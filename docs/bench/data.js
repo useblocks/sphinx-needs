@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788786981181,
+  "lastUpdate": 1788788475144,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -20376,6 +20376,42 @@ window.BENCHMARK_DATA = {
             "value": 53.430434077,
             "unit": "s",
             "extra": "Commit: 3069da1a73d23cf0768012b6e17092e7a02911a2\nBranch: master\nTime: 2026-09-07T15:14:42+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "292a6c258d326cf492e9fb58f78dded175d5c96e",
+          "message": "🔧 Stop shipping the test suite in the sphinx-needs sdist (#1905)\n\n`[tool.flit.sdist] include` drops `tests/` and `performance/` and keeps\n`docs/`.\n\n## Why\n\nSince #1904 the suite loads its fixtures from `sphinx-needs-testkit`, a\nworkspace member\nclassified `Private :: Do Not Upload` that no index carries and no sdist\ncan — the shipped\n`tests/conftest.py` line 29 is `from sphinx_needs_testkit import\nmake_plantuml_inert`, so\n`pytest` in an unpacked tarball dies at collection. A suite that cannot\nrun is worse than\nnone, because it looks runnable.\n\nBoth downstream consumers were checked rather than assumed, and neither\nloses anything.\n**conda-forge** builds from this sdist and its test step (`recipe.yaml`)\nis an import check\nplus `pip check` — it never ran these tests. **Debian** (`sphinx-needs`\n5.1.0+dfsg-8, sid)\n*does* run the suite, but from the GitHub tag tarball its `debian/watch`\nfetches — a\nrepository snapshot, which from 9.0.0 on carries the testkit at\n`packages/sphinx-needs-testkit/`, the vendored PlantUML jar and its pin.\nUnaffected.\n\n`docs/` stays: the offline documentation source, and what mature\nlibraries ship (sphinx,\ndocutils, pytest, attrs, jinja2 and click all ship docs; myst-parser,\nsphinx-design,\nsphinx-mounts and sphinx-codelinks ship the module alone).\n\n## Measured — `uv build --package sphinx-needs --no-sources`, same tree,\nflit_core 4\n\n| | files | tarball |\n|---|---|---|\n| before | 1380 | 8,090,950 B (7.72 MB) |\n| after | 817 | 7,723,432 B (7.37 MB) |\n\n563 files leave and the tarball moves 0.35 MB — test rst and python\ncompress to almost\nnothing. **The point is the 554 unrunnable files, not the bytes**, and\nthe manifest comment\nsays so rather than claiming a size win it does not have. `tar tzf … |\ngrep -c\n'^[^/]*/tests/'` is 0; `src/` (702 files) and `docs/` (110) are\nunchanged.\n\n## The fence, flipped\n\n`scripts/smoke_needs.py` asserted the three trees were present; the\nfailure mode is now the\nreverse, so `check_sdist_contents` takes an `unwanted` list beside\n`wanted`, `--sdist-dirs`\ndefaults to `docs` and a new `--sdist-absent-dirs` to `tests\nperformance`. The junk check\nand step 7 (build a wheel *from* the sdist) are unchanged; `poe\nsmoke-needs` passes neither\nlist, so the defaults are the policy. Mutation-tested — `tests/` back in\n`include`:\n\n```\nFAIL  the sdist does NOT ship tests/  -- 554 entries: tests/__init__.py, … -- drop tests/\n      from [tool.flit.sdist] include; the suite needs sphinx-needs-testkit, on no index\n```\n\n## Documentation\n\n`docs/contributing.rst` gains a short subsection: the sdist carries the\npackage and its\ndocumentation only, and the suite runs from a checkout (`uv sync\n--frozen`,\n`uv run poe test-needs`) or from a source snapshot with the testkit\ninstalled from the tree.\nRoot `AGENTS.md`'s two sdist paragraphs are rewritten to the new truth.\nThe \"this is an\nsdist\" prose in `tests/test_plantuml_command.py` now says \"a package\ndirectory copied out of\nthe repository\" — **no logic change**: that path is still real, the\nshipped `docs/conf.py`\nresolves a renderer through it, and the error strings (asserted word for\nword, duplicated in\nthree other files) are untouched.\n\n**For the 9.0.0 changelog: the sdist no longer carries the test suite.**\nNo entry here —\nsphinx-needs' changelog is stamped at release time by `poe bump` plus a\nhand-written\nparagraph, so the release PR should pick that line up.",
+          "timestamp": "2026-09-07T15:39:53+02:00",
+          "tree_id": "183070aed4c967597f8650d6e08cd31fd81bac7e",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/292a6c258d326cf492e9fb58f78dded175d5c96e"
+        },
+        "date": 1788788467795,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.14950473199999692,
+            "unit": "s",
+            "extra": "Commit: 292a6c258d326cf492e9fb58f78dded175d5c96e\nBranch: master\nTime: 2026-09-07T15:39:53+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 53.95134768099999,
+            "unit": "s",
+            "extra": "Commit: 292a6c258d326cf492e9fb58f78dded175d5c96e\nBranch: master\nTime: 2026-09-07T15:39:53+02:00"
           }
         ]
       }
