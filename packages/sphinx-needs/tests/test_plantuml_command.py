@@ -1,8 +1,8 @@
 """The order in which the suite decides how to render PlantUML.
 
 Every test project's ``plantuml`` configuration comes from the ``plantuml_command``
-fixture, which is :func:`tests.conftest.resolve_plantuml_command` applied to
-:func:`tests.conftest.workspace_plantuml_jar` -- the jar this repository commits at
+fixture, which is :func:`sphinx_needs_testkit.resolve_plantuml_command` applied to
+:func:`sphinx_needs_testkit.workspace_plantuml_jar` -- the jar this repository commits at
 ``vendor/plantuml/`` at the version ``vendor/plantuml/pin.toml`` names. The
 order that function applies is load-bearing rather than incidental, so it is asserted here
 instead of being left to the several hundred rendering tests that would merely go a strange
@@ -18,7 +18,7 @@ colour if it changed:
 
 The command it returns is a *string*, which sphinxcontrib-plantuml splits for itself, so
 two of the cases below assert through that real split rather than on the string -- what has
-to survive is the argv, not the spelling. :func:`tests.conftest.copy_test_utils` is pinned
+to survive is the argv, not the spelling. :func:`sphinx_needs_testkit.copy_test_utils` is pinned
 here too: it no longer copies a jar, but it is still what stands between a session fixture
 and a ``FileNotFoundError`` on a directory nothing guarantees.
 """
@@ -289,7 +289,7 @@ def test_no_pin_at_all_falls_through_to_the_executable(
 
     ``vendor/`` is at the repository root and flit's sdist ``include`` patterns cannot
     escape the package directory, so a tarball carries neither the jar nor the pin that
-    names it. :func:`tests.conftest.workspace_plantuml_jar` returns ``None`` there, and the
+    names it. :func:`sphinx_needs_testkit.workspace_plantuml_jar` returns ``None`` there, and the
     chain has to read that as "no workspace jar" rather than looking up a path on it.
     """
     monkeypatch.setattr(shutil, "which", lambda _name: "/usr/local/bin/plantuml")
