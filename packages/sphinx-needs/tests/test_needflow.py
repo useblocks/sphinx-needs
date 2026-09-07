@@ -7,7 +7,7 @@ from lxml import html as html_parser
 from sphinx import version_info
 from sphinx.config import Config
 
-from tests.conftest import assert_no_warnings, build_warnings
+from sphinx_needs_testkit import assert_no_warnings, build_warnings, plantuml_conf
 
 #: A ``conf.py`` for the inline source projects below.
 #: The id regex is relaxed, so that ids exercising the entity name sanitisation
@@ -1023,7 +1023,7 @@ Direction
 def test_direction_option_per_engine(
     make_app,
     tmp_path,
-    plantuml_command,
+    request,
     engine,
     value,
     plantuml_statement,
@@ -1043,7 +1043,7 @@ def test_direction_option_per_engine(
         srcdir=tmp_path,
         buildername="html",
         confoverrides={
-            "plantuml": plantuml_command,
+            **plantuml_conf(request, engine == "plantuml"),
             "graphviz_output_format": "svg",
             "needs_flow_engine": engine,
         },
@@ -1066,7 +1066,7 @@ def test_direction_option_per_engine(
     [("up", "'up'"), ("bt", "'up'"), ("left", "'left'"), ("rl", "'left'")],
 )
 def test_plantuml_reports_the_direction_it_cannot_draw(
-    make_app, tmp_path, plantuml_command, value, warned
+    make_app, tmp_path, request, value, warned
 ):
     """A direction PlantUML has no primitive for degrades with one warning per project.
 
@@ -1085,7 +1085,7 @@ def test_plantuml_reports_the_direction_it_cannot_draw(
     app = make_app(
         srcdir=tmp_path,
         buildername="html",
-        confoverrides={"plantuml": plantuml_command},
+        confoverrides=plantuml_conf(request),
     )
     app.build()
 
@@ -1095,9 +1095,7 @@ def test_plantuml_reports_the_direction_it_cannot_draw(
     assert warnings_text.count("the plantuml engine cannot draw") == 1
 
 
-def test_graphviz_draws_every_direction_without_warning(
-    make_app, tmp_path, plantuml_command
-):
+def test_graphviz_draws_every_direction_without_warning(make_app, tmp_path, request):
     """Graphviz supports all four directions, so none of them may warn.
 
     The companion of the PlantUML degradation test: a tier-2 warning that fired on an
@@ -1114,7 +1112,7 @@ def test_graphviz_draws_every_direction_without_warning(
         srcdir=tmp_path,
         buildername="html",
         confoverrides={
-            "plantuml": plantuml_command,
+            **plantuml_conf(request),
             "graphviz_output_format": "svg",
             "needs_flow_engine": "graphviz",
         },
@@ -1125,7 +1123,7 @@ def test_graphviz_draws_every_direction_without_warning(
 
 
 def test_unknown_direction_is_rejected_as_the_option_is_parsed(
-    make_app, tmp_path, plantuml_command
+    make_app, tmp_path, request
 ):
     """``:direction:`` is a closed enumeration, so docutils reports a bad value.
 
@@ -1138,7 +1136,7 @@ def test_unknown_direction_is_rejected_as_the_option_is_parsed(
     app = make_app(
         srcdir=tmp_path,
         buildername="html",
-        confoverrides={"plantuml": plantuml_command},
+        confoverrides=plantuml_conf(request),
     )
     app.build()  # must not raise
 
@@ -1180,7 +1178,7 @@ Config direction
     ],
 )
 def test_explicit_direction_beats_the_engine_config(
-    make_app, tmp_path, plantuml_command, engine, config_name, emitted, overridden
+    make_app, tmp_path, request, engine, config_name, emitted, overridden
 ):
     """An explicit ``:direction:`` must win over the config blob written beside it.
 
@@ -1204,7 +1202,7 @@ def test_explicit_direction_beats_the_engine_config(
         srcdir=tmp_path,
         buildername="html",
         confoverrides={
-            "plantuml": plantuml_command,
+            **plantuml_conf(request, engine == "plantuml"),
             "graphviz_output_format": "svg",
             "needs_flow_engine": engine,
         },
@@ -1222,7 +1220,7 @@ def test_explicit_direction_beats_the_engine_config(
 
 @pytest.mark.parametrize("engine", ["plantuml", "graphviz"])
 def test_agreeing_engine_config_does_not_warn_or_restate(
-    make_app, tmp_path, plantuml_command, engine
+    make_app, tmp_path, request, engine
 ):
     """A config blob that already draws the asked-for direction is left alone.
 
@@ -1238,7 +1236,7 @@ def test_agreeing_engine_config_does_not_warn_or_restate(
         srcdir=tmp_path,
         buildername="html",
         confoverrides={
-            "plantuml": plantuml_command,
+            **plantuml_conf(request, engine == "plantuml"),
             "graphviz_output_format": "svg",
             "needs_flow_engine": engine,
         },
@@ -1257,7 +1255,7 @@ def test_agreeing_engine_config_does_not_warn_or_restate(
 
 
 def test_project_direction_default_applies_without_the_option(
-    make_app, tmp_path, plantuml_command
+    make_app, tmp_path, request
 ):
     """``needs_flow_direction`` is the default a diagram without the option gets."""
     (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
@@ -1270,7 +1268,7 @@ def test_project_direction_default_applies_without_the_option(
         srcdir=tmp_path,
         buildername="html",
         confoverrides={
-            "plantuml": plantuml_command,
+            **plantuml_conf(request),
             "needs_flow_direction": "right",
         },
     )
@@ -1280,9 +1278,7 @@ def test_project_direction_default_applies_without_the_option(
     assert "left to right direction" in _debug_source(Path(app.outdir), "index.html")
 
 
-def test_option_beats_the_project_direction_default(
-    make_app, tmp_path, plantuml_command
-):
+def test_option_beats_the_project_direction_default(make_app, tmp_path, request):
     """A diagram always has the last word over ``needs_flow_direction``."""
     (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
     (tmp_path / "index.rst").write_text(DIRECTION_DOC.format(value="down"), "utf8")
@@ -1291,7 +1287,7 @@ def test_option_beats_the_project_direction_default(
         srcdir=tmp_path,
         buildername="html",
         confoverrides={
-            "plantuml": plantuml_command,
+            **plantuml_conf(request),
             "needs_flow_direction": "right",
         },
     )
@@ -1312,9 +1308,7 @@ No needflow at all
 """
 
 
-def test_bad_flow_config_is_reported_without_any_needflow(
-    make_app, tmp_path, plantuml_command
-):
+def test_bad_flow_config_is_reported_without_any_needflow(make_app, tmp_path, request):
     """An unusable ``needs_flow_*`` value is reported where the configuration is read.
 
     Checking these as a diagram is drawn means a project that misconfigures one and
@@ -1328,7 +1322,7 @@ def test_bad_flow_config_is_reported_without_any_needflow(
         srcdir=tmp_path,
         buildername="html",
         confoverrides={
-            "plantuml": plantuml_command,
+            **plantuml_conf(request),
             "needs_flow_direction": "sideways",
         },
     )
@@ -1340,7 +1334,7 @@ def test_bad_flow_config_is_reported_without_any_needflow(
 
 
 def test_bad_flow_config_is_reported_once_not_once_per_diagram(
-    make_app, tmp_path, plantuml_command
+    make_app, tmp_path, request
 ):
     """The read-time report is the only one, however many diagrams the project draws.
 
@@ -1358,7 +1352,7 @@ def test_bad_flow_config_is_reported_once_not_once_per_diagram(
         srcdir=tmp_path,
         buildername="html",
         confoverrides={
-            "plantuml": plantuml_command,
+            **plantuml_conf(request),
             "needs_flow_direction": "sideways",
         },
     )
@@ -1395,7 +1389,7 @@ Config value normalisation
     ids=["direction", "engine"],
 )
 def test_enum_config_values_ignore_case_and_padding(
-    make_app, tmp_path, plantuml_command, override, needle
+    make_app, tmp_path, request, override, needle
 ):
     """A configured enum value is matched the way the matching option value is.
 
@@ -1411,7 +1405,7 @@ def test_enum_config_values_ignore_case_and_padding(
         srcdir=tmp_path,
         buildername="html",
         confoverrides={
-            "plantuml": plantuml_command,
+            **plantuml_conf(request),
             "graphviz_output_format": "svg",
             **override,
         },
@@ -1432,7 +1426,7 @@ def test_enum_config_values_ignore_case_and_padding(
     ids=["direction", "engine"],
 )
 def test_normalisation_does_not_silence_a_genuinely_wrong_value(
-    make_app, tmp_path, plantuml_command, override, message
+    make_app, tmp_path, request, override, message
 ):
     """Tolerating case and padding must not turn a wrong value into a silent fallback.
 
@@ -1446,7 +1440,7 @@ def test_normalisation_does_not_silence_a_genuinely_wrong_value(
     app = make_app(
         srcdir=tmp_path,
         buildername="html",
-        confoverrides={"plantuml": plantuml_command, **override},
+        confoverrides={**plantuml_conf(request), **override},
     )
     app.build()  # must not raise
 
@@ -1488,7 +1482,7 @@ Link labels
 )
 @pytest.mark.parametrize("engine", ["plantuml", "graphviz"])
 def test_show_link_names_takes_a_value(
-    make_app, tmp_path, plantuml_command, engine, written, label
+    make_app, tmp_path, request, engine, written, label
 ):
     """Each accepted ``:show_link_names:`` value labels edges with what it names.
 
@@ -1504,7 +1498,7 @@ def test_show_link_names_takes_a_value(
         srcdir=tmp_path,
         buildername="html",
         confoverrides={
-            "plantuml": plantuml_command,
+            **plantuml_conf(request, engine == "plantuml"),
             "graphviz_output_format": "svg",
             "needs_flow_engine": engine,
         },
@@ -1529,7 +1523,7 @@ def test_show_link_names_takes_a_value(
 
 
 def test_unknown_show_link_names_value_is_rejected_as_it_is_parsed(
-    make_app, tmp_path, plantuml_command
+    make_app, tmp_path, request
 ):
     """``:show_link_names:`` is a closed enumeration once it takes a value."""
     (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
@@ -1540,7 +1534,7 @@ def test_unknown_show_link_names_value_is_rejected_as_it_is_parsed(
     app = make_app(
         srcdir=tmp_path,
         buildername="html",
-        confoverrides={"plantuml": plantuml_command},
+        confoverrides=plantuml_conf(request),
     )
     app.build()  # must not raise
 
@@ -1578,7 +1572,7 @@ def test_unknown_show_link_names_value_is_rejected_as_it_is_parsed(
     ],
 )
 def test_needs_flow_show_links_accepts_a_value_or_a_boolean(
-    make_app, tmp_path, plantuml_command, configured, label
+    make_app, tmp_path, request, configured, label
 ):
     """The project default takes a value, and keeps meaning what a boolean meant.
 
@@ -1597,7 +1591,7 @@ def test_needs_flow_show_links_accepts_a_value_or_a_boolean(
         srcdir=tmp_path,
         buildername="html",
         confoverrides={
-            "plantuml": plantuml_command,
+            **plantuml_conf(request),
             "needs_flow_show_links": configured,
         },
     )
@@ -1613,7 +1607,7 @@ def test_needs_flow_show_links_accepts_a_value_or_a_boolean(
 
 
 def test_unusable_needs_flow_show_links_string_warns_and_falls_back(
-    make_app, tmp_path, plantuml_command
+    make_app, tmp_path, request
 ):
     """A *string* is someone naming a value, so it is held to the enumeration.
 
@@ -1627,7 +1621,7 @@ def test_unusable_needs_flow_show_links_string_warns_and_falls_back(
         srcdir=tmp_path,
         buildername="html",
         confoverrides={
-            "plantuml": plantuml_command,
+            **plantuml_conf(request),
             "needs_flow_show_links": "yes please",
         },
     )
@@ -1639,9 +1633,7 @@ def test_unusable_needs_flow_show_links_string_warns_and_falls_back(
     assert "'none' is used" in warnings_text
 
 
-def test_show_link_names_option_beats_the_project_default(
-    make_app, tmp_path, plantuml_command
-):
+def test_show_link_names_option_beats_the_project_default(make_app, tmp_path, request):
     """A diagram has the last word, which it could not have before.
 
     The flag and the configuration used to be OR-ed, so a project that turned labels on
@@ -1654,7 +1646,7 @@ def test_show_link_names_option_beats_the_project_default(
         srcdir=tmp_path,
         buildername="html",
         confoverrides={
-            "plantuml": plantuml_command,
+            **plantuml_conf(request),
             "needs_flow_show_links": "outgoing",
         },
     )
@@ -1667,7 +1659,7 @@ def test_show_link_names_option_beats_the_project_default(
 
 @pytest.mark.parametrize("engine", ["plantuml", "graphviz"])
 def test_needgantt_and_needsequence_keep_their_bare_flag(
-    make_app, tmp_path, plantuml_command, engine
+    make_app, tmp_path, request, engine
 ):
     """The widened option must not narrow the flag the other diagrams share.
 
@@ -1687,7 +1679,7 @@ def test_needgantt_and_needsequence_keep_their_bare_flag(
         srcdir=tmp_path,
         buildername="html",
         confoverrides={
-            "plantuml": plantuml_command,
+            **plantuml_conf(request, engine == "plantuml"),
             "graphviz_output_format": "svg",
             "needs_flow_engine": engine,
         },
@@ -1780,7 +1772,7 @@ def _legend_rows(outdir: Path, part: str, file: str = "index.html") -> list[str]
     ]
 
 
-def _build_legend(make_app, tmp_path, plantuml_command, engine, written, **overrides):
+def _build_legend(make_app, tmp_path, request, engine, written, **overrides):
     """Build the legend project with one ``:show_legend:`` spelling.
 
     :param engine: The needflow engine to draw with.
@@ -1794,7 +1786,7 @@ def _build_legend(make_app, tmp_path, plantuml_command, engine, written, **overr
         srcdir=tmp_path,
         buildername="html",
         confoverrides={
-            "plantuml": plantuml_command,
+            **plantuml_conf(request, engine == "plantuml"),
             "graphviz_output_format": "svg",
             "needs_flow_engine": engine,
             **overrides,
@@ -1806,7 +1798,7 @@ def _build_legend(make_app, tmp_path, plantuml_command, engine, written, **overr
 
 @pytest.mark.parametrize("engine", ["plantuml", "graphviz"])
 def test_bare_show_legend_still_draws_the_in_diagram_legend(
-    make_app, tmp_path, plantuml_command, engine
+    make_app, tmp_path, request, engine
 ):
     """A bare ``:show_legend:`` must draw exactly the legend it always drew.
 
@@ -1814,7 +1806,7 @@ def test_bare_show_legend_still_draws_the_in_diagram_legend(
     keys existed keeps its in-image legend -- including the long-standing difference
     that plantuml lists every configured type while graphviz lists only what it drew.
     """
-    app = _build_legend(make_app, tmp_path, plantuml_command, engine, "")
+    app = _build_legend(make_app, tmp_path, request, engine, "")
 
     assert_no_warnings(app)
 
@@ -1833,14 +1825,14 @@ def test_bare_show_legend_still_draws_the_in_diagram_legend(
 
 @pytest.mark.parametrize("engine", ["plantuml", "graphviz"])
 def test_show_legend_key_selects_a_configured_legend(
-    make_app, tmp_path, plantuml_command, engine
+    make_app, tmp_path, request, engine
 ):
     """A named legend renders the same table beside the diagram on either engine.
 
     An external legend lists only what the diagram actually drew, which is the scope
     rule the two in-image legends disagree about.
     """
-    app = _build_legend(make_app, tmp_path, plantuml_command, engine, " beside")
+    app = _build_legend(make_app, tmp_path, request, engine, " beside")
 
     assert_no_warnings(app)
 
@@ -1855,15 +1847,13 @@ def test_show_legend_key_selects_a_configured_legend(
 
 
 @pytest.mark.parametrize("engine", ["plantuml", "graphviz"])
-def test_show_legend_can_describe_link_types(
-    make_app, tmp_path, plantuml_command, engine
-):
+def test_show_legend_can_describe_link_types(make_app, tmp_path, request, engine):
     """A link legend describes the link types the diagram drew edges for.
 
     No in-diagram legend here can do this, so a legend asking for links is always
     drawn beside the diagram.
     """
-    app = _build_legend(make_app, tmp_path, plantuml_command, engine, " links")
+    app = _build_legend(make_app, tmp_path, request, engine, " links")
 
     assert_no_warnings(app)
 
@@ -1879,7 +1869,7 @@ def test_show_legend_can_describe_link_types(
     ids=["both", "reversed"],
 )
 def test_legend_sections_keep_their_configured_order(
-    make_app, tmp_path, plantuml_command, engine, key, expected
+    make_app, tmp_path, request, engine, key, expected
 ):
     """``parts`` is an ordered list, and the order is contract.
 
@@ -1888,7 +1878,7 @@ def test_legend_sections_keep_their_configured_order(
     as a set, or as an enum with a fixed section order, renders these the same way round
     and fails one of the two.
     """
-    app = _build_legend(make_app, tmp_path, plantuml_command, engine, key)
+    app = _build_legend(make_app, tmp_path, request, engine, key)
 
     assert_no_warnings(app)
     assert _legend_sections(Path(app.outdir)) == expected
@@ -1896,7 +1886,7 @@ def test_legend_sections_keep_their_configured_order(
 
 @pytest.mark.parametrize("engine", ["plantuml", "graphviz"])
 def test_internal_placement_that_cannot_be_honoured_degrades_silently(
-    make_app, tmp_path, plantuml_command, engine
+    make_app, tmp_path, request, engine
 ):
     """A legend asking for links inside the diagram gets the table instead, silently.
 
@@ -1914,7 +1904,7 @@ def test_internal_placement_that_cannot_be_honoured_degrades_silently(
         srcdir=tmp_path,
         buildername="html",
         confoverrides={
-            "plantuml": plantuml_command,
+            **plantuml_conf(request, engine == "plantuml"),
             "graphviz_output_format": "svg",
             "needs_flow_engine": engine,
         },
@@ -1925,12 +1915,12 @@ def test_internal_placement_that_cannot_be_honoured_degrades_silently(
     assert _legend_sections(Path(app.outdir)) == ["types", "links"]
 
 
-def test_needs_flow_show_legend_supplies_the_key(make_app, tmp_path, plantuml_command):
+def test_needs_flow_show_legend_supplies_the_key(make_app, tmp_path, request):
     """``needs_flow_show_legend`` says *which* legend a bare option gets."""
     app = _build_legend(
         make_app,
         tmp_path,
-        plantuml_command,
+        request,
         "plantuml",
         "",
         needs_flow_show_legend="beside",
@@ -1940,9 +1930,7 @@ def test_needs_flow_show_legend_supplies_the_key(make_app, tmp_path, plantuml_co
     assert _legend_sections(Path(app.outdir)) == ["types"]
 
 
-def test_needs_flow_show_legend_never_says_whether(
-    make_app, tmp_path, plantuml_command
-):
+def test_needs_flow_show_legend_never_says_whether(make_app, tmp_path, request):
     """A project default cannot give a legend to a diagram that never asked for one.
 
     Whether there is a legend stays with the directive; the configuration only ever
@@ -1958,7 +1946,7 @@ def test_needs_flow_show_legend_never_says_whether(
         srcdir=tmp_path,
         buildername="html",
         confoverrides={
-            "plantuml": plantuml_command,
+            **plantuml_conf(request),
             "needs_flow_show_legend": "beside",
         },
     )
@@ -1969,12 +1957,12 @@ def test_needs_flow_show_legend_never_says_whether(
     assert "' Legend definition" not in _debug_source(Path(app.outdir), "index.html")
 
 
-def test_option_key_beats_the_project_key(make_app, tmp_path, plantuml_command):
+def test_option_key_beats_the_project_key(make_app, tmp_path, request):
     """The directive's own key wins over ``needs_flow_show_legend``."""
     app = _build_legend(
         make_app,
         tmp_path,
-        plantuml_command,
+        request,
         "plantuml",
         " reversed",
         needs_flow_show_legend="beside",
@@ -1985,7 +1973,7 @@ def test_option_key_beats_the_project_key(make_app, tmp_path, plantuml_command):
 
 
 def test_unknown_option_key_warns_and_hands_on_to_the_project_key(
-    make_app, tmp_path, plantuml_command
+    make_app, tmp_path, request
 ):
     """An unknown option key is treated as unset, so the chain continues.
 
@@ -1996,7 +1984,7 @@ def test_unknown_option_key_warns_and_hands_on_to_the_project_key(
     app = _build_legend(
         make_app,
         tmp_path,
-        plantuml_command,
+        request,
         "plantuml",
         " besidee",
         needs_flow_show_legend="reversed",
@@ -2012,10 +2000,10 @@ def test_unknown_option_key_warns_and_hands_on_to_the_project_key(
 
 
 def test_unknown_option_key_falls_back_to_the_engine_legend(
-    make_app, tmp_path, plantuml_command
+    make_app, tmp_path, request
 ):
     """With nothing configured either, the chain ends at the engine's own legend."""
-    app = _build_legend(make_app, tmp_path, plantuml_command, "plantuml", " besidee")
+    app = _build_legend(make_app, tmp_path, request, "plantuml", " besidee")
 
     warnings_text = "\n".join(build_warnings(app))
     assert (
@@ -2025,9 +2013,7 @@ def test_unknown_option_key_falls_back_to_the_engine_legend(
     assert "' Legend definition" in _debug_source(Path(app.outdir), "index.html")
 
 
-def test_unknown_option_key_is_reported_per_directive(
-    make_app, tmp_path, plantuml_command
-):
+def test_unknown_option_key_is_reported_per_directive(make_app, tmp_path, request):
     """An option key is the directive's own text, so it is reported every time.
 
     The author can act on each one, and two diagrams with the same typo are two
@@ -2043,7 +2029,7 @@ def test_unknown_option_key_is_reported_per_directive(
     app = make_app(
         srcdir=tmp_path,
         buildername="html",
-        confoverrides={"plantuml": plantuml_command},
+        confoverrides=plantuml_conf(request),
     )
     app.build()
 
@@ -2054,7 +2040,7 @@ def test_unknown_option_key_is_reported_per_directive(
 
 
 def test_unknown_project_key_is_reported_once_for_the_project(
-    make_app, tmp_path, plantuml_command
+    make_app, tmp_path, request
 ):
     """An unknown ``needs_flow_show_legend`` is one ``conf.py`` mistake, said once.
 
@@ -2072,7 +2058,7 @@ def test_unknown_project_key_is_reported_once_for_the_project(
         srcdir=tmp_path,
         buildername="html",
         confoverrides={
-            "plantuml": plantuml_command,
+            **plantuml_conf(request),
             "needs_flow_show_legend": "besidee",
         },
     )
@@ -2111,7 +2097,7 @@ def test_unknown_project_key_is_reported_once_for_the_project(
     ],
 )
 def test_unusable_legend_config_warns_and_never_crashes(
-    make_app, tmp_path, plantuml_command, legends, message
+    make_app, tmp_path, request, legends, message
 ):
     """A malformed ``needs_flow_legends`` entry is reported, and the build finishes.
 
@@ -2125,7 +2111,7 @@ def test_unusable_legend_config_warns_and_never_crashes(
         srcdir=tmp_path,
         buildername="html",
         confoverrides={
-            "plantuml": plantuml_command,
+            **plantuml_conf(request),
             "needs_flow_legends": legends,
         },
     )
@@ -2135,7 +2121,7 @@ def test_unusable_legend_config_warns_and_never_crashes(
 
 
 def test_unusable_legend_config_is_reported_without_any_needflow(
-    make_app, tmp_path, plantuml_command
+    make_app, tmp_path, request
 ):
     """The legend configuration is checked where it is read, not where it is used."""
     (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
@@ -2144,7 +2130,7 @@ def test_unusable_legend_config_is_reported_without_any_needflow(
         srcdir=tmp_path,
         buildername="html",
         confoverrides={
-            "plantuml": plantuml_command,
+            **plantuml_conf(request),
             "needs_flow_legends": {"bad": {"parts": 5}},
             "needs_flow_show_legend": "nowhere",
         },
@@ -2162,7 +2148,7 @@ def test_unusable_legend_config_is_reported_without_any_needflow(
     ids=["int", "none", "bool"],
 )
 def test_non_string_show_legend_key_is_reported_not_crashed(
-    make_app, tmp_path, plantuml_command, project_key, quoted
+    make_app, tmp_path, request, project_key, quoted
 ):
     """A non-string ``needs_flow_show_legend`` must warn, not end the build.
 
@@ -2180,7 +2166,7 @@ def test_non_string_show_legend_key_is_reported_not_crashed(
         srcdir=tmp_path,
         buildername="html",
         confoverrides={
-            "plantuml": plantuml_command,
+            **plantuml_conf(request),
             "needs_flow_show_legend": project_key,
         },
     )
@@ -2199,7 +2185,7 @@ def test_non_string_show_legend_key_is_reported_not_crashed(
     ids=["int", "none", "bool"],
 )
 def test_non_string_show_legend_key_still_resolves_the_chain(
-    make_app, tmp_path, plantuml_command, project_key, quoted
+    make_app, tmp_path, request, project_key, quoted
 ):
     """The same value must not crash the *per-diagram* resolution either.
 
@@ -2223,7 +2209,7 @@ def test_non_string_show_legend_key_still_resolves_the_chain(
         srcdir=tmp_path,
         buildername="html",
         confoverrides={
-            "plantuml": plantuml_command,
+            **plantuml_conf(request),
             "needs_flow_show_legend": project_key,
         },
     )
@@ -2246,7 +2232,7 @@ def test_non_string_show_legend_key_still_resolves_the_chain(
 
 
 def test_a_legend_beside_a_plantuml_figure_keeps_the_directive_classes(
-    make_app, tmp_path, plantuml_command
+    make_app, tmp_path, request
 ):
     """``:class:`` reaches the plantuml figure, which is where the option says it goes.
 
@@ -2262,7 +2248,7 @@ def test_a_legend_beside_a_plantuml_figure_keeps_the_directive_classes(
     app = make_app(
         srcdir=tmp_path,
         buildername="html",
-        confoverrides={"plantuml": plantuml_command},
+        confoverrides=plantuml_conf(request),
     )
     app.build()
 

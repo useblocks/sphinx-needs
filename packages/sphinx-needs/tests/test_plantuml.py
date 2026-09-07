@@ -2,7 +2,19 @@ from pathlib import Path
 
 import pytest
 
-from tests.conftest import assert_no_warnings, build_warnings
+from sphinx_needs_testkit import assert_no_warnings, build_warnings
+
+# WHY THE FIRST TWO TESTS OPT INTO RENDERING when their assertions look as though they do
+# not need it, and why a tidy-up of the opt-in list must not remove them.
+#
+# Both assert `"PlantUML is not available" not in index_html` and that the build was
+# silent. With the renderer inert BOTH are true of a build that drew nothing at all, so
+# without `"plantuml": True` each test passes while testing nothing whatever -- measured,
+# one at a time, when the opt-in list was checked for minimality. WITH it they test what
+# their names claim: that sphinx-needs finds `sphinxcontrib.plantuml` however it was
+# registered (in `extensions`, or by `app.setup_extension`), and that finding it produces
+# a clean render. They are the only two opt-ins in this suite whose necessity is invisible
+# from the assertions, and they cost about two seconds each.
 
 
 @pytest.mark.parametrize(
