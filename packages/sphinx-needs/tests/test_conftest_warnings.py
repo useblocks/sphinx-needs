@@ -68,6 +68,24 @@ def test_an_unlocated_warning_is_one_record() -> None:
     ]
 
 
+def test_every_sphinx_severity_starts_a_record() -> None:
+    """``SEVERE`` and ``CRITICAL`` are sphinx severities too; dropping them from the pattern
+    would glue such a record onto its predecessor and stay green everywhere else."""
+    stream = "WARNING: a\nSEVERE: b\nCRITICAL: c\nERROR: d\n"
+    assert build_warnings(stream) == [
+        "WARNING: a",
+        "SEVERE: b",
+        "CRITICAL: c",
+        "ERROR: d",
+    ]
+
+
+def test_a_location_containing_a_space_still_starts_a_record() -> None:
+    """A path with a space in it is a location like any other."""
+    stream = "/tmp/my docs/index.rst:3: WARNING: x [needs.a]\n"
+    assert build_warnings(stream) == ["/tmp/my docs/index.rst:3: WARNING: x [needs.a]"]
+
+
 def test_a_windows_location_does_not_split_on_the_drive_letter() -> None:
     """``C:`` is not followed by whitespace, so the non-greedy prefix walks past it."""
     stream = "C:\\a\\b\\index.rst:12: WARNING: x [needs.a]\nC:\\a\\b\\index.rst:20: ERROR: y\n"
@@ -167,6 +185,13 @@ def test_warning_count_matches_the_exact_type_not_a_prefix() -> None:
     assert warning_count(stream, "needs.variant") == 1
     assert warning_count(stream, "needs.variants") == 1
     assert warning_count(stream, "needs.link") == 0
+
+
+def test_warning_count_does_not_match_a_type_by_its_suffix() -> None:
+    """``[needs.link]`` must not be found inside ``[x.needs.link]``: the match is the whole
+    bracketed token, not its tail."""
+    stream = "WARNING: a [x.needs.link]\nWARNING: b [needs.link]\n"
+    assert warning_count(stream, "needs.link") == 1
 
 
 # ------------------------------------------------------------------- a stream that is not one
