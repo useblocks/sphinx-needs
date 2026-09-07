@@ -75,11 +75,21 @@ def test_doc_build_html(test_app):
 
     page1_html = Path(app.outdir, "page_1.html").read_text()
     assert "Page 1" in page1_html
-    assert "page_1 Story" in page1_html
     assert "SPEC_PAGE_1" in page1_html
+    # The same scheduling decides which story holds STORY_PAGE_1 in the output: the one
+    # the warning above does NOT name. SPEC_PAGE_1 links to the id either way, so only
+    # the target page of that link, and which title renders, follow the winner.
+    if "page_1.rst" in warnings[1]:
+        assert "page_1 Story" not in page1_html
+        page5_html = Path(app.outdir, "page_5.html").read_text()
+        assert "duplicate" in page5_html
+        link_target = "page_5.html#STORY_PAGE_1"
+    else:
+        assert "page_1 Story" in page1_html
+        link_target = "#STORY_PAGE_1"
     assert (
         '<div class="line">links outgoing: <span '
-        'class="links"><span><a class="reference internal" href="#STORY_PAGE_1" '
+        f'class="links"><span><a class="reference internal" href="{link_target}" '
         'title="SPEC_PAGE_1">STORY_PAGE_1</a></span></span></div>' in page1_html
     )
     page2_html = Path(app.outdir, "page_2.html").read_text()
