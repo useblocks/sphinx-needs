@@ -1,0 +1,15 @@
+// -*- mode: jsonc -*-
+{
+  // @JSONC alpha implementation, IMPL_JSONC_A, impl, [REQ_JSONC_1]
+  "alpha": 1,
+  "items": [
+    "first", // @JSONC inline item, IMPL_JSONC_B, impl, [REQ_JSONC_2]
+    "second"
+  ],
+  /* Block comment with marker
+     @JSONC beta implementation, IMPL_JSONC_C, impl, [REQ_JSONC_3]
+  */
+  "beta": {
+    "nested": true
+  }
+}

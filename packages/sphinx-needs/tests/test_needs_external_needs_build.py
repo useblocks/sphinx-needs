@@ -8,13 +8,15 @@ from sphinx import version_info
 from sphinx.testing.util import SphinxTestApp
 from sphinx.util.console import strip_colors
 
+from tests.conftest import build_warnings
+
 
 @pytest.mark.parametrize(
     "test_app",
     [{"buildername": "html", "srcdir": "doc_test/doc_needs_external_needs"}],
     indirect=True,
 )
-def test_doc_build_html(test_app: SphinxTestApp, plantuml_command: str):
+def test_doc_build_html(test_app: SphinxTestApp, plantuml_subprocess_args: list[str]):
     import subprocess
 
     src_dir = Path(test_app.srcdir)
@@ -24,8 +26,7 @@ def test_doc_build_html(test_app: SphinxTestApp, plantuml_command: str):
             "sphinx-build",
             "-b",
             "html",
-            "-D",
-            f"plantuml={plantuml_command}",
+            *plantuml_subprocess_args,
             src_dir,
             out_dir,
         ],
@@ -35,7 +36,7 @@ def test_doc_build_html(test_app: SphinxTestApp, plantuml_command: str):
         "WARNING: http://my_company.com/docs/v1/index.html#TEST_01: Need 'EXT_TEST_01' has unknown outgoing link 'SPEC_1' in field 'links' [needs.external_link_outgoing]",
         "WARNING: ../../_build/html/index.html#TEST_01: Need 'EXT_REL_PATH_TEST_01' has unknown outgoing link 'SPEC_1' in field 'links' [needs.external_link_outgoing]",
     ]
-    assert strip_colors(output.stderr.decode("utf-8")).splitlines() == expected_warnings
+    assert build_warnings(output.stderr.decode("utf-8")) == expected_warnings
 
     # run second time and check
     output_second = subprocess.run(
@@ -43,8 +44,7 @@ def test_doc_build_html(test_app: SphinxTestApp, plantuml_command: str):
             "sphinx-build",
             "-b",
             "html",
-            "-D",
-            f"plantuml={plantuml_command}",
+            *plantuml_subprocess_args,
             src_dir,
             out_dir,
         ],
@@ -56,10 +56,7 @@ def test_doc_build_html(test_app: SphinxTestApp, plantuml_command: str):
     # which leads to some SN warnings not being emitted for incremental builds
     if version_info < (8, 2):
         expected_warnings = []
-    assert (
-        strip_colors(output_second.stderr.decode("utf-8")).splitlines()
-        == expected_warnings
-    )
+    assert build_warnings(output_second.stderr.decode("utf-8")) == expected_warnings
 
     # check if incremental build used
     # first build output
@@ -84,7 +81,13 @@ def test_doc_build_html(test_app: SphinxTestApp, plantuml_command: str):
 )
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_needs_external_needs"}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_needs_external_needs",
+            "plantuml": True,
+        }
+    ],
     indirect=True,
 )
 def test_external_needs_base_url_relative_path(test_app):

@@ -12,6 +12,7 @@ from syrupy.filters import props
 
 from sphinx_needs.api import add_need_type, get_need_types
 from sphinx_needs.exceptions import NeedsConfigException
+from tests.conftest import assert_no_warnings, build_warnings
 
 
 @pytest.fixture()
@@ -54,7 +55,6 @@ def setup(app):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_basic",
-            "no_plantuml": True,
             "confoverrides": {"extensions": ["sphinx_needs", "dummy_extension.dummy"]},
         }
     ],
@@ -77,7 +77,6 @@ def test_api_configuration(test_app: SphinxTestApp):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_basic",
-            "no_plantuml": True,
             "confoverrides": {"extensions": ["sphinx_needs", "dummy_extension.dummy"]},
         }
     ],
@@ -97,7 +96,6 @@ def test_api_get_types(test_app: SphinxTestApp):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_basic",
-            "no_plantuml": True,
             "confoverrides": {"extensions": ["sphinx_needs", "dummy_extension.dummy"]},
         }
     ],
@@ -131,7 +129,6 @@ def test_api_add_field(
     tmpdir: Path,
     make_app: Callable[[], SphinxTestApp],
     write_fixture_files: Callable[[Path, dict[str, Any]], None],
-    get_warnings_list,
 ):
     content = {
         "conf": textwrap.dedent(
@@ -159,11 +156,11 @@ def test_api_add_field(
     app: SphinxTestApp = make_app(srcdir=Path(tmpdir), freshenv=True)
     app.build()
 
-    warnings = get_warnings_list(app)
-    assert warnings == [
-        "Field 'my_extra_option' (from add_field) has no 'schema', 'nullable' or 'default' defined, "
-        "which defaults to a string schema with nullable=True and no default. "
-        "To aide with backward compatibility please define at least one. [needs.config]\n"
+    assert build_warnings(app) == [
+        "WARNING: Field 'my_extra_option' (from add_field) has no 'schema', 'nullable' or "
+        "'default' defined, which defaults to a string schema with nullable=True and no "
+        "default. To aide with backward compatibility please define at least one. "
+        "[needs.config]"
     ]
 
     html = Path(app.outdir, "index.html").read_text()
@@ -177,7 +174,6 @@ def test_api_add_field_schema(
     tmpdir: Path,
     make_app: Callable[[], SphinxTestApp],
     write_fixture_files: Callable[[Path, dict[str, Any]], None],
-    get_warnings_list,
 ):
     content = {
         "conf": textwrap.dedent(
@@ -212,8 +208,7 @@ def test_api_add_field_schema(
     app: SphinxTestApp = make_app(srcdir=Path(tmpdir), freshenv=True)
     app.build()
 
-    warnings = get_warnings_list(app)
-    assert len(warnings) == 0, "\n".join(warnings)
+    assert_no_warnings(app)
 
     html = Path(app.outdir, "index.html").read_text()
     assert html is not None
@@ -269,7 +264,6 @@ def test_api_add_field_default(
     tmpdir: Path,
     make_app: Callable[[], SphinxTestApp],
     write_fixture_files: Callable[[Path, dict[str, Any]], None],
-    get_warnings_list,
     snapshot,
 ):
     content = {
@@ -309,8 +303,7 @@ def test_api_add_field_default(
 
     assert app.statuscode == 0
 
-    warnings = get_warnings_list(app)
-    assert len(warnings) == 0, "\n".join(warnings)
+    assert_no_warnings(app)
 
     json_text = Path(app.outdir, "needs.json").read_text()
     needs_data = json.loads(json_text)
@@ -321,7 +314,6 @@ def test_api_add_field_default_wrong(
     tmpdir: Path,
     make_app: Callable[[], SphinxTestApp],
     write_fixture_files: Callable[[Path, dict[str, Any]], None],
-    get_warnings_list,
     snapshot,
 ):
     content = {
@@ -359,8 +351,9 @@ def test_api_add_field_default_wrong(
     app.build()
     assert app.statuscode == 0
 
-    warnings = get_warnings_list(app)
-    assert warnings == [
-        "add_field['my_extra_option']['default'] value is incorrect: Cannot convert 'wrong default type' to integer [needs.config]\n",
-        "add_field['my_extra_option']['predicates'] value is incorrect: Cannot convert 'wrong predicate type' to integer [needs.config]\n",
+    assert build_warnings(app) == [
+        "WARNING: add_field['my_extra_option']['default'] value is incorrect: "
+        "Cannot convert 'wrong default type' to integer [needs.config]",
+        "WARNING: add_field['my_extra_option']['predicates'] value is incorrect: "
+        "Cannot convert 'wrong predicate type' to integer [needs.config]",
     ]

@@ -4,7 +4,8 @@ from pathlib import Path
 
 import pytest
 from lxml import html as html_parser
-from sphinx.util.console import strip_colors
+
+from tests.conftest import assert_no_warnings, build_warnings
 
 
 @pytest.mark.parametrize(
@@ -35,18 +36,26 @@ def test_doc_github_44(test_app):
     assert "Test 2" in html
     assert "Test 3" in html
 
-    stderr = strip_colors(output.stderr.decode("utf-8"))
-
     expected_warnings = [
-        f"{Path(str(app.srcdir)) / 'index.rst'}:11: WARNING: Need 'test_3' has unknown outgoing link 'test_123_broken' in field 'links' [needs.link_outgoing]"
+        "<srcdir>/index.rst:11: WARNING: Need 'test_3' has unknown outgoing link "
+        "'test_123_broken' in field 'links' [needs.link_outgoing]"
     ]
 
-    assert stderr.splitlines() == expected_warnings
+    assert (
+        build_warnings(output.stderr.decode("utf-8"), srcdir=app.srcdir)
+        == expected_warnings
+    )
 
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_github_issue_61"}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_github_issue_61",
+            "plantuml": True,
+        }
+    ],
     indirect=True,
 )
 def test_doc_github_61(test_app):
@@ -160,8 +169,7 @@ def test_doc_github_1664_legend(test_app):
     app.build()  # must not raise
 
     # a legend the engine cannot parse would be reported as a render warning
-    warnings = strip_colors(app._warning.getvalue()).strip()
-    assert warnings == ""
+    assert_no_warnings(app)
 
     debug = _debug_source(Path(app.outdir, "legend.html"))
 

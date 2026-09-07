@@ -1,7 +1,8 @@
 from pathlib import Path
 
 import pytest
-from sphinx.util.console import strip_colors
+
+from tests.conftest import build_warnings
 
 
 @pytest.mark.parametrize(
@@ -10,7 +11,6 @@ from sphinx.util.console import strip_colors
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_style_unknown",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -19,8 +19,8 @@ def test_doc_style_unknown(test_app):
     app = test_app
     app.build()
 
-    warnings = strip_colors(app._warning.getvalue()).splitlines()
-    assert warnings == [
+    warning_records = build_warnings(app)
+    assert warning_records == [
         "WARNING: needs_css not an existing file: UNKNOWN.css [needs.config]"
     ]
 

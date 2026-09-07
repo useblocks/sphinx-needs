@@ -4,7 +4,7 @@ on:
     branches: [master]
   pull_request:
 
-# A fix-up push otherwise leaves the superseded head's 25 jobs running to completion, and
+# A fix-up push otherwise leaves the superseded head's 26 jobs running to completion, and
 # the useblocks organisation shares 60 concurrent runners across all of its repositories.
 # The group is the pull request's number, so every run that is NOT a pull request -- every
 # push to master -- gets a group of its own and master runs neither queue behind nor cancel
@@ -37,6 +37,13 @@ jobs:
         # the synced environment, so `uv run poe lint` covers it too
         run: >
           uv run --no-project --with packaging python tools/src/sn_tools/check_workspace.py
+      - name: Check the vendored PlantUML is the one its pin names
+        # THE fence on the committed jar: `vendor/plantuml/pin.toml` is two lines a bump has
+        # to edit and a ~30 MB file it has to replace, and the file is the half a reviewer
+        # cannot see in a diff. `--no-project` for the same reason as the check above -- this
+        # reads the checkout, not an environment built from it -- and `--verify` never
+        # touches the network. `uv run poe lint` declares the same check as a dep
+        run: uv run --no-project python tools/src/sn_tools/fetch_plantuml.py --verify
       - run: uv run --frozen prek run --all-files --show-diff-on-failure
         env:
           PREK_COLOR: always
@@ -138,14 +145,17 @@ jobs:
   #       run: ubc build index docs --show-warnings
 
   # Display names carry the PACKAGE they exercise as their first word (`Needs …`,
-  # `Mounts …`), so the checks list on a pull request reads by package. `Lint` and
+  # `Extensions …` for the two that extend sphinx-needs), so the checks list on a pull
+  # request reads by package. `Lint` and
   # `check` are workspace-wide and are also required status contexts on master, so
   # their names must not change without updating the branch protection.
   #
-  # The two matrix jobs below call `test-package.yaml`, which holds the steps they used
-  # to carry a copy each. A called job's name is appended to its caller's, so these
-  # checks read `Needs py3.13 sphinx-9 ubuntu-latest / pytest` -- the ` / ` join is
-  # unconditional and cannot be suppressed. Neither required context is among them.
+  # `tests-core` calls `test-package.yaml` and `tests-extensions` calls
+  # `test-extensions.yaml`; both units get everything from the renderer installs to the
+  # sphinx-series fence from `.github/actions/prepare-cell`, so no job carries a copy of
+  # them. A called job's name is appended to its caller's, so these checks read
+  # `Needs py3.13 sphinx-9 ubuntu-latest / pytest` -- the ` / ` join is unconditional and
+  # cannot be suppressed. Neither required context is among them.
   tests-core:
     name: "Needs py${{ matrix.python-version }} ${{ matrix.sphinx-group }} ${{ matrix.os }}"
     strategy:
@@ -183,11 +193,30 @@ jobs:
       cache-suffix: ${{ matrix.python-version }}-${{ matrix.sphinx-group }}
       test-path: packages/sphinx-needs/tests
       # `benchmarks` is `benchmark.yaml`'s; `jstest` is the `tests-js` lane's
-      pytest-args: '--ignore=packages/sphinx-needs/tests/benchmarks -m "not jstest"'
+      # `-n 4`: four workers, the runner's core count. The `-n auto` race this suite used to
+      # document was on a jar copied into every test project; since #1870 the jar is one
+      # file at a fixed path and nothing copies it, and the suite was measured at `-n 4`
+      # and `-n auto` with no failure and no flake. Measured locally: 535 s serial -> 164 s
+      pytest-args: '--ignore=packages/sphinx-needs/tests/benchmarks -m "not jstest" -n 4'
       cov-module: sphinx_needs
       codecov-flag: pytests
       codecov-name: sphinx-need-pytests
       upload-coverage: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.14' }}
+      # Rendering is opt in now, but that does not make the jar optional here: measured with
+      # a logging shim on PATH, the suite still starts it 233 times across about a hundred
+      # cases (102) in nine files -- the twelve `test_app` parameter dicts that say
+      # `"plantuml": True`, and, for most of it, the tests that call `make_app` themselves and
+      # take the `plantuml_command` fixture (test_needflow and the needflow conformance corpus
+      # between them are 190 of the 233).
+      # That fixture still RAISES rather than skipping when it finds no renderer -- these
+      # tests assert on rendered output and skipping them would be a false green -- so the
+      # cells still need a jar. `actions/checkout` brings the committed one along and they
+      # would resolve it themselves; this input is what makes them CHECK it against
+      # `vendor/plantuml/pin.toml` first, set PLANTUML_JAR explicitly, and run the
+      # `test -f` / `java -version` step, so a jar that did not survive the checkout is one
+      # red step naming it rather than a scatter of render failures. These cells run bare
+      # `pytest`, not `poe`, so the tasks' `deps = ["fetch-plantuml"]` never fires here
+      needs-plantuml: true
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
@@ -210,6 +239,10 @@ jobs:
           enable-cache: true
           cache-suffix: ${{ matrix.python-version }}-${{ matrix.sphinx-group }}
           python-version: ${{ matrix.python-version }}
+      # NO PlantUML step: none of the three browser cases opts into rendering, and
+      # `test_app` resolves a renderer only for a build that did. The step used to be here
+      # because the fixture took `plantuml_command` unconditionally and it raises rather
+      # than skips
       - name: Install the cell
         # `js` is the browser driver (pytest-playwright); it is not in `test`, because only
         # these two cells want it
@@ -237,6 +270,14 @@ jobs:
           enable-cache: true
           # 3.12+: on 3.11 the lock resolves sphinx 8.2, and this job wants the newest sphinx
           python-version: "3.12"
+      - name: Point PLANTUML_JAR at the vendored jar
+        # the one jar `vendor/plantuml/pin.toml` names, verified against the pin first. `shell: bash` (pipefail) and
+        # `tr -d '\r'` (Windows) are both load-bearing -- vendor/plantuml/README.md,
+        # "The step CI runs", says why
+        shell: bash
+        run: |
+          jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py --verify | tr -d '\r')"
+          echo "PLANTUML_JAR=$jar" >> "$GITHUB_ENV"
       - name: Install Dependencies
         run: |
           uv sync --frozen --no-default-groups --group test --extra docs
@@ -259,12 +300,19 @@ jobs:
         run: uv run --no-sync sphinx-build -b html . _build
         working-directory: packages/sphinx-needs/docs
 
-  tests-mounts:
-    name: "Mounts ${{ matrix.sphinx-group }} ${{ matrix.os }}"
-    # A matrix of its own rather than more paths in `tests-core`, the way `tests-js` and
-    # `tests-no-mpl` already sit beside it: this package needs a diagram renderer that the
-    # core cells do not, wants its own codecov flag, and takes 1-3 minutes -- which folded
-    # into the core matrix would be paid eleven times, three of them on Windows.
+  tests-extensions:
+    name: "Extensions ${{ matrix.sphinx-group }} ${{ matrix.os }}"
+    # One cell per sphinx series running BOTH extension packages' suites, as steps. A
+    # matrix of its own rather than more paths in `tests-core`, the way `tests-js` and
+    # `tests-no-mpl` already sit beside it: these packages need a diagram renderer and a
+    # libclang wheel the core cells do not, they want codecov flags of their own, and
+    # sphinx-mounts takes 1-3 minutes -- which folded into the core matrix would be paid
+    # eleven times, three of them on Windows.
+    #
+    # And ONE cell for the two of them rather than a second three-cell matrix:
+    # sphinx-codelinks' whole suite is under 20 seconds, so a matrix of its own would
+    # spend more runner time starting jobs than testing, and would put three more entries
+    # on every pull request's checks list.
     strategy:
       fail-fast: false
       matrix:
@@ -272,30 +320,73 @@ jobs:
         sphinx-group: ["sphinx-7", "sphinx-8", "sphinx-9"]
         include:
           # sphinx-mounts' subject is filesystem paths, symlinks and path confinement, so
-          # one Windows cell is not optional coverage; its own CI ran three
+          # one Windows cell is not optional coverage; its own CI ran three. It is worth
+          # as much to sphinx-codelinks, whose two latent path bugs -- `locate_git_root`
+          # and `form_https_url` -- are exactly this class
           - os: "windows-latest"
             sphinx-group: "sphinx-9"
-    uses: ./.github/workflows/test-package.yaml
+    uses: ./.github/workflows/test-extensions.yaml
     with:
       os: ${{ matrix.os }}
       # deliberately NO `python-version`: that input becomes UV_PYTHON, which beats the
       # root `.python-version`. These cells vary the sphinx series, not the interpreter,
-      # so they run on the repository's pin -- which is what the unit's empty default means
+      # so they run on the repository's pin
       sphinx-group: ${{ matrix.sphinx-group }}
-      cache-suffix: mounts-${{ matrix.sphinx-group }}
-      test-path: packages/sphinx-mounts/tests
-      # `-m "not bazel"` deselects the two tests the `bazel` job below owns; they would
-      # skip here rather than fail, but a skip nobody reads is what the separate lane
-      # exists to avoid
-      pytest-args: '-m "not bazel"'
-      cov-module: sphinx_mounts
-      codecov-flag: mounts
-      codecov-name: sphinx-mounts-pytests
+      cache-suffix: extensions-${{ matrix.sphinx-group }}
       upload-coverage: ${{ matrix.os == 'ubuntu-latest' && matrix.sphinx-group == 'sphinx-9' }}
-      # the uml tests render for real and `_require_renderer` asserts rather than skips
-      needs-plantuml: true
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  docs-codelinks:
+    name: Docs codelinks
+    runs-on: ubuntu-latest
+    # the only job in this file with one, because it is the only one added since the two
+    # reusable workflows set `contents: read` on theirs. It reads the checkout and uploads
+    # nothing. Giving the other nine the same is a whole-file change and not this one's
+    permissions:
+      contents: read
+    # sphinx-codelinks' documentation is the one END-TO-END exercise of the extension:
+    # `src-trace` runs over four projects of its own source, so a build is the extension
+    # doing its real job rather than a rendering check. It is also what caught the
+    # worktree bug the import fixed. `docs.yaml` is a linkcheck scoped to sphinx-needs'
+    # docs, the Read the Docs pull-request build is neither required nor even run when the
+    # package did not change, and a 7-second build is a cheap price for the only gate there
+    # is (measured locally; the rest of the job is checkout and the one sync below).
+    #
+    # No `paths:` filter and no `if:`: it runs on every pull request, because the thing it
+    # builds reads `src/` -- a change to the extension with no change to `docs/` is
+    # precisely the change that breaks it.
+    steps:
+      - uses: actions/checkout@v7
+        # the `src-trace` directive turns every traced source line into a blob link at
+        # the current rev, which it reads from `.git/HEAD` and `.git/config`. It reads no
+        # history, so the default shallow checkout is enough -- but it does need `.git`,
+        # so this job must not be given `fetch-depth: 0`-free surprises like a
+        # `sparse-checkout` that omits it
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: true
+          cache-suffix: docs-codelinks
+          # no `python-version`, so this runs on the root `.python-version`, which is not
+          # on the runner image
+          cache-python: true
+      # `docs.yaml`'s Docs-Linkcheck idiom -- sync ONE environment, then run the builder in
+      # it with `--no-sync` -- rather than `uv run --frozen poe docs-codelinks`. That form
+      # is the same build, but it pays for two environments: the outer `uv run` syncs the
+      # DEFAULT one (the `dev` group: prek, poethepoet, uv, the whole `test` group, the `js`
+      # group -- 108 packages, 415 MB) purely so that `poe` exists, and poe's executor then
+      # syncs `.venvs/docs-codelinks` (71 packages, 138 MB) and builds there. There is no
+      # cheap way to keep poe as the single source of truth here, because poe itself lives
+      # in the `dev` group; so the command is restated, exactly as `docs.yaml` restates its
+      # own. Keep the two in step with the `docs-codelinks` poe task.
+      - name: Install the docs environment
+        run: uv sync --frozen --no-default-groups --extra docs-codelinks
+      - name: Build the docs
+        # `-nW --keep-going`, from the poe task, so a nitpick warning is an error. No
+        # renderer: these docs draw no diagrams, so unlike `docs-needs` there is no
+        # graphviz, java or plantuml to install
+        run: uv run --no-sync sphinx-build -nW --keep-going -b html docs docs/_build/html -T
+        working-directory: packages/sphinx-codelinks
 
   bazel:
     name: Mounts Bazel integration
@@ -304,8 +395,6 @@ jobs:
     # other job wants, and three of its four steps are `bazel build`/`bazel run` targets
     # that are not pytest at all. It is the only end-to-end proof that sphinx-mounts'
     # headline use case -- mounting `bazel-bin` outputs -- still works.
-    env:
-      PLANTUML_JAR: ${{ github.workspace }}/packages/sphinx-needs/tests/doc_test/utils/plantuml.jar
     steps:
       - uses: actions/checkout@v7
       - name: Install graphviz
@@ -315,6 +404,14 @@ jobs:
           enable-cache: true
           cache-suffix: bazel
           cache-python: true
+      - name: Point PLANTUML_JAR at the vendored jar
+        # the one jar `vendor/plantuml/pin.toml` names, verified against the pin first. `shell: bash` (pipefail) and
+        # `tr -d '\r'` (Windows) are both load-bearing -- vendor/plantuml/README.md,
+        # "The step CI runs", says why
+        shell: bash
+        run: |
+          jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py --verify | tr -d '\r')"
+          echo "PLANTUML_JAR=$jar" >> "$GITHUB_ENV"
       - uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-cache: true
@@ -366,7 +463,8 @@ jobs:
       - tests-core
       - tests-js
       - tests-no-mpl
-      - tests-mounts
+      - tests-extensions
+      - docs-codelinks
       - bazel
       - smoke-needs
 

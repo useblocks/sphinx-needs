@@ -10,6 +10,9 @@
 'pkg: sphinx-mounts':
   - changed-files:
       - any-glob-to-any-file: 'packages/sphinx-mounts/**'
+'pkg: sphinx-codelinks':
+  - changed-files:
+      - any-glob-to-any-file: 'packages/sphinx-codelinks/**'
 'pkg: workspace':
   - changed-files:
       - any-glob-to-any-file:
@@ -18,6 +21,7 @@
           - 'docker/**'
           - 'scripts/**'
           - 'tools/**'
+          - 'vendor/**'
           - 'pyproject.toml'
           - '.pre-commit-config.yaml'
           - '.readthedocs.yml'

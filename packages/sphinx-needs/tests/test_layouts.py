@@ -1,19 +1,20 @@
 import docutils
 import pytest
 
+from tests.conftest import assert_no_warnings
 from tests.util import extract_needs_from_html
 
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_layout", "no_plantuml": True}],
+    [{"buildername": "html", "srcdir": "doc_test/doc_layout"}],
     indirect=True,
 )
 def test_doc_build_html(test_app):
     app = test_app
     app.build()
 
-    assert len(app.warning_list) == 0
+    assert_no_warnings(app)
 
     html = (app.outdir / "index.html").read_text()
     assert "title_clean_layout" in html

@@ -28,9 +28,9 @@ from typing import Any
 
 import pytest
 from sphinx.testing.util import SphinxTestApp
-from sphinx.util.console import strip_colors
 
 from sphinx_needs.api import get_needs_view
+from tests.conftest import build_warnings
 
 PROLOG = """\
 .. |project| replace:: The Project
@@ -99,7 +99,7 @@ def params(conf: str = CONF, index: str = INDEX, **extra: str) -> dict[str, obje
     """Build the :func:`test_app` parameters for a single case."""
     files = [(Path("conf.py"), conf), (Path("index.rst"), index)]
     files.extend((Path(name), text) for name, text in extra.items())
-    return {"buildername": "html", "files": files, "no_plantuml": True}
+    return {"buildername": "html", "files": files}
 
 
 def needs(app: SphinxTestApp) -> dict[str, dict[str, Any]]:
@@ -188,7 +188,6 @@ requires_myst = pytest.mark.skipif(
         {
             "buildername": "html",
             "files": [(Path("conf.py"), MYST_CONF), (Path("index.md"), MYST_INDEX)],
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -269,10 +268,9 @@ def test_a_generated_needs_warnings_do_not_move_with_the_line_counter(
     app = test_app
     app.build()
 
-    index = Path(str(app.srcdir)) / "index.rst"
     reported = sorted(
-        line.split(": ERROR:")[0]
-        for line in strip_colors(app._warning.getvalue()).splitlines()
-        if "Unknown interpreted text role" in line
+        record.split(": ERROR:")[0]
+        for record in build_warnings(app)
+        if "Unknown interpreted text role" in record
     )
-    assert reported == [f"{index}:8", f"{index}:9"]
+    assert reported == ["<srcdir>/index.rst:8", "<srcdir>/index.rst:9"]

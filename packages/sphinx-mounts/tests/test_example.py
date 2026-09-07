@@ -3,26 +3,39 @@
 The example is a complete, checked-in reference setup: a host Sphinx
 project, two Bazel-generated bundles (one RST, one Markdown), ten
 checked-in "showcase" bundles — one folder per file-referencing
-directive (literalinclude, include, csv-table, raw, image, figure,
-graphviz, uml, mermaid) plus a Sphinx-Needs kitchen sink covering all
+directive (literalinclude, include,, csv-table,, raw,, image,, figure,
+graphviz,, uml,, mermaid) plus a Sphinx-Needs kitchen sink covering all
 three of its doc-relative file references, one checked-in "release
-notes" bundle mounted in file-list mode (``files``), and one checked-in
+notes" bundle mounted in file-list mode(``files``),and one checked-in
 "fragments" bundle of loose files mounted with ``attach_each`` — all
-wired into the host's toctree via ``attach_to``. This test runs the
-pipeline the example's README documents:
+wired into the host's toctree via ``attach_to``. The example is also
+**edition-variant**:``[needs.variant_data]`` in ``ubproject.toml`` sets
+``edition = "basic"``,two ``[[source.variant_sources]]`` rules gate the
+host's own ``variants/{basic,pro}.rst`` pages by glob,and two checked-in
+``reference/`` edition bundles are each gated whole by an ``if`` on their
+mount entry. This test runs the pipeline the example's README documents:
 
 1. Copy the example to a tmp workspace (so the developer's real
    ``bazel-bin/`` is untouched).
 2. ``bazel build //:all_bundles`` to materialise the bundles under
    ``bazel-bin/bundles/...``.
 3. ``sphinx-build`` against the host project. ``sphinx-mounts`` reads
-   ``ubproject.toml``, mounts both bundles in place, and ``attach_to``
+   ``ubproject.toml``, mounts both bundles in place,, and ``attach_to``
    injects each bundle's entry doc into the host's ``index.rst``
-   toctree at doctree-read time.
-4. Assert that all three layers (host, RST bundle, MD bundle) appear
+   toctree at doctree-read time. The variant keys narrow the doc set to
+   the basic edition:``variants/basic.rst`` and the ``reference/basic``
+   bundle are built;``variants/pro.rst`` and the ``reference/pro`` bundle
+   are gated off,and the references to them are downgraded to INFO so
+   ``-W`` passes.
+
+4. Assert that all three layers(host,, RST bundle,, MD bundle) appear
    in the rendered HTML, plus the attach_to wiring did its work.
 
-Marked ``bazel``; skipped when no ``bazel``/``bazelisk`` is on PATH.
+5. Flip ``edition`` to ``"pro"`` in the workspace's TOML and run the
+   pipeline again:the mirror image must hold — pro pages and bundle
+   present, basic absent,and ``-W`` passes again.
+
+Marked ``bazel``;skipped when no ``bazel``/``bazelisk`` is on PATH.
 """
 
 from __future__ import annotations
@@ -42,6 +55,39 @@ EXAMPLE_DIR = TESTS_DIR / "example"
 
 def _find_bazel() -> str | None:
     return shutil.which("bazel") or shutil.which("bazelisk")
+
+
+def _run_sphinx_build(docs: Path, html_out: Path) -> str:
+    """Run ``sphinx-build -nW`` against the host project; fail on nonzero.
+
+    Returns the combined stdout+stderr log, so callers can assert on the
+    INFO records the variant machinery emits (``mounts.mount_gated``,
+    ``mounts.variant_excluded_reference``)."""
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "sphinx",
+            "-b",
+            "html",
+            "-nW",
+            "--keep-going",
+            "-c",
+            str(docs),
+            str(docs),
+            str(html_out),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        pytest.fail(
+            "sphinx-build failed:\n"
+            f"stdout:\n{result.stdout}\n"
+            f"stderr:\n{result.stderr}\n"
+        )
+    return f"{result.stdout}\n{result.stderr}"
 
 
 @pytest.mark.bazel
@@ -72,8 +118,10 @@ def test_example_pipeline_end_to_end(tmp_path: Path) -> None:
         or shutil.which("plantuml")
     ):
         pytest.skip(
-            "no PlantUML — set PLANTUML_JAR (with java on PATH) or install a "
-            "`plantuml` executable, to render the showcase uml bundle under -nW"
+            "no PlantUML — run `uv run poe test-mounts`, which sets PLANTUML_JAR "
+            "from the pinned jar in vendor/plantuml/, or set "
+            "PLANTUML_JAR yourself (with java on PATH), or install a `plantuml` "
+            "executable, to render the showcase uml bundle under -nW"
         )
 
     workspace = tmp_path / "ws"
@@ -151,43 +199,20 @@ def test_example_pipeline_end_to_end(tmp_path: Path) -> None:
     # Run sphinx-build against the host project. -W turns any unresolved
     # reference into a failure, so a broken mount surfaces here.
     docs = workspace / "docs"
-    html_out = tmp_path / "html"
-    sphinx_build = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "sphinx",
-            "-b",
-            "html",
-            "-nW",
-            "--keep-going",
-            "-c",
-            str(docs),
-            str(docs),
-            str(html_out),
-        ],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if sphinx_build.returncode != 0:
-        pytest.fail(
-            "sphinx-build failed:\n"
-            f"stdout:\n{sphinx_build.stdout}\n"
-            f"stderr:\n{sphinx_build.stderr}\n"
-        )
+    html_basic = tmp_path / "html-basic"
+    log_basic = _run_sphinx_build(docs, html_basic)
 
     # 1) Host's own RST page rendered.
-    index_html = (html_out / "index.html").read_text(encoding="utf-8")
-    install_html = (html_out / "installation.html").read_text(encoding="utf-8")
+    index_html = (html_basic / "index.html").read_text(encoding="utf-8")
+    install_html = (html_basic / "installation.html").read_text(encoding="utf-8")
     assert "INDEX_PAGE_MARKER" in index_html
     assert "INSTALL_PAGE_MARKER" in install_html
 
     # 2) RST bundle rendered (entry + reference).
-    foo_index = (html_out / "_generated" / "api-foo" / "index.html").read_text(
+    foo_index = (html_basic / "_generated" / "api-foo" / "index.html").read_text(
         encoding="utf-8"
     )
-    foo_ref = (html_out / "_generated" / "api-foo" / "reference.html").read_text(
+    foo_ref = (html_basic / "_generated" / "api-foo" / "reference.html").read_text(
         encoding="utf-8"
     )
     assert "API_FOO_INDEX_MARKER" in foo_index
@@ -199,7 +224,7 @@ def test_example_pipeline_end_to_end(tmp_path: Path) -> None:
     #     resolved its path *inside* its bundle (and passed path_check);
     #     these spot-checks confirm the referenced content actually landed.
     def _showcase(name: str) -> str:
-        return (html_out / "_generated" / "showcase" / name / "index.html").read_text(
+        return (html_basic / "_generated" / "showcase" / name / "index.html").read_text(
             encoding="utf-8"
         )
 
@@ -214,13 +239,13 @@ def test_example_pipeline_end_to_end(tmp_path: Path) -> None:
     assert "SHOWCASE_FIGURE" in _showcase("figure")
     assert "SHOWCASE_GRAPHVIZ" in _showcase("graphviz")
     assert "SHOWCASE_UML" in _showcase("uml")
-    assert (html_out / "_images").is_dir()
+    assert (html_basic / "_images").is_dir()
 
     # 2b-bis) The Sphinx-Needs bundle is the one showcase covering several
     #     directives, so it has a page per directive rather than a single
     #     index. Each reads a different bundle-local file through a different
     #     mechanism; all three must resolve against the bundle root.
-    needs_out = html_out / "_generated" / "showcase" / "needs"
+    needs_out = html_basic / "_generated" / "showcase" / "needs"
 
     def _needs_page(name: str) -> str:
         return (needs_out / f"{name}.html").read_text(encoding="utf-8")
@@ -249,7 +274,7 @@ def test_example_pipeline_end_to_end(tmp_path: Path) -> None:
     assert "SHOWCASE_NEEDARCH" in _needs_page("needarch")
     included_in = [
         svg.name
-        for svg in (html_out / "_images").glob("*.svg")
+        for svg in (html_basic / "_images").glob("*.svg")
         if "SHOWCASE_NEEDS_PUML_INCLUDE" in svg.read_text(encoding="utf-8")
     ]
     assert len(included_in) == 2, (
@@ -267,11 +292,11 @@ def test_example_pipeline_end_to_end(tmp_path: Path) -> None:
     #     copyable to any server — and the api-foo bundle's coverage page
     #     links to + embeds it via a bundle-relative URL. The report is
     #     read in place; it is never staged into the docs source tree.
-    assert (html_out / "coverage" / "index.html").exists()
-    assert (html_out / "coverage" / "greeter.py.html").exists()
-    report_html = (html_out / "coverage" / "index.html").read_text(encoding="utf-8")
+    assert (html_basic / "coverage" / "index.html").exists()
+    assert (html_basic / "coverage" / "greeter.py.html").exists()
+    report_html = (html_basic / "coverage" / "index.html").read_text(encoding="utf-8")
     assert "API_FOO_COVERAGE_REPORT_MARKER" in report_html
-    foo_cov = (html_out / "_generated" / "api-foo" / "coverage.html").read_text(
+    foo_cov = (html_basic / "_generated" / "api-foo" / "coverage.html").read_text(
         encoding="utf-8"
     )
     assert "API_FOO_COVERAGE_MARKER" in foo_cov
@@ -283,13 +308,13 @@ def test_example_pipeline_end_to_end(tmp_path: Path) -> None:
     #     (each file's basename is the docname tail, so the source-side
     #     ``notes/`` subdirectory is dropped). The entry doc is wired in via
     #     attach_to, exactly like a directory mount.
-    rn_index = (html_out / "_generated" / "release-notes" / "index.html").read_text(
+    rn_index = (html_basic / "_generated" / "release-notes" / "index.html").read_text(
         encoding="utf-8"
     )
-    rn_q1 = (html_out / "_generated" / "release-notes" / "2026-q1.html").read_text(
+    rn_q1 = (html_basic / "_generated" / "release-notes" / "2026-q1.html").read_text(
         encoding="utf-8"
     )
-    rn_q2 = (html_out / "_generated" / "release-notes" / "2026-q2.html").read_text(
+    rn_q2 = (html_basic / "_generated" / "release-notes" / "2026-q2.html").read_text(
         encoding="utf-8"
     )
     assert "RELEASE_NOTES_INDEX_MARKER" in rn_index
@@ -297,31 +322,31 @@ def test_example_pipeline_end_to_end(tmp_path: Path) -> None:
     assert "RELEASE_NOTES_Q2_MARKER" in rn_q2
     # Flat namespace: the source-side ``notes/`` subdirectory is not part of
     # any docname, so no such directory exists in the output.
-    assert not (html_out / "_generated" / "release-notes" / "notes").exists()
+    assert not (html_basic / "_generated" / "release-notes" / "notes").exists()
     # Selective pick: the draft file sits in the same source tree but was
     # left out of the ``files`` list, so — unlike a directory mount — it was
     # never discovered and produced no page.
     assert not (
-        html_out / "_generated" / "release-notes" / "2026-q3-draft.html"
+        html_basic / "_generated" / "release-notes" / "2026-q3-draft.html"
     ).exists()
 
     # 2e) attach_each: the "fragments" bundle is a file-list mount of loose
     #     files with NO index. attach_each wires *every* listed file into the
     #     host toctree, so both pages render and neither is orphaned — without
     #     any index doc authored for the bundle.
-    frag_one = (html_out / "_generated" / "fragments" / "note-one.html").read_text(
+    frag_one = (html_basic / "_generated" / "fragments" / "note-one.html").read_text(
         encoding="utf-8"
     )
-    frag_two = (html_out / "_generated" / "fragments" / "note-two.html").read_text(
+    frag_two = (html_basic / "_generated" / "fragments" / "note-two.html").read_text(
         encoding="utf-8"
     )
     assert "FRAGMENT_ONE_MARKER" in frag_one
     assert "FRAGMENT_TWO_MARKER" in frag_two
     # No index doc exists or was invented for the fragments bundle.
-    assert not (html_out / "_generated" / "fragments" / "index.html").exists()
+    assert not (html_basic / "_generated" / "fragments" / "index.html").exists()
 
     # 3) Markdown bundle rendered.
-    bar_index = (html_out / "_generated" / "api-bar" / "index.html").read_text(
+    bar_index = (html_basic / "_generated" / "api-bar" / "index.html").read_text(
         encoding="utf-8"
     )
     assert "API_BAR_INDEX_MARKER" in bar_index
@@ -358,10 +383,82 @@ def test_example_pipeline_end_to_end(tmp_path: Path) -> None:
     assert "_generated/fragments/note-one.html" in index_html
     assert "_generated/fragments/note-two.html" in index_html
 
+    # 4b) The edition-variant host pages are wired into the host toctree by
+    #     hand, but only the page the CURRENT variant builds survives; the
+    #     reference to the excluded one is downgraded to INFO (so ``-W``
+    #     still passes), and the reference/basic mount's entry doc is wired
+    #     in via attach_to (never in the source RST).
+    assert "variants/basic" in source_index_rst
+    assert "variants/pro" in source_index_rst
+    assert "_generated/reference" not in source_index_rst
+    assert "variants/basic.html" in index_html
+    assert "variants/pro.html" not in index_html
+    assert "_generated/reference/basic/index.html" in index_html
+    assert "_generated/reference/pro/index.html" not in index_html
+    # The INFO records are the proof that the gating was applied, not a typo.
+    assert "mounts.mount_gated" in log_basic
+    assert "mounts.variant_excluded_reference" in log_basic
+
+    # 4c) The basic variant's own conditional page renders, links to the
+    #     basic edition bundle,and the pro pages/bundle are absent. The
+    #     variant_sources rule removed ``variants/pro.rst`` from the doc set,and
+    #     the ``if = "var.edition == 'pro'"`` gate removed the whole pro
+    #     bundle — no pages, no docnames at all.
+    basic_variant = (html_basic / "variants" / "basic.html").read_text(encoding="utf-8")
+    assert "VARIANT_BASIC_PAGE_MARKER" in basic_variant
+    assert "_generated/reference/basic/index.html" in basic_variant
+    ref_basic_index = (
+        html_basic / "_generated" / "reference" / "basic" / "index.html"
+    ).read_text(encoding="utf-8")
+    assert "REFERENCE_BASIC_INDEX_MARKER" in ref_basic_index
+    assert (
+        html_basic / "_generated" / "reference" / "basic" / "reference.html"
+    ).exists()
+    assert not (html_basic / "_generated" / "reference" / "pro").exists()
+    assert not (html_basic / "variants" / "pro.html").exists()
+
     # 5) Nothing was copied into the host srcdir — neither the mounted
     #    bundles (_generated) nor the html_extra_path report (coverage).
+
     assert not (docs / "_generated").exists()
     assert not (docs / "coverage").exists()
+
+    # 6) Build the OTHER edition: flip the variant map in the workspace's
+    #    TOML (the checked-in file is ``edition = "basic"``)and run the
+    #    pipeline again. Exactly the mirror image must hold — pro pages
+    #    and bundle present,, basic absent,, and ``-W`` still passes. The
+    #    conditions are evaluated against the SAME map sphinx-needs resolved
+    #    (needs_variant_data confval), so the two tools cannot disagree.
+
+    (docs / "ubproject.toml").write_text(
+        (docs / "ubproject.toml")
+        .read_text(encoding="utf-8")
+        .replace('edition = "basic"', 'edition = "pro"'),
+        encoding="utf-8",
+    )
+    html_pro = tmp_path / "html-pro"
+    log_pro = _run_sphinx_build(docs, html_pro)
+
+    index_pro = (html_pro / "index.html").read_text(encoding="utf-8")
+    assert "INDEX_PAGE_MARKER" in index_pro
+    assert "variants/basic.html" not in index_pro
+    assert "variants/pro.html" in index_pro
+    assert "_generated/reference/basic/index.html" not in index_pro
+    assert "_generated/reference/pro/index.html" in index_pro
+    assert "mounts.mount_gated" in log_pro
+    assert "mounts.variant_excluded_reference" in log_pro
+
+    pro_variant = (html_pro / "variants" / "pro.html").read_text(encoding="utf-8")
+    assert "VARIANT_PRO_PAGE_MARKER" in pro_variant
+    assert "_generated/reference/pro/index.html" in pro_variant
+    ref_pro_index = (
+        html_pro / "_generated" / "reference" / "pro" / "index.html"
+    ).read_text(encoding="utf-8")
+    assert "REFERENCE_PRO_INDEX_MARKER" in ref_pro_index
+    assert (html_pro / "_generated" / "reference" / "pro" / "reference.html").exists()
+    assert not (html_pro / "_generated" / "reference" / "basic").exists()
+    assert not (html_pro / "variants" / "basic.html").exists()
+    # The two builds shared one workspace;the flip is the only change.
 
 
 def _have_sphinx_module() -> bool:

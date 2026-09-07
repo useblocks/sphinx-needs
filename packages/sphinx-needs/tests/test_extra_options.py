@@ -3,21 +3,22 @@ import re
 from pathlib import Path
 
 import pytest
-from sphinx.util.console import strip_colors
 from syrupy.filters import props
+
+from tests.conftest import build_warnings
 
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/extra_options", "no_plantuml": True}],
+    [{"buildername": "html", "srcdir": "doc_test/extra_options"}],
     indirect=True,
 )
 def test_custom_attributes_appear(test_app, snapshot):
     app = test_app
     app.build()
 
-    warnings = strip_colors(app._warning.getvalue()).splitlines()
-    assert warnings == [
+    warning_records = build_warnings(app)
+    assert warning_records == [
         'WARNING: Config option "needs_extra_options" is deprecated. Please use "needs_fields" instead. [needs.deprecated]',
         "WARNING: Duplicate need field 'introduced', registered via add_field('When was this need introduced?') and needs_fields('When was this need introduced?'). [needs.config]",
         "WARNING: needs_fields key is not a string: 1 [needs.config]",

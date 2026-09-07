@@ -1,11 +1,11 @@
 import json
-import os
 import subprocess
 from pathlib import Path
 
 import pytest
-from sphinx.util.console import strip_colors
 from syrupy.filters import props
+
+from tests.conftest import build_warnings
 
 
 @pytest.mark.parametrize(
@@ -14,7 +14,6 @@ from syrupy.filters import props
         {
             "buildername": "html",
             "srcdir": "doc_test/need_constraints",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -23,21 +22,18 @@ def test_need_constraints(test_app, snapshot):
     app = test_app
     app.build()
 
-    warnings = (
-        strip_colors(test_app._warning.getvalue())
-        .replace(str(test_app.srcdir) + os.path.sep, "<srcdir>/")
-        .splitlines()
-    )
+    warning_records = build_warnings(test_app)
 
     # check this isolated as Sphinx version 7 and 8 behave differently for warning type logs
     assert any(
-        "undefined label: 'needs_constraint_failed_options'" in w for w in warnings
+        "undefined label: 'needs_constraint_failed_options'" in w
+        for w in warning_records
     )
 
     # TODO here we remove some spurious warnings that should be fixed properly
-    warnings = {
+    warning_records = {
         w
-        for w in warnings
+        for w in warning_records
         if "Aborted attempted copy" not in w
         and "cannot cache unpickable configuration value" not in w
         and "cannot cache unpickleable configuration value" not in w
@@ -51,14 +47,14 @@ def test_need_constraints(test_app, snapshot):
         "<srcdir>/index.rst:39: WARNING: Constraint 'team_requirement' in links for need SP_CA3FB FAILED! severity: MEDIUM None [needs.constraint]",
         "<srcdir>/style_test.rst:4: WARNING: Constraint 'critical' in tags for need TEST_STYLE FAILED! severity: CRITICAL None [needs.constraint]",
         "<srcdir>/style_test.rst:11: WARNING: Constraint 'team_requirement' in links for need TEST_STYLE2 FAILED! severity: MEDIUM None [needs.constraint]",
-        "WARNING: invalid_status: failed",
-        "\t\tfailed needs: 8 (SP_TOO_001, SP_TOO_002, SECURITY_REQ, SP_109F4, SP_3EBFA, SP_CA3FB, TEST_STYLE, TEST_STYLE2)",
+        "WARNING: invalid_status: failed\n"
+        "\t\tfailed needs: 8 (SP_TOO_001, SP_TOO_002, SECURITY_REQ, SP_109F4, SP_3EBFA, SP_CA3FB, TEST_STYLE, TEST_STYLE2)\n"
         "\t\tused filter: status not in ['open', 'closed', 'done', 'example_2', 'example_3'] [needs.warnings]",
     }
     # Debug output for mismatched warnings
-    if set(warnings) != set(expected_warnings):
-        warnings_only = set(warnings) - set(expected_warnings)
-        expected_only = set(expected_warnings) - set(warnings)
+    if set(warning_records) != set(expected_warnings):
+        warnings_only = set(warning_records) - set(expected_warnings)
+        expected_only = set(expected_warnings) - set(warning_records)
         if warnings_only:
             raise AssertionError(f"Unexpected warnings found: {warnings_only}")
         if expected_only:
@@ -106,18 +102,13 @@ def test_need_constraints(test_app, snapshot):
         {
             "buildername": "html",
             "srcdir": "doc_test/need_constraints_failed",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
 )
 def test_need_constraints_config(test_app):
     test_app.build()
-    warnings = (
-        strip_colors(test_app._warning.getvalue())
-        .replace(str(test_app.srcdir) + os.path.sep, "<srcdir>/")
-        .splitlines()
-    )
-    assert warnings == [
+    warning_records = build_warnings(test_app)
+    assert warning_records == [
         "<srcdir>/index.rst:4: WARNING: Need could not be created: Constraints {'non_existing'} not in 'needs_constraints'. [needs.create_need]"
     ]

@@ -13,17 +13,16 @@ carries the part ``TEST_1.P1``, so that seven objects can be counted.
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 import pytest
 from docutils import nodes
 from sphinx.testing.util import SphinxTestApp
-from sphinx.util.console import strip_colors
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsFilteredBaseType, SphinxNeedsData
 from sphinx_needs.filter_common import filter_scope_ids, process_filters
+from tests.conftest import build_warnings
 from tests.util import bar_sum_labels, chart_images, pie_slice_counts
 
 CHART_SCOPE = pytest.mark.parametrize(
@@ -34,7 +33,6 @@ CHART_SCOPE = pytest.mark.parametrize(
             "srcdir": "doc_test/doc_chart_scope",
             # the fixture needs no diagrams, so the suite-wide plantuml override
             # would only add an "unknown config value" warning to assert around
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -90,14 +88,6 @@ SCOPES: list[dict[str, object]] = [
 """The scopes of the oracle, as the four option values a directive collects."""
 
 
-def _warnings(app: SphinxTestApp) -> list[str]:
-    return (
-        strip_colors(app._warning.getvalue())
-        .replace(str(app.srcdir) + os.path.sep, "<srcdir>/")
-        .splitlines()
-    )
-
-
 @CHART_SCOPE
 def test_scope_intersects_every_content_line(test_app: SphinxTestApp):
     """A scoped chart counts each content line over the scope only.
@@ -108,7 +98,7 @@ def test_scope_intersects_every_content_line(test_app: SphinxTestApp):
     """
     app = test_app
     app.build()
-    assert _warnings(app) == [INVALID_FILTER_WARNING]
+    assert build_warnings(app) == [INVALID_FILTER_WARNING]
 
     images = chart_images(Path(app.outdir, "index.html").read_text())
     # the two empty-state pies write no image, so they are not in here, and the
@@ -165,7 +155,7 @@ def test_invalid_scope_filter_warns_once_and_selects_nothing(test_app: SphinxTes
     """
     app = test_app
     app.build()
-    assert _warnings(app) == [INVALID_FILTER_WARNING]
+    assert build_warnings(app) == [INVALID_FILTER_WARNING]
 
     images = chart_images(Path(app.outdir, "invalid.html").read_text())
     svg = Path(app.outdir, "_images", images["pie invalid scope filter"]).read_text()

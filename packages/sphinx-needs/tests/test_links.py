@@ -1,30 +1,28 @@
-import os
 from pathlib import Path
 
 import pytest
-from sphinx.util.console import strip_colors
+
+from tests.conftest import build_warnings
 
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_links", "no_plantuml": False}],
+    [{"buildername": "html", "srcdir": "doc_test/doc_links"}],
     indirect=True,
 )
 def test_links_html(test_app):
     app = test_app
     app.build()
 
-    warnings = strip_colors(
-        app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
-    ).splitlines()
+    warning_records = build_warnings(app)
     # print(warnings)
-    assert warnings == [
+    assert warning_records == [
         'WARNING: Config option "needs_extra_links" is deprecated. Please use "needs_links" instead. [needs.deprecated]',
-        "srcdir/index.rst:7: WARNING: Need 'REQ_001' has unknown outgoing link 'DEAD_LINK_NOT_ALLOWED' in field 'links' [needs.link_outgoing]",
-        "srcdir/index.rst:7: WARNING: Need 'REQ_001' has unknown outgoing link 'DEAD_LINK_ALLOWED' in field 'links' [needs.link_outgoing]",
-        "srcdir/index.rst:7: WARNING: Need 'REQ_001' has unknown outgoing link 'DEAD_LINK_ALLOWED' in field 'blocks' [needs.link_outgoing]",
-        "srcdir/index.rst:12: WARNING: Need 'REQ_002' has unknown outgoing link 'ARGH_123' in field 'links' [needs.link_outgoing]",
-        "srcdir/index.rst:49: WARNING: Need 'TEST_004' has unknown outgoing link 'REQ_005.invalid' in field 'tests' [needs.link_outgoing]",
+        "<srcdir>/index.rst:7: WARNING: Need 'REQ_001' has unknown outgoing link 'DEAD_LINK_NOT_ALLOWED' in field 'links' [needs.link_outgoing]",
+        "<srcdir>/index.rst:7: WARNING: Need 'REQ_001' has unknown outgoing link 'DEAD_LINK_ALLOWED' in field 'links' [needs.link_outgoing]",
+        "<srcdir>/index.rst:7: WARNING: Need 'REQ_001' has unknown outgoing link 'DEAD_LINK_ALLOWED' in field 'blocks' [needs.link_outgoing]",
+        "<srcdir>/index.rst:12: WARNING: Need 'REQ_002' has unknown outgoing link 'ARGH_123' in field 'links' [needs.link_outgoing]",
+        "<srcdir>/index.rst:49: WARNING: Need 'TEST_004' has unknown outgoing link 'REQ_005.invalid' in field 'tests' [needs.link_outgoing]",
     ]
 
     html = Path(app.outdir, "index.html").read_text()
@@ -44,7 +42,7 @@ def test_links_html(test_app):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "latex", "srcdir": "doc_test/doc_links", "no_plantuml": False}],
+    [{"buildername": "latex", "srcdir": "doc_test/doc_links"}],
     indirect=True,
 )
 def test_links_latex(test_app):

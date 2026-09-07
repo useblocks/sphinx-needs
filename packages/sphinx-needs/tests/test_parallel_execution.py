@@ -1,9 +1,9 @@
-import os
 from pathlib import Path
 
 import pytest
-from sphinx.util.console import strip_colors
 from sphinx.util.parallel import parallel_available
+
+from tests.conftest import build_warnings
 
 
 @pytest.mark.parametrize(
@@ -13,7 +13,6 @@ from sphinx.util.parallel import parallel_available
             "buildername": "html",
             "srcdir": "doc_test/parallel_doc",
             "parallel": 4,
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -22,21 +21,17 @@ from sphinx.util.parallel import parallel_available
 def test_doc_build_html(test_app):
     app = test_app
     app.build()
-    warnings = (
-        strip_colors(app._warning.getvalue())
-        .replace(str(app.srcdir) + os.path.sep, "<srcdir>/")
-        .strip()
-    )
+    warnings_text = "\n".join(build_warnings(app))
     # the duplicate need documents can be in the same process,
     # then the error is different in that case (error message and also the subtype)
     deprecation_prefix = "WARNING: needs_filter_data is deprecated and will be removed in a future version. Use needs_variant_data instead. [needs.deprecated]\n"
     assert (
         (
-            warnings
+            warnings_text
             == deprecation_prefix
             + "<srcdir>/page_5.rst:4: WARNING: A need with ID STORY_PAGE_1 already exists, title: 'duplicate'. [needs.duplicate_id]"
         )
-        or warnings
+        or warnings_text
         == deprecation_prefix
         + "<srcdir>/page_5.rst:4: WARNING: Need could not be created: A need with ID 'STORY_PAGE_1' already exists. [needs.create_need]"
     )

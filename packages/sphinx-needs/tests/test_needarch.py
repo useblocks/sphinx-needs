@@ -58,7 +58,13 @@ def test_doc_needarch_jinja_import(test_app, snapshot):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_needarch_jinja_func_need"}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_needarch_jinja_func_need",
+            "plantuml": True,
+        }
+    ],
     indirect=True,
 )
 def test_needarch_jinja_func_need(test_app, snapshot):

@@ -1,0 +1,19 @@
+{
+  "needs": [
+    {
+      "id": "IMPL_YAML",
+      "title": "Yaml Title",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ_YAML"
+        ]
+      },
+      "metadata": {},
+      "line": 1
+    }
+  ],
+  "need_refs": [],
+  "marked_rst": [],
+  "warnings": []
+}

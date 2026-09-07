@@ -1,22 +1,26 @@
 """The order in which the suite decides how to render PlantUML.
 
 Every test project's ``plantuml`` configuration comes from the ``plantuml_command``
-fixture, which is :func:`tests.conftest.resolve_plantuml_command` applied to the copy of
-the vendored jar that ``sphinx_test_tempdir`` made. The order that function applies is
-load-bearing rather than incidental, so it is asserted here instead of being left to the
-several hundred rendering tests that would merely go a strange colour if it changed:
+fixture, which is :func:`tests.conftest.resolve_plantuml_command` applied to
+:func:`tests.conftest.workspace_plantuml_jar` -- the jar this repository commits at
+``vendor/plantuml/`` at the version ``vendor/plantuml/pin.toml`` names. The
+order that function applies is load-bearing rather than incidental, so it is asserted here
+instead of being left to the several hundred rendering tests that would merely go a strange
+colour if it changed:
 
 * ``PLANTUML_JAR`` beats everything, because naming a jar is an explicit choice;
-* the vendored jar beats a ``plantuml`` on ``PATH``, because this suite renders for real
-  and a developer machine carrying a homebrew ``plantuml`` must not silently swap the
-  renderer version out from under it;
-* the executable is reached only when the vendored jar is gone, which is what a checkout
-  or an sdist without the jar looks like.
+* the workspace's committed jar beats a ``plantuml`` on ``PATH``, because this suite
+  renders for real and a developer machine carrying a homebrew ``plantuml`` must not
+  silently swap the renderer version out from under it;
+* the executable is reached only when that jar is gone -- a checkout somebody deleted it
+  from, or an sdist, which carries neither the jar nor the pin because ``vendor/`` is
+  outside the package directory flit builds the tarball from.
 
 The command it returns is a *string*, which sphinxcontrib-plantuml splits for itself, so
 two of the cases below assert through that real split rather than on the string -- what has
 to survive is the argv, not the spelling. :func:`tests.conftest.copy_test_utils` is pinned
-here too, since it decides whether route (2) is reachable at all.
+here too: it no longer copies a jar, but it is still what stands between a session fixture
+and a ``FileNotFoundError`` on a directory nothing guarantees.
 """
 
 from __future__ import annotations
@@ -24,19 +28,24 @@ from __future__ import annotations
 import os
 import re
 import shutil
+import tomllib
 from pathlib import Path
 
 import pytest
 from sphinxcontrib.plantuml import _split_cmdargs
 
-from tests.conftest import copy_test_utils, resolve_plantuml_command
+from tests.conftest import (
+    copy_test_utils,
+    resolve_plantuml_command,
+    workspace_plantuml_jar,
+)
 
 
 @pytest.fixture
-def vendored_jar(tmp_path: Path) -> Path:
-    """A stand-in for the copy of the vendored jar in the test tempdir."""
-    jar = tmp_path / "utils" / "plantuml.jar"
-    jar.parent.mkdir()
+def workspace_jar(tmp_path: Path) -> Path:
+    """A stand-in for the committed jar under ``vendor/plantuml/``."""
+    jar = tmp_path / "vendor" / "plantuml" / "plantuml-1.2026.8.jar"
+    jar.parent.mkdir(parents=True)
     jar.write_bytes(b"not really a jar")
     return jar
 
@@ -66,76 +75,97 @@ def _expected(path: Path) -> str:
 
 
 def test_the_environment_variable_wins(
-    tmp_path: Path, vendored_jar: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, workspace_jar: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """``PLANTUML_JAR`` is chosen over both the vendored jar and an executable."""
+    """``PLANTUML_JAR`` is chosen over both the workspace jar and an executable."""
     named = tmp_path / "somewhere-else.jar"
     named.write_bytes(b"not really a jar either")
     monkeypatch.setenv("PLANTUML_JAR", str(named))
     monkeypatch.setattr(shutil, "which", lambda _name: "/usr/local/bin/plantuml")
 
     assert (
-        resolve_plantuml_command(vendored_jar)
+        resolve_plantuml_command(workspace_jar)
         == f'java -Djava.awt.headless=true -jar "{named}"'
     )
 
 
-def test_the_vendored_jar_is_the_default(
-    vendored_jar: Path, monkeypatch: pytest.MonkeyPatch
+def test_the_workspace_jar_is_the_default(
+    workspace_jar: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """With no ``PLANTUML_JAR``, the vendored jar is used even when ``plantuml`` is on
-    ``PATH`` -- the developer-machine guard."""
+    """With no ``PLANTUML_JAR``, the workspace's own jar is used even when ``plantuml``
+    is on ``PATH`` -- the developer-machine guard."""
     monkeypatch.setattr(shutil, "which", lambda _name: "/usr/local/bin/plantuml")
 
     assert (
-        resolve_plantuml_command(vendored_jar)
-        == f'java -Djava.awt.headless=true -jar "{vendored_jar}"'
+        resolve_plantuml_command(workspace_jar)
+        == f'java -Djava.awt.headless=true -jar "{workspace_jar}"'
     )
 
 
 def test_an_executable_is_the_fallback(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """With the jar gone -- a checkout or sdist without it -- ``plantuml`` on ``PATH``
-    is used."""
+    """With the jar gone -- a checkout somebody deleted it from, or an sdist --
+    ``plantuml`` on ``PATH`` is used."""
     monkeypatch.setattr(shutil, "which", lambda _name: "/usr/local/bin/plantuml")
 
     assert (
-        resolve_plantuml_command(tmp_path / "utils" / "plantuml.jar")
+        resolve_plantuml_command(tmp_path / "vendor" / "plantuml.jar")
         == "/usr/local/bin/plantuml"
     )
 
 
 def test_a_named_jar_that_is_not_there_is_an_error(
-    tmp_path: Path, vendored_jar: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, workspace_jar: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """A ``PLANTUML_JAR`` naming no file fails loudly, and never falls through.
 
-    Falling back to the vendored jar here would render with a renderer the caller did not
+    Falling back to the workspace jar here would render with a renderer the caller did not
     ask for and report nothing about it.
     """
     missing = tmp_path / "gone.jar"
     monkeypatch.setenv("PLANTUML_JAR", str(missing))
     monkeypatch.setattr(shutil, "which", lambda _name: "/usr/local/bin/plantuml")
 
-    with pytest.raises(RuntimeError, match=_expected(missing)):
-        resolve_plantuml_command(vendored_jar)
+    with pytest.raises(RuntimeError, match=_expected(missing)) as caught:
+        resolve_plantuml_command(workspace_jar)
+
+    # and the alternative it offers is the true one. The jar is COMMITTED at
+    # ``vendor/plantuml/``: a checkout has it, and ``fetch_plantuml.py --verify`` -- which
+    # `poe lint` and CI's Lint job run -- downloads nothing at all, so a message saying
+    # ``poe fetch-plantuml`` "puts" it there named an action that path never takes. The same
+    # clause is in ``docs/conf.py``, ``performance/performance_test.py`` and
+    # ``tools/src/sn_tools/fetch_plantuml.py``, word for word, and this is the assertion that
+    # holds this copy of it to that wording
+    assert "unset it to render with the jar committed at vendor/plantuml/." in str(
+        caught.value
+    )
 
 
 def test_no_renderer_at_all_is_an_error(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """No variable, no jar and no executable names all three routes in the message."""
+    """No variable, no jar and no executable names all three routes in the message.
+
+    The first of them is a command -- ``uv run poe fetch-plantuml`` -- and it is asserted
+    literally: a fresh clone renders nothing until someone runs it, so a message that said
+    only "no PlantUML" would send the reader hunting for a file that was never there.
+    """
     monkeypatch.setattr(shutil, "which", lambda _name: None)
 
-    with pytest.raises(RuntimeError, match="no PlantUML to render with"):
-        resolve_plantuml_command(tmp_path / "utils" / "plantuml.jar")
+    with pytest.raises(RuntimeError, match="no PlantUML to render with") as caught:
+        resolve_plantuml_command(tmp_path / "vendor" / "plantuml.jar")
+
+    message = str(caught.value)
+    assert "uv run poe fetch-plantuml" in message
+    assert "PLANTUML_JAR" in message
+    assert "install a plantuml executable" in message
 
 
 def test_an_empty_variable_is_treated_as_unset(
-    vendored_jar: Path, monkeypatch: pytest.MonkeyPatch
+    workspace_jar: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """An empty ``PLANTUML_JAR`` falls through to the vendored jar.
+    """An empty ``PLANTUML_JAR`` falls through to the workspace jar.
 
     Not a curiosity: it is how the variable arrives from a developer shell with
     ``PLANTUML_JAR=`` exported, and from a workflow that computes the value with an
@@ -146,13 +176,13 @@ def test_an_empty_variable_is_treated_as_unset(
     monkeypatch.setenv("PLANTUML_JAR", "")
 
     assert (
-        resolve_plantuml_command(vendored_jar)
-        == f'java -Djava.awt.headless=true -jar "{vendored_jar}"'
+        resolve_plantuml_command(workspace_jar)
+        == f'java -Djava.awt.headless=true -jar "{workspace_jar}"'
     )
 
 
 def test_a_named_jar_that_is_a_directory_is_an_error(
-    tmp_path: Path, vendored_jar: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, workspace_jar: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """A ``PLANTUML_JAR`` naming a directory is as wrong as one naming nothing.
 
@@ -162,7 +192,7 @@ def test_a_named_jar_that_is_a_directory_is_an_error(
     monkeypatch.setenv("PLANTUML_JAR", str(tmp_path))
 
     with pytest.raises(RuntimeError, match=_expected(tmp_path)):
-        resolve_plantuml_command(vendored_jar)
+        resolve_plantuml_command(workspace_jar)
 
 
 def test_a_jar_path_with_a_space_stays_one_argument(
@@ -186,14 +216,14 @@ def test_a_jar_path_with_a_space_stays_one_argument(
 
 
 def test_the_ordinary_jar_path_splits_to_the_same_argv(
-    vendored_jar: Path, monkeypatch: pytest.MonkeyPatch
+    workspace_jar: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Quoting the path changes the string and not the argv."""
     monkeypatch.setattr(shutil, "which", lambda _name: None)
 
-    argv = _split_cmdargs(resolve_plantuml_command(vendored_jar))
+    argv = _split_cmdargs(resolve_plantuml_command(workspace_jar))
 
-    assert argv == ["java", "-Djava.awt.headless=true", "-jar", str(vendored_jar)]
+    assert argv == ["java", "-Djava.awt.headless=true", "-jar", str(workspace_jar)]
 
 
 def test_windows_prefers_the_blocking_shim(
@@ -209,7 +239,7 @@ def test_windows_prefers_the_blocking_shim(
     monkeypatch.setattr(shutil, "which", lambda name: f"C:/bin/{name}.exe")
 
     assert (
-        resolve_plantuml_command(tmp_path / "utils" / "plantuml.jar")
+        resolve_plantuml_command(tmp_path / "vendor" / "plantuml.jar")
         == "C:/bin/plantumlc.exe"
     )
 
@@ -228,7 +258,7 @@ def test_elsewhere_the_plain_executable_is_used(
     monkeypatch.setattr(shutil, "which", _which)
 
     assert (
-        resolve_plantuml_command(tmp_path / "utils" / "plantuml.jar")
+        resolve_plantuml_command(tmp_path / "vendor" / "plantuml.jar")
         == "/usr/local/bin/plantuml"
     )
     assert asked == ["plantuml"]
@@ -237,11 +267,12 @@ def test_elsewhere_the_plain_executable_is_used(
 def test_a_missing_utils_directory_is_not_an_error(tmp_path: Path) -> None:
     """`copy_test_utils` declines quietly when there is nothing to copy.
 
-    flit writes no directory entries into the sdist and ``doc_test/utils`` holds exactly
-    one file, so a packager who strips ``*.jar`` from the tarball is left without the
-    directory. Unguarded, the session fixture would raise ``FileNotFoundError`` before
-    the precedence chain above was consulted at all -- and the sdist route this whole
-    module exists for would be unreachable.
+    Which is now the ordinary case rather than the exotic one: ``doc_test/utils`` held
+    exactly one file, a plantuml jar for this package alone, and the workspace's one
+    shared jar is committed at ``vendor/plantuml/`` instead -- so the directory is not in the tree at all. Unguarded,
+    the session fixture would raise ``FileNotFoundError`` before the precedence chain
+    above was consulted, and every rendering test would fail for a reason that has nothing
+    to do with rendering.
     """
     destination = tmp_path / "tempdir" / "utils"
     destination.parent.mkdir()
@@ -249,6 +280,66 @@ def test_a_missing_utils_directory_is_not_an_error(tmp_path: Path) -> None:
     copy_test_utils(tmp_path / "not-there", destination)
 
     assert not destination.exists()
+
+
+def test_no_pin_at_all_falls_through_to_the_executable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """``None`` -- the sdist shape -- skips route (2) instead of crashing on it.
+
+    ``vendor/`` is at the repository root and flit's sdist ``include`` patterns cannot
+    escape the package directory, so a tarball carries neither the jar nor the pin that
+    names it. :func:`tests.conftest.workspace_plantuml_jar` returns ``None`` there, and the
+    chain has to read that as "no workspace jar" rather than looking up a path on it.
+    """
+    monkeypatch.setattr(shutil, "which", lambda _name: "/usr/local/bin/plantuml")
+
+    assert resolve_plantuml_command(None) == "/usr/local/bin/plantuml"
+
+
+def test_no_pin_and_no_executable_says_which_tree_this_is(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An sdist with no renderer at all gets a message about an sdist.
+
+    ``None does not exist`` would be the obvious way to write this and the wrong one: the
+    reader is in a tree where ``poe fetch-plantuml`` does not exist either -- the tarball
+    ships no ``vendor/``, no root ``pyproject.toml`` and no poe -- so the message has to say
+    that no pin was found rather than name a path that never was one, and it must not LEAD
+    with a command that cannot be run there. The two routes that do work come first; the task
+    is mentioned last and only for "a checkout of the repository".
+    """
+    monkeypatch.setattr(shutil, "which", lambda _name: None)
+
+    with pytest.raises(
+        RuntimeError, match=re.escape("no vendor/plantuml/pin.toml")
+    ) as caught:
+        resolve_plantuml_command(None)
+
+    message = str(caught.value)
+    assert message.index("Set PLANTUML_JAR") < message.index(
+        "uv run poe fetch-plantuml"
+    )
+    assert "in a checkout of the repository" in message
+
+
+def test_the_workspace_jar_is_read_from_the_pin() -> None:
+    """The path the fixture actually uses, in the tree this test is running in.
+
+    Two facts at once: the version comes out of ``vendor/plantuml/pin.toml`` rather than a
+    literal, and the filename carries it -- which is exactly what the four-year-old
+    ``plantuml.jar`` this replaced could not say for itself. Skipped rather than failed
+    when there is no pin, because that is the sdist the two cases above describe.
+    """
+    jar = workspace_plantuml_jar()
+    if jar is None:
+        pytest.skip("no vendor/plantuml/pin.toml: this is an sdist, not a checkout")
+
+    version = tomllib.loads((jar.parent / "pin.toml").read_text(encoding="utf-8"))[
+        "version"
+    ]
+    assert jar.name == f"plantuml-{version}.jar"
+    assert jar.parent.name == "plantuml"
 
 
 def test_a_present_utils_directory_is_copied(tmp_path: Path) -> None:

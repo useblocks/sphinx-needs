@@ -1,0 +1,15 @@
+{
+  "needs": [],
+  "need_refs": [
+    {
+      "need_id": "REQ_A",
+      "line": 1
+    },
+    {
+      "need_id": "REQ_B",
+      "line": 1
+    }
+  ],
+  "marked_rst": [],
+  "warnings": []
+}

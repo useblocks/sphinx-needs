@@ -191,7 +191,17 @@ def order(graph: dict[str, set[str]]) -> list[str]:
 
 
 def on_pypi(name: str, version: str) -> bool:
-    """True if this exact version is published. Any non-404 answer is fatal, not a pass."""
+    """True if this exact version is published. Any non-404 answer is fatal, not a pass.
+
+    `except OSError` rather than `except URLError`, exactly as `published_versions` below:
+    a socket read timeout raises `TimeoutError`, which is an `OSError` and NOT a
+    `URLError` -- `urlopen`'s read phase does not wrap it -- so the narrower clause let a
+    timeout out of THIS function, the one the plan job calls, as a traceback rather than
+    the fail-closed message it is written for. Nothing failed open (the job still exits
+    non-zero), but the reader was shown a stack instead of "cannot reach PyPI". The
+    `HTTPError` branch stays first: `HTTPError` is a `URLError` is an `OSError`, so a 404
+    would otherwise be swallowed by the clause below and reported as an outage.
+    """
     url = PYPI.format(name=name, version=version)
     try:
         with urllib.request.urlopen(url, timeout=30) as response:
@@ -203,9 +213,12 @@ def on_pypi(name: str, version: str) -> bool:
             f"PyPI returned {exc.code} for {url}; refusing to guess whether "
             f"{name} {version} is published"
         ) from exc
-    except urllib.error.URLError as exc:
+    except OSError as exc:  # URLError, and a read TimeoutError, which is not one
+        # `.reason` where there is one, so a URLError still reads `[Errno 61] Connection
+        # refused` rather than the `<urlopen error ...>` wrapper -- which is the shape
+        # `published_versions` prints two functions away, and the two should not drift
         raise PlanError(
-            f"cannot reach PyPI ({exc.reason}); refusing to guess whether "
+            f"cannot reach PyPI ({getattr(exc, 'reason', exc)}); refusing to guess whether "
             f"{name} {version} is published"
         ) from exc
 

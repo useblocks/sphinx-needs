@@ -23,6 +23,7 @@ the shim.
 | its tests | `packages/sphinx-needs/tests/` |
 | its documentation | `packages/sphinx-needs/docs/` (changelog: `docs/changelog.rst`) |
 | sphinx-mounts' behaviour, tests, documentation | `packages/sphinx-mounts/{src/sphinx_mounts,tests,docs}/` — start at [`packages/sphinx-mounts/AGENTS.md`](packages/sphinx-mounts/AGENTS.md) |
+| sphinx-codelinks' behaviour, tests, documentation | `packages/sphinx-codelinks/{src/sphinx_codelinks,tests,docs}/` — start at [`packages/sphinx-codelinks/AGENTS.md`](packages/sphinx-codelinks/AGENTS.md) |
 | the two conformance corpora | `packages/sphinx-needs/tests/conformance/` (needflow) and `packages/sphinx-mounts/tests/fixtures/variant_condition_conformance.toml` (variant conditions) — both shared byte-for-byte with ubCode, which is their repository of record; do not reformat either (`.gitattributes` plus the yamlfmt and taplo excludes protect them) |
 | a package's metadata, dependencies and extras | `packages/<pkg>/pyproject.toml` |
 | dependency groups (`test`, `benchmark`, `sphinx-7/8/9`, `typing`) | the root `pyproject.toml` — they are shared, and a group cannot be composed across the root/member boundary |
@@ -30,9 +31,10 @@ the shim.
 | the lock | the root `uv.lock` — one lock for the whole workspace |
 | hooks | the root `.pre-commit-config.yaml` — one config; anything triggered by `uv.lock` has to live here |
 | the repository's own tooling | `tools/` — the workspace fences and the release plan |
+| the PlantUML renderer | `vendor/plantuml/` — `pin.toml` (version + sha256, the one place either is written), the committed `plantuml-<version>.jar` it names, and a `README.md`. `uv run poe verify-plantuml` fences the two against each other |
 | CI | `.github/workflows/`, and `.github/scripts/` for the three checks that must run *inside* a CI environment |
 | the docker image | `docker/` — a repository-level deliverable, like the workflows |
-| Read the Docs | sphinx-needs: `.readthedocs.yml`, and it stays at the root under that exact name — the configuration path applies to every version, so moving it makes older tags unbuildable. sphinx-mounts: `packages/sphinx-mounts/.readthedocs.yaml`, which its own RTD project points at; every path inside it is relative to the REPOSITORY root, not to the file |
+| Read the Docs | sphinx-needs: `.readthedocs.yml`, and it stays at the root under that exact name — the configuration path applies to every version, so moving it makes older tags unbuildable. sphinx-mounts: `packages/sphinx-mounts/.readthedocs.yaml`, and sphinx-codelinks: `packages/sphinx-codelinks/.readthedocs.yaml`, each of which its own RTD project points at; every path inside those is relative to the REPOSITORY root, not to the file |
 
 **`tools/` is the workspace's tooling — a virtual member, never released, whose manifest
 declares the tooling's dependencies; `.github/scripts/` keeps only the checks that must
@@ -73,14 +75,20 @@ uv sync --frozen                      # every member, plus the shared test tooli
 uv run poe                            # list every task with its help
 uv run poe test-needs -k <expr>       # trailing words are appended to the task's command
 uv run poe test-mounts                # the sphinx-mounts suite (bazel tests deselected)
+uv run poe test-codelinks             # the sphinx-codelinks suite (adds the libclang group)
 uv run poe lint                       # every prek hook over the whole tree
 uv run poe typecheck                  # ty over both packages, against the oldest supported sphinx
 uv run poe docs-needs                 # the furo docs build
 uv run poe docs-mounts                # the sphinx-mounts docs build
+uv run poe docs-codelinks             # the sphinx-codelinks docs build
 uv run poe smoke-needs                # build the wheel and test the built package
+uv run poe verify-plantuml            # the committed PlantUML jar is the one its pin names
+uv run poe fetch-plantuml             # download it -- a bump step; otherwise a hash check
 uv run poe check-workspace            # the manifests agree with each other (Lint runs it)
 uv run poe release-plan               # what is pending, in what order (advice; exits 0)
+uv run poe bump <dist> --bump minor   # stamp a release: version, literals, floors, lock, changelog
 uv run poe import-check-needs         # import the wheel against PyPI-resolved dependencies
+uv run poe import-check-codelinks     # the same for sphinx-codelinks (with its libclang extra)
 uv run --frozen --no-sync pytest tools/tests -q   # the tooling's own tests
 UV_PYTHON=3.12 uv run --no-sync poe test-needs-sphinx8   # one CI matrix cell
 ```
@@ -99,18 +107,47 @@ matrix cells do — `setup-uv`'s `python-version` input is documented as setting
 CI's Lint job (and the monthly `prek-update` job) deliberately pass no such input, so they
 run on the pin, and Lint asserts the series it got equals the file.
 
-The machine needs `java` (the plantuml jar is vendored under `tests/doc_test/utils/`) and
-graphviz's `dot` on `PATH` — the needflow tests do not skip without them, so install
-graphviz as CI does (`apt-get install graphviz`). **sphinx-mounts needs a PlantUML too,
-and its tests assert rather than skip**: either a `plantuml` executable on `PATH`, or
-`PLANTUML_JAR` naming a plantuml jar with `java` on `PATH`. The second is what CI and
-`release.yaml` use, pointed at the jar sphinx-needs already vendors, so no runner installs
-a plantuml package:
-`PLANTUML_JAR=$PWD/packages/sphinx-needs/tests/doc_test/utils/plantuml.jar uv run poe test-mounts`.
-**sphinx-needs' own suite honours `PLANTUML_JAR` too**, ahead of the jar it vendors and ahead
-of any `plantuml` on `PATH`, so one export points both suites at one renderer — and a run from
-the sdist, whose embedded jar a distribution packager repacks away, has a supported route to a
-system PlantUML.
+The machine needs `java` and graphviz's `dot` on `PATH` — the tests that render do not skip
+without them, so install graphviz as CI does (`apt-get install graphviz`). Rendering in the
+sphinx-needs suite is opt in: a `test_app` build draws no diagram unless its parameter dict
+says `"plantuml": True`, so most of the suite runs without `java` at all, and the tests that do
+render fail loudly without it. `docs-needs` and the sphinx-mounts suite still need a renderer.
+**The PlantUML jar is committed**, once, at `vendor/plantuml/plantuml-<version>.jar` — the
+version `vendor/plantuml/pin.toml` names — so a checkout renders and **nothing has to reach the
+network**: not a CI job, not a Read the Docs build, not an offline machine, and not a sandboxed
+session whose allowlist this repository cannot set. `uv run poe verify-plantuml` checks the file
+against the pin (one sha256 of 30 MB, well under a second including `uv` and `poe` startup) and
+is what CI's Lint job runs; `uv run poe fetch-plantuml` downloads the jar the pin names, which
+is a **bump** step and otherwise the same hash check. **You will rarely run either by hand**:
+every task that renders declares `fetch-plantuml` — the sphinx-needs suites, `docs-needs*` and
+`benchmark-needs` through `deps`, the sphinx-mounts suites through
+`uses = { PLANTUML_JAR = "fetch-plantuml" }`, because that suite reads the variable and nothing
+else — and `lint` declares `verify-plantuml`. `smoke-needs`, `test-needs-js` and the
+sphinx-mounts docs render nothing and declare neither.
+
+Both suites resolve a renderer in the same order, and **both assert rather than skip** when
+they find none: `PLANTUML_JAR` (an explicit choice, and an error when it names no file) →
+the committed jar under `vendor/plantuml/` → a `plantuml` executable on `PATH` (`plantumlc`
+first on Windows, whose chocolatey `plantuml` shim is a non-blocking `javaw` launcher). So
+`PLANTUML_JAR=/any/plantuml.jar uv run poe test-mounts` still works and points both suites at
+one renderer — as does an offline machine with `plantuml` installed from its package manager.
+**To bump PlantUML**, edit `version` and `sha256` in `vendor/plantuml/pin.toml`, run
+`uv run poe fetch-plantuml`, `git rm` the old jar and `git add` the new one, and edit
+`ARG PLANTUML_VERSION` in `docker/Dockerfile` (a Dockerfile cannot read TOML; the duplication
+is declared there), then re-run the renderer-heavy suites — `vendor/plantuml/README.md` has
+the recipe, including the `http.postBuffer` a 30 MB push over HTTPS needs. An sdist carries
+neither the jar nor the pin — `vendor/` is outside the directory flit builds the tarball from
+— so a distribution packager building from it takes the `PLANTUML_JAR` or `plantuml`-on-`PATH`
+route, and the sdist is ≈8 MB rather than 28.
+
+**sphinx-codelinks needs NEITHER renderer**: nothing in that package draws a diagram, its
+docs build installs no `apt_packages` and its CI cell asks for graphviz only because it
+shares a cell with sphinx-mounts. What it does need is `git` on `PATH` — its suite builds
+real repositories and a real `git worktree` — and, for the 56 tests behind the optional
+preprocessor-aware C/C++ engine, the `libclang` wheel: a root dependency group,
+`codelinks-libclang`, which every `test-codelinks*` task adds for you. Without it those
+tests SKIP rather than fail, so a run that lacked it looks green
+(`303 passed, 26 skipped` instead of `359 passed`).
 `bazel` (or `bazelisk`) is the other optional binary — without it the `bazel`-marked tests
 skip, and `test-mounts` deselects them anyway. The browser tests (`-m jstest`, which
 `test-needs` excludes) additionally need a browser, and it is not a package: `uv run poe
@@ -136,9 +173,16 @@ answer; it fetches only what the pin names.
 `docs-needs` needs `docs.python.org` and `www.sphinx-doc.org` for intersphinx (and
 `api.github.com` for the GitHub-service example, whose warning is suppressed): behind a
 proxy that blocks the first two, `-nW` turns the unresolved references into dozens of errors
-that look like a docs regression. Run the test suite serially: plantuml is load-sensitive (a
-docs or wheel build running alongside it has failed a zero-warnings assertion), and
-`-n auto` races on the shared jar copy.
+that look like a docs regression. `docs-codelinks` adds one host to that list,
+`sphinx-needs.readthedocs.io`, and one requirement no other build has: it reads the git
+directory's `config` and `HEAD` to turn every traced source line into a blob link, so a
+checkout with no `origin` fails it under `-nW` (a linked worktree is fine — that is what
+`_git_dir`/`_git_common_dir` in `analyse/utils.py` are for). The suite runs on four workers in CI (`-n 4`; pytest-xdist is in the `test` group) and can
+locally: the `-n auto` race the suite used to document was on a jar copied into every test
+project, and since #1870 the jar is one file at a fixed path that nothing copies (measured at
+`-n 4` and `-n auto`: no failure, no flake). What still holds is that plantuml is load-sensitive
+across PROCESSES you start yourself: a docs or wheel build running alongside the suite has failed a
+zero-warnings assertion, so do not overlap those.
 
 Rough runtimes on a CI-class machine, so you can decide what to background: `lint` 15 s ·
 `typecheck` seconds once `.venvs/typing` exists (the first run creates it) ·
@@ -173,13 +217,15 @@ not the repository-relative path. (`testpaths` is only honoured when pytest is i
 the rootdir, so the tasks carry `--ignore=performance` instead of naming `tests`: a path in
 the task's own command would be *added* to yours rather than replaced by it.)
 
-**A bare `pytest` at the root collects sphinx-needs' suite and the tooling's, not
-sphinx-mounts'.** Its `tests` directory is deliberately absent from `testpaths`: both
-packages ship a `tests/__init__.py`, so under `--import-mode=importlib` both `conftest.py`
-resolve to the module name `tests.conftest` and a rootdir-invoked pytest refuses the second
-outright — listing it there collects *nothing*, rather than more. Run that suite through
-`poe test-mounts` (which cds into the package), the way CI does with an explicit path. The
-Lint job's "Check a bare root pytest still collects" step is what keeps the list honest.
+**A bare `pytest` at the root collects sphinx-needs' suite and the tooling's — not
+sphinx-mounts' and not sphinx-codelinks'.** Their `tests` directories are deliberately
+absent from `testpaths`: all three packages ship a `tests/__init__.py`, so under
+`--import-mode=importlib` every `conftest.py` resolves to the module name `tests.conftest`
+and a rootdir-invoked pytest refuses the second outright — listing one there collects
+*nothing*, rather than more. Run those suites through `poe test-mounts` and
+`poe test-codelinks` (which cd into the package), the way CI does with an explicit path.
+The Lint job's "Check a bare root pytest still collects" step is what keeps the list
+honest.
 
 `uv sync` with no arguments is enough: the root's default `dev` group includes the shared
 `test` group, and the root depends on every member. The `sphinx-7`, `sphinx-8`, `sphinx-9`
@@ -245,6 +291,34 @@ workflow holds no API token, and every one of its checks fails closed.
    cell.
 1. **Release pull request**, from `master` with a clean tree:
    ```bash
+   uv run poe bump <dist> --bump {patch|minor|major}    # or --to X.Y.Z; --dry-run to preview
+   ```
+   One command for every mechanical edit, printed step by step with the file it wrote:
+
+   - `[project] version` in `packages/<dist>/pyproject.toml`;
+   - `__version__` in `packages/<dist>/src/<module>/__init__.py` — it is stamped into every
+     generated `needs.json`, so it is a literal rather than an `importlib.metadata` lookup,
+     and `uv run poe check-workspace` fails when the two disagree;
+   - for sphinx-needs only, the `NEEDS_VERSION` fallback in `.github/workflows/docker.yaml`,
+     which becomes `sphinx-needs-v<version>`: it is used as a git ref, and only the runs
+     with no tag of their own read it. Nothing fences this one;
+   - every dependant's floor, when a member declares `<dist>` at runtime;
+   - `uv.lock`;
+   - the changelog entry in `packages/<dist>/docs/changelog.rst` — the `release:<version>`
+     label, the heading, `:Released:` in that file's own date format, and the
+     `:Full Changelog:` compare link where that file's newest entry has one. Both
+     conventions in this repository are honoured: a `sphinx-mounts`-style `Unreleased`
+     section is converted in place, keeping its bullets; a `sphinx-needs`-style entry is
+     inserted above the newest one, empty.
+
+   **By hand: the summary paragraph** under the new heading. `bump` deliberately writes no
+   prose — a placeholder in a changelog is a thing that ships — and it does not commit, tag
+   or push. It refuses to run if any file it would rewrite is dirty (`uv.lock` excepted:
+   `uv lock` derives it, and guarding it would make releasing two members in one pull
+   request impossible).
+
+   *What `bump` runs, for the by-hand path:*
+   ```bash
    uv version --package <dist> --bump {patch|minor|major} --no-sync
    uv run python tools/src/sn_tools/propagate_floors.py <dist>   # only if a member depends on <dist>
    uv lock
@@ -253,24 +327,19 @@ workflow holds no API token, and every one of its checks fails closed.
    the `uv-lock` hook then fails a release pull request for a reason that has nothing to do
    with the release; a bare `uv version --bump` creates and syncs `.venv` and re-resolves
    from cold, which reorders `resolution-markers` and stops the diff being readable.
-2. **The two numbers `uv version` does not write.** `__version__` in
-   `packages/<dist>/src/<module>/__init__.py` (it is stamped into every generated
-   `needs.json`, so it is a literal rather than an `importlib.metadata` lookup), and — for
-   sphinx-needs — the `NEEDS_VERSION` fallback in `.github/workflows/docker.yaml`, which
-   becomes `sphinx-needs-v<version>`: it is used as a git ref, and only the runs with no tag
-   of their own read it. `uv run poe check-workspace` fails on the first of them.
-3. **Changelog.** Stamp `packages/<dist>/docs/changelog.rst`: the `_release:<version>`
-   label, the version heading, `:Released: DD.MM.YYYY`, the `:Full Changelog:` compare link
-   (`…/compare/<previous tag>...<dist>-v<version>`) and the summary paragraph. The compare
-   link 404s in Docs-Linkcheck until the tag exists; that is expected and not a required
-   check.
-4. **Check it locally**: `uv run poe lint` (which now runs `check-workspace`) and
+2. **Write the summary paragraph** for the entry `bump` stamped, and check the rest of it:
+   `:Released: DD.MM.YYYY` for sphinx-needs, `:Released: YYYY-MM-DD` for sphinx-mounts, and
+   the compare link `…/compare/<previous tag>...<dist>-v<version>` — whose previous half is
+   a bare tag for a sphinx-needs release that follows one from before the monorepo move. The
+   compare link 404s in Docs-Linkcheck until the tag exists; that is expected and not a
+   required check.
+3. **Check it locally**: `uv run poe lint` (which now runs `check-workspace`) and
    `uv run poe smoke-needs`.
-5. **Merge**, then push the tag from `master`:
+4. **Merge**, then push the tag from `master`:
    ```bash
    git tag <dist>-v<version> && git push origin <dist>-v<version>
    ```
-6. The workflow does the rest: validate the tag, build, resolve the built wheel against
+5. The workflow does the rest: validate the tag, build, resolve the built wheel against
    PyPI alone, run the member's suite against its dependencies *as published*, publish, and
    create the GitHub Release titled `<dist> v<version>`. For sphinx-needs it then pushes a
    second, bare `<version>` tag, which is what keeps Read the Docs' `stable`, every
@@ -300,12 +369,13 @@ history (`git blame` follows renames on its own and needs nothing), and
 `git log --first-parent` to read the mainline -- squash merges, plus the one merge commit
 the sphinx-mounts import landed as.
 
-**sphinx-mounts' files are the opposite case and need no `--follow`.** Its history was
-imported in 2026-09 through `git filter-repo`, which rewrote the paths in every historical
-commit, so from this repository's point of view those files were always at
-`packages/sphinx-mounts/` — a plain `git log <path>` (and GitHub's per-file *History*
-button) shows the whole thing. `packages/sphinx-mounts/design/import-commit-map.txt` maps
-every hash the old repository had to its hash here.
+**The imported packages' files are the opposite case and need no `--follow`.**
+sphinx-mounts' and sphinx-codelinks' histories were imported in 2026-09 through
+`git filter-repo`, which rewrote the paths in every historical commit, so from this
+repository's point of view those files were always at `packages/sphinx-mounts/` and
+`packages/sphinx-codelinks/` — a plain `git log <path>` (and GitHub's per-file *History*
+button) shows the whole thing. `packages/<dist>/design/import-commit-map.txt` maps every
+hash the old repository had to its hash here, for both of them.
 
 To rebase a pull request opened before the move, use
 `git rebase -X find-renames=15% origin/master`, and never `git rebase --apply`, `git am`
@@ -323,8 +393,8 @@ move's pull request.
 ## Issues and labels
 
 Every issue and pull request carries one or more `pkg:` labels naming what it concerns:
-`pkg: <distribution>` (today `pkg: sphinx-needs` and `pkg: sphinx-mounts`) or
-`pkg: workspace` for the repository
+`pkg: <distribution>` (today `pkg: sphinx-needs`, `pkg: sphinx-mounts` and
+`pkg: sphinx-codelinks`) or `pkg: workspace` for the repository
 itself — workflows, CI, release, docker, tooling, the workspace root. Pull requests get
 theirs automatically from the paths they touch (`.github/labeler.yml`); the issue forms
 set it from their "Package" dropdown (`.github/issue-labeler.yml`). **An issue created

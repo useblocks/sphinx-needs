@@ -1,10 +1,8 @@
 import json
-import os
 from pathlib import Path
 
 import pytest
 from sphinx import version_info
-from sphinx.util.console import strip_colors
 from syrupy.filters import props
 
 from sphinx_needs.exceptions import FunctionParsingException
@@ -12,6 +10,7 @@ from sphinx_needs.functions.functions import (
     DynamicFunctionParsed,
     NeedAttribute,
 )
+from tests.conftest import assert_no_warnings, build_warnings
 
 
 @pytest.mark.parametrize(
@@ -130,7 +129,6 @@ def test_dynamic_function_from_string_fail(func_str, error_message):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_dynamic_functions",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -139,21 +137,19 @@ def test_doc_dynamic_functions(test_app, snapshot):
     app = test_app
     app.build()
 
-    warnings = strip_colors(
-        app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
-    ).splitlines()
-    assert warnings == [
-        'srcdir/index.rst:11: WARNING: The `need_func` role is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecated]',
-        "srcdir/index.rst:23: WARNING: Need could not be created: 'tags' value is invalid: only one string, dynamic function or variant function allowed per array item. [needs.create_need]",
-        'srcdir/index.rst:40: WARNING: The `need_func` role is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecated]',
-        'srcdir/index.rst:44: WARNING: The `need_func` role is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecated]',
-        "srcdir/index.rst:46: WARNING: Need could not be created: Field 'test_func' is invalid: Error parsing dynamic function 'test': Unsupported arg 0 value type [needs.create_need]",
-        "srcdir/index.rst:52: WARNING: Need could not be created: Field 'test_func' is invalid: Error parsing dynamic function 'test': Unsupported arg 0 value type [needs.create_need]",
-        'srcdir/index.rst:9: WARNING: The [[copy("id")]] syntax in need content is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecated]',
-        "srcdir/index.rst:33: WARNING: The [[copy('id')]] syntax in need content is deprecated. Replace with :ndf:`copy('id')` instead. [needs.deprecated]",
-        "srcdir/index.rst:38: WARNING: The [[copy('id')]] syntax in need content is deprecated. Replace with :ndf:`copy('id')` instead. [needs.deprecated]",
-        "srcdir/index.rst:44: WARNING: Error while executing function 'copy': Need not found [needs.dynamic_function]",
-        "srcdir/index.rst:44: WARNING: Error while executing function 'copy': Need not found [needs.dynamic_function]",
+    warning_records = build_warnings(app)
+    assert warning_records == [
+        '<srcdir>/index.rst:11: WARNING: The `need_func` role is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecated]',
+        "<srcdir>/index.rst:23: WARNING: Need could not be created: 'tags' value is invalid: only one string, dynamic function or variant function allowed per array item. [needs.create_need]",
+        '<srcdir>/index.rst:40: WARNING: The `need_func` role is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecated]',
+        '<srcdir>/index.rst:44: WARNING: The `need_func` role is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecated]',
+        "<srcdir>/index.rst:46: WARNING: Need could not be created: Field 'test_func' is invalid: Error parsing dynamic function 'test': Unsupported arg 0 value type [needs.create_need]",
+        "<srcdir>/index.rst:52: WARNING: Need could not be created: Field 'test_func' is invalid: Error parsing dynamic function 'test': Unsupported arg 0 value type [needs.create_need]",
+        '<srcdir>/index.rst:9: WARNING: The [[copy("id")]] syntax in need content is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecated]',
+        "<srcdir>/index.rst:33: WARNING: The [[copy('id')]] syntax in need content is deprecated. Replace with :ndf:`copy('id')` instead. [needs.deprecated]",
+        "<srcdir>/index.rst:38: WARNING: The [[copy('id')]] syntax in need content is deprecated. Replace with :ndf:`copy('id')` instead. [needs.deprecated]",
+        "<srcdir>/index.rst:44: WARNING: Error while executing function 'copy': Need not found [needs.dynamic_function]",
+        "<srcdir>/index.rst:44: WARNING: Error while executing function 'copy': Need not found [needs.dynamic_function]",
     ]
 
     json_data = Path(app.outdir, "needs.json").read_text()
@@ -167,7 +163,6 @@ def test_doc_dynamic_functions(test_app, snapshot):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_df_calc_sum",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -175,8 +170,7 @@ def test_doc_dynamic_functions(test_app, snapshot):
 def test_doc_df_calc_sum(test_app):
     app = test_app
     app.build()
-    warnings = strip_colors(app._warning.getvalue()).splitlines()
-    assert warnings == []
+    assert_no_warnings(app)
     html = Path(app.outdir, "index.html").read_text()
     assert "43210" in html  # all hours
     assert "3210" in html  # hours of linked needs
@@ -189,7 +183,6 @@ def test_doc_df_calc_sum(test_app):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_df_check_linked_values",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -197,8 +190,7 @@ def test_doc_df_calc_sum(test_app):
 def test_doc_df_linked_values(test_app):
     app = test_app
     app.build()
-    warnings = strip_colors(app._warning.getvalue()).splitlines()
-    assert warnings == []
+    assert_no_warnings(app)
     html = Path(app.outdir, "index.html").read_text()
     assert "all_good" in html
     assert "all_bad" not in html
@@ -211,7 +203,6 @@ def test_doc_df_linked_values(test_app):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_df_links_from_content",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -219,13 +210,11 @@ def test_doc_df_linked_values(test_app):
 def test_doc_df_links_from_content(test_app, snapshot):
     app = test_app
     app.build()
-    warnings = strip_colors(
-        app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
-    ).splitlines()
-    assert warnings == [
-        "srcdir/index.rst:51: WARNING: links_from_content: no stored node for need 'unknown1' [needs.dynamic_function]",
-        "srcdir/index.rst:51: WARNING: links_from_content: no stored node for need 'unknown2' [needs.dynamic_function]",
-        "srcdir/index.rst:57: WARNING: Error while executing function 'links_from_content': No need found for links_from_content [needs.dynamic_function]",
+    warning_records = build_warnings(app)
+    assert warning_records == [
+        "<srcdir>/index.rst:51: WARNING: links_from_content: no stored node for need 'unknown1' [needs.dynamic_function]",
+        "<srcdir>/index.rst:51: WARNING: links_from_content: no stored node for need 'unknown2' [needs.dynamic_function]",
+        "<srcdir>/index.rst:57: WARNING: Error while executing function 'links_from_content': No need found for links_from_content [needs.dynamic_function]",
         "WARNING: links_from_content: no stored node for need 'unknown3' [needs.dynamic_function]",
     ]
 
@@ -240,7 +229,6 @@ def test_doc_df_links_from_content(test_app, snapshot):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_df_user_functions",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -249,19 +237,17 @@ def test_doc_df_user_functions(test_app):
     app = test_app
     app.build()
 
-    warnings = strip_colors(
-        app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
-    ).splitlines()
+    warning_records = build_warnings(app)
     # print(warnings)
     expected = [
-        "srcdir/index.rst:10: WARNING: Error while resolving dynamic values for field 'status', of need 'TEST_2': dynamic function value <class 'object'> is not of type 'string' [needs.dynamic_function]",
-        "srcdir/index.rst:8: WARNING: The [[my_own_function()]] syntax in need content is deprecated. Replace with :ndf:`my_own_function()` instead. [needs.deprecated]",
-        "srcdir/index.rst:14: WARNING: The [[bad_function()]] syntax in need content is deprecated. Replace with :ndf:`bad_function()` instead. [needs.deprecated]",
-        "srcdir/index.rst:14: WARNING: Return value of function 'bad_function' is of type <class 'object'>. Allowed are str, int, float, list [needs.dynamic_function]",
-        "srcdir/index.rst:16: WARNING: The [[invalid]] syntax in need content is deprecated. Replace with :ndf:`invalid` instead. [needs.deprecated]",
-        "srcdir/index.rst:16: WARNING: Error parsing dynamic function: Not a function call [needs.dynamic_function]",
-        "srcdir/index.rst:18: WARNING: The [[unknown()]] syntax in need content is deprecated. Replace with :ndf:`unknown()` instead. [needs.deprecated]",
-        "srcdir/index.rst:18: WARNING: Unknown function 'unknown' [needs.dynamic_function]",
+        "<srcdir>/index.rst:10: WARNING: Error while resolving dynamic values for field 'status', of need 'TEST_2': dynamic function value <class 'object'> is not of type 'string' [needs.dynamic_function]",
+        "<srcdir>/index.rst:8: WARNING: The [[my_own_function()]] syntax in need content is deprecated. Replace with :ndf:`my_own_function()` instead. [needs.deprecated]",
+        "<srcdir>/index.rst:14: WARNING: The [[bad_function()]] syntax in need content is deprecated. Replace with :ndf:`bad_function()` instead. [needs.deprecated]",
+        "<srcdir>/index.rst:14: WARNING: Return value of function 'bad_function' is of type <class 'object'>. Allowed are str, int, float, list [needs.dynamic_function]",
+        "<srcdir>/index.rst:16: WARNING: The [[invalid]] syntax in need content is deprecated. Replace with :ndf:`invalid` instead. [needs.deprecated]",
+        "<srcdir>/index.rst:16: WARNING: Error parsing dynamic function: Not a function call [needs.dynamic_function]",
+        "<srcdir>/index.rst:18: WARNING: The [[unknown()]] syntax in need content is deprecated. Replace with :ndf:`unknown()` instead. [needs.deprecated]",
+        "<srcdir>/index.rst:18: WARNING: Unknown function 'unknown' [needs.dynamic_function]",
     ]
     if version_info >= (7, 3):
         warn = "WARNING: cannot cache unpickable configuration value: 'needs_functions' (because it contains a function, class, or module object)"
@@ -270,7 +256,7 @@ def test_doc_df_user_functions(test_app):
         if version_info >= (8, 2):
             warn = warn.replace("unpickable", "unpickleable")
         expected.insert(0, warn)
-    assert warnings == expected
+    assert warning_records == expected
 
     html = Path(app.outdir, "index.html").read_text()
     assert "Awesome" in html

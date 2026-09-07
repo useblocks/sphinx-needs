@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 import shutil
 from pathlib import Path
 from textwrap import dedent
@@ -9,8 +8,9 @@ from textwrap import dedent
 import pytest
 from sphinx import version_info
 from sphinx.testing.util import SphinxTestApp
-from sphinx.util.console import strip_colors
 from syrupy.filters import props
+
+from tests.conftest import build_warnings
 
 
 @pytest.mark.parametrize(
@@ -21,13 +21,9 @@ from syrupy.filters import props
 def test_external_html(test_app: SphinxTestApp):
     app = test_app
     app.build()
-    warnings = (
-        strip_colors(app._warning.getvalue())
-        .replace(str(app.srcdir) + os.path.sep, "<srcdir>/")
-        .splitlines()
-    )
+    warning_records = build_warnings(app)
     # print(warnings)
-    assert warnings == [
+    assert warning_records == [
         "WARNING: External need 'EXT_TEST_01' in 'needs_test_small.json' could not be added: Field 'extra2' is invalid: Invalid value for field 'extra2': 1 [needs.load_external_need]",
         "WARNING: External need 'EXT_TEST_03' in 'needs_test_small.json' could not be added: Unknown need type 'ask'. [needs.load_external_need]",
         "WARNING: Unknown keys in external need source 'needs_test_small.json': ['unknown_key'] [needs.unknown_external_keys]",
@@ -166,7 +162,6 @@ needs_builder_filter = ''
                  """,
                 ),
             ],
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -226,7 +221,6 @@ needs_builder_filter = ''
                  """,
                 ),
             ],
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -258,7 +252,7 @@ def test_external_allow_type_coercion_false(test_app):
     app = test_app
     app.build()
     assert app.statuscode == 0
-    assert strip_colors(app._warning.getvalue()).splitlines() == [
+    assert build_warnings(app) == [
         "WARNING: External need 'TEST_01' in 'needs.json' could not be added: 'tags' value is invalid: Invalid value for field 'tags': 'a,b,c' [needs.load_external_need]"
     ]
 
@@ -282,7 +276,6 @@ needs_build_json = True
                  """,
                 ),
             ],
-            "no_plantuml": True,
         }
     ],
     indirect=True,

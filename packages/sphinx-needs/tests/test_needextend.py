@@ -1,16 +1,16 @@
 import json
-import os
 from pathlib import Path
 
 import pytest
 from sphinx.application import Sphinx
-from sphinx.util.console import strip_colors
 from syrupy.filters import props
+
+from tests.conftest import build_warnings
 
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_needextend", "no_plantuml": True}],
+    [{"buildername": "html", "srcdir": "doc_test/doc_needextend"}],
     indirect=True,
 )
 def test_doc_needextend_html(test_app: Sphinx, snapshot):
@@ -52,7 +52,6 @@ def test_doc_needextend_html(test_app: Sphinx, snapshot):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_needextend_warnings",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -61,11 +60,9 @@ def test_doc_needextend_warnings(test_app: Sphinx):
     app = test_app
     app.build()
 
-    warnings = strip_colors(
-        app._warning.getvalue().replace(str(app.srcdir) + os.path.sep, "<srcdir>/")
-    ).splitlines()
+    warning_records = build_warnings(app)
     # print(warnings)
-    assert warnings == [
+    assert warning_records == [
         "<srcdir>/index.rst:25: WARNING: Empty ID/filter argument in needextend directive. [needs.needextend]",
         "<srcdir>/index.rst:26: WARNING: Empty ID/filter argument in needextend directive. [needs.needextend]",
         "<srcdir>/index.rst:28: WARNING: Cannot append to option '+hide' with type 'boolean'. [needs.needextend]",

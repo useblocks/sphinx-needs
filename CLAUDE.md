@@ -7,14 +7,22 @@ What a cloud environment for this repository needs, measured on the Ubuntu 24.04
 
 - **Network**: Custom, keeping the default package-manager list, plus `docs.python.org` and
   `www.sphinx-doc.org` (intersphinx — without them `docs-needs` fails under `-nW`),
+  `sphinx-needs.readthedocs.io` (intersphinx again, this time `docs-codelinks`', and it is
+  the same failure mode: `-nW` turns every unresolved cross-reference into an error),
   `cdn.playwright.dev` (Playwright's browser download — the only host it tries for
   chromium on linux-x64; its `playwright.download.prss.microsoft.com` mirror is never
   consulted for that artefact, see `AGENTS.md`), and `api.github.com` (the GitHub-service
-  example in the docs). The allowlist lives on the environment, not in this repository:
-  nothing under `.claude/` can add a host to it.
+  example in the docs). **The PlantUML renderer needs no host**: the jar is committed at
+  `vendor/plantuml/plantuml-<version>.jar`, so the checkout carries it and `poe test-needs`,
+  `docs-needs` and `test-mounts` render offline. That is one of the reasons it is committed —
+  the allowlist lives on the environment, not in this repository, and nothing under
+  `.claude/` can add a host to it.
 - **Setup script**: `apt-get install -y graphviz` — `dot` is absent from the image and the
   needflow tests fail rather than skip. Nothing else is needed: `prek` and `poe` come from
-  `uv sync`.
+  `uv sync`. `libclang` is not a system package here and does not belong in this script:
+  it is a 23 MiB wheel behind the root `codelinks-libclang` dependency group, which
+  `poe test-codelinks` adds for you. Without it 56 of sphinx-codelinks' 359 tests skip
+  rather than fail, so a run that lacked it would look green.
 - **Environment variables**: none to set on the environment. `.claude/settings.json` sets
   `UV_HTTP_TIMEOUT=180` for every Claude Code session, cloud ones included (committed
   project settings are read there): uv's 30 s default is not enough for this lock through

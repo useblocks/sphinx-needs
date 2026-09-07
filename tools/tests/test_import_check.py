@@ -18,6 +18,7 @@ environment plus `--expect-prefix`, and those are tested against real imports ab
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -166,11 +167,18 @@ def test_a_package_that_cannot_import_stops_its_own_subtree(tmp_path: Path) -> N
     assert "FAIL  pkg.broken: RuntimeError: no" in out
     assert "pkg.broken did not import, so anything under it was never walked" in out
     # the count understates the tree -- `pkg.broken.child` exists and was never reached --
-    # so the summary says how many packages hid contents from it
-    assert (
-        "FAIL  1 of 3 modules failed to import in 0.0s (2 imported; 1 package(s) did not "
-        "import, so their contents were never walked)" in out
-    )
+    # so the summary says how many packages hid contents from it.
+    #
+    # Matched with a regex around the elapsed time rather than asserting a literal
+    # `in 0.0s`: that is `{elapsed:.1f}` of a real subprocess, so on a machine under load
+    # -- a CI runner, or a local `lint`, `typecheck` and the suite back to back -- it
+    # rounds to `0.1s` and the test fails for a reason that has nothing to do with what it
+    # is about. Everything either side of the number is still asserted exactly.
+    assert re.search(
+        r"FAIL  1 of 3 modules failed to import in \d+\.\ds \(2 imported; "
+        r"1 package\(s\) did not import, so their contents were never walked\)",
+        out,
+    ), out
 
 
 def test_a_warning_at_import_time_is_not_a_failure(tmp_path: Path) -> None:

@@ -21,6 +21,8 @@ from typing import TYPE_CHECKING, Any
 import pytest
 from sphinx.project import Project
 
+from tests.conftest import assert_no_warnings
+
 if TYPE_CHECKING:
     from docutils import nodes
     from sphinx.application import Sphinx
@@ -200,7 +202,6 @@ def test_incdir_uses_physical_source_dir(
     mounted_project: tuple[Path, Path],
     plantuml_command: str,
     make_app: Callable[..., SphinxTestApp],
-    get_warnings_list: Callable[[SphinxTestApp], list[str]],
 ) -> None:
     host, bundle = mounted_project
     app = make_app(
@@ -223,7 +224,7 @@ def test_incdir_uses_physical_source_dir(
     # End-to-end proof that PlantUML ran and resolved the bundle-relative
     # ``!include``. Before the fix this failed with "plantuml command cannot be
     # run", because the non-existent cwd surfaced as ENOENT from ``subprocess``.
-    assert get_warnings_list(app) == []
+    assert_no_warnings(app)
     rendered = "\n".join(
         path.read_text(encoding="utf-8")
         for path in (Path(app.outdir) / "_images").glob("*.svg")

@@ -1,0 +1,31 @@
+{
+  "needs": [
+    {
+      "id": "IMPL_AORB",
+      "title": "A or B",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ"
+        ]
+      },
+      "metadata": {},
+      "line": 5
+    },
+    {
+      "id": "IMPL_NOTB",
+      "title": "Not B",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ"
+        ]
+      },
+      "metadata": {},
+      "line": 8
+    }
+  ],
+  "need_refs": [],
+  "marked_rst": [],
+  "warnings": []
+}

@@ -19,6 +19,7 @@ import pytest
 
 from sphinx_needs.card_layouts import BUILTIN_CARD_SPECS, compile_card_spec
 from sphinx_needs.defaults import LAYOUTS
+from tests.conftest import assert_no_warnings, build_warnings
 
 CLEAN_HEAD = (
     '<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>> '
@@ -1302,7 +1303,6 @@ def conf_py(specs: dict[str, Any], extra: str = "") -> str:
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (
                     Path("conf.py"),
@@ -1318,7 +1318,7 @@ def test_compiled_card_renders(test_app: Any) -> None:
     """A compiled card is a first class layout: it renders and warns about nothing."""
     app = test_app
     app.build()
-    assert app.warning_list == []
+    assert_no_warnings(app)
 
     table = need_table((app.outdir / "index.html").read_text(), "CARD_1")
     assert 'class="need needs_grid_simple_footer needs_layout_my_card' in table
@@ -1338,7 +1338,6 @@ def test_compiled_card_renders(test_app: Any) -> None:
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (
                     Path("conf.py"),
@@ -1367,7 +1366,7 @@ def test_compiled_side_card_skeleton(test_app: Any) -> None:
     """A partial side region spans the head and meta rows only."""
     app = test_app
     app.build()
-    assert app.warning_list == []
+    assert_no_warnings(app)
 
     html = scrub((app.outdir / "index.html").read_text())
     assert "needs_grid_simple_side_right_partial needs_layout_card_side" in html
@@ -1380,7 +1379,6 @@ def test_compiled_side_card_skeleton(test_app: Any) -> None:
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (
                     Path("conf.py"),
@@ -1396,7 +1394,7 @@ def test_headerless_card_renders_only_the_content(test_app: Any) -> None:
     """A headerless, meta-less card is a bare content cell."""
     app = test_app
     app.build()
-    assert app.warning_list == []
+    assert_no_warnings(app)
 
     html = (app.outdir / "index.html").read_text()
     assert "needs_grid_content needs_layout_card_focus" in html
@@ -1452,7 +1450,6 @@ PIC_SVG = (
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (
                     Path("conf.py"),
@@ -1482,7 +1479,7 @@ def test_conformance_specs_build(test_app: Any) -> None:
     """
     app = test_app
     app.build()
-    assert app.warning_list == []
+    assert_no_warnings(app)
 
     html = scrub((app.outdir / "index.html").read_text())
 
@@ -1544,7 +1541,6 @@ Object form
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (
                     Path("conf.py"),
@@ -1597,7 +1593,7 @@ def test_object_form_options_render(test_app: Any) -> None:
     """``height`` reaches the rendered image and ``label`` the rendered pair."""
     app = test_app
     app.build()
-    assert app.warning_list == []
+    assert_no_warnings(app)
 
     html = scrub((app.outdir / "index.html").read_text())
 
@@ -1752,7 +1748,6 @@ def test_name_collisions_are_refused(
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (
                     Path("conf.py"),
@@ -1769,8 +1764,8 @@ def test_unregistered_field_warns_at_build_time(test_app: Any) -> None:
     app = test_app
     app.build()
 
-    assert any("not registered" in warning for warning in app.warning_list), (
-        app.warning_list
+    assert any("not registered" in warning for warning in build_warnings(app)), (
+        build_warnings(app)
     )
     html = (app.outdir / "index.html").read_text()
     assert "needs_layout_my_card" in html
@@ -1796,7 +1791,6 @@ def setup(app):
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (
                     Path("conf.py"),
@@ -1817,7 +1811,7 @@ def test_user_layouts_object_survives_a_build(test_app: Any) -> None:
     """
     app = test_app
     app.build()
-    assert app.warning_list == []
+    assert_no_warnings(app)
 
     # the object conf.py handed over still holds exactly what conf.py put in it
     assert (app.outdir / "layouts_probe.txt").read_text() == "mine"
@@ -1860,7 +1854,6 @@ def test_compile_card_layouts_rebinds_instead_of_mutating() -> None:
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (Path("conf.py"), conf_py({})),
                 (Path("index.rst"), INDEX.replace("   :layout: my_card\n", "")),
@@ -1873,7 +1866,7 @@ def test_no_card_layouts_leaves_the_registry_alone(test_app: Any) -> None:
     """Without card specifications, ``needs_layouts`` is exactly the built-in set."""
     app = test_app
     app.build()
-    assert app.warning_list == []
+    assert_no_warnings(app)
     # only the built-in layouts (plus the ones registered by services) are present
     assert LAYOUTS.items() <= app.config.needs_layouts.items()
     assert set(app.config.needs_layouts) - set(LAYOUTS) == {"github"}

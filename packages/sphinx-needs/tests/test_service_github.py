@@ -4,8 +4,9 @@ from pathlib import Path
 import pytest
 import responses
 from sphinx import version_info
-from sphinx.util.console import strip_colors
 from syrupy.filters import props
+
+from tests.conftest import build_warnings
 
 
 @responses.activate
@@ -15,7 +16,6 @@ from syrupy.filters import props
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_service_github",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -85,16 +85,16 @@ def test_build(test_app, snapshot):
 
     app = test_app
     app.build()
-    warnings = strip_colors(app._warning.getvalue())
+    warnings_text = "\n".join(build_warnings(app))
     # print(warnings)
     prefix = " [docutils]" if version_info >= (8, 0) else ""
     expected_warnings = [
-        f'{Path(str(app.srcdir)) / "index.rst"}:4: WARNING: "query" or "specific" missing as option for github service. [needs.github]',
-        f"{Path(str(app.srcdir)) / 'index.rst'}:24: WARNING: Bullet list ends without a blank line; unexpected unindent.{prefix}",
-        f"{Path(str(app.srcdir)) / 'index.rst'}:23: WARNING: GitHub: API rate limit exceeded (twice). Stop here. [needs.github]",
+        '<srcdir>/index.rst:4: WARNING: "query" or "specific" missing as option for github service. [needs.github]',
+        f"<srcdir>/index.rst:24: WARNING: Bullet list ends without a blank line; unexpected unindent.{prefix}",
+        "<srcdir>/index.rst:23: WARNING: GitHub: API rate limit exceeded (twice). Stop here. [needs.github]",
     ]
 
-    assert warnings.splitlines() == expected_warnings
+    assert warnings_text.splitlines() == expected_warnings
 
     needs_data = json.loads((Path(app.outdir) / "needs.json").read_text("utf8"))
     assert needs_data == snapshot(

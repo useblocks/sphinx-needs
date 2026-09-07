@@ -3,25 +3,26 @@ from pathlib import Path
 import pytest
 from sphinx import version_info
 from sphinx.application import Sphinx
-from sphinx.util.console import strip_colors
+
+from tests.conftest import build_warnings
 
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_warning", "no_plantuml": True}],
+    [{"buildername": "html", "srcdir": "doc_test/doc_warning"}],
     indirect=True,
 )
 def test_proper_warning(test_app: Sphinx):
     test_app.build()
 
-    warnings = strip_colors(test_app._warning.getvalue()).splitlines()
+    warning_records = build_warnings(test_app)
     prefix = " [docutils]" if version_info >= (8, 0) else ""
-    assert warnings == [
-        f'{Path(str(test_app.srcdir)) / "index.rst"}:9: ERROR: Unknown interpreted text role "unknown0".{prefix}',
-        f'{Path(str(test_app.srcdir)) / "index.rst"}:16: ERROR: Unknown interpreted text role "unknown1".{prefix}',
-        f'{Path(str(test_app.srcdir)) / "index.rst"}:24: ERROR: Unknown interpreted text role "unknown2".{prefix}',
-        f'{Path(str(test_app.srcdir)) / "index.rst"}:31: ERROR: Unknown interpreted text role "unknown3".{prefix}',
-        f'{Path(str(test_app.srcdir)) / "index.rst"}:6: ERROR: Unknown interpreted text role "unknown4".{prefix}',
+    assert warning_records == [
+        f'<srcdir>/index.rst:9: ERROR: Unknown interpreted text role "unknown0".{prefix}',
+        f'<srcdir>/index.rst:16: ERROR: Unknown interpreted text role "unknown1".{prefix}',
+        f'<srcdir>/index.rst:24: ERROR: Unknown interpreted text role "unknown2".{prefix}',
+        f'<srcdir>/index.rst:31: ERROR: Unknown interpreted text role "unknown3".{prefix}',
+        f'<srcdir>/index.rst:6: ERROR: Unknown interpreted text role "unknown4".{prefix}',
     ]
 
     html = Path(test_app.outdir, "index.html").read_text(encoding="utf8")
@@ -36,7 +37,6 @@ def test_proper_warning(test_app: Sphinx):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_warning",
-            "no_plantuml": True,
             "confoverrides": {"rst_prolog": ".. |drift| replace:: drift\n"},
         }
     ],
@@ -59,12 +59,12 @@ def test_proper_warning_is_unaffected_by_rst_prolog(test_app: Sphinx):
     """
     test_app.build()
 
-    warnings = strip_colors(test_app._warning.getvalue()).splitlines()
+    warning_records = build_warnings(test_app)
     prefix = " [docutils]" if version_info >= (8, 0) else ""
-    assert warnings == [
-        f'{Path(str(test_app.srcdir)) / "index.rst"}:9: ERROR: Unknown interpreted text role "unknown0".{prefix}',
-        f'{Path(str(test_app.srcdir)) / "index.rst"}:16: ERROR: Unknown interpreted text role "unknown1".{prefix}',
-        f'{Path(str(test_app.srcdir)) / "index.rst"}:24: ERROR: Unknown interpreted text role "unknown2".{prefix}',
-        f'{Path(str(test_app.srcdir)) / "index.rst"}:31: ERROR: Unknown interpreted text role "unknown3".{prefix}',
-        f'{Path(str(test_app.srcdir)) / "index.rst"}:6: ERROR: Unknown interpreted text role "unknown4".{prefix}',
+    assert warning_records == [
+        f'<srcdir>/index.rst:9: ERROR: Unknown interpreted text role "unknown0".{prefix}',
+        f'<srcdir>/index.rst:16: ERROR: Unknown interpreted text role "unknown1".{prefix}',
+        f'<srcdir>/index.rst:24: ERROR: Unknown interpreted text role "unknown2".{prefix}',
+        f'<srcdir>/index.rst:31: ERROR: Unknown interpreted text role "unknown3".{prefix}',
+        f'<srcdir>/index.rst:6: ERROR: Unknown interpreted text role "unknown4".{prefix}',
     ]

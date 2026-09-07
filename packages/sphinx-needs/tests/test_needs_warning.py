@@ -1,9 +1,9 @@
-import os
 from pathlib import Path
 
 import pytest
 from sphinx import version_info
-from sphinx.util.console import strip_colors
+
+from tests.conftest import build_warnings
 
 
 @pytest.mark.parametrize(
@@ -12,7 +12,6 @@ from sphinx.util.console import strip_colors
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_needs_warnings",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -22,23 +21,21 @@ def test_needs_warnings(test_app):
     app.build()
 
     # stdout warnings
-    warnings = strip_colors(
-        app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
-    ).splitlines()
+    warning_records = build_warnings(app)
 
     expected = [
         "WARNING: 'invalid_status' in 'needs_warnings' is already registered. [needs.config]",
-        "WARNING: api_warning_filter: failed",
-        "\t\tfailed needs: 1 (TC_002)",
+        "WARNING: api_warning_filter: failed\n"
+        "\t\tfailed needs: 1 (TC_002)\n"
         "\t\tused filter: status == 'example_2' [needs.warnings]",
-        "WARNING: api_warning_func: failed",
-        "\t\tfailed needs: 1 (TC_003)",
+        "WARNING: api_warning_func: failed\n"
+        "\t\tfailed needs: 1 (TC_003)\n"
         "\t\tused filter: custom_warning_func [needs.warnings]",
-        "WARNING: invalid_status: failed",
-        "\t\tfailed needs: 2 (SP_TOO_001, US_63252)",
+        "WARNING: invalid_status: failed\n"
+        "\t\tfailed needs: 2 (SP_TOO_001, US_63252)\n"
         "\t\tused filter: status not in ['open', 'closed', 'done', 'example_2', 'example_3'] [needs.warnings]",
-        "WARNING: type_match: failed",
-        "\t\tfailed needs: 1 (TC_001)",
+        "WARNING: type_match: failed\n"
+        "\t\tfailed needs: 1 (TC_001)\n"
         "\t\tused filter: my_custom_warning_check [needs.warnings]",
     ]
 
@@ -58,7 +55,7 @@ def test_needs_warnings(test_app):
             "WARNING: cannot cache unpickable configuration value: 'needs_warnings' (because it contains a function, class, or module object)",
         )
 
-    assert warnings == expected
+    assert warning_records == expected
 
 
 @pytest.mark.parametrize(
@@ -154,7 +151,6 @@ needs_warnings = {"unknown_filter": 42}
 """,
                 ),
             ],
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -164,8 +160,8 @@ def test_needs_warnings_unknown_filter_type(test_app):
     app = test_app
     app.build()
 
-    warnings = strip_colors(
-        app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
-    ).splitlines()
+    warning_records = build_warnings(app)
 
-    assert warnings == ["WARNING: Unknown needs warnings filter 42! [needs.config]"]
+    assert warning_records == [
+        "WARNING: Unknown needs warnings filter 42! [needs.config]"
+    ]

@@ -53,7 +53,12 @@ needs_fields = {"number": {}}
 
 {% endif %}
 
-plantuml = "java -jar %s" % os.path.join(os.path.dirname(__file__), "..", "..", "docs", "utils", "plantuml-1.2022.14.jar")
+# Resolved by performance_test.py before this template is rendered: PLANTUML_JAR, else
+# the workspace's committed jar (vendor/plantuml/, at the pinned version), else a
+# `plantuml` on PATH. It cannot be resolved in here: this file is copied into a throwaway
+# tempdir first, so the rendered conf.py's own `__file__` is in that tempdir -- which is
+# why the path this line used to build never pointed at a real jar.
+plantuml = {{ plantuml_command }}
 plantuml_output_format = "svg"
 
 # Add any paths that contain templates here, relative to this directory.
