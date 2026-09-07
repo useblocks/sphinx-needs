@@ -1,10 +1,15 @@
-"""Tests for the suite's own warning normalisation (``tests/conftest.py``).
+"""Tests for the testkit's warning normalisation (``sphinx_needs_testkit._warnings``).
 
 Everything else in this suite exercises :func:`build_warnings` indirectly, through call
 sites that all feed it well-formed input from a real build. That leaves the boundary
 contract -- what starts a record, what continues one, and what is thrown away -- pinned by
-nothing, which matters because the shared test layer is about to export this function to
-other packages. These are constructed streams, so each rule is asserted on its own.
+nothing, which matters now that the shared test layer exports this function to the other
+packages here. These are constructed streams, so each rule is asserted on its own.
+
+They live in THIS suite rather than beside the function they test: sphinx-needs' is the
+only suite of the three that a test of the kit could join without adding a fourth suite,
+a fourth poe task and a fourth CI cell for a handful of unit tests. Move them the day the
+testkit grows a suite of its own.
 """
 
 import os
@@ -12,7 +17,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.conftest import assert_no_warnings, build_warnings, warning_count
+from sphinx_needs_testkit import assert_no_warnings, build_warnings, warning_count
 
 # in the platform's own form: `build_warnings` normalises the directory through `Path`, so
 # on Windows a POSIX literal here would become `\tmp\build\src` and never match the stream

@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 from sphinxcontrib.plantuml import plantuml
 
-from tests.conftest import assert_no_warnings
+from sphinx_needs_testkit import assert_no_warnings
 
 #: A ``conf.py`` for the inline source projects below.
 #: ``needgantt`` requires both of its value options to be numeric fields.

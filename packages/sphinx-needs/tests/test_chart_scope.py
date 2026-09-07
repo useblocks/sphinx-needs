@@ -22,7 +22,7 @@ from sphinx.testing.util import SphinxTestApp
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsFilteredBaseType, SphinxNeedsData
 from sphinx_needs.filter_common import filter_scope_ids, process_filters
-from tests.conftest import build_warnings
+from sphinx_needs_testkit import build_warnings
 from tests.util import bar_sum_labels, chart_images, pie_slice_counts
 
 CHART_SCOPE = pytest.mark.parametrize(

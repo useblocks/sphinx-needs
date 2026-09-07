@@ -34,7 +34,7 @@ from pathlib import Path
 import pytest
 from sphinxcontrib.plantuml import _split_cmdargs
 
-from tests.conftest import (
+from sphinx_needs_testkit import (
     copy_test_utils,
     resolve_plantuml_command,
     workspace_plantuml_jar,

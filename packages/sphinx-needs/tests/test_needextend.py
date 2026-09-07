@@ -5,7 +5,7 @@ import pytest
 from sphinx.application import Sphinx
 from syrupy.filters import props
 
-from tests.conftest import build_warnings
+from sphinx_needs_testkit import build_warnings
 
 
 @pytest.mark.parametrize(

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.conftest import assert_no_warnings, build_warnings
+from sphinx_needs_testkit import assert_no_warnings, build_warnings
 
 
 @pytest.mark.parametrize(

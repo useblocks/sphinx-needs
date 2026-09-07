@@ -6,7 +6,7 @@ import responses
 from sphinx import version_info
 from syrupy.filters import props
 
-from tests.conftest import build_warnings
+from sphinx_needs_testkit import build_warnings
 
 
 @responses.activate

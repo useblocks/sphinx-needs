@@ -10,7 +10,7 @@ from sphinx_needs.functions.functions import (
     DynamicFunctionParsed,
     NeedAttribute,
 )
-from tests.conftest import assert_no_warnings, build_warnings
+from sphinx_needs_testkit import assert_no_warnings, build_warnings
 
 
 @pytest.mark.parametrize(

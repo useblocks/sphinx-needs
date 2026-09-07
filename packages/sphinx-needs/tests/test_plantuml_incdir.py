@@ -21,7 +21,7 @@ from typing import TYPE_CHECKING, Any
 import pytest
 from sphinx.project import Project
 
-from tests.conftest import assert_no_warnings
+from sphinx_needs_testkit import assert_no_warnings
 
 if TYPE_CHECKING:
     from docutils import nodes

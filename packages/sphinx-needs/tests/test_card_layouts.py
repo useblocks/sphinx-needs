@@ -19,7 +19,7 @@ import pytest
 
 from sphinx_needs.card_layouts import BUILTIN_CARD_SPECS, compile_card_spec
 from sphinx_needs.defaults import LAYOUTS
-from tests.conftest import assert_no_warnings, build_warnings
+from sphinx_needs_testkit import assert_no_warnings, build_warnings
 
 CLEAN_HEAD = (
     '<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>> '
@@ -1675,7 +1675,7 @@ def test_invalid_card_warns_but_the_build_survives(
     bad_spec: dict[str, Any], expected: str, make_app: Any, sphinx_test_tempdir: Any
 ) -> None:
     """A bad card is skipped: the build succeeds and its siblings still compile."""
-    from tests.conftest import create_src_files_in_tmpdir
+    from sphinx_needs_testkit import create_src_files_in_tmpdir
 
     srcdir = create_src_files_in_tmpdir(
         [
@@ -1722,7 +1722,7 @@ def test_name_collisions_are_refused(
     sphinx_test_tempdir: Any,
 ) -> None:
     """A card never shadows a built-in or a hand written layout."""
-    from tests.conftest import create_src_files_in_tmpdir
+    from sphinx_needs_testkit import create_src_files_in_tmpdir
 
     srcdir = create_src_files_in_tmpdir(
         [
