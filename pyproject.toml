@@ -409,10 +409,10 @@ cwd = "packages/sphinx-needs"
 
 [tool.poe.tasks.test-needs-js]
 help = "Run only the browser tests; run `poe install-browser` once first"
-# yes, these need a jar too, although they render no diagram anyone looks at: two of the
-# three cases build through the `test_app` fixture, which takes `plantuml_command`, and
-# that fixture RAISES when it can find no renderer rather than skipping
-deps = ["fetch-plantuml"]
+# NO `deps = ["fetch-plantuml"]`, and no jar: none of the three cases opts into rendering
+# (their projects -- variant_doc, doc_basic, import_doc -- draw nothing), and `test_app` only
+# resolves `plantuml_command` for a build that asked for one. It used to need the jar because
+# the fixture took that fixture unconditionally and it RAISES rather than skipping
 cmd = "pytest --ignore=performance --ignore=tests/benchmarks -m jstest"
 cwd = "packages/sphinx-needs"
 
