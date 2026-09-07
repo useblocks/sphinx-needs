@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 import pytest
-from sphinx.util.console import strip_colors
+
+from tests.conftest import warnings
 
 
 @pytest.mark.parametrize(
@@ -23,15 +23,13 @@ def test_variant_role_html(test_app):
     app = test_app
     app.build()
 
-    warnings = strip_colors(
-        app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
-    ).splitlines()
+    warning_records = warnings(app)
 
     # The invalid reference and the mapping reference should warn.
-    assert warnings == [
-        "srcdir/index.rst:12: WARNING: 'variant' role could not resolve "
+    assert warning_records == [
+        "<srcdir>/index.rst:12: WARNING: 'variant' role could not resolve "
         "'nonexistent': Unknown variant data key: 'var.nonexistent' [needs.variant]",
-        "srcdir/index.rst:14: WARNING: 'variant' role could not resolve "
+        "<srcdir>/index.rst:14: WARNING: 'variant' role could not resolve "
         "'build': variant data reference 'var.build' resolves to a mapping "
         "('var.build'); access a leaf value instead [needs.variant]",
     ]
@@ -70,12 +68,10 @@ def test_variant_role_no_data_html(test_app):
     app = test_app
     app.build()
 
-    warnings = strip_colors(
-        app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
-    ).splitlines()
+    warning_records = warnings(app)
 
-    assert warnings == [
-        "srcdir/index.rst:4: WARNING: 'variant' role used but no variant data "
+    assert warning_records == [
+        "<srcdir>/index.rst:4: WARNING: 'variant' role used but no variant data "
         "is available: 'platform' [needs.variant]",
     ]
 
@@ -98,10 +94,8 @@ def test_variant_role_file_html(test_app):
     app = test_app
     app.build()
 
-    warnings = strip_colors(
-        app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
-    ).splitlines()
-    assert warnings == []
+    warning_records = warnings(app)
+    assert warning_records == []
 
     index_html = Path(app.outdir, "index.html").read_text()
     # Value from the JSON file.

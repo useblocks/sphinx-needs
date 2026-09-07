@@ -1,9 +1,9 @@
-import os
 import re
 from pathlib import Path
 
 import pytest
-from sphinx.util.console import strip_colors
+
+from tests.conftest import warnings
 
 
 @pytest.mark.parametrize(
@@ -51,10 +51,8 @@ def test_needbar_label_defaults(test_app):
     app = test_app
     app.build()
 
-    warnings = strip_colors(app._warning.getvalue()).replace(
-        str(app.srcdir) + os.path.sep, "<srcdir>/"
-    )
-    assert warnings.splitlines() == []
+    warnings_text = "\n".join(warnings(app))
+    assert warnings_text.splitlines() == []
 
     html = Path(app.outdir, "index.html").read_text()
     images = dict(re.findall(r'<img alt="([^"]*)"[^>]*src="_images/([^"]*)"', html))

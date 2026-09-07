@@ -3,7 +3,8 @@ from pathlib import Path
 
 import pytest
 from lxml import html as html_parser
-from sphinx.util.console import strip_colors
+
+from tests.conftest import warnings
 
 
 def build_warnings(app) -> list[str]:
@@ -12,11 +13,7 @@ def build_warnings(app) -> list[str]:
     The source directory is randomised per test run, so it is collapsed to
     ``<srcdir>/`` to keep the expected strings readable and stable.
     """
-    return (
-        strip_colors(app._warning.getvalue())
-        .replace(str(app.srcdir) + os.path.sep, "<srcdir>/")
-        .strip()
-    ).splitlines()
+    return ("\n".join(warnings(app))).splitlines()
 
 
 @pytest.mark.parametrize(
@@ -81,16 +78,14 @@ def test_needextract_basic(test_app):
 def test_needextract_with_nested_needs(test_app):
     app = test_app
     app.build()
-    warnings = strip_colors(
-        app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
-    ).splitlines()
+    warning_records = warnings(app)
     # print(warnings)
     # note these warnings are emitted twice because they are resolved twice: once when first specified and once when copied with needextract
-    assert warnings == [
-        'srcdir/index.rst:13: WARNING: The [[copy("id")]] syntax in need content is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecated]',
-        'srcdir/index.rst:33: WARNING: The [[copy("id")]] syntax in need content is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecated]',
-        'srcdir/index.rst:13: WARNING: The [[copy("id")]] syntax in need content is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecated]',
-        'srcdir/index.rst:33: WARNING: The [[copy("id")]] syntax in need content is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecated]',
+    assert warning_records == [
+        '<srcdir>/index.rst:13: WARNING: The [[copy("id")]] syntax in need content is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecated]',
+        '<srcdir>/index.rst:33: WARNING: The [[copy("id")]] syntax in need content is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecated]',
+        '<srcdir>/index.rst:13: WARNING: The [[copy("id")]] syntax in need content is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecated]',
+        '<srcdir>/index.rst:33: WARNING: The [[copy("id")]] syntax in need content is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecated]',
     ]
 
     needextract_html = Path(app.outdir, "needextract.html").read_text()

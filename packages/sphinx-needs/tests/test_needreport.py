@@ -6,9 +6,9 @@ import re
 from pathlib import Path, PurePosixPath, PureWindowsPath
 
 import pytest
-from sphinx.util.console import strip_colors
 
 from sphinx_needs.directives.needreport import DROPDOWN_MARKER
+from tests.conftest import warnings
 
 SPHINX_DESIGN_INSTALLED = importlib.util.find_spec("sphinx_design") is not None
 
@@ -39,11 +39,7 @@ def build_warnings(app) -> list[str]:
     The source directory is randomised per test run, so it is collapsed to
     ``<srcdir>/`` to keep the expected strings readable and stable.
     """
-    return (
-        strip_colors(app._warning.getvalue())
-        .replace(str(app.srcdir) + os.path.sep, "<srcdir>/")
-        .strip()
-    ).splitlines()
+    return ("\n".join(warnings(app))).splitlines()
 
 
 @pytest.mark.parametrize(

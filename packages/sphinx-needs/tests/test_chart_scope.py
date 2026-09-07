@@ -13,17 +13,16 @@ carries the part ``TEST_1.P1``, so that seven objects can be counted.
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 import pytest
 from docutils import nodes
 from sphinx.testing.util import SphinxTestApp
-from sphinx.util.console import strip_colors
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsFilteredBaseType, SphinxNeedsData
 from sphinx_needs.filter_common import filter_scope_ids, process_filters
+from tests.conftest import warnings
 from tests.util import bar_sum_labels, chart_images, pie_slice_counts
 
 CHART_SCOPE = pytest.mark.parametrize(
@@ -90,11 +89,7 @@ SCOPES: list[dict[str, object]] = [
 
 
 def _warnings(app: SphinxTestApp) -> list[str]:
-    return (
-        strip_colors(app._warning.getvalue())
-        .replace(str(app.srcdir) + os.path.sep, "<srcdir>/")
-        .splitlines()
-    )
+    return warnings(app)
 
 
 @CHART_SCOPE
