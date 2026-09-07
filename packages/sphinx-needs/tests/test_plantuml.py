@@ -52,9 +52,18 @@ def test_plantuml_unconfigured(test_app, get_warnings_list):
     test_app.build()
     assert test_app.statuscode == 0
 
+    # ONE warning now, where there used to be two. The fixture injected a `plantuml`
+    # confoverride into EVERY build, and this project deliberately does not load the
+    # extension, so the build also collected "unknown config value 'plantuml' in
+    # override, ignoring" -- a warning about the test fixture rather than about
+    # sphinx-needs. Rendering is opt in now and this test does not opt in, so nothing is
+    # injected and that warning is gone.
+    #
+    # Still two ENTRIES, though: `get_warnings_list` splits the stream on "WARNING: ", so
+    # a located warning arrives as its bare location followed by its message.
     warnings = get_warnings_list(test_app)
     assert len(warnings) == 2
-    assert "unknown config value 'plantuml' in override, ignoring" in warnings[0]
+    assert "index.rst" in warnings[0]
     # the page says so, but a build nobody reads the output of said nothing at all
     assert (
         "PlantUML is not available, so the diagram was not rendered. "

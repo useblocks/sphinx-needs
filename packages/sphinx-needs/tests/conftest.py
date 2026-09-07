@@ -14,6 +14,7 @@ from pathlib import Path
 import pytest
 import yaml
 from _pytest.mark import ParameterSet
+from docutils import nodes
 from docutils.nodes import document
 from sphinx import version_info
 from sphinx.application import Sphinx
@@ -244,17 +245,105 @@ def resolve_plantuml_command(workspace_jar: Path | None) -> str:
 
 @pytest.fixture(scope="session")
 def plantuml_command() -> str:
-    """The plantuml command every test project must build its diagrams with.
+    """The plantuml command every test project that RENDERS builds its diagrams with.
 
     CI runners have java and the checkout's jar but no ``plantuml`` on ``PATH``, so a
     project left on sphinxcontrib-plantuml's default command fails to render there while
-    passing on any machine that happens to have one installed. Every test therefore takes
-    its command from here, whether it goes through :func:`test_app` or calls ``make_app``
-    itself -- no test builds the path to the jar for itself.
+    passing on any machine that happens to have one installed. Every test that renders
+    therefore takes its command from here, whether it goes through :func:`test_app` or
+    calls ``make_app`` itself -- no test builds the path to the jar for itself.
+
+    :func:`resolve_plantuml_command` RAISES when it finds no renderer at all, which is
+    why :func:`test_app` does NOT name this fixture in its signature: a fixture named
+    there is resolved whether or not the body uses it, and on a machine with no jar and
+    no ``PLANTUML_JAR`` that difference is the whole suite erroring instead of the dozen
+    tests that genuinely need a renderer. It is pulled in with
+    ``request.getfixturevalue`` inside the opt-in branch instead.
 
     :return: The value for the ``plantuml`` configuration.
     """
     return resolve_plantuml_command(workspace_plantuml_jar())
+
+
+# The ``plantuml`` command for a build that did NOT opt in: one that cannot be run. Not
+# merely a placeholder -- sphinxcontrib-plantuml's own default is the bare word
+# ``plantuml``, so a build left on the default renders for real, silently, with whatever
+# unpinned renderer the developer's machine happens to carry. One token, no spaces, so
+# that whatever splits it (``shlex`` off Windows, sphinxcontrib's own unquoting on it)
+# still names it in the ``plantuml command %r cannot be run`` error it raises.
+_INERT_PLANTUML_COMMAND = (
+    "sphinx-needs-tests-this-build-did-not-opt-into-plantuml"
+    "--add-plantuml-True-to-its-test_app-parameters"
+)
+
+
+def _skip_plantuml_node(self, node: nodes.Element) -> None:
+    """Visit a ``plantuml`` node by dropping it: no subprocess, no warning, no markup."""
+    raise nodes.SkipNode
+
+
+def make_plantuml_inert(app: SphinxTestApp) -> None:
+    """Neutralise PlantUML rendering for one app, for a test that did not opt in.
+
+    Two halves, and both earn their place:
+
+    * every node visitor sphinxcontrib-plantuml registers is replaced with one that
+      raises ``SkipNode``. The directive still parses and the ``plantuml`` node still
+      lands in the doctree -- which is why the tests that inspect those nodes, or the
+      ``.puml`` files sphinx-needs writes itself, keep passing untouched -- but no JVM
+      starts. That is where the time goes: 2.04 s a render, measured, over the 107
+      renders the old default triggered.
+    * the ``plantuml`` configuration is pointed at :data:`_INERT_PLANTUML_COMMAND`, so a
+      render reached by a route these visitors do not cover (sphinxcontrib's batch path,
+      say, or a future one) fails LOUDLY and names the parameter that would have enabled
+      it, rather than quietly using a renderer this suite never chose.
+
+    Both happen after the app exists rather than through ``confoverrides``, because a
+    project that does not load ``sphinxcontrib.plantuml`` -- 88 of this suite's 138 test
+    projects -- would otherwise collect an "unknown config value 'plantuml' in override,
+    ignoring" warning that it never used to have.
+
+    :param app: The application to neutralise, already constructed and not yet built.
+    """
+    if "sphinxcontrib.plantuml" not in app.extensions:
+        return
+
+    from sphinxcontrib.plantuml import _NODE_VISITORS, plantuml
+
+    app.config.plantuml = _INERT_PLANTUML_COMMAND
+    app.add_node(
+        plantuml,
+        override=True,
+        **dict.fromkeys(_NODE_VISITORS, (_skip_plantuml_node, None)),
+    )
+
+
+def assert_nothing_rendered(app: SphinxTestApp) -> None:
+    """Assert a build that did not opt in really rendered no diagram.
+
+    :func:`make_plantuml_inert` is what makes that true; this is what keeps it true.
+    sphinxcontrib-plantuml writes every render into ``<outdir>/<plantuml_cache_path>``
+    before copying it to the image directory, so an empty (or absent) cache is the
+    cheapest proof that no renderer ran.
+
+    :param app: The built application.
+    """
+    if "sphinxcontrib.plantuml" not in app.extensions:
+        return
+
+    cache = Path(app.outdir) / app.config.plantuml_cache_path
+    rendered = (
+        sorted(
+            str(path.relative_to(cache)) for path in cache.rglob("*") if path.is_file()
+        )
+        if cache.is_dir()
+        else []
+    )
+    assert not rendered, (
+        f"PlantUML rendered {rendered} for a test that did not ask it to. "
+        "Add '\"plantuml\": True' to this test's test_app parameters if it means to "
+        "render; otherwise find out what got past the inert renderer."
+    )
 
 
 # node classes from extensions outside sphinx-needs are exempt from the parent check:
@@ -275,7 +364,7 @@ def _check_parent_child(app: Sphinx, doctree: document, docname: str):
 
 
 @pytest.fixture(scope="function")
-def test_app(make_app, sphinx_test_tempdir, plantuml_command, request):
+def test_app(make_app, sphinx_test_tempdir, request):
     """
     Fixture for creating a Sphinx application for testing.
 
@@ -284,20 +373,34 @@ def test_app(make_app, sphinx_test_tempdir, plantuml_command, request):
     directory. The fixture yields the Sphinx application, and cleans up the temporary
     source directory after the test function has executed.
 
+    **Rendering PlantUML is opt in**: a parameter dict that says ``"plantuml": True``
+    gets the session's :func:`plantuml_command`; every other build gets an inert
+    renderer (:func:`make_plantuml_inert`), and is held to it (:func:`assert_nothing_rendered`).
+    Twelve of this suite's 266 parameter dicts opt in -- diagrams are parsed everywhere,
+    but only those twelve assert on a rendered one, and rendering the rest cost a third
+    of the suite's wall time.
+
     :param make_app: A fixture for creating Sphinx applications.
     :param sphinx_test_tempdir: A fixture for providing the Sphinx test temporary directory.
-    :param plantuml_command: A fixture for the plantuml command to render with.
     :param request: A pytest request object for accessing fixture parameters.
 
     :return: A Sphinx application object.
     """
     builder_params = request.param
 
-    sphinx_conf_overrides = builder_params.get("confoverrides", {})
-    if not builder_params.get("no_plantuml", False):
-        # Since we don't want copy the plantuml.jar file for each test function,
-        # we need to override the plantuml conf variable and set it to what we have already
-        sphinx_conf_overrides.update(plantuml=plantuml_command)
+    # a COPY, because ``builder_params`` is the dict object in the test module's own
+    # ``@pytest.mark.parametrize`` argument list -- evaluated once at collection and
+    # shared by every rerun of that parameter, so updating it in place writes into the
+    # test's source-level literal
+    sphinx_conf_overrides = dict(builder_params.get("confoverrides", {}))
+    renders = builder_params.get("plantuml", False)
+    if renders:
+        # requested HERE and not in the signature: `plantuml_command` raises on a machine
+        # with no renderer, and a fixture named in a signature is resolved whether or not
+        # the body uses it
+        sphinx_conf_overrides.update(
+            plantuml=request.getfixturevalue("plantuml_command")
+        )
 
     srcdir = builder_params.get("srcdir")
     files = builder_params.get("files")
@@ -330,6 +433,9 @@ def test_app(make_app, sphinx_test_tempdir, plantuml_command, request):
         docutilsconf=builder_params.get("docutilsconf"),
         parallel=builder_params.get("parallel", 0),
     )
+
+    if not renders:
+        make_plantuml_inert(app)
     # Add the Sphinx warning as list to the app
     # Somehow "app._warning" seems to be just a boolean, if the builder is "latex" or "singlehtml".
     # In this case we don't catch the warnings.
@@ -347,6 +453,9 @@ def test_app(make_app, sphinx_test_tempdir, plantuml_command, request):
     app.connect("doctree-resolved", _check_parent_child, priority=999)
 
     yield app
+
+    if not renders:
+        assert_nothing_rendered(app)
 
     app.cleanup()
 
