@@ -107,13 +107,20 @@ matrix cells do — `setup-uv`'s `python-version` input is documented as setting
 CI's Lint job (and the monthly `prek-update` job) deliberately pass no such input, so they
 run on the pin, and Lint asserts the series it got equals the file.
 
-The machine needs `java` and graphviz's `dot` on `PATH` — the needflow tests do not skip
-without them, so install graphviz as CI does (`apt-get install graphviz`). **The PlantUML jar
+The machine needs `java` and graphviz's `dot` on `PATH` — the tests that render do not skip
+without them, so install graphviz as CI does (`apt-get install graphviz`). **`java` is needed
+by less of the sphinx-needs suite than it used to be**: rendering through the `test_app`
+fixture is opt in (`"plantuml": True` in the parameter dict — twelve parameter dicts do), and
+the rest of what needs a jar calls `make_app` itself: `tests/conformance/needflow/`,
+`tests/test_needflow.py`, `tests/test_plantuml_command.py` and `tests/test_plantuml_incdir.py`.
+Everything else in that suite renders nothing. `docs-needs` and the whole sphinx-mounts suite
+still need a renderer as before. **The PlantUML jar
 is committed**, once, at `vendor/plantuml/plantuml-<version>.jar` — the version
 `vendor/plantuml/pin.toml` names — so a checkout renders and **nothing has to reach the
-network**: not the 22 of a CI run's 26 jobs that render (counted on run 34057129950, on
-`a3aebf1f`: the four that do not are `Lint`, the smoke test, `Docs codelinks` and the `check`
-aggregator), not a Read the Docs build, not an offline machine,
+network**: not the 20 of a CI run's 26 jobs that render (counted on run 34057129950, on
+`a3aebf1f`, minus the two `Needs JS` cells this repository stopped pointing at a jar when
+rendering became opt in: the six that do not are `Lint`, the smoke test, `Docs codelinks`,
+the `check` aggregator and those two), not a Read the Docs build, not an offline machine,
 and not a sandboxed session whose allowlist this repository cannot set. `uv run poe verify-plantuml`
 checks the file against the pin (one sha256 of 30 MB, well under a second including `uv` and
 `poe` startup) and is what CI's Lint job runs; `uv run poe fetch-plantuml` downloads the jar
@@ -122,8 +129,10 @@ run either by hand**: every task that renders declares `fetch-plantuml` — the 
 suites, `docs-needs*` and `benchmark-needs` through `deps`, the sphinx-mounts suites through
 `uses = { PLANTUML_JAR = "fetch-plantuml" }`, because that suite reads the variable and
 nothing else — and `lint` declares `verify-plantuml`. `smoke-needs` does not (its doc renders
-needflow through graphviz) and neither do the sphinx-mounts docs (they render nothing, which
-is why their RTD config has no `default-jdk`).
+needflow through graphviz), neither do the sphinx-mounts docs (they render nothing, which
+is why their RTD config has no `default-jdk`), and neither does `test-needs-js`: none of the
+three browser cases opts into rendering, and the fixture no longer resolves a renderer for a
+build that did not ask for one.
 
 Both suites resolve a renderer in the same order, and **both assert rather than skip** when
 they find none: `PLANTUML_JAR` (an explicit choice, and an error when it names no file) →

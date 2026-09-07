@@ -89,11 +89,39 @@ def process_need(
 - Snapshot testing uses `syrupy` - update snapshots with `--snapshot-update`
 - Browser tests use pytest-playwright and require the `@pytest.mark.jstest` marker
 
+### Rendering PlantUML is opt in
+
+**A `test_app` build renders no diagram unless its parameter dict says `"plantuml": True`.**
+A `.. uml::`, `needflow`, `needuml`, `needarch`, `needsequence` or `needgantt` directive still
+parses and still reaches the doctree — so a test that inspects the emitted diagram *source*,
+or the `.puml` files sphinx-needs writes itself, needs nothing — but the renderer is inert:
+the node visitors drop the node, the app's own `PlantumlBuilder` refuses to render, and the
+`plantuml` configuration is pointed at a command that cannot be run. A build that reaches a
+renderer anyway fails loudly, naming the parameter that would have enabled it, instead of
+quietly using whatever `plantuml` the machine happens to carry (`make_plantuml_inert` in
+`tests/conftest.py`).
+
+Opt in only when the test asserts on a RENDERED diagram — the `<object data=…>` in the HTML,
+the SVG behind it, or a warning only the render path emits. Twelve of the suite's 266
+parameter dicts do (`git grep -n '"plantuml": True' tests`), and each JVM start costs about
+two seconds, which is where a third of the suite's wall time used to go.
+
+Six test projects render through matplotlib instead (`needpie`, `needbar`); they are
+unaffected, and need no jar.
+
+The tests that need a jar without going through `test_app` call `make_app` themselves and
+take the session-scoped `plantuml_command` fixture: `tests/conformance/needflow/`,
+`tests/test_needflow.py`, `tests/test_plantuml_command.py`, `tests/test_plantuml_incdir.py`.
+That fixture RAISES rather than skipping when it finds no renderer, which is why it is
+requested inside the opt-in branch of `test_app` rather than named in its signature — a
+fixture named in a signature is resolved whether or not the body uses it.
+
 ### Writing Tests
 
 1. Create a test documentation project in `tests/doc_test/` if needed
 2. Use the `test_app` fixture for Sphinx application testing
-3. Mark tests appropriately:
+3. Add `"plantuml": True` to the parameter dict only if the test asserts on a rendered diagram
+4. Mark tests appropriately:
    - `@pytest.mark.jstest` - browser tests (pytest-playwright)
    - `@pytest.mark.benchmark` - Performance benchmarks
    - `@pytest.mark.fixture_file` - Tests using fixture files
