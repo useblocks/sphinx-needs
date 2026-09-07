@@ -27,9 +27,9 @@ The possible variables are listed in the configuration documentation for :ref:`n
       :value: 20
       :unit: slices
 
-   | The requirement :need:`roles_req_1` is the most important one.
-   | But we can also set :need:`a custom link name <roles_req_1>`.
-   | And we can change the text even more e.g. :need:`[[value]] [[unit]] of [[title]] ([[id]] [[status]]) <roles_req_1>`.
+      | The requirement :need:`roles_req_1` is the most important one.
+      | But we can also set :need:`a custom link name <roles_req_1>`.
+      | And we can change the text even more e.g. :need:`[[value]] [[unit]] of [[title]] ([[id]] [[status]]) <roles_req_1>`.
 
 .. note::
 
