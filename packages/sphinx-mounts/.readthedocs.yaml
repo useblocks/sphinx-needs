@@ -60,15 +60,6 @@ sphinx:
 
 python:
   install:
-    # The workspace sibling FIRST, from this checkout. Read the Docs runs these entries in
-    # order with pip, and a member installed on its own would resolve `sphinx-needs` from
-    # PyPI -- the released version, not the one beside it -- so a docs build here could
-    # pass or fail on code the workspace does not have. With the sibling already installed
-    # the member's requirement is satisfied and pip fetches nothing (tight tracking keeps
-    # the checkout's version inside the member's floor and cap). CI's docs job builds from
-    # the workspace lock and needs none of this.
-    - method: pip
-      path: packages/sphinx-needs
     - method: pip
       path: packages/sphinx-mounts
       extra_requirements:
