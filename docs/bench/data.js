@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788756134689,
+  "lastUpdate": 1788756858233,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -20124,6 +20124,42 @@ window.BENCHMARK_DATA = {
             "value": 46.057140487,
             "unit": "s",
             "extra": "Commit: 09acc115069cfde0b5b0f5371aba4e908ead3a36\nBranch: master\nTime: 2026-09-07T06:40:59+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b15a2b47fe613c65d3a9f94d91cea926c8956f4f",
+          "message": "🧪 Render PlantUML only where a test asks for it (#1900)\n\n`test_app` injected a `plantuml` command into **every** build it made,\nso all 266 of the\nsuite's parameter dicts rendered unless they opted **out** with\n`\"no_plantuml\": True` — and\n127 did, one line at a time, over years. The default was backwards: 12\ntests assert on a\nrendered diagram; the rest paid ~2 s of JVM start per diagram for output\nnobody looks at.\nThis inverts it — a build renders only if its parameter dict says\n`\"plantuml\": True`.\n\n## Not opted in means the renderer is *inert*, not unset\n\nLeaving a project on sphinxcontrib's own default — the bare word\n`plantuml` — means \"render\nwith whatever unpinned renderer this machine carries, and say nothing\";\nhere that is homebrew\nPlantUML 1.2026.1 against the pinned 1.2026.8. So `make_plantuml_inert`\nputs three layers on a\nnon-opted build, each covering what the one before it cannot:\n\n1. every node visitor sphinxcontrib registers is replaced with one that\nraises `SkipNode` —\nthe directive still parses and the node still reaches the doctree, so\nevery test that\n   inspects the emitted *source* keeps passing, but no JVM starts;\n2. **this app's own** `PlantumlBuilder` gets its two render entry points\nreplaced with one\n   that raises, naming the parameter that would have enabled rendering;\n3. the `plantuml` config value is pointed at a command that cannot be\nrun.\n\n(2) is on the app, not on `outdir`, because ten test functions run a\nreal `sphinx-build`\nsubprocess — two into `app.outdir` — and a rendered file there is not\nthe fixture's doing.\n(3) is a *sentinel* rather than a fence: its protection is that the\ntoken cannot be `exec`-ed,\nand sphinxcontrib turns the error it provokes into a warning. The\ndocstring says so.\n\n**The fence is a property of this app object**, and the prose now says\nwhat goes round it. A\n`sphinx-build` **subprocess** reads the project's own `conf.py`, where\nsphinxcontrib's default\nis that bare word. Measured with a logging `plantuml`/`java` shim on\n`PATH`,\n`test_needuml.py::test_needuml_diagram_allowmixing` was drawing **eight\ndiagrams with homebrew\n1.2026.1** — long before this branch. A `plantuml_subprocess_args`\nfixture now passes the\nsuite's resolved command in: the same measurement goes from **225\npinned-jar / 14 unpinned\nstarts to 233 / 6**. The six left are `test_needpie.py`'s two `make_app`\ncallers, which take\nno renderer fixture at all — named in `AGENTS.md`, and the\nshared-test-layer slice's to close.\n\nAll three happen after the app exists, not through `confoverrides`: 88\nof the 138 test\nprojects do not load the extension, and injecting the config value into\nthose is what earned\n\"unknown config value 'plantuml' in override, ignoring\" — the one\nwarning\n`test_plantuml_unconfigured` loses here. `plantuml_command` also stops\nbeing named in\n`test_app`'s signature: it *raises* when it finds no renderer, and a\nfixture named in a\nsignature is resolved whether or not the body uses it, which is why a\nmachine with no jar used\nto see 478 errors and now sees 157.\n\n## What this buys\n\n`poe test-needs`, serial, back to back on one warm machine: **387.04 s →\n280.58 s, −27.5 %**,\nat an unchanged 1757 passed / 12 skipped / 3 deselected. No test is\nskipped, deselected or\nweakened; the twelve that need a renderer say so.\n\nThe browser lane drops its renderer entirely: `test-needs-js` loses\n`deps = [\"fetch-plantuml\"]` and the `tests-js` lane loses its\n`PLANTUML_JAR` step. Proved, not\nassumed — with `PLANTUML_JAR` naming a file that does not exist and\n`PATH` cut to the system\ndirectories the three browser cases pass, while the same environment\nturns `test_arch.py` into\n`RuntimeError: PLANTUML_JAR names … which is not a file`.\n\nA latent bug goes with it: `test_app` used to `.update()` the\n`confoverrides` dict **in\nplace** — the object inside the test module's own\n`@pytest.mark.parametrize` list, evaluated\nonce at collection and shared by every use of that parameter. It is\ncopied now.\n`plantuml_batch_size = 100` also rides along for opted-in builds; the\ngain is small\n(178.9 → 171.8 s over the seven opt-in modules), because this lever and\nthe inversion are\nsubstitutes, and the conformance corpus is measurably not worth batching\n(45.5 → 44.4 s).\n\n## Commits\n\nTen, each reviewable on its own: the mechanical deletion of all 130\n`no_plantuml` sites\n(deletions only) · the twelve opt-ins · the fixture inversion · the\nrender fence · the poe/CI\nsimplification · the batch size · the prose — then, after review, the\nsubprocess fix above ·\nthe 45 `doc_test/*/conf.py` comments claiming the suite sets their\ncommand (true of 10 of\nthem; now true of all 45) · and four prose corrections. The one that\nmattered:\n`vendor/plantuml/README.md`'s bump checklist claimed every rendering\ntest was in five named\npaths, and four files with 20 jar starts were outside them. It is a\nplain\n`uv run poe test-needs` now — affordable exactly because of this PR.\n\nNo changelog entry: nothing here changes sphinx-needs' behaviour for\nanyone who installs it\n(the diff touches no file under any package's `src/`).\n\nSlice 1 of a four-slice arc ending in one shared test layer for\nsphinx-needs, sphinx-mounts\nand sphinx-codelinks. It stands alone and moves no code between\npackages.",
+          "timestamp": "2026-09-07T06:53:40+02:00",
+          "tree_id": "ce11bb6c8b069d0a6710663c7fa45a1b83035133",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/b15a2b47fe613c65d3a9f94d91cea926c8956f4f"
+        },
+        "date": 1788756850197,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.13135802700000454,
+            "unit": "s",
+            "extra": "Commit: b15a2b47fe613c65d3a9f94d91cea926c8956f4f\nBranch: master\nTime: 2026-09-07T06:53:40+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 11.17983436199998,
+            "unit": "s",
+            "extra": "Commit: b15a2b47fe613c65d3a9f94d91cea926c8956f4f\nBranch: master\nTime: 2026-09-07T06:53:40+02:00"
           }
         ]
       }
