@@ -91,42 +91,20 @@ def process_need(
 
 ### Rendering PlantUML is opt in
 
-**A `test_app` build renders no diagram unless its parameter dict says `"plantuml": True`.**
-A `.. uml::`, `needflow`, `needuml`, `needarch`, `needsequence` or `needgantt` directive still
-parses and still reaches the doctree — so a test that inspects the emitted diagram *source*,
-or the `.puml` files sphinx-needs writes itself, needs nothing — but the renderer is inert:
-the node visitors drop the node, the app's own `PlantumlBuilder` refuses to render with an
-`AssertionError` naming the parameter, and the `plantuml` configuration is pointed at a
-command that cannot be run (`make_plantuml_inert` in `tests/conftest.py`).
+A `test_app` build renders no diagram unless its parameter dict says `"plantuml": True`.
+Otherwise the renderer is inert (`make_plantuml_inert` in `tests/conftest.py`): diagram
+directives still parse and reach the doctree, so a test that inspects diagram *source* or the
+`.puml` files sphinx-needs writes needs nothing, but no JVM starts — about two seconds each,
+which used to be a third of the suite's wall time. Opt in only when the test asserts on a
+**rendered** diagram: the `<object>` in the HTML, the SVG behind it, or a warning only the
+render path emits.
 
-**It fences the app `test_app` builds, and nothing else.** Two routes go round it, and both
-are older than the opt-in:
-
-- a test that runs `sphinx-build` as a **subprocess** gets a process the fixture cannot
-  patch, and it reads the project's own `conf.py` — where sphinxcontrib-plantuml's default is
-  the bare word `plantuml`. Pass the `plantuml_subprocess_args` fixture into the argv, as the
-  two tests that render this way do, and the subprocess uses the suite's own pinned renderer;
-- a test that calls **`make_app` directly** on a project that loads `sphinxcontrib.plantuml`,
-  without taking the `plantuml_command` fixture, renders with whatever `plantuml` is on
-  `PATH`. `tests/test_needpie.py` has the only two such cases today.
-
-Opt in only when the test asserts on a RENDERED diagram — the `<object data=…>` in the HTML,
-the SVG behind it, or a warning only the render path emits. Twelve of the suite's 266
-parameter dicts do (`git grep -n '"plantuml": True' tests`), and each JVM start costs about
-two seconds, which is where a third of the suite's wall time used to go.
-
-Six test projects render through matplotlib instead (`needpie`, `needbar`); they are
-unaffected, and need no jar.
-
-The tests that need a jar without going through `test_app` call `make_app` themselves and
-take the session-scoped `plantuml_command` fixture: `tests/conformance/needflow/`,
-`tests/test_needflow.py`, `tests/test_plantuml_incdir.py` — or run `sphinx-build` as a
-subprocess and take `plantuml_subprocess_args`: `tests/test_needuml.py::test_needuml_diagram_allowmixing`,
-`tests/test_needs_external_needs_build.py::test_doc_build_html`. (`tests/test_plantuml_command.py`
-renders nothing: it unit-tests the resolution chain against a fabricated jar.)
-That fixture RAISES rather than skipping when it finds no renderer, which is why it is
-requested inside the opt-in branch of `test_app` rather than named in its signature — a
-fixture named in a signature is resolved whether or not the body uses it.
+The fence covers the app `test_app` builds and nothing else. A test that runs `sphinx-build`
+as a subprocess passes the `plantuml_subprocess_args` fixture into its argv; a test that calls
+`make_app` directly on a project that loads `sphinxcontrib.plantuml` takes the
+`plantuml_command` fixture. Both then render with the suite's pinned jar; without them a build
+renders with whatever `plantuml` is on `PATH`, silently. `plantuml_command` raises rather than
+skips when it finds no renderer, so request it only where a render is asserted.
 
 ### Writing Tests
 
