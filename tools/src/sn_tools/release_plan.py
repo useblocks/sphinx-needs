@@ -110,10 +110,28 @@ class PlanError(RuntimeError):
     """A condition that must stop the release rather than be guessed at."""
 
 
+def private_classifier(project: dict[str, Any]) -> str:
+    """The `Private ::` classifier this member declares, for a message to name."""
+    return next(
+        (
+            item
+            for item in project.get("classifiers", [])
+            if isinstance(item, str) and item.startswith(PRIVATE_PREFIX)
+        ),
+        PRIVATE_CLASSIFIER,
+    )
+
+
 # PyPI rejects any distribution whose metadata carries a classifier beginning `Private ::`
 # (packaging.python.org/en/latest/guides/writing-pyproject-toml/). It is the marker for a
 # member this repository builds and installs but never publishes -- the shared test layer,
-# which the release workflow's compat cell has to be able to install
+# which the release workflow's compat cell has to be able to install.
+#
+# The PREFIX is the rule, so it is what the predicate tests. Testing one exact string
+# instead would refuse `Private :: Do Not Upload` and PLAN `Private :: Internal Use Only`,
+# which is just as unpublishable -- the tag accepted, the wheel built, the compat cell run,
+# and PyPI refusing the upload at the last possible moment.
+PRIVATE_PREFIX = "Private ::"
 PRIVATE_CLASSIFIER = "Private :: Do Not Upload"
 
 
@@ -184,7 +202,10 @@ def members(root: Path) -> Workspace:
             directories[key] = path.parent
             if raw.get("tool", {}).get("uv", {}).get("package") is False:
                 virtual.add(key)
-            if PRIVATE_CLASSIFIER in data.get("classifiers", []):
+            if any(
+                isinstance(item, str) and item.startswith(PRIVATE_PREFIX)
+                for item in data.get("classifiers", [])
+            ):
                 private.add(key)
     return Workspace(out, virtual, directories, private)
 
@@ -881,8 +902,8 @@ def plan(args: argparse.Namespace) -> int:
         why = (
             "a virtual member (`[tool.uv] package = false`)"
             if dist in virtual
-            else f"a private member (it declares the classifier `{PRIVATE_CLASSIFIER}`, "
-            "which PyPI rejects on upload)"
+            else "a private member (it declares the classifier "
+            f"`{private_classifier(found[dist])}`, which PyPI rejects on upload)"
         )
         raise PlanError(
             f"`{found[dist]['name']}` is {why}: this repository never releases it, and "
@@ -929,7 +950,7 @@ def plan(args: argparse.Namespace) -> int:
             why = (
                 "a virtual member (`[tool.uv] package = false`)"
                 if dependency in virtual
-                else f"a private member (`{PRIVATE_CLASSIFIER}`)"
+                else f"a private member (`{private_classifier(found[dependency])}`)"
             )
             raise PlanError(
                 f"{found[dist]['name']} declares a runtime (or extra) dependency on "

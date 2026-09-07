@@ -65,6 +65,7 @@ def write_member(
     virtual: bool = False,
     private: bool = False,
     private_classifier: bool = True,
+    classifiers: list[str] | None = None,
     extra_tables: str | None = None,
 ) -> Path:
     """One member manifest, plus (optionally) a module carrying a `__version__` literal."""
@@ -79,7 +80,10 @@ def write_member(
         lines.append(f'version = "{version}"')
     lines.append(f'requires-python = "{requires_python}"')
     lines.append(f"dependencies = [{toml_list(dependencies or [])}]")
-    if (virtual or private) and private_classifier:
+    if classifiers is not None:
+        # an explicit list, for a test about WHICH classifier is declared
+        lines.append(f"classifiers = [{toml_list(classifiers)}]")
+    elif (virtual or private) and private_classifier:
         # what check (6) demands of every member this repository never publishes -- a
         # virtual one, and one the root reaches only through a dependency group. A test
         # that wants it red passes `private_classifier=False`

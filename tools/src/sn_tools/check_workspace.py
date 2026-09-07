@@ -49,6 +49,11 @@ a failure mode that no other gate in this repository can see:
    refuse the artefact if anyone ever tries, and it is what
    `tools/src/sn_tools/release_plan.py` reads to refuse the tag; being one line that looks
    like decoration it is exactly the line a future tidy-up deletes, so it is asserted here.
+   The converse is refused too: a member the root depends on in `[project] dependencies` --
+   the list of what this repository publishes -- may not carry such a classifier, because
+   PyPI would refuse the very artefact that list says is shipped. The predicate is the
+   PREFIX, not one spelling: `Private :: Internal Use Only` is as unpublishable as
+   `Private :: Do Not Upload`.
 
 7. **no member carries a table the root owns.** `[dependency-groups]`, `[tool.ruff]`,
    `[tool.pytest]` and `[tool.ty]` (with everything nested under them) are declared once,
@@ -97,7 +102,10 @@ from packaging.version import InvalidVersion, Version
 ROOT_MANIFEST = "pyproject.toml"
 # PyPI rejects any distribution whose metadata carries a classifier beginning `Private ::`
 # (packaging.python.org/en/latest/guides/writing-pyproject-toml/), which is the only thing
-# standing between a by-hand `uv build tools/` and an upload
+# standing between a by-hand `uv build tools/` and an upload. The PREFIX is the rule, so it
+# is what the predicate tests; the full spelling below is the one this repository writes and
+# the one an error message recommends
+PRIVATE_PREFIX = "Private ::"
 PRIVATE_CLASSIFIER = "Private :: Do Not Upload"
 
 # Configuration the ROOT owns, for the whole workspace, with the reason a copy in a member
@@ -180,15 +188,22 @@ class Member:
         return self.data.get("tool", {}).get("uv", {}).get("package") is False
 
     @property
-    def private(self) -> bool:
-        """`Private :: Do Not Upload` -- the marker for a member that is never published.
+    def private(self) -> str | None:
+        """The `Private ::` classifier this member declares, if it declares one.
 
         PyPI rejects any distribution whose metadata carries a classifier beginning
-        `Private ::`, so this is the one declaration that holds outside this repository
-        as well as inside it. `release_plan.py` refuses a tag naming such a member, which
-        is what actually makes it unreleasable; this class only reports the flag.
+        `Private ::`, so this is the one declaration that holds outside this repository as
+        well as inside it. The PREFIX is tested rather than the full string, because the
+        prefix is what the rule says: `Private :: Internal Use Only` is as unpublishable as
+        the spelling this repository happens to use, and a predicate that missed it would
+        let such a member through every gate here and leave PyPI to refuse the upload --
+        the last possible moment. `release_plan.py` refuses a tag naming such a member,
+        which is what actually makes it unreleasable; this class only reports the flag.
         """
-        return PRIVATE_CLASSIFIER in self.project.get("classifiers", [])
+        for classifier in self.project.get("classifiers", []):
+            if isinstance(classifier, str) and classifier.startswith(PRIVATE_PREFIX):
+                return classifier
+        return None
 
     @property
     def module(self) -> str:
@@ -566,18 +581,32 @@ def check_private_classifier(
                 f"is declared only in the root's `{group}` dependency group, so it is "
                 "part of no product and nothing downstream could want it from an index"
             )
+        elif member.private:
+            # the converse, and it is a contradiction rather than a nicety: the member is
+            # in the list that says "this is one of the things this repository ships", and
+            # it carries the one classifier that guarantees it can never be shipped
+            report.error(
+                member.relative,
+                f"{member.name} declares the classifier `{member.private}`, so PyPI will "
+                "refuse it and this repository can never publish it -- but the root "
+                "depends on it in [project] dependencies, which is the list of members "
+                "that ARE published. Move it to the dependency group whose environments "
+                "need it, or drop the classifier",
+            )
+            continue
         else:
             continue
         if member.private:
-            report.ok(f"{member.relative}: declares `{PRIVATE_CLASSIFIER}`")
+            report.ok(f"{member.relative}: declares `{member.private}`")
         else:
             report.error(
                 member.relative,
                 f"{member.name} {why}, and this repository therefore never publishes it "
-                f'-- but it does not declare the classifier "{PRIVATE_CLASSIFIER}". That '
-                "classifier is what makes PyPI refuse the artefact, and what "
-                "`release_plan.py` reads to refuse the release tag; without it the member "
-                "is one `git tag` away from being published",
+                f'-- but it declares no "{PRIVATE_PREFIX}" classifier. Such a classifier '
+                f'("{PRIVATE_CLASSIFIER}" is the spelling this repository uses) is what '
+                "makes PyPI refuse the artefact, and what `release_plan.py` reads to "
+                "refuse the release tag; without one the member is one `git tag` away "
+                "from being published",
             )
 
 

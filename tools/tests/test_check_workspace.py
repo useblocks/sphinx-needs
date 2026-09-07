@@ -98,7 +98,7 @@ def test_a_member_in_a_group_still_needs_the_private_classifier(
     assert run(root) == 1
     out = capsys.readouterr().out
     assert "is declared only in the root's `test` dependency group" in out
-    assert 'does not declare the classifier "Private :: Do Not Upload"' in out
+    assert 'declares no "Private ::" classifier' in out
 
 
 def test_a_member_declared_in_both_places_is_an_error(workspace, capsys) -> None:
@@ -174,6 +174,46 @@ def test_a_private_member_is_not_held_to_the_tracking_policy(workspace, capsys) 
         root_groups={"test": ["acme-testkit"]},
     )
     assert run(root) == 0
+
+
+def test_any_private_prefix_classifier_counts(workspace, capsys) -> None:
+    """The rule is the PREFIX. `Private :: Internal Use Only` is as unpublishable as the
+    spelling this repository happens to use, and a predicate that tested one exact string
+    would let it through every gate here and leave PyPI to refuse the upload."""
+    root = workspace(
+        {
+            "acme-core": {"version": "1.0.0"},
+            "acme-testkit": {
+                "version": "0",
+                "classifiers": ["Private :: Internal Use Only"],
+            },
+        },
+        root_dependencies=["acme-core"],
+        root_groups={"test": ["acme-testkit"]},
+    )
+    assert run(root) == 0
+    assert "declares `Private :: Internal Use Only`" in capsys.readouterr().out
+
+
+def test_a_published_member_may_not_carry_a_private_classifier(
+    workspace, capsys
+) -> None:
+    """The converse, and it is a contradiction rather than a nicety: the member is in the
+    list that says what this repository ships, and carries the one line guaranteeing it
+    can never be shipped. Left unchecked it is planned, built, compat-celled and refused
+    by PyPI at the upload."""
+    root = workspace(
+        {
+            "acme-core": {
+                "version": "1.0.0",
+                "classifiers": ["Private :: Internal Use Only"],
+            }
+        },
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "declares the classifier `Private :: Internal Use Only`" in out
+    assert "the root depends on it in [project] dependencies" in out
 
 
 def test_a_runtime_dependency_on_a_private_member_is_an_error(
@@ -411,7 +451,7 @@ def test_a_virtual_member_must_declare_the_private_classifier(
     assert run(root) == 1
     out = capsys.readouterr().out
     assert "::error file=packages/acme-tools/pyproject.toml::" in out
-    assert 'does not declare the classifier "Private :: Do Not Upload"' in out
+    assert 'declares no "Private ::" classifier' in out
     assert "can still be built by hand" in out
 
 

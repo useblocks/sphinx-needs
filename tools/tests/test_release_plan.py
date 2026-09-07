@@ -336,6 +336,31 @@ def test_the_classifier_is_the_whole_of_the_refusal(workspace, capsys, offline) 
     assert '"dist": "acme-testkit"' in out
 
 
+def test_any_private_prefix_classifier_refuses_the_tag(
+    workspace, capsys, offline
+) -> None:
+    """The rule PyPI states is the PREFIX, and so is the predicate.
+
+    An exact-string test would refuse `Private :: Do Not Upload` and PLAN
+    `Private :: Internal Use Only`, which is exactly as unpublishable: the tag would be
+    accepted, the wheel built, the compat cell run, and the upload refused at the last
+    possible moment. The message names the classifier it actually found.
+    """
+    root = workspace(
+        {
+            "acme-core": {"version": "2.0.0"},
+            "acme-testkit": {
+                "version": "0",
+                "classifiers": ["Private :: Internal Use Only"],
+            },
+        }
+    )
+    assert run(root, "--tag", "acme-testkit-v0", "--rehearsal", "--no-git") == 1
+    out = capsys.readouterr().out
+    assert "`acme-testkit` is a private member" in out
+    assert "Private :: Internal Use Only" in out
+
+
 def test_a_runtime_dependency_on_a_private_member_is_refused(
     workspace, capsys, offline
 ) -> None:

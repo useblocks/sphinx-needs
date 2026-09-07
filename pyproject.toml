@@ -335,7 +335,11 @@ include = [
 # is deliberately absent from the `typing` environment, which pins the oldest supported
 # sphinx and docutils and nothing else it does not need. What the tests assert is asserted
 # by running them. `tools/tests` is a directory called `tests`, which is safe only because
-# nothing ever puts `tools/` itself on `sys.path` -- its conftest inserts `tools/src`
+# nothing ever puts `tools/` itself on `sys.path` -- its conftest inserts `tools/src`.
+# `packages/sphinx-needs-testkit/src` is absent from `include` above for that same reason
+# and not by oversight: it is test scaffolding whose whole surface is pytest fixtures, so
+# checking it would mean putting pytest into the floor environment for code that no
+# published package imports
 exclude = ["tools/tests"]
 
 [tool.ty.environment]
