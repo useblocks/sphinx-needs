@@ -88,16 +88,22 @@ def test_needuml_option_key_forbidden(test_app):
     [{"buildername": "html", "srcdir": "doc_test/doc_needuml_diagram_allowmixing"}],
     indirect=True,
 )
-def test_needuml_diagram_allowmixing(test_app):
+def test_needuml_diagram_allowmixing(test_app, plantuml_subprocess_args):
     app = test_app
 
     srcdir = Path(app.srcdir)
     out_dir = srcdir / "_build"
 
     out = subprocess.run(
-        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
+        ["sphinx-build", "-M", "html", srcdir, out_dir, *plantuml_subprocess_args],
+        capture_output=True,
     )
     assert out.returncode == 0
+    # the subprocess renders eight diagrams, and a failed render is only a WARNING to
+    # sphinxcontrib-plantuml -- so without this the test is green on a renderer that
+    # cannot run, which is how it spent years drawing with whatever `plantuml` the
+    # machine carried
+    assert "error while running plantuml" not in out.stderr.decode("utf-8")
 
 
 @pytest.mark.parametrize(

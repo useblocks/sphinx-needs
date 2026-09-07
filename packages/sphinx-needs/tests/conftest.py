@@ -339,6 +339,24 @@ def make_plantuml_inert(app: SphinxTestApp) -> None:
         plantuml_builder.render_batches = _refuse_to_render
 
 
+@pytest.fixture(scope="session")
+def plantuml_subprocess_args(plantuml_command: str) -> list[str]:
+    """``sphinx-build`` arguments pointing a SUBPROCESS build at this suite's renderer.
+
+    :func:`make_plantuml_inert` patches an app object, and a test that shells out to
+    ``sphinx-build`` gets a process the fixture cannot reach: it reads the project's own
+    ``conf.py``, where sphinxcontrib-plantuml's default is the bare word ``plantuml``. Such
+    a build therefore renders with whatever renderer the machine happens to carry, unpinned
+    and silently -- measured, before this fixture existed, as eight diagrams drawn by a
+    developer's homebrew PlantUML 1.2026.1 against the 1.2026.8 ``vendor/plantuml/pin.toml``
+    names. Passing these in makes a subprocess build render with the same command every
+    in-process build uses, and raise on a machine that has no renderer at all.
+
+    :return: ``["-D", "plantuml=<command>"]``, to splat into a ``sphinx-build`` argv.
+    """
+    return ["-D", f"plantuml={plantuml_command}"]
+
+
 # node classes from extensions outside sphinx-needs are exempt from the parent check:
 # sphinx-design installs its tab nodes by assigning ``children`` directly, so they never get
 # a parent (#1757), and the invariant guarded here (#1564) is about sphinx-needs' own nodes
