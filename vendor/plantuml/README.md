@@ -136,9 +136,11 @@ success on exactly the mistake the fence is for. Lint runs it (`pytest tools/tes
    from a git ref with no checkout as its build context, so it downloads its own copy; this
    is the one place the version is repeated, and it is repeated deliberately.)
 5. `uv run poe verify-plantuml` — the check Lint will make — and re-run the renderer-heavy
-   suites — every sphinx-needs test that actually renders is in these five paths:
-   `uv run poe test-needs tests/conformance tests/test_plantuml.py tests/test_plantuml_incdir.py tests/test_needuml.py tests/test_needflow.py`,
-   `uv run poe docs-needs`, `uv run poe test-mounts`.
+   suites: `uv run poe test-needs`, `uv run poe docs-needs`, `uv run poe test-mounts`. **The
+   whole sphinx-needs suite, not a path list**: rendering is opt in now, so the suite is
+   cheap (280 s serial, ~100 s at `-n 4`) and it is the only check that cannot miss a
+   renderer — the 102 rendering cases are spread over nine files, and a hand-written path
+   list is precisely the thing a jar bump would be trusted with and get wrong.
 
 **Pushing a bump may need `http.postBuffer`.** Over an HTTPS remote, git buffers a push body
 up to `http.postBuffer` (1 MB by default) and switches to chunked transfer above it, which

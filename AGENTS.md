@@ -110,11 +110,28 @@ run on the pin, and Lint asserts the series it got equals the file.
 The machine needs `java` and graphviz's `dot` on `PATH` — the tests that render do not skip
 without them, so install graphviz as CI does (`apt-get install graphviz`). **`java` is needed
 by less of the sphinx-needs suite than it used to be**: rendering through the `test_app`
-fixture is opt in (`"plantuml": True` in the parameter dict — twelve parameter dicts do), and
-the rest of what needs a jar calls `make_app` itself: `tests/conformance/needflow/`,
-`tests/test_needflow.py`, `tests/test_plantuml_command.py` and `tests/test_plantuml_incdir.py`.
-Everything else in that suite renders nothing. `docs-needs` and the whole sphinx-mounts suite
-still need a renderer as before. **The PlantUML jar
+fixture is opt in (`"plantuml": True` in the parameter dict — twelve parameter dicts do).
+Measured with a logging `plantuml`/`java` shim first on `PATH`, the whole suite starts the
+pinned jar **233 times across 102 cases in 44 test functions in nine files**:
+`tests/test_needflow.py` (144 starts), `tests/conformance/needflow/` (46),
+`tests/test_needuml.py` (16), `tests/test_needs_external_needs_build.py` (12),
+`tests/test_plantuml_incdir.py` (5), `tests/test_arch.py` (4), and two each from
+`tests/test_github_issues.py`, `tests/test_needarch.py` and `tests/test_plantuml.py`. Most of
+those come from tests that call `make_app` themselves and take the `plantuml_command` fixture
+rather than opting in through `test_app`. `tests/test_plantuml_command.py` renders **nothing**
+— it fabricates a jar in `tmp_path` and unit-tests the resolution chain's string output.
+`docs-needs` and the whole sphinx-mounts suite still need a renderer as before.
+
+**What the inert renderer does and does not cover.** It is a property of the app object
+`test_app` builds, so it covers in-process builds through that fixture and nothing else. Two
+routes are outside it, both pre-dating the opt-in and both measured: a test that shells out to
+`sphinx-build` gets a process the fixture cannot patch (the two that do now pass the suite's
+own command in with the `plantuml_subprocess_args` fixture, so they render with the pinned
+jar); and a test that calls `make_app` directly on a project that loads
+`sphinxcontrib.plantuml` without taking `plantuml_command` renders with whatever `plantuml` is
+on `PATH` — `tests/test_needpie.py`'s two such cases are the whole of that today, six ambient
+renders, and closing it is the job of the slice that moves the renderer resolution into the
+shared test layer. **The PlantUML jar
 is committed**, once, at `vendor/plantuml/plantuml-<version>.jar` — the version
 `vendor/plantuml/pin.toml` names — so a checkout renders and **nothing has to reach the
 network**: not the 20 of a CI run's 26 jobs that render (counted on run 34057129950, on

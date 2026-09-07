@@ -303,17 +303,35 @@ def make_plantuml_inert(app: SphinxTestApp) -> None:
       starts, and a JVM start is 2.04 s of every 2.13 s render, measured.
     * THIS APP'S OWN ``PlantumlBuilder`` has its two render entry points replaced with one
       that raises. That is the assertion that nothing renders, and it is made on the app
-      rather than on the output directory because two tests in this suite
-      (``test_needs_external_needs_build.py::test_doc_build_html`` and
-      ``test_needuml.py::test_needuml_diagram_allowmixing``) run a real ``sphinx-build``
-      SUBPROCESS into ``app.outdir``: a rendered file found there cannot be attributed to
-      the fixture's app, while a call reaching this object can only have come from it.
-    * the ``plantuml`` configuration is pointed at :data:`_INERT_PLANTUML_COMMAND`, so
-      anything that builds its own command line out of the config -- rather than going
-      through the object above -- fails naming the parameter that would have enabled it,
-      instead of quietly running whatever ``plantuml`` the machine happens to carry.
-      sphinxcontrib's own default is the bare word ``plantuml``, so "unset" would mean
-      "render with an unpinned renderer, and say nothing".
+      rather than on the output directory because ten test functions in this suite run a
+      real ``sphinx-build`` SUBPROCESS (eight of them in ``test_needuml.py``), two of them
+      into ``app.outdir`` itself: a rendered file found in that directory cannot be
+      attributed to the fixture's app, while a call reaching this object can only have come
+      from it.
+    * the ``plantuml`` configuration is pointed at :data:`_INERT_PLANTUML_COMMAND`. This one
+      is a SENTINEL rather than a fence, and the difference is worth stating: its whole
+      protection is that the token cannot be ``exec``-ed, and when sphinxcontrib does try it
+      the resulting ``PlantUmlError`` is caught by its own ``_prepare_html_render``, logged as
+      a warning and turned into a ``SkipNode`` -- so a build that got past both layers above
+      would warn and drop the diagram rather than fail. It also does not reach the batch
+      renderer: ``PlantumlBuilder.__init__`` freezes ``_base_cmdargs`` at ``builder-inited``,
+      before this function runs, and only ``render()`` and ``render_plantuml_inline()`` read
+      the live config (layer two is what covers that path). What it does buy is that "not
+      opted in" never means "run sphinxcontrib's default", which is the bare word
+      ``plantuml`` -- i.e. render with an unpinned renderer, and say nothing.
+
+    Layer one could also be spelled with a PUBLIC config value: ``plantuml_output_format =
+    "none"`` makes ``_prepare_html_render`` raise ``SkipNode`` and zeroes the batch path's
+    ``image_formats``, in every sphinxcontrib-plantuml back to 0.18.1. It is not used here
+    because it covers only the html and latex builders, where ``_NODE_VISITORS`` covers all
+    seven; and the private name is safe to depend on precisely because layer two is loud --
+    if a future release dropped it, the import below raises ``ImportError`` at fixture setup
+    rather than quietly restoring rendering.
+
+    **What this does NOT cover**: anything that is not this app object. A test that runs
+    ``sphinx-build`` as a subprocess gets a process with its own config (see
+    :func:`plantuml_subprocess_args`), and a test that calls ``make_app`` directly without
+    taking :func:`plantuml_command` never comes through here at all.
 
     All of it happens after the app exists rather than through ``confoverrides``, because a
     project that does not load ``sphinxcontrib.plantuml`` -- 88 of this suite's 138 test

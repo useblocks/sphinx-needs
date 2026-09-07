@@ -198,10 +198,12 @@ jobs:
       codecov-flag: pytests
       codecov-name: sphinx-need-pytests
       upload-coverage: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.14' }}
-      # Rendering is opt in now, so this is a couple of dozen tests rather than 478: the
-      # twelve `test_app` parameter dicts that say `"plantuml": True`, plus the tests that
-      # call `make_app` themselves and take the `plantuml_command` fixture (the needflow
-      # conformance corpus, test_needflow, test_plantuml_command, test_plantuml_incdir).
+      # Rendering is opt in now, but that does not make the jar optional here: measured with
+      # a logging shim on PATH, the suite still starts it 233 times across about a hundred
+      # cases (102) in nine files -- the twelve `test_app` parameter dicts that say
+      # `"plantuml": True`, and, for most of it, the tests that call `make_app` themselves and
+      # take the `plantuml_command` fixture (test_needflow and the needflow conformance corpus
+      # between them are 190 of the 233).
       # That fixture still RAISES rather than skipping when it finds no renderer -- these
       # tests assert on rendered output and skipping them would be a false green -- so the
       # cells still need a jar. `actions/checkout` brings the committed one along and they

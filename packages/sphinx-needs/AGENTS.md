@@ -95,11 +95,20 @@ def process_need(
 A `.. uml::`, `needflow`, `needuml`, `needarch`, `needsequence` or `needgantt` directive still
 parses and still reaches the doctree — so a test that inspects the emitted diagram *source*,
 or the `.puml` files sphinx-needs writes itself, needs nothing — but the renderer is inert:
-the node visitors drop the node, the app's own `PlantumlBuilder` refuses to render, and the
-`plantuml` configuration is pointed at a command that cannot be run. A build that reaches a
-renderer anyway fails loudly, naming the parameter that would have enabled it, instead of
-quietly using whatever `plantuml` the machine happens to carry (`make_plantuml_inert` in
-`tests/conftest.py`).
+the node visitors drop the node, the app's own `PlantumlBuilder` refuses to render with an
+`AssertionError` naming the parameter, and the `plantuml` configuration is pointed at a
+command that cannot be run (`make_plantuml_inert` in `tests/conftest.py`).
+
+**It fences the app `test_app` builds, and nothing else.** Two routes go round it, and both
+are older than the opt-in:
+
+- a test that runs `sphinx-build` as a **subprocess** gets a process the fixture cannot
+  patch, and it reads the project's own `conf.py` — where sphinxcontrib-plantuml's default is
+  the bare word `plantuml`. Pass the `plantuml_subprocess_args` fixture into the argv, as the
+  two tests that render this way do, and the subprocess uses the suite's own pinned renderer;
+- a test that calls **`make_app` directly** on a project that loads `sphinxcontrib.plantuml`,
+  without taking the `plantuml_command` fixture, renders with whatever `plantuml` is on
+  `PATH`. `tests/test_needpie.py` has the only two such cases today.
 
 Opt in only when the test asserts on a RENDERED diagram — the `<object data=…>` in the HTML,
 the SVG behind it, or a warning only the render path emits. Twelve of the suite's 266
