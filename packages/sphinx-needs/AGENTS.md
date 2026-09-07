@@ -120,7 +120,10 @@ unaffected, and need no jar.
 
 The tests that need a jar without going through `test_app` call `make_app` themselves and
 take the session-scoped `plantuml_command` fixture: `tests/conformance/needflow/`,
-`tests/test_needflow.py`, `tests/test_plantuml_command.py`, `tests/test_plantuml_incdir.py`.
+`tests/test_needflow.py`, `tests/test_plantuml_incdir.py` — or run `sphinx-build` as a
+subprocess and take `plantuml_subprocess_args`: `tests/test_needuml.py::test_needuml_diagram_allowmixing`,
+`tests/test_needs_external_needs_build.py::test_doc_build_html`. (`tests/test_plantuml_command.py`
+renders nothing: it unit-tests the resolution chain against a fabricated jar.)
 That fixture RAISES rather than skipping when it finds no renderer, which is why it is
 requested inside the opt-in branch of `test_app` rather than named in its signature — a
 fixture named in a signature is resolved whether or not the body uses it.

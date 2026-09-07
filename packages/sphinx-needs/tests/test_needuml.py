@@ -104,6 +104,10 @@ def test_needuml_diagram_allowmixing(test_app, plantuml_subprocess_args):
     # cannot run, which is how it spent years drawing with whatever `plantuml` the
     # machine carried
     assert "error while running plantuml" not in out.stderr.decode("utf-8")
+    # ...and a renderer that cannot even be STARTED is a different message ("plantuml
+    # command ... cannot be run"), also a WARNING: the positive assertion is that the
+    # diagrams exist. Eight on a good build; none under either failure (measured)
+    assert list((out_dir / "html" / "_images").glob("plantuml-*"))
 
 
 @pytest.mark.parametrize(

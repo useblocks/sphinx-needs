@@ -303,8 +303,8 @@ def make_plantuml_inert(app: SphinxTestApp) -> None:
       starts, and a JVM start is 2.04 s of every 2.13 s render, measured.
     * THIS APP'S OWN ``PlantumlBuilder`` has its two render entry points replaced with one
       that raises. That is the assertion that nothing renders, and it is made on the app
-      rather than on the output directory because ten test functions in this suite run a
-      real ``sphinx-build`` SUBPROCESS (eight of them in ``test_needuml.py``), two of them
+      rather than on the output directory because 23 test functions in this suite run a
+      real ``sphinx-build`` SUBPROCESS (twelve of them in ``test_needuml.py``), four of them
       into ``app.outdir`` itself: a rendered file found in that directory cannot be
       attributed to the fixture's app, while a call reaching this object can only have come
       from it.
