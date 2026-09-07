@@ -393,7 +393,13 @@ def test_app(make_app, sphinx_test_tempdir, request):
         # with no renderer, and a fixture named in a signature is resolved whether or not
         # the body uses it
         sphinx_conf_overrides.update(
-            plantuml=request.getfixturevalue("plantuml_command")
+            plantuml=request.getfixturevalue("plantuml_command"),
+            # sphinxcontrib-plantuml renders one diagram per `java` process by default
+            # (`plantuml_batch_size` is 1, and `collect_nodes` is only called above 1), and
+            # the JVM start is 2.04 s of every 2.13 s render, measured. Batching renders a
+            # whole document's diagrams in one process. 100 is "as many as there are": the
+            # largest opted-in project draws a dozen
+            plantuml_batch_size=100,
         )
 
     srcdir = builder_params.get("srcdir")
