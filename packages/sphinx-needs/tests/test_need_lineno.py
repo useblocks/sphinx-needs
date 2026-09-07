@@ -28,9 +28,9 @@ from typing import Any
 
 import pytest
 from sphinx.testing.util import SphinxTestApp
-from sphinx.util.console import strip_colors
 
 from sphinx_needs.api import get_needs_view
+from tests.conftest import build_warnings
 
 PROLOG = """\
 .. |project| replace:: The Project
@@ -268,10 +268,9 @@ def test_a_generated_needs_warnings_do_not_move_with_the_line_counter(
     app = test_app
     app.build()
 
-    index = Path(str(app.srcdir)) / "index.rst"
     reported = sorted(
-        line.split(": ERROR:")[0]
-        for line in strip_colors(app._warning.getvalue()).splitlines()
-        if "Unknown interpreted text role" in line
+        record.split(": ERROR:")[0]
+        for record in build_warnings(app)
+        if "Unknown interpreted text role" in record
     )
-    assert reported == [f"{index}:8", f"{index}:9"]
+    assert reported == ["<srcdir>/index.rst:8", "<srcdir>/index.rst:9"]

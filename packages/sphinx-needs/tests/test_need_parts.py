@@ -1,13 +1,12 @@
 import json
-import os
 from pathlib import Path
 
 import pytest
 from sphinx.application import Sphinx
-from sphinx.util.console import strip_colors
 from syrupy.extensions.json import JSONSnapshotExtension
 
 from sphinx_needs.data import SphinxNeedsData
+from tests.conftest import build_warnings
 
 
 @pytest.fixture
@@ -24,14 +23,12 @@ def test_doc_need_parts(test_app: Sphinx, snapshot_json):
     app = test_app
     app.build()
 
-    warnings = strip_colors(
-        app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
-    ).splitlines()
+    warning_records = build_warnings(app)
     # print(warnings)
-    assert warnings == [
-        "srcdir/index.rst:38: WARNING: Need 'OTHER_1' has unknown outgoing link 'SP_TOO_001.unknown_part' in field 'links' [needs.link_outgoing]",
-        "srcdir/index.rst:26: WARNING: Need part not associated with a need. [needs.part]",
-        "srcdir/index.rst:36: WARNING: linked need part SP_TOO_001.unknown_part not found [needs.link_ref]",
+    assert warning_records == [
+        "<srcdir>/index.rst:38: WARNING: Need 'OTHER_1' has unknown outgoing link 'SP_TOO_001.unknown_part' in field 'links' [needs.link_outgoing]",
+        "<srcdir>/index.rst:26: WARNING: Need part not associated with a need. [needs.part]",
+        "<srcdir>/index.rst:36: WARNING: linked need part SP_TOO_001.unknown_part not found [needs.link_ref]",
     ]
 
     html = Path(app.outdir, "index.html").read_text()

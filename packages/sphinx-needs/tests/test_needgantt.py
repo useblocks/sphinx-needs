@@ -6,8 +6,9 @@ import re
 from pathlib import Path
 
 import pytest
-from sphinx.util.console import strip_colors
 from sphinxcontrib.plantuml import plantuml
+
+from tests.conftest import assert_no_warnings
 
 #: A ``conf.py`` for the inline source projects below.
 #: ``needgantt`` requires both of its value options to be numeric fields.
@@ -147,7 +148,7 @@ def test_tasks_are_addressed_by_id(test_app):
     sources = _capture_diagrams(app)
     app.build()
 
-    assert strip_colors(app._warning.getvalue()).strip() == ""
+    assert_no_warnings(app)
 
     assert len(sources) == 1
     uml = sources[0]
@@ -203,7 +204,7 @@ def test_start_date_is_the_given_date(test_app, date):
     sources = _capture_diagrams(app)
     app.build()
 
-    assert strip_colors(app._warning.getvalue()).strip() == ""
+    assert_no_warnings(app)
     assert f"Project starts {date}" in sources[0]
 
 
@@ -237,7 +238,7 @@ def test_a_float_completion_is_an_integer_percentage(test_app):
     sources = _capture_diagrams(app)
     app.build()
 
-    assert strip_colors(app._warning.getvalue()).strip() == ""
+    assert_no_warnings(app)
 
     uml = sources[0]
     assert "[TASK_A] is 90% completed" in uml

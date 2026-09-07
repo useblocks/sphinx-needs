@@ -18,7 +18,8 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
-from sphinx.util.console import strip_colors
+
+from tests.conftest import build_warnings
 
 INDEX = """\
 String links
@@ -85,7 +86,7 @@ def need_html(app: Any) -> str:
 
 def warnings_of(app: Any) -> str:
     """Every warning the build emitted, as one string."""
-    return strip_colors(app._warning.getvalue())
+    return "\n".join(build_warnings(app))
 
 
 def _meta_span(html: str, field: str) -> str:

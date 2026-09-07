@@ -1,5 +1,4 @@
 import json
-import os
 import sys
 from collections.abc import Callable
 from pathlib import Path
@@ -8,10 +7,10 @@ from typing import Any
 import pytest
 from sphinx import version_info as sphinx_version
 from sphinx.testing.util import SphinxTestApp
-from sphinx.util.console import strip_colors
 from syrupy.filters import props
 
 from sphinx_needs.exceptions import NeedsConfigException
+from tests.conftest import assert_no_warnings, build_warnings
 
 CURR_DIR = Path(__file__).parent
 
@@ -60,10 +59,8 @@ def test_schemas(
     app.build()
 
     assert app.statuscode == 0
-    warnings = strip_colors(app._warning.getvalue()).replace(
-        str(app.srcdir) + os.path.sep, "<srcdir>/"
-    )
-    assert warnings == snapshot
+    warnings_text = "\n".join(build_warnings(app))
+    assert warnings_text == snapshot
 
     schema_violations: dict[str, Any] = json.loads(
         Path(app.outdir, "schema_violations.json").read_text("utf8")
@@ -82,13 +79,9 @@ def test_schemas(
 )
 def test_schema_typing(test_app: SphinxTestApp, snapshot) -> None:
     test_app.build()
-    warnings = (
-        strip_colors(test_app._warning.getvalue())
-        .replace(str(test_app.srcdir) + os.path.sep, "<srcdir>/")
-        .splitlines()
-    )
-    print(warnings)
-    assert not warnings
+    warning_records = build_warnings(test_app)
+    print(warning_records)
+    assert_no_warnings(test_app)
 
     needs = json.loads(Path(test_app.outdir, "needs.json").read_text("utf8"))
     assert needs == snapshot(exclude=props("created", "project", "creator"))
@@ -101,8 +94,8 @@ def test_schema_typing(test_app: SphinxTestApp, snapshot) -> None:
 )
 def test_schema_e2e(test_app: SphinxTestApp, snapshot) -> None:
     test_app.build()
-    warnings = strip_colors(test_app._warning.getvalue())
-    assert warnings == snapshot
+    warnings_text = "\n".join(build_warnings(test_app))
+    assert warnings_text == snapshot
 
     json_data = Path(test_app.outdir, "needs.json").read_text()
     needs = json.loads(json_data)
@@ -130,8 +123,7 @@ def test_schema_e2e(test_app: SphinxTestApp, snapshot) -> None:
 def test_schema_example(test_app: SphinxTestApp, snapshot) -> None:
     """Check error-free build of the example from the docs."""
     test_app.build()
-    warnings = strip_colors(test_app._warning.getvalue())
-    assert not warnings
+    assert_no_warnings(test_app)
 
 
 @pytest.mark.parametrize(
@@ -183,7 +175,5 @@ def test_schema_benchmark(schema_benchmark_app, snapshot):
     """Test the benchmark project works."""
     schema_benchmark_app.build()
     assert schema_benchmark_app.statuscode == 0
-    warnings = strip_colors(schema_benchmark_app.warning.getvalue()).replace(
-        str(schema_benchmark_app.srcdir) + os.path.sep, "<srcdir>/"
-    )
-    assert warnings == snapshot
+    warnings_text = "\n".join(build_warnings(schema_benchmark_app))
+    assert warnings_text == snapshot

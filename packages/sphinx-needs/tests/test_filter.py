@@ -1,9 +1,7 @@
-import os
 from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
-from sphinx.util.console import strip_colors
 from sphinxcontrib.plantuml import plantuml
 
 from sphinx_needs.filter_common import filter_needs_parts, filter_needs_view
@@ -14,6 +12,7 @@ from sphinx_needs.need_item import (
     NeedsContent,
 )
 from sphinx_needs.views import NeedsView
+from tests.conftest import assert_no_warnings, build_warnings
 from tests.util import chart_images, pie_slice_counts
 
 
@@ -25,9 +24,7 @@ from tests.util import chart_images, pie_slice_counts
 def test_filter_build_html(test_app):
     app = test_app
     app.build()
-    warnings = strip_colors(app._warning.getvalue()).replace(
-        str(app.srcdir) + os.path.sep, "<srcdir>/"
-    )
+    warnings_text = "\n".join(build_warnings(app))
     # print(warnings.splitlines())
 
     expected_warnings = [
@@ -38,7 +35,7 @@ def test_filter_build_html(test_app):
         "<srcdir>/index.rst:63: WARNING: Filter 'zzz' not valid. Error: name 'zzz' is not defined. [needs.filter]",
     ]
 
-    assert warnings.splitlines() == expected_warnings
+    assert warnings_text.splitlines() == expected_warnings
 
     html = Path(app.outdir, "index.html").read_text()
     assert "story_a_1" in html
@@ -145,10 +142,7 @@ def test_this_doc_in_charts_and_need_count(test_app):
     app = test_app
     app.build()
 
-    warnings = strip_colors(app._warning.getvalue()).replace(
-        str(app.srcdir) + os.path.sep, "<srcdir>/"
-    )
-    assert warnings.splitlines() == []
+    assert_no_warnings(app)
 
     # index.rst holds two needs, page.rst one
     html = Path(app.outdir, "index.html").read_text()
@@ -246,8 +240,8 @@ def test_this_doc_in_diagram_filters(test_app):
     # no filter may have degraded to a warning either: every filter in this fixture
     # raises on failure today, so this is a backstop against a future downgrade of
     # the failure mode
-    warnings = strip_colors(app._warning.getvalue())
-    assert "needs.filter" not in warnings
+    warnings_text = "\n".join(build_warnings(app))
+    assert "needs.filter" not in warnings_text
 
     index_sequence, index_flow, index_gantt = sources["index"]
     page_sequence, page_flow, page_gantt = sources["page"]

@@ -432,7 +432,6 @@
     Need path:      IMPL_SAFE_P10 > links > SPEC_SAFE_UNSAFE_FEAT_P10 > links > FEAT_P10
     Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links > items > validate > network > links > items > local > allOf > 1 > allOf > 0 > properties > asil > enum
     Schema message: "QM" is not one of "A", "B" or 2 other candidates [sn_schema_violation.network_local_fail]
-  
   '''
 # ---
 # name: test_schema_benchmark[10]
@@ -481,7 +480,6 @@
     Need path:      IMPL_SAFE_P1 > links > SPEC_SAFE_UNSAFE_FEAT_P1 > links > FEAT_P1
     Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links > items > validate > network > links > items > local > allOf > 1 > allOf > 0 > properties > asil > enum
     Schema message: "QM" is not one of "A", "B" or 2 other candidates [sn_schema_violation.network_local_fail]
-  
   '''
 # ---
 # name: test_schema_config[both_definitions_and_json_given]
@@ -790,7 +788,6 @@
     Need path:      SPEC_SAFE
     Schema path:    spec[1] > local > unevaluatedProperties
     Schema message: Unevaluated properties are not allowed ('priority', 'asil', 'approved', 'links' were unexpected) [sn_schema_violation.local_fail]
-  
   '''
 # ---
 # name: test_schema_e2e[test_app0].1
@@ -2871,7 +2868,6 @@
     Need path:      IMPL_1
     Schema path:    fields > schema > properties > array_field > uniqueItems
     Schema message: ["a","a"] has non-unique elements [sn_schema_violation.field_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/fields-array_unique_items].1
@@ -2915,7 +2911,6 @@
     Need path:      IMPL_1
     Schema path:    [0] > local > properties > asil > const
     Schema message: "QM" was expected [sn_schema_violation.local_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/fields-auto_inject_type_wrong_const].1
@@ -2952,10 +2947,7 @@
   })
 # ---
 # name: test_schemas[schema/fixtures/fields-coerce_to_boolean_from_string_error]
-  '''
-  <srcdir>/index.rst:1: WARNING: Need could not be created: Field 'approved' is invalid: Cannot convert 'not-a-boolean' to boolean [needs.create_need]
-  
-  '''
+  "<srcdir>/index.rst:1: WARNING: Need could not be created: Field 'approved' is invalid: Cannot convert 'not-a-boolean' to boolean [needs.create_need]"
 # ---
 # name: test_schemas[schema/fixtures/fields-coerce_to_boolean_from_string_error].1
   dict({
@@ -2975,10 +2967,7 @@
   })
 # ---
 # name: test_schemas[schema/fixtures/fields-coerce_to_integer_from_float_error]
-  '''
-  <srcdir>/index.rst:1: WARNING: Need could not be created: Field 'efforts' is invalid: Cannot convert '1.2' to integer [needs.create_need]
-  
-  '''
+  "<srcdir>/index.rst:1: WARNING: Need could not be created: Field 'efforts' is invalid: Cannot convert '1.2' to integer [needs.create_need]"
 # ---
 # name: test_schemas[schema/fixtures/fields-coerce_to_integer_from_float_error].1
   dict({
@@ -2988,10 +2977,7 @@
   })
 # ---
 # name: test_schemas[schema/fixtures/fields-coerce_to_integer_from_string_error]
-  '''
-  <srcdir>/index.rst:1: WARNING: Need could not be created: Field 'efforts' is invalid: Cannot convert 'QM' to integer [needs.create_need]
-  
-  '''
+  "<srcdir>/index.rst:1: WARNING: Need could not be created: Field 'efforts' is invalid: Cannot convert 'QM' to integer [needs.create_need]"
 # ---
 # name: test_schemas[schema/fixtures/fields-coerce_to_integer_from_string_error].1
   dict({
@@ -3011,10 +2997,7 @@
   })
 # ---
 # name: test_schemas[schema/fixtures/fields-coerce_to_number_from_string_error]
-  '''
-  <srcdir>/index.rst:1: WARNING: Need could not be created: Field 'efforts' is invalid: Cannot convert 'QM' to float [needs.create_need]
-  
-  '''
+  "<srcdir>/index.rst:1: WARNING: Need could not be created: Field 'efforts' is invalid: Cannot convert 'QM' to float [needs.create_need]"
 # ---
 # name: test_schemas[schema/fixtures/fields-coerce_to_number_from_string_error].1
   dict({
@@ -3041,7 +3024,6 @@
     Need path:      IMPL_1
     Schema path:    [0] > local > properties > asil > const
     Schema message: "QM" was expected [sn_schema_violation.local_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/fields-const_error].1
@@ -3085,7 +3067,6 @@
     Need path:      IMPL_1
     Schema path:    [0] > local > properties > asil > enum
     Schema message: "E" is not one of "QM", "A" or 3 other candidates [sn_schema_violation.local_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/fields-enum_error].1
@@ -3129,7 +3110,6 @@
     Need path:      IMPL_1
     Schema path:    fields > schema > properties > efforts > multipleOf
     Schema message: 8 is not a multiple of 3 [sn_schema_violation.field_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/fields-integer_multiple_of_error].1
@@ -3169,7 +3149,6 @@
     Need path:      IMPL_1
     Schema path:    fields > schema > properties > severity > enum
     Schema message: "critical" is not one of "low", "medium" or "high" [sn_schema_violation.field_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/fields-multiple_errors_per_need].1
@@ -3237,7 +3216,6 @@
     Need path:      IMPL_1
     Schema path:    fields > schema > properties > efforts > multipleOf
     Schema message: 5.0 is not a multiple of 3.3 [sn_schema_violation.field_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/fields-number_multiple_of_error].1
@@ -3301,7 +3279,6 @@
     Schema path:    [0] > local > required
     User message:   Required due to high efforts
     Schema message: "asil" is a required property [sn_schema_violation.local_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/fields-required_based_on_select_field_over_threshold].1
@@ -3334,7 +3311,6 @@
     Need path:      IMPL_1
     Schema path:    [0] > local > required
     Schema message: "asil" is a required property [sn_schema_violation.local_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/fields-required_missing].1
@@ -3367,7 +3343,6 @@
     Need path:      IMPL_1
     Schema path:    [0] > local > properties > asil > const
     Schema message: "B" was expected [sn_schema_violation.local_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/fields-select_by_docname].1
@@ -3411,7 +3386,6 @@
     Need path:      IMPL_1
     Schema path:    [0] > local > properties > asil > const
     Schema message: "B" was expected [sn_schema_violation.local_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/fields-select_by_is_external_false].1
@@ -3455,7 +3429,6 @@
     Need path:      IMPL_1
     Schema path:    [0] > local > properties > asil > const
     Schema message: "B" was expected [sn_schema_violation.local_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/fields-select_by_is_import_false].1
@@ -3509,7 +3482,6 @@
     Need path:      IMPL_2
     Schema path:    fields > schema > properties > status > enum
     Schema message: "other" is not one of "open", "in progress" or "closed" [sn_schema_violation.field_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/fields-status_enum].1
@@ -3536,10 +3508,7 @@
   })
 # ---
 # name: test_schemas[schema/fixtures/fields-status_non_nullable]
-  '''
-  <srcdir>/index.rst:5: WARNING: Need could not be created: Field 'status' is not nullable, but no value or default was given. [needs.create_need]
-  
-  '''
+  "<srcdir>/index.rst:5: WARNING: Need could not be created: Field 'status' is not nullable, but no value or default was given. [needs.create_need]"
 # ---
 # name: test_schemas[schema/fixtures/fields-status_non_nullable].1
   dict({
@@ -3566,7 +3535,6 @@
     Need path:      IMPL_1
     Schema path:    fields > schema > properties > start_date > format
     Schema message: "not-a-date" is not a "date" [sn_schema_violation.field_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/fields-string_format_date_error].1
@@ -3610,7 +3578,6 @@
     Need path:      IMPL_1
     Schema path:    fields > schema > properties > start_date > format
     Schema message: "2025-07-1099:99:99Z" is not a "date-time" [sn_schema_violation.field_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/fields-string_format_date_time_error].1
@@ -3654,7 +3621,6 @@
     Need path:      IMPL_1
     Schema path:    fields > schema > properties > _duration > format
     Schema message: "P1Q2Q10DT2H30M" is not a "duration" [sn_schema_violation.field_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/fields-string_format_duration_error].1
@@ -3698,7 +3664,6 @@
     Need path:      IMPL_1
     Schema path:    fields > schema > properties > email > format
     Schema message: "not-a-mail" is not a "email" [sn_schema_violation.field_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/fields-string_format_email_error].1
@@ -3742,7 +3707,6 @@
     Need path:      IMPL_1
     Schema path:    fields > schema > properties > time > format
     Schema message: "26:12:13+00:00" is not a "time" [sn_schema_violation.field_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/fields-string_format_time_error].1
@@ -3786,7 +3750,6 @@
     Need path:      IMPL_1
     Schema path:    fields > schema > properties > uri > format
     Schema message: "examplecom" is not a "uri" [sn_schema_violation.field_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/fields-string_format_uri_error].1
@@ -3830,7 +3793,6 @@
     Need path:      IMPL_1
     Schema path:    fields > schema > properties > uuid > format
     Schema message: "deadbeef-deadbeef-deadbeef-deadbeef" is not a "uuid" [sn_schema_violation.field_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/fields-string_format_uuid_error].1
@@ -3857,10 +3819,7 @@
   })
 # ---
 # name: test_schemas[schema/fixtures/fields-string_non_nullable]
-  '''
-  <srcdir>/index.rst:1: WARNING: Need could not be created: Field 'asil' is not nullable, but no value or default was given. [needs.create_need]
-  
-  '''
+  "<srcdir>/index.rst:1: WARNING: Need could not be created: Field 'asil' is not nullable, but no value or default was given. [needs.create_need]"
 # ---
 # name: test_schemas[schema/fixtures/fields-string_non_nullable].1
   dict({
@@ -3887,7 +3846,6 @@
     Need path:      IMPL_1
     Schema path:    fields > schema > properties > tags > items > enum
     Schema message: "b" is not one of "a" or "c" [sn_schema_violation.field_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/fields-tags_enum].1
@@ -3927,7 +3885,6 @@
     Need path:      IMPL_3
     Schema path:    fields > schema > properties > title > maxLength
     Schema message: "this title is too long" is longer than 20 characters [sn_schema_violation.field_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/fields-title_length].1
@@ -3970,10 +3927,7 @@
   })
 # ---
 # name: test_schemas[schema/fixtures/fields-wrong_type]
-  '''
-  <srcdir>/index.rst:1: WARNING: Need could not be created: Field 'asil' is invalid: Cannot convert 'QM' to integer [needs.create_need]
-  
-  '''
+  "<srcdir>/index.rst:1: WARNING: Need could not be created: Field 'asil' is invalid: Cannot convert 'QM' to integer [needs.create_need]"
 # ---
 # name: test_schemas[schema/fixtures/fields-wrong_type].1
   dict({
@@ -3990,7 +3944,6 @@
     Need path:      SPEC_1
     Schema path:    links > schema > properties > links > contains
     Schema message: None of [] are valid under the given schema [sn_schema_violation.link_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/links-contains].1
@@ -4030,7 +3983,6 @@
     Need path:      IMPL_1
     Schema path:    links > schema > properties > links > contains
     Schema message: None of ["SPEC_1"] are valid under the given schema [sn_schema_violation.link_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/links-contains_error].1
@@ -4086,7 +4038,6 @@
     Need path:      IMPL_1
     Schema path:    links > schema > properties > links > minItems
     Schema message: ["SPEC_1"] has less than 2 items [sn_schema_violation.link_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/links-inject_array].1
@@ -4146,7 +4097,6 @@
     Need path:      IMPL_1
     Schema path:    links > schema > properties > links > items > pattern
     Schema message: "SPEC_1" does not match "^[A-Z0-9_]{10,}" [sn_schema_violation.link_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/links-items_pattern_error].1
@@ -4186,7 +4136,6 @@
     Need path:      SPEC_2
     Schema path:    links > schema > properties > links > maxContains
     Schema message: None of [] are valid under the given schema [sn_schema_violation.link_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/links-max_contains].1
@@ -4248,7 +4197,6 @@
     Need path:      IMPL_1
     Schema path:    links > schema > properties > links > maxContains
     Schema message: None of ["SPEC_1","SPEC_2"] are valid under the given schema [sn_schema_violation.link_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/links-max_contains_error].1
@@ -4324,7 +4272,6 @@
     Need path:      IMPL_1
     Schema path:    links > schema > properties > links > maxItems
     Schema message: ["SPEC_1","SPEC_2"] has more than 1 item [sn_schema_violation.link_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/links-max_items_error].1
@@ -4358,7 +4305,6 @@
     Need path:      SPEC_1
     Schema path:    links > schema > properties > links > minContains
     Schema message: None of [] are valid under the given schema [sn_schema_violation.link_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/links-min_contains].1
@@ -4398,7 +4344,6 @@
     Need path:      IMPL_1
     Schema path:    links > schema > properties > links > minContains
     Schema message: None of ["SPEC_1"] are valid under the given schema [sn_schema_violation.link_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/links-min_contains_error].1
@@ -4448,7 +4393,6 @@
     Need path:      SPEC_1
     Schema path:    links > schema > properties > links > minItems
     Schema message: [] has less than 1 item [sn_schema_violation.link_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/links-min_items].1
@@ -4488,7 +4432,6 @@
     Need path:      IMPL_1
     Schema path:    links > schema > properties > links > minItems
     Schema message: ["SPEC_1"] has less than 2 items [sn_schema_violation.link_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/links-min_items_error].1
@@ -4543,7 +4486,6 @@
       Need path:      IMPL_SAFE > links > SPEC_UNSAFE
       Schema path:    safe-impl-[links]->safe-spec[0] > validate > network > links > contains > local > allOf > 0 > properties > asil > enum
       Schema message: "QM" is not one of "A", "B" or 2 other candidates [sn_schema_violation.network_contains_too_few]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/network-link_chain_hop_1_min_contains_error].1
@@ -4601,7 +4543,6 @@
         Need path:      IMPL_SAFE > links > SPEC_SAFE > links > REQ_UNSAFE
         Schema path:    safe-impl-[links]->safe-spec-[links]->safe-req[0] > validate > network > links > contains > validate > network > links > contains > local > allOf > 0 > properties > asil > enum
         Schema message: "QM" is not one of "A", "B" or 2 other candidates [sn_schema_violation.network_contains_too_few]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/network-link_chain_hop_2_min_contains_error].1
@@ -4704,7 +4645,6 @@
     Need path:      IMPL_1
     Schema path:    [0] > local > properties > links > maxItems
     Schema message: ["SPEC_1","SPEC_2"] has more than 1 item [sn_schema_violation.local_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/network-local_max_items_error].1
@@ -4748,7 +4688,6 @@
     Need path:      IMPL_1
     Schema path:    [0] > local > properties > links > minItems
     Schema message: ["SPEC_1"] has less than 2 items [sn_schema_violation.local_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/network-local_min_items_error].1
@@ -4791,7 +4730,6 @@
     Need path:      IMPL_1 > links
     Schema path:    [0] > validate > network > links > contains
     Schema message: Too many valid links of type 'links' (2 > 1) / ok: SPEC_1, SPEC_2 [sn_schema_violation.network_contains_too_many]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/network-max_contains_error].1
@@ -4823,7 +4761,6 @@
     Need path:      IMPL_1 > links > SPEC_5 > links > SPEC_4 > links > SPEC_3 > links > SPEC_2 > links > SPEC_1
     Schema path:    [0] > validate > network > links > items > validate > network > links > items > validate > network > links > items > validate > network > links > items > validate > network > links > items
     Schema message: Maximum network validation recursion level 4 reached. [sn_schema_violation.network_max_nest_level]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/network-max_network_levels].1
@@ -4865,7 +4802,6 @@
     Need path:      IMPL_1 > links
     Schema path:    [0] > validate > network > links > contains
     Schema message: Too few valid links of type 'links' (1 < 2) / ok: SPEC_1 [sn_schema_violation.network_contains_too_few]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/network-min_contains_error].1
@@ -4898,7 +4834,6 @@
     Need path:      REQ_1 > links (incoming) > IMPL_1
     Schema path:    req<-[links]-only-tests[0] > validate > network_back > links > items > local > properties > type > const
     Schema message: "test" was expected [sn_schema_violation.network_local_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/network-network_back_items_error].1
@@ -4931,7 +4866,6 @@
     Need path:      REQ_1 > links (incoming)
     Schema path:    req<-[links]-test-max-1[0] > validate > network_back > links > contains
     Schema message: Too many valid incoming links of type 'links' (2 > 1) / ok: TEST_1, TEST_2 [sn_schema_violation.network_contains_too_many]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/network-network_back_max_contains_error].1
@@ -4963,7 +4897,6 @@
     Need path:      REQ_1 > links (incoming)
     Schema path:    req<-[links]-test[0] > validate > network_back > links > contains
     Schema message: Too few valid incoming links of type 'links' (0 < 1) [sn_schema_violation.network_contains_too_few]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/network-network_back_min_contains_error].1
@@ -5016,7 +4949,6 @@
         Need path:      IMPL_1 > links > SPEC_1 > links (incoming) > IMPL_1
         Schema path:    impl->spec<-test[0] > validate > network > links > contains > validate > network_back > links > contains > local > properties > type > const
         Schema message: "test" was expected [sn_schema_violation.network_contains_too_few]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/network-network_back_nested_in_network_error].1
@@ -5104,7 +5036,6 @@
     Need path:      IMPL_1 > links > SPEC_1
     Schema path:    [0] > validate > network > links > items > local > properties > comment > const
     Schema message: "ok" was expected [sn_schema_violation.network_local_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/network-network_local_multi_error].1
@@ -5151,7 +5082,6 @@
     Need path:      IMPL_1 > links > SPEC_1
     Schema path:    [0] > validate > network > links > items > local > unevaluatedProperties
     Schema message: Unevaluated properties are not allowed ('asil' was unexpected) [sn_schema_violation.network_local_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/network-network_local_unevaluated_reduced_error].1
@@ -5193,7 +5123,6 @@
     Need path:      IMPL_SAFE > links
     Schema path:    impl-[links]->spec[0] > validate > network > links > contains
     Schema message: Too few valid links of type 'links' (0 < 1) [sn_schema_violation.network_contains_too_few]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/network-no_error_empty_links].1
@@ -5241,7 +5170,6 @@
       Need path:      IMPL_1 > links > SPEC_1
       Schema path:    [0] > validate > network > links > contains > local > properties > type > const
       Schema message: "req" was expected [sn_schema_violation.network_contains_too_few]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/network-schemas_in_conf_error].1
@@ -5288,7 +5216,6 @@
     Need path:      IMPL_1
     Schema path:    [0] > local > properties > asil > const
     Schema message: "A" was expected [sn_schema_violation.local_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/reporting-report_invalid_extra_field_default].1
@@ -5322,7 +5249,6 @@
     Need path:      IMPL_1
     Schema path:    [1] > local > properties > asil > const
     Schema message: "B" was expected [sn_schema_info.local_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/reporting-severity_default_suppress_severity].1
@@ -5370,7 +5296,6 @@
     Need path:      IMPL_1
     Schema path:    [1] > local > properties > asil > const
     Schema message: "B" was expected [sn_schema_info.local_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/reporting-severity_default_suppress_severity_and_rule].1
@@ -5418,7 +5343,6 @@
     Need path:      IMPL_1
     Schema path:    [0] > local > properties > asil > const
     Schema message: "A" was expected [sn_schema_violation.local_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/reporting-severity_rule_default].1
@@ -5452,7 +5376,6 @@
     Need path:      IMPL_1
     Schema path:    [0] > local > properties > asil > const
     Schema message: "A" was expected [sn_schema_info.local_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/reporting-severity_rule_info].1
@@ -5486,7 +5409,6 @@
     Need path:      IMPL_1
     Schema path:    [0] > local > properties > asil > const
     Schema message: "A" was expected [sn_schema_violation.local_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/reporting-severity_rule_violation].1
@@ -5520,7 +5442,6 @@
     Need path:      IMPL_1
     Schema path:    [0] > local > properties > asil > const
     Schema message: "A" was expected [sn_schema_warning.local_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/reporting-severity_rule_warning].1
@@ -5553,7 +5474,6 @@
     Need path:      IMPL_1
     Schema path:    [0] > local > unevaluatedProperties
     Schema message: Unevaluated properties are not allowed ('approved' was unexpected) [sn_schema_violation.local_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/unevaluated-unevaluated_allof_error].1
@@ -5585,7 +5505,6 @@
     Need path:      IMPL_1
     Schema path:    [0] > local > unevaluatedProperties
     Schema message: Unevaluated properties are not allowed ('comment' was unexpected) [sn_schema_violation.local_fail]
-  
   '''
 # ---
 # name: test_schemas[schema/fixtures/unevaluated-unevaluated_error].1

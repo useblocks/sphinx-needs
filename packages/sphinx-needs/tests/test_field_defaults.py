@@ -1,13 +1,12 @@
 import json
-import os
 from pathlib import Path
 
 import pytest
-from sphinx.util.console import strip_colors
 from syrupy.extensions import AmberSnapshotExtension
 from syrupy.filters import props
 
 from sphinx_needs.data import SphinxNeedsData
+from tests.conftest import build_warnings
 
 
 class SnapshotExtension(AmberSnapshotExtension):
@@ -35,10 +34,8 @@ def snapshot(snapshot):
 )
 def test_doc_global_option(test_app, snapshot):
     test_app.build()
-    warnings = strip_colors(
-        test_app._warning.getvalue().replace(str(test_app.srcdir) + os.sep, "srcdir/")
-    ).splitlines()
-    assert warnings == [
+    warning_records = build_warnings(test_app)
+    assert warning_records == [
         'WARNING: Config option "needs_global_options" is deprecated. Please use needs_fields and needs_links instead. [needs.deprecated]',
         "WARNING: needs_global_options['link3']['default'] value is incorrect: Invalid value for field 'link3': 1 [needs.config]",
         "WARNING: needs_global_options['bad_value_type']['default'] value is incorrect: Invalid value for field 'bad_value_type': 1.27 [needs.config]",
@@ -137,23 +134,21 @@ def test_invalid_predicate_default(test_app):
     """
     test_app.build()
 
-    warnings = strip_colors(
-        test_app._warning.getvalue().replace(str(test_app.srcdir) + os.sep, "srcdir/")
-    ).splitlines()
-    assert warnings == [
-        "srcdir/index.rst:4: WARNING: needs_fields['with_default']['predicates']: "
+    warning_records = build_warnings(test_app)
+    assert warning_records == [
+        "<srcdir>/index.rst:4: WARNING: needs_fields['with_default']['predicates']: "
         "Predicate \"section_name == 'Test'\" not valid. "
         "Error: name 'section_name' is not defined. "
         "The predicate is skipped. [needs.config]",
-        "srcdir/index.rst:4: WARNING: needs_fields['without_default']['predicates']: "
+        "<srcdir>/index.rst:4: WARNING: needs_fields['without_default']['predicates']: "
         "Predicate \"section_name == 'Test'\" not valid. "
         "Error: name 'section_name' is not defined. "
         "The predicate is skipped. [needs.config]",
-        "srcdir/index.rst:4: WARNING: needs_fields['later_predicate']['predicates']: "
+        "<srcdir>/index.rst:4: WARNING: needs_fields['later_predicate']['predicates']: "
         "Predicate \"section_name == 'Test'\" not valid. "
         "Error: name 'section_name' is not defined. "
         "The predicate is skipped. [needs.config]",
-        "srcdir/index.rst:4: WARNING: needs_links['blocks']['predicates']: "
+        "<srcdir>/index.rst:4: WARNING: needs_links['blocks']['predicates']: "
         "Predicate \"'body' in content\" not valid. "
         "Error: name 'content' is not defined. "
         "The predicate is skipped. [needs.config]",
@@ -186,10 +181,8 @@ def test_invalid_predicate_default(test_app):
 )
 def test_doc_field_defaults(test_app, snapshot):
     test_app.build()
-    warnings = strip_colors(
-        test_app._warning.getvalue().replace(str(test_app.srcdir) + os.sep, "srcdir/")
-    ).splitlines()
-    assert warnings == [
+    warning_records = build_warnings(test_app)
+    assert warning_records == [
         "WARNING: needs_fields['bad_value_type']['default'] value is incorrect: Invalid value for field 'bad_value_type': 1.27 [needs.config]",
         "WARNING: needs_fields['too_many_params']['predicates'] value is incorrect: defaults must be a list of (filter, value) pairs. [needs.config]",
         "WARNING: needs_links['link3']['default'] value is incorrect: Invalid value for field 'link3': 1 [needs.config]",

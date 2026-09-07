@@ -1,21 +1,13 @@
-import os
 import subprocess
 from pathlib import Path
 
 import pytest
 from docutils import nodes
-from sphinx.util.console import strip_colors
 from syrupy.filters import props
 
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.directives.needuml import get_debug_node_from_puml_node
-
-
-def _warnings(app) -> list[str]:
-    """Return the build's warnings, with the source directory path normalised away."""
-    return strip_colors(
-        app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
-    ).splitlines()
+from tests.conftest import build_warnings
 
 
 @pytest.mark.parametrize(
@@ -360,17 +352,17 @@ def test_needuml_option_warnings(test_app):
     app = test_app
     app.build()
 
-    assert _warnings(app) == [
-        "srcdir/index.rst:4: WARNING: config name 'no_such_config' is not defined in "
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:4: WARNING: config name 'no_such_config' is not defined in "
         "needs_flow_configs. [needs.needuml]",
-        "srcdir/index.rst:4: WARNING: extra option 'broken' is not a 'key:value' pair. "
+        "<srcdir>/index.rst:4: WARNING: extra option 'broken' is not a 'key:value' pair. "
         "[needs.needuml]",
-        'srcdir/index.rst:12: WARNING: scale value must be a number. "not-a-number" '
+        '<srcdir>/index.rst:12: WARNING: scale value must be a number. "not-a-number" '
         "found [needs.diagram_scale]",
     ]
     # the trailing commas of both options are skipped in silence, as an empty
     # `:config:` segment always has -- no "extra option '' is not a pair" line
-    assert not [line for line in _warnings(app) if "''" in line]
+    assert not [line for line in build_warnings(app) if "''" in line]
 
     needuml, scaled = app.env._needs_all_needumls.values()
     assert needuml["extra"] == {"url": "https://example.com/a:b", "plain": "value"}
@@ -463,18 +455,18 @@ def test_needuml_jinja_func_warnings(test_app):
     app = test_app
     app.build()
 
-    assert _warnings(app) == [
-        "srcdir/index.rst:13: WARNING: Jinja function ref() was given both 'option' "
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:13: WARNING: Jinja function ref() was given both 'option' "
         "and 'text' for need_id 'SP_001'; the value of 'option' is used. "
         "[needs.needuml]",
-        "srcdir/index.rst:13: WARNING: Jinja function ref() was given neither "
+        "<srcdir>/index.rst:13: WARNING: Jinja function ref() was given neither "
         "'option' nor 'text' for need_id 'SP_001'; the link is rendered without a "
         "label. [needs.needuml]",
-        "srcdir/index.rst:13: WARNING: Jinja function import() is called with option "
+        "<srcdir>/index.rst:13: WARNING: Jinja function import() is called with option "
         "name 'no_such_option', which does not exist in need SP_002. [needs.needuml]",
     ]
     # in particular: the defined-but-empty 'myopt' contributes no warning of its own
-    assert not [line for line in _warnings(app) if "'myopt'" in line]
+    assert not [line for line in build_warnings(app) if "'myopt'" in line]
 
     (needuml,) = app.env._needs_all_needumls.values()
     content = needuml["content_calculated"]
@@ -564,8 +556,8 @@ def test_needuml_save_without_plantuml(test_app):
     app = test_app
     app.build()
 
-    assert _warnings(app) == [
-        "srcdir/index.rst:4: WARNING: PlantUML is not available, so the diagram was "
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:4: WARNING: PlantUML is not available, so the diagram was "
         "not rendered. Install 'sphinxcontrib-plantuml' and add it to the "
         "'extensions' list to render it. [needs.needuml]"
     ]

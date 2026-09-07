@@ -6,9 +6,9 @@ import re
 from pathlib import Path, PurePosixPath, PureWindowsPath
 
 import pytest
-from sphinx.util.console import strip_colors
 
 from sphinx_needs.directives.needreport import DROPDOWN_MARKER
+from tests.conftest import assert_no_warnings, build_warnings
 
 SPHINX_DESIGN_INSTALLED = importlib.util.find_spec("sphinx_design") is not None
 
@@ -33,17 +33,13 @@ def highlighted_block(html: str) -> str:
     return match.group(0)
 
 
-def build_warnings(app) -> list[str]:
-    """Return the warnings of a finished build, one per line.
+def warning_lines(app) -> list[str]:
+    """The build's warnings, one entry per LINE rather than one per record.
 
-    The source directory is randomised per test run, so it is collapsed to
-    ``<srcdir>/`` to keep the expected strings readable and stable.
+    This module's expectations were written line by line, and a multi-line warning is one
+    record; splitting the shared normalisation back into lines keeps them as they are.
     """
-    return (
-        strip_colors(app._warning.getvalue())
-        .replace(str(app.srcdir) + os.path.sep, "<srcdir>/")
-        .strip()
-    ).splitlines()
+    return ("\n".join(build_warnings(app))).splitlines()
 
 
 @pytest.mark.parametrize(
@@ -55,7 +51,7 @@ def test_doc_needreport(test_app):
     app = test_app
     app.build()
     # check for warning about missing options
-    warnings = build_warnings(app)
+    warnings = warning_lines(app)
     assert warnings == [
         "<srcdir>/index.rst:6: WARNING: No options specified to generate need report [needs.needreport]",
         "<srcdir>/index.rst:8: WARNING: Could not load needs report template file <srcdir>/unknown.rst [needs.needreport]",
@@ -140,7 +136,7 @@ def test_render_failure_warns_and_build_survives(test_app, expected_detail):
     app = test_app
     app.build()
 
-    warnings = build_warnings(app)
+    warnings = warning_lines(app)
     assert len(warnings) == 1, warnings
     assert warnings[0].startswith(
         "<srcdir>/index.rst:4: WARNING: Could not render needs report template file "
@@ -198,7 +194,7 @@ def test_reserved_context_key_warns_but_still_overrides(test_app):
     app = test_app
     app.build()
 
-    warnings = build_warnings(app)
+    warnings = warning_lines(app)
     assert warnings == [
         "<srcdir>/index.rst:4: WARNING: needs_render_context replaces the needreport "
         "context key 'types'; only 'report_directive' is meant to be set this way "
@@ -269,7 +265,7 @@ def test_absolute_report_template_explains_the_rebase(test_app):
     app = test_app
     app.build()
 
-    warnings = build_warnings(app)
+    warnings = warning_lines(app)
 
     if os.name == "nt":
         # the configured path is used as it stands: the template is found, and
@@ -339,7 +335,7 @@ def test_no_dropdown_provider_falls_back_to_admonition(test_app):
 
     # one actionable warning naming both remedies, at the directive's own line,
     # in place of four "Unknown directive type" errors at invented line numbers
-    assert build_warnings(app) == [
+    assert warning_lines(app) == [
         "<srcdir>/index.rst:15: WARNING: No loaded extension provides a 'dropdown' "
         "directive, so the needs report is rendered with 'admonition' instead. "
         "Load an extension that provides it, for example sphinx-design, or choose "
@@ -417,7 +413,7 @@ def test_dropdown_provider_is_left_alone(test_app):
     app = test_app
     app.build()
 
-    assert build_warnings(app) == []
+    assert_no_warnings(app)
 
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
     # the dropdown path was taken: the provider rendered the section, and no
@@ -451,7 +447,7 @@ def test_sphinx_design_dropdown_output_is_unchanged(test_app):
     app = test_app
     app.build()
 
-    assert build_warnings(app) == []
+    assert_no_warnings(app)
 
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
     assert "sd-dropdown" in html
@@ -489,7 +485,7 @@ def test_explicitly_configured_dropdown_is_never_substituted(test_app):
     app.build()
 
     # docutils quotes the whole offending block back, so this spans many lines
-    reported = "\n".join(build_warnings(app))
+    reported = "\n".join(warning_lines(app))
     assert 'ERROR: Unknown directive type "dropdown".' in reported
     assert "No loaded extension provides" not in reported
 
@@ -538,7 +534,7 @@ def test_needs_report_template_renders(test_app):
     app = test_app
     app.build()
 
-    assert build_warnings(app) == []
+    assert_no_warnings(app)
 
     text = visible_text(Path(app.outdir, "index.html").read_text(encoding="utf8"))
     # the leading "/" of the configured path is stripped, not treated as the
@@ -628,7 +624,7 @@ def test_template_that_renders_no_dropdown_is_left_alone(test_app):
     app = test_app
     app.build()
 
-    assert build_warnings(app) == []
+    assert_no_warnings(app)
 
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
     # the report is on the page, rendered by the template's own choice
@@ -670,7 +666,7 @@ def test_hardcoded_dropdown_template_keeps_todays_errors(test_app):
     app = test_app
     app.build()
 
-    reported = "\n".join(build_warnings(app))
+    reported = "\n".join(warning_lines(app))
     assert 'ERROR: Unknown directive type "dropdown".' in reported
     assert "No loaded extension provides" not in reported
 
@@ -712,7 +708,7 @@ def test_unrenderable_template_warns_only_about_the_render(test_app):
     app = test_app
     app.build()
 
-    warnings = build_warnings(app)
+    warnings = warning_lines(app)
     assert len(warnings) == 1, warnings
     assert "Could not render needs report template file" in warnings[0]
     assert "No loaded extension provides" not in warnings[0]
@@ -765,7 +761,7 @@ def test_render_failure_detail_that_raises_cannot_end_the_build(test_app):
     app = test_app
     app.build()
 
-    warnings = build_warnings(app)
+    warnings = warning_lines(app)
     # Sphinx separately notes that ``needs_render_context`` cannot be cached
     # because it holds a function, which has nothing to do with the directive
     reported = [warning for warning in warnings if "needs.needreport" in warning]
@@ -858,7 +854,7 @@ def test_reserved_context_key_warns_once_per_build(test_app):
     app = test_app
     app.build()
 
-    warnings = build_warnings(app)
+    warnings = warning_lines(app)
     assert len(warnings) == 1, warnings
     assert (
         "needs_render_context replaces the needreport context key 'types'"
@@ -913,8 +909,8 @@ def test_example_markup_in_a_literal_block_is_substituted(test_app):
     app = test_app
     app.build()
 
-    assert len(build_warnings(app)) == 1
-    assert "No loaded extension provides" in build_warnings(app)[0]
+    assert len(warning_lines(app)) == 1
+    assert "No loaded extension provides" in warning_lines(app)[0]
 
     # the substitution reached the displayed example, which is the whole cost
     block = highlighted_block(Path(app.outdir, "index.html").read_text(encoding="utf8"))
@@ -951,7 +947,7 @@ def test_a_failed_fallback_render_keeps_the_report(test_app):
     app = test_app
     app.build()
 
-    assert build_warnings(app) == []
+    assert_no_warnings(app)
 
     # the default render is on the page, untouched
     block = highlighted_block(Path(app.outdir, "index.html").read_text(encoding="utf8"))
@@ -996,7 +992,7 @@ def test_failed_fallback_on_a_real_usage_keeps_todays_behaviour(test_app):
     app = test_app
     app.build()
 
-    reported = "\n".join(build_warnings(app))
+    reported = "\n".join(warning_lines(app))
     assert 'ERROR: Unknown directive type "dropdown".' in reported
     assert "No loaded extension provides" not in reported
     assert "Could not render" not in reported

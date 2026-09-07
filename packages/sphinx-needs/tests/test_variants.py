@@ -1,12 +1,11 @@
 import json
-import os
 from pathlib import Path
 
 import pytest
-from sphinx.util.console import strip_colors
 from syrupy.filters import props
 
 from sphinx_needs.variants import VariantFunctionParsed, match_variants
+from tests.conftest import build_warnings
 
 
 @pytest.mark.parametrize(
@@ -65,12 +64,8 @@ def test_variant_fields_html(test_app, snapshot):
     app = test_app
     app.build()
 
-    warnings = (
-        strip_colors(app._warning.getvalue())
-        .replace(str(app.srcdir) + os.path.sep, "<srcdir>/")
-        .splitlines()
-    )
-    assert warnings == [
+    warning_records = build_warnings(app)
+    assert warning_records == [
         "WARNING: needs_filter_data is deprecated and will be removed in a future version. Use needs_variant_data instead. [needs.deprecated]",
         "<srcdir>/index.rst:33: WARNING: Need could not be created: Link option 'links' is invalid: Unexpected text after closing condition bracket in link \"<<['tag_a' in build_tags]:SPEC_003\": ':SPEC_003'. [needs.create_need]",
     ]
@@ -110,8 +105,8 @@ def test_empty_variant_fields_html(test_app, snapshot):
     app = test_app
     app.build()
 
-    warnings = strip_colors(app._warning.getvalue()).splitlines()
-    assert warnings == [
+    warning_records = build_warnings(app)
+    assert warning_records == [
         "WARNING: needs_filter_data is deprecated and will be removed in a future version. Use needs_variant_data instead. [needs.deprecated]",
         'WARNING: Config option "needs_variant_options" is deprecated. Please use "needs_fields" with "parse_variants" instead. [needs.deprecated]',
     ]

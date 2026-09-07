@@ -1,11 +1,11 @@
 import json
-import os
 from pathlib import Path
 
 import pytest
 from sphinx.application import Sphinx
-from sphinx.util.console import strip_colors
 from syrupy.filters import props
+
+from tests.conftest import build_warnings
 
 
 @pytest.mark.parametrize(
@@ -23,26 +23,24 @@ def test_link_conditions(test_app: Sphinx, snapshot):
     app = test_app
     app.build()
 
-    warnings = strip_colors(
-        app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
-    ).splitlines()
+    warning_records = build_warnings(app)
 
-    assert warnings == [
+    assert warning_records == [
         # EXT_COND_FAIL external need links to REQ_002[status=="open"] which fails
         "WARNING: http://my_company.com/docs/v1/index.html#COND_FAIL: Need 'EXT_COND_FAIL' link 'REQ_002' in field 'links': condition 'status==\"open\"' not satisfied by target need 'REQ_002' [needs.link_condition_failed]",
         # SPEC_002 links to REQ_002[status=="open"] but REQ_002 has status "closed"
-        "srcdir/index.rst:28: WARNING: Need 'SPEC_002' link 'REQ_002' in field 'links': condition 'status==\"open\"' not satisfied by target need 'REQ_002' [needs.link_condition_failed]",
+        "<srcdir>/index.rst:28: WARNING: Need 'SPEC_002' link 'REQ_002' in field 'links': condition 'status==\"open\"' not satisfied by target need 'REQ_002' [needs.link_condition_failed]",
         # SPEC_003 links to REQ_001[status===] which has invalid syntax
-        "srcdir/index.rst:34: WARNING: Need 'SPEC_003' link 'REQ_001' in field 'links': invalid condition syntax 'status===': Filter 'status===' not valid. Error: invalid syntax (<string>, line 1). [needs.link_condition_invalid]",
+        "<srcdir>/index.rst:34: WARNING: Need 'SPEC_003' link 'REQ_001' in field 'links': invalid condition syntax 'status===': Filter 'status===' not valid. Error: invalid syntax (<string>, line 1). [needs.link_condition_invalid]",
         # SPEC_005 links to REQ_003[status=="open"] which fails (REQ_003 has status "done")
-        "srcdir/index.rst:46: WARNING: Need 'SPEC_005' link 'REQ_003' in field 'links': condition 'status==\"open\"' not satisfied by target need 'REQ_003' [needs.link_condition_failed]",
+        "<srcdir>/index.rst:46: WARNING: Need 'SPEC_005' link 'REQ_003' in field 'links': condition 'status==\"open\"' not satisfied by target need 'REQ_003' [needs.link_condition_failed]",
         # SPEC_006 links to REQ_001[["open" in tags]] with multi-bracket; fails because REQ_001 has no "open" tag
-        "srcdir/index.rst:52: WARNING: Need 'SPEC_006' link 'REQ_001' in field 'links': condition '\"open\" in tags' not satisfied by target need 'REQ_001' [needs.link_condition_failed]",
+        "<srcdir>/index.rst:52: WARNING: Need 'SPEC_006' link 'REQ_001' in field 'links': condition '\"open\" in tags' not satisfied by target need 'REQ_001' [needs.link_condition_failed]",
         # IMP_COND_FAIL imported via needimport, links to REQ_002[status=="open"] which fails
-        "srcdir/index.rst:61: WARNING: Need 'IMP_COND_FAIL' link 'REQ_002' in field 'links': condition 'status==\"open\"' not satisfied by target need 'REQ_002' [needs.link_condition_failed]",
+        "<srcdir>/index.rst:61: WARNING: Need 'IMP_COND_FAIL' link 'REQ_002' in field 'links': condition 'status==\"open\"' not satisfied by target need 'REQ_002' [needs.link_condition_failed]",
         # SPEC_RAW_001 uses raw_links (parse_conditions=False), so brackets are literal ID text.
         # The link target 'REQ_001[status=="open"]' doesn't exist as a need, so it's a dead link.
-        "srcdir/index.rst:66: WARNING: Need 'SPEC_RAW_001' has unknown outgoing link 'REQ_001[status==\"open\"]' in field 'raw_links' [needs.link_outgoing]",
+        "<srcdir>/index.rst:66: WARNING: Need 'SPEC_RAW_001' has unknown outgoing link 'REQ_001[status==\"open\"]' in field 'raw_links' [needs.link_outgoing]",
     ]
 
     needs_data = json.loads(Path(app.outdir, "needs.json").read_text())

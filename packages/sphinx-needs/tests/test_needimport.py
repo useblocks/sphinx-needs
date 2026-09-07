@@ -5,12 +5,12 @@ from pathlib import Path
 
 import pytest
 import responses
-from sphinx.util.console import strip_colors
 from syrupy.filters import props
 
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.directives.needimport import NeedimportException
 from sphinx_needs.needsfile import SphinxNeedsFileException
+from tests.conftest import assert_no_warnings, build_warnings
 
 
 @pytest.mark.parametrize(
@@ -22,7 +22,7 @@ def test_import_json(test_app):
     app = test_app
     app.build()
     assert app.statuscode == 0
-    assert not app.warning_list
+    assert_no_warnings(app)
 
     html = Path(app.outdir, "index.html").read_text()
     assert "TEST IMPORT TITLE" in html
@@ -105,7 +105,7 @@ def test_import_rel_abs_sphinx_paths(test_app, index_content):
     app = test_app
     app.build()
     assert app.statuscode == 0
-    assert not app.warning_list
+    assert_no_warnings(app)
 
     html = Path(app.outdir, "index.html").read_text()
     assert "TEST IMPORT TITLE" in html
@@ -138,7 +138,7 @@ def test_import_abs_paths_win(test_app, path_sep):
     app = test_app
     app.build()
     assert app.statuscode == 0
-    assert not app.warning_list
+    assert_no_warnings(app)
 
     html = Path(app.outdir, "index.html").read_text()
     assert "TEST IMPORT TITLE" in html
@@ -169,7 +169,7 @@ def test_import_abs_paths_lin_mac(test_app):
     app = test_app
     app.build()
     assert app.statuscode == 0
-    assert not app.warning_list
+    assert_no_warnings(app)
 
     html = Path(app.outdir, "index.html").read_text()
     assert "TEST IMPORT TITLE" in html
@@ -265,10 +265,10 @@ def test_import_allow_type_coercion_false(test_app):
     app = test_app
     app.build()
     assert app.statuscode == 0
-    assert strip_colors(app._warning.getvalue()).replace(
-        str(test_app.srcdir) + os.sep, "srcdir/"
+    assert "\n".join(build_warnings(app)).replace(
+        str(test_app.srcdir) + os.sep, "<srcdir>/"
     ).splitlines() == [
-        "srcdir/index.rst:1: WARNING: Need 'TEST_01' could not be imported: 'tags' value is invalid: Invalid value for field 'tags': 'a,b,c' [needs.import_need]"
+        "<srcdir>/index.rst:1: WARNING: Need 'TEST_01' could not be imported: 'tags' value is invalid: Invalid value for field 'tags': 'a,b,c' [needs.import_need]"
     ]
 
 
@@ -306,12 +306,10 @@ def test_json_schema_check(test_app):
 def test_need_schema_warnings(test_app, snapshot):
     """Test warnings are emitted when there are schema validation issues of individual needs."""
     test_app.build()
-    warnings = strip_colors(
-        test_app._warning.getvalue().replace(str(test_app.srcdir) + os.sep, "srcdir/")
-    ).splitlines()
-    assert warnings == [
-        "srcdir/index.rst:4: WARNING: Need 'TEST_01' could not be imported: Field 'extra2' is invalid: Invalid value for field 'extra2': 1 [needs.import_need]",
-        "srcdir/index.rst:4: WARNING: Unknown keys in import need source: ['unknown_key'] [needs.unknown_import_keys]",
+    warning_records = build_warnings(test_app)
+    assert warning_records == [
+        "<srcdir>/index.rst:4: WARNING: Need 'TEST_01' could not be imported: Field 'extra2' is invalid: Invalid value for field 'extra2': 1 [needs.import_need]",
+        "<srcdir>/index.rst:4: WARNING: Unknown keys in import need source: ['unknown_key'] [needs.unknown_import_keys]",
     ]
     json_data = Path(test_app.outdir, "needs.json").read_text()
     needs = json.loads(json_data)
@@ -353,13 +351,11 @@ def test_import_non_exists_json(test_app):
     app = test_app
     app.build()
 
-    warnings = strip_colors(
-        app._warning.getvalue().replace(str(app.srcdir) + os.path.sep, "<srcdir>/")
-    ).splitlines()
+    warning_records = build_warnings(app)
 
     assert app.statuscode == 0
 
-    assert warnings == [
+    assert warning_records == [
         "<srcdir>/index.rst:4: WARNING: Could not load needs import file <srcdir>/non_exists_file.json [needs.needimport]",
     ]
 
@@ -485,11 +481,9 @@ def test_needimport_needs_json_download_negative(test_app):
 def test_doc_needimport_noindex(test_app):
     app = test_app
     app.build()
-    warnings = strip_colors(
-        app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
-    ).splitlines()
-    assert warnings == [
-        "srcdir/needimport.rst:6: WARNING: Need 'TEST_01' has unknown outgoing link 'SPEC_1' in field 'links' [needs.link_outgoing]"
+    warning_records = build_warnings(app)
+    assert warning_records == [
+        "<srcdir>/needimport.rst:6: WARNING: Need 'TEST_01' has unknown outgoing link 'SPEC_1' in field 'links' [needs.link_outgoing]"
     ]
 
     latex_path = str(Path(app.outdir, "needstestdocs.tex"))
