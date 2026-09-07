@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788793520654,
+  "lastUpdate": 1788809339979,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -20484,6 +20484,42 @@ window.BENCHMARK_DATA = {
             "value": 52.33568347399999,
             "unit": "s",
             "extra": "Commit: ee865346daaeac196eaf0563f8b2e0bbdab17a84\nBranch: master\nTime: 2026-09-07T17:04:02+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "13286568797@163.com",
+            "name": "mikemikimike",
+            "username": "mikemikimike"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "dbb62b9d4435c6d6120284ee7678b7f724e37360",
+          "message": "🧪 fix: make sphinx-codelinks fixtures xdist-safe (#1912)\n\n## Summary\n\nFix xdist races in the sphinx-codelinks test fixtures.\n\nThe `temporary_gitignore` fixture previously wrote and removed\n`tests/data/dcdc/.gitignore`, a checked-in fixture path shared by xdist\nworkers. Parallel workers could remove each other's file and fail during\nteardown.\n\nThe fixture now copies `tests/data/dcdc` into each worker's temporary\ndirectory, initializes a temporary Git root so `.gitignore` discovery\nremains covered, and updates the discovery tests to use the isolated\nfixture.\n\n## Testing\n\n- `uv run poe test-codelinks -n 4` — 360 passed\n- `uv run poe lint`\n- `uv run poe typecheck`\n- `uv run poe docs-codelinks`\n\ncloses #1909\n\nCo-authored-by: mikemikimike <mikemikimike@users.noreply.github.com>",
+          "timestamp": "2026-09-07T21:27:25+02:00",
+          "tree_id": "acb3acbc44c2c02e00be0bc7e540488ceba5de56",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/dbb62b9d4435c6d6120284ee7678b7f724e37360"
+        },
+        "date": 1788809329715,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.18751144600000202,
+            "unit": "s",
+            "extra": "Commit: dbb62b9d4435c6d6120284ee7678b7f724e37360\nBranch: master\nTime: 2026-09-07T21:27:25+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.403922064999996,
+            "unit": "s",
+            "extra": "Commit: dbb62b9d4435c6d6120284ee7678b7f724e37360\nBranch: master\nTime: 2026-09-07T21:27:25+02:00"
           }
         ]
       }
