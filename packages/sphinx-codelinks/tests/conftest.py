@@ -1,4 +1,6 @@
 import json
+import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -45,9 +47,12 @@ ONELINE_COMMENT_STYLE_DEFAULT = OneLineCommentStyle()
 
 
 @pytest.fixture(scope="session")
-def source_directory() -> Path:
+def source_directory(tmp_path_factory: pytest.TempPathFactory) -> Path:
     tests_dir = Path(__file__).parent
-    source_directory = tests_dir / "data" / "dcdc"
+    source_fixture = tests_dir / "data" / "dcdc"
+    source_directory = tmp_path_factory.getbasetemp() / "dcdc"
+    shutil.copytree(source_fixture, source_directory)
+    subprocess.run(["git", "init", "--quiet"], cwd=source_directory, check=True)
     return source_directory
 
 

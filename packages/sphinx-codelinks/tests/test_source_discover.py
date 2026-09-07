@@ -15,6 +15,13 @@ from sphinx_codelinks.source_discover.source_discover import SourceDiscover
 FIXTURES_PATH = Path(__file__).parent / "data" / "discover_fixtures.json"
 
 
+def test_source_directory_is_worker_local(source_directory: Path) -> None:
+    checkout_fixture = Path(__file__).parent / "data" / "dcdc"
+
+    assert source_directory != checkout_fixture
+    assert (source_directory / "charge" / "demo_1.cpp").is_file()
+
+
 @pytest.mark.parametrize(
     ("config", "msgs"),
     [
