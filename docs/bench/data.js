@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788777588697,
+  "lastUpdate": 1788786257288,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -20268,6 +20268,42 @@ window.BENCHMARK_DATA = {
             "value": 10.257486667999999,
             "unit": "s",
             "extra": "Commit: 5ac29f258fefc58dbf3b54b4d9807264367cf961\nBranch: master\nTime: 2026-09-07T12:39:08+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "198982749+Copilot@users.noreply.github.com",
+            "name": "Copilot",
+            "username": "Copilot"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "529ab7d67409d150f654297aaf35f2600611cfdc",
+          "message": "📚 Fix typos and grammar errors in documentation (#1630)\n\nSix one-word fixes to the sphinx-needs documentation, from #1629.\n\n- `A need objects … its` → `A need object …` (`directives/need.rst`)\n- `we can also different fields to display` → `we can also display\ndifferent fields` (`tutorial.rst`)\n- `nd interference` → `and interference` (`tutorial.rst`)\n- `can be become` → `can become` (`filter.rst`)\n- `passionated` → `passionate` (`support.rst`)\n- a double space in the `Bugs, Features and PRs` heading\n(`contributing.rst`)\n\nRebuilt on `master` on 2026-09-07 as a single commit: the documentation\nnow lives under `packages/sphinx-needs/docs/`, the `availble` fix in\n`configuration.rst` had already landed in #1801, and the `.gitignore`\naddition from the original branch is dropped.\n\nCo-authored-by: Chris Sewell <chrisj_sewell@hotmail.com>",
+          "timestamp": "2026-09-07T15:03:35+02:00",
+          "tree_id": "84c991aeb7eaf7e2d04d792a959108fec0d4fc20",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/529ab7d67409d150f654297aaf35f2600611cfdc"
+        },
+        "date": 1788786248966,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.15255110300000752,
+            "unit": "s",
+            "extra": "Commit: 529ab7d67409d150f654297aaf35f2600611cfdc\nBranch: master\nTime: 2026-09-07T15:03:35+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 14.793643044999996,
+            "unit": "s",
+            "extra": "Commit: 529ab7d67409d150f654297aaf35f2600611cfdc\nBranch: master\nTime: 2026-09-07T15:03:35+02:00"
           }
         ]
       }
