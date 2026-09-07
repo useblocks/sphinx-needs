@@ -1,11 +1,15 @@
 :hide-navigation:
 
+.. _configuration:
+
 Configuration
 =============
 The following options can be set inside the ``conf.py`` file of your Sphinx project.
 
 .. contents::
    :local:
+
+.. _tr_rootdir:
 
 tr_rootdir
 ----------
@@ -70,6 +74,8 @@ By default ``tr_case`` is set to::
    ['test-case', 'testcase', 'test-case', 'TC_', '#999999', 'node']
 
 Please read :ref:`tr_file` for more details.
+
+.. _tr_report_template:
 
 tr_report_template
 ------------------
@@ -401,3 +407,109 @@ An example of a JSON file, which supports the below configuration, can be seen i
          }
       }
    }
+
+Declarative configuration (ubproject.toml)
+------------------------------------------
+.. versionadded:: 1.5.0
+
+All of the above can also be configured declaratively, in the
+``[test_reports]`` section of your project's ``ubproject.toml`` -- the same
+shared file other useblocks tooling (sphinx-needs, sphinx-codelinks,
+sphinx-mounts, ubCode) reads. It describes the project once, so every tool
+acting on it works from the same settings instead of each restating them.
+
+.. code-block:: toml
+
+   [test_reports]
+   file_option = "report_file"
+   source_file_option = "file"
+   source_line_option = "line"
+   deterministic_case_ids = true
+   extra_options = ["more_info", "priority"]
+   property_link_types = { request = "req" }
+   # Base directory the directives look their report files up under -- not an
+   # output directory. Relative to this file, see Paths below.
+   rootdir = "docs"
+
+   # Need types: named tables (recommended) ...
+   [test_reports.case]
+   directive = "test-case"
+   type = "testcase"
+   name = "Test-Case"
+   prefix = "TC_"
+   color = "#999999"
+   style = "rectangle"
+
+   # ... or the positional list spelling of conf.py:
+   # case = ["test-case", "testcase", "Test-Case", "TC_", "#999999", "rectangle"]
+
+**Keys.** Every key is named like its ``tr_*`` config value without the prefix
+(``file_option`` configures ``tr_file_option``, and so on). A key carrying the
+wrong type is an error -- that is the typo class this validation exists to
+catch. An *unknown* key is reported as a warning and ignored: the file is
+shared with tools on independent release cadences, so a key this version does
+not model must not take your build down.
+
+One sub-table belongs to another tool and is left alone: ``[test_reports.build]``
+holds the settings of the ``test-reports build`` command line, one sub-table per
+artifact it produces -- ``[test_reports.build.needs]`` for turning test reports
+into a ``needs.json`` outside Sphinx -- none of which this extension does. Any
+other sub-table is treated like any other unknown key -- reported and ignored.
+
+**Warnings.** The two warnings this feature emits carry a type, so either can
+be silenced through Sphinx's ``suppress_warnings`` in a project that builds
+with ``-W``: ``test_reports.unknown_key`` for the unknown-key report above, and
+``test_reports.missing_config`` for an explicitly named file that does not
+exist (see :ref:`tr_config_from_toml`). A known key with the wrong type is an
+error, not a warning, and cannot be suppressed.
+
+**Precedence.** ``-D`` on the ``sphinx-build`` command line beats the TOML
+file, which beats ``conf.py``, which beats the built-in default. The
+declarative file is the source of truth for the project; the command line stays
+the per-invocation escape hatch.
+
+**Paths.** ``rootdir`` (:ref:`tr_rootdir`) is the directory the relative report
+paths in the directives are resolved against -- with ``rootdir = "docs"``,
+``.. test-file:: reports/pytest.xml`` reads ``docs/reports/pytest.xml``. It is
+an input location, not an output directory: nothing is written there.
+``report_template`` (:ref:`tr_report_template`) names a custom template file.
+Relative values of both are resolved against the directory containing the TOML
+file (not against ``conf.py`` or the working directory), so both consumers
+resolve them identically and the file stays self-describing when moved as a
+unit.
+
+**Deterministic IDs.** A build that imports a ``needs.json`` carrying
+deterministic case IDs, next to locally created test-case needs, must set
+``deterministic_case_ids = true`` so both ID schemes agree.
+
+.. _tr_config_from_toml:
+
+tr_config_from_toml
+~~~~~~~~~~~~~~~~~~~
+.. versionadded:: 1.5.0
+
+Name of the declarative configuration file whose ``[test_reports]`` section is
+applied to the ``tr_*`` values above. Defaults to ``ubproject.toml``.
+
+With the default name, the file is searched for in your ``confdir`` and its
+parent directories, up to the repository root (the directory holding ``.git``).
+That is what lets the canonical layout work -- the shared ``ubproject.toml`` at
+the repository root, ``conf.py`` in ``docs/`` -- and lets a tool started
+anywhere below the root find exactly the same file by searching upward in the
+same way. Only the repository root bounds the search: a ``pyproject.toml`` on
+the way up does not, so a ``docs/`` directory with its own ``pyproject.toml``
+and the documentation of a workspace member in a monorepo
+(``packages/<name>/docs/conf.py``) both find the file at the root. A missing
+default file is not an error; ``sphinx-build -v`` reports where the search
+ended.
+
+Set to any other value to name a file explicitly; it is resolved against the
+``confdir``, is not searched for, and a warning of type
+``test_reports.missing_config`` is emitted if it does not exist -- the build
+then runs on the ``conf.py`` configuration. Set to ``None`` to switch
+declarative configuration off entirely.
+
+.. code-block:: python
+
+   tr_config_from_toml = "../ubproject.toml"   # explicit path
+   tr_config_from_toml = None                  # disable

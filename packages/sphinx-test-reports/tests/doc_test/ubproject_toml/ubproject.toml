@@ -1,0 +1,24 @@
+"$schema" = "https://ubcode.useblocks.com/ubproject.schema.json"
+
+[project]
+# Read by ubCode, ignored by sphinx-test-reports.
+name = "ubproject-toml-test"
+version = "1.0"
+
+[test_reports]
+# Same effect as doc_test/source_location_renamed's conf.py, but declarative:
+# free up "file"/"line" for the *source* location by renaming the field that
+# carries the XML report path.
+file_option = "report_file"
+source_file_option = "file"
+source_line_option = "line"
+extra_options = ["more_info"]
+
+[test_reports.case]
+# The named-table spelling of the positional tr_case list in conf.py.
+directive = "test-case"
+type = "testcase"
+name = "Test-Case"
+prefix = "TC_"
+color = "#999999"
+style = "rectangle"

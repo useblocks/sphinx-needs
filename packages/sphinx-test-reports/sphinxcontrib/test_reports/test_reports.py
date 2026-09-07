@@ -1,5 +1,6 @@
 # fmt: off
 import os
+from pathlib import Path
 
 from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
@@ -28,6 +29,14 @@ from sphinxcontrib.test_reports.directives.test_suite import (
 from sphinxcontrib.test_reports.environment import install_styles_static_files
 from sphinxcontrib.test_reports.exceptions import InvalidConfigurationError
 from sphinxcontrib.test_reports.functions import tr_link
+from sphinxcontrib.test_reports.projectconfig import (
+    BRIDGE_KEYS,
+    DEFAULT_TOML_FILENAME,
+    SECTION,
+    TomlConfigError,
+    find_project_config,
+    load_project_config,
+)
 
 # fmt: on
 
@@ -82,7 +91,7 @@ except ImportError:
             )
 
 
-def setup(app: Sphinx):
+def setup(app: Sphinx) -> dict[str, object]:
     """
     Setup following directives:
     * test_results
@@ -101,13 +110,34 @@ def setup(app: Sphinx):
     # Derive test-case IDs from the source location and case name instead of
     # hashing (type, title, content) -- the latter moves the ID when a test
     # starts failing differently. Off by default: enabling it changes IDs.
+    # Required (not just recommended) when the build consumes a needs.json
+    # produced by `test-reports build needs`, which always writes
+    # deterministic IDs.
     app.add_config_value("tr_deterministic_case_ids", False, "html")
+    # Declarative configuration: the [test_reports] section of this file
+    # overrides the tr_* config values above at config-inited. The default is
+    # searched for upwards from the confdir to the repository root; an explicit
+    # value is resolved against the confdir and warns if it does not exist (the
+    # build then runs on the conf.py configuration). None disables TOML reading
+    # entirely -- which is why NoneType has to be an accepted type here, or
+    # Sphinx's own check_confval_types warns about the documented way to switch
+    # it off.
+    app.add_config_value(
+        "tr_config_from_toml",
+        DEFAULT_TOML_FILENAME,
+        "env",
+        types=(str, type(None)),
+    )
 
     log = logging.getLogger(__name__)
     log.info("Setting up sphinx-test-reports extension")
 
     # configurations
-    app.add_config_value("tr_rootdir", app.confdir, "html")
+    # The default is Sphinx's confdir, a _StrPath. Without explicit types, a
+    # plain string -- the only thing TOML or a string literal in conf.py can
+    # supply -- fails Sphinx's check_confval_types ("has type 'str', defaults
+    # to '_StrPath'") and takes a -W build down. Every consumer accepts both.
+    app.add_config_value("tr_rootdir", app.confdir, "html", types=(str, os.PathLike))
     app.add_config_value(
         "tr_file",
         ["test-file", "testfile", "Test-File", "TF_", "#ffffff", "node"],
@@ -180,6 +210,12 @@ def setup(app: Sphinx):
 
     # events
     app.connect("env-updated", install_styles_static_files)
+    # The TOML bridge must run BEFORE tr_preparation and sphinx_needs_update,
+    # which read the values it writes. Spelled as an explicit priority rather
+    # than relying on registration order, so reordering these lines cannot
+    # silently break it. (Sphinx's own check_confval_types sits at 800, so it
+    # still validates what the bridge wrote.)
+    app.connect("config-inited", load_toml_config, priority=100)
     app.connect("config-inited", tr_preparation)
     app.connect("config-inited", sphinx_needs_update)
 
@@ -207,6 +243,95 @@ def register_tr_extra_options(app):
                 log.debug(
                     f"{direc}.option_spec now has keys: {list(direc.option_spec.keys())}"
                 )
+
+
+def _command_line_overrides(config: Config) -> set[str]:
+    """Config value names given on the command line with ``-D``.
+
+    Sphinx materialises those overrides *before* ``config-inited`` is emitted,
+    so a plain ``setattr`` here would silently win over them. The mapping is
+    spelled ``_overrides`` on newer Sphinx and ``overrides`` before that.
+    """
+    overrides = getattr(config, "_overrides", None)
+    if overrides is None:
+        overrides = getattr(config, "overrides", None)
+    return set(overrides or ())
+
+
+def load_toml_config(app: Sphinx, config: Config) -> None:
+    """Apply the ``[test_reports]`` section of the declarative config file.
+
+    Connected at a priority ahead of every other ``config-inited`` handler of
+    this extension, so the bridged values are in place when the directives and
+    the sphinx-needs registration read them.
+
+    Precedence is ``-D`` > TOML > ``conf.py`` > built-in default, mirroring the
+    CLI's flag > TOML > default. The file is the declarative source of truth
+    and conf.py the fallback, but ``-D`` stays the per-invocation escape hatch:
+    a key given there is left alone, because Sphinx has already applied it by
+    the time this runs.
+
+    Only :data:`BRIDGE_KEYS` reach the config values; the conversion-only keys
+    (``project``, ``version``, ...) belong to the CLI and are skipped here.
+    """
+    setting = config.tr_config_from_toml
+    if setting is None:
+        return
+
+    log = logging.getLogger(__name__)
+    confdir = Path(app.confdir)
+    if setting == DEFAULT_TOML_FILENAME:
+        # The shared file conventionally sits at the project root while conf.py
+        # sits in docs/, so search upwards -- anchoring at the confdir alone
+        # would leave the root file unread by the build while the CLI, started
+        # at the root, reads it.
+        # A fruitless search is not a warning -- most projects have no file
+        # -- but it says where it ended (visible with -v), so a misplaced file
+        # does not fail silently.
+        path = find_project_config(confdir, setting, report=log.verbose)
+        if path is None:
+            return
+    else:
+        path = Path(confdir, setting)
+        if not path.is_file():
+            log.warning(
+                f"tr_config_from_toml points at {path}, which does not exist; "
+                f"building with the conf.py configuration instead.",
+                type="test_reports",
+                subtype="missing_config",
+            )
+            return
+
+    def warn(message: str) -> None:
+        log.warning(message, type="test_reports", subtype="unknown_key")
+
+    try:
+        section = load_project_config(path, warn)
+    except TomlConfigError as error:
+        raise InvalidConfigurationError(str(error)) from error
+
+    if not section:
+        return
+
+    overridden = _command_line_overrides(config)
+    applied = []
+    skipped = []
+    for key in BRIDGE_KEYS:
+        if key not in section:
+            continue
+        name = f"tr_{key}"
+        if name in overridden:
+            skipped.append(name)
+            continue
+        setattr(config, name, section[key])
+        applied.append(key)
+    if applied:
+        log.info(f"Applied {', '.join(sorted(applied))} from {path}")
+    if skipped:
+        log.info(
+            f"Kept the -D value of {', '.join(sorted(skipped))} over "
+            f"[{SECTION}] in {path}"
+        )
 
 
 def tr_preparation(app, *args):

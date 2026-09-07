@@ -22,6 +22,13 @@ Unreleased
 * Feature: New ``tr_deterministic_case_ids`` option derives test-case IDs from
   the source location instead of the need content, so an ID no longer changes
   when a test starts failing differently.
+* Feature: Declarative configuration in the ``[test_reports]`` section of
+  ``ubproject.toml``, the file shared with the other useblocks tooling, so a
+  project is described once instead of being restated in ``conf.py``. The file
+  is searched for upwards from the ``confdir``, stopping at the repository
+  root;
+  the new ``tr_config_from_toml`` names or disables it. Precedence is ``-D`` >
+  ``ubproject.toml`` > ``conf.py`` > default. See :ref:`tr_config_from_toml`.
 * Support: Python 3.10 is no longer supported. It reached the end of upstream
   support, and dropping it lets the package read TOML with ``tomllib`` from the
   standard library instead of carrying a backport.
