@@ -142,19 +142,15 @@ def test_analyse_logs_per_project_summary_and_gates_detail(tmp_path: Path) -> No
 
 
 @pytest.mark.parametrize(
-    ("options", "stdout"),
+    ("gitignore", "stdout"),
     [
-        (
-            ["discover", str(TEST_DIR / "data" / "dcdc"), "--no-gitignore"],
-            "4 files discovered",
-        ),
-        (
-            ["discover", str(TEST_DIR / "data" / "dcdc"), "--gitignore"],
-            "3 files discovered",
-        ),
+        (False, "4 files discovered"),
+        (True, "3 files discovered"),
     ],
 )
-def test_discover(options, stdout):
+def test_discover(gitignore: bool, stdout: str, source_directory: Path) -> None:
+    options = ["discover", str(source_directory)]
+    options.append("--gitignore" if gitignore else "--no-gitignore")
     result = runner.invoke(app, options)
     assert result.exit_code == 0
     assert stdout in result.stdout
