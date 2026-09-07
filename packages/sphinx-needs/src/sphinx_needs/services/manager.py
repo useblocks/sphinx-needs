@@ -1,0 +1,59 @@
+from __future__ import annotations
+
+from typing import Any
+
+from sphinx.application import Sphinx
+
+from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
+from sphinx_needs.logging import get_logger
+from sphinx_needs.services.base import BaseService
+
+
+class ServiceManager:
+    def __init__(self, app: Sphinx):
+        self.app = app
+
+        self.log = get_logger(__name__)
+        self.services: dict[str, BaseService] = {}
+
+    def register(self, name: str, klass: type[BaseService], **kwargs: Any) -> None:
+        try:
+            config = NeedsSphinxConfig(self.app.config).services[name]
+        except KeyError:
+            self.log.debug(
+                f"No service config found for {name}. Add it in your conf.py to needs_services dictionary."
+            )
+            config = {}
+
+        # Register options from service class
+        for option in klass.options:
+            if option == "type":
+                # TODO this should probably be done a bit more systematically;
+                # the github service adds a "type" option, but this is related to the core need field NOT an extra field
+                pass
+            elif option not in _NEEDS_CONFIG.fields:
+                self.log.debug(f'Register option "{option}" for service "{name}"')
+                _NEEDS_CONFIG.add_field(
+                    option,
+                    f"Added by service {name}",
+                    "service",
+                    nullable=True,
+                    schema={"type": "string"},
+                )
+
+        # Init service with custom config
+        self.services[name] = klass(self.app, name, config, **kwargs)
+
+    def get(self, name: str) -> BaseService:
+        if name in self.services:
+            return self.services[name]
+        else:
+            raise NeedsServiceException(
+                "Service {} could not be found. Available services are {}".format(
+                    name, ", ".join(self.services)
+                )
+            )
+
+
+class NeedsServiceException(BaseException):
+    pass

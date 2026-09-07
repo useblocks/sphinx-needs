@@ -1,0 +1,31 @@
+{
+  "needs": [
+    {
+      "id": "IMPL_BASE",
+      "title": "Base",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ"
+        ]
+      },
+      "metadata": {},
+      "line": 1
+    },
+    {
+      "id": "IMPL_FALLBACK",
+      "title": "Fallback",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ"
+        ]
+      },
+      "metadata": {},
+      "line": 3
+    }
+  ],
+  "need_refs": [],
+  "marked_rst": [],
+  "warnings": []
+}

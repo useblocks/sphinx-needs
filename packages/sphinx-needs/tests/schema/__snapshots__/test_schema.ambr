@@ -1,0 +1,5531 @@
+# serializer version: 1
+# name: test_schema_benchmark[100]
+  '''
+  <srcdir>/index.rst:2: WARNING: toctree contains reference to nonexisting document ' :maxdepth: 2' [toc.not_readable]
+  WARNING: Need 'FEAt_P01' has schema warnings:
+    Severity:       warning
+    Field:          id
+    Need path:      FEAt_P01
+    Schema path:    [0] > local > properties > id > pattern
+    User message:   id must be uppercase
+    Schema message: "FEAt_P01" does not match "^[A-Z0-9_]+$" [sn_schema_warning.local_fail]
+  ERROR: Need 'SPEC_MISSING_APPROVAL_P01' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_MISSING_APPROVAL_P01
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_MISSING_APPROVAL_P01" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  WARNING: Need 'SPEC_MISSING_APPROVAL_P01' has schema infos:
+    Severity:       info
+    Need path:      SPEC_MISSING_APPROVAL_P01
+    Schema path:    spec-approved[2] > local > required
+    User message:   Approval required due to high efforts
+    Schema message: "approved" is a required property [sn_schema_info.local_fail]
+  ERROR: Need 'SPEC_P01' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_P01
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_P01" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_UNSAFE_FEAT_P01' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_UNSAFE_FEAT_P01
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_UNSAFE_FEAT_P01" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_P01' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_P01
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_P01" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'FEAT_P01' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_SAFE_P01 > links > SPEC_SAFE_UNSAFE_FEAT_P01 > links > FEAT_P01
+    Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links > items > validate > network > links > items > local > allOf > 1 > allOf > 0 > properties > asil > enum
+    Schema message: "QM" is not one of "A", "B" or 2 other candidates [sn_schema_violation.network_local_fail]
+  WARNING: Need 'FEAt_P02' has schema warnings:
+    Severity:       warning
+    Field:          id
+    Need path:      FEAt_P02
+    Schema path:    [0] > local > properties > id > pattern
+    User message:   id must be uppercase
+    Schema message: "FEAt_P02" does not match "^[A-Z0-9_]+$" [sn_schema_warning.local_fail]
+  ERROR: Need 'SPEC_MISSING_APPROVAL_P02' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_MISSING_APPROVAL_P02
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_MISSING_APPROVAL_P02" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  WARNING: Need 'SPEC_MISSING_APPROVAL_P02' has schema infos:
+    Severity:       info
+    Need path:      SPEC_MISSING_APPROVAL_P02
+    Schema path:    spec-approved[2] > local > required
+    User message:   Approval required due to high efforts
+    Schema message: "approved" is a required property [sn_schema_info.local_fail]
+  ERROR: Need 'SPEC_P02' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_P02
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_P02" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_UNSAFE_FEAT_P02' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_UNSAFE_FEAT_P02
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_UNSAFE_FEAT_P02" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_P02' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_P02
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_P02" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'FEAT_P02' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_SAFE_P02 > links > SPEC_SAFE_UNSAFE_FEAT_P02 > links > FEAT_P02
+    Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links > items > validate > network > links > items > local > allOf > 1 > allOf > 0 > properties > asil > enum
+    Schema message: "QM" is not one of "A", "B" or 2 other candidates [sn_schema_violation.network_local_fail]
+  WARNING: Need 'FEAt_P03' has schema warnings:
+    Severity:       warning
+    Field:          id
+    Need path:      FEAt_P03
+    Schema path:    [0] > local > properties > id > pattern
+    User message:   id must be uppercase
+    Schema message: "FEAt_P03" does not match "^[A-Z0-9_]+$" [sn_schema_warning.local_fail]
+  ERROR: Need 'SPEC_MISSING_APPROVAL_P03' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_MISSING_APPROVAL_P03
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_MISSING_APPROVAL_P03" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  WARNING: Need 'SPEC_MISSING_APPROVAL_P03' has schema infos:
+    Severity:       info
+    Need path:      SPEC_MISSING_APPROVAL_P03
+    Schema path:    spec-approved[2] > local > required
+    User message:   Approval required due to high efforts
+    Schema message: "approved" is a required property [sn_schema_info.local_fail]
+  ERROR: Need 'SPEC_P03' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_P03
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_P03" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_UNSAFE_FEAT_P03' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_UNSAFE_FEAT_P03
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_UNSAFE_FEAT_P03" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_P03' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_P03
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_P03" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'FEAT_P03' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_SAFE_P03 > links > SPEC_SAFE_UNSAFE_FEAT_P03 > links > FEAT_P03
+    Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links > items > validate > network > links > items > local > allOf > 1 > allOf > 0 > properties > asil > enum
+    Schema message: "QM" is not one of "A", "B" or 2 other candidates [sn_schema_violation.network_local_fail]
+  WARNING: Need 'FEAt_P04' has schema warnings:
+    Severity:       warning
+    Field:          id
+    Need path:      FEAt_P04
+    Schema path:    [0] > local > properties > id > pattern
+    User message:   id must be uppercase
+    Schema message: "FEAt_P04" does not match "^[A-Z0-9_]+$" [sn_schema_warning.local_fail]
+  ERROR: Need 'SPEC_MISSING_APPROVAL_P04' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_MISSING_APPROVAL_P04
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_MISSING_APPROVAL_P04" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  WARNING: Need 'SPEC_MISSING_APPROVAL_P04' has schema infos:
+    Severity:       info
+    Need path:      SPEC_MISSING_APPROVAL_P04
+    Schema path:    spec-approved[2] > local > required
+    User message:   Approval required due to high efforts
+    Schema message: "approved" is a required property [sn_schema_info.local_fail]
+  ERROR: Need 'SPEC_P04' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_P04
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_P04" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_UNSAFE_FEAT_P04' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_UNSAFE_FEAT_P04
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_UNSAFE_FEAT_P04" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_P04' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_P04
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_P04" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'FEAT_P04' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_SAFE_P04 > links > SPEC_SAFE_UNSAFE_FEAT_P04 > links > FEAT_P04
+    Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links > items > validate > network > links > items > local > allOf > 1 > allOf > 0 > properties > asil > enum
+    Schema message: "QM" is not one of "A", "B" or 2 other candidates [sn_schema_violation.network_local_fail]
+  WARNING: Need 'FEAt_P05' has schema warnings:
+    Severity:       warning
+    Field:          id
+    Need path:      FEAt_P05
+    Schema path:    [0] > local > properties > id > pattern
+    User message:   id must be uppercase
+    Schema message: "FEAt_P05" does not match "^[A-Z0-9_]+$" [sn_schema_warning.local_fail]
+  ERROR: Need 'SPEC_MISSING_APPROVAL_P05' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_MISSING_APPROVAL_P05
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_MISSING_APPROVAL_P05" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  WARNING: Need 'SPEC_MISSING_APPROVAL_P05' has schema infos:
+    Severity:       info
+    Need path:      SPEC_MISSING_APPROVAL_P05
+    Schema path:    spec-approved[2] > local > required
+    User message:   Approval required due to high efforts
+    Schema message: "approved" is a required property [sn_schema_info.local_fail]
+  ERROR: Need 'SPEC_P05' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_P05
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_P05" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_UNSAFE_FEAT_P05' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_UNSAFE_FEAT_P05
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_UNSAFE_FEAT_P05" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_P05' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_P05
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_P05" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'FEAT_P05' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_SAFE_P05 > links > SPEC_SAFE_UNSAFE_FEAT_P05 > links > FEAT_P05
+    Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links > items > validate > network > links > items > local > allOf > 1 > allOf > 0 > properties > asil > enum
+    Schema message: "QM" is not one of "A", "B" or 2 other candidates [sn_schema_violation.network_local_fail]
+  WARNING: Need 'FEAt_P06' has schema warnings:
+    Severity:       warning
+    Field:          id
+    Need path:      FEAt_P06
+    Schema path:    [0] > local > properties > id > pattern
+    User message:   id must be uppercase
+    Schema message: "FEAt_P06" does not match "^[A-Z0-9_]+$" [sn_schema_warning.local_fail]
+  ERROR: Need 'SPEC_MISSING_APPROVAL_P06' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_MISSING_APPROVAL_P06
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_MISSING_APPROVAL_P06" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  WARNING: Need 'SPEC_MISSING_APPROVAL_P06' has schema infos:
+    Severity:       info
+    Need path:      SPEC_MISSING_APPROVAL_P06
+    Schema path:    spec-approved[2] > local > required
+    User message:   Approval required due to high efforts
+    Schema message: "approved" is a required property [sn_schema_info.local_fail]
+  ERROR: Need 'SPEC_P06' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_P06
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_P06" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_UNSAFE_FEAT_P06' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_UNSAFE_FEAT_P06
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_UNSAFE_FEAT_P06" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_P06' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_P06
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_P06" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'FEAT_P06' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_SAFE_P06 > links > SPEC_SAFE_UNSAFE_FEAT_P06 > links > FEAT_P06
+    Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links > items > validate > network > links > items > local > allOf > 1 > allOf > 0 > properties > asil > enum
+    Schema message: "QM" is not one of "A", "B" or 2 other candidates [sn_schema_violation.network_local_fail]
+  WARNING: Need 'FEAt_P07' has schema warnings:
+    Severity:       warning
+    Field:          id
+    Need path:      FEAt_P07
+    Schema path:    [0] > local > properties > id > pattern
+    User message:   id must be uppercase
+    Schema message: "FEAt_P07" does not match "^[A-Z0-9_]+$" [sn_schema_warning.local_fail]
+  ERROR: Need 'SPEC_MISSING_APPROVAL_P07' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_MISSING_APPROVAL_P07
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_MISSING_APPROVAL_P07" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  WARNING: Need 'SPEC_MISSING_APPROVAL_P07' has schema infos:
+    Severity:       info
+    Need path:      SPEC_MISSING_APPROVAL_P07
+    Schema path:    spec-approved[2] > local > required
+    User message:   Approval required due to high efforts
+    Schema message: "approved" is a required property [sn_schema_info.local_fail]
+  ERROR: Need 'SPEC_P07' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_P07
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_P07" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_UNSAFE_FEAT_P07' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_UNSAFE_FEAT_P07
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_UNSAFE_FEAT_P07" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_P07' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_P07
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_P07" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'FEAT_P07' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_SAFE_P07 > links > SPEC_SAFE_UNSAFE_FEAT_P07 > links > FEAT_P07
+    Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links > items > validate > network > links > items > local > allOf > 1 > allOf > 0 > properties > asil > enum
+    Schema message: "QM" is not one of "A", "B" or 2 other candidates [sn_schema_violation.network_local_fail]
+  WARNING: Need 'FEAt_P08' has schema warnings:
+    Severity:       warning
+    Field:          id
+    Need path:      FEAt_P08
+    Schema path:    [0] > local > properties > id > pattern
+    User message:   id must be uppercase
+    Schema message: "FEAt_P08" does not match "^[A-Z0-9_]+$" [sn_schema_warning.local_fail]
+  ERROR: Need 'SPEC_MISSING_APPROVAL_P08' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_MISSING_APPROVAL_P08
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_MISSING_APPROVAL_P08" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  WARNING: Need 'SPEC_MISSING_APPROVAL_P08' has schema infos:
+    Severity:       info
+    Need path:      SPEC_MISSING_APPROVAL_P08
+    Schema path:    spec-approved[2] > local > required
+    User message:   Approval required due to high efforts
+    Schema message: "approved" is a required property [sn_schema_info.local_fail]
+  ERROR: Need 'SPEC_P08' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_P08
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_P08" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_UNSAFE_FEAT_P08' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_UNSAFE_FEAT_P08
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_UNSAFE_FEAT_P08" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_P08' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_P08
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_P08" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'FEAT_P08' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_SAFE_P08 > links > SPEC_SAFE_UNSAFE_FEAT_P08 > links > FEAT_P08
+    Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links > items > validate > network > links > items > local > allOf > 1 > allOf > 0 > properties > asil > enum
+    Schema message: "QM" is not one of "A", "B" or 2 other candidates [sn_schema_violation.network_local_fail]
+  WARNING: Need 'FEAt_P09' has schema warnings:
+    Severity:       warning
+    Field:          id
+    Need path:      FEAt_P09
+    Schema path:    [0] > local > properties > id > pattern
+    User message:   id must be uppercase
+    Schema message: "FEAt_P09" does not match "^[A-Z0-9_]+$" [sn_schema_warning.local_fail]
+  ERROR: Need 'SPEC_MISSING_APPROVAL_P09' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_MISSING_APPROVAL_P09
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_MISSING_APPROVAL_P09" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  WARNING: Need 'SPEC_MISSING_APPROVAL_P09' has schema infos:
+    Severity:       info
+    Need path:      SPEC_MISSING_APPROVAL_P09
+    Schema path:    spec-approved[2] > local > required
+    User message:   Approval required due to high efforts
+    Schema message: "approved" is a required property [sn_schema_info.local_fail]
+  ERROR: Need 'SPEC_P09' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_P09
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_P09" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_UNSAFE_FEAT_P09' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_UNSAFE_FEAT_P09
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_UNSAFE_FEAT_P09" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_P09' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_P09
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_P09" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'FEAT_P09' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_SAFE_P09 > links > SPEC_SAFE_UNSAFE_FEAT_P09 > links > FEAT_P09
+    Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links > items > validate > network > links > items > local > allOf > 1 > allOf > 0 > properties > asil > enum
+    Schema message: "QM" is not one of "A", "B" or 2 other candidates [sn_schema_violation.network_local_fail]
+  WARNING: Need 'FEAt_P10' has schema warnings:
+    Severity:       warning
+    Field:          id
+    Need path:      FEAt_P10
+    Schema path:    [0] > local > properties > id > pattern
+    User message:   id must be uppercase
+    Schema message: "FEAt_P10" does not match "^[A-Z0-9_]+$" [sn_schema_warning.local_fail]
+  ERROR: Need 'SPEC_MISSING_APPROVAL_P10' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_MISSING_APPROVAL_P10
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_MISSING_APPROVAL_P10" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  WARNING: Need 'SPEC_MISSING_APPROVAL_P10' has schema infos:
+    Severity:       info
+    Need path:      SPEC_MISSING_APPROVAL_P10
+    Schema path:    spec-approved[2] > local > required
+    User message:   Approval required due to high efforts
+    Schema message: "approved" is a required property [sn_schema_info.local_fail]
+  ERROR: Need 'SPEC_P10' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_P10
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_P10" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_UNSAFE_FEAT_P10' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_UNSAFE_FEAT_P10
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_UNSAFE_FEAT_P10" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_P10' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_P10
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_P10" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'FEAT_P10' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_SAFE_P10 > links > SPEC_SAFE_UNSAFE_FEAT_P10 > links > FEAT_P10
+    Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links > items > validate > network > links > items > local > allOf > 1 > allOf > 0 > properties > asil > enum
+    Schema message: "QM" is not one of "A", "B" or 2 other candidates [sn_schema_violation.network_local_fail]
+  '''
+# ---
+# name: test_schema_benchmark[10]
+  '''
+  <srcdir>/index.rst:2: WARNING: toctree contains reference to nonexisting document ' :maxdepth: 2' [toc.not_readable]
+  WARNING: Need 'FEAt_P1' has schema warnings:
+    Severity:       warning
+    Field:          id
+    Need path:      FEAt_P1
+    Schema path:    [0] > local > properties > id > pattern
+    User message:   id must be uppercase
+    Schema message: "FEAt_P1" does not match "^[A-Z0-9_]+$" [sn_schema_warning.local_fail]
+  ERROR: Need 'SPEC_MISSING_APPROVAL_P1' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_MISSING_APPROVAL_P1
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_MISSING_APPROVAL_P1" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  WARNING: Need 'SPEC_MISSING_APPROVAL_P1' has schema infos:
+    Severity:       info
+    Need path:      SPEC_MISSING_APPROVAL_P1
+    Schema path:    spec-approved[2] > local > required
+    User message:   Approval required due to high efforts
+    Schema message: "approved" is a required property [sn_schema_info.local_fail]
+  ERROR: Need 'SPEC_P1' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_P1
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_P1" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_UNSAFE_FEAT_P1' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_UNSAFE_FEAT_P1
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_UNSAFE_FEAT_P1" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_P1' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_P1
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_P1" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'FEAT_P1' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_SAFE_P1 > links > SPEC_SAFE_UNSAFE_FEAT_P1 > links > FEAT_P1
+    Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links > items > validate > network > links > items > local > allOf > 1 > allOf > 0 > properties > asil > enum
+    Schema message: "QM" is not one of "A", "B" or 2 other candidates [sn_schema_violation.network_local_fail]
+  '''
+# ---
+# name: test_schema_config[both_definitions_and_json_given]
+  "You cannot use both 'needs_schema_definitions' and 'needs_schema_definitions_from_json' at the same time."
+# ---
+# name: test_schema_config[extra_option_empty_schema]
+  "Invalid field 'efforts': Invalid schema: Must have a 'type' field."
+# ---
+# name: test_schema_config[extra_option_pattern_unsafe_error]
+  '''
+  Invalid field 'efforts': Invalid schema: "^IMPL_(?!SAFE)" is not a "regex"
+  
+  Failed validating "pattern" in schema["properties"]["efforts"]
+  
+  On instance:
+      "^IMPL_(?!SAFE)"
+  '''
+# ---
+# name: test_schema_config[extra_option_unknown_keys]
+  '''
+  Invalid field 'efforts': Invalid schema: Additional properties are not allowed ('unknown' was unexpected)
+  
+  Failed validating "additionalProperties" in schema
+  
+  On instance:
+      {"type":"string","unknown":"unknown"}
+  '''
+# ---
+# name: test_schema_config[link_array_wrong_item_type]
+  '''
+  Invalid link 'links': Invalid schema: "string" was expected
+  
+  Failed validating "const" in schema["$defs"]["LinkItemSchemaType"]["properties"]["type"]
+  
+  On instance["items"]["type"]:
+      "other"
+  '''
+# ---
+# name: test_schema_config[link_array_wrong_type]
+  '''
+  Invalid link 'links': Invalid schema: "array" was expected
+  
+  Failed validating "const" in schema["properties"]["type"]
+  
+  On instance["type"]:
+      "object"
+  '''
+# ---
+# name: test_schema_config[link_pattern_unsafe_error]
+  '''
+  Invalid link 'links': Invalid schema: "^IMPL_(?!SAFE)" is not a "regex"
+  
+  Failed validating "pattern" in schema["properties"]["links"]["items"]
+  
+  On instance:
+      "^IMPL_(?!SAFE)"
+  '''
+# ---
+# name: test_schema_config[link_unknown_keys]
+  '''
+  Invalid link 'links': Invalid schema: Additional properties are not allowed ('unknown' was unexpected)
+  
+  Failed validating "additionalProperties" in schema
+  
+  On instance:
+      {"items":{"type":"string"},"type":"array","unknown":"unknown"}
+  '''
+# ---
+# name: test_schema_config[local_error]
+  "Config error in schema '[0]' at path 'validate.local.properties.efforts': Field 'efforts' has type 'unknown', but expected 'string'."
+# ---
+# name: test_schema_config[missing_type_select]
+  '''
+  Schemas entry '[0]' is not valid:
+  {"properties":{"efforts":{"minimum":15,"type":"string"}},"type":"object"} is not valid under any of the schemas listed in the 'anyOf' keyword
+  
+  Failed validating "anyOf" in schema["properties"]["select"]
+  
+  On instance["select"]:
+      {"properties":{"efforts":{"minimum":15,"type":"string"}},"type":"object"}
+  '''
+# ---
+# name: test_schema_config[missing_type_validate_local]
+  '''
+  Schemas entry '[0]' is not valid:
+  {"properties":{"efforts":{"minimum":15,"type":"string"}},"type":"object"} is not valid under any of the schemas listed in the 'anyOf' keyword
+  
+  Failed validating "anyOf" in schema["$defs"]["ValidateSchemaType"]["properties"]["local"]
+  
+  On instance["validate"]["local"]:
+      {"properties":{"efforts":{"minimum":15,"type":"string"}},"type":"object"}
+  '''
+# ---
+# name: test_schema_config[network_link_not_exist]
+  "Schema '[0]' defines an unknown network link type 'links2'."
+# ---
+# name: test_schema_config[ref_error]
+  "Reference 'not-exist' not found in definitions (at schemas[0].validate.local)."
+# ---
+# name: test_schema_config[ref_mixed_error]
+  "Invalid $ref entry, expected a single $ref key: {'$ref': '#/$defs/not-exist', 'required': ['type']} (at schemas[0].validate.local)"
+# ---
+# name: test_schema_config[ref_not_defs_prefix]
+  "Invalid $ref value: type-impl, expected to start with '#/$defs/' (at schemas[0].validate.local)."
+# ---
+# name: test_schema_config[ref_recursive_error]
+  "Circular reference detected for 'type-impl' (at $defs.type-impl.allOf[0])."
+# ---
+# name: test_schema_config[ref_value_not_string]
+  'Invalid $ref value: 123, expected a string (at schemas[0].validate.local).'
+# ---
+# name: test_schema_config[schemas_select_pattern_unsafe_error]
+  '''
+  schema for 'needs_schema_definitions.0.select' is not valid:
+  "^IMPL_(?!SAFE)" is not a "regex"
+  
+  Failed validating "pattern" in schema["properties"]["id"]
+  
+  On instance:
+      "^IMPL_(?!SAFE)"
+  '''
+# ---
+# name: test_schema_config[schemas_validate_pattern_atomic_groups_error]
+  '''
+  schema for 'needs_schema_definitions.0.validate.local' is not valid:
+  "^(?>test)$" is not a "regex"
+  
+  Failed validating "pattern" in schema["properties"]["id"]
+  
+  On instance:
+      "^(?>test)$"
+  '''
+# ---
+# name: test_schema_config[schemas_validate_pattern_backref_error]
+  '''
+  schema for 'needs_schema_definitions.0.validate.local' is not valid:
+  "^IMPL_(SAFE)_\\1" is not a "regex"
+  
+  Failed validating "pattern" in schema["properties"]["id"]
+  
+  On instance:
+      "^IMPL_(SAFE)_\\1"
+  '''
+# ---
+# name: test_schema_config[schemas_validate_pattern_comment_groups_error]
+  '''
+  schema for 'needs_schema_definitions.0.validate.local' is not valid:
+  "^test(?#comment)$" is not a "regex"
+  
+  Failed validating "pattern" in schema["properties"]["id"]
+  
+  On instance:
+      "^test(?#comment)$"
+  '''
+# ---
+# name: test_schema_config[schemas_validate_pattern_conditional_error]
+  '''
+  schema for 'needs_schema_definitions.0.validate.local' is not valid:
+  "^(?(1)yes|no)$" is not a "regex"
+  
+  Failed validating "pattern" in schema["properties"]["id"]
+  
+  On instance:
+      "^(?(1)yes|no)$"
+  '''
+# ---
+# name: test_schema_config[schemas_validate_pattern_relative_subroutine_error]
+  '''
+  schema for 'needs_schema_definitions.0.validate.local' is not valid:
+  "^test(?+1)$" is not a "regex"
+  
+  Failed validating "pattern" in schema["properties"]["id"]
+  
+  On instance:
+      "^test(?+1)$"
+  '''
+# ---
+# name: test_schema_config[schemas_validate_pattern_subroutine_calls_error]
+  '''
+  schema for 'needs_schema_definitions.0.validate.local' is not valid:
+  "^test(?&name)$" is not a "regex"
+  
+  Failed validating "pattern" in schema["properties"]["id"]
+  
+  On instance:
+      "^test(?&name)$"
+  '''
+# ---
+# name: test_schema_config[schemas_validate_pattern_unnamed_groups_error]
+  '''
+  schema for 'needs_schema_definitions.0.validate.local' is not valid:
+  "^(test)?(?(1)yes|no)$" is not a "regex"
+  
+  Failed validating "pattern" in schema["properties"]["id"]
+  
+  On instance:
+      "^(test)?(?(1)yes|no)$"
+  '''
+# ---
+# name: test_schema_config[schemas_validate_pattern_unsafe_error]
+  '''
+  schema for 'needs_schema_definitions.0.validate.local' is not valid:
+  "^IMPL_(?!SAFE)" is not a "regex"
+  
+  Failed validating "pattern" in schema["properties"]["id"]
+  
+  On instance:
+      "^IMPL_(?!SAFE)"
+  '''
+# ---
+# name: test_schema_config[select_error]
+  "Config error in schema '[0]' at path 'select.properties.efforts': Field 'efforts' has type 'unknown', but expected 'string'."
+# ---
+# name: test_schema_config[status_wrong_type]
+  "Invalid `needs_fields` core option override for 'status': Child 'type' 'integer' does not match parent 'type' 'string'."
+# ---
+# name: test_schema_config[tags_wrong_items_type]
+  "Invalid `needs_fields` core option override for 'tags': 'items' inheritance: Child 'type' 'boolean' does not match parent 'type' 'string'."
+# ---
+# name: test_schema_config[title_nullable]
+  "Invalid `needs_fields` core option override for 'title': Cannot change 'nullable' from False to True in child."
+# ---
+# name: test_schema_config[title_wrong_type]
+  "Invalid `needs_fields` core option override for 'title': Child 'type' 'number' does not match parent 'type' 'string'."
+# ---
+# name: test_schema_config[type_error]
+  "Invalid field 'efforts': Invalid schema: Field schema has invalid type 'unknown'. Must be one of ['array', 'boolean', 'integer', 'number', 'string']."
+# ---
+# name: test_schema_config[type_mismatch_array_error]
+  '''
+  Schemas entry '[0]' is not valid:
+  {"items":{},"type":"object"} is not valid under any of the schemas listed in the 'anyOf' keyword
+  
+  Failed validating "anyOf" in schema["$defs"]["ValidateSchemaType"]["properties"]["local"]
+  
+  On instance["validate"]["local"]:
+      {"items":{},"type":"object"}
+  '''
+# ---
+# name: test_schema_config[type_mismatch_object_error]
+  "Config error in schema '[0]' at path 'validate.local': Schema has object keywords but type is 'array', expected 'object'."
+# ---
+# name: test_schema_config[type_mismatch_object_extra_option_error]
+  "Config error in schema '[0]' at path 'validate.local.properties.efforts': Field 'efforts' has type 'integer', but expected 'string'."
+# ---
+# name: test_schema_e2e[test_app0]
+  '''
+  WARNING: Need 'FEAt' has schema warnings:
+    Severity:       warning
+    Field:          id
+    Need path:      FEAt
+    Schema path:    [0] > local > properties > id > pattern
+    User message:   id must be uppercase with numbers and underscores
+    Schema message: "FEAt" does not match "^[A-Z0-9_]+$" [sn_schema_warning.local_fail]
+  ERROR: Need 'SPEC_MISSING_APPROVAL' has schema violations:
+    Severity:       violation
+    Need path:      SPEC_MISSING_APPROVAL
+    Schema path:    spec[1] > local > unevaluatedProperties
+    Schema message: Unevaluated properties are not allowed ('priority', 'asil' were unexpected) [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_MISSING_APPROVAL' has schema violations:
+    Severity:       violation
+    Need path:      SPEC_MISSING_APPROVAL
+    Schema path:    spec-approved-required[2] > local > required
+    User message:   Approval required due to high efforts
+    Schema message: "approved" is a required property [sn_schema_violation.local_fail]
+  WARNING: Need 'SPEC_MISSING_APPROVAL' has schema infos:
+    Severity:       info
+    Need path:      SPEC_MISSING_APPROVAL
+    Schema path:    spec-approved-not-given[3] > local > required
+    User message:   Approval not given
+    Schema message: "approved" is a required property [sn_schema_info.local_fail]
+  ERROR: Need 'SPEC' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC" does not match "^SPEC_[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC' has schema violations:
+    Severity:       violation
+    Need path:      SPEC
+    Schema path:    spec[1] > local > unevaluatedProperties
+    Schema message: Unevaluated properties are not allowed ('priority', 'asil' were unexpected) [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_UNSAFE_FEAT' has schema violations:
+    Severity:       violation
+    Need path:      SPEC_SAFE_UNSAFE_FEAT
+    Schema path:    spec[1] > local > unevaluatedProperties
+    Schema message: Unevaluated properties are not allowed ('priority', 'asil', 'approved', 'links' were unexpected) [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_UNSAFE_FEAT' has schema violations:
+    Severity:       violation
+    Need path:      SPEC_SAFE_UNSAFE_FEAT > links
+    Schema path:    safe-spec-[links]->safe-feat[4] > validate > network > links > contains
+    Schema message: Too few valid links of type 'links' (0 < 1) / nok: FEAT
+  
+      Details for FEAT
+      Field:          asil
+      Need path:      SPEC_SAFE_UNSAFE_FEAT > links > FEAT
+      Schema path:    safe-spec-[links]->safe-feat[4] > validate > network > links > contains > local > allOf > 0 > properties > asil > enum
+      Schema message: "QM" is not one of "A", "B" or 2 other candidates [sn_schema_violation.network_contains_too_few]
+  ERROR: Need 'SPEC_SAFE_ADD_UNSAFE_FEAT' has schema violations:
+    Severity:       violation
+    Need path:      SPEC_SAFE_ADD_UNSAFE_FEAT
+    Schema path:    spec[1] > local > unevaluatedProperties
+    Schema message: Unevaluated properties are not allowed ('priority', 'asil', 'approved', 'links' were unexpected) [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE' has schema violations:
+    Severity:       violation
+    Need path:      SPEC_SAFE
+    Schema path:    spec[1] > local > unevaluatedProperties
+    Schema message: Unevaluated properties are not allowed ('priority', 'asil', 'approved', 'links' were unexpected) [sn_schema_violation.local_fail]
+  '''
+# ---
+# name: test_schema_e2e[test_app0].1
+  dict({
+    'current_version': '',
+    'versions': dict({
+      '': dict({
+        'needs': dict({
+          'FEAT': dict({
+            'approved': None,
+            'arch': dict({
+            }),
+            'asil': 'QM',
+            'avatar': None,
+            'closed_at': None,
+            'completion': None,
+            'constraints': list([
+            ]),
+            'constraints_error': None,
+            'constraints_passed': True,
+            'constraints_results': dict({
+            }),
+            'content': '',
+            'created_at': None,
+            'departments': None,
+            'docname': 'index',
+            'doctype': '.rst',
+            'duration': None,
+            'efforts': None,
+            'external_css': 'external_link',
+            'external_url': None,
+            'has_dead_links': False,
+            'has_forbidden_dead_links': False,
+            'id': 'FEAT',
+            'id_prefix': None,
+            'is_external': False,
+            'is_import': False,
+            'is_modified': False,
+            'jinja_content': False,
+            'layout': None,
+            'lineno': 9,
+            'links': list([
+            ]),
+            'links_back': list([
+              'SPEC_SAFE_ADD_UNSAFE_FEAT',
+              'SPEC_SAFE_UNSAFE_FEAT',
+            ]),
+            'max_amount': None,
+            'max_content_lines': None,
+            'modifications': 0,
+            'parent_need': None,
+            'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
+            ]),
+            'parts': dict({
+            }),
+            'post_content': None,
+            'post_template': None,
+            'pre_content': None,
+            'pre_template': None,
+            'priority': None,
+            'query': None,
+            'scores': None,
+            'section_name': 'basic test',
+            'sections': list([
+              'basic test',
+            ]),
+            'service': None,
+            'signature': None,
+            'specific': None,
+            'status': None,
+            'string_option_wo_schema': None,
+            'style': None,
+            'tags': list([
+            ]),
+            'template': None,
+            'title': 'feat',
+            'type': 'feat',
+            'type_name': 'Feat',
+            'updated_at': None,
+            'url': None,
+            'user': None,
+          }),
+          'FEAT_SAFE': dict({
+            'approved': None,
+            'arch': dict({
+            }),
+            'asil': 'C',
+            'avatar': None,
+            'closed_at': None,
+            'completion': None,
+            'constraints': list([
+            ]),
+            'constraints_error': None,
+            'constraints_passed': True,
+            'constraints_results': dict({
+            }),
+            'content': '',
+            'created_at': None,
+            'departments': None,
+            'docname': 'index',
+            'doctype': '.rst',
+            'duration': None,
+            'efforts': None,
+            'external_css': 'external_link',
+            'external_url': None,
+            'has_dead_links': False,
+            'has_forbidden_dead_links': False,
+            'id': 'FEAT_SAFE',
+            'id_prefix': None,
+            'is_external': False,
+            'is_import': False,
+            'is_modified': False,
+            'jinja_content': False,
+            'layout': None,
+            'lineno': 13,
+            'links': list([
+            ]),
+            'links_back': list([
+              'SPEC_SAFE',
+            ]),
+            'max_amount': None,
+            'max_content_lines': None,
+            'modifications': 0,
+            'parent_need': None,
+            'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
+            ]),
+            'parts': dict({
+            }),
+            'post_content': None,
+            'post_template': None,
+            'pre_content': None,
+            'pre_template': None,
+            'priority': None,
+            'query': None,
+            'scores': None,
+            'section_name': 'basic test',
+            'sections': list([
+              'basic test',
+            ]),
+            'service': None,
+            'signature': None,
+            'specific': None,
+            'status': None,
+            'string_option_wo_schema': None,
+            'style': None,
+            'tags': list([
+            ]),
+            'template': None,
+            'title': 'feat safe',
+            'type': 'feat',
+            'type_name': 'Feat',
+            'updated_at': None,
+            'url': None,
+            'user': None,
+          }),
+          'FEAT_SAFE2': dict({
+            'approved': None,
+            'arch': dict({
+            }),
+            'asil': 'D',
+            'avatar': None,
+            'closed_at': None,
+            'completion': None,
+            'constraints': list([
+            ]),
+            'constraints_error': None,
+            'constraints_passed': True,
+            'constraints_results': dict({
+            }),
+            'content': '',
+            'created_at': None,
+            'departments': None,
+            'docname': 'index',
+            'doctype': '.rst',
+            'duration': None,
+            'efforts': None,
+            'external_css': 'external_link',
+            'external_url': None,
+            'has_dead_links': False,
+            'has_forbidden_dead_links': False,
+            'id': 'FEAT_SAFE2',
+            'id_prefix': None,
+            'is_external': False,
+            'is_import': False,
+            'is_modified': False,
+            'jinja_content': False,
+            'layout': None,
+            'lineno': 17,
+            'links': list([
+            ]),
+            'links_back': list([
+              'SPEC_SAFE',
+              'SPEC_SAFE_ADD_UNSAFE_FEAT',
+            ]),
+            'max_amount': None,
+            'max_content_lines': None,
+            'modifications': 0,
+            'parent_need': None,
+            'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
+            ]),
+            'parts': dict({
+            }),
+            'post_content': None,
+            'post_template': None,
+            'pre_content': None,
+            'pre_template': None,
+            'priority': None,
+            'query': None,
+            'scores': None,
+            'section_name': 'basic test',
+            'sections': list([
+              'basic test',
+            ]),
+            'service': None,
+            'signature': None,
+            'specific': None,
+            'status': None,
+            'string_option_wo_schema': None,
+            'style': None,
+            'tags': list([
+            ]),
+            'template': None,
+            'title': 'feat safe 2',
+            'type': 'feat',
+            'type_name': 'Feat',
+            'updated_at': None,
+            'url': None,
+            'user': None,
+          }),
+          'FEAt': dict({
+            'approved': None,
+            'arch': dict({
+            }),
+            'asil': 'QM',
+            'avatar': None,
+            'closed_at': None,
+            'completion': None,
+            'constraints': list([
+            ]),
+            'constraints_error': None,
+            'constraints_passed': True,
+            'constraints_results': dict({
+            }),
+            'content': '',
+            'created_at': None,
+            'departments': None,
+            'docname': 'index',
+            'doctype': '.rst',
+            'duration': None,
+            'efforts': None,
+            'external_css': 'external_link',
+            'external_url': None,
+            'has_dead_links': False,
+            'has_forbidden_dead_links': False,
+            'id': 'FEAt',
+            'id_prefix': None,
+            'is_external': False,
+            'is_import': False,
+            'is_modified': False,
+            'jinja_content': False,
+            'layout': None,
+            'lineno': 5,
+            'links': list([
+            ]),
+            'links_back': list([
+            ]),
+            'max_amount': None,
+            'max_content_lines': None,
+            'modifications': 0,
+            'parent_need': None,
+            'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
+            ]),
+            'parts': dict({
+            }),
+            'post_content': None,
+            'post_template': None,
+            'pre_content': None,
+            'pre_template': None,
+            'priority': None,
+            'query': None,
+            'scores': None,
+            'section_name': 'basic test',
+            'sections': list([
+              'basic test',
+            ]),
+            'service': None,
+            'signature': None,
+            'specific': None,
+            'status': None,
+            'string_option_wo_schema': None,
+            'style': None,
+            'tags': list([
+            ]),
+            'template': None,
+            'title': 'feat wrong id',
+            'type': 'feat',
+            'type_name': 'Feat',
+            'updated_at': None,
+            'url': None,
+            'user': None,
+          }),
+          'IMPL': dict({
+            'approved': None,
+            'arch': dict({
+            }),
+            'asil': None,
+            'avatar': None,
+            'closed_at': None,
+            'completion': None,
+            'constraints': list([
+            ]),
+            'constraints_error': None,
+            'constraints_passed': True,
+            'constraints_results': dict({
+            }),
+            'content': '',
+            'created_at': None,
+            'departments': None,
+            'docname': 'index',
+            'doctype': '.rst',
+            'duration': None,
+            'efforts': 30,
+            'external_css': 'external_link',
+            'external_url': None,
+            'has_dead_links': False,
+            'has_forbidden_dead_links': False,
+            'id': 'IMPL',
+            'id_prefix': None,
+            'is_external': False,
+            'is_import': False,
+            'is_modified': False,
+            'jinja_content': False,
+            'layout': None,
+            'lineno': 57,
+            'links': list([
+              'SPEC',
+            ]),
+            'links_back': list([
+            ]),
+            'max_amount': None,
+            'max_content_lines': None,
+            'modifications': 0,
+            'parent_need': None,
+            'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
+            ]),
+            'parts': dict({
+            }),
+            'post_content': None,
+            'post_template': None,
+            'pre_content': None,
+            'pre_template': None,
+            'priority': None,
+            'query': None,
+            'scores': None,
+            'section_name': 'basic test',
+            'sections': list([
+              'basic test',
+            ]),
+            'service': None,
+            'signature': None,
+            'specific': None,
+            'status': None,
+            'string_option_wo_schema': None,
+            'style': None,
+            'tags': list([
+            ]),
+            'template': None,
+            'title': 'impl',
+            'type': 'impl',
+            'type_name': 'Implementation',
+            'updated_at': None,
+            'url': None,
+            'user': None,
+          }),
+          'IMPL_ARRAY_TEST': dict({
+            'approved': None,
+            'arch': dict({
+            }),
+            'asil': None,
+            'avatar': None,
+            'closed_at': None,
+            'completion': None,
+            'constraints': list([
+            ]),
+            'constraints_error': None,
+            'constraints_passed': True,
+            'constraints_results': dict({
+            }),
+            'content': '',
+            'created_at': None,
+            'departments': list([
+              'dep1',
+              'dep2',
+              'dep3',
+            ]),
+            'docname': 'index',
+            'doctype': '.rst',
+            'duration': None,
+            'efforts': None,
+            'external_css': 'external_link',
+            'external_url': None,
+            'has_dead_links': False,
+            'has_forbidden_dead_links': False,
+            'id': 'IMPL_ARRAY_TEST',
+            'id_prefix': None,
+            'is_external': False,
+            'is_import': False,
+            'is_modified': False,
+            'jinja_content': False,
+            'layout': None,
+            'lineno': 67,
+            'links': list([
+            ]),
+            'links_back': list([
+            ]),
+            'max_amount': None,
+            'max_content_lines': None,
+            'modifications': 0,
+            'parent_need': None,
+            'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
+            ]),
+            'parts': dict({
+            }),
+            'post_content': None,
+            'post_template': None,
+            'pre_content': None,
+            'pre_template': None,
+            'priority': None,
+            'query': None,
+            'scores': list([
+              0.8,
+              0.9,
+              1000.5,
+            ]),
+            'section_name': 'basic test',
+            'sections': list([
+              'basic test',
+            ]),
+            'service': None,
+            'signature': None,
+            'specific': None,
+            'status': None,
+            'string_option_wo_schema': None,
+            'style': None,
+            'tags': list([
+            ]),
+            'template': None,
+            'title': 'Impl for array test',
+            'type': 'impl',
+            'type_name': 'Implementation',
+            'updated_at': None,
+            'url': None,
+            'user': None,
+          }),
+          'IMPL_SAFE': dict({
+            'approved': None,
+            'arch': dict({
+            }),
+            'asil': 'A',
+            'avatar': None,
+            'closed_at': None,
+            'completion': None,
+            'constraints': list([
+            ]),
+            'constraints_error': None,
+            'constraints_passed': True,
+            'constraints_results': dict({
+            }),
+            'content': '',
+            'created_at': None,
+            'departments': None,
+            'docname': 'index',
+            'doctype': '.rst',
+            'duration': None,
+            'efforts': None,
+            'external_css': 'external_link',
+            'external_url': None,
+            'has_dead_links': False,
+            'has_forbidden_dead_links': False,
+            'id': 'IMPL_SAFE',
+            'id_prefix': None,
+            'is_external': False,
+            'is_import': False,
+            'is_modified': False,
+            'jinja_content': False,
+            'layout': None,
+            'lineno': 62,
+            'links': list([
+              'SPEC_SAFE_UNSAFE_FEAT',
+            ]),
+            'links_back': list([
+            ]),
+            'max_amount': None,
+            'max_content_lines': None,
+            'modifications': 0,
+            'parent_need': None,
+            'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
+            ]),
+            'parts': dict({
+            }),
+            'post_content': None,
+            'post_template': None,
+            'pre_content': None,
+            'pre_template': None,
+            'priority': None,
+            'query': None,
+            'scores': None,
+            'section_name': 'basic test',
+            'sections': list([
+              'basic test',
+            ]),
+            'service': None,
+            'signature': None,
+            'specific': None,
+            'status': None,
+            'string_option_wo_schema': None,
+            'style': None,
+            'tags': list([
+            ]),
+            'template': None,
+            'title': 'safe impl',
+            'type': 'impl',
+            'type_name': 'Implementation',
+            'updated_at': None,
+            'url': None,
+            'user': None,
+          }),
+          'SPEC': dict({
+            'approved': None,
+            'arch': dict({
+            }),
+            'asil': 'QM',
+            'avatar': None,
+            'closed_at': None,
+            'completion': None,
+            'constraints': list([
+            ]),
+            'constraints_error': None,
+            'constraints_passed': True,
+            'constraints_results': dict({
+            }),
+            'content': '',
+            'created_at': None,
+            'departments': None,
+            'docname': 'index',
+            'doctype': '.rst',
+            'duration': None,
+            'efforts': 10,
+            'external_css': 'external_link',
+            'external_url': None,
+            'has_dead_links': False,
+            'has_forbidden_dead_links': False,
+            'id': 'SPEC',
+            'id_prefix': None,
+            'is_external': False,
+            'is_import': False,
+            'is_modified': False,
+            'jinja_content': False,
+            'layout': None,
+            'lineno': 27,
+            'links': list([
+            ]),
+            'links_back': list([
+              'IMPL',
+            ]),
+            'max_amount': None,
+            'max_content_lines': None,
+            'modifications': 0,
+            'parent_need': None,
+            'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
+            ]),
+            'parts': dict({
+            }),
+            'post_content': None,
+            'post_template': None,
+            'pre_content': None,
+            'pre_template': None,
+            'priority': 1,
+            'query': None,
+            'scores': None,
+            'section_name': 'basic test',
+            'sections': list([
+              'basic test',
+            ]),
+            'service': None,
+            'signature': None,
+            'specific': None,
+            'status': None,
+            'string_option_wo_schema': None,
+            'style': None,
+            'tags': list([
+            ]),
+            'template': None,
+            'title': 'spec',
+            'type': 'spec',
+            'type_name': 'Specification',
+            'updated_at': None,
+            'url': None,
+            'user': None,
+          }),
+          'SPEC_MISSING_APPROVAL': dict({
+            'approved': None,
+            'arch': dict({
+            }),
+            'asil': 'QM',
+            'avatar': None,
+            'closed_at': None,
+            'completion': None,
+            'constraints': list([
+            ]),
+            'constraints_error': None,
+            'constraints_passed': True,
+            'constraints_results': dict({
+            }),
+            'content': '',
+            'created_at': None,
+            'departments': None,
+            'docname': 'index',
+            'doctype': '.rst',
+            'duration': None,
+            'efforts': 20,
+            'external_css': 'external_link',
+            'external_url': None,
+            'has_dead_links': False,
+            'has_forbidden_dead_links': False,
+            'id': 'SPEC_MISSING_APPROVAL',
+            'id_prefix': None,
+            'is_external': False,
+            'is_import': False,
+            'is_modified': False,
+            'jinja_content': False,
+            'layout': None,
+            'lineno': 21,
+            'links': list([
+            ]),
+            'links_back': list([
+            ]),
+            'max_amount': None,
+            'max_content_lines': None,
+            'modifications': 0,
+            'parent_need': None,
+            'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
+            ]),
+            'parts': dict({
+            }),
+            'post_content': None,
+            'post_template': None,
+            'pre_content': None,
+            'pre_template': None,
+            'priority': 1,
+            'query': None,
+            'scores': None,
+            'section_name': 'basic test',
+            'sections': list([
+              'basic test',
+            ]),
+            'service': None,
+            'signature': None,
+            'specific': None,
+            'status': None,
+            'string_option_wo_schema': None,
+            'style': None,
+            'tags': list([
+            ]),
+            'template': None,
+            'title': 'spec missing approval',
+            'type': 'spec',
+            'type_name': 'Specification',
+            'updated_at': None,
+            'url': None,
+            'user': None,
+          }),
+          'SPEC_SAFE': dict({
+            'approved': True,
+            'arch': dict({
+            }),
+            'asil': 'B',
+            'avatar': None,
+            'closed_at': None,
+            'completion': None,
+            'constraints': list([
+            ]),
+            'constraints_error': None,
+            'constraints_passed': True,
+            'constraints_results': dict({
+            }),
+            'content': '',
+            'created_at': None,
+            'departments': None,
+            'docname': 'index',
+            'doctype': '.rst',
+            'duration': None,
+            'efforts': 20,
+            'external_css': 'external_link',
+            'external_url': None,
+            'has_dead_links': False,
+            'has_forbidden_dead_links': False,
+            'id': 'SPEC_SAFE',
+            'id_prefix': None,
+            'is_external': False,
+            'is_import': False,
+            'is_modified': False,
+            'jinja_content': False,
+            'layout': None,
+            'lineno': 49,
+            'links': list([
+              'FEAT_SAFE',
+              'FEAT_SAFE2',
+            ]),
+            'links_back': list([
+            ]),
+            'max_amount': None,
+            'max_content_lines': None,
+            'modifications': 0,
+            'parent_need': None,
+            'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
+            ]),
+            'parts': dict({
+            }),
+            'post_content': None,
+            'post_template': None,
+            'pre_content': None,
+            'pre_template': None,
+            'priority': 1,
+            'query': None,
+            'scores': None,
+            'section_name': 'basic test',
+            'sections': list([
+              'basic test',
+            ]),
+            'service': None,
+            'signature': None,
+            'specific': None,
+            'status': None,
+            'string_option_wo_schema': None,
+            'style': None,
+            'tags': list([
+            ]),
+            'template': None,
+            'title': 'safe spec',
+            'type': 'spec',
+            'type_name': 'Specification',
+            'updated_at': None,
+            'url': None,
+            'user': None,
+          }),
+          'SPEC_SAFE_ADD_UNSAFE_FEAT': dict({
+            'approved': True,
+            'arch': dict({
+            }),
+            'asil': 'B',
+            'avatar': None,
+            'closed_at': None,
+            'completion': None,
+            'constraints': list([
+            ]),
+            'constraints_error': None,
+            'constraints_passed': True,
+            'constraints_results': dict({
+            }),
+            'content': '',
+            'created_at': None,
+            'departments': None,
+            'docname': 'index',
+            'doctype': '.rst',
+            'duration': None,
+            'efforts': 20,
+            'external_css': 'external_link',
+            'external_url': None,
+            'has_dead_links': False,
+            'has_forbidden_dead_links': False,
+            'id': 'SPEC_SAFE_ADD_UNSAFE_FEAT',
+            'id_prefix': None,
+            'is_external': False,
+            'is_import': False,
+            'is_modified': False,
+            'jinja_content': False,
+            'layout': None,
+            'lineno': 41,
+            'links': list([
+              'FEAT',
+              'FEAT_SAFE2',
+            ]),
+            'links_back': list([
+            ]),
+            'max_amount': None,
+            'max_content_lines': None,
+            'modifications': 0,
+            'parent_need': None,
+            'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
+            ]),
+            'parts': dict({
+            }),
+            'post_content': None,
+            'post_template': None,
+            'pre_content': None,
+            'pre_template': None,
+            'priority': 1,
+            'query': None,
+            'scores': None,
+            'section_name': 'basic test',
+            'sections': list([
+              'basic test',
+            ]),
+            'service': None,
+            'signature': None,
+            'specific': None,
+            'status': None,
+            'string_option_wo_schema': None,
+            'style': None,
+            'tags': list([
+            ]),
+            'template': None,
+            'title': 'safe spec additional items',
+            'type': 'spec',
+            'type_name': 'Specification',
+            'updated_at': None,
+            'url': None,
+            'user': None,
+          }),
+          'SPEC_SAFE_UNSAFE_FEAT': dict({
+            'approved': True,
+            'arch': dict({
+            }),
+            'asil': 'B',
+            'avatar': None,
+            'closed_at': None,
+            'completion': None,
+            'constraints': list([
+            ]),
+            'constraints_error': None,
+            'constraints_passed': True,
+            'constraints_results': dict({
+            }),
+            'content': '',
+            'created_at': None,
+            'departments': None,
+            'docname': 'index',
+            'doctype': '.rst',
+            'duration': None,
+            'efforts': 20,
+            'external_css': 'external_link',
+            'external_url': None,
+            'has_dead_links': False,
+            'has_forbidden_dead_links': False,
+            'id': 'SPEC_SAFE_UNSAFE_FEAT',
+            'id_prefix': None,
+            'is_external': False,
+            'is_import': False,
+            'is_modified': False,
+            'jinja_content': False,
+            'layout': None,
+            'lineno': 33,
+            'links': list([
+              'FEAT',
+            ]),
+            'links_back': list([
+              'IMPL_SAFE',
+            ]),
+            'max_amount': None,
+            'max_content_lines': None,
+            'modifications': 0,
+            'parent_need': None,
+            'parent_needs': list([
+            ]),
+            'parent_needs_back': list([
+            ]),
+            'parts': dict({
+            }),
+            'post_content': None,
+            'post_template': None,
+            'pre_content': None,
+            'pre_template': None,
+            'priority': 1,
+            'query': None,
+            'scores': None,
+            'section_name': 'basic test',
+            'sections': list([
+              'basic test',
+            ]),
+            'service': None,
+            'signature': None,
+            'specific': None,
+            'status': None,
+            'string_option_wo_schema': None,
+            'style': None,
+            'tags': list([
+            ]),
+            'template': None,
+            'title': 'safe spec links unsafe feat',
+            'type': 'spec',
+            'type_name': 'Specification',
+            'updated_at': None,
+            'url': None,
+            'user': None,
+          }),
+        }),
+        'needs_amount': 12,
+        'needs_schema': dict({
+          '$schema': 'http://json-schema.org/draft-07/schema#',
+          'properties': dict({
+            'approved': dict({
+              'default': None,
+              'description': 'Approval flag',
+              'field_type': 'extra',
+              'type': list([
+                'boolean',
+                'null',
+              ]),
+            }),
+            'arch': dict({
+              'additionalProperties': dict({
+                'type': 'string',
+              }),
+              'default': dict({
+              }),
+              'description': 'Mapping of uml key to uml content.',
+              'field_type': 'core',
+              'type': 'object',
+            }),
+            'asil': dict({
+              'default': None,
+              'description': 'Automotive Safety Integrity Level',
+              'field_type': 'extra',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'avatar': dict({
+              'default': None,
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'closed_at': dict({
+              'default': None,
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'completion': dict({
+              'default': None,
+              'description': 'Added for needgantt functionality',
+              'field_type': 'extra',
+              'type': list([
+                'integer',
+                'null',
+              ]),
+            }),
+            'constraints': dict({
+              'default': list([
+              ]),
+              'description': 'List of constraint names, which are defined for this need.',
+              'field_type': 'core',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'constraints_error': dict({
+              'default': None,
+              'description': 'An error message set if any constraint failed, and `error_message` field is set in config.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'constraints_passed': dict({
+              'default': True,
+              'description': 'True if all constraints passed, False if any failed, None if not yet checked.',
+              'field_type': 'core',
+              'type': list([
+                'boolean',
+                'null',
+              ]),
+            }),
+            'constraints_results': dict({
+              'additionalProperties': dict({
+                'type': 'object',
+              }),
+              'default': dict({
+              }),
+              'description': 'Mapping of constraint name, to check name, to result, None if not yet checked.',
+              'field_type': 'core',
+              'type': list([
+                'object',
+                'null',
+              ]),
+            }),
+            'content': dict({
+              'default': '',
+              'description': 'The main content of the need.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'created_at': dict({
+              'default': None,
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'departments': dict({
+              'default': None,
+              'description': 'Departments',
+              'field_type': 'extra',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': list([
+                'array',
+                'null',
+              ]),
+            }),
+            'docname': dict({
+              'default': None,
+              'description': 'Name of the document where the need is defined (None if external).',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'doctype': dict({
+              'default': '.rst',
+              'description': "The markup type of the content, denoted by the suffix of the source file, e.g. '.rst'.",
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'duration': dict({
+              'default': None,
+              'description': 'Added for needgantt functionality',
+              'field_type': 'extra',
+              'type': list([
+                'integer',
+                'null',
+              ]),
+            }),
+            'efforts': dict({
+              'default': None,
+              'description': 'FTE days',
+              'field_type': 'extra',
+              'type': list([
+                'integer',
+                'null',
+              ]),
+            }),
+            'external_css': dict({
+              'default': '',
+              'description': 'CSS class name, added to the external reference.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'external_url': dict({
+              'default': None,
+              'description': 'URL of the need, if it is an external need.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'has_dead_links': dict({
+              'default': False,
+              'description': 'True if any links reference need ids that are not found in the need list.',
+              'field_type': 'core',
+              'type': 'boolean',
+            }),
+            'has_forbidden_dead_links': dict({
+              'default': False,
+              'description': 'True if any links reference need ids that are not found in the need list, and the link type does not allow dead links.',
+              'field_type': 'core',
+              'type': 'boolean',
+            }),
+            'id': dict({
+              'description': 'ID of the data.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'id_prefix': dict({
+              'default': None,
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'is_external': dict({
+              'default': False,
+              'description': 'If true, no node is created and need is referencing external url.',
+              'field_type': 'core',
+              'type': 'boolean',
+            }),
+            'is_import': dict({
+              'default': False,
+              'description': 'If true, the need was derived from an import.',
+              'field_type': 'core',
+              'type': 'boolean',
+            }),
+            'is_modified': dict({
+              'default': False,
+              'description': 'Whether the need was modified by needextend.',
+              'field_type': 'core',
+              'type': 'boolean',
+            }),
+            'jinja_content': dict({
+              'default': False,
+              'description': 'Whether the content was pre-processed by jinja.',
+              'field_type': 'core',
+              'type': 'boolean',
+            }),
+            'layout': dict({
+              'default': None,
+              'description': 'Key of the layout, which is used to render the need.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'lineno': dict({
+              'default': None,
+              'description': 'Line number where the need is defined (None if external).',
+              'field_type': 'core',
+              'type': list([
+                'integer',
+                'null',
+              ]),
+            }),
+            'links': dict({
+              'default': list([
+              ]),
+              'description': 'Link field',
+              'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'links_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'max_amount': dict({
+              'default': None,
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'max_content_lines': dict({
+              'default': None,
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'modifications': dict({
+              'default': 0,
+              'description': 'Number of modifications by needextend.',
+              'field_type': 'core',
+              'type': 'integer',
+            }),
+            'parent_need': dict({
+              'default': None,
+              'description': 'Simply the first parent id.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'parent_needs': dict({
+              'default': list([
+              ]),
+              'description': 'Link field',
+              'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'parent_needs_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'parts': dict({
+              'additionalProperties': dict({
+                'type': 'object',
+              }),
+              'default': dict({
+              }),
+              'description': "Mapping of parts, a.k.a. sub-needs, IDs to data that overrides the need's data",
+              'field_type': 'core',
+              'type': 'object',
+            }),
+            'post_content': dict({
+              'default': None,
+              'description': 'Additional content after the need.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'post_template': dict({
+              'default': None,
+              'description': 'The template key, if the post_content was created from a jinja template.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'pre_content': dict({
+              'default': None,
+              'description': 'Additional content before the need.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'pre_template': dict({
+              'default': None,
+              'description': 'The template key, if the pre_content was created from a jinja template.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'priority': dict({
+              'default': None,
+              'description': 'Priority level, 1-5 where 1 is highest and 5 is lowest',
+              'field_type': 'extra',
+              'type': list([
+                'integer',
+                'null',
+              ]),
+            }),
+            'query': dict({
+              'default': None,
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'scores': dict({
+              'default': None,
+              'description': 'Review scores',
+              'field_type': 'extra',
+              'items': dict({
+                'type': 'number',
+              }),
+              'type': list([
+                'array',
+                'null',
+              ]),
+            }),
+            'section_name': dict({
+              'default': None,
+              'description': 'Simply the first section.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'sections': dict({
+              'default': list([
+              ]),
+              'description': 'Sections of the need.',
+              'field_type': 'core',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'service': dict({
+              'default': None,
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'signature': dict({
+              'default': None,
+              'description': 'Derived from a docutils desc_name node.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'specific': dict({
+              'default': None,
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'status': dict({
+              'default': None,
+              'description': 'Status of the need.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'string_option_wo_schema': dict({
+              'default': None,
+              'description': 'String option',
+              'field_type': 'extra',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'style': dict({
+              'default': None,
+              'description': 'Comma-separated list of CSS classes (all appended by `needs_style_`).',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'tags': dict({
+              'default': list([
+              ]),
+              'description': 'List of tags.',
+              'field_type': 'core',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'template': dict({
+              'default': None,
+              'description': 'The template key, if the content was created from a jinja template.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'title': dict({
+              'description': 'Title of the need.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'type': dict({
+              'default': '',
+              'description': 'Type of the need.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'type_name': dict({
+              'default': '',
+              'description': 'Name of the type.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'updated_at': dict({
+              'default': None,
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'url': dict({
+              'default': None,
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'user': dict({
+              'default': None,
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+          }),
+          'type': 'object',
+        }),
+      }),
+    }),
+  })
+# ---
+# name: test_schema_typing[test_app0]
+  dict({
+    'current_version': '',
+    'versions': dict({
+      '': dict({
+        'needs': dict({
+          'REQ-1': dict({
+            'docname': 'index',
+            'external_css': 'external_link',
+            'field2': 2,
+            'id': 'REQ-1',
+            'lineno': 4,
+            'section_name': 'Test',
+            'sections': list([
+              'Test',
+            ]),
+            'title': 'title',
+            'type': 'req',
+            'type_name': 'Requirement',
+          }),
+          'REQ-2': dict({
+            'docname': 'index',
+            'external_css': 'external_link',
+            'field1': 'value1',
+            'field2': 42,
+            'field3': 3.14,
+            'field4': True,
+            'field5': list([
+              'item1',
+              'item2',
+              'item3',
+            ]),
+            'field6': list([
+              1,
+              2,
+              3,
+            ]),
+            'field7': list([
+              2.71,
+              1.41,
+            ]),
+            'field8': list([
+              True,
+              False,
+              True,
+            ]),
+            'field9': 44.0,
+            'id': 'REQ-2',
+            'lineno': 8,
+            'section_name': 'Test',
+            'sections': list([
+              'Test',
+            ]),
+            'title': 'title',
+            'type': 'req',
+            'type_name': 'Requirement',
+          }),
+        }),
+        'needs_amount': 2,
+        'needs_defaults_removed': True,
+        'needs_schema': dict({
+          '$schema': 'http://json-schema.org/draft-07/schema#',
+          'properties': dict({
+            'arch': dict({
+              'additionalProperties': dict({
+                'type': 'string',
+              }),
+              'default': dict({
+              }),
+              'description': 'Mapping of uml key to uml content.',
+              'field_type': 'core',
+              'type': 'object',
+            }),
+            'avatar': dict({
+              'default': None,
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'closed_at': dict({
+              'default': None,
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'completion': dict({
+              'default': None,
+              'description': 'Added for needgantt functionality',
+              'field_type': 'extra',
+              'type': list([
+                'integer',
+                'null',
+              ]),
+            }),
+            'constraints': dict({
+              'default': list([
+              ]),
+              'description': 'List of constraint names, which are defined for this need.',
+              'field_type': 'core',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'constraints_error': dict({
+              'default': None,
+              'description': 'An error message set if any constraint failed, and `error_message` field is set in config.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'constraints_passed': dict({
+              'default': True,
+              'description': 'True if all constraints passed, False if any failed, None if not yet checked.',
+              'field_type': 'core',
+              'type': list([
+                'boolean',
+                'null',
+              ]),
+            }),
+            'constraints_results': dict({
+              'additionalProperties': dict({
+                'type': 'object',
+              }),
+              'default': dict({
+              }),
+              'description': 'Mapping of constraint name, to check name, to result, None if not yet checked.',
+              'field_type': 'core',
+              'type': list([
+                'object',
+                'null',
+              ]),
+            }),
+            'content': dict({
+              'default': '',
+              'description': 'The main content of the need.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'created_at': dict({
+              'default': None,
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'docname': dict({
+              'default': None,
+              'description': 'Name of the document where the need is defined (None if external).',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'doctype': dict({
+              'default': '.rst',
+              'description': "The markup type of the content, denoted by the suffix of the source file, e.g. '.rst'.",
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'duration': dict({
+              'default': None,
+              'description': 'Added for needgantt functionality',
+              'field_type': 'extra',
+              'type': list([
+                'integer',
+                'null',
+              ]),
+            }),
+            'external_css': dict({
+              'default': '',
+              'description': 'CSS class name, added to the external reference.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'external_url': dict({
+              'default': None,
+              'description': 'URL of the need, if it is an external need.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'field1': dict({
+              'default': None,
+              'description': 'String option',
+              'field_type': 'extra',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'field2': dict({
+              'default': None,
+              'description': 'Integer option',
+              'field_type': 'extra',
+              'type': list([
+                'integer',
+                'null',
+              ]),
+            }),
+            'field3': dict({
+              'default': None,
+              'description': 'Number option',
+              'field_type': 'extra',
+              'type': list([
+                'number',
+                'null',
+              ]),
+            }),
+            'field4': dict({
+              'default': None,
+              'description': 'Boolean option',
+              'field_type': 'extra',
+              'type': list([
+                'boolean',
+                'null',
+              ]),
+            }),
+            'field5': dict({
+              'default': None,
+              'description': 'Array of strings option',
+              'field_type': 'extra',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': list([
+                'array',
+                'null',
+              ]),
+            }),
+            'field6': dict({
+              'default': None,
+              'description': 'Array of integers option',
+              'field_type': 'extra',
+              'items': dict({
+                'type': 'integer',
+              }),
+              'type': list([
+                'array',
+                'null',
+              ]),
+            }),
+            'field7': dict({
+              'default': None,
+              'description': 'Array of numbers option',
+              'field_type': 'extra',
+              'items': dict({
+                'type': 'number',
+              }),
+              'type': list([
+                'array',
+                'null',
+              ]),
+            }),
+            'field8': dict({
+              'default': None,
+              'description': 'Array of boolean option',
+              'field_type': 'extra',
+              'items': dict({
+                'type': 'boolean',
+              }),
+              'type': list([
+                'array',
+                'null',
+              ]),
+            }),
+            'field9': dict({
+              'default': None,
+              'description': 'Number option',
+              'field_type': 'extra',
+              'type': list([
+                'number',
+                'null',
+              ]),
+            }),
+            'has_dead_links': dict({
+              'default': False,
+              'description': 'True if any links reference need ids that are not found in the need list.',
+              'field_type': 'core',
+              'type': 'boolean',
+            }),
+            'has_forbidden_dead_links': dict({
+              'default': False,
+              'description': 'True if any links reference need ids that are not found in the need list, and the link type does not allow dead links.',
+              'field_type': 'core',
+              'type': 'boolean',
+            }),
+            'id': dict({
+              'description': 'ID of the data.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'id_prefix': dict({
+              'default': None,
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'is_external': dict({
+              'default': False,
+              'description': 'If true, no node is created and need is referencing external url.',
+              'field_type': 'core',
+              'type': 'boolean',
+            }),
+            'is_import': dict({
+              'default': False,
+              'description': 'If true, the need was derived from an import.',
+              'field_type': 'core',
+              'type': 'boolean',
+            }),
+            'is_modified': dict({
+              'default': False,
+              'description': 'Whether the need was modified by needextend.',
+              'field_type': 'core',
+              'type': 'boolean',
+            }),
+            'jinja_content': dict({
+              'default': False,
+              'description': 'Whether the content was pre-processed by jinja.',
+              'field_type': 'core',
+              'type': 'boolean',
+            }),
+            'layout': dict({
+              'default': None,
+              'description': 'Key of the layout, which is used to render the need.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'lineno': dict({
+              'default': None,
+              'description': 'Line number where the need is defined (None if external).',
+              'field_type': 'core',
+              'type': list([
+                'integer',
+                'null',
+              ]),
+            }),
+            'links': dict({
+              'default': list([
+              ]),
+              'description': 'Link field',
+              'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'links_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'max_amount': dict({
+              'default': None,
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'max_content_lines': dict({
+              'default': None,
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'modifications': dict({
+              'default': 0,
+              'description': 'Number of modifications by needextend.',
+              'field_type': 'core',
+              'type': 'integer',
+            }),
+            'parent_need': dict({
+              'default': None,
+              'description': 'Simply the first parent id.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'parent_needs': dict({
+              'default': list([
+              ]),
+              'description': 'Link field',
+              'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'parent_needs_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'parts': dict({
+              'additionalProperties': dict({
+                'type': 'object',
+              }),
+              'default': dict({
+              }),
+              'description': "Mapping of parts, a.k.a. sub-needs, IDs to data that overrides the need's data",
+              'field_type': 'core',
+              'type': 'object',
+            }),
+            'post_content': dict({
+              'default': None,
+              'description': 'Additional content after the need.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'post_template': dict({
+              'default': None,
+              'description': 'The template key, if the post_content was created from a jinja template.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'pre_content': dict({
+              'default': None,
+              'description': 'Additional content before the need.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'pre_template': dict({
+              'default': None,
+              'description': 'The template key, if the pre_content was created from a jinja template.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'query': dict({
+              'default': None,
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'section_name': dict({
+              'default': None,
+              'description': 'Simply the first section.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'sections': dict({
+              'default': list([
+              ]),
+              'description': 'Sections of the need.',
+              'field_type': 'core',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'service': dict({
+              'default': None,
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'signature': dict({
+              'default': None,
+              'description': 'Derived from a docutils desc_name node.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'specific': dict({
+              'default': None,
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'status': dict({
+              'default': None,
+              'description': 'Status of the need.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'style': dict({
+              'default': None,
+              'description': 'Comma-separated list of CSS classes (all appended by `needs_style_`).',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'tags': dict({
+              'default': list([
+              ]),
+              'description': 'List of tags.',
+              'field_type': 'core',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'template': dict({
+              'default': None,
+              'description': 'The template key, if the content was created from a jinja template.',
+              'field_type': 'core',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'title': dict({
+              'description': 'Title of the need.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'type': dict({
+              'default': '',
+              'description': 'Type of the need.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'type_name': dict({
+              'default': '',
+              'description': 'Name of the type.',
+              'field_type': 'core',
+              'type': 'string',
+            }),
+            'updated_at': dict({
+              'default': None,
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'url': dict({
+              'default': None,
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+            'user': dict({
+              'default': None,
+              'description': 'Added by service github-issues',
+              'field_type': 'extra',
+              'type': list([
+                'string',
+                'null',
+              ]),
+            }),
+          }),
+          'type': 'object',
+        }),
+      }),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-array_unique_items]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          array_field
+    Need path:      IMPL_1
+    Schema path:    fields > schema > properties > array_field > uniqueItems
+    Schema message: ["a","a"] has non-unique elements [sn_schema_violation.field_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-array_unique_items].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'array_field',
+            'need_path': 'IMPL_1',
+            'schema_path': 'fields > schema > properties > array_field > uniqueItems',
+            'severity': 'violation',
+            'validation_msg': '["a","a"] has non-unique elements',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'field_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-auto_inject_type]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/fields-auto_inject_type].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-auto_inject_type_wrong_const]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_1
+    Schema path:    [0] > local > properties > asil > const
+    Schema message: "QM" was expected [sn_schema_violation.local_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-auto_inject_type_wrong_const].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > asil > const',
+            'severity': 'violation',
+            'validation_msg': '"QM" was expected',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-coerce_to_boolean]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/fields-coerce_to_boolean].1
+  dict({
+    'validated_needs_count': 14,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-coerce_to_boolean_from_string_error]
+  "<srcdir>/index.rst:1: WARNING: Need could not be created: Field 'approved' is invalid: Cannot convert 'not-a-boolean' to boolean [needs.create_need]"
+# ---
+# name: test_schemas[schema/fixtures/fields-coerce_to_boolean_from_string_error].1
+  dict({
+    'validated_needs_count': 0,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-coerce_to_integer]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/fields-coerce_to_integer].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-coerce_to_integer_from_float_error]
+  "<srcdir>/index.rst:1: WARNING: Need could not be created: Field 'efforts' is invalid: Cannot convert '1.2' to integer [needs.create_need]"
+# ---
+# name: test_schemas[schema/fixtures/fields-coerce_to_integer_from_float_error].1
+  dict({
+    'validated_needs_count': 0,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-coerce_to_integer_from_string_error]
+  "<srcdir>/index.rst:1: WARNING: Need could not be created: Field 'efforts' is invalid: Cannot convert 'QM' to integer [needs.create_need]"
+# ---
+# name: test_schemas[schema/fixtures/fields-coerce_to_integer_from_string_error].1
+  dict({
+    'validated_needs_count': 0,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-coerce_to_number]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/fields-coerce_to_number].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-coerce_to_number_from_string_error]
+  "<srcdir>/index.rst:1: WARNING: Need could not be created: Field 'efforts' is invalid: Cannot convert 'QM' to float [needs.create_need]"
+# ---
+# name: test_schemas[schema/fixtures/fields-coerce_to_number_from_string_error].1
+  dict({
+    'validated_needs_count': 0,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-const]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/fields-const].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-const_error]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_1
+    Schema path:    [0] > local > properties > asil > const
+    Schema message: "QM" was expected [sn_schema_violation.local_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-const_error].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > asil > const',
+            'severity': 'violation',
+            'validation_msg': '"QM" was expected',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-enum]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/fields-enum].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-enum_error]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_1
+    Schema path:    [0] > local > properties > asil > enum
+    Schema message: "E" is not one of "QM", "A" or 3 other candidates [sn_schema_violation.local_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-enum_error].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > asil > enum',
+            'severity': 'violation',
+            'validation_msg': '"E" is not one of "QM", "A" or 3 other candidates',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-integer_multiple_of]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/fields-integer_multiple_of].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-integer_multiple_of_error]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          efforts
+    Need path:      IMPL_1
+    Schema path:    fields > schema > properties > efforts > multipleOf
+    Schema message: 8 is not a multiple of 3 [sn_schema_violation.field_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-integer_multiple_of_error].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'efforts',
+            'need_path': 'IMPL_1',
+            'schema_path': 'fields > schema > properties > efforts > multipleOf',
+            'severity': 'violation',
+            'validation_msg': '8 is not a multiple of 3',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'field_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-multiple_errors_per_need]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          priority
+    Need path:      IMPL_1
+    Schema path:    fields > schema > properties > priority > maximum
+    Schema message: 8 is greater than the maximum of 5 [sn_schema_violation.field_fail]
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          severity
+    Need path:      IMPL_1
+    Schema path:    fields > schema > properties > severity > enum
+    Schema message: "critical" is not one of "low", "medium" or "high" [sn_schema_violation.field_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-multiple_errors_per_need].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'priority',
+            'need_path': 'IMPL_1',
+            'schema_path': 'fields > schema > properties > priority > maximum',
+            'severity': 'violation',
+            'validation_msg': '8 is greater than the maximum of 5',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'field_fail',
+          'type': 'sn_schema_violation',
+        }),
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'severity',
+            'need_path': 'IMPL_1',
+            'schema_path': 'fields > schema > properties > severity > enum',
+            'severity': 'violation',
+            'validation_msg': '"critical" is not one of "low", "medium" or "high"',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'field_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-no_schema]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/fields-no_schema].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-number_multiple_of]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/fields-number_multiple_of].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-number_multiple_of_error]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          efforts
+    Need path:      IMPL_1
+    Schema path:    fields > schema > properties > efforts > multipleOf
+    Schema message: 5.0 is not a multiple of 3.3 [sn_schema_violation.field_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-number_multiple_of_error].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'efforts',
+            'need_path': 'IMPL_1',
+            'schema_path': 'fields > schema > properties > efforts > multipleOf',
+            'severity': 'violation',
+            'validation_msg': '5.0 is not a multiple of 3.3',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'field_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-required]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/fields-required].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-required_based_on_select_field_below_threshold]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/fields-required_based_on_select_field_below_threshold].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-required_based_on_select_field_missing]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/fields-required_based_on_select_field_missing].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-required_based_on_select_field_over_threshold]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Need path:      IMPL_1
+    Schema path:    [0] > local > required
+    User message:   Required due to high efforts
+    Schema message: "asil" is a required property [sn_schema_violation.local_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-required_based_on_select_field_over_threshold].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > required',
+            'severity': 'violation',
+            'user_msg': 'Required due to high efforts',
+            'validation_msg': '"asil" is a required property',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-required_missing]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Need path:      IMPL_1
+    Schema path:    [0] > local > required
+    Schema message: "asil" is a required property [sn_schema_violation.local_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-required_missing].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > required',
+            'severity': 'violation',
+            'validation_msg': '"asil" is a required property',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-select_by_docname]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_1
+    Schema path:    [0] > local > properties > asil > const
+    Schema message: "B" was expected [sn_schema_violation.local_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-select_by_docname].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > asil > const',
+            'severity': 'violation',
+            'validation_msg': '"B" was expected',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-select_by_docname_no_match]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/fields-select_by_docname_no_match].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-select_by_is_external_false]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_1
+    Schema path:    [0] > local > properties > asil > const
+    Schema message: "B" was expected [sn_schema_violation.local_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-select_by_is_external_false].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > asil > const',
+            'severity': 'violation',
+            'validation_msg': '"B" was expected',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-select_by_is_external_true_no_match]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/fields-select_by_is_external_true_no_match].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-select_by_is_import_false]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_1
+    Schema path:    [0] > local > properties > asil > const
+    Schema message: "B" was expected [sn_schema_violation.local_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-select_by_is_import_false].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > asil > const',
+            'severity': 'violation',
+            'validation_msg': '"B" was expected',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-select_by_is_import_true_no_match]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/fields-select_by_is_import_true_no_match].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-set_type_string]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/fields-set_type_string].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-status_enum]
+  '''
+  ERROR: Need 'IMPL_2' has schema violations:
+    Severity:       violation
+    Field:          status
+    Need path:      IMPL_2
+    Schema path:    fields > schema > properties > status > enum
+    Schema message: "other" is not one of "open", "in progress" or "closed" [sn_schema_violation.field_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-status_enum].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'IMPL_2': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'status',
+            'need_path': 'IMPL_2',
+            'schema_path': 'fields > schema > properties > status > enum',
+            'severity': 'violation',
+            'validation_msg': '"other" is not one of "open", "in progress" or "closed"',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'field_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-status_non_nullable]
+  "<srcdir>/index.rst:5: WARNING: Need could not be created: Field 'status' is not nullable, but no value or default was given. [needs.create_need]"
+# ---
+# name: test_schemas[schema/fixtures/fields-status_non_nullable].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-string_format_date]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/fields-string_format_date].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-string_format_date_error]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          start_date
+    Need path:      IMPL_1
+    Schema path:    fields > schema > properties > start_date > format
+    Schema message: "not-a-date" is not a "date" [sn_schema_violation.field_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-string_format_date_error].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'start_date',
+            'need_path': 'IMPL_1',
+            'schema_path': 'fields > schema > properties > start_date > format',
+            'severity': 'violation',
+            'validation_msg': '"not-a-date" is not a "date"',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'field_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-string_format_date_time]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/fields-string_format_date_time].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-string_format_date_time_error]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          start_date
+    Need path:      IMPL_1
+    Schema path:    fields > schema > properties > start_date > format
+    Schema message: "2025-07-1099:99:99Z" is not a "date-time" [sn_schema_violation.field_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-string_format_date_time_error].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'start_date',
+            'need_path': 'IMPL_1',
+            'schema_path': 'fields > schema > properties > start_date > format',
+            'severity': 'violation',
+            'validation_msg': '"2025-07-1099:99:99Z" is not a "date-time"',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'field_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-string_format_duration]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/fields-string_format_duration].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-string_format_duration_error]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          _duration
+    Need path:      IMPL_1
+    Schema path:    fields > schema > properties > _duration > format
+    Schema message: "P1Q2Q10DT2H30M" is not a "duration" [sn_schema_violation.field_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-string_format_duration_error].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': '_duration',
+            'need_path': 'IMPL_1',
+            'schema_path': 'fields > schema > properties > _duration > format',
+            'severity': 'violation',
+            'validation_msg': '"P1Q2Q10DT2H30M" is not a "duration"',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'field_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-string_format_email]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/fields-string_format_email].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-string_format_email_error]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          email
+    Need path:      IMPL_1
+    Schema path:    fields > schema > properties > email > format
+    Schema message: "not-a-mail" is not a "email" [sn_schema_violation.field_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-string_format_email_error].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'email',
+            'need_path': 'IMPL_1',
+            'schema_path': 'fields > schema > properties > email > format',
+            'severity': 'violation',
+            'validation_msg': '"not-a-mail" is not a "email"',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'field_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-string_format_time]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/fields-string_format_time].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-string_format_time_error]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          time
+    Need path:      IMPL_1
+    Schema path:    fields > schema > properties > time > format
+    Schema message: "26:12:13+00:00" is not a "time" [sn_schema_violation.field_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-string_format_time_error].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'time',
+            'need_path': 'IMPL_1',
+            'schema_path': 'fields > schema > properties > time > format',
+            'severity': 'violation',
+            'validation_msg': '"26:12:13+00:00" is not a "time"',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'field_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-string_format_uri]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/fields-string_format_uri].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-string_format_uri_error]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          uri
+    Need path:      IMPL_1
+    Schema path:    fields > schema > properties > uri > format
+    Schema message: "examplecom" is not a "uri" [sn_schema_violation.field_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-string_format_uri_error].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'uri',
+            'need_path': 'IMPL_1',
+            'schema_path': 'fields > schema > properties > uri > format',
+            'severity': 'violation',
+            'validation_msg': '"examplecom" is not a "uri"',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'field_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-string_format_uuid]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/fields-string_format_uuid].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-string_format_uuid_error]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          uuid
+    Need path:      IMPL_1
+    Schema path:    fields > schema > properties > uuid > format
+    Schema message: "deadbeef-deadbeef-deadbeef-deadbeef" is not a "uuid" [sn_schema_violation.field_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-string_format_uuid_error].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'uuid',
+            'need_path': 'IMPL_1',
+            'schema_path': 'fields > schema > properties > uuid > format',
+            'severity': 'violation',
+            'validation_msg': '"deadbeef-deadbeef-deadbeef-deadbeef" is not a "uuid"',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'field_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-string_non_nullable]
+  "<srcdir>/index.rst:1: WARNING: Need could not be created: Field 'asil' is not nullable, but no value or default was given. [needs.create_need]"
+# ---
+# name: test_schemas[schema/fixtures/fields-string_non_nullable].1
+  dict({
+    'validated_needs_count': 0,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-string_type]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/fields-string_type].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-tags_enum]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          tags.1
+    Need path:      IMPL_1
+    Schema path:    fields > schema > properties > tags > items > enum
+    Schema message: "b" is not one of "a" or "c" [sn_schema_violation.field_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-tags_enum].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'tags.1',
+            'need_path': 'IMPL_1',
+            'schema_path': 'fields > schema > properties > tags > items > enum',
+            'severity': 'violation',
+            'validation_msg': '"b" is not one of "a" or "c"',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'field_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-title_length]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          title
+    Need path:      IMPL_1
+    Schema path:    fields > schema > properties > title > minLength
+    Schema message: "too short title" is shorter than 16 characters [sn_schema_violation.field_fail]
+  ERROR: Need 'IMPL_3' has schema violations:
+    Severity:       violation
+    Field:          title
+    Need path:      IMPL_3
+    Schema path:    fields > schema > properties > title > maxLength
+    Schema message: "this title is too long" is longer than 20 characters [sn_schema_violation.field_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-title_length].1
+  dict({
+    'validated_needs_count': 3,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'title',
+            'need_path': 'IMPL_1',
+            'schema_path': 'fields > schema > properties > title > minLength',
+            'severity': 'violation',
+            'validation_msg': '"too short title" is shorter than 16 characters',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'field_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+      'IMPL_3': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'title',
+            'need_path': 'IMPL_3',
+            'schema_path': 'fields > schema > properties > title > maxLength',
+            'severity': 'violation',
+            'validation_msg': '"this title is too long" is longer than 20 characters',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'field_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-wrong_type]
+  "<srcdir>/index.rst:1: WARNING: Need could not be created: Field 'asil' is invalid: Cannot convert 'QM' to integer [needs.create_need]"
+# ---
+# name: test_schemas[schema/fixtures/fields-wrong_type].1
+  dict({
+    'validated_needs_count': 0,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/links-contains]
+  '''
+  ERROR: Need 'SPEC_1' has schema violations:
+    Severity:       violation
+    Field:          links
+    Need path:      SPEC_1
+    Schema path:    links > schema > properties > links > contains
+    Schema message: None of [] are valid under the given schema [sn_schema_violation.link_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/links-contains].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'SPEC_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'links',
+            'need_path': 'SPEC_1',
+            'schema_path': 'links > schema > properties > links > contains',
+            'severity': 'violation',
+            'validation_msg': 'None of [] are valid under the given schema',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'link_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/links-contains_error]
+  '''
+  ERROR: Need 'SPEC_1' has schema violations:
+    Severity:       violation
+    Field:          links
+    Need path:      SPEC_1
+    Schema path:    links > schema > properties > links > contains
+    Schema message: None of [] are valid under the given schema [sn_schema_violation.link_fail]
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          links
+    Need path:      IMPL_1
+    Schema path:    links > schema > properties > links > contains
+    Schema message: None of ["SPEC_1"] are valid under the given schema [sn_schema_violation.link_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/links-contains_error].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'links',
+            'need_path': 'IMPL_1',
+            'schema_path': 'links > schema > properties > links > contains',
+            'severity': 'violation',
+            'validation_msg': 'None of ["SPEC_1"] are valid under the given schema',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'link_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+      'SPEC_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'links',
+            'need_path': 'SPEC_1',
+            'schema_path': 'links > schema > properties > links > contains',
+            'severity': 'violation',
+            'validation_msg': 'None of [] are valid under the given schema',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'link_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/links-inject_array]
+  '''
+  ERROR: Need 'SPEC_1' has schema violations:
+    Severity:       violation
+    Field:          links
+    Need path:      SPEC_1
+    Schema path:    links > schema > properties > links > minItems
+    Schema message: [] has less than 2 items [sn_schema_violation.link_fail]
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          links
+    Need path:      IMPL_1
+    Schema path:    links > schema > properties > links > minItems
+    Schema message: ["SPEC_1"] has less than 2 items [sn_schema_violation.link_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/links-inject_array].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'links',
+            'need_path': 'IMPL_1',
+            'schema_path': 'links > schema > properties > links > minItems',
+            'severity': 'violation',
+            'validation_msg': '["SPEC_1"] has less than 2 items',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'link_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+      'SPEC_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'links',
+            'need_path': 'SPEC_1',
+            'schema_path': 'links > schema > properties > links > minItems',
+            'severity': 'violation',
+            'validation_msg': '[] has less than 2 items',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'link_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/links-items_pattern]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/links-items_pattern].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/links-items_pattern_error]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          links.0
+    Need path:      IMPL_1
+    Schema path:    links > schema > properties > links > items > pattern
+    Schema message: "SPEC_1" does not match "^[A-Z0-9_]{10,}" [sn_schema_violation.link_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/links-items_pattern_error].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'links.0',
+            'need_path': 'IMPL_1',
+            'schema_path': 'links > schema > properties > links > items > pattern',
+            'severity': 'violation',
+            'validation_msg': '"SPEC_1" does not match "^[A-Z0-9_]{10,}"',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'link_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/links-max_contains]
+  '''
+  ERROR: Need 'SPEC_1' has schema violations:
+    Severity:       violation
+    Field:          links
+    Need path:      SPEC_1
+    Schema path:    links > schema > properties > links > maxContains
+    Schema message: None of [] are valid under the given schema [sn_schema_violation.link_fail]
+  ERROR: Need 'SPEC_2' has schema violations:
+    Severity:       violation
+    Field:          links
+    Need path:      SPEC_2
+    Schema path:    links > schema > properties > links > maxContains
+    Schema message: None of [] are valid under the given schema [sn_schema_violation.link_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/links-max_contains].1
+  dict({
+    'validated_needs_count': 3,
+    'validation_warnings': dict({
+      'SPEC_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'links',
+            'need_path': 'SPEC_1',
+            'schema_path': 'links > schema > properties > links > maxContains',
+            'severity': 'violation',
+            'validation_msg': 'None of [] are valid under the given schema',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'link_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+      'SPEC_2': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'links',
+            'need_path': 'SPEC_2',
+            'schema_path': 'links > schema > properties > links > maxContains',
+            'severity': 'violation',
+            'validation_msg': 'None of [] are valid under the given schema',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'link_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/links-max_contains_error]
+  '''
+  ERROR: Need 'SPEC_1' has schema violations:
+    Severity:       violation
+    Field:          links
+    Need path:      SPEC_1
+    Schema path:    links > schema > properties > links > maxContains
+    Schema message: None of [] are valid under the given schema [sn_schema_violation.link_fail]
+  ERROR: Need 'SPEC_2' has schema violations:
+    Severity:       violation
+    Field:          links
+    Need path:      SPEC_2
+    Schema path:    links > schema > properties > links > maxContains
+    Schema message: None of [] are valid under the given schema [sn_schema_violation.link_fail]
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          links
+    Need path:      IMPL_1
+    Schema path:    links > schema > properties > links > maxContains
+    Schema message: None of ["SPEC_1","SPEC_2"] are valid under the given schema [sn_schema_violation.link_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/links-max_contains_error].1
+  dict({
+    'validated_needs_count': 3,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'links',
+            'need_path': 'IMPL_1',
+            'schema_path': 'links > schema > properties > links > maxContains',
+            'severity': 'violation',
+            'validation_msg': 'None of ["SPEC_1","SPEC_2"] are valid under the given schema',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'link_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+      'SPEC_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'links',
+            'need_path': 'SPEC_1',
+            'schema_path': 'links > schema > properties > links > maxContains',
+            'severity': 'violation',
+            'validation_msg': 'None of [] are valid under the given schema',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'link_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+      'SPEC_2': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'links',
+            'need_path': 'SPEC_2',
+            'schema_path': 'links > schema > properties > links > maxContains',
+            'severity': 'violation',
+            'validation_msg': 'None of [] are valid under the given schema',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'link_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/links-max_items]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/links-max_items].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/links-max_items_error]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          links
+    Need path:      IMPL_1
+    Schema path:    links > schema > properties > links > maxItems
+    Schema message: ["SPEC_1","SPEC_2"] has more than 1 item [sn_schema_violation.link_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/links-max_items_error].1
+  dict({
+    'validated_needs_count': 3,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'links',
+            'need_path': 'IMPL_1',
+            'schema_path': 'links > schema > properties > links > maxItems',
+            'severity': 'violation',
+            'validation_msg': '["SPEC_1","SPEC_2"] has more than 1 item',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'link_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/links-min_contains]
+  '''
+  ERROR: Need 'SPEC_1' has schema violations:
+    Severity:       violation
+    Field:          links
+    Need path:      SPEC_1
+    Schema path:    links > schema > properties > links > minContains
+    Schema message: None of [] are valid under the given schema [sn_schema_violation.link_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/links-min_contains].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'SPEC_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'links',
+            'need_path': 'SPEC_1',
+            'schema_path': 'links > schema > properties > links > minContains',
+            'severity': 'violation',
+            'validation_msg': 'None of [] are valid under the given schema',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'link_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/links-min_contains_error]
+  '''
+  ERROR: Need 'SPEC_1' has schema violations:
+    Severity:       violation
+    Field:          links
+    Need path:      SPEC_1
+    Schema path:    links > schema > properties > links > minContains
+    Schema message: None of [] are valid under the given schema [sn_schema_violation.link_fail]
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          links
+    Need path:      IMPL_1
+    Schema path:    links > schema > properties > links > minContains
+    Schema message: None of ["SPEC_1"] are valid under the given schema [sn_schema_violation.link_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/links-min_contains_error].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'links',
+            'need_path': 'IMPL_1',
+            'schema_path': 'links > schema > properties > links > minContains',
+            'severity': 'violation',
+            'validation_msg': 'None of ["SPEC_1"] are valid under the given schema',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'link_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+      'SPEC_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'links',
+            'need_path': 'SPEC_1',
+            'schema_path': 'links > schema > properties > links > minContains',
+            'severity': 'violation',
+            'validation_msg': 'None of [] are valid under the given schema',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'link_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/links-min_items]
+  '''
+  ERROR: Need 'SPEC_1' has schema violations:
+    Severity:       violation
+    Field:          links
+    Need path:      SPEC_1
+    Schema path:    links > schema > properties > links > minItems
+    Schema message: [] has less than 1 item [sn_schema_violation.link_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/links-min_items].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'SPEC_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'links',
+            'need_path': 'SPEC_1',
+            'schema_path': 'links > schema > properties > links > minItems',
+            'severity': 'violation',
+            'validation_msg': '[] has less than 1 item',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'link_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/links-min_items_error]
+  '''
+  ERROR: Need 'SPEC_1' has schema violations:
+    Severity:       violation
+    Field:          links
+    Need path:      SPEC_1
+    Schema path:    links > schema > properties > links > minItems
+    Schema message: [] has less than 2 items [sn_schema_violation.link_fail]
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          links
+    Need path:      IMPL_1
+    Schema path:    links > schema > properties > links > minItems
+    Schema message: ["SPEC_1"] has less than 2 items [sn_schema_violation.link_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/links-min_items_error].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'links',
+            'need_path': 'IMPL_1',
+            'schema_path': 'links > schema > properties > links > minItems',
+            'severity': 'violation',
+            'validation_msg': '["SPEC_1"] has less than 2 items',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'link_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+      'SPEC_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'links',
+            'need_path': 'SPEC_1',
+            'schema_path': 'links > schema > properties > links > minItems',
+            'severity': 'violation',
+            'validation_msg': '[] has less than 2 items',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'link_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/network-link_chain_hop_1_min_contains_error]
+  '''
+  ERROR: Need 'IMPL_SAFE' has schema violations:
+    Severity:       violation
+    Need path:      IMPL_SAFE > links
+    Schema path:    safe-impl-[links]->safe-spec[0] > validate > network > links > contains
+    Schema message: Too few valid links of type 'links' (0 < 1) / nok: SPEC_UNSAFE
+  
+      Details for SPEC_UNSAFE
+      Field:          asil
+      Need path:      IMPL_SAFE > links > SPEC_UNSAFE
+      Schema path:    safe-impl-[links]->safe-spec[0] > validate > network > links > contains > local > allOf > 0 > properties > asil > enum
+      Schema message: "QM" is not one of "A", "B" or 2 other candidates [sn_schema_violation.network_contains_too_few]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/network-link_chain_hop_1_min_contains_error].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'IMPL_SAFE': list([
+        dict({
+          'children': list([
+            dict({
+              'need_id': 'SPEC_UNSAFE',
+              'warning': dict({
+                'children': list([
+                ]),
+                'details': dict({
+                  'field': 'asil',
+                  'need_path': 'IMPL_SAFE > links > SPEC_UNSAFE',
+                  'schema_path': 'safe-impl-[links]->safe-spec[0] > validate > network > links > contains > local > allOf > 0 > properties > asil > enum',
+                  'validation_msg': '"QM" is not one of "A", "B" or 2 other candidates',
+                }),
+                'subtype': 'network_local_fail',
+              }),
+            }),
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_SAFE > links',
+            'schema_path': 'safe-impl-[links]->safe-spec[0] > validate > network > links > contains',
+            'severity': 'violation',
+            'validation_msg': "Too few valid links of type 'links' (0 < 1) / nok: SPEC_UNSAFE",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'network_contains_too_few',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/network-link_chain_hop_2_min_contains_error]
+  '''
+  ERROR: Need 'IMPL_SAFE' has schema violations:
+    Severity:       violation
+    Need path:      IMPL_SAFE > links
+    Schema path:    safe-impl-[links]->safe-spec-[links]->safe-req[0] > validate > network > links > contains
+    Schema message: Too few valid links of type 'links' (0 < 1) / nok: SPEC_SAFE
+  
+      Details for SPEC_SAFE
+      Need path:      IMPL_SAFE > links > SPEC_SAFE > links
+      Schema path:    safe-impl-[links]->safe-spec-[links]->safe-req[0] > validate > network > links > contains > validate > network > links > contains
+      User message:   Safe impl links to safe spec links to safe req
+      Schema message: Too few valid links of type 'links' (0 < 1) / nok: REQ_UNSAFE
+  
+        Details for REQ_UNSAFE
+        Field:          asil
+        Need path:      IMPL_SAFE > links > SPEC_SAFE > links > REQ_UNSAFE
+        Schema path:    safe-impl-[links]->safe-spec-[links]->safe-req[0] > validate > network > links > contains > validate > network > links > contains > local > allOf > 0 > properties > asil > enum
+        Schema message: "QM" is not one of "A", "B" or 2 other candidates [sn_schema_violation.network_contains_too_few]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/network-link_chain_hop_2_min_contains_error].1
+  dict({
+    'validated_needs_count': 3,
+    'validation_warnings': dict({
+      'IMPL_SAFE': list([
+        dict({
+          'children': list([
+            dict({
+              'need_id': 'SPEC_SAFE',
+              'warning': dict({
+                'children': list([
+                ]),
+                'details': dict({
+                  'need_path': 'IMPL_SAFE > links > SPEC_SAFE',
+                  'schema_path': 'safe-impl-[links]->safe-spec-[links]->safe-req[0] > validate > network > links > contains > local',
+                }),
+                'subtype': 'network_local_success',
+              }),
+            }),
+            dict({
+              'need_id': 'SPEC_SAFE',
+              'warning': dict({
+                'children': list([
+                  dict({
+                    'need_id': 'REQ_UNSAFE',
+                    'warning': dict({
+                      'children': list([
+                      ]),
+                      'details': dict({
+                        'field': 'asil',
+                        'need_path': 'IMPL_SAFE > links > SPEC_SAFE > links > REQ_UNSAFE',
+                        'schema_path': 'safe-impl-[links]->safe-spec-[links]->safe-req[0] > validate > network > links > contains > validate > network > links > contains > local > allOf > 0 > properties > asil > enum',
+                        'validation_msg': '"QM" is not one of "A", "B" or 2 other candidates',
+                      }),
+                      'subtype': 'network_local_fail',
+                    }),
+                  }),
+                ]),
+                'details': dict({
+                  'need_path': 'IMPL_SAFE > links > SPEC_SAFE > links',
+                  'schema_path': 'safe-impl-[links]->safe-spec-[links]->safe-req[0] > validate > network > links > contains > validate > network > links > contains',
+                  'user_msg': 'Safe impl links to safe spec links to safe req',
+                  'validation_msg': "Too few valid links of type 'links' (0 < 1) / nok: REQ_UNSAFE",
+                }),
+                'subtype': 'network_contains_too_few',
+              }),
+            }),
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_SAFE > links',
+            'schema_path': 'safe-impl-[links]->safe-spec-[links]->safe-req[0] > validate > network > links > contains',
+            'severity': 'violation',
+            'validation_msg': "Too few valid links of type 'links' (0 < 1) / nok: SPEC_SAFE",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'network_contains_too_few',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/network-link_chain_w_refs]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/network-link_chain_w_refs].1
+  dict({
+    'validated_needs_count': 3,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/network-link_name_contains]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/network-link_name_contains].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/network-local_max_items]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/network-local_max_items].1
+  dict({
+    'validated_needs_count': 3,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/network-local_max_items_error]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          links
+    Need path:      IMPL_1
+    Schema path:    [0] > local > properties > links > maxItems
+    Schema message: ["SPEC_1","SPEC_2"] has more than 1 item [sn_schema_violation.local_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/network-local_max_items_error].1
+  dict({
+    'validated_needs_count': 3,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'links',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > links > maxItems',
+            'severity': 'violation',
+            'validation_msg': '["SPEC_1","SPEC_2"] has more than 1 item',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/network-local_min_items]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/network-local_min_items].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/network-local_min_items_error]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          links
+    Need path:      IMPL_1
+    Schema path:    [0] > local > properties > links > minItems
+    Schema message: ["SPEC_1"] has less than 2 items [sn_schema_violation.local_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/network-local_min_items_error].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'links',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > links > minItems',
+            'severity': 'violation',
+            'validation_msg': '["SPEC_1"] has less than 2 items',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/network-max_contains]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/network-max_contains].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/network-max_contains_error]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Need path:      IMPL_1 > links
+    Schema path:    [0] > validate > network > links > contains
+    Schema message: Too many valid links of type 'links' (2 > 1) / ok: SPEC_1, SPEC_2 [sn_schema_violation.network_contains_too_many]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/network-max_contains_error].1
+  dict({
+    'validated_needs_count': 3,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_1 > links',
+            'schema_path': '[0] > validate > network > links > contains',
+            'severity': 'violation',
+            'validation_msg': "Too many valid links of type 'links' (2 > 1) / ok: SPEC_1, SPEC_2",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'network_contains_too_many',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/network-max_network_levels]
+  '''
+  ERROR: Need 'SPEC_1' has schema violations:
+    Severity:       violation
+    Need path:      IMPL_1 > links > SPEC_5 > links > SPEC_4 > links > SPEC_3 > links > SPEC_2 > links > SPEC_1
+    Schema path:    [0] > validate > network > links > items > validate > network > links > items > validate > network > links > items > validate > network > links > items > validate > network > links > items
+    Schema message: Maximum network validation recursion level 4 reached. [sn_schema_violation.network_max_nest_level]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/network-max_network_levels].1
+  dict({
+    'validated_needs_count': 6,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_1 > links > SPEC_5 > links > SPEC_4 > links > SPEC_3 > links > SPEC_2 > links > SPEC_1',
+            'schema_path': '[0] > validate > network > links > items > validate > network > links > items > validate > network > links > items > validate > network > links > items > validate > network > links > items',
+            'severity': 'violation',
+            'validation_msg': 'Maximum network validation recursion level 4 reached.',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'network_max_nest_level',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/network-min_contains]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/network-min_contains].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/network-min_contains_error]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Need path:      IMPL_1 > links
+    Schema path:    [0] > validate > network > links > contains
+    Schema message: Too few valid links of type 'links' (1 < 2) / ok: SPEC_1 [sn_schema_violation.network_contains_too_few]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/network-min_contains_error].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_1 > links',
+            'schema_path': '[0] > validate > network > links > contains',
+            'severity': 'violation',
+            'validation_msg': "Too few valid links of type 'links' (1 < 2) / ok: SPEC_1",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'network_contains_too_few',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/network-network_back_items_error]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          type
+    Need path:      REQ_1 > links (incoming) > IMPL_1
+    Schema path:    req<-[links]-only-tests[0] > validate > network_back > links > items > local > properties > type > const
+    Schema message: "test" was expected [sn_schema_violation.network_local_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/network-network_back_items_error].1
+  dict({
+    'validated_needs_count': 3,
+    'validation_warnings': dict({
+      'REQ_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'type',
+            'need_path': 'REQ_1 > links (incoming) > IMPL_1',
+            'schema_path': 'req<-[links]-only-tests[0] > validate > network_back > links > items > local > properties > type > const',
+            'severity': 'violation',
+            'validation_msg': '"test" was expected',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'network_local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/network-network_back_max_contains_error]
+  '''
+  ERROR: Need 'REQ_1' has schema violations:
+    Severity:       violation
+    Need path:      REQ_1 > links (incoming)
+    Schema path:    req<-[links]-test-max-1[0] > validate > network_back > links > contains
+    Schema message: Too many valid incoming links of type 'links' (2 > 1) / ok: TEST_1, TEST_2 [sn_schema_violation.network_contains_too_many]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/network-network_back_max_contains_error].1
+  dict({
+    'validated_needs_count': 3,
+    'validation_warnings': dict({
+      'REQ_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'need_path': 'REQ_1 > links (incoming)',
+            'schema_path': 'req<-[links]-test-max-1[0] > validate > network_back > links > contains',
+            'severity': 'violation',
+            'validation_msg': "Too many valid incoming links of type 'links' (2 > 1) / ok: TEST_1, TEST_2",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'network_contains_too_many',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/network-network_back_min_contains_error]
+  '''
+  ERROR: Need 'REQ_1' has schema violations:
+    Severity:       violation
+    Need path:      REQ_1 > links (incoming)
+    Schema path:    req<-[links]-test[0] > validate > network_back > links > contains
+    Schema message: Too few valid incoming links of type 'links' (0 < 1) [sn_schema_violation.network_contains_too_few]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/network-network_back_min_contains_error].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'REQ_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'need_path': 'REQ_1 > links (incoming)',
+            'schema_path': 'req<-[links]-test[0] > validate > network_back > links > contains',
+            'severity': 'violation',
+            'validation_msg': "Too few valid incoming links of type 'links' (0 < 1)",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'network_contains_too_few',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/network-network_back_min_contains_ok]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/network-network_back_min_contains_ok].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/network-network_back_nested_in_network_error]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Need path:      IMPL_1 > links
+    Schema path:    impl->spec<-test[0] > validate > network > links > contains
+    Schema message: Too few valid links of type 'links' (0 < 1) / nok: SPEC_1
+  
+      Details for SPEC_1
+      Need path:      IMPL_1 > links > SPEC_1 > links (incoming)
+      Schema path:    impl->spec<-test[0] > validate > network > links > contains > validate > network_back > links > contains
+      Schema message: Too few valid incoming links of type 'links' (0 < 1) / nok: IMPL_1
+  
+        Details for IMPL_1
+        Field:          type
+        Need path:      IMPL_1 > links > SPEC_1 > links (incoming) > IMPL_1
+        Schema path:    impl->spec<-test[0] > validate > network > links > contains > validate > network_back > links > contains > local > properties > type > const
+        Schema message: "test" was expected [sn_schema_violation.network_contains_too_few]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/network-network_back_nested_in_network_error].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+            dict({
+              'need_id': 'SPEC_1',
+              'warning': dict({
+                'children': list([
+                ]),
+                'details': dict({
+                  'need_path': 'IMPL_1 > links > SPEC_1',
+                  'schema_path': 'impl->spec<-test[0] > validate > network > links > contains > local',
+                }),
+                'subtype': 'network_local_success',
+              }),
+            }),
+            dict({
+              'need_id': 'SPEC_1',
+              'warning': dict({
+                'children': list([
+                  dict({
+                    'need_id': 'IMPL_1',
+                    'warning': dict({
+                      'children': list([
+                      ]),
+                      'details': dict({
+                        'field': 'type',
+                        'need_path': 'IMPL_1 > links > SPEC_1 > links (incoming) > IMPL_1',
+                        'schema_path': 'impl->spec<-test[0] > validate > network > links > contains > validate > network_back > links > contains > local > properties > type > const',
+                        'validation_msg': '"test" was expected',
+                      }),
+                      'subtype': 'network_local_fail',
+                    }),
+                  }),
+                ]),
+                'details': dict({
+                  'need_path': 'IMPL_1 > links > SPEC_1 > links (incoming)',
+                  'schema_path': 'impl->spec<-test[0] > validate > network > links > contains > validate > network_back > links > contains',
+                  'validation_msg': "Too few valid incoming links of type 'links' (0 < 1) / nok: IMPL_1",
+                }),
+                'subtype': 'network_contains_too_few',
+              }),
+            }),
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_1 > links',
+            'schema_path': 'impl->spec<-test[0] > validate > network > links > contains',
+            'severity': 'violation',
+            'validation_msg': "Too few valid links of type 'links' (0 < 1) / nok: SPEC_1",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'network_contains_too_few',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/network-network_back_nested_in_network_ok]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/network-network_back_nested_in_network_ok].1
+  dict({
+    'validated_needs_count': 3,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/network-network_local_multi_error]
+  '''
+  ERROR: Need 'SPEC_1' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_1 > links > SPEC_1
+    Schema path:    [0] > validate > network > links > items > local > properties > asil > const
+    Schema message: "A" was expected [sn_schema_violation.network_local_fail]
+  ERROR: Need 'SPEC_1' has schema violations:
+    Severity:       violation
+    Field:          comment
+    Need path:      IMPL_1 > links > SPEC_1
+    Schema path:    [0] > validate > network > links > items > local > properties > comment > const
+    Schema message: "ok" was expected [sn_schema_violation.network_local_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/network-network_local_multi_error].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1 > links > SPEC_1',
+            'schema_path': '[0] > validate > network > links > items > local > properties > asil > const',
+            'severity': 'violation',
+            'validation_msg': '"A" was expected',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'network_local_fail',
+          'type': 'sn_schema_violation',
+        }),
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'comment',
+            'need_path': 'IMPL_1 > links > SPEC_1',
+            'schema_path': '[0] > validate > network > links > items > local > properties > comment > const',
+            'severity': 'violation',
+            'validation_msg': '"ok" was expected',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'network_local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/network-network_local_unevaluated_reduced_error]
+  '''
+  ERROR: Need 'SPEC_1' has schema violations:
+    Severity:       violation
+    Need path:      IMPL_1 > links > SPEC_1
+    Schema path:    [0] > validate > network > links > items > local > unevaluatedProperties
+    Schema message: Unevaluated properties are not allowed ('asil' was unexpected) [sn_schema_violation.network_local_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/network-network_local_unevaluated_reduced_error].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_1 > links > SPEC_1',
+            'schema_path': '[0] > validate > network > links > items > local > unevaluatedProperties',
+            'severity': 'violation',
+            'validation_msg': "Unevaluated properties are not allowed ('asil' was unexpected)",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'network_local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/network-network_local_unevaluated_reduced_ok]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/network-network_local_unevaluated_reduced_ok].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/network-no_error_empty_links]
+  '''
+  ERROR: Need 'IMPL_SAFE' has schema violations:
+    Severity:       violation
+    Need path:      IMPL_SAFE > links
+    Schema path:    impl-[links]->spec[0] > validate > network > links > contains
+    Schema message: Too few valid links of type 'links' (0 < 1) [sn_schema_violation.network_contains_too_few]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/network-no_error_empty_links].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'IMPL_SAFE': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_SAFE > links',
+            'schema_path': 'impl-[links]->spec[0] > validate > network > links > contains',
+            'severity': 'violation',
+            'validation_msg': "Too few valid links of type 'links' (0 < 1)",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'network_contains_too_few',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/network-schemas_in_conf]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/network-schemas_in_conf].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/network-schemas_in_conf_error]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Need path:      IMPL_1 > links
+    Schema path:    [0] > validate > network > links > contains
+    Schema message: Too few valid links of type 'links' (0 < 1) / nok: SPEC_1
+  
+      Details for SPEC_1
+      Field:          type
+      Need path:      IMPL_1 > links > SPEC_1
+      Schema path:    [0] > validate > network > links > contains > local > properties > type > const
+      Schema message: "req" was expected [sn_schema_violation.network_contains_too_few]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/network-schemas_in_conf_error].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+            dict({
+              'need_id': 'SPEC_1',
+              'warning': dict({
+                'children': list([
+                ]),
+                'details': dict({
+                  'field': 'type',
+                  'need_path': 'IMPL_1 > links > SPEC_1',
+                  'schema_path': '[0] > validate > network > links > contains > local > properties > type > const',
+                  'validation_msg': '"req" was expected',
+                }),
+                'subtype': 'network_local_fail',
+              }),
+            }),
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_1 > links',
+            'schema_path': '[0] > validate > network > links > contains',
+            'severity': 'violation',
+            'validation_msg': "Too few valid links of type 'links' (0 < 1) / nok: SPEC_1",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'network_contains_too_few',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/reporting-report_invalid_extra_field_default]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_1
+    Schema path:    [0] > local > properties > asil > const
+    Schema message: "A" was expected [sn_schema_violation.local_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/reporting-report_invalid_extra_field_default].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > asil > const',
+            'severity': 'violation',
+            'validation_msg': '"A" was expected',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/reporting-severity_default_suppress_severity]
+  '''
+  WARNING: Need 'IMPL_1' has schema infos:
+    Severity:       info
+    Field:          asil
+    Need path:      IMPL_1
+    Schema path:    [1] > local > properties > asil > const
+    Schema message: "B" was expected [sn_schema_info.local_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/reporting-severity_default_suppress_severity].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > asil > const',
+            'severity': 'violation',
+            'validation_msg': '"A" was expected',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1',
+            'schema_path': '[1] > local > properties > asil > const',
+            'severity': 'info',
+            'validation_msg': '"B" was expected',
+          }),
+          'log_lvl': 'warning',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_info',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/reporting-severity_default_suppress_severity_and_rule]
+  '''
+  WARNING: Need 'IMPL_1' has schema infos:
+    Severity:       info
+    Field:          asil
+    Need path:      IMPL_1
+    Schema path:    [1] > local > properties > asil > const
+    Schema message: "B" was expected [sn_schema_info.local_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/reporting-severity_default_suppress_severity_and_rule].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > asil > const',
+            'severity': 'violation',
+            'validation_msg': '"A" was expected',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1',
+            'schema_path': '[1] > local > properties > asil > const',
+            'severity': 'info',
+            'validation_msg': '"B" was expected',
+          }),
+          'log_lvl': 'warning',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_info',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/reporting-severity_rule_default]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_1
+    Schema path:    [0] > local > properties > asil > const
+    Schema message: "A" was expected [sn_schema_violation.local_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/reporting-severity_rule_default].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > asil > const',
+            'severity': 'violation',
+            'validation_msg': '"A" was expected',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/reporting-severity_rule_info]
+  '''
+  WARNING: Need 'IMPL_1' has schema infos:
+    Severity:       info
+    Field:          asil
+    Need path:      IMPL_1
+    Schema path:    [0] > local > properties > asil > const
+    Schema message: "A" was expected [sn_schema_info.local_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/reporting-severity_rule_info].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > asil > const',
+            'severity': 'info',
+            'validation_msg': '"A" was expected',
+          }),
+          'log_lvl': 'warning',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_info',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/reporting-severity_rule_violation]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_1
+    Schema path:    [0] > local > properties > asil > const
+    Schema message: "A" was expected [sn_schema_violation.local_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/reporting-severity_rule_violation].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > asil > const',
+            'severity': 'violation',
+            'validation_msg': '"A" was expected',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/reporting-severity_rule_warning]
+  '''
+  WARNING: Need 'IMPL_1' has schema warnings:
+    Severity:       warning
+    Field:          asil
+    Need path:      IMPL_1
+    Schema path:    [0] > local > properties > asil > const
+    Schema message: "A" was expected [sn_schema_warning.local_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/reporting-severity_rule_warning].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > asil > const',
+            'severity': 'warning',
+            'validation_msg': '"A" was expected',
+          }),
+          'log_lvl': 'warning',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_warning',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_allof_error]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Need path:      IMPL_1
+    Schema path:    [0] > local > unevaluatedProperties
+    Schema message: Unevaluated properties are not allowed ('approved' was unexpected) [sn_schema_violation.local_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_allof_error].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > unevaluatedProperties',
+            'severity': 'violation',
+            'validation_msg': "Unevaluated properties are not allowed ('approved' was unexpected)",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_error]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Need path:      IMPL_1
+    Schema path:    [0] > local > unevaluatedProperties
+    Schema message: Unevaluated properties are not allowed ('comment' was unexpected) [sn_schema_violation.local_fail]
+  '''
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_error].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > unevaluatedProperties',
+            'severity': 'violation',
+            'validation_msg': "Unevaluated properties are not allowed ('comment' was unexpected)",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---

@@ -1,0 +1,40 @@
+{# Output for needs_types #}
+{% if types|length != 0 %}
+
+.. dropdown:: Need Types
+
+   {% for type in types %}
+   * {{ type.title | upper }}
+       + **:directive:** {{ type.directive }}
+       + **:prefix:** `{{ type.prefix }}`
+       + **:style:** {{ type.style }}
+   {% endfor %}
+{% endif %}
+{# Output for needs_types #}
+
+{# Output for needs_fields #}
+{% if options|length != 0 %}
+
+.. dropdown:: Need Fields
+
+   {% for option in options %}
+   * {{ option }}
+   {% endfor %}
+{% endif %}
+{# Output for needs_fields #}
+
+{# Output for needs_links #}
+{% if links|length != 0 %}
+
+.. dropdown:: Need Links
+
+   {% for link in links %}
+   * {{ link.option | upper }}
+       + **:incoming:** {{ link.incoming | capitalize }}
+       + **:outgoing:** {{ link.outgoing | capitalize }}
+       + **:copy:** {{ link.get('copy', None) | capitalize }}
+       + **:allow_dead_links:** {{ link.get('allow_dead_links', False) | capitalize }}
+   {% endfor %}
+{% endif %}
+{# Output for needs_links #}
+

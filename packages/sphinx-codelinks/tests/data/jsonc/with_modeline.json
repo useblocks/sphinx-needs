@@ -1,0 +1,5 @@
+// -*- mode: jsonc -*-
+{
+  // @JSONC modeline file, IMPL_JSONC_D, impl, [REQ_JSONC_4]
+  "value": 42
+}

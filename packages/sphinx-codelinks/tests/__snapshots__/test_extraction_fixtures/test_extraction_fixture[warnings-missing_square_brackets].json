@@ -1,0 +1,11 @@
+{
+  "needs": [],
+  "need_refs": [],
+  "marked_rst": [],
+  "warnings": [
+    {
+      "kind": "missing_square_brackets",
+      "line": 1
+    }
+  ]
+}

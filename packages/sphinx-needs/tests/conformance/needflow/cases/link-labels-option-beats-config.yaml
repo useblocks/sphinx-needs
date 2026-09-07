@@ -1,0 +1,59 @@
+id: link-labels-option-beats-config
+title: a diagram turns labels off against a project default that turns them on
+purpose: |
+  Only an unset option consults the configuration, so a diagram always has the last word. This
+  is the case that used to be inexpressible: the option and the project default were combined
+  such that the default could only ever turn labels on, leaving a project no way to draw one
+  unlabelled diagram. Every implementation must give the option precedence, so the expectation
+  here is an edge with no label at all despite the project asking for one.
+needs:
+- id: REQ_1
+  type: req
+  title: Requirement one
+  links:
+    links:
+    - REQ_2
+- id: REQ_2
+  type: req
+  title: Requirement two
+links:
+- option: links
+  incoming: is linked by
+  outgoing: links to
+config:
+  link_labels: outgoing
+options:
+  link_labels: none
+expect:
+  plantuml:
+    source: |
+      @startuml
+
+      ' Nodes definition
+
+      node "<size:12>Requirement</size>\n**Requirement one**\n<size:10>REQ_1</size>" as REQ_1 [[<NODE_URL:REQ_1>]]
+      node "<size:12>Requirement</size>\n**Requirement two**\n<size:10>REQ_2</size>" as REQ_2 [[<NODE_URL:REQ_2>]]
+
+      ' Connection definition
+
+      REQ_1 --> REQ_2
+
+      @enduml
+  graphviz:
+    source: |
+      digraph needflow {
+      compound=true;
+      node [
+        margin="0.21,0.11";
+      ]
+      edge [
+        minlen="2";
+      ]
+
+      // node definitions
+      "REQ_1" [label=<<font point-size="12">Requirement</font><br align="left"/><b>Requirement one</b><br align="left"/><font point-size="10">REQ_1</font><br align="left"/>>, tooltip="REQ_1", href="<NODE_URL:REQ_1>", target="_top", shape="box3d"];
+      "REQ_2" [label=<<font point-size="12">Requirement</font><br align="left"/><b>Requirement two</b><br align="left"/><font point-size="10">REQ_2</font><br align="left"/>>, tooltip="REQ_2", href="<NODE_URL:REQ_2>", target="_top", shape="box3d"];
+
+      // edge definitions
+      "REQ_1" -> "REQ_2" [arrowhead=vee];
+      }

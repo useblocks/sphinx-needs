@@ -3,145 +3,475 @@ on:
   push:
     branches: [master]
   pull_request:
-jobs:
 
+# A fix-up push otherwise leaves the superseded head's 26 jobs running to completion, and
+# the useblocks organisation shares 60 concurrent runners across all of its repositories.
+# The group is the pull request's number, so every run that is NOT a pull request -- every
+# push to master -- gets a group of its own and master runs neither queue behind nor cancel
+# each other. That last part is not `cancel-in-progress`'s doing: GitHub queues a run whose
+# group is busy as `pending`, and "any existing pending job or workflow in the same
+# concurrency group will be canceled", whatever `cancel-in-progress` says.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
   lint:
     name: Lint
-    runs-on: ubuntu-20.04
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.9'
-    - uses: pre-commit/action@v3.0.1
-
-  tests-core:
-    name: "Core py${{ matrix.python-version }} sphinx~=${{ matrix.sphinx-version }} ${{ matrix.os }}"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false  # Set on "false" to get the results of ALL builds
-      matrix:
-        os: ["ubuntu-latest"]
-        python-version: ["3.10", "3.12"]
-        sphinx-version: ["7.0", "8.0"]
-        include:
-          - os: "ubuntu-latest"
-            python-version: "3.9"
-            sphinx-version: "7.0"
-          - os: "windows-latest"
-            python-version: "3.9"
-            sphinx-version: "7.0"
-          - os: "windows-latest"
-            python-version: "3.12"
-            sphinx-version: "8.0"
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install graphviz (linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: sudo apt-get install graphviz
-      - name: Install graphviz (windows)
-        if: matrix.os == 'windows-latest'
-        run: choco install --no-progress graphviz
-      - name: Set Up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Update pip
-        run: python -m pip install --upgrade pip
-      - name: Install dependencies
-        run: |
-          python -m pip install sphinx~=${{ matrix.sphinx-version }} -e .[test]
-          python -m pip freeze
-      - name: Run pytest
-        run: python -m pytest -v --ignore=tests/benchmarks -m "not jstest" --cov=sphinx_needs --cov-report=xml --cov-report=term-missing tests
-      - name: Create coverage
-        run: coverage xml
-      - name: Upload to Codecov
-        if: github.event.pull_request.head.repo.full_name == github.repository && github.repository == 'useblocks/sphinx-needs' && matrix.os == 'ubuntu-latest'
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          name: sphinx-need-pytests
-          flags: pytests
-          file: ./coverage.xml
-          fail_ci_if_error: true
-
-  tests-js:
-    name: "JS py${{ matrix.python-version }} sphinx~=${{ matrix.sphinx-version }} ${{ matrix.os }}"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - os: "ubuntu-latest"
-            python-version: "3.9"
-            sphinx-version: "7.0"
-          - os: "ubuntu-latest"
-            python-version: "3.12"
-            sphinx-version: "8.0"
-    steps:
-      - uses: actions/checkout@v4
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-      - name: Install Cypress Test Framework
-        run: npm install cypress
-      - name: Set Up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Update pip
-        run: python -m pip install --upgrade pip
-      - name: Install dependencies
-        run: |
-          python -m pip install sphinx~=${{ matrix.sphinx-version }} -e .[test]
-          python -m pip freeze
-      - name: Run pytest
-        run: |
-          python -m pytest -v --ignore=tests/benchmarks -m "jstest" tests
-
-  tests-no-mpl:
-    name: Test matplotlib uninstalled
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Set Up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.0.1
         with:
-          python-version: "3.10"
-      - name: Update pip
-        run: python -m pip install --upgrade pip
+          enable-cache: true
+          # the pinned interpreter (root `.python-version`) is not on the runner image, so
+          # without this uv downloads it on every run
+          cache-python: true
+      - name: Check the workspace manifests agree with each other
+        # FIRST, and with `--no-project`: this fence reads the manifests, so it must not
+        # need an environment built from them -- a mistake in a manifest is exactly when
+        # `uv sync` fails, and a fence that syncs first reports "sync failed" instead of
+        # naming the mistake. It also replaces the inline requires-python check that used
+        # to sit further down this job, and adds six more assertions of the same kind
+        # (see the script's docstring). The local prek hook runs the same script against
+        # the synced environment, so `uv run poe lint` covers it too
+        run: >
+          uv run --no-project --with packaging python tools/src/sn_tools/check_workspace.py
+      - name: Check the vendored PlantUML is the one its pin names
+        # THE fence on the committed jar: `vendor/plantuml/pin.toml` is two lines a bump has
+        # to edit and a ~30 MB file it has to replace, and the file is the half a reviewer
+        # cannot see in a diff. `--no-project` for the same reason as the check above -- this
+        # reads the checkout, not an environment built from it -- and `--verify` never
+        # touches the network. `uv run poe lint` declares the same check as a dep
+        run: uv run --no-project python tools/src/sn_tools/fetch_plantuml.py --verify
+      - run: uv run --frozen prek run --all-files --show-diff-on-failure
+        env:
+          PREK_COLOR: always
+      - name: Check the type gate still sees every package
+        # the gate must see each package: a stale `[tool.ty.src] include` makes ty check zero
+        # files and exit 0, because ty intersects the CLI path with the include rather than
+        # overriding it -- so the type check stays green with a whole package unchecked.
+        # A non-zero exit is not enough on its own: `typecheck` also exits non-zero for
+        # reasons that have nothing to do with the probe (an unreadable `[tool.ty]` value, a
+        # `--python` that names no environment), and reading those as success would revive
+        # exactly the silent green this step exists to kill -- hence the `case`, which demands
+        # that the failure NAME the probe. Running after the prek step (whose `ty` hook is the
+        # same command) is belt and braces on top of that, not the guarantee: a healthy gate
+        # has already had to pass on this command before the probe is planted.
+        # ONE probe at a time, and one per package: with both planted at once a gate that had
+        # dropped one package would still go red on the other and look healthy.
+        run: |
+          probes="packages/sphinx-needs/src/sphinx_needs/_ty_gate_probe.py packages/sphinx-mounts/src/sphinx_mounts/_ty_gate_probe.py"
+          # shellcheck disable=SC2064
+          trap "rm -f $probes" EXIT
+          for probe in $probes; do
+            echo 'x: int = "not an int"' > "$probe"
+            if out=$(uv run --frozen --no-sync poe typecheck 2>&1); then
+              printf '%s\n' "$out"
+              echo "::error::the type check passed with a deliberate type error in $probe"
+              exit 1
+            fi
+            printf '%s\n' "$out"
+            case "$out" in
+              *"$probe"*) echo "the type gate is looking at $probe" ;;
+              *) echo "::error::the type check failed, but not on $probe -- the gate is broken"
+                 exit 1 ;;
+            esac
+            rm -f "$probe"
+          done
+      - name: Check the sphinx groups are declared conflicting
+        # if this sync ever succeeds, `[tool.uv] conflicts` has been dropped and the lock
+        # holds one sphinx again, so every matrix cell below would test the same version
+        env:
+          UV_PROJECT_ENVIRONMENT: .venvs/conflict-check
+        run: |
+          if uv sync --frozen --no-default-groups --group sphinx-7 --group sphinx-9; then
+            echo "::error::syncing sphinx-7 and sphinx-9 together should be an error"
+            exit 1
+          fi
+      - name: Check the default environment is the one the repository pins
+        # Two assertions about a bare `uv sync`, because it has two axes and each drifts on
+        # its own.
+        # Sphinx: the `sphinx-7` and `typing` groups both cap sphinx at the 7.4 series, and
+        # both are in the conflict set so that a plain `uv sync` is not capped by either.
+        # Interpreter: the root `.python-version` is what makes a bare `uv sync` the same
+        # environment everywhere. `setup-uv` is given no `python-version` input in THIS job
+        # precisely so uv reads that file (the monthly `prek-update` job omits it too, so it
+        # runs on the pin as well); every other job passes one, which `setup-uv` turns into
+        # `UV_PYTHON`, and the environment variable beats the file. So this is the job that
+        # tests the pin. The expected series is read back out of the file rather than written
+        # down a second time here.
+        run: |
+          v=$(cut -d. -f1,2 .python-version)
+          uv run --frozen python -c "
+          import sys, sphinx
+          assert sphinx.version_info[0] >= 9, 'sphinx ' + sphinx.__version__ + ' is not the newest series'
+          series = '%d.%d' % sys.version_info[:2]
+          assert series == '$v', 'the default environment is on python ' + series + ', but .python-version says $v'
+          "
+      - name: Check the typing floor is the floor it claims to be
+        # .venvs/typing exists because the `ty` hook ran the typecheck task above; the
+        # stubs must match the installed docutils, and that docutils must be the lowest
+        # series the floor sphinx accepts
+        env:
+          UV_PROJECT_ENVIRONMENT: .venvs/typing
+        run: uv run --frozen --no-sync --no-group dev --group typing python .github/scripts/check_typing_floor.py
+      - name: Test the repository's own tooling
+        # `tools/` holds the release fences: the one that decides whether a tag may publish,
+        # and the one that rewrites floors. Nothing else in CI exercises them, and they are
+        # in the root `testpaths`, so a bare `pytest` at the root runs them too -- but every
+        # matrix cell names the package's `tests` path explicitly and so never collects them
+        run: uv run --frozen --no-sync pytest tools/tests -q
+      - name: Check a bare root pytest still collects
+        # `[tool.pytest.ini_options] testpaths` exists so that a plain `pytest` at the root
+        # works, and NOTHING else in this repository exercises that: every other job and
+        # every poe task passes an explicit path or cds into a package. So a `testpaths`
+        # entry that makes collection fail outright -- two members' `tests/__init__.py` both
+        # resolving to `tests.conftest`, which is exactly what adding sphinx-mounts' suite
+        # did -- is invisible to all of them. Collection only: this runs no test
+        run: uv run --frozen --no-sync pytest --collect-only -q > /dev/null
+
+  # ubc:
+  #   name: ubc
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v7
+  #     - uses: useblocks/ubc-action@main
+  #       with:
+  #         version: 0.19.1
+  #     - name: Run 'ubc check docs'
+  #       run: ubc check docs
+  #     - name: Run 'ubc build index docs'
+  #       run: ubc build index docs --show-warnings
+
+  # Display names carry the PACKAGE they exercise as their first word (`Needs …`,
+  # `Extensions …` for the two that extend sphinx-needs), so the checks list on a pull
+  # request reads by package. `Lint` and
+  # `check` are workspace-wide and are also required status contexts on master, so
+  # their names must not change without updating the branch protection.
+  #
+  # `tests-core` calls `test-package.yaml` and `tests-extensions` calls
+  # `test-extensions.yaml`; both units get everything from the renderer installs to the
+  # sphinx-series fence from `.github/actions/prepare-cell`, so no job carries a copy of
+  # them. A called job's name is appended to its caller's, so these checks read
+  # `Needs py3.13 sphinx-9 ubuntu-latest / pytest` -- the ` / ` join is unconditional and
+  # cannot be suppressed. Neither required context is among them.
+  tests-core:
+    name: "Needs py${{ matrix.python-version }} ${{ matrix.sphinx-group }} ${{ matrix.os }}"
+    strategy:
+      fail-fast: false # Set on "false" to get the results of ALL builds
+      matrix:
+        os: ["ubuntu-latest"]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
+        sphinx-group: ["sphinx-7", "sphinx-8", "sphinx-9"]
+        include:
+          # corner cases for Windows
+          - os: "windows-latest"
+            python-version: "3.11"
+            sphinx-group: "sphinx-7"
+          - os: "windows-latest"
+            python-version: "3.12"
+            sphinx-group: "sphinx-8"
+          - os: "windows-latest"
+            python-version: "3.14"
+            sphinx-group: "sphinx-9"
+        exclude:
+          # Sphinx 9.1 requires python 3.12, one above this project's floor, so the
+          # `sphinx-9` group carries a `python_version >= '3.12'` marker and contributes
+          # nothing on 3.11. The sync would still exit 0 -- the environment just falls back
+          # to the project's own sphinx range -- and `check_sphinx_cell.py` in the unit
+          # would then fail the cell for testing a sphinx it never asked for. Exclude it
+          # instead.
+          - os: "ubuntu-latest"
+            python-version: "3.11"
+            sphinx-group: "sphinx-9"
+    uses: ./.github/workflows/test-package.yaml
+    with:
+      os: ${{ matrix.os }}
+      python-version: ${{ matrix.python-version }}
+      sphinx-group: ${{ matrix.sphinx-group }}
+      cache-suffix: ${{ matrix.python-version }}-${{ matrix.sphinx-group }}
+      test-path: packages/sphinx-needs/tests
+      # `benchmarks` is `benchmark.yaml`'s; `jstest` is the `tests-js` lane's
+      # `-n 4`: four workers, the runner's core count. The `-n auto` race this suite used to
+      # document was on a jar copied into every test project; since #1870 the jar is one
+      # file at a fixed path and nothing copies it, and the suite was measured at `-n 4`
+      # and `-n auto` with no failure and no flake. Measured locally: 535 s serial -> 164 s
+      pytest-args: '--ignore=packages/sphinx-needs/tests/benchmarks -m "not jstest" -n 4'
+      cov-module: sphinx_needs
+      codecov-flag: pytests
+      codecov-name: sphinx-need-pytests
+      upload-coverage: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.14' }}
+      # Rendering is opt in now, but that does not make the jar optional here: measured with
+      # a logging shim on PATH, the suite still starts it 233 times across about a hundred
+      # cases (102) in nine files -- the twelve `test_app` parameter dicts that say
+      # `"plantuml": True`, and, for most of it, the tests that call `make_app` themselves and
+      # take the `plantuml_command` fixture (test_needflow and the needflow conformance corpus
+      # between them are 190 of the 233).
+      # That fixture still RAISES rather than skipping when it finds no renderer -- these
+      # tests assert on rendered output and skipping them would be a false green -- so the
+      # cells still need a jar. `actions/checkout` brings the committed one along and they
+      # would resolve it themselves; this input is what makes them CHECK it against
+      # `vendor/plantuml/pin.toml` first, set PLANTUML_JAR explicitly, and run the
+      # `test -f` / `java -version` step, so a jar that did not survive the checkout is one
+      # red step naming it rather than a scatter of render failures. These cells run bare
+      # `pytest`, not `poe`, so the tasks' `deps = ["fetch-plantuml"]` never fires here
+      needs-plantuml: true
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  tests-js:
+    name: "Needs JS py${{ matrix.python-version }} ${{ matrix.sphinx-group }} ${{ matrix.os }}"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: "ubuntu-latest"
+            python-version: "3.11"
+            sphinx-group: "sphinx-7"
+          - os: "ubuntu-latest"
+            python-version: "3.13"
+            sphinx-group: "sphinx-9"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: true
+          cache-suffix: ${{ matrix.python-version }}-${{ matrix.sphinx-group }}
+          python-version: ${{ matrix.python-version }}
+      # NO PlantUML step: none of the three browser cases opts into rendering, and
+      # `test_app` resolves a renderer only for a build that did. The step used to be here
+      # because the fixture took `plantuml_command` unconditionally and it raises rather
+      # than skips
+      - name: Install the cell
+        # `js` is the browser driver (pytest-playwright); it is not in `test`, because only
+        # these two cells want it
+        run: uv sync --frozen --no-default-groups --group test --group js --group ${{ matrix.sphinx-group }}
+      - name: Check the cell installed the sphinx it names
+        # against the group's own specifier — see the comment in test-package.yaml
+        run: uv run --no-sync python .github/scripts/check_sphinx_cell.py ${{ matrix.sphinx-group }}
+      - name: Install the browser
+        # the binary is not a package: playwright fetches it from cdn.playwright.dev into
+        # ~/.cache/ms-playwright. `--with-deps` adds the apt libraries a runner lacks.
+        # Deliberately uncached for now — measure this step, and if it is slow enough to
+        # matter, add actions/cache on ~/.cache/ms-playwright keyed on the playwright
+        # version in uv.lock (the browser revision follows it)
+        run: uv run --frozen --no-sync playwright install --with-deps chromium
+      - name: Run pytest
+        run: uv run --no-sync pytest -v packages/sphinx-needs/tests --ignore=packages/sphinx-needs/tests/benchmarks -m "jstest"
+
+  tests-no-mpl:
+    name: Needs without matplotlib
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: true
+          # 3.12+: on 3.11 the lock resolves sphinx 8.2, and this job wants the newest sphinx
+          python-version: "3.12"
+      - name: Point PLANTUML_JAR at the vendored jar
+        # the one jar `vendor/plantuml/pin.toml` names, verified against the pin first. `shell: bash` (pipefail) and
+        # `tr -d '\r'` (Windows) are both load-bearing -- vendor/plantuml/README.md,
+        # "The step CI runs", says why
+        shell: bash
+        run: |
+          jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py --verify | tr -d '\r')"
+          echo "PLANTUML_JAR=$jar" >> "$GITHUB_ENV"
       - name: Install Dependencies
         run: |
-          python -m pip install -e .[test,docs]
-          python -m pip uninstall -y matplotlib numpy
-          python -m pip freeze
-      - name: Run pytest
+          uv sync --frozen --no-default-groups --group test --extra docs
+          # `uv pip` is not a project interface: it ignores UV_PROJECT_ENVIRONMENT and
+          # targets whatever virtualenv is active, so the environment is named here.
+          # There is none active on a runner, but there usually is one locally.
+          uv pip uninstall --python .venv/bin/python matplotlib numpy
+      - name: Check matplotlib really is gone
+        # every command below has to be `uv run --no-sync`: a bare `uv run` would re-sync
+        # the group that matplotlib is in and put it straight back
         run: |
-          python -m pytest -v tests/no_mpl_tests.py
+          if uv run --no-sync python -c "import matplotlib"; then
+            echo "::error::matplotlib is still installed, the job would test nothing"
+            exit 1
+          fi
+      - name: Run pytest
+        run: uv run --no-sync pytest -v packages/sphinx-needs/tests/no_mpl_tests.py
       - name: Run HTML build
         # the docs should build without matplotlib (just issuing warnings)
-        run: sphinx-build -b html . _build 
-        working-directory: docs
+        run: uv run --no-sync sphinx-build -b html . _build
+        working-directory: packages/sphinx-needs/docs
+
+  tests-extensions:
+    name: "Extensions ${{ matrix.sphinx-group }} ${{ matrix.os }}"
+    # One cell per sphinx series running BOTH extension packages' suites, as steps. A
+    # matrix of its own rather than more paths in `tests-core`, the way `tests-js` and
+    # `tests-no-mpl` already sit beside it: these packages need a diagram renderer and a
+    # libclang wheel the core cells do not, they want codecov flags of their own, and
+    # sphinx-mounts takes 1-3 minutes -- which folded into the core matrix would be paid
+    # eleven times, three of them on Windows.
+    #
+    # And ONE cell for the two of them rather than a second three-cell matrix:
+    # sphinx-codelinks' whole suite is under 20 seconds, so a matrix of its own would
+    # spend more runner time starting jobs than testing, and would put three more entries
+    # on every pull request's checks list.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest"]
+        sphinx-group: ["sphinx-7", "sphinx-8", "sphinx-9"]
+        include:
+          # sphinx-mounts' subject is filesystem paths, symlinks and path confinement, so
+          # one Windows cell is not optional coverage; its own CI ran three. It is worth
+          # as much to sphinx-codelinks, whose two latent path bugs -- `locate_git_root`
+          # and `form_https_url` -- are exactly this class
+          - os: "windows-latest"
+            sphinx-group: "sphinx-9"
+    uses: ./.github/workflows/test-extensions.yaml
+    with:
+      os: ${{ matrix.os }}
+      # deliberately NO `python-version`: that input becomes UV_PYTHON, which beats the
+      # root `.python-version`. These cells vary the sphinx series, not the interpreter,
+      # so they run on the repository's pin
+      sphinx-group: ${{ matrix.sphinx-group }}
+      cache-suffix: extensions-${{ matrix.sphinx-group }}
+      upload-coverage: ${{ matrix.os == 'ubuntu-latest' && matrix.sphinx-group == 'sphinx-9' }}
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  docs-codelinks:
+    name: Docs codelinks
+    runs-on: ubuntu-latest
+    # the only job in this file with one, because it is the only one added since the two
+    # reusable workflows set `contents: read` on theirs. It reads the checkout and uploads
+    # nothing. Giving the other nine the same is a whole-file change and not this one's
+    permissions:
+      contents: read
+    # sphinx-codelinks' documentation is the one END-TO-END exercise of the extension:
+    # `src-trace` runs over four projects of its own source, so a build is the extension
+    # doing its real job rather than a rendering check. It is also what caught the
+    # worktree bug the import fixed. `docs.yaml` is a linkcheck scoped to sphinx-needs'
+    # docs, the Read the Docs pull-request build is neither required nor even run when the
+    # package did not change, and a 7-second build is a cheap price for the only gate there
+    # is (measured locally; the rest of the job is checkout and the one sync below).
+    #
+    # No `paths:` filter and no `if:`: it runs on every pull request, because the thing it
+    # builds reads `src/` -- a change to the extension with no change to `docs/` is
+    # precisely the change that breaks it.
+    steps:
+      - uses: actions/checkout@v7
+        # the `src-trace` directive turns every traced source line into a blob link at
+        # the current rev, which it reads from `.git/HEAD` and `.git/config`. It reads no
+        # history, so the default shallow checkout is enough -- but it does need `.git`,
+        # so this job must not be given `fetch-depth: 0`-free surprises like a
+        # `sparse-checkout` that omits it
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: true
+          cache-suffix: docs-codelinks
+          # no `python-version`, so this runs on the root `.python-version`, which is not
+          # on the runner image
+          cache-python: true
+      # `docs.yaml`'s Docs-Linkcheck idiom -- sync ONE environment, then run the builder in
+      # it with `--no-sync` -- rather than `uv run --frozen poe docs-codelinks`. That form
+      # is the same build, but it pays for two environments: the outer `uv run` syncs the
+      # DEFAULT one (the `dev` group: prek, poethepoet, uv, the whole `test` group, the `js`
+      # group -- 108 packages, 415 MB) purely so that `poe` exists, and poe's executor then
+      # syncs `.venvs/docs-codelinks` (71 packages, 138 MB) and builds there. There is no
+      # cheap way to keep poe as the single source of truth here, because poe itself lives
+      # in the `dev` group; so the command is restated, exactly as `docs.yaml` restates its
+      # own. Keep the two in step with the `docs-codelinks` poe task.
+      - name: Install the docs environment
+        run: uv sync --frozen --no-default-groups --extra docs-codelinks
+      - name: Build the docs
+        # `-nW --keep-going`, from the poe task, so a nitpick warning is an error. No
+        # renderer: these docs draw no diagrams, so unlike `docs-needs` there is no
+        # graphviz, java or plantuml to install
+        run: uv run --no-sync sphinx-build -nW --keep-going -b html docs docs/_build/html -T
+        working-directory: packages/sphinx-codelinks
+
+  bazel:
+    name: Mounts Bazel integration
+    runs-on: ubuntu-latest
+    # Its own lane, not a matrix cell: it needs a Bazel installation and two caches no
+    # other job wants, and three of its four steps are `bazel build`/`bazel run` targets
+    # that are not pytest at all. It is the only end-to-end proof that sphinx-mounts'
+    # headline use case -- mounting `bazel-bin` outputs -- still works.
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install graphviz
+        run: sudo apt-get install graphviz
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: true
+          cache-suffix: bazel
+          cache-python: true
+      - name: Point PLANTUML_JAR at the vendored jar
+        # the one jar `vendor/plantuml/pin.toml` names, verified against the pin first. `shell: bash` (pipefail) and
+        # `tr -d '\r'` (Windows) are both load-bearing -- vendor/plantuml/README.md,
+        # "The step CI runs", says why
+        shell: bash
+        run: |
+          jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py --verify | tr -d '\r')"
+          echo "PLANTUML_JAR=$jar" >> "$GITHUB_ENV"
+      - uses: bazel-contrib/setup-bazel@0.19.0
+        with:
+          bazelisk-cache: true
+          repository-cache: true
+      - name: Install the environment
+        run: uv sync --frozen --no-default-groups --group test
+      - name: Run the bazel-marked tests
+        run: uv run --no-sync pytest -v packages/sphinx-mounts/tests -m bazel
+      # The three targets the example's README documents. `//:all_bundles` is covered by
+      # the test above as well; the two doc-build entry points are not, and they are what
+      # exercise `build_docs.sh` / `build_docs_sandbox.sh` against the real workspace root
+      - name: "Bazel: materialise all bundles"
+        working-directory: packages/sphinx-mounts/tests/example
+        run: bazel build //:all_bundles
+      - name: "Bazel: build docs as a sandboxed artefact (//:docs_html)"
+        working-directory: packages/sphinx-mounts/tests/example
+        run: bazel build //:docs_html
+      - name: "Bazel: build docs in-workspace (//:build_docs)"
+        working-directory: packages/sphinx-mounts/tests/example
+        run: bazel run //:build_docs
+
+  smoke-needs:
+    name: Needs smoke test of the built wheel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install graphviz
+        run: sudo apt-get install graphviz
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: true
+          # the declared `requires-python` floor: the throwaway environment the wheel is
+          # installed into inherits it through UV_PYTHON, so this cell is what keeps that
+          # floor honest. `setup-uv` sets UV_PYTHON from this input, which beats the root
+          # `.python-version` -- drop the input and this job would silently test 3.13.
+          python-version: "3.11"
+      - name: Build the wheel, install it out of the project and build a doc with it
+        run: uv run --frozen poe smoke-needs
 
   check:
-  
+
     # This job does nothing and is only used for the branch protection
     # see https://github.com/marketplace/actions/alls-green#why
 
     if: always()
 
     needs:
-    - lint
-    - tests-core
-    - tests-js
-    - tests-no-mpl
+      - lint
+      - tests-core
+      - tests-js
+      - tests-no-mpl
+      - tests-extensions
+      - docs-codelinks
+      - bazel
+      - smoke-needs
 
     runs-on: ubuntu-latest
 
     steps:
-    - name: Decide whether the needed jobs succeeded or failed
-      uses: re-actors/alls-green@release/v1
-      with:
-        jobs: ${{ toJSON(needs) }}
+      - name: Decide whether the needed jobs succeeded or failed
+        uses: re-actors/alls-green@release/v1
+        with:
+          jobs: ${{ toJSON(needs) }}

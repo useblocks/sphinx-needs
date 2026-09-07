@@ -1,0 +1,3722 @@
+.. _ubcode: https://ubcode.useblocks.com/
+.. _changelog:
+
+Changelog
+=========
+
+.. _`release:8.5.0`:
+
+8.5.0
+-----
+
+:Released: 03.09.2026
+:Full Changelog: `v8.4.0...v8.5.0 <https://github.com/useblocks/sphinx-needs/compare/8.4.0...8.5.0>`__
+
+This release is about **charts**, and about the tooling behind the project. :ref:`needpie`
+and :ref:`needbar` gain a scope — the same ``:filter:``, ``:status:``, ``:tags:`` and
+``:types:`` options a view directive takes — and accept the ``cypher`` option a chart
+authored for `ubCode`_ carries, so one document builds in both tools. Schema validation
+errors now name the keyword that failed and report a ``$ref`` at its definition, which
+changes their text. The bug fixes continue the previous release's theme: a :ref:`needuml`,
+:ref:`needarch` or :ref:`needextract` input that used to end the build with a traceback,
+and a malformed :ref:`needs_warnings` filter, are now located warnings — and, for a project
+that builds with ``-W``, can turn a green build red until the reported mistake is fixed or
+suppressed. Under the hood the development toolchain moves to a committed ``uv.lock``,
+``poe`` tasks and ``ty``; none of that touches the published package.
+
+Improvements
+............
+
+- ✨ :ref:`needpie` and :ref:`needbar` now accept the ``:filter:``, ``:status:``,
+  ``:tags:`` and ``:types:`` options, as the scope a chart is counted over (:pr:`1831`)
+
+  The four options were rejected on both chart directives with an ``unknown option``
+  error. They now select the needs and parts a chart counts over, once for the whole
+  chart: every content line or grid cell is counted as its own result restricted to
+  that scope, a static value such as ``10`` is left alone, and a chart that carries
+  none of the four counts over the whole project exactly as it did before.
+
+  A scope holds what the same four options select on a view directive such as
+  :ref:`needlist`, so a chart and a list written with the same options select the same
+  needs. On :ref:`needpie` a ``:filter-func:`` is handed the needs of the scope, as the
+  same view an unscoped chart hands it, so a scope restricts what such a function counts
+  from, not what it returns. The view gains one public method for that,
+  ``NeedsAndPartsListView.filter_id_complete``, which selects exactly the given needs and
+  parts by ``id_complete``.
+
+  Neither directive gains an empty state it did not have: a pie of only filter lines
+  whose scope selects nothing shows its ``:filter_warning:`` text, exactly as it does
+  for filters that match nothing, while a bar chart, which has no such text, draws all
+  zeros.
+
+  This is also the Sphinx-Needs half of a chart authored for `ubCode`_: the ``cypher``
+  query ubCode reads as a chart's scope is ignored by a Sphinx build, so writing the
+  same scope with these options beside the query makes both tools count over the same
+  needs. See :ref:`needpie_scope` and :ref:`needbar_scope`.
+
+- 👌 :ref:`Schema validation <schema_validation>` errors now name the failing keyword, and
+  report ``$ref`` targets at their definition **(changed output)** (:pr:`1819`)
+
+  The ``jsonschema-rs`` requirement moves from ``~=0.37.1`` to ``>=0.37.1,<0.53.0``,
+  which brings a rewritten error renderer with it. Which schemas validate, which needs
+  are reported, and the warning subtypes (``sn_schema_violation.*``) are all unchanged —
+  only the message text is different.
+
+  The failing keyword is now named, and the instance path is given relative to the
+  sub-schema that failed rather than from the root:
+
+  .. code-block:: text
+
+     - Failed validating in schema
+     + Failed validating "pattern" in schema["properties"]["efforts"]
+     - On instance["properties"]["efforts"]:
+     + On instance:
+
+  A ``$ref`` is reported where it is defined, instead of through the reference:
+
+  .. code-block:: text
+
+     - Failed validating "const" in schema["properties"]["contains"]["$ref"]["properties"]["type"]
+     + Failed validating "const" in schema["$defs"]["LinkItemSchemaType"]["properties"]["type"]
+
+  And the names listed by ``Unevaluated properties are not allowed (...)`` are no longer
+  sorted alphabetically. The set of names reported is unchanged, and the order is stable.
+
+  If you match on this text — in a test, a log filter, or a ``suppress_warnings`` entry
+  keyed to a message body rather than to a subtype — it will need updating.
+
+- ✨ The ``cypher`` directive option is now accepted on :ref:`needpie` and :ref:`needbar`
+  for `ubCode`_ compatibility (:pr:`1818`)
+
+  The two chart directives join :ref:`needlist`, :ref:`needtable` and :ref:`needflow` in
+  accepting this option and then ignoring it, so that a document authored for ubCode also builds
+  with Sphinx-Needs, instead of failing with an ``unknown option`` error.
+  The option never reaches a node, the rendered output, or the ``needs.json`` file.
+
+  On :ref:`needpie` the no-op is visible in the chart, though, which it is not on the three view directives:
+  ubCode reads the query as the scope each content line is counted over, whereas Sphinx-Needs
+  ignores it, so the same chart can show different numbers in the two tools.
+
+  On :ref:`needbar` the option is accepted so that a document already carrying it builds
+  in both.
+  See :ref:`ubCode compatibility <ubcode_compat_options>` for the exact per-directive list.
+
+Internal changes
+................
+
+- 🔧 mypy is replaced by `ty <https://docs.astral.sh/ty/>`__ for type checking (:pr:`1830`)
+
+  The ``typing`` dependency group is the pinned floor environment — the oldest supported
+  Sphinx and Docutils series, the stubs, and ty itself — installed into ``.venvs/typing``,
+  and ``uv run poe typecheck`` checks against it, as do the prek hook and CI. Nothing about
+  the published package changes: the group is development-only metadata, like the rest of
+  ``[dependency-groups]``.
+
+- 🔧 The development extras ``test``, ``test-parallel`` and ``benchmark`` become dependency
+  groups, tox is replaced by `poe <https://poethepoet.natn.io/>`__, and CI installs every
+  job from ``uv.lock`` (:pr:`1823`)
+
+  The three extras installed only the tools this project is developed with, so this does
+  not affect users of the package; ``pip install sphinx-needs[test]`` (or
+  ``[test-parallel]``, or ``[benchmark]``) no longer resolves, because dependency groups
+  are not published metadata. A contributor gets them with ``uv sync``, and every task —
+  the test suite against each supported Sphinx series, the type checker, the documentation
+  builds — is listed by ``uv run poe``, as :doc:`contributing` describes.
+
+  The ``plotting``, ``docs`` and the other ``theme-*`` extras are unchanged. ``theme-furo``
+  now requires furo 2025.12.19 or newer, the first release of that theme that supports
+  Sphinx 9. Every earlier release caps Sphinx below 9.0, so a documentation build with the
+  furo theme could not use the Sphinx this package already supports.
+
+Bug fixes
+.........
+
+- 🐛 A :ref:`needs_warnings` filter that is neither a string nor a callable is now
+  reported, instead of ending the build **(changed output)** (:pr:`1830`)
+
+  The guard for such a value called the warning logger without its ``subtype`` and
+  ``location`` arguments, so it raised ``TypeError`` at the end of the build rather than
+  logging anything. The entry is now reported as a ``needs.config`` warning and skipped,
+  and the remaining warning checks still run.
+
+- 🐛 Eight :ref:`needuml` and :ref:`needarch` inputs that were ignored, or that ended the
+  build, are now reported **(changed output)** (:pr:`1800`)
+
+  Three of them ended the whole build with a Python traceback and a "report this to the
+  developers" banner, none of them naming the document it came from:
+
+  - An ``:extra:`` value containing a second colon — a URL, a time, a namespaced
+    identifier — raised ``ValueError: too many values to unpack``. A pair is now split on
+    its first colon only, with both halves stripped, so such values are usable; a segment
+    carrying no colon at all is reported and skipped, and an empty one (from a trailing
+    comma) is skipped in silence, as an empty ``:config:`` segment always has been.
+  - ``uml(id, key=...)`` naming an arch key the need does not carry raised a bare
+    ``KeyError``, because the guard subscripted ``arch`` before testing for the key. The
+    message the code already held, naming both the key and the need, is now the one
+    raised.
+  - ``import()`` given an option holding a plain string consumed it one character at a
+    time, looking each character up as a need id and reporting the first character as an
+    unknown id. Such a value is now refused by name, and a list of ids is imported as it
+    always was. Note the one shape this ends: under a ``needs_id_regex`` permitting
+    single-character ids, a *string* of concatenated ids used to import them one by one,
+    and now errors. An option that is defined but unset still imports nothing, silently.
+
+  **The whitespace strip is the one change to what a working document renders.** It only
+  affects an ``:extra:`` written with spaces around a pair, which the documented example
+  never had: ``:extra: a:1, b:2`` stored the key ``" b"``, unreachable from a template, so
+  ``{{ b }}`` rendered empty and now renders ``2``; and ``:extra: name: X`` stored ``" X"``
+  and rendered a leading space, which it no longer does. Both are what the author wrote the
+  pair to mean.
+
+  The rest were silent, and are unchanged in what they render:
+
+  - Without ``sphinxcontrib.plantuml`` installed, every diagram in the project was
+    replaced by an error node on the page and nothing at all was logged.
+  - A ``:config:`` name that ``needs_flow_configs`` does not define was dropped. The
+    names it does define are still applied.
+  - A non-numeric ``:scale:`` fell back to 100, which it still does.
+  - ``ref()`` given both ``option`` and ``text``, or neither, was accepted without a
+    word: its own validation read ``(option and text) and (not option and not text)`` and
+    so could never hold. What is rendered is unchanged — ``option`` still wins over
+    ``text``, and a call with neither still renders a link with no label.
+  - ``import()`` ignored an option name the need does not carry.
+
+  The two template-function warnings above are emitted once per distinct message for the
+  whole build, so the same call on the same need in a second document is not reported
+  again.
+
+  **If you build with** ``-W``, the general rule applies here as it does elsewhere in this
+  release series: a mistake that used to be silent — or to crash — is now a warning, and a
+  warning fails a ``-W`` build. A project can start failing where it passed even though
+  nothing about it changed, most easily by not having ``sphinxcontrib.plantuml`` installed,
+  which now reports one warning per needuml. Silence them with
+  ``suppress_warnings = ["needs.needuml"]``; the ``:scale:`` one keeps the existing
+  ``needs.diagram_scale`` subtype shared with the other diagrams, so covering both takes
+  ``suppress_warnings = ["needs.needuml", "needs.diagram_scale"]``. A third subtype,
+  ``needs.uml``, already existed and is unchanged: it covers only the
+  :ref:`needs_uml_process_max_time` warning.
+
+  Finally, the :ref:`needumls_builder` builder no longer truncates the ``.puml`` files an
+  earlier run saved. The generated content is filled in while a document is written,
+  after the environment has been pickled, so a build that re-read nothing held an empty
+  value for every needuml and wrote it over the good file — reproducible with two
+  consecutive ``sphinx-build -b needumls`` runs, the second leaving zero bytes behind. A
+  needuml with no generated content is now skipped instead, which also means a build over
+  an already up-to-date ``.doctrees`` writes nothing rather than emptying everything; use a
+  fresh output folder or ``-E`` to regenerate. A needuml is still not re-rendered when a
+  need it references changes in another document; that needs dependency tracking and is not
+  addressed here.
+
+- 🐛 Six :ref:`needextract` inputs that ended the build are now reported instead
+  **(changed output)** (:pr:`1795`)
+
+  Each of these ended the whole build with a Python traceback and a "please report this
+  to the developers" banner, three of them from the directive's own option surface:
+
+  - an argument that looks like a need ID but names no need,
+  - an argument and ``:filter:`` together — the combination the documentation warns
+    about,
+  - ``needs_include_needs = False`` with any needextract in the project, which gave no
+    diagnostic at all,
+  - a ``needtable`` in the content of an extracted need,
+  - a ``needextract`` in the content of an extracted need,
+  - a footnote reference in the content of an extracted need.
+
+  The first three were one defect: the name holding a needextract's filter result was
+  assigned inside the loop over a document's nodes and read once after it, so any node
+  taking an early exit left it unbound. All three are now reported (or, under
+  ``needs_include_needs = False``, silently dropped, exactly as every other view
+  directive drops itself) and the rest of the build stands.
+
+  The other three come from *when* a need's content is copied. It is snapshotted while
+  the need's directive runs, before any of its document's transforms, and spliced into
+  the extract's document after all of *that* document's transforms — so it sees neither
+  document's pipeline, and a handful of transforms are replayed over it by hand. One of
+  those replays, ``env.resolve_references()``, ends by emitting ``doctree-resolved``,
+  with the detached container holding the copy standing in for a document: every
+  listener of the event ran a second time on a node that is not a document, this
+  extension's own listeners included. Sphinx's post-transforms are now applied directly
+  instead, so the event is emitted once per document and always with a document — a
+  guarantee a third-party listener gets too.
+
+  What a copy cannot render is now dropped from it and named, rather than reaching a
+  processor or the writer that cannot cope:
+
+  - ``needbar``, ``needextract``, ``needpie``, ``needtable`` and ``needuml`` — and so
+    ``needarch``, which is ``needuml`` restricted to a need's content — in the content of
+    an extracted need are omitted from the copy, each reported at the needextract site.
+  - A footnote reference in it is rendered as the marker its author wrote, without the
+    trailing ``_``, and reported. The footnote's own text stays where it is, so nothing
+    disappears from the page.
+
+  Everything else a copy carries is unchanged, byte for byte: rich markup, code blocks,
+  images, substitutions, nested needs, figures under ``numfig``, and needs extracted in
+  their own document or defined later in the build. In particular the reference contract
+  is untouched — a ``:ref:`` or ``:need:`` inside extracted content still resolves to
+  the page the need is written on, and so does the extract card's own ID chip.
+
+.. _`release:8.4.0`:
+
+8.4.0
+-----
+
+:Released: 27.08.2026
+:Full Changelog: `v8.3.1...v8.4.0 <https://github.com/useblocks/sphinx-needs/compare/8.3.1...8.4.0>`__
+
+This release is about the **view directives**, and about a build that no longer stops at
+the first bad value. :ref:`needflow` gains a portable vocabulary — a ``:direction:`` that
+means the same thing on both engines, named legend configurations, and a
+``:show_link_names:`` that says what each connection is labelled with — alongside a long
+list of fixes to both of its emitters. :ref:`needs_card_layouts` describes a need's card
+as a small dictionary instead of a hand-written layout string, :ref:`list2need` builds its
+needs directly and so works in Markdown documents and records the line each need was
+written on, and every view can cap what it shows with ``max_items``. Running through the
+rest is one theme: configuration mistakes and render failures that used to end the build
+with a traceback are now located warnings, which leaves the rest of the build in place —
+and, for a project that builds with ``-W``, can turn a green build red until the reported
+mistake is fixed or suppressed.
+
+Improvements
+............
+
+- ✨ :ref:`list2need` works in Markdown documents, and records the line each need was
+  written on (:issue:`1349`, :pr:`1790`)
+
+  The directive used to render every item into a need directive through a template and
+  hand the result back to the parser. That step is gone: the items are built directly,
+  and a nested item is placed inside its parent. The syntax and its parsing are
+  untouched — the same list structure, the same ``(ID)`` capture, the same
+  ``:delimiter:`` split, the same ``((option="value"))`` region, the same validation —
+  so a list that built before builds the same needs, with the same IDs, apart from the
+  one class of item named under Breaking changes below.
+
+  What the step cost, and is therefore fixed:
+
+  - A list written as a ``{list2need}`` fence in a MyST Markdown document produced no
+    needs at all, only an error naming a myst-parser internal. It now creates its needs,
+    like any other directive.
+  - Handing generated text back to the parser advanced its line counter for the rest of
+    the file, so every need from the directive onwards — the items themselves, and any
+    ordinary need directive written below them — was recorded at a line further down the
+    file than it was written, by an amount that grew with each list in the document.
+    Every ``lineno`` in ``needs.json`` is now the line the need was written on, inside
+    an ``eval-rst`` block in a Markdown document too.
+  - An item written ``()`` with options, such as ``* ()A title ((status="open"))``, lost
+    them: they became body text. They are now set.
+
+  Four inputs that used to be errors are now defined, none of which a document that
+  built cleanly can contain:
+
+  - ``((id="MY-ID"))`` names the need. The template wrote both the derived ID and this
+    one as two ``:id:`` lines of the same generated need, which docutils refused with
+    ``duplicate option "id"``, so the item was dropped. The ID is applied before
+    ``:links-down:`` is built, so the links of the other items agree with it. An empty
+    ``((id=""))`` is refused with a diagnostic instead.
+  - An inline option naming the same link field as ``:links-down:`` — ``((links="X"))``
+    under ``:links-down: links`` — used to produce one corrupt link value and an
+    ``unknown outgoing link`` warning. The two sets of links are now merged.
+  - An item carrying ``((title_from_content="true"))`` reads it as a need directive
+    does.
+  - A child of a ``((hide="true"))`` item is rendered at the level above it, rather
+    than being placed inside a need that is taken out of the document.
+
+  The content of a parent need no longer holds the generated reStructuredText of its
+  children — nesting is a property of the document, not of the parent's text — so
+  ``needs.json``, and a filter reading ``content``, see the item's own text only.
+
+- 👌 :ref:`needs_variant_data` is resolved while the configuration is being initialised
+  (:issue:`1783`, :pr:`1787`)
+
+  The :ref:`needs_variant_data_file` is loaded, and the inline
+  :ref:`needs_variant_data` merged on top of it, during ``config-inited`` instead of
+  when document reading starts. What is merged, and which value wins — inline over
+  file, ``sphinx-build -D`` over :ref:`needs_from_toml` — is unchanged, as are the
+  errors reported for a file that is missing or does not contain valid variant data.
+  Only the point in the build at which the work happens has moved. The full-rebuild
+  fix this also brings is described under Bug fixes below.
+
+  A file that cannot be used now fails the build during configuration, before any
+  document is read, rather than once reading has begun.
+
+  An extension that handles ``config-inited`` after Sphinx-Needs can now read the merged
+  map, which matters because configuration deciding which documents exist at all — such
+  as ``exclude_patterns`` — can only be changed while that event is running.
+
+  In return, an extension that *writes* :ref:`needs_variant_data` from its own
+  ``config-inited`` handler no longer has the file merged into what it wrote, and no
+  longer has it validated: resolution has already happened by then, so the value is
+  taken as it stands. It is used consistently — the :ref:`variant role <role_variant>`
+  and ``var.*`` filter expressions always read the same map — but if you write the
+  configuration this way and rely on the merge or the validation, set
+  :ref:`needs_variant_data` in ``conf.py``, in :ref:`needs_from_toml`, or with
+  ``sphinx-build -D`` instead.
+
+- ✨ New :ref:`needflow` ``:direction:`` option and :ref:`needs_flow_direction`
+  configuration (:pr:`1782`)
+
+  A diagram says which way it flows as an intent — ``down`` (the default), ``up``,
+  ``right`` or ``left`` — and each engine spells that in its own language, so the same
+  document renders the same way on either engine.
+  The tokens ``TB``, ``TD``, ``BT``, ``LR`` and ``RL`` are accepted as aliases, so a
+  habit picked up from Graphviz or Mermaid does not have to be unlearned.
+
+  .. code-block:: rst
+
+     .. needflow::
+        :direction: right
+
+  PlantUML has no bottom-up or right-to-left layout, so ``up`` is drawn ``down`` and
+  ``left`` is drawn ``right``, with one ``needs.needflow`` warning per project;
+  Graphviz draws all four.
+  A diagram is never refused for asking: a plainer diagram is better than a failed build.
+
+  An explicit ``:direction:`` also wins over a layout that the ``:config:`` it is written
+  beside happens to set, on both engines, and the disagreement is reported.
+  A diagram that does not use the option keeps byte-identical diagram source.
+
+- ✨ :ref:`needflow` ``:show_legend:`` takes the name of a legend configuration
+  (:pr:`1782`)
+
+  Written bare it draws exactly the legend it always drew, so no existing diagram
+  changes — including the long-standing difference that ``plantuml`` lists every
+  configured need type while ``graphviz`` lists only the ones it drew.
+  Written with a value it names an entry of the new :ref:`needs_flow_legends`:
+
+  .. code-block:: python
+
+     needs_flow_legends = {
+         "beside": {"parts": ["types", "links"], "placement": "external"},
+     }
+
+  A legend with ``placement = "external"`` is rendered as a document table beside the
+  diagram, so it looks the same on both engines, its text is selectable and searchable,
+  and it can describe **link types** — which no in-diagram legend ever could.
+  It lists only what the diagram actually drew.
+  ``parts`` is an ordered list, and the order is contract: ``["links", "types"]`` puts
+  the link table first and keeps it there.
+
+  The new :ref:`needs_flow_show_legend` says *which* legend a diagram gets when it asks
+  for one without naming it — never *whether*: asking stays with the directive.
+  Resolution is a chain — the option's name, then the project default, then the engine's
+  own legend — and a name that is not defined warns and hands on to the next step, so a
+  typo in one diagram does not cost the project the legend it configured.
+
+  A ``needs_flow_legends`` entry that cannot be used is reported as a ``needs.config``
+  warning and skipped, rather than failing the build.
+
+- ✨ New :ref:`needs_card_layouts` configuration, for describing layouts declaratively
+  (:pr:`1765`)
+
+  A *card specification* states what a need should show — ``header``, ``meta``, ``footer``,
+  ``side`` and ``collapse`` — as a small dictionary, instead of as hand-written layout
+  strings. Specifications are compiled into :ref:`needs_layouts` entries during
+  configuration, so a card works wherever a layout name is accepted, and can inherit from
+  another card or from a built-in layout via ``extends``:
+
+  .. code-block:: python
+
+     needs_card_layouts = {
+         "product": {
+             "extends": "clean",
+             "meta": {"include": ["status", "tags"]},
+             "footer": ["id", "type"],
+             "collapse": "closed",
+         }
+     }
+
+  ``needs_layouts`` is unchanged and remains supported for layouts the card vocabulary
+  cannot express. A specification that cannot be compiled, or whose name is already taken
+  by an existing layout, is reported as a new ``needs.card_layout`` warning and skipped,
+  leaving the rest of the build untouched. See :ref:`card_layouts` for the full vocabulary
+  and its documented limits.
+
+- ✨ :ref:`needs_card_layouts` elements gain an object form
+  (:pr:`1766`)
+
+  Every element string is now shorthand for an object with a ``type`` key —
+  ``"image:diagram"`` is spelled ``{"type": "image", "field": "diagram"}`` — and the two
+  spellings mix freely in one list. An object without options compiles to exactly the same
+  layout as its string shorthand; the strings stay valid and remain the documented default.
+  The object form exists to carry options: ``height`` and ``width`` on ``image`` elements,
+  and ``label`` on ``field`` elements, replacing the field name in the rendered
+  ``name: value`` pair:
+
+  .. code-block:: python
+
+     needs_card_layouts = {
+         "illustrated": {
+             "footer": [
+                 "id",
+                 {"type": "field", "field": "owner", "label": "Owned by"},
+             ],
+             "side": {
+                 "elements": [{"type": "image", "field": "picture", "height": "40px"}]
+             },
+         }
+     }
+
+  Option values are grammar-bound; an option on the wrong type, an unknown key, or a value
+  outside its grammar is reported as a ``needs.card_layout`` warning and the card is
+  skipped, like any other invalid specification. See
+  :ref:`the object form <card_layouts_object_form>` for the option table and grammars.
+
+- ✨ The ``cypher``, ``width`` and ``height`` directive options are now
+  accepted for `ubCode`_ compatibility (:pr:`1760`)
+
+  :ref:`needlist`, :ref:`needtable`, :ref:`needflow` and :ref:`needsequence` accept these
+  ubCode-only options and then ignore them, so that a document authored for ubCode also
+  builds with Sphinx-Needs, instead of failing with an ``unknown option`` error.
+  Nothing about the build changes: the options never reach a node, the rendered output, or
+  the ``needs.json`` file. See :ref:`ubCode compatibility <ubcode_compat_options>` for the
+  exact per-directive list.
+
+- ✨ The ``max_items`` option on :ref:`needlist`, :ref:`needtable`, :ref:`needflow` and
+  :ref:`needsequence` now limits how many items a view shows (:pr:`1761`)
+
+  The limit is applied after filtering and sorting, so a view keeps the first items it would
+  otherwise have rendered; on :ref:`needsequence` it counts messages rather than needs.
+  ``:max_items: 0`` means no limit, and a view without the option falls back to the new
+  :ref:`needs_views_max_items` configuration, which defaults to ``0`` — so nothing is limited
+  until you ask for it, and existing projects render exactly as before. A view that was
+  truncated says so, instead of silently dropping needs: it adds a notice to the page and
+  emits a ``needs.max_items`` warning, which a project that caps deliberately can silence
+  with ``suppress_warnings = ["needs.max_items"]``.
+
+  Previously the option was accepted and ignored for `ubCode`_ compatibility, which was only
+  ever in an unreleased state, so no released behaviour changes.
+  The stored environment version is bumped for the new directive option, so the first build
+  after upgrading re-reads every document.
+
+- 👌 :ref:`needs_string_links` is validated when it is loaded, and no longer fails the build
+  (:pr:`1767`)
+
+  A configuration entry used to be looked at only while a need was being rendered, and then
+  indexed into blindly. A missing key, a regular expression that does not compile, a template
+  that does not parse, or an entry that is not a dictionary each aborted the whole build with
+  an uncaught exception naming neither the entry nor a file — and did so even when no need
+  used the field the entry names.
+
+  Every entry is now validated once, during configuration. A problem is reported as a new
+  ``needs.string_link`` warning naming the entry, and only that entry is skipped, so a
+  configuration that used to fail the build now builds and renders everything else. The same
+  warning also covers the cases that previously passed in silence — an unknown key inside an
+  entry, an ``options`` entry naming a field that is registered nowhere, an empty ``options``
+  — none of which skips the entry.
+
+  **If you build with** ``-W``, take this as the general rule: a configuration mistake that
+  used to be silent — or to crash — is now a warning, and a warning fails a ``-W`` build. So
+  a project whose ``needs_string_links`` contains anything questionable can start failing
+  where it passed, even though nothing about it changed. The same goes for the list-field fix
+  below, which reaches render-time failures that the meta area used to swallow. Silence the
+  configuration warnings with ``suppress_warnings = ["needs.string_link"]``; render-time
+  failures keep the existing ``needs.layout`` subtype, so covering both takes
+  ``suppress_warnings = ["needs.string_link", "needs.layout"]``.
+
+  Two spellings of ``options`` are now skipped with a warning, and both used to render
+  links, so **if your links have disappeared this is the paragraph to read**. A **bare
+  string** was accepted before, but with two contradictory meanings: the ``,``/``;``
+  splitting silently did not happen, while the per-field test degraded into a substring
+  match, so ``options = "myfield"`` also applied to a field named ``my``. A **mapping**
+  (``{"myfield": True}``) worked by accident, through iteration over its keys. Write either
+  as a list. A list, tuple, set or frozenset of names is accepted, as is an already-compiled
+  ``re.Pattern`` for ``regex`` (a *bytes* pattern is not, as it could never match a field value).
+
+- 👌 :ref:`needflow` ``:debug:`` shows the generated diagram source as a code block under the
+  plantuml engine too **(changed output)**
+
+  The plantuml engine emitted raw HTML, an unnumbered and unstyled ``<pre>`` block,
+  where the graphviz engine emitted a literal block,
+  so the same option gave the source line numbers and the theme's code styling
+  on one engine only.
+  Both now emit a literal block.
+  The plantuml source is shown unhighlighted, because Pygments has no PlantUML lexer.
+
+  This is a deliberate change to the rendered page rather than a fix:
+  a project that styles or scrapes the debug block sees the new markup.
+
+Deprecations
+............
+
+- 🔧 The undocumented ``needtable`` ``:style_col:`` option is deprecated —
+  it was declared but never read, so it has never had any effect.
+  A document that sets it still builds and now gets a ``deprecated`` warning;
+  the line can simply be deleted.
+
+Breaking changes
+................
+
+- ‼️ A :ref:`list2need` item written ``()`` gets the same generated ID as one written
+  without brackets (:pr:`1790`)
+
+  Writing an empty bracketed group used to suppress the ID of the generated need, which
+  sent it down the need directives' own ID generator — a different one, which reads
+  :ref:`needs_id_from_title` where list2need's does not, and hashes the content when the
+  title is empty. One list could therefore carry two kinds of generated ID at once,
+  chosen by two characters of punctuation. The directive now derives every ID itself.
+
+  Under the default configuration the two generators agreed for an item whose title
+  carries no options, so almost every project sees no change. **A project that sets**
+  ``needs_id_from_title``, **writes** ``()`` **on an item with no title, or writes**
+  ``()`` **on an item that also carries an** ``((option="value"))`` **area, gets a
+  different ID for those items**, and any ``:need:`` reference to the old ID has to be
+  updated. Give such an item an explicit ID — ``* (MY-ID)A title`` — if its ID has to
+  stay as it was.
+
+  The third case is the widest of the three, because it needs no configuration: the
+  ID list2need derives is the hash of the title *before* the option area is removed
+  from it, which is the ID an item without the ``()`` has always been given, while the
+  second generator hashed the title after it. So ``* ()A title ((status="open"))``
+  moves from ``R_328F3`` to ``R_0FF10`` — the ID ``* A title ((status="open"))``
+  already had.
+
+- ‼️ :ref:`needflow` ``:show_link_names:`` takes an optional value, and now wins over
+  :ref:`needs_flow_show_links` (:pr:`1782`)
+
+  The option chooses what each connection is labelled with: ``none``, ``outgoing``,
+  ``incoming`` or ``type``.
+  Written bare it still means ``outgoing``, which is what the flag has always drawn, so
+  no existing document changes; the other three values are new.
+
+  ``needs_flow_show_links`` takes the same four values, and ``True``/``False`` keep
+  meaning ``outgoing``/``none``.
+  Any other non-string value is read for its truth, because that is what a value declared
+  a boolean for years actually did — ``1`` still draws labels.
+
+  **A string that is not one of the four values now warns and falls back to** ``none``,
+  where it used to be truthy and draw labels.
+  That is the one input whose behaviour changes.
+  If you build with ``-W``, note that the warning fails the build; silence it with
+  ``suppress_warnings = ["needs.config"]`` or, better, write one of the four values.
+
+  The option now overrides the configuration instead of being combined with it.
+  A project that turned labels on previously left no way of drawing a single unlabelled
+  diagram; ``:show_link_names: none`` is that way.
+
+  Enumerated ``needs_flow_*`` configuration values — ``needs_flow_show_links``,
+  :ref:`needs_flow_direction` and :ref:`needs_flow_engine` — are now matched without
+  regard to case or surrounding whitespace, exactly as the matching directive options
+  always have been.
+  A project whose value only differed in capitalisation stops warning and starts being
+  honoured.
+
+
+Internal changes
+................
+
+These changes do not affect user-facing behaviour:
+
+- ♻️ :ref:`needflow`'s two engines now share one graph-model pass, with no change to the
+  generated diagram source
+
+Bug fixes
+.........
+
+- 🐛 An invalid ``predicates`` expression warns instead of ending the build (:pr:`1791`)
+
+  A ``predicates`` match expression on a :ref:`needs_fields` or :ref:`needs_links`
+  default that cannot be evaluated — one naming ``section_name`` or ``content``, say,
+  neither of which a predicate has access to — used to raise out of the need's creation
+  and end the whole build with a traceback and a "please report this to the developers"
+  banner. No need was created, no other warning in the project was ever reported, and
+  nothing said which document the expression had failed on.
+
+  Such an expression is now reported as a ``needs.config`` warning, located at a need it
+  was evaluated against and naming the field, the expression and the underlying error,
+  and is then skipped: the remaining predicates are still evaluated, and if none of them
+  matches then the plain ``default`` applies, exactly as it does for a predicate that
+  simply did not match. A statically malformed ``predicates`` value — the wrong number
+  of items in a pair, say — has always been reported this way; only the expression
+  itself was left to end the build.
+
+  The warning is deduplicated on its full message, so a single configuration mistake --
+  such as the name typo above, which fails identically for every need -- is reported once
+  rather than once per need. An expression that fails only for some needs, or for
+  different reasons on different needs, is reported once per distinct error.
+
+- 🐛 A need records the line it is actually written on **(changed output)** (:issue:`1349`, :pr:`1789`)
+
+  ``rst_prolog``, ``.. include::`` and :ref:`list2need` each put text into the document
+  being parsed, and each one used to shift the ``lineno`` recorded for every need after
+  it by the length of that text. The shifts compound, so in a document with a prolog and
+  a couple of includes the recorded line was routinely past the end of the file. The
+  line is now resolved back to the one the directive stands on — the same line the
+  directive's own warnings have always reported.
+
+  **No warning location regresses.** The only warning locations that move are the
+  ones this corrects — sites that report at a need's stored line now name the true
+  one. Everything anchored through the directive's own location helper, including
+  the content a :ref:`need_pre_template` or :ref:`need_post_template` renders, is
+  byte-identical to before.
+
+  One thing is deliberately unchanged: ``lineno_content`` is still the parser's own
+  counter, because that is what it is used as. (The needs :ref:`list2need` *generates*
+  recorded their position inside the generated block when this entry was written;
+  :pr:`1790` builds them directly, so they now record the line of their own list item.)
+
+- 🐛 Fix :ref:`needs_variant_data_file` triggering full rebuilds (:issue:`1783`, :pr:`1787`)
+
+  The merged variant data was written back onto the configuration after Sphinx's
+  ``config-inited`` checkpoint, so the pickled configuration held the merged map while
+  the next build compared it against the unmerged one — a difference Sphinx read as a
+  changed ``env`` value, re-reading every document on every incremental build. The
+  merge now happens before that checkpoint, so an unchanged file is recognised as
+  unchanged and nothing is re-read.
+
+  Editing the file's *contents* is now what triggers the rebuild, because the merged
+  map is part of the configuration being compared. The :ref:`variant role
+  <role_variant>` previously advised a clean build (``sphinx-build -E``) to pick such an
+  edit up; that advice is gone, along with the need for it.
+
+  Projects that set :ref:`needs_variant_data` inline only were never affected and are
+  unchanged.
+
+- 🐛 :ref:`needs_string_links` no longer makes a field value disappear when its template fails
+
+  A template that fails at render time — an unknown filter, say — logged a warning and then
+  returned nothing at all, and the value vanished from the page rather than merely losing its
+  link. It now falls back to the plain text, which is what a non-matching regular expression
+  has always done, and the warning says which need it came from.
+
+- 🐛 :ref:`needs_string_links` renders separators between items only **(changed output)**
+  (:pr:`1718`)
+
+  In a need's meta area, the separator condition counted the *characters* of the value instead
+  of its items, so every item got a trailing ``;`` — and a single-character value got no
+  separator at all. N items now produce N-1 separators, exactly as :ref:`needtable` cells have
+  always done. Fields not named in any ``options`` are unaffected.
+  The one-line fix landed in :pr:`1718`; this release also pins the rule with regression
+  tests on both surfaces.
+
+- 🐛 :ref:`needs_string_links` applies to list fields in the meta area **(changed output)**
+
+  A field holding a list (``tags``, or any array field) was linked element by element in a
+  :ref:`needtable` but rendered as plain text in the need itself. Both surfaces now link the
+  elements, so the same field no longer renders differently depending on where you look at it.
+  Empty elements are left alone on both surfaces, rather than linked to the bare url.
+
+  One consequence is worth calling out for ``-W`` builds: a template that fails at render
+  time on a **list** field is now reported (as a ``needs.layout`` warning, the subtype every
+  render-time failure uses), where the meta area previously failed silently. A project whose
+  list-field template is broken and which has no :ref:`needtable` rendering that field emitted
+  no warning at all before.
+
+- 🐛 :ref:`needs_string_links` drops items that are empty once stripped, so ``AB-1, , AB-2``
+  is two items rather than three with an empty one in the middle.
+
+- 🐛 :ref:`needflow` no longer fails the build when a need type has no ``color`` (or an
+  empty one) and the diagram shows a legend (:issue:`1664`).
+
+  ``color`` is optional in :ref:`needs_types`, but both engines read it unguarded while
+  building the legend, so ``:show_legend:`` ended the build with ``KeyError: 'color'``.
+  Such a type keeps its legend row, with an empty color swatch; a type whose ``color`` is
+  set to an empty string no longer emits an empty swatch value either.
+
+- 🐛 :ref:`needflow` needs whose ids differ only in punctuation are no longer drawn as a
+  single node by the plantuml engine.
+
+  PlantUML entity names cannot contain punctuation, so ids such as ``R-1`` and ``R=1`` both
+  became ``R_1`` and silently collapsed into one node, taking their edges with them.
+  Entity names are now assigned per diagram, so that they stay unique; the names shown by
+  ``:debug:`` therefore change for such ids. :ref:`needuml` entity names are unchanged.
+
+- 🐛 :ref:`needflow` ``:border_color:`` accepts a value written with a leading ``#``.
+
+  ``#00FF00`` previously reached graphviz as ``##00FF00`` and PlantUML as ``line:#00FF00``,
+  which PlantUML rejects outright. Both engines now normalise the value and add the prefix
+  their own syntax needs. Relatedly, a variant expression that matches nothing now means
+  "no border color" under graphviz, instead of the literal color ``#None``.
+
+- 🐛 :ref:`needflow` ``:highlight:`` filters that consult ``needs`` now also work for a
+  need with parts or child needs.
+
+  The graphviz engine draws such a need as a subgraph, and that path evaluated the filter
+  without the needs list, so the same expression could behave differently -- or fail the
+  build -- depending on whether a need happened to have children.
+
+- 🐛 A graphviz :ref:`needflow` image without an ``:alt:`` option now gets
+  ``alt="needflow graphviz diagram"``.
+
+  The intended default was unreachable, so every such image was published with an empty
+  ``alt`` attribute. Writing ``:alt:`` with no value still gives an empty ``alt``, for a
+  diagram that is purely decorative.
+  The stored environment version is bumped, because the option is recorded differently
+  when it is not given, so the first build after upgrading re-reads every document.
+
+- 🐛 The :ref:`needflow` warning for an unknown ``:config:`` name now names
+  :ref:`needs_flow_configs`, which was misspelled as ``need_flows_configs``.
+
+- 🐛 The :ref:`needflow` warning for an unknown ``:link_types:`` value now carries the
+  source location of the directive under the graphviz engine, as it already did under
+  plantuml.
+
+- 🐛 A wrapped :ref:`needflow` graphviz label no longer breaks an HTML entity in two.
+
+  A need title is wrapped to the label width and escaped for graphviz's HTML-like labels,
+  but the escaping ran first,
+  so the wrapper counted the characters of an entity and could break inside one:
+  a title holding a quote wrapped to ``&quo<br/>t;``,
+  which graphviz refuses to render, ending the build with ``not well-formed (invalid token)``.
+  Wrapping now happens first,
+  which also makes the wrap width count what the reader sees rather than what the escaper wrote.
+
+- 🐛 A :ref:`needs_graphviz_styles` element type holding something other than a mapping of
+  attributes is now reported and ignored.
+
+  Such a value travelled unchecked into the emitter,
+  where ``'str' object has no attribute 'items'`` ended the whole build with a traceback
+  instead of a message.
+  It is now reported as a ``needs.needflow`` warning naming the config,
+  and the diagram is drawn without the offending style.
+
+- 🐛 An unknown :ref:`needs_flow_engine` value is now reported,
+  and the default engine draws the diagram.
+
+  The value was checked with a bare ``assert``,
+  which ends the build with a traceback rather than a message —
+  and which ``python -O`` strips altogether,
+  leaving the unknown name to fail somewhere further downstream.
+  It is now a ``needs.config`` warning, said once for the project.
+
+- 🐛 :ref:`needflow` naming several graphviz ``:config:`` styles no longer leaks the merged
+  style into the diagrams after it.
+
+  The merge took the first style's attributes by reference
+  and then updated that same dictionary with the second style's,
+  rewriting the configured (and built-in) styles in place:
+  every later diagram naming the first style inherited the second one's attributes,
+  for the rest of the build.
+  A page therefore rendered differently depending on which diagrams came before it.
+
+- 🐛 ``c.this_doc()`` now works in :ref:`needpie`, :ref:`needbar` and the
+  :ref:`need_count` role (:issue:`1449`)
+
+  These evaluate their filters themselves, and did not pass on the document the
+  directive or role was written in, so ``c.this_doc()`` ended in a
+  ``this_doc can not be used in this context`` warning and counted nothing. They now
+  resolve it against their own document, as :ref:`needtable`, :ref:`needlist` and the
+  other directives whose ``:filter:`` runs through ``process_filters`` already did.
+
+- 🐛 ``c.this_doc()`` now also works in :ref:`needsequence` ``:filter:``,
+  :ref:`needflow` ``:highlight:`` and :ref:`needgantt` ``:milestone_filter:``
+
+  These three options are evaluated with ``filter_single_need``, which *raises* on an
+  invalid filter, and none of the four call sites caught it — so ``c.this_doc()`` here
+  ended the build with ``this_doc can not be used in this context`` rather than merely
+  warning. Each now resolves the filter against the document its own directive is
+  written in, continuing the coverage that the entry above began.
+
+  Filters configured in **conf.py**, such as :ref:`needs_constraints` and
+  :ref:`needs_warnings`, remain uncovered: they belong to the project rather than to any
+  document, so there is no origin document to resolve ``c.this_doc()`` against.
+
+- 🐛 :ref:`needpie` and :ref:`needbar` images are now byte-identical between builds of
+  unchanged sources.
+
+  Matplotlib writes the wall clock time into every SVG and PDF it produces, and — with
+  no hash salt configured — derives an SVG's internal element ids from a random
+  ``uuid4``, so two builds of the same chart never agreed byte for byte. The date is now
+  left out of both formats, and the ids are salted with the chart's own file name, which
+  is already derived from the directive's target id. This covers every image the
+  directives write: SVG for the HTML builders, PDF for the LaTeX builder, and PNG, which
+  already carried no timestamp. Nothing about the rendered chart changes.
+
+- 🐛 :ref:`needbar` no longer fails the build when ``:ylabels: FROM_DATA`` is given on
+  its own.
+
+  The default xlabels — ``1``, ``2``, … one per column — were derived before the ylabels
+  column had been taken out of the content, so there was always one too many of them and
+  the build ended with ``length of xlabels: N+1 is not equal with sum of columns: N``.
+  Grids that give both label options, or only ``:xlabels: FROM_DATA``, are unaffected.
+
+- 🐛 A :ref:`needpie` with a title now uses it as the image's ``alt`` text, as
+  :ref:`needbar` already did.
+
+  Until now every pie was published with the ``alt`` docutils falls back to — the
+  image's own file URI — which tells a screen reader nothing. A pie without a title
+  keeps that fallback.
+
+- 🐛 A :ref:`needpie` whose values are all zero no longer writes an unreferenced image
+  file.
+
+  Such a pie is replaced by the "No needs passed the filters" paragraph, but the chart
+  had already been rendered into ``_images/``, where it then stayed, referenced by
+  nothing.
+
+- 🐛 :ref:`needreport` reports a template it cannot render, instead of ending the build
+
+  A template with a Jinja syntax error — or one that merely applies a filter to a variable
+  that does not exist, which is what the stale example in these docs did — raised out of
+  the directive and took the whole build down with it. That is the failure mode
+  :pr:`1105` set out to remove, and the missing-file case has warned rather than aborted
+  ever since; the render case now does too, as a ``needs.needreport`` warning naming the
+  template and repeating the engine's own explanation. The directive then contributes
+  nothing to the page, exactly as it already did for a template that is missing.
+
+  Two smaller diagnostics come with it. A :ref:`needs_render_context` entry that takes
+  over one of the reserved context names — ``types``, ``links``, ``options`` or ``usage``
+  — is now reported; which value wins is deliberately unchanged, since these have been
+  silently overridable for years, and only ``report_directive`` is meant to be set this
+  way. The collision is a property of the configuration rather than of any one directive,
+  so it is reported once per build. And when :ref:`needs_report_template` holds a path
+  that is absolute in the POSIX sense, the "could not load" warning explains why it names
+  a path nobody wrote down: the value is always resolved relative to the source
+  directory, so such a path is appended to it rather than read from where it points.
+  A Windows drive-letter path is not relative, so it is used as it stands.
+
+  One consequence is worth calling out for ``-W`` builds: a project that overrides one of
+  those four reserved names renders exactly as it did before, but now emits a warning
+  where it emitted none, so a green build turns red until the entry is removed or the
+  warning is suppressed.
+
+- 🐛 :ref:`needreport` renders without an extension providing ``dropdown``
+  (:issue:`899`)
+
+  Each section of the default template is wrapped in a ``dropdown`` directive, which
+  neither Sphinx nor Sphinx-Needs provides. A project without an extension supplying one
+  got a docutils error per section — at line numbers belonging to the template rather
+  than to the document, so pointing at innocent lines — and, because Sphinx strips
+  ``system_message`` nodes, the report then vanished from the page altogether: an empty
+  section, four errors on the console, and a build that still exited ``0`` unless ``-W``
+  was in use.
+
+  When nothing provides ``dropdown``, the report is now rendered with ``admonition``
+  instead, and one ``needs.needreport`` warning names both remedies. Projects that do
+  load such an extension are unaffected: the directive is looked up in the registry, so
+  a provider is used exactly as before and nothing is warned about. Nor is an explicit
+  choice ever second-guessed — ``needs_render_context = {"report_directive": "dropdown"}``
+  is honoured as written, provider or not.
+
+  The substitution is decided on the rendered report and adopted only when it changes it,
+  so a project with a template of its own gains neither the substitution nor the warning
+  unless it was actually rendering a ``dropdown``. A template that never produces one —
+  because it writes its own directive, or shadows ``report_directive`` with a
+  ``{% set %}`` — is left exactly as it is, and so is one with ``.. dropdown::``
+  hardcoded in it, which re-rendering cannot reach. If the substituted render fails where
+  the default one succeeded, the default is kept and nothing is reported.
+
+  The decision is a textual scan of the rendered report, so a template that merely shows
+  ``.. dropdown::`` as example markup while producing it through ``report_directive`` is
+  treated as though it used it.
+
+- 🐛 :ref:`needgantt` draws each task once, in its type color **(changed output)**
+  (:pr:`1778`)
+
+  Tasks are declared as ``[<title>] as [<id>]``, which binds every later ``[...]``
+  reference to the *id*, but the completion and color lines addressed tasks by their
+  *title*. PlantUML does not reject an unbound reference — it silently declares a second,
+  zero length task of that name — so every need carrying a type color or a completion
+  value was drawn twice, which, since :ref:`needs_types` entries carry a color by default,
+  is every need in almost every chart. The color and the completion landed on the phantom
+  bar, too, leaving the real one in PlantUML's default grey: a three need chart rendered
+  as six bars, three of them grey and full length, three of them zero length and correctly
+  colored. Both lines now address the task by its id, so a chart of N needs draws N bars,
+  colored and shaded as configured.
+
+- 🐛 :ref:`needgantt_start_date` names the month it was given, and a December date no
+  longer ends the build **(changed output)** (:pr:`1778`)
+
+  The date was reformatted through a month name table indexed with the 1-based month
+  number, so the chart started one month later than asked for — ``2020-03-25`` became
+  ``the 25th of April 2020`` — and any December date raised
+  ``IndexError: list index out of range``, aborting the build. The generated statement is
+  now the ISO date, which PlantUML also accepts (``Project starts 2020-03-25``) and which
+  renders the identical chart, and which cannot mis-suffix a date either: ``2020-01-01``
+  used to be written ``the 01th of February 2020``.
+
+Documentation
+.............
+
+- 📚 :ref:`needgantt` no longer claims that task elements are linked to their related
+  need when PlantUML's output format is ``svg`` (:pr:`1778`)
+
+  No such link has ever been generated; the only link a chart produces is its caption,
+  which points at the generated image file.
+
+- 📚 The :ref:`needpie` and :ref:`needbar` pages are corrected against what the two
+  directives actually do.
+
+  Both claimed that several image files are written per chart, where exactly one is,
+  and both called a literal content value a "float/int", where only a non-negative
+  integer is read as one. The pages now also say what an invalid value really does —
+  a label, ``:explode:`` or grid-shape mismatch, an unknown color and an unknown style
+  all end the build — and that the rotation options take non-negative integers, that a
+  filter containing a comma needs a custom ``:separator:``, and that ``:colors:``
+  shorter than the data is extended with the default colors rather than repeated.
+  ``needpie`` gains the missing ``:filter_warning:`` section and states that content
+  and ``:filter-func:`` are alternatives; ``needbar`` states that it takes no filter
+  options at all.
+
+- 📚 :ref:`needs_string_links` documents the behaviour it always had: the ``,``/``;`` splitting
+  and its lack of an escape, that the first entry naming a field wins with no fallthrough, that
+  the pattern is searched rather than anchored, that :ref:`needs_render_context` shadows
+  same-named capture groups, and that the templates are rendered with MiniJinja rather than
+  Jinja2.
+
+- 📚 The :ref:`needreport` and :ref:`needs_report_template` pages are corrected against
+  what the directive actually does.
+
+  The "default template" the configuration page printed had drifted so far from the
+  packaged one that copying it — the customisation route both pages recommend — ends the
+  build, because it reads two context variables, ``fields`` and ``json_exclude_fields``,
+  that have never existed. The page now includes the packaged template from the source
+  tree, so the two cannot diverge again, and the context is described as it is: the key is
+  ``options``, ``report_directive`` is listed, and every number in ``usage`` is called out
+  as permanently ``0`` — real counts come from the :ref:`need_count` role that the
+  template emits, and those count need parts and :ref:`needs_external_needs` alike.
+
+  The ``:template:`` option, until now documented nowhere, gains a section of its own and
+  the three-level precedence it takes part in is written down. ``needs_report_template``
+  is described as resolved relative to the source directory rather than "must be an
+  absolute path"; the ``dropdown`` prerequisite and the ``report_directive`` escape hatch
+  now also appear on the configuration page; and an ``.rst`` template kept inside the
+  source directory is noted as being built as a document of its own, with the
+  ``exclude_patterns`` entry that avoids it.
+
+- 📚 The :ref:`list2need` page is corrected against what the directive actually does
+  (:pr:`1788`)
+
+  A new :ref:`Need IDs <list2need_ids>` section replaces the claim that an ID is captured
+  by "the same mechanism as :ref:`need_part`". It is not: the bracketed group is searched
+  for anywhere in the line, runs greedily from the first ``(`` to the last ``)``, and
+  accepts a far wider character class — so a title carrying a second parenthetical, as in
+  ``(REQ-1) The system (as defined) shall work``, yields an ID that
+  :ref:`needs_id_regex` then refuses, and a title with a parenthetical but no leading ID
+  has it taken as the ID and deleted from the title. The section also writes down the
+  generated-ID formula — the need type's prefix followed by the ``SHA1`` of the title,
+  cut to :ref:`needs_id_length` — and the consequence that follows from the document not
+  being part of the hash input: the same title at the same level in two documents produces
+  the same ID, and the second need is dropped with a duplicate-ID warning.
+
+  The list-structure rules are stated rather than left to be discovered: the indentation
+  must be a multiple of two spaces and one level is always exactly two, tabs are expanded
+  before the directive sees them and so cannot be used, and a continuation line that starts
+  in the first column loses its first word. The :ref:`list2need_meta_data` section replaces
+  "the position of the option-string inside the line is not important" with what the
+  regular expression does — only the **first** ``((...))`` region is read, it runs greedily
+  from the first ``((`` to the last ``))``, so text between two regions is deleted, and an
+  unquoted value such as ``((status=open))`` is dropped in silence.
+
+  The "List with need-ids" example built a need titled ``(FEATURE``, because the default
+  ``.`` delimiter splits ``(FEATURE.3)`` before the ID is read; it now uses an ID without a
+  dot, and says why.
+
+- 📚 ``docs/ubproject.toml``, the `ubCode`_ configuration of this documentation, is brought
+  up to date with current ubCode releases
+
+  It now mirrors the parts of ``conf.py`` that ubCode also understands (the ``|br|``
+  substitution, the ``:pr:`` / ``:issue:`` roles and the intersphinx projects), and drops
+  five ``extend_directives`` entries for directives that ubCode now supports natively.
+  Sphinx is unaffected: ``needs_from_toml`` reads only the ``[needs]`` table, which is
+  unchanged.
+
+.. _`release:8.3.1`:
+
+8.3.1
+-----
+
+:Released: 11.08.2026
+:Full Changelog: `v8.3.0...v8.3.1 <https://github.com/useblocks/sphinx-needs/compare/8.3.0...8.3.1>`__
+
+This is a patch release with a PlantUML bug fix and a documentation
+restructuring.
+
+Bug fixes
+.........
+
+- 🐛 Generated PlantUML diagrams (:ref:`needuml`, :ref:`needarch`,
+  :ref:`needflow`, :ref:`needsequence`, :ref:`needgantt`) now derive PlantUML's
+  working directory from the *physical* path of the source document instead of
+  its logical docname (:issue:`1749`).
+
+  Relative ``!include`` paths therefore also resolve for documents whose source
+  file does not live under ``srcdir`` — e.g. documents contributed by
+  `sphinx-mounts <https://github.com/useblocks/sphinx-mounts>`__ — which
+  previously failed with a misleading
+  ``WARNING: plantuml command '...' cannot be run``.
+  Ordinary documents keep the exact working directory they had before.
+
+Documentation
+.............
+
+- 📚 The documentation now uses the shared
+  `sphinx-syntax-example <https://github.com/sphinx-extensions2/sphinx-syntax-example>`__
+  ``syntax-example`` directive, in place of the bespoke ``need-example`` directive
+  that was defined in ``docs/conf.py``.
+  Consequently, the ``docs`` extra now requires Python >= 3.11.
+
+.. _`release:8.3.0`:
+
+8.3.0
+-----
+
+:Released: 08.07.2026
+:Full Changelog: `v8.2.0...v8.3.0 <https://github.com/useblocks/sphinx-needs/compare/8.2.0...8.3.0>`__
+
+Improvements
+............
+
+- ✨ :ref:`needs_role_need_template` is now rendered with
+  `Jinja <https://jinja.palletsprojects.com/>`_ instead of Python's
+  ``str.format`` (:issue:`1697`, :pr:`1698`)
+
+  Jinja filters and control structures such as ``{% if %}`` are now supported,
+  and the additional variables ``id_complete``, ``id_parent``, ``id_part``,
+  ``is_need`` and ``is_part`` are available (also via a ``need`` object, e.g.
+  ``{{ need.type }}``). The inline role variant ``:need:`[[...]] <ID>``` is
+  likewise rendered as Jinja.
+
+  .. deprecated:: 8.3.0
+
+     The old ``str.format`` syntax (``{field}`` placeholders) is deprecated.
+     Templates using it are still rendered with ``str.format`` and emit a
+     ``needs.deprecated`` warning; migrate ``{field}`` to ``{{ field }}`` (e.g.
+     ``"{title} ({id})"`` → ``"{{ title }} ({{ id }})"``). Support for the old
+     syntax will be removed in a future release.
+
+.. _`release:8.2.0`:
+
+8.2.0
+-----
+
+:Released: 01.07.2026
+:Full Changelog: `v8.1.1...v8.2.0 <https://github.com/useblocks/sphinx-needs/compare/8.1.1...8.2.0>`__
+
+This release is all about **building one documentation source for many
+product variants**. If you maintain docs that differ by architecture, build
+flavour, feature flags or customer edition, the new variant-data tooling lets
+you describe those parameters once and let Sphinx-Needs do the branching — in
+filters, in need fields, in prose, and in whole sections. The other headline is
+``network_back`` schema validation, which finally lets you express link-coverage
+rules from the side of the relationship where they actually make sense.
+
+Variant data: describe your build once, reuse it everywhere
+...........................................................
+
+The centrepiece of 8.2.0 is :ref:`needs_variant_data` — a structured,
+namespaced replacement for the old flat ``needs_filter_data``. You define your
+variant parameters as ordinary (nestable) data and read them back through a
+clean ``var`` namespace:
+
+.. code-block:: python
+
+   # conf.py
+   needs_variant_data = {
+       "cpu": "arm",
+       "debug": True,
+       "build": {"optimization": 2, "features": ["feature_a", "feature_b"]},
+   }
+
+Once configured, the same ``var`` data is available in four complementary ways,
+so you can pick the right tool for each spot in your docs:
+
+- **In filters** — ``var.build.debug`` reads far more naturally than the old
+  bracket syntax, and nested data avoids clashing with your need field names:
+
+  .. code-block:: rst
+
+     .. needtable::
+        :filter: var.cpu == "arm" and var.build.debug == True
+
+- **In need field values** — inject a variant value straight into a field with
+  the new :ref:`\<{ ... }> syntax <needs_variant_data_references>` (for any
+  field flagged ``parse_variants``):
+
+  .. code-block:: rst
+
+     .. req:: Example
+        :id: VD_001
+        :arch: <{ var.cpu }>
+
+- **In prose** — the new :ref:`variant role <role_variant>` drops a resolved
+  value straight into your text, rendering the configured ``cpu`` value as
+  ``arm``.
+
+- **In whole blocks** — the new :ref:`if directive <if>` includes or excludes
+  entire sections (needs and all) at parse time, based on a ``var`` expression:
+
+  .. code-block:: rst
+
+     .. if:: var.cpu == "arm"
+
+        This section — and every need inside it — is only built for ARM.
+
+Variant data can also be loaded from JSON via :ref:`needs_variant_data_file`
+and swapped per build with ``sphinx-build -D needs_variant_data_file=...``,
+making it easy to generate variant-specific outputs from a single source tree
+(:pr:`1715`, :pr:`1716`, :pr:`1721`, :pr:`1737`).
+
+Improvements
+............
+
+- ✨ Add a ``network_back`` schema-validation key, the sibling of ``network``,
+  that validates a need's **incoming** links instead of its outgoing ones. This
+  lets you state a rule from the target's point of view — for example *"every
+  requirement must be covered by at least one test"* — once, on the requirement,
+  instead of repeating it on every test. It reuses the familiar ``items`` /
+  ``contains`` / ``minContains`` / ``maxContains`` structure and can be freely
+  mixed and nested with ``network`` (see :ref:`network_back_validation`)
+  (:pr:`1731`)
+
+- 👌 Allow link fields in :ref:`needservice` directive options, so needs
+  created via a custom service can declare links to other needs (:pr:`1632`).
+  Thanks to `@filipepcampos <https://github.com/filipepcampos>`__
+
+- 👌 Honor ``-D`` command-line overrides when loading needs from a TOML file,
+  so per-build configuration works as expected (:pr:`1717`)
+
+- 👌 Include the JSON location (path) in ``$ref`` resolution error messages,
+  making schema-configuration mistakes much easier to track down (:pr:`1736`)
+
+- 👌 Track JSON files imported via :ref:`needimport` as build dependencies, so
+  editing an imported file triggers a rebuild (:pr:`1730`). Thanks to
+  `@yhontyk <https://github.com/yhontyk>`__
+
+- 🔧 Add a root ``context7.json`` configuration file so AI assistants using
+  Context7 can discover the live Sphinx-Needs documentation and use the
+  project-specific reference instead of stale training data (:issue:`1719`)
+
+Deprecations
+............
+
+- ⚠️ Deprecate :ref:`needs_filter_data` in favour of the new, structured
+  :ref:`needs_variant_data`. It keeps working for now but emits a warning; the
+  flat data it provides is injected at the filter root and can collide with need
+  field names, which the namespaced ``var`` data avoids (:pr:`1715`)
+
+Breaking changes
+................
+
+- ‼️ Remove the discontinued **Open-Needs** service (:pr:`1732`)
+
+  The Open-Needs project is discontinued and ``open-needs.org`` no longer
+  resolves, so the ``open-needs`` service has been removed. The
+  ``sphinx_needs.services.open_needs.OpenNeedsService`` import and the
+  ``params``, ``prefix`` and ``url_postfix`` extra fields that the service
+  registered are no longer available.
+
+Bug fixes
+.........
+
+- 🐛 Fix ``needpie`` raising ``All wedge sizes are zero`` on matplotlib 3.11+
+  when a pie has no data (e.g. zero matching needs); an empty pie with its
+  legend is now rendered instead (:issue:`1727`)
+
+- 🐛 Sort need link and backlink lists in ``needs.json`` and HTML output using
+  natural, case-insensitive ordering (e.g. ``REQ_2`` < ``REQ_9`` < ``REQ_10``)
+  and collapse duplicate entries, so build outputs are reproducible regardless
+  of need load order (e.g. when using :ref:`needs_external_needs`)
+  (:issue:`1371`)
+
+- 🐛 Fix parent-child relationship of newly created nodes for needs. This
+  fixes interoperability with Sphinx extensions that look up source lines,
+  like sphinxcontrib-spelling (:issue:`1564`). Thanks to
+  `@tim-nordell-nimbelink <https://github.com/tim-nordell-nimbelink>`__
+
+.. _`release:8.1.1`:
+
+8.1.1
+-----
+
+:Released: 20.05.2026
+:Full Changelog: `v8.1.0...v8.1.1 <https://github.com/useblocks/sphinx-needs/compare/8.1.0...6d0c7c071db3ecec49580dccbaece18d56624301>`__
+
+This is a patch release with bug fixes and a minor performance improvement.
+
+Performance
+...........
+
+- ⚡️ Add ``NeedItem.is_in_document()`` (:pr:`1709`)
+
+  Replace direct ``need["docname"] == docname`` comparisons with a method on
+  ``NeedItem`` and ``NeedPartItem``, encapsulating the document membership
+  logic behind a single access point. Speeds up document purges on projects
+  with many needs.
+
+Bug fixes
+.........
+
+- 🐛 Fix ``needs_schema_definitions`` triggering full rebuilds (:issue:`1710`, :pr:`1712`).
+  ``resolve_schemas_config`` mutated the schemas dict in place after Sphinx's
+  ``config-inited`` checkpoint, so the pickled config diverged from the config
+  loaded on the next build — causing Sphinx to detect a spurious change and
+  rebuild every document on every incremental run. The resolved schemas are
+  now stored on the env via ``SphinxNeedsData`` accessors, leaving the config
+  object byte-equal across builds.
+
+- 🐛 Fix Docker build by switching PlantUML source to GitHub releases (:pr:`1708`).
+  The Dockerfile hardcoded a Sourceforge mirror that became unreachable,
+  breaking the ``Docker-Image`` workflow. The download URL now points at the
+  official ``github.com/plantuml/plantuml/releases/latest/download/plantuml.jar``
+  endpoint.
+
+.. _`release:8.1.0`:
+
+8.1.0
+-----
+
+:Released: 20.05.2026
+:Full Changelog: `v8.0.0...v8.1.0 <https://github.com/useblocks/sphinx-needs/compare/8.0.0...8.1.0>`__
+
+This release focuses on **filter performance improvements** and bug fixes.
+
+Performance
+...........
+
+- ⚡️ Short-circuit simple filter expressions to avoid ``eval()`` overhead (:pr:`1677`)
+
+  Common filter patterns (e.g. ``id == "REQ_001"``, ``type == "spec"``) are now
+  matched and evaluated directly without invoking Python's ``eval()``, significantly
+  reducing filtering time for large need sets.
+
+- ⚡️ Add ``NeedItem.filter_context()`` to avoid costly ``{**need}`` unpacking (:pr:`1706`)
+
+  Filter evaluation no longer creates a full dictionary copy of each need on every
+  filter call, reducing memory allocations and improving throughput.
+
+- ⚡️ Cache ``NeedLink`` filter string (:pr:`1705`)
+
+  Pre-compute and store the filter string on ``NeedLink`` construction, avoiding
+  repeated string formatting on every access through ``NeedItem.__getitem__``.
+
+Bug fixes
+.........
+
+- 🐛 Fix ``needflow`` rendering very dark / black nodes when a need type has no
+  ``color`` set in ``needs_types`` (:issue:`1664`, :pr:`1702`).
+  Previously a hard-coded ``#000000`` fallback was used as the fill color, which
+  produced unreadable nodes — especially under browser dark mode.
+  When no color is configured, no color is emitted and the diagram engine's
+  default node color is used.
+
+  .. note::
+
+     This is a minor behavior change for users with ``needs_types`` entries
+     that omit the ``color`` key: diagrams (``needflow``, ``needuml``,
+     ``needgantt``) that previously rendered such nodes as solid black will
+     now render them with the diagram engine's default node color (typically
+     light). To preserve the old appearance, set ``"color": "#000000"``
+     explicitly on the affected ``needs_types`` entry.
+
+- 🐛 Fix ``:need:`` role in section headings by registering ``NeedRef`` node
+  with Sphinx's LaTeX builder (:pr:`1700`).
+
+.. _`release:8.0.0`:
+
+8.0.0
+-----
+
+:Released: 19.03.2026
+:Full Changelog: `v7.0.0...v8.0.0 <https://github.com/useblocks/sphinx-needs/compare/7.0.0...8.0.0>`__
+
+This release introduces **conditional link assessment** — the ability to attach
+:ref:`filter_string` conditions to links that are checked against the target need at build time.
+It also overhauls the internal link representation and fixes ``links_from_content`` to
+use the parsed doctree instead of fragile regex matching.
+
+Conditional link assessment
+...........................
+
+A major motivation for requirements-management tooling is ensuring traceability —
+not just *that* two needs are linked, but that the link is **valid in context**.
+For example, a specification should only link to requirements that are in an
+``"open"`` or ``"approved"`` state, or a test should only reference an implementation
+at a compatible version.
+
+Sphinx-Needs now supports this via **inline conditions** on link references
+(see :ref:`need_conditional_links`).
+Append a :ref:`filter_string` in square brackets after the target ID:
+
+.. code-block:: rst
+
+   .. spec:: My Specification
+      :links: REQ_001[status=="open"], REQ_002[version>=3]
+
+Each condition is evaluated against the **target** need's fields.
+If a condition evaluates to ``False``, a ``needs.link_condition_failed`` warning is emitted;
+if the condition syntax is invalid, a ``needs.link_condition_invalid`` warning is emitted.
+Links without conditions continue to work exactly as before.
+
+The condition is a standard :ref:`filter_string` expression, so you can use any Python-style
+comparison operators (``==``, ``!=``, ``>``, ``<``, ``>=``, ``<=``), membership checks
+(``in``, ``not in``), boolean connectives (``and``, ``or``, ``not``), and built-in helpers
+like ``search()``.
+
+This means conditions already work with **numeric fields** such as ``integer`` or ``number``
+(decimal) types. For example, if you define a ``version`` field:
+
+.. code-block:: toml
+
+   [needs.fields.version]
+   schema.type = "integer"
+   nullable = false
+
+You can then enforce version constraints on links:
+
+.. code-block:: rst
+
+   .. spec:: My Specification
+      :links: REQ_001[version>=2]
+
+When the condition contains square brackets (e.g. for list indexing), use multiple opening
+brackets — the parser matches N opening ``[`` with N closing ``]``:
+``REQ_001[[tags[0]=="important"]]``.
+
+- ✨ Add conditional need link assessment (:pr:`1675`)
+- ♻️ Add ``_split_link_list`` parser with condition syntax support (:pr:`1674`)
+- 👌 Parse link conditions from imported and external needs (:pr:`1680`)
+- 👌 Add :ref:`needs_json_include_link_conditions` config option (:pr:`1681`)
+
+  Controls whether conditions are included in ``needs.json`` output (default: ``True``).
+  Backlink fields are never affected.
+
+- 👌 Add ``parse_conditions`` configuration for link types (:pr:`1684`)
+
+  Per-link-type control over whether ``[condition]`` brackets are parsed.
+  Set ``parse_conditions = false`` on a link type to treat brackets as literal ID text.
+
+  .. code-block:: toml
+
+     [needs.links.raw_links]
+     parse_conditions = false
+
+.. note::
+
+   **Potential future directions**:
+
+   - **Hash-based checks**: combined with a ``hash`` field and a dynamic function that
+     computes a content hash, conditions like ``REQ_001[hash=="abc123"]`` could detect
+     when a linked need's content has changed since the link was authored.
+   - **Semantic version comparisons**: a dedicated semver field type would enable
+     conditions like ``REQ_001[version~=">=1.2.0"]`` with proper semver semantics.
+   - **Terse constraint syntax**: a more compact notation (e.g. ``REQ_001[s=open,v>=2]``
+     with field shorthands) is under consideration for common cases, but would
+     complement — not replace — the current filter-string syntax.
+
+``links_from_content`` rewrite
+..............................
+
+The ``links_from_content`` dynamic function previously used a regex to
+extract ``:need:`ID``` references from raw RST source text.
+This was fragile and could not handle custom titles (e.g. ``:need:`My Title <REQ_001>```),
+nested content, or other edge cases.
+
+It now walks the **parsed doctree** for the source need, collecting ``NeedRef`` nodes
+directly. This is more robust and correctly handles all role syntax variants.
+
+**Limitations**: ``links_from_content`` requires a stored doctree node.
+It will emit a warning and return an empty list for:
+
+- **External needs** (loaded via ``needimport`` / ``needs_external_needs``) — they have no doctree.
+- **Need parts** — not supported; a warning is emitted.
+
+- ♻️ Fix ``links_from_content`` to use parsed doctree nodes instead of regex (:pr:`1685`)
+
+Breaking changes
+................
+
+- ‼️ ``ENV_DATA_VERSION`` bumped to 4 (:pr:`1683`)
+
+  The internal format for storing link data in the Sphinx build environment has changed
+  (links are now stored as structured ``NeedLink`` objects instead of plain strings).
+  **Incremental builds from a previous version will trigger a full rebuild automatically.**
+
+- ‼️ ``need["links"]`` (and other link fields) now returns a fresh ``list[str]`` copy
+  rather than a reference to the internal storage (:pr:`1670`)
+
+  Previously, code like ``need["links"].append("NEW_ID")`` would mutate the internal list.
+  This now **silently has no effect** — the returned list is a projection from the internal
+  ``NeedLink`` representation. This should only affect exotic use cases such as dynamic
+  functions or custom extensions that mutate link lists via ``__getitem__`` access.
+  Use the ``NeedItem`` API (e.g. ``get_links(as_str=False)``) for direct access to the
+  internal ``NeedLink`` objects.
+
+Internal changes
+................
+
+These changes do not affect user-facing behaviour but improve link handling internals:
+
+- ♻️ Introduce ``NeedLink`` structured internal representation for links (:pr:`1670`)
+- ♻️ Store ``NeedLink`` instead of ``str`` in ``LinksLiteralValue`` and ``LinksFunctionArray`` (:pr:`1673`)
+- 🔧 Use ``NeedLink`` directly in ``update_back_links`` function (:pr:`1672`)
+- 🔧 Store ``NeedPartData.backlinks`` as ``NeedLink`` instead of ``str`` (:pr:`1679`)
+- 🔧 Use ``get_links(as_str=False)`` in needextend to avoid round-trip serialization (:pr:`1678`)
+- ♻️ Store ``NeedLink`` on ``NeedRef`` node at parse time instead of re-parsing later (:pr:`1682`)
+- 🧪 Add tests for variants in links (:pr:`1669`)
+
+Bug fixes
+.........
+
+- 🐛 Fix linkcheck CI job warnings (:pr:`1667`)
+
+Documentation
+.............
+
+- 📚 Add sphinx-ai-index to Sphinx docs builder (:pr:`1671`)
+
+.. _`release:7.0.0`:
+
+7.0.0
+-----
+
+:Released: 24.02.2026
+:Full Changelog: `v6.3.0...v7.0.0 <https://github.com/useblocks/sphinx-needs/compare/6.3.0...7.0.0>`__
+
+This is a major release that consolidates field, link, and default configuration
+into a single, composable schema system — inspired by
+`SysML2 <https://github.com/Systems-Modeling/SysML-v2-Release>`__.
+See the `extensible schema proposal <https://github.com/useblocks/sphinx-needs/discussions/1646>`__
+for the full design rationale.
+
+This release completes the first two phases of the proposal:
+migrating fields (``needs_extra_options`` → :ref:`needs_fields`) and
+links (``needs_extra_links`` → :ref:`needs_links`).
+The next potential phase is **per-type schemas with type inheritance**,
+allowing individual need types to specialize fields and links
+(see `discussion comment <https://github.com/useblocks/sphinx-needs/discussions/1646#discussioncomment-15788244>`__
+for the implementation plan).
+
+All deprecated configuration options continue to work in this release but emit warnings.
+We recommend migrating to the new options as soon as possible;
+deprecated options will be removed in a future major release.
+
+Consolidated field & link configuration
+........................................
+
+The core theme of this release is moving from many scattered configuration options
+to a **unified per-field / per-link definition**.
+This makes the configuration more explicit, easier to understand, and
+lays the groundwork for future per-type schemas.
+
+- ✨ Add :ref:`needs_fields` configuration, deprecate ``needs_extra_options`` (:pr:`1611`)
+
+  The new :ref:`needs_fields` is a **dictionary** mapping field names to their full configuration.
+  It replaces the flat list ``needs_extra_options`` and also allows **specializing core fields**
+  (e.g. ``status``, ``tags``) by narrowing their type constraints
+  (following the `Liskov substitution principle <https://en.wikipedia.org/wiki/Liskov_substitution_principle>`__).
+
+  .. code-block:: toml
+     :caption: Before (deprecated)
+
+     needs_extra_options = ["priority", "verified"]
+
+  .. code-block:: toml
+     :caption: After
+
+     [needs.fields.priority]
+     description = "Priority level"
+     schema.type = "integer"
+     schema.minimum = 1
+     schema.maximum = 5
+
+     [needs.fields.verified]
+     schema.type = "boolean"
+
+- ⚠️ Migrate ``needs_extra_links`` to :ref:`needs_links` (:pr:`1649`)
+
+  The new :ref:`needs_links` uses the same dict-based pattern as :ref:`needs_fields`,
+  replacing the list-based ``needs_extra_links``.
+  The redundant ``option`` key is no longer needed.
+
+  .. code-block:: toml
+     :caption: Before (deprecated)
+
+     [[needs.extra_links]]
+     option = "blocks"
+     incoming = "is blocked by"
+
+  .. code-block:: toml
+     :caption: After
+
+     [needs.links.blocks]
+     incoming = "is blocked by"
+
+- ✨ Add ``default`` and ``predicates`` keys to :ref:`needs_fields` and :ref:`needs_links`,
+  deprecate ``needs_global_options`` (:pr:`1612`)
+
+  Field defaults and conditional (predicate-based) defaults can now be set
+  **directly on each field or link**, replacing the separate ``needs_global_options`` configuration.
+
+  .. code-block:: toml
+     :caption: Before (deprecated)
+
+     [needs.global_options.status]
+     default = "draft"
+     predicates = [['status == "open"', "active"]]
+
+  .. code-block:: toml
+     :caption: After
+
+     [needs.fields.status]
+     default = "draft"
+     predicates = [['status == "open"', "active"]]
+
+- ✨ Add ``nullable`` key to :ref:`needs_fields` items (:pr:`1613`)
+
+  Individual fields can now declare whether ``null`` (``None``) is a valid value.
+
+- ✨ Add ``parse_variants`` to :ref:`needs_fields` / :ref:`needs_links`,
+  deprecate ``needs_variant_options`` (:pr:`1614`)
+
+  Variant parsing is now enabled per-field/link instead of via a separate global list.
+
+  .. code-block:: toml
+     :caption: Before (deprecated)
+
+     needs_variant_options = ["author", "status"]
+
+  .. code-block:: toml
+     :caption: After
+
+     [needs.fields.author]
+     parse_variants = true
+
+     [needs.fields.status]
+     parse_variants = true
+
+- ♻️ Move ``needs_statuses`` and ``needs_tags`` checking to schema validation (:pr:`1605`)
+
+  ``needs_statuses`` and ``needs_tags`` are now deprecated.
+  Use schema ``enum`` constraints on the ``status`` and ``tags`` fields instead:
+
+  .. code-block:: toml
+     :caption: Before (deprecated)
+
+     needs_statuses = [{name = "draft"}, {name = "approved"}]
+     needs_tags = [{name = "security"}, {name = "usability"}]
+
+  .. code-block:: toml
+     :caption: After
+
+     [needs.fields.status]
+     schema.enum = ["draft", "approved"]
+
+     [needs.fields.tags]
+     schema.items.enum = ["security", "usability"]
+
+API changes
+...........
+
+- ✨ Add ``add_field`` API; deprecate ``add_extra_option`` (:pr:`1641`)
+
+  Extensions that programmatically add fields should migrate from
+  :py:func:`~sphinx_needs.api.configuration.add_extra_option` to the new
+  :py:func:`~sphinx_needs.api.configuration.add_field`,
+  which accepts the same schema, default, and predicate options as :ref:`needs_fields`.
+
+- 👌 Allow ``add_field`` API to set defaults/predicates (:pr:`1643`)
+
+Breaking changes
+................
+
+- ‼️ ``needs_fields`` and ``add_field`` default to **nullable with no default** (:pr:`1645`)
+
+  When defining a field via :ref:`needs_fields` or ``add_field`` **without** an explicit ``schema``,
+  the field now defaults to ``nullable=True`` with no default value (i.e. ``null``).
+
+  Previously, fields without an explicit schema defaulted to ``nullable=False`` with a
+  default of ``""`` (empty string). This was a legacy of the untyped ``needs_extra_options`` era
+  and caused confusion when users expected unset fields to be ``null`` rather than an empty string.
+
+  The old ``needs_extra_options`` / ``add_extra_option`` APIs retain their legacy behaviour,
+  so **only** users who have already migrated to ``needs_fields`` / ``add_field`` are affected.
+
+  To restore the old behaviour explicitly:
+
+  .. code-block:: toml
+
+     [needs.fields.my_field]
+     nullable = false
+     default = ""
+
+- ‼️ Need fields added by services default to nullable and null (:pr:`1644`)
+
+  Fields registered by built-in services (e.g. GitHub) now default to nullable with no default,
+  matching the new ``needs_fields`` convention.
+
+- ⚠️ Separate reduced vs full need representation for schema validation (:pr:`1652`)
+
+  Schema validation now distinguishes between a **reduced** need representation
+  (for type-specific ``local``/``network`` schemas, where default-valued and empty fields are
+  stripped) and a **full** representation (for global field/link constraints).
+
+  Previously, fields with default ``[]`` values (link fields, ``tags``) were stripped before
+  validation, silently bypassing constraints like ``minItems``, ``contains``, and ``minContains``.
+  These fields are now retained as ``[]`` in global constraint validation, so such constraints
+  will now correctly trigger on needs that have empty link/tag lists.
+
+- ♻️ Replace ``jinja2`` with ``minijinja`` for template rendering (:pr:`1659`)
+
+  The ``jinja2`` dependency has been replaced by ``minijinja`` (``minijinja-py``),
+  a lightweight, Rust-based Jinja2-compatible template engine.
+  This provides faster template rendering and a smaller dependency footprint.
+
+  **Standard Jinja2 syntax is fully supported** — most custom templates will work without changes.
+  Notable differences:
+
+  - ``None`` renders as ``"none"`` (lowercase) instead of ``"None"``.
+    Use ``{% if field %}{{ field }}{% endif %}`` to guard against ``None`` output.
+  - A few Jinja2-only filters are not available: ``wordcount``, ``center``, ``urlize``,
+    ``xmlattr``, ``forceescape``. See the ``minijinja``
+    `documentation <https://docs.rs/minijinja/latest/minijinja/>`__ for alternatives.
+
+Compatibility changes
+.....................
+
+- ⬆️ Support Sphinx 9 and Docutils 0.22 (:pr:`1653`)
+
+  Sphinx-Needs now supports Sphinx 7.4 through 9.x and Docutils 0.22.
+
+Bug fixes
+.........
+
+- 🐛 Fix ``needs.json`` read/write when no needs are present (:pr:`1661`)
+- 🐛 Fix ``needextend`` data purging and deterministic ordering (:pr:`1657`)
+- 🐛 Fix schema validation returning per-need errors (:pr:`1640`)
+
+Improvements
+............
+
+- 👌 Default values of extra fields now checked against schema definitions (:pr:`1647`)
+- 👌 Expose ``parse_dynamic_functions`` in field and link configuration (:pr:`1660`)
+- 👌 Minor improvements for ``needs_fields`` inheritance (:pr:`1635`)
+- ✨ Add ``uniqueItems`` to ``array`` schema validation (:pr:`1610`)
+
+Internal changes
+................
+
+These changes do not affect user-facing behaviour but improve the codebase:
+
+- ♻️ Migrate use of ``extra_links`` to Schema-Based Access (:pr:`1638`)
+- 🔧 Refactor schema validation: separate select filtering from local validation (:pr:`1655`)
+- 🔧 Simplify field/link validation (:pr:`1654`)
+- 🔧 Simplify ``generate_needs`` function (:pr:`1651`)
+- 🔧 Rename "option" to "field" internally (:pr:`1642`)
+- 🔧 Refactor ``populate_field_type`` to use type-directed schema walking (:pr:`1639`)
+- 🔧 Store full schema on ``FieldSchema`` (:pr:`1603`)
+- 🔧 Add ``validate_extra_option_schema`` (:pr:`1602`)
+- 🔧 Remove use of ``extra_options`` after config resolution (:pr:`1607`)
+- 🔧 Move link ``schema`` to ``LinkSchema`` (:pr:`1617`)
+- 🔧 Simplify ``import_prefix_link_edit`` (:pr:`1615`)
+- 🔧 Add ``AGENTS.md`` (:pr:`1621`)
+- 🧪 Add tests for ``create_inherited_field`` (:pr:`1636`)
+
+Documentation fixes
+...................
+
+- 📚 Fix typo in sort of ``needtable`` documentation (:pr:`1619`)
+- 📚 Fix small grammatical error in ``need.rst`` (:pr:`1637`)
+- 📚 Fix typo in documentation for GitHub service example (:pr:`1634`)
+
+.. _`release:6.3.0`:
+
+6.3.0
+-----
+
+:Released: 15.12.2025
+:Full Changelog: `v6.2.0...v6.3.0 <https://github.com/useblocks/sphinx-needs/compare/6.2.0...6.3.0>`__
+
+- ⬆️ Support Python 3.14 (:pr:`1598`)
+- ♻️ Remove ``typeguard`` dependency (:pr:`1597`)
+- 👌 Relative paths from toml configuration (:pr:`1589`)
+
+  Ensure that file paths originating from a :ref:`needs_from_toml` file are relative to that file, rather than the :file:`conf.py` file
+
+- ✨ Add new ``needs_links`` configuration (dict-based) as replacement for ``needs_extra_links`` (list-based)
+
+  The new :ref:`needs_links` configuration uses a dictionary mapping link name to configuration,
+  removing the redundant ``option`` key required in :ref:`needs_extra_links`.
+  Also adds support for a ``description`` field for link types.
+  The old ``needs_extra_links`` configuration is now deprecated but remains supported for backward compatibility.
+
+- ✨ Expose ``parse_dynamic_functions`` in field and link configuration
+
+  Add per-field/link ``parse_dynamic_functions`` option to :ref:`needs_fields`, :ref:`needs_links`,
+  and the ``add_field`` / ``add_extra_option`` API functions.
+  Also add a new :ref:`needs_parse_dynamic_functions` global config option (default ``True``)
+  that sets the default for all extra fields and links when not explicitly set per-field/link.
+  This provides a migration path to eventually disable dynamic function parsing by default
+  in a future major release.
+
+.. _`release:6.2.0`:
+
+6.2.0
+-----
+
+:Released: 28.11.2025
+:Full Changelog: `v6.1.1...v6.2.0 <https://github.com/useblocks/sphinx-needs/compare/6.1.1...6.2.0>`__
+
+This release introduces performance improvements for schema validation, to make it ~3 times faster (:pr:`1581`, :pr:`1582`, :pr:`1583`, :pr:`1584`).
+
+This includes a change in dependencies, from ``jsonschema`` to ``jsonschema-rs`` for the core validation engine.
+
+.. _`release:6.1.1`:
+
+6.1.1
+-----
+
+:Released: 25.11.2025
+:Full Changelog: `v6.1.0...v6.1.1 <https://github.com/useblocks/sphinx-needs/compare/6.1.0...6.1.1>`__
+
+This release focuses on schema validation improvements and bug fixes.
+
+- ✨ Add ``needs_schema_validation_enabled`` configuration (:pr:`1574`)
+
+  New configuration option to disable schema validation entirely.
+  This is set to ``True`` by default, for backward compatibility,
+  and provides an opt-out mechanism when schema validation is not needed.
+
+  See :ref:`needs_schema_validation_enabled` for more information.
+
+- ✨ Add ``allow_type_coercion`` configuration for external/import ``needs.json`` reads (:pr:`1573`)
+
+  New configuration option for ``needs_external_needs`` and the ``needimport`` directive
+  that controls whether field values should be automatically coerced to expected types.
+  For example, enables/disables parsing comma-separated strings like ``"a,b,c"`` into
+  list types like ``["a", "b", "c"]``.
+  Set to ``True`` by default for backward compatibility.
+  Setting to ``False`` may improve performance by skipping additional parsing.
+
+  See :ref:`needs_external_needs` and :ref:`needimport` for more information.
+
+- 👌 Allow ``\.`` in schema regex patterns (:pr:`1568`)
+
+  The regex pattern ``\.`` is now allowed in schema validations.
+
+- 🐛 Fix schema network type injection (:pr:`1570`)
+
+  Fixed type injection mechanism that was failing for link types called ``contains`` or ``items``.
+  Constrained the injection to specific schema path structure locations.
+
+- 🐛 Fix ``needs.json`` schema for nullable fields (:pr:`1571`)
+
+  Nullable fields now correctly reflect that property in the ``needs.json`` schemas section.
+
+.. _`release:6.1.0`:
+
+6.1.0
+-----
+
+:Released: 31.10.2025
+:Full Changelog: `v6.0.1...v6.1.0 <https://github.com/useblocks/sphinx-needs/compare/6.0.0...6.1.0>`__
+
+Main focus of this release is the improvement of the schema severity handling.
+
+- 👌 Improve schema severity handling (:pr:`1561`)
+
+  The PR removes the setting ``needs_schema_severity``.
+
+  All violations are printed to the console unless suppressed by ``suppress_warnings``.
+  To enable :ref:`granular warning suppression <suppress_validation_messages>`,
+  the following warning types were added:
+
+  - info: sn_schema_info
+  - warning: sn_schema_warning
+  - violation: sn_schema_violation
+
+  The severities ``info`` and ``warning`` are logged as ``logger.warning()``.
+  The severity ``violation`` is logged as ``logger.error()`` so they appear as a different
+  color in the output.
+
+  The ``schema_violations.json`` file contains all violations, irrespective of the severity.
+  Any downstream tool can filter for the required severity levels.
+
+  In ``schema_violations.json``, child elements do not contain ``log_lvl`` and ``type`` anymore
+  to avoid duplication.
+
+- 👌 Make ``incoming`` / ``outgoing`` keys optional in ``needs_extra_links`` (:pr:`1548`)
+
+  Defining a link is now possible with just ``needs_extra_links = [{"option": "links"}]``.
+
+- 🔧 Run new ubc action on docs (:pr:`1541`)
+
+  A new `GitHub action <https://github.com/useblocks/ubc-action>`__ to run ``ubc``
+  is now used to lint all RST sources in the CI. Next step is to create a
+  pre-commit hook for local usage.
+
+Minor documentation updates and internal improvements:
+
+- 📚 Co-locate dynamic and variant function docs (:pr:`1544`)
+- 📚 Fix linkchecks (:pr:`1556`)
+- 📚 Improve schema docs (:pr:`1554`)
+- 📚 Enable link to full schema example (:pr:`1538`)
+- ♻ Early resolution of schema_debug_path (:pr:`1563`)
+- 🔧 Derive core ``FieldSchema`` from ``NeedsCoreFields`` (:pr:`1546`)
+- 🧪 Add snapshot test for field schema (:pr:`1545`)
+
+.. _`release:6.0.1`:
+
+6.0.1
+-----
+
+:Released: 02.10.2025
+:Full Changelog: `v6.0.0...v6.0.1 <https://github.com/useblocks/sphinx-needs/compare/6.0.0...02eb6e771a6cc39cc8875c9a77520c02135cc084>`__
+
+This release contains bug fixes for the 6.0.0 schema validation system and some minor improvements.
+
+- 👌 Add schema to add_extra_option :pr:`1527`
+
+  Added ``schema`` parameter to
+  :py:func:`add_extra_option <sphinx_needs.api.configuration.add_extra_option>`
+  API to support typed fields in extensions that add extra options programmatically.
+
+- 🐛 Inject build_tags to variant filter strings :pr:`1531`
+
+  Introduced a new context variable ``build_tags`` into
+  :ref:`variant filter strings <needs_variant_support>` that contains
+  all defined Sphinx build tags to be used as variant selector.
+  The new variable can be used like this: ``'tag1' in build_tags``.
+  This also avoids polluting the variable namespace with tags.
+
+- 🐛 Fix name error schema_path_contains :pr:`1530`
+
+  Fixed bug when using ``contains`` validation on empty link lists.
+
+- 🔧 Fix schema json missing exc message :pr:`1526`
+- 🔧 Improve error for variant options :pr:`1524`
+
+  Better error messages when variant options are incorrectly set to link types.
+
+- 📚 Add release labels to changelog :pr:`1523`
+
+  Added stable release labels to changelog for better URL references.
+
+.. _`release:6.0.0`:
+
+6.0.0
+-----
+
+:Released: 28.09.2025
+:Full Changelog: `v5.1.0...v6.0.0 <https://github.com/useblocks/sphinx-needs/compare/5.1.0...fc765b4ea6fdf79ad146cf2ce66e084178de3a9f>`__
+
+This release introduces strong typing for extra option fields to the Sphinx-Needs codebase.
+This affects needs read from RST sources (or others like .md), but also imported/exported needs
+of needs.json files.
+
+The default type for extra options is still ``string``, so existing configuration should work
+as before. Type errors are detected early once each need is fully resolved, i.e. after
+reading in the sources and evaluating :ref:`needs_global_options` (defaults),
+:ref:`needextend`, :ref:`variants <needs_variant_support>` and :ref:`dynamic_functions`.
+Errors in the typing system lead to needs not being created.
+
+The release also introduces a new :ref:`schema_validation` system that integrates
+into the strong typing. It is JSON schema compliant in large parts with custom extensions
+to support network validation.
+
+The core of Sphinx-Needs had to be refactored in large parts to enable these changes.
+The following are the main user-facing changes:
+
+- ♻️ Allow for typed ``needs_extra_options`` fields :pr:`1516`
+
+  The ``needs_extra_options`` configuration option was extended to support schema information.
+  The field ``schema.type`` globally sets the type for the field. Users can select between
+  ``string``, ``number`` (float), ``integer``, ``boolean`` and ``array``. For the ``array`` type
+  another keyword ``schema.items.type`` defines the list items type.
+
+  Examples in TOML configuration:
+
+  .. code-block:: toml
+
+     [[needs.extra_options]]
+     name = "priority"
+     description = "Priority level, 1-5 where 1 is highest and 5 is lowest"
+     schema.type = "integer"
+     schema.minimum = 1
+     schema.maximum = 5
+
+     [[needs.extra_options]]
+     name = "asil"
+     description = "Automotive Safety Integrity Level"
+     schema.type = "string"
+     schema.enum = ["QM", "A", "B", "C", "D"]
+
+  **Key Changes:**
+
+  - Strong typing for ``needs_extra_options`` with JSON schema validation
+  - Delayed resolution for dynamic functions, needextend, defaults, and variants
+  - Automatic type coercion from string inputs (directive options) to proper types
+  - Missing fields are set to ``None`` (null in JSON)
+  - needs.json import/export with type validation and coercion; empty ``""`` field values
+    of existing needs.json files of type ``integer`` are coerced to ``0``, and for
+    type ``number`` to ``0.0`` for backwards compatibility. Empty strings for ``boolean``
+    fields are coerced to ``True`` as this is often used as a flag.
+  - Integration with schema validation system. The same fields for :ref:`supported_data_types`
+    can be set in the definition, so they are set globally for that field.
+
+  The implementation strives to be as backwards compatible as possible. See below for details.
+
+- ✨ Schema validation :pr:`1467`
+
+  The PR adds a fast, declarative and versatile JSON schema based need validation.
+  The schema is defined in the :ref:`needs_schema_definitions` configuration option or
+  as JSON format passed via :ref:`needs_schema_definitions_from_json`.
+
+  **Key Features:**
+
+  - JSON Schema standard compliance using ``$defs`` and ``$ref`` for reusable sub-schemas
+  - Fully typed implementation with runtime validation of schema definitions
+  - Auto-injection of default string type when not specified
+  - Select mechanism, comparable to database queries to select need nodes for validation.
+  - Root ``validate`` key with ``local`` and ``network`` sub-sections for validation types.
+    The split enables IDE extensions such as `ubCode`_ to validate-on-type for need-local
+    changes and also run network validation once the index is fully built.
+  - Debug mechanism using :ref:`needs_schema_debug_active` to check why validations pass or fail.
+    4 files are written per validation: original need, reduced need, applied schema and
+    a result file with user and validation message. File naming pattern is
+    ``<need_id>__<schema_path>__<validation_rule>.<json|txt>``. Nested graph-validations are also
+    dumped.
+  - String regex pattern constraints with cross-engine compatibility
+  - Semantic equivalence to JSON Schema spec for array ``items``, ``minItems``, ``maxItems``,
+    ``contains``, ``minContains``, and ``maxContains``
+
+  The new validation can replace :ref:`needs_warnings`, :ref:`needs_constraints`,
+  :ref:`needs_id_regex`, :ref:`needs_statuses`, and :ref:`needs_tags` in the future.
+
+  The implementation of the new strong typing and schema validation into `ubCode`_ is on the
+  immediate roadmap.
+
+- 👌 Write schema violations into a JSON file :pr:`1503`
+
+  Schema validation violations are now exported to a JSON file (``schema_violations.json``)
+  for external tooling integration and automated quality assurance workflows. This enables
+  CI/CD systems and external analysis tools to programmatically process validation results.
+
+- Always generate schema violations.json report file :pr:`1511`
+
+**These PRs were part of the internal changes:**
+
+- 🧪 Move to snapshot testing for test_schema :pr:`1519`
+- 🔧 Add ``VariantFunctionParsed`` dataclass :pr:`1515`
+- 🔧 Add ``DynamicFunctionParsed`` dataclass :pr:`1514`
+- ♻️ Auto-compute certain need fields :pr:`1496`
+- ♻️ Set some core need fields to nullable :pr:`1488`
+- 🔧 Split import item filtering to separate function :pr:`1484`
+- ♻️ Lazily assess directive options :pr:`1482`
+- 🧪 Improve test for need parts :pr:`1507`
+- 👌 Improve need part processing :pr:`1469`
+- 🔧 Centralise allowed variant core need fields :pr:`1424`
+- ✨ Add ``is_import`` need field :pr:`1429`
+
+  New field to identify needs that were imported from external sources.
+
+**Breaking Changes**
+
+- :ref:`Variants <needs_variant_support>` have to be wrapped with ``<< >>``. This allows
+  for a safer parsing strategy and support for usage in array elements.
+- The variant delimiter has changed to only allow ``,``. Formerly also ``;`` was possible.
+- 🐛 Fix: disallow need variants for list type fields :pr:`1489`
+
+  Variants no longer supported in list-type fields due to parsing instability.
+  This feature might be re-introduced in future.
+  The new syntax ``<< >>`` would make this much easier.
+
+- ‼️ remove parsing of deprecated ``needs_global_options`` format :pr:`1517`
+
+  Removes support for the deprecated legacy format of
+  ``needs_global_options``. The system now only accepts the dictionary format
+  introduced in version 5.1.0. Projects using the old format will receive a warning
+  that the configuration is not a ``dict`` and the parsing will be skipped entirely.
+  Users must migrate to the new explicit format for global options to continue working.
+
+- ‼️ Improve needs default field application (via needs_global_options) :pr:`1478`
+
+  Previously defaults would be applied to any fields of a need with a "falsy" value,
+  e.g. ``None``, ``False``, ``0``, ``""``, ``[]``. This is an issue if the user wants to
+  specifically set fields to these values, without them being overridden by defaults.
+  Therefore, now defaults are only applied to fields with a missing or None value.
+
+- ‼️ Disallow ``add_extra_option`` overriding an internal field :pr:`1477`
+
+  Needs are stored in a flat dictionary as of now, so they cannot overlap.
+
+- ♻️ Store needs as ``NeedItem`` / ``NeedPartItem``, rather than standard ``dict`` :pr:`1485`
+
+  Replaces standard dictionary storage with specialized ``NeedItem`` and ``NeedPartItem`` classes.
+  This allows better encapsulation and control over data mutation.
+
+  This is breaking for any users doing "non-API" modifications or additions to the needs data,
+  i.e. directly adding dict items.
+  It should not change interactions with standard APIs like ``add_need`` or filter strings.
+
+  These PRs are also related:
+
+  - ♻️ Improve storage of part data on NeedItem :pr:`1509`
+  - 🔧 Improve storage of content generation on ``NeedItem`` :pr:`1506`
+  - 🔧 Improve storage of constraint results on ``NeedItem`` :pr:`1504`
+  - 👌 Capture more information about modifications on ``NeedItem`` :pr:`1502`
+  - ♻️ split off ``source`` fields in ``NeedItem`` internal data :pr:`1491`
+  - ♻️ split ``NeedItem`` internal data into core, extras, links and backlinks :pr:`1490`
+
+- ⬆️ Drop Python 3.9 :pr:`1468`
+- ⬆️ Drop Sphinx<7.4, test against Python 3.13 :pr:`1447`
+
+**Further improvements and fixes**
+
+- 🔧 Improve plantuml check + add tests :pr:`1521`
+
+  PlantUML extension detection now uses ``app.extensions`` for better compatibility with dynamic
+  registration. Thanks to @AlexanderLanin for the initial implementation.
+
+- ♻️ Warn for missing needimport files :pr:`1510`
+
+  Missing :ref:`needimport` files now emit warnings instead of throwing exceptions, making
+  it possible to ignore the problem for specific use cases.
+
+- 🐛 Avoid leaking auth credentials for ext. need warnings :pr:`1512`
+- ♻️ Exclude ``is_need`` / ``is_part`` from ``needs.json`` output :pr:`1505`
+
+  It doesn't make sense to have these, since only needs are written, not parts.
+  Also, these fields are "thrown away" when passing in external/import needs.json.
+
+  These fields are only really used during processing, within filter contexts, when filtering
+  across both needs and parts.
+
+- 👌 Reset directive option specs at start of build :pr:`1448`
+
+  Internal fix to reset directive options for consistent builds & testing.
+
+- 🐛 Warn on dynamic function with surrounding text :pr:`1426`
+
+  Added warning when dynamic functions are used for a list type with surrounding text
+  as the surrounding text will be silently ignored.
+
+- Allow ``collapse`` and ``hide`` in ``needs_global_options`` :pr:`1456`
+- 🔧 Allow template global_options :pr:`1454`
+- 👌 Re-allow dynamic functions for ``layout`` field :pr:`1423`
+- 🔧 Allow pre/post template ``global_options`` :pr:`1428`
+
+**Minor documentation updates**
+
+- 📚 Clarify c.this_doc() for needextend :pr:`1475`
+- 📚 Fix needs_extra_links name :pr:`1501`
+- 📚 Format configuration.rst :pr:`1473`
+- 📚 Fix escape sequences :pr:`1470`
+
+**Infrastructure**
+
+- 🔧 benchmark group non win32 :pr:`1450`
+- 🐛 Fix cyclic imports :pr:`1443`
+- 🔧 Added yamlfmt pre-commit :pr:`1446`
+- 🔧 Use ubuntu-latest in CI :pr:`1439`
+- 📚 update tox version to py39 :pr:`1438`
+
+.. _`release:5.1.0`:
+
+5.1.0
+-----
+
+:Released: 06.03.2025
+:Full Changelog: `v5.0.0...v5.1.0 <https://github.com/useblocks/sphinx-needs/compare/5.0.0...9ad91a92c68899f750081f6d683473080a567cad>`__
+
+The :ref:`needs_global_options` configuration option has been updated to a new format,
+to be more explicit and to allow for future improvements :pr:`1413`.
+The old format is currently still supported, but will emit a warning.
+Additionally, checks are put in place to ensure that the keys used are from the allowed set (:pr:`1410`).:
+
+- any ``needs_extra_options`` field
+- any ``needs_extra_links`` field
+- ``status``
+- ``layout``
+- ``style``
+- ``tags``
+- ``constraints``
+
+.. code-block:: python
+   :caption: Old format
+
+   needs_global_options = {
+      "field1": "a",
+      "field2": ("a", 'status == "done"'),
+      "field3": ("a", 'status == "done"', "b"),
+      "field4": [
+         ("a", 'status == "done"'),
+         ("b", 'status == "ongoing"'),
+         ("c", 'status == "other"', "d"),
+      ],
+   }
+
+.. code-block:: python
+   :caption: New format
+
+   needs_global_options = {
+      "field1": {"default": "a"},
+      "field2": {"predicates": [('status == "done"', "a")]},
+      "field3": {
+         "predicates": [('status == "done"', "a")],
+         "default": "b",
+      },
+      "field4": {
+         "predicates": [
+               ('status == "done"', "a"),
+               ('status == "ongoing"', "b"),
+               ('status == "other"', "c"),
+         ],
+         "default": "d",
+      },
+   }
+
+.. _`release:5.0.0`:
+
+5.0.0
+-----
+
+:Released: 18.02.2025
+:Full Changelog: `v4.2.0...v5.0.0 <https://github.com/useblocks/sphinx-needs/compare/4.2.0...5.0.0>`__
+
+This release includes a number of changes,
+to bring more clarity to the needs data structure and post-processing steps.
+In most cases it should not be breaking,
+but may be in some corner cases.
+
+- ✨ Add ``c.this_doc()`` check for use in directive ``:filter:`` option :pr:`1393` and :pr:`1405`
+
+  This allows for filtering of needs only in the same document as the
+  directive itself, e.g.
+
+  .. code-block:: rst
+
+     .. needextend:: c.this_doc() and status is None
+        :status: open
+
+  This works for all common filtered directives, see :ref:`filter_current_page`
+
+- ♻️ Remove ``full_title`` need field and only trim generated titles :pr:`1407`
+
+  The existence of both ``title`` and ``full_title`` is confusing and unnecessary (in most cases these are equal), and so ``full_title`` is removed.
+
+  Trimming (when :ref:`needs_max_title_length` is set) is now only applied to auto-generated titles,
+  as per the documentation in :ref:`needs_title_from_content`
+
+- ♻️ Make ``needextend`` argument declarative :pr:`1391`
+
+  The argument for ``needextend`` can refer to either a single need ID or
+  filter function.
+  Currently, the format cannot be known until all needs have been
+  processed, and it is resolved during post-processing.
+  This is problematic for (a) user readability, (b) improving processing
+  performance and issue feedback
+
+  This PR slightly modifies the argument processing to allow for two
+  "explicit" formats:
+
+  - ``<ID>``, if the argument is enclosed in ``<>`` it is always processed as a single ID
+  - ``"filter string"``, if the argument is enclosed in ``""`` it is always processed as a filter string
+
+  See :ref:`needextend` for more information.
+
+- ♻️ Remove back link manipulation from ``needextend`` :pr:`1386`
+
+  Back links are computed at the end of the need post-processing, after
+  ``needextend`` have been applied.
+
+  Back links should always be in-sync with forward links, therefore it
+  doesn't make sense to modify back links in this way.
+
+- ♻️ Do not process dynamic functions on internal need fields :pr:`1387` and :pr:`1406`
+
+  For most "internal" need fields it does not make sense that these would
+  be dynamic, and anyway this would fail since their values are not string
+  types.
+
+  Dynamic function processing is now skipped, for core fields that
+  should not be altered by the user.
+  The following fields are allowed to contain dynamic functions:
+
+  - ``status``
+  - ``tags``
+  - ``style``
+  - ``constraints``
+  - all ``needs_extra_options``
+  - all ``needs_extra_links``
+  - all ``needs_global_options``
+
+- ♻️ Remove ``delete`` from internal needs and ``needs.json`` :pr:`1347`
+
+  The ``:delete:`` option on a need directive deletes a need before
+  creating/storing it, therefore it is impossible for it to be
+  anything other than ``False``.
+  Storing the field on a need is misleading, because it suggests that the
+  need will be deleted, which is not possible with the current sphinx-needs logic.
+
+- 👌 Add type warnings of extra options in external/import reads :pr:`1389`
+
+  Currently, the value of all extra options is expected to be a string;
+  other types are not supported in various aspects of sphinx-needs (such
+  as ``needextend``, dynamic functions and filtering), and in-fact are
+  already silently converted to strings during the reads.
+
+  The warnings ``needs.mistyped_external_values`` and ``needs.mistyped_import_values`` are added for non-string values,
+  for ``needs_external_needs`` and ``needimport`` sources respectively.
+
+- 🔧 Synchronize list splitting behaviour in ``need`` and ``needextend`` directives :pr:`1385`
+
+.. _`release:4.2.0`:
+
+4.2.0
+-----
+
+:Released: 07.01.2025
+:Full Changelog: `v4.1.0...v4.2.0 <https://github.com/useblocks/sphinx-needs/compare/4.1.0...4.2.0>`__
+
+- ⬆️ Drop Python 3.8 and Sphinx 6
+- ✨ Add :ref:`needs_import_keys` configuration :pr:`1379`
+- 👌 Allow ``filter-func`` in ``needpie`` to have multiple dots in the import path :pr:`1350`
+- 🐛 Make external paths relative to ``confdir``, not ``srcdir`` :pr:`1378`
+- 🔧 Release needs data mutation lock at end of process :pr:`1359`
+- 🔧 Add ``lineno`` to default output of ``needs.json`` :pr:`1346`
+
+.. _`release:4.1.0`:
+
+4.1.0
+-----
+
+:Released: 28.10.2024
+:Full Changelog: `v4.0.0...v4.1.0 <https://github.com/useblocks/sphinx-needs/compare/4.0.0...4.1.0>`__
+
+New
+...
+
+- ✨ Add ``needs_from_toml`` configuration :pr:`1337`
+
+  Configuration can now be loaded from a TOML file, using the ``needs_from_toml`` configuration option.
+  See :ref:`needs_from_toml` for more information.
+
+- ✨ Allow configuring description of extra options in ``needs_extra_options`` :pr:`1338`
+
+  The ``needs_extra_options`` configuration option now supports dict items with a ``name`` and ``description`` key,
+  See :ref:`needs_extra_options` for more information.
+
+Fixes
+.....
+
+- 🐛 Fix clickable links to needs in ``needflow``, when using the ``graphviz`` engine :pr:`1339`
+- 🐛 Allow sphinx-needs to run without ``sphinxcontrib.plantuml`` installed :pr:`1328`
+- 🔧 Remove some internal fields from needs layout :pr:`1330`
+- 🔧 Merge defaults into user-defined configuration earlier (to avoid sphinx warnings) :pr:`1341`
+
+.. _`release:4.0.0`:
+
+4.0.0
+-----
+
+:Released: 09.10.2024
+:Full Changelog: `v3.0.0...v4.0.0 <https://github.com/useblocks/sphinx-needs/compare/3.0.0...4.0.0>`__
+
+Breaking Changes
+................
+
+This commit contains a number of breaking changes:
+
+Improvements to filtering at scale
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For large projects, the filtering of needs in analytical directives such as :ref:`needtable`, :ref:`needuml`, etc, can be slow due to
+requiring an ``O(N)`` scan of all needs to determine which to include.
+
+To address this, the storage of needs has been refactored to allow for pre-indexing of common need keys, such as ``id``, ``status``, ``tags``, etc, after the read/collection phase.
+Filter strings such as ``id == "my_id"`` are then pre-processed to take advantage of these indexes and allow for ``O(1)`` filtering of needs, see the :ref:`filter_string_performance` section for more information.
+
+This change has required changes to the internal API and stricter control on the access to and modification of need data, which may affect custom extensions that modified needs data directly:
+
+- Access to internal data from the Sphinx ``env`` object has been made private
+- Needs data during the write phase is exposed with either the read-only :class:`.NeedsView` or :class:`.NeedsAndPartsListView`, depending on the context.
+- Access to needs data, during the write phase, can now be achieved via :func:`.get_needs_view`
+- Access to mutable needs should generally be avoided outside of the formal means, but for back-compatibility the following :external+sphinx:ref:`Sphinx event callbacks <events>` are now available:
+
+  - ``needs-before-post-processing``: callbacks ``func(app, needs)`` are called just before the needs are post-processed (e.g. processing dynamic functions and back links)
+  - ``needs-before-sealing``: callbacks ``func(app, needs)`` just after post-processing, and before the needs are changed to read-only
+
+Additionally, to identify any long running filters,
+the :ref:`needs_uml_process_max_time`, :ref:`needs_filter_max_time` and :ref:`needs_debug_filters` configuration options have been added.
+
+Key changes were made in:
+
+- ♻️ Replace need dicts/lists with views (with fast filtering) in :pr:`1281`
+- 🔧 split ``filter_needs`` func by needs type in :pr:`1276`
+- 🔧 Make direct access to ``env`` attributes private in :pr:`1310`
+- 👌 Move sorting to end of ``process_filters`` in :pr:`1257`
+- 🔧 Improve ``process_filters`` function in :pr:`1256`
+- 🔧 Improve internal API for needs access in :pr:`1255`
+- 👌 Add ``needs_uml_process_max_time`` configuration in :pr:`1314`
+- ♻️ Add ``needs_filter_max_time`` / ``needs_debug_filters``, deprecate ``export_id`` in :pr:`1309`
+
+Improved warnings
+~~~~~~~~~~~~~~~~~
+
+sphinx-needs is designed to be durable and only except when absolutely necessary.
+Any non-fatal issues during the build are logged as Sphinx warnings.
+The warnings types have been improved and stabilised to provide more information and context, see :ref:`config-warnings` for more information.
+
+Additionally, the :func:`.add_need` function will now only raise the singular exception :class:`.InvalidNeedException` for all need creation issues.
+
+Key changes were made in:
+
+- 👌 Warn on unknown need keys in external/import sources in :pr:`1316`
+- ♻️  Extract ``generate_need`` from ``add_need`` & consolidate warnings in :pr:`1318`
+
+Improved ``needs.json``
+~~~~~~~~~~~~~~~~~~~~~~~
+
+A  number of output need fields have been changed, to simplify the output.
+Key changes were made in:
+
+- 🔧  change type of need fields with ``bool | None`` to just ``bool`` in :pr:`1293`
+- ♻️ Remove ``target_id`` core need field in :pr:`1315`
+- ♻️ Output ``content`` in ``needs.json`` not ``description`` in :pr:`1312`
+- 👌 Add ``creator`` key to ``needs.json`` in :pr:`1311`
+
+Replacement of ``[[...]]`` and ``need_func`` in need content
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The parsing of the ``[[...]]`` dynamic function syntax in need content could cause confusion and unexpected behaviour.
+This has been deprecated in favour of the new, more explicit :ref:`ndf role <ndf>`, which also deprecates the ``need_func`` role.
+
+See :pr:`1269` and :pr:`1266` for more information.
+
+Removed deprecation
+~~~~~~~~~~~~~~~~~~~
+
+The deprecated ``needfilter`` directive is now removed (:pr:`1308`)
+
+New and improved features
+.........................
+
+- ✨ add ``tags`` option for ``list2need`` directive in :pr:`1296`
+- ✨ Add ``ids`` option for ``needimport`` in :pr:`1292`
+- 👌 Allow ``ref`` in ``needuml`` to handle need parts in :pr:`1222`
+- 👌 Improve parsing of need option lists with dynamic functions in :pr:`1272`
+- 👌 Improve warning for needextract incompatibility with external needs in :pr:`1325`
+- 🔧 Set ``env_version`` for sphinx extension in :pr:`1313`
+
+Bug Fixes
+.........
+
+- 🐛 Fix removal of ``Needextend`` nodes in :pr:`1298`
+- 🐛 Fix ``usage`` numbers  in ``needreport`` in :pr:`1285`
+- 🐛 Fix ``parent_need`` propagation from external/imported needs in :pr:`1286`
+- 🐛 Fix ``need_part`` with multi-line content in :pr:`1284`
+- 🐛 Fix dynamic functions in ``needextract`` need in :pr:`1273`
+- 🐛 Disallow dynamic functions ``[[..]]`` in literal content in :pr:`1263`
+- 🐛 fix parts defined in nested needs in :pr:`1265`
+- 🐛 Handle malformed ``filter-func`` option value in :pr:`1254`
+- 🐛 Pass ``needs`` to ``highlight`` filter of ``graphviz`` ``needflow`` in :pr:`1274`
+- 🐛 Fix parts title for ``needflow`` with ``graphviz`` engine in :pr:`1280`
+- 🐛 Fix ``need_count`` division by 0 in :pr:`1324`
+
+.. _`release:3.0.0`:
+
+3.0.0
+-----
+
+:Released: 28.08.2024
+:Full Changelog: `v2.1.0...v3.0.0 <https://github.com/useblocks/sphinx-needs/compare/2.1.0...59cc6bf>`__
+
+This release includes a number of new features and improvements, as well as some bug fixes.
+
+Updated dependencies
+....................
+
+- sphinx: ``>=5.0,<8`` to ``>=6.0,<9``
+- requests: ``^2.25.1`` to ``^2.32``
+- requests-file: ``^1.5.1`` to ``^2.1``
+- sphinx-data-viewer: ``^0.1.1`` to ``^0.1.5``
+
+Documentation and CSS styling
+.............................
+
+The documentation theme has been completely updated, and a tutorial added.
+
+To improve ``sphinx-needs`` compatibility across different Sphinx HTML themes,
+the CSS for needs etc has been modified substantially, and so,
+if you have custom CSS for your needs, you may need to update it.
+
+See :ref:`install_theme` for more information on how to setup CSS for different themes,
+and :pr:`1178`, :pr:`1181`, :pr:`1182` and :pr:`1184` for the changes.
+
+``needflow`` improvements
+.........................
+
+The use of `Graphviz <https://graphviz.org/>`__ as the underlying engine for ``needflow`` diagrams, in addition to the default `PlantUML <http://plantuml.com>`__,
+is now allowed via the global :ref:`needs_flow_engine` configuration option, or the per-diagram :ref:`engine <needflow_engine>` option.
+
+The intention being to simplify and improve performance of graph builds, since ``plantuml`` has issues with JVM initialisation times and reliance on a third-party sphinx extension.
+
+See :ref:`needflow` for more information,
+and :pr:`1235` for the changes.
+
+additional improvements:
+
+- ✨ Allow setting an ``alt`` text for ``needflow`` images
+- ✨ Allow creating a ``needflow`` from a ``root_id`` in :pr:`1186`
+- ✨ Add ``border_color`` option for ``needflow`` in :pr:`1194`
+
+``needs.json`` improvements
+...........................
+
+A ``needs_schema`` is now included in the ``needs.json`` file (per version), which is a JSON schema for the data structure of a single need.
+
+This includes defaults for each field, and can be used in combination with the :ref:`needs_json_remove_defaults` configuration option to remove these defaults from each individual need.
+
+Together with the new automatic minifying of the ``needs.json`` file, this can reduce the file size by down to 1/8th of its previous size.
+
+The :ref:`needs_json_exclude_fields` configuration option can also be used to modify the excluded need fields from the ``needs.json`` file,
+and backlinks are now included in the ``needs.json`` file by default.
+
+See :ref:`needs_builder_format` for more information,
+and :pr:`1230`, :pr:`1232`, :pr:`1233` for the changes.
+
+Additionally, the ``content_node``, ``content_id`` fields are removed from the internal need data structure (see :pr:`1241` and :pr:`1242`).
+
+Additional improvements
+.......................
+
+- 👌 Capture filter processing times when using ``needs_debug_measurement=True`` in :pr:`1240`
+- 👌 Allow ``style`` and ``color`` fields to be omitted for ``needs_types`` items and a default used in :pr:`1185`
+- 👌 Allow ``collapse`` / ``delete`` / ``jinja_content`` directive options to be flags in :pr:`1188`
+- 👌 Improve ``need-extend``; allow dynamic functions in lists in :pr:`1076`
+- 👌 Add collapse button to ``clean_xxx`` layouts in :pr:`1187`
+- 🐛 fix warnings for duplicate needs in parallel builds in :pr:`1223`
+- 🐛 Fix rendering of ``needextract`` needs and use warnings instead of exceptions in :pr:`1243` and :pr:`1249`
+
+.. _`release:2.1.0`:
+
+2.1.0
+-----
+
+:Released: 08.05.2024
+:Full Changelog: `v2.0.0...v2.1.0 <https://github.com/useblocks/sphinx-needs/compare/2.0.0...2.1.0>`__
+
+Improvements
+............
+
+- 👌 Default to warning for missing ``needextend`` ID in :pr:`1066`
+- 👌 Make ``needtable`` titles more permissive in :pr:`1102`
+- 👌 Add ``filter_warning`` directive option, to replace default warning text in :pr:`1093`
+- 👌 Improve and test github ``needservice`` directive in :pr:`1113`
+- 👌 Improve warnings for invalid filters (add source location and subtype) in :pr:`1128`
+- 👌 Exclude external needs from ``needs_id_regex`` check in :pr:`1108`
+- 👌 Fail and emit warning on filters that do not return a boolean result in :pr:`964`
+- 👌 Improve ``Need`` node creation and content parsing in :pr:`1168`
+- 👌 Add loading message to ``permalink.html`` in :pr:`1081`
+- 👌 Remove hard-coding of ``completion`` and ``duration`` need fields in :pr:`1127`
+
+Bug fixes
+.........
+
+- 🐛 Image layout function in :pr:`1135`
+- 🐛 Centralise splitting of need ID in :pr:`1101`
+- 🐛 Centralise need missing link reporting in :pr:`1104`
+
+Internal improvements
+.....................
+
+- 🔧 Use future annotations in all modules in :pr:`1111`
+- 🔧 Replace black/isort/pyupgrade/flake8 with ruff in :pr:`1080`
+- 🔧 Add better typing for ``extra_links`` config variable in :pr:`1131`
+- 🔧 Centralise need parts creation and strongly type needs in :pr:`1129`
+- 🔧 Fix typing of need docname/lineno in :pr:`1134`
+- 🔧 Type ``ExternalSource`` config dict in :pr:`1115`
+- 🔧 Enforce type checking in ``needuml.py`` in :pr:`1116`
+- 🔧 Enforce type checking in ``api/need.py`` in :pr:`1117`
+- 🔧 Add better typing for ``global_options`` config variable in :pr:`1120`
+- 🔧 Move dead link need fields to internals in :pr:`1119`
+- 🔧 Remove usage of ``hide_status`` and ``hide_tags`` in :pr:`1130`
+- 🔧 Remove ``hidden`` field from ``extra_options`` in :pr:`1124`
+- 🔧 Remove ``constraints`` from ``extra_options`` in :pr:`1123`
+- 🔧 Remove use of deprecated ``needs_extra_options`` as ``dict`` in :pr:`1126`
+
+.. _`release:2.0.0`:
+
+2.0.0
+-----
+
+:Released: 13.11.2023
+:Full Changelog: `1.3.0...v2.0.0 <https://github.com/useblocks/sphinx-needs/compare/1.3.0...faba19e>`__
+
+This release is focussed on improving the internal code-base and its build time performance, as well as improved build warnings and other functionality improvements / fixes.
+
+Changed
+.......
+
+* Add Sphinx 7 support and drop Python 3.7 (:pr:`1056`).
+  Sphinx 5, 6, 7 and Python 3.8 to 3.11 are now fully supported and tested.
+* The ``matplotlib`` dependency (for ``needbar`` and ``needpie`` plots) is now optional, and should be installed with ``sphinx-needs[plotting]``, see :ref:`installation`  (:pr:`1061`)
+* The ``NeedsBuilder`` format name is changed to ``needs`` (:pr:`978`)
+
+New
+...
+
+* Added Builder :ref:`needs_id_builder` and config option :ref:`needs_build_json_per_id` in ``conf.py`` (:pr:`960`)
+* Added ``needs_reproducible_json`` config option for the needs builder, see :ref:`needs_build_json` (:pr:`1065`)
+* Added error messages for constraint failures (:pr:`1036`)
+
+Improved
+........
+
+Performance:
+
+* General performance improvement (up to 50%) and less memory consumption (~40%).
+* ``external_needs`` now uses cached templates to save generation time.
+* Improved performance for :ref:`needextend` with single needs.
+* Improved performance by memoizing the inline parse in ``build_need`` (:pr:`968`)
+* Remove ``deepcopy`` of needs data (:pr:`1033`)
+* Optimize ``needextend`` filter_needs usage (:pr:`1030`)
+* Improve performance of needs builders by skipping document post-transforms (:pr:`1054`)
+
+Other:
+
+* Improve sphinx warnings (:pr:`975`, :pr:`982`)
+  All warnings are now suffixed with ``[needs]``, and can be suppressed (see `suppress_warnings <https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-suppress_warnings>`_)
+* Improve logging for static file copies (:pr:`992`)
+* Improve removal of hidden need nodes (:pr:`1013`)
+* Improve ``process_constraints`` function (:pr:`1015`)
+* Allow ``needextend`` directive to use dynamic functions (:pr:`1052`)
+* Remove some unnecessary keys from output ``needs.json`` (:pr:`1053`)
+
+Fixed
+.....
+
+* Fix gantt chart rendering (:pr:`984`)
+* Fix ``execute_func`` (:pr:`994`)
+* Fix adding sections to hidden needs (:pr:`995`)
+* Fix ``NeedImport`` logic (:pr:`1006`)
+* Fix creation of need title nodes (:pr:`1008`)
+* Fix logic for ``process_needextend`` function (:pr:`1037`)
+* Fix usage of reST syntax in prefix parameter of meta (:pr:`1046`)
+
+Internal
+........
+
+* 🔧 Centralise access to sphinx-needs config to ``NeedsSphinxConfig``  (:pr:`998`)
+* 🔧 Centralise sphinx ``env`` data access to ``SphinxNeedsData`` (:pr:`987`)
+* 🔧 Consolidate needs data post-processing into ``post_process_needs_data`` function  (:pr:`1039`)
+* 🔧 Add strict type checking (:pr:`1000`, :pr:`1002`, :pr:`1042`)
+* 🔧 Replace ``Directive`` with ``SphinxDirective`` (:pr:`986`)
+* 🔧 Remove ``unwrap`` function (:pr:`1017`)
+* 🔧 Add ``remove_node_from_tree`` utility function (:pr:`1063`)
+* ♻️ Refactor needs post-processing function signatures (:pr:`1040`)
+* 📚 Simplify Sphinx-Needs docs builds (:pr:`972`)
+* 📚 Always use headless plantuml (:pr:`983`)
+* 📚 Add intersphinx (:pr:`991`)
+* 📚 Add outline of extension logic (:pr:`1012`)
+* 📚 Fixed extra links example (:pr:`1016`)
+* 🧪 Remove boilerplate from test build ``conf.py`` files (:pr:`989`, :pr:`990`)
+* 🧪 Add headless java to test builds (:pr:`988`)
+* 🧪 Add snapshot testing (:pr:`1019`, :pr:`1020`, :pr:`1059`)
+* 🧪 Make documentation builds fail on warnings (:pr:`1005`)
+* 🧪 Add testing of JS scripts using Cypress integrated into PyTest (:pr:`1051`)
+* 🧪 Add code coverage to CI testing (:pr:`1067`)
+
+.. _`release:1.3.0`:
+
+1.3.0
+-----
+
+Released: 16.08.2023
+
+* Improvement: Configuration option :ref:`needs_debug_measurement` added, which creates a runtime report
+  for debugging purposes.
+  (:pr:`917`)
+* Bugfix: Replace hardcoded ``index`` with config value ``root_doc``.
+  (:pr:`877`)
+* Bugfix: Fix unbounded memory usage in pickle environment.
+  (:pr:`912`)
+* Bugfix: Supports "None" body in Github services.
+  (:issue:`903`)
+* Removed esbonio for :ref:`ide`.
+* Removed configuration option **needs_ide_snippets_id** to support custom need ID for :ref:`ide` snippets.
+* Removed configuration **needs_ide_directive_snippets** to support custom directive snippets for IDE features.
+* Provided new IDE support option: VsCode extension
+  `Sphinx-Needs-VsCode <https://marketplace.visualstudio.com/items?itemName=useblocks.sphinx-needs-vscode>`_.
+* Improvement: Added configuration option :ref:`needs_report_dead_links`, which can deactivate log messages of
+  outgoing dead links.
+  (:issue:`920`)
+* Improvement: Configuration option :ref:`needs_allow_unsafe_filters` added, which allows unsafe filter for
+  :ref:`filter_func`.
+  (:issue:`831`)
+
+.. _`release:1.2.2`:
+
+1.2.2
+-----
+
+Released: 08.02.2023
+
+* Bugfix: Changed needed version of jsonschema-lib to be not so strict.
+  (:pr:`871`)
+
+.. _`release:1.2.1`:
+
+1.2.1
+-----
+
+Released: 08.02.2023
+
+* Bugfix: Fixed pygls version compatibility.
+  (:pr:`867`,
+  :pr:`865`)
+
+.. _`release:1.2.0`:
+
+1.2.0
+-----
+
+Released: 24.01.2023
+
+* Bugfix: Allowing newer versions of jsonschema.
+  (:pr:`848`)
+* Improvement: Adds :ref:`list2need` directive, which allows to create simple needs from list.
+  (:issue:`854`)
+
+.. _`release:1.1.1`:
+
+1.1.1
+-----
+
+Released: 21.12.2022
+
+* Bugfix: Removed outdated JS codes that handles the collapse button.
+  (:issue:`840`)
+* Improvement: Write autogenerated images into output folder
+  (:issue:`413`)
+* Improvement: Added vector output support to need figures.
+  (:issue:`815`).
+* Improvement: Introduce the jinja function ``ref`` for :ref:`needuml`.
+  (:issue:`789`)
+* Bugfix: Needflow fix bug in child need handling.
+  (:issue:`785`).
+* Bugfix: Needextract handles image and download directives correctly.
+  (:issue:`818`).
+* Bugfix: Needextract handles substitutions correctly.
+  (:issue:`835`).
+
+.. _`release:1.1.0`:
+
+1.1.0
+-----
+
+Released: 22.11.2022
+
+* Bugfix: Expand/Collapse button does not work.
+  (:issue:`795`).
+* Bugfix: ``singlehtml`` and ``latex`` related builders are working again.
+  (:issue:`796`).
+* Bugfix: Needextend throws the same information 3 times as part of a single warning.
+  (:issue:`747`).
+* Improvement: Memory consumption and runtime improvements
+  (:issue:`790`).
+* Improvement: Obfuscate HTTP authentication credentials from log output.
+  (:issue:`759`)
+* Bugfix: needflow: nested needs on same level throws PlantUML error.
+  (:issue:`799`)
+
+.. _`release:1.0.3`:
+
+1.0.3
+-----
+
+Released: 08.11.2022
+
+* Improvement: Fixed :ref:`needextend` error handling by adding a strict-mode option to it.
+  (:issue:`747`)
+* Improvement: Fixed issue with handling needs-variants by default.
+  (:issue:`776`)
+* Improvement: Performance fix needs processing.
+  (:issue:`756`)
+* Improvement: Performance fix for needflow.
+  (:issue:`760`)
+* Improvement: Fixed rendering issue with the debug layout.
+  (:issue:`721`)
+* Improvement: Added :ref:`needs_show_link_id`.
+* Improvement: Supported arguments as filter string for :ref:`needextract`.
+  (:issue:`688`)
+* Improvement: Added :ref:`needs_render_context` configuration option which enables you to use custom data as the
+  context when rendering Jinja templates or strings.
+  (:issue:`704`)
+* Improvement: Supported ``target_url`` for :ref:`needs_external_needs`.
+  (:issue:`701`)
+* Bugfix: Fixed needuml key shown in need meta data by providing internal need option ``arch``.
+  (:issue:`687`)
+* Improvement: Included child needs inside their parent need for :ref:`needflow`.
+  (:issue:`714`)
+* Improvement: Supported generate need ID from title with :ref:`needs_id_from_title`.
+  (:issue:`692`)
+* Improvement: Supported download ``needs.json`` for :ref:`needimport`.
+  (:issue:`715`)
+* Bugfix: Fixed import() be included in needarch.
+  (:issue:`730`)
+* Bugfix: Needuml: uml() call circle leads to an exception :ref:`needarch_ex_loop`.
+  (:issue:`731`)
+* Improvement: needarch provide need() function to get "need data".
+  (:issue:`732`)
+* Improvement: needuml - flow() shall return plantuml text without newline.
+  (:issue:`737`)
+* Bugfix: Needuml used but "sphinxcontrib.plantuml" not installed leads to exception
+  (:issue:`742`)
+* Improvement: better documentation of mixing orientation and coloring in needs_extra_links
+  (:issue:`764`)
+* Bugfix: Needarch: Fixed import() function to work with new implemented flow() (#737).
+  (:issue:`752`)
+* Bugfix: Needtable: generate id for nodes.table
+  (:issue:`434`)
+* Improvement: Updated pantuml in test folder to same version as in doc folder
+  (:issue:`765`)
+
+.. _`release:1.0.2`:
+
+1.0.2
+-----
+
+Released: 22.09.2022
+
+* Improvement: Added support for variants handling for need options.
+  (:issue:`671`)
+* Improvement: Added Jinja support for need content via the :ref:`jinja_content` option.
+  (:issue:`678`)
+* Improvement: Added checks and warnings for :ref:`needimport` and :ref:`needs_external_needs`.
+  (:issue:`624`)
+* Improvement: Support for :ref:`needs_string_links` in :ref:`needtable`.
+  (:issue:`535`)
+* Improvement: Added ``key`` option for :ref:`needuml`.
+* Bugfix: Removed default setting ``allowmixing`` for :ref:`needuml`.
+  (:issue:`649`)
+* Bugfix: Fixed the collapse button issue for needs including nested needs.
+  (:issue:`659`)
+* Bugfix: Fixed :ref:`needextract` filter options issue involved with :ref:`need_part`.
+  (:issue:`651`)
+* Improvement: Added ``save`` option for :ref:`needuml`.
+* Improvement: Added builder :ref:`needumls_builder` and config option :ref:`needs_build_needumls` in ``conf.py``.
+* Improvement: Added ``filter`` function for :ref:`needuml`.
+* Improvement: Renamed jinja function ``need`` to ``flow`` for :ref:`needuml`.
+* Improvement: Added directive :ref:`needarch`.
+* Improvement: Added configuration option **needs_ide_snippets_id** to support custom need ID for :ref:`ide` snippets.
+* Improvement: Provides jinja function :ref:`needarch_jinja_import` for :ref:`needarch` to execute :ref:`needuml_jinja_uml`
+  automatically for all the links defined in the need :ref:`need_links` options.
+* Improvement: Added configuration **needs_ide_directive_snippets** to support custom directive snippets for IDE features.
+  (:issue:`640`)
+* Bugfix: Updated pip install URLs in Dockerfile.
+  (:issue:`673`)
+* Improvement: Providing IDE features support for **ide_myst**.
+
+.. _`release:1.0.1`:
+
+1.0.1
+-----
+
+Released: 11.07.2022
+
+* Notice: **Sphinx <5.0 is no longer supported.**
+* Notice: **Docutils <0.18.1 is no longer supported.**
+* Improvement: Provides :ref:`needuml` for powerful, reusable Need objects.
+* Improvement: Provides :ref:`needreport` for documenting configuration used in a **Sphinx-Needs** project's **conf.py**.
+* Improvement: Provides initial support for Sphinx-Needs IDE language features.
+  (:pr:`584`)
+* Improvement: Support snippet for auto directive completion for Sphinx-Needs IDE language features.
+* Improvement: Added ``show_top_sum`` to :ref:`Needbar <needbar>` and make it possible to rotate the bar labels.
+  (:issue:`516`)
+* Improvement: Added ``needs_constraints`` option. Constraints can be set for individual needs and describe properties
+  a need has to meet.
+* Improvement: Added customizable link text of :ref:`Need <needref>`.
+  (`#439 <https://github.com/useblocks/sphinx-needs/discussions/439>`_)
+* Bugfix: Fixed lsp needs.json path check.
+  (:issue:`603`,
+  :issue:`633`)
+* Bugfix: Support embedded needs in embedded needs.
+  (:issue:`486`)
+* Bugfix: Correct references in :ref:`needtables <needtable>` to be external or internal instead of always external.
+* Bugfix: Correct documentation and configuration in :ref:`need_tags` to *list* type.
+* Bugfix: Handle overlapping labels in :ref:`needpie`.
+  (:issue:`498`)
+* Bugfix: :ref:`needimport` uses source-folder for relative path calculation (instead of confdir).
+
+.. _`release:0.7.9`:
+
+0.7.9
+-----
+
+Released: 10.05.2022
+
+* Improvement: Add permanent link layout function.
+  (:issue:`390`)
+* Improvement: Support for **Sphinx-Needs** Docker Image.
+  (:issue:`531`)
+* Bugfix: :ref:`needextract` not correctly rendering nested :ref:`needs <need>`.
+  (:issue:`329`)
+
+.. _`release:0.7.8`:
+
+0.7.8
+-----
+
+Released: 29.03.2022
+
+* Improvement: Provides line number info for needs node.
+  (:issue:`499`)
+* Bugfix: :ref:`needpie` causing a crash in some cases on newer matplotlib versions.
+  (:issue:`513`,
+  :issue:`517`)
+* Bugfix: :ref:`needpie` takes need-parts in account for filtering.
+  (:issue:`514`)
+* Bugfix: Empty and invalid ``need.json`` files throw user-friendly exceptions.
+  (:issue:`441`)
+
+.. _`release:0.7.7`:
+
+0.7.7
+-----
+
+Released: 04.03.2022
+
+* Bugfix: ``need`` role supporting lower and upper IDs.
+  (:issue:`508`)
+* Bugfix: Correct image registration to support build via Sphinx API.
+  (:issue:`505`)
+* Bugfix: Correct css/js file registration on windows.
+  (:issue:`455`)
+
+.. _`release:0.7.6`:
+
+0.7.6
+-----
+
+Released: 28.02.2022
+
+* Improvement: :ref:`filter_func` support arguments.
+  (:issue:`429`)
+* Improvement: Adds :ref:`needs_build_json` config option to build ``needs.json`` in parallel to other output formats.
+  (:issue:`485`)
+* Improvement: Migrate tests to Pytest and Sphinx internal testing structure.
+  (:issue:`471`)
+* Bugfix: :ref:`needs_builder` supports incremental build (no doctree deletion).
+  (:issue:`481`)
+* Bugfix: :ref:`needs_external_needs` working with :ref:`role_need`.
+  (:issue:`483`)
+
+.. _`release:0.7.5`:
+
+0.7.5
+-----
+
+Released: 21.01.2022
+
+* Improvement: :ref:`needbar` is introduced
+  (:issue:`452`)
+* Improvement: :ref:`needs_external_needs` supports relative path for ``base_url``.
+* Improvement: ``needs.json`` schema gets checked during a :ref:`needimport`
+  (:issue:`456`)
+* Improvement: Supports :ref:`filter_func` for :ref:`needpie`
+  (:issue:`400`)
+* Bugfix: Changed :ref:`needgantt` strftime format string according to C89 defined value.
+  (:issue:`445`)
+* Bugfix: :ref:`needpie` option :legend: is correctls rendered
+  (:issue:`448`)
+* Bugfix: :ref:`needpie` figures are closed after creation, to free memory and suppress matplotlib warning
+  (:issue:`450`)
+* Bugfix: Added implementation for simple_footer grid in Layouts Grids
+  (:issue:`457`)
+* Bugfix: Changed :ref:`needs_external_needs` Fix issue when loading needs from URL.
+  (:issue:`459`)
+* Bugfix: Changed :ref:`needs_external_needs` getting from URL was using parameter related to local file.
+  (:issue:`458`)
+
+.. _`release:0.7.4`:
+
+0.7.4
+-----
+
+Released: 30.11.2021
+
+* Improvement: Adds :ref:`needservice_debug` flag for :ref:`needservice`.
+* Improvement: Better css table handling.
+* Improvement: Adds :ref:`needtable_class` to :ref:`needtable` to set own css classes for tables.
+  (:issue:`421`)
+* Improvement: Adds :ref:`needs_string_links` to support easy string2link transformations.
+  (:issue:`404`)
+* Improvement: Adds :ref:`needtable_colwidths` to :ref:`needtable` directive, to allow the definition of column widths.
+  (:issue:`402`)
+
+.. _`release:0.7.3`:
+
+0.7.3
+-----
+
+Released: 08.11.2021
+
+* Improvement: Schema check for ``need.json`` files implemented.
+* Improvement: New option for ``needtable`` and co: :ref:`filter_func`, which allows to reference and use python code
+  as filter code from external files
+  (:issue:`340`)
+* Bugfix: Fixed :ref:`needs_builder` handling warnings about missing needs.json when :ref:`needs_file` not configured
+  (:issue:`340`)
+* Bugfix: unstable build with :ref:`needs_external_needs`
+  (:issue:`399`)
+* Bugfix: :ref:`needs_external_needs` reads external need status now and warnings gets not checked for
+  :ref:`needs_external_needs`
+  (:issue:`375`)
+
+.. _`release:0.7.2`:
+
+0.7.2
+-----
+
+Released: 08.10.2021
+
+* Improvement: New config option :ref:`needs_builder_filter` to define a filter for the needs builder.
+  (:issue:`342`)
+* Improvement: Added option ``json_path`` for :ref:`needs_external_needs` to support external needs from local ``needs.json`` files.
+  (:issue:`339`)
+* Improvement: Providing :ref:`needs_table_classes` to allow to set custom table css classes, to better support
+  themes like ReadTheDocs.
+  (:issue:`305`)
+* Improvement: Supporting user defined filter code function for :ref:`needs_warnings`
+  (:issue:`345`)
+* Improvement: Supporting caption for :ref:`needtable`
+  (:issue:`348`)
+* Improvement: New config option :ref:`needs_filter_data` to allow to use custom data inside a :ref:`filter_string`
+  (:issue:`317`)
+* Improvement: API to register warnings
+  (:issue:`343`)
+* Bugfix: Scrolling tables improved and ReadTheDocs Tables fixed
+  (:issue:`305`)
+* Bugfix: :ref:`needtable` need parts 'id' column is not linked
+  (:issue:`336`)
+* Bugfix: :ref:`needtable` need parts 'incoming' column is empty
+  (:issue:`336`)
+* Bugfix: :ref:`needs_warnings` not written to error log.
+  (:issue:`344`)
+* Improvement: Providing :ref:`needs_warnings_always_warn` to raise sphinx-warnings for each not passed :ref:`needs_warnings`.
+  (:issue:`344`)
+* Bugfix: :ref:`needimport` relative path not consistent to Sphinx default directives.
+  (:issue:`351`)
+
+.. _`release:0.7.1`:
+
+0.7.1
+-----
+
+Released: 21.07.2021
+
+* Improvement: Support for parallel sphinx-build when using ``-j`` option
+  (:issue:`319`)
+* Improvement: Better ``eval()`` handling for filter strings
+  (:issue:`328`)
+* Improvement: Internal :ref:`performance measurement <performance>` script
+* Improvement: :ref:`Profiling support <profiling>` for selected functions
+
+.. _`release:0.7.0`:
+
+0.7.0
+-----
+
+Released: 06.07.2021
+
+* Improvement: Providing :ref:`needs_external_needs` to allow usage and referencing of external needs.
+  (:issue:`137`)
+* Improvement: New directive :ref:`needextend` to modify or extend existing needs.
+  (:issue:`282`)
+* Improvement: Allowing :ref:`needtable_custom_titles` for :ref:`needtable`.
+  (:issue:`299`)
+* Bugfix: :ref:`needextend` does not support usage of internal options.
+  (:issue:`318`)
+* Bugfix: :ref:`needtable` shows attributes with value ``False`` again.
+* Bugfix: ``:hide:`` and ``:collapse: True`` are working inside :ref:`needimport`.
+  (:issue:`284`,
+  :issue:`294`)
+* Bugfix: :ref:`needpie` amount labels get calculated correctly.
+  (:issue:`297`)
+
+.. _`release:0.6.3`:
+
+0.6.3
+-----
+
+Released: 18.06.2021
+
+* Improvement: Dead links (references to not found needs) are supported and configurable by :ref:`allow_dead_links`.
+  (:issue:`116`)
+* Improvement: Introducing :ref:`need_func` to execute :ref:`dynamic_functions` inline.
+  (:issue:`133`)
+* Improvement: Support for :ref:`!multiline_option` in templates.
+* Bugfix: needflow: links  for need-parts get correctly calculated.
+  (:issue:`205`)
+* Bugfix: CSS update for ReadTheDocsTheme to show tables correctly.
+  (:issue:`263`)
+* Bugfix: CSS fix for needtable :ref:`needtable_style_row`.
+  (:issue:`195`)
+* Bugfix: ``current_need`` var is accessible in all need-filters.
+  (:issue:`169`)
+* Bugfix: Sets defaults for color and style of need type configuration, if not set by user.
+  (:issue:`151`)
+* Bugfix: :ref:`needtable` shows horizontal scrollbar for tables using datatables style.
+  (:issue:`271`)
+* Bugfix: Using ``id_complete`` instead of ``id`` in filter code handling.
+  (:issue:`156`)
+* Bugfix: Dynamic Functions registration working for external extensions.
+  (:issue:`288`)
+
+.. _`release:0.6.2`:
+
+0.6.2
+-----
+
+Released: 30.04.2021
+
+* Improvement: Parent needs of nested needs get collected and are available in filters.
+  (:issue:`249`)
+* Bugfix: Copying static files during sphinx build is working again.
+  (:issue:`252`)
+* Bugfix: Link function for layouts setting correct text.
+  (:issue:`251`)
+
+.. _`release:0.6.1`:
+
+0.6.1
+-----
+
+Released: 23.04.2021
+
+* Support: Removes support for Sphinx version <3.0 (Sphinx 2.x may still work, but it gets not tested).
+* Improvement: Internal change to poetry, nox and github actions.
+  (:issue:`216`)
+* Bugfix: Need-service calls get mocked during tests, so that tests don't need reachable external services any more.
+* Bugfix: No warning is thrown any more, if :ref:`needservice` can't find a service config in **conf.py**
+  (:issue:`168`)
+* Bugfix: Needs nodes get ``ids`` set directly, to avoid empty ids given by sphinx or other extensions for need-nodes.
+  (:issue:`193`)
+* Bugfix: :ref:`needimport` supports extra options and extra fields.
+  (:issue:`227`)
+* Bugfix: Checking for ending ``/`` of given github api url.
+  (:issue:`187`)
+* Bugfix: Using correct indention for pre and post_template function of needs.
+* Bugfix: Certain log message don't use python internal ``id`` any more.
+  (:issue:`225`)
+* Bugfix: JS-code for meta area collapse is working again.
+  (:issue:`242`)
+
+.. _`release:0.6.0`:
+
+0.6.0
+-----
+
+* Improvement: Directive :ref:`needservice` added, which allow to include data from external services like Jira or github.
+  See also :ref:`services`
+  (:issue:`163`)
+* Improvement: :ref:`github_service` added to fetch issues, pr or commits from GitHub or GitHub Enterprise.
+* Bugfix: Role :ref:`role_need_outgoing` shows correct link instead of *None*
+  (:issue:`160`)
+
+.. _`release:0.5.6`:
+
+0.5.6
+-----
+
+* Bugfix: Dynamic function registration via API supports new internal function handling
+  (:issue:`147`)
+* Bugfix: Deactivated linked gantt elements in :ref:`needgantt`, as PlantUML does not support them in its
+  latest version (not beta).
+
+.. _`release:0.5.5`:
+
+0.5.5
+-----
+
+* Improvement: Added :ref:`needsequence` directive. (:issue:`144`)
+* Improvement: Added :ref:`needgantt` directive. (:issue:`146`)
+* Improvement: Added two new need-options: :ref:`need_duration` and :ref:`need_completion`
+* Improvement: Configuration option :ref:`needs_duration_option` and :ref:`needs_completion_option` added
+* Bugfix: Using of `tags.has() <https://www.sphinx-doc.org/en/master/usage/configuration.html#conf-tags>`_ in
+  **conf.py** does not raise an exception any more. (:issue:`142`)
+* Improvement: Clean up of internal configuration handling and avoiding needs_functions to get pickled by sphinx.
+
+.. _`release:0.5.4`:
+
+0.5.4
+-----
+
+* Improvement: Added options :ref:`need_pre_template` and :ref:`need_post_template` for needs. (:issue:`139`)
+* Bugfix: Setting correct default value for :ref:`needs_statuses` (:issue:`136`)
+* Bugfix: Dynamic functions can be used in links (text and url) now.
+
+.. _`release:0.5.3`:
+
+0.5.3
+-----
+
+* Improvement: Added ``transparent`` for transparent background to needflow configurations.
+* Improvement: :ref:`needflow` uses directive argument as caption now.
+* Improvement: Added option :ref:`needflow_align` to align needflow images.
+* Improvement: Added option :ref:`needflow_scale` to scale needflow images. (:issue:`127`)
+* Improvement: Added option :ref:`needflow_highlight` to :ref:`needflow`. (:issue:`128`)
+* Improvement: :ref:`need_count` supports :ref:`ratio calculation <need_count_ratio>`. (:issue:`131`)
+* Improvement: :ref:`needlist`, :ref:`needtable` and :ref:`needflow` support :ref:`filter_code`. (:issue:`132`)
+* Improvement: :ref:`needflow` caption is a link to the original image file. (:issue:`129`)
+* Bugfix: :ref:`need_template` can now be set via :ref:`needs_global_options`.
+* Bugfix: Setting correct urls for needs in :ref:`needflow` charts.
+* Bugfix: Setting correct image candidates (:issue:`134`)
+
+.. _`release:0.5.2`:
+
+0.5.2
+-----
+
+* Improvement: **Sphinx-Needs** configuration gets checked before build. (:issue:`118`)
+* Improvement: ``meta_links_all`` :ref:`layout function <layout_functions>` now supports an exclude parameter
+* Improvement: :ref:`needflow`'s :ref:`connection line and arrow type <needflow_style_start>` can be configured.
+* Improvement: Configurations added for :ref:`needflow`. Use :ref:`needs_flow_configs` to define them and :ref:`needflow_config` for activation.
+* Improvement: :ref:`needflow` option :ref:`needflow_debug` added, which prints the generated PlantUML code after the flowchart.
+* Improvement: Supporting Need-Templates by providing need option :ref:`need_template` and
+  configuration option :ref:`needs_template_folder`. (:issue:`119`)
+* Bugfix: :ref:`needs_global_options` handles None values correctly. ``style`` can now be set.
+* Bugfix: :ref:`needs_title_from_content` takes ``\n`` and ``.`` as delimiter.
+* Bugfix: Setting css-attribute ``white-space: normal`` for all need-tables, which is set badly in some sphinx-themes.
+  (Yes, I'm looking at you *ReadTheDocs theme*...)
+* Bugfix: ``meta_all`` :ref:`layout function <layout_functions>` also outputs extra links and the ``no_links``
+  parameter now works as expected
+* Bugfix: Added need-type as css-class back on need. Css class name is ``needs_type_(need_type attribute)``.
+  (:issue:`124`)
+* Bugfix: Need access inside list comprehensions in :ref:`filter_string` is now working.
+
+.. _`release:0.5.1`:
+
+0.5.1
+-----
+
+* Improvement: Added :ref:`needextract` directive to mirror existing needs for special outputs. (:issue:`66`)
+* Improvement: Added new styles ``discreet`` and ``discreet_border``.
+* Bugfix: Some minor css fixes for new layout system.
+
+.. _`release:0.5.0`:
+
+0.5.0
+-----
+
+* Improvement: Introduction of needs :ref:`layouts_styles`.
+* Improvement: Added config options :ref:`needs_layouts` and :ref:`needs_default_layout`.
+* Improvement: Added :ref:`needpie` which draws pie-charts based on :ref:`filter_string`.
+* Improvement: Added config option :ref:`needs_warnings`. (:issue:`110`)
+* Bugfix: Need css style name is now based on need-type and not on the longer, whitespace-containing type name.
+  Example: ``need-test`` instead of not valid ``need-test case``. (:issue:`108`)
+* Bugfix: No more exception raise if ``copy`` value not set inside :ref:`needs_extra_links`.
+* Improvement: Better log message, if required id is missing. (:issue:`112`)
+* Removed: Configuration option :ref:`!needs_collapse_details`. This is now realized by :ref:`layouts`.
+* Removed: Configuration option :ref:`!needs_hide_options`. This is now realized by :ref:`layouts`.
+* Removed: Need option :ref:`!need_hide_status`. This is now realized by :ref:`layouts`.
+* Removed: Need option :ref:`!need_hide_tags`. This is now realized by :ref:`layouts`.
+
+**WARNING**: This version changes a lot the html output and therefore the needed css selectors. So if you are using
+custom css definitions you need to update them.
+
+.. _`release:0.4.3`:
+
+0.4.3
+-----
+
+* Improvement: Role :ref:`role_need` supports standard sphinx-ref syntax. Example: ``:need:`custom name <need_id>```
+* Improvement: Added :ref:`global_option_filters` to set values of global options only under custom circumstances.
+* Improvement: Added sorting to :ref:`needtable`. See :ref:`needtable_sort` for details.
+* Improvement: Added dynamic function :ref:`links_content` to calculated links to other needs automatically from need-content.
+  (:issue:`98`)
+* Improvement: Dynamic function :ref:`copy` supports uppercase and lowercase transformation.
+* Improvement: Dynamic function :ref:`copy` supports filter_string.
+* Bugfix: Fixed corrupted :ref:`dynamic_functions` handling for ``tags`` and other list options.
+  (:issue:`100`)
+* Bugfix: Double entries for same need in :ref:`needtable` fixed. (:issue:`93`)
+
+.. _`release:0.4.2`:
+
+0.4.2
+-----
+
+* Improvement: Added ``signature`` information to need-object. Usable inside :ref:`filter_string`.
+  Mainly needed by `Sphinx-Test-Reports <https://sphinx-test-reports.readthedocs.io/en/latest/>`_ to link imported
+  test cases to needs documented by
+  `sphinx-autodoc <https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html>`_.
+
+.. _`release:0.4.1`:
+
+0.4.1
+-----
+
+* Improvement: Added :ref:`need_style` option to allow custom styles for needs.
+* Improvement: Added :ref:`needtable_style_row` option to allow custom styles for table rows and columns.
+
+.. _`release:0.4.0`:
+
+0.4.0
+-----
+
+* Improvement: Provides API for other sphinx-extensions. See :ref:`api` for documentation.
+* Improvement: Added :ref:`support` page.
+* Bugfix: Fixed deprecation warnings to support upcoming Sphinx3.0 API.
+
+.. _`release:0.3.15`:
+
+0.3.15
+------
+
+* Improvement: In filter operations, all needs can be accessed  by using keyword ``needs``.
+* Bugfix: Removed prefix from normal needs for needtable (:issue:`97`)
+
+.. _`release:0.3.14`:
+
+0.3.14
+------
+
+* Improvement: Added config option :ref:`needs_role_need_max_title_length` to define the maximum title length of
+  referenced needs. (:issue:`95`)
+
+.. _`release:0.3.13`:
+
+0.3.13
+------
+
+* Bugfix: Filters on needs with ``id_parent`` or ``id_complete`` do not raise an exception any more and filters
+  gets executed correctly.
+
+.. _`release:0.3.12`:
+
+0.3.12
+------
+
+* Improvement: Tables can be sorted by any alphanumeric option. (:issue:`92`)
+* Improvement: :ref:`need_part` are now embedded in their parent need, if :ref:`needflow` is used. (:issue:`83`)
+* Bugfix: Links to :ref:`need_part` are no longer rendered to parent need, instead the link goes directly to the need_part. (:issue:`91`)
+* Bugfix: Links in :ref:`needflow` get shown again by default (:issue:`90`)
+
+.. _`release:0.3.11`:
+
+0.3.11
+------
+
+* Improvement: Added config option :ref:`needs_extra_links` to define additional link types like *blocks*, *tested by* and more.
+  Supports also style configuration and custom presentation names for links.
+* Improvement: Added :ref:`!export_id` option for filter directives to export results of filters to ``needs.json``.
+* Improvement: Added config option :ref:`needs_flow_show_links` and related needflow option :ref:`needflow_show_link_names`.
+* Improvement: Added config option :ref:`needs_flow_link_types` and related needflow option :ref:`needflow_link_types`.
+* Bugfix: Unicode handling for Python 2.7 fixed. (:issue:`86`)
+
+.. _`release:0.3.10`:
+
+0.3.10
+------
+
+* Bugfix: **type** was missing in output of builder :ref:`needs_builder` (:issue:`79`)
+* Bugfix: **needs_functions** parameter in *conf.py* created a sphinx error, if
+  containing python methods. Internal workaround added, so that usage of own
+  :ref:`dynamic_functions` stays the same as in prior versions (:issue:`78`)
+
+.. _`release:0.3.9`:
+
+0.3.9
+-----
+
+* Bugfix: Grubby tag/link strings in needs, which define empty links/tags, produce a warning now.
+* Bugfix: Better logging of document location, if a filter string is not valid.
+* Bugfix: Replaced all print-statements with sphinx warnings.
+
+.. _`release:0.3.8`:
+
+0.3.8
+-----
+
+* Improvement: :ref:`need_part` has now attributes ``id_parent`` and ``id_complete``, which can be referenced
+  in :ref:`filter_string`.
+* Improvement: :ref:`needtable` supports presentation of filtered :ref:`need_part` (without showing parent need).
+
+.. _`release:0.3.7`:
+
+0.3.7
+-----
+
+* Improvement: :ref:`filter_string` now supports the filtering of :ref:`need_part`.
+* Improvement: The ID of a need is now printed as link, which can easily be used for sharing. (:issue:`75`)
+* Bugfix: Filter functionality in different directives are now using the same internal filter function.
+* Bugfix: Reused IDs for a :ref:`need_part` are now detected and a warning gets printed. (:issue:`74`)
+
+.. _`release:0.3.6`:
+
+0.3.6
+-----
+
+* Improvement: Added needtable option :ref:`needtable_show_parts`.
+* Improvement: Added configuration option :ref:`needs_part_prefix`.
+* Improvement: Added docname to output file of builder :ref:`needs_builder`
+* Bugfix: Added missing needs_import template to MANIFEST.ini.
+
+.. _`release:0.3.5`:
+
+0.3.5
+-----
+
+* Bugfix: A :ref:`need_part` without a given ID gets a random id based on its content now.
+* Bugfix: Calculation of outgoing links does not crash, if need_parts are involved.
+
+.. _`release:0.3.4`:
+
+0.3.4
+-----
+
+* Bugfix: Need representation in PDFs were broken (e.g. all meta data on one line).
+
+.. _`release:0.3.3`:
+
+0.3.3
+-----
+
+* Bugfix: Latex and Latexpdf are working again.
+
+.. _`release:0.3.2`:
+
+0.3.2
+-----
+
+* Bugfix: Links to parts of needs (:ref:`need_part`) are now stored and presented as *links incoming* of target link.
+
+.. _`release:0.3.1`:
+
+0.3.1
+-----
+
+* Improvement: Added dynamic function :ref:`check_linked_values`.
+* Improvement: Added dynamic function :ref:`calc_sum`.
+* Improvement: Added role :ref:`need_count`, which shows the amount of found needs for a given filter-string.
+* Bugfix: Links to :ref:`need_part` in :ref:`needflow` are now shown correctly as extra line between
+    need_parts containing needs.
+* Bugfix: Links to :ref:`need_part` in :ref:`needtable` are now shown and linked correctly in tables.
+
+.. _`release:0.3.0`:
+
+0.3.0
+-----
+
+* Improvement: :ref:`dynamic_functions` are now available to support calculation of need values.
+* Improvement: :ref:`needs_functions` can be used to register and use own dynamic functions.
+* Improvement: Added :ref:`needs_global_options` to set need values globally for all needs.
+* Improvement: Added :ref:`!needs_hide_options` to hide specific options of all needs.
+* Bugfix: Removed needs are now deleted from existing needs.json (:issue:`68`)
+* Removed: :ref:`!needs_template` and :ref:`!needs_template_collapse` are no longer supported.
+
+.. _`release:0.2.5`:
+
+0.2.5
+-----
+
+* Bugfix: Fix for changes made in 0.2.5.
+
+.. _`release:0.2.4`:
+
+0.2.4
+-----
+
+* Bugfix: Fixed performance issue (:issue:`63`)
+
+.. _`release:0.2.3`:
+
+0.2.3
+-----
+
+* Improvement: Titles can now be made optional.  See :ref:`needs_title_optional`. (:issue:`49`)
+* Improvement: Titles be auto-generated from the first sentence of a requirement.  See :ref:`needs_title_from_content` and :ref:`title_from_content`. (:issue:`49`)
+* Improvement: Titles can have a maximum length.  See :ref:`needs_max_title_length`. (:issue:`49`)
+
+.. _`release:0.2.2`:
+
+0.2.2
+-----
+
+* Improvement: The sections, to which a need belongs, are now stored, filterable and exported in ``needs.json``. See updated :ref:`option_filter`. (:pr:`53` )
+* Improvement: Project specific options for needs are supported now. See :ref:`needs_extra_options`. (:pr:`48` )
+* Bugfix: Logging fixed (:issue:`50` )
+* Bugfix: Tests for custom styles are now working when executed with all other tests (:pr:`47`)
+
+.. _`release:0.2.1`:
+
+0.2.1
+-----
+
+* Bugfix: Sphinx warnings fixed, if need-collapse was used. (:issue:`46`)
+* Bugfix: dark.css, blank.css and common.css used wrong need-container selector. Fixed.
+
+.. _`release:0.2.0`:
+
+0.2.0
+-----
+
+* Deprecated: ``needfilter`` is replaced by :ref:`needlist`, :ref:`needtable` or :ref:`needflow`. Which support additional options for related layout.
+* Improvement: Added :ref:`needtable` directive.
+* Improvement: Added `DataTables <https://datatables.net/>`_ support for :ref:`needtable` (including table search, excel/pdf export and dynamic column selection).
+* Improvement: Added :ref:`needs_id_regex`, which takes a regular expression and which is used to validate given IDs of needs.
+* Improvement: Added meta information shields on documentation page
+* Improvement: Added more examples to documentation
+* Bugfix: Care about unneeded separator characters in tags (:issue:`36`)
+* Bugfix: Avoiding multiple registration of resource files (js, css), if sphinx gets called several times (e.g. during tests)
+* Bugfix: Needs with no status shows up on filters (:issue:`45`)
+* Bugfix: Supporting Sphinx 1.7 (:issue:`41`)
+
+.. _`release:0.1.49`:
+
+0.1.49
+------
+
+* Bugfix: Supporting plantuml >= 0.9 (:issue:`38`)
+* Bugfix: need_outgoing does not crash, if given need-id does not exist (:issue:`32`)
+
+.. _`release:0.1.48`:
+
+0.1.48
+------
+
+* Improvement: Added configuration option :ref:`needs_role_need_template`.
+* Bugfix: Referencing not existing needs will result in build warnings instead of a build crash.
+* Refactoring: needs development files are stored internally under *sphinxcontrib/needs*, which is in sync with
+    most other sphinxcontrib-packages.
+
+.. _`release:0.1.47`:
+
+0.1.47
+------
+
+* Bugfix: dark.css was missing in MANIFEST.in.
+* Improvement: Better output, if configured needs_css file can not be found during build.
+
+.. _`release:0.1.46`:
+
+0.1.46
+------
+
+* Bugfix: Added python2/3 compatibility for needs_import.
+
+.. _`release:0.1.45`:
+
+0.1.45
+------
+
+* Bugfix: needs with no status are handled the correct way now.
+
+.. _`release:0.1.44`:
+
+0.1.44
+------
+
+* Bugfix: Import statements are checked, if Python 2 or 3 is used.
+
+.. _`release:0.1.43`:
+
+0.1.43
+------
+
+* Improvement: Added "dark.css" as style
+* Bugfix: Removed "," as as separator of links in need presentation.
+
+.. _`release:0.1.42`:
+
+0.1.42
+------
+
+* Improvement: Added config parameter :ref:`needs_css`, which allows to set a css file.
+* Improvement: Most need-elements (title, id, tags, status, ...) got their own html class attribute to support custom styles.
+* Improvement: Set default style "modern.css" for all projects without configured :ref:`needs_css` parameter.
+
+.. _`release:0.1.41`:
+
+0.1.41
+------
+
+* Improvement: Added config parameters :ref:`needs_statuses` and :ref:`needs_tags` to allow only configured statuses/tags inside documentation.
+* Bugfix: Added LICENSE file (MIT)
+
+.. _`release:0.1.40`:
+
+0.1.40
+------
+
+* Bugfix: Removed jinja activation
+
+.. _`release:0.1.39`:
+
+0.1.39
+------
+
+* Bugfix: Added missing needimport_template.rst to package
+* Bugfix: Corrected version param of needimport
+
+.. _`release:0.1.38`:
+
+0.1.38
+------
+
+* Improvement: **:links:**, **:tags:** and other list-based options can handle "," as delimiter
+    (beside documented ";"). No spooky errors are thrown any more if "," is used accidentally.
+
+.. _`release:0.1.37`:
+
+0.1.37
+------
+
+* Bugfix: Implemented 0.1.36 bugfix also for ``needfilter`` and :ref:`needimport`.
+
+.. _`release:0.1.36`:
+
+0.1.36
+------
+
+* Bugfix: Empty **:links:** and **:tags:** options for :ref:`need` raise no error during build.
+
+.. _`release:0.1.35`:
+
+0.1.35
+------
+
+* Improvement/Bug: Updated default node_template to use less space for node parameter representation
+* Improvement: Added **:filter:** option to :ref:`needimport` directive
+* Bugfix: Set correct default value for **need_list** option. So no more warnings should be thrown during build.
+* Bugfix: Imported needs gets sorted by id before adding them to the related document.
+
+.. _`release:0.1.34`:
+
+0.1.34
+------
+
+* Improvement: New option **tags** for :ref:`needimport` directive
+* Bugfix: Handling of relative paths in needs builder
+
+.. _`release:0.1.33`:
+
+0.1.33
+------
+
+* New feature: Directive :ref:`needimport` implemented
+* Improvement: needs-builder stores needs.json for all cases in the build directory (like _build/needs/needs.json) (See `issue <https://github.com/useblocks/sphinx-needs/issues/9>`_)
+* Bugfix: Wrong version in needs.json, if an existing needs.json got imported
+* Bugfix: Wrong need amount in initial needs.json fixed
+
+.. _`release:0.1.32`:
+
+0.1.32
+------
+
+* Bugfix: Setting correct working directory during conf.py import
+* Bugfix: Better config handling, if Sphinx builds gets called multiple times during one single python process. (Configs from prio sphinx builds may still be active.)
+* Bugifx: Some clean ups for using Sphinx >= 1.6
+
+.. _`release:0.1.31`:
+
+0.1.31
+------
+
+* Bugfix: Added missing dependency to setup.py: Sphinx>=1.6
+
+.. _`release:0.1.30`:
+
+0.1.30
+------
+
+* Improvement: Builder :ref:`needs_builder` added, which exports all needs to a json file.
+
+.. _`release:0.1.29`:
+
+0.1.29
+------
+
+* Bugfix: Build has crashed, if sphinx-needs was loaded but not a single need was defined.
+
+.. _`release:0.1.28`:
+
+0.1.28
+------
+
+* Bugfix: Added support for multiple sphinx projects initialisations/builds during a single python process call.
+    (Reliable sphinx-needs configuration separation)
+
+.. _`release:0.1.27`:
+
+0.1.27
+------
+
+* New config: :ref:`needs_show_link_type`
+* New config: :ref:`needs_show_link_title`
+
+.. _`release:0.1.26`:
+
+0.1.26
+------
+
+* Bugfix: Working placement of "," for links list produced by roles :ref:`role_need_outgoing`
+    and :ref:`role_need_incoming`.
+
+.. _`release:0.1.25`:
+
+0.1.25
+------
+
+* Restructured code
+* Restructured documentation
+* Improvement: Role :ref:`role_need_outgoing` was added to print outgoing links from a given need
+* Improvement: Role :ref:`role_need_incoming` was added to print incoming links to a given need
+
+.. _`release:0.1.24`:
+
+0.1.24
+------
+
+* Bugfix: Reactivated jinja execution for documentation.
+
+.. _`release:0.1.23`:
+
+0.1.23
+------
+
+* Improvement: :ref:`complex filter <filter>` for needfilter directive supports :ref:`regex searches <re_search>`.
+* Improvement: :ref:`complex filter <filter>` has access to nearly all need variables (id, title, content, ...)`.
+* Bugfix: If a duplicated ID is detected an error gets thrown.
+
+.. _`release:0.1.22`:
+
+0.1.22
+------
+
+* Improvement: needfilter directives supports complex filter-logic by using parameter :ref:`filter`.
+
+.. _`release:0.1.21`:
+
+0.1.21
+------
+
+* Improvement: Added word highlighting of need titles in linked pages of svg diagram boxes.
+
+.. _`release:0.1.20`:
+
+0.1.20
+------
+
+* Bugfix for custom needs_types: Parameter in conf.py was not taken into account.
+
+.. _`release:0.1.19`:
+
+0.1.19
+------
+
+* Added configuration parameter :ref:`needs_id_required`.
+* Backwards compatibility changes:
+* Reimplemented **needlist** as alias for ``needfilter``
+* Added *need* directive/need as part of the default :ref:`needs_types` configuration.
+
+.. _`release:0.1.18`:
+
+0.1.18
+------
+
+**Initial start for the changelog**
+
+* Free definable need types (Requirements, Bugs, Tests, Employees, ...)
+* Allowing configuration of needs with a
+* directive name
+* meaningful title
+* prefix for generated IDs
+* color
+* Added **needfilter** directive
+* Added layouts for needfilter:
+* list (default)
+* table
+* diagram (based on plantuml)
+* Integrated interaction with the activated plantuml sphinx extension
+* Added role **need** to create a reference to a need by giving the id

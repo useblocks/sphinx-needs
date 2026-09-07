@@ -1,0 +1,74 @@
+# Non-default one-line comment configurations.
+#
+# (a) A bracketed multi-field config (``[[`` / ``]]``, six fields). The two extra
+#     str fields (``status``, ``priority``) are not core (id/title/type) and not
+#     list fields, so the harness surfaces them under ``metadata`` in the snapshot.
+# (b) A space-separated config (``@`` start, newline end, `` `` split char) with
+#     three fields ``title id type``.
+
+bracketed_defaults_applied:
+  # Only id + title given; type/links/status/priority fall back to their defaults.
+  # status=open and priority=low appear under ``metadata``.
+  lang: cpp
+  config:
+    start_sequence: "[["
+    end_sequence: "]]"
+    field_split_char: ","
+    needs_fields:
+      - {name: id}
+      - {name: title}
+      - {name: type, default: impl}
+      - {name: links, type: "list[str]", default: []}
+      - {name: status, default: open}
+      - {name: priority, default: low}
+  source: |
+    /* [[IMPL_1, title 1]] */
+    void f() {}
+
+bracketed_two_links:
+  # All fields given explicitly; links holds two ids and status=open is explicit.
+  lang: cpp
+  config:
+    start_sequence: "[["
+    end_sequence: "]]"
+    field_split_char: ","
+    needs_fields:
+      - {name: id}
+      - {name: title}
+      - {name: type, default: impl}
+      - {name: links, type: "list[str]", default: []}
+      - {name: status, default: open}
+      - {name: priority, default: low}
+  source: |
+    /* [[IMPL_5, title 5, impl, [SPEC_1, SPEC_2], open]] */
+    void f() {}
+
+space_separated:
+  # Space as the field split char: title=MyFeature, id=FEAT_001, type=feature.
+  lang: cpp
+  config:
+    start_sequence: "@"
+    end_sequence: "\n"
+    field_split_char: " "
+    needs_fields:
+      - {name: title}
+      - {name: id}
+      - {name: type, default: impl}
+  source: |
+    // @MyFeature FEAT_001 feature
+    void f() {}
+
+space_separated_defaults_applied:
+  # Space-separated config with only title + id given; type defaults to impl.
+  lang: cpp
+  config:
+    start_sequence: "@"
+    end_sequence: "\n"
+    field_split_char: " "
+    needs_fields:
+      - {name: title}
+      - {name: id}
+      - {name: type, default: impl}
+  source: |
+    // @Implementation IMPL_1
+    void f() {}

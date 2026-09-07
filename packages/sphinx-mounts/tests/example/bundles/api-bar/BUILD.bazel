@@ -1,0 +1,25 @@
+# The ``api-bar`` bundle: a single Markdown file, demonstrating that
+# any source format Sphinx knows about (here: ``.md`` via myst-parser)
+# is mounted through the same mechanism.
+
+genrule(
+    name = "gen_index",
+    outs = ["index.md"],
+    cmd = """cat > $@ <<'EOF'
+# api-bar
+
+API_BAR_INDEX_MARKER
+
+A Markdown bundle, mounted via ``myst-parser``. The host project's
+``extensions`` list enables ``myst_parser``; ``sphinx-mounts`` then
+picks up ``.md`` files automatically because they appear in Sphinx's
+``source_suffix``.
+EOF
+""",
+)
+
+filegroup(
+    name = "bundle",
+    srcs = [":gen_index"],
+    visibility = ["//visibility:public"],
+)

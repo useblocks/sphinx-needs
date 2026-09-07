@@ -1,0 +1,140 @@
+name: Test a package
+
+# ONE package's pytest cell, called once per package from `ci.yaml`.
+#
+# It exists because `tests-core` and `tests-mounts` were 30 code lines each and 23 of them
+# were byte-identical: checkout, the two graphviz installs with their guards, the cell
+# sync, the version report, the `check_sphinx_cell.py` fence and the codecov block minus
+# three values. A third package would have been a third copy of all of it, and every
+# cross-cutting change -- a `setup-uv` bump, a new step, a different `uv sync` flag -- a
+# three-place edit. What genuinely varies per package is the caller's `with:` block, and
+# what varies per cell is the caller's matrix, so both stay in `ci.yaml` where a reviewer
+# reads them.
+#
+# Only this one shape is shared. `tests-js`, `tests-no-mpl`, `bazel` and `smoke-needs`
+# share the five-line prologue and nothing else, and `release.yaml`'s compat cell builds
+# its environment from a wheel rather than from the workspace, so none of them belongs
+# here: folding them in would need an input that switches the body, which is how a
+# reusable workflow turns into a scripting language. `test-extensions.yaml` is the one
+# exception and it is a SECOND unit rather than an input on this one, for the same
+# reason: it runs two suites in one job. What the two units genuinely share -- everything
+# from the renderer installs to the sphinx-series fence -- is
+# `.github/actions/prepare-cell`, so neither holds a copy of it.
+#
+# `./`-referenced workflows come from the caller's own commit, so a pull request that
+# changes this file and `ci.yaml` together is tested as one change.
+
+on:
+  workflow_call:
+    inputs:
+      os:
+        description: The runner to test on.
+        type: string
+        default: ubuntu-latest
+      python-version:
+        # passed to `setup-uv`, which turns it into UV_PYTHON. Empty is exactly equivalent
+        # to omitting it -- setup-uv exports the variable only for a non-empty value -- so
+        # uv falls back to the root `.python-version`, which is what a package that varies
+        # the sphinx series but not the interpreter wants
+        description: The interpreter, or empty for the root `.python-version`.
+        type: string
+        default: ""
+      sphinx-group:
+        description: The dependency group naming the sphinx series this cell tests against.
+        type: string
+        required: true
+      cache-suffix:
+        # the lock is the same file for every cell while the installed set is not, so each
+        # cell needs its own cache entry
+        description: "`setup-uv`'s cache key suffix."
+        type: string
+        required: true
+      test-path:
+        description: The package's tests directory, relative to the repository root.
+        type: string
+        required: true
+      pytest-args:
+        description: 'Further pytest arguments, substituted into the command: `--ignore=…`, `-m "…"`.'
+        type: string
+        default: ""
+      cov-module:
+        description: The importable module coverage is measured over.
+        type: string
+        required: true
+      codecov-flag:
+        # `codecov.yml` gives each flag a target of its own, so a young package's coverage
+        # is not averaged into a mature one's 80% target
+        description: The codecov flag this package's coverage lands on.
+        type: string
+        required: true
+      codecov-name:
+        description: The upload's display name in codecov.
+        type: string
+        required: true
+      upload-coverage:
+        # which cell uploads is a per-package policy, so the caller computes this from its
+        # own matrix and the decision stays visible in `ci.yaml`
+        description: Whether THIS cell uploads coverage.
+        type: boolean
+        default: false
+      needs-graphviz:
+        # a package that never calls `dot` sets this false rather than paying 5-23 s of
+        # `apt-get`/`choco` per cell for a renderer it does not use
+        description: Install graphviz.
+        type: boolean
+        default: true
+      needs-plantuml:
+        # no runner image has a `plantuml` package, and every image has `java`
+        description: Verify the vendored PlantUML against its pin and point PLANTUML_JAR at it.
+        type: boolean
+        default: false
+    secrets:
+      CODECOV_TOKEN:
+        description: Read only by the upload step, and only on this repository's own pull requests.
+        required: false
+
+jobs:
+  # The job id and its display name are both `pytest`, because a called job's name is
+  # appended to the caller's: the checks read `Needs py3.13 sphinx-9 ubuntu-latest /
+  # pytest`. The ` / ` join is unconditional and cannot be suppressed.
+  pytest:
+    name: pytest
+    runs-on: ${{ inputs.os }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: true
+          cache-suffix: ${{ inputs.cache-suffix }}
+          python-version: ${{ inputs.python-version }}
+          # only when no interpreter was named: those cells run on the root
+          # `.python-version`, which is not on the runner image, so without this uv
+          # downloads it on every run. A cell that names one gets it from setup-uv
+          cache-python: ${{ inputs.python-version == '' }}
+      # The renderer installs, the cell sync and the two fences that guard them. They are
+      # a composite action rather than eight lines here because `test-extensions.yaml`
+      # runs exactly the same eight before its own pytest steps -- see the action's own
+      # header for why it holds no `uses:` step, and why `setup-uv` therefore sits above
+      # it rather than below
+      - uses: ./.github/actions/prepare-cell
+        with:
+          sphinx-group: ${{ inputs.sphinx-group }}
+          needs-graphviz: ${{ inputs.needs-graphviz }}
+          needs-plantuml: ${{ inputs.needs-plantuml }}
+      - name: Run pytest
+        # `--durations=25`: the slowest tests, printed at the end of every cell, so a slow
+        # Windows run can be read rather than guessed at (there is no Windows machine to
+        # profile on otherwise)
+        run: uv run --no-sync pytest -v ${{ inputs.test-path }} ${{ inputs.pytest-args }} --durations=25 --cov=${{ inputs.cov-module }} --cov-report=xml --cov-report=term-missing
+      - name: Upload to Codecov
+        # dependabot PRs get no secrets; without a token the upload fails and takes the required `check` gate with it
+        if: inputs.upload-coverage && github.event.pull_request.head.repo.full_name == github.repository && github.repository == 'useblocks/sphinx-needs' && github.actor != 'dependabot[bot]'
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          name: ${{ inputs.codecov-name }}
+          flags: ${{ inputs.codecov-flag }}
+          files: ./coverage.xml # `file` was renamed to `files` in codecov-action v5
+          fail_ci_if_error: true

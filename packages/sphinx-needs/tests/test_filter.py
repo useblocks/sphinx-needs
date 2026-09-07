@@ -1,0 +1,492 @@
+from pathlib import Path
+from unittest.mock import Mock
+
+import pytest
+from sphinxcontrib.plantuml import plantuml
+
+from sphinx_needs.filter_common import filter_needs_parts, filter_needs_view
+from sphinx_needs.need_item import (
+    NeedItem,
+    NeedItemSourceExternal,
+    NeedPartData,
+    NeedsContent,
+)
+from sphinx_needs.views import NeedsView
+from sphinx_needs_testkit import assert_no_warnings, build_warnings
+from tests.util import chart_images, pie_slice_counts
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/filter_doc"}],
+    indirect=True,
+)
+def test_filter_build_html(test_app):
+    app = test_app
+    app.build()
+    warnings_text = "\n".join(build_warnings(app))
+    # print(warnings.splitlines())
+
+    expected_warnings = [
+        "<srcdir>/index.rst:51: WARNING: Filter 'xxx' not valid. Error: name 'xxx' is not defined. [needs.filter]",
+        "<srcdir>/index.rst:54: WARNING: Filter '1' not valid. Error: Filter did not evaluate to a boolean, instead <class 'int'>: 1. [needs.filter]",
+        "<srcdir>/index.rst:57: WARNING: Filter 'yyy' not valid. Error: name 'yyy' is not defined. [needs.filter]",
+        "<srcdir>/index.rst:60: WARNING: Sorting parameter yyy not valid: Error: 'yyy' [needs.filter]",
+        "<srcdir>/index.rst:63: WARNING: Filter 'zzz' not valid. Error: name 'zzz' is not defined. [needs.filter]",
+    ]
+
+    assert warnings_text.splitlines() == expected_warnings
+
+    html = Path(app.outdir, "index.html").read_text()
+    assert "story_a_1" in html
+    assert "story_b_1" not in html
+    assert "story_a_b_1" in html
+
+    assert "req_a_1" not in html
+    assert "req_b_1" not in html
+    assert "req_c_1" in html
+
+    html_2 = Path(app.outdir, "filter_tags_or.html").read_text()
+    assert "req_a" in html_2
+    assert "req_b" in html_2
+    assert "req_c" in html_2
+
+    html_3 = Path(app.outdir, "filter_all.html").read_text()
+    assert "req_a_not" not in html_3
+    assert "req_b_found" in html_3
+    assert "req_c_not" not in html_3
+    assert "req_d_found" in html_3
+    assert "story_1_not" not in html_3
+    assert "story_2_found" in html_3
+    assert "my_test" in html_3
+
+    html_4 = Path(app.outdir, "filter_search.html").read_text()
+    assert "search_a" in html_4
+    assert "search_b" not in html_4
+    assert "search_c" not in html_4
+    assert "search_d" not in html_4
+    assert "search_2_1" in html_4
+    assert "search_2_2" in html_4
+    assert "test_email" in html_4
+
+    # nested needs
+    html_5 = Path(app.outdir, "nested_needs.html").read_text()
+    assert "STORY_PARENT" in html_5
+    assert "CHILD_1_STORY" in html_5
+    assert "CHILD_2_STORY" in html_5
+    assert (
+        '<div class="line">child needs: <span class="parent_needs"><span><a class="reference internal" '
+        'href="#CHILD_1_STORY" title="STORY_PARENT">CHILD_1_STORY</a></span></span></div>'
+        in html_5
+    )
+    assert (
+        '<div class="line">parent needs: <span class="parent_needs"><span><a class="reference internal" '
+        'href="#CHILD_1_STORY" title="CHILD_2_STORY">CHILD_1_STORY</a></span></span></div>'
+        in html_5
+    )
+
+    html_6 = Path(app.outdir, "filter_no_needs.html").read_text()
+    assert html_6.count("No needs passed the filters") == 6
+    assert html_6.count("Should show no specific message and no default message") == 6
+    assert html_6.count("<figure class=") == 3
+
+    assert html_6.count("got filter warning from needtable") == 1
+    assert "no filter warning from needtable" not in html_6
+    assert html_6.count('<table class="NEEDS_DATATABLES') == 1
+
+    assert html_6.count("got filter warning from needlist") == 1
+    assert "no filter warning from needlist" not in html_6
+
+    assert html_6.count("got filter warning from needflow") == 1
+    assert "no filter warning from needflow" not in html_6
+
+    assert html_6.count("got filter warning from needgant") == 1
+    assert "no filter warning from needgant" not in html_6
+
+    assert (
+        html_6.count("got filter warning from needsequence") == 1
+    )  # maybe fixed later, now always start node is shown
+    assert "no filter warning from needsequence" not in html_6
+
+    assert html_6.count("got filter warning from needpie") == 1
+    assert "no filter warning from needpie" not in html_6
+    assert (
+        '<img alt="Success Pie" id="needpie-filter_no_needs-3" '
+        'src="_images/need_pie_580f4.svg"' in html_6
+    )
+    # the three empty pies are replaced by a paragraph and write no image
+    assert html_6.count("<img alt=") == 1
+
+    assert html_6.count('<p class="needs_filter_warning"') == 18
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_filter_this_doc",
+        }
+    ],
+    indirect=True,
+)
+def test_this_doc_in_charts_and_need_count(test_app):
+    """``c.this_doc()`` must also work in needpie, needbar and the need_count role.
+
+    These call the filter engine directly and used to omit the origin document,
+    so the filter aborted with a ``needs.filter`` warning and counted nothing.
+
+    A chart's ``:filter:`` scope calls the engine once more, from a third place,
+    and so has to name the origin document as well.
+    """
+    app = test_app
+    app.build()
+
+    assert_no_warnings(app)
+
+    # index.rst holds two needs, page.rst one
+    html = Path(app.outdir, "index.html").read_text()
+    assert "index_count-2" in html
+    assert "index_ratio_a-66.7" in html  # 2 of 3 needs
+    assert "index_ratio_b-150.0" in html  # 3 of 2 needs
+    # a pie of a single non-empty slice renders an image,
+    # an all-zero one is replaced by the "no needs" paragraph
+    assert '<img alt="Index pie"' in html
+    assert "No needs passed the filters" not in html
+    assert '<img alt="Index bar"' in html
+
+    # a scope ``:filter:`` of c.this_doc() restricts the chart to its own page,
+    # so the first slice counts the page's two story needs, not the project's three
+    images = chart_images(html)
+    scoped_pie = Path(app.outdir, "_images", images["Index scoped pie"]).read_text()
+    assert pie_slice_counts(scoped_pie) == [2, 1]
+
+    html_page = Path(app.outdir, "page.html").read_text()
+    assert "page_count-1" in html_page
+    assert '<img alt="Page pie"' in html_page
+    assert "No needs passed the filters" not in html_page
+
+    page_images = chart_images(html_page)
+    scoped_pie = Path(app.outdir, "_images", page_images["Page scoped pie"]).read_text()
+    assert pie_slice_counts(scoped_pie) == [1, 2]
+
+
+def _capture_diagrams(app) -> dict[str, list[str]]:
+    """Collect the PlantUML source of every diagram, keyed by the document it is on.
+
+    The generated source is asserted on rather than the rendered image, so that the
+    assertions describe what the directive decided to draw and do not depend on the
+    PlantUML binary being able to draw it.
+    """
+    sources: dict[str, list[str]] = {}
+
+    def collect(app_, doctree, docname):
+        for node in doctree.findall(plantuml):
+            sources.setdefault(docname, []).append(node["uml"])
+
+    app.connect("doctree-resolved", collect, priority=900)
+    return sources
+
+
+def _arrows(uml: str) -> list[str]:
+    """The messages a generated sequence diagram draws, in order."""
+    return [line.strip() for line in uml.splitlines() if " -> " in line]
+
+
+def _highlighted(uml: str) -> set[str]:
+    """The need ids a generated needflow draws with the highlight outline."""
+    return {
+        line.split(" as ", 1)[1].split(" ", 1)[0]
+        for line in uml.splitlines()
+        if "line:FF0000" in line
+    }
+
+
+def _milestones(uml: str) -> set[str]:
+    """The need ids a generated gantt chart draws as a milestone (a zero day task)."""
+    return {
+        line.split("] as [", 1)[1].split("]", 1)[0]
+        for line in uml.splitlines()
+        if line.startswith("[") and " lasts 0 days" in line
+    }
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_filter_this_doc_diagrams",
+        }
+    ],
+    indirect=True,
+)
+def test_this_doc_in_diagram_filters(test_app):
+    """``c.this_doc()`` must also work in the three diagram filters.
+
+    ``needsequence`` ``:filter:``, ``needflow`` ``:highlight:`` and ``needgantt``
+    ``:milestone_filter:`` call :func:`filter_single_need` directly and used to omit
+    the origin document. That function *raises* on an invalid filter, and none of the
+    three call sites catches it, so ``c.this_doc()`` aborted the whole build.
+
+    Every filter is evaluated against needs from both documents, so each assertion
+    below can only pass if it resolved against the document the directive itself is
+    written in.
+    """
+    app = test_app
+    sources = _capture_diagrams(app)
+    app.build()
+
+    # no filter may have degraded to a warning either: every filter in this fixture
+    # raises on failure today, so this is a backstop against a future downgrade of
+    # the failure mode
+    warnings_text = "\n".join(build_warnings(app))
+    assert "needs.filter" not in warnings_text
+
+    index_sequence, index_flow, index_gantt = sources["index"]
+    page_sequence, page_flow, page_gantt = sources["page"]
+
+    # the sequence filter applies to the receivers of a message: SENDER's message goes
+    # to one receiver on each document, and only the local one may be drawn
+    assert _arrows(index_sequence) == ["SENDER -> INDEX_RECV: Message"]
+    assert _arrows(page_sequence) == ["SENDER -> PAGE_RECV: Message"]
+
+    # every needflow draws all four needs, and highlights only its own document's
+    assert _highlighted(index_flow) == {"SENDER", "MESSAGE", "INDEX_RECV"}
+    assert _highlighted(page_flow) == {"PAGE_RECV"}
+
+    # likewise, a gantt task is a milestone only on the document that defines it
+    assert _milestones(index_gantt) == {"SENDER", "MESSAGE", "INDEX_RECV"}
+    assert _milestones(page_gantt) == {"PAGE_RECV"}
+    # and the needs that are not milestones keep their duration, i.e. the filter
+    # selected rather than matching everything
+    assert "[Page receiver] as [PAGE_RECV] lasts 1 days" in index_gantt
+    assert "[Sender] as [SENDER] lasts 1 days" in page_gantt
+    # needgantt evaluates the milestone filter a second time, for the constraints
+    # section, where a milestone "happens at" rather than "starts at"
+    assert "[SENDER] happens at [MESSAGE]'s end" in index_gantt
+    assert "[SENDER] starts at [MESSAGE]'s end" in page_gantt
+
+
+def create_needs_view():
+    needs_core = [
+        (
+            {
+                "id": "req_a_1",
+                "type": "requirement",
+                "type_name": "Req",
+                "tags": ["a", "b"],
+                "status": "",
+            },
+            None,
+            (),
+        ),
+        (
+            {
+                "id": "req_b_1",
+                "type": "requirement",
+                "type_name": "Req",
+                "tags": ["b", "c"],
+                "status": "",
+            },
+            None,
+            (),
+        ),
+        (
+            {
+                "id": "req_c_1",
+                "type": "requirement",
+                "type_name": "Req",
+                "tags": ["c", "d"],
+                "status": "",
+            },
+            None,
+            (),
+        ),
+        (
+            {
+                "id": "story_a_1",
+                "type": "story",
+                "type_name": "Story",
+                "tags": ["a", "b"],
+                "status": "",
+            },
+            NeedItemSourceExternal(url="https://example.com"),
+            (),
+        ),
+        (
+            {
+                "id": "story_b_1",
+                "type": "story",
+                "type_name": "Story",
+                "tags": ["b", "c"],
+                "status": "ongoing",
+            },
+            None,
+            (),
+        ),
+        (
+            {
+                "id": "story_a_b_1",
+                "type": "story",
+                "type_name": "Story",
+                "tags": ["a", "b", "c"],
+                "status": "done",
+            },
+            None,
+            (
+                NeedPartData(
+                    id="part_a",
+                    content="Part A",
+                ),
+            ),
+        ),
+    ]
+
+    core_base = {
+        "id": "abc",
+        "type": "type",
+        "type_name": "type title",
+        "type_prefix": "type prefix",
+        "type_color": "#000000",
+        "type_style": "node",
+        "status": None,
+        "tags": ["tag1"],
+        "constraints": ("const1",),
+        "title": "title",
+        "collapse": False,
+        "arch": {},
+        "style": None,
+        "layout": None,
+        "hide": False,
+        "external_css": "external_link",
+        "has_dead_links": False,
+        "has_forbidden_dead_links": False,
+        "sections": (),
+        "signature": None,
+    }
+
+    content = NeedsContent(
+        content="content",
+        doctype=".rst",
+    )
+
+    need_items = [
+        NeedItem(
+            core=core_base | core,
+            extras={},
+            links={},
+            source=source,
+            content=content,
+            parts=parts,
+        )
+        for core, source, parts in needs_core
+    ]
+
+    return NeedsView._from_needs({n["id"]: n for n in need_items})
+
+
+std_test_params = (
+    ("", "__all__", True),
+    ("True", "__all__", True),
+    ("xxx", "__all__", False),
+    ("not xxx", [], False),
+    ("False", [], True),
+    ("False and False", [], True),
+    ("False and True", [], True),
+    ("True and True", "__all__", True),
+    ("True or False", "__all__", False),
+    ("id == 'req_a_1'", ["req_a_1"], True),
+    ("id == 'unknown'", [], True),
+    ("is_external", ["story_a_1"], True),
+    ("is_external==True", ["story_a_1"], True),
+    ("type == 'requirement'", ["req_a_1", "req_b_1", "req_c_1"], True),
+    ("type == 'unknown'", [], True),
+    ("type == 'requirement' and True", ["req_a_1", "req_b_1", "req_c_1"], True),
+    ("type == 'requirement' and False", [], True),
+    ("type == 'story' and status == 'done'", ["story_a_b_1"], True),
+    ("status in ['ongoing', 'done']", ["story_b_1", "story_a_b_1"], True),
+    ("status in ('ongoing', 'done')", ["story_b_1", "story_a_b_1"], True),
+    ("status in {'ongoing', 'done'}", ["story_b_1", "story_a_b_1"], True),
+    ("'d' in tags", ["req_c_1"], True),
+    ("'a' in tags", ["story_a_1", "req_a_1", "story_a_b_1"], True),
+)
+
+
+@pytest.mark.parametrize(
+    "filter_string, expected_ids, strict_eval",
+    std_test_params,
+    ids=[s for s, _, _ in std_test_params],
+)
+def test_filter_needs_view(filter_string, expected_ids, strict_eval):
+    if expected_ids == "__all__":
+        expected_ids = list(create_needs_view())
+    mock_config = Mock()
+    mock_config.filter_data = {"xxx": True}
+    result = filter_needs_view(
+        create_needs_view(), mock_config, filter_string, strict_eval=strict_eval
+    )
+    assert {n["id"] for n in result} == set(expected_ids)
+
+
+part_test_params = (
+    ("", "__all__", True),
+    ("True", "__all__", True),
+    ("xxx", "__all__", False),
+    ("not xxx", [], False),
+    ("False", [], True),
+    ("False and False", [], True),
+    ("False and True", [], True),
+    ("True and True", "__all__", True),
+    ("True or False", "__all__", False),
+    ("id == 'req_a_1'", ["req_a_1"], True),
+    ("id == 'unknown'", [], True),
+    ("is_external", ["story_a_1"], True),
+    ("is_external==True", ["story_a_1"], True),
+    ("type == 'requirement'", ["req_a_1", "req_b_1", "req_c_1"], True),
+    ("type == 'unknown'", [], True),
+    ("type == 'requirement' and True", ["req_a_1", "req_b_1", "req_c_1"], True),
+    ("type == 'requirement' and False", [], True),
+    ("type == 'story' and status == 'done'", ["story_a_b_1", "part_a"], True),
+    ("status in ['ongoing', 'done']", ["story_b_1", "story_a_b_1", "part_a"], True),
+    ("status in ('ongoing', 'done')", ["story_b_1", "story_a_b_1", "part_a"], True),
+    ("status in {'ongoing', 'done'}", ["story_b_1", "story_a_b_1", "part_a"], True),
+    ("'d' in tags", ["req_c_1"], True),
+    ("'a' in tags", ["story_a_1", "req_a_1", "story_a_b_1", "part_a"], True),
+    ("id == 'part_a'", ["part_a"], True),
+    ("id in ['part_a', 'req_a_1']", ["part_a", "req_a_1"], True),
+    ("id in ['part_a', 'story_a_b_1']", ["story_a_b_1", "part_a"], True),
+)
+
+
+@pytest.mark.parametrize(
+    "filter_string, expected_ids, strict_eval",
+    part_test_params,
+    ids=[s for s, _, _ in part_test_params],
+)
+def test_filter_needs_parts(filter_string, expected_ids, strict_eval):
+    if expected_ids == "__all__":
+        expected_ids = []
+        for need in create_needs_view().values():
+            expected_ids.append(need["id"])
+            expected_ids.extend(need["parts"])
+    mock_config = Mock()
+    mock_config.filter_data = {"xxx": True}
+    result = filter_needs_parts(
+        create_needs_view().to_list_with_parts(),
+        mock_config,
+        filter_string,
+        str,
+        strict_eval=strict_eval,
+    )
+    assert {n["id"] for n in result} == set(expected_ids)
+
+
+def test_filter_needs_then_parts():
+    npl = (
+        create_needs_view()
+        .filter_ids(["story_b_1", "story_a_b_1"])
+        .to_list_with_parts()
+        .filter_has_tag(["a"])
+    )
+    assert {n["id"] for n in npl} == {"story_a_b_1", "part_a"}

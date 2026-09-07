@@ -1,0 +1,45 @@
+/* Source-repo link in the left sidebar (rendered by side-github.html). */
+.gh-source {
+    display: flex;
+    align-items: center;
+    gap: .5em;
+    padding-left: var(--sidebar-item-spacing-horizontal);
+    padding-right: var(--sidebar-item-spacing-horizontal);
+    padding-top: .6em;
+    padding-bottom: .6em;
+    text-decoration: none;
+    border-top: 1px solid var(--color-background-border);
+    border-bottom: 1px solid var(--color-background-border);
+}
+
+.gh-source--icon {
+    height: 1.5em;
+    color: var(--color-foreground-primary);
+}
+
+.gh-source:hover .gh-source--info * {
+    color: var(--color-foreground-primary);
+}
+
+.gh-source--info {
+    display: inline-flex;
+    flex-direction: column;
+    gap: .1em;
+}
+
+.gh-source--version {
+    display: inline-flex;
+    align-items: center;
+    gap: .2em;
+}
+
+.gh-source--version-icon {
+    height: .8em;
+}
+
+.gh-source--version-icon,
+.gh-source--version-text,
+.gh-source--repo-text {
+    font-size: .8em;
+    color: var(--color-foreground-muted);
+}

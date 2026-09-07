@@ -1,0 +1,11 @@
+{
+  "needs": [],
+  "need_refs": [],
+  "marked_rst": [],
+  "warnings": [
+    {
+      "kind": "not_start_or_end_with_square_brackets",
+      "line": 1
+    }
+  ]
+}

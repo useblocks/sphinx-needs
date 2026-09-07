@@ -1,0 +1,660 @@
+from __future__ import annotations
+
+import cProfile
+import importlib
+import operator
+import os
+import re
+from collections.abc import Callable, Iterable
+from dataclasses import dataclass
+from functools import lru_cache, reduce, wraps
+from typing import TYPE_CHECKING, Any, Protocol, TypeVar
+from urllib.parse import urlparse
+
+from docutils import nodes
+from sphinx.application import Sphinx
+from sphinx.environment import BuildEnvironment
+
+from sphinx_needs._jinja import render_template_string
+from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.defaults import NEEDS_PROFILING
+from sphinx_needs.exceptions import NeedsInvalidFilter
+from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.need_item import NeedItem, NeedPartItem
+from sphinx_needs.string_links import (
+    CompiledStringLink,
+    compiled_string_links,
+    split_string_link_value,
+    string_link_field_names,
+)
+from sphinx_needs.views import NeedsAndPartsListView, NeedsView
+
+if TYPE_CHECKING:
+    import matplotlib
+    from matplotlib.figure import FigureBase
+
+
+logger = get_logger(__name__)
+
+
+class DummyOptionSpec(dict[str, Callable[[str], str]]):
+    """An option_spec allows any options."""
+
+    def __bool__(self) -> bool:
+        """Behaves like some options are defined."""
+        return True
+
+    def __getitem__(self, _key: str) -> Callable[[str], str]:
+        return lambda x: x
+
+
+def coerce_to_boolean(argument: str | None) -> bool:
+    """Convert a string to a boolean.
+
+    The value can be one of case-insensitive "true"/"false" or "yes"/"no",
+    or the empty string also evaluates to True.
+
+    :raises ValueError: If the value is not a valid flag or case-insensitive true/false/yes/no.
+    """
+    if argument is None:
+        return True
+    if argument.upper() in ["", "TRUE", "YES"]:
+        return True
+    if argument.upper() in ["FALSE", "NO"]:
+        return False
+    raise ValueError("not a flag or case-insensitive true/false/yes/no")
+
+
+def split_need_id(need_id_full: str) -> tuple[str, str | None]:
+    """A need id can be a combination of a main id and a part id,
+    split by a dot.
+    This function splits them:
+    If there is no dot, the part id is None,
+    otherwise everything before the first dot is the main id,
+    and everything after the first dot is the part id.
+    """
+    if "." in need_id_full:
+        need_id, need_part_id = need_id_full.split(".", maxsplit=1)
+    else:
+        need_id = need_id_full
+        need_part_id = None
+    return need_id, need_part_id
+
+
+def row_col_maker(
+    app: Sphinx,
+    fromdocname: str,
+    all_needs: NeedsView,
+    need_info: NeedItem | NeedPartItem,
+    need_key: str,
+    make_ref: bool = False,
+    ref_lookup: bool = False,
+    prefix: str = "",
+) -> nodes.entry:
+    """
+    Creates and returns a column.
+
+    :param app: current sphinx app
+    :param fromdocname: current document
+    :param all_needs: Dictionary of all need objects
+    :param need_info: need_info object, which stores all related need data
+    :param need_key: The key to access the needed data from need_info
+    :param make_ref: If true, creates a reference for the given data in need_key
+    :param ref_lookup: If true, it uses the data to lookup for a related need and uses its data to create the reference
+    :param prefix: string, which is used as prefix for the text output
+    :return: column object (nodes.entry)
+    """
+    builder = app.builder
+    env = app.env
+    needs_config = NeedsSphinxConfig(env.config)
+
+    row_col = nodes.entry(classes=["needs_" + need_key])
+    para_col = nodes.paragraph()
+
+    needs_string_links_option = string_link_field_names(needs_config)
+    # compiled once per cell, not once per value in the cell
+    link_string_list = compiled_string_links(needs_config)
+
+    if need_key in need_info and need_info[need_key] is not None:
+        value = need_info[need_key]
+        if isinstance(value, list | set):
+            data = value
+        elif isinstance(value, str) and need_key in needs_string_links_option:
+            data = split_string_link_value(value)
+        else:
+            data = [value]
+
+        for index, datum in enumerate(data):
+            link_id = datum
+            link_part = None
+
+            needs_schema = SphinxNeedsData(env).get_schema()
+            link_list = []
+            for link_field in needs_schema.iter_link_fields():
+                link_list.append(link_field.name)
+                link_list.append(link_field.name + "_back")
+
+            matching_link_confs = [
+                link_conf
+                for link_conf in link_string_list.values()
+                if need_key in link_conf.options and len(datum) != 0
+            ]
+
+            if need_key in link_list and "." in datum:
+                link_id = datum.split(".")[0]
+                link_part = datum.split(".")[1]
+
+            datum_text = prefix + str(datum)
+            text_col = nodes.Text(datum_text)
+            if make_ref or ref_lookup:
+                try:
+                    if need_info["is_external"]:
+                        ref_col = nodes.reference("", "")
+                    else:
+                        # Mark references as "internal" so that if the rinohtype builder is being used it produces an
+                        # internal reference within the generated PDF instead of an external link. This replicates the
+                        # behaviour of references created with the sphinx utility `make_refnode`.
+                        ref_col = nodes.reference("", "", internal=True)
+
+                    if make_ref:
+                        if need_info["is_external"]:
+                            assert need_info["external_url"] is not None, (
+                                "external_url must be set for external needs"
+                            )
+                            ref_col["refuri"] = check_and_calc_base_url_rel_path(
+                                need_info["external_url"], fromdocname
+                            )
+                            ref_col["classes"].append(need_info["external_css"])
+                            row_col["classes"].append(need_info["external_css"])
+                        elif _docname := need_info["docname"]:
+                            ref_col["refuri"] = builder.get_relative_uri(
+                                fromdocname, _docname
+                            )
+                            ref_col["refuri"] += "#" + datum
+                    elif ref_lookup:
+                        temp_need = all_needs[link_id]
+                        if temp_need["is_external"]:
+                            assert temp_need["external_url"] is not None, (
+                                "external_url must be set for external needs"
+                            )
+                            ref_col["refuri"] = check_and_calc_base_url_rel_path(
+                                temp_need["external_url"], fromdocname
+                            )
+                            ref_col["classes"].append(temp_need["external_css"])
+                            row_col["classes"].append(temp_need["external_css"])
+                        elif _docname := temp_need["docname"]:
+                            ref_col["refuri"] = builder.get_relative_uri(
+                                fromdocname, _docname
+                            )
+                            ref_col["refuri"] += "#" + temp_need["id"]
+                            if link_part:
+                                ref_col["refuri"] += "." + link_part
+
+                except KeyError:
+                    para_col += text_col
+                else:
+                    ref_col.append(text_col)
+                    para_col += ref_col
+            elif matching_link_confs:
+                para_col += match_string_link(
+                    datum_text,
+                    datum,
+                    need_key,
+                    matching_link_confs,
+                    render_context=needs_config.render_context,
+                    location=(need_info["docname"], need_info["lineno"]),
+                )
+            else:
+                para_col += text_col
+
+            if index + 1 < len(data):
+                para_col += nodes.emphasis("; ", "; ")
+
+    row_col += para_col
+
+    return row_col
+
+
+def import_prefix_link_edit(
+    needs: dict[str, Any], id_prefix: str, link_names: Iterable[str]
+) -> None:
+    """
+    Changes existing links to support given prefix.
+    Only link-ids get touched, which are part of ``needs`` (so are linking them).
+    Other links do not get the prefix, as they are treated as "external" links.
+
+    :param needs: Dict of all needs
+    :param id_prefix: Prefix as string
+    :param link_names: Iterable of link field names to be prefixed
+    :return:
+    """
+    if not id_prefix:
+        return
+
+    from sphinx_needs.need_item import NeedLink
+
+    needs_ids = set(needs.keys())
+    link_names_list = list(link_names)
+
+    for need in needs.values():
+        for link_name in link_names_list:
+            if link_name not in need:
+                continue
+            for n, link in enumerate(need[link_name]):
+                parsed = NeedLink.from_string(link)
+                if parsed.id in needs_ids:
+                    prefixed = NeedLink(
+                        id=f"{id_prefix}{parsed.id}",
+                        part=parsed.part,
+                        condition=parsed.condition,
+                    )
+                    need[link_name][n] = prefixed.to_link_string()
+        # Manipulate descriptions
+        # ToDo: Use regex for better matches.
+        for id in needs_ids:
+            for key in ("content", "description"):
+                if key in need:
+                    need[key] = need[key].replace(id, "".join([id_prefix, id]))
+
+
+FuncT = TypeVar("FuncT")
+
+
+def profile(keyword: str) -> Callable[[FuncT], FuncT]:
+    """
+    Activate profiling for a specific function.
+
+    Activation only happens, if given keyword is part of ``needs_profiling``.
+    """
+
+    def inner(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            with cProfile.Profile() as pr:
+                result = func(*args, **kwargs)
+
+            profile_folder = os.path.join(os.getcwd(), "profile")
+            profile_file = os.path.join(profile_folder, f"{keyword}.prof")
+            if not os.path.exists(profile_file):
+                os.makedirs(profile_folder, exist_ok=True)
+            pr.dump_stats(profile_file)
+            return result
+
+        if keyword in NEEDS_PROFILING:
+            return wrapper
+        return func
+
+    return inner
+
+
+def check_and_calc_base_url_rel_path(external_url: str, fromdocname: str) -> str:
+    """
+    Check given base_url from needs_external_needs and calculate relative path if base_url is relative path.
+
+    :param external_url: Caculated external_url from base_url in needs_external_needs
+    :param fromdocname: document name
+    :return: calculated external_url
+    """
+    ref_uri = external_url
+    # check if given base_url is url or relative path
+    parsed_url = urlparse(external_url)
+    # get path sep considering plattform dependency, '\' for Windows, '/' fro Unix
+    curr_path_sep = os.path.sep
+    # check / or \ to determine the relative path to conf.py directory
+    if (
+        not parsed_url.scheme
+        and not os.path.isabs(external_url)
+        and curr_path_sep in fromdocname
+    ):
+        sub_level = len(fromdocname.split(curr_path_sep)) - 1
+        ref_uri = os.path.join(sub_level * (".." + curr_path_sep), external_url)
+
+    return ref_uri
+
+
+class FilterFunc(Protocol):
+    def __call__(
+        self,
+        *,
+        needs: NeedsAndPartsListView,
+        results: list[Any],
+        **kwargs: str,
+    ) -> None: ...
+
+
+@dataclass
+class FilterFuncResult:
+    """Dataclass for filter function."""
+
+    sig: str
+    func: FilterFunc
+    args: str
+
+
+@lru_cache(maxsize=32)
+def check_and_get_external_filter_func(
+    filter_func_ref: str | None,
+) -> FilterFuncResult | None:
+    """Check and import filter function from external python file."""
+    if not filter_func_ref:
+        return None
+
+    try:
+        filter_module, filter_function = filter_func_ref.rsplit(".", 1)
+    except ValueError:
+        raise NeedsInvalidFilter("does not contain a dot")
+
+    result = re.search(r"^(\w+)(?:\((.*)\))*$", filter_function)
+    if not result:
+        raise NeedsInvalidFilter(f"malformed function signature: {filter_function!r}")
+    filter_function = result.group(1)
+    filter_args = result.group(2) or ""
+
+    try:
+        final_module = importlib.import_module(filter_module)
+    except Exception:
+        raise NeedsInvalidFilter(f"cannot import module: {filter_module}")
+
+    try:
+        filter_func = getattr(final_module, filter_function)
+    except Exception:
+        raise NeedsInvalidFilter(f"module does not have function: {filter_function}")
+
+    return FilterFuncResult(filter_func_ref, filter_func, filter_args)
+
+
+def jinja_parse(context: dict[str, Any], jinja_string: str) -> str:
+    """
+    Function to parse mapping options set to a string containing jinja template format.
+
+    :param context: Data to be used as context in rendering jinja template
+    :type context: dict
+    :param jinja_string: A jinja template string
+    :type jinja_string: str
+    :return: A rendered jinja template as string
+    :rtype: str
+
+    """
+    try:
+        content = render_template_string(jinja_string, context, autoescape=False)
+    except Exception as e:
+        raise ReferenceError(
+            f'There was an error in the jinja statement: "{jinja_string}". '
+            f"Error Msg: {e}"
+        ) from e
+
+    return content
+
+
+@lru_cache
+def import_matplotlib() -> matplotlib | None:
+    """Import and return matplotlib, or return None if it cannot be imported.
+
+    Also sets the interactive backend to ``Agg``, if ``DISPLAY`` is not set.
+    """
+    try:
+        import matplotlib
+        import matplotlib.pyplot
+    except ImportError:
+        return None
+    if not os.environ.get("DISPLAY"):
+        matplotlib.use("Agg")
+    return matplotlib
+
+
+def _savefig_reproducibly(
+    figure: FigureBase, path: str, ext: str, basename: str
+) -> None:
+    """Write a matplotlib figure, without the build time leaking into the file.
+
+    The SVG and PDF writers stamp the wall clock time under their own metadata
+    keys, and the SVG writer additionally derives element ids from a random
+    ``uuid4`` whenever ``svg.hashsalt`` is unset. Both leaks are suppressed here,
+    so that rebuilding unchanged sources produces the same bytes. ``basename`` is
+    the per-chart digest of the directive's target id, and so is a stable salt
+    that still differs between charts of one build.
+
+    The PNG writer needs nothing: it writes no timestamp of its own.
+
+    :param figure: The figure to write.
+    :param path: The file to write it to.
+    :param ext: The file extension, deciding the matplotlib writer.
+    :param basename: The file name without extension, used as the id salt.
+    """
+    if ext == "pdf":
+        # the PDF writer stamps the wall clock as ``CreationDate``; its object
+        # ids come from a sequential counter and are already deterministic, so
+        # it needs no salt
+        figure.savefig(path, metadata={"CreationDate": None})
+        return
+
+    # only the SVG writer takes the salt, and it is the one the HTML builders use;
+    # ``import_matplotlib`` cannot fail here, since a figure only exists if it
+    # succeeded already
+    matplotlib = import_matplotlib() if ext == "svg" else None
+    if matplotlib is None:
+        figure.savefig(path)
+        return
+
+    with matplotlib.rc_context({"svg.hashsalt": basename}):
+        figure.savefig(path, metadata={"Date": None})
+
+
+def save_matplotlib_figure(
+    app: Sphinx, figure: FigureBase, basename: str, fromdocname: str
+) -> nodes.image:
+    builder = app.builder
+    env = app.env
+
+    image_folder = os.path.join(builder.outdir, builder.imagedir)
+    os.makedirs(image_folder, exist_ok=True)
+
+    # Determine a common mimetype between matplotlib and the builder.
+    matplotlib_types = {
+        "image/svg+xml": "svg",
+        "application/pdf": "pdf",
+        "image/png": "png",
+    }
+
+    for builder_mimetype in builder.supported_image_types:
+        if builder_mimetype in matplotlib_types:
+            mimetype = builder_mimetype
+            break
+    else:
+        # No matching type?  Surprising, but just save as .png to mimic the old behavior.
+        # (More than likely the build will not work...)
+        mimetype = "image/png"
+
+    ext = matplotlib_types[mimetype]
+
+    abs_file_path = os.path.join(image_folder, f"{basename}.{ext}")
+    if abs_file_path not in env.images:
+        _savefig_reproducibly(
+            figure, os.path.join(env.app.srcdir, abs_file_path), ext, basename
+        )
+        env.images.add_file(fromdocname, abs_file_path)
+
+    image_node = nodes.image()
+    image_node["uri"] = abs_file_path
+
+    # look at uri value for source path, relative to the srcdir folder
+    image_node["candidates"] = {mimetype: abs_file_path}
+
+    return image_node
+
+
+def dict_get(root: dict[str, Any], items: Any, default: Any = None) -> Any:
+    """
+    Access a nested object in root by item sequence.
+
+    Usage::
+       data = {"nested": {"a_list": [{"finally": "target_data"}]}}
+       value = dict_get(["nested", "a_list", 0, "finally"], "Not_found")
+
+    """
+    try:
+        value = reduce(operator.getitem, items, root)
+    except (KeyError, IndexError, TypeError) as e:
+        logger.debug(e)
+        return default
+    return value
+
+
+def match_string_link(
+    text_item: str,
+    data: str,
+    need_key: str,
+    matching_link_confs: list[CompiledStringLink],
+    render_context: dict[str, Any],
+    location: str | tuple[str | None, int | None] | nodes.Node | None = None,
+) -> nodes.Node:
+    """Turn a single field value into a link, if a string link applies to it.
+
+    :param text_item: The text to fall back to, if no link can be created.
+    :param data: The value to search with the string link's regular expression.
+    :param need_key: The name of the need field, used in messages.
+    :param matching_link_confs: The compiled entries naming ``need_key``;
+        only the first is ever used.
+    :param render_context: The ``needs_render_context``, which is merged over
+        the regular expression's named groups.
+    :param location: Where to point a warning, if rendering fails.
+    :return: The link, or the plain text if no link could be created.
+    """
+    try:
+        link_name = None
+        link_url = None
+        link_conf = matching_link_confs[
+            0
+        ]  # We only handle the first matching string_link
+        match = link_conf.regex.search(data)
+        if match:
+            render_content = match.groupdict()
+            link_url = link_conf.url_template.render(
+                {**render_content, **render_context}
+            )
+            link_name = link_conf.name_template.render(
+                {**render_content, **render_context}
+            )
+
+        # if no string_link match was made, we handle it as normal string value
+        ref_item = (
+            nodes.reference(link_name, link_name, refuri=link_url)
+            if link_name
+            else nodes.Text(text_item)
+        )
+
+    except Exception as e:
+        log_warning(
+            logger,
+            f'Problems dealing with string to link transformation for value "{data}" of '
+            f'option "{need_key}". Error: {e}',
+            "layout",
+            location,
+        )
+        # fall back to the plain text: a template that fails at render time
+        # (an unknown filter, say) must not make the value disappear from the page
+        return nodes.Text(text_item)
+    else:
+        return ref_item
+
+
+pattern = r"(https://|http://|www\.|[\w]*?)([\w\-/.]+):([\w\-/.]+)@([\w\-/.]+)"
+data_compile = re.compile(pattern)
+
+
+def clean_log(data: str) -> str:
+    """
+     Function for cleaning login credentials like username & password from log output.
+
+    :param data: The login url entered by the user.
+    :type data: str
+    :return: Cleaned login string or None
+    """
+
+    clean_credentials = data_compile.sub(r"\1****:****@\4", data)
+    return clean_credentials
+
+
+def node_match(
+    node_types: type[nodes.Element] | list[type[nodes.Element]],
+) -> Callable[[nodes.Node], bool]:
+    """
+    Returns a condition function for doctuils.nodes.findall()
+
+    It takes a single or a list of node-types, if a findall() finds that node-type, the node
+    get returned by findall() inside a generator-object.
+
+    Use it like::
+
+    for node_need in doctree.findall(node_mathc([Need, NeedTable])):
+        if isinstance(node_nee, Need):
+            pass  # some need voodoo
+        elif isinstance(node_nee, NeedTable):
+            pass  # some needtable voodoo
+        else:
+            raise Exception('Not requested node type')
+
+    :param node_types: List of docutils node types
+    :return: function, which can be used as constraint-function for docutils findall()
+    """
+    node_types_list = node_types if isinstance(node_types, list) else [node_types]
+
+    def condition(
+        node: nodes.Node, node_types: list[type[nodes.Element]] = node_types_list
+    ) -> bool:
+        return any(isinstance(node, x) for x in node_types)
+
+    return condition
+
+
+def add_doc(env: BuildEnvironment, docname: str, category: str | None = None) -> None:
+    """Stores a docname, to know later all need-relevant docs"""
+    docs = SphinxNeedsData(env).get_or_create_docs()
+    if docname not in docs["all"]:
+        docs["all"].append(docname)
+
+    if category:
+        if category not in docs:
+            docs[category] = []
+        if docname not in docs[category]:
+            docs[category].append(docname)
+
+
+def split_link_types(link_types: str, location: Any) -> list[str]:
+    """Split link_types string into list of link_types."""
+    return [x.strip() for x in re.split(";|,", link_types) if x.strip()]
+
+
+def get_scale(options: dict[str, Any], location: Any) -> str:
+    """Get scale for diagram, from directive option."""
+    scale: str = options.get("scale", "100").replace("%", "")
+    if not scale.isdigit():
+        log_warning(
+            logger,
+            f'scale value must be a number. "{scale}" found',
+            "diagram_scale",
+            location=location,
+        )
+        return "100"
+    if int(scale) < 1 or int(scale) > 300:
+        log_warning(
+            logger,
+            f'scale value must be between 1 and 300. "{scale}" found',
+            "diagram_scale",
+            location=location,
+        )
+        return "100"
+    return scale
+
+
+def remove_node_from_tree(node: nodes.Element) -> None:
+    """Remove a docutils node in-place from its node-tree."""
+    # Ok, this is really dirty.
+    # If we replace a node, docutils checks, if it will not lose any attributes.
+    # But this is here the case, because we are using the attribute "ids" of a node.
+    # However, I do not understand, why losing an attribute is such a big deal, so we delete everything
+    # before docutils claims about it.
+    for att in ("ids", "names", "classes", "dupnames"):
+        node[att] = []
+    node.replace_self([])

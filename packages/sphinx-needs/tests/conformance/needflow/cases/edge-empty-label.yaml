@@ -1,0 +1,58 @@
+id: edge-empty-label
+title: A link type with an empty outgoing title, labelled
+purpose: |
+  An empty label is where the engines legitimately diverge, so the corpus records what
+  each does rather than assuming they agree. Upstream both engines emit the label even
+  when it is empty; mermaid cannot, because its pipe form is a parse error with nothing
+  between the pipes, so the ubCode expectation for this case will differ by design. That
+  is exactly the kind of divergence a shared corpus exists to make explicit instead of
+  discovering later.
+needs:
+- id: REQ_1
+  type: req
+  title: Requirement one
+  links:
+    links:
+    - REQ_2
+- id: REQ_2
+  type: req
+  title: Requirement two
+links:
+- option: links
+  incoming: ''
+  outgoing: ''
+options:
+  link_labels: outgoing
+expect:
+  plantuml:
+    source: |
+      @startuml
+
+      ' Nodes definition
+
+      node "<size:12>Requirement</size>\n**Requirement one**\n<size:10>REQ_1</size>" as REQ_1 [[<NODE_URL:REQ_1>]]
+      node "<size:12>Requirement</size>\n**Requirement two**\n<size:10>REQ_2</size>" as REQ_2 [[<NODE_URL:REQ_2>]]
+
+      ' Connection definition
+
+      REQ_1 --> REQ_2: \n
+
+      @enduml
+  graphviz:
+    source: |
+      digraph needflow {
+      compound=true;
+      node [
+        margin="0.21,0.11";
+      ]
+      edge [
+        minlen="2";
+      ]
+
+      // node definitions
+      "REQ_1" [label=<<font point-size="12">Requirement</font><br align="left"/><b>Requirement one</b><br align="left"/><font point-size="10">REQ_1</font><br align="left"/>>, tooltip="REQ_1", href="<NODE_URL:REQ_1>", target="_top", shape="box3d"];
+      "REQ_2" [label=<<font point-size="12">Requirement</font><br align="left"/><b>Requirement two</b><br align="left"/><font point-size="10">REQ_2</font><br align="left"/>>, tooltip="REQ_2", href="<NODE_URL:REQ_2>", target="_top", shape="box3d"];
+
+      // edge definitions
+      "REQ_1" -> "REQ_2" [label="", arrowhead=vee];
+      }

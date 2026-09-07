@@ -1,0 +1,817 @@
+"""Every check in `check_workspace.py`, red and green.
+
+The point of each of these is a mistake that no other gate in the repository can see: uv
+resolves the workspace copy whatever a specifier says, the specifier is not in `uv.lock` at
+all, and a member out of step with the root's `requires-python` still locks, builds and
+publishes. So the tests assert on the *messages* as well as the exit codes -- a fence whose
+output does not name the file and the fix is one nobody acts on.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import pytest
+from sn_tools import check_workspace
+
+pytestmark = pytest.mark.filterwarnings("error")
+
+
+def run(root: Path, *args: str) -> int:
+    return check_workspace.main([*args, "--root", str(root)])
+
+
+def test_green(workspace, capsys) -> None:
+    root = workspace({"acme-core": {"version": "1.2.3", "module_version": "1.2.3"}})
+    assert run(root) == 0
+    out = capsys.readouterr().out
+    assert "the root declares every member, bare: acme-core" in out
+    assert "every member is sourced from the workspace" in out
+    assert "requires-python >=3.11,<4" in out
+    assert "no intra-workspace runtime dependencies among 1 member(s)" in out
+    assert "__version__ == 1.2.3" in out
+
+
+def test_green_with_an_honest_tight_edge(workspace, capsys) -> None:
+    root = workspace(
+        {
+            "acme-core": {"version": "2.0.0"},
+            "acme-ext": {"version": "0.1.0", "dependencies": ["acme-core>=2.0.0,<3"]},
+        }
+    )
+    assert run(root) == 0
+    assert "acme-ext -> acme-core<3,>=2.0.0  (workspace acme-core 2.0.0)" in (
+        capsys.readouterr().out
+    )
+
+
+# --- (1) the root lists every member, bare --------------------------------------------
+
+
+def test_root_missing_a_member(workspace, capsys) -> None:
+    root = workspace({"acme-core": {}}, root_dependencies=[])
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "::error file=pyproject.toml::`acme-core` is a workspace member" in out
+    assert "neither depends on it nor names it in a dependency group" in out
+
+
+# --- (1) the second route: a member declared in a dependency group ---------------------
+
+
+def test_a_member_declared_in_a_dependency_group_is_green(workspace, capsys) -> None:
+    """The shared test layer's route: installed where the group is asked for, and
+    nowhere else -- not in `.venvs/typing`, not in a docs environment."""
+    root = workspace(
+        {
+            "acme-core": {"version": "1.0.0"},
+            "acme-testkit": {"version": "0", "private": True},
+        },
+        root_dependencies=["acme-core"],
+        root_groups={"test": ["pytest", "acme-testkit"]},
+    )
+    assert run(root) == 0
+    out = capsys.readouterr().out
+    assert (
+        "the root declares every member, bare: acme-core, acme-testkit (group test)"
+        in out
+    )
+
+
+def test_a_member_in_a_group_still_needs_the_private_classifier(
+    workspace, capsys
+) -> None:
+    """Without it the member is one `git tag` away from PyPI: `release_plan.py` reads
+    exactly this line, and nothing else says the member is not a product."""
+    root = workspace(
+        {
+            "acme-core": {"version": "1.0.0"},
+            "acme-testkit": {
+                "version": "0",
+                "private": True,
+                "private_classifier": False,
+            },
+        },
+        root_dependencies=["acme-core"],
+        root_groups={"test": ["acme-testkit"]},
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "is declared only in the root's `test` dependency group" in out
+    assert 'declares no "Private ::" classifier' in out
+
+
+def test_a_member_declared_in_both_places_is_an_error(workspace, capsys) -> None:
+    """Which of the two is right decides whether the member reaches environments that
+    never ask for the group, so it cannot be both."""
+    root = workspace(
+        {
+            "acme-core": {"version": "1.0.0"},
+            "acme-testkit": {"version": "0", "private": True},
+        },
+        root_dependencies=["acme-core", "acme-testkit"],
+        root_groups={"test": ["acme-testkit"]},
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "`acme-testkit` is declared twice at the root" in out
+
+
+def test_a_group_entry_naming_a_member_must_be_bare(workspace, capsys) -> None:
+    root = workspace(
+        {
+            "acme-core": {"version": "1.0.0"},
+            "acme-testkit": {"version": "0", "private": True},
+        },
+        root_dependencies=["acme-core"],
+        root_groups={"test": ["acme-testkit>=0"]},
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "names the workspace member" in out
+    assert "is not bare" in out
+
+
+def test_a_group_entry_that_is_not_a_member_is_ignored(workspace, capsys) -> None:
+    """Groups are full of ordinary PyPI requirements; only a member's name is this
+    check's business."""
+    root = workspace(
+        {"acme-core": {"version": "1.0.0"}},
+        root_dependencies=["acme-core"],
+        root_groups={"test": ["pytest>=8,<10", "sphinx~=7.4"]},
+    )
+    assert run(root) == 0
+
+
+def test_an_include_group_table_is_not_a_requirement(workspace, capsys) -> None:
+    """`{ include-group = "test" }` is a table, not a string, and must not be parsed."""
+    root = workspace(
+        {"acme-core": {"version": "1.0.0"}},
+        root_dependencies=["acme-core"],
+        root_groups={"test": ["pytest"]},
+    )
+    manifest = root / "pyproject.toml"
+    manifest.write_text(
+        manifest.read_text(encoding="utf-8") + 'dev = [{ include-group = "test" }]\n',
+        encoding="utf-8",
+    )
+    assert run(root) == 0
+
+
+def test_a_private_member_is_not_held_to_the_tracking_policy(workspace, capsys) -> None:
+    """The cap stops a future major being co-installed with a published wheel; a member
+    that publishes none has nothing to co-install with."""
+    root = workspace(
+        {
+            "acme-core": {"version": "1.2.3"},
+            "acme-testkit": {
+                "version": "0",
+                "private": True,
+                "dependencies": ["acme-core>=1.0.0"],
+            },
+        },
+        root_dependencies=["acme-core"],
+        root_groups={"test": ["acme-testkit"]},
+    )
+    assert run(root) == 0
+
+
+def test_any_private_prefix_classifier_counts(workspace, capsys) -> None:
+    """The rule is the PREFIX. `Private :: Internal Use Only` is as unpublishable as the
+    spelling this repository happens to use, and a predicate that tested one exact string
+    would let it through every gate here and leave PyPI to refuse the upload."""
+    root = workspace(
+        {
+            "acme-core": {"version": "1.0.0"},
+            "acme-testkit": {
+                "version": "0",
+                "classifiers": ["Private :: Internal Use Only"],
+            },
+        },
+        root_dependencies=["acme-core"],
+        root_groups={"test": ["acme-testkit"]},
+    )
+    assert run(root) == 0
+    assert "declares `Private :: Internal Use Only`" in capsys.readouterr().out
+
+
+def test_a_published_member_may_not_carry_a_private_classifier(
+    workspace, capsys
+) -> None:
+    """The converse, and it is a contradiction rather than a nicety: the member is in the
+    list that says what this repository ships, and carries the one line guaranteeing it
+    can never be shipped. Left unchecked it is planned, built, compat-celled and refused
+    by PyPI at the upload."""
+    root = workspace(
+        {
+            "acme-core": {
+                "version": "1.0.0",
+                "classifiers": ["Private :: Internal Use Only"],
+            }
+        },
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "declares the classifier `Private :: Internal Use Only`" in out
+    assert "the root depends on it in [project] dependencies" in out
+
+
+def test_a_runtime_dependency_on_a_private_member_is_an_error(
+    workspace, capsys
+) -> None:
+    """`Private :: Do Not Upload` means never on PyPI, so a published wheel naming it
+    could not be installed -- exactly as for a virtual member."""
+    root = workspace(
+        {
+            "acme-core": {"version": "2.0.0", "dependencies": ["acme-testkit>=0,<1"]},
+            "acme-testkit": {"version": "0", "private": True},
+        },
+        root_dependencies=["acme-core"],
+        root_groups={"test": ["acme-testkit"]},
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "a member this repository never publishes" in out
+    assert "could never be installed" in out
+
+
+def test_check_five_does_not_skip_a_private_member(workspace, capsys) -> None:
+    """Unlike a virtual member: this one IS installed, so its module is imported, and the
+    two numbers agreeing costs nothing to keep true."""
+    root = workspace(
+        {
+            "acme-core": {"version": "1.0.0"},
+            "acme-testkit": {
+                "version": "0",
+                "private": True,
+                "module_version": "0.1",
+            },
+        },
+        root_dependencies=["acme-core"],
+        root_groups={"test": ["acme-testkit"]},
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert '__version__ = "0.1"' in out
+
+
+def test_root_depends_on_a_non_member(workspace, capsys) -> None:
+    root = workspace({"acme-core": {}}, root_dependencies=["acme-core", "requests"])
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "the root depends on `requests`, which is not a workspace member" in out
+
+
+def test_root_dependency_is_not_bare(workspace, capsys) -> None:
+    root = workspace({"acme-core": {}}, root_dependencies=["acme-core>=1"])
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "the root dependency `acme-core>=1` is not bare" in out
+    assert "Write `acme-core`" in out
+
+
+# --- (2) every member is sourced from the workspace -----------------------------------
+
+
+def test_member_without_a_source_entry(workspace, capsys) -> None:
+    root = workspace({"acme-core": {}}, sources={})
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "`acme-core` is a workspace member with no [tool.uv.sources] entry" in out
+    # the message quotes what uv itself says, measured on uv 0.12.9
+    assert "is included as a workspace member, but is missing" in out
+    # ... and the check does not also claim success
+    assert "every member is sourced from the workspace" not in out
+
+
+def test_one_bad_source_among_several(workspace, capsys) -> None:
+    root = workspace(
+        {"acme-core": {}, "acme-ext": {}},
+        sources={"acme-core": "{ workspace = true }"},
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "`acme-ext` is a workspace member with no [tool.uv.sources] entry" in out
+    assert "every member is sourced from the workspace" not in out
+
+
+def test_member_sourced_from_somewhere_else(workspace, capsys) -> None:
+    root = workspace(
+        {"acme-core": {}}, sources={"acme-core": '{ git = "https://example.invalid" }'}
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "does not resolve the member in this tree" in out
+    assert "every member is sourced from the workspace" not in out
+
+
+# --- (3) requires-python equality (the retired inline ci.yaml step) --------------------
+
+
+def test_member_requires_python_differs(workspace, capsys) -> None:
+    root = workspace({"acme-core": {"requires_python": ">=3.12,<4"}})
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert (
+        "::error file=packages/acme-core/pyproject.toml::requires-python is >=3.12,<4, "
+        "but the root declares >=3.11,<4" in out
+    )
+
+
+# --- (4) intra-workspace specifiers ----------------------------------------------------
+
+
+def test_specifier_does_not_admit_the_tree(workspace, capsys) -> None:
+    root = workspace(
+        {
+            "acme-core": {"version": "1.2.3"},
+            "acme-ext": {"dependencies": ["acme-core>=99"]},
+        }
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert (
+        "the workspace builds acme-core 1.2.3, which this specifier does not admit"
+        in out
+    )
+    assert "uv#9811" in out
+
+
+def test_specifier_is_admitted_but_not_tight(workspace, capsys) -> None:
+    root = workspace(
+        {
+            "acme-core": {"version": "1.2.3"},
+            "acme-ext": {"dependencies": ["acme-core>=1.0"]},
+        }
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "tight tracking wants `acme-core<2,>=1.2.3`" in out
+    assert "propagate_floors.py acme-core" in out
+
+
+def test_a_runtime_dependency_on_a_virtual_member_is_an_error(
+    workspace, capsys
+) -> None:
+    """A virtual member is never released, so it is never on PyPI and a wheel naming it
+    could not be installed."""
+    root = workspace(
+        {
+            "acme-core": {"version": "2.0.0", "dependencies": ["acme-tools>=0,<1"]},
+            "acme-tools": {"version": "0", "virtual": True},
+        }
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "`acme-tools` is a member this repository never publishes" in out
+    assert "could never be installed" in out
+
+
+def test_a_virtual_member_is_otherwise_checked_like_any_other(
+    workspace, capsys
+) -> None:
+    """Only the runtime-edge rule is special: the rest applies unchanged."""
+    root = workspace(
+        {
+            "acme-core": {"version": "2.0.0"},
+            "acme-tools": {
+                "version": "0",
+                "virtual": True,
+                "requires_python": ">=3.12,<4",
+            },
+        }
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert (
+        "::error file=packages/acme-tools/pyproject.toml::requires-python is >=3.12,<4"
+        in out
+    )
+
+
+def test_a_virtual_dependant_is_not_held_to_the_tracking_policy(
+    workspace, capsys
+) -> None:
+    """The cap stops a future major being co-installed with a published wheel; a virtual
+    member publishes none, so a loose floor outward is its own business."""
+    root = workspace(
+        {
+            "acme-core": {"version": "1.2.3"},
+            "acme-tools": {
+                "version": "0",
+                "virtual": True,
+                "dependencies": ["acme-core>=1.0"],
+            },
+        }
+    )
+    assert run(root) == 0
+    assert "OK    acme-tools -> acme-core>=1.0" in capsys.readouterr().out
+
+
+def test_a_virtual_dependant_is_still_held_to_honesty(workspace, capsys) -> None:
+    """Only the policy half is relaxed: a floor the tree cannot satisfy is still red."""
+    root = workspace(
+        {
+            "acme-core": {"version": "1.2.3"},
+            "acme-tools": {
+                "version": "0",
+                "virtual": True,
+                "dependencies": ["acme-core>=99"],
+            },
+        }
+    )
+    assert run(root) == 1
+    assert "which this specifier does not admit" in capsys.readouterr().out
+
+
+def test_check_five_skips_a_virtual_member_by_rule(workspace, capsys) -> None:
+    """Not by module-name derivation: a virtual member with a module present and a
+    mismatching `__version__` is still skipped."""
+    root = workspace(
+        {
+            "acme-tools": {
+                "version": "0",
+                "virtual": True,
+                "module_version": "9.9.9",
+            }
+        }
+    )
+    assert run(root) == 0
+    out = capsys.readouterr().out
+    assert "__version__" not in out
+
+
+def test_a_virtual_member_must_declare_the_private_classifier(
+    workspace, capsys
+) -> None:
+    """The classifier is the second fence; without this, it is the line a tidy-up deletes."""
+    root = workspace(
+        {"acme-tools": {"version": "0", "virtual": True, "private_classifier": False}}
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "::error file=packages/acme-tools/pyproject.toml::" in out
+    assert 'declares no "Private ::" classifier' in out
+    assert "can still be built by hand" in out
+
+
+def test_a_virtual_member_with_the_classifier_is_green(workspace, capsys) -> None:
+    root = workspace({"acme-tools": {"version": "0", "virtual": True}})
+    assert run(root) == 0
+    assert "declares `Private :: Do Not Upload`" in capsys.readouterr().out
+
+
+def test_a_publishable_member_is_not_asked_for_the_classifier(
+    workspace, capsys
+) -> None:
+    root = workspace({"acme-core": {"version": "1.0.0"}})
+    assert run(root) == 0
+    assert "Private :: Do Not Upload" not in capsys.readouterr().out
+
+
+def test_a_virtual_member_may_depend_on_a_virtual_sibling(workspace, capsys) -> None:
+    """uv resolves it, and there is no wheel to be uninstallable."""
+    root = workspace(
+        {
+            "acme-tools": {
+                "version": "0",
+                "virtual": True,
+                "dependencies": ["acme-more>=0"],
+            },
+            "acme-more": {"version": "0", "virtual": True},
+        }
+    )
+    assert run(root) == 0
+    assert "OK    acme-tools -> acme-more>=0" in capsys.readouterr().out
+
+
+def test_a_virtual_dependant_gets_the_honesty_message_without_publish(
+    workspace, capsys
+) -> None:
+    """It is still an error -- uv resolves the workspace copy regardless -- but a virtual
+    member publishes no wheel, so the consequence is worded for the tree, not for PyPI."""
+    root = workspace(
+        {
+            "acme-core": {"version": "1.2.3"},
+            "acme-tools": {
+                "version": "0",
+                "virtual": True,
+                "dependencies": ["acme-core>=99"],
+            },
+        }
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "so the specifier says something untrue about the tree" in out
+    assert "publish a wheel nobody can install" not in out
+
+
+def test_no_policy_accepts_a_loose_but_honest_floor(workspace, capsys) -> None:
+    root = workspace(
+        {
+            "acme-core": {"version": "1.2.3"},
+            "acme-ext": {"dependencies": ["acme-core>=1.0"]},
+        }
+    )
+    assert run(root, "--no-policy") == 0
+    assert "OK    acme-ext -> acme-core>=1.0" in capsys.readouterr().out
+
+
+def test_an_extra_is_checked_too(workspace, capsys) -> None:
+    root = workspace(
+        {
+            "acme-core": {"version": "1.2.3"},
+            "acme-ext": {"optional_dependencies": {"all": ["acme-core>=99"]}},
+        }
+    )
+    assert run(root) == 1
+    assert "acme-ext[all] -> acme-core>=99" in capsys.readouterr().out
+
+
+def test_dynamic_member_version_is_an_error(workspace, capsys) -> None:
+    root = workspace({"acme-core": {"version": None}})
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "acme-core declares a dynamic version" in out
+    assert "uv version --package" in out
+
+
+# --- (5) `__version__` agrees with the manifest ---------------------------------------
+
+
+def test_module_version_disagrees(workspace, capsys) -> None:
+    root = workspace({"acme-core": {"version": "8.5.0", "module_version": "8.5.1"}})
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "::error file=packages/acme-core/src/acme_core/__init__.py::" in out
+    assert '__version__ = "8.5.1"' in out
+    assert 'version = "8.5.0"' in out
+
+
+def test_module_without_a_version_literal_is_skipped(workspace, capsys) -> None:
+    root = workspace({"acme-core": {"version": "8.5.0"}})
+    (root / "packages/acme-core/src/acme_core").mkdir(parents=True)
+    (root / "packages/acme-core/src/acme_core/__init__.py").write_text(
+        '"""no version here."""\n', encoding="utf-8"
+    )
+    assert run(root) == 0
+    assert "__version__" not in capsys.readouterr().out
+
+
+def test_module_name_comes_from_tool_flit_module(workspace, capsys) -> None:
+    root = workspace(
+        {
+            "acme-core": {
+                "version": "8.5.0",
+                "module_version": "8.5.1",
+                "module_name": "acme",
+            }
+        }
+    )
+    assert run(root) == 1
+    assert "packages/acme-core/src/acme/__init__.py" in capsys.readouterr().out
+
+
+# --- everything is reported, not just the first -----------------------------------------
+
+
+def test_every_failure_is_reported_in_one_run(workspace, capsys) -> None:
+    root = workspace(
+        {
+            "acme-core": {"version": "1.2.3", "requires_python": ">=3.12,<4"},
+            "acme-ext": {
+                "version": "0.1.0",
+                "dependencies": ["acme-core>=99"],
+                "module_version": "0.2.0",
+            },
+        },
+        root_dependencies=["acme-core"],
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert out.count("::error") == 4, out
+    assert "`acme-ext` is a workspace member but the root neither depends on it" in out
+    assert "requires-python is >=3.12,<4" in out
+    assert "does not admit" in out
+    assert "__version__" in out
+
+
+def test_a_member_with_no_name_is_annotated_not_a_traceback(workspace, capsys) -> None:
+    """It used to raise KeyError('name') -- fail closed, but with no annotation."""
+    root = workspace({"acme-core": {"version": "1.0.0"}})
+    (root / "packages/acme-core/pyproject.toml").write_text(
+        '[project]\nversion = "1.0.0"\n', encoding="utf-8"
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "::error file=packages/acme-core/pyproject.toml::" in out
+    assert "[project] declares no `name`" in out
+    assert "Traceback" not in out
+
+
+# --- source keys are canonicalised, as uv canonicalises them ---------------------------
+
+
+def test_a_source_key_spelled_differently_is_the_same_member(workspace, capsys) -> None:
+    """uv accepts `my_member` for a member named `My_Member`; so must this."""
+    root = workspace(
+        {"My_Member": {"version": "1.0.0"}},
+        root_dependencies=["My_Member"],
+        sources={"my_member": "{ workspace = true }"},
+    )
+    assert run(root) == 0
+    assert "every member is sourced from the workspace" in capsys.readouterr().out
+
+
+# --- the edges ---------------------------------------------------------------------------
+
+
+def test_a_member_below_the_first_level_gets_a_root_relative_annotation(
+    workspace, capsys
+) -> None:
+    """`::error file=` is resolved against the workspace root, so the path must be too."""
+    root = workspace(
+        {"acme-core": {"version": "8.5.0", "module_version": "8.5.1"}},
+        member_globs=["packages/*/*"],
+        directories={"acme-core": "packages/group/acme-core"},
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "::error file=packages/group/acme-core/src/acme_core/__init__.py::" in out, (
+        out
+    )
+
+
+def test_a_member_matched_by_two_globs_is_counted_once(workspace, capsys) -> None:
+    root = workspace(
+        {"acme-core": {"version": "1.0.0"}},
+        member_globs=["packages/*", "packages/acme-core"],
+    )
+    assert run(root) == 0
+    out = capsys.readouterr().out
+    assert out.count("packages/acme-core/pyproject.toml: requires-python") == 1
+    assert "among 1 member(s)" in out
+
+
+def test_a_non_bare_root_dependency_does_not_also_print_ok(workspace, capsys) -> None:
+    root = workspace({"acme-core": {}}, root_dependencies=["acme-core>=1"])
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "is not bare" in out
+    assert "the root lists every member, bare" not in out
+
+
+def test_a_nameless_member_is_one_error_not_two(workspace, capsys) -> None:
+    """The member's own error is the actionable one; a "matches no package" ERROR on top of
+    it would show two problems where there is one."""
+    root = workspace({"acme-core": {"version": "1.0.0"}}, root_dependencies=[])
+    (root / "packages/acme-core/pyproject.toml").write_text(
+        '[project]\nversion = "1.0.0"\n', encoding="utf-8"
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert out.count("::error") == 1, out
+    assert "[project] declares no `name`" in out
+    # the glob is still reported, as context rather than as a second finding
+    assert "matches no usable package in this tree -- see the errors above" in out
+
+
+def test_a_members_glob_matching_nothing_at_all_is_still_reported(
+    tmp_path: Path, capsys
+) -> None:
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nname = "root"\nversion = "0"\nrequires-python = ">=3.11,<4"\n'
+        'dependencies = []\n\n[tool.uv.workspace]\nmembers = ["packages/*"]\n',
+        encoding="utf-8",
+    )
+    assert check_workspace.main(["--root", str(tmp_path)]) == 1
+    out = capsys.readouterr().out
+    assert "matches no package in this tree" in out
+    assert "no usable package" not in out
+
+
+def test_no_workspace_members_key(tmp_path: Path, capsys) -> None:
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nname = "x"\nversion = "0"\n', encoding="utf-8"
+    )
+    assert check_workspace.main(["--root", str(tmp_path)]) == 1
+    assert "no [tool.uv.workspace] members" in capsys.readouterr().out
+
+
+def test_no_manifest_at_all(tmp_path: Path, capsys) -> None:
+    assert check_workspace.main(["--root", str(tmp_path / "nope")]) == 2
+    assert "run this at the workspace root" in capsys.readouterr().out
+
+
+def test_an_unparseable_member_manifest_is_named(workspace, capsys) -> None:
+    root = workspace({"acme-core": {"version": "1.0.0"}})
+    (root / "packages/acme-core/pyproject.toml").write_text(
+        '[project]\nname = "acme-core"\ndependencies = [\n', encoding="utf-8"
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "::error file=packages/acme-core/pyproject.toml::" in out
+    assert "not valid TOML" in out
+
+
+def test_an_unparseable_root_manifest_is_named(tmp_path: Path, capsys) -> None:
+    (tmp_path / "pyproject.toml").write_text("[project\n", encoding="utf-8")
+    assert check_workspace.main(["--root", str(tmp_path)]) == 2
+    assert "::error file=pyproject.toml::" in capsys.readouterr().out
+
+
+# --- (7) no member carries a table the root owns ---------------------------------------
+
+
+def test_a_member_with_no_root_owned_table_is_green(workspace, capsys) -> None:
+    root = workspace({"acme-core": {"version": "1.0.0"}})
+    assert run(root) == 0
+    assert "no member carries a root-owned table" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    ("table", "planted"),
+    [
+        ("tool.ruff", '[tool.ruff.lint]\nextend-select = ["T20"]'),
+        ("tool.ruff", "[tool.ruff]\nline-length = 100"),
+        ("tool.pytest", '[tool.pytest.ini_options]\ntestpaths = ["tests"]'),
+        ("tool.ty", '[tool.ty.src]\ninclude = ["src"]'),
+        ("dependency-groups", '[dependency-groups]\ntesting = ["pytest"]'),
+    ],
+)
+def test_a_root_owned_table_in_a_member_is_an_error(
+    workspace, capsys, table: str, planted: str
+) -> None:
+    root = workspace({"acme-core": {"version": "1.0.0", "extra_tables": planted}})
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "::error file=packages/acme-core/pyproject.toml::" in out
+    assert f"[{table}] is configured at the ROOT" in out
+    assert "no member carries a root-owned table" not in out
+
+
+@pytest.mark.parametrize(
+    "planted",
+    [
+        # a table whose NAME merely starts with a forbidden one -- the walk is over exact
+        # keys, and a future "simplification" into a prefix match would fire on these
+        "[tool.ruff-something]\nx = 1",
+        "[tool.pytest-randomly]\nx = 1",
+        # tables a member is entitled to, and which no member-owned check may claim
+        '[tool.poe.tasks.x]\ncmd = "true"',
+        '[tool.flit.sdist]\ninclude = ["docs/"]',
+        # the forbidden names as DATA rather than as tables
+        '[tool.poe.tasks."tool.ruff"]\ncmd = "true"',
+    ],
+)
+def test_a_table_that_only_looks_root_owned_stays_green(
+    workspace, capsys, planted: str
+) -> None:
+    root = workspace({"acme-core": {"version": "1.0.0", "extra_tables": planted}})
+    exit_code = run(root)
+    out = capsys.readouterr().out
+    assert exit_code == 0, out
+    assert "no member carries a root-owned table" in out
+
+
+def test_the_ruff_message_says_the_root_ruleset_is_replaced(workspace, capsys) -> None:
+    """The one failure mode that is silent in both directions gets its own words."""
+    root = workspace(
+        {"acme-core": {"version": "1.0.0", "extra_tables": "[tool.ruff]\nsrc = []"}}
+    )
+    assert run(root) == 1
+    assert "REPLACES it" in capsys.readouterr().out
+
+
+def test_a_virtual_member_is_checked_for_root_owned_tables_too(
+    workspace, capsys
+) -> None:
+    root = workspace(
+        {
+            "acme-tools": {
+                "version": "0",
+                "virtual": True,
+                "extra_tables": '[tool.ty.src]\ninclude = ["src"]',
+            }
+        }
+    )
+    assert run(root) == 1
+    assert "[tool.ty] is configured at the ROOT" in capsys.readouterr().out
+
+
+def test_several_root_owned_tables_are_all_reported(workspace, capsys) -> None:
+    root = workspace(
+        {
+            "acme-core": {
+                "version": "1.0.0",
+                "extra_tables": (
+                    '[dependency-groups]\ntesting = ["pytest"]\n\n'
+                    '[tool.ruff.lint]\nextend-select = ["T20"]\n\n'
+                    '[tool.pytest.ini_options]\ntestpaths = ["tests"]'
+                ),
+            }
+        }
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert out.count("::error") == 3, out

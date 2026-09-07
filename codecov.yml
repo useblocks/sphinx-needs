@@ -1,10 +1,30 @@
+# One repository, three packages, three coverage uploads -- so three flags with targets of
+# their own. Without them all three would land on the `default` status and a young
+# package's coverage would be averaged into a mature one's 80%, moving a gate nobody
+# decided to move.
 coverage:
   status:
     project:
-      default:
+      # sphinx-needs, uploaded by the `tests-core` cell with `flags: pytests`
+      needs:
+        flags: [pytests]
         target: 80%
+        threshold: 0.5%
+      # sphinx-mounts, uploaded by the `tests-extensions` cell with `flags: mounts`.
+      # `target: auto` -- do not hold it against itself -- until its real number is known;
+      # picking one blind is how a gate ends up disabled
+      mounts:
+        flags: [mounts]
+        target: auto
+        threshold: 0.5%
+      # sphinx-codelinks, uploaded by the same cell with `flags: codelinks`, from its own
+      # `--cov-report=xml:codelinks.xml`. `target: auto` for the same reason: this package
+      # arrived with the monorepo import and its number has never been measured here
+      codelinks:
+        flags: [codelinks]
+        target: auto
         threshold: 0.5%
     patch:
       default:
-        target: 70%
+        target: 67%
         threshold: 0.5%

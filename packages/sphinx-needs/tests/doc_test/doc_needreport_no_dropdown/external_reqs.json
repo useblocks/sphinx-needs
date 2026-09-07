@@ -1,0 +1,47 @@
+{
+  "created": "2026-01-01T00:00:00.000000",
+  "current_version": "1.0",
+  "project": "needreport external",
+  "versions": {
+    "1.0": {
+      "created": "2026-01-01T00:00:00.000000",
+      "filters": {},
+      "filters_amount": 0,
+      "needs": {
+        "EXT_REQ_1": {
+          "id": "EXT_REQ_1",
+          "type": "req",
+          "title": "External requirement 1",
+          "description": "",
+          "docname": "index",
+          "doctype": ".rst",
+          "external_url": "http://my_company.com/docs/v1/index.html#EXT_REQ_1",
+          "is_external": true,
+          "is_need": true,
+          "is_part": false,
+          "parts": {},
+          "status": null,
+          "tags": [],
+          "links": []
+        },
+        "EXT_REQ_2": {
+          "id": "EXT_REQ_2",
+          "type": "req",
+          "title": "External requirement 2",
+          "description": "",
+          "docname": "index",
+          "doctype": ".rst",
+          "external_url": "http://my_company.com/docs/v1/index.html#EXT_REQ_2",
+          "is_external": true,
+          "is_need": true,
+          "is_part": false,
+          "parts": {},
+          "status": null,
+          "tags": [],
+          "links": []
+        }
+      },
+      "needs_amount": 2
+    }
+  }
+}

@@ -1,14 +1,14 @@
 version: 2
 
 sphinx:
-  configuration: docs/conf.py
+  configuration: packages/sphinx-needs/docs/conf.py
   builder: html
   fail_on_warning: true
 
 python:
   install:
     - method: pip
-      path: .
+      path: packages/sphinx-needs
       extra_requirements:
         - docs
         - theme-furo
@@ -21,10 +21,50 @@ build:
   tools:
     python: "3.11"
   jobs:
+    post_checkout:
+      # Every pull request against this repository builds BOTH Read the Docs projects. A
+      # pull request that touches neither `packages/sphinx-needs/` nor this file has nothing
+      # for this one to build, so cancel it. Exit code 183 is Read the Docs' documented
+      # "skip" code (https://docs.readthedocs.com/platform/stable/guides/build/skip-build.html):
+      # the build is recorded as `cancelled`, and the commit status sent to GitHub is
+      # `success` with the description "Read the Docs build skipped" -- which matters here,
+      # because `docs/readthedocs.org:sphinx-needs` is a REQUIRED status on `master`, and a
+      # skipped build satisfies it. Measured on the sphinx-mounts project: build 34411602
+      # (pull request #1861) and the skipped build on #1864, both `cancelled` / `success`.
+      #
+      # Why a plain two-dot `git diff` and not a merge base: Read the Docs clones the default
+      # branch with `--depth 1` and then fetches the pull-request head with `--depth 50`, so
+      # `origin/master` is a shallow root with no ancestry and `git merge-base` has nothing
+      # to walk. The diff therefore compares against master's CURRENT tip: if master moved
+      # and touched this package, the build runs although the pull request did not touch it.
+      # That is the safe direction; it never skips a build that was needed.
+      #
+      # THREE paths, and the third is recent: `python.install` below pip-installs the
+      # package directory with its own extras (the root manifest and `uv.lock` take no
+      # part), and every `literalinclude` in the docs stays inside the package
+      # (`../../tests/doc_test/…`) -- but `docs/conf.py` no longer reads only files under
+      # `docs/`. It reads `vendor/plantuml/pin.toml` to find the renderer, and renders with
+      # the jar committed beside it. Without `vendor/` here, a pull request that bumps the
+      # pin would skip THIS build -- the only one that renders these docs under
+      # `fail_on_warning` -- and report `success` to GitHub for a renderer nobody tried.
+      # `tools/` is deliberately NOT here: nothing under it runs in this build any more.
+      # Branch and tag builds (`latest`, `stable`, releases) are never cancelled.
+      - |
+        if [ "$READTHEDOCS_VERSION_TYPE" != "external" ]; then
+          exit 0
+        fi
+        if ! git rev-parse --verify --quiet origin/master > /dev/null; then
+          echo "origin/master is not available in this clone; building to be safe"
+          exit 0
+        fi
+        if git diff --quiet origin/master -- packages/sphinx-needs/ .readthedocs.yml vendor/; then
+          echo "nothing under packages/sphinx-needs/ or vendor/, and nothing in .readthedocs.yml, changed; skipping this build (exit 183)"
+          exit 183
+        fi
     pre_create_environment:
       - echo "DOT details"
       - which dot
     pre_build:
       # ideally we would just set the DOCS_THEME environment variable
       # but I couldn't see an easy way to do that for the build job
-      - 'echo "furo" > docs/DOCS_THEME'
+      - 'echo "furo" > packages/sphinx-needs/docs/DOCS_THEME'

@@ -1,0 +1,214 @@
+/* These classes are added by the sphinx_needs.layout.LayoutHandler class,
+to style the representation per need,
+based on layout/style keys in the need definition.
+*/
+
+/* ************ */
+/* layout names */
+/* ************ */
+table.needs_layout_focus_l td.side {
+    text-orientation: upright;
+    writing-mode: sideways-lr;
+    font-size: small;
+}
+
+table.needs_layout_focus_r td.side {
+    text-orientation: upright;
+    writing-mode: sideways-rl;
+    font-size: small;
+}
+
+table.needs_layout_complete td.head_left {
+    text-align: left;
+    background-color: var(--sn-color-complete-bg-head);
+    font-size: smaller;
+}
+
+table.needs_layout_complete td.head_center {
+    text-align: center;
+    font-weight: bold;
+}
+
+table.needs_layout_complete td.head_right {
+    text-align: right;
+    background-color: var(--sn-color-complete-bg-head);
+    font-size: smaller;
+}
+
+table.needs_layout_complete tr.footer {
+    background-color: var(--sn-color-complete-bg-foot);
+}
+
+table.needs_layout_complete td.footer_right {
+    text-align: right;
+}
+
+table.needs_layout_complete td.footer {
+    text-align: center;
+}
+
+/* ************* */
+/* layout styles */
+/* ************* */
+
+table.needs_style_clean,
+table.needs_style_clean tr,
+table.needs_style_clean td {
+    margin-bottom: 10px;
+    border: none !important;
+    background: None !important;
+    padding: 0;
+    box-shadow: None;
+}
+
+table.needs_style_clean {
+    width: 100%;
+}
+
+table.needs_style_discreet,
+table.needs_style_discreet tr.need,
+table.needs_style_discreet td.need {
+    background-color: var(--sn-color-bg-lightgray) !important;
+}
+
+table.needs_style_gray,
+table.needs_style_gray tr.need,
+table.needs_style_gray td.need {
+    background-color: var(--sn-color-bg-gray) !important;
+}
+
+table.needs_style_green,
+table.needs_style_green tr.need,
+table.needs_style_green td.need,
+tr.needs_green,
+table.needs_style_implemented,
+table.needs_style_implemented tr.need,
+table.needs_style_implemented td.need,
+tr.needs_implemented {
+    background-color: var(--sn-color-bg-green) !important;
+}
+
+table.needs_style_red,
+table.needs_style_red tr.need,
+table.needs_style_red td.need,
+tr.needs_red,
+table.needs_style_open,
+table.needs_style_open tr.need,
+table.needs_style_open td.need,
+tr.needs_open {
+    background-color: var(--sn-color-bg-red) !important;
+}
+
+table.needs_style_yellow,
+table.needs_style_yellow tr.need,
+table.needs_style_yellow td.need,
+tr.needs_yellow,
+table.needs_style_in_progress,
+table.needs_style_in_progress tr.need,
+table.needs_style_in_progress td.need tr.needs_in_progress {
+    background-color: var(--sn-color-bg-yellow) !important;
+}
+
+table.needs_style_blue,
+table.needs_style_blue tr.need,
+table.needs_style_blue td.need,
+tr.needs_blue {
+    background-color: var(--sn-color-bg-blue) !important;
+}
+
+table.needs_style_green_border {
+    border: 5px solid var(--sn-color-border-green) !important;
+}
+
+table.needs_style_red_border {
+    border: 5px solid var(--sn-color-border-red) !important;
+}
+
+table.needs_style_yellow_border {
+    border: 5px solid var(--sn-color-border-yellow) !important;
+}
+
+table.needs_style_blue_border {
+    border: 5px solid var(--sn-color-border-blue) !important;
+}
+
+table.needs_style_discreet_border {
+    border: 5px solid var(--sn-color-border-lightgray) !important;
+}
+
+table.needs_style_green_bar {
+    background: linear-gradient(to right, transparent 90%, var(--sn-color-bar-green) 10%);
+}
+
+table.needs_style_red_bar {
+    background: linear-gradient(to right, transparent 90%, var(--sn-color-bar-red) 10%);
+}
+
+table.needs_style_orange_bar {
+    background: linear-gradient(to right, transparent 90%, var(--sn-color-bar-orange) 10%);
+}
+
+table.needs_style_yellow_bar {
+    background: linear-gradient(to right, transparent 90%, var(--sn-color-bar-yellow) 10%);
+}
+
+table.needs_style_blue_bar {
+    background: linear-gradient(to right, transparent 90%, var(--sn-color-bar-blue) 10%);
+}
+
+/* *****************
+   layout debug view
+   *****************
+
+- debug_on_layout_btn is set when collapsed.startswith("Debug view")
+- debug_off_layout_btn is set when visible.startswith("Debug view") 
+*/
+
+div.debug_on_layout_btn.debug_on_layout_btn,
+div.debug_off_layout_btn.debug_off_layout_btn {
+    border: 2px solid var(--sn-color-debug-btn-border);
+    width: fit-content;
+    padding: 3px 6px;
+    border-radius: 4px;
+}
+
+div.debug_on_layout_btn.debug_on_layout_btn:before {
+    content: "Hide debugger";
+    color: var(--sn-color-debug-btn-on-text);
+    font-size: large;
+    font-weight: 400;
+    margin-top: 3px;
+    cursor: pointer;
+    outline: none;
+}
+
+div.debug_on_layout_btn.debug_on_layout_btn:after {
+    content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='25' height='20' viewBox='0 0 24 24' fill='none' stroke='%23f43333' stroke-width='2.0' stroke-linecap='round' stroke-linejoin='round' class='feather feather-eye-off'%3E%3Cpath d='M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24'%3E%3C/path%3E%3Cline x1='1' y1='1' x2='23' y2='23'%3E%3C/line%3E%3C/svg%3E");
+    color: var(--sn-color-debug-btn-on-text);
+    font-size: large;
+    font-weight: 400;
+    margin-top: 3px;
+    cursor: pointer;
+    outline: none;
+}
+
+div.debug_off_layout_btn.debug_off_layout_btn:before {
+    content: "Show debugger";
+    color: var(--sn-color-debug-btn-off-text);
+    font-size: large;
+    font-weight: 400;
+    margin-top: 3px;
+    cursor: pointer;
+    outline: none;
+}
+
+div.debug_off_layout_btn.debug_off_layout_btn:after {
+    content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='25' height='20' viewBox='0 0 24 24' fill='none' stroke='%230dd3f5' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' class='feather feather-eye'%3E%3Cpath d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z'%3E%3C/path%3E%3Ccircle cx='12' cy='12' r='3'%3E%3C/circle%3E%3C/svg%3E");
+    ;
+    color: var(--sn-color-debug-btn-off-text);
+    font-size: large;
+    font-weight: 400;
+    margin-top: 3px;
+    cursor: pointer;
+    outline: none;
+}

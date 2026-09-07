@@ -1,0 +1,19 @@
+{
+  "needs": [
+    {
+      "id": "IMPL_CPP11",
+      "title": "C++11 constexpr",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ"
+        ]
+      },
+      "metadata": {},
+      "line": 1
+    }
+  ],
+  "need_refs": [],
+  "marked_rst": [],
+  "warnings": []
+}

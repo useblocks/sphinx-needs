@@ -1,0 +1,10 @@
+2026 Q1
+=======
+
+RELEASE_NOTES_Q1_MARKER
+
+First hand-picked release note. Its source lives at
+``release-notes/notes/2026-q1.rst``, but file-list mode uses only the
+basename, so it is reachable at the flat docname
+``_generated/release-notes/2026-q1`` — the ``notes/`` subdirectory is
+dropped.

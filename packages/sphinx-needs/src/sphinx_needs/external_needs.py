@@ -1,0 +1,222 @@
+from __future__ import annotations
+
+import json
+import os
+
+import requests
+from requests_file import FileAdapter
+from sphinx.application import Sphinx
+from sphinx.environment import BuildEnvironment
+
+from sphinx_needs._jinja import compile_template
+from sphinx_needs.api import InvalidNeedException, add_external_need, del_need
+from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
+from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.need_item import NeedItemSourceExternal
+from sphinx_needs.utils import clean_log, import_prefix_link_edit
+
+log = get_logger(__name__)
+
+
+def load_external_needs(
+    app: Sphinx, env: BuildEnvironment, _docnames: list[str]
+) -> None:
+    """Load needs from configured external sources."""
+    needs_config = NeedsSphinxConfig(app.config)
+    needs_schema = SphinxNeedsData(env).get_schema()
+
+    for idx, source in enumerate(needs_config.external_needs):
+        if "base_url" not in source:
+            raise NeedsExternalException(
+                f"base_url must be configured in external_needs item {idx}."
+            )
+
+        if source["base_url"].endswith("/"):
+            source["base_url"] = source["base_url"][:-1]
+
+        target_url = source.get("target_url", "")
+
+        if source.get("json_url", False) and source.get("json_path", False):
+            raise NeedsExternalException(
+                clean_log(
+                    "json_path and json_url are both configured, but only one is allowed.\n"
+                    f"json_path: {source['json_path']}\n"
+                    f"json_url: {source['json_url']}."
+                )
+            )
+        elif not (source.get("json_url", False) or source.get("json_path", False)):
+            raise NeedsExternalException(
+                "json_path or json_url must be configured to use external_needs."
+            )
+
+        if source.get("json_url", False):
+            log.info(
+                clean_log(f"Loading external needs from url {source['json_url']}.")
+            )
+            s = requests.Session()
+            s.mount("file://", FileAdapter())
+            try:
+                response = s.get(source["json_url"])
+                needs_json = (
+                    response.json()
+                )  # The downloaded file MUST be json. Everything else we do not handle!
+            except Exception as e:
+                raise NeedsExternalException(
+                    clean_log(
+                        "Getting {} didn't work. Reason: {}".format(
+                            source["json_url"], e
+                        )
+                    )
+                )
+
+        if source.get("json_path", False):
+            if os.path.isabs(source["json_path"]):
+                json_path = source["json_path"]
+            else:
+                json_path = os.path.join(app.confdir, source["json_path"])
+
+            if not os.path.exists(json_path):
+                raise NeedsExternalException(
+                    f"Given json_path {json_path} does not exist."
+                )
+
+            with open(json_path) as json_file:
+                needs_json = json.load(json_file)
+
+        version = source.get("version", needs_json.get("current_version"))
+        if not version:
+            raise NeedsExternalException(
+                'No version defined in "needs_external_needs" or by "current_version" from loaded json file'
+            )
+
+        try:
+            data = needs_json["versions"][version]
+            needs = data["needs"]
+        except KeyError:
+            if not needs_json.get("versions"):
+                # The versions dict is empty, so no needs were ever added.
+                data = {}
+                needs = {}
+            else:
+                uri = source.get("json_url", source.get("json_path", "unknown"))
+                raise NeedsExternalException(
+                    clean_log(
+                        f"Version {version} not found in json file from {uri}: {list(needs_json.get('versions'))}"
+                    )
+                )
+
+        log.debug(f"Loading {len(needs)} needs.")
+
+        defaults = (
+            {
+                name: value["default"]
+                for name, value in schema["properties"].items()
+                if "default" in value
+            }
+            if (schema := data.get("needs_schema"))
+            else {}
+        )
+
+        id_prefix = source.get("id_prefix", "").upper()
+        import_prefix_link_edit(needs, id_prefix, needs_schema.iter_link_field_names())
+
+        # all known need fields in the project
+        known_keys = {
+            "full_title",  # legacy
+            *NeedsCoreFields,
+            *(x for x in needs_schema.iter_link_field_names()),
+            *(f"{x}_back" for x in needs_schema.iter_link_field_names()),
+            *(x for x in needs_schema.iter_extra_field_names()),
+        }
+        # all keys that should not be imported from external needs
+        omitted_keys = {
+            "full_title",  # legacy
+            *(k for k, v in NeedsCoreFields.items() if v.get("exclude_external")),
+            *(f"{x}_back" for x in needs_schema.iter_link_field_names()),
+        }
+
+        # Pre-compile target_url template once (avoids re-parsing per need)
+        target_tpl = (
+            compile_template(target_url, autoescape=False) if target_url else None
+        )
+
+        # collect keys for warning logs, so that we only log one warning per key
+        unknown_keys: set[str] = set()
+
+        for need in needs.values():
+            need_params = {**defaults, **need}
+
+            if "description" in need_params and not need_params.get("content"):
+                # legacy versions of sphinx-needs changed "description" to "content" when outputting to json
+                need_params["content"] = need_params["description"]
+                del need_params["description"]
+
+            # Remove unknown options, as they may be defined in source system, but not in this sphinx project
+            for option in list(need_params):
+                if option not in known_keys:
+                    unknown_keys.add(option)
+                    del need_params[option]
+                elif option in omitted_keys:
+                    del need_params[option]
+
+            # These keys need to be different for add_need() api call.
+            need_params["need_type"] = need_params.pop("type", "")
+
+            # Replace id, to get unique ids
+            need_params["id"] = id_prefix + need["id"]
+
+            need_params["external_css"] = source.get("css_class")
+
+            if target_tpl:
+                # render jinja content
+                cal_target_url = target_tpl.render({"need": need})
+                external_url = f"{source['base_url']}/{cal_target_url}"
+            else:
+                external_url = f"{source['base_url']}/{need.get('docname', '__error__')}.html#{need['id']}"
+
+            # check if external needs already exist
+            ext_need_id = need_params["id"]
+
+            need = SphinxNeedsData(env).get_needs_mutable().get(ext_need_id)
+
+            if (
+                need is not None
+                and need["is_external"]
+                and source["base_url"] in need["external_url"]
+            ):
+                # delete the already existing external need from api need
+                del_need(app, ext_need_id)
+
+            try:
+                add_external_need(
+                    app,
+                    need_source=NeedItemSourceExternal(url=external_url),
+                    allow_type_coercion=source.get("allow_type_coercion", True),
+                    **need_params,
+                )
+            except InvalidNeedException as err:
+                location = source.get("json_url", "") or source.get("json_path", "")
+                log_warning(
+                    log,
+                    clean_log(
+                        f"External need {ext_need_id!r} in {location!r} could not be added: {err.message}"
+                    ),
+                    "load_external_need",
+                    location=None,
+                )
+
+        source_str = source.get("json_url", "") or source.get("json_path", "")
+        if unknown_keys:
+            log_warning(
+                log,
+                clean_log(
+                    f"Unknown keys in external need source {source_str!r}: {sorted(unknown_keys)!r}"
+                ),
+                "unknown_external_keys",
+                location=None,
+            )
+
+
+class NeedsExternalException(BaseException):
+    pass

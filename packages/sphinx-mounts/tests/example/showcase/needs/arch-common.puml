@@ -1,0 +1,15 @@
+' Bundle-local PlantUML library, ``!include``-d by needuml.rst and
+' needarch.rst. PlantUML resolves ``!include`` against its own working
+' directory, which Sphinx-Needs derives from the *source file* of the
+' including document -- so this file is found whether the bundle is mounted
+' from an external tree or copied into the host srcdir.
+'
+' Requires sphinx-needs > 8.3.0. Earlier versions derived that working
+' directory from the logical docname, which does not exist on disk for a
+' mounted document, and the build failed with the misleading
+' "plantuml command '...' cannot be run".
+' See https://github.com/useblocks/sphinx-needs/issues/1749.
+
+skinparam componentStyle rectangle
+
+component "SHOWCASE_NEEDS_PUML_INCLUDE" as BundleLibrary

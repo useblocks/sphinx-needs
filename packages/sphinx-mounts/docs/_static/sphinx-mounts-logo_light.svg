@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  sphinx-mounts logo (light theme).
+
+  The host pyramid is *incomplete* — the right block of the middle
+  row is missing (drawn as a dashed slot) — and the external "mount"
+  block sits beside it with a small chevron pointing into the slot.
+  The mounted piece is what completes the structure.
+
+  Blocks are drawn slightly inset inside an implicit 50 × 50 grid
+  cell, so the transparent background shines through the seams and
+  the discrete-pieces composition reads at a glance.
+
+  Layout: icon on top, project name "Mounts" centered below. Palette
+  matches sphinx-codelinks' light variant (#583eff accent, black
+  text, transparent background).
+-->
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 600 360"
+     width="600"
+     height="360"
+     role="img"
+     aria-label="sphinx-mounts">
+  <title>sphinx-mounts</title>
+
+  <g fill="#583eff">
+    <!-- Pyramid: top -->
+    <rect x="242" y="52" width="46" height="46"/>
+    <!-- Pyramid: middle row, only the left block is native -->
+    <rect x="217" y="102" width="46" height="46"/>
+    <!-- Pyramid: base row, fully native -->
+    <rect x="192" y="152" width="46" height="46"/>
+    <rect x="242" y="152" width="46" height="46"/>
+    <rect x="292" y="152" width="46" height="46"/>
+
+    <!-- External mount block, beside the pyramid -->
+    <rect x="367" y="102" width="46" height="46"/>
+
+    <!-- Arrow pointing from the mount block into the empty slot -->
+    <polygon points="323,125 353,110 353,140"/>
+  </g>
+
+  <!-- Empty slot at the right of the middle row — destination of
+       the mount, drawn as a dashed ghost so the gap reads as
+       intentional. -->
+  <rect x="267" y="102" width="46" height="46"
+        fill="none" stroke="#583eff" stroke-width="2.5"
+        stroke-dasharray="6 4"/>
+
+  <!-- Project name, centered below the icon -->
+  <text x="300" y="310"
+        text-anchor="middle"
+        font-family="'Liberation Mono', ui-monospace, monospace"
+        font-weight="bold"
+        font-size="95"
+        fill="#000000">Mounts</text>
+</svg>

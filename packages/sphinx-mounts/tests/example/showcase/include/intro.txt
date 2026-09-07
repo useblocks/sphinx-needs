@@ -1,0 +1,2 @@
+SHOWCASE_INCLUDE_BODY — pulled in from intro.txt, which lives next to
+index.rst inside this bundle.

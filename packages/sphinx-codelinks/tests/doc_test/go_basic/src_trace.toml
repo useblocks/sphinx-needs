@@ -1,0 +1,5 @@
+[codelinks.projects.src]
+remote_url_pattern = "https://github.com/useblocks/sphinx-codelinks/blob/{commit}/{path}#L{line}"
+
+[codelinks.projects.src.source_discover]
+comment_type = "go"

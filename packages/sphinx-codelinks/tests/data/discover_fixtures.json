@@ -1,0 +1,390 @@
+[
+  {
+    "name": "basic_cpp_no_gitignore",
+    "description": "Discover C++ files by extension with gitignore disabled",
+    "git_init": false,
+    "files": {
+      "src/main.cpp": "// main",
+      "src/util.h": "// header",
+      "src/readme.txt": "not source"
+    },
+    "config": {
+      "src_dir": "src",
+      "include": [],
+      "exclude": [],
+      "gitignore": false,
+      "comment_type": "cpp"
+    },
+    "expected": [
+      "src/main.cpp",
+      "src/util.h"
+    ]
+  },
+  {
+    "name": "gitignore_excludes_directory",
+    "description": "Gitignore excludes an entire directory",
+    "git_init": true,
+    "files": {
+      "src/main.cpp": "// main",
+      "src/util.cpp": "// util",
+      "src/build/generated.cpp": "// generated",
+      "src/.gitignore": "build/\n"
+    },
+    "config": {
+      "src_dir": "src",
+      "include": [],
+      "exclude": [],
+      "gitignore": true,
+      "comment_type": "cpp"
+    },
+    "expected": [
+      "src/main.cpp",
+      "src/util.cpp"
+    ]
+  },
+  {
+    "name": "nested_gitignore",
+    "description": "Nested .gitignore excludes a specific pattern in a subdirectory",
+    "git_init": true,
+    "files": {
+      "src/main.cpp": "// main",
+      "src/vendor/lib.cpp": "// vendor lib",
+      "src/vendor/lib.generated.cpp": "// generated",
+      "src/vendor/.gitignore": "*.generated.cpp\n"
+    },
+    "config": {
+      "src_dir": "src",
+      "include": [],
+      "exclude": [],
+      "gitignore": true,
+      "comment_type": "cpp"
+    },
+    "expected": [
+      "src/main.cpp",
+      "src/vendor/lib.cpp"
+    ]
+  },
+  {
+    "name": "explicit_exclude_pattern",
+    "description": "Exclude patterns filter out matching files",
+    "git_init": false,
+    "files": {
+      "src/main.cpp": "// code",
+      "src/build/generated.cpp": "// generated"
+    },
+    "config": {
+      "src_dir": "src",
+      "include": [],
+      "exclude": ["**/build/**"],
+      "gitignore": false,
+      "comment_type": "cpp"
+    },
+    "expected": [
+      "src/main.cpp"
+    ]
+  },
+  {
+    "name": "explicit_include_pattern",
+    "description": "Include patterns restrict discovery to matching files only",
+    "git_init": false,
+    "files": {
+      "src/main.cpp": "// main",
+      "src/util.h": "// header",
+      "src/readme.txt": "not source"
+    },
+    "config": {
+      "src_dir": "src",
+      "include": ["**/*.cpp"],
+      "exclude": [],
+      "gitignore": false,
+      "comment_type": "cpp"
+    },
+    "expected": [
+      "src/main.cpp"
+    ]
+  },
+  {
+    "name": "include_and_exclude_combined",
+    "description": "Include and exclude patterns work together",
+    "git_init": false,
+    "files": {
+      "src/main.cpp": "// main",
+      "src/test_main.cpp": "// test",
+      "src/lib/util.cpp": "// util",
+      "src/lib/test_util.cpp": "// test util"
+    },
+    "config": {
+      "src_dir": "src",
+      "include": ["**/*.cpp"],
+      "exclude": ["**/test_*.cpp"],
+      "gitignore": false,
+      "comment_type": "cpp"
+    },
+    "expected": [
+      "src/lib/util.cpp",
+      "src/main.cpp"
+    ]
+  },
+  {
+    "name": "default_include_from_language",
+    "description": "When include is empty, files are discovered by language extensions",
+    "git_init": false,
+    "files": {
+      "src/main.cpp": "// code",
+      "src/util.h": "// header",
+      "src/helper.hpp": "// hpp header",
+      "src/readme.txt": "not source",
+      "src/data.json": "not source"
+    },
+    "config": {
+      "src_dir": "src",
+      "include": [],
+      "exclude": [],
+      "gitignore": false,
+      "comment_type": "cpp"
+    },
+    "expected": [
+      "src/helper.hpp",
+      "src/main.cpp",
+      "src/util.h"
+    ]
+  },
+  {
+    "name": "hidden_files_discovered",
+    "description": "Hidden files (dotfiles) are discovered since hidden(false) is set",
+    "git_init": false,
+    "files": {
+      "src/main.cpp": "// main",
+      "src/.hidden.cpp": "// hidden"
+    },
+    "config": {
+      "src_dir": "src",
+      "include": [],
+      "exclude": [],
+      "gitignore": false,
+      "comment_type": "cpp"
+    },
+    "expected": [
+      "src/.hidden.cpp",
+      "src/main.cpp"
+    ]
+  },
+  {
+    "name": "dot_ignore_file_support",
+    "description": ".ignore file patterns are respected when gitignore is enabled",
+    "git_init": true,
+    "files": {
+      "src/main.cpp": "// main",
+      "src/generated.cpp": "// generated",
+      "src/.ignore": "generated.cpp\n"
+    },
+    "config": {
+      "src_dir": "src",
+      "include": [],
+      "exclude": [],
+      "gitignore": true,
+      "comment_type": "cpp"
+    },
+    "expected": [
+      "src/main.cpp"
+    ]
+  },
+  {
+    "name": "python_comment_type",
+    "description": "Comment type filters to only Python file extensions",
+    "git_init": false,
+    "files": {
+      "src/main.py": "# main",
+      "src/util.cpp": "// util",
+      "src/helper.h": "// header"
+    },
+    "config": {
+      "src_dir": "src",
+      "include": [],
+      "exclude": [],
+      "gitignore": false,
+      "comment_type": "python"
+    },
+    "expected": [
+      "src/main.py"
+    ]
+  },
+  {
+    "name": "rust_comment_type",
+    "description": "Comment type filters to only Rust file extensions",
+    "git_init": false,
+    "files": {
+      "src/main.rs": "// main",
+      "src/util.cpp": "// util",
+      "src/lib.py": "# lib"
+    },
+    "config": {
+      "src_dir": "src",
+      "include": [],
+      "exclude": [],
+      "gitignore": false,
+      "comment_type": "rust"
+    },
+    "expected": [
+      "src/main.rs"
+    ]
+  },
+  {
+    "name": "nonexistent_src_dir",
+    "description": "Non-existent src_dir returns an empty list",
+    "git_init": false,
+    "files": {
+      "other/main.cpp": "// main"
+    },
+    "config": {
+      "src_dir": "src",
+      "include": [],
+      "exclude": [],
+      "gitignore": false,
+      "comment_type": "cpp"
+    },
+    "expected": []
+  },
+  {
+    "name": "gitignore_disabled_ignores_gitignore_file",
+    "description": "When gitignore is false, .gitignore files are not respected",
+    "git_init": true,
+    "files": {
+      "src/main.cpp": "// main",
+      "src/build/generated.cpp": "// generated",
+      "src/.gitignore": "build/\n"
+    },
+    "config": {
+      "src_dir": "src",
+      "include": [],
+      "exclude": [],
+      "gitignore": false,
+      "comment_type": "cpp"
+    },
+    "expected": [
+      "src/build/generated.cpp",
+      "src/main.cpp"
+    ]
+  },
+  {
+    "name": "gitignore_and_exclude_combined",
+    "description": "Both gitignore and explicit exclude patterns are applied",
+    "git_init": true,
+    "files": {
+      "src/main.cpp": "// main",
+      "src/util.cpp": "// util",
+      "src/test_main.cpp": "// test",
+      "src/build/output.cpp": "// build output",
+      "src/.gitignore": "build/\n"
+    },
+    "config": {
+      "src_dir": "src",
+      "include": [],
+      "exclude": ["**/test_*.cpp"],
+      "gitignore": true,
+      "comment_type": "cpp"
+    },
+    "expected": [
+      "src/main.cpp",
+      "src/util.cpp"
+    ]
+  },
+  {
+    "name": "deeply_nested_files",
+    "description": "Files in deeply nested directories are discovered",
+    "git_init": false,
+    "files": {
+      "src/a/b/c/deep.cpp": "// deep",
+      "src/main.cpp": "// main"
+    },
+    "config": {
+      "src_dir": "src",
+      "include": [],
+      "exclude": [],
+      "gitignore": false,
+      "comment_type": "cpp"
+    },
+    "expected": [
+      "src/a/b/c/deep.cpp",
+      "src/main.cpp"
+    ]
+  },
+  {
+    "name": "multiple_cpp_extensions",
+    "description": "All C++ extensions are recognized",
+    "git_init": false,
+    "files": {
+      "src/a.cpp": "// cpp",
+      "src/b.hpp": "// hpp",
+      "src/c.h": "// h",
+      "src/d.cc": "// cc",
+      "src/e.hh": "// hh",
+      "src/f.c": "// c",
+      "src/g.cxx": "// cxx",
+      "src/h.hxx": "// hxx",
+      "src/i.ci": "// ci",
+      "src/j.ihl": "// ihl",
+      "src/k.txt": "not source"
+    },
+    "config": {
+      "src_dir": "src",
+      "include": [],
+      "exclude": [],
+      "gitignore": false,
+      "comment_type": "cpp"
+    },
+    "expected": [
+      "src/a.cpp",
+      "src/b.hpp",
+      "src/c.h",
+      "src/d.cc",
+      "src/e.hh",
+      "src/f.c",
+      "src/g.cxx",
+      "src/h.hxx",
+      "src/i.ci",
+      "src/j.ihl"
+    ]
+  },
+  {
+    "name": "yaml_comment_type",
+    "description": "YAML comment type discovers both .yml and .yaml files",
+    "git_init": false,
+    "files": {
+      "src/config.yml": "key: value",
+      "src/data.yaml": "key: value",
+      "src/main.cpp": "// not yaml"
+    },
+    "config": {
+      "src_dir": "src",
+      "include": [],
+      "exclude": [],
+      "gitignore": false,
+      "comment_type": "yaml"
+    },
+    "expected": [
+      "src/config.yml",
+      "src/data.yaml"
+    ]
+  },
+  {
+    "name": "csharp_comment_type",
+    "description": "C# comment type discovers .cs files only",
+    "git_init": false,
+    "files": {
+      "src/Program.cs": "// main",
+      "src/main.cpp": "// not cs",
+      "src/util.py": "# not cs"
+    },
+    "config": {
+      "src_dir": "src",
+      "include": [],
+      "exclude": [],
+      "gitignore": false,
+      "comment_type": "cs"
+    },
+    "expected": [
+      "src/Program.cs"
+    ]
+  }
+]

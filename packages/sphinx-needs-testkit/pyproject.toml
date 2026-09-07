@@ -1,0 +1,62 @@
+# The workspace's shared TEST layer: the Sphinx application lifecycle, the PlantUML
+# renderer resolution, the warning normalisation and the doctree snapshot extension that
+# every suite in this repository needs and that three of them used to carry their own copy
+# of. It is a member so that it is importable -- a `conftest.py` can share fixtures and
+# hooks and nothing else, and half of what is shared here is a plain function -- and so
+# that one `uv sync` puts it in every environment the suites run in.
+#
+# IT IS A PRIVATE MEMBER: this repository never publishes it. That is a NEW notion in this
+# workspace, and it is not the same as `tools/`'s. `tools/` is VIRTUAL
+# (`[tool.uv] package = false`), which hides it from uv's workspace selectors and makes it
+# uninstallable; this member has to be BUILDABLE and INSTALLABLE, because the release
+# workflow's compat cell installs the `test` group into an environment outside the project
+# and then runs a member's suite in it. So `package = false` is not available here, and the
+# marker is the classifier below instead:
+#
+#   1. `tools/src/sn_tools/release_plan.py` refuses a tag that names a member declaring
+#      `Private :: Do Not Upload`, exactly as it refuses one naming a virtual member, and
+#      leaves it out of the plan's release order. A tag is the only thing that starts the
+#      release workflow, so that refusal is the fence.
+#   2. The classifier itself, for the by-hand path: "To prevent a package from being
+#      uploaded to PyPI, use the special `Private :: Do Not Upload` classifier. PyPI will
+#      always reject packages with classifiers beginning with `Private ::`."
+#      (packaging.python.org/en/latest/guides/writing-pyproject-toml/).
+#   3. `check_workspace.py`'s check (6) asserts the classifier is here -- a member the root
+#      reaches only through a dependency group is never published, and this is the one line
+#      that says so, which makes it exactly the line a tidy-up deletes.
+#
+# `uv build --all-packages` DOES build it, unlike `tools/`. That is fine and deliberate:
+# the artefact is unpublishable, and the alternative (`package = false`) would take the
+# compat cell with it.
+[project]
+name = "sphinx-needs-testkit"
+# never released, so there is nothing for the number to track. `check_workspace.py` check
+# (5) holds it equal to `__version__` in `src/sphinx_needs_testkit/__init__.py` all the
+# same -- the check is on every non-virtual member, and this one is not exempt
+version = "0"
+description = "Shared pytest fixtures and helpers for this workspace's suites. Never released."
+# the marker, and the fence: see the three numbered notes above
+classifiers = ["Private :: Do Not Upload"]
+# must equal the root's, and `check_workspace.py` check (3) is what says so
+requires-python = ">=3.11,<4"
+# Only what this package IMPORTS, and nothing that belongs to one suite. There is
+# deliberately no dependency on any sibling: this module has to load for sphinx-mounts'
+# and sphinx-codelinks' suites too, so anything sphinx-needs-specific stays in
+# sphinx-needs' own `tests/conftest.py`. The range on sphinx is the workspace's
+# (`>=7.4,<10`), so this member never narrows a matrix cell -- a member whose sphinx range
+# excluded one of the root's `sphinx-7`/`sphinx-8`/`sphinx-9` pins would make `uv lock`
+# fail rather than quietly skip that cell.
+dependencies = [
+  "pytest>=8,<10",   # the fixtures and the `pytest_addoption` hook
+  "sphinx>=7.4,<10", # SphinxTestApp, and `strip_colors` for the warning normalisation
+  "syrupy>=4,<7",    # the single-file doctree snapshot extension
+]
+
+[build-system]
+requires = ["flit_core >=3.4,<5"]
+build-backend = "flit_core.buildapi"
+
+# Deliberately no `[tool.flit.sdist]`: there is no non-Python payload and no test tree to
+# ship, so flit's module-only sdist is exactly right -- and nothing consumes either
+# artefact in any case. Everything else -- ruff, ty, pytest and the dependency groups --
+# is the ROOT's, and `check_workspace.py` check (7) refuses those tables here.

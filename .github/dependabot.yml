@@ -11,9 +11,65 @@ updates:
       prefix: 🔧
     schedule:
       interval: monthly
-  - package-ecosystem: pip
+  # uv, not pip: this repository locks its development environment in uv.lock, and the
+  # uv ecosystem updates that lock. Minor and patch updates are batched into one monthly
+  # pull request; major updates fall outside the group and arrive one per dependency,
+  # so the bumps most likely to break something are the ones that come isolated.
+  - package-ecosystem: uv
     directory: /
     commit-message:
       prefix: ⬆️
     schedule:
       interval: monthly
+    ignore:
+      # the `sphinx-7`, `sphinx-8` and `sphinx-9` dependency groups pin one series each,
+      # on purpose: they are the test matrix, and which three series are tested is a
+      # decision taken by hand, alongside the CI cells and the `requires-python` markers
+      # that go with them. Patch updates inside a series still flow.
+      - dependency-name: sphinx
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
+      # the `typing` dependency group pins the oldest supported docutils series and the stubs
+      # that describe it, so the type checker runs against the floor. The stubs have no other
+      # job, so their series moves by hand, with the floor (`check_typing_floor.py` fails
+      # Lint when the two drift apart). docutils itself is deliberately NOT listed: the main
+      # environment should keep taking new docutils series as sphinx allows them, and the
+      # occasional proposal to widen the floor line is closed by hand.
+      - dependency-name: types-docutils
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
+      # dependabot-core#14004: with a uv workspace, dependabot treats the members
+      # themselves as PyPI dependencies. This member's name IS a real PyPI project,
+      # so without this it would propose "updating" the local package to its own
+      # last release. It now covers two sites: the member itself, and the root's
+      # `dependencies = ["sphinx-needs"]`, which is how a bare `uv sync` installs it.
+      # Note this is a blanket ignore: it silences EVERY update of anything
+      # named `sphinx-needs` in the uv ecosystem, so a future member that legitimately
+      # depends on the published distribution would stop being bumped. Revisit then.
+      - dependency-name: sphinx-needs
+      # the second member, for exactly the same reason: `sphinx-mounts` is a real PyPI
+      # project as well as the name of a directory under `packages/`
+      - dependency-name: sphinx-mounts
+      # the third member, same reason again -- and here the blanket ignore above is worth
+      # rereading: sphinx-codelinks depends on the PUBLISHED sphinx-needs by name
+      # (`sphinx-needs>=8.5.0,<9`), and that specifier is a floor moved by hand at release
+      # time by `propagate_floors.py`, not by dependabot
+      - dependency-name: sphinx-codelinks
+      # the workspace root itself. Its name is not on PyPI at all, so there is nothing to
+      # bump to -- this pre-empts the same #14004 noise rather than fixing a live proposal
+      - dependency-name: sphinx-needs-workspace
+    groups:
+      # a dependency joins the first group whose pattern matches, so `ty` is listed first:
+      # its 0.0.x releases are patch bumps that can change diagnostics, and each one should
+      # be its own reviewable pull request rather than a rider in the monthly batch
+      ty:
+        patterns:
+          - ty
+      python-minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch

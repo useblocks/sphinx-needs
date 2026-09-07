@@ -1,0 +1,108 @@
+[build-system]
+requires = ["flit_core >=3.4,<5"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "sphinx-needs"
+# Static, and deliberately so: `uv version --package sphinx-needs` cannot read (or write) a
+# dynamic version, and every gate downstream of it -- the release workflow's tag/version
+# agreement check, the floor propagation, the workspace fence -- needs the number without
+# running the build backend. It is duplicated once, as `__version__` in
+# `src/sphinx_needs/__init__.py` (which is stamped into every generated `needs.json`, so it
+# cannot become an `importlib.metadata` lookup); `tools/src/sn_tools/check_workspace.py` is
+# what keeps the two equal.
+version = "8.5.0"
+# `description` stays dynamic: flit_core reads the module docstring by AST, so a static
+# version alongside a dynamic description is a supported combination.
+dynamic = ["description"]
+authors = [{ name = "team useblocks", email = "info@useblocks.com" }]
+license.file = "LICENSE"
+readme = "README.rst"
+urls.Repository = "http://github.com/useblocks/sphinx-needs"
+urls.Documentation = "https://sphinx-needs.readthedocs.io/en/latest/"
+classifiers = [
+  'Development Status :: 5 - Production/Stable',
+  'Intended Audience :: Developers',
+  'License :: OSI Approved :: MIT License',
+  'Operating System :: OS Independent',
+  'Programming Language :: Python',
+  'Programming Language :: Python :: 3',
+  'Programming Language :: Python :: 3.11',
+  'Programming Language :: Python :: 3.12',
+  'Programming Language :: Python :: 3.13',
+  'Programming Language :: Python :: 3.14',
+  'Topic :: Documentation',
+  'Topic :: Utilities',
+  'Framework :: Sphinx :: Extension',
+]
+requires-python = ">=3.11,<4"
+dependencies = [
+  "sphinx>=7.4,<10",
+  "requests-file>=2.1,<4.0",       # external links
+  "requests~=2.32",                # external links
+  "jsonschema-rs>=0.37.1,<0.54.0", # schema validation
+  "sphinx-data-viewer~=0.1.5",     # needservice debug output
+  "sphinxcontrib-jquery~=4.0",     # needed for datatables in sphinx>=6
+  "typing-extensions>=4.14.0",     # for `**kwargs: Unpack[...]` (PEP 692), which typing supports from 3.12
+  "minijinja~=2.15",               # lightweight jinja2-compatible template engine
+]
+
+[project.optional-dependencies]
+plotting = ["matplotlib>=3.3.0"] # for needpie / needbar
+docs = [
+  "matplotlib>=3.3.0",
+  "sphinxcontrib-plantuml~=0.0",
+  "sphinx-copybutton~=0.5",
+  "sphinxcontrib-programoutput~=0.17",
+  "sphinx-design~=0.6",
+  "sphinx-ai-index~=0.1.0",
+  "sphinx-syntax-example~=0.2.0",      # the `syntax-example` directive
+]
+theme-im = ["sphinx-immaterial>=0.11.11,<0.14.0"]
+# furo before 2025.12.19 caps sphinx at <9.0, which the `sphinx-9` group cannot resolve.
+# A floor rather than `~=`: furo versions are dates, so `~=` would admit one month only
+theme-furo = ["furo>=2025.12.19"]
+theme-pds = ["pydata-sphinx-theme>=0.15.2,<0.20.0"]
+theme-rtd = ["sphinx_rtd_theme>=3.0.2,<4"]
+
+# The sdist. flit 3 inferred its contents from git (`flit build --use-vcs`, which is what
+# CI ran until this workflow was rewritten); flit 4 flipped that default off, and
+# `uv build` -- which resolves `flit_core >=3.4,<5` to 4.x -- never had it at all. Without
+# this table the sdist is the module alone, with no warning and exit 0. Declaring the
+# contents makes it independent of which flit_core is resolved and of whether the build ran
+# in a git checkout at all.
+#
+# `docs/` ships; `tests/` and `performance/` deliberately do NOT, which reverses what this
+# table said until 9.0.0. The suite loads its fixtures from `sphinx-needs-testkit`, a
+# workspace member classified `Private :: Do Not Upload` that is on no index, so a `tests/`
+# tree in a tarball is a suite nobody can run from it -- worse than shipping none, because
+# it looks runnable. Neither downstream consumer loses anything, and both were checked
+# rather than assumed: conda-forge builds from this sdist and its test step is an import
+# check plus `pip check`, and Debian does run the suite but out of the GitHub tag tarball
+# its `debian/watch` fetches -- a repository snapshot, which carries the testkit, the
+# vendored PlantUML jar and its pin, none of which any sdist can. `docs/` stays as the
+# offline documentation source, which is also the mature-library convention (sphinx,
+# docutils, pytest, attrs, jinja2 and click all ship docs). `scripts/smoke_needs.py`
+# asserts both halves -- `docs/` present, `tests/` and `performance/` absent -- so putting
+# an unrunnable suite back is a red gate rather than a discovery on PyPI. Measured 2026-09:
+# 1380 files / 7.72 MB before this change and 817 / 7.37 MB after -- the tarball barely
+# moves because 554 files of test rst and python compress to a third of a megabyte; the
+# point is the 554 files, not the bytes.
+[tool.flit.sdist]
+include = ["docs/"]
+# Whatever a *used* checkout leaves lying under that tree. flit reads the working directory,
+# not git, so anything a docs build wrote is a candidate: measured on a tree where
+# `poe docs-needs` had run, the build alone adds 456 files (`docs/_build/`) plus the two
+# generated artefacts named below. The `__pycache__` and `.pyc` patterns are belt and braces
+# -- flit_core 4 already drops those -- and they cost nothing to state next to the ones it
+# does not. The `**/.pytest_cache/` entry went with the test tree: pytest writes that
+# directory at its rootdir, never inside `docs/`, and `smoke_needs.py` still asserts no
+# tarball carries one.
+exclude = [
+  "docs/_build/",
+  "docs/github_images/",
+  "docs/_static/tutorial_needs.json",
+  "**/_build/",
+  "**/__pycache__/",
+  "**/*.pyc",
+]

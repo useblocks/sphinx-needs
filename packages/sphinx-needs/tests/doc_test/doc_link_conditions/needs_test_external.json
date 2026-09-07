@@ -1,0 +1,43 @@
+{
+    "current_version": "1.0",
+    "versions": {
+        "1.0": {
+            "needs": {
+                "COND_PASS": {
+                    "id": "COND_PASS",
+                    "type": "impl",
+                    "type_name": "Implementation",
+                    "title": "External with passing condition",
+                    "description": "",
+                    "docname": "index",
+                    "tags": [],
+                    "status": null,
+                    "links": ["REQ_001[status==\"open\"]"]
+                },
+                "COND_FAIL": {
+                    "id": "COND_FAIL",
+                    "type": "impl",
+                    "type_name": "Implementation",
+                    "title": "External with failing condition",
+                    "description": "",
+                    "docname": "index",
+                    "tags": [],
+                    "status": null,
+                    "links": ["REQ_002[status==\"open\"]"]
+                },
+                "COND_NONE": {
+                    "id": "COND_NONE",
+                    "type": "impl",
+                    "type_name": "Implementation",
+                    "title": "External with no condition",
+                    "description": "",
+                    "docname": "index",
+                    "tags": [],
+                    "status": null,
+                    "links": ["REQ_001"]
+                }
+            },
+            "needs_amount": 3
+        }
+    }
+}

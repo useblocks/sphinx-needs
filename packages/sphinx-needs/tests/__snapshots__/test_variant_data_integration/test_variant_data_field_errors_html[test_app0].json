@@ -1,0 +1,80 @@
+{
+  "REQ_BADTYPE_ARRAY": {
+    "docname": "index",
+    "external_css": "external_link",
+    "id": "REQ_BADTYPE_ARRAY",
+    "lineno": 24,
+    "section_name": "Variant Data Field Errors Test",
+    "sections": [
+      "Variant Data Field Errors Test"
+    ],
+    "title": "Type mismatch (integer into array of strings)",
+    "type": "req",
+    "type_name": "Requirement"
+  },
+  "REQ_BADTYPE_STR": {
+    "docname": "index",
+    "external_css": "external_link",
+    "id": "REQ_BADTYPE_STR",
+    "lineno": 16,
+    "section_name": "Variant Data Field Errors Test",
+    "sections": [
+      "Variant Data Field Errors Test"
+    ],
+    "title": "Type mismatch (integer into string field)",
+    "type": "req",
+    "type_name": "Requirement"
+  },
+  "REQ_BADTYPE_STRING": {
+    "docname": "index",
+    "external_css": "external_link",
+    "id": "REQ_BADTYPE_STRING",
+    "lineno": 20,
+    "section_name": "Variant Data Field Errors Test",
+    "sections": [
+      "Variant Data Field Errors Test"
+    ],
+    "title": "Type mismatch (integer into array of strings)",
+    "type": "req",
+    "type_name": "Requirement"
+  },
+  "REQ_MISSING": {
+    "docname": "index",
+    "external_css": "external_link",
+    "id": "REQ_MISSING",
+    "lineno": 8,
+    "section_name": "Variant Data Field Errors Test",
+    "sections": [
+      "Variant Data Field Errors Test"
+    ],
+    "title": "Missing variant attribute",
+    "type": "req",
+    "type_name": "Requirement"
+  },
+  "REQ_MISSING_NESTED": {
+    "docname": "index",
+    "external_css": "external_link",
+    "id": "REQ_MISSING_NESTED",
+    "lineno": 12,
+    "section_name": "Variant Data Field Errors Test",
+    "sections": [
+      "Variant Data Field Errors Test"
+    ],
+    "title": "Missing nested variant attribute",
+    "type": "req",
+    "type_name": "Requirement"
+  },
+  "REQ_SYNTAX": {
+    "docname": "index",
+    "external_css": "external_link",
+    "id": "REQ_SYNTAX",
+    "lineno": 4,
+    "section_name": "Variant Data Field Errors Test",
+    "sections": [
+      "Variant Data Field Errors Test"
+    ],
+    "title": "Invalid variant data path",
+    "type": "req",
+    "type_name": "Requirement"
+  }
+}

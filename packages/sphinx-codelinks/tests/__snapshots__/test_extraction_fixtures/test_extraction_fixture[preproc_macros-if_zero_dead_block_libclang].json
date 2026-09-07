@@ -1,0 +1,19 @@
+{
+  "needs": [
+    {
+      "id": "IMPL_LIVE",
+      "title": "Live",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ"
+        ]
+      },
+      "metadata": {},
+      "line": 1
+    }
+  ],
+  "need_refs": [],
+  "marked_rst": [],
+  "warnings": []
+}

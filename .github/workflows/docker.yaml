@@ -10,13 +10,27 @@ on:
         required: true
         default: 'n'
   push:
-    tags:
-      - '*.*.*'
+    # This image is sphinx-needs', so it keys on sphinx-needs' tags only. The previous
+    # filter was `'*.*.*'`, and GitHub's tag globs match hyphens (only `/` is excluded), so
+    # under `<dist>-v<version>` tags it fired for EVERY member of the workspace and handed
+    # `docker/metadata-action` a string that is not PEP 440.
+    tags: ['sphinx-needs-v[0-9]+.[0-9]+.[0-9]+']
   pull_request:
     paths: ['docker/**']
 
 env:
-  NEEDS_VERSION: 4.1.0
+  # On a tag run this IS the tag: the Dockerfile uses it as a git ref
+  # (`git+...@$NEEDS_VERSION#subdirectory=packages/sphinx-needs`), and the prefixed tag is
+  # the ref that release.yaml was triggered by -- the bare companion tag it pushes may not
+  # exist yet when this workflow starts. That is #540.
+  #
+  # The literal is only for the runs that have no tag: the `docker/**` `pull_request` path
+  # filter and a manual dispatch. It has to name a ref cut AFTER the workspace move,
+  # because the subdirectory in that URL does not exist in an earlier one -- `8.5.0`
+  # predates the move, so this path stays red until the first monorepo release, at which
+  # point the release recipe bumps it to `sphinx-needs-v<version>`. (The `pre-release`
+  # branch of the Dockerfile is never exercised by CI at all.)
+  NEEDS_VERSION: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '8.5.0' }}
   DEPLOY_IMAGE: ${{ github.event_name != 'pull_request' }}
 
 jobs:
@@ -27,30 +41,30 @@ jobs:
         base-image: ["sphinxdoc/sphinx:latest", "sphinxdoc/sphinx-latexpdf:latest"]
         image: ["sphinxneeds", "sphinxneeds-latexpdf"]
         exclude:
-        - base-image: "sphinxdoc/sphinx:latest"
-          image: "sphinxneeds-latexpdf"
-        - base-image: "sphinxdoc/sphinx-latexpdf:latest"
-          image: "sphinxneeds"
+          - base-image: "sphinxdoc/sphinx:latest"
+            image: "sphinxneeds-latexpdf"
+          - base-image: "sphinxdoc/sphinx-latexpdf:latest"
+            image: "sphinxneeds"
     name: "Image: ${{ matrix.image }} | Baseimage: ${{ matrix.base-image }}"
     runs-on: ubuntu-latest
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE
       - name: Checkout 🛎️
-        uses: actions/checkout@v4
-      -
-        name: Set up Docker Build 🐋
-        uses: docker/setup-buildx-action@v3
-      -
-        name: Extract metadata (tags, labels) for Docker
+        uses: actions/checkout@v7
+      - name: Set up Docker Build 🐋
+        uses: docker/setup-buildx-action@v4
+      - name: Extract metadata (tags, labels) for Docker
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: |
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.image }}
           flavor: |
             latest=true
           tags: |
-            type=pep440,pattern={{version}}
+            # the image version is the tag with its `sphinx-needs-v` prefix stripped;
+            # `type=pep440` cannot be used because the tag itself is not PEP 440
+            type=match,pattern=sphinx-needs-v(.*),group=1
 
       - name: Check if deployment manually disabled
         if: github.event.inputs.deploy == 'n'
@@ -58,14 +72,14 @@ jobs:
           echo "DEPLOY_IMAGE=false" >> "$GITHUB_ENV"
 
       - name: Login to Docker Hub Docker Registry 🐸
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push html image to Doker Hub Docker Registry 🐳
         id: docker_build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           push: ${{ env.DEPLOY_IMAGE == 'true' }}
           file: docker/Dockerfile

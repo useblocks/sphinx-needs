@@ -1,0 +1,19 @@
+{
+  "schemas": [
+    {
+      "id": "spec",
+      "select": {
+        "properties": {
+          "type": { "const": "spec" }
+        }
+      },
+      "validate": {
+        "local": {
+          "properties": {
+            "id": { "pattern": "^SPEC_[A-Z0-9_]+$" }
+          }
+        }
+      }
+    }
+  ]
+}

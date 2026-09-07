@@ -1,0 +1,20 @@
+# Labels issues from the "Package" dropdown of the issue forms
+# (.github/workflows/label-issues.yaml). A form renders the dropdown as a
+# "### Package" heading followed by the chosen options, comma-separated, so each
+# pattern looks for its option between that heading and the next one. Issues created
+# without a form (the API, `gh issue create`) have no such heading and get nothing
+# from here -- pass the label yourself, as AGENTS.md says. The `/.../i` form makes the
+# patterns case-insensitive, like the workflow's `contains()` gate, so the two agree.
+'pkg: sphinx-needs':
+  - '/### Package[^#]*\bsphinx-needs\b/i'
+# `sphinx-mounts` contains neither `sphinx-needs` nor `sphinx-codelinks` as a
+# \b-delimited word, and neither of those contains the others, so no two patterns can
+# match one choice. Every pattern has to be present before its option is offered by a
+# form, though: the workflow runs with `sync-labels: 1`, so a pattern that is missing when
+# its option is picked means the label is synced away rather than merely not added
+'pkg: sphinx-mounts':
+  - '/### Package[^#]*\bsphinx-mounts\b/i'
+'pkg: sphinx-codelinks':
+  - '/### Package[^#]*\bsphinx-codelinks\b/i'
+'pkg: workspace':
+  - '/### Package[^#]*\bthe repository\b/i'

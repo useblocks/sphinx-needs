@@ -1,0 +1,31 @@
+{
+  "needs": [
+    {
+      "id": "IMPL_BEFORE",
+      "title": "Before the error",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ"
+        ]
+      },
+      "metadata": {},
+      "line": 1
+    },
+    {
+      "id": "IMPL_AFTER",
+      "title": "After the error",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ"
+        ]
+      },
+      "metadata": {},
+      "line": 7
+    }
+  ],
+  "need_refs": [],
+  "marked_rst": [],
+  "warnings": []
+}

@@ -1,0 +1,7 @@
+{
+  "env": "production",
+  "build": {
+    "debug": true,
+    "opt_level": 1
+  }
+}

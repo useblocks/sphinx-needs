@@ -1,0 +1,477 @@
+"$schema" = "https://ubcode.useblocks.com/ubproject.schema.json"
+
+# Branding for the `ubc build html` site — the ubCode counterpart of the
+# Sphinx/furo theming in conf.py + _static/_css/furo.css, written against
+# ubCode's documented `--ubc-*` CSS variable contract.
+[build.html]
+title = "Sphinx-Needs"
+# `shared.css` is the theme-AGNOSTIC sheet every Sphinx theme links in conf.py
+# (flow-chart sizing/animations, grid-example helpers) — reused verbatim here.
+# Order matters: the theme sheet comes second so its declarations win where the
+# two meet (notably the hero background, whose shared.css URL is
+# `_css/`-relative and cannot survive the flat copy into `_static/`).
+extra_css = ["_static/_css/shared.css", "_static/ubc-theme.css"]
+# The furo pair (`light_logo` / `dark_logo` in conf.py); the long logos carry
+# the wordmark, so `hide_title` keeps the sidebar logo-only (furo's
+# `sidebar_hide_name`). Favicon matches conf.py's `html_favicon`.
+logo = "_static/sphinx-needs-logo-long-light.svg"
+logo_dark = "_static/sphinx-needs-logo-long-dark.svg"
+hide_title = true
+favicon = "_static/sphinx-needs-logo-square-dark.svg"
+# conf.py computes `2017-{now.year}`; TOML is static, so the year is written out.
+copyright = "2017-2026, team useblocks"
+# The furo triple from conf.py's `html_theme_options` (source_repository /
+# source_branch / source_directory), so the built site's view/edit buttons
+# point at the same files the Sphinx build's do.
+source_repository = "https://github.com/useblocks/sphinx-needs"
+source_branch = "master"
+source_directory = "docs/"
+
+[parse]
+# Enable the built-in extension ports used by these docs:
+# - sphinx_syntax_example: the `.. syntax-example::` directive (also declared in
+#   `extensions` in docs/conf.py), so the engine recognises it by module tag and
+#   renders the same source + rendered-result shape as the Sphinx build.
+# - sphinx.ext.extlinks: the `:pr:` and `:issue:` roles configured below.
+# - sphinx.ext.todo: the `.. todo::` directive.
+extensions = ["sphinx_syntax_example", "sphinx.ext.extlinks", "sphinx.ext.todo"]
+# Mirrors conf.py's `rst_epilog`, which defines the `|br|` substitution.
+rst_epilog = """
+.. |br| raw:: html
+
+   <br>
+"""
+# Number the `syntax-example` rubrics per document ("Example 1", "Example 2", ...),
+# mirroring the `syntax_example_numbering` confval in docs/conf.py.
+syntax_example_numbering = true
+
+# Mirrors conf.py's `extlinks`.
+[parse.extlinks.pr]
+url = "https://github.com/useblocks/sphinx-needs/pull/%s"
+caption = "PR #%s"
+
+[parse.extlinks.issue]
+url = "https://github.com/useblocks/sphinx-needs/issues/%s"
+caption = "issue #%s"
+
+[parse.extend_directives.need-warnings]
+argument = false
+options = false
+content = false
+parse_content = false
+content_required = false
+
+[parse.extend_directives.need-core-fields]
+argument = false
+options = false
+content = false
+parse_content = false
+content_required = false
+
+[needs]
+show_link_type = false
+show_link_title = false
+title_optional = true
+max_title_length = 75
+id_regex = "^[A-Za-z0-9_]+"
+id_required = false
+table_style = "datatables"
+table_columns = "ID;TITLE;STATUS;OUTGOING"
+default_layout = "clean"
+service_all_data = true
+# needs.json build options
+build_json = true
+reproducible_json = true
+json_remove_defaults = true
+build_json_per_id = false
+
+[needs.fields.status]
+parse_variants = true
+
+[needs.fields.my_extra_option]
+description = "Custom extra option"
+nullable = true
+
+[needs.fields.another_option]
+description = "Another custom option"
+default = ""
+
+[needs.fields.author]
+description = "Author of the need"
+nullable = true
+
+[needs.fields.comment]
+description = "Additional comments"
+nullable = true
+
+[needs.fields.amount]
+description = "Amount value"
+schema.type = "number"
+
+[needs.fields.hours]
+description = "Time in hours"
+schema.type = "integer"
+
+[needs.fields.duration]
+description = "Time in days"
+schema.type = "integer"
+
+[needs.fields.completion]
+description = "Completion in %"
+schema.type = "integer"
+
+[needs.fields.image]
+description = "Image reference"
+nullable = true
+
+[needs.fields.config]
+description = "Configuration option"
+nullable = true
+
+[needs.fields.github]
+description = "GitHub reference"
+nullable = true
+
+[needs.fields.value]
+description = "General value field"
+nullable = true
+
+[needs.fields.unit]
+description = "Unit specification"
+nullable = true
+
+[[needs.types]]
+directive = "int"
+title = "Interface"
+content = "plantuml"
+prefix = "I_"
+color = "#BFD8D2"
+style = "card"
+
+[[needs.types]]
+directive = "comp"
+title = "Component"
+content = "plantuml"
+prefix = "C_"
+color = "#BFD8D2"
+style = "card"
+
+[[needs.types]]
+directive = "sys"
+title = "System"
+content = "plantuml"
+prefix = "S_"
+color = "#BFD8D2"
+style = "card"
+
+[[needs.types]]
+directive = "req"
+title = "Requirement"
+prefix = "R_"
+color = "#BFD8D2"
+style = "node"
+
+[[needs.types]]
+directive = "spec"
+title = "Specification"
+prefix = "S_"
+color = "#FEDCD2"
+style = "node"
+
+[[needs.types]]
+directive = "impl"
+title = "Implementation"
+prefix = "I_"
+color = "#DF744A"
+style = "node"
+
+[[needs.types]]
+directive = "test"
+title = "Test Case"
+prefix = "T_"
+color = "#DCB239"
+style = "node"
+
+[[needs.types]]
+directive = "feature"
+title = "Feature"
+prefix = "F_"
+color = "#FFCC00"
+style = "node"
+
+[[needs.types]]
+directive = "user"
+title = "User"
+prefix = "U_"
+color = "#777777"
+style = "node"
+
+[[needs.types]]
+directive = "action"
+title = "Action"
+prefix = "A_"
+color = "#FFCC00"
+style = "node"
+
+[[needs.types]]
+directive = "milestone"
+title = "Milestone"
+prefix = "M_"
+color = "#FF3333"
+style = "node"
+
+[[needs.types]]
+directive = "tutorial-project"
+title = "Project"
+prefix = "P_"
+color = "#BFD8D2"
+style = "rectangle"
+
+[[needs.types]]
+directive = "tutorial-req"
+title = "Requirement"
+prefix = "R_"
+color = "#BFD8D2"
+style = "rectangle"
+
+[[needs.types]]
+directive = "tutorial-spec"
+title = "Specification"
+prefix = "S_"
+color = "#FEDCD2"
+style = "rectangle"
+
+[[needs.types]]
+directive = "tutorial-test"
+title = "Test Case"
+prefix = "T_"
+color = "#f9e79f"
+style = "rectangle"
+
+[needs.links.blocks]
+incoming = "is blocked by"
+outgoing = "blocks"
+copy = true
+style = "#AA0000"
+style_part = "dotted,#AA0000"
+style_start = "-"
+style_end = "-o"
+allow_dead_links = true
+
+[needs.links.tests]
+incoming = "is tested by"
+outgoing = "tests"
+copy = true
+style = "#00AA00"
+style_part = "dotted,#00AA00"
+
+[needs.links.checks]
+incoming = "is checked by"
+outgoing = "checks"
+copy = false
+style = "#00AA00"
+style_part = "dotted,#00AA00"
+
+[needs.links.triggers]
+incoming = "triggered by"
+outgoing = "triggers"
+copy = false
+style = "#00AA00"
+style_part = "solid,#777777"
+allow_dead_links = true
+
+[needs.links.starts_with]
+incoming = "triggers directly"
+outgoing = "starts with"
+copy = false
+style = "#00AA00"
+style_part = "solid,#777777"
+
+[needs.links.starts_after]
+incoming = "triggers at end"
+outgoing = "starts after"
+copy = false
+style = "#00AA00"
+style_part = "solid,#777777"
+
+[needs.links.ends_with]
+incoming = "triggers to end with"
+outgoing = "ends with"
+copy = false
+style = "#00AA00"
+style_part = "solid,#777777"
+
+[needs.links.tutorial_required_by]
+incoming = "requires"
+outgoing = "required by"
+style = "#00AA00"
+
+[needs.links.tutorial_specifies]
+incoming = "specified by"
+outgoing = "specifies"
+
+[needs.links.tutorial_tests]
+option = "tutorial_tests"
+incoming = "tested by"
+outgoing = "tests"
+
+[needs.warnings]
+type_check = "type not in ['int', 'comp', 'sys', 'req', 'spec', 'impl', 'test', 'feature', 'user', 'action', 'milestone', 'tutorial-project', 'tutorial-req', 'tutorial-spec', 'tutorial-test', 'issue', 'pr', 'commit']"
+
+[needs.constraints.critical]
+check_0 = "'critical' in tags"
+check_1 = "'SECURITY_REQ' in links"
+severity = "CRITICAL"
+
+[needs.constraints.security]
+check_0 = "'security' in tags"
+severity = "HIGH"
+
+[needs.constraints.team]
+check_0 = "author == \"Bob\""
+severity = "LOW"
+
+[needs.constraint_failed_options.CRITICAL]
+on_fail = ["warn"]
+style = ["red_bar"]
+force_style = true
+
+[needs.constraint_failed_options.HIGH]
+on_fail = ["warn"]
+style = ["orange_bar"]
+force_style = true
+
+[needs.constraint_failed_options.MEDIUM]
+on_fail = ["warn"]
+style = ["yellow_bar"]
+force_style = false
+
+[needs.constraint_failed_options.LOW]
+on_fail = []
+style = ["yellow_bar"]
+force_style = false
+
+[needs.flow_legends.beside]
+parts = ["types", "links"]
+placement = "external"
+
+[needs.flow_configs]
+my_config = """
+skinparam monochrome true
+skinparam componentStyle uml2
+"""
+another_config = """
+skinparam class {
+    BackgroundColor PaleGreen
+    ArrowColor SeaGreen
+    BorderColor SpringGreen
+}
+"""
+tutorial = """
+left to right direction
+skinparam backgroundcolor transparent
+skinparam Arrow {
+    Color #57ACDC
+    FontColor #808080
+    FontStyle Bold
+}
+skinparam rectangleBorderThickness 2
+"""
+
+[needs.graphviz_styles.tutorial.graph]
+rankdir = "LR"
+bgcolor = "transparent"
+
+[needs.graphviz_styles.tutorial.node]
+fontname = "sans-serif"
+fontsize = 12
+penwidth = 2
+margin = "0.11,0.11"
+style = "rounded"
+
+[needs.graphviz_styles.tutorial.edge]
+color = "#57ACDC"
+fontsize = 10
+fontcolor = "#808080"
+
+[needs.layouts.example]
+grid = "simple_side_right_partial"
+
+[needs.layouts.example.layout]
+head = ["**<<meta(\"title\")>>** for *<<meta(\"author\")>>*"]
+meta = ["**status**: <<meta(\"status\")>>", "**author**: <<meta(\"author\")>>"]
+side = ["<<image(\"_images/{{author}}.png\", align=\"center\")>>"]
+
+[needs.layouts.permalink_example]
+grid = "simple"
+
+[needs.layouts.permalink_example.layout]
+head = [
+  "<<meta(\"type_name\")>>: **<<meta(\"title\")>>** <<meta_id()>> <<permalink()>> <<collapse_button(\"meta\", collapsed=\"icon:arrow-down-circle\", visible=\"icon:arrow-right-circle\", initial=False)>> ",
+]
+meta = ["<<meta_all(no_links=True)>>", "<<meta_links_all()>>"]
+
+[needs.layouts.detail_view]
+grid = "simple"
+
+[needs.layouts.detail_view.layout]
+head = [
+  "<<meta(\"type_name\")>>: **<<meta(\"title\")>>** <<meta_id()>> <<permalink()>> <<collapse_button(\"meta\", collapsed=\"icon:arrow-down-circle\", visible=\"icon:arrow-right-circle\", initial=False)>> <<sidebar(\"\")>>",
+]
+meta = ["<<meta_all(no_links=True)>>", "<<meta_links_all()>>"]
+
+# Card specifications, rendered live on the `card_layouts` page.
+#
+# The three `[needs.layouts]` entries above stay hand-written on purpose: each
+# uses something the card vocabulary deliberately does not cover -- prose in the
+# head, `permalink()`, `sidebar()` -- which is exactly what makes them the
+# escape-hatch examples on the layout page. The two below are the cases the card
+# vocabulary is for, and they are declared here rather than in `conf.py` so that
+# the `needs_from_toml` path is exercised by this project's own build.
+
+# `clean` plus the need's image beside the header and meta, with the body running
+# full width underneath it (`span = "partial"`).
+[needs.card_layouts.card_profile]
+extends = "clean"
+
+[needs.card_layouts.card_profile.meta]
+exclude = ["layout", "style"]
+
+[needs.card_layouts.card_profile.side]
+elements = ["image:image", "id"]
+position = "left"
+span = "partial"
+
+# A compact card: two named fields, no links, a footer, and the meta region
+# collapsed until the reader opens it.
+[needs.card_layouts.card_summary]
+collapse = "closed"
+footer = ["id", "type", "layout_echo"]
+
+[needs.card_layouts.card_summary.meta]
+include = ["status", "author"]
+links = false
+
+[needs.string_links.config_link]
+regex = "^(?P<value>\\w+)$"
+link_url = "https://sphinxcontrib-needs.readthedocs.io/en/latest/configuration.html#{{value | replace(\"_\", \"-\")}}"
+link_name = "Sphinx-Needs docs for {{value | replace(\"_\", \"-\") }}"
+options = ["config"]
+
+[needs.string_links.github_link]
+regex = "^(?P<value>\\w+)$"
+link_url = "https://github.com/useblocks/sphinxcontrib-needs/issues/{{value}}"
+link_name = "GitHub #{{value}}"
+options = ["github"]
+
+[needs_json]
+path = "_build/html/furo/needs.json"
+src = "."
+
+# Cross-project references, mirroring conf.py's `intersphinx_mapping` (same
+# project names, so external references resolve identically in both engines).
+[intersphinx.projects.python]
+url = "https://docs.python.org/3.8"
+
+[intersphinx.projects.sphinx]
+url = "https://www.sphinx-doc.org/en/master"

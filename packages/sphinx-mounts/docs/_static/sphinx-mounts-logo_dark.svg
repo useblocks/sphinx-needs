@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  sphinx-mounts logo (dark theme).
+
+  Same geometry as the light version: incomplete pyramid whose
+  right-middle block is missing, with an external "mount" block at
+  the side completing the structure via a small chevron arrow.
+  Blocks slightly inset inside their grid cells so the dark
+  background shines through the seams.
+  Palette matches sphinx-codelinks' dark variant (#e4ff3e accent,
+  white text, transparent background).
+-->
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 600 360"
+     width="600"
+     height="360"
+     role="img"
+     aria-label="sphinx-mounts">
+  <title>sphinx-mounts</title>
+
+  <g fill="#e4ff3e">
+    <!-- Pyramid: top -->
+    <rect x="242" y="52" width="46" height="46"/>
+    <!-- Pyramid: middle row, only the left block is native -->
+    <rect x="217" y="102" width="46" height="46"/>
+    <!-- Pyramid: base row, fully native -->
+    <rect x="192" y="152" width="46" height="46"/>
+    <rect x="242" y="152" width="46" height="46"/>
+    <rect x="292" y="152" width="46" height="46"/>
+
+    <!-- External mount block, beside the pyramid -->
+    <rect x="367" y="102" width="46" height="46"/>
+
+    <!-- Arrow pointing from the mount block into the empty slot -->
+    <polygon points="323,125 353,110 353,140"/>
+  </g>
+
+  <!-- Empty slot at the right of the middle row — destination of
+       the mount, drawn as a dashed ghost. -->
+  <rect x="267" y="102" width="46" height="46"
+        fill="none" stroke="#e4ff3e" stroke-width="2.5"
+        stroke-dasharray="6 4"/>
+
+  <!-- Project name, centered below the icon -->
+  <text x="300" y="310"
+        text-anchor="middle"
+        font-family="'Liberation Mono', ui-monospace, monospace"
+        font-weight="bold"
+        font-size="95"
+        fill="#ffffff">Mounts</text>
+</svg>

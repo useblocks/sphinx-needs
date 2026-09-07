@@ -1,0 +1,622 @@
+.. _configuration:
+
+Configuration
+=============
+
+The configuration for ``CodeLinks`` takes place in the project's :external+sphinx:ref:`conf.py file <build-config>`.
+
+Each source code project may have different configurations because of its programming language or its locations.
+Therefore, based on such considerations, there are **global options** and **project-specific options** for ``CodeLinks``.
+
+.. attention:: It is highly recommended to set the configuration options in a TOML file, which can be used for both the Sphinx extension and the CLI application. The default file name is ``ubproject.toml``, the shared ubCode project file.
+
+If the configurations are set in ``conf.py``,  the options start with the prefix ``src_trace_``.
+
+Sphinx Configuration
+--------------------
+
+By default, **Sphinx-CodeLinks** loads its configuration from the shared ``ubproject.toml`` file, which is looked up next to :file:`conf.py`.
+
+.. _`src_trace_config_from_toml`:
+
+src_trace_config_from_toml
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Specifies the path to a `TOML file <https://toml.io>`__ containing **Sphinx-CodeLinks** configuration options. This allows you to maintain configuration in a separate file for better organization.
+
+**Type:** ``str`` (relative path to the directory where conf.py is located)
+**Default:** ``"ubproject.toml"``
+
+.. code-block:: python
+
+   # In conf.py
+   src_trace_config_from_toml = "ubproject.toml"
+
+When using a TOML configuration file:
+
+- Configuration options are placed under a ``[codelinks]`` section
+- The ``src_trace_`` prefix is omitted in the TOML file
+- TOML configuration overrides settings in :file:`conf.py`
+
+.. note:: ``ubproject.toml`` is the shared ubCode project file, which other useblocks tools (e.g. Sphinx-Needs via ``needs_from_toml`` or the ubCode checker in VS Code) read as well. Keeping the ``[codelinks]`` configuration in this file makes all tools aware of the configured projects. If the default file does not exist or contains no ``[codelinks]`` section, it is silently ignored and the configuration from :file:`conf.py` is used. Only a TOML file that was explicitly configured but cannot be loaded triggers a Sphinx warning.
+
+.. caution:: Relative paths specified in the TOML file are resolved relative to the directory containing the TOML file, not the Sphinx project root.
+
+.. _`set_local_url`:
+
+Global Options
+--------------
+
+set_local_url
+~~~~~~~~~~~~~
+
+Enables the generation of local file system links to source code locations. When enabled, Sphinx Directive **src-trace** will add a custom field, which contains the local path to the source file, to generated needs.
+
+**Type:** ``bool``
+**Default:** ``False``
+
+.. code-block:: toml
+
+   [codelinks]
+   set_local_url = true
+
+local_url_field
+~~~~~~~~~~~~~~~
+
+Specifies the custom field name used for local source code links.
+
+**Type:** ``str``
+**Default:** ``"local-url"``
+**Required when:** :ref:`set_local_url` is ``True``
+
+.. code-block:: toml
+
+   [codelinks]
+   local_url_field = "local-url"
+
+.. _`set_remote_url`:
+
+set_remote_url
+~~~~~~~~~~~~~~
+
+Enables the generation of remote repository links to source code locations. When enabled, Sphinx Directive **src-trace** will add a custom field, which contains the URL to the remote repository (e.g., GitHub, GitLab) where the source file is hosted, to needs.
+
+**Type:** ``bool``
+**Default:** ``False``
+
+.. code-block:: toml
+
+   [codelinks]
+   set_remote_url = true
+
+remote_url_field
+~~~~~~~~~~~~~~~~
+
+Specifies the custom field name used for remote source code links.
+
+**Type:** ``str``
+**Default:** ``"remote-url"``
+**Required when:** :ref:`set_remote_url` is ``True``
+
+.. code-block:: toml
+
+   [codelinks]
+   remote_url_field = "remote-url"
+
+outdir
+~~~~~~
+
+Specifies the output directory for generated artifacts such as extracted markers and warnings.
+
+**Type:** ``str``
+**Default:** ``"./output"``
+
+.. code-block:: toml
+
+   [codelinks]
+   outdir = "output"
+
+Project-Specific Options
+------------------------
+
+Project-specific options are configured within the ``projects`` section, allowing different settings for :ref:`SourceDiscover <discover>` and :ref:`SourceAnalyse <analyse>`.
+
+projects
+~~~~~~~~
+
+Defines configuration for individual source code projects. Each project is identified by a unique name (key) and contains its own set of configuration options (value).
+
+**Type:** ``dict[str, dict]``
+**Default:** ``{}``
+
+.. code-block:: toml
+
+   [codelinks.projects.my_project]
+   # Configuration for "my_project"
+
+   [codelinks.projects.another_project]
+   # Configuration for "another_project"
+
+remote_url_pattern
+~~~~~~~~~~~~~~~~~~
+
+Defines the URL pattern for Sphinx Directive ``src-trace`` to generate links to remote source code repositories (e.g., GitHub, GitLab). This pattern uses placeholders that are dynamically replaced with actual values.
+
+**Type:** ``str``
+**Default:** Not set
+**Required when:** :ref:`set_remote_url` is ``True``
+
+**Available placeholders:**
+
+- ``{commit}`` - Git commit hash
+- ``{path}`` - Relative path to the source file
+- ``{line}`` - Line number in the source file
+
+.. code-block:: toml
+
+   [codelinks.projects.my_project]
+   remote_url_pattern = "https://github.com/user/repo/blob/{commit}/{path}#L{line}"
+
+**Common patterns:**
+
+- **GitHub:** ``https://github.com/user/repo/blob/{commit}/{path}#L{line}``
+- **GitLab:** ``https://gitlab.com/user/repo/-/blob/{commit}/{path}#L{line}``
+- **Bitbucket:** ``https://bitbucket.org/user/repo/src/{commit}/{path}#lines-{line}``
+
+.. note:: This option integrates with :external+needs:ref:`need_string_links<needs_string_links>` to automatically generate clickable links in the documentation.
+
+.. _`discover_config`:
+
+source_discover
+~~~~~~~~~~~~~~~
+
+Configures how **Sphinx-CodeLinks** discovers and processes source files within a project. This option controls which files are analyzed for extracting documentation needs.
+
+**Type:** ``dict``
+**Default:** See below
+
+.. code-block:: toml
+
+   [codelinks.projects.my_project.source_discover]
+   src_dir = "./"
+   exclude = []
+   include = []
+   gitignore = true
+   follow_links = false
+   comment_type = "cpp"
+
+**Configuration fields:**
+
+- ``src_dir`` - Root directory for source file discovery (relative to Sphinx project root or the directory where the TOML config file is located if given)
+- ``exclude`` - List of glob patterns to exclude from processing
+- ``include`` - List of glob patterns to include (if empty, includes all files)
+- ``gitignore`` - Whether to respect ``.gitignore``, ``.ignore``, and related ignore files when discovering files
+- ``follow_links`` - Whether to follow symbolic links during file discovery
+- ``comment_type`` - Comment style for the programming language
+
+.. _`source_dir`:
+
+src_dir
+^^^^^^^
+
+Specifies the root directory for source file discovery. This path is resolved relative to the location of the TOML configuration file.
+
+**Type:** ``str``
+**Default:** ``"./"``
+
+.. code-block:: toml
+
+   [codelinks.projects.my_project.source_discover]
+   src_dir = "../src"
+
+**Examples:**
+
+- ``"./"`` - Current directory (relative to config file)
+- ``"../src"`` - Parent directory's src folder
+- ``"./my_project/source"`` - Subdirectory within current directory
+
+exclude
+^^^^^^^
+
+Defines a list of glob patterns for files and directories to exclude from discovery. This is useful for ignoring build artifacts, temporary files, or specific source files that shouldn't be processed.
+
+**Type:** ``list[str]``
+**Default:** ``[]``
+
+.. code-block:: toml
+
+   [codelinks.projects.my_project.source_discover]
+   exclude = [
+       "build/**"
+       "*.tmp"
+       "tests/fixtures/**"
+       "vendor/third_party/**"
+   ]
+
+**Common exclusion patterns:**
+
+- ``"build/**"`` - Exclude entire build directory
+- ``"*.o"`` - Exclude object files
+- ``"**/__pycache__/**"`` - Exclude Python cache directories
+- ``"node_modules/**"`` - Exclude Node.js dependencies
+
+include
+^^^^^^^
+
+Defines a list of glob patterns for files to explicitly include in discovery. When specified, only files matching these patterns will be processed, regardless of other filtering rules.
+
+**Type:** ``list[str]``
+**Default:** ``[]`` (include all files)
+
+.. code-block:: toml
+
+   [codelinks.projects.my_project.source_discover]
+   include = [
+       "src/**/*.cpp",
+       "src/**/*.h",
+       "include/**/*.hpp"
+   ]
+
+**Priority:** When ``include`` patterns are specified, only files matching those patterns
+are considered (this overrides ``gitignore`` exclusions for matched files).
+``exclude`` patterns are then applied to remove files from that set.
+
+**Common inclusion patterns:**
+
+- ``"**/*.cpp"`` - Include all C++ source files
+- ``"**/*.py"`` - Include all Python files
+- ``"src/**"`` - Include everything in src directory
+- ``"*.{c,h}"`` - Include C source and header files
+
+comment_type
+^^^^^^^^^^^^
+
+Specifies the comment syntax style used in the source code files. This determines what file types are discovered and how **Sphinx-CodeLinks** parses comments for documentation extraction.
+
+**Type:** ``str``
+**Default:** ``"cpp"``
+**Supported values:** ``"cpp"``, ``"python"``, ``"cs"``, ``"yaml"``, ``"rust"``, ``"go"``, ``"jsonc"``, ``"bash"``
+
+.. code-block:: toml
+
+   [codelinks.projects.my_project.source_discover]
+   comment_type = "python"
+
+**Supported comment styles:**
+
+.. list-table:: Title
+   :header-rows: 1
+   :widths: 25, 25, 30, 50
+
+   * - Language
+     - comment_type
+     - Comment Syntax
+     - discovered file types
+   * - C/C++
+     - ``"cpp"``
+     - ``//`` (single-line),
+       ``/* */`` (multi-line)
+     - ``.c``, ``.ci``, ``.h``, ``.cpp``, ``.cc``, ``.cxx``, ``.hpp``, ``.hh``, ``.hxx`` and ``.ihl``
+   * - Python
+     - ``"python"``
+     - ``#`` (single-line),
+       ``""" """`` (docstrings)
+     - ``.py``
+   * - C#
+     - ``"cs"``
+     - ``//`` (single-line),
+       ``/* */`` (multi-line),
+       ``///`` (XML doc comments)
+     - ``.cs``
+   * - YAML
+     - ``"yaml"``
+     - ``#`` (single-line)
+     - ``.yaml``, ``.yml``
+   * - Rust
+     - ``"rust"``
+     - ``//`` (single-line),
+       ``/* */`` (multi-line),
+       ``///`` (doc comments),
+       ``//!`` (inner doc comments)
+     - ``.rs``
+   * - Go
+     - ``"go"``
+     - ``//`` (single-line),
+       ``/* */`` (multi-line)
+     - ``.go``
+   * - JSON with Comments (JSONC)
+     - ``"jsonc"``
+     - ``//`` (single-line),
+       ``/* */`` (multi-line)
+     - ``.jsonc`` (always); ``.json`` only when the file opens with a comment
+       (e.g. the mode line ``// -*- mode: jsonc -*-``)
+   * - Bash / POSIX shell
+     - ``"bash"``
+     - ``#`` (single-line)
+     - ``.sh``, ``.bash``, ``.zsh``, ``.ksh``
+
+.. note:: Future versions may support additional programming languages.
+
+gitignore
+^^^^^^^^^
+
+Controls whether to respect ignore files when discovering source files.
+When enabled, files and directories matched by ignore rules will be automatically
+excluded from processing.
+
+**Type:** ``bool``
+**Default:** ``true``
+
+.. code-block:: toml
+
+   [codelinks.projects.my_project.source_discover]
+   gitignore = false
+
+**Behavior:**
+
+When set to ``true`` (recommended), the following ignore sources are respected:
+
+- ``.gitignore`` files (including nested ``.gitignore`` files in subdirectories)
+- ``.ignore`` files (same syntax as ``.gitignore``, useful for non-git projects)
+- ``.git/info/exclude``
+- Global gitignore (e.g. ``~/.config/git/ignore``)
+- Parent directory ignore files
+
+When set to ``false``, all ignore files are disregarded and every matching file is processed.
+
+follow_links
+^^^^^^^^^^^^
+
+Controls whether symbolic links are followed during file discovery.
+When disabled, symbolic links to directories are not traversed.
+
+**Type:** ``bool``
+**Default:** ``false``
+
+.. code-block:: toml
+
+   [codelinks.projects.my_project.source_discover]
+   follow_links = true
+
+**Behavior:**
+
+- ``false`` - Symbolic links to directories are skipped (default, safer)
+- ``true`` - Symbolic links are followed, discovering files inside linked directories
+
+For more information about the usage examples, see :ref:`source discover <discover>`.
+
+.. _`analyse_config`:
+
+analyse
+~~~~~~~
+
+Configures how **Sphinx-CodeLinks** analyse source files to extract markers from comments. This option defines how the markers in source code are parsed and extracted.
+
+**Complete Configuration Example:**
+
+.. code-block:: toml
+
+   [codelinks]
+   outdir = "output"
+
+   [codelinks.projects.my_project.source_discover]
+   src_dir = "./"
+   exclude = []
+   include = []
+   gitignore = true
+   follow_links = false
+   comment_type = "cpp"
+
+   [codelinks.projects.my_project.analyse]
+   get_need_id_refs = true
+   get_oneline_needs = true
+   get_rst = true
+   # Optional: Explicit Git root for Bazel or deeply nested configs
+   # git_root = "/path/to/repo"
+
+   [codelinks.projects.my_project.analyse.oneline_comment_style]
+   start_sequence = "@"
+   # End sequences is newline by default. Whether it is "\n" or "\r\n" depending on the platform
+   end_sequence = "\n"
+   field_split_char = ","
+   needs_fields = [
+       { name = "title", type = "str" },
+       { name = "id", type = "str" },
+       { name = "type", type = "str", default = "impl" },
+       { name = "links", type = "list[str]", default = [] },
+   ]
+
+   [codelinks.projects.my_project.analyse.need_id_refs]
+   markers = ["@need-ids:"]
+
+   [codelinks.projects.my_project.analyse.marked_rst]
+   start_sequence = "@rst"
+   end_sequence = "@endrst"
+
+get_need_id_refs
+^^^^^^^^^^^^^^^^
+
+Enables the extraction of need IDs from source code comments. When enabled, **SourceAnalyse** will parse comments for specific markers that indicate need IDs, allowing them to be extracted for further usages.
+
+**Type:** ``bool``
+**Default:** ``False``
+
+.. code-block:: toml
+
+   [codelinks.projects.my_project.analyse]
+   get_need_id_refs = true
+
+get_oneline_needs
+^^^^^^^^^^^^^^^^^
+
+Enables the extraction of one-line needs directly from source code comments. When enabled, **SourceAnalyse** will parse comments for simplified :ref:`one-line patterns <oneline>` that represent needs, allowing them to be processed without requiring full RST syntax.
+
+**Type:** ``bool``
+**Default:** ``False``
+
+.. code-block:: toml
+
+   [codelinks.projects.my_project.analyse]
+   get_oneline_needs = false
+
+get_rst
+^^^^^^^
+
+Enables the extraction of marked RST text from source code comments. When enabled, **SourceAnalyse** will parse comments for specific markers that indicate RST blocks, allowing them to be extracted.
+
+**Type:** ``bool``
+**Default:** ``False``
+
+.. code-block:: toml
+
+   [codelinks.projects.my_project.analyse]
+   get_rst = false
+
+.. _`git_root`:
+
+git_root
+^^^^^^^^
+
+Specifies an explicit path to the Git repository root directory. This option is particularly useful in environments where the standard Git root auto-detection fails, such as:
+
+- **Bazel builds**: Where the execution path differs from the standard repository layout
+- **Deeply nested configurations**: Where ``conf.py`` is located in a deep subdirectory far from the repository root
+- **Custom build systems**: Where the working directory is different from the source repository
+
+When not set, **Sphinx-CodeLinks** will automatically traverse parent directories to locate the ``.git`` folder.
+
+**Type:** ``str`` (path)
+**Default:** Not set (auto-detection)
+
+.. code-block:: toml
+
+   [codelinks.projects.my_project.analyse]
+   git_root = "/absolute/path/to/repo"
+
+.. note:: When ``git_root`` is explicitly set, **Sphinx-CodeLinks** will use this path directly without attempting auto-detection. Ensure the path points to a valid Git repository containing a ``.git`` directory.
+
+.. _`oneline_comment_style`:
+
+analyse.oneline_comment_style
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Enables the use of simplified :ref:`one-line comment patterns <oneline>` to represent **Sphinx-Needs** items directly in source code, eliminating the need for embedded RST syntax.
+
+**Type:** ``dict``
+**Default:** See below
+
+.. code-block:: toml
+
+   [codelinks.projects.my_project.analyse.oneline_comment_style]
+   start_sequence = "@"
+   end_sequence = "\n"  # Platform-specific line ending
+   field_split_char = ","
+   needs_fields = [
+         { name = "title", type = "str" },
+         { name = "id", type = "str" },
+         { name = "type", type = "str", default = "impl" },
+         { name = "links", type = "list[str]", default = [] },
+   ]
+
+**Configuration fields:**
+
+- ``start_sequence`` - Character(s) that begin a one-line comment pattern
+- ``end_sequence`` - Character(s) that end a one-line comment pattern (typically line ending)
+- ``field_split_char`` - Character used to separate fields within the comment
+- ``needs_fields`` - List of field definitions for extracting need information
+
+**Example usage:**
+
+The following one-line comment in source code:
+
+.. code-block:: cpp
+
+   // @Function Bar, IMPL_4, impl, [SPEC_1, SPEC_2]
+
+Is equivalent to this RST directive:
+
+.. code-block:: rst
+
+   .. impl:: Function Bar
+      :id: IMPL_4
+      :links: SPEC_1, SPEC_2
+
+.. important:: The ``type`` and ``title`` fields must be configured in ``needs_fields`` as they are mandatory for **Sphinx-Needs**.
+
+analyse.need_id_refs
+^^^^^^^^^^^^^^^^^^^^
+
+Configuration for Sphinx-Needs ID reference extraction.
+
+**Type:** ``dict``
+**Default:** See below
+
+.. code-block:: toml
+
+   [codelinks.projects.my_project.analyse.need_id_refs]
+   markers = ["@need-ids:"]
+
+**Configuration fields:**
+
+- ``markers`` (``list[str]``) - List of marker strings that identify need ID references
+
+analyse.marked_rst
+^^^^^^^^^^^^^^^^^^
+
+Configuration for marked RST block extraction.
+
+**Type:** ``dict``
+**Default:** See below
+
+.. code-block:: toml
+
+   [codelinks.projects.my_project.analyse.marked_rst]
+   start_sequence = "@rst"
+   end_sequence = "@endrst"
+
+**Configuration fields:**
+
+- ``start_sequence`` (``str``) - Marker that begins an RST block
+- ``end_sequence`` (``str``) - Marker that ends an RST block
+
+.. _`preprocessor_config`:
+
+analyse.preprocessor
+^^^^^^^^^^^^^^^^^^^^^
+
+Opts in to the **preprocessor-aware C/C++ engine** (powered by libclang). When this
+table is present and ``comment_type`` is ``"cpp"``, **Sphinx-CodeLinks** parses each
+C/C++ file as a real translation unit and **drops comments that fall inside inactive
+preprocessor branches** (``#if`` / ``#ifdef`` / ``#else`` …). Without this table, the
+default tree-sitter engine is used, which extracts every comment regardless of
+preprocessor conditions.
+
+See :ref:`preprocessor_engine` for the conceptual overview, header handling, and
+limitations.
+
+**Type:** ``dict``
+**Default:** Not set (the tree-sitter engine is used)
+
+.. important:: The libclang engine requires an optional dependency. Install it with
+   ``pip install 'sphinx-codelinks[libclang]'``. The ``libclang`` wheel bundles the
+   native library, so no compiler or system toolchain is required.
+
+.. code-block:: toml
+
+   [codelinks.projects.my_project.analyse.preprocessor]
+   compile_commands = "build/compile_commands.json"
+   defines = ["VARIANT_A", "PLATFORM_LINUX"]
+   includes = ["include", "third_party/include"]
+
+**Configuration fields:**
+
+- ``compile_commands`` (``str``) - Path to a ``compile_commands.json`` compilation
+  database. Relative paths resolve against the TOML config file. If omitted,
+  **Sphinx-CodeLinks** walks up from each source file to find one, stopping at a
+  directory containing ``.git``, ``ubproject.toml``, or ``pyproject.toml``, or at the
+  filesystem root.
+- ``defines`` (``list[str]``) - ``-D`` macros used when a file has **no** entry in the
+  database. This is the fallback applied to every header file (headers never appear in a
+  database) and to all files when no database is found.
+- ``includes`` (``list[str]``) - ``-I`` include directories used together with
+  ``defines`` on the fallback path.

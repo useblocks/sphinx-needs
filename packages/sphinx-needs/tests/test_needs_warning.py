@@ -1,0 +1,167 @@
+from pathlib import Path
+
+import pytest
+from sphinx import version_info
+
+from sphinx_needs_testkit import build_warnings
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_needs_warnings",
+        }
+    ],
+    indirect=True,
+)
+def test_needs_warnings(test_app):
+    app = test_app
+    app.build()
+
+    # stdout warnings
+    warning_records = build_warnings(app)
+
+    expected = [
+        "WARNING: 'invalid_status' in 'needs_warnings' is already registered. [needs.config]",
+        "WARNING: api_warning_filter: failed\n"
+        "\t\tfailed needs: 1 (TC_002)\n"
+        "\t\tused filter: status == 'example_2' [needs.warnings]",
+        "WARNING: api_warning_func: failed\n"
+        "\t\tfailed needs: 1 (TC_003)\n"
+        "\t\tused filter: custom_warning_func [needs.warnings]",
+        "WARNING: invalid_status: failed\n"
+        "\t\tfailed needs: 2 (SP_TOO_001, US_63252)\n"
+        "\t\tused filter: status not in ['open', 'closed', 'done', 'example_2', 'example_3'] [needs.warnings]",
+        "WARNING: type_match: failed\n"
+        "\t\tfailed needs: 1 (TC_001)\n"
+        "\t\tused filter: my_custom_warning_check [needs.warnings]",
+    ]
+
+    if version_info >= (8, 2):
+        expected.insert(
+            1,
+            "WARNING: cannot cache unpickleable configuration value: 'needs_warnings' (because it contains a function, class, or module object) [config.cache]",
+        )
+    elif version_info >= (8, 0):
+        expected.insert(
+            1,
+            "WARNING: cannot cache unpickable configuration value: 'needs_warnings' (because it contains a function, class, or module object) [config.cache]",
+        )
+    elif version_info >= (7, 3):
+        expected.insert(
+            1,
+            "WARNING: cannot cache unpickable configuration value: 'needs_warnings' (because it contains a function, class, or module object)",
+        )
+
+    assert warning_records == expected
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_needs_warnings_return_status_code",
+        }
+    ],
+    indirect=True,
+)
+def test_needs_warnings_return_status_code(test_app):
+    import subprocess
+
+    app = test_app
+
+    srcdir = Path(app.srcdir)
+    out_dir = srcdir / "_build"
+
+    # Check return code when "-W --keep-going" not used
+    out_normal = subprocess.run(
+        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
+    )
+    assert out_normal.returncode == 0
+
+    # Check return code when only "-W" is used
+    out_w = subprocess.run(
+        ["sphinx-build", "-M", "html", srcdir, out_dir, "-W"], capture_output=True
+    )
+    assert out_w.returncode >= 1
+
+    # Check return code when only "--keep-going" is used
+    out_keep_going = subprocess.run(
+        ["sphinx-build", "-M", "html", srcdir, out_dir, "--keep-going"],
+        capture_output=True,
+    )
+    assert out_keep_going.returncode == 0
+
+    # Check return code when "-W --keep-going" is used
+    out_w_keep_going = subprocess.run(
+        ["sphinx-build", "-M", "html", srcdir, out_dir, "-W", "--keep-going"],
+        capture_output=True,
+    )
+    assert out_w_keep_going.returncode == 1
+
+    # Check no Sphinx raised warnings
+    assert "WARNING" not in out_w_keep_going.stdout.decode("utf-8")
+
+    warnings = out_w_keep_going.stderr.decode("utf-8")
+
+    # Check Sphinx-needs raised warnings amount
+    assert warnings.count("WARNING: ") == 2
+
+    # Check warnings contents
+    assert "WARNING: invalid_status: failed" in warnings
+    assert "failed needs: 2 (SP_TOO_001, US_63252)" in warnings
+    assert (
+        "used filter: status not in ['open', 'closed', 'done', 'example_2', 'example_3']"
+        in warnings
+    )
+
+    # Check needs warning from custom defined filter code
+    assert "WARNING: type_match: failed" in warnings
+    assert "failed needs: 1 (TC_001)" in warnings
+    assert "used filter: my_custom_warning_check" in warnings
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (
+                    "index.rst",
+                    "Test\n====\n\n.. story:: A story\n   :id: US_001\n",
+                ),
+                (
+                    "conf.py",
+                    """
+extensions = ["sphinx_needs"]
+needs_types = [
+    {
+        "directive": "story",
+        "title": "User Story",
+        "prefix": "US_",
+        "color": "#BFD8D2",
+        "style": "node",
+    },
+]
+needs_warnings = {"unknown_filter": 42}
+""",
+                ),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_needs_warnings_unknown_filter_type(test_app):
+    """A filter that is neither a string nor a callable is reported, not raised."""
+    app = test_app
+    app.build()
+
+    warning_records = build_warnings(app)
+
+    assert warning_records == [
+        "WARNING: Unknown needs warnings filter 42! [needs.config]"
+    ]

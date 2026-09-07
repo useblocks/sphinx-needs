@@ -1,0 +1,92 @@
+[project]
+name = "sphinx-codelinks"
+version = "1.4.0"
+description = "Fast Source Code Traceability for Sphinx-Needs"
+authors = [{ name = "team useblocks", email = "info@useblocks.com" }]
+maintainers = [
+  { name = "Marco Heinemann", email = "marco.heinemann@useblocks.com" },
+  { name = "Jui-Wen Chen", email = "jui-wen.chen@useblocks.com" },
+]
+license = { file = "LICENSE" }
+readme = "README.md"
+# EQUAL to the sphinx-needs workspace root's `requires-python`, deliberately: on import
+# `tools/src/sn_tools/check_workspace.py` check (3) compares the two strings for equality,
+# because uv resolves one lock against the root and a member out of step with it still
+# locks, builds and publishes -- the gap shows up only as an install failure for a user on
+# an interpreter inside it.
+requires-python = ">=3.11,<4"
+dependencies = [
+  "comment-parser>=1.2.4",
+  "ignore-python>=0.3.3",
+  "typer>=0.16.0",
+  "click < 8.2",           # click 8.2.* produces empty errors if no args are given
+  "jsonschema",
+  "sphinx>=7.4,<10",
+  # TIGHT tracking, not a compatibility range: sphinx-needs is a sibling in the workspace
+  # this package is being imported into, and `check_workspace.py` check (4) requires
+  # `>=<the sibling's current version>,<<its next major>` on every intra-workspace runtime
+  # edge. uv never validates a specifier it resolves through `workspace = true` (uv#9811),
+  # so the floor is the only statement of what was actually tested, and the cap is what
+  # stops a future major being co-installed with a wheel written against this one.
+  "sphinx-needs>=8.5.0,<9",
+  "jinja2",
+  "pygments",
+  "docutils",                   # constrained by user or Sphinx
+  "tree-sitter-cpp>=0.23.4",
+  "giturlparse>=0.12.0",
+  "tree-sitter-python>=0.23.6",
+  # Compiling issue on manylinux aarch64 image, so install from git instead of Pypi
+  # https://github.com/tree-sitter/py-tree-sitter/issues/386#issuecomment-3101430799
+  "tree-sitter~=0.25.1",
+  "tree-sitter-c-sharp>=0.23.1",
+  "tree-sitter-yaml>=0.7.1",
+  "tree-sitter-rust>=0.23.0",
+  "tree-sitter-go>=0.23.0",
+  "tree-sitter-json>=0.24.8",
+  "tree-sitter-bash>=0.25.1",
+]
+
+[project.optional-dependencies]
+# libclang enables the preprocessor-aware C/C++ engine (skips comments inside
+# inactive #if/#ifdef regions). Plain tree-sitter C/C++ extraction needs none of
+# this, so libclang stays optional. Named after the backend, not "cpp": the
+# engine handles C and Objective-C too, and tree-sitter already covers C++.
+# Floor 16 (not 18): the extraction snapshots are byte-identical on libclang 16,
+# 17 and 18 (the engine only uses get_all_skipped_ranges + comment tokenization,
+# stable since long before 16), so support older toolchains too. No upper bound.
+libclang = ["libclang>=16"]
+
+# An EXTRA, not a dependency group, because Read the Docs installs extras and cannot install
+# groups: its `python.install` block takes `extra_requirements`, and there is no equivalent
+# for PEP 735 groups. It is also the shape a member of the sphinx-needs workspace has --
+# the root there re-exports each member's extra (`docs-mounts = ["sphinx-mounts[docs]"]`),
+# because `uv sync --extra` resolves against the workspace root rather than the member.
+docs = [
+  "furo>=2024.5.6",
+  "myst-parser>=4.0.0",
+  "sphinx-design>=0.6.1",
+  "sphinx-code-tabs>=0.5.5",
+  "sphinxcontrib-typer>=0.9.1", # tracks typer's rich_utils internals: 0.9.1+ needs typer>=0.26.8 and declares it; older releases break on it
+  "sphinxcontrib-video>=0.4.1",
+]
+
+[project.urls]
+Homepage = "https://codelinks.useblocks.com"
+Documentation = "https://codelinks.useblocks.com"
+Repository = "https://github.com/useblocks/sphinx-needs"
+Issues = "https://github.com/useblocks/sphinx-needs/issues"
+Changelog = "https://github.com/useblocks/sphinx-needs/blob/master/packages/sphinx-codelinks/docs/changelog.rst"
+
+[build-system]
+requires = ["flit_core >=3.4,<4"]
+build-backend = "flit_core.buildapi"
+
+# Deliberately NO `[tool.flit.sdist]`: this distribution carries no non-Python payload, so
+# flit's module-only sdist is byte-for-byte the shape already published on PyPI, and
+# nothing downstream builds from it -- the git pins in the wild clone the repository.
+# Everything else -- ruff, ty, pytest and the dependency groups -- is the ROOT's, and
+# `tools/src/sn_tools/check_workspace.py` check (7) refuses those tables here: a member
+# `[tool.ruff]` does not extend the root's configuration, it replaces it.
+
+[project.scripts]
+codelinks = "sphinx_codelinks.cmd:app"

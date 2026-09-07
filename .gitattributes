@@ -1,2 +1,20 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# The needflow conformance corpus is shared byte-for-byte with ubCode and checksummed in
+# its own manifest, so its working-tree bytes must stay canonical on every platform --
+# `text=auto` above would otherwise hand Windows a CRLF checkout. This later, more
+# specific pattern wins over it. The harness additionally normalises line endings before
+# hashing, so the contract holds even where this pin is absent.
+packages/sphinx-needs/tests/conformance/needflow/** text eol=lf
+
+# The variant-condition conformance corpus is the second such file, shared byte-for-byte
+# with ubCode in the same way and pinned by a digest fence in that repository. taplo leaves
+# it alone today, but its defaults are not a contract, so the exclude in
+# .pre-commit-config.yaml states the intent -- and this line keeps the working-tree bytes
+# canonical on Windows regardless.
+packages/sphinx-mounts/tests/fixtures/variant_condition_conformance.toml text eol=lf
+
+# The committed PlantUML jar. `text=auto` at the top would otherwise ask git to classify a
+# 30 MB zip on every checkout; git's own detection gets it right, and this states it.
+vendor/plantuml/*.jar binary

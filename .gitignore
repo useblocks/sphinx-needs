@@ -3,8 +3,6 @@
 .DS_Store
 .venv*
 .pvenv
-.nox
-node_modules
 
 .envrc
 *.pyc
@@ -15,13 +13,40 @@ build
 _build
 .cache/
 *pycache*
-.tox/
 .cache/
 .pytest_cache
 .coverage
 coverage.xml
+# the Extensions CI cell runs two suites in one working directory, so each names its own
+# coverage report (`--cov-report=xml:<name>.xml`) instead of sharing `coverage.xml`
+mounts.xml
+codelinks.xml
+.ty_cache
+
+# packages/sphinx-codelinks' tests write these at the CWD: `tests/test_cmd.py` writes
+# `invalid_objs.json`, and the `codelinks analyse` runs in its docs and tests write
+# `output/`. They were in that repository's own .gitignore, which retired at the import
+invalid_objs.json
+output/
 .doctrees
-docs/github_images/
+packages/sphinx-needs/docs/github_images/
+packages/sphinx-needs/docs/_static/tutorial_needs.json
+packages/sphinx-mounts/docs/superpowers/
+
+# The temp file `uv run poe fetch-plantuml` downloads into. The JAR ITSELF IS COMMITTED
+# (`vendor/plantuml/plantuml-<version>.jar`, the version `vendor/plantuml/pin.toml` names),
+# so there is deliberately no `vendor/plantuml/*.jar` line here -- one would not hide a
+# tracked file, but it would say the opposite of what this repository does. The `.part` is
+# removed on a failed download and renamed into place on a successful one, but a Ctrl-C or
+# a SIGKILL mid-fetch leaves it, and an untracked ~30 MB blob would then dirty the tree and
+# join `prek run --all-files`
+vendor/plantuml/.plantuml-*.part
+
+# `bazel build` in packages/sphinx-mounts/tests/example writes these convenience symlinks
+# into the workspace; the root pytest `norecursedirs` skips them for the same reason
+bazel-*
+.ruff_cache
+/prompts.md
 .eggs/
 
 
@@ -30,8 +55,6 @@ docs/github_images/
 .dockerignore
 
 .benchmarks/
-tests/cypress/
-cypress/
 
 output.json
 mem_out.*
@@ -39,4 +62,4 @@ mem_out.*
 pyinstrument*
 *.prof
 
-uv.lock
+schema_debug/

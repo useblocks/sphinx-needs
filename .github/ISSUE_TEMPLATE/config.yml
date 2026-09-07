@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Question or discussion
+    url: https://github.com/useblocks/sphinx-needs/discussions
+    about: Ask how to do something, or discuss an idea before it becomes an issue.
+  - name: Documentation
+    url: https://sphinx-needs.readthedocs.io
+    about: The reference for every directive, role and configuration option.

@@ -36,7 +36,13 @@ RUN apt-get -y install \
   default-jre
 
 # Install PlantUML
-RUN wget -c https://netcologne.dl.sourceforge.net/project/plantuml/plantuml.jar -O /tmp/plantuml.jar && \
+# PINNED, and the value MIRRORS `vendor/plantuml/pin.toml` -- the one place the workspace
+# writes a PlantUML version. A Dockerfile cannot read TOML, so this repetition is declared
+# rather than hidden: bump both together (the pin file's README says so too). It used to be
+# `releases/latest/download/plantuml.jar`, which made this image the one place in the
+# repository where the renderer could change without a commit.
+ARG PLANTUML_VERSION=1.2026.8
+RUN wget -c https://github.com/plantuml/plantuml/releases/download/v${PLANTUML_VERSION}/plantuml-${PLANTUML_VERSION}.jar -O /tmp/plantuml.jar && \
     mkdir -p /usr/share/plantuml && \
     mv /tmp/plantuml.jar /usr/share/plantuml/plantuml.jar
 
@@ -47,9 +53,9 @@ RUN pip3 install --no-cache-dir \
 # Install Sphinx-Needs
 RUN \
     if [ -n "$NEEDS_VERSION" ] && [ "$NEEDS_VERSION" = "pre-release" ]; then \
-      pip3 install --no-cache-dir "sphinx-needs[plotting] @ git+https://github.com/useblocks/sphinx-needs"; \
+      pip3 install --no-cache-dir "sphinx-needs[plotting] @ git+https://github.com/useblocks/sphinx-needs#subdirectory=packages/sphinx-needs"; \
     elif [ -n "$NEEDS_VERSION" ]; then \
-      pip3 install --no-cache-dir "sphinx-needs[plotting] @ git+https://github.com/useblocks/sphinx-needs@$NEEDS_VERSION"; \
+      pip3 install --no-cache-dir "sphinx-needs[plotting] @ git+https://github.com/useblocks/sphinx-needs@$NEEDS_VERSION#subdirectory=packages/sphinx-needs"; \
     else \
       pip3 install --no-cache-dir sphinx-needs[plotting]; \
     fi

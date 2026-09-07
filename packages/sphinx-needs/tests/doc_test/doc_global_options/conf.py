@@ -1,0 +1,84 @@
+extensions = ["sphinx_needs"]
+
+needs_types = [
+    {
+        "directive": "spec",
+        "title": "Specification",
+        "prefix": "SP_",
+    }
+]
+
+needs_links = {
+    "link1": {
+        "incoming": "is linked by",
+        "outgoing": "links to",
+    },
+    "link2": {
+        "incoming": "is linked by",
+        "outgoing": "links to",
+    },
+    "link3": {
+        "incoming": "is linked by",
+        "outgoing": "links to",
+    },
+}
+
+needs_fields = {
+    "option_1": {"nullable": True},
+    "option_2": {"nullable": True},
+    "option_3": {"nullable": True},
+    "option_4": {"nullable": True},
+    "option_5": {"nullable": True},
+    "bad_value_type": {"nullable": True},
+    "too_many_params": {"nullable": True},
+}
+
+needs_global_options = {
+    "collapse": {"default": True},
+    "hide": {"default": False},
+    "layout": {"default": "clean_l"},
+    "option_1": {"default": "test_global"},
+    "option_2": {"default": "[[copy('id')]]"},
+    "option_3": {"predicates": [('status == "implemented"', "STATUS_IMPL")]},
+    "option_4": {
+        "default": "STATUS_UNKNOWN",
+        "predicates": [('status == "closed"', "STATUS_CLOSED")],
+    },
+    "option_5": {
+        "predicates": [
+            ('status == "implemented"', "STATUS_IMPL"),
+            ('status == "closed"', "STATUS_CLOSED"),
+        ],
+        "default": "final",
+    },
+    "link1": {"default": ["SPEC_1"]},
+    "link2": {
+        "predicates": [
+            ('status == "implemented"', ["SPEC_2", "[[copy('link1')]]"]),
+            ('status == "closed"', ["SPEC_3"]),
+        ],
+        "default": ["SPEC_1"],
+    },
+    "tags": {
+        "predicates": [
+            ('status == "implemented"', ["a", "b"]),
+            ('status == "closed"', ["c", "[[copy('status')]]"]),
+        ],
+        "default": ["d"],
+    },
+    "link3": {"default": 1},
+    "bad_value_type": {"default": 1.27},
+    "too_many_params": {"predicates": [("a", "b", "c", "d")]},
+    "unknown": {"default": "unknown"},
+}
+
+needs_build_json = True
+needs_json_remove_defaults = True
+needs_json_exclude_fields = [
+    "id_complete",
+    "id_parent",
+    "lineno_content",
+    "type_color",
+    "type_prefix",
+    "type_style",
+]

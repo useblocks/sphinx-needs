@@ -1,0 +1,35 @@
+{
+  "created": "2026-07-30T09:00:00.000000",
+  "project": "upstream-component",
+  "current_version": "1.0",
+  "versions": {
+    "1.0": {
+      "created": "2026-07-30T09:00:00.000000",
+      "needs_amount": 2,
+      "needs": {
+        "SN_IMP_REQ": {
+          "id": "SN_IMP_REQ",
+          "type": "req",
+          "type_name": "Requirement",
+          "title": "SHOWCASE_NEEDIMPORT_TITLE",
+          "description": "Imported from a needs.json that travels inside the bundle, addressed by a bundle-relative path.",
+          "docname": "index",
+          "tags": ["imported"],
+          "status": "open",
+          "links": []
+        },
+        "SN_IMP_SPEC": {
+          "id": "SN_IMP_SPEC",
+          "type": "spec",
+          "type_name": "Specification",
+          "title": "Imported specification",
+          "description": "Links back to another imported need, so the imported data forms its own traceability graph alongside the bundle's own needs.",
+          "docname": "index",
+          "tags": ["imported"],
+          "status": "open",
+          "links": ["SN_IMP_REQ"]
+        }
+      }
+    }
+  }
+}

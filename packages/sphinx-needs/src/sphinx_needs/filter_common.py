@@ -1,0 +1,887 @@
+"""
+filter_base is used to provide common filter functionality for directives
+like needtable, needlist and needflow.
+"""
+
+from __future__ import annotations
+
+import ast
+import json
+import re
+from collections.abc import Callable, Iterable
+from pathlib import Path
+from timeit import default_timer as timer
+from types import CodeType
+from typing import Any, TypedDict, overload
+
+from docutils import nodes
+from docutils.parsers.rst import directives
+from sphinx.application import Sphinx
+from sphinx.util.docutils import SphinxDirective
+
+from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import NeedsFilteredBaseType, NeedsMutable
+from sphinx_needs.debug import measure_time, measure_time_func
+from sphinx_needs.exceptions import NeedsInvalidFilter
+from sphinx_needs.logging import log_warning
+from sphinx_needs.need_item import NeedItem, NeedPartItem
+from sphinx_needs.needs_schema import AllowedTypes
+from sphinx_needs.ubquery import try_build_simple_predicate
+from sphinx_needs.utils import check_and_get_external_filter_func
+from sphinx_needs.utils import logger as log
+from sphinx_needs.views import NeedsAndPartsListView, NeedsView
+
+
+class FilterAttributesType(TypedDict):
+    status: list[str]
+    tags: list[str]
+    types: list[str]
+    filter: str
+    sort_by: str
+    filter_code: list[str]
+    filter_func: str | None
+    filter_warning: str | None
+    """If set, the filter is exported with this ID in the needs.json file."""
+
+
+class FilterBase(SphinxDirective):
+    has_content = True
+
+    base_option_spec: dict[str, Callable[[str], Any]] = {
+        "status": directives.unchanged_required,
+        "tags": directives.unchanged_required,
+        "types": directives.unchanged_required,
+        "filter": directives.unchanged_required,
+        "filter-func": directives.unchanged_required,
+        "sort_by": directives.unchanged,
+        "export_id": directives.unchanged,
+        "filter_warning": directives.unchanged,
+    }
+
+    def collect_filter_attributes(self) -> FilterAttributesType:
+        _tags = str(self.options.get("tags", ""))
+        tags = (
+            [tag.strip() for tag in re.split(";|,", _tags) if len(tag) > 0]
+            if _tags
+            else []
+        )
+
+        status = self.options.get("status")
+        if status:
+            try:
+                status = str(status)
+                status = [stat.strip() for stat in re.split(";|,", status)]
+            except Exception:
+                # If we could not transform/use status information, we just skip this status
+                pass
+        else:
+            status = []
+
+        types = self.options.get("types", [])
+        if isinstance(types, str):
+            types = [typ.strip() for typ in re.split(";|,", types)]
+
+        if "export_id" in self.options:
+            log_warning(
+                log,
+                "The 'export_id' option is deprecated, instead use the `needs_debug_filters` configuration.",
+                "deprecated",
+                location=self.get_location(),
+            )
+
+        # Add the need and all needed information
+        collected_filter_options: FilterAttributesType = {
+            "status": status,  # ty: ignore[invalid-argument-type]
+            "tags": tags,
+            "types": types,
+            "filter": self.options.get("filter"),  # ty: ignore[invalid-argument-type]
+            "sort_by": self.options.get("sort_by"),  # ty: ignore[invalid-argument-type]
+            "filter_code": self.content,  # ty: ignore[invalid-argument-type]
+            "filter_func": self.options.get("filter-func"),
+            "filter_warning": self.options.get("filter_warning"),
+        }
+        return collected_filter_options
+
+
+def process_filters(
+    app: Sphinx,
+    needs_view: NeedsView,
+    filter_data: NeedsFilteredBaseType,
+    origin: str,
+    location: nodes.Element,
+    include_external: bool = True,
+) -> list[NeedItem | NeedPartItem]:
+    """
+    Filters all needs with given configuration.
+    Used by needlist, needtable and needflow.
+
+    :param app: Sphinx application object
+    :param filter_data: Filter configuration
+    :param origin: Origin of the request (e.g. needlist, needtable, needflow)
+    :param location: Origin node of the request
+    :param include_external: Boolean, which decides to include external needs or not
+
+    :return: list of needs, which passed the filters
+    """
+    start = timer()
+    needs_config = NeedsSphinxConfig(app.config)
+
+    # filter string to record (will be joined by 'and')
+    full_filter: list[str] = []
+
+    # check if include external needs
+    if not include_external:
+        full_filter.append("is_external == False")
+        needs_view = needs_view.filter_is_external(False)
+
+    # Check if external filter code is defined
+    try:
+        ff_result = check_and_get_external_filter_func(filter_data.get("filter_func"))
+    except NeedsInvalidFilter as e:
+        log_warning(
+            log,
+            str(e),
+            "filter_func",
+            location=location,
+        )
+        return []
+
+    filter_code = (
+        "\n".join(filter_data["filter_code"]) if filter_data["filter_code"] else None
+    )
+
+    found_needs: list[NeedItem | NeedPartItem] = []
+
+    if (not filter_code or filter_code.isspace()) and not ff_result:
+        # TODO these may not be correct for parts
+        filtered_needs = needs_view
+        if filter_data["status"]:
+            full_filter.append(f"status in {filter_data['status']!r}")
+            filtered_needs = filtered_needs.filter_statuses(filter_data["status"])
+        if filter_data["tags"]:
+            full_filter.append(
+                " or ".join(f"{tag!r} in tags" for tag in filter_data["tags"])
+            )
+            filtered_needs = filtered_needs.filter_has_tag(filter_data["tags"])
+        if filter_data["types"]:
+            full_filter.append(
+                f"type in {filter_data['types']!r} or type_name in {filter_data['types']!r}"
+            )
+            filtered_needs = filtered_needs.filter_types(
+                filter_data["types"], or_type_names=True
+            )
+        if filter_data["filter"]:
+            full_filter.append(filter_data["filter"])
+
+        # Get need by filter string
+        found_needs = filter_needs_parts(
+            filtered_needs.to_list_with_parts(),
+            needs_config,
+            filter_data["filter"],
+            location=location,
+            origin_docname=filter_data["docname"],
+        )
+    else:
+        # The filter results may be dirty, as it may continue manipulated needs.
+        found_dirty_needs: list[NeedItem | NeedPartItem] = []
+
+        if filter_code:  # code from content
+            full_filter.append(filter_code)
+            # TODO better context type
+            context: dict[str, NeedsAndPartsListView] = {
+                "needs": needs_view.to_list_with_parts(),
+                "results": [],
+            }  # ty: ignore[invalid-assignment]
+            exec(filter_code, context)
+            found_dirty_needs = context["results"]  # ty: ignore[invalid-assignment]
+        elif ff_result:  # code from external file
+            full_filter.append(ff_result.sig)
+            args = []
+            if ff_result.args:
+                args = ff_result.args.split(",")
+            args_context = {f"arg{index + 1}": arg for index, arg in enumerate(args)}
+
+            # Decorate function to allow time measurments
+            filter_func = measure_time_func(
+                ff_result.func, category="filter_func", source="user"
+            )
+            filter_func(
+                needs=needs_view.to_list_with_parts(),
+                results=found_dirty_needs,
+                **args_context,
+            )
+        else:
+            log_warning(
+                log, "Something went wrong running filter", "filter", location=location
+            )
+            return []
+
+        # Check if config allow unsafe filters
+        if needs_config.allow_unsafe_filters:
+            found_needs = found_dirty_needs
+        else:
+            # Just take the ids from search result and use the related, but original need
+            found_need_ids = [x["id_complete"] for x in found_dirty_needs]
+            for need in needs_view.to_list_with_parts():
+                if need["id_complete"] in found_need_ids:
+                    found_needs.append(need)
+
+    if sort_key := filter_data["sort_by"]:
+        try:
+            found_needs = sorted(
+                found_needs,
+                key=lambda node: node[sort_key] or "",
+            )
+        except KeyError as e:
+            log_warning(
+                log,
+                f"Sorting parameter {sort_key} not valid: Error: {e}",
+                "filter",
+                location=location,
+            )
+            return []
+
+    duration = timer() - start
+
+    if (
+        needs_config.filter_max_time is not None
+        and duration > needs_config.filter_max_time
+    ):
+        log_warning(
+            log,
+            f"Filtering took {duration:.3f}s, which is longer than the configured maximum of {needs_config.filter_max_time}s.",
+            "filter",
+            location=location,
+        )
+
+    if needs_config.debug_filters and full_filter:
+        # Store basic filter configuration and result global list.
+        # Needed mainly for exporting the result to needs.json (if builder "needs" is used).
+        json_line = json.dumps(
+            {
+                "origin": origin,
+                "source": str(location.source) if location.source else None,
+                "line": location.line,
+                "filter": full_filter[0]
+                if len(full_filter) == 1
+                else " and ".join(f"({f})" for f in full_filter),
+                "needs_count": len(found_needs),
+                "runtime": duration,
+            }
+        )
+        with Path(str(app.outdir), "debug_filters.jsonl").open("a") as f:
+            f.write(json_line + "\n")
+
+    return found_needs
+
+
+def filter_scope_ids(
+    needs_view: NeedsView,
+    config: NeedsSphinxConfig,
+    /,
+    *,
+    status: list[str],
+    tags: list[str],
+    types: list[str],
+    filter: str | None,
+    location: nodes.Element,
+    origin_docname: str,
+) -> frozenset[str] | None:
+    """Resolve the selection options of a chart directive into a scope of needs.
+
+    ``needpie`` and ``needbar`` count one filter per content line or grid cell,
+    rather than the single filter the need-listing directives take.
+    The four selection options therefore do not select what such a chart *shows*;
+    they select the needs (and parts) it counts over, once for the whole chart.
+    Each content line is then counted as ``line-result`` intersected with this scope,
+    so a line can only ever count needs that are in the scope,
+    and a literal numeric line is not affected at all.
+
+    The scope is the same set of needs that the same four options select on a
+    need-listing directive such as ``needlist``: each option narrows the view in
+    turn, exactly as ``process_filters`` narrows it there, each one matching
+    any-of its own values; ``:types:`` matches the directive name or the
+    human-readable type title; and ``:filter:`` is evaluated last, over needs
+    *and* parts. Parts follow their need for ``:status:``, ``:tags:`` and
+    ``:types:``, exactly as they do there -- including that the ``id`` fast path
+    admits sibling parts once the view has been narrowed, which is inherited
+    behaviour rather than a property of the scope.
+
+    :param needs_view: all needs of the project, unfiltered.
+    :param config: used to evaluate the ``filter`` expression.
+    :param status: the ``:status:`` option values, empty if the option was not given.
+    :param tags: the ``:tags:`` option values, empty if the option was not given.
+    :param types: the ``:types:`` option values, empty if the option was not given.
+    :param filter: the ``:filter:`` option value, None if the option was not given.
+    :param location: the chart node, used to locate warnings of an invalid ``filter``.
+    :param origin_docname: the document the chart is written on,
+        so that ``c.this_doc()`` can be used in ``filter``.
+
+    :return: the ``id_complete`` of every need and part in the scope,
+        or None if no selection option was given.
+        None means "no scope", which is not the same as an empty scope:
+        an unscoped chart counts its lines over the whole project.
+    """
+    if not (status or tags or types or filter):
+        # no selection option given: the chart counts over the whole project,
+        # exactly as it did before these options existed
+        return None
+
+    # the same narrowing calls, in the same order, that process_filters applies
+    # for a need-listing directive, so that the scope of a chart and the result
+    # of a needlist with the same options hold the same needs
+    filtered_needs = needs_view
+    if status:
+        filtered_needs = filtered_needs.filter_statuses(status)
+    if tags:
+        filtered_needs = filtered_needs.filter_has_tag(tags)
+    if types:
+        filtered_needs = filtered_needs.filter_types(types, or_type_names=True)
+
+    parts = filtered_needs.to_list_with_parts()
+    members: Iterable[NeedItem | NeedPartItem] = (
+        filter_needs_parts(
+            parts,
+            config,
+            filter,
+            location=location,
+            origin_docname=origin_docname,
+        )
+        if filter
+        else parts
+    )
+
+    return frozenset(need["id_complete"] for need in members)
+
+
+def resolve_max_items(max_items: int | None, config: NeedsSphinxConfig) -> int:
+    """Resolve the effective item limit of a view directive.
+
+    Note that only an unset option falls back to the configuration,
+    so an explicit ``:max_items: 0`` means "no limit" whatever the configuration says.
+
+    :param max_items: the directive option value, or None if the option was not given.
+    :param config: used for the ``needs_views_max_items`` fallback.
+
+    :return: the effective limit, where zero or less means no limit.
+    """
+    return config.views_max_items if max_items is None else max_items
+
+
+def apply_max_items(
+    needs: list[NeedItem | NeedPartItem],
+    max_items: int | None,
+    config: NeedsSphinxConfig,
+) -> tuple[list[NeedItem | NeedPartItem], int]:
+    """Apply the ``max_items`` cap to an already filtered and sorted list of needs.
+
+    :param needs: the filtered, sorted needs.
+    :param max_items: the directive option value, or None if the option was not given.
+    :param config: used for the ``needs_views_max_items`` fallback.
+
+    :return: the (possibly truncated) needs, and the total before any truncation.
+    """
+    total = len(needs)
+    limit = resolve_max_items(max_items, config)
+    if limit <= 0 or total <= limit:
+        return needs, total
+    return needs[:limit], total
+
+
+def filter_needs_mutable(
+    needs: NeedsMutable,
+    config: NeedsSphinxConfig,
+    filter_string: str | None = "",
+    current_need: NeedItem | None = None,
+    *,
+    location: tuple[str, int | None] | nodes.Node | None = None,
+    append_warning: str = "",
+    origin_docname: str | None = None,
+) -> list[NeedItem]:
+    return filter_needs(
+        needs.values(),
+        config,
+        filter_string,
+        current_need,
+        location=location,
+        append_warning=append_warning,
+        origin_docname=origin_docname,
+    )
+
+
+@overload
+def _analyze_and_apply_expr(
+    needs: NeedsView, expr: ast.expr
+) -> tuple[NeedsView, bool]: ...
+
+
+@overload
+def _analyze_and_apply_expr(
+    needs: NeedsAndPartsListView, expr: ast.expr
+) -> tuple[NeedsAndPartsListView, bool]: ...
+
+
+def _analyze_and_apply_expr(
+    needs: NeedsView | NeedsAndPartsListView, expr: ast.expr
+) -> tuple[NeedsView | NeedsAndPartsListView, bool]:
+    """Analyze the expr for known filter patterns,
+    and apply them to the given needs.
+
+    :returns: the needs (potentially filtered),
+        and a boolean denoting if it still requires python eval filtering
+    """
+    if isinstance(expr, ast.Constant):
+        if isinstance(expr.value, str | bool):
+            # "value" / True / False
+            return needs if expr.value else needs.filter_ids([]), False
+
+    elif isinstance(expr, ast.Name):
+        # x
+        if expr.id == "is_external":
+            return needs.filter_is_external(True), False
+
+    elif isinstance(expr, ast.Compare):
+        # <expr1> <comp> <expr2>
+        if len(expr.ops) == 1 and isinstance(expr.ops[0], ast.Eq):
+            # x == y
+            if (
+                isinstance(expr.left, ast.Name)
+                and len(expr.comparators) == 1
+                and isinstance(expr.comparators[0], ast.Constant)
+            ):
+                # x == "value"
+                field = expr.left.id
+                value = expr.comparators[0].value
+            elif (
+                isinstance(expr.left, ast.Constant)
+                and len(expr.comparators) == 1
+                and isinstance(expr.comparators[0], ast.Name)
+            ):
+                # "value" == x
+                field = expr.comparators[0].id
+                value = expr.left.value
+            else:
+                return needs, True
+
+            if field == "id":
+                # id == value
+                return needs.filter_ids([value]), False  # ty: ignore[invalid-argument-type]
+            elif field == "type":
+                # type == value
+                return needs.filter_types([value]), False  # ty: ignore[invalid-argument-type]
+            elif field == "status":
+                # status == value
+                return needs.filter_statuses([value]), False  # ty: ignore[invalid-argument-type]
+            elif field == "is_external":
+                # is_external == value
+                return needs.filter_is_external(value), False  # ty: ignore[invalid-argument-type]
+
+        elif len(expr.ops) == 1 and isinstance(expr.ops[0], ast.In):
+            # <expr1> in <expr2>
+            if (
+                isinstance(expr.left, ast.Name)
+                and len(expr.comparators) == 1
+                and isinstance(expr.comparators[0], ast.List | ast.Tuple | ast.Set)
+                and all(
+                    isinstance(elt, ast.Constant) for elt in expr.comparators[0].elts
+                )
+            ):
+                values = [
+                    elt.value
+                    for elt in expr.comparators[0].elts
+                    if isinstance(elt, ast.Constant) and isinstance(elt.value, str)
+                ]
+                if expr.left.id == "id":
+                    # id in ["a", "b", ...]
+                    return needs.filter_ids(values), False
+                if expr.left.id == "status":
+                    # status in ["a", "b", ...]
+                    return needs.filter_statuses(values), False
+                elif expr.left.id == "type":
+                    # type in ["a", "b", ...]
+                    return needs.filter_types(values), False
+            elif (
+                isinstance(expr.left, ast.Constant)
+                and len(expr.comparators) == 1
+                and isinstance(expr.comparators[0], ast.Name)
+                and expr.comparators[0].id == "tags"
+                and isinstance(expr.left.value, str)
+            ):
+                # "value" in tags
+                return needs.filter_has_tag([expr.left.value]), False
+
+    elif isinstance((and_op := expr), ast.BoolOp) and isinstance(and_op.op, ast.And):
+        # x and y and ...
+        requires_eval = False
+        for operand in and_op.values:
+            needs, _requires_eval = _analyze_and_apply_expr(needs, operand)
+            requires_eval |= _requires_eval
+        return needs, requires_eval
+
+    return needs, True
+
+
+def filter_needs_view(
+    needs: NeedsView,
+    config: NeedsSphinxConfig,
+    filter_string: str | None = "",
+    current_need: NeedItem | None = None,
+    *,
+    location: tuple[str, int | None] | nodes.Node | None = None,
+    append_warning: str = "",
+    strict_eval: bool = False,
+    origin_docname: str | None = None,
+) -> list[NeedItem]:
+    if not filter_string:
+        return list(needs.values())
+
+    try:
+        body = ast.parse(filter_string).body
+    except Exception:
+        pass  # warning already emitted in filter_needs
+    else:
+        if len(body) == 1 and isinstance((expr := body[0]), ast.Expr):
+            needs, requires_eval = _analyze_and_apply_expr(needs, expr.value)
+            if not requires_eval:
+                return list(needs.values())
+
+    if strict_eval:
+        # this is mainly used for testing purposes, to check if expression analysis is working
+        raise RuntimeError(
+            f"Strict eval mode, but no simple filter found: {filter_string!r}"
+        )
+
+    return filter_needs(
+        needs.values(),
+        config,
+        filter_string,
+        current_need,
+        location=location,
+        append_warning=append_warning,
+        origin_docname=origin_docname,
+    )
+
+
+def filter_needs_parts(
+    needs: NeedsAndPartsListView,
+    config: NeedsSphinxConfig,
+    filter_string: str | None = "",
+    current_need: NeedItem | None = None,
+    *,
+    location: tuple[str, int | None] | nodes.Node | None = None,
+    append_warning: str = "",
+    strict_eval: bool = False,
+    origin_docname: str | None = None,
+) -> list[NeedItem | NeedPartItem]:
+    if not filter_string:
+        return list(needs)
+
+    try:
+        body = ast.parse(filter_string).body
+    except Exception:
+        pass  # warning already emitted in filter_needs
+    else:
+        if len(body) == 1 and isinstance((expr := body[0]), ast.Expr):
+            needs, requires_eval = _analyze_and_apply_expr(needs, expr.value)
+            if not requires_eval:
+                return list(needs)
+
+    if strict_eval:
+        # this is mainly used for testing purposes, to check if expression analysis is working
+        raise RuntimeError(
+            f"Strict eval mode, but no simple filter found: {filter_string!r}"
+        )
+
+    return filter_needs_and_parts(
+        needs,
+        config,
+        filter_string,
+        current_need,
+        location=location,
+        append_warning=append_warning,
+        origin_docname=origin_docname,
+    )
+
+
+@measure_time("filtering")
+def filter_needs(
+    needs: Iterable[NeedItem],
+    config: NeedsSphinxConfig,
+    filter_string: str | None = "",
+    current_need: NeedItem | None = None,
+    *,
+    location: tuple[str, int | None] | nodes.Node | None = None,
+    append_warning: str = "",
+    origin_docname: str | None = None,
+) -> list[NeedItem]:
+    return filter_needs_and_parts(
+        needs,
+        config,
+        filter_string=filter_string,
+        current_need=current_need,
+        location=location,
+        append_warning=append_warning,
+        origin_docname=origin_docname,
+    )  # ty: ignore[invalid-return-type]
+
+
+@measure_time("filtering")
+def filter_needs_and_parts(
+    needs: Iterable[NeedItem | NeedPartItem],
+    config: NeedsSphinxConfig,
+    filter_string: str | None = "",
+    current_need: NeedItem | NeedPartItem | None = None,
+    *,
+    location: tuple[str, int | None] | nodes.Node | None = None,
+    append_warning: str = "",
+    origin_docname: str | None = None,
+) -> list[NeedItem | NeedPartItem]:
+    """
+    Filters given needs based on a given filter string.
+    Returns all needs, which pass the given filter.
+
+    :param needs: list of needs, which shall be filtered
+    :param config: NeedsSphinxConfig object
+    :param filter_string: strings, which gets evaluated against each need
+    :param current_need: current need, which uses the filter.
+    :param location: source location for error reporting (docname, line number)
+    :param append_warning: additional text to append to any failed filter warning
+
+    :return: list of found needs
+    """
+    if not filter_string:
+        return list(needs)
+
+    # === Fast path: try compiled predicate to avoid eval() entirely ===
+    simple_pred = try_build_simple_predicate(filter_string)
+    var_proxy = config.variant_data_proxy
+
+    if simple_pred is not None:
+        fallback: dict[str, Any] | None = None
+        if config.filter_data or var_proxy is not None:
+            fallback = dict(config.filter_data) if config.filter_data else {}
+            if var_proxy is not None:
+                fallback["var"] = var_proxy
+        found_needs: list[NeedItem | NeedPartItem] = []
+        error_reported = False
+        for filter_need in needs:
+            try:
+                result = simple_pred(filter_need, fallback)
+                if not isinstance(result, bool):
+                    raise NeedsInvalidFilter(
+                        f"Filter did not evaluate to a boolean, instead {type(result)}: {result}"
+                    )
+                if result:
+                    found_needs.append(filter_need)
+            except NeedsInvalidFilter:
+                raise
+            except Exception as e:
+                if not error_reported:
+                    if append_warning:
+                        append_warning = f" {append_warning}"
+                    log_warning(
+                        log,
+                        f"Filter {filter_string!r} not valid. Error: {e}.{append_warning}",
+                        "filter",
+                        location=location,
+                    )
+                    error_reported = True
+        return found_needs
+
+    # === Slow path: fall back to eval() per item ===
+    found_needs_slow: list[NeedItem | NeedPartItem] = []
+
+    # https://docs.python.org/3/library/functions.html?highlight=compile#compile
+    filter_compiled = compile(filter_string, "<string>", "eval")
+    error_reported = False
+    for filter_need in needs:
+        try:
+            if filter_single_need(
+                filter_need,
+                config,
+                filter_string,
+                needs,
+                current_need,
+                filter_compiled=filter_compiled,
+                origin_docname=origin_docname,
+            ):
+                found_needs_slow.append(filter_need)
+        except Exception as e:
+            if not error_reported:  # Let's report a filter-problem only once
+                if append_warning:
+                    append_warning = f" {append_warning}"
+                log_warning(
+                    log,
+                    f"{e}{append_warning}",
+                    "filter",
+                    location=location,
+                )
+                error_reported = True
+
+    return found_needs_slow
+
+
+def need_search(*args: Any, **kwargs: Any) -> bool:
+    return re.search(*args, **kwargs) is not None
+
+
+class PredicateContextData(TypedDict):
+    """Data for the predicate context."""
+
+    id: str
+    type: str
+    title: str
+    tags: list[str]
+    status: str | None
+    docname: str | None
+    is_external: bool
+    is_import: bool
+
+
+@measure_time("check_default_predicate")
+def apply_default_predicate(
+    predicate: str,
+    config: NeedsSphinxConfig,
+    context: PredicateContextData,
+    extras: dict[str, AllowedTypes | None],
+    links: dict[str, list[str]],
+) -> bool:
+    """Checks if a single need passes a default predicate.
+
+    :raises NeedsInvalidFilter: if the predicate is not valid
+    """
+    predicate_context: dict[str, Any] = {
+        **context,
+        **extras,
+        **links,
+        **config.filter_data,
+    }
+    if (var_proxy := config.variant_data_proxy) is not None:
+        predicate_context["var"] = var_proxy
+    try:
+        # Set filter_context as globals and not only locals in eval()!
+        # Otherwise, the vars not be accessed in list comprehensions.
+        result = eval(predicate, predicate_context)
+        if not isinstance(result, bool):
+            raise NeedsInvalidFilter(
+                f"Did not evaluate to a boolean, instead {type(result)}: {result}"
+            )
+    except Exception as e:
+        raise NeedsInvalidFilter(f"Predicate {predicate!r} not valid. Error: {e}.")
+    return result
+
+
+def filter_import_item(
+    context: dict[str, Any], config: NeedsSphinxConfig, filter_string: str
+) -> bool:
+    """Filters a single item from an imported needs.json file."""
+    filter_context = context.copy()
+    # Get needs external filter data and merge to filter_context
+    filter_context.update(config.filter_data)
+    if (var_proxy := config.variant_data_proxy) is not None:
+        filter_context["var"] = var_proxy
+    filter_context["search"] = need_search
+    try:
+        # Set filter_context as globals and not only locals in eval()!
+        # Otherwise, the vars not be accessed in list comprehensions.
+        result = eval(filter_string, filter_context)
+        if not isinstance(result, bool):
+            raise NeedsInvalidFilter(
+                f"Filter did not evaluate to a boolean, instead {type(result)}: {result}"
+            )
+    except Exception as e:
+        raise NeedsInvalidFilter(f"Filter {filter_string!r} not valid. Error: {e}.")
+    return result
+
+
+@measure_time("filtering")
+def filter_single_need(
+    need: NeedItem | NeedPartItem,
+    config: NeedsSphinxConfig,
+    filter_string: str = "",
+    needs: Iterable[NeedItem | NeedPartItem] | None = None,
+    current_need: NeedItem | NeedPartItem | None = None,
+    filter_compiled: CodeType | None = None,
+    *,
+    origin_docname: str | None = None,
+) -> bool:
+    """Checks if a single need/need_part passes a filter_string.
+
+    :param need: the data for a single need
+    :param config: NeedsSphinxConfig object
+    :param filter_string: string, which is used as input for eval()
+    :param needs: list of all needs
+    :param current_need: set the current_need in the filter context as this, otherwise the need itself
+    :param filter_compiled: An already compiled filter_string to save time
+    :param origin_docname: The origin docname that the filter was called from, if any
+
+    :return: True, if need passes the filter_string, else False
+    """
+    var_proxy = config.variant_data_proxy
+
+    # === Fast path: short-circuit simple expressions ===
+    simple_pred = try_build_simple_predicate(filter_string)
+    if simple_pred is not None:
+        fallback: dict[str, Any] | None = None
+        if config.filter_data or var_proxy is not None:
+            fallback = dict(config.filter_data) if config.filter_data else {}
+            if var_proxy is not None:
+                fallback["var"] = var_proxy
+        try:
+            result = simple_pred(need, fallback)
+            if not isinstance(result, bool):
+                raise NeedsInvalidFilter(
+                    f"Filter did not evaluate to a boolean, instead {type(result)}: {result}"
+                )
+            return result
+        except NeedsInvalidFilter:
+            raise
+        except Exception as e:
+            raise NeedsInvalidFilter(f"Filter {filter_string!r} not valid. Error: {e}.")
+
+    # === Slow path: fall back to eval() ===
+    filter_context: dict[str, Any] = need.filter_context()
+    if needs:
+        filter_context["needs"] = needs
+    if current_need:
+        filter_context["current_need"] = current_need
+    else:
+        filter_context["current_need"] = need
+
+    # Get needs external filter data and merge to filter_context
+    filter_context.update(config.filter_data)
+    if var_proxy is not None:
+        filter_context["var"] = var_proxy
+
+    filter_context["search"] = need_search
+
+    filter_context["c"] = NeedCheckContext(need, origin_docname)
+
+    try:
+        # Set filter_context as globals and not only locals in eval()!
+        # Otherwise, the vars not be accessed in list comprehensions.
+        result = eval(filter_compiled or filter_string, filter_context)
+        if not isinstance(result, bool):
+            raise NeedsInvalidFilter(
+                f"Filter did not evaluate to a boolean, instead {type(result)}: {result}"
+            )
+    except Exception as e:
+        raise NeedsInvalidFilter(f"Filter {filter_string!r} not valid. Error: {e}.")
+    return result
+
+
+class NeedCheckContext:
+    """A namespace for filter checks of the current need."""
+
+    __slots__ = ("_need", "_origin_docname")
+
+    def __init__(
+        self, need: NeedItem | NeedPartItem, origin_docname: str | None
+    ) -> None:
+        self._need = need
+        self._origin_docname = origin_docname
+
+    def this_doc(self) -> bool:
+        if self._origin_docname is None:
+            raise ValueError("`this_doc` can not be used in this context")
+        return self._need.is_in_document(self._origin_docname)

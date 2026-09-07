@@ -1,0 +1,793 @@
+"""SN extension for schema validation."""
+
+from __future__ import annotations
+
+from collections.abc import Mapping
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, Final, TypedDict, cast
+
+import jsonschema_rs
+from jsonschema_rs import RegexOptions, ValidationError, Validator
+
+from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.need_item import NeedItem
+from sphinx_needs.schema.config import (
+    MAP_RULE_DEFAULT_SEVERITY,
+    MAX_NESTED_NETWORK_VALIDATION_LEVELS,
+    MessageRuleEnum,
+    NeedFieldsSchemaType,
+    NeedFieldsSchemaWithVersionType,
+    ResolvedLinkSchemaType,
+    SchemasRootType,
+    SeverityEnum,
+    ValidateSchemaType,
+    get_schema_name,
+)
+from sphinx_needs.schema.reporting import (
+    OntologyWarning,
+    save_debug_file,
+    save_debug_files,
+)
+from sphinx_needs.schema.utils import get_properties_from_schema
+from sphinx_needs.views import NeedsView
+
+if TYPE_CHECKING:
+    from typing import NotRequired
+
+    from sphinx_needs.needs_schema import FieldsSchema
+
+# TODO(Marco): error for conflicting unevaluatedProperties
+
+_SCHEMA_VERSION: Final[str] = "https://json-schema.org/draft/2020-12/schema"
+"""
+JSON schema metaversion to use.
+
+The implementation requires at least draft 2019-09 as unevaluatedProperties was added there.
+"""
+
+
+def validate_field_link_schemas(
+    config: NeedsSphinxConfig,
+    fields_schema: FieldsSchema,
+    needs: NeedsView,
+) -> dict[str, list[OntologyWarning]]:
+    """Validate all needs against the combined field and link schema.
+
+    Builds a single JSON Schema validator from all field and link schemas
+    defined in ``fields_schema``, then validates each need against it.
+    For each need, only the properties present in the schema are included
+    (excluding ``None`` values), so the validator only sees relevant fields.
+
+    Errors on link properties use :attr:`MessageRuleEnum.link_fail` and
+    the ``links > schema`` schema path prefix, while errors on other
+    properties use :attr:`MessageRuleEnum.field_fail` and ``fields > schema``.
+
+    :param config: The Sphinx-Needs configuration.
+    :param fields_schema: The fields schema containing core, extra, and link field definitions.
+    :param needs: The needs view to validate.
+    :return: Mapping of need ID to list of validation warnings.
+    """
+    # Build combined properties from all field and link schemas
+    combined_properties: dict[str, Any] = {}
+    link_names: set[str] = set()
+    for field in fields_schema.iter_core_fields():
+        combined_properties[field.name] = field.schema
+    for field in fields_schema.iter_extra_fields():
+        combined_properties[field.name] = field.schema
+    for link in fields_schema.iter_link_fields():
+        combined_properties[link.name] = link.schema
+        link_names.add(link.name)
+
+    if not combined_properties:
+        return {}
+
+    schema: NeedFieldsSchemaType = {
+        "type": "object",
+        "properties": combined_properties,
+    }
+    need_2_warnings: dict[str, list[OntologyWarning]] = {}
+    validator = compile_validator(schema)
+    schema_properties = validator.properties
+
+    for need in needs.values():
+        # Project the need to only the properties present in the schema,
+        # excluding None values (we don't allow {"type": ["string", "null"]})
+        need_data: dict[str, Any] = {
+            key: value
+            for key, value in need.items()
+            if key in schema_properties and value is not None
+        }
+
+        warnings: list[OntologyWarning] = []
+        try:
+            validation_errors = list(validator.compiled.iter_errors(instance=need_data))
+        except ValidationError as exc:
+            warnings.append(
+                {
+                    "rule": MessageRuleEnum.cfg_schema_error,
+                    "severity": get_severity(MessageRuleEnum.cfg_schema_error),
+                    "validation_message": str(exc),
+                    "need": need,
+                    "schema_path": ["fields", "schema"],
+                    "need_path": [need["id"]],
+                }
+            )
+            save_debug_files(config, warnings)
+            need_2_warnings[need["id"]] = warnings
+            continue
+
+        for err in validation_errors:
+            # Determine if the error is on a link property by checking
+            # the root property name from the instance path
+            root_prop = str(err.instance_path[0]) if err.instance_path else None
+            is_link = root_prop is not None and root_prop in link_names
+            rule = MessageRuleEnum.link_fail if is_link else MessageRuleEnum.field_fail
+            schema_prefix = "links" if is_link else "fields"
+            warning: OntologyWarning = {
+                "rule": rule,
+                "severity": get_severity(rule),
+                "validation_message": err.message,
+                "need": need,
+                "reduced_need": need_data,
+                "final_schema": validator.raw,
+                "schema_path": [
+                    schema_prefix,
+                    "schema",
+                    *(str(item) for item in err.schema_path),
+                ],
+                "need_path": [need["id"]],
+            }
+            if err_field := ".".join([str(x) for x in err.instance_path]):
+                warning["field"] = err_field
+            warnings.append(warning)
+
+        save_debug_files(config, warnings)
+        if warnings:
+            need_2_warnings[need["id"]] = warnings
+
+    return need_2_warnings
+
+
+def validate_type_schema(
+    config: NeedsSphinxConfig,
+    schema: SchemasRootType,
+    needs: NeedsView,
+    field_properties: Mapping[str, NeedFieldProperties],
+    *,
+    fields_schema: FieldsSchema,
+) -> dict[str, list[OntologyWarning]]:
+    """Validate needs against a type schema.
+
+    :param fields_schema: The fields schema, used to derive the set of
+        field names visible to ``select`` schemas.
+    """
+    need_2_warnings: dict[str, list[OntologyWarning]] = {}
+
+    schema_name = get_schema_name(schema)
+    select_validator: SchemaValidator | None = None
+    select_field_names: frozenset[str] = frozenset()
+    if schema.get("select"):
+        select_validator = compile_validator(
+            cast(NeedFieldsSchemaType, schema["select"])
+        )
+        select_field_names = frozenset(
+            {
+                *fields_schema.iter_core_field_names(),
+                *fields_schema.iter_extra_field_names(),
+                *fields_schema.iter_link_field_names(),
+                # identity fields not in the user-configurable schema
+                # but essential for select matching
+                "id",
+                "type",
+                # source fields
+                "docname",
+                "is_external",
+                "is_import",
+            }
+        )
+    user_severity = SeverityEnum[schema["severity"]] if "severity" in schema else None
+    local_network_schema: ValidateSchemaType = {}
+    if "local" in schema["validate"]:
+        local_network_schema["local"] = schema["validate"]["local"]
+    if "network" in schema["validate"]:
+        local_network_schema["network"] = schema["validate"]["network"]
+    if "network_back" in schema["validate"]:
+        local_network_schema["network_back"] = schema["validate"]["network_back"]
+
+    validator_cache: dict[tuple[str, ...], SchemaValidator] = {}
+
+    for need in needs.values():
+        # maintain state for nested network validation
+        if select_validator is not None and not _check_select_match(
+            need,
+            select_validator,
+            select_field_names=select_field_names,
+            config=config,
+            schema_path=[schema_name, "select"],
+            need_path=[need["id"]],
+        ):
+            continue
+
+        _, new_warnings_recurse = recurse_validate_schemas(
+            config,
+            need,
+            needs,
+            user_message=schema.get("message"),
+            field_properties=field_properties,
+            schema=local_network_schema,
+            severity=user_severity,
+            schema_path=[schema_name],
+            need_path=[need["id"]],
+            validator_cache=validator_cache,
+            recurse_level=0,
+        )
+        if new_warnings_recurse:
+            need_2_warnings[need["id"]] = new_warnings_recurse
+
+    return need_2_warnings
+
+
+def recurse_validate_schemas(
+    config: NeedsSphinxConfig,
+    need: NeedItem,
+    needs: NeedsView,
+    user_message: str | None,
+    field_properties: Mapping[str, NeedFieldProperties],
+    schema: ValidateSchemaType,
+    schema_path: list[str],
+    need_path: list[str],
+    recurse_level: int,
+    validator_cache: dict[tuple[str, ...], SchemaValidator],
+    severity: SeverityEnum | None = None,
+) -> tuple[bool, list[OntologyWarning]]:
+    """
+    Recursively validate a need against type schemas.
+
+    The bool success bit indicates whether local and downstream validation were successful.
+    The returned list of OntologyWarning objects contains warnings
+    that are already filtered by user severity and can directly be used for user reporting.
+    """
+    if recurse_level > MAX_NESTED_NETWORK_VALIDATION_LEVELS:
+        rule = MessageRuleEnum.network_max_nest_level
+        warning: OntologyWarning = {
+            "rule": rule,
+            "severity": MAP_RULE_DEFAULT_SEVERITY[rule],
+            "validation_message": (
+                f"Maximum network validation recursion level {MAX_NESTED_NETWORK_VALIDATION_LEVELS} reached."
+            ),
+            "need": need,
+            "schema_path": schema_path,
+            "need_path": need_path,
+        }
+        if user_message is not None:
+            warning["user_message"] = user_message
+        return False, [warning]
+
+    warnings: list[OntologyWarning] = []
+    success = True
+    if "local" in schema:
+        rule_success = (
+            MessageRuleEnum.local_success
+            if recurse_level == 0
+            else MessageRuleEnum.network_local_success
+        )
+        rule_fail = (
+            MessageRuleEnum.local_fail
+            if recurse_level == 0
+            else MessageRuleEnum.network_local_fail
+        )
+        if (validator := validator_cache.get((*schema_path, "local"))) is None:
+            validator = compile_validator(cast(NeedFieldsSchemaType, schema["local"]))
+            validator_cache[(*schema_path, "local")] = validator
+        warnings_local = _validate_need_local(
+            need,
+            field_properties,
+            validator,
+            fail_rule=rule_fail,
+            success_rule=rule_success,
+            schema_path=[*schema_path, "local"],
+            need_path=need_path,
+            user_message=user_message if recurse_level == 0 else None,
+            user_severity=severity if recurse_level == 0 else None,
+        )
+        save_debug_files(config, warnings_local)
+        warnings.extend(warnings_local)
+        if any_not_of_rule(warnings_local, rule_success):
+            success = False
+    if "network" in schema or "network_back" in schema:
+        # Flatten outgoing ("network") and incoming ("network_back") link rules
+        # into a single iteration so both directions share the same logic.
+        network_entries: list[tuple[str, str, ResolvedLinkSchemaType]] = [
+            (network_key, link_type, link_schema)
+            for network_key in ("network", "network_back")
+            for link_type, link_schema in schema.get(network_key, {}).items()
+        ]
+        for network_key, link_type, link_schema in network_entries:
+            # For incoming links, traverse the computed ``<link_type>_back`` field;
+            # for outgoing links, traverse the link field directly.
+            link_field = link_type if network_key == "network" else f"{link_type}_back"
+            link_desc = "links" if network_key == "network" else "incoming links"
+            link_desc_singular = "link" if network_key == "network" else "incoming link"
+            # Preposition relating the need to the traversed targets: outgoing links go
+            # "to" their targets, incoming links come "from" their sources.
+            link_prep = "to" if network_key == "network" else "from"
+            # Label for this hop in ``need_path``. For incoming links the traversed need
+            # is the *source* of the link, so the hop is annotated to make the direction
+            # unambiguous (otherwise ``REQ_1 > links > IMPL_1`` reads as if REQ_1 links to
+            # IMPL_1, when in fact IMPL_1 links to REQ_1).
+            link_path_label = (
+                link_type if network_key == "network" else f"{link_type} (incoming)"
+            )
+            items_targets_ok: list[str] = []
+            """List of target need ids for items validation that passed."""
+            items_targets_nok: list[str] = []
+            """List of target need ids for items validation that failed."""
+            items_warnings_per_target: dict[str, list[OntologyWarning]] = {}
+            """Map of target need id to warnings for failed items validation."""
+            contains_targets_ok: list[str] = []
+            """List of target need ids for contains validation that passed."""
+            contains_targets_nok: list[str] = []
+            """List of target need ids for contains validation that failed."""
+            contains_warnings_per_target: dict[str, list[OntologyWarning]] = {}
+            """Map of target need id to warnings for failed contains validation."""
+            schema_path_items = [
+                *schema_path,
+                "validate",
+                network_key,
+                link_type,
+                "items",
+            ]
+            schema_path_contains = [
+                *schema_path,
+                "validate",
+                network_key,
+                link_type,
+                "contains",
+            ]
+            for target_need_id in need[link_field]:
+                # collect all downstream warnings for broken links, items and contains
+                # evaluation happens later
+                try:
+                    target_need = needs[target_need_id]
+                except KeyError:
+                    # Target need does not exist (broken link). Only reachable for the
+                    # outgoing direction: incoming-link sources come from resolved
+                    # ``<link_type>_back`` fields, so they always resolve to a need.
+                    rule = MessageRuleEnum.network_missing_target
+                    msg = f"Broken {link_desc_singular} of type '{link_type}' to '{target_need_id}'"
+                    # report it directly, it's not a minmax warning and the target need is ignored
+                    # in the minmax checks
+                    warnings.append(
+                        {
+                            "rule": rule,
+                            "severity": get_severity(rule, severity),
+                            "validation_message": msg,
+                            "need": need,
+                            "schema_path": [
+                                *schema_path,
+                                "validate",
+                                network_key,
+                                link_type,
+                            ],
+                            "need_path": [*need_path, link_path_label],
+                        }
+                    )
+                    if recurse_level == 0 and user_message is not None:
+                        warnings[-1]["user_message"] = user_message
+                    continue
+
+                need_path_link = [*need_path, link_path_label, target_need_id]
+                # Handle items validation - all items must pass
+                if link_schema.get("items"):
+                    new_success, new_warnings = recurse_validate_schemas(
+                        config=config,
+                        need=target_need,
+                        needs=needs,
+                        user_message=user_message,
+                        field_properties=field_properties,
+                        schema=link_schema["items"],
+                        schema_path=schema_path_items,
+                        need_path=need_path_link,
+                        recurse_level=recurse_level + 1,
+                        validator_cache=validator_cache,
+                        severity=severity,
+                    )
+                    if new_success:
+                        items_targets_ok.append(target_need_id)
+                    else:
+                        items_targets_nok.append(target_need_id)
+                    items_warnings_per_target[target_need_id] = new_warnings
+                else:
+                    items_targets_ok.append(target_need_id)
+
+                # Handle contains validation - at least some items must pass
+                if link_schema.get("contains"):
+                    new_success, new_warnings = recurse_validate_schemas(
+                        config=config,
+                        need=target_need,
+                        needs=needs,
+                        user_message=user_message,
+                        field_properties=field_properties,
+                        schema=link_schema["contains"],
+                        schema_path=schema_path_contains,
+                        need_path=need_path_link,
+                        recurse_level=recurse_level + 1,
+                        validator_cache=validator_cache,
+                        severity=severity,
+                    )
+                    if new_success:
+                        contains_targets_ok.append(target_need_id)
+                    else:
+                        contains_targets_nok.append(target_need_id)
+                    contains_warnings_per_target[target_need_id] = new_warnings
+                else:
+                    contains_targets_ok.append(target_need_id)
+
+            # Check items validation results
+            items_success = True
+            if link_schema.get("items") and items_targets_nok:
+                items_success = False
+                # Add warnings for failed items validation
+                items_nok_warnings = [
+                    warning
+                    for target_id in items_targets_nok
+                    for warning in items_warnings_per_target[target_id]
+                ]
+                rule = MessageRuleEnum.network_items_fail
+                msg = (
+                    f"Items validation failed for {link_desc} of type '{link_type}' "
+                    f"{link_prep} {', '.join(items_targets_nok)}"
+                )
+                if items_targets_ok:
+                    msg += f" / ok: {', '.join(items_targets_ok)}"
+                if items_targets_nok:
+                    msg += f" / nok: {', '.join(items_targets_nok)}"
+                warning = {
+                    "rule": rule,
+                    "severity": get_severity(rule, severity),
+                    "validation_message": msg,
+                    "need": need,
+                    "schema_path": schema_path_items,
+                    "need_path": [*need_path, link_path_label],
+                    "children": items_nok_warnings,  # user is interested in these
+                }
+                if recurse_level == 0 and user_message is not None:
+                    # user message only added to the root validation
+                    warning["user_message"] = user_message
+                warnings.extend(items_nok_warnings)
+
+            # Check contains validation results
+            contains_success = True
+            if link_schema.get("contains"):
+                contains_warnings: list[OntologyWarning] = []
+                contains_cnt_ok = len(contains_targets_ok)
+                contains_cnt_nok = len(contains_targets_nok)
+                min_contains = 1  # default if minContains is not set
+                if "minContains" in link_schema:
+                    min_contains = link_schema["minContains"]
+                if contains_cnt_ok < min_contains:
+                    rule = MessageRuleEnum.network_contains_too_few
+                    msg = f"Too few valid {link_desc} of type '{link_type}' ({contains_cnt_ok} < {min_contains})"
+                    if contains_cnt_ok > 0:
+                        msg += f" / ok: {', '.join(contains_targets_ok)}"
+                    if contains_cnt_nok > 0:
+                        msg += f" / nok: {', '.join(contains_targets_nok)}"
+                    contains_nok_warnings = [
+                        warning
+                        for target_id in contains_targets_nok
+                        for warning in contains_warnings_per_target[target_id]
+                    ]
+                    contains_warnings.append(
+                        {
+                            "rule": rule,
+                            "severity": get_severity(rule, severity),
+                            "validation_message": msg,
+                            "need": need,
+                            "schema_path": schema_path_contains,
+                            "need_path": [*need_path, link_path_label],
+                            "children": contains_nok_warnings,  # user is interested in these
+                        }
+                    )
+                    if recurse_level and user_message is not None:
+                        contains_warnings[-1]["user_message"] = user_message
+                    contains_success = False
+                if "maxContains" in link_schema:
+                    max_contains = link_schema["maxContains"]
+                    if contains_cnt_ok > max_contains:
+                        rule = MessageRuleEnum.network_contains_too_many
+                        msg = f"Too many valid {link_desc} of type '{link_type}' ({contains_cnt_ok} > {max_contains})"
+                        if contains_cnt_ok > 0:
+                            msg += f" / ok: {', '.join(contains_targets_ok)}"
+                        if contains_cnt_nok > 0:
+                            msg += f" / nok: {', '.join(contains_targets_nok)}"
+                        contains_warnings.append(
+                            {
+                                "rule": rule,
+                                "severity": get_severity(rule, severity),
+                                "validation_message": msg,
+                                "need": need,
+                                "schema_path": schema_path_contains,
+                                "need_path": [*need_path, link_path_label],
+                                # children not passed, no interest in too much success
+                            }
+                        )
+                        if recurse_level == 0 and user_message is not None:
+                            # user message only added to the root validation
+                            contains_warnings[-1]["user_message"] = user_message
+                        contains_success = False
+
+                warnings.extend(contains_warnings)
+
+            # Overall success requires both items and minmax validation to pass
+            if not (items_success and contains_success):
+                success = False
+
+    return success, warnings
+
+
+class NeedFieldProperties(TypedDict):
+    """Properties of a need field used for schema validation."""
+
+    field_type: str
+    default: NotRequired[Any]
+
+
+def reduce_need(
+    need: NeedItem,
+    field_properties: Mapping[str, NeedFieldProperties],
+    schema_properties: set[str],
+) -> dict[str, Any]:
+    """
+    Reduce a need to only actively-set fields for type-specific schema validation.
+
+    This is used for ``local`` and ``network`` schemas, where the validator needs to
+    distinguish between fields that were explicitly set and those at their defaults.
+    It strips out:
+
+    - Extra fields that are ``None`` (not provided)
+    - Link fields that are empty (``[]``)
+    - Core fields that are ``None``, not referenced in the schema, or match their default
+
+    This is required for:
+
+    - ``unevaluatedProperties``: without reduction, internal/unrelated fields would
+      cause false "additional property" failures.
+    - ``required``: without reduction, core fields at their default value would still
+      be present, so ``required`` would always pass even if the user never explicitly
+      set the field.
+
+    .. note::
+
+       This cannot distinguish "explicitly set to the default value" from "never set."
+       For example, if a user sets ``:tags:`` to ``[]`` and the schema has ``minItems: 1``,
+       the field is stripped (since ``[]`` matches the default) and the violation is silently
+       ignored.
+
+    :param need: The need to reduce.
+    :param field_properties: Mapping of field names to their schema properties (type, default).
+    :param schema_properties: Set of field names referenced in the user-provided schema.
+    """
+    reduced_need: dict[str, Any] = {}
+
+    for field, value in need.iter_extra_items():
+        if value is None:
+            # value is not provided
+            continue
+        reduced_need[field] = value
+
+    for field, value in need.iter_links_items():
+        if value:
+            # keep non-empty link fields
+            reduced_need[field] = value
+
+    for field, value in need.iter_core_items():
+        if value is None:
+            # value is not provided
+            continue
+        schema_field = field_properties[field]
+        if field in schema_properties and not (
+            "default" in schema_field and value == schema_field["default"]
+        ):
+            # keep core field, it has no default or differs from the default and
+            # is part of the user provided schema
+            reduced_need[field] = value
+
+    return reduced_need
+
+
+def get_severity(
+    rule: MessageRuleEnum, user_severity: SeverityEnum | None = None
+) -> SeverityEnum:
+    """Get rule severity, select the default severity if not overridden by a schema."""
+    if user_severity is not None:
+        return user_severity
+    return MAP_RULE_DEFAULT_SEVERITY[rule]
+
+
+def any_not_of_rule(warnings: list[OntologyWarning], rule: MessageRuleEnum) -> bool:
+    """
+    Check if any warning in the list does not match the given rule.
+
+    :param warnings: List of OntologyWarning objects.
+    :param rule: The rule to check against.
+    :return: True if any warning does not match the rule, False otherwise.
+    """
+    return any(warning["rule"] != rule for warning in warnings)
+
+
+def validate_object_schema_compiles(schema: Any) -> None:
+    """Validate schema properties by trying to compile them."""
+    jsonschema_rs.validator_for(
+        {
+            "$schema": _SCHEMA_VERSION,
+            "type": "object",
+            **{
+                k: schema[k]
+                for k in ("properties", "allOf", "required", "unevaluatedProperties")
+                if k in schema
+            },
+        },
+        validate_formats=True,
+        pattern_options=jsonschema_rs.RegexOptions(),
+    )
+
+
+@dataclass(slots=True, frozen=True)
+class SchemaValidator:
+    raw: NeedFieldsSchemaWithVersionType
+    compiled: Validator
+    properties: set[str]
+
+
+def compile_validator(schema: NeedFieldsSchemaType) -> SchemaValidator:
+    """Compile a JSON schema into a validator."""
+    final_schema: NeedFieldsSchemaWithVersionType = {
+        "$schema": _SCHEMA_VERSION,
+        "type": "object",
+        **{
+            k: schema[k]
+            for k in ("properties", "allOf", "required", "unevaluatedProperties")
+            if k in schema
+        },
+    }
+    properties = get_properties_from_schema(final_schema)
+    compiled = jsonschema_rs.validator_for(
+        cast(dict[str, Any], final_schema),
+        validate_formats=True,
+        pattern_options=RegexOptions(),
+    )
+    return SchemaValidator(raw=final_schema, compiled=compiled, properties=properties)
+
+
+def _check_select_match(
+    need: NeedItem,
+    validator: SchemaValidator,
+    *,
+    select_field_names: frozenset[str],
+    config: NeedsSphinxConfig,
+    schema_path: list[str],
+    need_path: list[str],
+) -> bool:
+    """Check whether a need matches a ``select`` schema.
+
+    Builds a projection of the need from :meth:`NeedItem.items`,
+    keeping only fields whose name is in ``select_field_names`` and
+    stripping ``None`` values.
+
+    When :attr:`NeedsSphinxConfig.schema_debug_active` is enabled, a
+    debug file is written for each evaluated need using the
+    ``select_success`` / ``select_fail`` rule.
+
+    :param need: The need to test.
+    :param validator: Compiled select schema validator.
+    :param select_field_names: Field names to include in the projection
+        (typically built from :class:`FieldsSchema` iterators plus
+        identity and source fields).
+    :param config: Sphinx-Needs configuration (used for debug file writing).
+    :param schema_path: Schema path for debug reporting.
+    :param need_path: Need path for debug reporting.
+    :return: ``True`` if the need matches the select schema.
+    """
+    needs_json: dict[str, Any] = {
+        k: v for k, v in need.items() if k in select_field_names and v is not None
+    }
+    is_match = validator.compiled.is_valid(instance=needs_json)
+
+    if config.schema_debug_active:
+        rule = (
+            MessageRuleEnum.select_success if is_match else MessageRuleEnum.select_fail
+        )
+        warning: OntologyWarning = {
+            "rule": rule,
+            "severity": get_severity(rule),
+            "need": need,
+            "reduced_need": needs_json,
+            "final_schema": validator.raw,
+            "schema_path": schema_path,
+            "need_path": need_path,
+        }
+        save_debug_file(config, warning)
+
+    return is_match
+
+
+def _validate_need_local(
+    need: NeedItem,
+    field_properties: Mapping[str, NeedFieldProperties],
+    validator: SchemaValidator,
+    *,
+    fail_rule: MessageRuleEnum,
+    success_rule: MessageRuleEnum,
+    schema_path: list[str],
+    need_path: list[str],
+    user_message: str | None = None,
+    user_severity: SeverityEnum | None = None,
+) -> list[OntologyWarning]:
+    """Validate a need against a ``local`` (or network-local) schema.
+
+    Uses :func:`reduce_need` to strip the need down to actively-set fields
+    so that ``required`` and ``unevaluatedProperties`` have meaningful
+    semantics on fully-materialised need objects.
+
+    :param need: The need to validate.
+    :param field_properties: Mapping of field names to their schema properties.
+    :param validator: Compiled local schema validator.
+    :param fail_rule: Rule for validation failure warnings.
+    :param success_rule: Rule for validation success warnings.
+    :param schema_path: Schema path for reporting.
+    :param need_path: Need path for reporting.
+    :param user_message: Optional user message to attach to warnings.
+    :param user_severity: Optional severity override for the rules.
+    """
+    needs_json = reduce_need(need, field_properties, validator.properties)
+    warnings: list[OntologyWarning] = []
+    warning: OntologyWarning
+    try:
+        validation_errors: list[ValidationError] = list(
+            validator.compiled.iter_errors(instance=needs_json)
+        )
+    except ValidationError as exc:
+        warning = {
+            "rule": MessageRuleEnum.cfg_schema_error,
+            "severity": get_severity(MessageRuleEnum.cfg_schema_error),
+            "validation_message": str(exc),
+            "need": need,
+            "schema_path": schema_path,
+            "need_path": [need["id"]],
+        }
+        if user_message is not None:
+            warning["user_message"] = user_message
+        warnings.append(warning)
+        return warnings
+
+    if validation_errors:
+        for err in validation_errors:
+            warning = {
+                "rule": fail_rule,
+                "severity": get_severity(fail_rule, user_severity),
+                "validation_message": err.message,
+                "need": need,
+                "reduced_need": needs_json,
+                "final_schema": validator.raw,
+                "schema_path": [*schema_path, *(str(item) for item in err.schema_path)],
+                "need_path": need_path,
+            }
+            if field := ".".join([str(x) for x in err.instance_path]):
+                warning["field"] = field
+            if user_message is not None:
+                warning["user_message"] = user_message
+            warnings.append(warning)
+    else:
+        warning = {
+            "rule": success_rule,
+            "severity": get_severity(success_rule),
+            "need": need,
+            "reduced_need": needs_json,
+            "final_schema": validator.raw,
+            "schema_path": schema_path,
+            "need_path": need_path,
+        }
+        if user_message is not None:
+            warning["user_message"] = user_message
+        warnings.append(warning)
+    return warnings
