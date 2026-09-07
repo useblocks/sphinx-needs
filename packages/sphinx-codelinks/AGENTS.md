@@ -187,8 +187,9 @@ a file path: `poe test-codelinks -- --collect-only -q` collects **0 items**, whe
 ### Test Structure
 
 - Tests use `pytest` with fixtures from `conftest.py`, which also loads the workspace's
-  shared test layer, `packages/sphinx-needs-testkit` — the doctree snapshot extension comes
-  from there rather than from a copy here
+  shared test layer, `packages/sphinx-needs-testkit` — the doctree snapshot extension and
+  the warning normalisation a build assertion goes through both come from there rather than
+  from a copy here, so a warning means the same thing in this suite as in the other two
 - Snapshot testing uses `syrupy` for complex output comparisons
 - Test data is in `tests/data/`
 - Sphinx integration tests use real Sphinx projects in `tests/doc_test/`

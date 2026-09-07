@@ -177,7 +177,8 @@ def test_an_empty_variable_is_treated_as_unset(
     ``PLANTUML_JAR=`` exported, and from a workflow that computes the value with an
     expression rather than deciding whether to set it. Read as "set but names no file"
     it would instead raise, which is a red run for every cell that does not want a jar.
-    sphinx-mounts' `_plantuml_jar_command` agrees, and its own suite pins it too.
+    sphinx-mounts' suite pins the same reading of the variable, against this same
+    function -- it has no copy of the chain to disagree with any more.
     """
     monkeypatch.setenv("PLANTUML_JAR", "")
 

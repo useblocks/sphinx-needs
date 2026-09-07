@@ -7,10 +7,10 @@ doc-relative path (needimport, needreport, needuml), plus the path_check
 enforcement. The graphviz/uml cases render for real and **hard-require**
 their renderers — the full mounts chain, render included, must be
 exercised rather than silently skipped when one is missing. ``dot`` has to be
-on ``PATH``; PlantUML is taken either from a ``plantuml`` executable on
-``PATH`` or, when ``PLANTUML_JAR`` names one, from a plantuml jar run through
-``java`` (which is how CI supplies it — see ``.github/workflows/ci.yaml`` and
-the package's ``AGENTS.md``). Mermaid uses 'raw'
+on ``PATH``; PlantUML comes from the workspace's shared resolution
+(``PLANTUML_JAR``, then the jar committed under ``vendor/plantuml/``, then a
+``plantuml`` executable on ``PATH``), which raises rather than falling back to a
+renderer nobody chose. Mermaid uses 'raw'
 output, so no mmdc is needed. The needuml ``!include`` case renders for
 real too, since PlantUML resolves that path itself and records no Sphinx
 dependency.
@@ -32,7 +32,12 @@ import pytest
 import sphinx
 from sphinx.errors import ExtensionError
 
-from tests.conftest import count_mount_warnings, count_warnings, write_ubproject_toml
+from sphinx_needs_testkit import (
+    plantuml_conf,
+    resolve_plantuml_command,
+    warning_count,
+)
+from tests.conftest import write_ubproject_toml
 
 if TYPE_CHECKING:
     from sphinx.testing.util import SphinxTestApp
@@ -337,10 +342,12 @@ def test_graphviz_file_resolves_within_bundle(make_app, make_host_project, tmp_p
     app = _build(make_app, host)
 
     assert (bundle / "g.dot").resolve() in _resolved_deps(app, "_g/api/index")
-    assert count_warnings(app) == 0, app._warning.getvalue()
+    assert warning_count(app) == 0, app._warning.getvalue()
 
 
-def test_uml_file_resolves_within_bundle(make_app, make_host_project, tmp_path):
+def test_uml_file_resolves_within_bundle(
+    request, make_app, make_host_project, tmp_path
+):
     pytest.importorskip("sphinxcontrib.plantuml")
     _require_renderer(".. uml:: d.puml\n")
     bundle = tmp_path / "bundle"
@@ -352,7 +359,7 @@ def test_uml_file_resolves_within_bundle(make_app, make_host_project, tmp_path):
 
     host = make_host_project()
     _add_extensions(host, "sphinxcontrib.plantuml")
-    for line in _plantuml_extra_conf():
+    for line in _plantuml_extra_conf(request):
         _append_conf(host, line)
     write_ubproject_toml(host, [{"dir": str(bundle), "mount_at": "_g/api"}])
     _replace_index_toctree(host, "_g/api/index")
@@ -360,7 +367,7 @@ def test_uml_file_resolves_within_bundle(make_app, make_host_project, tmp_path):
     app = _build(make_app, host)
 
     assert (bundle / "d.puml").resolve() in _resolved_deps(app, "_g/api/index")
-    assert count_warnings(app) == 0, app._warning.getvalue()
+    assert warning_count(app) == 0, app._warning.getvalue()
 
 
 def test_mermaid_file_resolves_within_bundle(make_app, make_host_project, tmp_path):
@@ -500,7 +507,9 @@ def test_needreport_resolves_template_within_bundle(
     assert not (Path(app.outdir) / "_g" / "api" / "report-template.html").exists()
 
 
-def test_needuml_include_resolves_within_bundle(make_app, make_host_project, tmp_path):
+def test_needuml_include_resolves_within_bundle(
+    request, make_app, make_host_project, tmp_path
+):
     """``needuml``'s PlantUML ``!include`` resolves against the bundle root.
 
     The reference case for sphinx-needs
@@ -532,7 +541,10 @@ def test_needuml_include_resolves_within_bundle(make_app, make_host_project, tmp
         "sphinxcontrib.plantuml",
         # The SVG path applies no scaling, so Pillow is not needed for the
         # ``scale`` attribute sphinx-needs stamps onto every diagram node.
-        conf_lines=("plantuml_output_format = 'svg_img'", *_plantuml_extra_conf()),
+        conf_lines=(
+            "plantuml_output_format = 'svg_img'",
+            *_plantuml_extra_conf(request),
+        ),
     )
     write_ubproject_toml(host, [{"dir": str(bundle), "mount_at": "_g/api"}])
     _replace_index_toctree(host, "_g/api/index")
@@ -659,7 +671,8 @@ def test_escape_at_the_default_path_check_warns_and_builds(
     warnings = app._warning.getvalue()
     assert "mounts.path_escape" in warnings, warnings
     assert "outside its bundle root" in warnings, warnings
-    assert count_mount_warnings(app) == 1, warnings
+    assert warning_count(app) == 1
+    assert warning_count(app, "mounts.path_escape") == 1, warnings
     # The build really completed: the page exists, unlike under "error".
     assert (Path(app.outdir) / "_g" / "api" / "index.html").exists()
 
@@ -683,7 +696,7 @@ def test_escape_at_the_default_path_check_is_suppressible(
 
     app = _build(make_app, host)
 
-    assert count_warnings(app) == 0, app._warning.getvalue()
+    assert warning_count(app) == 0, app._warning.getvalue()
 
 
 def test_path_check_warn_emits_warning_not_error(make_app, make_host_project, tmp_path):
@@ -699,8 +712,8 @@ def test_path_check_warn_emits_warning_not_error(make_app, make_host_project, tm
 
     assert "outside its bundle root" in app._warning.getvalue()
     assert "mounts.path_escape" in app._warning.getvalue()
-    assert count_warnings(app) == 1  # only the path_escape warning
-    assert count_mount_warnings(app) == 1
+    assert warning_count(app) == 1  # only the path_escape warning
+    assert warning_count(app, "mounts.path_escape") == 1
 
 
 def test_path_check_off_allows_escape(make_app, make_host_project, tmp_path):
@@ -715,7 +728,7 @@ def test_path_check_off_allows_escape(make_app, make_host_project, tmp_path):
     app = _build(make_app, host)
 
     assert "outside its bundle root" not in app._warning.getvalue()
-    assert count_warnings(app) == 0
+    assert warning_count(app) == 0
     # The leaked host file content really did render (documents the leak).
     html = (Path(app.outdir) / "_g" / "api" / "index.html").read_text(encoding="utf-8")
     assert "HOST_SECRET" in html
@@ -804,7 +817,7 @@ def test_files_mode_sibling_reference_within_the_mounts_roots_is_allowed(
 
     app = _build(make_app, host)
 
-    assert count_warnings(app) == 0, app._warning.getvalue()
+    assert warning_count(app) == 0, app._warning.getvalue()
     html = (Path(app.outdir) / "_g" / "rn" / "2026-q1.html").read_text(encoding="utf-8")
     assert "SHARED_TEXT" in html
 
@@ -906,7 +919,8 @@ def test_files_mode_disjoint_branches_do_not_widen_to_the_filesystem_root(
 
     warnings = app._warning.getvalue()
     assert "mounts.path_escape" in warnings, warnings
-    assert count_mount_warnings(app) == 1, warnings
+    assert warning_count(app) == 1
+    assert warning_count(app, "mounts.path_escape") == 1, warnings
 
 
 def test_files_mode_escape_above_every_root_still_fails(
@@ -1141,7 +1155,7 @@ def test_symlinked_bundle_root_is_not_an_escape(make_app, make_host_project, tmp
 
     app = _build(make_app, host)  # must NOT raise
 
-    assert count_warnings(app) == 0, app._warning.getvalue()
+    assert warning_count(app) == 0, app._warning.getvalue()
     html = (Path(app.outdir) / "_g" / "api" / "index.html").read_text(encoding="utf-8")
     assert "IN_BUNDLE" in html
 
@@ -1310,92 +1324,72 @@ def _require_sphinx_needs() -> None:
         ) from exc
 
 
-def _plantuml_jar_command() -> tuple[str, ...] | None:
-    """The ``plantuml`` configuration value for a jar named by ``PLANTUML_JAR``.
-
-    The second of the two ways this suite can reach PlantUML, and the one CI
-    uses: no ``plantuml`` package is installed anywhere, and the workflows
-    point this variable at the jar the workspace commits at
-    ``vendor/plantuml/`` (at the version ``vendor/plantuml/pin.toml`` names,
-    which the workflows verify before pointing at it). ``java`` has to be on ``PATH`` for
-    it, which it is on every GitHub runner image.
-
-    Returns ``None`` when the variable is unset, so the ``plantuml``-on-PATH
-    route is used instead; a variable that names a file which is not there is
-    a mistake worth failing on rather than falling back from, so it returns
-    the command regardless and lets the render fail loudly.
-    """
-    jar = os.environ.get("PLANTUML_JAR")
-    if not jar:
-        return None
-    # A TUPLE, not a string: sphinxcontrib-plantuml's ``_split_cmdargs`` passes a
-    # list or tuple through untouched and ``shlex``-splits anything else, which
-    # would break on a checkout under a path containing a space (and, on posix,
-    # on a Windows path's backslashes). Headless, like the sphinx-needs fixture
-    # that supplies the same jar: a CI runner has no windowing toolkit.
-    return ("java", "-Djava.awt.headless=true", "-jar", jar)
-
-
 def test_an_empty_plantuml_jar_is_treated_as_unset(
-    monkeypatch: pytest.MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     """An empty ``PLANTUML_JAR`` means "no jar", not "a jar named nothing".
 
     That is how the variable arrives from a developer shell with ``PLANTUML_JAR=``
     exported, and from a workflow that computes the value with an expression rather than
     deciding whether to set it at all. Read the other way, every cell that does not want
-    a jar would go red. sphinx-needs' suite agrees, and pins it in
-    ``tests/test_plantuml_command.py``; this is the same four lines on this side, because
-    the two implementations are separate and nothing else links them.
+    a jar would go red — and a value that is set but names no file is refused outright,
+    which is the mistake this one must not be mistaken for.
+
+    The resolution is the workspace's shared one now, so this asserts against it directly
+    rather than against a copy of it. It is worth keeping on this side because this suite
+    reaches the variable by three routes the sphinx-needs suite does not — its own poe
+    tasks, its CI cells, and the release workflow's compat cell — and because a jar handed
+    to it explicitly is what all three do.
     """
     monkeypatch.setenv("PLANTUML_JAR", "")
+    workspace_jar = tmp_path / "plantuml-0.0.0.jar"
+    workspace_jar.write_bytes(b"")
 
-    assert _plantuml_jar_command() is None
+    assert str(workspace_jar) in resolve_plantuml_command(workspace_jar)
 
 
 def _require_renderer(directive_rst: str) -> None:
     """Fail the test when a diagram directive's renderer is not available.
 
-    The graphviz/uml cases must exercise the full mounts chain *including*
-    the real renderer — tolerating a missing one would silently skip the
-    render step, which is the whole point of those tests. So this asserts; it
-    never skips.
+    ``dot`` only, and it asserts rather than skipping: the graphviz cases must exercise
+    the full mounts chain *including* the real renderer, and tolerating a missing one
+    would silently drop the render step, which is the whole point of them.
+
+    PlantUML is not checked here any more. :func:`_plantuml_extra_conf` resolves it
+    through the workspace's shared layer, which raises — with the one message every suite
+    in this repository gives — rather than falling back to a renderer nobody chose, so the
+    uml cases assert by construction and one fewer copy of the chain exists.
     """
     if "graphviz" in directive_rst:
         assert shutil.which("dot"), (
             "graphviz (the `dot` binary) is required to run this test — "
             "install it (e.g. `apt install graphviz`)"
         )
-    elif "uml" in directive_rst:
-        assert _plantuml_jar_command() or shutil.which("plantuml"), (
-            "PlantUML is required to run this test. Either set PLANTUML_JAR to "
-            "a plantuml jar and have `java` on PATH (this repository commits the "
-            "pinned one at vendor/plantuml/, and `uv run poe test-mounts` points "
-            "the variable at it for you, which is what CI does too), or install "
-            "a `plantuml` executable (e.g. "
-            "`apt install plantuml`, `brew install plantuml`, "
-            "`choco install plantuml`)"
-        )
 
 
-def _plantuml_extra_conf() -> tuple[str, ...]:
-    """Extra conf.py lines for the uml tests.
+def _plantuml_extra_conf(
+    request: pytest.FixtureRequest, renders: bool = True
+) -> tuple[str, ...]:
+    """Extra conf.py lines pointing a build at the workspace's PlantUML renderer.
 
-    ``PLANTUML_JAR`` wins when it is set: it is an explicit choice, and it is
-    the one CI makes on every runner including Windows.
+    The shared resolution, rendered as source: ``PLANTUML_JAR`` (an explicit choice, and
+    an error when it names no file), then the jar this repository commits under
+    ``vendor/plantuml/``, then a ``plantuml`` executable on ``PATH`` — ``plantumlc``
+    first on Windows, whose chocolatey ``plantuml`` shim is a non-blocking ``javaw``
+    launcher. This suite used to write that chain out for itself, without the vendored
+    step, which is why the jar had to be handed to it in an environment variable.
 
-    Otherwise sphinxcontrib.plantuml invokes the ``plantuml`` command
-    synchronously; on Windows the chocolatey package's ``plantuml`` shim is
-    non-blocking (javaw), so its ``plantumlc`` (java) shim must be used there.
+    ``renders`` is the lazy half, and it matters for the one parametrised test whose nine
+    cases include a single uml one: a parameter that draws no PlantUML diagram must not
+    make the session resolve a renderer, or a machine with none could not run the other
+    eight.
+
+    ``repr`` of the command string, so a path containing a space — or a Windows path's
+    backslashes — survives into the conf.py as one literal.
     """
-    jar_command = _plantuml_jar_command()
-    if jar_command is not None:
-        # `repr` of the tuple, so both a Windows path's backslashes and any
-        # space in it survive into the conf.py as one argument
-        return (f"plantuml = {jar_command!r}",)
-    if os.name == "nt":
-        return ("plantuml = 'plantumlc'",)
-    return ()
+    return tuple(
+        f"{key} = {value!r}" for key, value in plantuml_conf(request, renders).items()
+    )
 
 
 _RED_PNG = _tiny_png((0xFF, 0x00, 0x00))
@@ -1505,6 +1499,7 @@ REREAD_CASES = [
     REREAD_CASES,
 )
 def test_changed_include_target_rereads_mounted_doc(
+    request,
     make_app,
     make_host_project,
     tmp_path,
@@ -1539,14 +1534,19 @@ def test_changed_include_target_rereads_mounted_doc(
     host = make_host_project()
     if extensions:
         _add_extensions(host, *extensions)
-    for line in conf_lines + _plantuml_extra_conf():
+    # only the `uml` parameter draws a PlantUML diagram, and only it may make the
+    # session resolve a renderer -- otherwise a machine with none could run none of
+    # the nine
+    for line in conf_lines + _plantuml_extra_conf(
+        request, requires == "sphinxcontrib.plantuml"
+    ):
         _append_conf(host, line)
     write_ubproject_toml(host, [{"dir": str(bundle), "mount_at": "_generated/m"}])
     _replace_index_toctree(host, "_generated/m/index")
 
     app = make_app(srcdir=host, freshenv=True)
     app.build()
-    assert count_warnings(app) == 0, app._warning.getvalue()
+    assert warning_count(app) == 0, app._warning.getvalue()
 
     # Precondition (teeth): the directive recorded its target as a dependency
     # of the mounted doc, pointing at the external file. Without this, a later
@@ -1564,7 +1564,7 @@ def test_changed_include_target_rereads_mounted_doc(
     _bump_mtime(bundle / target_name)
 
     app.build()
-    assert count_warnings(app) == 0, app._warning.getvalue()
+    assert warning_count(app) == 0, app._warning.getvalue()
     read = _docs_read_in_log(app._status.getvalue()[offset:])
 
     assert "_generated/m/index" in read, (

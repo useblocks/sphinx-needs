@@ -581,10 +581,18 @@ def check_private_classifier(
                 f"is declared only in the root's `{group}` dependency group, so it is "
                 "part of no product and nothing downstream could want it from an index"
             )
-        elif member.private:
+        elif group == "" and member.private:
             # the converse, and it is a contradiction rather than a nicety: the member is
             # in the list that says "this is one of the things this repository ships", and
-            # it carries the one classifier that guarantees it can never be shipped
+            # it carries the one classifier that guarantees it can never be shipped.
+            #
+            # `group == ""` and not merely a falsy `group`: check (1) returns `""` for a
+            # member reached through `[project] dependencies` and NOTHING AT ALL for one
+            # declared in neither place, and only the first is the contradiction this
+            # branch describes. Read as falsy, a member the root never declares would be
+            # told "the root depends on it in [project] dependencies", which is the one
+            # thing that is not true of it -- and check (1) has already named that tree's
+            # real fault.
             report.error(
                 member.relative,
                 f"{member.name} declares the classifier `{member.private}`, so PyPI will "

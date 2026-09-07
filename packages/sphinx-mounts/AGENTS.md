@@ -115,27 +115,23 @@ as a standalone repository cannot be built there at all. Do not reintroduce it.
 
 ## Testing Guidelines
 
-- Tests use `pytest` with `sphinx.testing.fixtures`.
+- Tests use `pytest` with `sphinx.testing.fixtures`, and the workspace's shared test
+  layer beside it — the warning normalisation this suite asserts through and the renderer
+  resolution its uml cases build with both come from there, so a warning count, a warning
+  type and a jar mean the same thing in every suite in this repository.
 - **Renderers are a prerequisite, not an optional extra.** The graphviz and PlantUML cases
-  in `tests/test_path_directives.py` render for real, and `_require_renderer` **asserts**
-  rather than skipping — the point of those tests is to exercise the whole mounts chain
-  including the render step. Two routes, and either satisfies them:
+  in `tests/test_path_directives.py` render for real and **assert** rather than skipping —
+  the point of those tests is to exercise the whole mounts chain including the render step.
+  Two routes, and either satisfies them:
   - `dot` (graphviz) on `PATH`, which is required and has no alternative; and
-  - PlantUML, from **either** a `plantuml` executable on `PATH` **or** a plantuml jar named
-    by `PLANTUML_JAR`, with `java` on `PATH`. This suite reads the variable and never a
-    path, which is what keeps it independent of the workspace's layout — so **the jar has
-    to be handed to it**, and `uv run poe test-mounts` does exactly that:
-    `uses = { PLANTUML_JAR = "fetch-plantuml" }` runs that task and captures the path it
-    prints. The jar is the one `vendor/plantuml/pin.toml` names and it is **committed** at
-    `vendor/plantuml/plantuml-<version>.jar`, so the task hashes a file the checkout already
-    has rather than downloading anything; CI and `release.yaml` run the same script (with
-    `--verify`) and write the same variable. Pointing it somewhere else is honoured ahead of
-    everything: `PLANTUML_JAR=/any/plantuml.jar uv run poe test-mounts` (poe hands back the
-    value you set, because the script short-circuits on it). Running `pytest` directly,
-    outside the task, is the one case where you have to export it yourself —
-    `PLANTUML_JAR=$PWD/vendor/plantuml/plantuml-1.2026.8.jar`, or whatever
-    `uv run poe verify-plantuml` prints. sphinx-needs' suite reads the same variable first,
-    so one export serves both packages.
+  - PlantUML, resolved exactly as every other suite here resolves it: `PLANTUML_JAR` (an
+    explicit choice, and an error when it names no file), then the jar **committed** at
+    `vendor/plantuml/plantuml-<version>.jar` that `vendor/plantuml/pin.toml` names, then a
+    `plantuml` executable on `PATH`. A checkout therefore needs nothing exported and no
+    network: `uv run poe test-mounts` hashes the committed jar against the pin and the
+    suite finds it, and a bare `pytest` finds it too. `PLANTUML_JAR=/any/plantuml.jar` is
+    still honoured ahead of everything, which is how CI, `release.yaml` and the Bazel lane
+    supply theirs.
 
   Mermaid uses `raw` output, so no `mmdc` binary is needed.
 - **The three sphinx-needs integration tests assert rather than skip too.** They are the

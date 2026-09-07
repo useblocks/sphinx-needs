@@ -110,18 +110,19 @@ def test_example_pipeline_end_to_end(tmp_path: Path) -> None:
             "'dot' not on PATH — required to render the showcase graphviz "
             "bundle under -nW"
         )
-    # PlantUML comes either from an executable on PATH or, when PLANTUML_JAR
-    # names a jar, from java — the route CI takes; the example's conf.py reads
-    # the same variable.
-    if not (
-        (os.environ.get("PLANTUML_JAR") and shutil.which("java"))
-        or shutil.which("plantuml")
-    ):
+    # One condition, not a resolution chain: the example is built by Bazel in a
+    # sandbox that cannot see ``vendor/``, so ``PLANTUML_JAR`` (which its
+    # ``.bazelrc`` passes through ``--action_env`` and its ``docs/conf.py``
+    # reads) is the only route to a renderer it has. ``uv run poe
+    # test-mounts-bazel`` is the task that sets it -- it is the one sphinx-mounts
+    # task that kept ``uses``, for exactly this reason.
+    if not os.environ.get("PLANTUML_JAR"):
         pytest.skip(
-            "no PlantUML — run `uv run poe test-mounts`, which sets PLANTUML_JAR "
-            "from the pinned jar in vendor/plantuml/, or set "
-            "PLANTUML_JAR yourself (with java on PATH), or install a `plantuml` "
-            "executable, to render the showcase uml bundle under -nW"
+            "PLANTUML_JAR is unset, and the example's Bazel sandbox has no other "
+            "route to a renderer — run `uv run poe test-mounts-bazel`, which sets "
+            "it from the jar committed under vendor/plantuml/, or export it "
+            "yourself (with java on PATH), to render the showcase uml bundle "
+            "under -nW"
         )
 
     workspace = tmp_path / "ws"

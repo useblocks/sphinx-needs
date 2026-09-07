@@ -27,12 +27,8 @@ from docutils import nodes
 from sphinx import addnodes
 from sphinx.testing.fixtures import SharedResult  # noqa: F401  (registers fixture)
 
-from tests.conftest import (
-    count_mount_warnings,
-    count_warnings,
-    patch_conf_py,
-    write_ubproject_toml,
-)
+from sphinx_needs_testkit import build_warnings, warning_count
+from tests.conftest import patch_conf_py, write_ubproject_toml
 
 if TYPE_CHECKING:
     pass
@@ -54,7 +50,7 @@ def _build_clean(make_app, host_dir: Path) -> Path:
     """
     app = make_app(srcdir=host_dir, freshenv=True)
     app.build()
-    assert count_warnings(app) == 0, app._warning.getvalue()
+    assert warning_count(app) == 0, app._warning.getvalue()
     return Path(app.outdir)
 
 
@@ -347,8 +343,8 @@ def test_root_mount_shadowing_host_doc_warns(
     assert "mounts.docname_conflict" in warnings
     # The whole mount was removed: no sibling docs were mounted.
     assert not (Path(app.outdir) / "intro.html").exists()
-    assert count_warnings(app) == 1  # only the docname conflict
-    assert count_mount_warnings(app) == 1
+    assert warning_count(app) == 1  # only the docname conflict
+    assert warning_count(app, "mounts.docname_conflict") == 1
 
 
 def test_root_mount_with_attach_to_wires_bare_entry_doc(
@@ -837,7 +833,7 @@ def test_attach_each_wires_every_file_without_entry_doc(
 
     app = make_app(srcdir=host, freshenv=True)
     app.build()
-    assert count_warnings(app) == 0
+    assert warning_count(app) == 0
 
     # Every listed file is wired into the host toctree, in files order, and
     # no phantom "index" entry doc is invented.
@@ -881,7 +877,7 @@ def test_attach_each_creates_toctree_when_absent(
 
     app = make_app(srcdir=host, freshenv=True)
     app.build()
-    assert count_warnings(app) == 0
+    assert warning_count(app) == 0
 
     doctree = app.env.get_doctree("index")
     toctrees = list(doctree.findall(addnodes.toctree))
@@ -912,8 +908,8 @@ def test_mount_files_unknown_suffix_warns(make_app, make_host_project, tmp_path)
     warnings = app._warning.getvalue()
     assert "source_suffix" in warnings
     assert "mounts.unknown_suffix" in warnings
-    assert count_warnings(app) == 1  # only the unknown_suffix warning
-    assert count_mount_warnings(app) == 1
+    assert warning_count(app) == 1  # only the unknown_suffix warning
+    assert warning_count(app, "mounts.unknown_suffix") == 1
 
 
 def test_mount_files_missing_file_warns(make_app, make_host_project, tmp_path):
@@ -938,8 +934,8 @@ def test_mount_files_missing_file_warns(make_app, make_host_project, tmp_path):
     warnings = app._warning.getvalue()
     assert "does not exist" in warnings
     assert "mounts.missing_path" in warnings
-    assert count_warnings(app) == 1  # only the missing_path warning
-    assert count_mount_warnings(app) == 1
+    assert warning_count(app) == 1  # only the missing_path warning
+    assert warning_count(app, "mounts.missing_path") == 1
 
 
 def test_missing_mount_dir_warns(make_app, make_host_project, tmp_path):
@@ -962,8 +958,8 @@ def test_missing_mount_dir_warns(make_app, make_host_project, tmp_path):
     assert "does not exist" in warnings
     assert "mounts.missing_path" in warnings
     assert (Path(app.outdir) / "index.html").exists()
-    assert count_warnings(app) == 1  # only the missing_path warning
-    assert count_mount_warnings(app) == 1
+    assert warning_count(app) == 1  # only the missing_path warning
+    assert warning_count(app, "mounts.missing_path") == 1
 
 
 def test_missing_mount_dir_with_attach_to_does_not_wire_dangling_ref(
@@ -997,8 +993,8 @@ def test_missing_mount_dir_with_attach_to_does_not_wire_dangling_ref(
     assert all("_generated/api-foo/index" not in t["includefiles"] for t in toctrees)
     warnings = app._warning.getvalue()
     assert "toc.not_readable" not in warnings
-    assert count_warnings(app) == 1  # only the mounts.missing_path warning
-    assert count_mount_warnings(app) == 1
+    assert warning_count(app) == 1  # only the mounts.missing_path warning
+    assert warning_count(app, "mounts.missing_path") == 1
 
 
 def test_exclude_filter_bundle_files(make_app, make_host_project, tmp_path):
@@ -1069,8 +1065,8 @@ def test_docname_conflict_warns_and_first_mount_wins(
     )
     assert "API Foo" in html
     assert "Dup" not in html
-    assert count_warnings(app) == 1  # only the docname conflict
-    assert count_mount_warnings(app) == 1
+    assert warning_count(app) == 1  # only the docname conflict
+    assert warning_count(app, "mounts.docname_conflict") == 1
 
 
 def test_intra_mount_basename_collision_warns_and_skips_the_mount(
@@ -1127,8 +1123,8 @@ def test_intra_mount_basename_collision_warns_and_skips_the_mount(
         warnings
     )
     assert "include / exclude" not in warnings, warnings
-    assert count_warnings(app) == 1, warnings
-    assert count_mount_warnings(app) == 1
+    assert warning_count(app) == 1, warnings
+    assert warning_count(app, "mounts.docname_conflict") == 1
     # Whole-mount skip: neither document was mounted.
     assert not (Path(app.outdir) / "_g/fl/notes.html").exists()
 
@@ -1180,8 +1176,8 @@ def test_intra_mount_suffix_collision_warns_and_skips_the_mount(
     # remedy to offer here.
     assert "include / exclude" in warnings, warnings
     assert "`files` list" not in warnings, warnings
-    assert count_warnings(app) == 1, warnings
-    assert count_mount_warnings(app) == 1
+    assert warning_count(app) == 1, warnings
+    assert warning_count(app, "mounts.docname_conflict") == 1
     assert not (Path(app.outdir) / "_g/dm/index.html").exists()
 
 
@@ -1244,8 +1240,8 @@ def test_listed_file_that_is_only_a_suffix_is_rejected(
     warnings = app._warning.getvalue()
     assert "mounts.empty_docname" in warnings, warnings
     assert "no name before its '.rst' suffix" in warnings, warnings
-    assert count_warnings(app) == 1, warnings
-    assert count_mount_warnings(app) == 1
+    assert warning_count(app) == 1, warnings
+    assert warning_count(app, "mounts.empty_docname") == 1
     # Whole-mount skip: nothing was mounted, and no dotfile page was written.
     assert "_g/b" not in app.env.project.docnames
     assert not (Path(app.outdir) / "_g" / "b" / ".html").exists()
@@ -1309,7 +1305,8 @@ def test_include_on_a_file_list_mount_warns_that_it_is_ignored(
     warnings = app._warning.getvalue()
     assert "mounts.ignored_option" in warnings, warnings
     assert "include" in warnings, warnings
-    assert count_mount_warnings(app) == 1, warnings
+    assert warning_count(app) == 1
+    assert warning_count(app, "mounts.ignored_option") == 1, warnings
     # The filter really had no effect: both files are still mounted. The
     # warning describes the situation rather than changing it.
     assert (Path(app.outdir) / "_g" / "m" / "one.html").exists()
@@ -1344,7 +1341,8 @@ def test_exclude_on_a_file_list_mount_warns_that_it_is_ignored(
     warnings = app._warning.getvalue()
     assert "mounts.ignored_option" in warnings, warnings
     assert "include and exclude" in warnings, warnings
-    assert count_mount_warnings(app) == 1, warnings
+    assert warning_count(app) == 1
+    assert warning_count(app, "mounts.ignored_option") == 1, warnings
     # `exclude` did not drop the file either.
     assert (Path(app.outdir) / "_g" / "m" / "one.html").exists()
 
@@ -1371,7 +1369,14 @@ def test_directory_mount_with_include_does_not_warn(
     app = make_app(srcdir=host, freshenv=True)
     app.build()
 
-    assert count_mount_warnings(app) == 0, app._warning.getvalue()
+    # The FAMILY, not one type: the claim is that a directory mount stays silent whatever
+    # it might have warned about, and `warning_count` matches one type exactly, offering no
+    # prefix, deliberately. The TOTAL is not available here -- excluding `details.rst` makes
+    # the bundle's own toctree dangle, so the build emits a `toc.not_readable` and a
+    # `ref.doc` that have nothing to do with the claim (measured: `warning_count(app)` is 2).
+    assert [w for w in build_warnings(app) if "[mounts." in w] == [], (
+        app._warning.getvalue()
+    )
     # ...and the patterns genuinely applied.
     assert not (Path(app.outdir) / "_g" / "m" / "details.html").exists()
 
@@ -1399,8 +1404,9 @@ def test_docname_conflict_warning_is_suppressible(
     app.build()
 
     assert "docname conflict" not in app._warning.getvalue()
-    assert count_warnings(app) == 0
-    assert count_mount_warnings(app) == 0
+    # `warning_count(app) == 0` is the whole claim: a typed count of zero passes for any
+    # type string, including one no version of this package has ever emitted.
+    assert warning_count(app) == 0
 
 
 def test_docname_conflict_warning_group_suppressible(
@@ -1424,8 +1430,9 @@ def test_docname_conflict_warning_group_suppressible(
     app.build()
 
     assert "docname conflict" not in app._warning.getvalue()
-    assert count_warnings(app) == 0
-    assert count_mount_warnings(app) == 0
+    # `warning_count(app) == 0` is the whole claim: a typed count of zero passes for any
+    # type string, including one no version of this package has ever emitted.
+    assert warning_count(app) == 0
 
 
 def test_docname_conflict_fails_under_warningiserror(
@@ -1472,8 +1479,8 @@ def test_docname_conflict_fails_under_warningiserror(
         assert "docname conflict" in warnings
         assert "toc.not_readable" not in warnings
         assert "toc.not_included" not in warnings
-        assert count_warnings(app) == 1  # only the docname conflict
-        assert count_mount_warnings(app) == 1
+        assert warning_count(app) == 1  # only the docname conflict
+        assert warning_count(app, "mounts.docname_conflict") == 1
 
 
 def test_strict_mount_at_warns_on_preexisting_host_dir(
@@ -1506,8 +1513,8 @@ def test_strict_mount_at_warns_on_preexisting_host_dir(
     assert "mounts.mount_at_occupied" in warnings
     # The whole mount was removed: no bundle doc was mounted.
     assert not (Path(app.outdir) / "_generated" / "api-foo" / "index.html").exists()
-    assert count_warnings(app) == 1  # only the mount_at_occupied warning
-    assert count_mount_warnings(app) == 1
+    assert warning_count(app) == 1  # only the mount_at_occupied warning
+    assert warning_count(app, "mounts.mount_at_occupied") == 1
 
 
 def test_strict_mount_at_passes_when_no_host_dir(
@@ -1580,8 +1587,8 @@ def test_strict_mount_at_warns_on_preexisting_host_dir_in_files_mode(
     warnings = app._warning.getvalue()
     assert "strict_mount_at" in warnings
     assert "mounts.mount_at_occupied" in warnings
-    assert count_warnings(app) == 1  # only the mount_at_occupied warning
-    assert count_mount_warnings(app) == 1
+    assert warning_count(app) == 1  # only the mount_at_occupied warning
+    assert warning_count(app, "mounts.mount_at_occupied") == 1
 
 
 def test_toml_overrides_conf_py_mounts(
@@ -1722,7 +1729,8 @@ def test_top_level_mounts_table_warns_that_it_is_deprecated(
     warnings = app._warning.getvalue()
     assert "mounts.deprecated_location" in warnings, warnings
     assert "[[source.mounts]]" in warnings, warnings
-    assert count_mount_warnings(app) == 1, warnings
+    assert warning_count(app) == 1
+    assert warning_count(app, "mounts.deprecated_location") == 1, warnings
     # The mount itself is unaffected — deprecated, not broken.
     html = _read_html(Path(app.outdir), "_generated/api-foo/details")
     assert "BUNDLE_SIMPLE_DETAILS_MARKER" in html
@@ -1744,7 +1752,7 @@ def test_namespaced_mounts_table_does_not_warn(
     app = make_app(srcdir=host, freshenv=True)
     app.build()
 
-    assert count_warnings(app) == 0, app._warning.getvalue()
+    assert warning_count(app) == 0, app._warning.getvalue()
 
 
 def test_deprecated_location_warning_is_suppressible(
@@ -1774,7 +1782,7 @@ def test_deprecated_location_warning_is_suppressible(
     app = make_app(srcdir=host, freshenv=True)
     app.build()
 
-    assert count_warnings(app) == 0, app._warning.getvalue()
+    assert warning_count(app) == 0, app._warning.getvalue()
 
 
 def test_conf_py_mounts_fallback_is_not_deprecated(
@@ -1797,7 +1805,7 @@ def test_conf_py_mounts_fallback_is_not_deprecated(
     app.build()
 
     assert "deprecated" not in app._warning.getvalue(), app._warning.getvalue()
-    assert count_warnings(app) == 0, app._warning.getvalue()
+    assert warning_count(app) == 0, app._warning.getvalue()
 
 
 def test_declaring_mounts_in_both_tables_fails_the_build(
@@ -1976,7 +1984,7 @@ def test_attach_to_targets_specific_toctree_by_index(
 
     app = make_app(srcdir=host, freshenv=True)
     app.build()
-    assert count_warnings(app) == 0
+    assert warning_count(app) == 0
 
     # Inspect the parsed doctree directly: the mount entry must be in
     # the *second* toctree node (index 1, the SecondCaption one), not
@@ -2025,8 +2033,8 @@ def test_attach_to_index_out_of_range_warns_and_skips(
     warnings = app._warning.getvalue()
     assert "toctree_index" in warnings
     assert "mounts.toctree_index" in warnings
-    assert count_warnings(app) == 1  # only the toctree_index warning
-    assert count_mount_warnings(app) == 1
+    assert warning_count(app) == 1  # only the toctree_index warning
+    assert warning_count(app, "mounts.toctree_index") == 1
     # The host toctree is untouched: still empty, nothing wired on top.
     doctree = app.env.get_doctree("index")
     toctrees = list(doctree.findall(addnodes.toctree))
@@ -2096,7 +2104,7 @@ def test_attach_to_appends_new_toctree_at_section_end(
 
     app = make_app(srcdir=host, freshenv=True)
     app.build()
-    assert count_warnings(app) == 0
+    assert warning_count(app) == 0
 
     doctree = app.env.get_doctree("index")
     first_section = next(doctree.findall(nodes.section))
@@ -2165,7 +2173,7 @@ def test_attach_to_idempotent_with_static_entry(
 
     app = make_app(srcdir=host, freshenv=True)
     app.build()
-    assert count_warnings(app) == 0
+    assert warning_count(app) == 0
 
     # Inspect the env's resolved toctree includes — the dedup guarantee is
     # that ``_generated/api-foo/index`` appears once for the host index doc,
@@ -2202,8 +2210,8 @@ def test_attach_to_warns_when_target_docname_missing(
     warnings = app._warning.getvalue()
     assert "nonexistent_host_doc" in warnings
     assert "attach_to" in warnings
-    assert count_warnings(app) == 1  # only the attach_to_missing warning
-    assert count_mount_warnings(app) == 1
+    assert warning_count(app) == 1  # only the attach_to_missing warning
+    assert warning_count(app, "mounts.attach_to_missing") == 1
 
 
 # ---------- helpers ----------
@@ -2317,12 +2325,12 @@ def test_incremental_skips_mount_when_nothing_changed(
 
     app = make_app(srcdir=host, freshenv=True)
     app.build()
-    assert count_warnings(app) == 0
+    assert warning_count(app) == 0
     offset = len(app._status.getvalue())
 
     # Rebuild without changing anything.
     app.build()
-    assert count_warnings(app) == 0
+    assert warning_count(app) == 0
     warm_log = app._status.getvalue()[offset:]
 
     read = _docs_read_in_log(warm_log)
@@ -2366,7 +2374,7 @@ def test_host_toctree_change_does_not_reparse_mount_files(
 
     app = make_app(srcdir=host, freshenv=True)
     app.build()
-    assert count_warnings(app) == 0
+    assert warning_count(app) == 0
     cold_html = (Path(app.outdir) / "index.html").read_text(encoding="utf-8")
     assert "_generated/m/foo.html" in cold_html
 
@@ -2378,7 +2386,7 @@ def test_host_toctree_change_does_not_reparse_mount_files(
     _bump_mtime(host / "index.rst")
 
     app.build()
-    assert count_warnings(app) == 0
+    assert warning_count(app) == 0
     warm_log = app._status.getvalue()[offset:]
     warm_html = (Path(app.outdir) / "index.html").read_text(encoding="utf-8")
 
@@ -2426,7 +2434,7 @@ def test_incremental_rereads_mount_doc_when_dependency_changes(
 
     app = make_app(srcdir=host, freshenv=True)
     app.build()
-    assert count_warnings(app) == 0
+    assert warning_count(app) == 0
 
     # Precondition: the include target is a recorded dependency of the
     # mounted doc, pointing at the external file (not into the host srcdir).
@@ -2449,7 +2457,7 @@ def test_incremental_rereads_mount_doc_when_dependency_changes(
     _bump_mtime(snippet)
 
     app.build()
-    assert count_warnings(app) == 0
+    assert warning_count(app) == 0
     warm_log = app._status.getvalue()[offset:]
     read = _docs_read_in_log(warm_log)
 
@@ -2486,14 +2494,14 @@ def test_incremental_rereads_changed_file_in_file_list_mount(
 
     app = make_app(srcdir=host, freshenv=True)
     app.build()
-    assert count_warnings(app) == 0
+    assert warning_count(app) == 0
     offset = len(app._status.getvalue())
 
     page_a.write_text("Page A\n======\n\nA_MARKER_MODIFIED\n", encoding="utf-8")
     _bump_mtime(page_a)
 
     app.build()
-    assert count_warnings(app) == 0
+    assert warning_count(app) == 0
     warm_log = app._status.getvalue()[offset:]
     read = _docs_read_in_log(warm_log)
 
@@ -2564,7 +2572,7 @@ def test_disappearing_mount_entry_unwires_host_toctree_incrementally(
 
     app = make_app(srcdir=host, freshenv=True)
     app.build()
-    assert count_warnings(app) == 0, app._warning.getvalue()
+    assert warning_count(app) == 0, app._warning.getvalue()
     index_html = (Path(app.outdir) / "index.html").read_text(encoding="utf-8")
     assert "_g/m/index.html" in index_html, "entry doc was not wired on build 1"
 
@@ -2573,7 +2581,7 @@ def test_disappearing_mount_entry_unwires_host_toctree_incrementally(
 
     app.build()
     removal_log = app._status.getvalue()[offset:]
-    assert count_warnings(app) == 0, app._warning.getvalue()
+    assert warning_count(app) == 0, app._warning.getvalue()
     index_html = (Path(app.outdir) / "index.html").read_text(encoding="utf-8")
     assert "_g/m/index.html" not in index_html, (
         "host page still links to the removed mount entry"
@@ -2593,7 +2601,7 @@ def test_disappearing_mount_entry_unwires_host_toctree_incrementally(
     # ...and the next build has genuinely nothing left to do.
     offset = len(app._status.getvalue())
     app.build()
-    assert count_warnings(app) == 0, app._warning.getvalue()
+    assert warning_count(app) == 0, app._warning.getvalue()
     assert "no targets are out of date" in app._status.getvalue()[offset:], (
         "removal did not converge — the build still finds outdated targets"
     )
@@ -2622,7 +2630,7 @@ def test_appearing_mount_entry_wires_host_toctree_incrementally(
 
     app = make_app(srcdir=host, freshenv=True)
     app.build()
-    assert count_warnings(app) == 0, app._warning.getvalue()
+    assert warning_count(app) == 0, app._warning.getvalue()
     index_html = (Path(app.outdir) / "index.html").read_text(encoding="utf-8")
     assert "_g/m/index.html" not in index_html, "nothing should be wired yet"
 
@@ -2635,7 +2643,7 @@ def test_appearing_mount_entry_wires_host_toctree_incrementally(
     )
 
     app.build()
-    assert count_warnings(app) == 0, app._warning.getvalue()
+    assert warning_count(app) == 0, app._warning.getvalue()
     index_html = (Path(app.outdir) / "index.html").read_text(encoding="utf-8")
     assert "_g/m/index.html" in index_html, (
         "appearing entry doc was not wired into the host toctree"
@@ -2643,7 +2651,7 @@ def test_appearing_mount_entry_wires_host_toctree_incrementally(
 
     offset = len(app._status.getvalue())
     app.build()
-    assert count_warnings(app) == 0, app._warning.getvalue()
+    assert warning_count(app) == 0, app._warning.getvalue()
     assert "no targets are out of date" in app._status.getvalue()[offset:], (
         "wiring did not converge — the build still finds outdated targets"
     )
@@ -2678,14 +2686,14 @@ def test_bundle_churn_without_attach_to_does_not_reread_host(
 
     app = make_app(srcdir=host, freshenv=True)
     app.build()
-    assert count_warnings(app) == 0, app._warning.getvalue()
+    assert warning_count(app) == 0, app._warning.getvalue()
     offset = len(app._status.getvalue())
 
     # A brand-new docname is reported as "added" without any mtime comparison.
     (bundle / "extra.rst").write_text(":orphan:\n\nExtra\n=====\n", encoding="utf-8")
 
     app.build()
-    assert count_warnings(app) == 0, app._warning.getvalue()
+    assert warning_count(app) == 0, app._warning.getvalue()
     churn_log = app._status.getvalue()[offset:]
     read = _docs_read_in_log(churn_log)
     assert read == {"_g/m/extra"}, (
@@ -2723,7 +2731,7 @@ def test_no_attach_to_mount_entry_doc_appearing_is_silent(
 
     app = make_app(srcdir=host, freshenv=True)
     app.build()
-    assert count_warnings(app) == 0, app._warning.getvalue()
+    assert warning_count(app) == 0, app._warning.getvalue()
     offset = len(app._status.getvalue())
 
     # The second mount gains its entry doc. It wires nothing, so nothing
@@ -2731,7 +2739,7 @@ def test_no_attach_to_mount_entry_doc_appearing_is_silent(
     (late / "index.rst").write_text(":orphan:\n\nLate\n====\n", encoding="utf-8")
 
     app.build()
-    assert count_warnings(app) == 0, app._warning.getvalue()
+    assert warning_count(app) == 0, app._warning.getvalue()
     appear_log = app._status.getvalue()[offset:]
     assert _docs_read_in_log(appear_log) == {"_g/l/index"}, appear_log
     assert "mount wiring changed" not in appear_log, (
@@ -2801,7 +2809,8 @@ def test_dangling_attach_to_does_not_announce_a_re_read(
     app = make_app(srcdir=host, freshenv=True)
     app.build()
     # Exactly one diagnostic, and it is the missing target.
-    assert count_mount_warnings(app) == 1, app._warning.getvalue()
+    assert warning_count(app) == 1
+    assert warning_count(app, "mounts.attach_to_missing") == 1, app._warning.getvalue()
     assert "mounts.attach_to_missing" in app._warning.getvalue()
 
     # Removing the entry doc moves the wiring signature, which is what used to
@@ -2873,7 +2882,7 @@ def test_attach_each_rewires_when_the_listed_set_changes(
 
     app = make_app(srcdir=host, freshenv=True)
     app.build()
-    assert count_warnings(app) == 0, app._warning.getvalue()
+    assert warning_count(app) == 0, app._warning.getvalue()
     index_html = (Path(app.outdir) / "index.html").read_text(encoding="utf-8")
     assert "_g/m/page_a.html" in index_html
     assert "_g/m/page_b.html" in index_html
@@ -2974,17 +2983,18 @@ def test_restored_env_still_mounts_correctly(
 
     first = make_app(srcdir=host, freshenv=True)
     first.build()
-    assert count_warnings(first) == 0, first._warning.getvalue()
+    assert warning_count(first) == 0, first._warning.getvalue()
 
     # freshenv defaults to False, so this one loads environment.pickle.
     second = make_app(srcdir=host)
     second.build()
-    # Not ``count_warnings``: building a SECOND app in one process makes
-    # docutils re-register its nodes, directives and roles, which emits dozens
-    # of ``app.add_node`` / ``app.add_directive`` warnings that have nothing to
-    # do with mounting. Assert on the categories this test is about instead.
+    # Not the total: building a SECOND app in one process makes docutils re-register its
+    # nodes, directives and roles, which emits dozens of ``app.add_node`` /
+    # ``app.add_directive`` warnings that have nothing to do with mounting. Assert on the
+    # categories this test is about instead -- and on the whole mounts family, since the
+    # claim is that a restored env warns about nothing at all.
     warnings = second._warning.getvalue()
-    assert count_mount_warnings(second) == 0, warnings
+    assert [w for w in build_warnings(second) if "[mounts." in w] == [], warnings
     assert "toc.not_readable" not in warnings, warnings
     assert "toc.not_included" not in warnings, warnings
 
@@ -3017,7 +3027,7 @@ def test_mounted_path_type_matches_host_path_type(
 
     app = make_app(srcdir=host, freshenv=True)
     app.build()
-    assert count_warnings(app) == 0
+    assert warning_count(app) == 0
 
     stored = app.project._docname_to_path
     host_type = type(stored["index"])
@@ -3047,7 +3057,7 @@ def test_doc2path_result_is_usable_as_a_string(
 
     app = make_app(srcdir=host, freshenv=True)
     app.build()
-    assert count_warnings(app) == 0
+    assert warning_count(app) == 0
 
     docname = "_g/m/index"
     path = app.env.doc2path(docname, False)
@@ -3087,7 +3097,7 @@ def test_path2doc_round_trips_a_mounted_source_path(
 
     app = make_app(srcdir=host, freshenv=True)
     app.build()
-    assert count_warnings(app) == 0
+    assert warning_count(app) == 0
 
     source = bundle_simple / "intro.rst"
     assert app.env.path2doc(str(source)) == "_g/m/intro"

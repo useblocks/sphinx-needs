@@ -216,6 +216,29 @@ def test_a_published_member_may_not_carry_a_private_classifier(
     assert "the root depends on it in [project] dependencies" in out
 
 
+def test_a_member_declared_nowhere_is_not_told_the_root_depends_on_it(
+    workspace, capsys
+) -> None:
+    """Check (6)'s converse describes ONE tree: a member in `[project] dependencies` that
+    carries the classifier. A member the root declares in neither place is check (1)'s
+    fault to report, and saying it here too would tell the reader the root depends on it
+    -- the one thing that is not true of it. Red either way; this is about which sentence
+    the reader acts on."""
+    root = workspace(
+        {
+            "acme-core": {"version": "1.0.0"},
+            "acme-testkit": {"version": "0", "private": True},
+        },
+        root_dependencies=["acme-core"],
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert (
+        "`acme-testkit` is a workspace member but the root neither depends on it" in out
+    )
+    assert "the root depends on it in [project] dependencies" not in out
+
+
 def test_a_runtime_dependency_on_a_private_member_is_an_error(
     workspace, capsys
 ) -> None:
