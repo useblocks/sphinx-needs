@@ -179,6 +179,17 @@ def test_app(
 
     :return: A Sphinx application object.
     """
+    # THE PLUGIN ORDER, asserted rather than trusted to a comment. `sphinx.testing.fixtures`
+    # defines a `sphinx_test_tempdir` of its own -- `tmp_path_factory.getbasetemp()`, named
+    # `pytest-<n>` -- and where two plugins define a fixture the one registered LAST wins. If
+    # it wins here, every build in the suite goes somewhere else and `--sn-build-dir` is
+    # inert, with the whole suite still GREEN. The names cannot collide, so this is total.
+    assert sphinx_test_tempdir.name == "sn_test_build_data", (
+        "sphinx.testing.fixtures' sphinx_test_tempdir won -- check the plugin order: this "
+        "plugin must be named AFTER `sphinx.testing.fixtures` in the suite's "
+        "`pytest_plugins`"
+    )
+
     builder_params = request.param
 
     # a COPY, because ``builder_params`` is the dict object in the test module's own
@@ -236,7 +247,11 @@ def test_app(
         require_plantuml_extension(
             app, f"{request.node.nodeid} (srcdir {srcdir or files})"
         )
-    else:
+    elif getattr(app.config, "plantuml", None) == "plantuml":
+        # `elif`, and the guard rather than a bare call: a suite whose own `make_app`
+        # already applies this policy (sphinx-needs' does) has neutralised the app before
+        # it got here, and calling it twice is duplicated work and duplicated intent.
+        # The condition is the same one: sphinxcontrib-plantuml's default command.
         make_plantuml_inert(app)
     for event, handler, priority in test_app_events:
         app.connect(event, handler, priority=priority)

@@ -12,6 +12,13 @@ from sphinx_codelinks.config import OneLineCommentStyle
 # makes this the fence that the kit is importable in every cell this suite runs in.
 # The order matters where both plugins define a fixture -- see the note in the testkit's
 # `fixtures` module -- so the testkit always comes last.
+#
+# This suite also INHERITS the kit's `test_app`, its `sphinx_test_tempdir` and the
+# `--sn-build-dir` option, and uses none of them: it builds through sphinx's `make_app`,
+# which does not depend on `sphinx_test_tempdir`. So they are inert here -- and the day a
+# test here uses sphinx's `app` fixture instead, it will need a `tests_dir` fixture in this
+# file, which the kit deliberately leaves to each suite. That arrives as
+# `fixture 'tests_dir' not found`, which is loud rather than wrong.
 pytest_plugins = ["sphinx.testing.fixtures", "sphinx_needs_testkit.fixtures"]
 
 TEST_DIR = Path(__file__).parent

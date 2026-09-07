@@ -36,6 +36,8 @@ from sphinxcontrib.plantuml import _split_cmdargs
 
 from sphinx_needs_testkit import (
     copy_test_utils,
+    plantuml_conf,
+    require_plantuml_extension,
     resolve_plantuml_command,
     workspace_plantuml_jar,
 )
@@ -353,3 +355,54 @@ def test_a_present_utils_directory_is_copied(tmp_path: Path) -> None:
     copy_test_utils(source, destination)
 
     assert (destination / "plantuml.jar").read_bytes() == b"not really a jar"
+
+
+class _StubApp:
+    """Just enough application for :func:`require_plantuml_extension` to read."""
+
+    def __init__(self, *extensions: str) -> None:
+        self.extensions = dict.fromkeys(extensions)
+
+
+def test_an_opt_in_without_the_extension_is_refused_by_name() -> None:
+    """Setting ``plantuml`` on a project that never loads the extension is a mistake.
+
+    Nothing is rendered and no diagram is drawn; what the build gets instead is ``unknown
+    config value 'plantuml' in override, ignoring`` -- twice -- which is exactly the
+    warning the opt-in design removed from every project that does NOT render. The only
+    signal is in a warning stream the test may never read, so the harness refuses instead,
+    and the message has to carry what the reader needs to fix it: which build, and both
+    ways out.
+    """
+    with pytest.raises(RuntimeError) as caught:
+        require_plantuml_extension(_StubApp("sphinx_needs"), "tests/test_x.py::test_y")
+
+    message = str(caught.value)
+    assert "tests/test_x.py::test_y" in message
+    assert "does not load `sphinxcontrib.plantuml`" in message
+    assert "unknown config value 'plantuml' in override, ignoring" in message
+    assert "drop the opt-in" in message
+
+
+def test_a_build_that_draws_nothing_never_asks_for_a_renderer() -> None:
+    """The property the whole opt-in design rests on, asserted without a renderer.
+
+    A fixture named in a test's SIGNATURE is resolved whether the body uses it or not, and
+    resolving this one raises on a machine with no jar -- which is why 57 cases that have
+    never drawn a PlantUML diagram used to error there, the graphviz half of a conformance
+    corpus among them. :func:`sphinx_needs_testkit.plantuml_conf` is the lazy spelling, and
+    "lazy" has to mean *the fixture is not even asked for*: a request whose
+    ``getfixturevalue`` explodes proves that, where a green run on this machine (which has
+    a jar) would prove nothing at all.
+    """
+
+    class _ExplodingRequest:
+        def getfixturevalue(self, name: str) -> str:
+            raise AssertionError(f"resolved {name!r} for a build that draws nothing")
+
+    assert plantuml_conf(_ExplodingRequest(), False) == {}  # type: ignore[arg-type]
+
+    # No converse case here, and deliberately: a `plantuml_conf` that always returned `{}`
+    # would take every rendering test in this suite with it, and a guard that always raised
+    # would take all twelve opt-ins. Only the one-sided halves above need a test of their
+    # own -- they are the ones that regress to a green suite.

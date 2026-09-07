@@ -1112,7 +1112,9 @@ def test_graphviz_draws_every_direction_without_warning(make_app, tmp_path, requ
         srcdir=tmp_path,
         buildername="html",
         confoverrides={
-            **plantuml_conf(request),
+            # `False`: the engine two lines below is graphviz, so no PlantUML diagram can
+            # be drawn here and asking for a renderer would only make this case need a jar
+            **plantuml_conf(request, False),
             "graphviz_output_format": "svg",
             "needs_flow_engine": "graphviz",
         },

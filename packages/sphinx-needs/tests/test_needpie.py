@@ -9,6 +9,28 @@ from sphinx import version_info
 from sphinx.testing.util import SphinxTestApp
 
 
+def _assert_no_default_renderer(app: SphinxTestApp) -> None:
+    """This suite's `make_app` rule, asserted where it is easiest to lose.
+
+    A build that chose no renderer -- neither in `confoverrides` nor in its project's own
+    `conf.py` -- must not be left on sphinxcontrib-plantuml's DEFAULT command, the bare
+    word ``plantuml``: that is whatever unpinned renderer the developer's machine happens
+    to carry, and nothing at all on a CI runner. `doc_needpie` loads the extension and
+    asserts on no diagram, and these two builds were measured drawing six of them with a
+    homebrew PlantUML 1.2026.1 against the 1.2026.8 this repository pins -- silently, and
+    for years. The suite's own `make_app` fixture is what neutralises such a build now;
+    this is the assertion that says so.
+
+    A project that does not load the extension has no such config value at all, which is
+    equally fine -- hence the ``getattr``.
+    """
+    assert getattr(app.config, "plantuml", None) != "plantuml", (
+        "this build chose no renderer and was left on sphinxcontrib-plantuml's default "
+        "command, so it would draw with whatever `plantuml` is on PATH -- the suite's "
+        "`make_app` fixture should have made it inert"
+    )
+
+
 @pytest.mark.parametrize(
     "test_app",
     [{"buildername": "html", "srcdir": "doc_test/doc_needpie"}],
@@ -50,6 +72,7 @@ def test_chart_images_are_reproducible(
             buildername="html",
             freshenv=True,
         )
+        _assert_no_default_renderer(app)
         app.build()
         assert app.statuscode == 0
         builds.append(
@@ -87,6 +110,7 @@ def test_sphinx_api_needpie(tmp_path: Path, make_app: type[SphinxTestApp]):
         buildername="html",
         parallel=4,
     )
+    _assert_no_default_renderer(sphinx_app)
     sphinx_app.build()
     assert sphinx_app.statuscode == 0
 
