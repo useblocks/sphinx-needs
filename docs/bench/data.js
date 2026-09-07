@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788756858233,
+  "lastUpdate": 1788761878629,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -20160,6 +20160,42 @@ window.BENCHMARK_DATA = {
             "value": 11.17983436199998,
             "unit": "s",
             "extra": "Commit: b15a2b47fe613c65d3a9f94d91cea926c8956f4f\nBranch: master\nTime: 2026-09-07T06:53:40+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c4d048583c7d2ac14bd7119c923f7e78eec7cd7c",
+          "message": "🔧 Read the Docs installs the workspace sibling from the checkout before the member (#1901)\n\n## Why\n\n`packages/sphinx-codelinks/.readthedocs.yaml` pip-installs the member\ndirectory alone, so the member's `sphinx-needs>=8.5.0,<9` resolves from\nPyPI: the **released** sphinx-needs, not the one beside the member in\nthe same checkout. Today the two are the same version and nothing shows.\nThe first extension change that relies on unreleased sphinx-needs code\nwould be green in CI, whose docs jobs build from the workspace lock, and\nred on Read the Docs — or wrongly green, because the released version\nhappens to still work.\n\n## What changes\n\nThe codelinks config gains one `python.install` entry ahead of the\nmember: `packages/sphinx-needs`, plain, from the checkout. Read the Docs\nruns the entries in order with pip, so by the time the member is\ninstalled its sphinx-needs requirement is already satisfied and pip\nfetches nothing. Tight tracking is what makes this safe: the workspace's\nversion literal is always inside the member's floor and cap, and the\nbump tool keeps it there.\n\nThe root `.readthedocs.yml` (sphinx-needs' own project) is unchanged: it\nhas no workspace dependency. sphinx-mounts' config is unchanged too: it\ndoes not depend on sphinx-needs, and a first draft of this change that\ngave it the same entry was reverted after its build log showed the\nsibling installed and never resolved. CI's docs jobs are unchanged: they\nalready build from the lock.\n\n## What proves it\n\nThis pull request's own Read the Docs build for sphinx-codelinks.\nMeasured on build 34425440: the sibling step ends `Successfully built\nsphinx-needs` (wheel `sphinx_needs-8.5.0` from the checkout), and the\nmember step reports `Requirement already satisfied:\nsphinx-needs<9,>=8.5.0` from the build's own site-packages — no\ndownload.",
+          "timestamp": "2026-09-07T08:17:12+02:00",
+          "tree_id": "d3e41936bed3eed233f0b6a25321af8e25f8dc29",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/c4d048583c7d2ac14bd7119c923f7e78eec7cd7c"
+        },
+        "date": 1788761868990,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1738411830000075,
+            "unit": "s",
+            "extra": "Commit: c4d048583c7d2ac14bd7119c923f7e78eec7cd7c\nBranch: master\nTime: 2026-09-07T08:17:12+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 14.859383406999996,
+            "unit": "s",
+            "extra": "Commit: c4d048583c7d2ac14bd7119c923f7e78eec7cd7c\nBranch: master\nTime: 2026-09-07T08:17:12+02:00"
           }
         ]
       }
