@@ -7,9 +7,11 @@ from syrupy.extensions.single_file import SingleFileSnapshotExtension, WriteMode
 from sphinx_codelinks.config import OneLineCommentStyle
 
 # The workspace's shared test layer, `packages/sphinx-needs-testkit`, which carries the
-# doctree snapshot extension this file used to hold a byte-for-byte copy of. A line that
-# resolves to nothing is a collection ERROR, not a silent loss of fixtures, which is what
-# makes this the fence that the kit is importable in every cell this suite runs in.
+# doctree snapshot extension this file used to hold a byte-for-byte copy of -- and, imported
+# by name in the test modules rather than through this line, the warning normalisation the
+# suite's build assertions go through. A line that resolves to nothing is a collection
+# ERROR, not a silent loss of fixtures, which is what makes this the fence that the kit is
+# importable in every cell this suite runs in.
 # The order matters where both plugins define a fixture -- see the note in the testkit's
 # `fixtures` module -- so the testkit always comes last.
 #
