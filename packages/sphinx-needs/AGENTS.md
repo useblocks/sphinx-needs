@@ -84,7 +84,12 @@ def process_need(
 
 ### Test Structure
 
-- Tests use `pytest` with fixtures defined in `tests/conftest.py`
+- Tests use `pytest`. The Sphinx application lifecycle, the PlantUML resolution, the
+  warning normalisation and the doctree snapshot extension come from the workspace's shared
+  test layer, `packages/sphinx-needs-testkit`, which `tests/conftest.py` loads as a plugin
+  and which the other packages' suites share; `tests/conftest.py` keeps what is this suite's
+  own, and two fixtures the layer deliberately leaves to it — where this suite's test
+  projects live, and what every build of one must assert
 - Test documentation projects are in `tests/doc_test/`
 - Snapshot testing uses `syrupy` - update snapshots with `--snapshot-update`
 - Browser tests use pytest-playwright and require the `@pytest.mark.jstest` marker
@@ -92,19 +97,29 @@ def process_need(
 ### Rendering PlantUML is opt in
 
 A `test_app` build renders no diagram unless its parameter dict says `"plantuml": True`.
-Otherwise the renderer is inert (`make_plantuml_inert` in `tests/conftest.py`): diagram
+Otherwise the renderer is inert (`make_plantuml_inert` in the shared test layer): diagram
 directives still parse and reach the doctree, so a test that inspects diagram *source* or the
 `.puml` files sphinx-needs writes needs nothing, but no JVM starts — about two seconds each,
 which used to be a third of the suite's wall time. Opt in only when the test asserts on a
 **rendered** diagram: the `<object>` in the HTML, the SVG behind it, or a warning only the
 render path emits.
 
-The fence covers the app `test_app` builds and nothing else. A test that runs `sphinx-build`
-as a subprocess passes the `plantuml_subprocess_args` fixture into its argv; a test that calls
-`make_app` directly on a project that loads `sphinxcontrib.plantuml` takes the
-`plantuml_command` fixture. Both then render with the suite's pinned jar; without them a build
-renders with whatever `plantuml` is on `PATH`, silently. `plantuml_command` raises rather than
-skips when it finds no renderer, so request it only where a render is asserted.
+No build in this suite renders with sphinxcontrib-plantuml's own default command — the bare
+word `plantuml`, i.e. whatever unpinned renderer the machine happens to carry. `test_app` says
+that for its own builds, and this suite's `make_app` fixture says it for every application
+made by calling `make_app` directly: one that has not chosen a renderer, in its
+`confoverrides` or in the `conf.py` its project writes, is made inert too. A test that runs
+`sphinx-build` as a SUBPROCESS is the one route neither can reach, and it passes the
+`plantuml_subprocess_args` fixture into its argv instead.
+
+Choose a renderer with `plantuml_conf(request)`, which resolves the suite-wide command only
+when the build will actually draw — never by naming `plantuml_command` in a test's signature,
+because a fixture named there is resolved whether the body uses it or not, and this one raises
+rather than skips when the machine has no renderer at all. A test parametrised over more than
+one diagram engine passes the engine's answer (`plantuml_conf(request, engine == "plantuml")`)
+so that the half which draws nothing needs no jar. An opt-in on a project that never loads
+`sphinxcontrib.plantuml` is refused by name: it would render nothing and collect an `unknown
+config value` warning instead.
 
 ### Writing Tests
 
@@ -127,7 +142,7 @@ skips when it finds no renderer, so request it only where a render is asserted.
 
 ### Asserting on warnings
 
-Assert on a build's warnings through `tests/conftest.py`'s `build_warnings(app)` — or
+Assert on a build's warnings through the shared test layer's `build_warnings(app)` — or
 `assert_no_warnings(app)` / `warning_count(app, warning_type)` — and never by reading the
 warning stream again. It is the suite's one normalisation: ANSI colours stripped, the source
 directory rewritten to `<srcdir>/`, one entry per warning *record* with its location attached
@@ -164,7 +179,7 @@ def test_example(test_app):
 - `src/sphinx_needs/config.py` - Configuration options via `NeedsSphinxConfig` class (centralizes all `needs_*` config values)
 - `src/sphinx_needs/data.py` - Data structures (`SphinxNeedsData`, `NeedsInfoType`, etc.) for storing and accessing needs
 - `src/sphinx_needs/directives/` - All directive implementations
-- `tests/conftest.py` - Test fixtures and configuration
+- `tests/conftest.py` - this suite's own fixtures, and the shared test layer it loads
 
 ### Configuration (`src/sphinx_needs/config.py`)
 

@@ -24,6 +24,7 @@ the shim.
 | its documentation | `packages/sphinx-needs/docs/` (changelog: `docs/changelog.rst`) |
 | sphinx-mounts' behaviour, tests, documentation | `packages/sphinx-mounts/{src/sphinx_mounts,tests,docs}/` — start at [`packages/sphinx-mounts/AGENTS.md`](packages/sphinx-mounts/AGENTS.md) |
 | sphinx-codelinks' behaviour, tests, documentation | `packages/sphinx-codelinks/{src/sphinx_codelinks,tests,docs}/` — start at [`packages/sphinx-codelinks/AGENTS.md`](packages/sphinx-codelinks/AGENTS.md) |
+| the fixtures, helpers and renderer resolution three suites share | `packages/sphinx-needs-testkit/` — a member this repository never publishes, installed through the root's `test` group and loaded by each suite's `tests/conftest.py` as a pytest plugin |
 | the two conformance corpora | `packages/sphinx-needs/tests/conformance/` (needflow) and `packages/sphinx-mounts/tests/fixtures/variant_condition_conformance.toml` (variant conditions) — both shared byte-for-byte with ubCode, which is their repository of record; do not reformat either (`.gitattributes` plus the yamlfmt and taplo excludes protect them) |
 | a package's metadata, dependencies and extras | `packages/<pkg>/pyproject.toml` |
 | dependency groups (`test`, `benchmark`, `sphinx-7/8/9`, `typing`) | the root `pyproject.toml` — they are shared, and a group cannot be composed across the root/member boundary |
@@ -271,7 +272,10 @@ tenth of the size. Nothing runs `flit` directly any more.)
 
 ## Releasing a package
 
-Every distribution under `packages/` releases independently. One workflow,
+Every distribution under `packages/` releases independently — with one exception, the
+shared test layer, which declares the classifier `Private :: Do Not Upload` and which
+`release_plan.py` therefore refuses a tag for, exactly as it refuses one naming the virtual
+tooling member. One workflow,
 `.github/workflows/release.yaml`, serves all of them, and the tag says which:
 `<dist>-v<version>`. It publishes with PyPI trusted publishing (OIDC), so the
 workflow holds no API token, and every one of its checks fails closed.
@@ -393,8 +397,8 @@ move's pull request.
 ## Issues and labels
 
 Every issue and pull request carries one or more `pkg:` labels naming what it concerns:
-`pkg: <distribution>` (today `pkg: sphinx-needs`, `pkg: sphinx-mounts` and
-`pkg: sphinx-codelinks`) or `pkg: workspace` for the repository
+`pkg: <package>` (today `pkg: sphinx-needs`, `pkg: sphinx-mounts`,
+`pkg: sphinx-codelinks` and `pkg: sphinx-needs-testkit`) or `pkg: workspace` for the repository
 itself — workflows, CI, release, docker, tooling, the workspace root. Pull requests get
 theirs automatically from the paths they touch (`.github/labeler.yml`); the issue forms
 set it from their "Package" dropdown (`.github/issue-labeler.yml`). **An issue created
