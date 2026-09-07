@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788792617059,
+  "lastUpdate": 1788793520654,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -20448,6 +20448,42 @@ window.BENCHMARK_DATA = {
             "value": 54.99516572500001,
             "unit": "s",
             "extra": "Commit: d394586b47d207435eead4bb8bc2b045f9f8f64f\nBranch: master\nTime: 2026-09-07T16:48:52+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ee865346daaeac196eaf0563f8b2e0bbdab17a84",
+          "message": "🧪 Adopt the shared test layer in sphinx-mounts and sphinx-codelinks (#1907)\n\nFourth and last slice of the shared-test-layer arc (#1899, #1900, #1902,\n#1904): the member\n`packages/sphinx-needs-testkit` exists and sphinx-needs' suite uses it,\nand this retires the copies of\nthe same ideas in the other two suites. **Tests and prose only** — no\npublished package's `src/` is\ntouched, no `[project]` dependencies change, counts hold: **sphinx-needs\n1781/12, sphinx-mounts 943,\nsphinx-codelinks 359**.\n\n## sphinx-mounts — the warnings\n\n`count_warnings` counted occurrences of the substring `WARNING:`;\n`count_mount_warnings` counted\noccurrences of `[mounts.` — the warning *family*, not a type. Both are\ngone; the 82 assertion sites go\nthrough `warning_count`, which counts warning **records** and, given a\ntype, only those carrying exactly\nthat `[type]` token. The 25 family sites land as **21 typed `== 1` + 2\nfamily + 2 dropped** (a typed\ncount of zero passes for any type string, and `warning_count(app) == 0`\nwas already beside them). Each\ntype was read off an assertion the same test already made on the raw\nstream where one existed — 18 of\nthe 21 — and otherwise off the source that emits it. An exact-type count\nsays nothing about the *other*\nwarnings, so at the six sites where the family count was the only \"how\nmany\" claim the swap would have\nbeen a step down: all six builds are clean apart from the warning they\nare about, so each gained\n`warning_count(app) == 1`. The two survivors say why the total is\nunavailable to them.\n\n## sphinx-mounts — the renderer\n\n`_plantuml_jar_command` / `_plantuml_extra_conf` were a copy of the\nresolution chain, and the short one:\n`PLANTUML_JAR`, then `plantuml` on `PATH`, with **no step for the jar\nthis repository commits** — the\nwhole reason the jar had to be handed to this suite in an environment\nvariable. Both are now\n`plantuml_conf` rendered as `conf.py` lines, so a checkout needs nothing\nexported: `poe test-mounts`,\nand a bare `pytest`, find `vendor/plantuml/plantuml-<pinned>.jar`\nthemselves. The lazy half earns its\nkeep on the one parametrised test whose nine cases include a single uml\none — only that parameter\nresolves a renderer. So `test-mounts` and its three matrix tasks take\n`deps = [\"fetch-plantuml\"]` like\nevery other rendering task; **`test-mounts-bazel` keeps `uses`**, its\nbuild running in a Bazel sandbox\nthat cannot see `vendor/` and reads the variable through `--action_env`.\nCI is unaffected either way: it\nruns `pytest` directly with the variable set by the composite action —\nroute 1 of the same chain.\n`test_example.py`'s guard was another copy whose message named the wrong\ntask; it is now one condition\nnaming `test-mounts-bazel`. Two copies remain on purpose —\n`docs/conf.py` and `performance_test.py`,\nwhich must not import a test-only member — and the root `AGENTS.md` now\nsays which is which.\n\n## sphinx-codelinks, and one tooling fix\n\nThree of its assertions were `app.warning.getvalue() == \"\"`, which fails\nwith a bare `assert '' == '<the\nwhole stream>'`; `assert_no_warnings` says how many were emitted and\nprints each. A fourth grepped the\nraw stream and would have passed on any number of warnings. Nothing else\nthere duplicates the layer: it\nrenders no diagrams, and its `copytree` calls copy fixture trees into\npytest's `tmpdir`. Separately,\n`check_workspace.py` check (6) reports a contradiction when a member the\nroot *publishes* carries a\n`Private ::` classifier; it read the route as falsy rather than as the\nempty string, so a member\ndeclared in neither place — already condemned by check (1) — was told\n\"the root depends on it in\n`[project]` dependencies\". One test; 309.\n\n## Mutations\n\n| mutation | result |\n|---|---|\n| `PLANTUML_JAR=/nonexistent/plantuml.jar` | red with the **same message\nfrom the same line** in sphinx-mounts and sphinx-needs alike, and a\nthird time from `fetch_plantuml.py` through the task |\n| the source emits `docname_conflict` under another topic | the\nexact-type assertion red (`assert 0 == 1`); the family count it\nreplaced, restored on the same tree, green |\n| mounts loses the testkit from `pytest_plugins` | 3 failed + 940 passed\n= the same 943, `fixture 'plantuml_command' not found` — nothing\nsilently collects less |\n| `test_example.py` reached with no jar and no `plantuml` | the skip now\nnames `test-mounts-bazel`, the task that sets the variable; with it set,\nthe guard passes and the test proceeds into Bazel |\n\nThe plugin **order** is fenced by nothing here, and the conftest says\nso: reversing it is 943 passed,\nbecause the only fixture both define is `sphinx_test_tempdir`, which\nthis suite never resolves. Gates:\nthe three suites `-rs`, `pytest tools/tests`, `lint`, `typecheck`,\n`check-workspace`, `release-plan`.",
+          "timestamp": "2026-09-07T17:04:02+02:00",
+          "tree_id": "24db57d45f69ee1d276e46782e174951f6e43d2d",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/ee865346daaeac196eaf0563f8b2e0bbdab17a84"
+        },
+        "date": 1788793513187,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.14678896499999894,
+            "unit": "s",
+            "extra": "Commit: ee865346daaeac196eaf0563f8b2e0bbdab17a84\nBranch: master\nTime: 2026-09-07T17:04:02+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 52.33568347399999,
+            "unit": "s",
+            "extra": "Commit: ee865346daaeac196eaf0563f8b2e0bbdab17a84\nBranch: master\nTime: 2026-09-07T17:04:02+02:00"
           }
         ]
       }
