@@ -8,6 +8,8 @@ from sphinx import version_info
 from sphinx.testing.util import SphinxTestApp
 from sphinx.util.console import strip_colors
 
+from tests.conftest import warnings
+
 
 @pytest.mark.parametrize(
     "test_app",
@@ -34,7 +36,7 @@ def test_doc_build_html(test_app: SphinxTestApp, plantuml_subprocess_args: list[
         "WARNING: http://my_company.com/docs/v1/index.html#TEST_01: Need 'EXT_TEST_01' has unknown outgoing link 'SPEC_1' in field 'links' [needs.external_link_outgoing]",
         "WARNING: ../../_build/html/index.html#TEST_01: Need 'EXT_REL_PATH_TEST_01' has unknown outgoing link 'SPEC_1' in field 'links' [needs.external_link_outgoing]",
     ]
-    assert strip_colors(output.stderr.decode("utf-8")).splitlines() == expected_warnings
+    assert warnings(output.stderr.decode("utf-8")) == expected_warnings
 
     # run second time and check
     output_second = subprocess.run(
@@ -54,10 +56,7 @@ def test_doc_build_html(test_app: SphinxTestApp, plantuml_subprocess_args: list[
     # which leads to some SN warnings not being emitted for incremental builds
     if version_info < (8, 2):
         expected_warnings = []
-    assert (
-        strip_colors(output_second.stderr.decode("utf-8")).splitlines()
-        == expected_warnings
-    )
+    assert warnings(output_second.stderr.decode("utf-8")) == expected_warnings
 
     # check if incremental build used
     # first build output

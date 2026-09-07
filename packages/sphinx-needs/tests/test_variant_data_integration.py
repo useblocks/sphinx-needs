@@ -3,15 +3,14 @@
 from __future__ import annotations
 
 import json
-import os
 import textwrap
 from pathlib import Path
 
 import pytest
-from sphinx.util.console import strip_colors
 from syrupy.extensions.json import JSONSnapshotExtension
 
 from sphinx_needs.exceptions import NeedsConfigException
+from tests.conftest import warnings
 
 
 @pytest.mark.parametrize(
@@ -28,14 +27,12 @@ def test_variant_data_html(test_app):
     app = test_app
     app.build()
 
-    warnings = strip_colors(
-        app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
-    ).splitlines()
-    print(warnings)
+    warning_records = warnings(app)
+    print(warning_records)
     # The needs_warnings check for wrong_platform should fire for REQ_002
-    assert warnings == [
-        "WARNING: wrong_platform: failed",
-        "\t\tfailed needs: 1 (REQ_002)",
+    assert warning_records == [
+        "WARNING: wrong_platform: failed\n"
+        "\t\tfailed needs: 1 (REQ_002)\n"
         "\t\tused filter: platform is not None and var.platform != platform [needs.warnings]",
     ]
 
@@ -68,10 +65,8 @@ def test_variant_data_file_html(test_app):
     app = test_app
     app.build()
 
-    warnings = strip_colors(
-        app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
-    ).splitlines()
-    assert warnings == []
+    warning_records = warnings(app)
+    assert warning_records == []
 
     index_html = Path(app.outdir, "index.html").read_text()
 
@@ -104,10 +99,8 @@ def test_variant_data_fields_html(test_app, snapshot_json):
     app = test_app
     app.build()
 
-    warnings = strip_colors(
-        app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
-    ).splitlines()
-    assert warnings == []
+    warning_records = warnings(app)
+    assert warning_records == []
 
     data = json.loads(Path(app.outdir, "needs.json").read_text())
     assert data["versions"][""]["needs"] == snapshot_json
@@ -132,17 +125,15 @@ def test_variant_data_field_errors_html(test_app, snapshot_json):
     app = test_app
     app.build()
 
-    warnings = strip_colors(
-        app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
-    ).splitlines()
+    warning_records = warnings(app)
 
-    assert warnings == [
-        "srcdir/index.rst:4: WARNING: Error while resolving dynamic values for field 'mystring', of need 'REQ_SYNTAX': variant data reference 'platform' is invalid: expected a dotted 'var.*' path [needs.dynamic_function]",
-        "srcdir/index.rst:8: WARNING: Error while resolving dynamic values for field 'mystring', of need 'REQ_MISSING': Unknown variant data key: 'var.nonexistent' [needs.dynamic_function]",
-        "srcdir/index.rst:12: WARNING: Error while resolving dynamic values for field 'mystring', of need 'REQ_MISSING_NESTED': Unknown variant data key: 'var.build.missing' [needs.dynamic_function]",
-        "srcdir/index.rst:16: WARNING: Error while resolving dynamic values for field 'myint', of need 'REQ_BADTYPE_STR': variant data value <class 'str'> is not of type 'integer' [needs.dynamic_function]",
-        "srcdir/index.rst:20: WARNING: Error while resolving dynamic values for field 'mystring', of need 'REQ_BADTYPE_STRING': variant data reference 'var.build' resolves to a mapping ('var.build'); access a leaf value instead [needs.dynamic_function]",
-        "srcdir/index.rst:24: WARNING: Error while resolving dynamic values for field 'myarray', of need 'REQ_BADTYPE_ARRAY': variant data value <class 'int'> is not of type 'array' or item type 'string' [needs.dynamic_function]",
+    assert warning_records == [
+        "<srcdir>/index.rst:4: WARNING: Error while resolving dynamic values for field 'mystring', of need 'REQ_SYNTAX': variant data reference 'platform' is invalid: expected a dotted 'var.*' path [needs.dynamic_function]",
+        "<srcdir>/index.rst:8: WARNING: Error while resolving dynamic values for field 'mystring', of need 'REQ_MISSING': Unknown variant data key: 'var.nonexistent' [needs.dynamic_function]",
+        "<srcdir>/index.rst:12: WARNING: Error while resolving dynamic values for field 'mystring', of need 'REQ_MISSING_NESTED': Unknown variant data key: 'var.build.missing' [needs.dynamic_function]",
+        "<srcdir>/index.rst:16: WARNING: Error while resolving dynamic values for field 'myint', of need 'REQ_BADTYPE_STR': variant data value <class 'str'> is not of type 'integer' [needs.dynamic_function]",
+        "<srcdir>/index.rst:20: WARNING: Error while resolving dynamic values for field 'mystring', of need 'REQ_BADTYPE_STRING': variant data reference 'var.build' resolves to a mapping ('var.build'); access a leaf value instead [needs.dynamic_function]",
+        "<srcdir>/index.rst:24: WARNING: Error while resolving dynamic values for field 'myarray', of need 'REQ_BADTYPE_ARRAY': variant data value <class 'int'> is not of type 'array' or item type 'string' [needs.dynamic_function]",
     ]
 
     data = json.loads(Path(app.outdir, "needs.json").read_text())
@@ -194,10 +185,8 @@ def test_variant_data_nested_inline_overrides_file(test_app):
     app = test_app
     app.build()
 
-    warnings = strip_colors(
-        app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
-    ).splitlines()
-    assert warnings == []
+    warning_records = warnings(app)
+    assert warning_records == []
 
     index_html = Path(app.outdir, "index.html").read_text()
 
@@ -353,10 +342,8 @@ def test_variant_data_extension_write_stays_coherent(test_app):
     app = test_app
     app.build()
 
-    warnings = strip_colors(
-        app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
-    ).splitlines()
-    assert warnings == []
+    warning_records = warnings(app)
+    assert warning_records == []
 
     index_html = Path(app.outdir, "index.html").read_text()
 

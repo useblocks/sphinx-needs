@@ -1,9 +1,9 @@
-import os
 from pathlib import Path
 
 import pytest
 from docutils import __version__ as doc_ver
-from sphinx.util.console import strip_colors
+
+from tests.conftest import warnings
 
 
 @pytest.mark.parametrize(
@@ -15,18 +15,16 @@ def test_doc_needs_filter_data_html(test_app):
     app = test_app
     app.build()
 
-    warnings = strip_colors(
-        app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
-    ).splitlines()
-    print(warnings)
-    assert warnings == [
+    warning_records = warnings(app)
+    print(warning_records)
+    assert warning_records == [
         "WARNING: needs_filter_data is deprecated and will be removed in a future version. Use needs_variant_data instead. [needs.deprecated]",
-        "srcdir/filter_code.rst:34: WARNING: malformed function signature: 'own_filter_code(' [needs.filter_func]",
-        "srcdir/filter_code.rst:43: WARNING: malformed function signature: 'own_filter_code(' [needs.filter_func]",
-        "srcdir/filter_code.rst:39: WARNING: malformed function signature: 'my_pie_filter_code(' [needs.filter_func]",
-        "srcdir/filter_code.rst:48: WARNING: malformed function signature: 'my_pie_filter_code(' [needs.filter_func]",
-        "WARNING: variant_not_equal_current_variant: failed",
-        "\t\tfailed needs: 1 (extern_filter_story_002)",
+        "<srcdir>/filter_code.rst:34: WARNING: malformed function signature: 'own_filter_code(' [needs.filter_func]",
+        "<srcdir>/filter_code.rst:43: WARNING: malformed function signature: 'own_filter_code(' [needs.filter_func]",
+        "<srcdir>/filter_code.rst:39: WARNING: malformed function signature: 'my_pie_filter_code(' [needs.filter_func]",
+        "<srcdir>/filter_code.rst:48: WARNING: malformed function signature: 'my_pie_filter_code(' [needs.filter_func]",
+        "WARNING: variant_not_equal_current_variant: failed\n"
+        "\t\tfailed needs: 1 (extern_filter_story_002)\n"
         "\t\tused filter: variant != current_variant [needs.warnings]",
     ]
 

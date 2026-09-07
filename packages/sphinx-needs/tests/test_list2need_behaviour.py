@@ -27,10 +27,10 @@ from typing import Any
 import pytest
 from sphinx.errors import SphinxError, SphinxWarning
 from sphinx.testing.util import SphinxTestApp
-from sphinx.util.console import strip_colors
 
 from sphinx_needs.api import get_needs_view
 from sphinx_needs.data import SphinxNeedsData
+from tests.conftest import warnings
 
 CONF = """\
 extensions = ["sphinx_needs"]
@@ -79,13 +79,9 @@ def needs(app: SphinxTestApp) -> dict[str, dict[str, Any]]:
     return {k: {**v} for k, v in get_needs_view(app).items()}
 
 
-def warnings(app: SphinxTestApp) -> str:
-    """Every warning the build emitted, as one string.
-
-    ``app.warning_list`` is captured by the fixture before the test builds, so the
-    stream itself has to be read back afterwards.
-    """
-    return strip_colors(app._warning.getvalue())
+def warning_text(app: SphinxTestApp) -> str:
+    """Every warning the build emitted, as one string; this module asserts substrings."""
+    return "\n".join(warnings(app))
 
 
 # ---------------------------------------------------------------------------
@@ -133,13 +129,13 @@ def test_id_capture(test_app: SphinxTestApp):
     assert "REQ-1" not in built
     assert (
         "Given ID 'REQ-1) The system (as defined' does not match configured regex"
-        in warnings(app)
+        in warning_text(app)
     )
 
     # NOTE: current behaviour; see PR discussion.
     # Two adjacent bracketed groups are captured as one id for the same reason.
     assert "AAA" not in built
-    assert "Given ID 'AAA)(BBB' does not match configured regex" in warnings(app)
+    assert "Given ID 'AAA)(BBB' does not match configured regex" in warning_text(app)
 
     # NOTE: current behaviour; see PR discussion.
     # The inner group is optional, so a literal "()" matches with no id. It is stripped
@@ -272,7 +268,7 @@ def test_empty_parentheses_and_inline_options_can_be_used_together(
     assert built["R_D7997"]["title"] == "Title with empty parens"
     assert built["R_D7997"]["status"] == "open"
     assert built["R_D7997"]["content"] == ""
-    assert "A need with ID 'R_D7997' already exists" in warnings(app)
+    assert "A need with ID 'R_D7997' already exists" in warning_text(app)
 
 
 COLLIDING = """
@@ -322,12 +318,12 @@ def test_equal_titles_collide_unless_the_type_prefix_differs(test_app: SphinxTes
 
     # NOTE: current behaviour; see PR discussion.
     # Twice in the same list: the second need is dropped.
-    assert "A need with ID 'R_C6376' already exists" in warnings(app)
+    assert "A need with ID 'R_C6376' already exists" in warning_text(app)
     assert built["R_C6376"]["title"] == "Same title in one list"
 
     # NOTE: current behaviour; see PR discussion.
     # Once in each of two documents: likewise, and the survivor is the first read.
-    assert "A need with ID 'R_1776A' already exists" in warnings(app)
+    assert "A need with ID 'R_1776A' already exists" in warning_text(app)
     assert built["R_1776A"]["docname"] == "index"
 
     # The same title at two levels is safe, because the prefixes differ. Both needs are
@@ -335,7 +331,7 @@ def test_equal_titles_collide_unless_the_type_prefix_differs(test_app: SphinxTes
     assert built["R_E8D5C"]["type"] == "req"
     assert built["S_E8D5C"]["type"] == "spec"
     assert built["S_E8D5C"]["parent_need"] == "R_E8D5C"
-    assert "E8D5C" not in warnings(app)
+    assert "E8D5C" not in warning_text(app)
 
 
 # ---------------------------------------------------------------------------
@@ -380,7 +376,7 @@ def test_inline_options(test_app: SphinxTestApp):
     # second region's name is read as the option "((tags".
     assert built["OPT-GREEDY"]["title"] == "Title"
     assert built["OPT-GREEDY"]["status"] == "open"
-    assert "Unknown option '((tags'" in warnings(app)
+    assert "Unknown option '((tags'" in warning_text(app)
 
     # NOTE: current behaviour; see PR discussion.
     # The options are extracted after the delimiter split, so a "." inside a value has
@@ -424,7 +420,7 @@ def test_an_id_written_as_an_inline_option(test_app: SphinxTestApp):
     assert "Gamma" not in {need["title"] for need in built.values()}
     assert (
         "Need could not be created: Given ID '' does not match configured regex"
-        in warnings(app)
+        in warning_text(app)
     )
 
 
@@ -456,9 +452,11 @@ def test_title_from_content_behaves_as_it_does_on_a_need_directive(
     assert built["R_D351E"]["title"] == "the first sentence here"
 
     assert built["TFC-TITLED"]["title"] == "A real title"
-    assert "title_from_content set to True, but a title was provided." in warnings(app)
-    assert "Unknown option 'title_from_content'" not in warnings(app)
-    assert "No title given" not in warnings(app)
+    assert "title_from_content set to True, but a title was provided." in warning_text(
+        app
+    )
+    assert "Unknown option 'title_from_content'" not in warning_text(app)
+    assert "No title given" not in warning_text(app)
 
 
 UNQUOTED_OPTION = """
@@ -486,7 +484,7 @@ def test_an_unquoted_option_value_is_dropped_without_a_diagnostic(
     app.build()
     # NOTE: current behaviour; see PR discussion.
     assert needs(app)["OPT-UNQUOTED"]["status"] is None
-    assert warnings(app) == ""
+    assert warning_text(app) == ""
 
 
 # ---------------------------------------------------------------------------
@@ -639,7 +637,7 @@ def test_a_directive_in_an_items_content_keeps_its_options(test_app: SphinxTestA
     assert (
         built["DIR-CHILD"]["content"] == ".. rubric:: A rubric\n   :class: highlighted"
     )
-    assert warnings(app) == ""
+    assert warning_text(app) == ""
 
 
 NESTED = """
@@ -733,7 +731,7 @@ def test_a_hidden_parent_does_not_take_its_child_out_of_the_page(
     index = Path(app.outdir, "index.html").read_text()
     assert 'id="HID-CHILD"' in index
     assert 'href="#HID-CHILD"' in index
-    assert warnings(app) == ""
+    assert warning_text(app) == ""
 
 
 NO_NEED_CREATED_INDEX = """
@@ -774,7 +772,7 @@ def test_a_list_that_creates_nothing_does_not_register_its_document(
     app = test_app
     app.build()
 
-    assert "A need with ID 'DUP-1' already exists" in warnings(app)
+    assert "A need with ID 'DUP-1' already exists" in warning_text(app)
     docs = SphinxNeedsData(app.env).get_or_create_docs()["all"]
     assert "index" in docs
     assert "other" not in docs
@@ -1000,7 +998,7 @@ def test_the_directive_runs_in_a_markdown_document(test_app: SphinxTestApp):
     assert built["MD-A"]["doctype"] == ".md"
     # The items are on lines 6 and 7 of index.md.
     assert (built["MD-A"]["lineno"], built["MD-B"]["lineno"]) == (6, 7)
-    assert warnings(app) == ""
+    assert warning_text(app) == ""
     assert built["MD-CONTROL"]["title"] == "A control need"
 
 
