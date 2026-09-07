@@ -1211,6 +1211,82 @@ By default the following template is used:
    <size:12>{{type_name}} (part)</size>\\n**{{content|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id_parent}}.**{{id}}**</size>
    {%- endif -%}
 
+Displaying ports in a needflow
+++++++++++++++++++++++++++++++
+
+The PlantUML ``portin`` and ``portout`` styles can show interface ports inside
+a containing need. Define a need type for the container and each direction of
+port, then use ``needs_diagram_template`` to keep the port labels compact. The
+example defines the complete ``needs_types`` list; add these entries to your
+existing list if the project also uses other need types:
+
+.. code-block:: python
+
+   # conf.py
+   needs_types = [
+       {
+           "directive": "block",
+           "title": "Block",
+           "prefix": "B_",
+           "color": "#BFD8D2",
+           "style": "node",
+       },
+       {
+           "directive": "inport",
+           "title": "Input Port",
+           "prefix": "IP_",
+           "color": "#FEDCD2",
+           "style": "portin",
+       },
+       {
+           "directive": "outport",
+           "title": "Output Port",
+           "prefix": "OP_",
+           "color": "#DF744A",
+           "style": "portout",
+       },
+   ]
+
+   needs_diagram_template = """
+   {%- if type in ["inport", "outport"] -%}
+   {{ title }}
+   {%- elif is_need -%}
+   <size:12>{{type_name}}</size>\\n**{{title|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id}}</size>
+   {%- else -%}
+   <size:12>{{type_name}} (part)</size>\\n**{{content|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id_parent}}.**{{id}}**</size>
+   {%- endif -%}
+   """
+
+Nest the port needs in the containing block and include all three needs in the
+same ``needflow``:
+
+.. code-block:: rst
+
+   .. block:: Controller
+      :id: CONTROLLER
+      :tags: controller_ports
+
+      .. inport:: Sensor input
+         :id: SENSOR_INPUT
+         :tags: controller_ports
+
+      .. outport:: Actuator command
+         :id: ACTUATOR_COMMAND
+         :tags: controller_ports
+
+   .. needflow::
+      :tags: controller_ports
+      :engine: plantuml
+
+The nested directives set the parent-child relationship that makes PlantUML
+place the ports inside ``CONTROLLER``. The compact template applies only to the
+two port directives; all other need types retain the default diagram label.
+
+.. note::
+
+   ``portin`` and ``portout`` are PlantUML-specific styles. Use the PlantUML
+   :ref:`needflow engine <needflow_engine>` for this layout.
+
 .. _`needs_id_required`:
 
 needs_id_required
