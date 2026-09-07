@@ -15,7 +15,6 @@ from syrupy.filters import props
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_service_github",
-            "no_plantuml": True,
         }
     ],
     indirect=True,

@@ -71,7 +71,6 @@ def params(body: str, conf: str = CONF, **extra: str) -> dict[str, object]:
     return {
         "buildername": "html",
         "files": project(body, conf, **extra),
-        "no_plantuml": True,
     }
 
 
@@ -962,7 +961,6 @@ def myst_params(index: str) -> dict[str, object]:
     return {
         "buildername": "html",
         "files": [(Path("conf.py"), MYST_CONF), (Path("index.md"), index)],
-        "no_plantuml": True,
     }
 
 

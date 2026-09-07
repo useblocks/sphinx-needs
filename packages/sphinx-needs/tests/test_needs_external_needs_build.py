@@ -14,7 +14,7 @@ from sphinx.util.console import strip_colors
     [{"buildername": "html", "srcdir": "doc_test/doc_needs_external_needs"}],
     indirect=True,
 )
-def test_doc_build_html(test_app: SphinxTestApp, plantuml_command: str):
+def test_doc_build_html(test_app: SphinxTestApp, plantuml_subprocess_args: list[str]):
     import subprocess
 
     src_dir = Path(test_app.srcdir)
@@ -24,8 +24,7 @@ def test_doc_build_html(test_app: SphinxTestApp, plantuml_command: str):
             "sphinx-build",
             "-b",
             "html",
-            "-D",
-            f"plantuml={plantuml_command}",
+            *plantuml_subprocess_args,
             src_dir,
             out_dir,
         ],
@@ -43,8 +42,7 @@ def test_doc_build_html(test_app: SphinxTestApp, plantuml_command: str):
             "sphinx-build",
             "-b",
             "html",
-            "-D",
-            f"plantuml={plantuml_command}",
+            *plantuml_subprocess_args,
             src_dir,
             out_dir,
         ],
@@ -84,7 +82,13 @@ def test_doc_build_html(test_app: SphinxTestApp, plantuml_command: str):
 )
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_needs_external_needs"}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_needs_external_needs",
+            "plantuml": True,
+        }
+    ],
     indirect=True,
 )
 def test_external_needs_base_url_relative_path(test_app):

@@ -77,7 +77,7 @@ def test_schemas(
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/schema_typing", "no_plantuml": True}],
+    [{"buildername": "html", "srcdir": "doc_test/schema_typing"}],
     indirect=True,
 )
 def test_schema_typing(test_app: SphinxTestApp, snapshot) -> None:
@@ -96,7 +96,7 @@ def test_schema_typing(test_app: SphinxTestApp, snapshot) -> None:
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_schema_e2e", "no_plantuml": True}],
+    [{"buildername": "html", "srcdir": "doc_test/doc_schema_e2e"}],
     indirect=True,
 )
 def test_schema_e2e(test_app: SphinxTestApp, snapshot) -> None:
@@ -123,7 +123,6 @@ def test_schema_e2e(test_app: SphinxTestApp, snapshot) -> None:
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_schema_example",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -162,7 +161,6 @@ Test
 """,
                 ),
             ],
-            "no_plantuml": True,
         }
     ],
     indirect=True,

@@ -12,7 +12,6 @@ from sphinx.testing.util import SphinxTestApp
         {
             "buildername": "html",
             "srcdir": "doc_test/add_sections_sigs",
-            "no_plantuml": True,
         }
     ],
     indirect=True,

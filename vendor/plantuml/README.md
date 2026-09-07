@@ -5,7 +5,9 @@ for every package in this repository. `pin.toml` names the version and its sha25
 `plantuml-<version>.jar` beside it is that file. Nothing downloads it — a checkout has it.
 
 Everything that renders a diagram in this repository reads this one pin — sphinx-needs' test
-suite (`tests/conftest.py`) and its documentation (`docs/conf.py`), the performance project,
+suite (`tests/conftest.py`, for the builds that opt into rendering: the dozen `test_app`
+parameter dicts that say `"plantuml": True`, plus the tests that call `make_app` and take the
+`plantuml_command` fixture themselves) and its documentation (`docs/conf.py`), the performance project,
 the sphinx-mounts suite (through `PLANTUML_JAR`, which CI and the poe tasks set from here),
 `ci.yaml`, `release.yaml`, `benchmark.yaml`, `docs.yaml` and Read the Docs. The docker image
 is the one exception it cannot be: a `Dockerfile` cannot read TOML, so `docker/Dockerfile`
@@ -32,9 +34,11 @@ without a commit.
   1.2022.5, and sat four years and ~46 releases behind without anyone noticing, because
   nothing in the tree said what it was.
 - **Zero network.** A checkout renders. That is the whole point of committing it, and it is
-  worth more than the ~30 MB: 22 of a CI run's 26 jobs render (counted on run 34057129950,
-  on `a3aebf1f`: the four that do not are `Lint`, the smoke test, `Docs codelinks` and the
-  `check` aggregator), Read the Docs builds on every pull request, developers work offline,
+  worth more than the ~30 MB: 20 of a CI run's 26 jobs render (counted on run 34057129950,
+  on `a3aebf1f`, minus the two `Needs JS` cells that stopped needing a renderer when
+  rendering became opt in: the six that do not are `Lint`, the smoke test, `Docs codelinks`,
+  the `check` aggregator and those two), Read the Docs builds on every pull request,
+  developers work offline,
   and a sandboxed agent session's network allowlist is set
   on the environment rather than in this repository (this repository's own `CLAUDE.md` records
   `api.github.com` having to be added to it by hand).
@@ -132,8 +136,11 @@ success on exactly the mistake the fence is for. Lint runs it (`pytest tools/tes
    from a git ref with no checkout as its build context, so it downloads its own copy; this
    is the one place the version is repeated, and it is repeated deliberately.)
 5. `uv run poe verify-plantuml` — the check Lint will make — and re-run the renderer-heavy
-   suites: `uv run poe test-needs tests/test_plantuml.py tests/test_plantuml_incdir.py tests/test_needuml.py tests/test_needflow.py`,
-   `uv run poe docs-needs`, `uv run poe test-mounts`.
+   suites: `uv run poe test-needs`, `uv run poe docs-needs`, `uv run poe test-mounts`. **The
+   whole sphinx-needs suite, not a path list**: rendering is opt in now, so the suite is
+   cheap (280 s serial, ~100 s at `-n 4`) and it is the only check that cannot miss a
+   renderer — the 102 rendering cases are spread over nine files, and a hand-written path
+   list is precisely the thing a jar bump would be trusted with and get wrong.
 
 **Pushing a bump may need `http.postBuffer`.** Over an HTTPS remote, git buffers a push body
 up to `http.postBuffer` (1 MB by default) and switches to chunked transfer above it, which

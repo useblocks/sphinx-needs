@@ -15,7 +15,7 @@ from sphinx_needs.needsfile import SphinxNeedsFileException
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/import_doc", "no_plantuml": True}],
+    [{"buildername": "html", "srcdir": "doc_test/import_doc"}],
     indirect=True,
 )
 def test_import_json(test_app):
@@ -92,7 +92,6 @@ needs_json = """
                 ("needs.json", needs_json),
                 ("nested/needs.json", needs_json),
             ],
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -123,7 +122,6 @@ def test_import_rel_abs_sphinx_paths(test_app, index_content):
                 ("conf.py", 'extensions = ["sphinx_needs"]'),
                 ("needs.json", needs_json),
             ],
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -156,7 +154,6 @@ def test_import_abs_paths_win(test_app, path_sep):
                 ("conf.py", 'extensions = ["sphinx_needs"]'),
                 ("needs.json", needs_json),
             ],
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -187,7 +184,6 @@ def test_import_abs_paths_lin_mac(test_app):
             "files": [
                 ("conf.py", 'extensions = ["sphinx_needs"]\nneeds_build_json = True'),
             ],
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -236,7 +232,6 @@ def test_import_allow_type_coercion_true(test_app):
             "files": [
                 ("conf.py", 'extensions = ["sphinx_needs"]\nneeds_build_json = True'),
             ],
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -283,7 +278,6 @@ def test_import_allow_type_coercion_false(test_app):
         {
             "buildername": "html",
             "srcdir": "doc_test/import_doc_invalid",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -305,7 +299,6 @@ def test_json_schema_check(test_app):
         {
             "buildername": "html",
             "srcdir": "doc_test/import_doc_warnings",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -333,7 +326,6 @@ def test_need_schema_warnings(test_app, snapshot):
         {
             "buildername": "html",
             "srcdir": "doc_test/import_doc_empty",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -352,7 +344,6 @@ def test_empty_file_check(test_app):
         {
             "buildername": "html",
             "srcdir": "doc_test/non_exists_file_import",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -375,7 +366,7 @@ def test_import_non_exists_json(test_app):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "needs", "srcdir": "doc_test/import_doc", "no_plantuml": True}],
+    [{"buildername": "needs", "srcdir": "doc_test/import_doc"}],
     indirect=True,
 )
 def test_import_builder(test_app, snapshot):
@@ -392,7 +383,6 @@ def test_import_builder(test_app, snapshot):
         {
             "buildername": "needs",
             "srcdir": "doc_test/doc_needimport_download_needs_json",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -469,7 +459,6 @@ def test_needimport_needs_json_download(test_app, snapshot):
         {
             "buildername": "needs",
             "srcdir": "doc_test/doc_needimport_download_needs_json_negative",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -489,7 +478,6 @@ def test_needimport_needs_json_download_negative(test_app):
         {
             "buildername": "latex",
             "srcdir": "doc_test/doc_needimport_noindex",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -521,7 +509,6 @@ def test_doc_needimport_noindex(test_app):
                 ("conf.py", 'extensions = ["sphinx_needs"]'),
                 ("needs.json", needs_json),  # reuse the existing needs_json string
             ],
-            "no_plantuml": True,
         }
     ],
     indirect=True,

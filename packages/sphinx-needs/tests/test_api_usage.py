@@ -54,7 +54,6 @@ def setup(app):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_basic",
-            "no_plantuml": True,
             "confoverrides": {"extensions": ["sphinx_needs", "dummy_extension.dummy"]},
         }
     ],
@@ -77,7 +76,6 @@ def test_api_configuration(test_app: SphinxTestApp):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_basic",
-            "no_plantuml": True,
             "confoverrides": {"extensions": ["sphinx_needs", "dummy_extension.dummy"]},
         }
     ],
@@ -97,7 +95,6 @@ def test_api_get_types(test_app: SphinxTestApp):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_basic",
-            "no_plantuml": True,
             "confoverrides": {"extensions": ["sphinx_needs", "dummy_extension.dummy"]},
         }
     ],

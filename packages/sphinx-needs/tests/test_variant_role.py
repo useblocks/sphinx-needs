@@ -15,7 +15,6 @@ from sphinx.util.console import strip_colors
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_variant_role",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -62,7 +61,6 @@ def test_variant_role_html(test_app):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_variant_role_no_data",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -91,7 +89,6 @@ def test_variant_role_no_data_html(test_app):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_variant_role_file",
-            "no_plantuml": True,
         }
     ],
     indirect=True,

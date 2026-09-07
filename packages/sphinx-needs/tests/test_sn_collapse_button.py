@@ -161,7 +161,6 @@ def test_collapse_button_in_doc_basic(test_app: SphinxTestApp, page: Page) -> No
         {
             "buildername": "html",
             "srcdir": "doc_test/import_doc",
-            "no_plantuml": True,
         }
     ],
     indirect=True,

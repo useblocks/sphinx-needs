@@ -10,7 +10,6 @@ from sphinx.util.console import strip_colors
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_style_unknown",
-            "no_plantuml": True,
         }
     ],
     indirect=True,

@@ -88,16 +88,26 @@ def test_needuml_option_key_forbidden(test_app):
     [{"buildername": "html", "srcdir": "doc_test/doc_needuml_diagram_allowmixing"}],
     indirect=True,
 )
-def test_needuml_diagram_allowmixing(test_app):
+def test_needuml_diagram_allowmixing(test_app, plantuml_subprocess_args):
     app = test_app
 
     srcdir = Path(app.srcdir)
     out_dir = srcdir / "_build"
 
     out = subprocess.run(
-        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
+        ["sphinx-build", "-M", "html", srcdir, out_dir, *plantuml_subprocess_args],
+        capture_output=True,
     )
     assert out.returncode == 0
+    # the subprocess renders eight diagrams, and a failed render is only a WARNING to
+    # sphinxcontrib-plantuml -- so without this the test is green on a renderer that
+    # cannot run, which is how it spent years drawing with whatever `plantuml` the
+    # machine carried
+    assert "error while running plantuml" not in out.stderr.decode("utf-8")
+    # ...and a renderer that cannot even be STARTED is a different message ("plantuml
+    # command ... cannot be run"), also a WARNING: the positive assertion is that the
+    # diagrams exist. Eight on a good build; none under either failure (measured)
+    assert list((out_dir / "html" / "_images").glob("plantuml-*"))
 
 
 @pytest.mark.parametrize(
@@ -177,7 +187,13 @@ def test_needumls_builder(test_app, snapshot):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_needuml_filter"}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_needuml_filter",
+            "plantuml": True,
+        }
+    ],
     indirect=True,
 )
 def test_needuml_filter(test_app, snapshot):
@@ -201,7 +217,13 @@ def test_needuml_filter(test_app, snapshot):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_needuml_jinja_func_flow"}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_needuml_jinja_func_flow",
+            "plantuml": True,
+        }
+    ],
     indirect=True,
 )
 def test_needuml_jinja_func_flow(test_app, snapshot):
@@ -275,7 +297,13 @@ def test_doc_needarch_jinja_import_negative(test_app):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_needuml_jinja_func_ref"}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_needuml_jinja_func_ref",
+            "plantuml": True,
+        }
+    ],
     indirect=True,
 )
 def test_needuml_jinja_func_ref(test_app, snapshot):
@@ -308,7 +336,13 @@ def test_needuml_jinja_func_ref(test_app, snapshot):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_needuml_option_warnings"}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_needuml_option_warnings",
+            "plantuml": True,
+        }
+    ],
     indirect=True,
 )
 def test_needuml_option_warnings(test_app):
@@ -517,7 +551,6 @@ def test_needumls_builder_rerun_keeps_saved_files(test_app):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_needuml_save_no_plantuml",
-            "no_plantuml": True,
         }
     ],
     indirect=True,

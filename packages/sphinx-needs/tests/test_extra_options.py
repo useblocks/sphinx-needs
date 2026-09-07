@@ -9,7 +9,7 @@ from syrupy.filters import props
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/extra_options", "no_plantuml": True}],
+    [{"buildername": "html", "srcdir": "doc_test/extra_options"}],
     indirect=True,
 )
 def test_custom_attributes_appear(test_app, snapshot):

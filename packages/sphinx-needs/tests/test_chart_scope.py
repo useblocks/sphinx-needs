@@ -34,7 +34,6 @@ CHART_SCOPE = pytest.mark.parametrize(
             "srcdir": "doc_test/doc_chart_scope",
             # the fixture needs no diagrams, so the suite-wide plantuml override
             # would only add an "unknown config value" warning to assert around
-            "no_plantuml": True,
         }
     ],
     indirect=True,

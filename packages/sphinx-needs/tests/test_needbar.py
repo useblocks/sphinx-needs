@@ -36,7 +36,6 @@ def _x_tick_labels(svg: str) -> list[str]:
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_needbar_from_data",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -78,7 +77,6 @@ def test_needbar_label_defaults(test_app):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_needbar_from_data",
-            "no_plantuml": True,
         }
     ],
     indirect=True,

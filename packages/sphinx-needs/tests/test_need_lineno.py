@@ -99,7 +99,7 @@ def params(conf: str = CONF, index: str = INDEX, **extra: str) -> dict[str, obje
     """Build the :func:`test_app` parameters for a single case."""
     files = [(Path("conf.py"), conf), (Path("index.rst"), index)]
     files.extend((Path(name), text) for name, text in extra.items())
-    return {"buildername": "html", "files": files, "no_plantuml": True}
+    return {"buildername": "html", "files": files}
 
 
 def needs(app: SphinxTestApp) -> dict[str, dict[str, Any]]:
@@ -188,7 +188,6 @@ requires_myst = pytest.mark.skipif(
         {
             "buildername": "html",
             "files": [(Path("conf.py"), MYST_CONF), (Path("index.md"), MYST_INDEX)],
-            "no_plantuml": True,
         }
     ],
     indirect=True,

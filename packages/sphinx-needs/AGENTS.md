@@ -89,11 +89,29 @@ def process_need(
 - Snapshot testing uses `syrupy` - update snapshots with `--snapshot-update`
 - Browser tests use pytest-playwright and require the `@pytest.mark.jstest` marker
 
+### Rendering PlantUML is opt in
+
+A `test_app` build renders no diagram unless its parameter dict says `"plantuml": True`.
+Otherwise the renderer is inert (`make_plantuml_inert` in `tests/conftest.py`): diagram
+directives still parse and reach the doctree, so a test that inspects diagram *source* or the
+`.puml` files sphinx-needs writes needs nothing, but no JVM starts — about two seconds each,
+which used to be a third of the suite's wall time. Opt in only when the test asserts on a
+**rendered** diagram: the `<object>` in the HTML, the SVG behind it, or a warning only the
+render path emits.
+
+The fence covers the app `test_app` builds and nothing else. A test that runs `sphinx-build`
+as a subprocess passes the `plantuml_subprocess_args` fixture into its argv; a test that calls
+`make_app` directly on a project that loads `sphinxcontrib.plantuml` takes the
+`plantuml_command` fixture. Both then render with the suite's pinned jar; without them a build
+renders with whatever `plantuml` is on `PATH`, silently. `plantuml_command` raises rather than
+skips when it finds no renderer, so request it only where a render is asserted.
+
 ### Writing Tests
 
 1. Create a test documentation project in `tests/doc_test/` if needed
 2. Use the `test_app` fixture for Sphinx application testing
-3. Mark tests appropriately:
+3. Add `"plantuml": True` to the parameter dict only if the test asserts on a rendered diagram
+4. Mark tests appropriately:
    - `@pytest.mark.jstest` - browser tests (pytest-playwright)
    - `@pytest.mark.benchmark` - Performance benchmarks
    - `@pytest.mark.fixture_file` - Tests using fixture files

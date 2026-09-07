@@ -129,7 +129,6 @@ def test_filter_build_html(test_app):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_filter_this_doc",
-            "no_plantuml": True,
         }
     ],
     indirect=True,

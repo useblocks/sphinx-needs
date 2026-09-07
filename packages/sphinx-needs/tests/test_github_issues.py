@@ -46,7 +46,13 @@ def test_doc_github_44(test_app):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_github_issue_61"}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_github_issue_61",
+            "plantuml": True,
+        }
+    ],
     indirect=True,
 )
 def test_doc_github_61(test_app):

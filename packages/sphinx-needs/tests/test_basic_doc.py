@@ -18,7 +18,7 @@ from sphinx_needs.directives.needtable import Needtable
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_basic", "no_plantuml": True}],
+    [{"buildername": "html", "srcdir": "doc_test/doc_basic"}],
     indirect=True,
 )
 def test_build_html(test_app: SphinxTestApp, snapshot_doctree):
@@ -58,7 +58,7 @@ def test_build_html(test_app: SphinxTestApp, snapshot_doctree):
 )
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_basic", "no_plantuml": True}],
+    [{"buildername": "html", "srcdir": "doc_test/doc_basic"}],
     indirect=True,
 )
 def test_html_head_files(test_app: SphinxTestApp):
@@ -89,7 +89,6 @@ def test_html_head_files(test_app: SphinxTestApp):
         {
             "buildername": "singlehtml",
             "srcdir": "doc_test/doc_basic",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -102,7 +101,7 @@ def test_build_singlehtml(test_app: SphinxTestApp):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "latex", "srcdir": "doc_test/doc_basic", "no_plantuml": True}],
+    [{"buildername": "latex", "srcdir": "doc_test/doc_basic"}],
     indirect=True,
 )
 def test_build_latex(test_app: SphinxTestApp):
@@ -129,7 +128,7 @@ def test_build_latex(test_app: SphinxTestApp):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "epub", "srcdir": "doc_test/doc_basic", "no_plantuml": True}],
+    [{"buildername": "epub", "srcdir": "doc_test/doc_basic"}],
     indirect=True,
 )
 def test_build_epub(test_app: SphinxTestApp):
@@ -140,7 +139,7 @@ def test_build_epub(test_app: SphinxTestApp):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "json", "srcdir": "doc_test/doc_basic", "no_plantuml": True}],
+    [{"buildername": "json", "srcdir": "doc_test/doc_basic"}],
     indirect=True,
 )
 def test_build_json(test_app: SphinxTestApp):
@@ -151,7 +150,7 @@ def test_build_json(test_app: SphinxTestApp):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "needs", "srcdir": "doc_test/doc_basic", "no_plantuml": True}],
+    [{"buildername": "needs", "srcdir": "doc_test/doc_basic"}],
     indirect=True,
 )
 def test_build_needs(test_app: SphinxTestApp, snapshot):

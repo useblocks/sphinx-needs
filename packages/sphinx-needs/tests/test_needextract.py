@@ -25,7 +25,6 @@ def build_warnings(app) -> list[str]:
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_needextract",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -75,7 +74,6 @@ def test_needextract_basic(test_app):
         {
             "buildername": "html",
             "srcdir": "doc_test/needextract_with_nested_needs",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -184,7 +182,6 @@ Extract
         pytest.param(
             {
                 "buildername": "html",
-                "no_plantuml": True,
                 "files": [
                     (Path("conf.py"), CONF),
                     (Path("index.rst"), UNKNOWN_ID_INDEX),
@@ -200,7 +197,6 @@ Extract
         pytest.param(
             {
                 "buildername": "html",
-                "no_plantuml": True,
                 "files": [
                     (Path("conf.py"), CONF),
                     (Path("index.rst"), ARG_AND_FILTER_INDEX),
@@ -216,7 +212,6 @@ Extract
         pytest.param(
             {
                 "buildername": "html",
-                "no_plantuml": True,
                 "files": [
                     (Path("conf.py"), CONF_NEEDS_HIDDEN),
                     (Path("index.rst"), PLAIN_EXTRACT_INDEX),
@@ -369,7 +364,6 @@ def extract_doc(need_id: str) -> str:
         pytest.param(
             {
                 "buildername": "html",
-                "no_plantuml": True,
                 "files": [
                     (Path("conf.py"), CONF),
                     (Path("index.rst"), VIEW_IN_CONTENT_INDEX),
@@ -386,7 +380,6 @@ def extract_doc(need_id: str) -> str:
         pytest.param(
             {
                 "buildername": "html",
-                "no_plantuml": True,
                 "files": [
                     (Path("conf.py"), CONF),
                     (Path("index.rst"), NESTED_EXTRACT_INDEX),
@@ -403,7 +396,6 @@ def extract_doc(need_id: str) -> str:
         pytest.param(
             {
                 "buildername": "html",
-                "no_plantuml": True,
                 "files": [
                     (Path("conf.py"), CONF),
                     (Path("index.rst"), NEEDPIE_IN_CONTENT_INDEX),
@@ -420,7 +412,6 @@ def extract_doc(need_id: str) -> str:
         pytest.param(
             {
                 "buildername": "html",
-                "no_plantuml": True,
                 "files": [
                     (Path("conf.py"), CONF),
                     (Path("index.rst"), NEEDBAR_IN_CONTENT_INDEX),
@@ -437,7 +428,6 @@ def extract_doc(need_id: str) -> str:
         pytest.param(
             {
                 "buildername": "html",
-                "no_plantuml": True,
                 "files": [
                     (Path("conf.py"), CONF),
                     (Path("index.rst"), NEEDUML_IN_CONTENT_INDEX),
@@ -462,7 +452,6 @@ def extract_doc(need_id: str) -> str:
         pytest.param(
             {
                 "buildername": "html",
-                "no_plantuml": True,
                 "files": [
                     (Path("conf.py"), CONF),
                     (Path("index.rst"), NEEDTABLE_IN_CHILD_INDEX),
@@ -540,7 +529,6 @@ Index
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (Path("conf.py"), CONF),
                 (Path("index.rst"), REFERENCE_CONTRACT_INDEX),
@@ -620,7 +608,6 @@ Index
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (Path("conf.py"), RECORDING_CONF),
                 (Path("index.rst"), RECORDING_INDEX),
@@ -682,7 +669,6 @@ Index
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (Path("conf.py"), CONF),
                 (Path("index.rst"), FOOTNOTE_INDEX),
@@ -764,7 +750,6 @@ def setup(app):
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (Path("conf.py"), LEAK_PROBE_CONF),
                 # a need with a reference in it, so the post-transforms have

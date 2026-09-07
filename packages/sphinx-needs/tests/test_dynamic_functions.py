@@ -130,7 +130,6 @@ def test_dynamic_function_from_string_fail(func_str, error_message):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_dynamic_functions",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -167,7 +166,6 @@ def test_doc_dynamic_functions(test_app, snapshot):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_df_calc_sum",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -189,7 +187,6 @@ def test_doc_df_calc_sum(test_app):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_df_check_linked_values",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -211,7 +208,6 @@ def test_doc_df_linked_values(test_app):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_df_links_from_content",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -240,7 +236,6 @@ def test_doc_df_links_from_content(test_app, snapshot):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_df_user_functions",
-            "no_plantuml": True,
         }
     ],
     indirect=True,

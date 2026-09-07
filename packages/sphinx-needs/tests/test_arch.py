@@ -4,7 +4,9 @@ import pytest
 
 
 @pytest.mark.parametrize(
-    "test_app", [{"buildername": "html", "srcdir": "doc_test/arch_doc"}], indirect=True
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/arch_doc", "plantuml": True}],
+    indirect=True,
 )
 def test_doc_build_html(test_app):
     app = test_app

@@ -50,8 +50,8 @@ import yaml
 REPO = Path(__file__).resolve().parents[2]
 SCRIPT = "tools/src/sn_tools/fetch_plantuml.py"
 
-# The eight sites, counted by hand on this head and asserted below. Seven CAPTURE the jar's
-# path into `PLANTUML_JAR`; the eighth is CI's Lint job, which runs the same `--verify` with
+# The seven sites, counted by hand on this head and asserted below. Six CAPTURE the jar's
+# path into `PLANTUML_JAR`; the seventh is CI's Lint job, which runs the same `--verify` with
 # no pipe and no capture — so it needs neither `shell: bash` nor the `tr`, and a plain `run:`
 # under `bash -e` already carries the script's exit status.
 #
@@ -59,7 +59,6 @@ SCRIPT = "tools/src/sn_tools/fetch_plantuml.py"
 #                                                                  tests-extensions x4)
 #   .github/workflows/benchmark.yaml         benchmarks           capture
 #   .github/workflows/ci.yaml                bazel                capture
-#   .github/workflows/ci.yaml                tests-js             capture
 #   .github/workflows/ci.yaml                tests-no-mpl         capture
 #   .github/workflows/docs.yaml              linkcheck            capture
 #   .github/workflows/release.yaml           build                capture
@@ -67,8 +66,8 @@ SCRIPT = "tools/src/sn_tools/fetch_plantuml.py"
 #
 # Adding a job that renders means adding a site and raising these numbers — deliberately, so
 # that the addition is a decision someone made rather than a step nobody checked.
-EXPECTED_SITES = 8
-EXPECTED_CAPTURES = 7
+EXPECTED_SITES = 7
+EXPECTED_CAPTURES = 6
 
 
 @dataclass(frozen=True)
