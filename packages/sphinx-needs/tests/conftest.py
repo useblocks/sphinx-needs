@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os.path
+import re
 import secrets
 import shutil
 import string
@@ -375,6 +376,91 @@ def plantuml_subprocess_args(plantuml_command: str) -> list[str]:
     return ["-D", f"plantuml={plantuml_command}"]
 
 
+#: A line STARTS a warning record when it carries a severity token, optionally behind the
+#: location sphinx puts in front of it (``<path>: `` or ``<path>:<line>: ``). Everything
+#: after such a line and before the next one is a continuation of that record. Splitting on
+#: the substring ``"WARNING: "`` instead -- which is what this suite used to do -- detaches
+#: every location from its message, turns N located warnings into N+1 entries, and cuts a
+#: message that merely quotes the token in half.
+_RECORD_START = re.compile(r"^(?:.*?:\s)?(?:WARNING|ERROR|SEVERE|CRITICAL):\s")
+
+
+def warnings(
+    source: SphinxTestApp | str, *, srcdir: str | Path | None = None
+) -> list[str]:
+    """Every warning a build emitted, normalised, one entry per RECORD.
+
+    The one normalisation this suite has, in one place:
+
+    * ANSI colour codes stripped (``strip_colors``);
+    * the source directory rewritten to ``<srcdir>/``, so an assertion can name a file
+      without knowing which temporary directory the fixture chose;
+    * one entry per warning record, **including its location**, with a multi-line message
+      kept whole rather than split into one entry per line;
+    * the severity token kept as it was emitted, so an ``ERROR`` never reads as a
+      ``WARNING``.
+
+    Read AFTER the build, never snapshotted during fixture setup: the attribute this
+    replaced was computed before the test called ``app.build()``, so every assertion on it
+    was really an assertion about application construction.
+
+    :param source: A built application, or captured text (a subprocess' ``stderr``).
+    :param srcdir: The directory to rewrite to ``<srcdir>/``. Taken from the application
+        when ``source`` is one; give it explicitly for captured text if the rewrite matters.
+    :return: One string per warning record, in emission order.
+    """
+    if isinstance(source, str):
+        text = source
+    else:
+        stream = getattr(source, "_warning", None) or source.warning
+        # a `latex` or `singlehtml` SphinxTestApp can carry a bool here rather than a stream
+        text = stream.getvalue() if hasattr(stream, "getvalue") else ""
+        if srcdir is None:
+            srcdir = source.srcdir
+
+    text = strip_colors(text)
+    if srcdir is not None:
+        for separator in (os.sep, "/"):
+            text = text.replace(str(srcdir) + separator, "<srcdir>/")
+
+    records: list[str] = []
+    for line in text.splitlines():
+        if records and not _RECORD_START.match(line):
+            records[-1] += "\n" + line
+        elif line.strip():
+            records.append(line)
+    return records
+
+
+def assert_no_warnings(source: SphinxTestApp | str, **kwargs: object) -> None:
+    """Assert a build emitted nothing at all, and print everything it did emit if it did.
+
+    :param source: A built application, or captured text.
+    :param kwargs: Passed through to :func:`warnings`.
+    """
+    emitted = warnings(source, **kwargs)  # type: ignore[arg-type]
+    assert not emitted, "the build emitted {} warning(s):\n{}".format(
+        len(emitted), "\n".join(emitted)
+    )
+
+
+def warning_count(
+    source: SphinxTestApp | str, type_prefix: str | None = None, **kwargs: object
+) -> int:
+    """How many warnings a build emitted, optionally only those of one warning type.
+
+    :param source: A built application, or captured text.
+    :param type_prefix: Count only records whose ``[type]`` suffix starts with this --
+        ``"needs."`` for sphinx-needs' own, ``"needs.link_outgoing"`` for exactly one.
+    :param kwargs: Passed through to :func:`warnings`.
+    :return: The number of matching warning records.
+    """
+    emitted = warnings(source, **kwargs)  # type: ignore[arg-type]
+    if type_prefix is None:
+        return len(emitted)
+    return sum(1 for record in emitted if f"[{type_prefix}" in record)
+
+
 # node classes from extensions outside sphinx-needs are exempt from the parent check:
 # sphinx-design installs its tab nodes by assigning ``children`` directly, so they never get
 # a parent (#1757), and the invariant guarded here (#1564) is about sphinx-needs' own nodes
@@ -472,16 +558,6 @@ def test_app(make_app, sphinx_test_tempdir, request):
 
     if not renders:
         make_plantuml_inert(app)
-    # Add the Sphinx warning as list to the app
-    # Somehow "app._warning" seems to be just a boolean, if the builder is "latex" or "singlehtml".
-    # In this case we don't catch the warnings.
-    if builder_params.get("buildername", "html") == "html":
-        app.warning_list = strip_colors(
-            app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
-        ).splitlines()
-    else:
-        app.warning_list = None
-
     # Check created all parent-child node relationships after any other
     # code within the doctree-resolved event by setting the priority to 999.
     # Placing this test here provides coverage for quite a few tests in
@@ -605,27 +681,6 @@ def write_fixture_files():
                     )
 
     return _inner
-
-
-@pytest.fixture
-def get_warnings_list():
-    """
-    Fixture to get a list of warnings from a SphinxTestApp.
-
-    The split happens in each occurence of "WARNING: ".
-    Each warning is returned as a string with \n as multi line speparator.
-    """
-
-    def _get_warnings_list(app: SphinxTestApp) -> list[str]:
-        warnings_raw = strip_colors(app.warning.getvalue())
-        warnings_split = [
-            part
-            for part in warnings_raw.replace("ERROR: ", "WARNING: ").split("WARNING: ")
-            if part
-        ]
-        return warnings_split
-
-    return _get_warnings_list
 
 
 @pytest.fixture
