@@ -138,8 +138,9 @@ one renderer — as does an offline machine with `plantuml` installed from its p
 is declared there), then re-run the renderer-heavy suites — `vendor/plantuml/README.md` has
 the recipe, including the `http.postBuffer` a 30 MB push over HTTPS needs. An sdist carries
 neither the jar nor the pin — `vendor/` is outside the directory flit builds the tarball from
-— so a distribution packager building from it takes the `PLANTUML_JAR` or `plantuml`-on-`PATH`
-route, and the sdist is ≈8 MB rather than 28.
+— so a docs build out of the tarball takes the `PLANTUML_JAR` or `plantuml`-on-`PATH` route,
+and a packager who runs the suite does so from a repository snapshot, where the jar, the pin
+and the testkit all are. The sdist is ≈7.4 MB rather than 28.
 
 **sphinx-codelinks needs NEITHER renderer**: nothing in that package draws a diagram, its
 docs build installs no `apt_packages` and its CI cell asks for graphviz only because it
@@ -262,10 +263,15 @@ uv pip install|uninstall …       # NOT project-scoped: it targets the activate
 **The sdist's contents come from `[tool.flit.sdist]`, not from git.** `uv build` runs
 `flit_core.buildapi`, which never consults git: measured, the sdist built in a worktree and
 the one built in a `git clone --depth 1` of it have identical entry lists *and* identical
-entry sizes. So what decides whether `tests/`, `docs/` and `performance/` ship
-is the `include`/`exclude` table in `packages/sphinx-needs/pyproject.toml`, and
-`uv run poe smoke-needs` asserts on every run that those trees are in the tarball and that
-nothing a docs or test run left behind is. (Until flit 4 this was a worktree hazard rather
+entry sizes. So the `include`/`exclude` table in `packages/sphinx-needs/pyproject.toml` is
+the whole story, and it now says `docs/` alone: `tests/` and `performance/` stopped shipping
+when the suite moved its fixtures into `packages/sphinx-needs-testkit`, a private member no
+index carries and no tarball can, which made the shipped suite unrunnable rather than merely
+large (1380 files / 7.72 MB before, 817 / 7.37 MB after — the count, not the bytes: test rst
+compresses to nothing). A packager who runs the suite does so from a repository snapshot,
+where the jar, the pin and the testkit all are. `uv run poe smoke-needs` asserts both
+directions on every run — `docs/` present, `tests/` and `performance/` absent — plus that
+nothing a docs build left behind is there. (Until flit 4 this was a worktree hazard rather
 than a manifest one: `flit build --use-vcs` tested `.git` for a *directory*, and in a
 worktree it is a file, so the sdist silently fell back to the module alone — no warning, a
 tenth of the size. Nothing runs `flit` directly any more.)

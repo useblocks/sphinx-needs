@@ -13,8 +13,12 @@ colour if it changed:
   renders for real and a developer machine carrying a homebrew ``plantuml`` must not
   silently swap the renderer version out from under it;
 * the executable is reached only when that jar is gone -- a checkout somebody deleted it
-  from, or an sdist, which carries neither the jar nor the pin because ``vendor/`` is
-  outside the package directory flit builds the tarball from.
+  from, or a package directory copied out of the repository, which has no ``vendor/``
+  above it because ``vendor/`` sits at the repository root and flit's ``include`` patterns
+  cannot escape the package directory. That used to describe the sdist as well; from 9.0.0
+  the tarball ships neither this suite nor the testkit it imports, so nobody reaches this
+  chain from one -- but ``docs/conf.py``, which the sdist does ship, resolves a renderer
+  the same way, and its copy of the message says the same two things in the same order.
 
 The command it returns is a *string*, which sphinxcontrib-plantuml splits for itself, so
 two of the cases below assert through that real split rather than on the string -- what has
@@ -107,8 +111,8 @@ def test_the_workspace_jar_is_the_default(
 def test_an_executable_is_the_fallback(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """With the jar gone -- a checkout somebody deleted it from, or an sdist --
-    ``plantuml`` on ``PATH`` is used."""
+    """With the jar gone -- a checkout somebody deleted it from, or a package directory
+    copied out of the repository -- ``plantuml`` on ``PATH`` is used."""
     monkeypatch.setattr(shutil, "which", lambda _name: "/usr/local/bin/plantuml")
 
     assert (
@@ -287,12 +291,15 @@ def test_a_missing_utils_directory_is_not_an_error(tmp_path: Path) -> None:
 def test_no_pin_at_all_falls_through_to_the_executable(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """``None`` -- the sdist shape -- skips route (2) instead of crashing on it.
+    """``None`` -- a tree with no ``vendor/`` above it -- skips route (2) instead of
+    crashing on it.
 
-    ``vendor/`` is at the repository root and flit's sdist ``include`` patterns cannot
-    escape the package directory, so a tarball carries neither the jar nor the pin that
-    names it. :func:`sphinx_needs_testkit.workspace_plantuml_jar` returns ``None`` there, and the
-    chain has to read that as "no workspace jar" rather than looking up a path on it.
+    ``vendor/`` is at the repository root and flit's ``include`` patterns cannot escape the
+    package directory, so nothing this repository builds carries the jar or the pin that
+    names it: the sdist (whose ``docs/conf.py`` resolves a renderer this way), the wheel,
+    and a package directory somebody copied out of the tree.
+    :func:`sphinx_needs_testkit.workspace_plantuml_jar` returns ``None`` in all of them, and
+    the chain has to read that as "no workspace jar" rather than looking up a path on it.
     """
     monkeypatch.setattr(shutil, "which", lambda _name: "/usr/local/bin/plantuml")
 
@@ -302,14 +309,15 @@ def test_no_pin_at_all_falls_through_to_the_executable(
 def test_no_pin_and_no_executable_says_which_tree_this_is(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """An sdist with no renderer at all gets a message about an sdist.
+    """A pinless tree with no renderer at all gets a message about a pinless tree.
 
     ``None does not exist`` would be the obvious way to write this and the wrong one: the
-    reader is in a tree where ``poe fetch-plantuml`` does not exist either -- the tarball
-    ships no ``vendor/``, no root ``pyproject.toml`` and no poe -- so the message has to say
-    that no pin was found rather than name a path that never was one, and it must not LEAD
-    with a command that cannot be run there. The two routes that do work come first; the task
-    is mentioned last and only for "a checkout of the repository".
+    reader is in a tree where ``poe fetch-plantuml`` does not exist either -- an sdist
+    building its shipped ``docs/`` ships no ``vendor/``, no root ``pyproject.toml`` and no
+    poe, and neither does a copied-out package directory -- so the message has to say that
+    no pin was found rather than name a path that never was one, and it must not LEAD with
+    a command that cannot be run there. The two routes that do work come first; the task is
+    mentioned last and only for "a checkout of the repository".
     """
     monkeypatch.setattr(shutil, "which", lambda _name: None)
 
@@ -331,11 +339,16 @@ def test_the_workspace_jar_is_read_from_the_pin() -> None:
     Two facts at once: the version comes out of ``vendor/plantuml/pin.toml`` rather than a
     literal, and the filename carries it -- which is exactly what the four-year-old
     ``plantuml.jar`` this replaced could not say for itself. Skipped rather than failed
-    when there is no pin, because that is the sdist the two cases above describe.
+    when there is no pin, which is the pinless tree the two cases above describe -- no
+    longer an sdist, which stopped shipping this suite in 9.0.0, but still a package
+    directory copied out of the repository. The guard stays because what it protects is the
+    assertion below, which is about the pin and not about how the tree was obtained.
     """
     jar = workspace_plantuml_jar()
     if jar is None:
-        pytest.skip("no vendor/plantuml/pin.toml: this is an sdist, not a checkout")
+        pytest.skip(
+            "no vendor/plantuml/pin.toml: this tree is not a repository checkout"
+        )
 
     version = tomllib.loads((jar.parent / "pin.toml").read_text(encoding="utf-8"))[
         "version"

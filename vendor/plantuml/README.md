@@ -22,9 +22,9 @@ unpinned `releases/latest` download in the docker image, a fourth version that c
 without a commit.
 
 - **The sdist.** Moving the jar *here* is what takes it out of the tarball, and that is true
-  whether or not it is committed: `[tool.flit.sdist]` ships `tests/` and `docs/`, and flit's
-  `include` patterns cannot escape the package directory, so a repository-root directory
-  cannot enter the sdist at all. The two jars were 21,421,383 bytes on disk, and dropping
+  whether or not it is committed: `[tool.flit.sdist]` ships `docs/` (and shipped `tests/`
+  too, at the time), and flit's `include` patterns cannot escape the package directory, so a
+  repository-root directory cannot enter the sdist at all. The two jars were 21,421,383 bytes on disk, and dropping
   them takes the 28,050,184-byte sphinx-needs sdist down by 19,962,751 bytes — **71 %**, to
   ≈8.1 MB against a 2.8 MB wheel. A distribution packager building from the sdist takes the
   `PLANTUML_JAR` or `plantuml`-on-`PATH` route below.
