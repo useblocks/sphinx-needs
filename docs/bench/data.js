@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788788475144,
+  "lastUpdate": 1788792617059,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -20412,6 +20412,42 @@ window.BENCHMARK_DATA = {
             "value": 53.95134768099999,
             "unit": "s",
             "extra": "Commit: 292a6c258d326cf492e9fb58f78dded175d5c96e\nBranch: master\nTime: 2026-09-07T15:39:53+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d394586b47d207435eead4bb8bc2b045f9f8f64f",
+          "message": "🧪 The parallel build test follows whichever story kept STORY_PAGE_1 (#1908)\n\n`tests/doc_test/parallel_doc` declares `STORY_PAGE_1` twice, on `page_1`\nand `page_5`, and a four-worker build decides by merge order which story\nis created and which is reported as the duplicate. #1904 made the\nwarning assertion accept either outcome; the HTML assertions still\nassumed `page_1` had won, and on a CI cell where it lost (#1907's\n`py3.12 sphinx-7` run) `page_1.html` has no story card and\n`SPEC_PAGE_1`'s outgoing link points at `page_5.html#STORY_PAGE_1`.\n\nThe test now keys both on the page the duplicate warning names: if\n`page_1` lost, its title is absent, `page_5.html` carries the surviving\nstory and the link crosses pages; otherwise the original assertions\nhold. The losing branch's three literals were checked against a real\nbuild of the fixture with only `page_5`'s story present, since the\nlosing order cannot be forced locally. Debian disables this test as\nunstable (their bug 1117433); with this it should be stable for them\ntoo.",
+          "timestamp": "2026-09-07T16:48:52+02:00",
+          "tree_id": "df86051c545f2715779f9077259ad97a827f1ff1",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/d394586b47d207435eead4bb8bc2b045f9f8f64f"
+        },
+        "date": 1788792608718,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.15543189800000334,
+            "unit": "s",
+            "extra": "Commit: d394586b47d207435eead4bb8bc2b045f9f8f64f\nBranch: master\nTime: 2026-09-07T16:48:52+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 54.99516572500001,
+            "unit": "s",
+            "extra": "Commit: d394586b47d207435eead4bb8bc2b045f9f8f64f\nBranch: master\nTime: 2026-09-07T16:48:52+02:00"
           }
         ]
       }
