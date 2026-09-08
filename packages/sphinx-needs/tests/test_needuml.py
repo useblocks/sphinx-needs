@@ -1,4 +1,4 @@
-import subprocess
+import re
 from pathlib import Path
 
 import pytest
@@ -6,8 +6,11 @@ from docutils import nodes
 from syrupy.filters import props
 
 from sphinx_needs.data import SphinxNeedsData
-from sphinx_needs.directives.needuml import get_debug_node_from_puml_node
-from sphinx_needs_testkit import build_warnings, sphinx_build_command
+from sphinx_needs.directives.needuml import (
+    NeedumlException,
+    get_debug_node_from_puml_node,
+)
+from sphinx_needs_testkit import assert_no_warnings, build_warnings
 
 
 @pytest.mark.parametrize(
@@ -38,19 +41,13 @@ def test_doc_build_html(test_app, snapshot):
 def test_needuml_option_key_duplicate(test_app):
     app = test_app
 
-    srcdir = Path(app.srcdir)
-    out_dir = srcdir / "_build"
-
-    out = subprocess.run(
-        sphinx_build_command("-M", "html", srcdir, out_dir), capture_output=True
-    )
-    assert out.returncode == 1
-
-    assert (
-        "sphinx_needs.directives.needuml.NeedumlException: Inside need: INT_001, "
-        "found duplicate Needuml option key name: sequence"
-        in out.stderr.decode("utf-8")
-    )
+    with pytest.raises(
+        NeedumlException,
+        match=re.escape(
+            "Inside need: INT_001, found duplicate Needuml option key name: sequence"
+        ),
+    ):
+        app.build()
 
 
 @pytest.mark.parametrize(
@@ -61,45 +58,37 @@ def test_needuml_option_key_duplicate(test_app):
 def test_needuml_option_key_forbidden(test_app):
     app = test_app
 
-    srcdir = Path(app.srcdir)
-    out_dir = srcdir / "_build"
-
-    out = subprocess.run(
-        sphinx_build_command("-M", "html", srcdir, out_dir), capture_output=True
-    )
-    assert out.returncode == 1
-
-    assert (
-        "sphinx_needs.directives.needuml.NeedumlException: Needuml option key name can't be: diagram"
-        in out.stderr.decode("utf-8")
-    )
+    with pytest.raises(
+        NeedumlException,
+        match=re.escape("Needuml option key name can't be: diagram"),
+    ):
+        app.build()
 
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_needuml_diagram_allowmixing"}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_needuml_diagram_allowmixing",
+            "plantuml": True,
+        }
+    ],
     indirect=True,
 )
-def test_needuml_diagram_allowmixing(test_app, plantuml_subprocess_args):
+def test_needuml_diagram_allowmixing(test_app):
     app = test_app
-
-    srcdir = Path(app.srcdir)
-    out_dir = srcdir / "_build"
-
-    out = subprocess.run(
-        sphinx_build_command("-M", "html", srcdir, out_dir, *plantuml_subprocess_args),
-        capture_output=True,
-    )
-    assert out.returncode == 0
-    # the subprocess renders eight diagrams, and a failed render is only a WARNING to
+    app.build()
+    # this build renders eight diagrams, and a failed render is only a WARNING to
     # sphinxcontrib-plantuml -- so without this the test is green on a renderer that
     # cannot run, which is how it spent years drawing with whatever `plantuml` the
-    # machine carried
-    assert "error while running plantuml" not in out.stderr.decode("utf-8")
-    # ...and a renderer that cannot even be STARTED is a different message ("plantuml
-    # command ... cannot be run"), also a WARNING: the positive assertion is that the
-    # diagrams exist. Eight on a good build; none under either failure (measured)
-    assert list((out_dir / "html" / "_images").glob("plantuml-*"))
+    # machine carried. A renderer that cannot even be STARTED is a different message
+    # ("plantuml command ... cannot be run"), also a WARNING: both are covered by
+    # asserting the build emitted nothing at all
+    assert_no_warnings(app)
+    # the positive assertion is that the diagrams exist. Eight on a good build; none
+    # under either failure (measured)
+    assert list(Path(app.outdir, "_images").glob("plantuml-*"))
 
 
 @pytest.mark.parametrize(
@@ -136,20 +125,14 @@ def test_needuml_save(test_app, snapshot):
 def test_needuml_save_with_abs_path(test_app):
     app = test_app
 
-    srcdir = Path(app.srcdir)
-    out_dir = srcdir / "_build"
-
-    # this fails before plantuml is required, so the plantuml path is not provided
-    out = subprocess.run(
-        sphinx_build_command("-M", "html", srcdir, out_dir), capture_output=True
-    )
-    assert out.returncode == 1
-
-    assert (
-        "sphinx_needs.directives.needuml.NeedumlException: "
-        "Given save path: /_out/my_needuml.puml, is not a relative posix path."
-        in out.stderr.decode("utf-8")
-    )
+    # this fails before plantuml is required, so the build never renders
+    with pytest.raises(
+        NeedumlException,
+        match=re.escape(
+            "Given save path: /_out/my_needuml.puml, is not a relative posix path."
+        ),
+    ):
+        app.build()
 
 
 @pytest.mark.parametrize(
@@ -198,13 +181,7 @@ def test_needuml_filter(test_app, snapshot):
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
     assert "as ST_002 [[../index.html#ST_002]]" in html
 
-    srcdir = Path(app.srcdir)
-    out_dir = srcdir / "_build"
-
-    out = subprocess.run(
-        sphinx_build_command("-M", "html", srcdir, out_dir), capture_output=True
-    )
-    assert out.returncode == 0
+    assert_no_warnings(app)
 
 
 @pytest.mark.parametrize(
@@ -228,13 +205,7 @@ def test_needuml_jinja_func_flow(test_app, snapshot):
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
     assert "as ST_001 [[../index.html#ST_001]]" in html
 
-    srcdir = Path(app.srcdir)
-    out_dir = srcdir / "_build"
-
-    out = subprocess.run(
-        sphinx_build_command("-M", "html", srcdir, out_dir), capture_output=True
-    )
-    assert out.returncode == 0
+    assert_no_warnings(app)
 
 
 @pytest.mark.parametrize(
@@ -245,18 +216,13 @@ def test_needuml_jinja_func_flow(test_app, snapshot):
 def test_needuml_jinja_func_need_removed(test_app):
     app = test_app
 
-    srcdir = Path(app.srcdir)
-    out_dir = srcdir / "_build"
-
-    out = subprocess.run(
-        sphinx_build_command("-M", "html", srcdir, out_dir), capture_output=True
-    )
-    assert out.returncode == 1
-    assert (
-        "sphinx_needs.directives.needuml.NeedumlException: "
-        "Jinja function 'need()' is not supported in needuml directive."
-        in out.stderr.decode("utf-8")
-    )
+    with pytest.raises(
+        NeedumlException,
+        match=re.escape(
+            "Jinja function 'need()' is not supported in needuml directive."
+        ),
+    ):
+        app.build()
 
 
 @pytest.mark.parametrize(
@@ -272,19 +238,13 @@ def test_needuml_jinja_func_need_removed(test_app):
 def test_doc_needarch_jinja_import_negative(test_app):
     app = test_app
 
-    srcdir = Path(app.srcdir)
-    out_dir = srcdir / "_build"
-
-    out = subprocess.run(
-        sphinx_build_command("-M", "html", srcdir, out_dir), capture_output=True
-    )
-
-    assert out.returncode == 1
-    assert (
-        "sphinx_needs.directives.needuml.NeedumlException: "
-        "Jinja function 'import()' is not supported in needuml directive."
-        in out.stderr.decode("utf-8")
-    )
+    with pytest.raises(
+        NeedumlException,
+        match=re.escape(
+            "Jinja function 'import()' is not supported in needuml directive."
+        ),
+    ):
+        app.build()
 
 
 @pytest.mark.parametrize(
@@ -317,13 +277,7 @@ def test_needuml_jinja_func_ref(test_app, snapshot):
         in html
     )
 
-    srcdir = Path(app.srcdir)
-    out_dir = srcdir / "_build"
-
-    out = subprocess.run(
-        sphinx_build_command("-M", "html", srcdir, out_dir), capture_output=True
-    )
-    assert out.returncode == 0
+    assert_no_warnings(app)
 
 
 @pytest.mark.parametrize(
@@ -390,20 +344,16 @@ def test_needuml_jinja_func_uml_missing_key(test_app):
     """
     app = test_app
 
-    srcdir = Path(app.srcdir)
-    out_dir = srcdir / "_build"
+    with pytest.raises(
+        NeedumlException,
+        match=re.escape("Option key name: nosuchkey does not exist in need SP_001."),
+    ) as caught:
+        app.build()
 
-    out = subprocess.run(
-        sphinx_build_command("-M", "html", srcdir, out_dir), capture_output=True
-    )
-    assert out.returncode == 1
-
-    stderr = out.stderr.decode("utf-8")
-    assert (
-        "sphinx_needs.directives.needuml.NeedumlException: "
-        "Option key name: nosuchkey does not exist in need SP_001." in stderr
-    )
-    assert "KeyError: 'nosuchkey'" not in stderr
+    # the guard, not a KeyError caught or wrapped after the fact: nothing is chained
+    # to it, either way
+    assert not isinstance(caught.value.__context__, KeyError)
+    assert not isinstance(caught.value.__cause__, KeyError)
 
 
 @pytest.mark.parametrize(
@@ -419,20 +369,14 @@ def test_needuml_jinja_func_import_string_option(test_app):
     """
     app = test_app
 
-    srcdir = Path(app.srcdir)
-    out_dir = srcdir / "_build"
+    with pytest.raises(
+        NeedumlException,
+        match=re.escape("Option value for 'status' is not a list of need ids: 'open'."),
+    ) as caught:
+        app.build()
 
-    out = subprocess.run(
-        sphinx_build_command("-M", "html", srcdir, out_dir), capture_output=True
-    )
-    assert out.returncode == 1
-
-    stderr = out.stderr.decode("utf-8")
-    assert (
-        "sphinx_needs.directives.needuml.NeedumlException: "
-        "Option value for 'status' is not a list of need ids: 'open'." in stderr
-    )
-    assert "undefined need_id: 'o'" not in stderr
+    # not the old message, which reported the string's first character as a need id
+    assert "undefined need_id: 'o'" not in str(caught.value)
 
 
 @pytest.mark.parametrize(
@@ -502,7 +446,7 @@ def test_get_debug_node_from_puml_node_figure():
     [{"buildername": "needumls", "srcdir": "doc_test/doc_needuml_save"}],
     indirect=True,
 )
-def test_needumls_builder_rerun_keeps_saved_files(test_app):
+def test_needumls_builder_rerun_keeps_saved_files(test_app, make_app):
     """A second build must not truncate the ``.puml`` files the first one wrote.
 
     ``content_calculated`` is filled in while a document is written, after the
@@ -512,21 +456,28 @@ def test_needumls_builder_rerun_keeps_saved_files(test_app):
     """
     app = test_app
 
-    srcdir = Path(app.srcdir)
-    out_dir = srcdir / "_build_rerun"
-    saved = [
-        out_dir / "_build" / "my_needuml.puml",
-        out_dir / "_out" / "sub_folder" / "my_needs.puml",
-    ]
-
     first: list[str] = []
     for run in range(2):
-        out = subprocess.run(
-            sphinx_build_command("-b", "needumls", str(srcdir), str(out_dir)),
-            capture_output=True,
+        # the SECOND run is a second application over the first one's build directory,
+        # not a second `app.build()`: it has to load the environment the first run
+        # pickled, because that is where `content_calculated` is empty. An application
+        # that never let go of its environment still holds the values its own write
+        # phase put there, and would not exercise this at all
+        current = (
+            app
+            if run == 0
+            else make_app(
+                buildername="needumls",
+                srcdir=app.srcdir,
+                builddir=Path(app.outdir).parent,
+            )
         )
-        assert out.returncode == 0, out.stderr.decode("utf-8")
+        current.build()
 
+        saved = [
+            Path(current.outdir, "_build", "my_needuml.puml"),
+            Path(current.outdir, "_out", "sub_folder", "my_needs.puml"),
+        ]
         contents = [path.read_text() for path in saved]
         assert all(content.strip() for content in contents), (
             f"a saved .puml file is empty after run {run + 1}: {contents}"

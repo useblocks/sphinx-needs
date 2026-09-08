@@ -1,11 +1,10 @@
 import json
-import subprocess
 from pathlib import Path
 
 import pytest
 from syrupy.filters import props
 
-from sphinx_needs_testkit import build_warnings, sphinx_build_command
+from sphinx_needs_testkit import build_warnings
 
 
 @pytest.mark.parametrize(
@@ -63,21 +62,6 @@ def test_need_constraints(test_app, snapshot):
     json_text = Path(app.outdir, "needs.json").read_text()
     needs_data = json.loads(json_text)
     assert needs_data == snapshot(exclude=props("created", "project", "creator"))
-
-    srcdir = Path(app.srcdir)
-    out_dir = srcdir / "_build"
-
-    # Check return code when "-W --keep-going" not used
-    out_normal = subprocess.run(
-        sphinx_build_command("-M", "html", srcdir, out_dir), capture_output=True
-    )
-    assert out_normal.returncode == 0
-
-    # Check return code when only "-W" is used
-    out_w = subprocess.run(
-        sphinx_build_command("-M", "html", srcdir, out_dir, "-W"), capture_output=True
-    )
-    assert out_w.returncode >= 1
 
     # test if constraints_results / constraints_passed is properly set
     html = Path(app.outdir, "index.html").read_text()
