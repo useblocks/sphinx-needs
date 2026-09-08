@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788862552339,
+  "lastUpdate": 1788862576505,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -20556,6 +20556,42 @@ window.BENCHMARK_DATA = {
             "value": 45.453333617,
             "unit": "s",
             "extra": "Commit: aaa815d981431ee36dc18f6fa559b1dab445ab98\nBranch: master\nTime: 2026-09-08T12:14:36+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "72e41f6bd5a2f16eed22d86481a9766967a179bd",
+          "message": "🧪 sphinx-codelinks: one fixture for the worker-local dcdc copy (#1915)\n\nFollow-up to #1912, which stopped the sphinx-codelinks suite writing a\n`.gitignore` into the checked-in `tests/data/dcdc` fixture by copying it\nunder pytest's temp directory once per xdist worker. This tightens what\nthat left behind; tests only, no behaviour change.\n\n- **One fixture instead of two.** The autouse, session-scoped\n`temporary_gitignore` fixture wrote the `.gitignore` into the copy and\nunlinked it at teardown. `source_directory` now writes it right after\nthe copy: the directory is pytest's to clean up, so the teardown goes,\nand tests that never touch the copy no longer trigger the copy plus `git\ninit` just because an autouse fixture depended on it.\n- **`tmp_path_factory.mktemp(\"dcdc\")`** rather than a path composed\nunder `getbasetemp()` by hand.\n- **The `git init` says why it is there.** The `ignore` crate discovery\nwalks with honours a `.gitignore` only inside a git repository\n(`require_git`, its default), so without the `git init` the\n`--gitignore` cases see all four files instead of three. The fixture's\ndocstring now records that, since the line reads like an accident\notherwise.\n- **A stronger worker-locality fence.**\n`test_source_directory_is_worker_local` asserted the fixture was not the\ncheckout path; it now asserts the copy is under\n`tmp_path_factory.getbasetemp()` (per worker under xdist) and that the\n`.gitignore` the discovery cases rely on is in place.\n- **The session-scoped `source_paths` fixture goes**: nothing requested\nit (every other `source_paths` in the suite is the `SourceDiscover`\nattribute).\n\nMeasured on the branch, in the order the change was made: `poe\ntest-codelinks` serial and `-n 4` both 360 passed; `poe lint`, `poe\ntypecheck` green. Four mutations, each reverted with a clean tree\nbetween:\n\n| mutation | red |\n|---|---|\n| drop the `git init` | `test_discover[True-3 files discovered]`,\n`test_source_discover[config1-3-]` (4 files, not 3) |\n| drop the `.gitignore` write | the two above plus the worker-locality\ntest |\n| return the checkout path from the fixture | the same three |\n| copy to a sibling of the base temp directory | the worker-locality\ntest alone |",
+          "timestamp": "2026-09-08T12:14:51+02:00",
+          "tree_id": "426925eeabb0b0ade7540d1e18601359fe0b1bb6",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/72e41f6bd5a2f16eed22d86481a9766967a179bd"
+        },
+        "date": 1788862568151,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.15591322500000615,
+            "unit": "s",
+            "extra": "Commit: 72e41f6bd5a2f16eed22d86481a9766967a179bd\nBranch: master\nTime: 2026-09-08T12:14:51+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 56.377989474,
+            "unit": "s",
+            "extra": "Commit: 72e41f6bd5a2f16eed22d86481a9766967a179bd\nBranch: master\nTime: 2026-09-08T12:14:51+02:00"
           }
         ]
       }
