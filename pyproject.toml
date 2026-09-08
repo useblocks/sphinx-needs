@@ -627,6 +627,38 @@ cmd = "ty check packages/sphinx-needs/src/sphinx_needs packages/sphinx-mounts/sr
 executor = { type = "uv", frozen = true, no-group = "dev", group = ["typing"] }
 env = { UV_PROJECT_ENVIRONMENT = ".venvs/typing" }
 
+# The OTHER type gate, and the only one that is not Python: `needstable.js` is plain
+# ES2020 typed through `// @ts-check` and JSDoc, and tsc is what checks those types
+# (`packages/sphinx-needs/design/needstable-contract.md` §4 is the contract it enforces).
+# The name follows the naming rule -- this acts on ONE package, so it ends in `-needs`,
+# while `typecheck` above is bare because it covers all three. CI's Lint job runs this
+# task rather than its own copy of the command, so the gate a developer runs and the gate
+# that blocks a pull request cannot drift.
+#
+# The typescript version is PINNED, and that is the point of the task: `npx -p typescript`
+# resolves whatever is newest that day, so a compiler release could turn a pull request
+# red with nothing in this repository having changed. To bump it, edit the one literal
+# below and run the task (measured on 5.9.3; 7.0.2, the newest at the time of writing,
+# passes the same file).
+#
+# ONE PATH PER LINE, so adding a script to the gate is one line -- which is the whole
+# extension story. Only `needstable.js` is here for now: `sphinx_needs_collapse.js` beside
+# it is jQuery-era, carries no `// @ts-check` and does not pass `--strict`, so #1922, which
+# ports it, is the pull request that adds the second line.
+#
+# No `package.json`, no `node_modules` and no second lock file: `npx -y -p` fetches the
+# pinned compiler into npm's cache for the run (23 MB unpacked, ~2 s cold, then cached).
+# Node itself comes from the machine, which is why CI needs no `setup-node`: GitHub's
+# `ubuntu-latest` image ships node and npm.
+[tool.poe.tasks.typecheck-js-needs]
+help = "Type-check the JSDoc-typed browser scripts with tsc (needs node on PATH)"
+cmd = """
+npx -y -p typescript@5.9.3 tsc
+  --allowJs --checkJs --noEmit --strict --target es2020 --lib dom,es2020
+  src/sphinx_needs/libs/html/needstable.js
+"""
+cwd = "packages/sphinx-needs"
+
 [tool.poe.tasks.benchmark-needs]
 help = "Run the benchmark suite (time + memory); needs the docs extra for the corpus"
 deps = ["fetch-plantuml"]

@@ -314,8 +314,10 @@ $ echo $?
 0
 ```
 
-It is not a CI gate here — this package's CI has no node — so run it by hand after editing
-the file. A consumer with a JavaScript toolchain can run the same check on its vendored copy.
+It IS a CI gate here: `uv run poe typecheck-js-needs` runs exactly that command with the
+typescript version pinned in the task, and the Lint job runs the task (#1924) — so run the
+task after editing the file, and bump the compiler by editing that one literal. A consumer
+with a JavaScript toolchain can run the unpinned command above on its vendored copy.
 
 Why not TypeScript source: it would need a node toolchain, committed compiled output and a
 re-compile fence in a Python repository — exactly the machinery rolling our own avoided —
