@@ -107,6 +107,12 @@
      * @typedef {"text" | "number" | "date"} ColumnType
      */
 
+    /**
+     * Which pager control had focus when the pager was rebuilt, so it can be given back.
+     *
+     * @typedef {{kind: "previous" | "next" | "number", page: number}} PagerFocus
+     */
+
     /* ----------------------------------------------------------------- helpers */
 
     /**
@@ -800,6 +806,9 @@
          * @param {number} pageCount
          */
         paintPager(pageCount) {
+            /* every button is about to be replaced, including the one the reader just
+               activated -- read where focus is BEFORE that happens */
+            const focused = this.focusedPagerControl();
             this.pager.replaceChildren();
             this.pager.hidden = pageCount <= 1;
             if (pageCount <= 1) {
@@ -875,6 +884,79 @@
                     "needstable-page-next",
                 ),
             );
+            if (focused) {
+                this.restorePagerFocus(focused);
+            }
+        }
+
+        /**
+         * Which pager control has focus right now, if any.
+         *
+         * @returns {PagerFocus | null}
+         */
+        focusedPagerControl() {
+            const active = document.activeElement;
+            if (!active || !this.pager.contains(active)) {
+                return null;
+            }
+            if (active.classList.contains("needstable-page-previous")) {
+                return { kind: "previous", page: this.page };
+            }
+            if (active.classList.contains("needstable-page-next")) {
+                return { kind: "next", page: this.page };
+            }
+            return {
+                kind: "number",
+                page: Number(active.textContent || "1") - 1,
+            };
+        }
+
+        /**
+         * Give focus back to the equivalent control in the rebuilt pager: the same page
+         * number if it is still offered, else the nearest one; a prev/next that is now
+         * disabled hands focus to the other one.
+         *
+         * @param {PagerFocus} focused
+         */
+        restorePagerFocus(focused) {
+            /** @type {HTMLButtonElement | null} */
+            let target = null;
+            if (focused.kind === "previous" || focused.kind === "next") {
+                const own = /** @type {HTMLButtonElement | null} */ (
+                    this.pager.querySelector("button.needstable-page-" + focused.kind)
+                );
+                const otherName =
+                    focused.kind === "previous" ? "next" : "previous";
+                const other = /** @type {HTMLButtonElement | null} */ (
+                    this.pager.querySelector("button.needstable-page-" + otherName)
+                );
+                target = own && !own.disabled ? own : other;
+            } else {
+                const numbers = /** @type {HTMLButtonElement[]} */ (
+                    Array.from(
+                        this.pager.querySelectorAll("button.needstable-page-number"),
+                    )
+                );
+                /**
+                 * @param {HTMLButtonElement} button
+                 * @returns {number}
+                 */
+                const distance = (button) =>
+                    Math.abs(Number(button.textContent || "1") - 1 - focused.page);
+                numbers.forEach((button) => {
+                    if (!target || distance(button) < distance(target)) {
+                        target = button;
+                    }
+                });
+            }
+            if (!target) {
+                target = /** @type {HTMLButtonElement | null} */ (
+                    this.pager.querySelector("button.needstable-page[aria-current]")
+                );
+            }
+            if (target && !target.disabled) {
+                target.focus();
+            }
         }
 
         /* ------------------------------------------------------------------ export */

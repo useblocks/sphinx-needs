@@ -471,6 +471,23 @@ def test_keyboard_sorting(opened) -> None:
     page.keyboard.press("Enter")
     assert _aria_sort(page, INTERACTIVE)[0] == "descending"
 
+    # paging rebuilds every pager button, including the one the reader just activated.
+    # Focus has to land back inside the pager, or a keyboard reader is returned to <body>
+    # and has to Tab from the top of the document after every page change.
+    pager = _wrapper(page, INTERACTIVE).locator("nav.needstable-pager")
+    before = _need_ids(page, INTERACTIVE)
+    pager.locator("button.needstable-page-next").focus()
+    page.keyboard.press("Enter")
+    assert _need_ids(page, INTERACTIVE) != before, "the page did not change"
+    assert page.evaluate(
+        "() => document.activeElement.closest('nav.needstable-pager') !== null"
+    ), page.evaluate("() => document.activeElement.tagName")
+    # "Next" is disabled on the last page, so focus goes to the control that is not
+    assert (
+        page.evaluate("() => document.activeElement.className")
+        == "needstable-page needstable-page-previous"
+    )
+
 
 @pytest.mark.jstest
 @_APP
