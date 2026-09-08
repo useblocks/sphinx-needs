@@ -48,31 +48,20 @@ ONELINE_COMMENT_STYLE_DEFAULT = OneLineCommentStyle()
 
 @pytest.fixture(scope="session")
 def source_directory(tmp_path_factory: pytest.TempPathFactory) -> Path:
-    tests_dir = Path(__file__).parent
-    source_fixture = tests_dir / "data" / "dcdc"
-    source_directory = tmp_path_factory.getbasetemp() / "dcdc"
-    shutil.copytree(source_fixture, source_directory)
+    """A worker-local copy of ``tests/data/dcdc``: a git repository whose ``.gitignore``
+    hides ``demo_1.cpp``.
+
+    The copy lives under pytest's base temp directory -- one per xdist worker -- so no test
+    writes into the checkout and no worker can remove another's ``.gitignore``. The
+    ``git init`` is load-bearing: the ``ignore`` crate discovery walks with honours a
+    ``.gitignore`` only inside a repository, so without it the ``--gitignore`` cases see all
+    four files.
+    """
+    source_directory = tmp_path_factory.mktemp("dcdc")
+    shutil.copytree(TEST_DIR / "data" / "dcdc", source_directory, dirs_exist_ok=True)
     subprocess.run(["git", "init", "--quiet"], cwd=source_directory, check=True)
+    (source_directory / ".gitignore").write_text("demo_1.cpp\n", encoding="utf-8")
     return source_directory
-
-
-@pytest.fixture(scope="session")
-def source_paths(source_directory: Path) -> list[Path]:
-    source_paths = [
-        source_directory / "charge" / "demo_1.cpp",
-        source_directory / "charge" / "demo_2.cpp",
-        source_directory / "discharge" / "demo_3.cpp",
-        source_directory / "supercharge.cpp",
-    ]
-    return source_paths
-
-
-@pytest.fixture(scope="session", autouse=True)
-def temporary_gitignore(source_directory: Path):
-    gitignore_path = source_directory / ".gitignore"
-    gitignore_path.write_text("demo_1.cpp\n", encoding="utf-8")
-    yield
-    gitignore_path.unlink()
 
 
 # `DoctreeSnapshotExtension` and `snapshot_doctree` are NOT here any more: they were a
