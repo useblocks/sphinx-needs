@@ -223,10 +223,22 @@ agent's* colour scheme rather than the page's.
 > so on a site whose own switch was set to dark the columns popover came out black on white
 > over a dark page. `--sn-color-table-popover-bg` / `-fg` now exist in all three themes and
 > are mapped here, and the docs' per-theme sheets re-point them at each theme's own
-> mode-aware background and text colours. The sort indicators are drawn with CSS borders inheriting
-`currentColor`, never a Unicode arrow or an image, so they cannot come out as a different
-character on a different operating system. The chrome is deliberately quiet: no border
-around the widget, small buttons, little rounding — the table's data is the content.
+> mode-aware background and text colours.
+
+The sheet also has to **fence the widget off from the host**, not only take colour from it.
+A host theme styles bare element selectors, and several do: a `<summary>` as a collapsible
+admonition with its own background, border, weight and injected icons; a compounding
+`font-size` cascade that reaches an `<input>` and a `<select>` but not the buttons beside
+them. Every control the widget generates therefore states its own `font`, `background` and
+`border`, and the disclosure's summary suppresses the marker and any injected `::before` /
+`::after`.
+
+The sort indicators are drawn with CSS borders inheriting `currentColor`, never a Unicode
+arrow or an image, so they cannot come out as a different character on a different
+operating system. **At rest they are two triangles with a visible gap**: one element
+carrying both borders makes them meet at a point, which reads as a solid hourglass rather
+than as "sortable either way". The chrome is deliberately quiet: no border around the
+widget, small buttons, little rounding — the table's data is the content.
 
 ## 4. Type-checking the script
 
