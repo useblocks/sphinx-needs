@@ -110,7 +110,9 @@ def test_no_test_in_this_tree_builds_in_a_subprocess() -> None:
         f"{path.relative_to(here.parent)}:{number}"
         for path in sorted(here.parent.rglob("*.py"))
         if path.resolve() != here
-        for number, line in enumerate(path.read_text(encoding="utf8").splitlines(), 1)
+        for number, line in enumerate(
+            path.read_text(encoding="utf8", errors="replace").splitlines(), 1
+        )
         if "sphinx_build_command(" in line
     ]
     assert not offenders, (
