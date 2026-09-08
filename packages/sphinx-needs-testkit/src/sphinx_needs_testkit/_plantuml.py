@@ -181,10 +181,9 @@ def make_plantuml_inert(app: SphinxTestApp) -> None:
       starts, and a JVM start is 2.04 s of every 2.13 s render, measured.
     * THIS APP'S OWN ``PlantumlBuilder`` has its two render entry points replaced with one
       that raises. That is the assertion that nothing renders, and it is made on the app
-      rather than on the output directory because 23 test functions in the sphinx-needs
-      suite run a real ``sphinx-build`` SUBPROCESS, four of them into ``app.outdir``
-      itself: a rendered file found in that directory cannot be attributed to the
-      fixture's app, while a call reaching this object can only have come from it.
+      rather than on the output directory because a rendered file found in a directory
+      cannot be attributed to any particular application, while a call reaching this
+      object can only have come from this one.
     * the ``plantuml`` configuration is pointed at :data:`_INERT_PLANTUML_COMMAND`. This one
       is a SENTINEL rather than a fence, and the difference is worth stating: its whole
       protection is that the token cannot be ``exec``-ed, and when sphinxcontrib does try it
@@ -205,9 +204,9 @@ def make_plantuml_inert(app: SphinxTestApp) -> None:
     if a future release dropped it, the import below raises ``ImportError`` at fixture setup
     rather than quietly restoring rendering.
 
-    **What this does NOT cover**: anything that is not this app object. A test that runs
-    ``sphinx-build`` as a subprocess gets a process with its own config (see
-    ``plantuml_subprocess_args``).
+    **What this does NOT cover**: anything that is not this app object. A build spawned as
+    a subprocess is a process with its own config, which no patch made here can reach --
+    which is one reason no test in the sphinx-needs suite spawns one.
 
     All of it happens after the app exists rather than through ``confoverrides``, because a
     project that does not load ``sphinxcontrib.plantuml`` -- 88 of the sphinx-needs suite's

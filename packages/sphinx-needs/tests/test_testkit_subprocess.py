@@ -1,17 +1,19 @@
 """Tests for the testkit's subprocess argv (``sphinx_needs_testkit._subprocess``).
 
 Two of these pin the argv helper's contract, three pin the fence's, and the sixth points
-the fence at this tree -- the one that matters after the conversion. A site that spells the
-build command as the bare word again is not a failing test: it passes, out of whatever
-environment the machine's ``PATH`` points at, so nothing would report it. The fence does.
+the fence at this tree -- the one that matters now that no test in it spawns a build at
+all. A site that spells the build command as the bare word again is not a failing test: it
+passes, out of whatever environment the machine's ``PATH`` points at, so nothing would
+report it. The fence does.
 
 The fence's three are here because it is a published kit function now, and its two call
 sites only ever assert that it does NOT fire -- which a fence-shaped no-op would satisfy
 too. They pin the three halves nothing else can see: that it raises at all, that the walk
 is recursive, and that a ``tests_dir`` naming no directory is loud rather than green.
 
-The walk itself is the kit's (``assert_no_bare_sphinx_build``) because two suites here
-spawn builds and both are walked; sphinx-mounts calls it from a module of its own. These
+The walk itself is the kit's (``assert_no_bare_sphinx_build``) because the tree that must
+never spawn a build and the one that legitimately does are both walked; sphinx-mounts calls
+it from a module of its own. These
 unit tests live in THIS suite for the same reason the warning tests do, and the note at the
 top of ``test_testkit_warnings.py`` is that reason: sphinx-needs' is the only one of the
 three suites a test of the kit can join without a fourth suite, task and CI cell.
