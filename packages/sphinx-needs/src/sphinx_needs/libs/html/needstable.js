@@ -292,6 +292,18 @@
     }
 
     /**
+     * Normalise a filter query the way the index it searches was normalised: runs of
+     * whitespace collapsed, trimmed, lower-cased. Without this a query typed exactly as
+     * the cell reads -- two spaces and all -- would never match.
+     *
+     * @param {string} text
+     * @returns {string}
+     */
+    function normaliseQuery(text) {
+        return text.replace(/\s+/g, " ").trim().toLowerCase();
+    }
+
+    /**
      * @param {string} text a label holding `{name}` placeholders
      * @param {Record<string, string | number>} values
      * @returns {string}
@@ -472,6 +484,9 @@
             this.searchInput = element("input", "needstable-search-input");
             this.sizeSelect = element("select", "needstable-page-size-select");
             this.columnsDetails = element("details", "needstable-columns");
+            this.columnsSummary = element("summary", "needstable-columns-summary");
+            /** @type {HTMLInputElement[]} one per column, in column order */
+            this.columnCheckboxes = [];
             this.copyButton = element("button", "needstable-button needstable-copy");
             this.csvButton = element("button", "needstable-button needstable-csv");
             this.info = element("div", "needstable-info");
@@ -580,7 +595,7 @@
                 }
                 this.searchTimer = setTimeout(() => {
                     this.searchTimer = undefined;
-                    this.query = this.searchInput.value.trim().toLowerCase();
+                    this.query = normaliseQuery(this.searchInput.value);
                     this.page = 0;
                     this.update();
                 }, 100);
@@ -612,11 +627,10 @@
             this.controls.appendChild(sizeLabel);
 
             /* column visibility -- a native disclosure, so nothing manages a popover */
-            const summary = element("summary", "needstable-columns-summary");
-            summary.textContent = this.labels.columns;
-            this.columnsDetails.appendChild(summary);
+            this.columnsSummary.textContent = this.labels.columns;
+            this.columnsDetails.appendChild(this.columnsSummary);
             const list = element("div", "needstable-columns-list");
-            this.headers.forEach((header, index) => {
+            this.columnCheckboxes = this.headers.map((header, index) => {
                 const itemLabel = element("label", "needstable-columns-item");
                 const checkbox = element("input");
                 checkbox.type = "checkbox";
@@ -631,6 +645,16 @@
                 itemLabel.appendChild(checkbox);
                 itemLabel.appendChild(name);
                 list.appendChild(itemLabel);
+                return checkbox;
+            });
+            /* Escape closes the disclosure and hands focus back to the control that
+               opened it, which is what a reader who opened it by keyboard expects */
+            this.columnsDetails.addEventListener("keydown", (event) => {
+                if (event.key === "Escape" && this.columnsDetails.open) {
+                    this.columnsDetails.open = false;
+                    this.columnsSummary.focus();
+                    event.stopPropagation();
+                }
             });
             this.columnsDetails.appendChild(list);
             this.controls.appendChild(this.columnsDetails);
@@ -682,6 +706,12 @@
             const hidden = this.hiddenColumns;
             this.headers.forEach((header, index) => {
                 header.classList.toggle(HIDDEN_CLASS, hidden[index]);
+            });
+            /* a table cannot be reduced to no columns at all: the last one still showing
+               keeps its checkbox, disabled */
+            const showing = hidden.filter((isHidden) => !isHidden).length;
+            this.columnCheckboxes.forEach((checkbox, index) => {
+                checkbox.disabled = showing === 1 && !hidden[index];
             });
             /* the rows on the page are synced by `paint()`; a detached row is synced
                when it is next painted, so there is nothing to walk here */

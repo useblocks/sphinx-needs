@@ -11,7 +11,7 @@ against the same markup contract.
 
 ## 0. Decision record
 
-**The problem, as measured.** Until 9.0.0 sphinx-needs vendored DataTables 1.10.16 and
+**The problem, as measured.** Before this change sphinx-needs vendored DataTables 1.10.16 and
 loaded 2.26 MB of JavaScript plus jQuery on **every page of every project** — `search.html`
 and `genindex.html` included (#462, open since 2022). The whole tree landed in one commit in
 2018 and was never updated: 34 files, 4.72 MB, of which 25 files and 2.43 MB were
@@ -98,21 +98,36 @@ configuration (#408, #1425).
 - Unknown `data-needstable-*` attributes are ignored: this is the extension point for
   per-table configuration. A new knob is a new attribute here, not a new shape of
   configuration dictionary.
-- `data-col` is the **column key** — the option name as the author wrote it (`id`, `title`,
-  `outgoing`, a custom field). The visible header text is a display string and may be
-  anything; `needs_col_<key>` is a styling hook.
+- `data-col` is the **column key** — the option name **case-folded to lower**: an author who
+  writes `:columns: myField` gets `data-col="myfield"`. The visible header text is a display
+  string and may be anything. `needs_col_<key>` is a styling hook, and the key goes into it
+  verbatim, so a key that is not a CSS identifier (`special-chars!`) needs escaping in a
+  selector — as the pre-existing `needs_<key>` cell class already does.
+
+  > *Corrected 2026-09-08.* This said "the option name as the author wrote it". Review
+  > measured the lowering, which a producer implementing the contract has to know.
 - `data-type` is `text`, `number` or `date`, and is **omitted unless the producer knows**:
   sphinx-needs emits it for a field whose schema is `integer` or `number` and for nothing
   else. The script detects the rest from the first fifty non-empty values.
 - `need` / `need_part` say what kind of row it is; `:style_row:` adds its class beside them,
   as it always has. `data-parent` appears on a part row only.
+- **Exactly one header row is read: the last row of the `<thead>`.** A producer that emits a
+  spanning group header above the real one gets column visibility and the export from that
+  last row only — a `colspan`ed group header cannot be hidden per column in any
+  well-defined way.
 - docutils' `row-odd` / `row-even` may stay, but they are stale the moment a sort reorders
   anything and **nothing may depend on them**.
 - Cells, their `needs_<key>` classes, the links inside them and the `<colgroup>` are
   untouched. That is the whole point of enhancing in place.
 - The `:show_filters:` paragraph goes **after** `</table>`: a `<p>` between `</tbody>` and
   `</table>` is invalid HTML that browsers hoist out again. Order is table, filter
-  paragraph, max-items notice. The table `id` is used as the CSV file name.
+  paragraph, max-items notice — and the same for `:style: table`, where the paragraph
+  follows the wrapper `div` rather than sitting inside the table. The table `id` is used as
+  the CSV file name.
+- **A `:style: table` table carries the row and header attributes** — `scope`, `data-col`,
+  `needs_col_*`, `data-need-id`, `data-parent` — but none of the table-level
+  `data-needstable-*` options and not the hook class, so the script ignores it. The
+  attributes are useful to anything else reading the page, and cost nothing.
 
 ## 2. The script
 
@@ -141,15 +156,29 @@ group when the lead row **or any part row** matches; paging counts groups.
 **Sorting.** Click, Enter or Space on a header's button cycles `none → ascending →
 descending → none`. There is **no sort at initialisation**: the DOM order is the producer's
 `:sort:` order, it is the "none" state, and "none" restores it exactly. Comparators are
-typed — `number` (locale-agnostic, tolerating `%` and grouped digits), `date` (ISO 8601
-first, then `Date.parse`), `text` (`Intl.Collator`, `numeric: true`, `sensitivity: "base"`).
-Empty cells sort last in both directions; `<td data-sort="…">` overrides a cell's value. The
-`<th>` carries `aria-sort`; the button's accessible name is `"<Header>: sort"`.
+typed — `number`, `date`, and `text` (`Intl.Collator`, `numeric: true`,
+`sensitivity: "base"`). Empty cells sort last in both directions; `<td data-sort="…">`
+overrides a cell's value. The `<th>` carries `aria-sort`; the button's accessible name is
+`"<Header>: sort"`.
+
+The two parsers make locale decisions, and these are they:
+
+- **Numbers.** Whitespace (ordinary, non-breaking and narrow) and `%` are dropped. A full
+  stop is **always** the decimal mark. A comma groups digits only when the whole value has
+  the shape `1,234,567`, and is a decimal mark otherwise; where both appear, the rightmost
+  is the decimal mark. So `1.000` sorts as one, not as a thousand.
+- **Dates.** A bare `YYYY-MM-DD` is read as UTC midnight; anything else goes to
+  `Date.parse`, which reads it in **the reader's timezone**, so two spellings of the same
+  calendar day can differ by the machine's UTC offset. A producer that cares should emit
+  `<td data-sort>` with a full ISO timestamp.
 
 **Filtering.** One text input per table, case-insensitive substring over the group's whole
 rendered text — **all** columns, including ones the reader switched off, because the data is
 still the data. Debounced. An `aria-live="polite"` element reports `Showing 1–10 of 42` or
-`No matching rows`.
+`No matching rows`. Both the index and the query have runs of whitespace collapsed, so a
+query typed exactly as the cell reads matches it. **The index is a snapshot taken at
+initialisation**: a page that mutates a cell afterwards has to `destroy()` and `init()` again
+for the filter to see it — sorting reads cells live, so the two would otherwise disagree.
 
 **Paging — page-only DOM.** Changing the page rebuilds the pager, so the control the reader
 just activated is removed from the document; focus is given back to the equivalent control
@@ -160,9 +189,11 @@ anchors behave no worse than before, and a ten-thousand-row table initialises in
 milliseconds rather than seconds. The pager is **hidden entirely** when there is one page.
 Sorting or changing the filter resets to page one.
 
-**Column visibility.** A native `<details><summary>` with one checkbox per column. Hiding a
-column adds `needstable-hidden` to that column's `<th>` and cells and removes its `<col>`
-from the `<colgroup>`, so the remaining widths stay aligned.
+**Column visibility.** A native `<details><summary>` with one checkbox per column, which
+Escape closes, handing focus back to the summary. Hiding a column adds `needstable-hidden`
+to that column's `<th>` and cells and removes its `<col>` from the `<colgroup>`, so the
+remaining widths stay aligned. The last column still showing keeps its checkbox, disabled: a
+table cannot be reduced to no columns at all.
 
 **Copy and CSV.** Two buttons, over the header plus **every group the filter matches** — not
 only the page — and every row of those groups, so part rows export their own text. A cell's

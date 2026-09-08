@@ -314,6 +314,38 @@ def test_filter_matches_a_part_beyond_the_first_page(opened) -> None:
 
 @pytest.mark.jstest
 @_APP
+def test_filter_query_whitespace_is_normalised(opened) -> None:
+    """t14 -- a query typed exactly as the cell reads matches it.
+
+    The index the filter searches collapses runs of whitespace, so the query has to as
+    well; otherwise a cell rendered with two spaces is found by typing one and not by
+    typing what is on the screen.
+    """
+    page, _ = opened
+
+    page.evaluate(
+        """(id) => {
+            const table = document.getElementById(id);
+            table.__needstable.destroy();
+            table.tBodies[0].rows[0].cells[1].textContent = 'gamma  spaced';
+            window.needstable.init(table);
+        }""",
+        INTERACTIVE,
+    )
+    search = _wrapper(page, INTERACTIVE).locator("input.needstable-search-input")
+
+    search.fill("gamma  spaced")
+    page.wait_for_timeout(250)
+    assert _need_ids(page, INTERACTIVE) == ["R_01"]
+
+    # and the collapsed spelling still matches, as it always did
+    search.fill("gamma spaced")
+    page.wait_for_timeout(250)
+    assert _need_ids(page, INTERACTIVE) == ["R_01"]
+
+
+@pytest.mark.jstest
+@_APP
 def test_paging(opened) -> None:
     """t5 -- ten groups a page, a hidden pager when there is one page, "All", and reset."""
     page, _ = opened
@@ -461,6 +493,35 @@ def test_column_visibility_reaches_the_export(opened) -> None:
     )
     assert part_line is not None, "the part row is not in the export"
     assert part_line.count(",") == 4, part_line
+
+    # `copy()` writes the same matrix, tab-separated
+    tsv_header = page.evaluate(
+        f"() => document.getElementById('{INTERACTIVE}')"
+        ".__needstable.tsv().split('\\n')[0]"
+    )
+    assert tsv_header == "ID\tTitle\tAmount\tDue\tOutgoing"
+
+    # a table cannot be reduced to no columns: switch every column off but one, and the
+    # last one still showing keeps its checkbox, disabled
+    boxes = wrapper.locator("label.needstable-columns-item input")
+    for index in (1, 3, 4, 5):
+        boxes.nth(index).uncheck()
+    assert boxes.nth(0).is_enabled() is False
+    assert [boxes.nth(index).is_checked() for index in range(6)] == [
+        True,
+        False,
+        False,
+        False,
+        False,
+        False,
+    ]
+
+    # Escape closes the disclosure and hands focus back to the control that opened it
+    page.keyboard.press("Escape")
+    assert wrapper.locator("details.needstable-columns").get_attribute("open") is None
+    assert page.evaluate("() => document.activeElement.className") == (
+        "needstable-columns-summary"
+    )
 
 
 @pytest.mark.jstest

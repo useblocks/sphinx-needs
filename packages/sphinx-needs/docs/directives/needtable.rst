@@ -140,10 +140,15 @@ Supported values are:
    cell classes and the links inside cells all survive sorting and searching, and a
    reader with JavaScript switched off still gets the whole table.
 
+   The count it shows -- *Showing 1-10 of 42* -- counts **needs**, not rows: a need and
+   its :ref:`parts <needtable_show_parts>` are one entry, so that a page never splits a
+   need from its parts. The DataTables style counted rows, so a table with
+   ``:show_parts:`` reports a smaller total than it did before 9.0.0.
+
    What it deliberately does **not** do: export to Excel or PDF (the CSV it writes opens
    in Excel, and the browser's own print command prints the page), and let the reader
    drag columns into a different order. Both were features of the DataTables package
-   Sphinx-Needs bundled until 9.0.0.
+   Sphinx-Needs bundled before this change.
 
 Overrides config parameter :ref:`needs_table_style` if set.
 
@@ -348,8 +353,18 @@ In this case, we set the sort option to ``status``. So *EX_ROW_3* is above of *E
 
 .. versionchanged:: 9.0.0
 
-   Before 9.0.0 the bundled DataTables package re-sorted every table by its first column
-   as soon as the page loaded, so ``:sort:`` was only visible with ``:style: table``.
+   Before this change the bundled DataTables package re-sorted every table by its first
+   column as soon as the page loaded, so ``:sort:`` was only visible with ``:style: table``.
+
+.. note::
+
+   When the reader sorts a column of the interactive table, two rules decide the order.
+   A number is read with the full stop as its decimal mark; a comma groups digits only in
+   the ``1,234,567`` shape and is a decimal mark otherwise, and a per-cent sign and any
+   whitespace are ignored -- so ``1.000`` sorts as one. A date written as ``YYYY-MM-DD``
+   is read as UTC; any other spelling is read in the reader's own timezone, so two
+   spellings of the same day can order differently. Cells with no value sort last,
+   whichever way the column points.
 
 
 .. _needtable_class:
