@@ -6,6 +6,7 @@ Executes several performance tests.
 import os.path
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
 import tomllib
@@ -185,7 +186,11 @@ def start(
     )
     start_time = time.time()
     params = [
-        "sphinx-build",
+        # this script is run by hand from a shell, where the bare word would resolve to
+        # whatever Sphinx that shell's PATH holds -- or to none at all
+        sys.executable,
+        "-m",
+        "sphinx",
         "-a",
         "-E",
         "-j",

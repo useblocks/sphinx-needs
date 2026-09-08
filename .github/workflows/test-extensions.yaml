@@ -75,8 +75,8 @@ jobs:
           # sphinx-mounts' path directives render with `dot`; sphinx-codelinks renders
           # nothing at all, and pays for the install here because the two share a cell
           needs-graphviz: true
-          # sphinx-mounts' uml tests render for real and `_require_renderer` asserts
-          # rather than skips
+          # sphinx-mounts' uml tests render for real, and the shared resolution RAISES
+          # rather than skipping when it finds no renderer
           needs-plantuml: true
       - name: Check the libclang engine this cell asked for is really there
         # `extra-groups: codelinks-libclang` above is the ONLY executable place that wheel

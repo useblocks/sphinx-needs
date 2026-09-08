@@ -1,4 +1,6 @@
 import json
+import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -7,9 +9,11 @@ from syrupy.extensions.single_file import SingleFileSnapshotExtension, WriteMode
 from sphinx_codelinks.config import OneLineCommentStyle
 
 # The workspace's shared test layer, `packages/sphinx-needs-testkit`, which carries the
-# doctree snapshot extension this file used to hold a byte-for-byte copy of. A line that
-# resolves to nothing is a collection ERROR, not a silent loss of fixtures, which is what
-# makes this the fence that the kit is importable in every cell this suite runs in.
+# doctree snapshot extension this file used to hold a byte-for-byte copy of -- and, imported
+# by name in the test modules rather than through this line, the warning normalisation the
+# suite's build assertions go through. A line that resolves to nothing is a collection
+# ERROR, not a silent loss of fixtures, which is what makes this the fence that the kit is
+# importable in every cell this suite runs in.
 # The order matters where both plugins define a fixture -- see the note in the testkit's
 # `fixtures` module -- so the testkit always comes last.
 #
@@ -43,29 +47,21 @@ ONELINE_COMMENT_STYLE_DEFAULT = OneLineCommentStyle()
 
 
 @pytest.fixture(scope="session")
-def source_directory() -> Path:
-    tests_dir = Path(__file__).parent
-    source_directory = tests_dir / "data" / "dcdc"
+def source_directory(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """A worker-local copy of ``tests/data/dcdc``: a git repository whose ``.gitignore``
+    hides ``demo_1.cpp``.
+
+    The copy lives under pytest's base temp directory -- one per xdist worker -- so no test
+    writes into the checkout and no worker can remove another's ``.gitignore``. The
+    ``git init`` is load-bearing: the ``ignore`` crate discovery walks with honours a
+    ``.gitignore`` only inside a repository, so without it the ``--gitignore`` cases see all
+    four files.
+    """
+    source_directory = tmp_path_factory.mktemp("dcdc")
+    shutil.copytree(TEST_DIR / "data" / "dcdc", source_directory, dirs_exist_ok=True)
+    subprocess.run(["git", "init", "--quiet"], cwd=source_directory, check=True)
+    (source_directory / ".gitignore").write_text("demo_1.cpp\n", encoding="utf-8")
     return source_directory
-
-
-@pytest.fixture(scope="session")
-def source_paths(source_directory: Path) -> list[Path]:
-    source_paths = [
-        source_directory / "charge" / "demo_1.cpp",
-        source_directory / "charge" / "demo_2.cpp",
-        source_directory / "discharge" / "demo_3.cpp",
-        source_directory / "supercharge.cpp",
-    ]
-    return source_paths
-
-
-@pytest.fixture(scope="session", autouse=True)
-def temporary_gitignore(source_directory: Path):
-    gitignore_path = source_directory / ".gitignore"
-    gitignore_path.write_text("demo_1.cpp\n", encoding="utf-8")
-    yield
-    gitignore_path.unlink()
 
 
 # `DoctreeSnapshotExtension` and `snapshot_doctree` are NOT here any more: they were a

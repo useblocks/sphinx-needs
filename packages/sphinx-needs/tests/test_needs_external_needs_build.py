@@ -16,64 +16,52 @@ from sphinx_needs_testkit import build_warnings
     [{"buildername": "html", "srcdir": "doc_test/doc_needs_external_needs"}],
     indirect=True,
 )
-def test_doc_build_html(test_app: SphinxTestApp, plantuml_subprocess_args: list[str]):
-    import subprocess
+def test_doc_build_html(test_app: SphinxTestApp):
+    app = test_app
 
-    src_dir = Path(test_app.srcdir)
-    out_dir = Path(test_app.outdir)
-    output = subprocess.run(
-        [
-            "sphinx-build",
-            "-b",
-            "html",
-            *plantuml_subprocess_args,
-            src_dir,
-            out_dir,
-        ],
-        capture_output=True,
-    )
+    # BOTH streams accumulate across builds, so the second build's share of each is
+    # sliced off the end: the status text at the length the first build left it, the
+    # warnings at the count it left them
+    app.build()
+    first_status_length = len(app._status.getvalue())
+    first_warnings = build_warnings(app)
+
     expected_warnings = [
         "WARNING: http://my_company.com/docs/v1/index.html#TEST_01: Need 'EXT_TEST_01' has unknown outgoing link 'SPEC_1' in field 'links' [needs.external_link_outgoing]",
         "WARNING: ../../_build/html/index.html#TEST_01: Need 'EXT_REL_PATH_TEST_01' has unknown outgoing link 'SPEC_1' in field 'links' [needs.external_link_outgoing]",
     ]
-    assert build_warnings(output.stderr.decode("utf-8")) == expected_warnings
+    assert first_warnings == expected_warnings
 
     # run second time and check
-    output_second = subprocess.run(
-        [
-            "sphinx-build",
-            "-b",
-            "html",
-            *plantuml_subprocess_args,
-            src_dir,
-            out_dir,
-        ],
-        capture_output=True,
-    )
+    app.build()
+    second_warnings = build_warnings(app)[len(first_warnings) :]
 
     # Sphinx 8.2 removed an early return in case no documents were updated in
     # https://github.com/sphinx-doc/sphinx/pull/13236
     # which leads to some SN warnings not being emitted for incremental builds
     if version_info < (8, 2):
         expected_warnings = []
-    assert build_warnings(output_second.stderr.decode("utf-8")) == expected_warnings
+    assert second_warnings == expected_warnings
 
     # check if incremental build used
+    first_status = strip_colors(app._status.getvalue()[:first_status_length])
+    second_status = strip_colors(app._status.getvalue()[first_status_length:])
     # first build output
     assert (
         "updating environment: [new config] 3 added, 0 changed, 0 removed"
-        in strip_colors(output.stdout.decode("utf-8"))
+        in first_status
     )
-    # second build output
+    # second build output. The subprocess build this replaced looked for "loading
+    # pickled environment" here, which is how a NEW process gets an environment it did
+    # not build; in process the environment is simply still there, so what says the
+    # build was incremental is that it re-read nothing and rewrote nothing
     # TODO(Marco) check why 3 added configs are expected, should be 0 for incremental builds without changes
-    assert "loading pickled environment" in output_second.stdout.decode("utf-8")
     assert (
         "updating environment: [new config] 3 added, 0 changed, 0 removed"
-        not in strip_colors(output_second.stdout.decode("utf-8"))
+        not in second_status
     )
-    assert "updating environment: 0 added, 0 changed, 0 removed" in strip_colors(
-        output_second.stdout.decode("utf-8")
-    )
+    assert "updating environment: 0 added, 0 changed, 0 removed" in second_status
+    assert "no targets are out of date." in second_status
 
 
 @pytest.mark.skipif(

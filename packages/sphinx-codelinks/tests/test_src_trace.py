@@ -15,6 +15,7 @@ from sphinx_codelinks.config import (
     check_configuration,
 )
 from sphinx_codelinks.sphinx_extension.source_tracing import set_config_to_sphinx
+from sphinx_needs_testkit import assert_no_warnings, build_warnings
 
 
 @pytest.mark.parametrize(
@@ -322,7 +323,7 @@ def test_default_ubproject_toml_is_loaded(
     app.build()
 
     assert "demo" in app.config.src_trace_projects
-    assert app.warning.getvalue() == ""
+    assert_no_warnings(app)
 
 
 def test_default_ubproject_toml_without_codelinks_section_is_silent(
@@ -338,7 +339,7 @@ def test_default_ubproject_toml_without_codelinks_section_is_silent(
     app.build()
 
     assert app.config.src_trace_projects == {}
-    assert app.warning.getvalue() == ""
+    assert_no_warnings(app)
 
 
 def test_missing_default_ubproject_toml_is_silent(
@@ -351,7 +352,7 @@ def test_missing_default_ubproject_toml_is_silent(
     app.build()
 
     assert app.config.src_trace_projects == {}
-    assert app.warning.getvalue() == ""
+    assert_no_warnings(app)
 
 
 def test_explicit_toml_config_missing_warns(
@@ -366,4 +367,6 @@ def test_explicit_toml_config_missing_warns(
     app = make_app(srcdir=minimal_sphinx_project, freshenv=True)
     app.build()
 
-    assert "does not exist" in app.warning.getvalue()
+    warnings = build_warnings(app)
+    assert len(warnings) == 1, warnings
+    assert "does not exist" in warnings[0]

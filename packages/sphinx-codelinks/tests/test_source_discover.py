@@ -15,6 +15,16 @@ from sphinx_codelinks.source_discover.source_discover import SourceDiscover
 FIXTURES_PATH = Path(__file__).parent / "data" / "discover_fixtures.json"
 
 
+def test_source_directory_is_worker_local(
+    source_directory: Path, tmp_path_factory: pytest.TempPathFactory
+) -> None:
+    assert source_directory.is_relative_to(tmp_path_factory.getbasetemp())
+    assert (source_directory / "charge" / "demo_1.cpp").is_file()
+    assert (source_directory / ".gitignore").read_text(
+        encoding="utf-8"
+    ) == "demo_1.cpp\n"
+
+
 @pytest.mark.parametrize(
     ("config", "msgs"),
     [
