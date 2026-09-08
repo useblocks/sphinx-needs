@@ -312,8 +312,7 @@ def setup(app: Sphinx) -> dict[str, Any]:
         ),
     )
 
-    app.add_role("need_func", NeedFuncRole(with_brackets=True))  # deprecrated
-    app.add_role("ndf", NeedFuncRole(with_brackets=False))
+    app.add_role("ndf", NeedFuncRole())
 
     # Resolves :variant:`a.b` immediately to the value from needs_variant_data.
     app.add_role("variant", VariantRole())
