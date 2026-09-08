@@ -61,7 +61,7 @@ def test_needextract_basic(test_app):
     ]
     run_checks(checks, "subfolder/check_images_2.html")
 
-    index_html = Path(app.outdir, "check_need_refs.html").read_text()
+    index_html = Path(app.outdir, "check_need_refs.html").read_text(encoding="utf-8")
     assert "Awesome Sphinx-Needs" in index_html
 
 
@@ -80,7 +80,7 @@ def test_needextract_with_nested_needs(test_app):
     app.build()
     assert_no_warnings(app)
 
-    needextract_html = Path(app.outdir, "needextract.html").read_text()
+    needextract_html = Path(app.outdir, "needextract.html").read_text(encoding="utf-8")
 
     # ensure that the needs exist and that their hrefs point to the correct location
     assert (

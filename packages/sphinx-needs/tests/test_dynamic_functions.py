@@ -145,7 +145,7 @@ def test_doc_dynamic_functions(test_app, snapshot):
         "<srcdir>/index.rst:45: WARNING: Error while executing function 'copy': Need not found [needs.dynamic_function]",
     ]
 
-    html = Path(app.outdir, "index.html").read_text()
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
     # since 9.0.0 ``[[...]]`` in a need's CONTENT is plain text, and only the ``ndf`` role runs
     # a dynamic function there.  Sphinx's smartquotes transform has already curled the quotes by
     # the time the text is rendered -- which is what the removed scan used to undo before it ran
@@ -167,7 +167,7 @@ def test_doc_dynamic_functions(test_app, snapshot):
         'href="#dynamic-functions">SP_TOO_001</a>' in html
     )
 
-    json_data = Path(app.outdir, "needs.json").read_text()
+    json_data = Path(app.outdir, "needs.json").read_text(encoding="utf-8")
     needs = json.loads(json_data)
     assert needs == snapshot(exclude=props("created", "project", "creator"))
 
@@ -186,7 +186,7 @@ def test_doc_df_calc_sum(test_app):
     app = test_app
     app.build()
     assert_no_warnings(app)
-    html = Path(app.outdir, "index.html").read_text()
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
     assert "43210" in html  # all hours
     assert "3210" in html  # hours of linked needs
     assert "210" in html  # hours of filtered needs
@@ -206,7 +206,7 @@ def test_doc_df_linked_values(test_app):
     app = test_app
     app.build()
     assert_no_warnings(app)
-    html = Path(app.outdir, "index.html").read_text()
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
     assert "all_good" in html
     assert "all_bad" not in html
     assert "all_awesome" in html
@@ -233,7 +233,7 @@ def test_doc_df_links_from_content(test_app, snapshot):
         "WARNING: links_from_content: no stored node for need 'unknown3' [needs.dynamic_function]",
     ]
 
-    json_data = Path(app.outdir, "needs.json").read_text()
+    json_data = Path(app.outdir, "needs.json").read_text(encoding="utf-8")
     needs = json.loads(json_data)
     assert needs == snapshot(exclude=props("created", "project", "creator"))
 
@@ -269,7 +269,7 @@ def test_doc_df_user_functions(test_app):
         expected.insert(0, warn)
     assert warning_records == expected
 
-    html = Path(app.outdir, "index.html").read_text()
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
     assert "Awesome" in html
     # the same call written as ``[[...]]`` in the content is plain text since 9.0.0
     assert "[[my_own_function()]] is not a dynamic function here" in html
