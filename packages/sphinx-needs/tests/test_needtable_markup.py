@@ -186,6 +186,15 @@ def test_show_filters_paragraph_follows_the_table(test_app: SphinxTestApp) -> No
     assert "Used filter" not in html[start:end]
     assert html[end:].lstrip().startswith("<p><em>Used filter")
 
+    # and for `:style: table` it follows the wrapper the plain style is given, rather
+    # than sitting inside the table there either: the paragraph is not table content
+    plain_start = html.index('<table class="NEEDS_TABLE')
+    plain_end = html.index("</table>", plain_start) + len("</table>")
+    assert "Used filter" not in html[plain_start:plain_end]
+    after_plain = html[plain_end:].lstrip()
+    assert after_plain.startswith("</div>")
+    assert after_plain[len("</div>") :].lstrip().startswith("<p><em>Used filter")
+
 
 @_APP
 def test_colgroup_and_caption_unchanged(test_app: SphinxTestApp) -> None:
@@ -390,3 +399,28 @@ def test_a_second_translator_patch_survives(test_app: SphinxTestApp) -> None:
     assert 'data-otherext="yes"' in html
     assert 'data-need-id="REQ_001"' in html
     assert 'scope="col"' in html
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needtable_truncated"}],
+    indirect=True,
+)
+def test_emitted_order_is_table_filters_notice(test_app: SphinxTestApp) -> None:
+    """A truncated table emits three things, and their order is part of the contract.
+
+    ``:max_items:`` puts its notice AFTER the filter paragraph, which is itself after the
+    table -- so a reader meets the data, then what selected it, then what was left out.
+    """
+    app = test_app
+    app.build()
+    # the one warning is the `max_items` truncation the directive is meant to report
+    assert [
+        warning for warning in build_warnings(app) if "max_items" not in warning
+    ] == []
+
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    table_end = html.index("</table>") + len("</table>")
+    filters = html.index("Used filter")
+    notice = html.index("needs_max_items_notice")
+    assert table_end < filters < notice, (table_end, filters, notice)

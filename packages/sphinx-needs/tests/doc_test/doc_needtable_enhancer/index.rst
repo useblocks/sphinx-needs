@@ -110,6 +110,7 @@ The plain table
    :columns: id;title
    :types: spec
    :filter: docname == "index"
+   :show_filters:
 
 .. toctree::
    :hidden:

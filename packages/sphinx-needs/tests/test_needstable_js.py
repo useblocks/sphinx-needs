@@ -305,6 +305,12 @@ def test_filter_matches_a_part_beyond_the_first_page(opened) -> None:
     assert _need_ids(page, INTERACTIVE) == []
     assert info.text_content().strip() == "No matching rows"
 
+    # the count is announced, not merely displayed
+    assert info.get_attribute("aria-live") == "polite"
+    assert wrapper.locator("nav.needstable-pager").get_attribute("aria-label") == (
+        "Pagination"
+    )
+
 
 @pytest.mark.jstest
 @_APP
@@ -336,6 +342,19 @@ def test_paging(opened) -> None:
     # `[hidden] { display: none }`, and an element that is `hidden` but still displayed
     # stays in the accessibility tree. Assert the thing that actually removes it.
     assert _pager_display(page, SMALL) == "none"
+
+    # the small table asks for `:page_size: 5`, which is not one of the offered sizes;
+    # the control has to be able to show the size the table is actually using
+    assert small.locator(
+        "select.needstable-page-size-select option"
+    ).all_text_contents() == [
+        "5",
+        "10",
+        "25",
+        "50",
+        "All",
+    ]
+    assert small.locator("select.needstable-page-size-select").input_value() == "5"
 
     _show_all(page, INTERACTIVE)
     assert len(_need_ids(page, INTERACTIVE)) == 14
@@ -431,6 +450,17 @@ def test_column_visibility_reaches_the_export(opened) -> None:
         == 5
     )
     assert csv_header() == "ID,Title,Amount,Due,Outgoing"
+
+    # and a PART row loses the column too -- `matrix()` filters every row of every group
+    # by the same index, not only the leads
+    part_line = page.evaluate(
+        f"""() => document.getElementById('{INTERACTIVE}')
+            .__needstable.csv()
+            .split('\\r\\n')
+            .find((line) => line.startsWith('\u2192 S_02.P1'))"""
+    )
+    assert part_line is not None, "the part row is not in the export"
+    assert part_line.count(",") == 4, part_line
 
 
 @pytest.mark.jstest
@@ -555,6 +585,56 @@ def test_columns_popover_follows_the_theme(opened) -> None:
     # the surface is not the user agent's white
     assert colours["bg"] == "rgb(51, 51, 51)", colours
     assert colours["fg"] == "rgb(238, 238, 238)", colours
+
+
+@pytest.mark.jstest
+@_APP
+def test_producer_extension_points(opened) -> None:
+    """t13 -- the two extension points the contract publishes but sphinx-needs never uses.
+
+    ``<td data-sort>`` and ``data-needstable-labels`` are for a producer that knows more
+    than the rendered text does, or that speaks another language. sphinx-needs emits
+    neither today, so without this the only thing standing between them and a silent
+    regression is the design document's prose. They are set here on the built page, and the
+    widget re-initialised over it.
+    """
+    page, _ = opened
+
+    result = page.evaluate(
+        """(id) => {
+            const table = document.getElementById(id);
+            table.__needstable.destroy();
+            // `Alpha requirement` sorts first by text; `zzz` sends it to the end
+            const first = table.tBodies[0].rows[0];
+            first.cells[1].setAttribute('data-sort', 'zzz');
+            table.setAttribute(
+                'data-needstable-labels',
+                JSON.stringify({copy: 'Kopieren', empty: 'Nichts gefunden'}),
+            );
+            const instance = window.needstable.init(table);
+            instance.pageSize = 0;
+            instance.toggleSort(1);
+            const wrapper = table.closest('div.needstable');
+            const ids = Array.from(table.tBodies[0].rows).map(
+                (row) => row.getAttribute('data-need-id'),
+            );
+            instance.query = 'no such need anywhere';
+            instance.update();
+            return {
+                ids: ids,
+                copyLabel: wrapper.querySelector('button.needstable-copy').textContent,
+                emptyLabel: wrapper.querySelector('div.needstable-info').textContent,
+            };
+        }""",
+        INTERACTIVE,
+    )
+
+    # `data-sort` beat the cell's own text: the row that sorts first by title is last
+    assert result["ids"][0] != "R_01", result["ids"]
+    assert result["ids"][-1] == "R_01", result["ids"]
+    # and the producer's labels reached the DOM
+    assert result["copyLabel"] == "Kopieren"
+    assert result["emptyLabel"] == "Nichts gefunden"
 
 
 @pytest.mark.jstest
