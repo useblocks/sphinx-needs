@@ -74,17 +74,22 @@ def test_html_head_files(test_app: SphinxTestApp):
     script_nodes = root_tree.xpath("/html/head/script")
     script_files = [x.attrib["src"].rsplit("?", 1)[0] for x in script_nodes]
     assert script_files.count("_static/sphinx-needs/libs/html/needstable.js") == 1
+    assert (
+        script_files.count("_static/sphinx-needs/libs/html/sphinx_needs_collapse.js")
+        == 1
+    )
 
-    # the tag has to be DEFERRED, and `loading_method` is not an HTML attribute: only
+    # both tags have to be DEFERRED, and `loading_method` is not an HTML attribute: only
     # `Sphinx.add_js_file` translates that keyword, and the per-page registration has to
     # go through the builder, which writes every keyword into the tag verbatim
-    script = next(
-        node
-        for node in script_nodes
-        if "libs/html/needstable.js" in node.attrib.get("src", "")
-    )
-    assert script.attrib.get("defer") is not None, dict(script.attrib)
-    assert "loading_method" not in script.attrib, dict(script.attrib)
+    for asset in ("needstable.js", "sphinx_needs_collapse.js"):
+        script = next(
+            node
+            for node in script_nodes
+            if f"libs/html/{asset}" in node.attrib.get("src", "")
+        )
+        assert script.attrib.get("defer") is not None, dict(script.attrib)
+        assert "loading_method" not in script.attrib, dict(script.attrib)
 
     link_nodes = root_tree.xpath("/html/head/link")
     link_files = [x.attrib["href"].rsplit("?", 1)[0] for x in link_nodes]
@@ -101,9 +106,14 @@ def test_html_head_files(test_app: SphinxTestApp):
     # whole 2.26 MB DataTables bundle
     for pagename in ("search.html", "genindex.html"):
         tree = html_parser.parse(str(Path(app.outdir, pagename)))
-        assets = [
-            node.attrib["src" if node.tag == "script" else "href"].rsplit("?", 1)[0]
-            for node in tree.xpath("/html/head/script") + tree.xpath("/html/head/link")
+        page_scripts = [
+            node.attrib["src"].rsplit("?", 1)[0]
+            for node in tree.xpath("/html/head/script")
+            if "src" in node.attrib
+        ]
+        assets = page_scripts + [
+            node.attrib["href"].rsplit("?", 1)[0]
+            for node in tree.xpath("/html/head/link")
         ]
         assert "_static/sphinx-needs/libs/html/needstable.js" not in assets, pagename
         assert "_static/sphinx-needs/libs/html/needstable.css" not in assets, pagename
