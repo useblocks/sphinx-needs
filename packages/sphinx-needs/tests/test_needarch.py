@@ -1,9 +1,11 @@
+import re
 from pathlib import Path
 
 import pytest
 from syrupy.filters import props
 
-from sphinx_needs_testkit import sphinx_build_command
+from sphinx_needs.directives.needuml import NeedArchException
+from sphinx_needs_testkit import assert_no_warnings
 
 
 @pytest.mark.parametrize(
@@ -24,22 +26,13 @@ def test_doc_needarch(test_app):
     indirect=True,
 )
 def test_doc_needarch_negative(test_app):
-    import subprocess
-
     app = test_app
 
-    srcdir = Path(app.srcdir)
-    out_dir = srcdir / "_build"
-
-    out = subprocess.run(
-        sphinx_build_command("-M", "html", srcdir, out_dir), capture_output=True
-    )
-
-    assert out.returncode == 1
-    assert (
-        "sphinx_needs.directives.needuml.NeedArchException: Directive needarch "
-        "can only be used inside a need." in out.stderr.decode("utf-8")
-    )
+    with pytest.raises(
+        NeedArchException,
+        match=re.escape("Directive needarch can only be used inside a need."),
+    ):
+        app.build()
 
 
 @pytest.mark.parametrize(
@@ -79,12 +72,5 @@ def test_needarch_jinja_func_need(test_app, snapshot):
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
     assert "as INT_001 [[../index.html#INT_001]]" in html
 
-    import subprocess
-
-    srcdir = Path(app.srcdir)
-    out_dir = srcdir / "_build"
-
-    out = subprocess.run(
-        sphinx_build_command("-M", "html", srcdir, out_dir), capture_output=True
-    )
-    assert out.returncode == 0
+    assert app.statuscode == 0
+    assert_no_warnings(app)
