@@ -30,6 +30,8 @@
 
     --sn-color-table-label: #eee;
     --sn-color-table-btn-border: #999;
+    --sn-color-table-popover-bg: #333;
+    --sn-color-table-popover-fg: #eee;
 
     --sn-color-debug-btn-border: #888;
     --sn-color-debug-btn-on-text: #ff3f34;

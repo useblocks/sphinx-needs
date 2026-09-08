@@ -8,6 +8,8 @@ body {
     --sn-color-debug-btn-border: var(--md-typeset-color);
     --sn-color-table-label: var(--md-typeset-color);
     --sn-color-table-btn-border: var(--md-default-fg-color--light);
+    --sn-color-table-popover-bg: var(--md-default-bg-color);
+    --sn-color-table-popover-fg: var(--md-typeset-color);
 }
 /* doc config end */
 

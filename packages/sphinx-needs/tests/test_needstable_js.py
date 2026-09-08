@@ -521,6 +521,43 @@ def test_destroy_restores_the_original_dom(opened) -> None:
 
 
 @pytest.mark.jstest
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_needtable_enhancer",
+            "confoverrides": {"needs_css": "dark.css"},
+        }
+    ],
+    indirect=True,
+)
+def test_columns_popover_follows_the_theme(opened) -> None:
+    """t12 -- the one opaque surface the widget paints takes its colours from the host.
+
+    Everything else the widget draws is transparent and inherits the page. The columns
+    disclosure cannot be: it overlays the table. Its structural fallbacks are the system
+    colours, which follow the USER AGENT's colour scheme rather than the page's, so on a
+    site whose own switch says dark they come out white on a dark page.
+    """
+    page, _ = opened
+    wrapper = _wrapper(page, INTERACTIVE)
+    wrapper.locator("details.needstable-columns > summary").click()
+
+    colours = page.evaluate(
+        """() => {
+            const list = document.querySelector('div.needstable-columns-list');
+            const style = getComputedStyle(list);
+            return {bg: style.backgroundColor, fg: style.color};
+        }"""
+    )
+    # `dark.css` says #333 on #eee; the point is that a token answered at all, and that
+    # the surface is not the user agent's white
+    assert colours["bg"] == "rgb(51, 51, 51)", colours
+    assert colours["fg"] == "rgb(238, 238, 238)", colours
+
+
+@pytest.mark.jstest
 @_APP
 def test_plain_table_is_untouched(opened) -> None:
     """t10 -- `:style: table` opts out, and nothing on the page throws."""

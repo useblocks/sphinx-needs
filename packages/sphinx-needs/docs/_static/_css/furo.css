@@ -169,6 +169,8 @@ body {
     --sn-color-debug-btn-off-text: #096285;
     --sn-color-table-label: var(--color-foreground-muted);
     --sn-color-table-btn-border: var(--color-foreground-muted);
+    --sn-color-table-popover-bg: var(--color-background-primary);
+    --sn-color-table-popover-fg: var(--color-foreground-primary);
 }
 
 @media not print {

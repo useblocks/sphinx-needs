@@ -4,6 +4,8 @@
 body {
     --sn-color-table-label: var(--pst-color-text-muted);
     --sn-color-table-btn-border: var(--pst-color-text-muted);
+    --sn-color-table-popover-bg: var(--pst-color-background);
+    --sn-color-table-popover-fg: var(--pst-color-text-base);
 }
 
 html[data-theme="light"] {

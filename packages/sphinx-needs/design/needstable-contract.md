@@ -211,7 +211,19 @@ and `--needstable-focus-color` (`currentColor`), `--needstable-hover-bg` and
 `--needstable-current-bg` (a neutral translucent grey), `--needstable-popover-bg` /
 `--needstable-popover-color` (`Canvas` / `CanvasText`). A host maps its own tokens onto them
 in its own sheet; sphinx-needs does that in `src/sphinx_needs/css/common/needstable.css`,
-against `--sn-color-table-*`. The sort indicators are drawn with CSS borders inheriting
+against `--sn-color-table-*`.
+
+**A host MUST answer the two popover properties.** The columns disclosure is the only
+opaque surface the widget paints — everything else is transparent and inherits the page —
+and its fallbacks are the system colours `Canvas` / `CanvasText`, which follow the *user
+agent's* colour scheme rather than the page's.
+
+> *Corrected 2026-09-08.* This section used to list the two properties as though a host
+> already answered them. Review measured that sphinx-needs answered only three of the six,
+> so on a site whose own switch was set to dark the columns popover came out black on white
+> over a dark page. `--sn-color-table-popover-bg` / `-fg` now exist in all three themes and
+> are mapped here, and the docs' per-theme sheets re-point them at each theme's own
+> mode-aware background and text colours. The sort indicators are drawn with CSS borders inheriting
 `currentColor`, never a Unicode arrow or an image, so they cannot come out as a different
 character on a different operating system. The chrome is deliberately quiet: no border
 around the widget, small buttons, little rounding — the table's data is the content.

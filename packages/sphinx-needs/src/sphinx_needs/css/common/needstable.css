@@ -29,4 +29,11 @@ div.needstable {
     --needstable-label-color: var(--sn-color-table-label);
     --needstable-border-color: var(--sn-color-table-btn-border);
     --needstable-focus-color: var(--sn-color-table-label);
+    /* The columns disclosure is the only OPAQUE surface the widget paints, so it is the
+    only one that cannot inherit the page's colours. Its structural fallbacks are the
+    system colours `Canvas`/`CanvasText`, which follow the user agent's colour scheme
+    rather than the page's -- so on a site whose own switch is set to dark they come out
+    white on a dark page. These two tokens answer them, from the theme `needs_css` names. */
+    --needstable-popover-bg: var(--sn-color-table-popover-bg);
+    --needstable-popover-color: var(--sn-color-table-popover-fg);
 }
