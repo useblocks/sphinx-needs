@@ -110,7 +110,10 @@ that for its own builds, and this suite's `make_app` fixture says it for every a
 made by calling `make_app` directly: one that has not chosen a renderer, in its
 `confoverrides` or in the `conf.py` its project writes, is made inert too. A test that runs
 `sphinx-build` as a SUBPROCESS is the one route neither can reach, and it passes the
-`plantuml_subprocess_args` fixture into its argv instead.
+`plantuml_subprocess_args` fixture into its argv instead. It builds that argv with
+`sphinx_build_command(...)` from the shared test layer and never with the bare word, which
+`PATH` resolves to whatever Sphinx comes first there -- another checkout's, or none at all --
+rather than to the interpreter running the tests.
 
 Choose a renderer with `plantuml_conf(request)`, which resolves the suite-wide command only
 when the build will actually draw — never by naming `plantuml_command` in a test's signature,
