@@ -455,6 +455,43 @@ def test_scroll_frame(opened, test_app: SphinxTestApp) -> None:
 
 
 @pytest.mark.jstest
+@_APP
+def test_the_last_column_is_guarded_from_the_first_paint(
+    opened, test_app: SphinxTestApp
+) -> None:
+    """t16 -- a one-column table cannot be emptied by the reader's first click.
+
+    The guard is applied whenever the visibility changes, which for two or more columns
+    means the first click engages it in time. With exactly one column that click is already
+    the fatal one, so the guard has to hold before the reader touches anything.
+    """
+    page, _ = opened
+
+    def disabled_flags() -> list[bool]:
+        return page.evaluate(
+            """() => Array.from(
+                document.querySelectorAll('label.needstable-columns-item input'),
+            ).map((box) => box.disabled)"""
+        )
+
+    # six columns and three: nothing is disabled, because nothing is at stake yet
+    assert disabled_flags() == [False] * 9
+
+    page.goto(Path(test_app.outdir, "one_column.html").as_uri())
+    assert disabled_flags() == [True]
+
+    # and the guard means what it says: clicking it changes nothing
+    box = page.locator("label.needstable-columns-item input")
+    page.locator("details.needstable-columns > summary").click()
+    assert box.is_enabled() is False
+    assert box.is_checked() is True
+    assert page.evaluate(
+        "() => document.querySelector('colgroup') === null"
+        " || document.querySelectorAll('colgroup > col').length"
+    )
+
+
+@pytest.mark.jstest
 def test_the_vendored_pair_lays_out_on_its_own(page: Page) -> None:
     """t15 -- `needstable.css` + `needstable.js`, with no host stylesheet at all.
 

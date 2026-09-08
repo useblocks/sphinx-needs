@@ -117,3 +117,4 @@ The plain table
 
    no_table
    wide
+   one_column

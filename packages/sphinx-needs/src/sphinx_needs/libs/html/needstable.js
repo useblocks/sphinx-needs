@@ -495,6 +495,9 @@
             this.sortButtons = [];
 
             this.buildControls();
+            /* the last-column guard has to hold from the first paint: with one column the
+               reader's first click would otherwise empty the table */
+            this.applyColumnVisibility();
             this.update();
         }
 
