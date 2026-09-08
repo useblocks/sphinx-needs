@@ -356,6 +356,10 @@ allowed-unresolved-imports = [
   "clang.**",
   "matplotlib",
   "matplotlib.**",
+  # `theme_shots.py` imports playwright lazily, inside the one function that drives a
+  # browser, so that its tests and `--help` run without it. The driver lives in the root
+  # `js` group, which the typing floor deliberately does not install
+  "playwright.**",
   "requests_file",
   "sphinx_data_viewer.**",
   "sphinxcontrib.plantuml",
@@ -819,3 +823,35 @@ executor = { type = "uv", frozen = true, no-group = "dev", extra = [
   "theme-rtd",
 ] }
 env = { UV_PROJECT_ENVIRONMENT = ".venvs/docs-rtd", DOCS_THEME = "sphinx_rtd_theme" }
+
+# --- Theme screenshots ---
+# `docs-needs-shots` reads the five theme builds above; `docs-needs-themes` produces them. They
+# are two tasks rather than one on purpose: the builds are ~2 minutes each, and putting ten
+# minutes of `deps` in front of every re-shoot would make the instrument too expensive to use
+# the way it is meant to be used -- shoot, look, change one CSS rule, shoot again.
+
+[tool.poe.tasks.docs-needs-themes]
+help = "Build the HTML docs in all five themes, one after another (~10 min), for docs-needs-shots"
+# `deps` and nothing else: poe runs a task's dependencies in order and one at a time, which is
+# the requirement here rather than a convenience -- AGENTS.md's "do not run two docs builds
+# concurrently" is about plantuml, which is load-sensitive across processes. The `expr` is the
+# task's body only because a task needs one; it prints where the builds went
+deps = [
+  "docs-needs",
+  "docs-needs-alabaster",
+  "docs-needs-im",
+  "docs-needs-pds",
+  "docs-needs-rtd",
+]
+expr = "'built into packages/sphinx-needs/docs/_build/html/; `poe docs-needs-shots` next'"
+
+[tool.poe.tasks.docs-needs-shots]
+help = "Screenshot the needtable examples in every EXISTING theme build (docs-needs, docs-needs-alabaster, docs-needs-im, docs-needs-pds, docs-needs-rtd -- or docs-needs-themes for all five), light and dark, into docs/_build/shots"
+# NO `deps` on the five builds: see the comment above. A theme that was not built is reported
+# and skipped, so this is useful with one build present as well as five.
+#
+# No `executor` override either, exactly like `test-needs-js`: playwright comes from the root
+# `js` group, `dev` includes `js`, and `dev` is what a bare `uv sync` installs -- so the
+# default `.venv` already has the driver. The BROWSER is not a package: `poe install-browser`
+# once per machine, and the script's error message says so if it is missing.
+cmd = "python tools/src/sn_tools/theme_shots.py"

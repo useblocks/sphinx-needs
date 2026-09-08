@@ -82,6 +82,8 @@ uv run poe typecheck                  # ty over both packages, against the oldes
 uv run poe docs-needs                 # the furo docs build
 uv run poe docs-mounts                # the sphinx-mounts docs build
 uv run poe docs-codelinks             # the sphinx-codelinks docs build
+uv run poe docs-needs-themes          # the docs in all five themes, one after another
+uv run poe docs-needs-shots           # screenshot the needtable examples in every theme built
 uv run poe smoke-needs                # build the wheel and test the built package
 uv run poe verify-plantuml            # the committed PlantUML jar is the one its pin names
 uv run poe fetch-plantuml             # download it -- a bump step; otherwise a hash check
