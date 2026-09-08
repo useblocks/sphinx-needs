@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788893473257,
+  "lastUpdate": 1788895802574,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -20772,6 +20772,42 @@ window.BENCHMARK_DATA = {
             "value": 58.95197665,
             "unit": "s",
             "extra": "Commit: c737c800d946736f75ed2ddb67de6b2c220e68d8\nBranch: master\nTime: 2026-09-08T20:49:44+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4a54ea25d04f495c0854df15fb07a77c4e630c4d",
+          "message": "🧪 Type-check needstable.js in CI (#1928)\n\n`needstable.js` (#1920) is plain JavaScript typed through `// @ts-check`\nand JSDoc, and `design/needstable-contract.md` §4 records the single\ncommand that checks those types. It passes at the tip, but nothing ran\nit, so any later edit could regress a type silently. This makes it a\ngate.\n\n- **A poe task, `typecheck-js-needs`**, holds the command with the\ntypescript version **pinned** (`typescript@5.9.3`): an unpinned `npx -p\ntypescript` resolves whatever compiler is newest that day, which would\nlet a TypeScript release turn a pull request red with nothing here\nhaving changed. To bump it, edit that one literal and run the task.\n5.9.3 is the newest 5.9.x; the file is also clean under 7.0.2, today's\n`latest`.\n- **One Lint step runs the task**, not a copy of the command, so the\ngate a developer runs locally and the gate that blocks a pull request\ncannot drift, the same arrangement as the prek hooks and `poe lint`.\nLint rather than the `tests-js` lane: it needs no browser, no sphinx and\nno interpreter matrix, and Lint is a required status context in its own\nright. No `setup-node`: `ubuntu-latest` ships node and npm, and `npx -y\n-p` fetches the pinned compiler into the runner's npm cache for the run\n(about 2.5 s cold on an empty cache, 23 MB unpacked).\n- **Files checked**: `needstable.js` only. `sphinx_needs_collapse.js` is\njQuery-era, carries no `// @ts-check` and does not pass `--strict`;\n#1922 ports it and is the pull request that adds the second line. The\ntask lists one path per line, so that is a one-line change.\n- **Docs**: §4's \"It is not a CI gate here\" sentence now says the\nopposite, and the root `AGENTS.md` commands block gains the task. No\nchangelog entry: nothing user-visible changed.\n\nProof the fence bites: with `this.sortColumn = -1` (declared `@type\n{number}`) changed to a string, the task exits 2 with\n\n```\nsrc/sphinx_needs/libs/html/needstable.js(452,13): error TS2322: Type 'string' is not assignable to type 'number'.\n```\n\nCloses #1924",
+          "timestamp": "2026-09-08T21:28:44+02:00",
+          "tree_id": "b45a25a03f8251f4649c6eb43288ec051cb5831b",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/4a54ea25d04f495c0854df15fb07a77c4e630c4d"
+        },
+        "date": 1788895793375,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.11022397600001455,
+            "unit": "s",
+            "extra": "Commit: 4a54ea25d04f495c0854df15fb07a77c4e630c4d\nBranch: master\nTime: 2026-09-08T21:28:44+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 47.62569825200001,
+            "unit": "s",
+            "extra": "Commit: 4a54ea25d04f495c0854df15fb07a77c4e630c4d\nBranch: master\nTime: 2026-09-08T21:28:44+02:00"
           }
         ]
       }
