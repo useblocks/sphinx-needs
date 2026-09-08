@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788868407772,
+  "lastUpdate": 1788876243172,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -20628,6 +20628,42 @@ window.BENCHMARK_DATA = {
             "value": 54.965125459,
             "unit": "s",
             "extra": "Commit: 3b9c202a64a098e7407fa7f688878ca07fcddd60\nBranch: master\nTime: 2026-09-08T13:52:07+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8ee38a0e578c62cd480399308790e296ef09e793",
+          "message": "🧪 Every test in the sphinx-needs suite builds in process (#1917)\n\n> *\"Ugly workaround to get the sphinx build output. I have no glue how\nto get it from an\n> `app.build()`, because stdout redirecting does not work.\"*\n\nThat comment has sat above `test_doc_github_44` since 2018, and 27\nfurther subprocess builds\ngrew from it. All it could not reach, the in-process application\nexposes; all 28 sites are\nconverted, in eight modules. **No test in sphinx-needs' suite spawns a\nSphinx build any more** —\ntwo tree tests in `test_testkit_subprocess.py` keep it so, one against\nthe bare word and one\nagainst `sphinx_build_command(`. sphinx-mounts' bazel tests are\nuntouched.\n\n| the subprocess proved | the in-process assertion |\n|---|---|\n| warnings on stderr | `build_warnings(app)` compared to the exact list\n|\n| `not out.stderr` | `assert_no_warnings(app)`, which names what it\nfound |\n| exit 1 + a class name in a traceback | `pytest.raises(<the class>,\nmatch=re.escape(<the full message>))` |\n| exit 0 | the build not raising, plus the exact (usually empty) warning\nlist |\n| `-W` / `--keep-going` exit codes | dropped: Sphinx's contract, changed\nin 8.1. What they stood for is the warning list, now asserted directly |\n| status text on stdout | `app._status.getvalue()` |\n| a second builder over the same source | `make_app(buildername=…,\nsrcdir=app.srcdir, builddir=…)` |\n| a rendered diagram | `\"plantuml\": True` in the parameter dict; `-a -E`\nbecomes nothing at all |\n\nNo site loses what it asserted about sphinx-needs; one stdout check\nnarrowed to Sphinx's status\nstream, the only channel a Sphinx warning could leak into in process; a\nstray `print` in\n`src/` is no longer seen, and no test in this suite claims it is. Where\nthe in-process form\nasserts more, the ledger says so — a class asserted as a type rather\nthan matched in a\ntraceback; an exact three-record list where a `\"WARNING: \"` count said\ntwo (it read the\n*fourth* build into one output directory, where Sphinx had nothing left\nto re-pickle).\n\n| | before | after |\n|---|---|---|\n| the eight modules, best of 2 | 48 passed in **43.20 s** | 48 passed in\n**21.94 s** |\n| `git grep -c subprocess tests/` | 51 hits in 11 files | 9 in 4, none a\nSphinx build |\n| `needuml.py` lines covered by `test_needarch.py` (a subprocess\ncontributes none) | 223 / 317 | 225 / 317 |\n\n**Isolation.** A subprocess was hermetic by accident, so `sphinx_needs`'\nmodule-level state was censused: 35\ncontainers, 12 caches, 0 `global`s. `config._NEEDS_CONFIG`, the one\nlarge mutable singleton,\nis cleared at the end of every `setup(app)`, and nothing else a\nconverted test writes outlives\nits application — the eight sites that abort a build half-way included,\nsince `pytest.raises`\nkeeps the exception in the test body and `cleanup()` still runs.\n\n| proof | result |\n|---|---|\n| full suite, default / reversed / random seed 1911 | 1787 passed in\neach at `141ac75f`; 1788 at the head, which adds one test |\n| each exception site immediately before `test_basic_doc.py` | 8 × 9\npassed |\n| all eight as one battery, then three clean modules | 31 passed |\n\nThe random order did find one order-dependence, and it is **not** this\nPR's — reproduced\nidentically on `master`. `test_measure_time` sets\n`debug.EXECUTE_TIME_MEASUREMENTS` and never\nresets it, so a later build measures a filter function whose test\ndirectory has been deleted\nand dies in `inspect.getsourcelines`. A commit here closes it test-side;\nthe production half\n(`debug.process_timing` should reset it, which matters for esbonio) is a\nfollow-up.\n\n**Also retired:** `plantuml_subprocess_args` (the testkit fixture that\npointed a spawned build\nat the pinned renderer; no consumer left), the two imports in the eight\nmodules, and the stale\nprose. Tests only; nothing shipped changes. No changelog entry.",
+          "timestamp": "2026-09-08T16:02:06+02:00",
+          "tree_id": "d3f8561330128a62c37f255d5d880c2427c0274b",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/8ee38a0e578c62cd480399308790e296ef09e793"
+        },
+        "date": 1788876207089,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.16813197500000143,
+            "unit": "s",
+            "extra": "Commit: 8ee38a0e578c62cd480399308790e296ef09e793\nBranch: master\nTime: 2026-09-08T16:02:06+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 56.719305465999994,
+            "unit": "s",
+            "extra": "Commit: 8ee38a0e578c62cd480399308790e296ef09e793\nBranch: master\nTime: 2026-09-08T16:02:06+02:00"
           }
         ]
       }
