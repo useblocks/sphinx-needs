@@ -183,7 +183,8 @@ for the filter to see it — sorting reads cells live, so the two would otherwis
 **Paging — page-only DOM.** Changing the page rebuilds the pager, so the control the reader
 just activated is removed from the document; focus is given back to the equivalent control
 (the same page number if it is still offered, else the nearest; a prev/next that has become
-disabled hands focus to the other one). Only the current page's rows are attached; the rest
+disabled hands focus to the other one), and to the search box when the pager goes away
+entirely. Only the current page's rows are attached; the rest
 are held in memory, in order. Every comparable widget already did this, so find-in-page and `#id`
 anchors behave no worse than before, and a ten-thousand-row table initialises in tens of
 milliseconds rather than seconds. The pager is **hidden entirely** when there is one page.

@@ -845,6 +845,12 @@
             this.pager.replaceChildren();
             this.pager.hidden = pageCount <= 1;
             if (pageCount <= 1) {
+                if (focused) {
+                    /* the pager is going away while it holds focus. Hand it to the search
+                       box -- the control that collapses the table in practice -- rather
+                       than dropping the reader back to the top of the document. */
+                    this.searchInput.focus();
+                }
                 return;
             }
 

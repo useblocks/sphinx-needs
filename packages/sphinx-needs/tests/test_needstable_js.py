@@ -656,6 +656,29 @@ def test_keyboard_sorting(opened) -> None:
         == "needstable-page needstable-page-previous"
     )
 
+    # and when the pager goes away entirely while it holds focus -- which only a script can
+    # arrange, since every control that collapses the table takes focus itself first -- the
+    # reader lands on the search box rather than on <body>
+    landed = page.evaluate(
+        """(id) => {
+            const table = document.getElementById(id);
+            const wrapper = table.closest('div.needstable');
+            wrapper.querySelector('button.needstable-page-number').focus();
+            const instance = table.__needstable;
+            instance.query = 'zebracrossing';
+            instance.page = 0;
+            instance.update();
+            const pager = wrapper.querySelector('nav.needstable-pager');
+            return {
+                display: getComputedStyle(pager).display,
+                active: document.activeElement.className,
+            };
+        }""",
+        INTERACTIVE,
+    )
+    assert landed["display"] == "none", landed
+    assert landed["active"] == "needstable-search-input", landed
+
 
 @pytest.mark.jstest
 @_APP
