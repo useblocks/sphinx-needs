@@ -136,8 +136,14 @@ def install_lib_static_files(app: Sphinx, env: BuildEnvironment) -> None:
     copy_asset(str(source_dir), str(destination_dir), **_overwrite())
 
     lib_path = Path("sphinx-needs") / "libs" / "html"
-    # the needtable pair is registered per page, in `install_needtable_assets` below
-    _add_js_file(app, lib_path.joinpath("sphinx_needs_collapse.js"))
+    # the needtable pair is registered per page, in `install_needtable_assets` below.
+    # `loading_method="defer"`: this route goes through `Sphinx.add_js_file`, which
+    # translates the keyword into the `defer` attribute (passing `defer="defer"` would
+    # write the same tag). `install_needtable_assets` below has to spell the attribute out
+    # because the builder-level `add_js_file` has no such keyword
+    _add_js_file(
+        app, lib_path.joinpath("sphinx_needs_collapse.js"), loading_method="defer"
+    )
 
 
 def install_needtable_assets(
