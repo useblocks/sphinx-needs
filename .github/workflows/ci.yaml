@@ -79,6 +79,26 @@ jobs:
             esac
             rm -f "$probe"
           done
+      - name: Type-check the needstable script
+        # tsc over `needstable.js`, the vendored browser script that is plain JavaScript
+        # typed through `// @ts-check` and JSDoc. The check is the one
+        # `packages/sphinx-needs/design/needstable-contract.md` §4 records; until now it was
+        # a by-hand step, so a JSDoc type could regress without anything going red (#1924).
+        # The command -- and the typescript version it pins -- lives in the
+        # `typecheck-js-needs` poe task and NOT here, so what a developer runs and what
+        # blocks a pull request cannot drift; the pin matters because `npx -p typescript`
+        # would otherwise resolve whatever compiler is newest that day.
+        #
+        # In LINT rather than in `tests-js`: this needs no browser, no sphinx and no
+        # interpreter matrix -- just node -- and Lint is a required status context on
+        # master in its own right, not only through `check`. No `setup-node` either:
+        # `ubuntu-latest` ships node and npm, and `npx -y -p` fetches the pinned compiler
+        # into the runner's npm cache for the run (23 MB unpacked, ~2 s).
+        #
+        # After the prek step for the same reason as the probe above: `uv run --frozen`
+        # there has already built the default environment, which is where poe lives, so
+        # this step can be `--no-sync`
+        run: uv run --frozen --no-sync poe typecheck-js-needs
       - name: Check the sphinx groups are declared conflicting
         # if this sync ever succeeds, `[tool.uv] conflicts` has been dropped and the lock
         # holds one sphinx again, so every matrix cell below would test the same version
