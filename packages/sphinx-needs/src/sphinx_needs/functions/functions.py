@@ -208,8 +208,10 @@ def find_and_replace_node_content(
     Search inside a given node and its children for ``NeedFunc`` nodes,
     created by the ``ndf`` role, and replace each with the text its function returns.
 
-    Literal blocks, inline literals and nested needs are not descended into;
-    a nested need runs this pass itself, for its own need data.
+    A nested need is not descended into, because it runs this pass itself, for its own
+    need data -- that skip is observable. Literal blocks and inline literals are skipped
+    to state the intent: RST cannot put a role inside either, so no ``NeedFunc`` can be
+    there to find.
 
     :param node: Node to analyse
     :param env: Sphinx environment
