@@ -578,6 +578,26 @@ def test_plain_table_is_untouched(opened) -> None:
         page.evaluate("() => document.querySelectorAll('div.needstable').length") == 2
     )
     assert page.evaluate("() => window.needstable.version") == "1"
+
+    # every control on the bar is one typeface and one size. A host theme that styles
+    # `<summary>` or a form control -- and several do, one of them as an admonition with
+    # an injected icon and a chevron -- must not leave one of them a different size from
+    # its neighbours. This runs against the default theme only, but it fences the
+    # `font: inherit` rules that stop it happening.
+    sizes = page.evaluate(
+        """() => {
+            const bar = document.querySelector('div.needstable-controls');
+            const of = (selector) =>
+                getComputedStyle(bar.querySelector(selector)).fontSize;
+            return {
+                copy: of('button.needstable-copy'),
+                summary: of('details.needstable-columns > summary'),
+                search: of('input.needstable-search-input'),
+                size: of('select.needstable-page-size-select'),
+            };
+        }"""
+    )
+    assert len(set(sizes.values())) == 1, sizes
     # a second init is a no-op that hands back the same instance
     assert page.evaluate(
         f"""() => {{

@@ -71,6 +71,10 @@ div.needstable input.needstable-search-input {
     min-width: 6em;
     max-width: 18em;
     padding: 0.15em 0.4em;
+    /* without this a host's compounding `font-size` cascade lands on the form controls
+       but not on the buttons beside them, and the two end up different sizes on one line */
+    font: inherit;
+    line-height: inherit;
     color: inherit;
     background-color: transparent;
     border: 1px solid var(--needstable-border-color, currentColor);
@@ -79,6 +83,8 @@ div.needstable input.needstable-search-input {
 
 div.needstable select.needstable-page-size-select {
     padding: 0.1em 0.2em;
+    font: inherit;
+    line-height: inherit;
     color: inherit;
     background-color: transparent;
     border: 1px solid var(--needstable-border-color, currentColor);
@@ -115,15 +121,35 @@ details.needstable-columns {
     position: relative;
 }
 
-details.needstable-columns > summary {
+/* A host theme may style every `<summary>` on the page as something of its own -- an
+   admonition with a background, a border, an accent bar, a bold font and an injected icon
+   and chevron. This control is a button in a toolbar, so it has to say so itself rather
+   than inherit any of that. */
+div.needstable details.needstable-columns > summary {
     padding: 0.1em 0.7em;
+    font: inherit;
+    font-weight: inherit;
+    color: inherit;
+    background: none;
+    box-shadow: none;
     border: 1px solid var(--needstable-border-color, currentColor);
     border-radius: 2px;
     cursor: pointer;
     list-style: none;
 }
 
-details.needstable-columns > summary::-webkit-details-marker {
+/* the disclosure triangle, and anything a host injects in its place */
+div.needstable details.needstable-columns > summary::-webkit-details-marker {
+    display: none;
+}
+
+div.needstable details.needstable-columns > summary::marker {
+    content: "";
+}
+
+div.needstable details.needstable-columns > summary::before,
+div.needstable details.needstable-columns > summary::after {
+    content: none;
     display: none;
 }
 
@@ -143,11 +169,11 @@ div.needstable-columns-list {
 
 /* the sort control: a real <button>, so Enter and Space work without a key handler */
 div.needstable button.needstable-sort {
+    position: relative;
     display: inline-flex;
-    gap: 0.35em;
     align-items: center;
     margin: 0;
-    padding: 0;
+    padding: 0 1em 0 0;
     font: inherit;
     color: inherit;
     text-align: inherit;
@@ -156,28 +182,49 @@ div.needstable button.needstable-sort {
     cursor: pointer;
 }
 
+/* The indicator is TWO triangles with a gap between them -- an up one above a down one.
+   One element carrying both borders makes them meet at a point, which reads as a solid
+   hourglass rather than as "sortable both ways". They are drawn with borders rather than
+   a glyph or an image so that they inherit the text colour and cannot come out as a
+   different character on a different operating system. */
+div.needstable button.needstable-sort::before,
 div.needstable button.needstable-sort::after {
-    /* drawn with borders rather than a glyph or an image: it inherits the text colour
-       and cannot come out as a different character on a different operating system */
     content: "";
-    display: inline-block;
+    position: absolute;
+    right: 0.15em;
     width: 0;
     height: 0;
-    border-left: 0.3em solid transparent;
-    border-right: 0.3em solid transparent;
-    border-top: 0.35em solid currentColor;
-    border-bottom: 0.35em solid currentColor;
+    border-left: 0.28em solid transparent;
+    border-right: 0.28em solid transparent;
     opacity: 0.35;
 }
 
-div.needstable th[aria-sort="ascending"] button.needstable-sort::after {
-    border-top-color: transparent;
+div.needstable button.needstable-sort::before {
+    bottom: calc(50% + 1px);
+    border-bottom: 0.32em solid currentColor;
+}
+
+div.needstable button.needstable-sort::after {
+    top: calc(50% + 1px);
+    border-top: 0.32em solid currentColor;
+}
+
+/* sorted: the direction in force at full strength, the other one gone. The two keep
+   their positions, so the header text does not move when the column is sorted. */
+div.needstable th[aria-sort="ascending"] button.needstable-sort::before {
     opacity: 1;
 }
 
+div.needstable th[aria-sort="ascending"] button.needstable-sort::after {
+    opacity: 0;
+}
+
 div.needstable th[aria-sort="descending"] button.needstable-sort::after {
-    border-bottom-color: transparent;
     opacity: 1;
+}
+
+div.needstable th[aria-sort="descending"] button.needstable-sort::before {
+    opacity: 0;
 }
 
 div.needstable :focus-visible {
