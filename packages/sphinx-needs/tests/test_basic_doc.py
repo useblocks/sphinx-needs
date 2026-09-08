@@ -75,6 +75,17 @@ def test_html_head_files(test_app: SphinxTestApp):
     script_files = [x.attrib["src"].rsplit("?", 1)[0] for x in script_nodes]
     assert script_files.count("_static/sphinx-needs/libs/html/needstable.js") == 1
 
+    # the tag has to be DEFERRED, and `loading_method` is not an HTML attribute: only
+    # `Sphinx.add_js_file` translates that keyword, and the per-page registration has to
+    # go through the builder, which writes every keyword into the tag verbatim
+    script = next(
+        node
+        for node in script_nodes
+        if "libs/html/needstable.js" in node.attrib.get("src", "")
+    )
+    assert script.attrib.get("defer") is not None, dict(script.attrib)
+    assert "loading_method" not in script.attrib, dict(script.attrib)
+
     link_nodes = root_tree.xpath("/html/head/link")
     link_files = [x.attrib["href"].rsplit("?", 1)[0] for x in link_nodes]
     assert link_files.count("_static/sphinx-needs/libs/html/needstable.css") == 1

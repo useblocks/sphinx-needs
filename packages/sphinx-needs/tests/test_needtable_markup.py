@@ -275,6 +275,15 @@ def test_assets_are_registered_per_page(test_app: SphinxTestApp) -> None:
     for asset in pair:
         assert on_index.count(asset) == 1, on_index
 
+    # `defer`, not the untranslated `loading_method` keyword. This assertion is the one
+    # that runs on every platform: `test_html_head_files` is skipped on Windows.
+    tree = html_parser.parse(str(Path(app.outdir, "index.html")))
+    script = tree.xpath("/html/head/script[contains(@src, 'libs/html/needstable.js')]")[
+        0
+    ]
+    assert script.get("defer") is not None, dict(script.attrib)
+    assert script.get("loading_method") is None, dict(script.attrib)
+
     for pagename in ("no_table.html", "search.html", "genindex.html"):
         elsewhere = assets(pagename)
         for asset in pair:
