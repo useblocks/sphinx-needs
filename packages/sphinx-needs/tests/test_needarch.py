@@ -3,6 +3,8 @@ from pathlib import Path
 import pytest
 from syrupy.filters import props
 
+from sphinx_needs_testkit import sphinx_build_command
+
 
 @pytest.mark.parametrize(
     "test_app",
@@ -30,7 +32,7 @@ def test_doc_needarch_negative(test_app):
     out_dir = srcdir / "_build"
 
     out = subprocess.run(
-        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
+        sphinx_build_command("-M", "html", srcdir, out_dir), capture_output=True
     )
 
     assert out.returncode == 1
@@ -83,6 +85,6 @@ def test_needarch_jinja_func_need(test_app, snapshot):
     out_dir = srcdir / "_build"
 
     out = subprocess.run(
-        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
+        sphinx_build_command("-M", "html", srcdir, out_dir), capture_output=True
     )
     assert out.returncode == 0

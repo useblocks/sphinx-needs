@@ -8,7 +8,7 @@ from sphinx import version_info
 from sphinx.testing.util import SphinxTestApp
 from sphinx.util.console import strip_colors
 
-from sphinx_needs_testkit import build_warnings
+from sphinx_needs_testkit import build_warnings, sphinx_build_command
 
 
 @pytest.mark.parametrize(
@@ -22,14 +22,7 @@ def test_doc_build_html(test_app: SphinxTestApp, plantuml_subprocess_args: list[
     src_dir = Path(test_app.srcdir)
     out_dir = Path(test_app.outdir)
     output = subprocess.run(
-        [
-            "sphinx-build",
-            "-b",
-            "html",
-            *plantuml_subprocess_args,
-            src_dir,
-            out_dir,
-        ],
+        sphinx_build_command("-b", "html", *plantuml_subprocess_args, src_dir, out_dir),
         capture_output=True,
     )
     expected_warnings = [
@@ -40,14 +33,7 @@ def test_doc_build_html(test_app: SphinxTestApp, plantuml_subprocess_args: list[
 
     # run second time and check
     output_second = subprocess.run(
-        [
-            "sphinx-build",
-            "-b",
-            "html",
-            *plantuml_subprocess_args,
-            src_dir,
-            out_dir,
-        ],
+        sphinx_build_command("-b", "html", *plantuml_subprocess_args, src_dir, out_dir),
         capture_output=True,
     )
 

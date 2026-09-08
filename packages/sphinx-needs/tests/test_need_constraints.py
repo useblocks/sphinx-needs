@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 from syrupy.filters import props
 
-from sphinx_needs_testkit import build_warnings
+from sphinx_needs_testkit import build_warnings, sphinx_build_command
 
 
 @pytest.mark.parametrize(
@@ -69,13 +69,13 @@ def test_need_constraints(test_app, snapshot):
 
     # Check return code when "-W --keep-going" not used
     out_normal = subprocess.run(
-        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
+        sphinx_build_command("-M", "html", srcdir, out_dir), capture_output=True
     )
     assert out_normal.returncode == 0
 
     # Check return code when only "-W" is used
     out_w = subprocess.run(
-        ["sphinx-build", "-M", "html", srcdir, out_dir, "-W"], capture_output=True
+        sphinx_build_command("-M", "html", srcdir, out_dir, "-W"), capture_output=True
     )
     assert out_w.returncode >= 1
 
