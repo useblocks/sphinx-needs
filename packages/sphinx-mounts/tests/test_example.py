@@ -73,7 +73,7 @@ def _run_sphinx_build(docs: Path, html_out: Path) -> str:
     )
     if result.returncode != 0:
         pytest.fail(
-            "sphinx-build failed:\n"
+            "the Sphinx build failed:\n"
             f"stdout:\n{result.stdout}\n"
             f"stderr:\n{result.stderr}\n"
         )

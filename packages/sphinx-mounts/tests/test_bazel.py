@@ -91,7 +91,7 @@ def test_bazel_genrule_output_is_mounted(tmp_path: Path) -> None:
     )
     if sphinx_build.returncode != 0:
         pytest.fail(
-            "sphinx-build failed:\n"
+            "the Sphinx build failed:\n"
             f"stdout:\n{sphinx_build.stdout}\n"
             f"stderr:\n{sphinx_build.stderr}\n"
         )
