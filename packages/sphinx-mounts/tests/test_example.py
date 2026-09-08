@@ -40,14 +40,14 @@ Marked ``bazel``;skipped when no ``bazel``/``bazelisk`` is on PATH.
 
 from __future__ import annotations
 
-import importlib.util
 import os
 import shutil
 import subprocess
-import sys
 from pathlib import Path
 
 import pytest
+
+from sphinx_needs_testkit import sphinx_build_command
 
 TESTS_DIR = Path(__file__).parent
 EXAMPLE_DIR = TESTS_DIR / "example"
@@ -64,19 +64,9 @@ def _run_sphinx_build(docs: Path, html_out: Path) -> str:
     INFO records the variant machinery emits (``mounts.mount_gated``,
     ``mounts.variant_excluded_reference``)."""
     result = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "sphinx",
-            "-b",
-            "html",
-            "-nW",
-            "--keep-going",
-            "-c",
-            str(docs),
-            str(docs),
-            str(html_out),
-        ],
+        sphinx_build_command(
+            "-b", "html", "-nW", "--keep-going", "-c", docs, docs, html_out
+        ),
         capture_output=True,
         text=True,
         check=False,
@@ -95,8 +85,6 @@ def test_example_pipeline_end_to_end(tmp_path: Path) -> None:
     bazel = _find_bazel()
     if bazel is None:
         pytest.skip("bazel/bazelisk not on PATH")
-    if shutil.which("sphinx-build") is None and not _have_sphinx_module():
-        pytest.skip("sphinx-build not available")
     pytest.importorskip("myst_parser")
     # The showcase bundles render graphviz and plantuml diagrams at build
     # time under ``-nW``; skip (don't fail) when their extensions or
@@ -460,10 +448,3 @@ def test_example_pipeline_end_to_end(tmp_path: Path) -> None:
     assert not (html_pro / "_generated" / "reference" / "basic").exists()
     assert not (html_pro / "variants" / "basic.html").exists()
     # The two builds shared one workspace;the flip is the only change.
-
-
-def _have_sphinx_module() -> bool:
-    """``python -m sphinx`` only works if Sphinx is importable from the
-    current interpreter — which it is when the suite runs out of the
-    workspace environment."""
-    return importlib.util.find_spec("sphinx") is not None

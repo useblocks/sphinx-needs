@@ -13,11 +13,12 @@ from __future__ import annotations
 
 import shutil
 import subprocess
-import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pytest
+
+from sphinx_needs_testkit import sphinx_build_command
 
 if TYPE_CHECKING:
     pass
@@ -74,19 +75,16 @@ def test_bazel_genrule_output_is_mounted(tmp_path: Path) -> None:
     sphinx_project = workspace / "sphinx_project"
     html_out = tmp_path / "html"
     sphinx_build = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "sphinx",
+        sphinx_build_command(
             "-b",
             "html",
             "-W",
             "--keep-going",
             "-c",
-            str(sphinx_project),
-            str(sphinx_project),
-            str(html_out),
-        ],
+            sphinx_project,
+            sphinx_project,
+            html_out,
+        ),
         capture_output=True,
         text=True,
         check=False,

@@ -7,7 +7,7 @@ from syrupy.filters import props
 
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.directives.needuml import get_debug_node_from_puml_node
-from sphinx_needs_testkit import build_warnings
+from sphinx_needs_testkit import build_warnings, sphinx_build_command
 
 
 @pytest.mark.parametrize(
@@ -42,7 +42,7 @@ def test_needuml_option_key_duplicate(test_app):
     out_dir = srcdir / "_build"
 
     out = subprocess.run(
-        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
+        sphinx_build_command("-M", "html", srcdir, out_dir), capture_output=True
     )
     assert out.returncode == 1
 
@@ -65,7 +65,7 @@ def test_needuml_option_key_forbidden(test_app):
     out_dir = srcdir / "_build"
 
     out = subprocess.run(
-        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
+        sphinx_build_command("-M", "html", srcdir, out_dir), capture_output=True
     )
     assert out.returncode == 1
 
@@ -87,7 +87,7 @@ def test_needuml_diagram_allowmixing(test_app, plantuml_subprocess_args):
     out_dir = srcdir / "_build"
 
     out = subprocess.run(
-        ["sphinx-build", "-M", "html", srcdir, out_dir, *plantuml_subprocess_args],
+        sphinx_build_command("-M", "html", srcdir, out_dir, *plantuml_subprocess_args),
         capture_output=True,
     )
     assert out.returncode == 0
@@ -141,7 +141,7 @@ def test_needuml_save_with_abs_path(test_app):
 
     # this fails before plantuml is required, so the plantuml path is not provided
     out = subprocess.run(
-        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
+        sphinx_build_command("-M", "html", srcdir, out_dir), capture_output=True
     )
     assert out.returncode == 1
 
@@ -202,7 +202,7 @@ def test_needuml_filter(test_app, snapshot):
     out_dir = srcdir / "_build"
 
     out = subprocess.run(
-        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
+        sphinx_build_command("-M", "html", srcdir, out_dir), capture_output=True
     )
     assert out.returncode == 0
 
@@ -232,7 +232,7 @@ def test_needuml_jinja_func_flow(test_app, snapshot):
     out_dir = srcdir / "_build"
 
     out = subprocess.run(
-        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
+        sphinx_build_command("-M", "html", srcdir, out_dir), capture_output=True
     )
     assert out.returncode == 0
 
@@ -249,7 +249,7 @@ def test_needuml_jinja_func_need_removed(test_app):
     out_dir = srcdir / "_build"
 
     out = subprocess.run(
-        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
+        sphinx_build_command("-M", "html", srcdir, out_dir), capture_output=True
     )
     assert out.returncode == 1
     assert (
@@ -276,7 +276,7 @@ def test_doc_needarch_jinja_import_negative(test_app):
     out_dir = srcdir / "_build"
 
     out = subprocess.run(
-        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
+        sphinx_build_command("-M", "html", srcdir, out_dir), capture_output=True
     )
 
     assert out.returncode == 1
@@ -321,7 +321,7 @@ def test_needuml_jinja_func_ref(test_app, snapshot):
     out_dir = srcdir / "_build"
 
     out = subprocess.run(
-        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
+        sphinx_build_command("-M", "html", srcdir, out_dir), capture_output=True
     )
     assert out.returncode == 0
 
@@ -394,7 +394,7 @@ def test_needuml_jinja_func_uml_missing_key(test_app):
     out_dir = srcdir / "_build"
 
     out = subprocess.run(
-        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
+        sphinx_build_command("-M", "html", srcdir, out_dir), capture_output=True
     )
     assert out.returncode == 1
 
@@ -423,7 +423,7 @@ def test_needuml_jinja_func_import_string_option(test_app):
     out_dir = srcdir / "_build"
 
     out = subprocess.run(
-        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
+        sphinx_build_command("-M", "html", srcdir, out_dir), capture_output=True
     )
     assert out.returncode == 1
 
@@ -522,7 +522,7 @@ def test_needumls_builder_rerun_keeps_saved_files(test_app):
     first: list[str] = []
     for run in range(2):
         out = subprocess.run(
-            ["sphinx-build", "-b", "needumls", str(srcdir), str(out_dir)],
+            sphinx_build_command("-b", "needumls", str(srcdir), str(out_dir)),
             capture_output=True,
         )
         assert out.returncode == 0, out.stderr.decode("utf-8")

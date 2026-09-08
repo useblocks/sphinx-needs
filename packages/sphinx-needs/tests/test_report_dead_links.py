@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from sphinx_needs_testkit import build_warnings
+from sphinx_needs_testkit import build_warnings, sphinx_build_command
 
 
 @pytest.mark.parametrize(
@@ -17,7 +17,7 @@ def test_needs_dead_links_warnings(test_app):
     src_dir = Path(app.srcdir)
     out_dir = Path(app.outdir)
     output = subprocess.run(
-        ["sphinx-build", "-M", "html", src_dir, out_dir], capture_output=True
+        sphinx_build_command("-M", "html", src_dir, out_dir), capture_output=True
     )
 
     # check there are expected warnings
@@ -42,7 +42,7 @@ def test_needs_dead_links_warnings_needs_builder(test_app):
     src_dir = Path(app.srcdir)
     out_dir = Path(app.outdir)
     output = subprocess.run(
-        ["sphinx-build", "-M", "needs", src_dir, out_dir], capture_output=True
+        sphinx_build_command("-M", "needs", src_dir, out_dir), capture_output=True
     )
 
     # check there are expected warnings
@@ -67,7 +67,7 @@ def test_needs_dead_links_suppress_warnings(test_app):
     src_dir = Path(app.srcdir)
     out_dir = Path(app.outdir)
     output = subprocess.run(
-        ["sphinx-build", "-M", "html", src_dir, out_dir], capture_output=True
+        sphinx_build_command("-M", "html", src_dir, out_dir), capture_output=True
     )
 
     # check there are no warnings

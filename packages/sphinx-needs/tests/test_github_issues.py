@@ -5,7 +5,11 @@ from pathlib import Path
 import pytest
 from lxml import html as html_parser
 
-from sphinx_needs_testkit import assert_no_warnings, build_warnings
+from sphinx_needs_testkit import (
+    assert_no_warnings,
+    build_warnings,
+    sphinx_build_command,
+)
 
 
 @pytest.mark.parametrize(
@@ -24,7 +28,7 @@ def test_doc_github_44(test_app):
     app = test_app
 
     output = subprocess.run(
-        ["sphinx-build", "-a", "-E", "-b", "html", app.srcdir, app.outdir],
+        sphinx_build_command("-a", "-E", "-b", "html", app.srcdir, app.outdir),
         check=True,
         capture_output=True,
     )

@@ -6,6 +6,8 @@ from pathlib import Path
 import pytest
 from syrupy.filters import props
 
+from sphinx_needs_testkit import sphinx_build_command
+
 
 @pytest.mark.parametrize(
     "test_app",
@@ -70,7 +72,7 @@ def test_doc_needs_build_without_needs_file(test_app):
     out_dir = os.path.join(srcdir, "_build")
 
     out = subprocess.run(
-        ["sphinx-build", "-b", "needs", srcdir, out_dir], capture_output=True
+        sphinx_build_command("-b", "needs", srcdir, out_dir), capture_output=True
     )
     assert not out.stderr
     assert (
@@ -98,7 +100,7 @@ def test_needs_html_and_json(test_app):
     build_dir = os.path.join(app.outdir, "../needs")
     print(build_dir)
     output = subprocess.run(
-        ["sphinx-build", "-b", "needs", srcdir, build_dir],
+        sphinx_build_command("-b", "needs", srcdir, build_dir),
         capture_output=True,
     )
     print(output)

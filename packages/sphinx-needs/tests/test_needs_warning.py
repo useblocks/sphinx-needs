@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from sphinx import version_info
 
-from sphinx_needs_testkit import build_warnings
+from sphinx_needs_testkit import build_warnings, sphinx_build_command
 
 
 @pytest.mark.parametrize(
@@ -78,26 +78,26 @@ def test_needs_warnings_return_status_code(test_app):
 
     # Check return code when "-W --keep-going" not used
     out_normal = subprocess.run(
-        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
+        sphinx_build_command("-M", "html", srcdir, out_dir), capture_output=True
     )
     assert out_normal.returncode == 0
 
     # Check return code when only "-W" is used
     out_w = subprocess.run(
-        ["sphinx-build", "-M", "html", srcdir, out_dir, "-W"], capture_output=True
+        sphinx_build_command("-M", "html", srcdir, out_dir, "-W"), capture_output=True
     )
     assert out_w.returncode >= 1
 
     # Check return code when only "--keep-going" is used
     out_keep_going = subprocess.run(
-        ["sphinx-build", "-M", "html", srcdir, out_dir, "--keep-going"],
+        sphinx_build_command("-M", "html", srcdir, out_dir, "--keep-going"),
         capture_output=True,
     )
     assert out_keep_going.returncode == 0
 
     # Check return code when "-W --keep-going" is used
     out_w_keep_going = subprocess.run(
-        ["sphinx-build", "-M", "html", srcdir, out_dir, "-W", "--keep-going"],
+        sphinx_build_command("-M", "html", srcdir, out_dir, "-W", "--keep-going"),
         capture_output=True,
     )
     assert out_w_keep_going.returncode == 1
