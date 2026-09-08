@@ -92,6 +92,11 @@ class NeedtableHeader(nodes.entry):
     """A ``<th>`` of a needtable, carrying ``scope``, ``data-col`` and ``data-type``."""
 
 
+#: Sentinel for "the translator carried no ``starttag`` of its own", which is not the same
+#: as "it carried one whose value was ``None``".
+_NO_INSTANCE_STARTTAG = object()
+
+
 @contextmanager
 def _with_html_attributes(translator: Any, node: nodes.Element) -> Iterator[None]:
     """Add ``node["html_attributes"]`` to the start tag the base visitor emits.
@@ -102,10 +107,14 @@ def _with_html_attributes(translator: Any, node: nodes.Element) -> Iterator[None
     row classes, docutils' ``morecols``/``morerows``, the ``head``/``stub`` classes and
     the ``self.context`` push that ``depart_entry`` pops) belongs to those writers and
     changes between releases -- we delegate to them with ``starttag`` wrapped for the
-    duration of the one call.
+    duration of the one call, and RESTORED to whatever was there before -- which may be
+    another extension's own instance-level patch, installed by exactly this technique.
     """
     extra = node.get("html_attributes") or {}
     original = translator.starttag
+    # what the INSTANCE carried before, if anything: `del` would switch off another
+    # extension's patch for the rest of the document, silently
+    previous = translator.__dict__.get("starttag", _NO_INSTANCE_STARTTAG)
 
     def starttag(
         node_: nodes.Element,
@@ -122,7 +131,10 @@ def _with_html_attributes(translator: Any, node: nodes.Element) -> Iterator[None
     try:
         yield
     finally:
-        del translator.starttag
+        if previous is _NO_INSTANCE_STARTTAG:
+            del translator.starttag
+        else:
+            translator.starttag = previous
 
 
 def html_visit_needtable_table(translator: Any, node: NeedtableTable) -> None:

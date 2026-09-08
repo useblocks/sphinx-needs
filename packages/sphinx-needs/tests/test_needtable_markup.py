@@ -12,6 +12,7 @@ browser.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -356,3 +357,36 @@ def test_page_size_option_is_validated(test_app: SphinxTestApp) -> None:
     tree = html_parser.parse(str(Path(app.outdir, "index.html")))
     for table in tree.xpath("//table[contains(@class, 'NEEDS_DATATABLES')]"):
         assert table.get("data-needstable-page-size") == "10"
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needtable_translator_patch"}],
+    indirect=True,
+)
+def test_a_second_translator_patch_survives(test_app: SphinxTestApp) -> None:
+    """A needtable must not switch off another extension's `starttag` patch.
+
+    Putting the contract attributes on the table means wrapping the translator's
+    ``starttag`` for one call. Restoring that by DELETING the instance attribute would
+    remove whatever was there before -- and "whatever was there before" includes another
+    extension using the very same technique, which would then be silently off for the rest
+    of the document.
+    """
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    marked = re.findall(r"<p[^>]*>Paragraph (BEFORE|AFTER) the needtable", html)
+    assert marked == ["BEFORE", "AFTER"], html
+    for position in ("BEFORE", "AFTER"):
+        assert f'<p data-otherext="yes">Paragraph {position} the needtable' in html, (
+            position
+        )
+
+    # and the needtable's own contract attributes are still there, through the other
+    # extension's wrapper
+    assert 'data-otherext="yes"' in html
+    assert 'data-need-id="REQ_001"' in html
+    assert 'scope="col"' in html
