@@ -57,7 +57,12 @@ def install_styles_static_files(app: Sphinx, env: BuildEnvironment) -> None:
         str(dest_dir.joinpath("common_css")),
         lambda path: not path.endswith(".css"),
     )
-    for common_path in dest_dir.joinpath("common_css").glob("*.css"):
+    # Sphinx preserves registration order for stylesheets with the same priority.
+    # Sort by filename to keep generated HTML and the CSS cascade deterministic.
+    common_css_files = sorted(
+        dest_dir.joinpath("common_css").glob("*.css"), key=lambda path: path.name
+    )
+    for common_path in common_css_files:
         _add_css_file(app, common_path.relative_to(statics_dir))
 
     # Add theme css file
