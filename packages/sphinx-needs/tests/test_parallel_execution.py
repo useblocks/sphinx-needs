@@ -55,12 +55,12 @@ def test_doc_build_html(test_app):
     )
     assert (
         """<thead>
-<tr class="row-odd"><th class="head"><p>ID</p></th>
-<th class="head"><p>Title</p></th>
-<th class="head"><p>Status</p></th>
-<th class="head"><p>Type</p></th>
-<th class="head"><p>Outgoing</p></th>
-<th class="head"><p>Tags</p></th>
+<tr class="row-odd"><th class="head needs_col_id" data-col="id" scope="col"><p>ID</p></th>
+<th class="head needs_col_title" data-col="title" scope="col"><p>Title</p></th>
+<th class="head needs_col_status" data-col="status" scope="col"><p>Status</p></th>
+<th class="head needs_col_type" data-col="type" scope="col"><p>Type</p></th>
+<th class="head needs_col_outgoing" data-col="outgoing" scope="col"><p>Outgoing</p></th>
+<th class="head needs_col_tags" data-col="tags" scope="col"><p>Tags</p></th>
 </tr>
 </thead>
 """

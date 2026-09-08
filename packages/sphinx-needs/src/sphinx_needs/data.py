@@ -41,7 +41,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 7
+ENV_DATA_VERSION: Final = 8
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -51,6 +51,11 @@ Version 7 adds the resolved needflow presentation options to :class:`NeedsFlowTy
 They are read while the diagram is rendered, i.e. from the doctree, so an unbumped
 rebuild over an existing ``_build`` keeps the old doctrees and ends with a ``KeyError``
 rather than re-reading the document.
+
+Version 8 changes the HTML a needtable renders to (the markup contract in
+``design/needstable-contract.md``). The table is built at ``doctree-resolved``, so an
+unbumped rebuild over an existing ``_build`` writes no page whose source did not change
+and leaves DataTables-era markup on disk for the new client-side script to meet.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """

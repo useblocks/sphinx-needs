@@ -98,6 +98,15 @@ from sphinx_needs.directives.needservice import Needservice, NeedserviceDirectiv
 from sphinx_needs.directives.needtable import (
     Needtable,
     NeedtableDirective,
+    NeedtableHeader,
+    NeedtableRow,
+    NeedtableTable,
+    html_depart_needtable_header,
+    html_depart_needtable_row,
+    html_depart_needtable_table,
+    html_visit_needtable_header,
+    html_visit_needtable_row,
+    html_visit_needtable_table,
     process_needtables,
 )
 from sphinx_needs.directives.needuml import (
@@ -234,6 +243,23 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.add_node(Needimport)
     app.add_node(Needlist)
     app.add_node(Needtable)
+    # The three docutils sub-classes a needtable's HTML is built from. They exist only so
+    # that the HTML writers can emit attributes docutils has no other channel for (the
+    # markup contract in `design/needstable-contract.md`); NO other builder gets a
+    # visitor, so `SphinxTranslator.dispatch_visit` walks the MRO and latex, text,
+    # texinfo and man render them as the plain `table`/`row`/`entry` they subclass.
+    app.add_node(
+        NeedtableTable,
+        html=(html_visit_needtable_table, html_depart_needtable_table),
+    )
+    app.add_node(
+        NeedtableRow,
+        html=(html_visit_needtable_row, html_depart_needtable_row),
+    )
+    app.add_node(
+        NeedtableHeader,
+        html=(html_visit_needtable_header, html_depart_needtable_header),
+    )
     app.add_node(NeedflowPlantuml)
     app.add_node(NeedflowGraphiz, html=(html_visit_needflow_graphviz, None))
     app.add_node(Needpie)
