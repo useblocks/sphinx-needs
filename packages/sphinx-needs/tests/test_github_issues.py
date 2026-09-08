@@ -1,15 +1,10 @@
 import re
-import subprocess
 from pathlib import Path
 
 import pytest
 from lxml import html as html_parser
 
-from sphinx_needs_testkit import (
-    assert_no_warnings,
-    build_warnings,
-    sphinx_build_command,
-)
+from sphinx_needs_testkit import assert_no_warnings, build_warnings
 
 
 @pytest.mark.parametrize(
@@ -21,19 +16,10 @@ def test_doc_github_44(test_app):
     """
     https://github.com/useblocks/sphinxcontrib-needs/issues/44
     """
-    # Ugly workaround to get the sphinx build output.
-    # I have no glue how to get it from an app.build(), because stdout redirecting does not work. Maybe because
-    # nosetest is doing something similar for each test.
-    # So we call the needed command directly, but still use the sphinx_testing app to create the outdir for us.
     app = test_app
+    app.build()
+    assert app.statuscode == 0
 
-    output = subprocess.run(
-        sphinx_build_command("-a", "-E", "-b", "html", app.srcdir, app.outdir),
-        check=True,
-        capture_output=True,
-    )
-
-    # app.build() Uncomment, if build should stop on breakpoints
     html = Path(app.outdir, "index.html").read_text()
     assert "<h1>Github Issue 44 test" in html
     assert "Test 1" in html
@@ -45,10 +31,7 @@ def test_doc_github_44(test_app):
         "'test_123_broken' in field 'links' [needs.link_outgoing]"
     ]
 
-    assert (
-        build_warnings(output.stderr.decode("utf-8"), srcdir=app.srcdir)
-        == expected_warnings
-    )
+    assert build_warnings(app) == expected_warnings
 
 
 @pytest.mark.parametrize(
