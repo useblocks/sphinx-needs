@@ -41,7 +41,12 @@ def test_the_spawned_process_is_the_sphinx_this_interpreter_imports() -> None:
     version = subprocess.run(
         sphinx_build_command("--version"), capture_output=True, text=True, check=True
     )
-    assert version.stdout.strip() == f"{_BARE} {sphinx.__version__}"
+    # the VERSION, not the program name in front of it: measured, sphinx 7.4 answers
+    # `__main__.py 7.4.7` here and sphinx 9.1 `sphinx-build 9.1.0`, because only the newer
+    # series names the console script when it was not the console script that was run. The
+    # version is the half that says WHICH sphinx the subprocess got, which is the claim.
+    # Both series answer on stdout; neither writes anything to stderr.
+    assert version.stdout.split()[-1:] == [sphinx.__version__], version
 
 
 def test_no_test_in_this_tree_spawns_the_bare_command() -> None:
