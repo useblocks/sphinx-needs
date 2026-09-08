@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788887177387,
+  "lastUpdate": 1788887682290,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -20700,6 +20700,42 @@ window.BENCHMARK_DATA = {
             "value": 47.58694460200002,
             "unit": "s",
             "extra": "Commit: 77c455c562cdd45b9afcc837482bf21d1d85ef0d\nBranch: master\nTime: 2026-09-08T19:04:57+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "166810241+Peter-Baer@users.noreply.github.com",
+            "name": "Peter Bär",
+            "username": "Peter-Baer"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "865915d8d6e722103b3793e0ba7bbc05990a6050",
+          "message": "📚 Make each example's sentence the need's own content in roles.rst (#1201)\n\nBoth examples on the roles page — the `:need:` one and the\n`need_outgoing` one — become the content of the need they describe,\nrather than paragraphs after it.\n\nUntil #1919 this could not build: a `[[field]]` inside a need's content\nwas intercepted as the deprecated dynamic-function syntax (4.0.0, #1269)\nbefore the `:need:` role that carries it was resolved, so the first\nexample's `[[value]] [[unit]] …` line failed the `-W` docs build with\nten warnings once it sat inside the need. #1919 removed that scan for\n9.0.0 (#1906), and the `:need:` role's own template syntax now renders\ninside a need — that build was the acceptance test for #1919, with this\nbranch's diff applied.\n\nThe change itself is the original four lines; the branch was rebased\nafter the documentation moved under `packages/sphinx-needs/docs/`, and\nbrought up to date with `master` once #1919 landed.\n\n---------\n\nCo-authored-by: Chris Sewell <chrisj_sewell@hotmail.com>",
+          "timestamp": "2026-09-08T19:13:03+02:00",
+          "tree_id": "58fd568d8bb7af9cc7fe0aa3d59a79b7a4dbf19e",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/865915d8d6e722103b3793e0ba7bbc05990a6050"
+        },
+        "date": 1788887673379,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.11961463899999814,
+            "unit": "s",
+            "extra": "Commit: 865915d8d6e722103b3793e0ba7bbc05990a6050\nBranch: master\nTime: 2026-09-08T19:13:03+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 62.741815575,
+            "unit": "s",
+            "extra": "Commit: 865915d8d6e722103b3793e0ba7bbc05990a6050\nBranch: master\nTime: 2026-09-08T19:13:03+02:00"
           }
         ]
       }
