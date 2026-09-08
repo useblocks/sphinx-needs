@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788809339979,
+  "lastUpdate": 1788862552339,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -20520,6 +20520,42 @@ window.BENCHMARK_DATA = {
             "value": 60.403922064999996,
             "unit": "s",
             "extra": "Commit: dbb62b9d4435c6d6120284ee7678b7f724e37360\nBranch: master\nTime: 2026-09-07T21:27:25+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "alex@lanin.de",
+            "name": "Alexander Lanin",
+            "username": "AlexanderLanin"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "aaa815d981431ee36dc18f6fa559b1dab445ab98",
+          "message": "👌 register common CSS files deterministically (#1914)\n\n## Why\n\nCommon CSS files are discovered with `Path.glob()`, whose iteration\norder is not guaranteed. Because Sphinx emits same-priority stylesheets\nin registration order, this can make generated HTML and the CSS cascade\nvary between otherwise identical builds.\n\n## What changed\n\n- Sort common CSS paths by filename before registering them.\n- Add regression coverage asserting that registered common CSS files are\nordered deterministically.\n\nFixes #1913",
+          "timestamp": "2026-09-08T12:14:36+02:00",
+          "tree_id": "b55a504648aa700cfaf33285da18e56bf66a3338",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/aaa815d981431ee36dc18f6fa559b1dab445ab98"
+        },
+        "date": 1788862543515,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1339625749999982,
+            "unit": "s",
+            "extra": "Commit: aaa815d981431ee36dc18f6fa559b1dab445ab98\nBranch: master\nTime: 2026-09-08T12:14:36+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 45.453333617,
+            "unit": "s",
+            "extra": "Commit: aaa815d981431ee36dc18f6fa559b1dab445ab98\nBranch: master\nTime: 2026-09-08T12:14:36+02:00"
           }
         ]
       }
