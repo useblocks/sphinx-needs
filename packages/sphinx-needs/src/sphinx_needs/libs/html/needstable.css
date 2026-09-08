@@ -66,14 +66,29 @@ label.needstable-columns-item {
     gap: 0.4em;
 }
 
+/* a host may set a `font-size` on bare `label`, which the control inside it would then
+   faithfully inherit -- so the labels take the control bar's size explicitly */
+div.needstable label.needstable-search,
+div.needstable label.needstable-page-size,
+div.needstable label.needstable-columns-item {
+    font: inherit;
+    /* the `font` shorthand resets `line-height` to `normal`, and the control inside the
+       label would inherit that instead of the bar's -- which is a control two pixels
+       shorter than the buttons beside it */
+    line-height: inherit;
+}
+
 div.needstable input.needstable-search-input {
     flex: 1 1 auto;
     min-width: 6em;
     max-width: 18em;
-    padding: 0.15em 0.4em;
-    /* without this a host's compounding `font-size` cascade lands on the form controls
-       but not on the buttons beside them, and the two end up different sizes on one line */
-    font: inherit;
+    padding: 0.1em 0.4em;
+    /* Without this a host's compounding `font-size` cascade lands on the form controls
+       but not on the buttons beside them, and the two end up different sizes on one line.
+       The `!important` is the one in this sheet, and it is forced by a measurement: a host
+       theme sets `body, input { font-size: 16px !important }`, which nothing weaker can
+       answer, and the search box would be two points larger than everything beside it. */
+    font: inherit !important;
     line-height: inherit;
     color: inherit;
     background-color: transparent;
