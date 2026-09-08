@@ -656,6 +656,7 @@ cmd = """
 npx -y -p typescript@5.9.3 tsc
   --allowJs --checkJs --noEmit --strict --target es2020 --lib dom,es2020
   src/sphinx_needs/libs/html/needstable.js
+  src/sphinx_needs/libs/html/sphinx_needs_collapse.js
 """
 cwd = "packages/sphinx-needs"
 

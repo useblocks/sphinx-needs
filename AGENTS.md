@@ -79,7 +79,7 @@ uv run poe test-mounts                # the sphinx-mounts suite (bazel tests des
 uv run poe test-codelinks             # the sphinx-codelinks suite (adds the libclang group)
 uv run poe lint                       # every prek hook over the whole tree
 uv run poe typecheck                  # ty over both packages, against the oldest supported sphinx
-uv run poe typecheck-js-needs         # tsc over the vendored needstable.js (needs node)
+uv run poe typecheck-js-needs         # tsc over the two browser scripts (needs node)
 uv run poe docs-needs                 # the furo docs build
 uv run poe docs-mounts                # the sphinx-mounts docs build
 uv run poe docs-codelinks             # the sphinx-codelinks docs build
