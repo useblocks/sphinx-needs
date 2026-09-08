@@ -38,7 +38,7 @@ Twelve needs, sorted by id, so that the default page size of ten puts ``S_02`` a
 .. req:: Zeta requirement
    :id: R_06
    :status: closed
-   :amount: 3
+   :amount: -20
    :due: 2022-12-31
 
 .. req:: Eta requirement
@@ -50,7 +50,7 @@ Twelve needs, sorted by id, so that the default page size of ten puts ``S_02`` a
 .. req:: Theta requirement
    :id: R_08
    :status: closed
-   :amount: 8
+   :amount: -5
    :due: 2024-07-04
 
 .. req:: Iota requirement

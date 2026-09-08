@@ -1,38 +1,62 @@
+// @ts-check
 /*!
  * needstable.js -- in-place enhancement of a server-rendered needtable.
  *
  * Copyright (c) useblocks GmbH. MIT licence.
  *
- * sphinx-needs is the REPOSITORY OF RECORD for this file; ubCode vendors it
- * byte-identical behind a sha256 fence. Edits land here first. The markup this script
- * reads, the DOM it builds and the classes it uses are specified in
- * `packages/sphinx-needs/design/needstable-contract.md`; a change to that specification
- * bumps NEEDSTABLE_VERSION below.
+ * sphinx-needs is the REPOSITORY OF RECORD for this file. What it reads, what it builds
+ * and why it exists at all are specified in `design/needstable-contract.md` in this
+ * package; a change to that specification bumps NEEDSTABLE_VERSION below. A consumer that
+ * ships this asset vendors it byte-identical and records its sha256 and that version.
  *
  * It never re-renders. Every `<tr>` and `<td>` the server wrote is the same node
  * afterwards, so `:style_row:` classes, the per-cell `needs_*` classes, the links inside
  * cells and the `<colgroup>` all survive sorting, filtering and paging. Rows that are not
- * on the current page are DETACHED rather than hidden -- as DataTables and every other
- * paging table already did -- which is what keeps a ten-thousand-row table usable.
+ * on the current page are DETACHED rather than hidden -- as every paging table already
+ * did -- which is what keeps a ten-thousand-row table usable.
  *
- * No dependencies, no network, no `innerHTML`, no `eval`. It runs from `file://` and
- * under `script-src 'self'` or a nonce.
+ * Requirements it holds itself to, so that any documentation builder or restrictive host
+ * can embed it unchanged: a classic script (no ES modules, no dynamic imports, no
+ * workers), no network access, no `eval` and no `innerHTML`, no dependencies, and
+ * CSP-clean under a strict `script-src`.
+ *
+ * Plain ES2020 JavaScript, type-checked through JSDoc; the design document carries the
+ * one-line `tsc` recipe.
  */
 
 (function () {
     "use strict";
 
     /** The version of the markup + DOM contract this file implements. */
-    var NEEDSTABLE_VERSION = "1";
+    const NEEDSTABLE_VERSION = "1";
 
     /** The class a `<table>` must carry to be enhanced. */
-    var HOOK_CLASS = "NEEDS_DATATABLES";
+    const HOOK_CLASS = "NEEDS_DATATABLES";
 
-    /** Where the instance is parked on the table element, for idempotent init. */
-    var INSTANCE_KEY = "__needstable";
+    /** The class that hides a column the reader switched off. */
+    const HIDDEN_CLASS = "needstable-hidden";
 
-    /** English defaults; `data-needstable-labels` (a JSON object) overrides any of them. */
-    var LABELS = {
+    /**
+     * Every string the widget shows. A producer overrides any of them through
+     * `data-needstable-labels`; this file ships no translation catalogues.
+     *
+     * @typedef {object} NeedstableLabels
+     * @property {string} search
+     * @property {string} rowsPerPage
+     * @property {string} all
+     * @property {string} columns
+     * @property {string} copy
+     * @property {string} csv
+     * @property {string} info `{start}`, `{end}` and `{total}` are substituted
+     * @property {string} empty
+     * @property {string} pagination
+     * @property {string} previous
+     * @property {string} next
+     * @property {string} sort `{column}` is substituted
+     */
+
+    /** @type {NeedstableLabels} */
+    const LABELS = {
         search: "Search",
         rowsPerPage: "Rows per page",
         all: "All",
@@ -42,39 +66,84 @@
         info: "Showing {start}–{end} of {total}",
         empty: "No matching rows",
         pagination: "Pagination",
-        first: "First",
         previous: "Previous",
         next: "Next",
-        last: "Last",
         sort: "{column}: sort",
     };
 
-    var DEFAULTS = {
+    /**
+     * @typedef {object} NeedstableOptions
+     * @property {number} pageSize rows per page; `0` means all of them
+     * @property {number[]} pageSizes the sizes offered, `0` meaning "All"
+     * @property {Partial<NeedstableLabels>} [labels]
+     */
+
+    /** @type {NeedstableOptions} */
+    const DEFAULTS = {
         pageSize: 10,
         pageSizes: [10, 25, 50, 0],
     };
 
+    /**
+     * A need row and the part rows that belong to it: one unit for sorting, filtering
+     * and paging alike.
+     *
+     * @typedef {object} NeedstableGroup
+     * @property {HTMLTableRowElement} lead the need row the group sorts by
+     * @property {HTMLTableRowElement[]} rows the lead row, then its part rows
+     * @property {string | null} needId the lead row's `data-need-id`
+     * @property {string} text every row's text, lower-cased, for the filter
+     */
+
+    /**
+     * A `<table>` that may already carry an instance.
+     *
+     * @typedef {HTMLTableElement & {__needstable?: NeedsTable}} EnhancedTable
+     */
+
+    /**
+     * How a column is compared: declared by the producer, or detected from the values.
+     *
+     * @typedef {"text" | "number" | "date"} ColumnType
+     */
+
     /* ----------------------------------------------------------------- helpers */
 
+    /**
+     * @template {keyof HTMLElementTagNameMap} K
+     * @param {K} tag
+     * @param {string} [className]
+     * @returns {HTMLElementTagNameMap[K]}
+     */
     function element(tag, className) {
-        var node = document.createElement(tag);
+        const node = document.createElement(tag);
         if (className) {
             node.className = className;
         }
         return node;
     }
 
-    /** An element's text, trimmed, with runs of whitespace collapsed to one space. */
+    /**
+     * An element's text, trimmed, with runs of whitespace collapsed to one space.
+     *
+     * @param {Element} node
+     * @returns {string}
+     */
     function cellText(node) {
         return (node.textContent || "").replace(/\s+/g, " ").trim();
     }
 
-    /** The value a cell sorts and exports by: `data-sort` when given, else its text. */
+    /**
+     * The value a cell sorts and exports by: `data-sort` when given, else its text.
+     *
+     * @param {HTMLTableCellElement | undefined} cell
+     * @returns {string}
+     */
     function cellValue(cell) {
         if (!cell) {
             return "";
         }
-        var override = cell.getAttribute("data-sort");
+        const override = cell.getAttribute("data-sort");
         return override === null ? cellText(cell) : override.trim();
     }
 
@@ -85,14 +154,17 @@
      * comma and a full stop are present the RIGHTMOST is the decimal mark and the other
      * groups digits; a lone comma groups digits only when the whole string looks like
      * `1,234,567`, and is a decimal mark otherwise.
+     *
+     * @param {string} text
+     * @returns {number} `NaN` when the text is not a number
      */
     function toNumber(text) {
-        var value = String(text).replace(/[\s\u00a0\u202f%]/g, "");
+        let value = String(text).replace(/[\s\u00a0\u202f%]/g, "");
         if (!value) {
             return NaN;
         }
-        var comma = value.lastIndexOf(",");
-        var dot = value.lastIndexOf(".");
+        const comma = value.lastIndexOf(",");
+        const dot = value.lastIndexOf(".");
         if (comma >= 0 && dot >= 0) {
             value =
                 comma > dot
@@ -103,33 +175,41 @@
                 ? value.replace(/,/g, "")
                 : value.replace(",", ".");
         }
-        var number = Number(value);
+        const number = Number(value);
         return Number.isFinite(number) ? number : NaN;
     }
 
-    /** Parse a date out of rendered text: ISO 8601 first, then whatever the engine takes. */
+    /**
+     * Parse a date out of rendered text: ISO 8601 first, then whatever the engine takes.
+     *
+     * @param {string} text
+     * @returns {number} milliseconds since the epoch, or `NaN`
+     */
     function toDate(text) {
-        var value = String(text).trim();
+        const value = String(text).trim();
         if (!value) {
             return NaN;
         }
         if (/^\d{4}-\d{2}-\d{2}([T ]\d{2}:\d{2}(:\d{2})?)?/.test(value)) {
             return Date.parse(value.length === 10 ? value + "T00:00:00Z" : value);
         }
-        var parsed = Date.parse(value);
-        return Number.isNaN(parsed) ? NaN : parsed;
+        return Date.parse(value);
     }
 
-    var collator = new Intl.Collator(undefined, {
+    const collator = new Intl.Collator(undefined, {
         numeric: true,
         sensitivity: "base",
     });
 
+    /**
+     * @param {ColumnType} type
+     * @returns {(left: string, right: string) => number}
+     */
     function comparatorFor(type) {
         if (type === "number") {
-            return function (left, right) {
-                var a = toNumber(left);
-                var b = toNumber(right);
+            return (left, right) => {
+                const a = toNumber(left);
+                const b = toNumber(right);
                 if (Number.isNaN(a) && Number.isNaN(b)) {
                     return collator.compare(left, right);
                 }
@@ -143,9 +223,9 @@
             };
         }
         if (type === "date") {
-            return function (left, right) {
-                var a = toDate(left);
-                var b = toDate(right);
+            return (left, right) => {
+                const a = toDate(left);
+                const b = toDate(right);
                 if (Number.isNaN(a) && Number.isNaN(b)) {
                     return collator.compare(left, right);
                 }
@@ -158,18 +238,21 @@
                 return a - b;
             };
         }
-        return function (left, right) {
-            return collator.compare(left, right);
-        };
+        return (left, right) => collator.compare(left, right);
     }
 
-    /** Guess a column's type from up to 50 non-empty values. */
+    /**
+     * Guess a column's type from up to fifty non-empty values.
+     *
+     * @param {string[]} values
+     * @returns {ColumnType}
+     */
     function detectType(values) {
-        var seen = 0;
-        var numbers = 0;
-        var dates = 0;
-        for (var index = 0; index < values.length && seen < 50; index += 1) {
-            var value = values[index];
+        let seen = 0;
+        let numbers = 0;
+        let dates = 0;
+        for (let index = 0; index < values.length && seen < 50; index += 1) {
+            const value = values[index];
             if (!value) {
                 continue;
             }
@@ -192,34 +275,52 @@
         return "text";
     }
 
-    /** RFC 4180: quote a field that holds a comma, a quote or a line break. */
+    /**
+     * RFC 4180: quote a field that holds a comma, a quote or a line break.
+     *
+     * @param {string} value
+     * @returns {string}
+     */
     function csvField(value) {
         return /[",\r\n]/.test(value) ? '"' + value.replace(/"/g, '""') + '"' : value;
     }
 
+    /**
+     * @param {string} text a label holding `{name}` placeholders
+     * @param {Record<string, string | number>} values
+     * @returns {string}
+     */
     function template(text, values) {
-        return text.replace(/\{(\w+)\}/g, function (whole, name) {
-            return Object.prototype.hasOwnProperty.call(values, name)
+        return text.replace(/\{(\w+)\}/g, (whole, name) =>
+            Object.prototype.hasOwnProperty.call(values, name)
                 ? String(values[name])
-                : whole;
-        });
+                : whole,
+        );
     }
 
-    /** Read this table's `data-needstable-*` options. */
+    /**
+     * Read a table's `data-needstable-*` options. Anything malformed is ignored, so that
+     * a bad attribute degrades to the default rather than to no table at all.
+     *
+     * @param {HTMLTableElement} table
+     * @returns {Partial<NeedstableOptions>}
+     */
     function readOptions(table) {
-        var options = {};
-        var pageSize = table.getAttribute("data-needstable-page-size");
+        /** @type {Partial<NeedstableOptions>} */
+        const options = {};
+        const pageSize = table.getAttribute("data-needstable-page-size");
         if (pageSize !== null) {
-            var parsed = parseInt(pageSize, 10);
+            const parsed = parseInt(pageSize, 10);
             if (Number.isFinite(parsed) && parsed >= 0) {
                 options.pageSize = parsed;
             }
         }
-        var pageSizes = table.getAttribute("data-needstable-page-sizes");
+        const pageSizes = table.getAttribute("data-needstable-page-sizes");
         if (pageSizes !== null) {
-            var sizes = [];
-            pageSizes.split(",").forEach(function (entry) {
-                var size = parseInt(entry, 10);
+            /** @type {number[]} */
+            const sizes = [];
+            pageSizes.split(",").forEach((entry) => {
+                const size = parseInt(entry, 10);
                 if (Number.isFinite(size) && size >= 0 && sizes.indexOf(size) === -1) {
                     sizes.push(size);
                 }
@@ -228,10 +329,10 @@
                 options.pageSizes = sizes;
             }
         }
-        var labels = table.getAttribute("data-needstable-labels");
+        const labels = table.getAttribute("data-needstable-labels");
         if (labels !== null) {
             try {
-                var parsedLabels = JSON.parse(labels);
+                const parsedLabels = JSON.parse(labels);
                 if (parsedLabels && typeof parsedLabels === "object") {
                     options.labels = parsedLabels;
                 }
@@ -242,541 +343,29 @@
         return options;
     }
 
-    function assign(target) {
-        for (var index = 1; index < arguments.length; index += 1) {
-            var source = arguments[index];
-            if (!source) {
-                continue;
-            }
-            Object.keys(source).forEach(function (key) {
-                target[key] = source[key];
-            });
-        }
-        return target;
-    }
-
-    /* -------------------------------------------------------------- the instance */
-
     /**
-     * @param {HTMLTableElement} table the server-rendered table, enhanced in place
-     * @param {object} [options] overrides for the `data-needstable-*` options
-     */
-    function NeedsTable(table, options) {
-        this.table = table;
-        this.options = assign({}, DEFAULTS, readOptions(table), options || {});
-        this.labels = assign({}, LABELS, this.options.labels || {});
-
-        this.head = table.tHead;
-        this.headers = this.head
-            ? Array.prototype.slice.call(this.head.rows[this.head.rows.length - 1].cells)
-            : [];
-        this.body = table.tBodies[0];
-        /** every body row, in the order the server wrote them -- never re-ordered */
-        this.rows = this.body ? Array.prototype.slice.call(this.body.rows) : [];
-        this.colgroup = table.querySelector("colgroup");
-        this.cols = this.colgroup
-            ? Array.prototype.slice.call(this.colgroup.children)
-            : [];
-        if (this.cols.length !== this.headers.length) {
-            /* a colgroup that does not describe these columns is left alone */
-            this.cols = [];
-        }
-        /* every CHILD NODE, not only the elements: the text nodes between them are part
-           of the document the server wrote, and `destroy()` owes them back */
-        this.bodyNodes = this.body
-            ? Array.prototype.slice.call(this.body.childNodes)
-            : [];
-        this.colgroupNodes = this.colgroup
-            ? Array.prototype.slice.call(this.colgroup.childNodes)
-            : [];
-
-        this.hiddenColumns = this.headers.map(function () {
-            return false;
-        });
-        this.sortColumn = -1;
-        /** 0 = unsorted (the server's `:sort:` order), 1 = ascending, -1 = descending */
-        this.sortDirection = 0;
-        this.query = "";
-        this.pageSize = this.options.pageSize;
-        if (this.options.pageSizes.indexOf(this.pageSize) === -1) {
-            /* a producer may name a page size that is not among the offered ones; the
-               control has to be able to show the size the table is actually using */
-            this.options.pageSizes = this.options.pageSizes
-                .concat([this.pageSize])
-                .sort(function (left, right) {
-                    /* 0 means "All" and belongs at the end, not at the start */
-                    if (left === 0 || right === 0) {
-                        return left === 0 ? 1 : -1;
-                    }
-                    return left - right;
-                });
-        }
-        this.page = 0;
-        this.searchTimer = null;
-
-        this.groups = this.buildGroups();
-        this.types = this.detectTypes();
-        this.view = this.groups.slice();
-
-        this.buildControls();
-        this.update();
-    }
-
-    /**
-     * A need row and the part rows belonging to it are ONE unit: they sort together, and
-     * a filter that matches any of their text keeps all of them.
+     * Order page sizes for the control: `0` ("All") comes after every real size.
      *
-     * Rows are read in document order. Anything that is not `tr.need_part` starts a
-     * group. A `tr.need_part` joins the group being built when its `data-parent` names
-     * that group's need, or -- when it carries no `data-parent` -- because it follows it
-     * (the adjacency fallback, for a producer that does not emit the attribute).
-     * Otherwise it is a group of its own. Groups are therefore contiguous runs of the
-     * source order, which is what lets the unsorted state restore that order exactly.
+     * @param {number} left
+     * @param {number} right
+     * @returns {number}
      */
-    NeedsTable.prototype.buildGroups = function () {
-        var groups = [];
-        var current = null;
-        this.rows.forEach(function (row) {
-            var isPart = row.classList.contains("need_part");
-            if (isPart && current) {
-                var parent = row.getAttribute("data-parent");
-                if (parent === null || parent === current.needId) {
-                    current.rows.push(row);
-                    return;
-                }
-            }
-            current = {
-                lead: row,
-                rows: [row],
-                needId: row.getAttribute("data-need-id"),
-                text: "",
-            };
-            groups.push(current);
-        });
-        groups.forEach(function (group) {
-            var text = group.rows
-                .map(function (row) {
-                    return cellText(row);
-                })
-                .join(" ");
-            group.text = text.toLowerCase();
-        });
-        return groups;
-    };
-
-    NeedsTable.prototype.detectTypes = function () {
-        var self = this;
-        return this.headers.map(function (header, index) {
-            var declared = header.getAttribute("data-type");
-            if (declared) {
-                return declared;
-            }
-            return detectType(
-                self.groups.map(function (group) {
-                    return cellValue(group.lead.cells[index]);
-                }),
-            );
-        });
-    };
-
-    /* ------------------------------------------------------------------ the DOM */
-
-    NeedsTable.prototype.buildControls = function () {
-        var self = this;
-        var table = this.table;
-
-        this.wrapper = element("div", "needstable");
-        table.parentNode.insertBefore(this.wrapper, table);
-        this.controls = element("div", "needstable-controls");
-        this.footer = element("div", "needstable-footer");
-        this.wrapper.appendChild(this.controls);
-        this.wrapper.appendChild(table);
-        this.wrapper.appendChild(this.footer);
-
-        /* search */
-        var searchLabel = element("label", "needstable-search");
-        var searchText = element("span", "needstable-label");
-        searchText.textContent = this.labels.search;
-        this.searchInput = element("input", "needstable-search-input");
-        this.searchInput.type = "search";
-        this.searchInput.placeholder = this.labels.search;
-        this.searchInput.addEventListener("input", function () {
-            if (self.searchTimer !== null) {
-                clearTimeout(self.searchTimer);
-            }
-            self.searchTimer = setTimeout(function () {
-                self.searchTimer = null;
-                self.query = self.searchInput.value.trim().toLowerCase();
-                self.page = 0;
-                self.update();
-            }, 100);
-        });
-        searchLabel.appendChild(searchText);
-        searchLabel.appendChild(this.searchInput);
-        this.controls.appendChild(searchLabel);
-
-        /* page size */
-        var sizeLabel = element("label", "needstable-page-size");
-        var sizeText = element("span", "needstable-label");
-        sizeText.textContent = this.labels.rowsPerPage;
-        this.sizeSelect = element("select", "needstable-page-size-select");
-        this.options.pageSizes.forEach(function (size) {
-            var option = element("option");
-            option.value = String(size);
-            option.textContent = size === 0 ? self.labels.all : String(size);
-            if (size === self.pageSize) {
-                option.selected = true;
-            }
-            self.sizeSelect.appendChild(option);
-        });
-        this.sizeSelect.addEventListener("change", function () {
-            self.pageSize = parseInt(self.sizeSelect.value, 10) || 0;
-            self.page = 0;
-            self.update();
-        });
-        sizeLabel.appendChild(sizeText);
-        sizeLabel.appendChild(this.sizeSelect);
-        this.controls.appendChild(sizeLabel);
-
-        /* column visibility -- a native disclosure, so nothing has to manage a popover */
-        this.columnsDetails = element("details", "needstable-columns");
-        var summary = element("summary", "needstable-columns-summary");
-        summary.textContent = this.labels.columns;
-        this.columnsDetails.appendChild(summary);
-        var list = element("div", "needstable-columns-list");
-        this.headers.forEach(function (header, index) {
-            var itemLabel = element("label", "needstable-columns-item");
-            var checkbox = element("input");
-            checkbox.type = "checkbox";
-            checkbox.checked = true;
-            checkbox.addEventListener("change", function () {
-                self.hiddenColumns[index] = !checkbox.checked;
-                self.applyColumnVisibility();
-                self.update();
-            });
-            var name = element("span");
-            name.textContent = cellText(header);
-            itemLabel.appendChild(checkbox);
-            itemLabel.appendChild(name);
-            list.appendChild(itemLabel);
-        });
-        this.columnsDetails.appendChild(list);
-        this.controls.appendChild(this.columnsDetails);
-
-        /* export */
-        this.copyButton = element("button", "needstable-button needstable-copy");
-        this.copyButton.type = "button";
-        this.copyButton.textContent = this.labels.copy;
-        this.copyButton.addEventListener("click", function () {
-            self.copy();
-        });
-        this.controls.appendChild(this.copyButton);
-
-        this.csvButton = element("button", "needstable-button needstable-csv");
-        this.csvButton.type = "button";
-        this.csvButton.textContent = this.labels.csv;
-        this.csvButton.addEventListener("click", function () {
-            self.downloadCsv();
-        });
-        this.controls.appendChild(this.csvButton);
-
-        /* sortable headers: the header's own content becomes the button's label */
-        this.sortButtons = this.headers.map(function (header, index) {
-            var host =
-                header.children.length === 1 &&
-                header.firstElementChild.tagName === "P"
-                    ? header.firstElementChild
-                    : header;
-            var button = element("button", "needstable-sort");
-            button.type = "button";
-            var name = cellText(header);
-            button.setAttribute(
-                "aria-label",
-                template(self.labels.sort, { column: name }),
-            );
-            while (host.firstChild) {
-                button.appendChild(host.firstChild);
-            }
-            host.appendChild(button);
-            header.setAttribute("aria-sort", "none");
-            button.addEventListener("click", function () {
-                self.toggleSort(index);
-            });
-            return button;
-        });
-
-        /* footer: the live region, then the pager */
-        this.info = element("div", "needstable-info");
-        this.info.setAttribute("aria-live", "polite");
-        this.pager = element("nav", "needstable-pager");
-        this.pager.setAttribute("aria-label", this.labels.pagination);
-        this.footer.appendChild(this.info);
-        this.footer.appendChild(this.pager);
-    };
-
-    /** Hide or show a column: the header, every cell, and the `<col>` that sizes it. */
-    NeedsTable.prototype.applyColumnVisibility = function () {
-        var hidden = this.hiddenColumns;
-        this.headers.forEach(function (header, index) {
-            header.classList.toggle("needstable-hidden", hidden[index]);
-        });
-        /* the rows on the page are synced by `paint()`; a detached row is synced when
-           it is next painted, so there is nothing to walk here */
-        if (this.cols.length) {
-            var anyHidden = hidden.some(Boolean);
-            var kept = anyHidden
-                ? this.cols.filter(function (col, index) {
-                      return !hidden[index];
-                  })
-                : this.colgroupNodes;
-            this.colgroup.replaceChildren.apply(this.colgroup, kept);
+    function bySize(left, right) {
+        if (left === 0 || right === 0) {
+            return left === 0 ? 1 : -1;
         }
-    };
+        return left - right;
+    }
 
-    /* --------------------------------------------------------------- behaviours */
-
-    /** none -> ascending -> descending -> none. */
-    NeedsTable.prototype.toggleSort = function (index) {
-        if (this.sortColumn !== index) {
-            this.sortColumn = index;
-            this.sortDirection = 1;
-        } else if (this.sortDirection === 1) {
-            this.sortDirection = -1;
-        } else {
-            this.sortColumn = -1;
-            this.sortDirection = 0;
-        }
-        this.page = 0;
-        this.update();
-    };
-
-    NeedsTable.prototype.update = function () {
-        var self = this;
-        var query = this.query;
-        this.view = query
-            ? this.groups.filter(function (group) {
-                  return group.text.indexOf(query) !== -1;
-              })
-            : this.groups.slice();
-
-        if (this.sortDirection !== 0 && this.sortColumn >= 0) {
-            var column = this.sortColumn;
-            var direction = this.sortDirection;
-            var compare = comparatorFor(this.types[column]);
-            /* decorate-sort-undecorate keeps the sort stable and the comparator cheap */
-            var decorated = this.view.map(function (group, position) {
-                return {
-                    group: group,
-                    position: position,
-                    value: cellValue(group.lead.cells[column]),
-                };
-            });
-            decorated.sort(function (left, right) {
-                if (left.value === "" || right.value === "") {
-                    /* empty cells sort last whichever way the column is pointing */
-                    if (left.value === right.value) {
-                        return left.position - right.position;
-                    }
-                    return left.value === "" ? 1 : -1;
-                }
-                var order = compare(left.value, right.value);
-                if (order !== 0) {
-                    return direction * order;
-                }
-                return left.position - right.position;
-            });
-            this.view = decorated.map(function (entry) {
-                return entry.group;
-            });
-        }
-
-        this.headers.forEach(function (header, index) {
-            var state = "none";
-            if (index === self.sortColumn && self.sortDirection === 1) {
-                state = "ascending";
-            } else if (index === self.sortColumn && self.sortDirection === -1) {
-                state = "descending";
-            }
-            header.setAttribute("aria-sort", state);
-        });
-
-        this.paint();
-    };
-
-    /** Attach only the current page's rows; the rest stay out of the document. */
-    NeedsTable.prototype.paint = function () {
-        var self = this;
-        var groupCount = this.view.length;
-        var size = this.pageSize || groupCount || 1;
-        var pageCount = Math.max(1, Math.ceil(groupCount / size));
-        if (this.page >= pageCount) {
-            this.page = pageCount - 1;
-        }
-        var from = this.page * size;
-        var to = Math.min(groupCount, from + size);
-
-        var fragment = document.createDocumentFragment();
-        var shownRows = 0;
-        for (var index = from; index < to; index += 1) {
-            this.view[index].rows.forEach(function (row) {
-                for (var cell = 0; cell < row.cells.length; cell += 1) {
-                    row.cells[cell].classList.toggle(
-                        "needstable-hidden",
-                        Boolean(self.hiddenColumns[cell]),
-                    );
-                }
-                fragment.appendChild(row);
-                shownRows += 1;
-            });
-        }
-        if (this.body) {
-            this.body.replaceChildren(fragment);
-        }
-
-        this.info.textContent = groupCount
-            ? template(this.labels.info, {
-                  start: from + 1,
-                  end: to,
-                  total: groupCount,
-              })
-            : this.labels.empty;
-        this.paintPager(pageCount);
-        return shownRows;
-    };
-
-    NeedsTable.prototype.paintPager = function (pageCount) {
-        var self = this;
-        this.pager.replaceChildren();
-        /* one page needs no pager at all */
-        this.pager.hidden = pageCount <= 1;
-        if (pageCount <= 1) {
-            return;
-        }
-
-        var makeButton = function (label, page, disabled, current, className) {
-            var button = element("button", "needstable-page " + className);
-            button.type = "button";
-            button.textContent = label;
-            button.disabled = Boolean(disabled);
-            if (current) {
-                button.setAttribute("aria-current", "page");
-            }
-            button.addEventListener("click", function () {
-                self.page = page;
-                self.paint();
-            });
-            return button;
-        };
-        var addEllipsis = function () {
-            var span = element("span", "needstable-ellipsis");
-            span.textContent = "…";
-            self.pager.appendChild(span);
-        };
-
-        this.pager.appendChild(
-            makeButton(
-                this.labels.previous,
-                this.page - 1,
-                this.page === 0,
-                false,
-                "needstable-page-previous",
-            ),
-        );
-        var wanted = [0, pageCount - 1];
-        for (var page = this.page - 1; page <= this.page + 1; page += 1) {
-            if (page >= 0 && page < pageCount && wanted.indexOf(page) === -1) {
-                wanted.push(page);
-            }
-        }
-        wanted.sort(function (left, right) {
-            return left - right;
-        });
-        var previous = -1;
-        wanted.forEach(function (page) {
-            if (previous >= 0 && page - previous > 1) {
-                addEllipsis();
-            }
-            self.pager.appendChild(
-                makeButton(
-                    String(page + 1),
-                    page,
-                    false,
-                    page === self.page,
-                    "needstable-page-number",
-                ),
-            );
-            previous = page;
-        });
-        this.pager.appendChild(
-            makeButton(
-                this.labels.next,
-                this.page + 1,
-                this.page === pageCount - 1,
-                false,
-                "needstable-page-next",
-            ),
-        );
-    };
-
-    /* ------------------------------------------------------------------ export */
-
-    /** Header plus one line per row of every group the filter matches -- not per page. */
-    NeedsTable.prototype.matrix = function () {
-        var self = this;
-        var keep = function (_value, index) {
-            return !self.hiddenColumns[index];
-        };
-        var rows = [
-            this.headers
-                .filter(keep)
-                .map(function (header) {
-                    return cellText(header);
-                }),
-        ];
-        this.view.forEach(function (group) {
-            group.rows.forEach(function (row) {
-                rows.push(
-                    Array.prototype.slice
-                        .call(row.cells)
-                        .filter(keep)
-                        .map(function (cell) {
-                            return cellText(cell);
-                        }),
-                );
-            });
-        });
-        return rows;
-    };
-
-    NeedsTable.prototype.tsv = function () {
-        return this.matrix()
-            .map(function (row) {
-                return row.join("\t");
-            })
-            .join("\n");
-    };
-
-    /** RFC 4180: CRLF line endings, quoted fields, doubled embedded quotes. */
-    NeedsTable.prototype.csv = function () {
-        return this.matrix()
-            .map(function (row) {
-                return row.map(csvField).join(",");
-            })
-            .join("\r\n");
-    };
-
-    NeedsTable.prototype.copy = function () {
-        var text = this.tsv();
+    /**
+     * Copy through the pre-async-clipboard route, for a browser or an origin that has no
+     * usable `navigator.clipboard`.
+     *
+     * @param {string} text
+     */
+    function copyWithExecCommand(text) {
         try {
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(text);
-                return;
-            }
-        } catch (error) {
-            /* fall through to the pre-async-clipboard route below */
-        }
-        try {
-            var area = element("textarea", "needstable-clipboard");
+            const area = element("textarea", "needstable-clipboard");
             area.value = text;
             area.setAttribute("aria-hidden", "true");
             document.body.appendChild(area);
@@ -786,69 +375,615 @@
         } catch (error) {
             /* a browser that allows neither route silently copies nothing */
         }
-    };
+    }
 
-    NeedsTable.prototype.downloadCsv = function () {
-        /* the BOM is what makes Excel open a UTF-8 CSV as UTF-8 */
-        var blob = new Blob(["\ufeff" + this.csv()], {
-            type: "text/csv;charset=utf-8",
-        });
-        var url = URL.createObjectURL(blob);
-        var link = element("a", "needstable-download");
-        link.href = url;
-        link.download = (this.table.id || "needtable") + ".csv";
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        setTimeout(function () {
-            URL.revokeObjectURL(url);
-        }, 0);
-    };
+    /* -------------------------------------------------------------- the instance */
 
-    /* ----------------------------------------------------------------- teardown */
+    class NeedsTable {
+        /**
+         * @param {HTMLTableElement} table the server-rendered table, enhanced in place
+         * @param {Partial<NeedstableOptions>} [options] overrides for the attributes
+         */
+        constructor(table, options) {
+            /** @type {HTMLTableElement} */
+            this.table = table;
+            /** @type {NeedstableOptions} */
+            this.options = Object.assign(
+                {},
+                DEFAULTS,
+                readOptions(table),
+                options || {},
+            );
+            /** @type {NeedstableLabels} */
+            this.labels = Object.assign({}, LABELS, this.options.labels || {});
 
-    /** Put the table back exactly as the server wrote it. */
-    NeedsTable.prototype.destroy = function () {
-        var self = this;
-
-        this.hiddenColumns = this.hiddenColumns.map(function () {
-            return false;
-        });
-        this.applyColumnVisibility();
-        this.rows.forEach(function (row) {
-            for (var index = 0; index < row.cells.length; index += 1) {
-                row.cells[index].classList.remove("needstable-hidden");
+            const head = table.tHead;
+            /** @type {HTMLTableCellElement[]} */
+            this.headers = head
+                ? Array.from(head.rows[head.rows.length - 1].cells)
+                : [];
+            /** @type {HTMLTableSectionElement | undefined} */
+            this.body = table.tBodies[0];
+            /**
+             * Every body row, in the order the server wrote them. Never re-ordered: the
+             * view is a list of groups, and this is what "unsorted" restores.
+             *
+             * @type {HTMLTableRowElement[]}
+             */
+            this.rows = this.body ? Array.from(this.body.rows) : [];
+            /** @type {HTMLTableColElement | null} */
+            this.colgroup = table.querySelector("colgroup");
+            /** @type {Element[]} */
+            this.cols = this.colgroup ? Array.from(this.colgroup.children) : [];
+            if (this.cols.length !== this.headers.length) {
+                /* a colgroup that does not describe these columns is left alone */
+                this.cols = [];
             }
-        });
-        this.headers.forEach(function (header) {
-            header.classList.remove("needstable-hidden");
-            header.removeAttribute("aria-sort");
-        });
-        this.sortButtons.forEach(function (button) {
-            var host = button.parentNode;
-            while (button.firstChild) {
-                host.insertBefore(button.firstChild, button);
+            /* every CHILD NODE, not only the elements: the text nodes between them are
+               part of the document the server wrote, and `destroy()` owes them back */
+            /** @type {ChildNode[]} */
+            this.bodyNodes = this.body ? Array.from(this.body.childNodes) : [];
+            /** @type {ChildNode[]} */
+            this.colgroupNodes = this.colgroup
+                ? Array.from(this.colgroup.childNodes)
+                : [];
+
+            /** @type {boolean[]} */
+            this.hiddenColumns = this.headers.map(() => false);
+            /** @type {number} the column being sorted, or `-1` for none */
+            this.sortColumn = -1;
+            /** @type {number} 0 = unsorted (the server's order), 1 = up, -1 = down */
+            this.sortDirection = 0;
+            /** @type {string} */
+            this.query = "";
+            /** @type {number} */
+            this.pageSize = this.options.pageSize;
+            if (this.options.pageSizes.indexOf(this.pageSize) === -1) {
+                /* a producer may name a page size that is not among the offered ones;
+                   the control has to be able to show the size the table is using */
+                this.options.pageSizes = this.options.pageSizes
+                    .concat([this.pageSize])
+                    .sort(bySize);
             }
-            button.remove();
-        });
-        if (this.body) {
-            /* every node goes back, in the order the server wrote them */
-            this.body.replaceChildren.apply(this.body, this.bodyNodes);
+            /** @type {number} */
+            this.page = 0;
+            /** @type {number | undefined} */
+            this.searchTimer = undefined;
+
+            /** @type {NeedstableGroup[]} */
+            this.groups = this.buildGroups();
+            /** @type {ColumnType[]} */
+            this.types = this.detectTypes();
+            /** @type {NeedstableGroup[]} what the filter and sort leave, in order */
+            this.view = this.groups.slice();
+
+            /* the widget's own elements, created here so that every field this instance
+               has is declared in one place; `buildControls` configures and assembles them */
+            this.wrapper = element("div", "needstable");
+            this.controls = element("div", "needstable-controls");
+            this.footer = element("div", "needstable-footer");
+            this.searchInput = element("input", "needstable-search-input");
+            this.sizeSelect = element("select", "needstable-page-size-select");
+            this.columnsDetails = element("details", "needstable-columns");
+            this.copyButton = element("button", "needstable-button needstable-copy");
+            this.csvButton = element("button", "needstable-button needstable-csv");
+            this.info = element("div", "needstable-info");
+            this.pager = element("nav", "needstable-pager");
+            /** @type {HTMLButtonElement[]} */
+            this.sortButtons = [];
+
+            this.buildControls();
+            this.update();
         }
-        if (this.wrapper && this.wrapper.parentNode) {
-            this.wrapper.parentNode.insertBefore(this.table, this.wrapper);
-            this.wrapper.remove();
+
+        /**
+         * A need row and the part rows belonging to it are ONE unit: they sort together,
+         * and a filter that matches any of their text keeps all of them.
+         *
+         * Rows are read in document order. Anything that is not `tr.need_part` starts a
+         * group. A `tr.need_part` joins the group being built when its `data-parent`
+         * names that group's need, or -- when it carries no `data-parent` -- because it
+         * follows it (the adjacency fallback, for a producer that does not emit the
+         * attribute). Otherwise it is a group of its own. Groups are therefore contiguous
+         * runs of the source order, which is what lets the unsorted state restore that
+         * order exactly.
+         *
+         * @returns {NeedstableGroup[]}
+         */
+        buildGroups() {
+            /** @type {NeedstableGroup[]} */
+            const groups = [];
+            /** @type {NeedstableGroup | null} */
+            let current = null;
+            this.rows.forEach((row) => {
+                const isPart = row.classList.contains("need_part");
+                if (isPart && current) {
+                    const parent = row.getAttribute("data-parent");
+                    if (parent === null || parent === current.needId) {
+                        current.rows.push(row);
+                        return;
+                    }
+                }
+                current = {
+                    lead: row,
+                    rows: [row],
+                    needId: row.getAttribute("data-need-id"),
+                    text: "",
+                };
+                groups.push(current);
+            });
+            groups.forEach((group) => {
+                group.text = group.rows
+                    .map((row) => cellText(row))
+                    .join(" ")
+                    .toLowerCase();
+            });
+            return groups;
         }
-        if (this.searchTimer !== null) {
-            clearTimeout(this.searchTimer);
-            this.searchTimer = null;
+
+        /**
+         * The comparator type of each column: what the producer declared, else what the
+         * values look like.
+         *
+         * @returns {ColumnType[]}
+         */
+        detectTypes() {
+            return this.headers.map((header, index) => {
+                const declared = header.getAttribute("data-type");
+                if (
+                    declared === "text" ||
+                    declared === "number" ||
+                    declared === "date"
+                ) {
+                    return declared;
+                }
+                return detectType(
+                    this.groups.map((group) => cellValue(group.lead.cells[index])),
+                );
+            });
         }
-        try {
-            delete self.table[INSTANCE_KEY];
-        } catch (error) {
-            self.table[INSTANCE_KEY] = undefined;
+
+        /* ------------------------------------------------------------------ the DOM */
+
+        /** Wrap the table in the two control bars and wire every control up. */
+        buildControls() {
+            const table = this.table;
+            const parent = table.parentNode;
+            if (parent) {
+                parent.insertBefore(this.wrapper, table);
+            }
+            this.wrapper.appendChild(this.controls);
+            this.wrapper.appendChild(table);
+            this.wrapper.appendChild(this.footer);
+
+            /* search */
+            const searchLabel = element("label", "needstable-search");
+            const searchText = element("span", "needstable-label");
+            searchText.textContent = this.labels.search;
+            this.searchInput.type = "search";
+            this.searchInput.placeholder = this.labels.search;
+            this.searchInput.addEventListener("input", () => {
+                if (this.searchTimer !== undefined) {
+                    clearTimeout(this.searchTimer);
+                }
+                this.searchTimer = setTimeout(() => {
+                    this.searchTimer = undefined;
+                    this.query = this.searchInput.value.trim().toLowerCase();
+                    this.page = 0;
+                    this.update();
+                }, 100);
+            });
+            searchLabel.appendChild(searchText);
+            searchLabel.appendChild(this.searchInput);
+            this.controls.appendChild(searchLabel);
+
+            /* page size */
+            const sizeLabel = element("label", "needstable-page-size");
+            const sizeText = element("span", "needstable-label");
+            sizeText.textContent = this.labels.rowsPerPage;
+            this.options.pageSizes.forEach((size) => {
+                const option = element("option");
+                option.value = String(size);
+                option.textContent = size === 0 ? this.labels.all : String(size);
+                if (size === this.pageSize) {
+                    option.selected = true;
+                }
+                this.sizeSelect.appendChild(option);
+            });
+            this.sizeSelect.addEventListener("change", () => {
+                this.pageSize = parseInt(this.sizeSelect.value, 10) || 0;
+                this.page = 0;
+                this.update();
+            });
+            sizeLabel.appendChild(sizeText);
+            sizeLabel.appendChild(this.sizeSelect);
+            this.controls.appendChild(sizeLabel);
+
+            /* column visibility -- a native disclosure, so nothing manages a popover */
+            const summary = element("summary", "needstable-columns-summary");
+            summary.textContent = this.labels.columns;
+            this.columnsDetails.appendChild(summary);
+            const list = element("div", "needstable-columns-list");
+            this.headers.forEach((header, index) => {
+                const itemLabel = element("label", "needstable-columns-item");
+                const checkbox = element("input");
+                checkbox.type = "checkbox";
+                checkbox.checked = true;
+                checkbox.addEventListener("change", () => {
+                    this.hiddenColumns[index] = !checkbox.checked;
+                    this.applyColumnVisibility();
+                    this.update();
+                });
+                const name = element("span");
+                name.textContent = cellText(header);
+                itemLabel.appendChild(checkbox);
+                itemLabel.appendChild(name);
+                list.appendChild(itemLabel);
+            });
+            this.columnsDetails.appendChild(list);
+            this.controls.appendChild(this.columnsDetails);
+
+            /* export */
+            this.copyButton.type = "button";
+            this.copyButton.textContent = this.labels.copy;
+            this.copyButton.addEventListener("click", () => this.copy());
+            this.controls.appendChild(this.copyButton);
+
+            this.csvButton.type = "button";
+            this.csvButton.textContent = this.labels.csv;
+            this.csvButton.addEventListener("click", () => this.downloadCsv());
+            this.controls.appendChild(this.csvButton);
+
+            /* sortable headers: the header's own content becomes the button's label, and
+               it goes inside the header's `<p>` where there is one, so that a `<button>`
+               never ends up holding block content */
+            this.sortButtons = this.headers.map((header, index) => {
+                const only = header.firstElementChild;
+                const host =
+                    header.children.length === 1 && only && only.tagName === "P"
+                        ? only
+                        : header;
+                const button = element("button", "needstable-sort");
+                button.type = "button";
+                button.setAttribute(
+                    "aria-label",
+                    template(this.labels.sort, { column: cellText(header) }),
+                );
+                while (host.firstChild) {
+                    button.appendChild(host.firstChild);
+                }
+                host.appendChild(button);
+                header.setAttribute("aria-sort", "none");
+                button.addEventListener("click", () => this.toggleSort(index));
+                return button;
+            });
+
+            /* footer: the live region, then the pager */
+            this.info.setAttribute("aria-live", "polite");
+            this.pager.setAttribute("aria-label", this.labels.pagination);
+            this.footer.appendChild(this.info);
+            this.footer.appendChild(this.pager);
         }
-    };
+
+        /** Hide or show columns: the headers, and the `<col>`s that size them. */
+        applyColumnVisibility() {
+            const hidden = this.hiddenColumns;
+            this.headers.forEach((header, index) => {
+                header.classList.toggle(HIDDEN_CLASS, hidden[index]);
+            });
+            /* the rows on the page are synced by `paint()`; a detached row is synced
+               when it is next painted, so there is nothing to walk here */
+            if (this.cols.length && this.colgroup) {
+                const anyHidden = hidden.some(Boolean);
+                const kept = anyHidden
+                    ? this.cols.filter((col, index) => !hidden[index])
+                    : this.colgroupNodes;
+                this.colgroup.replaceChildren(...kept);
+            }
+        }
+
+        /* --------------------------------------------------------------- behaviours */
+
+        /**
+         * Cycle a column: none -> ascending -> descending -> none.
+         *
+         * @param {number} index
+         */
+        toggleSort(index) {
+            if (this.sortColumn !== index) {
+                this.sortColumn = index;
+                this.sortDirection = 1;
+            } else if (this.sortDirection === 1) {
+                this.sortDirection = -1;
+            } else {
+                this.sortColumn = -1;
+                this.sortDirection = 0;
+            }
+            this.page = 0;
+            this.update();
+        }
+
+        /** Re-filter, re-sort and repaint. */
+        update() {
+            const query = this.query;
+            this.view = query
+                ? this.groups.filter((group) => group.text.indexOf(query) !== -1)
+                : this.groups.slice();
+
+            if (this.sortDirection !== 0 && this.sortColumn >= 0) {
+                const column = this.sortColumn;
+                const direction = this.sortDirection;
+                const compare = comparatorFor(this.types[column]);
+                /* decorate-sort-undecorate: the comparator sees strings, and the
+                   original position keeps the sort stable */
+                const decorated = this.view.map((group, position) => ({
+                    group,
+                    position,
+                    value: cellValue(group.lead.cells[column]),
+                }));
+                decorated.sort((left, right) => {
+                    if (left.value === "" || right.value === "") {
+                        /* empty cells sort last whichever way the column points */
+                        if (left.value === right.value) {
+                            return left.position - right.position;
+                        }
+                        return left.value === "" ? 1 : -1;
+                    }
+                    const order = compare(left.value, right.value);
+                    return order !== 0
+                        ? direction * order
+                        : left.position - right.position;
+                });
+                this.view = decorated.map((entry) => entry.group);
+            }
+
+            this.headers.forEach((header, index) => {
+                let state = "none";
+                if (index === this.sortColumn && this.sortDirection === 1) {
+                    state = "ascending";
+                } else if (index === this.sortColumn && this.sortDirection === -1) {
+                    state = "descending";
+                }
+                header.setAttribute("aria-sort", state);
+            });
+
+            this.paint();
+        }
+
+        /** Attach only the current page's rows; the rest stay out of the document. */
+        paint() {
+            const groupCount = this.view.length;
+            const size = this.pageSize || groupCount || 1;
+            const pageCount = Math.max(1, Math.ceil(groupCount / size));
+            if (this.page >= pageCount) {
+                this.page = pageCount - 1;
+            }
+            const from = this.page * size;
+            const to = Math.min(groupCount, from + size);
+
+            const fragment = document.createDocumentFragment();
+            for (let index = from; index < to; index += 1) {
+                this.view[index].rows.forEach((row) => {
+                    for (let cell = 0; cell < row.cells.length; cell += 1) {
+                        row.cells[cell].classList.toggle(
+                            HIDDEN_CLASS,
+                            Boolean(this.hiddenColumns[cell]),
+                        );
+                    }
+                    fragment.appendChild(row);
+                });
+            }
+            if (this.body) {
+                this.body.replaceChildren(fragment);
+            }
+
+            this.info.textContent = groupCount
+                ? template(this.labels.info, {
+                      start: from + 1,
+                      end: to,
+                      total: groupCount,
+                  })
+                : this.labels.empty;
+            this.paintPager(pageCount);
+        }
+
+        /**
+         * Draw the pager: previous, the first and last page, a window around the current
+         * one with ellipses for the gaps, next. Hidden entirely when there is one page.
+         *
+         * @param {number} pageCount
+         */
+        paintPager(pageCount) {
+            this.pager.replaceChildren();
+            this.pager.hidden = pageCount <= 1;
+            if (pageCount <= 1) {
+                return;
+            }
+
+            /**
+             * @param {string} label
+             * @param {number} page
+             * @param {boolean} disabled
+             * @param {boolean} current
+             * @param {string} className
+             * @returns {HTMLButtonElement}
+             */
+            const makeButton = (label, page, disabled, current, className) => {
+                const button = element("button", "needstable-page " + className);
+                button.type = "button";
+                button.textContent = label;
+                button.disabled = disabled;
+                if (current) {
+                    button.setAttribute("aria-current", "page");
+                }
+                button.addEventListener("click", () => {
+                    this.page = page;
+                    this.paint();
+                });
+                return button;
+            };
+            const addEllipsis = () => {
+                const span = element("span", "needstable-ellipsis");
+                span.textContent = "…";
+                this.pager.appendChild(span);
+            };
+
+            this.pager.appendChild(
+                makeButton(
+                    this.labels.previous,
+                    this.page - 1,
+                    this.page === 0,
+                    false,
+                    "needstable-page-previous",
+                ),
+            );
+            const wanted = [0, pageCount - 1];
+            for (let page = this.page - 1; page <= this.page + 1; page += 1) {
+                if (page >= 0 && page < pageCount && wanted.indexOf(page) === -1) {
+                    wanted.push(page);
+                }
+            }
+            wanted.sort((left, right) => left - right);
+            let previous = -1;
+            wanted.forEach((page) => {
+                if (previous >= 0 && page - previous > 1) {
+                    addEllipsis();
+                }
+                this.pager.appendChild(
+                    makeButton(
+                        String(page + 1),
+                        page,
+                        false,
+                        page === this.page,
+                        "needstable-page-number",
+                    ),
+                );
+                previous = page;
+            });
+            this.pager.appendChild(
+                makeButton(
+                    this.labels.next,
+                    this.page + 1,
+                    this.page === pageCount - 1,
+                    false,
+                    "needstable-page-next",
+                ),
+            );
+        }
+
+        /* ------------------------------------------------------------------ export */
+
+        /**
+         * Header plus one line per row of every group the filter matches -- not per page.
+         *
+         * @returns {string[][]}
+         */
+        matrix() {
+            /**
+             * @param {unknown} _value
+             * @param {number} index
+             * @returns {boolean}
+             */
+            const keep = (_value, index) => !this.hiddenColumns[index];
+            const rows = [this.headers.filter(keep).map((header) => cellText(header))];
+            this.view.forEach((group) => {
+                group.rows.forEach((row) => {
+                    rows.push(
+                        Array.from(row.cells)
+                            .filter(keep)
+                            .map((cell) => cellText(cell)),
+                    );
+                });
+            });
+            return rows;
+        }
+
+        /** @returns {string} the table as tab-separated text */
+        tsv() {
+            return this.matrix()
+                .map((row) => row.join("\t"))
+                .join("\n");
+        }
+
+        /** @returns {string} RFC 4180: CRLF endings, quoted fields, doubled quotes */
+        csv() {
+            return this.matrix()
+                .map((row) => row.map(csvField).join(","))
+                .join("\r\n");
+        }
+
+        /** Put the table on the clipboard as tab-separated text. */
+        copy() {
+            const text = this.tsv();
+            try {
+                if (navigator.clipboard) {
+                    navigator.clipboard
+                        .writeText(text)
+                        .catch(() => copyWithExecCommand(text));
+                    return;
+                }
+            } catch (error) {
+                /* fall through to the pre-async-clipboard route */
+            }
+            copyWithExecCommand(text);
+        }
+
+        /** Hand the reader the table as a CSV file. */
+        downloadCsv() {
+            /* the BOM is what makes a spreadsheet read a UTF-8 CSV as UTF-8 */
+            const blob = new Blob(["\ufeff" + this.csv()], {
+                type: "text/csv;charset=utf-8",
+            });
+            const url = URL.createObjectURL(blob);
+            const link = element("a", "needstable-download");
+            link.href = url;
+            link.download = (this.table.id || "needtable") + ".csv";
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 0);
+        }
+
+        /* ----------------------------------------------------------------- teardown */
+
+        /** Put the table back exactly as the server wrote it. */
+        destroy() {
+            this.hiddenColumns = this.hiddenColumns.map(() => false);
+            this.applyColumnVisibility();
+            this.rows.forEach((row) => {
+                for (let index = 0; index < row.cells.length; index += 1) {
+                    row.cells[index].classList.remove(HIDDEN_CLASS);
+                }
+            });
+            this.headers.forEach((header) => {
+                header.classList.remove(HIDDEN_CLASS);
+                header.removeAttribute("aria-sort");
+            });
+            this.sortButtons.forEach((button) => {
+                const host = button.parentNode;
+                if (!host) {
+                    return;
+                }
+                while (button.firstChild) {
+                    host.insertBefore(button.firstChild, button);
+                }
+                button.remove();
+            });
+            if (this.body) {
+                /* every node goes back, in the order the server wrote them */
+                this.body.replaceChildren(...this.bodyNodes);
+            }
+            if (this.wrapper.parentNode) {
+                this.wrapper.parentNode.insertBefore(this.table, this.wrapper);
+                this.wrapper.remove();
+            }
+            if (this.searchTimer !== undefined) {
+                clearTimeout(this.searchTimer);
+                this.searchTimer = undefined;
+            }
+            delete (/** @type {EnhancedTable} */ (this.table).__needstable);
+        }
+    }
 
     /* -------------------------------------------------------------------- entry */
 
@@ -856,15 +991,17 @@
      * Enhance one table. Calling it again on the same table returns the same instance.
      *
      * @param {HTMLTableElement} table
-     * @param {object} [options]
+     * @param {Partial<NeedstableOptions>} [options]
      * @returns {NeedsTable}
      */
     function init(table, options) {
-        if (table[INSTANCE_KEY]) {
-            return table[INSTANCE_KEY];
+        const enhanced = /** @type {EnhancedTable} */ (table);
+        const existing = enhanced.__needstable;
+        if (existing) {
+            return existing;
         }
-        var instance = new NeedsTable(table, options);
-        table[INSTANCE_KEY] = instance;
+        const instance = new NeedsTable(table, options);
+        enhanced.__needstable = instance;
         return instance;
     }
 
@@ -872,25 +1009,22 @@
      * Enhance every needtable under `root` (the document by default).
      *
      * @param {ParentNode} [root]
-     * @param {object} [options]
+     * @param {Partial<NeedstableOptions>} [options]
      * @returns {NeedsTable[]}
      */
     function initAll(root, options) {
-        var scope = root || document;
-        var tables = scope.querySelectorAll("table." + HOOK_CLASS);
-        return Array.prototype.map.call(tables, function (table) {
-            return init(table, options);
-        });
+        const scope = root || document;
+        const tables = scope.querySelectorAll("table." + HOOK_CLASS);
+        return Array.from(tables).map((table) =>
+            init(/** @type {HTMLTableElement} */ (table), options),
+        );
     }
 
-    window.needstable = {
-        init: init,
-        initAll: initAll,
-        version: NEEDSTABLE_VERSION,
-    };
+    const api = { init: init, initAll: initAll, version: NEEDSTABLE_VERSION };
+    /** @type {Window & {needstable?: typeof api}} */ (window).needstable = api;
 
     if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", function () {
+        document.addEventListener("DOMContentLoaded", () => {
             initAll();
         });
     } else {

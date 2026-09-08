@@ -3,16 +3,16 @@
  *
  * Copyright (c) useblocks GmbH. MIT licence.
  *
- * sphinx-needs is the REPOSITORY OF RECORD for this file; ubCode vendors it
- * byte-identical beside the script. It pairs with `needstable.js` and describes only
- * LAYOUT: where the control bars sit, how the pager reads, the sort glyphs, the hidden
- * column, the focus ring.
+ * sphinx-needs is the REPOSITORY OF RECORD for this file; a consumer that ships this
+ * asset vendors it byte-identical beside the script. It pairs with `needstable.js` and
+ * describes only LAYOUT: where the control bars sit, how the pager reads, the sort
+ * glyphs, the hidden column, the focus ring.
  *
  * It is HOST-AGNOSTIC on purpose: it names no theme and no `--sn-*` token. Every colour
  * goes through a `--needstable-*` custom property whose fallback is `currentColor`,
  * `inherit` or transparent, so an unstyled host gets the page's own colours and a host
  * that wants more sets the properties. sphinx-needs does that in
- * `css/common/needstable.css`.
+ * `css/common/needstable.css`. The reasoning is in `design/needstable-contract.md`.
  *
  * The chrome is deliberately quiet: the table's data is the content, the controls are
  * not. No border around the widget, small buttons, little rounding.

@@ -3,8 +3,8 @@
 This is the half of ``design/needstable-contract.md`` that sphinx-needs *emits*: the hook
 class and the per-table options on the ``<table>``, the column key and sort type on each
 ``<th>``, the need id (and parent) on each ``<tr>``, and the filter paragraph's place
-*after* the table rather than inside it. ubCode implements the same contract, so a change
-here is a change to a shared specification, not only to this package.
+*after* the table rather than inside it. It is a specification shared with other producers
+of needtable markup, so a change here is a change to more than this package.
 
 The behaviour built on top of it is asserted in ``test_needstable_js.py``, which drives a
 browser.

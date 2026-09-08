@@ -194,18 +194,20 @@ def test_typed_sort_and_three_state_cycle(opened) -> None:
     original = _need_ids(page, INTERACTIVE)
     assert _aria_sort(page, INTERACTIVE) == ["none"] * 6
 
-    # `amount` is declared `data-type="number"`: 2 before 10 before 100, not "10, 100, 2"
+    # `amount` is declared `data-type="number"`, so a number comparator runs: 2 before 10
+    # before 100, not "10, 100, 2" -- and -20 before -5, which a text collator gets wrong
+    # even with `numeric: true` (measured: it orders "-5" before "-20")
     _sort(page, INTERACTIVE, 3)
     amounts = [value for value in _column(page, INTERACTIVE, 3) if value]
     assert amounts == [
+        "-20",
+        "-5",
         "1",
         "2",
-        "3",
         "4",
         "4",
         "4",
         "7",
-        "8",
         "10",
         "15",
         "25",

@@ -28,10 +28,10 @@ div.needstable > table.NEEDS_DATATABLES.NEEDS_DATATABLES {
     overflow-x: auto;
 }
 
-/* `libs/html/needstable.css` is the structural, host-agnostic half of the pair, shared
-byte-for-byte with ubCode. It asks for every colour through a `--needstable-*` custom
-property with a self-effacing fallback; this is where Sphinx-Needs' own theme tokens
-answer. See `design/needstable-contract.md`. */
+/* `libs/html/needstable.css` is the structural, host-agnostic half of the pair, and is
+shipped verbatim by every consumer of the contract. It asks for every colour through a
+`--needstable-*` custom property with a self-effacing fallback; this is where Sphinx-Needs'
+own theme tokens answer. See `design/needstable-contract.md`. */
 div.needstable {
     --needstable-label-color: var(--sn-color-table-label);
     --needstable-border-color: var(--sn-color-table-btn-border);
