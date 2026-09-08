@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788876243172,
+  "lastUpdate": 1788887177387,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -20664,6 +20664,42 @@ window.BENCHMARK_DATA = {
             "value": 56.719305465999994,
             "unit": "s",
             "extra": "Commit: 8ee38a0e578c62cd480399308790e296ef09e793\nBranch: master\nTime: 2026-09-08T16:02:06+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "77c455c562cdd45b9afcc837482bf21d1d85ef0d",
+          "message": "‼️ Remove the 4.0 deprecation of `[[...]]` in need content, and the `need_func` role (#1919)\n\nSince 4.0.0 (#1269, #1266) every `[[...]]` inside a need's **content**\nhas been executed\n*and* warned about under `[needs.deprecated]`, with the `:ndf:` role as\nits replacement;\nthe `need_func` role was deprecated in the same round. Four majors have\ncarried the\nwarning, and 9.0.0 is the release that drops it.\n\nAfter this PR:\n\n- `[[...]]` in a need's **content** is plain text, as it is in any other\nSphinx document.\n- `:ndf:` is the one way to run a dynamic function inline.\n- a document that still writes `:need_func:` gets docutils' own\n`Unknown interpreted text role \"need_func\"`. No stub role warns: the\npoint of the major\n  is that the old syntax is gone.\n- the private `_detect_and_execute_field` goes too — a pure deletion in\nits own commit; it\nhas been uncalled since #1516 replaced its two call sites with the\nparsed\n  `DynamicFunctionParsed` path, and it was never re-exported.\n- `[[...]]` in **fields** is untouched — `:tags:`, `:status:`,\n`:links:`, `:style:`,\n`needtable`'s `:style_row:`, extra fields, `needs_global_options`\ndefaults. That is still\nthe documented way to write a dynamic function in an option, and\n`FUNC_RE` and\n  `check_and_get_content` are exactly as they were.\n\n`find_and_replace_node_content` now does one thing: replace every\n`NeedFunc` node with the\ntext its function returns, skipping nested needs as before — and a\n`reference`'s children\nare now walked like everything else's, which resolves an `:ndf:` reached\nthrough a\nsubstitution used as an internal hyperlink (`|sub|_` with ``.. _sub:\n`Section`_``), where\nthe old code returned early on the missing `refuri` and left `??` plus a\nspurious\n`Error while executing function 'copy': Need not found`. Gone with the\nscan are the quote\nnormalisation it needed (sphinx's smartquotes transform had already\ncurled `\"` to `“` by\nthe time it ran) and the rewrite of a link's `refuri`, so\n`` `link <http://www.[[copy('id')]]>`_ `` is now an ordinary URL.\n\nBeyond the deprecation itself, the scan intercepted `[[...]]` in a\nneed's body before roles\nwere resolved, so the `:need:` role's own `[[field]]` template syntax\ncould not be written\ninside a need at all. That is what blocks #1201, which can be updated\nand merged once this\nlands.\n\n## Tests\n\n`doc_dynamic_functions` and `needextract_with_nested_needs` keep their\n`[[copy(\"id\")]]`\ncontent lines, and the tests now assert positively that they render as\nwritten rather than\nonly that the warning is absent; the `:ndf:` lines beside them still\nresolve. In\n`doc_df_user_functions` the four content calls become `:ndf:` roles,\nwhich keeps every\nerror path that project exists to cover (bad return type, \"Not a\nfunction call\", unknown\nfunction), with one plain `[[...]]` line added for the literal\nassertion.\n`test_need_func_role_removed` is new, and so are fences for two paths\nthat had none: the\n`|sub|_`-into-an-internal-link shape above, and `needtable`'s\n`:style_row: needs_[[copy(\"status\")]]` — the one live consumer of\n`check_and_get_content`,\nwhich until now could be reduced to a pass-through with the whole suite\nand the docs build\nstill green.\n\n## For the 9.0.0 changelog\n\n**BREAKING**: `[[...]]` inside a need's content is no longer interpreted\nas a dynamic\nfunction, and the `need_func` role is removed; both were deprecated in\n4.0.0. Use the\n`:ndf:` role. Dynamic functions in fields (`[[...]]` in options and\nlinks) are unchanged.\n\nCloses #1906",
+          "timestamp": "2026-09-08T19:04:57+02:00",
+          "tree_id": "e127c01d146e19a451bf9fa5c277fa55a3f267d5",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/77c455c562cdd45b9afcc837482bf21d1d85ef0d"
+        },
+        "date": 1788887168786,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1212102040000076,
+            "unit": "s",
+            "extra": "Commit: 77c455c562cdd45b9afcc837482bf21d1d85ef0d\nBranch: master\nTime: 2026-09-08T19:04:57+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 47.58694460200002,
+            "unit": "s",
+            "extra": "Commit: 77c455c562cdd45b9afcc837482bf21d1d85ef0d\nBranch: master\nTime: 2026-09-08T19:04:57+02:00"
           }
         ]
       }
