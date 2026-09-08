@@ -35,7 +35,7 @@ To refer to a dynamic function, you can use the following syntax:
 
       This need has id :ndf:`copy("id")` and status :ndf:`copy("status")`.
 
-Dynamic functions can be used for the following directive options:
+The ``[[...]]`` syntax applies to directive **options** only; the following are supported:
 
 - ``status``
 - ``tags``
@@ -45,9 +45,12 @@ Dynamic functions can be used for the following directive options:
 - :ref:`extra fields <needs_fields>`
 - :ref:`needs_links`
 
-.. deprecated:: 3.1.0
+Inside a need's **content**, the :ref:`ndf` role is the way to call a dynamic function.
 
-   The :ref:`ndf` role replaces the use of the ``[[...]]`` syntax in need content.
+.. versionchanged:: 9.0.0
+
+   The ``[[...]]`` syntax is no longer interpreted in a need's content, where it is now
+   plain text as in any other Sphinx document; use the :ref:`ndf` role instead.
 
 Built-in functions
 -------------------
