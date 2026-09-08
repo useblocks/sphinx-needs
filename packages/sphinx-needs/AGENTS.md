@@ -110,12 +110,13 @@ that for its own builds, and this suite's `make_app` fixture says it for every a
 made by calling `make_app` directly: one that has not chosen a renderer, in its
 `confoverrides` or in the `conf.py` its project writes, is made inert too. That is total
 because **no test in this suite spawns a Sphinx build**: the in-process application carries
-the warnings (`build_warnings(app)`), the status text (`app._status`), the exceptions
-(`pytest.raises`) and the exit code (`app.statuscode`) a subprocess used to be needed for,
-and a subprocess is the one route the inert renderer cannot reach. The fence
-`assert_no_bare_sphinx_build`, from `tests/test_testkit_subprocess.py`, keeps it that way; a
-suite that genuinely must spawn one — sphinx-mounts' bazel tests — builds its argv with
-`sphinx_build_command(...)` rather than with the bare word.
+the warnings (`build_warnings(app)`), the status text (`app._status`) and the failures
+(`pytest.raises`) a subprocess used to be needed for, and a subprocess is the one route the
+inert renderer cannot reach. Two tests in `tests/test_testkit_subprocess.py` keep it so, and
+it takes both — one walks the tree for the bare word `sphinx-build`, the other for
+`sphinx_build_command(`, which is what an argv built the right way looks like and what every
+converted site used to spell. A suite that genuinely must spawn a build — sphinx-mounts'
+bazel tests — builds its argv with `sphinx_build_command(...)` rather than with the bare word.
 
 Choose a renderer with `plantuml_conf(request)`, which resolves the suite-wide command only
 when the build will actually draw — never by naming `plantuml_command` in a test's signature,

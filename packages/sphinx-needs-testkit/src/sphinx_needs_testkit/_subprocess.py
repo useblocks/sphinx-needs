@@ -2,9 +2,9 @@
 
 The argv, because there is one right answer to a question each suite had been answering
 for itself -- and answering the same way, wrongly, at every site -- and the fence that
-keeps it that way, because two suites here spawn builds and both must be walked, and the
-third consumer of this module should get the fence with the helper rather than a file to
-copy.
+keeps it that way, because the tree that must never spawn a build and the one that
+legitimately does are both walked, and the third consumer of this module should get the
+fence with the helper rather than a file to copy.
 """
 
 from __future__ import annotations
@@ -69,9 +69,10 @@ def assert_no_bare_sphinx_build(tests_dir: Path) -> None:
     job in this workspace runs where that environment is the right one. Nothing else would
     ever report the regression.
 
-    It lives here rather than in one suite because two suites in this workspace spawn
-    builds and both must be walked -- and because the third consumer of this module,
-    sphinx-test-reports, gets the fence with the helper rather than a file to copy.
+    It lives here rather than in one suite because the tree that must never spawn a build
+    and the one that legitimately does are both walked -- and because the third consumer
+    of this module, sphinx-test-reports, gets the fence with the helper rather than a file
+    to copy.
 
     An explicit ``AssertionError`` rather than a bare ``assert``: pytest rewrites
     assertions in test modules and plugins, not in a package imported by name, so a bare
