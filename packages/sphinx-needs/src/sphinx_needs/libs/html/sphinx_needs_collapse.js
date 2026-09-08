@@ -18,11 +18,10 @@
  *           <span class="needs visible"> ... </span>     the other carries HIDE_CLASS
  *
  * The `id` on the control is NOT an identifier: docutils writes the same one on every
- * need of a page (`target__show__meta`, forty-four times over in one of the test
- * projects), and what it actually carries is the state the page was written in plus the
- * row classes, joined by `__`. So every lookup here is scoped to the control's own
- * `SNCB-` container instead, which is what the `#<container id> table ...` selectors this
- * file used to build did.
+ * need in the same state -- `target__show__meta`, thirty-one times over on one test
+ * project's index page -- and what it carries is that state plus the row classes, joined
+ * by `__`. So every lookup here is scoped to the control's own `SNCB-` container instead,
+ * which is what the `#<container id> table ...` selectors this file used to build did.
  *
  * The server already hides the right ICON, so on load the only state this script has to
  * establish is the metadata ROWS'. A click then flips all three.

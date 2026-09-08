@@ -106,14 +106,9 @@ def test_html_head_files(test_app: SphinxTestApp):
     # whole 2.26 MB DataTables bundle
     for pagename in ("search.html", "genindex.html"):
         tree = html_parser.parse(str(Path(app.outdir, pagename)))
-        page_scripts = [
-            node.attrib["src"].rsplit("?", 1)[0]
-            for node in tree.xpath("/html/head/script")
-            if "src" in node.attrib
-        ]
-        assets = page_scripts + [
-            node.attrib["href"].rsplit("?", 1)[0]
-            for node in tree.xpath("/html/head/link")
+        assets = [
+            node.attrib["src" if node.tag == "script" else "href"].rsplit("?", 1)[0]
+            for node in tree.xpath("/html/head/script") + tree.xpath("/html/head/link")
         ]
         assert "_static/sphinx-needs/libs/html/needstable.js" not in assets, pagename
         assert "_static/sphinx-needs/libs/html/needstable.css" not in assets, pagename
