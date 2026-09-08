@@ -205,82 +205,35 @@ def find_and_replace_node_content(
     node: nodes.Node, env: BuildEnvironment, need: NeedItem
 ) -> nodes.Node:
     """
-    Search inside a given node and its children for nodes of type Text,
-    if found, check if it contains a function string and run/replace it.
+    Search inside a given node and its children for ``NeedFunc`` nodes,
+    created by the ``ndf`` role, and replace each with the text its function returns.
+
+    A nested need is not descended into, because it runs this pass itself, for its own
+    need data -- that skip is observable. Literal blocks and inline literals are skipped
+    to state the intent: RST cannot put a role inside either, so no ``NeedFunc`` can be
+    there to find.
 
     :param node: Node to analyse
     :param env: Sphinx environment
     :param need: Need data
     """
-    new_children = []
     if isinstance(node, NeedFunc):
         return node.get_text(env, need)
-    elif (not node.children and isinstance(node, nodes.Text)) or isinstance(
-        node, nodes.reference
-    ):
-        if isinstance(node, nodes.reference):
-            try:
-                new_text = node.attributes["refuri"]
-            except KeyError:
-                # If no refuri is set, we don't need to modify anything.
-                # So stop here and return the untouched node.
-                return node
-        else:
-            new_text = node
-        func_match = FUNC_RE.findall(new_text)
-        for func_string in func_match:
-            # sphinx is replacing ' and " with language specific quotation marks (up and down), which makes
-            # it impossible for the later used AST render engine to detect a python function call in the given
-            # string. Therefor a replacement is needed for the execution of the found string.
-            func_string_org = func_string[:]
-            func_string = func_string.replace("„", '"')
-            func_string = func_string.replace("“", '"')
-            func_string = func_string.replace("”", '"')
-            func_string = func_string.replace("”", '"')
 
-            func_string = func_string.replace("‘", "'")  # noqa: RUF001
-            func_string = func_string.replace("’", "'")  # noqa: RUF001
-
-            msg = f"The [[{func_string}]] syntax in need content is deprecated. Replace with :ndf:`{func_string}` instead."
-            log_warning(logger, msg, "deprecated", location=node)
-
-            func_return = execute_func(
-                env.app, need, SphinxNeedsData(env).get_needs_view(), func_string, node
-            )
-
-            if isinstance(func_return, list):
-                func_return = ", ".join(str(el) for el in func_return)
-
-            new_text = new_text.replace(
-                f"[[{func_string_org}]]",
-                "" if func_return is None else str(func_return),
-            )
-
-        if isinstance(node, nodes.reference):
-            node.attributes["refuri"] = new_text
-            # Call normal handling for children of reference node (will contain related Text node with link-text)
-            for child in node.children:
-                new_child = find_and_replace_node_content(child, env, need)
-                new_children.append(new_child)
-
-            node.children = new_children
-            for subchild in node.children:
-                node.setup_child(subchild)
-        else:
-            node = nodes.Text(new_text)
+    if not node.children:
         return node
-    else:
-        for child in node.children:
-            if isinstance(child, nodes.literal_block | nodes.literal | Need):
-                # Do not parse literal blocks or nested needs
-                new_children.append(child)
-                continue
-            new_child = find_and_replace_node_content(child, env, need)
-            new_children.append(new_child)
 
-        node.children = new_children
-        for subchild in node.children:
-            node.setup_child(subchild)
+    new_children = []
+    for child in node.children:
+        if isinstance(child, nodes.literal_block | nodes.literal | Need):
+            # Do not parse literal blocks or nested needs
+            new_children.append(child)
+            continue
+        new_children.append(find_and_replace_node_content(child, env, need))
+
+    node.children = new_children
+    for subchild in node.children:
+        node.setup_child(subchild)
     return node
 
 
@@ -441,6 +394,10 @@ def check_and_get_content(
     If not, content is returned.
     If it is, the functions gets executed and its returns value replaces the related part in content.
 
+    This is the ``[[...]]`` syntax as written in a directive option
+    (``:style:``, ``needtable``'s ``:style_row:``); it is not applied to a need's content,
+    where the ``ndf`` role is the way to call a dynamic function.
+
     :param content: option content string
     :param need: need
     :param env: Sphinx environment object
@@ -464,31 +421,6 @@ def check_and_get_content(
         f"[[{func_call}]]", "" if func_return is None else str(func_return)
     )
     return content
-
-
-def _detect_and_execute_field(
-    content: Any, need: NeedItem, needs: NeedsMutable, app: Sphinx
-) -> tuple[
-    str | None,
-    str | int | float | list[str] | list[int] | list[float] | list[NeedLink] | None,
-]:
-    """Detects if given need field value is a function call and executes it."""
-    content = str(content)
-
-    func_match = FUNC_RE.search(content)
-    if func_match is None:
-        return None, None
-
-    func_call = func_match.group(1)  # Extract function call
-    func_return = execute_func(
-        app,
-        need,
-        needs,
-        func_call,
-        (need["docname"], need["lineno"]) if need["docname"] else None,
-    )  # Execute function call and get return value
-
-    return func_call, func_return
 
 
 @dataclass(frozen=True, slots=True)

@@ -189,15 +189,15 @@ To calculate the ratio of one filter to another filter, you can define two filte
 
 need_func
 ---------
-.. deprecated:: 3.1.0
+.. versionchanged:: 9.0.0
 
-   Use :ref:`ndf` instead.
+   The ``need_func`` role is removed; use :ref:`ndf` instead.
 
 .. _ndf:
 
 ndf
 ---
-.. versionadded:: 3.1.0
+.. versionadded:: 4.0.0
 
 Executes a :ref:`need dynamic function <dynamic_functions>` and uses the return values as content.
 

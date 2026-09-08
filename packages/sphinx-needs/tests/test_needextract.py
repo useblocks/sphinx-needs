@@ -61,7 +61,7 @@ def test_needextract_basic(test_app):
     ]
     run_checks(checks, "subfolder/check_images_2.html")
 
-    index_html = Path(app.outdir, "check_need_refs.html").read_text()
+    index_html = Path(app.outdir, "check_need_refs.html").read_text(encoding="utf-8")
     assert "Awesome Sphinx-Needs" in index_html
 
 
@@ -78,17 +78,9 @@ def test_needextract_basic(test_app):
 def test_needextract_with_nested_needs(test_app):
     app = test_app
     app.build()
-    warning_records = warning_lines(app)
-    # print(warnings)
-    # note these warnings are emitted twice because they are resolved twice: once when first specified and once when copied with needextract
-    assert warning_records == [
-        '<srcdir>/index.rst:13: WARNING: The [[copy("id")]] syntax in need content is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecated]',
-        '<srcdir>/index.rst:33: WARNING: The [[copy("id")]] syntax in need content is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecated]',
-        '<srcdir>/index.rst:13: WARNING: The [[copy("id")]] syntax in need content is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecated]',
-        '<srcdir>/index.rst:33: WARNING: The [[copy("id")]] syntax in need content is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecated]',
-    ]
+    assert_no_warnings(app)
 
-    needextract_html = Path(app.outdir, "needextract.html").read_text()
+    needextract_html = Path(app.outdir, "needextract.html").read_text(encoding="utf-8")
 
     # ensure that the needs exist and that their hrefs point to the correct location
     assert (
@@ -110,9 +102,14 @@ def test_needextract_with_nested_needs(test_app):
         in needextract_html
     )
 
-    # dynamic functions should be executed
-    assert "This is id SPEC_1 SPEC_1" in needextract_html
-    assert "This is grandchild id SPEC_1_1_2 SPEC_1_1_2" in needextract_html
+    # the extracted copy runs the ``ndf`` role against the need it was copied from, and
+    # leaves ``[[...]]`` in the content alone, exactly as the original does.  (The copy is
+    # taken before docutils' smartquotes transform, so its quotes are still straight ones,
+    # where the original page renders them curled.)
+    assert "This is id [[copy(&quot;id&quot;)]] SPEC_1" in needextract_html
+    assert (
+        "This is grandchild id [[copy(&quot;id&quot;)]] SPEC_1_1_2" in needextract_html
+    )
 
 
 # -- inputs that used to end the build ---------------------------------------

@@ -3,6 +3,8 @@ from pathlib import Path
 import pytest
 from docutils import __version__ as doc_ver
 
+from sphinx_needs_testkit import assert_no_warnings
+
 
 @pytest.mark.parametrize(
     "test_app",
@@ -24,7 +26,7 @@ def test_doc_build_html(test_app):
     assert warnings.count("The 'style_col' option has never had any effect") == 1
     assert "test_styles.rst" in warnings
 
-    html = Path(app.outdir, "index.html").read_text()
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
     assert "SP_TOO_001" in html
     assert 'id="needtable-index-0"' in html
 
@@ -56,7 +58,9 @@ def test_doc_build_html(test_app):
     assert "another_test_class" in html
 
     # Test colwidths
-    colwidths_html_path = Path(app.outdir, "test_colwidths.html").read_text()
+    colwidths_html_path = Path(app.outdir, "test_colwidths.html").read_text(
+        encoding="utf-8"
+    )
 
     if int(doc_ver.split(".")[1]) >= 18:
         assert '<col style="width: 50.0%" />' in colwidths_html_path
@@ -76,7 +80,7 @@ def test_doc_build_html(test_app):
 def test_doc_needtable_options(test_app):
     app = test_app
     app.build()
-    html = Path(app.outdir, "test_options.html").read_text()
+    html = Path(app.outdir, "test_options.html").read_text(encoding="utf-8")
     assert "SP_TOO_003" in html
     assert 'id="needtable-test_options-0"' in html
     assert 'id="needtable-test_options-1"' in html
@@ -124,7 +128,7 @@ def test_string_links_no_trailing_separator(test_app):
     """Test that single-value string_links fields don't get a trailing separator."""
     app = test_app
     app.build()
-    html = Path(app.outdir, "test_options.html").read_text()
+    html = Path(app.outdir, "test_options.html").read_text(encoding="utf-8")
 
     # Find the SINGLE_STRING_LINK need's github cell content
     assert "SINGLE_STRING_LINK" in html
@@ -166,7 +170,7 @@ def test_string_links_no_trailing_separator(test_app):
 def test_doc_needtable_styles(test_app):
     app = test_app
     app.build()
-    html = Path(app.outdir, "test_styles.html").read_text()
+    html = Path(app.outdir, "test_styles.html").read_text(encoding="utf-8")
     assert "style_1" in html
     assert "NEEDS_TABLE" in html
     assert "NEEDS_DATATABLES" in html
@@ -180,7 +184,7 @@ def test_doc_needtable_styles(test_app):
 def test_doc_needtable_parts(test_app):
     app = test_app
     app.build()
-    html = Path(app.outdir, "test_parts.html").read_text()
+    html = Path(app.outdir, "test_parts.html").read_text(encoding="utf-8")
     assert "table_001.1" in html
     assert "table_001.2" in html
     assert "table_001.3" in html
@@ -195,8 +199,57 @@ def test_doc_needtable_parts(test_app):
 def test_doc_needtable_titles(test_app):
     app = test_app
     app.build()
-    html = Path(app.outdir, "test_titles.html").read_text()
+    html = Path(app.outdir, "test_titles.html").read_text(encoding="utf-8")
     assert '<th class="head"><p>Headline</p></th>' in html
     assert '<th class="head"><p>To this need123</p></th>' in html
     assert '<th class="head"><p>Special Characters!</p></th>' in html
     assert '<td class="needs_special-chars!"><p>special-chars value</p></td>' in html
+
+
+# -- the option-level ``[[...]]`` path ---------------------------------------
+#
+# ``needtable``'s ``style_row`` is the one live consumer of
+# ``check_and_get_content``: ``:style:`` is itself a dynamic-function FIELD, so the
+# field path has already resolved it before ``need.py`` re-runs the option parser over
+# ``classes``.  Nothing else in this suite writes ``[[...]]`` in an option, so a break in
+# that path shows up only as a silently wrong row class -- no warning, no failing build.
+
+STYLE_ROW_CONF = """\
+extensions = ["sphinx_needs"]
+"""
+
+STYLE_ROW_INDEX = """\
+Style row
+=========
+
+.. req:: One
+   :id: R_ONE
+   :status: open
+
+.. needtable::
+   :style_row: needs_[[copy("status")]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), STYLE_ROW_CONF),
+                (Path("index.rst"), STYLE_ROW_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_needtable_style_row_dynamic_function(test_app):
+    app = test_app
+    app.build()
+
+    assert_no_warnings(app)
+
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    assert '<tr class="need needs_open' in html
+    assert "[[copy(" not in html
