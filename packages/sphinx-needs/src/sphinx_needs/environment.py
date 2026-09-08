@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from docutils import nodes
 from sphinx import version_info as sphinx_version
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
@@ -10,6 +11,7 @@ from sphinx.util.fileutil import copy_asset, copy_asset_file
 
 from sphinx_needs._jinja import render_template_string
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.directives.needtable import HAS_INTERACTIVE_TABLE
 from sphinx_needs.logging import log_warning
 from sphinx_needs.utils import logger
 
@@ -105,10 +107,44 @@ def install_lib_static_files(app: Sphinx, env: BuildEnvironment) -> None:
     copy_asset(str(source_dir), str(destination_dir))
 
     lib_path = Path("sphinx-needs") / "libs" / "html"
-    # the interactive needtable: one script and one sheet, no dependency
-    _add_js_file(app, lib_path.joinpath("needstable.js"), loading_method="defer")
-    _add_css_file(app, lib_path.joinpath("needstable.css"))
+    # the needtable pair is registered per page, in `install_needtable_assets` below
     _add_js_file(app, lib_path.joinpath("sphinx_needs_collapse.js"))
+
+
+def install_needtable_assets(
+    app: Sphinx,
+    pagename: str,
+    templatename: str,
+    context: dict[str, Any],
+    doctree: nodes.document | None,
+) -> None:
+    """Register ``needstable.{js,css}`` on the pages that hold an interactive needtable.
+
+    Closes #462 for the table assets: before this, every page of every project -- and
+    that includes ``search.html`` and ``genindex.html``, which have no doctree at all --
+    carried the table's script and stylesheet.
+
+    ``handle_page`` resets the builder's asset lists to their build-wide state just
+    before it emits ``html-page-context``, so an asset added from here reaches that page
+    and no other. It goes through the BUILDER rather than through ``app.add_js_file``
+    because the application's route also appends to the extension registry, once per
+    page, and a builder re-initialised afterwards would pick every one of them up
+    globally -- which is the behaviour this handler exists to remove.
+    """
+    if doctree is None or not doctree.get(HAS_INTERACTIVE_TABLE):
+        return
+    # imported here rather than at module level, so that a `needs`- or `schema`-builder
+    # run does not pay for Sphinx's HTML writer stack it never uses
+    from sphinx.builders.html import StandaloneHTMLBuilder
+
+    builder = app.builder
+    if not isinstance(builder, StandaloneHTMLBuilder):
+        return  # nothing else emits this event, but nothing else has the two methods
+    lib_path = Path("sphinx-needs") / "libs" / "html"
+    builder.add_js_file(
+        lib_path.joinpath("needstable.js").as_posix(), loading_method="defer"
+    )
+    builder.add_css_file(lib_path.joinpath("needstable.css").as_posix())
 
 
 def install_permalink_file(app: Sphinx, env: BuildEnvironment) -> None:

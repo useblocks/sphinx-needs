@@ -107,3 +107,8 @@ The plain table
    :style: table
    :columns: id;title
    :types: spec
+
+.. toctree::
+   :hidden:
+
+   no_table

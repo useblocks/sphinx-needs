@@ -85,6 +85,18 @@ def test_html_head_files(test_app: SphinxTestApp):
     for head_file in script_files + link_files:
         assert "\\" not in head_file
 
+    # the table assets go on the pages that have a table, and nowhere else (#462).
+    # `search.html` and `genindex.html` have no doctree at all, and used to carry the
+    # whole 2.26 MB DataTables bundle
+    for pagename in ("search.html", "genindex.html"):
+        tree = html_parser.parse(str(Path(app.outdir, pagename)))
+        assets = [
+            node.attrib["src" if node.tag == "script" else "href"].rsplit("?", 1)[0]
+            for node in tree.xpath("/html/head/script") + tree.xpath("/html/head/link")
+        ]
+        assert "_static/sphinx-needs/libs/html/needstable.js" not in assets, pagename
+        assert "_static/sphinx-needs/libs/html/needstable.css" not in assets, pagename
+
 
 @pytest.mark.parametrize(
     "test_app",

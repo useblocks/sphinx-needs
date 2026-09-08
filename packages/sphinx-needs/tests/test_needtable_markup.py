@@ -235,3 +235,34 @@ def test_singlehtml_build(test_app: SphinxTestApp) -> None:
     html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
     assert 'data-need-id="R_01"' in html
     assert 'data-needstable-page-size="10"' in html
+
+
+@_APP
+def test_assets_are_registered_per_page(test_app: SphinxTestApp) -> None:
+    """The client pair goes on the pages that have an interactive needtable (#462).
+
+    ``no_table.rst`` holds a need but no needtable, so it must carry neither file.
+    """
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+
+    def assets(pagename: str) -> list[str]:
+        tree = html_parser.parse(str(Path(app.outdir, pagename)))
+        return [
+            node.attrib["src" if node.tag == "script" else "href"].rsplit("?", 1)[0]
+            for node in tree.xpath("/html/head/script") + tree.xpath("/html/head/link")
+        ]
+
+    pair = [
+        "_static/sphinx-needs/libs/html/needstable.js",
+        "_static/sphinx-needs/libs/html/needstable.css",
+    ]
+    on_index = assets("index.html")
+    for asset in pair:
+        assert on_index.count(asset) == 1, on_index
+
+    for pagename in ("no_table.html", "search.html", "genindex.html"):
+        elsewhere = assets(pagename)
+        for asset in pair:
+            assert asset not in elsewhere, (pagename, elsewhere)

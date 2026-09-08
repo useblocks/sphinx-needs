@@ -117,6 +117,7 @@ from sphinx_needs.directives.needuml import (
 )
 from sphinx_needs.environment import (
     install_lib_static_files,
+    install_needtable_assets,
     install_permalink_file,
     install_styles_static_files,
 )
@@ -373,6 +374,9 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.connect("doctree-read", analyse_need_locations)
 
     app.connect("env-merge-info", merge_data)
+
+    # the needtable client assets go only on the pages that have a needtable (#462)
+    app.connect("html-page-context", install_needtable_assets)
 
     app.connect("env-updated", install_lib_static_files)
     app.connect("env-updated", install_permalink_file)

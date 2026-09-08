@@ -34,6 +34,13 @@ class Needtable(nodes.General, nodes.Element):
     pass
 
 
+#: Set on a resolved doctree that holds at least one INTERACTIVE needtable, so that
+#: `environment.py` can register the client assets for that page and no other (#462).
+#: The doctree the `html-page-context` handler is given is the very object this module
+#: mutated moments earlier, in the same process, for both serial and parallel writes --
+#: which is why no environment-stored, purged and merged set of document names is needed.
+HAS_INTERACTIVE_TABLE = "needs_has_interactive_table"
+
 #: Default number of rows the interactive table shows per page.
 DEFAULT_PAGE_SIZE = 10
 #: Default page sizes offered by the interactive table (``0`` means "All").
@@ -533,6 +540,7 @@ def process_needtables(
                 replacement.append(table_wrapper)
             else:
                 replacement.append(table_node)
+                doctree[HAS_INTERACTIVE_TABLE] = True
             if current_needtable["show_filters"]:
                 # the filter information goes AFTER the table: a paragraph inside a
                 # `<table>` element is invalid HTML, which browsers hoist out again
