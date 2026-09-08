@@ -49,7 +49,9 @@ PNG = base64.b64decode(
 LABELS = ("first", "style-row", "sorted", "filtered", "full")
 
 
-def write_shots(out: Path, theme: str, mode: str, *, payload: bytes = PNG) -> list[dict]:
+def write_shots(
+    out: Path, theme: str, mode: str, *, payload: bytes = PNG
+) -> list[dict]:
     """`<out>/<theme>/<mode>/<label>.png` for every label, and the manifest entries for them."""
     directory = out / theme / mode
     directory.mkdir(parents=True, exist_ok=True)
@@ -66,7 +68,8 @@ def write_shots(out: Path, theme: str, mode: str, *, payload: bytes = PNG) -> li
                 "file": f"{theme}/{mode}/{label}.png",
                 "bytes": len(payload),
                 "sha": theme_shots.sha256_of(path),
-                "wrapper": "div.dataTables_wrapper",
+                "wrapper": None if label == "full" else "div.dataTables_wrapper",
+                "viewport": label == "full",
             }
         )
     return shots
@@ -105,7 +108,11 @@ def fake_manifest(
         "modes": ["light", "dark"],
         "filter_text": "spec",
         "targets": [
-            {"label": label, "page": theme_shots.NEEDTABLE_PAGE, "help": f"the {label} shot"}
+            {
+                "label": label,
+                "page": theme_shots.NEEDTABLE_PAGE,
+                "help": f"the {label} shot",
+            }
             for label in LABELS
         ],
         "source": {"sphinx_needs_version": version, "git_sha": git_sha},
@@ -167,12 +174,21 @@ def test_closest_wrapper(ancestors: set[str], expected: str | None):
     )
 
 
-def test_scoped_narrows_to_a_section():
-    assert theme_shots.scoped(None, "table.NEEDS_DATATABLES") == "table.NEEDS_DATATABLES"
-    assert (
-        theme_shots.scoped("section#style-row", "table.NEEDS_DATATABLES")
-        == "section#style-row table.NEEDS_DATATABLES"
-    )
+def test_scope_strategies_without_an_anchor_is_just_the_element():
+    assert theme_shots.scope_strategies(None, "table.NEEDS_DATATABLES") == [
+        ("selector", "table.NEEDS_DATATABLES")
+    ]
+
+
+def test_scope_strategies_copes_with_both_shapes_of_section():
+    """sphinx puts the id on the section; sphinx-immaterial puts it on the heading."""
+    assert theme_shots.scope_strategies("#style-row", "table.NEEDS_DATATABLES") == [
+        # four of the five themes: the widget is a descendant of `<section id="style-row">`
+        ("selector", "#style-row table.NEEDS_DATATABLES"),
+        # sphinx-immaterial unwraps sections, so nothing is a descendant of the `<h3>` and
+        # the widget has to be found by document order instead
+        ("after", "#style-row"),
+    ]
 
 
 def test_default_targets_cover_the_documented_set():
@@ -180,9 +196,9 @@ def test_default_targets_cover_the_documented_set():
     assert labels == ["first", "style-row", "sorted", "filtered", "full"]
     by_label = {target.label: target for target in theme_shots.DEFAULT_TARGETS}
     # the two interaction states are the SAME widget as `first`, so they are comparable
-    assert by_label["sorted"].scope is None
-    assert by_label["filtered"].scope is None
-    assert by_label["style-row"].scope == "section#style-row"
+    assert by_label["sorted"].anchor is None
+    assert by_label["filtered"].anchor is None
+    assert by_label["style-row"].anchor == "#style-row"
     # every widget target starts from the table that IS in the built HTML
     assert all(
         target.element == theme_shots.WIDGET_TABLE
@@ -274,31 +290,53 @@ def test_is_dark(colour: str | None, expected: bool | None):
     assert theme_shots.is_dark(colour) is expected
 
 
-def shot(label: str, sha: str) -> dict[str, Any]:
-    return {"label": label, "sha": sha, "file": f"x/{label}.png"}
+def shot(label: str, sha: str, *, viewport: bool = False) -> dict[str, Any]:
+    return {
+        "label": label,
+        "sha": sha,
+        "file": f"x/{label}.png",
+        "viewport": viewport,
+    }
 
 
 def test_dark_verdict_calls_a_theme_dark_less_only_when_both_signals_agree():
     light = {
         "background": "rgb(255, 255, 255)",
-        "shots": [shot("first", "aa"), shot("full", "bb")],
+        "shots": [shot("first", "aa"), shot("full", "bb", viewport=True)],
     }
     dark = {
         "background": "rgb(255, 255, 255)",
-        "shots": [shot("first", "aa"), shot("full", "bb")],
+        "shots": [shot("first", "aa"), shot("full", "bb", viewport=True)],
     }
     supported, reason, identical = theme_shots.dark_verdict(light, dark)
     assert supported is False
     assert "byte-identical" in reason
-    assert identical == ["first", "full"]
+    # the whole-page shot is never one of the signals, so it is not one of the labels either
+    assert identical == ["first"]
 
 
-def test_dark_verdict_one_changed_shot_is_enough():
+def test_dark_verdict_ignores_a_whole_page_shot_that_moved_on_its_own():
+    """Measured on master: alabaster and rtd, whose code blocks are not the theme's doing."""
+    light = {
+        "background": "rgb(255, 255, 255)",
+        "shots": [shot("first", "aa"), shot("full", "bb", viewport=True)],
+    }
+    dark = {
+        "background": "rgb(255, 255, 255)",
+        "shots": [shot("first", "aa"), shot("full", "ZZ", viewport=True)],
+    }
+    supported, reason, _ = theme_shots.dark_verdict(light, dark)
+    assert supported is False
+    # ... and the reader is told about it anyway
+    assert "whole-page shot does differ" in reason
+
+
+def test_dark_verdict_one_changed_widget_shot_is_enough():
     light = {"background": "rgb(255, 255, 255)", "shots": [shot("first", "aa")]}
     dark = {"background": "rgb(255, 255, 255)", "shots": [shot("first", "zz")]}
     supported, reason, identical = theme_shots.dark_verdict(light, dark)
     assert supported is True
-    assert "1 of 1 shots changed" in reason
+    assert "1 of 1 widget shots changed" in reason
     assert identical == []
 
 
@@ -352,11 +390,17 @@ def test_manifest_and_gallery(tmp_path: Path):
         out,
         {
             "furo": {
-                "backgrounds": {"light": "rgb(255, 255, 255)", "dark": "rgb(19, 19, 22)"},
+                "backgrounds": {
+                    "light": "rgb(255, 255, 255)",
+                    "dark": "rgb(19, 19, 22)",
+                },
                 "errors": [{"kind": "pageerror", "text": "$ is not defined"}],
             },
             "alabaster": {
-                "backgrounds": {"light": "rgb(255, 255, 255)", "dark": "rgb(255, 255, 255)"}
+                "backgrounds": {
+                    "light": "rgb(255, 255, 255)",
+                    "dark": "rgb(255, 255, 255)",
+                }
             },
         },
     )
@@ -449,7 +493,7 @@ def test_compare_layout_brings_the_before_images_inside(tmp_path: Path):
 def test_compare_needs_a_manifest(tmp_path: Path):
     (tmp_path / "before").mkdir()
     (tmp_path / "after").mkdir()
-    with pytest.raises(SystemExit, match="manifest.json"):
+    with pytest.raises(SystemExit, match=r"manifest\.json"):
         theme_shots.import_before(tmp_path / "before", tmp_path / "after")
 
 

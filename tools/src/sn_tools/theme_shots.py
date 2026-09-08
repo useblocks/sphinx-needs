@@ -180,10 +180,12 @@ class Target:
 
     label: str
     page: str
-    #: A CSS selector for the section to search inside, or None for the whole document. This
-    #: is how "the widget in the #style-row example section" is said without naming an element
-    #: that a theme or a rewrite might rename.
-    scope: str | None = None
+    #: A CSS selector for the thing that starts the section to search in, or None for the
+    #: whole document. NOT necessarily a container: sphinx emits `<section id="style-row">`,
+    #: but sphinx-immaterial unwraps sections and moves the id onto the `<h3>`, so
+    #: `#style-row table.NEEDS_DATATABLES` matches nothing in that one build. See
+    #: `scope_strategies`, which is why this is an anchor rather than a scope.
+    anchor: str | None = None
     #: The element to find (inside `scope`). The FIRST match wins -- "the first widget on the
     #: page" is a target, not an accident.
     element: str = WIDGET_TABLE
@@ -205,9 +207,10 @@ DEFAULT_TARGETS: tuple[Target, ...] = (
     Target(
         label="style-row",
         page=NEEDTABLE_PAGE,
-        # the section's own id, which sphinx derives from the `style_row` heading; the
-        # `needtable_style_row` label above it becomes a bare anchor, not the section id
-        scope="section#style-row",
+        # the id sphinx derives from the `style_row` heading -- which lands on the section in
+        # four of the five themes and on the heading itself in sphinx-immaterial, so it is
+        # written bare and `scope_strategies` copes with both
+        anchor="#style-row",
         wrappers=WIDGET_WRAPPERS,
         help="the widget in the style_row example, whose rows carry theme-fighting colours",
     ),
@@ -264,9 +267,21 @@ def closest_wrapper(
     return resolve_selector(wrappers, has_ancestor)
 
 
-def scoped(scope: str | None, element: str) -> str:
-    """The CSS the page is actually queried with."""
-    return element if scope is None else f"{scope} {element}"
+def scope_strategies(anchor: str | None, element: str) -> list[tuple[str, str]]:
+    """The ways to find `element` "in the `anchor` section", in order: `(strategy, argument)`.
+
+    Two, because the five theme builds do not agree on what an anchor IS. sphinx writes
+    `<section id="style-row">` and the element is a descendant, so a descendant selector finds
+    it -- in furo, alabaster, pydata-sphinx-theme and sphinx_rtd_theme. sphinx-immaterial
+    unwraps sections and moves the id onto the `<h3>`, where nothing is a descendant of the
+    anchor at all and `#style-row table.NEEDS_DATATABLES` silently matches nothing. (Measured:
+    that is exactly the shot this instrument dropped on its first full run.) So the fallback is
+    document order -- the first match that FOLLOWS the anchor -- which is what "the widget in
+    that example section" means in both DOMs. The strategy that fired is recorded.
+    """
+    if anchor is None:
+        return [("selector", element)]
+    return [("selector", f"{anchor} {element}"), ("after", anchor)]
 
 
 def select_targets(
@@ -355,34 +370,81 @@ def is_dark(colour: str | None) -> bool | None:
 def dark_verdict(light: Json, dark: Json) -> tuple[bool, str, list[str]]:
     """Does this theme have a dark mode? `(supported, reason, labels that came out identical)`.
 
-    TWO signals, and both have to say "nothing changed" before a theme is called dark-less,
-    because either alone can lie. Byte equality alone would call a theme dark-less if a build
-    happened to render identically for some other reason; a background sample alone would miss
-    a theme that darkens its content area and not its page. Together they are the observable
-    difference between "the emulation did nothing" and "the theme responded".
+    TWO signals -- the theme's own page background, and byte equality of the WIDGET shots --
+    and both have to say "nothing moved" before a theme is called dark-less. Either alone can
+    lie: byte equality would call a theme dark-less if a build happened to render identically
+    for some other reason, and a background sample alone would miss a theme that darkened its
+    content area and not its page.
+
+    The whole-page shot is deliberately NOT one of the signals, and that is a measured
+    correction rather than a simplification. On master, alabaster's and sphinx_rtd_theme's
+    `full` shots DO differ between the two colour schemes while every widget shot is
+    byte-identical and the page background never moves: something on the page that is not the
+    theme -- the syntax-example extension's stylesheet -- answers `prefers-color-scheme` on its
+    own. Counting that as a dark mode put two duplicate rows in the gallery, which is the exact
+    thing this function exists to prevent. It is still reported in the reason, because a
+    reviewer looking at a light theme with dark code blocks in it wants to know.
     """
-    light_shots = {shot["label"]: shot for shot in light.get("shots", [])}
-    dark_shots = {shot["label"]: shot for shot in dark.get("shots", [])}
+
+    def widgets(entry: Json) -> dict[str, Json]:
+        return {
+            shot["label"]: shot
+            for shot in entry.get("shots", [])
+            if not shot.get("viewport")
+        }
+
+    light_shots, dark_shots = widgets(light), widgets(dark)
     shared = [label for label in light_shots if label in dark_shots]
     identical = [
-        label for label in shared if light_shots[label].get("sha") == dark_shots[label].get("sha")
+        label
+        for label in shared
+        if light_shots[label].get("sha") == dark_shots[label].get("sha")
     ]
     background_light = light.get("background")
     background_dark = dark.get("background")
-    if not shared:
-        return False, "no shots were captured in dark mode", identical
-    if len(identical) == len(shared) and background_light == background_dark:
+    moved = background_light != background_dark
+    changed = len(shared) - len(identical)
+    if moved:
         return (
-            False,
-            "every dark shot is byte-identical to its light counterpart and the page "
-            f"background is unchanged ({background_light})",
+            True,
+            f"the page background moved from {background_light} to {background_dark}",
             identical,
         )
-    if background_light != background_dark:
-        reason = f"the page background moved from {background_light} to {background_dark}"
-    else:
-        reason = f"{len(shared) - len(identical)} of {len(shared)} shots changed"
-    return True, reason, identical
+    if changed:
+        return True, f"{changed} of {len(shared)} widget shots changed", identical
+    if not shared:
+        return False, "no widget shots were captured in dark mode", identical
+    viewport_moved = _viewport_moved(light, dark)
+    aside = (
+        " (the whole-page shot does differ, so something on the page other than the theme "
+        "answers prefers-color-scheme)"
+        if viewport_moved
+        else ""
+    )
+    return (
+        False,
+        f"the page background is unchanged ({background_light}) and every widget shot is "
+        f"byte-identical to its light counterpart{aside}",
+        identical,
+    )
+
+
+def _viewport_moved(light: Json, dark: Json) -> bool:
+    """Whether the whole-page shots differ -- reported, never counted. See `dark_verdict`."""
+
+    def viewports(entry: Json) -> dict[str, Json]:
+        return {
+            shot["label"]: shot
+            for shot in entry.get("shots", [])
+            if shot.get("viewport")
+        }
+
+    left, right = viewports(light), viewports(dark)
+    return any(
+        left[label].get("sha") != right[label].get("sha")
+        for label in left
+        if label in right
+    )
 
 
 def sha256_of(path: Path) -> str:
@@ -476,6 +538,17 @@ BROWSER_MISSING = (
 
 #: `el.closest(selector) !== null`, for `closest_wrapper`.
 JS_HAS_ANCESTOR = "(el, selector) => el.closest(selector) !== null"
+
+#: The `after` scope strategy: the first `element` that FOLLOWS `anchor` in document order.
+#: What "the widget in that example section" means when the anchor is a heading rather than a
+#: container -- see `scope_strategies`.
+JS_AFTER_ANCHOR = """(args) => {
+  const anchor = document.querySelector(args.anchor);
+  if (!anchor) return null;
+  return Array.from(document.querySelectorAll(args.element)).find(
+    (el) => anchor.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING
+  ) || null;
+}"""
 
 #: The first non-transparent background walking up from `<body>`. A theme that paints the page
 #: on `<html>` and leaves `<body>` transparent is the common case for exactly the themes whose
@@ -619,9 +692,9 @@ def _capture_mode(
     page.on("pageerror", lambda error: log.add("pageerror", str(error)))
     page.on(
         "console",
-        lambda message: log.add("console.error", message.text)
-        if message.type == "error"
-        else None,
+        lambda message: (
+            log.add("console.error", message.text) if message.type == "error" else None
+        ),
     )
     directory = out / theme / mode
     directory.mkdir(parents=True, exist_ok=True)
@@ -686,18 +759,32 @@ def _capture_target(
 ) -> Json:
     """One screenshot, plus everything a reviewer needs in order to trust it."""
     path = directory / f"{target.label}.png"
-    selector = scoped(target.scope, target.element)
+    strategies = scope_strategies(target.anchor, target.element)
     record: Json = {
         "label": target.label,
         "theme": theme,
         "mode": mode,
         "page": target.page,
         "file": f"{theme}/{mode}/{target.label}.png",
-        "selector": selector,
+        "viewport": target.viewport,
     }
-    handle = page.query_selector(selector)
+    handle = None
+    for strategy, argument in strategies:
+        if strategy == "selector":
+            handle = page.query_selector(argument)
+        else:
+            handle = page.evaluate_handle(
+                JS_AFTER_ANCHOR, {"anchor": argument, "element": target.element}
+            ).as_element()
+        if handle is not None:
+            record["strategy"] = strategy
+            record["selector"] = argument
+            break
     if handle is None:
-        record["error"] = f"no element matched {selector!r}"
+        record["selector"] = strategies[0][1]
+        record["error"] = "nothing matched " + " or ".join(
+            f"{strategy}:{argument!r}" for strategy, argument in strategies
+        )
         return record
 
     if target.viewport:
@@ -983,7 +1070,9 @@ def write_gallery(manifest: Json, out: Path, before: Json | None = None) -> Path
                 if before is not None:
                     cell.append(_figure("before", before_shots.get(label)))
                 cell.append(
-                    _figure("after" if before is not None else label, after_shots.get(label))
+                    _figure(
+                        "after" if before is not None else label, after_shots.get(label)
+                    )
                 )
                 parts.append("<td>" + "".join(cell) + "</td>")
             parts.append("</tr>")
@@ -1043,7 +1132,10 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
-        "--root", type=Path, default=None, help="the repository root (default: this checkout)"
+        "--root",
+        type=Path,
+        default=None,
+        help="the repository root (default: this checkout)",
     )
     parser.add_argument(
         "--build-root",
@@ -1129,12 +1221,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     for name in missing:
         task = tasks.get(name)
         hint = f" (build it with `uv run poe {task}`)" if task else ""
-        print(f"note: no build at {build_root / name} -- skipping{hint}", file=sys.stderr)
+        print(
+            f"note: no build at {build_root / name} -- skipping{hint}", file=sys.stderr
+        )
     if not themes:
         raise SystemExit(
             f"error: no theme build under {build_root}.\n"
             "Build them first -- `uv run poe docs-needs-themes`, or one at a time:\n"
-            + "\n".join(f"  uv run poe {task:24s} # {name}" for name, task in BUILD_TASKS)
+            + "\n".join(
+                f"  uv run poe {task:24s} # {name}" for name, task in BUILD_TASKS
+            )
         )
 
     out.mkdir(parents=True, exist_ok=True)
