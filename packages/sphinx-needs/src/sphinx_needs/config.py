@@ -663,6 +663,15 @@ class NeedsSphinxConfig:
         default="DATATABLES", metadata={"rebuild": "html", "types": (str,)}
     )
     """Default style for the needtable."""
+    table_page_size: int = field(
+        default=10, metadata={"rebuild": "html", "types": (int,)}
+    )
+    """Default number of rows an interactive needtable shows per page."""
+    table_page_sizes: list[int] = field(
+        default_factory=lambda: [10, 25, 50, 0],
+        metadata={"rebuild": "html", "types": (list,)},
+    )
+    """Page sizes an interactive needtable offers; ``0`` means all rows."""
     role_need_template: str = field(
         default="{{ title }} ({{ id }})",
         metadata={"rebuild": "html", "types": (str,)},

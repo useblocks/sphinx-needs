@@ -86,11 +86,11 @@ def test_doc_needtable_options(test_app):
     assert 'id="needtable-test_options-1"' in html
 
     column_order = """
-<tr class="row-odd"><th class="head"><p>Incoming</p></th>
-<th class="head"><p>ID</p></th>
-<th class="head"><p>Tags</p></th>
-<th class="head"><p>Status</p></th>
-<th class="head"><p>Title</p></th>
+<tr class="row-odd"><th class="head needs_col_incoming" data-col="incoming" scope="col"><p>Incoming</p></th>
+<th class="head needs_col_id" data-col="id" scope="col"><p>ID</p></th>
+<th class="head needs_col_tags" data-col="tags" scope="col"><p>Tags</p></th>
+<th class="head needs_col_status" data-col="status" scope="col"><p>Status</p></th>
+<th class="head needs_col_title" data-col="title" scope="col"><p>Title</p></th>
 </tr>
 """
 
@@ -109,10 +109,10 @@ def test_doc_needtable_options(test_app):
     assert "Sphinx-Needs docs for needs-string-links" in html
 
     string_column_order = """
-<tr class="row-odd"><th class="head"><p>ID</p></th>
-<th class="head"><p>Title</p></th>
-<th class="head"><p>Config</p></th>
-<th class="head"><p>Github</p></th>
+<tr class="row-odd"><th class="head needs_col_id" data-col="id" scope="col"><p>ID</p></th>
+<th class="head needs_col_title" data-col="title" scope="col"><p>Title</p></th>
+<th class="head needs_col_config" data-col="config" scope="col"><p>Config</p></th>
+<th class="head needs_col_github" data-col="github" scope="col"><p>Github</p></th>
 </tr>
 """
 
@@ -200,9 +200,20 @@ def test_doc_needtable_titles(test_app):
     app = test_app
     app.build()
     html = Path(app.outdir, "test_titles.html").read_text(encoding="utf-8")
-    assert '<th class="head"><p>Headline</p></th>' in html
-    assert '<th class="head"><p>To this need123</p></th>' in html
-    assert '<th class="head"><p>Special Characters!</p></th>' in html
+    assert (
+        '<th class="head needs_col_title" data-col="title" scope="col">'
+        "<p>Headline</p></th>" in html
+    )
+    assert (
+        '<th class="head needs_col_incoming" data-col="incoming" scope="col">'
+        "<p>To this need123</p></th>" in html
+    )
+    # the column key is the option name verbatim -- as it already is for the cell
+    # class below, punctuation and all
+    assert (
+        '<th class="head needs_col_special-chars!" data-col="special-chars!"'
+        ' scope="col"><p>Special Characters!</p></th>' in html
+    )
     assert '<td class="needs_special-chars!"><p>special-chars value</p></td>' in html
 
 

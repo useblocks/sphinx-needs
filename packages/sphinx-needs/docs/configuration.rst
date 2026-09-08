@@ -1657,8 +1657,58 @@ Default value: ``"datatables"``
 
 Supported values:
 
-* **table**: Default Sphinx table
-* **datatables**: Table with activated DataTables functions (Sort, search, export, ...).
+* **table**: a plain Sphinx table.
+* **datatables**: the interactive table -- sorting, search, pagination, column
+  visibility, copy and CSV download, added in the browser by a small script that ships
+  with Sphinx-Needs. See :ref:`style <needtable_style>` for what it does and does not do.
+
+.. versionchanged:: 9.0.0
+
+   ``datatables`` used to name the bundled `DataTables <https://datatables.net>`__
+   package. It now names Sphinx-Needs' own interactive table, which needs no third-party
+   JavaScript; the configuration value and the ``NEEDS_DATATABLES`` CSS class are
+   unchanged, so no project has to be edited.
+
+.. _`needs_table_page_size`:
+
+needs_table_page_size
+~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 9.0.0
+
+How many rows a page of an :ref:`interactive table <needtable_style>` holds. Can be
+overridden for a single table with :ref:`page_size <needtable_page_size>`.
+
+.. code-block:: python
+
+   # conf.py
+   needs_table_page_size = 25
+
+Default value: ``10``
+
+Must be a positive whole number. A need and its parts count as one row, so that a page
+never splits a need from its parts.
+
+.. _`needs_table_page_sizes`:
+
+needs_table_page_sizes
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 9.0.0
+
+The page sizes an :ref:`interactive table <needtable_style>` offers the reader, in the
+order they are offered. ``0`` means "All".
+
+.. code-block:: python
+
+   # conf.py
+   needs_table_page_sizes = [10, 25, 50, 0]
+
+Default value: ``[10, 25, 50, 0]``
+
+Must be a non-empty list of whole numbers that are not negative. If
+:ref:`needs_table_page_size` (or a table's own :ref:`page_size <needtable_page_size>`) is
+not among them, it is added, so the control can always show the size in use.
 
 .. _`needs_table_columns`:
 

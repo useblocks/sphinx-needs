@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>needstable: the vendored pair alone</title>
+<!--
+  The markup contract and NOTHING else: this page loads `needstable.css` and
+  `needstable.js` straight out of the package and no host stylesheet at all. It is what a
+  consumer that vendors the pair byte-identical actually ships, so it is the only thing
+  that can fence the structural sheet on its own. `tests/test_needstable_js.py` opens it
+  over `file://` and measures the table against its scroll frame.
+-->
+<link rel="stylesheet" href="../../src/sphinx_needs/libs/html/needstable.css">
+<script defer src="../../src/sphinx_needs/libs/html/needstable.js"></script>
+</head>
+<body style="margin:0">
+<div id="host" style="width: 800px">
+  <table class="NEEDS_DATATABLES docutils align-default" id="pair-table"
+         data-needstable-page-size="10" data-needstable-page-sizes="10,25,0">
+    <colgroup>
+      <col style="width: 20.0%"><col style="width: 60.0%"><col style="width: 20.0%">
+    </colgroup>
+    <thead>
+      <tr class="row-odd">
+        <th class="head needs_col_id" data-col="id" scope="col"><p>ID</p></th>
+        <th class="head needs_col_title" data-col="title" scope="col"><p>Title</p></th>
+        <th class="head needs_col_amount" data-col="amount" data-type="number" scope="col"><p>Amount</p></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="need" data-need-id="R_01">
+        <td class="needs_id"><p><a href="#R_01">R_01</a></p></td>
+        <td class="needs_title"><p>First</p></td>
+        <td class="needs_amount"><p>10</p></td>
+      </tr>
+      <tr class="need_part" data-need-id="R_01.P1" data-parent="R_01">
+        <td class="needs_id_complete"><p><a href="#R_01.P1">R_01.P1</a></p></td>
+        <td class="needs_content"><p>a part</p></td>
+        <td class="needs_amount"><p>10</p></td>
+      </tr>
+      <tr class="need" data-need-id="R_02">
+        <td class="needs_id"><p><a href="#R_02">R_02</a></p></td>
+        <td class="needs_title"><p>Second</p></td>
+        <td class="needs_amount"><p>2</p></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+</body>
+</html>

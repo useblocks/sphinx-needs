@@ -1,0 +1,324 @@
+/*!
+ * needstable.css -- the structural sheet for needstable.js.
+ *
+ * Copyright (c) useblocks GmbH. MIT licence.
+ *
+ * sphinx-needs is the REPOSITORY OF RECORD for this file; a consumer that ships this
+ * asset vendors it byte-identical beside the script. It pairs with `needstable.js` and
+ * describes only LAYOUT: where the control bars sit, how the pager reads, the sort
+ * glyphs, the hidden column, the focus ring.
+ *
+ * It is HOST-AGNOSTIC on purpose: it names no theme and no `--sn-*` token. Every colour
+ * goes through a `--needstable-*` custom property whose fallback is `currentColor`,
+ * `inherit` or transparent, so an unstyled host gets the page's own colours and a host
+ * that wants more sets the properties. sphinx-needs does that in
+ * `css/common/needstable.css`. The reasoning is in `design/needstable-contract.md`.
+ *
+ * The chrome is deliberately quiet: the table's data is the content, the controls are
+ * not. No border around the widget, small buttons, little rounding.
+ */
+
+div.needstable {
+    /* the table itself may be wider than the page; the controls must not scroll with it */
+    display: block;
+    width: 100%;
+}
+
+/* The scroll frame. The TABLE is deliberately NOT the scroll container: a `<table>` set
+   to `display: block` re-wraps its rows in an anonymous table box that shrink-to-fits, so
+   `width: 100%` stops at the outer block and the table can render a fifth narrower than
+   the space it is given -- and a host theme that wraps the `<table>` itself displaces any
+   `div.needstable > table` rule entirely. An inner box the host does not know about has
+   neither problem, and the controls stay outside it. */
+div.needstable-scroll {
+    width: 100%;
+    overflow-x: auto;
+}
+
+/* The table fills the frame. This sheet has to say so itself: a host may supply the rule
+   (sphinx-needs does), but a consumer that ships the pair on its own would otherwise get a
+   shrink-to-fit table -- measured at 378 px in an 800 px frame -- with its `<colgroup>`
+   percentages resolving against the shrunken width.
+
+   A DESCENDANT selector, not a child one: a host theme's own script may wrap every table in
+   a container of its own, which lands between this frame and the table and displaces any
+   rule that names the frame as the table's parent -- the same fragility that took the
+   scroll job off the table in the first place. It is qualified by the hook class rather
+   than left bare, so a table nested inside a needtable's cell is not caught. */
+div.needstable-scroll table.NEEDS_DATATABLES {
+    width: 100%;
+}
+
+div.needstable-controls,
+div.needstable-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75em;
+    margin: 0.4em 0;
+    font-size: 0.88em;
+    color: var(--needstable-label-color, inherit);
+}
+
+div.needstable-footer {
+    justify-content: space-between;
+}
+
+/* the search box takes the free space, so the rest keeps its natural width */
+label.needstable-search {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    flex: 1 1 12em;
+    min-width: 8em;
+}
+
+label.needstable-page-size,
+label.needstable-columns-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+}
+
+/* a host may set a `font-size` on bare `label`, which the control inside it would then
+   faithfully inherit -- so the labels take the control bar's size explicitly */
+div.needstable label.needstable-search,
+div.needstable label.needstable-page-size,
+div.needstable label.needstable-columns-item {
+    font: inherit;
+    /* the `font` shorthand resets `line-height` to `normal`, and the control inside the
+       label would inherit that instead of the bar's -- which is a control two pixels
+       shorter than the buttons beside it */
+    line-height: inherit;
+}
+
+div.needstable input.needstable-search-input {
+    flex: 1 1 auto;
+    min-width: 6em;
+    max-width: 18em;
+    padding: 0.1em 0.4em;
+    /* Without this a host's compounding `font-size` cascade lands on the form controls
+       but not on the buttons beside them, and the two end up different sizes on one line.
+       The `!important` is the one in this sheet, and it is forced by a measurement: a host
+       theme sets `body, input { font-size: 16px !important }`, which nothing weaker can
+       answer, and the search box would be two points larger than everything beside it. */
+    font: inherit !important;
+    line-height: inherit;
+    color: inherit;
+    background-color: transparent;
+    border: 1px solid var(--needstable-border-color, currentColor);
+    border-radius: 2px;
+}
+
+div.needstable select.needstable-page-size-select {
+    padding: 0.1em 0.2em;
+    font: inherit;
+    line-height: inherit;
+    color: inherit;
+    background-color: transparent;
+    border: 1px solid var(--needstable-border-color, currentColor);
+    border-radius: 2px;
+    cursor: pointer;
+}
+
+div.needstable button.needstable-button,
+div.needstable button.needstable-page {
+    padding: 0.1em 0.7em;
+    font-size: inherit;
+    line-height: inherit;
+    color: inherit;
+    white-space: nowrap;
+    background-color: transparent;
+    background-image: none;
+    border: 1px solid var(--needstable-border-color, currentColor);
+    border-radius: 2px;
+    cursor: pointer;
+}
+
+div.needstable button.needstable-button:hover:not(:disabled),
+div.needstable button.needstable-page:hover:not(:disabled) {
+    background-color: var(--needstable-hover-bg, rgba(127, 127, 127, 0.16));
+}
+
+div.needstable button:disabled {
+    cursor: default;
+    opacity: 0.45;
+}
+
+/* column visibility: a native disclosure, so no script manages a popover */
+details.needstable-columns {
+    position: relative;
+}
+
+/* the fence has to reach the `<details>` as well as its `<summary>`: a host theme that
+   styles the element itself draws a border and a background around the whole control,
+   which reads as a ring two pixels larger than the button inside it */
+div.needstable details.needstable-columns {
+    /* the disclosure is a flex item on the control bar, and a host may size `<details>`
+       itself; without these it can end up narrower than the button inside it */
+    flex: 0 0 auto;
+    min-width: max-content;
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: 0;
+    box-shadow: none;
+}
+
+/* A host theme may style every `<summary>` on the page as something of its own -- an
+   admonition with a background, a border, an accent bar, a bold font and an injected icon
+   and chevron. This control is a button in a toolbar, so it has to say so itself rather
+   than inherit any of that. */
+div.needstable details.needstable-columns > summary {
+    /* a host may give `summary` a NEGATIVE horizontal margin, which makes the control
+       wider than the box around it and leaves the two boxes disagreeing */
+    margin: 0;
+    padding: 0.1em 0.7em;
+    font: inherit;
+    font-weight: inherit;
+    color: inherit;
+    background: none;
+    box-shadow: none;
+    border: 1px solid var(--needstable-border-color, currentColor);
+    border-radius: 2px;
+    cursor: pointer;
+    list-style: none;
+}
+
+/* the disclosure triangle, and anything a host injects in its place */
+div.needstable details.needstable-columns > summary::-webkit-details-marker {
+    display: none;
+}
+
+div.needstable details.needstable-columns > summary::marker {
+    content: "";
+}
+
+div.needstable details.needstable-columns > summary::before,
+div.needstable details.needstable-columns > summary::after {
+    content: none;
+    display: none;
+}
+
+div.needstable-columns-list {
+    position: absolute;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2em;
+    padding: 0.4em 0.6em;
+    white-space: nowrap;
+    background-color: var(--needstable-popover-bg, Canvas);
+    color: var(--needstable-popover-color, CanvasText);
+    border: 1px solid var(--needstable-border-color, currentColor);
+    border-radius: 2px;
+}
+
+/* the sort control: a real <button>, so Enter and Space work without a key handler */
+div.needstable button.needstable-sort {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    margin: 0;
+    padding: 0 1em 0 0;
+    font: inherit;
+    color: inherit;
+    text-align: inherit;
+    background: none;
+    border: 0;
+    cursor: pointer;
+}
+
+/* The indicator is TWO triangles with a gap between them -- an up one above a down one.
+   One element carrying both borders makes them meet at a point, which reads as a solid
+   hourglass rather than as "sortable both ways". They are drawn with borders rather than
+   a glyph or an image so that they inherit the text colour and cannot come out as a
+   different character on a different operating system. */
+div.needstable button.needstable-sort::before,
+div.needstable button.needstable-sort::after {
+    content: "";
+    position: absolute;
+    right: 0.15em;
+    width: 0;
+    height: 0;
+    border-left: 0.28em solid transparent;
+    border-right: 0.28em solid transparent;
+    opacity: 0.35;
+}
+
+div.needstable button.needstable-sort::before {
+    bottom: calc(50% + 1px);
+    border-bottom: 0.32em solid currentColor;
+}
+
+div.needstable button.needstable-sort::after {
+    top: calc(50% + 1px);
+    border-top: 0.32em solid currentColor;
+}
+
+/* sorted: the direction in force at full strength, the other one gone. The two keep
+   their positions, so the header text does not move when the column is sorted. */
+div.needstable th[aria-sort="ascending"] button.needstable-sort::before {
+    opacity: 1;
+}
+
+div.needstable th[aria-sort="ascending"] button.needstable-sort::after {
+    opacity: 0;
+}
+
+div.needstable th[aria-sort="descending"] button.needstable-sort::after {
+    opacity: 1;
+}
+
+div.needstable th[aria-sort="descending"] button.needstable-sort::before {
+    opacity: 0;
+}
+
+div.needstable :focus-visible {
+    outline: 2px solid var(--needstable-focus-color, currentColor);
+    outline-offset: 1px;
+}
+
+nav.needstable-pager {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25em;
+}
+
+/* The script sets `hidden` when there is one page. An author `display` rule beats the
+   user agent's `[hidden] { display: none }`, and an element that is `hidden` but still
+   displayed stays in the accessibility tree -- a screen reader would meet an empty
+   "Pagination" landmark on every single-page table. */
+nav.needstable-pager[hidden] {
+    display: none;
+}
+
+div.needstable button.needstable-page[aria-current="page"] {
+    font-weight: bold;
+    background-color: var(--needstable-current-bg, rgba(127, 127, 127, 0.22));
+}
+
+span.needstable-ellipsis {
+    padding: 0 0.2em;
+}
+
+/* a column the reader switched off, in the header and in every cell */
+div.needstable .needstable-hidden {
+    display: none;
+}
+
+/* the pre-async-clipboard copy route parks a textarea for one tick */
+textarea.needstable-clipboard {
+    position: fixed;
+    top: -100vh;
+    left: -100vw;
+    opacity: 0;
+}
+
+@media print {
+    div.needstable-controls,
+    div.needstable-footer {
+        display: none;
+    }
+}

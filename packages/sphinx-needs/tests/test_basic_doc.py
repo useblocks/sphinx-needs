@@ -49,8 +49,10 @@ def test_build_html(test_app: SphinxTestApp, snapshot_doctree):
     build_dir = Path(app.outdir) / "_static" / "sphinx-needs" / "libs" / "html"
     files = [f for f in build_dir.glob("**/*") if f.is_file()]
     assert build_dir / "sphinx_needs_collapse.js" in files
-    assert build_dir / "datatables_loader.js" in files
-    assert build_dir / "DataTables-1.10.16" / "js" / "jquery.dataTables.min.js" in files
+    assert build_dir / "needstable.js" in files
+    assert build_dir / "needstable.css" in files
+    # the whole vendored DataTables tree went with the enhancer that replaced it
+    assert not [f for f in files if "datatables" in f.name.lower()]
 
 
 @pytest.mark.skipif(
@@ -71,16 +73,40 @@ def test_html_head_files(test_app: SphinxTestApp):
     root_tree = html_parser.parse(html_path)
     script_nodes = root_tree.xpath("/html/head/script")
     script_files = [x.attrib["src"].rsplit("?", 1)[0] for x in script_nodes]
-    assert script_files.count("_static/sphinx-needs/libs/html/datatables.min.js") == 1
+    assert script_files.count("_static/sphinx-needs/libs/html/needstable.js") == 1
+
+    # the tag has to be DEFERRED, and `loading_method` is not an HTML attribute: only
+    # `Sphinx.add_js_file` translates that keyword, and the per-page registration has to
+    # go through the builder, which writes every keyword into the tag verbatim
+    script = next(
+        node
+        for node in script_nodes
+        if "libs/html/needstable.js" in node.attrib.get("src", "")
+    )
+    assert script.attrib.get("defer") is not None, dict(script.attrib)
+    assert "loading_method" not in script.attrib, dict(script.attrib)
 
     link_nodes = root_tree.xpath("/html/head/link")
     link_files = [x.attrib["href"].rsplit("?", 1)[0] for x in link_nodes]
+    assert link_files.count("_static/sphinx-needs/libs/html/needstable.css") == 1
     assert link_files.count("_static/sphinx-needs/modern.css") == 1
 
     # Checks if not \ (Backslash) is found as path of js/css files
     # This can happen when working on Windows (would be a bug ;) )
     for head_file in script_files + link_files:
         assert "\\" not in head_file
+
+    # the table assets go on the pages that have a table, and nowhere else (#462).
+    # `search.html` and `genindex.html` have no doctree at all, and used to carry the
+    # whole 2.26 MB DataTables bundle
+    for pagename in ("search.html", "genindex.html"):
+        tree = html_parser.parse(str(Path(app.outdir, pagename)))
+        assets = [
+            node.attrib["src" if node.tag == "script" else "href"].rsplit("?", 1)[0]
+            for node in tree.xpath("/html/head/script") + tree.xpath("/html/head/link")
+        ]
+        assert "_static/sphinx-needs/libs/html/needstable.js" not in assets, pagename
+        assert "_static/sphinx-needs/libs/html/needstable.css" not in assets, pagename
 
 
 @pytest.mark.parametrize(

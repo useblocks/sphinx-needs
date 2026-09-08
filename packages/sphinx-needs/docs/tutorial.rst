@@ -298,8 +298,8 @@ Similarly, we can display the same items in a table format:
         :columns: id,type,title,status
         :style: table
 
-There are currently two styles for the table; a simple HTML ``table``, or the default ``datatables`` style to add dynamic pagination, filtering and sorting,
-using the `DataTables <https://datatables.net/>`__ JS package:
+There are currently two styles for the table; a simple HTML ``table``, or the default ``datatables`` style,
+which adds pagination, search, sorting, column visibility and a CSV download in the browser:
 
 .. syntax-example:: Table with dynamic features
 
@@ -307,7 +307,7 @@ using the `DataTables <https://datatables.net/>`__ JS package:
         :tags: tutorial
         :sort: id
         :columns: id,type,title,status
-        :style: datatable
+        :style: datatables
 
 Finally, we can display a :ref:`flow diagram <needflow>` of the need items, to also show the relationships between them:
  

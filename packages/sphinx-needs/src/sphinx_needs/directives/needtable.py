@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterator, Sequence
+from contextlib import contextmanager
 from typing import Any
 
 from docutils import nodes
@@ -23,7 +24,7 @@ from sphinx_needs.filter_common import FilterBase, apply_max_items, process_filt
 from sphinx_needs.functions.functions import check_and_get_content
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import NeedItem, NeedPartItem
-from sphinx_needs.needs_schema import LinkSchema
+from sphinx_needs.needs_schema import FieldsSchema, LinkSchema
 from sphinx_needs.utils import add_doc, profile, remove_node_from_tree, row_col_maker
 
 LOGGER = get_logger(__name__)
@@ -31,6 +32,138 @@ LOGGER = get_logger(__name__)
 
 class Needtable(nodes.General, nodes.Element):
     pass
+
+
+#: Set on a resolved doctree that holds at least one INTERACTIVE needtable, so that
+#: `environment.py` can register the client assets for that page and no other (#462).
+#: The doctree the `html-page-context` handler is given is the very object this module
+#: mutated moments earlier, in the same process, for both serial and parallel writes --
+#: which is why no environment-stored, purged and merged set of document names is needed.
+HAS_INTERACTIVE_TABLE = "needs_has_interactive_table"
+
+#: Default number of rows the interactive table shows per page.
+DEFAULT_PAGE_SIZE = 10
+#: Default page sizes offered by the interactive table (``0`` means "All").
+DEFAULT_PAGE_SIZES = (10, 25, 50, 0)
+
+
+def validate_page_size(value: object) -> int | None:
+    """A page size is a positive integer; ``0`` ("all") is not a page size.
+
+    :return: the value if it is one, otherwise ``None``.
+    """
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        return None
+    return value
+
+
+def validate_page_sizes(value: object) -> list[int] | None:
+    """The offered page sizes are a non-empty list of non-negative integers.
+
+    ``0`` is allowed here and means "All".
+
+    :return: the sizes if they are ones, otherwise ``None``.
+    """
+    if not isinstance(value, list | tuple) or not value:
+        return None
+    sizes: list[int] = []
+    for entry in value:
+        if isinstance(entry, bool) or not isinstance(entry, int) or entry < 0:
+            return None
+        sizes.append(entry)
+    return sizes
+
+
+class NeedtableTable(nodes.table):
+    """The ``<table>`` of a needtable.
+
+    Behaves exactly like :class:`docutils.nodes.table` everywhere except the HTML
+    builders, where the registered visitor adds this node's ``html_attributes`` to the
+    start tag: the ``data-needstable-*`` options the client-side enhancer reads.
+    See ``design/needstable-contract.md``.
+    """
+
+
+class NeedtableRow(nodes.row):
+    """A body ``<tr>`` of a needtable, carrying ``data-need-id`` (and ``data-parent``)."""
+
+
+class NeedtableHeader(nodes.entry):
+    """A ``<th>`` of a needtable, carrying ``scope``, ``data-col`` and ``data-type``."""
+
+
+#: Sentinel for "the translator carried no ``starttag`` of its own". Restoring means
+#: putting back exactly what was there -- another extension's own instance-level patch, or
+#: nothing at all -- and those two need different operations, so "nothing" needs a value
+#: that cannot be confused with an attribute that is present.
+_NO_INSTANCE_STARTTAG = object()
+
+
+@contextmanager
+def _with_html_attributes(translator: Any, node: nodes.Element) -> Iterator[None]:
+    """Add ``node["html_attributes"]`` to the start tag the base visitor emits.
+
+    docutils' HTML writer serialises only the attributes a visitor hands to
+    ``starttag()``; a node carrying its own is not enough. Rather than re-implement
+    ``visit_table`` / ``visit_row`` / ``visit_entry`` -- whose logic (Sphinx's even/odd
+    row classes, docutils' ``morecols``/``morerows``, the ``head``/``stub`` classes and
+    the ``self.context`` push that ``depart_entry`` pops) belongs to those writers and
+    changes between releases -- we delegate to them with ``starttag`` wrapped for the
+    duration of the one call, and RESTORED to whatever was there before -- which may be
+    another extension's own instance-level patch, installed by exactly this technique.
+    """
+    extra = node.get("html_attributes") or {}
+    original = translator.starttag
+    # what the INSTANCE carried before, if anything: `del` would switch off another
+    # extension's patch for the rest of the document, silently
+    previous = translator.__dict__.get("starttag", _NO_INSTANCE_STARTTAG)
+
+    def starttag(
+        node_: nodes.Element,
+        tagname: str,
+        suffix: str = "\n",
+        empty: bool = False,
+        **attributes: Any,
+    ) -> str:
+        if node_ is node:
+            attributes.update(extra)
+        return original(node_, tagname, suffix, empty, **attributes)
+
+    translator.starttag = starttag
+    try:
+        yield
+    finally:
+        if previous is _NO_INSTANCE_STARTTAG:
+            del translator.starttag
+        else:
+            translator.starttag = previous
+
+
+def html_visit_needtable_table(translator: Any, node: NeedtableTable) -> None:
+    with _with_html_attributes(translator, node):
+        translator.visit_table(node)
+
+
+def html_depart_needtable_table(translator: Any, node: NeedtableTable) -> None:
+    translator.depart_table(node)
+
+
+def html_visit_needtable_row(translator: Any, node: NeedtableRow) -> None:
+    with _with_html_attributes(translator, node):
+        translator.visit_row(node)
+
+
+def html_depart_needtable_row(translator: Any, node: NeedtableRow) -> None:
+    translator.depart_row(node)
+
+
+def html_visit_needtable_header(translator: Any, node: NeedtableHeader) -> None:
+    with _with_html_attributes(translator, node):
+        translator.visit_entry(node)
+
+
+def html_depart_needtable_header(translator: Any, node: NeedtableHeader) -> None:
+    translator.depart_entry(node)
 
 
 class NeedtableDirective(FilterBase):
@@ -53,6 +186,7 @@ class NeedtableDirective(FilterBase):
         "sort": directives.unchanged_required,
         "class": directives.unchanged_required,
         "max_items": directives.nonnegative_int,
+        "page_size": directives.unchanged_required,
         # ubCode compatibility: accepted and ignored by Sphinx-Needs.
         "cypher": directives.unchanged,
     }
@@ -106,6 +240,21 @@ class NeedtableDirective(FilterBase):
 
         sort = self.options.get("sort", "id_complete")
 
+        page_size: int | None = None
+        if (raw_page_size := self.options.get("page_size")) is not None:
+            try:
+                page_size = validate_page_size(int(raw_page_size))
+            except ValueError:
+                page_size = None
+            if page_size is None:
+                log_warning(
+                    LOGGER,
+                    "The 'page_size' option must be a positive integer, "
+                    f"got {raw_page_size!r}; ignoring it.",
+                    "directive",
+                    location=self.get_location(),
+                )
+
         title = None
         if self.arguments:
             title = self.arguments[0]
@@ -126,6 +275,7 @@ class NeedtableDirective(FilterBase):
             "show_filters": "show_filters" in self.options,
             "show_parts": self.options.get("show_parts", False) is None,
             "max_items": self.options.get("max_items"),
+            "page_size": page_size,
             **self.collect_filter_attributes(),
         }
         node = Needtable("", **attributes)
@@ -134,6 +284,21 @@ class NeedtableDirective(FilterBase):
         add_doc(env, env.docname)
 
         return [targetnode, node]
+
+
+def _column_type(needs_schema: FieldsSchema, key: str) -> str | None:
+    """The ``data-type`` a column's ``<th>`` should declare, or ``None``.
+
+    Only types the *producer* knows are declared; anything else is left to the script's
+    own detection, which reads the rendered cell text. A link field is deliberately not
+    typed: its cell holds references, not a value.
+    """
+    field = needs_schema.get_any_field(key)
+    if field is None or isinstance(field, LinkSchema):
+        return None
+    if field.schema.get("type") in ("integer", "number"):
+        return "number"
+    return None
 
 
 @measure_time("needtable")
@@ -198,9 +363,27 @@ def process_needtables(
         if style != "TABLE":
             classes.extend(needs_config.table_classes)
 
-        table_node = nodes.table(
+        table_node = NeedtableTable(
             classes=classes, ids=[node.attributes["ids"][0] + "-table_node"]
         )
+        if style != "TABLE":
+            # per-table options for the client-side enhancer; a `:style: table` table
+            # carries none of them and the script ignores it. A bad configuration value
+            # is warned about once, at `config-inited`, and falls back here.
+            page_size = (
+                current_needtable.get("page_size")
+                or validate_page_size(needs_config.table_page_size)
+                or DEFAULT_PAGE_SIZE
+            )
+            page_sizes = validate_page_sizes(needs_config.table_page_sizes) or list(
+                DEFAULT_PAGE_SIZES
+            )
+            table_node["html_attributes"] = {
+                "data-needstable-page-size": str(page_size),
+                "data-needstable-page-sizes": ",".join(
+                    str(size) for size in page_sizes
+                ),
+            }
         tgroup = nodes.tgroup(cols=len(current_needtable["columns"]))
 
         # Define Table column width
@@ -216,9 +399,19 @@ def process_needtables(
                 tgroup += nodes.colspec(colwidth=5)
 
         node_columns = []
-        for _option, title in current_needtable["columns"]:
-            header_name = title
-            node_columns.append(nodes.entry("", nodes.paragraph("", header_name)))
+        for option, title in current_needtable["columns"]:
+            key = option.lower()
+            html_attributes = {"scope": "col", "data-col": key}
+            if (col_type := _column_type(needs_schema, key)) is not None:
+                html_attributes["data-type"] = col_type
+            node_columns.append(
+                NeedtableHeader(
+                    "",
+                    nodes.paragraph("", title),
+                    classes=[f"needs_col_{key}"],
+                    html_attributes=html_attributes,
+                )
+            )
 
         tgroup += nodes.thead("", nodes.row("", *node_columns))
         tbody = nodes.tbody()
@@ -276,11 +469,20 @@ def process_needtables(
             )  # Replace whitespaces with _ to get valid css name
 
             if need_info["is_need"] or isinstance(need_info, NeedItem):
-                row = nodes.row(classes=["need", style_row])
+                row = NeedtableRow(
+                    classes=["need", style_row],
+                    html_attributes={"data-need-id": need_info["id_complete"]},
+                )
                 prefix = ""
                 temp_need = need_info.copy()
             else:
-                row = nodes.row(classes=["need_part", style_row])
+                row = NeedtableRow(
+                    classes=["need_part", style_row],
+                    html_attributes={
+                        "data-need-id": need_info["id_complete"],
+                        "data-parent": need_info["id_parent"],
+                    },
+                )
                 prefix = needs_config.part_prefix
                 temp_need = need_info.copy_for_needtable()
 
@@ -336,7 +538,13 @@ def process_needtables(
                 and isinstance(need_info, NeedItem)
             ):
                 for temp_part in need_info.iter_part_items():
-                    row = nodes.row(classes=["need_part"])
+                    row = NeedtableRow(
+                        classes=["need_part"],
+                        html_attributes={
+                            "data-need-id": temp_part["id_complete"],
+                            "data-parent": temp_part["id_parent"],
+                        },
+                    )
 
                     for option, _title in current_needtable["columns"]:
                         if option == "ID":
@@ -380,39 +588,40 @@ def process_needtables(
 
                     tbody += row
 
-        content: nodes.Element
-        if len(filtered_needs) == 0:
-            content = no_needs_found_paragraph(current_needtable.get("filter_warning"))
-        else:
-            # Put the table in a div-wrapper, so that we can control overflow / scroll layout
-            if style == "TABLE":
-                table_wrapper = nodes.container(classes=["needstable_wrapper"])
-                table_wrapper.insert(0, table_node)
-                content = table_wrapper
-            else:
-                content = table_node
-        # add filter information to output
-        if current_needtable["show_filters"]:
-            table_node.append(used_filter_paragraph(current_needtable))
-
         if current_needtable["caption"]:
             title_text = current_needtable["caption"]
             title_node = nodes.title(title_text, "", nodes.Text(title_text))
             table_node.insert(0, title_node)
 
-        if len(filtered_needs) < total_needs:
-            # the notice goes after the table, rather than inside it like the filter
-            # information, since the table node is what the table styles initialise on
-            node.replace_self(
-                [
-                    content,
-                    report_max_items(
-                        len(filtered_needs),
-                        total_needs,
-                        origin="needtable",
-                        location=node,
-                    ),
-                ]
+        # everything that replaces the directive node, in document order
+        replacement: list[nodes.Node] = []
+        if len(filtered_needs) == 0:
+            replacement.append(
+                no_needs_found_paragraph(current_needtable.get("filter_warning"))
             )
         else:
-            node.replace_self(content)
+            # Put the table in a div-wrapper, so that we can control overflow / scroll layout
+            if style == "TABLE":
+                table_wrapper = nodes.container(classes=["needstable_wrapper"])
+                table_wrapper.insert(0, table_node)
+                replacement.append(table_wrapper)
+            else:
+                replacement.append(table_node)
+                doctree[HAS_INTERACTIVE_TABLE] = True
+            if current_needtable["show_filters"]:
+                # the filter information goes AFTER the table: a paragraph inside a
+                # `<table>` element is invalid HTML, which browsers hoist out again
+                replacement.append(used_filter_paragraph(current_needtable))
+
+        if len(filtered_needs) < total_needs:
+            # the notice goes last, after the table and the filter information
+            replacement.append(
+                report_max_items(
+                    len(filtered_needs),
+                    total_needs,
+                    origin="needtable",
+                    location=node,
+                )
+            )
+
+        node.replace_self(replacement)
