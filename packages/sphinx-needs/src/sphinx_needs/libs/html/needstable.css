@@ -24,8 +24,13 @@ div.needstable {
     width: 100%;
 }
 
-div.needstable > table {
-    display: block;
+/* The scroll frame. The TABLE is deliberately NOT the scroll container: a `<table>` set
+   to `display: block` re-wraps its rows in an anonymous table box that shrink-to-fits, so
+   `width: 100%` stops at the outer block and the table can render a fifth narrower than
+   the space it is given -- and a host theme that wraps the `<table>` itself displaces any
+   `div.needstable > table` rule entirely. An inner box the host does not know about has
+   neither problem, and the controls stay outside it. */
+div.needstable-scroll {
     width: 100%;
     overflow-x: auto;
 }

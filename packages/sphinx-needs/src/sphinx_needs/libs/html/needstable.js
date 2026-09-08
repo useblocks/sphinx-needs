@@ -461,6 +461,7 @@
                has is declared in one place; `buildControls` configures and assembles them */
             this.wrapper = element("div", "needstable");
             this.controls = element("div", "needstable-controls");
+            this.scroll = element("div", "needstable-scroll");
             this.footer = element("div", "needstable-footer");
             this.searchInput = element("input", "needstable-search-input");
             this.sizeSelect = element("select", "needstable-page-size-select");
@@ -553,7 +554,12 @@
                 parent.insertBefore(this.wrapper, table);
             }
             this.wrapper.appendChild(this.controls);
-            this.wrapper.appendChild(table);
+            /* the table goes in its own scroll frame: it keeps `display: table`, so
+               `:colwidths:` percentages resolve against the full column width, and the
+               control bars are siblings of the frame rather than of the table, so they
+               never scroll sideways with the data */
+            this.scroll.appendChild(table);
+            this.wrapper.appendChild(this.scroll);
             this.wrapper.appendChild(this.footer);
 
             /* search */

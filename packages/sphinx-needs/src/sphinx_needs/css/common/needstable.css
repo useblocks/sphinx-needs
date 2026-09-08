@@ -21,13 +21,6 @@ div.needstable_wrapper {
     padding: 0;
 }
 
-/* Once needstable.js has wrapped it, the TABLE is the scroll container: the control bars
-and the pager sit outside it and must not scroll sideways with the data. */
-div.needstable > table.NEEDS_DATATABLES.NEEDS_DATATABLES {
-    display: block;
-    overflow-x: auto;
-}
-
 /* `libs/html/needstable.css` is the structural, host-agnostic half of the pair, and is
 shipped verbatim by every consumer of the contract. It asks for every colour through a
 `--needstable-*` custom property with a self-effacing fallback; this is where Sphinx-Needs'

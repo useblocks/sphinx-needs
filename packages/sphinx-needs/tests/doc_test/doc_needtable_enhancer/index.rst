@@ -87,7 +87,7 @@ The interactive table
    :columns: id;title;status;amount;due;outgoing
    :colwidths: 15,35,10,10,15,15
    :style_row: needs_[[copy('status')]]
-   :filter: is_need
+   :filter: is_need and docname == "index"
    :show_parts:
    :show_filters:
 
@@ -99,6 +99,7 @@ Three rows, so its pager has a single page and must be hidden.
 .. needtable:: Specifications only
    :columns: id;title;status
    :types: spec
+   :filter: docname == "index"
    :page_size: 5
 
 The plain table
@@ -108,8 +109,10 @@ The plain table
    :style: table
    :columns: id;title
    :types: spec
+   :filter: docname == "index"
 
 .. toctree::
    :hidden:
 
    no_table
+   wide

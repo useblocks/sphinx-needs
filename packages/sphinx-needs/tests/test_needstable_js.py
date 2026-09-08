@@ -356,6 +356,55 @@ def test_paging(opened) -> None:
 
 @pytest.mark.jstest
 @_APP
+def test_scroll_frame(opened, test_app: SphinxTestApp) -> None:
+    """t11 -- the table fills its column, and the scroll frame is what scrolls.
+
+    The `<table>` keeps ``display: table``, so ``:colwidths:`` percentages resolve against
+    the whole column; the horizontal scrolling is a box of the widget's own, outside which
+    the control bars sit. A `<table>` set to ``display: block`` would shrink-to-fit instead,
+    and a rule targeting the table through its parent would stop matching in any host whose
+    own script wraps the `<table>`.
+    """
+    page, _ = opened
+
+    def geometry(table_id: str) -> dict[str, float]:
+        return page.evaluate(
+            """(id) => {
+                const table = document.getElementById(id);
+                const wrapper = table.closest('div.needstable');
+                const scroll = table.closest('div.needstable-scroll');
+                const controls = wrapper.querySelector('div.needstable-controls');
+                return {
+                    wrapper: wrapper.getBoundingClientRect().width,
+                    controls: controls.getBoundingClientRect().width,
+                    scrollClient: scroll.clientWidth,
+                    scrollWidth: scroll.scrollWidth,
+                    table: table.getBoundingClientRect().width,
+                    display: getComputedStyle(table).display,
+                    overflowX: getComputedStyle(scroll).overflowX,
+                };
+            }""",
+            table_id,
+        )
+
+    # (a) a table that fits fills the frame exactly -- it does not shrink-to-fit
+    narrow = geometry(SMALL)
+    assert narrow["display"] == "table"
+    assert abs(narrow["table"] - narrow["scrollClient"]) <= 1, narrow
+    assert abs(narrow["scrollClient"] - narrow["wrapper"]) <= 1, narrow
+
+    # (b) a table too wide for the page scrolls INSIDE the frame, and the control bar is
+    # not dragged wider with it. `wide.html` holds a ten-column table for exactly this.
+    page.goto(Path(test_app.outdir, "wide.html").as_uri())
+    wide_id = page.evaluate("() => document.querySelector('table.NEEDS_DATATABLES').id")
+    wide = geometry(wide_id)
+    assert wide["overflowX"] == "auto", wide
+    assert wide["scrollWidth"] > wide["scrollClient"], wide
+    assert abs(wide["controls"] - wide["wrapper"]) <= 1, wide
+
+
+@pytest.mark.jstest
+@_APP
 def test_column_visibility_reaches_the_export(opened) -> None:
     """t6 -- hiding a column removes it from the table AND from what is exported."""
     page, _ = opened

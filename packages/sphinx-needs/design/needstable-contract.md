@@ -179,9 +179,22 @@ under a strict `script-src`. It must never re-render a cell or name an absolute 
 ```text
 div.needstable
 ├── div.needstable-controls   (search, page size, columns, copy, csv)
-├── table                     (the producer's table, moved, never rebuilt)
+├── div.needstable-scroll     (overflow-x: auto -- the horizontal scroll frame)
+│   └── table                 (the producer's table, moved, never rebuilt)
 └── div.needstable-footer     (div.needstable-info[aria-live], nav.needstable-pager)
 ```
+
+The scroll frame is a box of the widget's own, and the table inside it keeps
+`display: table; width: 100%`.
+
+> *Corrected 2026-09-08.* An earlier draft made the `<table>` itself the scroll container
+> (`div.needstable > table { display: block; overflow-x: auto }`) and said so here. Review
+> measured that wrong twice over: a `display: block` table re-wraps its rows in an anonymous
+> table box that shrink-to-fits, so a table narrower than its column rendered up to 22 %
+> narrower still (555 px in a 708 px column) and `:colwidths:` percentages resolved against
+> the shrunken width; and in a host whose own script wraps every `<table>` in a `<div>`, the
+> child combinator stopped matching at all, so the rule was dead code exactly where scrolling
+> mattered. An inner box the host does not know about has neither problem.
 
 Every generated element carries a `needstable-*` class and nothing else, and no inline
 styles. The header's own content is wrapped in `button.needstable-sort` — inside the `<th>`'s
