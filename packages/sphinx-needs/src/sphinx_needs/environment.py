@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 from sphinx import version_info as sphinx_version
 from sphinx.application import Sphinx
@@ -26,7 +27,7 @@ def _add_css_file(app: Sphinx, rel_path: Path) -> None:
     app.add_css_file(rel_str)
 
 
-def _add_js_file(app: Sphinx, rel_path: Path) -> None:
+def _add_js_file(app: Sphinx, rel_path: Path, **kwargs: Any) -> None:
     # note this deduplication is already done in Sphinx v7.2.1+
     # https://github.com/sphinx-doc/sphinx/commit/0c22d9c9ff4a0a6b3ce2f0aa6bc591b4525b4163
     rel_str = rel_path.as_posix()
@@ -34,7 +35,7 @@ def _add_js_file(app: Sphinx, rel_path: Path) -> None:
         app.builder, "script_files", []
     ):
         return
-    app.add_js_file(rel_str)
+    app.add_js_file(rel_str, **kwargs)
 
 
 def install_styles_static_files(app: Sphinx, env: BuildEnvironment) -> None:
@@ -95,20 +96,18 @@ def install_lib_static_files(app: Sphinx, env: BuildEnvironment) -> None:
     if builder.name in ["needs", "schema"]:
         return
 
-    logger.info("Copying static files for sphinx-needs datatables support")
+    logger.info("Copying static files for sphinx-needs")
 
     statics_dir = Path(builder.outdir) / _STATIC_DIR_NAME
     source_dir = Path(__file__).parent / "libs" / "html"
     destination_dir = statics_dir / "sphinx-needs" / "libs" / "html"
 
-    # "Copying static files for sphinx-needs datatables support..."
     copy_asset(str(source_dir), str(destination_dir))
 
-    # Add the needed datatables js and css file
     lib_path = Path("sphinx-needs") / "libs" / "html"
-    _add_js_file(app, lib_path.joinpath("datatables.min.js"))
-    _add_js_file(app, lib_path.joinpath("datatables_loader.js"))
-    _add_css_file(app, lib_path.joinpath("datatables.min.css"))
+    # the interactive needtable: one script and one sheet, no dependency
+    _add_js_file(app, lib_path.joinpath("needstable.js"), loading_method="defer")
+    _add_css_file(app, lib_path.joinpath("needstable.css"))
     _add_js_file(app, lib_path.joinpath("sphinx_needs_collapse.js"))
 
 

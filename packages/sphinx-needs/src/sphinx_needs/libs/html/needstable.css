@@ -1,0 +1,217 @@
+/*!
+ * needstable.css -- the structural sheet for needstable.js.
+ *
+ * Copyright (c) useblocks GmbH. MIT licence.
+ *
+ * sphinx-needs is the REPOSITORY OF RECORD for this file; ubCode vendors it
+ * byte-identical beside the script. It pairs with `needstable.js` and describes only
+ * LAYOUT: where the control bars sit, how the pager reads, the sort glyphs, the hidden
+ * column, the focus ring.
+ *
+ * It is HOST-AGNOSTIC on purpose: it names no theme and no `--sn-*` token. Every colour
+ * goes through a `--needstable-*` custom property whose fallback is `currentColor`,
+ * `inherit` or transparent, so an unstyled host gets the page's own colours and a host
+ * that wants more sets the properties. sphinx-needs does that in
+ * `css/common/needstable.css`.
+ *
+ * The chrome is deliberately quiet: the table's data is the content, the controls are
+ * not. No border around the widget, small buttons, little rounding.
+ */
+
+div.needstable {
+    /* the table itself may be wider than the page; the controls must not scroll with it */
+    display: block;
+    width: 100%;
+}
+
+div.needstable > table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+}
+
+div.needstable-controls,
+div.needstable-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75em;
+    margin: 0.4em 0;
+    font-size: 0.88em;
+    color: var(--needstable-label-color, inherit);
+}
+
+div.needstable-footer {
+    justify-content: space-between;
+}
+
+/* the search box takes the free space, so the rest keeps its natural width */
+label.needstable-search {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    flex: 1 1 12em;
+    min-width: 8em;
+}
+
+label.needstable-page-size,
+label.needstable-columns-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+}
+
+div.needstable input.needstable-search-input {
+    flex: 1 1 auto;
+    min-width: 6em;
+    max-width: 18em;
+    padding: 0.15em 0.4em;
+    color: inherit;
+    background-color: transparent;
+    border: 1px solid var(--needstable-border-color, currentColor);
+    border-radius: 2px;
+}
+
+div.needstable select.needstable-page-size-select {
+    padding: 0.1em 0.2em;
+    color: inherit;
+    background-color: transparent;
+    border: 1px solid var(--needstable-border-color, currentColor);
+    border-radius: 2px;
+    cursor: pointer;
+}
+
+div.needstable button.needstable-button,
+div.needstable button.needstable-page {
+    padding: 0.1em 0.7em;
+    font-size: inherit;
+    line-height: inherit;
+    color: inherit;
+    white-space: nowrap;
+    background-color: transparent;
+    background-image: none;
+    border: 1px solid var(--needstable-border-color, currentColor);
+    border-radius: 2px;
+    cursor: pointer;
+}
+
+div.needstable button.needstable-button:hover:not(:disabled),
+div.needstable button.needstable-page:hover:not(:disabled) {
+    background-color: var(--needstable-hover-bg, rgba(127, 127, 127, 0.16));
+}
+
+div.needstable button:disabled {
+    cursor: default;
+    opacity: 0.45;
+}
+
+/* column visibility: a native disclosure, so no script manages a popover */
+details.needstable-columns {
+    position: relative;
+}
+
+details.needstable-columns > summary {
+    padding: 0.1em 0.7em;
+    border: 1px solid var(--needstable-border-color, currentColor);
+    border-radius: 2px;
+    cursor: pointer;
+    list-style: none;
+}
+
+details.needstable-columns > summary::-webkit-details-marker {
+    display: none;
+}
+
+div.needstable-columns-list {
+    position: absolute;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2em;
+    padding: 0.4em 0.6em;
+    white-space: nowrap;
+    background-color: var(--needstable-popover-bg, Canvas);
+    color: var(--needstable-popover-color, CanvasText);
+    border: 1px solid var(--needstable-border-color, currentColor);
+    border-radius: 2px;
+}
+
+/* the sort control: a real <button>, so Enter and Space work without a key handler */
+div.needstable button.needstable-sort {
+    display: inline-flex;
+    gap: 0.35em;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    text-align: inherit;
+    background: none;
+    border: 0;
+    cursor: pointer;
+}
+
+div.needstable button.needstable-sort::after {
+    /* drawn with borders rather than a glyph or an image: it inherits the text colour
+       and cannot come out as a different character on a different operating system */
+    content: "";
+    display: inline-block;
+    width: 0;
+    height: 0;
+    border-left: 0.3em solid transparent;
+    border-right: 0.3em solid transparent;
+    border-top: 0.35em solid currentColor;
+    border-bottom: 0.35em solid currentColor;
+    opacity: 0.35;
+}
+
+div.needstable th[aria-sort="ascending"] button.needstable-sort::after {
+    border-top-color: transparent;
+    opacity: 1;
+}
+
+div.needstable th[aria-sort="descending"] button.needstable-sort::after {
+    border-bottom-color: transparent;
+    opacity: 1;
+}
+
+div.needstable :focus-visible {
+    outline: 2px solid var(--needstable-focus-color, currentColor);
+    outline-offset: 1px;
+}
+
+nav.needstable-pager {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25em;
+}
+
+div.needstable button.needstable-page[aria-current="page"] {
+    font-weight: bold;
+    background-color: var(--needstable-current-bg, rgba(127, 127, 127, 0.22));
+}
+
+span.needstable-ellipsis {
+    padding: 0 0.2em;
+}
+
+/* a column the reader switched off, in the header and in every cell */
+div.needstable .needstable-hidden {
+    display: none;
+}
+
+/* the pre-async-clipboard copy route parks a textarea for one tick */
+textarea.needstable-clipboard {
+    position: fixed;
+    top: -100vh;
+    left: -100vw;
+    opacity: 0;
+}
+
+@media print {
+    div.needstable-controls,
+    div.needstable-footer {
+        display: none;
+    }
+}

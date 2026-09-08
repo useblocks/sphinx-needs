@@ -17,6 +17,7 @@ from pathlib import Path
 import pytest
 from lxml import html as html_parser
 from sphinx.testing.util import SphinxTestApp
+
 from sphinx_needs_testkit import assert_no_warnings
 
 #: the project every test in this module builds
