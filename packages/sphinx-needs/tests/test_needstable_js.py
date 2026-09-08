@@ -492,6 +492,73 @@ def test_the_last_column_is_guarded_from_the_first_paint(
 
 
 @pytest.mark.jstest
+@_APP
+def test_the_host_fence_holds(opened) -> None:
+    """t17 -- the widget's controls are unmoved by a host that styles bare elements.
+
+    The project loads a stylesheet that does what real themes were measured doing: every
+    `<details>` painted as an admonition, a glyph injected into every `<summary>`, the
+    summary pulled out of its own box by a negative margin, and a smaller font on form
+    controls than on the buttons beside them. Verification for the look of it is the theme
+    gallery; this is the part a machine can hold.
+    """
+    page, _ = opened
+
+    fenced = page.evaluate(
+        """() => {
+            const widget = document.querySelector('div.needstable');
+            const details = widget.querySelector('details.needstable-columns');
+            const summary = details.querySelector('summary');
+            const style = getComputedStyle(details);
+            const before = getComputedStyle(summary, '::before');
+            const after = getComputedStyle(summary, '::after');
+            const size = (selector) =>
+                getComputedStyle(widget.querySelector(selector)).fontSize;
+            return {
+                border: style.borderTopWidth + ' ' + style.borderTopStyle,
+                background: style.backgroundColor,
+                boxShadow: style.boxShadow,
+                beforeContent: before.content,
+                afterContent: after.content,
+                summaryMargin: getComputedStyle(summary).marginLeft,
+                detailsWidth: details.getBoundingClientRect().width,
+                summaryWidth: summary.getBoundingClientRect().width,
+                sizes: [
+                    size('button.needstable-copy'),
+                    size('details.needstable-columns > summary'),
+                    size('input.needstable-search-input'),
+                    size('select.needstable-page-size-select'),
+                ],
+            };
+        }"""
+    )
+
+    # the host's own stylesheet is really loaded -- a `<details>` outside the widget would
+    # be red -- so a passing assertion below means the fence, not an absent hostile sheet
+    assert (
+        page.evaluate(
+            """() => {
+            const probe = document.createElement('details');
+            document.body.appendChild(probe);
+            const painted = getComputedStyle(probe).borderTopWidth;
+            probe.remove();
+            return painted;
+        }"""
+        )
+        == "2px"
+    )
+
+    assert fenced["border"] == "0px none", fenced
+    assert fenced["background"] == "rgba(0, 0, 0, 0)", fenced
+    assert fenced["boxShadow"] == "none", fenced
+    assert fenced["beforeContent"] in ("none", "normal"), fenced
+    assert fenced["afterContent"] in ("none", "normal"), fenced
+    assert fenced["summaryMargin"] == "0px", fenced
+    assert abs(fenced["detailsWidth"] - fenced["summaryWidth"]) <= 1, fenced
+    assert len(set(fenced["sizes"])) == 1, fenced
+
+
+@pytest.mark.jstest
 def test_the_vendored_pair_lays_out_on_its_own(page: Page) -> None:
     """t15 -- `needstable.css` + `needstable.js`, with no host stylesheet at all.
 

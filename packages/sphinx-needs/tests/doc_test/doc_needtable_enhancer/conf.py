@@ -7,6 +7,11 @@ plain ``:style: table`` style, which the client-side enhancer must leave alone.
 
 extensions = ["sphinx_needs"]
 
+# a stylesheet that does to bare elements what real host themes were measured doing; the
+# widget has to be unmoved by it, and `test_the_host_fence_holds` asserts that it is
+html_static_path = ["_static"]
+html_css_files = ["hostile.css"]
+
 needs_id_regex = "^[A-Za-z0-9_]+"
 
 needs_types = [

@@ -1,0 +1,33 @@
+/* A stylesheet that does to bare elements what real host themes were measured doing:
+   painting every `<details>` as an admonition, injecting a glyph into every `<summary>`,
+   pulling the summary out of its own box with a negative margin, and running a smaller
+   font size on form controls than on the buttons beside them.
+
+   The widget has to be unmoved by all of it. `tests/test_needstable_js.py` asserts the
+   computed values inside `div.needstable`. */
+
+details {
+    border: 2px solid red;
+    background: red;
+    box-shadow: 0 0 4px red;
+    padding: 6px;
+}
+
+summary::before {
+    content: "x";
+}
+
+summary::after {
+    content: "y";
+}
+
+summary {
+    margin: -8px;
+    font-weight: bold;
+    font-size: 22px;
+}
+
+input,
+select {
+    font-size: 9px;
+}
