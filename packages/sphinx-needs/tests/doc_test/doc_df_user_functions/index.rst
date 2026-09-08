@@ -5,17 +5,19 @@ DYNAMIC FUNCTIONS
     :id: TEST_1
     :status: [[my_own_function()]]
 
-    [[my_own_function()]]
+    :ndf:`my_own_function()`
+
+    [[my_own_function()]] is not a dynamic function here
 
 .. spec:: TEST_2
     :id: TEST_2
     :status: [[bad_function()]]
 
-    [[bad_function()]]
+    :ndf:`bad_function()`
 
-    [[invalid]]
+    :ndf:`invalid`
 
-    [[unknown()]]
+    :ndf:`unknown()`
 
     .. code-block:: toml
 

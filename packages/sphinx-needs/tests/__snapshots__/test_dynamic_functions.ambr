@@ -667,8 +667,6 @@
             'content': '''
               This is id [[copy("id")]]
               
-              This is also id :need_func:`[[copy("id")]]`
-              
               This is the best id :ndf:`copy("id")`
             ''',
             'docname': 'index',
@@ -692,7 +690,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'TEST_2',
-            'lineno': 15,
+            'lineno': 13,
             'section_name': 'DYNAMIC FUNCTIONS',
             'sections': list([
               'DYNAMIC FUNCTIONS',
@@ -710,7 +708,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'TEST_3',
-            'lineno': 19,
+            'lineno': 17,
             'section_name': 'DYNAMIC FUNCTIONS',
             'sections': list([
               'DYNAMIC FUNCTIONS',
@@ -729,14 +727,12 @@
               
                   nested id [[copy('id')]]
               
-                  nested id also :need_func:`[[copy("id")]]`
-              
                   nested id best :ndf:`copy("id")`
             ''',
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'TEST_5',
-            'lineno': 29,
+            'lineno': 27,
             'parent_needs_back': list([
               'TEST_6',
             ]),
@@ -755,14 +751,12 @@
             'content': '''
               nested id [[copy('id')]]
               
-              nested id also :need_func:`[[copy("id")]]`
-              
               nested id best :ndf:`copy("id")`
             ''',
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'TEST_6',
-            'lineno': 35,
+            'lineno': 33,
             'parent_need': 'TEST_5',
             'parent_needs': list([
               'TEST_5',
@@ -779,7 +773,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'TEST_9',
-            'lineno': 56,
+            'lineno': 52,
             'non_func': '[[test(need.unknown)]]',
             'section_name': 'DYNAMIC FUNCTIONS',
             'sections': list([

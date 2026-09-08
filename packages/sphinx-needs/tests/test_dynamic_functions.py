@@ -139,18 +139,23 @@ def test_doc_dynamic_functions(test_app, snapshot):
 
     warning_records = build_warnings(app)
     assert warning_records == [
-        '<srcdir>/index.rst:11: WARNING: The `need_func` role is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecated]',
-        "<srcdir>/index.rst:23: WARNING: Need could not be created: 'tags' value is invalid: only one string, dynamic function or variant function allowed per array item. [needs.create_need]",
-        '<srcdir>/index.rst:40: WARNING: The `need_func` role is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecated]',
-        '<srcdir>/index.rst:44: WARNING: The `need_func` role is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecated]',
-        "<srcdir>/index.rst:46: WARNING: Need could not be created: Field 'test_func' is invalid: Error parsing dynamic function 'test': Unsupported arg 0 value type [needs.create_need]",
-        "<srcdir>/index.rst:52: WARNING: Need could not be created: Field 'test_func' is invalid: Error parsing dynamic function 'test': Unsupported arg 0 value type [needs.create_need]",
-        '<srcdir>/index.rst:9: WARNING: The [[copy("id")]] syntax in need content is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecated]',
-        "<srcdir>/index.rst:33: WARNING: The [[copy('id')]] syntax in need content is deprecated. Replace with :ndf:`copy('id')` instead. [needs.deprecated]",
-        "<srcdir>/index.rst:38: WARNING: The [[copy('id')]] syntax in need content is deprecated. Replace with :ndf:`copy('id')` instead. [needs.deprecated]",
-        "<srcdir>/index.rst:44: WARNING: Error while executing function 'copy': Need not found [needs.dynamic_function]",
-        "<srcdir>/index.rst:44: WARNING: Error while executing function 'copy': Need not found [needs.dynamic_function]",
+        "<srcdir>/index.rst:21: WARNING: Need could not be created: 'tags' value is invalid: only one string, dynamic function or variant function allowed per array item. [needs.create_need]",
+        "<srcdir>/index.rst:42: WARNING: Need could not be created: Field 'test_func' is invalid: Error parsing dynamic function 'test': Unsupported arg 0 value type [needs.create_need]",
+        "<srcdir>/index.rst:48: WARNING: Need could not be created: Field 'test_func' is invalid: Error parsing dynamic function 'test': Unsupported arg 0 value type [needs.create_need]",
+        "<srcdir>/index.rst:40: WARNING: Error while executing function 'copy': Need not found [needs.dynamic_function]",
     ]
+
+    html = Path(app.outdir, "index.html").read_text()
+    # since 9.0.0 ``[[...]]`` in a need's CONTENT is plain text, and only the ``ndf`` role runs
+    # a dynamic function there.  Sphinx's smartquotes transform has already curled the quotes by
+    # the time the text is rendered -- which is what the removed scan used to undo before it ran
+    # the call, and one of the reasons the syntax was surprising.
+    assert "This is id [[copy(\u201cid\u201d)]]" in html
+    assert "This is the best id SP_TOO_001" in html
+    assert "nested id [[copy(\u2018id\u2019)]]" in html
+    assert "nested id best TEST_6" in html
+    # a link's URI is left alone too
+    assert "href=\"http://www.[[copy('id')]]\"" in html
 
     json_data = Path(app.outdir, "needs.json").read_text()
     needs = json.loads(json_data)
@@ -240,14 +245,10 @@ def test_doc_df_user_functions(test_app):
     warning_records = build_warnings(app)
     # print(warnings)
     expected = [
-        "<srcdir>/index.rst:10: WARNING: Error while resolving dynamic values for field 'status', of need 'TEST_2': dynamic function value <class 'object'> is not of type 'string' [needs.dynamic_function]",
-        "<srcdir>/index.rst:8: WARNING: The [[my_own_function()]] syntax in need content is deprecated. Replace with :ndf:`my_own_function()` instead. [needs.deprecated]",
-        "<srcdir>/index.rst:14: WARNING: The [[bad_function()]] syntax in need content is deprecated. Replace with :ndf:`bad_function()` instead. [needs.deprecated]",
-        "<srcdir>/index.rst:14: WARNING: Return value of function 'bad_function' is of type <class 'object'>. Allowed are str, int, float, list [needs.dynamic_function]",
-        "<srcdir>/index.rst:16: WARNING: The [[invalid]] syntax in need content is deprecated. Replace with :ndf:`invalid` instead. [needs.deprecated]",
-        "<srcdir>/index.rst:16: WARNING: Error parsing dynamic function: Not a function call [needs.dynamic_function]",
-        "<srcdir>/index.rst:18: WARNING: The [[unknown()]] syntax in need content is deprecated. Replace with :ndf:`unknown()` instead. [needs.deprecated]",
-        "<srcdir>/index.rst:18: WARNING: Unknown function 'unknown' [needs.dynamic_function]",
+        "<srcdir>/index.rst:12: WARNING: Error while resolving dynamic values for field 'status', of need 'TEST_2': dynamic function value <class 'object'> is not of type 'string' [needs.dynamic_function]",
+        "<srcdir>/index.rst:16: WARNING: Return value of function 'bad_function' is of type <class 'object'>. Allowed are str, int, float, list [needs.dynamic_function]",
+        "<srcdir>/index.rst:18: WARNING: Error parsing dynamic function: Not a function call [needs.dynamic_function]",
+        "<srcdir>/index.rst:20: WARNING: Unknown function 'unknown' [needs.dynamic_function]",
     ]
     if version_info >= (7, 3):
         warn = "WARNING: cannot cache unpickable configuration value: 'needs_functions' (because it contains a function, class, or module object)"
@@ -260,3 +261,48 @@ def test_doc_df_user_functions(test_app):
 
     html = Path(app.outdir, "index.html").read_text()
     assert "Awesome" in html
+    # the same call written as ``[[...]]`` in the content is plain text since 9.0.0
+    assert "[[my_own_function()]] is not a dynamic function here" in html
+
+
+# -- the ``need_func`` role, removed in 9.0.0 --------------------------------
+#
+# It was deprecated in 4.0.0 together with ``[[...]]`` in a need's content, and
+# ``ndf`` replaces both.  Nothing registers it any more, so a document that still
+# writes it gets docutils' own diagnostic for a role that does not exist.
+
+NEED_FUNC_CONF = """\
+extensions = ["sphinx_needs"]
+"""
+
+NEED_FUNC_INDEX = """\
+Removed role
+============
+
+.. req:: One
+   :id: R_ONE
+
+   This is id :need_func:`[[copy("id")]]`
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), NEED_FUNC_CONF),
+                (Path("index.rst"), NEED_FUNC_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_need_func_role_removed(test_app):
+    app = test_app
+    app.build()
+
+    warning_records = build_warnings(app)
+    assert len(warning_records) == 1, warning_records
+    assert 'Unknown interpreted text role "need_func"' in warning_records[0]
