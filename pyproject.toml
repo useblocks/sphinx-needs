@@ -643,8 +643,8 @@ env = { UV_PROJECT_ENVIRONMENT = ".venvs/typing" }
 #
 # ONE PATH PER LINE, so adding a script to the gate is one line -- which is the whole
 # extension story. Both of the package's browser scripts are here: `needstable.js` since
-# #1928, and `sphinx_needs_collapse.js` since #1922 ported it off jQuery and gave it the
-# `// @ts-check` header that makes `--strict` mean something.
+# #1928, and `sphinx_needs_collapse.js` since its port off jQuery (#1922), which gave it
+# the `// @ts-check` header that makes `--strict` mean something.
 #
 # No `package.json`, no `node_modules` and no second lock file: `npx -y -p` fetches the
 # pinned compiler into npm's cache for the run (23 MB unpacked, ~2 s cold, then cached).
