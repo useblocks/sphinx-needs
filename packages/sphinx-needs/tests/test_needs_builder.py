@@ -1,12 +1,11 @@
 import json
 import os
-import subprocess
 from pathlib import Path
 
 import pytest
 from syrupy.filters import props
 
-from sphinx_needs_testkit import sphinx_build_command
+from sphinx_needs_testkit import assert_no_warnings
 
 
 @pytest.mark.parametrize(
@@ -67,17 +66,12 @@ def test_doc_needs_builder_remove_defaults(test_app, snapshot):
 )
 def test_doc_needs_build_without_needs_file(test_app):
     app = test_app
+    app.build()
 
-    srcdir = Path(app.srcdir)
-    out_dir = os.path.join(srcdir, "_build")
-
-    out = subprocess.run(
-        sphinx_build_command("-b", "needs", srcdir, out_dir), capture_output=True
-    )
-    assert not out.stderr
+    assert_no_warnings(app)
     assert (
         "needs.json found, but will not be used because needs_file not configured."
-        in out.stdout.decode("utf-8")
+        in app._status.getvalue()
     )
 
 
@@ -86,7 +80,7 @@ def test_doc_needs_build_without_needs_file(test_app):
     [{"buildername": "html", "srcdir": "doc_test/doc_needs_builder_parallel"}],
     indirect=True,
 )
-def test_needs_html_and_json(test_app):
+def test_needs_html_and_json(test_app, make_app):
     """
     Build html output and needs.json in one sphinx-build
     """
@@ -96,15 +90,17 @@ def test_needs_html_and_json(test_app):
     needs_json_path = os.path.join(app.outdir, "needs.json")
     assert os.path.exists(needs_json_path)
 
-    srcdir = app.srcdir
-    build_dir = os.path.join(app.outdir, "../needs")
-    print(build_dir)
-    output = subprocess.run(
-        sphinx_build_command("-b", "needs", srcdir, build_dir),
-        capture_output=True,
+    # the same source, a second time, through the needs builder: its own build
+    # directory, so it reads the sources afresh rather than the html build's doctrees
+    needs_app = make_app(
+        buildername="needs",
+        srcdir=app.srcdir,
+        builddir=Path(app.srcdir).parent / "needs_build",
     )
-    print(output)
-    needs_json_path_2 = os.path.join(build_dir, "needs.json")
+    needs_app.build()
+    assert needs_app.statuscode == 0
+
+    needs_json_path_2 = os.path.join(needs_app.outdir, "needs.json")
     assert os.path.exists(needs_json_path_2)
 
     # Check if the needs.json files from html/parallel build and builder are the same
