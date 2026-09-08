@@ -2,8 +2,9 @@
 
 The argv, because there is one right answer to a question each suite had been answering
 for itself -- and answering the same way, wrongly, at every site -- and the fence that
-keeps it that way, because a suite cannot police the rule from inside one of its own test
-modules any more than it could invent the answer.
+keeps it that way, because two suites here spawn builds and both must be walked, and the
+third consumer of this module should get the fence with the helper rather than a file to
+copy.
 """
 
 from __future__ import annotations
@@ -20,7 +21,7 @@ _BARE = "sphinx" + "-build"
 #: The literal at the head of an argv, followed by a closing quote OR whitespace -- so
 #: ``["<bare>", …]`` and ``shlex.split("<bare> -M html")`` both match, and prose does not:
 #: a mention in a docstring or a comment has a character in front of the word rather than a
-#: quote (measured over both trees this walks, which carry three such mentions between them).
+#: quote (measured over both trees this walks: every mention there has one).
 #: Two spellings deliberately escape it, ``"sphinx" "-build"`` and a command assembled for
 #: ``shell=True``: a pattern that catches those catches prose too, and nobody writes either
 #: by accident.
@@ -79,8 +80,13 @@ def assert_no_bare_sphinx_build(tests_dir: Path) -> None:
     :param tests_dir: The suite's own ``tests`` directory, walked recursively for ``*.py``.
         Read with ``errors="replace"`` -- one mis-encoded byte in one fixture module should
         not turn this into a ``UnicodeDecodeError`` naming the fence instead of the file.
+    :raises NotADirectoryError: If ``tests_dir`` is not a directory. A walk of nothing
+        reports nothing, so a mistyped argument -- which the next caller writes by hand, in
+        another repository -- would otherwise be a permanently green fence.
     :raises AssertionError: If any line matches, listing every one of them.
     """
+    if not tests_dir.is_dir():
+        raise NotADirectoryError(f"not a tests directory: {tests_dir}")
     offenders = [
         f"{path.relative_to(tests_dir)}:{number}: {line.strip()}"
         for path in sorted(tests_dir.rglob("*.py"))
@@ -93,6 +99,7 @@ def assert_no_bare_sphinx_build(tests_dir: Path) -> None:
         raise AssertionError(
             "these lines spawn the build command resolved on PATH rather than through the "
             "interpreter under test; build the argv with "
-            "`sphinx_needs_testkit.sphinx_build_command` instead:\n"
-            + "\n".join(offenders)
+            "`sphinx_needs_testkit.sphinx_build_command` instead. A line that only names "
+            "the command in prose is a false positive of a fence that reads source, not "
+            "intent -- reword it.\n" + "\n".join(offenders)
         )
