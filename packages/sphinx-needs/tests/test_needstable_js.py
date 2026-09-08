@@ -835,8 +835,19 @@ def test_producer_extension_points(opened) -> None:
 @pytest.mark.jstest
 @_APP
 def test_plain_table_is_untouched(opened) -> None:
-    """t10 -- `:style: table` opts out, and nothing on the page throws."""
+    """t10 -- `:style: table` opts out, and nothing on the page throws.
+
+    Also the load-time guarantee everything else on the page depends on: initialising a
+    widget must not take focus or move the viewport. The page's second table is a single
+    page, so the branch that hands focus to the search box when the pager collapses runs at
+    load -- and it has to do nothing, because nothing was focused.
+    """
     page, _ = opened
+
+    # nothing on this page has been touched yet: the widgets built themselves, and neither
+    # stole focus nor scrolled the reader down to itself
+    assert page.evaluate("() => document.activeElement === document.body")
+    assert page.evaluate("() => window.scrollY") == 0
 
     assert page.locator(f"#{PLAIN}").evaluate("t => !t.__needstable")
     assert page.evaluate(
