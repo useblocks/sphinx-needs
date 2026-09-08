@@ -167,8 +167,8 @@ body {
     --sn-color-debug-btn-border: #333;
     --sn-color-debug-btn-on-text: #f43333;
     --sn-color-debug-btn-off-text: #096285;
-    --sn-color-datatable-label: var(--color-foreground-muted);
-    --sn-color-datatable-btn-border: var(--color-foreground-muted);
+    --sn-color-table-label: var(--color-foreground-muted);
+    --sn-color-table-btn-border: var(--color-foreground-muted);
 }
 
 @media not print {

@@ -97,14 +97,16 @@ def _need_ids(page: Page, table_id: str) -> list[str]:
 
 
 def _wrapper(page: Page, table_id: str) -> Any:
-    return page.locator(f"#{table_id}").locator("xpath=ancestor::div[@class='needstable'][1]")
+    return page.locator(f"#{table_id}").locator(
+        "xpath=ancestor::div[@class='needstable'][1]"
+    )
 
 
 def _show_all(page: Page, table_id: str) -> None:
     """Switch a table to the "All" page size, so every row is attached."""
-    _wrapper(page, table_id).locator("select.needstable-page-size-select").select_option(
-        "0"
-    )
+    _wrapper(page, table_id).locator(
+        "select.needstable-page-size-select"
+    ).select_option("0")
 
 
 def _sort(page: Page, table_id: str, column: int, times: int = 1) -> None:
@@ -195,7 +197,21 @@ def test_typed_sort_and_three_state_cycle(opened) -> None:
     # `amount` is declared `data-type="number"`: 2 before 10 before 100, not "10, 100, 2"
     _sort(page, INTERACTIVE, 3)
     amounts = [value for value in _column(page, INTERACTIVE, 3) if value]
-    assert amounts == ["1", "2", "3", "4", "4", "4", "7", "8", "10", "15", "25", "42", "100"]
+    assert amounts == [
+        "1",
+        "2",
+        "3",
+        "4",
+        "4",
+        "4",
+        "7",
+        "8",
+        "10",
+        "15",
+        "25",
+        "42",
+        "100",
+    ]
     # the need with no amount is last, whichever way the column points
     assert _column(page, INTERACTIVE, 3)[-1] == ""
     assert _aria_sort(page, INTERACTIVE)[3] == "ascending"
@@ -263,7 +279,7 @@ def test_filter_matches_a_part_beyond_the_first_page(opened) -> None:
     page.wait_for_timeout(250)
 
     assert _need_ids(page, INTERACTIVE) == ["S_02", "S_02.P1", "S_02.P2"]
-    assert info.text_content().strip() == "Showing 1–1 of 1"
+    assert info.text_content().strip() == "Showing 1\u20131 of 1"
 
     search.fill("no such need anywhere")
     page.wait_for_timeout(250)
@@ -282,7 +298,7 @@ def test_paging(opened) -> None:
     assert len(_need_ids(page, INTERACTIVE)) == 10
     assert pager.is_visible()
     assert wrapper.locator("div.needstable-info").text_content().strip() == (
-        "Showing 1–10 of 12"
+        "Showing 1\u201310 of 12"
     )
 
     # the second page carries the last two groups, which is four rows: S_02 and its two
@@ -295,23 +311,24 @@ def test_paging(opened) -> None:
     small = _wrapper(page, SMALL)
     assert _need_ids(page, SMALL) == ["S_01", "S_02", "S_02.P1", "S_02.P2", "S_03"]
     assert small.locator("div.needstable-info").text_content().strip() == (
-        "Showing 1–3 of 3"
+        "Showing 1\u20133 of 3"
     )
     assert small.locator("nav.needstable-pager").is_hidden()
 
     _show_all(page, INTERACTIVE)
     assert len(_need_ids(page, INTERACTIVE)) == 14
-    assert _wrapper(page, INTERACTIVE).locator(
-        "nav.needstable-pager"
-    ).is_hidden()
+    assert _wrapper(page, INTERACTIVE).locator("nav.needstable-pager").is_hidden()
 
     # back to ten a page, on page two, then filter: the view resets to page one
     wrapper.locator("select.needstable-page-size-select").select_option("10")
     pager.locator("button.needstable-page-number", has_text="2").click()
     wrapper.locator("input.needstable-search-input").fill("requirement")
     page.wait_for_timeout(250)
-    assert wrapper.locator("div.needstable-info").text_content().strip().startswith(
-        "Showing 1–"
+    assert (
+        wrapper.locator("div.needstable-info")
+        .text_content()
+        .strip()
+        .startswith("Showing 1\u2013")
     )
 
 
@@ -335,10 +352,13 @@ def test_column_visibility_reaches_the_export(opened) -> None:
 
     assert wrapper.locator("thead th").nth(2).is_hidden()
     # the `<col>` that sized the hidden column goes with it, so the widths stay aligned
-    assert page.evaluate(
-        f"() => document.getElementById('{INTERACTIVE}')"
-        ".querySelector('colgroup').children.length"
-    ) == 5
+    assert (
+        page.evaluate(
+            f"() => document.getElementById('{INTERACTIVE}')"
+            ".querySelector('colgroup').children.length"
+        )
+        == 5
+    )
     assert csv_header() == "ID,Title,Amount,Due,Outgoing"
 
 
@@ -407,9 +427,9 @@ def test_destroy_restores_the_original_dom(opened) -> None:
     assert restored == pristine
     # and the widget is gone from around it
     assert page.locator(f"#{INTERACTIVE}").evaluate("t => !t.__needstable")
-    assert page.evaluate(
-        f"() => document.querySelectorAll('div.needstable').length"
-    ) == 1
+    assert (
+        page.evaluate("() => document.querySelectorAll('div.needstable').length") == 1
+    )
 
 
 @pytest.mark.jstest
@@ -429,7 +449,9 @@ def test_plain_table_is_untouched(opened) -> None:
         PLAIN,
     )
     # the two interactive tables on the page each got their own widget
-    assert page.evaluate("() => document.querySelectorAll('div.needstable').length") == 2
+    assert (
+        page.evaluate("() => document.querySelectorAll('div.needstable').length") == 2
+    )
     assert page.evaluate("() => window.needstable.version") == "1"
     # a second init is a no-op that hands back the same instance
     assert page.evaluate(

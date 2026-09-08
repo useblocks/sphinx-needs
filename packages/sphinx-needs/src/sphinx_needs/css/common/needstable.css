@@ -1,5 +1,5 @@
 /* These are used by the needtable directive
-to style the table representation of the needs. 
+to style the table representation of the needs.
 
 Note: we use `table.NEEDS_TABLE.NEEDS_TABLE` to select a needtable, to increase the specificity of the selector,
 so that it should be generally higher than the specificity of the theme CSS selectors.
@@ -21,86 +21,19 @@ div.needstable_wrapper {
     padding: 0;
 }
 
-/* These are "overrides" for CSS added by the bundled https://datatables.net JS package */
-
-table.dataTable {
-    border-collapse: collapse;
-    border: none;
-}
-
-table.dataTable tbody tr {
-    background-color: var(--sn-color-datatable-body-bg);
-}
-
-div.dataTables_length {
-    margin-bottom: 10px;
-}
-
-div.dataTables_wrapper {
+/* Once needstable.js has wrapped it, the TABLE is the scroll container: the control bars
+and the pager sit outside it and must not scroll sideways with the data. */
+div.needstable > table.NEEDS_DATATABLES.NEEDS_DATATABLES {
+    display: block;
     overflow-x: auto;
-    padding: 0px 5px;
-    /*Space needed for table borders */
 }
 
-.dataTables_wrapper .dataTables_paginate .paginate_button {
-    padding: 0.15em 0.75em;
-    background: none;
+/* `libs/html/needstable.css` is the structural, host-agnostic half of the pair, shared
+byte-for-byte with ubCode. It asks for every colour through a `--needstable-*` custom
+property with a self-effacing fallback; this is where Sphinx-Needs' own theme tokens
+answer. See `design/needstable-contract.md`. */
+div.needstable {
+    --needstable-label-color: var(--sn-color-table-label);
+    --needstable-border-color: var(--sn-color-table-btn-border);
+    --needstable-focus-color: var(--sn-color-table-label);
 }
-
-.dataTables_wrapper .dataTables_paginate .paginate_button.current,
-.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
-    background: none;
-}
-
-div.dataTables_length select {
-    background: none;
-    color: var(--sn-color-datatable-label);
-    border: 1px solid var(--sn-color-datatable-btn-border);
-    border-radius: 2px;
-    cursor: pointer;
-}
-
-div.dt-buttons {
-    margin-left: 0.5em;
-}
-
-div.dt-buttons button {
-    padding: 0.1em 1em;
-    border: 1px solid var(--sn-color-datatable-btn-border);
-    border-radius: 2px;
-    font-size: 0.88em;
-    line-height: inherit;
-    color: var(--sn-color-datatable-label);
-    white-space: nowrap;
-    overflow: hidden;
-    background-color: inherit;
-    background-image: none;
-}
-
-.dataTables_wrapper .dataTables_filter input {
-    max-width: 100px;
-    border: 1px solid var(--sn-color-datatable-btn-border);
-    margin-bottom: 10px;
-    background-color: transparent;
-    border-radius: 2px;
-}
-
-.dataTables_wrapper.dataTables_wrapper .dataTables_length,
-.dataTables_wrapper.dataTables_wrapper .dataTables_filter,
-.dataTables_wrapper.dataTables_wrapper .dataTables_info,
-.dataTables_wrapper.dataTables_wrapper .dataTables_processing {
-    color: var(--sn-color-datatable-label);
-}
-
-.dataTables_wrapper.dataTables_wrapper .dataTables_paginate,
-.dataTables_wrapper.dataTables_wrapper .dataTables_paginate a.paginate_button,
-.dataTables_wrapper.dataTables_wrapper .dataTables_paginate a.paginate_button.current {
-    /* datatables set this as !important, so unfortunately we have to do the same */
-    color: var(--sn-color-datatable-label) !important;
-}
-
-.dataTables_wrapper.dataTables_wrapper .dataTables_paginate a.paginate_button.disabled {
-    filter: saturate(0.5);
-}
-
-/* TODO: Ideally, if there is only one page, then the paginate buttons should be hidden. */
