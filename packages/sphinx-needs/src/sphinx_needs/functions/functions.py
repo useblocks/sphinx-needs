@@ -421,31 +421,6 @@ def check_and_get_content(
     return content
 
 
-def _detect_and_execute_field(
-    content: Any, need: NeedItem, needs: NeedsMutable, app: Sphinx
-) -> tuple[
-    str | None,
-    str | int | float | list[str] | list[int] | list[float] | list[NeedLink] | None,
-]:
-    """Detects if given need field value is a function call and executes it."""
-    content = str(content)
-
-    func_match = FUNC_RE.search(content)
-    if func_match is None:
-        return None, None
-
-    func_call = func_match.group(1)  # Extract function call
-    func_return = execute_func(
-        app,
-        need,
-        needs,
-        func_call,
-        (need["docname"], need["lineno"]) if need["docname"] else None,
-    )  # Execute function call and get return value
-
-    return func_call, func_return
-
-
 @dataclass(frozen=True, slots=True)
 class NeedAttribute:
     """A reference to a need field."""
