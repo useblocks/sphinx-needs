@@ -15,7 +15,8 @@ from docutils.parsers.rst import Directive
 from sphinx.application import Sphinx
 
 
-class marker(nodes.General, nodes.Element):
+# lower case, like docutils' own node classes (`paragraph`, `table`, `row`)
+class marker(nodes.General, nodes.Element):  # noqa: N801
     """Where the patch is installed. It writes nothing of its own."""
 
 
