@@ -145,11 +145,29 @@ details.needstable-columns {
     position: relative;
 }
 
+/* the fence has to reach the `<details>` as well as its `<summary>`: a host theme that
+   styles the element itself draws a border and a background around the whole control,
+   which reads as a ring two pixels larger than the button inside it */
+div.needstable details.needstable-columns {
+    /* the disclosure is a flex item on the control bar, and a host may size `<details>`
+       itself; without these it can end up narrower than the button inside it */
+    flex: 0 0 auto;
+    min-width: max-content;
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: 0;
+    box-shadow: none;
+}
+
 /* A host theme may style every `<summary>` on the page as something of its own -- an
    admonition with a background, a border, an accent bar, a bold font and an injected icon
    and chevron. This control is a button in a toolbar, so it has to say so itself rather
    than inherit any of that. */
 div.needstable details.needstable-columns > summary {
+    /* a host may give `summary` a NEGATIVE horizontal margin, which makes the control
+       wider than the box around it and leaves the two boxes disagreeing */
+    margin: 0;
     padding: 0.1em 0.7em;
     font: inherit;
     font-weight: inherit;
