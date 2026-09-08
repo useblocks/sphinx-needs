@@ -112,7 +112,7 @@ made by calling `make_app` directly: one that has not chosen a renderer, in its
 `sphinx-build` as a SUBPROCESS is the one route neither can reach, and it passes the
 `plantuml_subprocess_args` fixture into its argv instead. It builds that argv with
 `sphinx_build_command(...)` from the shared test layer and never with the bare word, which
-`PATH` resolves to whatever Sphinx comes first there -- another checkout's, or none at all --
+`PATH` resolves to whatever Sphinx comes first there — another checkout's, or none at all —
 rather than to the interpreter running the tests.
 
 Choose a renderer with `plantuml_conf(request)`, which resolves the suite-wide command only
