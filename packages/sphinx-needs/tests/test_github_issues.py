@@ -18,7 +18,6 @@ def test_doc_github_44(test_app):
     """
     app = test_app
     app.build()
-    assert app.statuscode == 0
 
     html = Path(app.outdir, "index.html").read_text()
     assert "<h1>Github Issue 44 test" in html

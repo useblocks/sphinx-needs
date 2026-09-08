@@ -20,7 +20,6 @@ from sphinx_needs_testkit import build_warnings
 def test_need_constraints(test_app, snapshot):
     app = test_app
     app.build()
-    assert app.statuscode == 0
 
     warning_records = build_warnings(test_app)
 

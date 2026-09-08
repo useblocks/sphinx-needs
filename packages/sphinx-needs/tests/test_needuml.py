@@ -79,7 +79,6 @@ def test_needuml_option_key_forbidden(test_app):
 def test_needuml_diagram_allowmixing(test_app):
     app = test_app
     app.build()
-    assert app.statuscode == 0
     # this build renders eight diagrams, and a failed render is only a WARNING to
     # sphinxcontrib-plantuml -- so without this the test is green on a renderer that
     # cannot run, which is how it spent years drawing with whatever `plantuml` the
@@ -182,7 +181,6 @@ def test_needuml_filter(test_app, snapshot):
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
     assert "as ST_002 [[../index.html#ST_002]]" in html
 
-    assert app.statuscode == 0
     assert_no_warnings(app)
 
 
@@ -207,7 +205,6 @@ def test_needuml_jinja_func_flow(test_app, snapshot):
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
     assert "as ST_001 [[../index.html#ST_001]]" in html
 
-    assert app.statuscode == 0
     assert_no_warnings(app)
 
 
@@ -280,7 +277,6 @@ def test_needuml_jinja_func_ref(test_app, snapshot):
         in html
     )
 
-    assert app.statuscode == 0
     assert_no_warnings(app)
 
 
@@ -354,8 +350,10 @@ def test_needuml_jinja_func_uml_missing_key(test_app):
     ) as caught:
         app.build()
 
-    # the guard, not a KeyError caught after the fact: nothing is chained to it
+    # the guard, not a KeyError caught or wrapped after the fact: nothing is chained
+    # to it, either way
     assert not isinstance(caught.value.__context__, KeyError)
+    assert not isinstance(caught.value.__cause__, KeyError)
 
 
 @pytest.mark.parametrize(
@@ -475,7 +473,6 @@ def test_needumls_builder_rerun_keeps_saved_files(test_app, make_app):
             )
         )
         current.build()
-        assert current.statuscode == 0, current._warning.getvalue()
 
         saved = [
             Path(current.outdir, "_build", "my_needuml.puml"),

@@ -95,3 +95,27 @@ def test_a_tests_dir_that_is_no_directory_is_loud(tmp_path: Path) -> None:
 
 def test_no_test_in_this_tree_spawns_the_bare_command() -> None:
     assert_no_bare_sphinx_build(Path(__file__).parent)
+
+
+def test_no_test_in_this_tree_builds_in_a_subprocess() -> None:
+    """The other half: the kit's argv helper is not for THIS suite either.
+
+    ``assert_no_bare_sphinx_build`` guards the bare word, which a site built with
+    ``sphinx_build_command`` never contains -- and that argv is exactly the shape all 28
+    converted sites had. This walk is what makes "no test in this suite spawns a build" a
+    fenced claim rather than a description of today.
+    """
+    here = Path(__file__).resolve()
+    offenders = [
+        f"{path.relative_to(here.parent)}:{number}"
+        for path in sorted(here.parent.rglob("*.py"))
+        if path.resolve() != here
+        for number, line in enumerate(path.read_text(encoding="utf8").splitlines(), 1)
+        if "sphinx_build_command(" in line
+    ]
+    assert not offenders, (
+        "this suite builds in process: `test_app` / `make_app` for the build, "
+        "`build_warnings(app)` for the warnings, `app._status` for the status text, "
+        "`pytest.raises` for the failures -- see the 'Rendering PlantUML is opt in' "
+        "paragraph in packages/sphinx-needs/AGENTS.md:\n" + "\n".join(offenders)
+    )

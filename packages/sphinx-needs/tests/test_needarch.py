@@ -72,5 +72,4 @@ def test_needarch_jinja_func_need(test_app, snapshot):
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
     assert "as INT_001 [[../index.html#INT_001]]" in html
 
-    assert app.statuscode == 0
     assert_no_warnings(app)

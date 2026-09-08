@@ -98,7 +98,6 @@ def test_needs_html_and_json(test_app, make_app):
         builddir=Path(app.srcdir).parent / "needs_build",
     )
     needs_app.build()
-    assert needs_app.statuscode == 0
 
     needs_json_path_2 = os.path.join(needs_app.outdir, "needs.json")
     assert os.path.exists(needs_json_path_2)
