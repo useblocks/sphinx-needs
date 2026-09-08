@@ -35,6 +35,15 @@ div.needstable-scroll {
     overflow-x: auto;
 }
 
+/* The table fills the frame. This sheet has to say so itself: a host may supply the rule
+   (sphinx-needs does), but a consumer that ships the pair on its own would otherwise get a
+   shrink-to-fit table -- measured at 378 px in an 800 px frame -- with its `<colgroup>`
+   percentages resolving against the shrunken width. The structural sheet is sufficient for
+   layout on its own; a host sheet only answers the colour tokens. */
+div.needstable-scroll > table {
+    width: 100%;
+}
+
 div.needstable-controls,
 div.needstable-footer {
     display: flex;

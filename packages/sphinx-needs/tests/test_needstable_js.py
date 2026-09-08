@@ -455,6 +455,46 @@ def test_scroll_frame(opened, test_app: SphinxTestApp) -> None:
 
 
 @pytest.mark.jstest
+def test_the_vendored_pair_lays_out_on_its_own(page: Page) -> None:
+    """t15 -- `needstable.css` + `needstable.js`, with no host stylesheet at all.
+
+    This is what a consumer that vendors the pair byte-identical actually ships, and it is
+    the only thing that can fence the STRUCTURAL sheet: sphinx-needs' own host sheet also
+    gives the table `width: 100%`, so every other test in this module passes whether or not
+    the shipped pair does. Without the rule the table shrink-to-fits -- measured at 378 px
+    in an 800 px frame, with the `<colgroup>` percentages resolving against the shrunken
+    width, which is the defect the scroll frame was introduced to fix.
+
+    It needs no sphinx build: the fixture references the two files in the package tree.
+    """
+    fixture = Path(__file__).parent / "fixtures" / "needstable_pair.html"
+    page_errors: list[str] = []
+    page.on("pageerror", lambda error: page_errors.append(error.message))
+    page.goto(fixture.as_uri())
+
+    measured = page.evaluate(
+        """() => {
+            const table = document.getElementById('pair-table');
+            const frame = table.closest('div.needstable-scroll');
+            return {
+                enhanced: Boolean(table.__needstable),
+                host: document.getElementById('host').clientWidth,
+                frame: frame ? frame.clientWidth : null,
+                table: table.getBoundingClientRect().width,
+                controls: document
+                    .querySelector('div.needstable-controls')
+                    .getBoundingClientRect().width,
+            };
+        }"""
+    )
+    assert not page_errors, page_errors
+    assert measured["enhanced"], "the pair did not enhance its own markup"
+    assert measured["frame"] == measured["host"], measured
+    assert abs(measured["table"] - measured["frame"]) <= 1, measured
+    assert abs(measured["controls"] - measured["host"]) <= 1, measured
+
+
+@pytest.mark.jstest
 @_APP
 def test_column_visibility_reaches_the_export(opened) -> None:
     """t6 -- hiding a column removes it from the table AND from what is exported."""

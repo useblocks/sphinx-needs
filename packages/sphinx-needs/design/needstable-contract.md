@@ -221,6 +221,15 @@ div.needstable
 The scroll frame is a box of the widget's own, and the table inside it keeps
 `display: table; width: 100%`.
 
+**The structural sheet is sufficient for layout on its own.** A consumer that ships the pair
+and no host stylesheet gets a widget that lays out correctly; a host sheet answers the colour
+tokens below and nothing else is required of it.
+
+> *Corrected 2026-09-08.* The `width: 100%` used to come only from sphinx-needs' own host
+> sheet, so the pair alone laid the table out at 378 px in an 800 px frame — this section's
+> own correction, reproduced in the artefact it was written for. `needstable.css` now carries
+> the rule.
+
 > *Corrected 2026-09-08.* An earlier draft made the `<table>` itself the scroll container
 > (`div.needstable > table { display: block; overflow-x: auto }`) and said so here. Review
 > measured that wrong twice over: a `display: block` table re-wraps its rows in an anonymous
