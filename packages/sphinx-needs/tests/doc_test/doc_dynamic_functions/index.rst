@@ -10,6 +10,11 @@ DYNAMIC FUNCTIONS
 
     This is the best id :ndf:`copy("id")`
 
+    via an internal link: |intsub|_
+
+    .. |intsub| replace:: :ndf:`copy("id")`
+    .. _intsub: `DYNAMIC FUNCTIONS`_
+
 .. spec:: TEST_2
    :id: TEST_2
    :tags: my_tag; [[copy("tags", "SP_TOO_001")]]

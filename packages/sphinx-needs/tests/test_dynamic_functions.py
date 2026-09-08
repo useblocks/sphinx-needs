@@ -139,10 +139,10 @@ def test_doc_dynamic_functions(test_app, snapshot):
 
     warning_records = build_warnings(app)
     assert warning_records == [
-        "<srcdir>/index.rst:21: WARNING: Need could not be created: 'tags' value is invalid: only one string, dynamic function or variant function allowed per array item. [needs.create_need]",
-        "<srcdir>/index.rst:42: WARNING: Need could not be created: Field 'test_func' is invalid: Error parsing dynamic function 'test': Unsupported arg 0 value type [needs.create_need]",
-        "<srcdir>/index.rst:48: WARNING: Need could not be created: Field 'test_func' is invalid: Error parsing dynamic function 'test': Unsupported arg 0 value type [needs.create_need]",
-        "<srcdir>/index.rst:40: WARNING: Error while executing function 'copy': Need not found [needs.dynamic_function]",
+        "<srcdir>/index.rst:26: WARNING: Need could not be created: 'tags' value is invalid: only one string, dynamic function or variant function allowed per array item. [needs.create_need]",
+        "<srcdir>/index.rst:47: WARNING: Need could not be created: Field 'test_func' is invalid: Error parsing dynamic function 'test': Unsupported arg 0 value type [needs.create_need]",
+        "<srcdir>/index.rst:53: WARNING: Need could not be created: Field 'test_func' is invalid: Error parsing dynamic function 'test': Unsupported arg 0 value type [needs.create_need]",
+        "<srcdir>/index.rst:45: WARNING: Error while executing function 'copy': Need not found [needs.dynamic_function]",
     ]
 
     html = Path(app.outdir, "index.html").read_text()
@@ -156,6 +156,16 @@ def test_doc_dynamic_functions(test_app, snapshot):
     assert "nested id best TEST_6" in html
     # a link's URI is left alone too
     assert "href=\"http://www.[[copy('id')]]\"" in html
+    # an ``ndf`` reached through a substitution used as an INTERNAL hyperlink reference
+    # (``|intsub|_``): the reference node carries a refid and NO refuri, and the walk this
+    # PR replaced returned early on exactly that, never visiting the reference's children.
+    # It rendered ``??``; here it resolves.  The other half of this assertion is the
+    # expected-warnings list above, which is exact and holds a single "Need not found" --
+    # the one from the need-less ``:ndf:`` at index.rst:45, not a second, spurious one.
+    assert (
+        'via an internal link: <a class="reference internal" '
+        'href="#dynamic-functions">SP_TOO_001</a>' in html
+    )
 
     json_data = Path(app.outdir, "needs.json").read_text()
     needs = json.loads(json_data)

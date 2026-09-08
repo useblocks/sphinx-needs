@@ -3,6 +3,8 @@ from pathlib import Path
 import pytest
 from docutils import __version__ as doc_ver
 
+from sphinx_needs_testkit import assert_no_warnings
+
 
 @pytest.mark.parametrize(
     "test_app",
@@ -200,3 +202,52 @@ def test_doc_needtable_titles(test_app):
     assert '<th class="head"><p>To this need123</p></th>' in html
     assert '<th class="head"><p>Special Characters!</p></th>' in html
     assert '<td class="needs_special-chars!"><p>special-chars value</p></td>' in html
+
+
+# -- the option-level ``[[...]]`` path ---------------------------------------
+#
+# ``needtable``'s ``style_row`` is the one live consumer of
+# ``check_and_get_content``: ``:style:`` is itself a dynamic-function FIELD, so the
+# field path has already resolved it before ``need.py`` re-runs the option parser over
+# ``classes``.  Nothing else in this suite writes ``[[...]]`` in an option, so a break in
+# that path shows up only as a silently wrong row class -- no warning, no failing build.
+
+STYLE_ROW_CONF = """\
+extensions = ["sphinx_needs"]
+"""
+
+STYLE_ROW_INDEX = """\
+Style row
+=========
+
+.. req:: One
+   :id: R_ONE
+   :status: open
+
+.. needtable::
+   :style_row: needs_[[copy("status")]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), STYLE_ROW_CONF),
+                (Path("index.rst"), STYLE_ROW_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_needtable_style_row_dynamic_function(test_app):
+    app = test_app
+    app.build()
+
+    assert_no_warnings(app)
+
+    html = Path(app.outdir, "index.html").read_text()
+    assert '<tr class="need needs_open' in html
+    assert "[[copy(" not in html
