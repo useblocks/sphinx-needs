@@ -230,6 +230,10 @@ def setup(app: Sphinx) -> dict[str, Any]:
     LOGGER.debug("Starting setup of Sphinx-Needs")
     LOGGER.debug("Load Sphinx-Data-Viewer for Sphinx-Needs")
     app.setup_extension("sphinx_data_viewer")
+    # nothing of ours has needed jQuery since #1922 made `sphinx_needs_collapse.js` plain
+    # JavaScript. sphinx-data-viewer's `jsonview_loader.js` still does, and that extension
+    # adds it to EVERY page while declaring no jQuery dependency of its own -- so dropping
+    # this line puts `$ is not defined` on every page of every project
     app.setup_extension("sphinxcontrib.jquery")
     app.setup_extension("sphinx.ext.graphviz")
 

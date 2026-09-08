@@ -42,7 +42,7 @@ dependencies = [
   "requests~=2.32",                # external links
   "jsonschema-rs>=0.37.1,<0.54.0", # schema validation
   "sphinx-data-viewer~=0.1.5",     # needservice debug output
-  "sphinxcontrib-jquery~=4.0",     # sphinx_needs_collapse.js is still jQuery
+  "sphinxcontrib-jquery~=4.0",     # sphinx-data-viewer's loader; nothing of ours (#1922)
   "typing-extensions>=4.14.0",     # for `**kwargs: Unpack[...]` (PEP 692), which typing supports from 3.12
   "minijinja~=2.15",               # lightweight jinja2-compatible template engine
 ]

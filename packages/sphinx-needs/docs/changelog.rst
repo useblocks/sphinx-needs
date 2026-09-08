@@ -4,6 +4,25 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+- ♻️ The need's collapse button is plain JavaScript, and no longer blocks the parser
+  (:issue:`1922`, :pr:`TBD`)
+
+  ``sphinx_needs_collapse.js`` -- the control that hides and shows a need's meta rows --
+  was written against jQuery. It is now plain ES2020 with no dependencies, type-checked
+  through JSDoc as ``needstable.js`` is, and registered with ``defer``, so it runs after
+  the page is parsed instead of blocking it. What it does is unchanged: the same initial
+  state, the same toggle on click, the same classes.
+
+  ``sphinxcontrib-jquery`` **remains a dependency**, so a project whose own scripts rely
+  on Sphinx-Needs putting jQuery on the page still works. It can go once
+  `sphinx-data-viewer <https://github.com/useblocks/sphinx-data-viewer>`__ -- which
+  Sphinx-Needs sets up for :ref:`needservice`'s debug output, and which adds a jQuery
+  loader script to every page while declaring no jQuery dependency of its own -- no
+  longer needs it.
+
 .. _`release:8.5.0`:
 
 8.5.0
