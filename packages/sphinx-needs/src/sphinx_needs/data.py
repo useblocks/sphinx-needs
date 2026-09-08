@@ -828,6 +828,9 @@ class NeedsTableType(NeedsFilteredBaseType):
     max_items: int | None
     """Maximum number of needs to show, ``None`` if the option was not given."""
 
+    page_size: int | None
+    """Rows per page for the interactive style, ``None`` to use ``needs_table_page_size``."""
+
 
 class NeedsUmlType(NeedsBaseDataType):
     """Data for a single (filtered) uml diagram."""

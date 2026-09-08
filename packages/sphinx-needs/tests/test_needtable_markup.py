@@ -18,7 +18,7 @@ import pytest
 from lxml import html as html_parser
 from sphinx.testing.util import SphinxTestApp
 
-from sphinx_needs_testkit import assert_no_warnings
+from sphinx_needs_testkit import assert_no_warnings, build_warnings
 
 #: the project every test in this module builds
 _SRCDIR = "doc_test/doc_needtable_enhancer"
@@ -60,6 +60,9 @@ def test_table_element(test_app: SphinxTestApp) -> None:
     assert interactive.get("data-needstable-page-sizes") == "10,25,50,0"
 
     assert "NEEDS_DATATABLES" in small.get("class").split()
+    # `:page_size:` overrides `needs_table_page_size` for this table alone
+    assert small.get("data-needstable-page-size") == "5"
+    assert small.get("data-needstable-page-sizes") == "10,25,50,0"
 
     # `:style: table` opts out: no hook class, and none of the options
     assert "NEEDS_TABLE" in plain.get("class").split()
@@ -266,3 +269,90 @@ def test_assets_are_registered_per_page(test_app: SphinxTestApp) -> None:
         elsewhere = assets(pagename)
         for asset in pair:
             assert asset not in elsewhere, (pagename, elsewhere)
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "srcdir": _SRCDIR,
+            "confoverrides": {
+                "needs_table_page_size": 25,
+                "needs_table_page_sizes": [25, 100, 0],
+            },
+        }
+    ],
+    indirect=True,
+)
+def test_page_size_configuration(test_app: SphinxTestApp) -> None:
+    """``needs_table_page_size`` and ``needs_table_page_sizes`` reach the table."""
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+
+    interactive, small, _plain = _needtables(app)
+    assert interactive.get("data-needstable-page-size") == "25"
+    assert interactive.get("data-needstable-page-sizes") == "25,100,0"
+    # the directive option still wins for the table that carries it
+    assert small.get("data-needstable-page-size") == "5"
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "srcdir": _SRCDIR,
+            "confoverrides": {
+                # 0 means "all", which is not a page SIZE
+                "needs_table_page_size": 0,
+                "needs_table_page_sizes": [],
+            },
+        }
+    ],
+    indirect=True,
+)
+def test_page_size_configuration_is_validated(test_app: SphinxTestApp) -> None:
+    """A bad value is reported once, at configuration time, and the default is used."""
+    app = test_app
+    app.build()
+
+    warnings = build_warnings(app)
+    assert [warning for warning in warnings if "needs_table_page_size " in warning] == [
+        "WARNING: needs_table_page_size must be a positive integer, got 0; "
+        "using 10. [needs.config]"
+    ], warnings
+    assert [
+        warning for warning in warnings if "needs_table_page_sizes " in warning
+    ] == [
+        "WARNING: needs_table_page_sizes must be a non-empty list of non-negative "
+        "integers (0 means all), got []; using [10, 25, 50, 0]. [needs.config]"
+    ], warnings
+
+    interactive = _needtables(app)[0]
+    assert interactive.get("data-needstable-page-size") == "10"
+    assert interactive.get("data-needstable-page-sizes") == "10,25,50,0"
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needtable_bad_page_size"}],
+    indirect=True,
+)
+def test_page_size_option_is_validated(test_app: SphinxTestApp) -> None:
+    """A bad ``:page_size:`` is reported at the directive and then ignored."""
+    app = test_app
+    app.build()
+
+    warnings = build_warnings(app)
+    assert warnings == [
+        "<srcdir>/index.rst:7: WARNING: The 'page_size' option must be a positive "
+        "integer, got '0'; ignoring it. [needs.directive]",
+        "<srcdir>/index.rst:10: WARNING: The 'page_size' option must be a positive "
+        "integer, got 'lots'; ignoring it. [needs.directive]",
+    ], warnings
+
+    tree = html_parser.parse(str(Path(app.outdir, "index.html")))
+    for table in tree.xpath("//table[contains(@class, 'NEEDS_DATATABLES')]"):
+        assert table.get("data-needstable-page-size") == "10"

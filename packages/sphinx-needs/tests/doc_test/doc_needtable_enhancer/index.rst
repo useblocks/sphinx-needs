@@ -99,6 +99,7 @@ Three rows, so its pager has a single page and must be hidden.
 .. needtable:: Specifications only
    :columns: id;title;status
    :types: spec
+   :page_size: 5
 
 The plain table
 ---------------

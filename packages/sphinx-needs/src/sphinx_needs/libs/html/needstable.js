@@ -298,6 +298,19 @@
         this.sortDirection = 0;
         this.query = "";
         this.pageSize = this.options.pageSize;
+        if (this.options.pageSizes.indexOf(this.pageSize) === -1) {
+            /* a producer may name a page size that is not among the offered ones; the
+               control has to be able to show the size the table is actually using */
+            this.options.pageSizes = this.options.pageSizes
+                .concat([this.pageSize])
+                .sort(function (left, right) {
+                    /* 0 means "All" and belongs at the end, not at the start */
+                    if (left === 0 || right === 0) {
+                        return left === 0 ? 1 : -1;
+                    }
+                    return left - right;
+                });
+        }
         this.page = 0;
         this.searchTimer = null;
 

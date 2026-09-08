@@ -47,6 +47,33 @@ DEFAULT_PAGE_SIZE = 10
 DEFAULT_PAGE_SIZES = (10, 25, 50, 0)
 
 
+def validate_page_size(value: object) -> int | None:
+    """A page size is a positive integer; ``0`` ("all") is not a page size.
+
+    :return: the value if it is one, otherwise ``None``.
+    """
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        return None
+    return value
+
+
+def validate_page_sizes(value: object) -> list[int] | None:
+    """The offered page sizes are a non-empty list of non-negative integers.
+
+    ``0`` is allowed here and means "All".
+
+    :return: the sizes if they are ones, otherwise ``None``.
+    """
+    if not isinstance(value, list | tuple) or not value:
+        return None
+    sizes: list[int] = []
+    for entry in value:
+        if isinstance(entry, bool) or not isinstance(entry, int) or entry < 0:
+            return None
+        sizes.append(entry)
+    return sizes
+
+
 class NeedtableTable(nodes.table):
     """The ``<table>`` of a needtable.
 
@@ -145,6 +172,7 @@ class NeedtableDirective(FilterBase):
         "sort": directives.unchanged_required,
         "class": directives.unchanged_required,
         "max_items": directives.nonnegative_int,
+        "page_size": directives.unchanged_required,
         # ubCode compatibility: accepted and ignored by Sphinx-Needs.
         "cypher": directives.unchanged,
     }
@@ -198,6 +226,21 @@ class NeedtableDirective(FilterBase):
 
         sort = self.options.get("sort", "id_complete")
 
+        page_size: int | None = None
+        if (raw_page_size := self.options.get("page_size")) is not None:
+            try:
+                page_size = validate_page_size(int(raw_page_size))
+            except ValueError:
+                page_size = None
+            if page_size is None:
+                log_warning(
+                    LOGGER,
+                    "The 'page_size' option must be a positive integer, "
+                    f"got {raw_page_size!r}; ignoring it.",
+                    "directive",
+                    location=self.get_location(),
+                )
+
         title = None
         if self.arguments:
             title = self.arguments[0]
@@ -218,6 +261,7 @@ class NeedtableDirective(FilterBase):
             "show_filters": "show_filters" in self.options,
             "show_parts": self.options.get("show_parts", False) is None,
             "max_items": self.options.get("max_items"),
+            "page_size": page_size,
             **self.collect_filter_attributes(),
         }
         node = Needtable("", **attributes)
@@ -310,11 +354,20 @@ def process_needtables(
         )
         if style != "TABLE":
             # per-table options for the client-side enhancer; a `:style: table` table
-            # carries none of them and the script ignores it
+            # carries none of them and the script ignores it. A bad configuration value
+            # is warned about once, at `config-inited`, and falls back here.
+            page_size = (
+                current_needtable.get("page_size")
+                or validate_page_size(needs_config.table_page_size)
+                or DEFAULT_PAGE_SIZE
+            )
+            page_sizes = validate_page_sizes(needs_config.table_page_sizes) or list(
+                DEFAULT_PAGE_SIZES
+            )
             table_node["html_attributes"] = {
-                "data-needstable-page-size": str(DEFAULT_PAGE_SIZE),
+                "data-needstable-page-size": str(page_size),
                 "data-needstable-page-sizes": ",".join(
-                    str(size) for size in DEFAULT_PAGE_SIZES
+                    str(size) for size in page_sizes
                 ),
             }
         tgroup = nodes.tgroup(cols=len(current_needtable["columns"]))

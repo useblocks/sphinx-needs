@@ -51,7 +51,7 @@ If you set **:columns:**, the current table will not use the value of config par
 
 Tables with a lot of columns will get a horizontal scrollbar in HTML output.
 
-**DataTable style**
+**Interactive style**
 
 .. syntax-example::
 
@@ -125,8 +125,25 @@ Allows you to set a specific style for the current table.
 
 Supported values are:
 
-* table
-* datatables
+``table``
+   A plain Sphinx table. The rows are exactly what the
+   :ref:`sort <needtable_sort>` option produced, and nothing is added on top of them.
+
+``datatables``
+   The **interactive table**, and the default. It is the same table, enhanced in the
+   browser by a small script that ships with Sphinx-Needs: the reader can sort a column,
+   search the whole table, page through it and choose how many rows a page holds, switch
+   columns off, copy the table to the clipboard and download it as CSV.
+
+   The enhancement is *in place*: every row and cell stays the element Sphinx-Needs
+   rendered, so :ref:`style_row <needtable_style_row>` classes, the ``needs_<column>``
+   cell classes and the links inside cells all survive sorting and searching, and a
+   reader with JavaScript switched off still gets the whole table.
+
+   What it deliberately does **not** do: export to Excel or PDF (the CSV it writes opens
+   in Excel, and the browser's own print command prints the page), and let the reader
+   drag columns into a different order. Both were features of the DataTables package
+   Sphinx-Needs bundled until 9.0.0.
 
 Overrides config parameter :ref:`needs_table_style` if set.
 
@@ -324,8 +341,15 @@ In this case, we set the sort option to ``status``. So *EX_ROW_3* is above of *E
 
 .. note::
 
-   Sorting only works if you use the standard sphinx-table for output: ``:style: table``.
-   By default, tables generated with DataTables uses Javascript to sort results.
+   ``:sort:`` decides the order of the rows in **both** styles.
+   With :ref:`style <needtable_style>` ``datatables`` it is the order the reader first
+   sees, and the one a third click on a column header goes back to; the two clicks in
+   between sort that column ascending and descending.
+
+.. versionchanged:: 9.0.0
+
+   Before 9.0.0 the bundled DataTables package re-sorted every table by its first column
+   as soon as the page loaded, so ``:sort:`` was only visible with ``:style: table``.
 
 
 .. _needtable_class:
@@ -384,6 +408,27 @@ Without the option, the table shows as many needs as that configuration allows.
       :style: table
       :sort: id
       :max_items: 2
+
+.. _needtable_page_size:
+
+page_size
+~~~~~~~~~
+
+.. versionadded:: 9.0.0
+
+How many rows a page of the :ref:`interactive table <needtable_style>` holds, for this
+table alone. Overrides :ref:`needs_table_page_size`, and must be a positive whole number;
+anything else is reported as a ``needs.directive`` warning and ignored.
+
+A need and its :ref:`parts <needtable_show_parts>` count as one row here, so that a page
+never splits a need from its parts. The option has no effect on ``:style: table``.
+
+.. syntax-example::
+
+   .. needtable::
+      :tags: flow_example
+      :sort: id
+      :page_size: 2
 
 common filters
 ~~~~~~~~~~~~~~

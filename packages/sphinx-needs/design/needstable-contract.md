@@ -36,7 +36,8 @@ script is the version of *this document*; a change to anything below bumps it.
   (`<table class="NEEDS_TABLE">`) means, and such a table carries none of the options.
 - `data-needstable-page-size` — rows per page, `0` for all. Optional; default `10`.
 - `data-needstable-page-sizes` — the list offered in the page-size control, `0` = "All".
-  Optional; default `10,25,50,0`.
+  Optional; default `10,25,50,0`. The script adds the page size in use to the list when a
+  producer names one that is not in it, so that the control can always show it.
 - `data-needstable-labels` — a JSON object overriding any of the script's English labels.
   Optional. **The producer localises**; the script ships no catalogues.
 - Unknown `data-needstable-*` attributes are ignored: this is the extension point for

@@ -96,6 +96,8 @@ from sphinx_needs.directives.needsequence import (
 )
 from sphinx_needs.directives.needservice import Needservice, NeedserviceDirective
 from sphinx_needs.directives.needtable import (
+    DEFAULT_PAGE_SIZE,
+    DEFAULT_PAGE_SIZES,
     Needtable,
     NeedtableDirective,
     NeedtableHeader,
@@ -108,6 +110,8 @@ from sphinx_needs.directives.needtable import (
     html_visit_needtable_row,
     html_visit_needtable_table,
     process_needtables,
+    validate_page_size,
+    validate_page_sizes,
 )
 from sphinx_needs.directives.needuml import (
     NeedarchDirective,
@@ -861,6 +865,25 @@ def check_configuration(app: Sphinx, config: Config) -> None:
     needs_config = NeedsSphinxConfig(config)
     fields = _NEEDS_CONFIG.fields
     link_types = [x["option"] for x in needs_config._extra_links]
+
+    if validate_page_size(needs_config.table_page_size) is None:
+        log_warning(
+            LOGGER,
+            "needs_table_page_size must be a positive integer, "
+            f"got {needs_config.table_page_size!r}; "
+            f"using {DEFAULT_PAGE_SIZE}.",
+            "config",
+            None,
+        )
+    if validate_page_sizes(needs_config.table_page_sizes) is None:
+        log_warning(
+            LOGGER,
+            "needs_table_page_sizes must be a non-empty list of non-negative integers "
+            f"(0 means all), got {needs_config.table_page_sizes!r}; "
+            f"using {list(DEFAULT_PAGE_SIZES)}.",
+            "config",
+            None,
+        )
 
     external_filter = needs_config.filter_data
     if external_filter:
