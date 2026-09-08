@@ -509,26 +509,48 @@ def test_the_vendored_pair_lays_out_on_its_own(page: Page) -> None:
     page.on("pageerror", lambda error: page_errors.append(error.message))
     page.goto(fixture.as_uri())
 
-    measured = page.evaluate(
-        """() => {
-            const table = document.getElementById('pair-table');
-            const frame = table.closest('div.needstable-scroll');
-            return {
-                enhanced: Boolean(table.__needstable),
-                host: document.getElementById('host').clientWidth,
-                frame: frame ? frame.clientWidth : null,
-                table: table.getBoundingClientRect().width,
-                controls: document
-                    .querySelector('div.needstable-controls')
-                    .getBoundingClientRect().width,
-            };
-        }"""
-    )
+    measure = """() => {
+        const table = document.getElementById('pair-table');
+        const frame = table.closest('div.needstable-scroll');
+        return {
+            enhanced: Boolean(table.__needstable),
+            host: document.getElementById('host').clientWidth,
+            frame: frame ? frame.clientWidth : null,
+            table: table.getBoundingClientRect().width,
+            parent: table.parentElement.className,
+            controls: document
+                .querySelector('div.needstable-controls')
+                .getBoundingClientRect().width,
+        };
+    }"""
+
+    measured = page.evaluate(measure)
     assert not page_errors, page_errors
     assert measured["enhanced"], "the pair did not enhance its own markup"
+    assert measured["parent"] == "needstable-scroll", measured
     assert measured["frame"] == measured["host"], measured
     assert abs(measured["table"] - measured["frame"]) <= 1, measured
     assert abs(measured["controls"] - measured["host"]) <= 1, measured
+
+    # The second shape: a host theme's own script wraps every table in a container of its
+    # own, at DOM ready, which lands BETWEEN the frame and the table. Any rule naming the
+    # frame as the table's parent stops matching there -- the fragility that took the
+    # scroll job off the table in the first place -- and the table would be back to
+    # shrink-to-fit inside a frame that is still the right width.
+    page.evaluate(
+        """() => {
+            const table = document.getElementById('pair-table');
+            const wrapper = document.createElement('div');
+            wrapper.className = 'wy-table-responsive';
+            table.parentNode.insertBefore(wrapper, table);
+            wrapper.appendChild(table);
+        }"""
+    )
+    wrapped = page.evaluate(measure)
+    assert wrapped["parent"] == "wy-table-responsive", wrapped
+    assert wrapped["frame"] == wrapped["host"], wrapped
+    assert abs(wrapped["table"] - wrapped["frame"]) <= 1, wrapped
+    assert not page_errors, page_errors
 
 
 @pytest.mark.jstest

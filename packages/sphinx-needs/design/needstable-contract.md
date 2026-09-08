@@ -222,9 +222,19 @@ div.needstable
 The scroll frame is a box of the widget's own, and the table inside it keeps
 `display: table; width: 100%`.
 
-**The structural sheet is sufficient for layout on its own.** A consumer that ships the pair
-and no host stylesheet gets a widget that lays out correctly; a host sheet answers the colour
-tokens below and nothing else is required of it.
+**The structural sheet is sufficient for layout on its own**, including under a host whose
+own script wraps the `<table>`. A consumer that ships the pair and no host stylesheet gets a
+widget that lays out correctly; a host sheet answers the colour tokens below and nothing else
+is required of it. Every rule in it that reaches the table is therefore written as a
+*descendant* selector qualified by the hook class — `div.needstable-scroll
+table.NEEDS_DATATABLES` — never as a child of the frame.
+
+> *Corrected 2026-09-08.* The rule this paragraph was written for was a child combinator, so
+> a host that wrapped the `<table>` displaced it and the pair alone laid the table out at
+> 378 px in an 800 px frame again — under a paragraph three lines below claiming that the
+> frame cannot be displaced by exactly that. The frame cannot; the rule that gave the table
+> its width could. It is a class-qualified descendant selector now, and the pair-only fixture
+> asserts both shapes.
 
 **A host that wraps the `<table>` itself keeps the scrolling.** Some themes' own scripts put
 every table in a scroll container of their own, which lands *inside* this frame; the inner

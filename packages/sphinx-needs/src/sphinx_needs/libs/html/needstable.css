@@ -38,9 +38,14 @@ div.needstable-scroll {
 /* The table fills the frame. This sheet has to say so itself: a host may supply the rule
    (sphinx-needs does), but a consumer that ships the pair on its own would otherwise get a
    shrink-to-fit table -- measured at 378 px in an 800 px frame -- with its `<colgroup>`
-   percentages resolving against the shrunken width. The structural sheet is sufficient for
-   layout on its own; a host sheet only answers the colour tokens. */
-div.needstable-scroll > table {
+   percentages resolving against the shrunken width.
+
+   A DESCENDANT selector, not a child one: a host theme's own script may wrap every table in
+   a container of its own, which lands between this frame and the table and displaces any
+   rule that names the frame as the table's parent -- the same fragility that took the
+   scroll job off the table in the first place. It is qualified by the hook class rather
+   than left bare, so a table nested inside a needtable's cell is not caught. */
+div.needstable-scroll table.NEEDS_DATATABLES {
     width: 100%;
 }
 
