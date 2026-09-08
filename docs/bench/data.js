@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788862576505,
+  "lastUpdate": 1788868407772,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -20592,6 +20592,42 @@ window.BENCHMARK_DATA = {
             "value": 56.377989474,
             "unit": "s",
             "extra": "Commit: 72e41f6bd5a2f16eed22d86481a9766967a179bd\nBranch: master\nTime: 2026-09-08T12:14:51+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3b9c202a64a098e7407fa7f688878ca07fcddd60",
+          "message": "🧪 Subprocess builds run the interpreter under test (#1916)\n\nEvery test in sphinx-needs' suite that builds a Sphinx project as a\n**subprocess** spawned\nthe bare word `sphinx-build`, resolved on `PATH`. Under `uv run poe\ntest-needs` that happens\nto be the environment pytest is running out of, so the suite is green\nand the defect is\ninvisible. From an unactivated shell, or from any shell whose `PATH`\ncarries another Sphinx\nfirst, the child is a different Sphinx and a different sphinx-needs — or\nnone, and the test\ndies in `subprocess` before it reports anything about the build. A\ndeveloper with more than\none checkout of this repository hits that as the ordinary case: `which\nsphinx-build` answers\nwith whichever `.venv` came first, which is not the checkout under test.\nIt was measured\nfirst on sphinx-test-reports, whose three equivalent sites all fail from\na bare shell\n(useblocks/sphinx-test-reports#145), and that suite joins this workspace\nnext.\n\n## What changed\n\n- **`sphinx_needs_testkit.sphinx_build_command()`** — new, in the shared\ntest layer, a plain\n  function imported by name like `build_warnings`, returning\n`[sys.executable, \"-m\", \"sphinx\", *(os.fspath(a) for a in args)]`.\n`python -m sphinx` is\n`sphinx.cmd.build.main`, the same entry point the `sphinx-build` console\nscript wraps, `-M`\nmake mode included, so a call site changes in argv[0] — and in one thing\nmore: `-m` puts\nthe working directory on the child's `sys.path` where the script put its\nown `bin/`.\nHarmless from every directory a task here runs in, and worth knowing for\na suite adopting\nthis from its own. It lives in the kit because the answer is the\nworkspace's.\n- **All 28 spawn sites in sphinx-needs' suite** (8 modules) build their\nargv with it. Flags,\n  their order, `capture_output`, the `.decode(...)` after it: untouched.\n- **sphinx-mounts' two sites** call it too. They already spelled out\n`[sys.executable, \"-m\",\n\"sphinx\", …]`, so there was one right answer written twice; now there is\none. That retires\n`_have_sphinx_module()` and the `shutil.which(\"sphinx-build\")` skip\nbeside it in\n`test_example.py`: that suite's `conftest.py` loads\n`sphinx.testing.fixtures`, so\ncollection cannot succeed unless sphinx is importable and the skip could\nnever fire.\n- **`performance/performance_test.py`**, converted by hand to the same\n`sys.executable, \"-m\",\n\"sphinx\"` rather than through the kit — a benchmark script run from a\nshell is not a suite,\n  and `performance/` is collected by nothing, so no fence reaches it.\n- **A fence in the kit**, `assert_no_bare_sphinx_build(tests_dir)`,\ncalled from a test in\nsphinx-needs' suite and from one in sphinx-mounts': it walks that tree's\n`*.py` and names\nevery `file:line` spelling the command as the bare word or splitting it\nout of a string.\nBoth trees, because the mounts sites are behind `@pytest.mark.bazel` —\ndeselected locally,\ngreen in CI whatever argv[0] says — so a regression there has no result\nto fail.\nsphinx-codelinks gets no such module: its suite spawns no build. (Two\nshell scripts under\n`packages/sphinx-mounts/tests/example/` do spawn `sphinx-build`, through\n`uv run\n--project=<workspace root>`, which pins the environment by another\nroute; no test reaches\n  either.)\n- **Dead scaffolding**:\n`packages/sphinx-codelinks/tests/data/sphinx/{Makefile,make.bat}`,\nsphinx-quickstart leftovers naming a `sphinx-build` on `PATH`. That\nfixture project is only\n  ever handed to `make_app`, in process; nothing referenced either file.\n\n## The payoff, measured\n\nThe eight sphinx-needs modules, run with the environment's `bin/` off\n`PATH` (`java` and\n`dot` reachable, no `sphinx-build` anywhere on it) — what a bare shell\ndoes — go from **23\nfailed, 25 passed**, every failure `FileNotFoundError: …\n'sphinx-build'`, to **48 passed**.\n\nTests and one benchmark script; nothing shipped changes, so there is no\nchangelog entry.\n\nCloses #1911",
+          "timestamp": "2026-09-08T13:52:07+02:00",
+          "tree_id": "62a2657322ba8fc6c54db90eed88a5b97fe497e8",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/3b9c202a64a098e7407fa7f688878ca07fcddd60"
+        },
+        "date": 1788868400586,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.15332531500000357,
+            "unit": "s",
+            "extra": "Commit: 3b9c202a64a098e7407fa7f688878ca07fcddd60\nBranch: master\nTime: 2026-09-08T13:52:07+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 54.965125459,
+            "unit": "s",
+            "extra": "Commit: 3b9c202a64a098e7407fa7f688878ca07fcddd60\nBranch: master\nTime: 2026-09-08T13:52:07+02:00"
           }
         ]
       }
