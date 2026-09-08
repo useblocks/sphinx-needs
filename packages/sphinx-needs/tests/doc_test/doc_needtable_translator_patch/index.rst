@@ -13,3 +13,12 @@ Paragraph BEFORE the needtable.
    :columns: id;title
 
 Paragraph AFTER the needtable.
+
+.. otherext-marker2::
+
+Paragraph after the SECOND patch.
+
+.. needtable::
+   :columns: id;status
+
+Paragraph after the second needtable.

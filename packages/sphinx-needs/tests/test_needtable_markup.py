@@ -409,6 +409,23 @@ def test_a_second_translator_patch_survives(test_app: SphinxTestApp) -> None:
     assert 'data-need-id="REQ_001"' in html
     assert 'scope="col"' in html
 
+    # a SECOND extension patches further down the page, and a second needtable follows it:
+    # what has to be restored is whatever was there at that moment, which is a different
+    # callable from the one that was there the first time
+    assert (
+        '<p data-otherext="yes" data-otherext2="yes">Paragraph after the SECOND patch'
+        in html
+    )
+    assert (
+        '<p data-otherext="yes" data-otherext2="yes">'
+        "Paragraph after the second needtable" in html
+    )
+    # both wrappers are still in the chain when the second table is written
+    second = html[html.index("Paragraph after the SECOND patch") :]
+    second_table = second[: second.index("</table>")]
+    assert 'data-otherext2="yes"' in second_table
+    assert 'data-need-id="REQ_001"' in second_table
+
 
 @pytest.mark.parametrize(
     "test_app",

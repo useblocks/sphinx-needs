@@ -713,17 +713,29 @@ def test_destroy_restores_the_original_dom(opened) -> None:
 
 @pytest.mark.jstest
 @pytest.mark.parametrize(
-    "test_app",
+    ("test_app", "expected"),
     [
-        {
-            "buildername": "html",
-            "srcdir": "doc_test/doc_needtable_enhancer",
-            "confoverrides": {"needs_css": "dark.css"},
-        }
+        # the DEFAULT theme, which is what a project that never sets `needs_css` gets
+        (
+            {
+                "buildername": "html",
+                "srcdir": "doc_test/doc_needtable_enhancer",
+                "confoverrides": {"needs_css": "modern.css"},
+            },
+            ("rgb(255, 255, 255)", "rgb(51, 51, 51)"),
+        ),
+        (
+            {
+                "buildername": "html",
+                "srcdir": "doc_test/doc_needtable_enhancer",
+                "confoverrides": {"needs_css": "dark.css"},
+            },
+            ("rgb(51, 51, 51)", "rgb(238, 238, 238)"),
+        ),
     ],
-    indirect=True,
+    indirect=["test_app"],
 )
-def test_columns_popover_follows_the_theme(opened) -> None:
+def test_columns_popover_follows_the_theme(opened, expected) -> None:
     """t12 -- the one opaque surface the widget paints takes its colours from the host.
 
     Everything else the widget draws is transparent and inherits the page. The columns
@@ -742,10 +754,10 @@ def test_columns_popover_follows_the_theme(opened) -> None:
             return {bg: style.backgroundColor, fg: style.color};
         }"""
     )
-    # `dark.css` says #333 on #eee; the point is that a token answered at all, and that
-    # the surface is not the user agent's white
-    assert colours["bg"] == "rgb(51, 51, 51)", colours
-    assert colours["fg"] == "rgb(238, 238, 238)", colours
+    # the point is that a token answered at all -- in BOTH themes, including the default
+    # one, whose mapping nothing would otherwise notice the loss of -- and so that the
+    # surface is never the user agent's `Canvas`
+    assert (colours["bg"], colours["fg"]) == expected, colours
 
 
 @pytest.mark.jstest

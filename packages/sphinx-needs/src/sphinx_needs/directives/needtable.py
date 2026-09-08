@@ -92,8 +92,10 @@ class NeedtableHeader(nodes.entry):
     """A ``<th>`` of a needtable, carrying ``scope``, ``data-col`` and ``data-type``."""
 
 
-#: Sentinel for "the translator carried no ``starttag`` of its own", which is not the same
-#: as "it carried one whose value was ``None``".
+#: Sentinel for "the translator carried no ``starttag`` of its own". Restoring means
+#: putting back exactly what was there -- another extension's own instance-level patch, or
+#: nothing at all -- and those two need different operations, so "nothing" needs a value
+#: that cannot be confused with an attribute that is present.
 _NO_INSTANCE_STARTTAG = object()
 
 
