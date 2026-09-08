@@ -433,3 +433,38 @@ def test_emitted_order_is_table_filters_notice(test_app: SphinxTestApp) -> None:
     filters = html.index("Used filter")
     notice = html.index("needs_max_items_notice")
     assert table_end < filters < notice, (table_end, filters, notice)
+
+
+@_APP
+def test_a_stale_build_directory_refreshes(test_app: SphinxTestApp) -> None:
+    """Assets whose bytes changed are re-copied, not abandoned with a warning.
+
+    Everything this extension copies is its own, under ``_static/sphinx-needs/``, so when
+    the file on disk differs from the file in the package the package is right. Sphinx does
+    not agree by default: from 8.1 it warns ``misc.copy_overwrite`` and **aborts the copy**,
+    so an upgrader's first incremental build keeps the old stylesheet -- and fails under
+    ``-W``. The three files below are the three call sites: a directory copy from
+    ``css/common``, a directory copy from ``libs/html``, and the single-file copy of the
+    theme named by ``needs_css``.
+    """
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+
+    stale = b"/* stale bytes from an older release */\n"
+    built = [
+        Path(app.outdir, "_static", "sphinx-needs", "common_css", "needstable.css"),
+        Path(app.outdir, "_static", "sphinx-needs", "libs", "html", "needstable.css"),
+        Path(app.outdir, "_static", "sphinx-needs", "modern.css"),
+    ]
+    for path in built:
+        assert path.is_file(), path
+        path.write_bytes(stale)
+
+    # the same outdir, no `-E`: exactly what a `git checkout` between builds produces
+    app.build()
+
+    warnings = build_warnings(app)
+    assert [w for w in warnings if "copy_overwrite" in w] == [], warnings
+    for path in built:
+        assert path.read_bytes() != stale, f"{path.name} was left stale"

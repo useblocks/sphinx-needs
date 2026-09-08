@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import inspect
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +18,30 @@ from sphinx_needs.logging import log_warning
 from sphinx_needs.utils import logger
 
 _STATIC_DIR_NAME = "_static"
+
+
+@lru_cache(maxsize=1)
+def _overwrite() -> dict[str, Any]:
+    """The keyword that lets sphinx overwrite an asset whose bytes have changed.
+
+    Everything this module copies is the extension's own, under
+    ``_static/sphinx-needs/``, and never anything a project wrote -- so when the file on
+    disk differs from the file in the package, the package is right.
+
+    Sphinx does not agree by default, and has not agreed the same way for long. Up to 7.4
+    ``copy_asset``/``copy_asset_file`` take a private ``__overwrite_warning__`` and copy
+    anyway; from 8.1 they take ``force`` and, when the destination exists with different
+    bytes, warn ``misc.copy_overwrite`` and **abort the copy**. So on any modern sphinx an
+    upgrader's first incremental build keeps the OLD stylesheet on disk -- the widget then
+    runs on the fallback colours -- and fails outright under ``-W``.
+
+    Asking the signature rather than the version number means a release that changes the
+    spelling again resolves itself, and that the 7.4 floor is passed nothing it does not
+    understand.
+    """
+    if "force" in inspect.signature(copy_asset).parameters:
+        return {"force": True}
+    return {}
 
 
 def _add_css_file(app: Sphinx, rel_path: Path) -> None:
@@ -59,6 +85,7 @@ def install_styles_static_files(app: Sphinx, env: BuildEnvironment) -> None:
         str(css_root.joinpath("common")),
         str(dest_dir.joinpath("common_css")),
         lambda path: not path.endswith(".css"),
+        **_overwrite(),
     )
     # Sphinx preserves registration order for stylesheets with the same priority.
     # Sort by filename to keep generated HTML and the CSS cascade deterministic.
@@ -70,10 +97,12 @@ def install_styles_static_files(app: Sphinx, env: BuildEnvironment) -> None:
 
     # Add theme css file
     if config.css in [f.name for f in css_root.joinpath("themes").glob("*.css")]:
-        copy_asset_file(str(css_root.joinpath("themes", config.css)), str(dest_dir))
+        copy_asset_file(
+            str(css_root.joinpath("themes", config.css)), str(dest_dir), **_overwrite()
+        )
         _add_css_file(app, dest_dir.joinpath(config.css).relative_to(statics_dir))
     elif Path(config.css).is_file():
-        copy_asset_file(config.css, str(dest_dir))
+        copy_asset_file(config.css, str(dest_dir), **_overwrite())
         _add_css_file(
             app, dest_dir.joinpath(Path(config.css).name).relative_to(statics_dir)
         )
@@ -104,7 +133,7 @@ def install_lib_static_files(app: Sphinx, env: BuildEnvironment) -> None:
     source_dir = Path(__file__).parent / "libs" / "html"
     destination_dir = statics_dir / "sphinx-needs" / "libs" / "html"
 
-    copy_asset(str(source_dir), str(destination_dir))
+    copy_asset(str(source_dir), str(destination_dir), **_overwrite())
 
     lib_path = Path("sphinx-needs") / "libs" / "html"
     # the needtable pair is registered per page, in `install_needtable_assets` below
