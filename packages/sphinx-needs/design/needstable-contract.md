@@ -121,8 +121,14 @@ same instance), `initAll(root, options)` over `table.NEEDS_DATATABLES`, and `ver
 instance exposes `destroy()`, which puts the table back exactly as the producer wrote it:
 wrapper and controls removed, every detached row re-attached in the original order, the
 `<th>` contents unwrapped, `aria-sort` gone, hidden columns shown. It self-initialises on
-`DOMContentLoaded`, or at once when the document is already parsed — which is the case for
-the deferred script tag sphinx-needs emits.
+`DOMContentLoaded`, or at once when the document is already parsed. The producer should
+emit the tag with `defer`, which makes the second branch the one taken.
+
+> *Corrected 2026-09-08.* This paragraph used to claim that sphinx-needs already emitted a
+> deferred tag. Review measured otherwise: the per-page registration went through the
+> builder's `add_js_file`, which writes every keyword into the tag verbatim, so the page
+> carried an invalid `loading_method="defer"` attribute and a render-blocking script. The
+> extension now passes `defer="defer"`, and two tests assert the attribute.
 
 **Groups.** A `tr.need` and the `tr.need_part` rows that follow it are ONE unit. Rows are
 read in document order; anything that is not `tr.need_part` starts a group; a

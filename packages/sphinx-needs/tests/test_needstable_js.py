@@ -40,11 +40,16 @@ _APP = pytest.mark.parametrize(
     indirect=True,
 )
 
-# The script is a deferred one, so it runs after parsing but BEFORE `DOMContentLoaded`,
-# with `document.readyState === "interactive"`. The `readystatechange` to "interactive"
-# fires just before deferred scripts run, which is the last moment at which the untouched
-# markup can still be read -- and the only way to capture it without blocking the script,
-# which `page.route` cannot do for a `file://` URL.
+# The script is deferred, so it runs after parsing but BEFORE `DOMContentLoaded`, with
+# `document.readyState === "interactive"`. The `readystatechange` to "interactive" fires
+# just before deferred scripts run, which is the last moment at which the untouched markup
+# can still be read -- and the only way to capture it without blocking the script, which
+# `page.route` cannot do for a `file://` URL.
+#
+# This comment used to describe a tag that was not in fact deferred (review measured
+# `loading_method="defer"`, a literal attribute, on every page). The capture happened to
+# work anyway, because an UNdeferred script's `DOMContentLoaded` listener runs later still
+# than this event; it is correct in both worlds, and correct for the stated reason now.
 _CAPTURE_PRISTINE = """
 document.addEventListener('readystatechange', function () {
     if (document.readyState !== 'interactive' || window.__pristine) {
@@ -113,6 +118,18 @@ def _sort(page: Page, table_id: str, column: int, times: int = 1) -> None:
     button = _wrapper(page, table_id).locator("th button.needstable-sort").nth(column)
     for _ in range(times):
         button.click()
+
+
+def _pager_display(page: Page, table_id: str) -> str:
+    """The pager's COMPUTED display -- `none` is the only value that really hides it."""
+    return page.evaluate(
+        """(id) => {
+            const wrapper = document.getElementById(id).closest('div.needstable');
+            const pager = wrapper.querySelector('nav.needstable-pager');
+            return getComputedStyle(pager).display;
+        }""",
+        table_id,
+    )
 
 
 def _aria_sort(page: Page, table_id: str) -> list[str | None]:
@@ -315,11 +332,14 @@ def test_paging(opened) -> None:
     assert small.locator("div.needstable-info").text_content().strip() == (
         "Showing 1\u20133 of 3"
     )
-    assert small.locator("nav.needstable-pager").is_hidden()
+    # `hidden` alone is not enough: an author `display` rule beats the user agent's
+    # `[hidden] { display: none }`, and an element that is `hidden` but still displayed
+    # stays in the accessibility tree. Assert the thing that actually removes it.
+    assert _pager_display(page, SMALL) == "none"
 
     _show_all(page, INTERACTIVE)
     assert len(_need_ids(page, INTERACTIVE)) == 14
-    assert _wrapper(page, INTERACTIVE).locator("nav.needstable-pager").is_hidden()
+    assert _pager_display(page, INTERACTIVE) == "none"
 
     # back to ten a page, on page two, then filter: the view resets to page one
     wrapper.locator("select.needstable-page-size-select").select_option("10")

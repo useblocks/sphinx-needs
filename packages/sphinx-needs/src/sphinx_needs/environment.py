@@ -141,9 +141,10 @@ def install_needtable_assets(
     if not isinstance(builder, StandaloneHTMLBuilder):
         return  # nothing else emits this event, but nothing else has the two methods
     lib_path = Path("sphinx-needs") / "libs" / "html"
-    builder.add_js_file(
-        lib_path.joinpath("needstable.js").as_posix(), loading_method="defer"
-    )
+    # `defer="defer"`, not `loading_method="defer"`: only `Sphinx.add_js_file` translates
+    # that keyword, and the builder method this handler has to use writes every keyword
+    # straight into the tag's attributes
+    builder.add_js_file(lib_path.joinpath("needstable.js").as_posix(), defer="defer")
     builder.add_css_file(lib_path.joinpath("needstable.css").as_posix())
 
 

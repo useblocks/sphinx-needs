@@ -187,6 +187,14 @@ nav.needstable-pager {
     gap: 0.25em;
 }
 
+/* The script sets `hidden` when there is one page. An author `display` rule beats the
+   user agent's `[hidden] { display: none }`, and an element that is `hidden` but still
+   displayed stays in the accessibility tree -- a screen reader would meet an empty
+   "Pagination" landmark on every single-page table. */
+nav.needstable-pager[hidden] {
+    display: none;
+}
+
 div.needstable button.needstable-page[aria-current="page"] {
     font-weight: bold;
     background-color: var(--needstable-current-bg, rgba(127, 127, 127, 0.22));
