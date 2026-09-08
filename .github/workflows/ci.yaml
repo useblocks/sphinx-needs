@@ -91,9 +91,9 @@ jobs:
         #
         # In LINT rather than in `tests-js`: this needs no browser, no sphinx and no
         # interpreter matrix -- just node -- and Lint is a required status context on
-        # master, which `tests-js` is not. No `setup-node` either: `ubuntu-latest` ships
-        # node and npm, and `npx -y -p` fetches the pinned compiler into the runner's npm
-        # cache for the run (23 MB unpacked, ~2 s).
+        # master in its own right, not only through `check`. No `setup-node` either:
+        # `ubuntu-latest` ships node and npm, and `npx -y -p` fetches the pinned compiler
+        # into the runner's npm cache for the run (23 MB unpacked, ~2 s).
         #
         # After the prek step for the same reason as the probe above: `uv run --frozen`
         # there has already built the default environment, which is where poe lives, so
