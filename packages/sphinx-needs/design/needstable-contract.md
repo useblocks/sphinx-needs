@@ -226,6 +226,16 @@ The scroll frame is a box of the widget's own, and the table inside it keeps
 and no host stylesheet gets a widget that lays out correctly; a host sheet answers the colour
 tokens below and nothing else is required of it.
 
+**A host that wraps the `<table>` itself keeps the scrolling.** Some themes' own scripts put
+every table in a scroll container of their own, which lands *inside* this frame; the inner
+box then takes the overflow and the frame never scrolls. That is harmless — the scrollbar is
+one box in, at the same place on the screen, and the control bars are unaffected — and it is
+the property the frame was chosen for: a box the host does not know about cannot be displaced
+by the host wrapping the table. `overflow-x: auto` also makes the computed `overflow-y`
+`auto`, so the frame clips vertically as well; nothing in a needtable overflows that way,
+and the only visible consequence is that a focus ring on a cell at the very top or bottom
+edge can lose a pixel.
+
 > *Corrected 2026-09-08.* The `width: 100%` used to come only from sphinx-needs' own host
 > sheet, so the pair alone laid the table out at 378 px in an 800 px frame — this section's
 > own correction, reproduced in the artefact it was written for. `needstable.css` now carries

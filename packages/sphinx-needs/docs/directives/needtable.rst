@@ -143,7 +143,7 @@ Supported values are:
    The count it shows -- *Showing 1-10 of 42* -- counts **needs**, not rows: a need and
    its :ref:`parts <needtable_show_parts>` are one entry, so that a page never splits a
    need from its parts. The DataTables style counted rows, so a table with
-   ``:show_parts:`` reports a smaller total than it did before 9.0.0.
+   ``:show_parts:`` reports a smaller total than DataTables did.
 
    What it deliberately does **not** do: export to Excel or PDF (the CSV it writes opens
    in Excel, and the browser's own print command prints the page), and let the reader
