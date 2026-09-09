@@ -36,6 +36,9 @@ Unreleased
   6.0.1 is the first release whose ``add_extra_option`` takes a schema, which
   this extension registers its fields with; sphinx-needs 6 itself requires
   Sphinx 7.4. The compatibility branches for older releases are gone.
+* Testing: Run the test suite against sphinx-needs 8.5.0. The matrix
+  previously topped out at 8.0.0, so the release a fresh install resolves to
+  was untested.
 
 .. _`release:1.4.0`:
 

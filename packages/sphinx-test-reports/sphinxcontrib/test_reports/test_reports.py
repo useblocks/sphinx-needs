@@ -61,7 +61,7 @@ FIELD_DESCRIPTIONS = {
 }
 
 try:
-    # sphinx-needs >= 8.5: fields are registered through add_field.
+    # sphinx-needs >= 7.0: fields are registered through add_field.
     from sphinx_needs.api import add_field as _add_field
 
     def _register_field(app, name, schema=None):
