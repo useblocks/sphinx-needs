@@ -142,6 +142,24 @@ class TestFieldNameCollisionIsRejected:
         with pytest.raises(InvalidConfigurationError):
             check_field_name_collisions(config)
 
+    def test_a_rename_onto_a_fixed_field_is_an_error(self):
+        # The same failure as two options sharing a name: every test-case
+        # directive passes `case` to add_need already.
+        from sphinxcontrib.test_reports.exceptions import InvalidConfigurationError
+        from sphinxcontrib.test_reports.test_reports import check_field_name_collisions
+
+        config = self._Config(
+            tr_file_option="case",
+            tr_source_file_option="case_file",
+            tr_source_line_option="case_line",
+        )
+
+        with pytest.raises(InvalidConfigurationError) as exc:
+            check_field_name_collisions(config)
+
+        assert "tr_file_option" in str(exc.value)
+        assert "'case'" in str(exc.value)
+
     def test_distinct_names_are_accepted(self):
         from sphinxcontrib.test_reports.test_reports import check_field_name_collisions
 

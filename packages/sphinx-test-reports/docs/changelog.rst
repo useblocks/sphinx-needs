@@ -29,6 +29,30 @@ Unreleased
   root;
   the new ``tr_config_from_toml`` names or disables it. Precedence is ``-D`` >
   ``ubproject.toml`` > ``conf.py`` > default. See :ref:`tr_config_from_toml`.
+* Feature: New ``test-reports build needs`` command line interface, converting
+  test-result XML into a ``needs.json`` without running Sphinx, so the
+  conversion can run as a cacheable build action and the documentation build
+  only imports the result. Its settings come from the ``[test_reports.build.needs]``
+  table of ``ubproject.toml``, with flags for per-invocation overrides. See
+  :ref:`cli`.
+* Feature: The produced ``needs.json`` declares every field it uses in a
+  ``needs_schema``, as Sphinx-Needs does for the files a build writes, so a
+  consumer can read the type of a field from the artifact instead of from a
+  Sphinx build with the extension loaded. The declarations and the fields the
+  extension registers come from one table, so the two cannot drift apart.
+* Bugfix: ``tr_file_option``, ``tr_source_file_option`` and
+  ``tr_source_line_option`` may no longer name a fixed field such as ``case``
+  or ``result``, in ``conf.py`` or in the declarative file. The build
+  previously stopped with a bare ``TypeError`` from inside a directive.
+* Support: ``result_text`` and ``remote_url`` are registered as need fields by
+  the extension, so a ``needs.json`` the ``build needs`` command produced
+  imports without dropping them. A project that registered ``remote_url``
+  itself keeps its own registration.
+* Known: Sphinx 9 renders a configuration error raised from the declarative
+  file -- a wrong type, a rename onto a fixed field, a disagreeing need type
+  -- as its crash report rather than as a one-line message; the message is in
+  the report. A typo in ``[test_reports.build.needs]`` is reported the same
+  way.
 * Support: Python 3.10 is no longer supported. It reached the end of upstream
   support, and dropping it lets the package read TOML with ``tomllib`` from the
   standard library instead of carrying a backport.

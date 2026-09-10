@@ -8,8 +8,15 @@ from sphinx.config import Config
 from sphinx.util import logging
 
 # from docutils import nodes
-from sphinx_needs.api import add_dynamic_function, add_need_type
-from sphinx_needs.exceptions import NeedsApiConfigWarning
+# sphinx-needs ships no py.typed marker and no stubs exist, so every import
+# from it is untyped to mypy. Nothing to fix on this side.
+from sphinx_needs.api import (  # type: ignore[import-untyped]
+    add_dynamic_function,
+    add_need_type,
+)
+from sphinx_needs.exceptions import (  # type: ignore[import-untyped]
+    NeedsApiConfigWarning,
+)
 
 from sphinxcontrib.test_reports.directives.test_case import TestCase, TestCaseDirective
 from sphinxcontrib.test_reports.directives.test_env import EnvReport, EnvReportDirective
@@ -28,9 +35,16 @@ from sphinxcontrib.test_reports.directives.test_suite import (
 )
 from sphinxcontrib.test_reports.environment import install_styles_static_files
 from sphinxcontrib.test_reports.exceptions import InvalidConfigurationError
+from sphinxcontrib.test_reports.fields import (
+    FIELDS,
+    RENAMEABLE_FIELDS,
+    RESERVED_NAMES,
+    declaration,
+)
 from sphinxcontrib.test_reports.functions import tr_link
 from sphinxcontrib.test_reports.projectconfig import (
     BRIDGE_KEYS,
+    DEFAULT_FIELD_NAMES,
     DEFAULT_TOML_FILENAME,
     SECTION,
     TomlConfigError,
@@ -42,32 +56,14 @@ from sphinxcontrib.test_reports.projectconfig import (
 
 VERSION = "1.4.0"
 
-# Field descriptions for better semantics
-FIELD_DESCRIPTIONS = {
-    "file": "Test file name",
-    "suite": "Test suite name",
-    "case": "Test case name",
-    "case_name": "Test case display name",
-    "case_parameter": "Test case parameter",
-    "classname": "Test class name",
-    "time": "Test execution time",
-    "suites": "Number of test suites",
-    "cases": "Number of test cases",
-    "passed": "Number of passed tests",
-    "skipped": "Number of skipped tests",
-    "failed": "Number of failed tests",
-    "errors": "Number of test errors",
-    "result": "Test result status",
-}
-
 try:
     # sphinx-needs >= 7.0: fields are registered through add_field.
     from sphinx_needs.api import add_field as _add_field
 
-    def _register_field(app, name, schema=None):
-        description = FIELD_DESCRIPTIONS.get(name, name)
+    def _register_field(app: Sphinx, name: str, role: str | None = None) -> None:
+        type_, description = declaration(name, role)
         try:
-            _add_field(name, description, schema=schema)
+            _add_field(name, description, schema={"type": type_})
         except NeedsApiConfigWarning:
             # Already registered, e.g. via needs_fields or needs_extra_options
             # in conf.py. Anything else is a real error and must surface.
@@ -78,12 +74,13 @@ try:
 except ImportError:
     from sphinx_needs.api import add_extra_option as _add_extra_option
 
-    def _register_field(app, name, schema=None):
+    def _register_field(app: Sphinx, name: str, role: str | None = None) -> None:
         # add_extra_option takes description and schema from sphinx-needs
         # 6.0.1 on, which is the package's floor.
+        type_, description = declaration(name, role)
         try:
             _add_extra_option(
-                app, name, description=FIELD_DESCRIPTIONS.get(name, name), schema=schema
+                app, name, description=description, schema={"type": type_}
             )
         except NeedsApiConfigWarning:
             logging.getLogger(__name__).debug(
@@ -100,19 +97,22 @@ def setup(app: Sphinx) -> dict[str, object]:
     """
 
     # Name of the need field carrying the path of the XML *report*.
-    app.add_config_value("tr_file_option", "file", "html")
+    app.add_config_value("tr_file_option", DEFAULT_FIELD_NAMES["file_option"], "html")
     # Names of the need fields carrying the *test source* location taken from
     # the <testcase> file/line attributes. Defaults avoid the collision with
     # tr_file_option above; set both to "file"/"line" (and tr_file_option to
     # something else) to match a metamodel that spells them verbatim.
-    app.add_config_value("tr_source_file_option", "case_file", "html")
-    app.add_config_value("tr_source_line_option", "case_line", "html")
+    app.add_config_value(
+        "tr_source_file_option", DEFAULT_FIELD_NAMES["source_file_option"], "html"
+    )
+    app.add_config_value(
+        "tr_source_line_option", DEFAULT_FIELD_NAMES["source_line_option"], "html"
+    )
     # Derive test-case IDs from the source location and case name instead of
     # hashing (type, title, content) -- the latter moves the ID when a test
     # starts failing differently. Off by default: enabling it changes IDs.
     # Required (not just recommended) when the build consumes a needs.json
-    # produced by `test-reports build needs`, which always writes
-    # deterministic IDs.
+    # produced by `test-reports build needs`, which always writes them.
     app.add_config_value("tr_deterministic_case_ids", False, "html")
     # Declarative configuration: the [test_reports] section of this file
     # overrides the tr_* config values above at config-inited. The default is
@@ -228,7 +228,7 @@ def setup(app: Sphinx) -> dict[str, object]:
     }
 
 
-def register_tr_extra_options(app):
+def register_tr_extra_options(app: Sphinx) -> None:
     """Register extra options with directives."""
 
     log = logging.getLogger(__name__)
@@ -237,12 +237,16 @@ def register_tr_extra_options(app):
 
     if tr_extra_options:
         for direc in [TestSuiteDirective, TestFileDirective, TestCaseDirective]:
+            # docutils types `option_spec` as optional on the directive base
+            # class. All three define one, so this keeps mutating the existing
+            # mapping; the assignment only matters in the case the type allows
+            # for and the classes do not produce.
+            spec = direc.option_spec or {}
             for option_name in tr_extra_options:
-                direc.option_spec[option_name] = directives.unchanged
+                spec[option_name] = directives.unchanged
                 log.debug(f"Registered {option_name} with {direc}")
-                log.debug(
-                    f"{direc}.option_spec now has keys: {list(direc.option_spec.keys())}"
-                )
+                log.debug(f"{direc}.option_spec now has keys: {list(spec.keys())}")
+            direc.option_spec = spec
 
 
 def _command_line_overrides(config: Config) -> set[str]:
@@ -334,29 +338,35 @@ def load_toml_config(app: Sphinx, config: Config) -> None:
         )
 
 
-def tr_preparation(app, *args):
+def tr_preparation(app: Sphinx, *args: object) -> None:
     """
     Prepares needed vars in the app context.
     """
-    if not hasattr(app, "tr_types"):
-        app.tr_types = {}
+    # `tr_types` is attached to the application object, which has no such
+    # attribute as far as a type checker is concerned -- the directives read it
+    # back the same way (see `test_common.py`). One narrow ignore for the
+    # attachment; the rest of the function works on a typed mapping.
+    types: dict[str, list[str]] = getattr(app, "tr_types", None) or {}
+    app.tr_types = types  # type: ignore[attr-defined]
 
     # Collects the configured test-report node types
-    app.tr_types[app.config.tr_file[0]] = app.config.tr_file[1:]
-    app.tr_types[app.config.tr_suite[0]] = app.config.tr_suite[1:]
-    app.tr_types[app.config.tr_case[0]] = app.config.tr_case[1:]
+    types[app.config.tr_file[0]] = app.config.tr_file[1:]
+    types[app.config.tr_suite[0]] = app.config.tr_suite[1:]
+    types[app.config.tr_case[0]] = app.config.tr_case[1:]
 
     app.add_directive(app.config.tr_file[0], TestFileDirective)
     app.add_directive(app.config.tr_suite[0], TestSuiteDirective)
     app.add_directive(app.config.tr_case[0], TestCaseDirective)
 
 
-def check_field_name_collisions(config) -> None:
-    """Reject configurations where two field options name the same need field.
+def check_field_name_collisions(config: Config) -> None:
+    """Reject configurations where a field option names a field already taken.
 
     The report path and the test-source location are separate fields; if two
-    options resolve to one name, ``add_need`` receives the same keyword twice
-    and fails with a bare ``TypeError`` from inside a directive.
+    options resolve to one name, or one of them to a fixed field such as
+    ``case`` or ``result``, ``add_need`` receives the same keyword twice and
+    fails with a bare ``TypeError`` from inside a directive. The loader makes
+    the same check for the declarative file; this covers ``conf.py``.
     """
     options = {
         "tr_file_option": getattr(config, "tr_file_option", "file"),
@@ -365,6 +375,11 @@ def check_field_name_collisions(config) -> None:
     }
 
     for name, value in options.items():
+        if value in RESERVED_NAMES:
+            raise InvalidConfigurationError(
+                f"{name} is set to '{value}', a field every test-case need has "
+                f"already; it must name a field of its own."
+            )
         clashing = [
             other
             for other, other_value in options.items()
@@ -386,32 +401,21 @@ def sphinx_needs_update(app: Sphinx, config: Config) -> None:
 
     # sphinx-needs >= 6 registers fields with a schema; there is no older
     # branch to keep, the package requires that version.
-    _register_field(
-        app, getattr(config, "tr_file_option", "file"), schema={"type": "string"}
-    )
-    _register_field(
-        app,
-        getattr(config, "tr_source_file_option", "case_file"),
-        schema={"type": "string"},
-    )
-    _register_field(
-        app,
-        getattr(config, "tr_source_line_option", "case_line"),
-        schema={"type": "string"},
-    )
-    _register_field(app, "suite", schema={"type": "string"})
-    _register_field(app, "case", schema={"type": "string"})
-    _register_field(app, "case_name", schema={"type": "string"})
-    _register_field(app, "case_parameter", schema={"type": "string"})
-    _register_field(app, "classname", schema={"type": "string"})
-    _register_field(app, "time", schema={"type": "string"})
-    _register_field(app, "suites", schema={"type": "integer"})
-    _register_field(app, "cases", schema={"type": "integer"})
-    _register_field(app, "passed", schema={"type": "integer"})
-    _register_field(app, "skipped", schema={"type": "integer"})
-    _register_field(app, "failed", schema={"type": "integer"})
-    _register_field(app, "errors", schema={"type": "integer"})
-    _register_field(app, "result", schema={"type": "string"})
+    #
+    # Type and description of every field come from the shared table in
+    # `fields`, which the converter writes into the `needs_schema` of the
+    # needs.json it produces -- a field registered here and the same field
+    # declared there cannot say different things. `result_text` and
+    # `remote_url` are written by the converter only, and registered here so
+    # that a needs.json it produced imports without sphinx-needs dropping them
+    # as unknown keys.
+    # The renameable fields are registered under the name their `tr_*` value
+    # selects -- spelled like the role with the prefix, as every bridged key is.
+    for role in RENAMEABLE_FIELDS:
+        name = getattr(config, f"tr_{role}", DEFAULT_FIELD_NAMES[role])
+        _register_field(app, name, role=role)
+    for name in FIELDS:
+        _register_field(app, name)
     # Extra dynamic functions
     # For details about usage read
     # https://sphinx-needs.readthedocs.io/en/latest/api.html#sphinx_needs.api.configuration.add_dynamic_function
@@ -421,7 +425,7 @@ def sphinx_needs_update(app: Sphinx, config: Config) -> None:
     # extracted from JUnit XML are accepted by sphinx-needs
     tr_extra_options = getattr(config, "tr_extra_options", [])
     for option_name in tr_extra_options:
-        _register_field(app, option_name, schema={"type": "string"})
+        _register_field(app, option_name)
 
     # Extra need types
     # For details about usage read

@@ -146,8 +146,11 @@ rename the report field instead:
    tr_source_file_option = "file"
    tr_source_line_option = "line"
 
-Each of the three options must name a different field; otherwise the build stops
-with a configuration error.
+Each of the three options must name a field of its own -- not one of the other
+two, and not a fixed field such as ``case`` or ``result`` -- or the build stops
+with a configuration error. For the :ref:`build needs command <cli>` to write
+the renamed fields as well, put the renames in ``ubproject.toml``
+(:ref:`tr_config_from_toml`): it cannot see ``conf.py``.
 
 The field is empty when the XML carries no ``file`` attribute. With pytest this
 is the norm: it emits ``file``/``line`` only with ``junit_family = xunit1`` (or
@@ -444,17 +447,25 @@ acting on it works from the same settings instead of each restating them.
    # case = ["test-case", "testcase", "Test-Case", "TC_", "#999999", "rectangle"]
 
 **Keys.** Every key is named like its ``tr_*`` config value without the prefix
-(``file_option`` configures ``tr_file_option``, and so on). A key carrying the
+(``file_option`` configures ``tr_file_option``, and so on). The build applies
+them all; the :ref:`build needs command <cli>` reads the three field-name keys
+(``file_option``, ``source_file_option``, ``source_line_option``) and
+``extra_options`` as well, so the needs it writes have the shape of the needs
+the build creates and carry exactly the fields the build accepts -- and it
+refuses a file whose path fields share a name or take a fixed field's, as the
+build does. A key carrying the
 wrong type is an error -- that is the typo class this validation exists to
 catch. An *unknown* key is reported as a warning and ignored: the file is
 shared with tools on independent release cadences, so a key this version does
 not model must not take your build down.
 
-One sub-table belongs to another tool and is left alone: ``[test_reports.build]``
-holds the settings of the ``test-reports build`` command line, one sub-table per
-artifact it produces -- ``[test_reports.build.needs]`` for turning test reports
-into a ``needs.json`` outside Sphinx -- none of which this extension does. Any
-other sub-table is treated like any other unknown key -- reported and ignored.
+The ``[test_reports.build.needs]`` sub-table holds the settings of the
+:ref:`build needs command <cli-declarative>`. The build validates it along with
+the rest of the section -- so a typo is caught whichever consumer reads the file
+first -- but never applies it to a ``tr_*`` value. One rule spans both:
+``need_type`` in that table and the ``type`` of ``case`` name the same need
+type, and a file setting them to different values is rejected. Any other sub-table is an unknown key like any other --
+reported and ignored.
 
 **Warnings.** The two warnings this feature emits carry a type, so either can
 be silenced through Sphinx's ``suppress_warnings`` in a project that builds

@@ -75,6 +75,7 @@ Content
    install
    directives/index
    configuration
+   cli
    parsers
    filter
    functions

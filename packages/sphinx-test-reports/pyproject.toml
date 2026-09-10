@@ -47,7 +47,17 @@ docs = [
 ]
 
 [dependency-groups]
-dev = ["pre-commit~=3.0", "nox>=2025.2.9", "mypy>=1.16.0"]
+dev = [
+  "pre-commit~=3.0",
+  "nox>=2025.2.9",
+  "mypy>=1.16.0",
+  # Stubs for docutils, which ships none: without them every directive
+  # option spec is untyped and `test_reports.py` cannot be checked.
+  "types-docutils>=0.21",
+]
+
+[project.scripts]
+test-reports = "sphinxcontrib.test_reports.cli:main"
 
 [tool.flit.module]
 name = "sphinxcontrib.test_reports"
@@ -84,7 +94,7 @@ extend-select = [
 packages = ["sphinxcontrib.test_reports"]
 strict = true
 show_error_codes = true
-# TODO: reactivate below files and fix issues in future PRs
+# TODO: reactivate below files and fix issues in future PRs (#114)
 exclude = [
   "^sphinxcontrib/test_reports/__init__\\.py$",
   "^sphinxcontrib/test_reports/config\\.py$",
@@ -101,7 +111,6 @@ exclude = [
   "^sphinxcontrib/test_reports/functions",
   "^sphinxcontrib/test_reports/jsonparser\\.py$",
   "^sphinxcontrib/test_reports/junitparser\\.py$",
-  "^sphinxcontrib/test_reports/test_reports\\.py$",
 ]
 # Disallow dynamic typing
 disallow_any_unimported = true
@@ -132,3 +141,19 @@ disallow_untyped_defs = true
 
 # # Config file
 # warn_unused_configs = true
+
+# The two modules that talk to something untyped by construction:
+# `test_reports.py` to the sphinx-needs API (which ships no py.typed) and to
+# `tr_*` config values read off the Sphinx config with `getattr`; `cli.py` to
+# `argparse.Namespace`, whose attributes are `Any`. Nearly every expression in
+# them is therefore `Any`, which `disallow_any_expr` cannot accept and no
+# amount of local annotation fixes. The flag also has no counterpart in `ty`,
+# which the sphinx-needs workspace uses, so relaxing it here costs nothing
+# there. Every other strict check still applies -- annotations and real type
+# errors are caught, which the `exclude` entries this replaces prevented.
+[[tool.mypy.overrides]]
+module = [
+  "sphinxcontrib.test_reports.test_reports",
+  "sphinxcontrib.test_reports.cli",
+]
+disallow_any_expr = false

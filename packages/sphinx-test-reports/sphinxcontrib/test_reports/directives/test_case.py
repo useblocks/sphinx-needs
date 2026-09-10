@@ -6,6 +6,7 @@ from sphinx_needs.utils import add_doc
 from sphinxcontrib.test_reports.config import DEFAULT_OPTIONS
 from sphinxcontrib.test_reports.directives.test_common import TestCommonDirective
 from sphinxcontrib.test_reports.exceptions import TestReportInvalidOptionError
+from sphinxcontrib.test_reports.identity import split_case_name
 
 
 class TestCase(nodes.General, nodes.Element):
@@ -154,18 +155,7 @@ class TestCaseDirective(TestCommonDirective):
         # If time is already a string or None, keep it as is
         style = "tr_" + case["result"]
 
-        import re
-
-        groups = re.match(r"^(?P<name>[^\[]+)($|\[(?P<param>.*)?\])", case["name"])
-        try:
-            case_name = groups["name"]
-            case_parameter = groups["param"]
-        except TypeError:
-            case_name = case_full_name
-            case_parameter = ""
-
-        if case_parameter is None:
-            case_parameter = ""
+        case_name, case_parameter = split_case_name(case["name"])
 
         # Flatten JUnit <properties> into top-level case keys so that
         # the extra-data loop below picks them up as sphinx-needs fields.

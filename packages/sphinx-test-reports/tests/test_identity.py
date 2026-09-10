@@ -22,6 +22,7 @@ from sphinxcontrib.test_reports.identity import (
     case_display_name,
     deterministic_case_id,
     short_hash,
+    split_case_name,
 )
 
 
@@ -52,6 +53,38 @@ class TestCaseDisplayName:
     def test_unknown_classname_is_treated_as_absent(self):
         """The parser reports "unknown" when the attribute is missing."""
         assert case_display_name("unknown", "Standalone") == "Standalone"
+
+
+class TestSplitCaseName:
+    """``name[param]`` as pytest spells it, split for both writers alike.
+
+    The one definition the directives and the converter share; the shapes
+    pinned here are the ones a report can carry, so a change to the pattern
+    shows up as a failing test rather than as two writers disagreeing.
+    """
+
+    @pytest.mark.parametrize(
+        ("name", "expected"),
+        [
+            ("test_x", ("test_x", "")),
+            ("test_x[a-b]", ("test_x", "a-b")),
+            ("tests.test_cli.test_help[1-2]", ("tests.test_cli.test_help", "1-2")),
+            # An empty parameter list is a parameter of "".
+            ("test_x[]", ("test_x", "")),
+            # The parameter is greedy: brackets inside it survive.
+            ("test_x[a[0]-b]", ("test_x", "a[0]-b")),
+            # googletest's parameterised spelling carries no brackets at all.
+            ("Works/0", ("Works/0", "")),
+            # Not the pytest shape: the name is kept whole, never cut at a
+            # bracket -- an unclosed one, text after the closing one, or a
+            # name that starts with one.
+            ("test_x[abc", ("test_x[abc", "")),
+            ("test_x[a]b", ("test_x[a]b", "")),
+            ("[only]", ("[only]", "")),
+        ],
+    )
+    def test_splits_pytest_s_shape_and_only_that(self, name, expected):
+        assert split_case_name(name) == expected
 
 
 class TestDeterministicCaseId:

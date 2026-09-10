@@ -35,6 +35,28 @@ def short_hash(value: str, length: int = 5) -> str:
     return letters_only[:length].lower()
 
 
+#: ``name[param]`` as pytest spells a parameterised case, and nothing else:
+#: anchored at both ends, so a name that merely contains a bracket -- an
+#: unclosed one, or text after the closing one -- is kept whole rather than
+#: cut at the bracket. The parameter is greedy, so brackets inside it survive.
+_PARAMETERISED = re.compile(r"^(?P<name>[^\[]+)(?:\[(?P<param>.*)\])?$")
+
+
+def split_case_name(name: str) -> tuple[str, str]:
+    """``("test_x", "a-b")`` for ``"test_x[a-b]"``, ``("test_x", "")`` for
+    ``"test_x"``: the name is always there, the parameter only when pytest
+    spelled one.
+
+    One definition for the build's directives and the converter, so an
+    imported need and a locally created one for the same case agree on
+    ``case_name`` and ``case_parameter``.
+    """
+    match = _PARAMETERISED.match(name)
+    if match is None:
+        return name, ""
+    return match.group("name"), match.group("param") or ""
+
+
 def case_display_name(classname: str, name: str) -> str:
     """Human-readable case name: ``Classname__Casename``.
 
