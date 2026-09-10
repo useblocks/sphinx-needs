@@ -21,6 +21,10 @@ is the worked example below.
 Enabling it
 -----------
 
+The plugin is the ``pytest`` extra of the package: ``pip install
+"sphinx-test-reports[pytest]"`` installs it without the documentation toolchain
+(see :doc:`/install`). Enable it in the pytest configuration:
+
 .. code-block:: ini
 
    # pytest.ini / pyproject.toml [tool.pytest.ini_options]

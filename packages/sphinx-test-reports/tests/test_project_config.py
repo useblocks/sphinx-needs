@@ -15,7 +15,6 @@ from shutil import copytree
 
 import pytest
 
-from sphinxcontrib.test_reports.exceptions import InvalidConfigurationError
 from sphinxcontrib.test_reports.projectconfig import (
     BRIDGE_KEYS,
     BUILD_TABLE,
@@ -459,6 +458,7 @@ class TestLoader:
         assert config["rootdir"] == str(tmp_path)
 
 
+@pytest.mark.toolchain
 class TestSphinxBridge:
     """The build reads the same section and honours the same precedence."""
 
@@ -507,6 +507,8 @@ class TestSphinxBridge:
         _write(tmp_path / "docs", "[test_reports]\nsuite_id_length = 'four'\n")
 
         from sphinx.application import Sphinx
+
+        from sphinxcontrib.test_reports.exceptions import InvalidConfigurationError
 
         docs = tmp_path / "docs"
         with pytest.raises(InvalidConfigurationError, match="suite_id_length"):
@@ -715,6 +717,7 @@ def _basic_doc(tmp_path, toml=None, conf_extra=""):
     return docs
 
 
+@pytest.mark.toolchain
 class TestBridgePrecedence:
     """``-D`` > TOML > conf.py, and the diagnostics for a file that is missing."""
 
@@ -822,6 +825,7 @@ def _documented_toml_example():
     return "\n".join(block) + "\n"
 
 
+@pytest.mark.toolchain
 class TestConfvalTypes:
     """The bridged values must pass Sphinx's own confval type check.
 
@@ -878,13 +882,15 @@ class TestSphinxFree:
         )
         assert result.returncode == 0, result.stderr
 
+    @pytest.mark.toolchain
     def test_a_missing_sphinx_needs_is_an_extension_error(self):
         # The lazy `setup` owns the message Sphinx would have produced for a
         # broken extension import, because Sphinx fetches `setup` with
         # getattr() and would otherwise show a raw traceback. Sphinx renders
         # the wrapped exception itself, so the message must not carry it a
-        # second time. Checked in a subprocess: sphinx_needs is importable
-        # here.
+        # second time -- but it names the extra that installs the toolchain,
+        # the likely cause since the toolchain stopped being a dependency.
+        # Checked in a subprocess: sphinx_needs is importable here.
         code = (
             "import sys\n"
             "sys.modules['sphinx_needs'] = None\n"  # `from sphinx_needs...` fails
@@ -907,3 +913,4 @@ class TestSphinxFree:
         )
         assert message.count("(exception:") == 1
         assert "sphinx_needs" in message
+        assert 'pip install "sphinx-test-reports[sphinx]"' in message

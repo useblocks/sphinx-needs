@@ -7,6 +7,22 @@ Unreleased
 ----------
 :Released: under development
 
+* Breaking: ``pip install sphinx-test-reports`` no longer installs Sphinx and
+  Sphinx-Needs. They are the new ``sphinx`` extra, so the install line of a
+  documentation project becomes ``pip install "sphinx-test-reports[sphinx]"``.
+  The bare package brings only ``lxml``, the dependency of the ``test-reports``
+  command, which runs in test runners and build actions that have no
+  documentation toolchain; the pytest plugin, the ``pytest`` extra, runs there
+  too. An extra is opt-in, so the extension now checks the
+  installed toolchain against the versions the extra declares when Sphinx
+  loads it: a missing or older Sphinx or Sphinx-Needs stops the build with a
+  message naming the install line, instead of a traceback from inside a
+  directive.
+* Testing: CI installs the package with the ``pytest`` extra alone and runs the
+  converter's and the pytest plugin's tests without Sphinx -- on the newest
+  pytest and on the oldest the plugin supports -- so a toolchain import
+  creeping into either import chain, or Sphinx creeping back into a dependency
+  list, fails the build.
 * Feature: Support the googletest XML dialect: ``status="notrun"`` is reported
   as ``disabled`` instead of ``passed``, all ``<failure>``/``<skipped>`` parts
   of a test case are kept instead of only the first, ``RecordProperty`` values
@@ -48,7 +64,9 @@ Unreleased
   helper, for cases skipped at setup and under pytest-xdist too. Which
   properties exist, their XML names and which take lists is the
   ``test_reports_properties`` pytest ini option; S-CORE's model, which the
-  plugin was ported from, is the documented example. See :ref:`pytest_plugin`.
+  plugin was ported from, is the documented example. The plugin is the
+  ``pytest`` extra: ``pip install "sphinx-test-reports[pytest]"`` installs it
+  and pytest, without the documentation toolchain. See :ref:`pytest_plugin`.
 * Bugfix: ``tr_file_option``, ``tr_source_file_option`` and
   ``tr_source_line_option`` may no longer name a fixed field such as ``case``
   or ``result``, in ``conf.py`` or in the declarative file. The build
@@ -61,7 +79,8 @@ Unreleased
   file -- a wrong type, a rename onto a fixed field, a disagreeing need type
   -- as its crash report rather than as a one-line message; the message is in
   the report. A typo in ``[test_reports.build.needs]`` is reported the same
-  way.
+  way, and so is a missing or outdated toolchain refused when the extension
+  loads.
 * Support: Python 3.10 is no longer supported. It reached the end of upstream
   support, and dropping it lets the package read TOML with ``tomllib`` from the
   standard library instead of carrying a backport.

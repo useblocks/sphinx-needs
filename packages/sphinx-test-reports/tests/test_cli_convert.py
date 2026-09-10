@@ -68,6 +68,7 @@ class TestNoSphinxImport:
 
 
 class TestEnvelope:
+    @pytest.mark.toolchain
     def test_output_passes_the_sphinx_needs_schema(self, tmp_path):
         """The output must validate against sphinx-needs' own needs.json schema."""
         from sphinx_needs import needsfile
@@ -616,6 +617,7 @@ class TestContentIsNotDuplicated:
         assert "not applicable on this platform" in content
 
 
+@pytest.mark.toolchain
 class TestImportIntoABuild:
     """The documented consumption path: ``needimport`` of the produced file.
 

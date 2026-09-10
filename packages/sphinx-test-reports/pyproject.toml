@@ -23,9 +23,15 @@ classifiers = [
 ]
 keywords = ["sphinx", "documentation", "test-reports"]
 requires-python = ">=3.11"
-dependencies = ["sphinx>=7.4", "lxml", "sphinx-needs>=6.0.1"]
+dependencies = ["lxml"]
 
 [project.optional-dependencies]
+# The Sphinx extension. The `test-reports` command and the pytest plugin run
+# without the documentation toolchain, so it is an extra rather than a
+# dependency; the lazy
+# `setup` in `__init__.py` enforces these floors when the extension is loaded,
+# since an extra is opt-in and pip never sees them otherwise.
+sphinx = ["sphinx>=7.4", "sphinx-needs>=6.0.1"]
 # The pytest plugin (sphinxcontrib.test_reports.pytest_plugin); pytest is not
 # a dependency of the extension or the converter. 7.0 is where everything the
 # plugin uses exists (pytest.Config/Item/Mark, Config.stash,
@@ -40,6 +46,8 @@ test = [
   "pytest-xdist",
   "pytest>=7.0",
   "pytest-cov",
+  "sphinx>=7.4",
+  "sphinx-needs>=6.0.1",
   "sphinx_design",
   "sphinxcontrib-plantuml",
 ]
@@ -71,6 +79,11 @@ test-reports = "sphinxcontrib.test_reports.cli:main"
 
 [tool.flit.module]
 name = "sphinxcontrib.test_reports"
+
+[tool.pytest.ini_options]
+markers = [
+  "toolchain: needs the documentation toolchain (Sphinx, sphinx-needs) installed; deselected by the toolchain_free nox session",
+]
 
 [project.urls]
 Homepage = "https://github.com/useblocks/sphinx-test-reports"

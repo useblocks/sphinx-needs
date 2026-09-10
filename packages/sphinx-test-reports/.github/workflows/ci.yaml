@@ -44,6 +44,27 @@ jobs:
       - name: Run the plugin's tests on the oldest supported pytest
         run: nox --non-interactive --session "plugin_floor(python='${{ matrix.python-version }}', pytest_version='${{ matrix.pytest-version }}')" -- --full-trace
 
+  toolchain-free:
+    # The converter and the pytest plugin run without Sphinx; this installs the
+    # package with the `pytest` extra alone and runs their tests where Sphinx is
+    # absent, the only thing that guarantees it.
+    name: "Test without Sphinx (python: ${{ matrix.python-version }})"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set Up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Nox
+        run: |
+          python -m pip install nox
+      - name: Run Tests
+        run: nox --non-interactive --session "toolchain_free-${{ matrix.python-version }}" -- --full-trace
+
   pre-commit:
     name: pre-commit
     runs-on: ubuntu-latest
@@ -68,8 +89,10 @@ jobs:
         uses: astral-sh/setup-uv@v5
 
       - name: uv sync
+        # The toolchain is an extra: without it, mypy cannot follow the
+        # extension's Sphinx and docutils imports.
         run: |
-          uv sync --group dev
+          uv sync --group dev --extra sphinx
 
       - name: Run mypy
         run: |
@@ -99,6 +122,7 @@ jobs:
     needs:
       - tests
       - plugin-floor
+      - toolchain-free
       - pre-commit
       - mypy
       - linkcheck

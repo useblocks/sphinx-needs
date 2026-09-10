@@ -13,7 +13,10 @@ be cached by a build system, and the data is unavailable to anything else. The
 CLI splits the computation out; the documentation build only imports the result.
 
 The command imports no Sphinx code at all, so it can run as a build action in an
-environment that has no documentation toolchain installed.
+environment that has no documentation toolchain installed. Installed as
+``pip install sphinx-test-reports`` -- without the ``sphinx`` extra the
+:doc:`extension needs </install>` -- the package brings a single dependency,
+``lxml``.
 
 Converting a report
 -------------------
