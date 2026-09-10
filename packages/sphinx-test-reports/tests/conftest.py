@@ -6,7 +6,7 @@ from tempfile import mkdtemp
 
 import pytest
 
-pytest_plugins = "sphinx.testing.fixtures"
+pytest_plugins = ["sphinx.testing.fixtures", "pytester"]
 
 
 def copy_srcdir_to_tmpdir(srcdir, tmp):

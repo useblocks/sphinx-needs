@@ -26,6 +26,13 @@ requires-python = ">=3.11"
 dependencies = ["sphinx>=7.4", "lxml", "sphinx-needs>=6.0.1"]
 
 [project.optional-dependencies]
+# The pytest plugin (sphinxcontrib.test_reports.pytest_plugin); pytest is not
+# a dependency of the extension or the converter. 7.0 is where everything the
+# plugin uses exists (pytest.Config/Item/Mark, Config.stash,
+# issue_config_time_warning). pytest before 7.3.2 does not run on Python 3.12
+# at all -- that floor is pytest's own, not this one's; the nox session
+# plugin_floor runs the plugin's tests on the oldest pytest of each Python.
+pytest = ["pytest>=7.0"]
 test = [
   "beautifulsoup4",
   "nox>=2025.2.9",
@@ -54,6 +61,9 @@ dev = [
   # Stubs for docutils, which ships none: without them every directive
   # option spec is untyped and `test_reports.py` cannot be checked.
   "types-docutils>=0.21",
+  # pytest: mypy type-checks the pytest plugin, so `uv sync --group dev` (the
+  # CI mypy job) has to be able to follow its imports.
+  "pytest>=7.0",
 ]
 
 [project.scripts]
@@ -127,6 +137,7 @@ disallow_untyped_defs = true
 # check_untyped_defs = true
 # disallow_untyped_decorators = true
 
+
 # # None and optional handling
 # no_implicit_optional = true
 
@@ -157,3 +168,16 @@ module = [
   "sphinxcontrib.test_reports.cli",
 ]
 disallow_any_expr = false
+
+# The pytest plugin decorates arbitrary test functions (Callable[..., object],
+# whose `...` is an Any) and reads pytest's Any-typed config API; everything
+# else stays strict. Both module names: `packages` above yields the full one,
+# a file passed on the command line loses the `sphinxcontrib` prefix because
+# that directory is a namespace package.
+[[tool.mypy.overrides]]
+module = [
+  "sphinxcontrib.test_reports.pytest_plugin",
+  "test_reports.pytest_plugin",
+]
+disallow_any_expr = false
+disallow_any_explicit = false

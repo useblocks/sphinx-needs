@@ -76,6 +76,7 @@ Content
    directives/index
    configuration
    cli
+   pytest
    parsers
    filter
    functions

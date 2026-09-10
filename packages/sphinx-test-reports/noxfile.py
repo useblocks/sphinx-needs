@@ -20,6 +20,20 @@ def tests(session, sphinx_needs, sphinx):
     run_tests(session, sphinx, sphinx_needs)
 
 
+#: The oldest pytest the plugin's tests run on, per Python: 7.0 is the plugin's
+#: own floor (the pytest extra), and 7.3.2 the first pytest that runs on
+#: Python 3.12 at all.
+PLUGIN_PYTEST_FLOORS = [("3.11", "7.0.1"), ("3.12", "7.3.2")]
+
+
+@session
+@nox.parametrize("python,pytest_version", PLUGIN_PYTEST_FLOORS)
+def plugin_floor(session, pytest_version):
+    """The pytest plugin's tests on the oldest pytest it supports."""
+    session.install(".[test]", f"pytest=={pytest_version}")
+    session.run("pytest", "tests/test_pytest_plugin.py")
+
+
 @session(python="3.12")
 def linkcheck(session):
     session.install(".[docs]")
