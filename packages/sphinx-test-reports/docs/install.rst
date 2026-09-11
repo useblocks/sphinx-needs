@@ -24,7 +24,7 @@ bare package, whose single dependency is ``lxml``::
 
    pip install sphinx-test-reports
 
-.. versionchanged:: 1.5.0
+.. versionchanged:: 2.0.0
    ``pip install sphinx-test-reports`` -- without an extra -- no longer
    installs Sphinx and Sphinx-Needs. A documentation project has to add the
    ``sphinx`` extra to its install line; a test runner or a build action that

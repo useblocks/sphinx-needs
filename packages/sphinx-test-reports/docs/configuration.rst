@@ -130,7 +130,7 @@ Default: **file**
 
 tr_source_file_option
 ---------------------
-.. versionadded:: 1.5.0
+.. versionadded:: 2.0.0
 
 Name of the Sphinx-Needs field that carries the source file of a test case,
 taken from the ``file`` attribute of the JUnit/googletest ``<testcase>``
@@ -162,7 +162,7 @@ Default: **case_file**
 
 tr_source_line_option
 ---------------------
-.. versionadded:: 1.5.0
+.. versionadded:: 2.0.0
 
 Name of the Sphinx-Needs field that carries the source line of a test case,
 taken from the ``line`` attribute of the ``<testcase>`` element.
@@ -174,7 +174,7 @@ Default: **case_line**
 
 tr_deterministic_case_ids
 -------------------------
-.. versionadded:: 1.5.0
+.. versionadded:: 2.0.0
 
 Derive test-case IDs from the source location and the case name instead of
 hashing the need's type, title and content.
@@ -413,7 +413,7 @@ An example of a JSON file, which supports the below configuration, can be seen i
 
 Declarative configuration (ubproject.toml)
 ------------------------------------------
-.. versionadded:: 1.5.0
+.. versionadded:: 2.0.0
 
 All of the above can also be configured declaratively, in the
 ``[test_reports]`` section of your project's ``ubproject.toml`` -- the same
@@ -497,7 +497,7 @@ deterministic case IDs, next to locally created test-case needs, must set
 
 tr_config_from_toml
 ~~~~~~~~~~~~~~~~~~~
-.. versionadded:: 1.5.0
+.. versionadded:: 2.0.0
 
 Name of the declarative configuration file whose ``[test_reports]`` section is
 applied to the ``tr_*`` values above. Defaults to ``ubproject.toml``.

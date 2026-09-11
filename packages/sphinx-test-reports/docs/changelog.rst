@@ -7,6 +7,48 @@ Unreleased
 ----------
 :Released: under development
 
+.. _`release:2.0.0`:
+
+2.0.0
+-----
+:Released: 11.09.2026
+
+A major release. ``pip install sphinx-test-reports`` no longer installs Sphinx
+and Sphinx-Needs, Python 3.10 is no longer supported, Sphinx-Needs 6.0.1 and
+Sphinx 7.4 are the oldest supported versions, and a failed test case's
+``result`` is spelled ``failed`` rather than ``failure``. What the bare package
+gains in return is a life outside a documentation build: a ``test-reports``
+command that turns test-result XML into a ``needs.json`` without running
+Sphinx, and a pytest plugin that writes the XML shape this extension reads. A
+project can also be described once, declaratively, in the ``[test_reports]``
+section of ``ubproject.toml`` instead of being restated in ``conf.py``.
+
+Upgrading a documentation project means adding the extra to its install line:
+``pip install "sphinx-test-reports[sphinx]"``. Beyond that, only a project that
+names the old ``failure`` result has to change anything: a filter on the value,
+a custom ``tr_report_template`` copied from the shipped one, and custom CSS on
+the ``tr_failure`` class.
+
+* Breaking: ``pip install sphinx-test-reports`` no longer installs Sphinx and
+  Sphinx-Needs. They are the new ``sphinx`` extra, so the install line of a
+  documentation project becomes ``pip install "sphinx-test-reports[sphinx]"``.
+  The bare package brings only ``lxml``, the dependency of the ``test-reports``
+  command, which runs in test runners and build actions that have no
+  documentation toolchain; the pytest plugin, the ``pytest`` extra, runs there
+  too. An extra is opt-in, so the extension now checks the installed toolchain
+  against the versions the extra declares when Sphinx loads it: a missing or
+  older Sphinx or Sphinx-Needs stops the build with a message naming the
+  install line, instead of a traceback from inside a directive.
+  `#159 <https://github.com/useblocks/sphinx-test-reports/pull/159>`_
+* Breaking: Python 3.10 is no longer supported. It reached the end of upstream
+  support, and dropping it lets the package read TOML with ``tomllib`` from the
+  standard library instead of carrying a backport.
+  `#147 <https://github.com/useblocks/sphinx-test-reports/pull/147>`_
+* Breaking: sphinx-needs 6.0.1 and Sphinx 7.4 are the oldest supported
+  versions. 6.0.1 is the first release whose ``add_extra_option`` takes a
+  schema, which this extension registers its fields with; sphinx-needs 6 itself
+  requires Sphinx 7.4. The compatibility branches for older releases are gone.
+  `#150 <https://github.com/useblocks/sphinx-test-reports/pull/150>`_
 * Breaking: a failed test case now carries the ``result`` value ``failed``
   instead of ``failure``, so that every state is spelled the same way -- as a
   participle, like the ``passed``, ``skipped`` and ``disabled`` beside it, and
@@ -23,61 +65,14 @@ Unreleased
   carries rules for both, so the colours survive either way). The value is also
   what ``test-reports build needs`` writes into ``needs.json``, so a consumer
   of that file -- a schema, a metamodel validator -- has to be updated with it.
-* Improvement: both parsers now map their input onto that one vocabulary
-  instead of each passing its own through, so a JSON report written against
-  the JUnit dialect no longer produces a different ``result`` than the XML it
-  mirrors. A state this package does not know is still passed through
-  untouched, so a ``tr_json_mapping`` pointing at a report with a vocabulary
-  of its own keeps working.
-* Breaking: ``pip install sphinx-test-reports`` no longer installs Sphinx and
-  Sphinx-Needs. They are the new ``sphinx`` extra, so the install line of a
-  documentation project becomes ``pip install "sphinx-test-reports[sphinx]"``.
-  The bare package brings only ``lxml``, the dependency of the ``test-reports``
-  command, which runs in test runners and build actions that have no
-  documentation toolchain; the pytest plugin, the ``pytest`` extra, runs there
-  too. An extra is opt-in, so the extension now checks the
-  installed toolchain against the versions the extra declares when Sphinx
-  loads it: a missing or older Sphinx or Sphinx-Needs stops the build with a
-  message naming the install line, instead of a traceback from inside a
-  directive.
-* Testing: CI installs the package with the ``pytest`` extra alone and runs the
-  converter's and the pytest plugin's tests without Sphinx -- on the newest
-  pytest and on the oldest the plugin supports -- so a toolchain import
-  creeping into either import chain, or Sphinx creeping back into a dependency
-  list, fails the build.
-* Feature: Support the googletest XML dialect: ``status="notrun"`` is reported
-  as ``disabled`` instead of ``passed``, all ``<failure>``/``<skipped>`` parts
-  of a test case are kept instead of only the first, ``RecordProperty`` values
-  in attribute form are read (on ``<testcase>`` for googletest < 1.8.1 and on
-  ``<testsuite>`` for suite-level properties up to 1.15.x), and ``timestamp``,
-  ``value_param`` and ``type_param`` are parsed. ``<system-err>`` is captured.
-* Feature: The source location of a test case is available as Sphinx-Needs
-  fields, configurable via the new ``tr_source_file_option`` and
-  ``tr_source_line_option``.
-* Bugfix: ``tr_file_option`` is now honoured by the directives, not only by the
-  field registration. Renaming the field previously produced needs carrying an
-  unregistered field.
-* Feature: New ``tr_deterministic_case_ids`` option derives test-case IDs from
-  the source location instead of the need content, so an ID no longer changes
-  when a test starts failing differently.
-* Feature: Declarative configuration in the ``[test_reports]`` section of
-  ``ubproject.toml``, the file shared with the other useblocks tooling, so a
-  project is described once instead of being restated in ``conf.py``. The file
-  is searched for upwards from the ``confdir``, stopping at the repository
-  root;
-  the new ``tr_config_from_toml`` names or disables it. Precedence is ``-D`` >
-  ``ubproject.toml`` > ``conf.py`` > default. See :ref:`tr_config_from_toml`.
+  `#161 <https://github.com/useblocks/sphinx-test-reports/pull/161>`_
 * Feature: New ``test-reports build needs`` command line interface, converting
   test-result XML into a ``needs.json`` without running Sphinx, so the
   conversion can run as a cacheable build action and the documentation build
-  only imports the result. Its settings come from the ``[test_reports.build.needs]``
-  table of ``ubproject.toml``, with flags for per-invocation overrides. See
-  :ref:`cli`.
-* Feature: The produced ``needs.json`` declares every field it uses in a
-  ``needs_schema``, as Sphinx-Needs does for the files a build writes, so a
-  consumer can read the type of a field from the artifact instead of from a
-  Sphinx build with the extension loaded. The declarations and the fields the
-  extension registers come from one table, so the two cannot drift apart.
+  only imports the result. Its settings come from the
+  ``[test_reports.build.needs]`` table of ``ubproject.toml``, with flags for
+  per-invocation overrides. See :ref:`cli`.
+  `#148 <https://github.com/useblocks/sphinx-test-reports/pull/148>`_
 * Feature: A pytest plugin (``-p sphinxcontrib.test_reports.pytest_plugin``)
   gives every test case the source location an editor shows -- pytest's
   ``file``/``line`` counted from 1, Bazel's runfiles prefix cut, a runtime
@@ -89,30 +84,78 @@ Unreleased
   plugin was ported from, is the documented example. The plugin is the
   ``pytest`` extra: ``pip install "sphinx-test-reports[pytest]"`` installs it
   and pytest, without the documentation toolchain. See :ref:`pytest_plugin`.
+  `#151 <https://github.com/useblocks/sphinx-test-reports/pull/151>`_
+* Feature: Declarative configuration in the ``[test_reports]`` section of
+  ``ubproject.toml``, the file shared with the other useblocks tooling, so a
+  project is described once instead of being restated in ``conf.py``. The file
+  is searched for upwards from the ``confdir``, stopping at the repository
+  root; the new ``tr_config_from_toml`` names or disables it. Precedence is
+  ``-D`` > ``ubproject.toml`` > ``conf.py`` > default. See
+  :ref:`tr_config_from_toml`.
+  `#145 <https://github.com/useblocks/sphinx-test-reports/pull/145>`_
+* Feature: The produced ``needs.json`` declares every field it uses in a
+  ``needs_schema``, as Sphinx-Needs does for the files a build writes, so a
+  consumer can read the type of a field from the artifact instead of from a
+  Sphinx build with the extension loaded. The declarations and the fields the
+  extension registers come from one table, so the two cannot drift apart.
+  `#148 <https://github.com/useblocks/sphinx-test-reports/pull/148>`_
+* Feature: Support the googletest XML dialect: ``status="notrun"`` is reported
+  as ``disabled`` instead of ``passed``, all ``<failure>``/``<skipped>`` parts
+  of a test case are kept instead of only the first, ``RecordProperty`` values
+  in attribute form are read (on ``<testcase>`` for googletest < 1.8.1 and on
+  ``<testsuite>`` for suite-level properties up to 1.15.x), and ``timestamp``,
+  ``value_param`` and ``type_param`` are parsed. ``<system-err>`` is captured.
+  `#141 <https://github.com/useblocks/sphinx-test-reports/pull/141>`_
+* Feature: The source location of a test case is available as Sphinx-Needs
+  fields, configurable via the new ``tr_source_file_option`` and
+  ``tr_source_line_option``.
+  `#142 <https://github.com/useblocks/sphinx-test-reports/pull/142>`_
+* Feature: New ``tr_deterministic_case_ids`` option derives test-case IDs from
+  the source location instead of the need content, so an ID no longer changes
+  when a test starts failing differently.
+  `#143 <https://github.com/useblocks/sphinx-test-reports/pull/143>`_
+* Improvement: both parsers now map their input onto the one ``result``
+  vocabulary instead of each passing its own through, so a JSON report written
+  against the JUnit dialect no longer produces a different ``result`` than the
+  XML it mirrors. A state this package does not know is still passed through
+  untouched, so a ``tr_json_mapping`` pointing at a report with a vocabulary of
+  its own keeps working.
+  `#161 <https://github.com/useblocks/sphinx-test-reports/pull/161>`_
+* Bugfix: ``tr_file_option`` is now honoured by the directives, not only by the
+  field registration. Renaming the field previously produced needs carrying an
+  unregistered field.
+  `#142 <https://github.com/useblocks/sphinx-test-reports/pull/142>`_
 * Bugfix: ``tr_file_option``, ``tr_source_file_option`` and
   ``tr_source_line_option`` may no longer name a fixed field such as ``case``
   or ``result``, in ``conf.py`` or in the declarative file. The build
   previously stopped with a bare ``TypeError`` from inside a directive.
+  `#148 <https://github.com/useblocks/sphinx-test-reports/pull/148>`_
 * Support: ``result_text`` and ``remote_url`` are registered as need fields by
   the extension, so a ``needs.json`` the ``build needs`` command produced
   imports without dropping them. A project that registered ``remote_url``
   itself keeps its own registration.
+  `#148 <https://github.com/useblocks/sphinx-test-reports/pull/148>`_
+* Support: ``packaging`` is no longer a runtime dependency. The last import of
+  it under ``sphinxcontrib/`` is gone, so the ``docs`` and ``test`` extras,
+  whose ``conf.py`` files still use it, declare it instead.
+  `#154 <https://github.com/useblocks/sphinx-test-reports/pull/154>`_
+* Testing: CI installs the package with the ``pytest`` extra alone and runs the
+  converter's and the pytest plugin's tests without Sphinx -- on the newest
+  pytest and on the oldest the plugin supports -- so a toolchain import
+  creeping into either import chain, or Sphinx creeping back into a dependency
+  list, fails the build.
+  `#159 <https://github.com/useblocks/sphinx-test-reports/pull/159>`_
+* Testing: Run the test suite against sphinx-needs 8.5.0. The matrix
+  previously topped out at 8.0.0, so the release a fresh install resolves to
+  was untested.
+  `#158 <https://github.com/useblocks/sphinx-test-reports/pull/158>`_
 * Known: Sphinx 9 renders a configuration error raised from the declarative
   file -- a wrong type, a rename onto a fixed field, a disagreeing need type
   -- as its crash report rather than as a one-line message; the message is in
   the report. A typo in ``[test_reports.build.needs]`` is reported the same
   way, and so is a missing or outdated toolchain refused when the extension
   loads.
-* Support: Python 3.10 is no longer supported. It reached the end of upstream
-  support, and dropping it lets the package read TOML with ``tomllib`` from the
-  standard library instead of carrying a backport.
-* Support: sphinx-needs 6.0.1 and Sphinx 7.4 are the oldest supported versions.
-  6.0.1 is the first release whose ``add_extra_option`` takes a schema, which
-  this extension registers its fields with; sphinx-needs 6 itself requires
-  Sphinx 7.4. The compatibility branches for older releases are gone.
-* Testing: Run the test suite against sphinx-needs 8.5.0. The matrix
-  previously topped out at 8.0.0, so the release a fresh install resolves to
-  was untested.
+  `#148 <https://github.com/useblocks/sphinx-test-reports/pull/148>`_
 
 .. _`release:1.4.0`:
 

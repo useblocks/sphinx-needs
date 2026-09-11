@@ -54,7 +54,7 @@ from sphinxcontrib.test_reports.projectconfig import (
 
 # fmt: on
 
-VERSION = "1.4.0"
+VERSION = "2.0.0"
 
 try:
     # sphinx-needs >= 7.0: fields are registered through add_field.

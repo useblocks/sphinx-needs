@@ -2,7 +2,7 @@
 
 pytest plugin
 =============
-.. versionadded:: 1.5.0
+.. versionadded:: 2.0.0
 
 A stock pytest run writes a JUnit XML that this extension can only partly use.
 Under pytest's default ``junit_family = xunit2`` no ``<testcase>`` carries the

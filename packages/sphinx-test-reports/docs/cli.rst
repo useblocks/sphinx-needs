@@ -2,7 +2,7 @@
 
 Command line interface
 ======================
-.. versionadded:: 1.5.0
+.. versionadded:: 2.0.0
 
 ``Sphinx-Test-Reports`` ships a ``test-reports`` command that converts
 test-result XML into a ``needs.json`` **without running Sphinx**.

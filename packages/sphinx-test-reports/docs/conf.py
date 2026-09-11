@@ -32,9 +32,9 @@ copyright = f"team useblocks, 2017-{now.year}"
 author = "team useblocks"
 
 # The short X.Y version
-version = "1.4"
+version = "2.0"
 # The full version, including alpha/beta/rc tags
-release = "1.4.0"
+release = "2.0.0"
 
 needs_id_regex = ".*"
 needs_css = "dark.css"
