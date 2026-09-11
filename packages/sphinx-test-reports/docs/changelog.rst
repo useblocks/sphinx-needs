@@ -7,6 +7,28 @@ Unreleased
 ----------
 :Released: under development
 
+* Breaking: a failed test case now carries the ``result`` value ``failed``
+  instead of ``failure``, so that every state is spelled the same way -- as a
+  participle, like the ``passed``, ``skipped`` and ``disabled`` beside it, and
+  like the ``failed`` count on a test-file and test-suite need. ``failure`` was
+  never a chosen name: it was the name of the JUnit ``<failure>`` element,
+  passed through by the parser. The full vocabulary is now ``passed``,
+  ``failed``, ``error``, ``skipped``, ``disabled``; ``error`` is unchanged,
+  because it agrees with the ``errors`` count beside it. **Three things in a
+  project have to be updated:** a filter naming the value
+  (``'failure' == result`` becomes ``'failed' == result``), a custom
+  ``tr_report_template``, which contains two such filters in the shipped
+  template it was copied from, and custom CSS targeting the generated
+  ``tr_failure`` class, which is now ``tr_failed`` (the stylesheet still
+  carries rules for both, so the colours survive either way). The value is also
+  what ``test-reports build needs`` writes into ``needs.json``, so a consumer
+  of that file -- a schema, a metamodel validator -- has to be updated with it.
+* Improvement: both parsers now map their input onto that one vocabulary
+  instead of each passing its own through, so a JSON report written against
+  the JUnit dialect no longer produces a different ``result`` than the XML it
+  mirrors. A state this package does not know is still passed through
+  untouched, so a ``tr_json_mapping`` pointing at a report with a vocabulary
+  of its own keeps working.
 * Breaking: ``pip install sphinx-test-reports`` no longer installs Sphinx and
   Sphinx-Needs. They are the new ``sphinx`` extra, so the install line of a
   documentation project becomes ``pip install "sphinx-test-reports[sphinx]"``.

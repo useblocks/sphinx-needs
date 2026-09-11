@@ -18,6 +18,8 @@ sphinx-needs declares every registered field.
 
 from typing import Iterable, Mapping
 
+from sphinxcontrib.test_reports.results import CANONICAL_RESULTS
+
 #: ``name -> (JSON type, description)`` for every field declared under a fixed
 #: name. The build registers all of them, on test-file, test-suite and
 #: test-case needs alike; the converter writes test-case needs and therefore
@@ -38,7 +40,10 @@ FIELDS: dict[str, tuple[str, str]] = {
     # Turning it into a number is issue #156: it has to change here, in both
     # writers and in every consuming filter at once.
     "time": ("string", "Test execution time, in seconds"),
-    "result": ("string", "Test result status"),
+    # The states are named, not just the field: a consumer reading the
+    # declarations out of a produced `needs.json` learns the field's domain
+    # from them without having to load this package.
+    "result": ("string", f"Test result status: {', '.join(CANONICAL_RESULTS)}"),
     "result_text": ("string", "One-line rendering of the first failure message"),
     "remote_url": ("string", "URL of the test's source in the remote repository"),
     "suites": ("integer", "Number of test suites"),

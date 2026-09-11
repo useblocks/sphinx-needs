@@ -32,6 +32,7 @@ TOOLCHAIN_FREE_TESTS = [
     "tests/test_needs_export.py",
     "tests/test_project_config.py",
     "tests/test_pytest_plugin.py",
+    "tests/test_result_vocabulary.py",
     "tests/test_toolchain.py",
 ]
 

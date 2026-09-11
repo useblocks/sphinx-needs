@@ -2,6 +2,11 @@ tr.tr_passed, div.tr_passed {
     background-color: rgba(0,250,0,0.2) !important;
 }
 
+/* `tr_failure` is the class needs carried before the result was spelled
+   `failed`. It is kept because a project may still produce it: a result a
+   `tr_json_mapping` supplies under a vocabulary of its own is passed through
+   unnormalised, and the class is built from the result value. */
+tr.tr_failed, div.tr_failed,
 tr.tr_failure, div.tr_failure {
     background-color: rgba(250,0,0,0.2) !important;
 }
@@ -25,6 +30,7 @@ td.status p.tr_passed{
     color: #008000;
 }
 
+td.status p.tr_failed,
 td.status p.tr_failure{
     border: 1px solid #800000;
     color: #800000;

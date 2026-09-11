@@ -567,8 +567,8 @@ def test_url_synthesis_needs_both_parts(tmp_path, flag):
 class TestResultVocabulary:
     """The export uses the parser's vocabulary, which is the build's.
 
-    ``failure`` is a documented need field value and a CSS class
-    (``tr_failure``), and the shipped report template filters on it. A project
+    ``failed`` is a documented need field value and a CSS class
+    (``tr_failed``), and the shipped report template filters on it. A project
     that mixes imported and locally created test-case needs filters both with
     one expression only if the two writers spell the result alike.
     """
@@ -577,7 +577,7 @@ class TestResultVocabulary:
         _, data = _convert(tmp_path)
 
         assert (
-            _needs(data)["testcase__MathTest__Subtraction_srmht"]["result"] == "failure"
+            _needs(data)["testcase__MathTest__Subtraction_srmht"]["result"] == "failed"
         )
 
     @pytest.mark.parametrize(

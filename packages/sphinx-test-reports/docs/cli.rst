@@ -41,7 +41,7 @@ lost evidence.
 Each test case becomes one need shaped exactly like the need the build's
 ``test-case`` directive creates for it: titled with the case name; ``suite``,
 ``case``, ``case_name``, ``case_parameter``, ``classname``, ``result`` (spelled
-as the build spells it -- ``passed``, ``failure``, ``error``, ``skipped``,
+as the build spells it -- ``passed``, ``failed``, ``error``, ``skipped``,
 ``disabled`` -- so one filter matches imported and local cases alike) and
 ``time``; the report path under ``file``; the test's source location under
 ``case_file`` and ``case_line``; a one-line ``result_text``; and the full

@@ -59,7 +59,7 @@ def test_first_failure_part_stays_in_the_legacy_flat_keys():
     """``text``/``message`` keep their meaning for existing consumers."""
     case = _case("MathTest", "Subtraction")
 
-    assert case["result"] == "failure"
+    assert case["result"] == "failed"
     assert case["message"] == case["parts"][0]["message"]
     assert case["text"] == case["parts"][0]["text"]
 

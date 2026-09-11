@@ -148,7 +148,7 @@ def test_parse_ctest_xml():
     )  # fail in name, but nowhere in status, faked fail
     assert test_suite["testcases"][2]["result"] == "passed"
     assert test_suite["testcases"][3]["name"] == "fail_test_output"
-    assert test_suite["testcases"][3]["result"] == "failure"
+    assert test_suite["testcases"][3]["result"] == "failed"
     assert test_suite["testcases"][4]["name"] == "skipped_test"
     assert test_suite["testcases"][4]["result"] == "skipped"
 
@@ -171,7 +171,7 @@ def test_parse_error_xml():
     assert test_suite["testcases"][0]["result"] == "passed"
 
     assert test_suite["testcases"][1]["name"] == "AFailingTest"
-    assert test_suite["testcases"][1]["result"] == "failure"
+    assert test_suite["testcases"][1]["result"] == "failed"
 
     assert test_suite["testcases"][2]["name"] == "AnErrorTest"
     assert test_suite["testcases"][2]["result"] == "error"

@@ -38,7 +38,8 @@ or if it selects only the first found test case. The best case is to always try 
 
 ``test-case`` creates a need of type ``testcase`` and adds the following options automatically:
 
-* **result**: Result of the test case run. E.g passed or failed.
+* **result**: Result of the test case run: ``passed``, ``failed``, ``error``,
+  ``skipped`` or ``disabled``.
 * **time**: Needed time for running the test case
 
 These options can also be used to :ref:`filter for certain test-files <filter>`.

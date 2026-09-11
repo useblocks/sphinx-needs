@@ -6,6 +6,8 @@ import os
 
 from lxml import etree, objectify
 
+from sphinxcontrib.test_reports.results import normalize_result
+
 #: Attributes the JUnit/googletest dialects define themselves. Every *other*
 #: attribute is a ``RecordProperty`` value in attribute form: googletest wrote
 #: test-case properties as attributes before 1.8.1 (the form its official docs
@@ -46,7 +48,9 @@ TESTSUITE_KNOWN_ATTRIBUTES = frozenset(
 )
 
 #: ``<testcase>`` children carrying a result, in the precedence order used to
-#: classify a case that has more than one kind of them.
+#: classify a case that has more than one kind of them. These are XML element
+#: names, not ``result`` values -- ``<failure>`` is read as the result
+#: ``failed`` (see :mod:`sphinxcontrib.test_reports.results`).
 RESULT_PART_KINDS = ("skipped", "failure", "error")
 
 
@@ -187,7 +191,11 @@ class JUnitParser:
                 None,
             )
             if first_part is not None:
-                tc_dict["result"] = first_part["kind"]
+                # The part's `kind` is the name of the XML element the evidence
+                # came from and stays that way -- the converter capitalises it
+                # into the evidence heading. `result` is this package's
+                # vocabulary, so it goes through the mapping.
+                tc_dict["result"] = normalize_result(first_part["kind"])
                 tc_dict["type"] = first_part["type"]
                 # part text can be None for pytest xfail test cases
                 tc_dict["text"] = first_part["text"]

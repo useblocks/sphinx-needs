@@ -12,6 +12,8 @@ import os
 from functools import reduce
 from typing import Any, Dict, List
 
+from sphinxcontrib.test_reports.results import normalize_result
+
 
 def dict_get(root, items, default=None):
     """
@@ -60,6 +62,14 @@ class JsonParser:
             tc_dict = {
                 k: dict_get(json_dict, v[0], v[1]) for k, v in tc_mapping.items()
             }
+            # A JSON report written against the JUnit dialect spells a failure
+            # `failure`, after the element name. The API is documented as being
+            # in sync with the JUnit parser's, so the same outcome has to
+            # arrive under the same `result` here -- a value this package does
+            # not know is left as the report wrote it.
+            result = tc_dict.get("result")
+            if isinstance(result, str):
+                tc_dict["result"] = normalize_result(result)
             return tc_dict
 
         def parse_testsuite(json_dict) -> Dict[str, Any]:

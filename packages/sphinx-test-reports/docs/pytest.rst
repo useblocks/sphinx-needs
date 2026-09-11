@@ -173,7 +173,7 @@ spelling. Empty values are not written, and a decorator that would write
 nothing is an error at import time. The values are written when the test is
 set up, against the declared model; a wrong shape -- a list where one value is
 expected -- makes that test error at setup with the ``TypeError`` above (its
-need then carries the result ``error``, not ``failure``). The properties keep
+need then carries the result ``error``, not ``failed``). The properties keep
 the order of the keywords.
 
 The decorator also goes on a class, and decorators stack: a classification on

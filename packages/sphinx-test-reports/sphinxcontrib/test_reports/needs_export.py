@@ -176,11 +176,11 @@ def build_need(
     ``case_name``/``case_parameter``/``classname``/``result``/``time`` plus the
     renameable report-path and source-location fields in *fields* (see
     :data:`DEFAULT_FIELD_NAMES`) -- and so are the values: the title is the
-    case name and ``result`` keeps the parser's spelling (``failure``, which is
-    also a documented field value and the ``tr_failure`` CSS class), so that a
-    need imported from the produced ``needs.json`` and one created locally from
-    the same report are indistinguishable to a schema, a filter or a
-    ``needtable``.
+    case name and ``result`` keeps the parser's spelling (``failed``, which is
+    also a documented field value and the ``tr_failed`` CSS class, see
+    :mod:`sphinxcontrib.test_reports.results`), so that a need imported from
+    the produced ``needs.json`` and one created locally from the same report
+    are indistinguishable to a schema, a filter or a ``needtable``.
 
     XML properties become fields under their own names only when listed in
     *extra_options* -- the same list that makes the build register them as need

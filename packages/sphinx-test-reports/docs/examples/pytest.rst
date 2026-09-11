@@ -7,13 +7,13 @@ The data is coming from a pytest-run on the tests of the sphinx project.
 
 | Test suites: :need_count:`'pytest_sphinx' in tags and type=='testsuite'`
 | Test cases: :need_count:`'pytest_sphinx' in tags and type=='testcase'`
-| Failed test cases: :need_count:`'pytest_sphinx' in tags and 'failure' == result and type=='testcase'`
+| Failed test cases: :need_count:`'pytest_sphinx' in tags and 'failed' == result and type=='testcase'`
 | Skipped test cases: :need_count:`'pytest_sphinx' in tags and 'skipped' == result and type=='testcase'`
 
 **Failed test cases**:
 
 .. needtable::
-   :filter: 'pytest_sphinx' in tags and 'failure' == result
+   :filter: 'pytest_sphinx' in tags and 'failed' == result
    :columns: id, title, result
    :style: table
    :style_row: tr_[[copy('result')]]

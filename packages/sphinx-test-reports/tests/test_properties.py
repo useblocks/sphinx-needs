@@ -159,7 +159,7 @@ class TestParserBackwardCompatibility:
 
         tc = results[0]["testcases"][2]
         assert tc["name"] == "AFailingTest"
-        assert tc["result"] == "failure"
+        assert tc["result"] == "failed"
         assert tc["text"] == " details about failure "
 
 
