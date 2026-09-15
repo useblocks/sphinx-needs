@@ -9,6 +9,7 @@
 
 import datetime
 import os
+import shutil
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -16,6 +17,8 @@ import os
 #
 # import os
 import sys
+import tomllib
+from pathlib import Path
 
 from packaging.version import Version
 
@@ -57,14 +60,62 @@ extensions = [
     "sphinx_immaterial",
 ]
 
-local_plantuml_path = os.path.join(os.path.dirname(__file__), "utils", "plantuml.jar")
-plantuml = f"java -Djava.awt.headless=true -jar {local_plantuml_path}"
 
-# If we are running on windows, we need to manipulate the path,
-# otherwise plantuml will have problems.
-if os.name == "nt":
-    plantuml = plantuml.replace("/", "\\")
-    plantuml = plantuml.replace("\\", "\\\\")
+def _resolve_plantuml() -> str:
+    """How these docs render PlantUML, in the order the whole workspace agrees on.
+
+    1. ``PLANTUML_JAR``, through ``java``. An explicit choice wins, and a value naming no
+       file is an error rather than a silent fall-through.
+    2. The workspace's committed jar, ``vendor/plantuml/plantuml-<pinned version>.jar``.
+       ``vendor/plantuml/pin.toml`` is the one place the version is written, and the jar is
+       committed beside it, so this route needs nothing of the environment -- which is what
+       lets Read the Docs build these docs with no network beyond its own install.
+    3. A ``plantuml`` executable on ``PATH`` (``plantumlc`` first on Windows, whose
+       chocolatey ``plantuml`` shim is a non-blocking ``javaw`` launcher).
+
+    These docs carried their own jar under ``docs/utils/`` until the import into this
+    workspace -- a second copy, at a second version, beside the test suite's own. The chain
+    is written out here rather than imported from the shared test layer, exactly as
+    ``packages/sphinx-needs/docs/conf.py`` writes it out: a docs build must not import a
+    test-only member, and a reader of this file should not have to look elsewhere to find
+    out what renders their diagrams.
+    """
+    quoted = 'java -Djava.awt.headless=true -jar "{}"'
+    env_jar = os.environ.get("PLANTUML_JAR")
+    if env_jar:
+        if not os.path.isfile(env_jar):
+            raise RuntimeError(
+                f"PLANTUML_JAR names {env_jar!r}, which is not a file. Point it at a "
+                "plantuml jar, or unset it to render with the jar committed at "
+                "vendor/plantuml/."
+            )
+        return quoted.format(env_jar)
+    vendor = Path(__file__).resolve().parents[3] / "vendor" / "plantuml"
+    pinned = None
+    if (pin := vendor / "pin.toml").is_file():
+        version = tomllib.loads(pin.read_text(encoding="utf-8"))["version"]
+        pinned = vendor / f"plantuml-{version}.jar"
+        if pinned.is_file():
+            return quoted.format(pinned)
+    for name in ("plantumlc", "plantuml") if os.name == "nt" else ("plantuml",):
+        if executable := shutil.which(name):
+            return executable
+    if pinned is None:
+        raise RuntimeError(
+            "no PlantUML to render these docs with, and this tree has no "
+            "vendor/plantuml/pin.toml naming one -- which is what an sdist looks like. "
+            "Set PLANTUML_JAR to a plantuml jar (with java on PATH), or install a "
+            "plantuml executable; in a checkout of the repository, "
+            "`uv run poe fetch-plantuml` downloads the pinned one."
+        )
+    raise RuntimeError(
+        "no PlantUML to render these docs with. Run `uv run poe fetch-plantuml` to "
+        "download the pinned jar into vendor/plantuml/, or set PLANTUML_JAR to a plantuml "
+        "jar of your own (with java on PATH), or install a plantuml executable."
+    )
+
+
+plantuml = _resolve_plantuml()
 
 plantuml_output_format = "png"
 
@@ -123,8 +174,8 @@ html_favicon = "_static/sphinx-test-reports-logo.svg"
 html_title = "Sphinx-Test-Reports"
 
 other_options = {
-    "repo_url": "https://github.com/useblocks/sphinx-test-reports",
-    "repo_name": "sphinx-test-reports",
+    "repo_url": "https://github.com/useblocks/sphinx-needs",
+    "repo_name": "sphinx-needs",
     "font": False,
 }
 html_theme_options.update(other_options)

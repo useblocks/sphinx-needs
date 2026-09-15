@@ -4,7 +4,10 @@ Support
 =======
 
 If you find any bugs or have an idea for an improvement, feel free to open an entry on our issue-tracker at github:
-https://github.com/useblocks/sphinx-test-reports
+https://github.com/useblocks/sphinx-needs/issues
+
+Please add the ``pkg: sphinx-test-reports`` label, or pick *sphinx-test-reports* from the
+"Package" dropdown of the issue form, so that it reaches the right maintainers.
 
 We are happy for each new entry and support wherever we can.
 

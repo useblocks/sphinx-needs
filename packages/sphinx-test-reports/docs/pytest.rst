@@ -214,7 +214,7 @@ Metadata known only at run time
 -------------------------------
 
 A parameterised test whose metadata comes from the file it is driven by cannot
-use a decorator. :func:`apply_test_metadata` records the same properties from
+use a decorator. ``apply_test_metadata`` records the same properties from
 inside the test body, and can point the case at the file that drove it instead
 of at the test function:
 

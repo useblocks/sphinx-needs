@@ -5,7 +5,6 @@ Changelog
 
 Unreleased
 ----------
-:Released: under development
 
 .. _`release:2.0.0`:
 
