@@ -61,7 +61,7 @@ jobs:
         # ONE probe at a time, and one per package: with both planted at once a gate that had
         # dropped one package would still go red on the other and look healthy.
         run: |
-          probes="packages/sphinx-needs/src/sphinx_needs/_ty_gate_probe.py packages/sphinx-mounts/src/sphinx_mounts/_ty_gate_probe.py"
+          probes="packages/sphinx-needs/src/sphinx_needs/_ty_gate_probe.py packages/sphinx-mounts/src/sphinx_mounts/_ty_gate_probe.py packages/sphinx-codelinks/src/sphinx_codelinks/_ty_gate_probe.py packages/sphinx-test-reports/src/sphinxcontrib/test_reports/_ty_gate_probe.py"
           # shellcheck disable=SC2064
           trap "rm -f $probes" EXIT
           for probe in $probes; do
@@ -408,6 +408,116 @@ jobs:
         run: uv run --no-sync sphinx-build -nW --keep-going -b html docs docs/_build/html -T
         working-directory: packages/sphinx-codelinks
 
+  docs-reports:
+    name: Docs reports
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    # sphinx-test-reports' docs went from five warnings to zero in this pull request, and
+    # without this job nothing holds that: the Read the Docs build is not a required check,
+    # it is `-W` WITHOUT `-n`, and that project's settings do not point at this repository
+    # yet. `docs.yaml`'s linkcheck is scoped to sphinx-needs' own docs. sphinx-mounts has no
+    # docs job either, so this is a deliberate departure from that precedent rather than an
+    # oversight -- the difference is that these docs RENDER, which is a failure mode a build
+    # catches and a reviewer does not.
+    #
+    # No `paths:` filter and no `if:`: a change to `src/` with no change to `docs/` is
+    # precisely the change that breaks a docs build.
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: true
+          cache-suffix: docs-reports
+          # no `python-version`, so this runs on the root `.python-version`
+          cache-python: true
+      - name: Install graphviz
+        # 13 `needflow` directives across three pages need `dot`; PlantUML needs a JDK,
+        # which every Linux runner image already has
+        run: sudo apt-get install graphviz
+      - name: Point PLANTUML_JAR at the vendored jar
+        # the one jar `vendor/plantuml/pin.toml` names, verified against the pin first.
+        # The capture shape is the workspace's ONE shape and is fenced as such by
+        # `tools/tests/test_ci_plantuml_steps.py`, on every site including ubuntu-only ones:
+        # `shell: bash` for pipefail, `tr -d` for Windows' carriage return, and the export on
+        # the very next line. Uniform so that a step copied anywhere is already right --
+        # vendor/plantuml/README.md, "The step CI runs", says why each clause matters.
+        shell: bash
+        run: |
+          jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py --verify | tr -d '\r')"
+          echo "PLANTUML_JAR=$jar" >> "$GITHUB_ENV"
+      - name: Install the docs environment
+        # `docs.yaml`'s idiom -- sync ONE environment, then run the builder in it with
+        # `--no-sync` -- rather than `uv run --frozen poe docs-reports`, which pays for two
+        # environments because poe itself lives in the `dev` group. Keep in step with the
+        # `docs-reports` poe task.
+        run: uv sync --frozen --no-default-groups --extra docs-reports
+      - name: Build the docs
+        # `-nW --keep-going`, from the poe task: a nitpick warning is an error here, which
+        # is stricter than the Read the Docs build and is the point of the job
+        run: uv run --no-sync sphinx-build -nW --keep-going -b html docs docs/_build/html -T
+        working-directory: packages/sphinx-test-reports
+
+  toolchain-free:
+    name: Toolchain-free (sphinx-test-reports)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    # sphinx-test-reports' converter (`test-reports`) and its pytest plugin are meant to run
+    # where the documentation toolchain is NOT installed -- that is why Sphinx and
+    # sphinx-needs are an EXTRA of that package rather than dependencies. This job is the
+    # only thing that keeps it true: it installs the package with the dependencies it
+    # declares, asserts that sphinx, sphinx_needs and docutils are all absent, and runs the
+    # modules that do not need a build.
+    #
+    # It CANNOT be a matrix cell, and that is structural rather than a configuration gap:
+    # the root's `[project] dependencies` name every member, `[project] dependencies` are
+    # installed in every environment, and sphinx-needs declares sphinx at runtime -- so
+    # every environment a `uv sync` at this root can produce has Sphinx in it, whatever
+    # groups are asked for. The environment is therefore built OUTSIDE the project with
+    # `uv pip install --no-sources`, exactly as `release.yaml`'s compat cell builds its own.
+    #
+    # It replaces the `toolchain_free` session of the noxfile the import retired. That
+    # noxfile's other lane, `plugin_floor` (the plugin on the oldest pytest of each Python),
+    # is deliberately NOT here: it belongs with the release that makes the plugin a shipped
+    # surface of its own.
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: true
+          cache-suffix: toolchain-free
+          cache-python: true
+      - name: Build an environment with no documentation toolchain in it
+        run: |
+          uv venv /tmp/toolchain-free
+          uv pip install --python /tmp/toolchain-free --no-sources "packages/sphinx-test-reports[pytest]"
+      - name: Assert the toolchain really is absent
+        # the fence's fence. Without this the job would still pass with Sphinx installed,
+        # and would be testing nothing it claims to test.
+        run: |
+          /tmp/toolchain-free/bin/python -c "
+          import importlib.util, sys
+          present = [m for m in ('sphinx', 'sphinx_needs', 'docutils') if importlib.util.find_spec(m)]
+          sys.exit(f'toolchain installed: {present}' if present else 0)
+          "
+      - name: Run the modules that need no documentation build
+        # From the REPOSITORY ROOT, so pytest's rootdir is this repository and the root
+        # `[tool.pytest.ini_options]` applies -- which is where the `toolchain` marker is
+        # registered, so `-m "not toolchain"` deselects rather than warning.
+        run: |
+          /tmp/toolchain-free/bin/python -m pytest -q -m "not toolchain" \
+            packages/sphinx-test-reports/tests/test_cli_config.py \
+            packages/sphinx-test-reports/tests/test_cli_convert.py \
+            packages/sphinx-test-reports/tests/test_identity.py \
+            packages/sphinx-test-reports/tests/test_junit_parser.py \
+            packages/sphinx-test-reports/tests/test_junit_parser_gtest.py \
+            packages/sphinx-test-reports/tests/test_needs_export.py \
+            packages/sphinx-test-reports/tests/test_project_config.py \
+            packages/sphinx-test-reports/tests/test_pytest_plugin.py \
+            packages/sphinx-test-reports/tests/test_result_vocabulary.py \
+            packages/sphinx-test-reports/tests/test_toolchain.py
+
   bazel:
     name: Mounts Bazel integration
     runs-on: ubuntu-latest
@@ -485,6 +595,8 @@ jobs:
       - tests-no-mpl
       - tests-extensions
       - docs-codelinks
+      - docs-reports
+      - toolchain-free
       - bazel
       - smoke-needs
 

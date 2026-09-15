@@ -57,6 +57,11 @@ updates:
       # (`sphinx-needs>=8.5.0,<9`), and that specifier is a floor moved by hand at release
       # time by `propagate_floors.py`, not by dependabot
       - dependency-name: sphinx-codelinks
+      # the fourth member, same reason: `sphinx-test-reports` is a real PyPI project as
+      # well as a directory under `packages/`, and it names the published sphinx-needs by
+      # name in two extras (`sphinx-needs>=8.5.0,<9`) -- a floor `propagate_floors.py`
+      # moves at release time, not dependabot
+      - dependency-name: sphinx-test-reports
       # the workspace root itself. Its name is not on PyPI at all, so there is nothing to
       # bump to -- this pre-empts the same #14004 noise rather than fixing a live proposal
       - dependency-name: sphinx-needs-workspace

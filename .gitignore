@@ -21,6 +21,7 @@ coverage.xml
 # coverage report (`--cov-report=xml:<name>.xml`) instead of sharing `coverage.xml`
 mounts.xml
 codelinks.xml
+reports.xml
 .ty_cache
 
 # packages/sphinx-codelinks' tests write these at the CWD: `tests/test_cmd.py` writes

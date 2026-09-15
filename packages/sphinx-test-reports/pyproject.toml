@@ -1,0 +1,99 @@
+[project]
+name = "sphinx-test-reports"
+version = "2.0.0"
+description = "Sphinx extension for showing test results and test environment information inside sphinx documentations"
+readme = "README.rst"
+license = { text = "MIT" }
+authors = [{ name = "team useblocks", email = "info@useblocks.com" }]
+classifiers = [
+  "Framework :: Sphinx",
+  "Framework :: Sphinx :: Extension",
+  "Development Status :: 4 - Beta",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Documentation",
+]
+keywords = ["sphinx", "documentation", "test-reports"]
+# EQUAL to the workspace root's `requires-python`, deliberately: `check_workspace.py`
+# check (3) compares the two strings for EQUALITY, so the `,<4` is not cosmetic -- uv
+# resolves one lock against the root, and a member out of step with it still locks, builds
+# and publishes; the gap shows up only as an install failure for a user on an interpreter
+# inside it. This package declared a bare `>=3.11` before the import.
+requires-python = ">=3.11,<4"
+dependencies = ["lxml"]
+
+[project.optional-dependencies]
+# The Sphinx extension. The `test-reports` command and the pytest plugin run
+# without the documentation toolchain, so it is an extra rather than a
+# dependency; the lazy
+# `setup` in `__init__.py` enforces these floors when the extension is loaded,
+# since an extra is opt-in and pip never sees them otherwise.
+#
+# TIGHT tracking on the sibling, not a compatibility range: sphinx-needs is a member of
+# this workspace, and `check_workspace.py` check (4) requires
+# `>=<the sibling's current version>,<<its next major>` on every intra-workspace edge --
+# including one declared in an extra. uv never validates a specifier it resolves through
+# `workspace = true` (uv#9811), so the floor is the only statement of what was actually
+# tested, and `propagate_floors.py` moves it at each sphinx-needs release. The published
+# 2.0.0 said `>=6.0.1`; narrowing it is what the import costs, and the changelog says so.
+sphinx = ["sphinx>=7.4", "sphinx-needs>=8.5.0,<9"]
+# The pytest plugin (sphinxcontrib.test_reports.pytest_plugin); pytest is not
+# a dependency of the extension or the converter. 7.0 is where everything the
+# plugin uses exists (pytest.Config/Item/Mark, Config.stash,
+# issue_config_time_warning). pytest before 7.3.2 does not run on Python 3.12
+# at all -- that floor is pytest's own, not this one's; the `toolchain-free` CI job runs
+# the plugin's tests with no documentation toolchain installed at all.
+pytest = ["pytest>=7.0"]
+# There is no `test` extra any more: the workspace's test tooling is the ROOT's shared
+# `test` dependency group, which every cell and the release compat cell install, and
+# `check_workspace.py` check (7) refuses a `[dependency-groups]` table here. `nox` and
+# `packaging` went with the noxfile the CI matrix replaced.
+#
+# An EXTRA rather than a group for the docs, because Read the Docs installs extras and
+# cannot install PEP 735 groups: its `python.install` block takes `extra_requirements`.
+# The root re-exports it as `docs-reports` -- uv resolves `--extra` against the project,
+# which is the workspace root, so an extra that lives only here is not reachable by name.
+docs = [
+  "packaging",
+  "pillow",
+  "sphinx-design",
+  "sphinx-immaterial",
+  "sphinx-needs>=8.5.0,<9",
+  "sphinx",
+  "sphinxcontrib-plantuml",
+]
+
+[project.urls]
+Homepage = "https://sphinx-test-reports.readthedocs.io/en/latest/"
+Documentation = "https://sphinx-test-reports.readthedocs.io/en/latest/"
+Repository = "https://github.com/useblocks/sphinx-needs"
+Issues = "https://github.com/useblocks/sphinx-needs/issues"
+Changelog = "https://github.com/useblocks/sphinx-needs/blob/master/packages/sphinx-test-reports/docs/changelog.rst"
+
+[project.scripts]
+test-reports = "sphinxcontrib.test_reports.cli:main"
+
+[build-system]
+requires = ["flit_core >=3.4,<4"]
+build-backend = "flit_core.buildapi"
+
+# The import name is NOT the distribution name with `-` -> `_`: this package installs into
+# the `sphinxcontrib` PEP 420 namespace, which is why this table exists at all.
+# `check_workspace.Member.module` and `tools/src/sn_tools/import_check.py` both read it;
+# `release.yaml` is taught to read it too, because its `${DIST//-/_}` derivation would
+# otherwise name a module that does not exist. See this package's `AGENTS.md` for what the
+# DOTTED name costs today -- check (5) prints no line for this member.
+[tool.flit.module]
+name = "sphinxcontrib.test_reports"
+
+# Deliberately NO `[tool.flit.sdist]`: this distribution's sdist already ships the module
+# and nothing else, which is byte-for-byte the shape published on PyPI.
+# Everything else -- ruff, ty, pytest and the dependency groups -- is the ROOT's, and
+# `check_workspace.py` check (7) refuses those tables here: a member `[tool.ruff]` does not
+# extend the root's configuration, it replaces it. The `toolchain` pytest marker this
+# package declared moved to the root's `markers` list with the rest of the pytest
+# configuration; `[tool.mypy]` went because the workspace type-checks with ty.

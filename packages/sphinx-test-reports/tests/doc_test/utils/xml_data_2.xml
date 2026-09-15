@@ -1,0 +1,10 @@
+<testsuite name="My testsuite" tests="4" failures="1" errors="0" skips="1" time="0.572" >
+    <testcase classname="test_basic_doc" name="test_doc_build_html"/>
+    <testcase classname="test_empty_doc" name="test_doc_build_html"/>
+    <testcase classname="test_junit_parser" name="test_init_parser">
+        <failure type="KeyException"> key "name" could not be accessed in junit object </failure>
+    </testcase>
+    <testcase classname="test_junit_parser" name="test_call_parser">
+        <skipped > Passed on the last test run </skipped>
+    </testcase>
+</testsuite>

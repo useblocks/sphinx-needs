@@ -1,0 +1,229 @@
+import hashlib
+from typing import Any
+
+from docutils import nodes
+from docutils.parsers.rst import directives
+
+import sphinxcontrib.test_reports.directives.test_case
+from sphinx_needs.api import add_need
+from sphinx_needs.utils import add_doc
+from sphinxcontrib.test_reports.directives.test_common import TestCommonDirective
+from sphinxcontrib.test_reports.exceptions import TestReportInvalidOptionError
+
+
+class TestSuite(nodes.General, nodes.Element):
+    pass
+
+
+class TestSuiteDirective(TestCommonDirective):
+    """
+    Directive for showing test suites.
+    """
+
+    has_content = True
+    required_arguments = 1
+    optional_arguments = 0
+    option_spec = {
+        "id": directives.unchanged_required,
+        "status": directives.unchanged_required,
+        "tags": directives.unchanged_required,
+        "links": directives.unchanged_required,
+        "collapse": directives.unchanged_required,
+        "file": directives.unchanged_required,
+        "suite": directives.unchanged_required,
+    }
+
+    final_argument_whitespace = True
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.case_ids = []
+
+    def run(self, nested=False, count=-1):
+        self.prepare_basic_options()
+        self.load_test_file()
+
+        if nested:
+            # access n-th nested suite here
+            self.results = self.results[0]["testsuite_nested"]
+
+        suite_name = self.options.get("suite")
+
+        if suite_name is None:
+            raise TestReportInvalidOptionError("Suite not given!")
+
+        suite = None
+        for suite_obj in self.results:
+            if suite_obj["name"] == suite_name:
+                suite = suite_obj
+                break
+
+            elif nested:  # access correct nested testsuite here
+                suite = self.results[count]
+                break
+
+        if suite is None:
+            raise TestReportInvalidOptionError(
+                f"Suite {suite_name} not found in test file {self.test_file}"
+            )
+
+        cases = suite["tests"]
+
+        passed = suite["passed"]
+        skipped = suite["skips"]
+        errors = suite["errors"]
+        failed = suite["failures"]
+
+        # Flatten JUnit <properties> into extra_options so that
+        # suite-level properties are surfaced as sphinx-needs fields.
+        # Only propagate properties that are explicitly listed in
+        # tr_extra_options to avoid unknown-kwarg errors from add_need.
+        allowed_extras = set(getattr(self.app.config, "tr_extra_options", []))
+        suite_properties = suite.get("properties", {})
+        for prop_name, prop_value in suite_properties.items():
+            if (
+                prop_name in allowed_extras
+                and prop_name not in suite
+                and prop_value not in ["", None]
+            ):
+                self.extra_options[prop_name] = str(prop_value)
+
+        self._apply_property_links(suite_properties)
+
+        main_section = []
+        docname = self.state.document.settings.env.docname
+        # The fields whose NAMES come from configuration -- the renameable report-path
+        # field and the configured extra options -- in one mapping. `dict[str, Any]`
+        # because `add_need` types each keyword parameter separately.
+        report_fields: dict[str, Any] = {
+            self.report_file_field(): self.test_file_given,
+            **self.extra_options,
+        }
+        main_section += add_need(
+            self.app,
+            self.state,
+            docname,
+            self.lineno,
+            need_type=self.need_type,
+            title=self.test_name,
+            id=self.test_id,
+            content=self.test_content,
+            links=self.test_links,
+            tags=self.test_tags,
+            status=self.test_status,
+            collapse=self.collapse,
+            suite=suite["name"],
+            cases=cases,
+            passed=passed,
+            skipped=skipped,
+            failed=failed,
+            errors=errors,
+            **report_fields,
+        )
+
+        # TODO double nested logic
+        # nested testsuite present, if testcases are present -> reached most inner testsuite
+        access_count = 0
+        if len(suite_obj["testcases"]) == 0:
+            for suite in suite_obj["testsuite_nested"]:
+                suite_id = self.test_id
+                suite_id += (
+                    "_"
+                    + hashlib.sha1(suite["name"].encode("UTF-8"))
+                    .hexdigest()
+                    .upper()[: self.app.config.tr_suite_id_length]
+                )
+
+                options = self.options
+                options["suite"] = suite["name"]
+                options["id"] = suite_id
+
+                if "links" not in self.options:
+                    options["links"] = self.test_id
+                elif self.test_id not in options["links"]:
+                    options["links"] = options["links"] + ";" + self.test_id
+
+                arguments = [suite["name"]]
+                suite_directive = TestSuiteDirective(
+                    self.app.config.tr_suite[0],
+                    arguments,
+                    options,
+                    "",
+                    self.lineno,  # no content
+                    self.content_offset,
+                    self.block_text,
+                    self.state,
+                    self.state_machine,
+                )
+
+                is_nested = len(suite_obj["testsuites"]) > 0
+
+                # create suite_directive for each nested suite, directive appends content in html files
+                # access_count keeps track of which nested testsuite to access in the directive
+                main_section += suite_directive.run(nested=True, count=access_count)
+                access_count += 1
+
+        # suite has testcases
+        if "auto_cases" in self.options and len(suite_obj["testcases"]) > 0:
+            case_count = 0
+
+            for case in suite["testcases"]:
+                case_id = self.deterministic_case_id_for(case)
+                if case_id is None:
+                    # Default: a hash fragment scoped to the parent suite.
+                    case_id = self.test_id
+                    case_id += (
+                        "_"
+                        + hashlib.sha1(
+                            case["classname"].encode("UTF-8")
+                            + case["name"].encode("UTF-8")
+                        )
+                        .hexdigest()
+                        .upper()[: self.app.config.tr_case_id_length]
+                    )
+
+                if case_id not in self.case_ids:
+                    self.case_ids.append(case_id)
+                else:
+                    raise Exception(f"Case ID exists: {case_id}")
+
+                # We need to copy self.options, otherwise it gets updated and sets same values
+                # for all testsuites.
+                options = self.options.copy()
+
+                options["case"] = case["name"]
+                options["classname"] = case["classname"]
+                options["id"] = case_id
+
+                if "links" not in self.options:
+                    options["links"] = self.test_id
+                elif self.test_id not in options["links"]:
+                    options["links"] = options["links"] + ";" + self.test_id
+
+                arguments = [case["name"]]
+                case_directive = (
+                    sphinxcontrib.test_reports.directives.test_case.TestCaseDirective(
+                        self.app.config.tr_case[0],
+                        arguments,
+                        options,
+                        "",
+                        self.lineno,  # no content
+                        self.content_offset,
+                        self.block_text,
+                        self.state,
+                        self.state_machine,
+                    )
+                )
+
+                is_nested = len(suite_obj["testsuite_nested"]) > 0 or nested
+
+                # depending if nested or not, runs case directive to add content to testcases
+                # count is for correct suite access, if multiple present, case_count is for correct case access
+                main_section += case_directive.run(is_nested, count, case_count)
+
+                if is_nested:
+                    case_count += 1
+
+        add_doc(self.env, docname)
+
+        return main_section

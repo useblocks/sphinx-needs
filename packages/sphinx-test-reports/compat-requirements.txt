@@ -1,0 +1,29 @@
+# The RELEASED dependencies this package needs beyond what its wheel declares, for the
+# compat cell in .github/workflows/release.yaml -- the one gate that runs a member's suite
+# against everything as PUBLISHED rather than as checked out. It is installed BEFORE the
+# wheel and then passed again as a `-c` constraint, so it cannot be downgraded by the
+# wheel's own `Requires-Dist`.
+#
+# This file covers something neither sibling's does: sphinx-test-reports is the first member
+# here whose RUNTIME dependencies are optional. Its 2.0.0 release moved Sphinx and
+# sphinx-needs behind a `sphinx` extra -- so that the `test-reports` converter and the pytest
+# plugin install without a documentation toolchain -- and the compat cell installs a bare
+# wheel path with no extras. Measured on the built wheel: `Requires-Dist` is `lxml`, full
+# stop.
+#
+# Without these two lines the failure is LOUD rather than silent, which is the good case:
+# `release.yaml` runs the `import_check` walk BEFORE pytest, and that walk fails
+# `FAIL 6 of 25 modules failed to import` naming `sphinx_needs`, exit 1, under the step's
+# default `bash -e`. Measured by running the cell by hand. With them, the walk imports 25 of
+# 25 and the suite runs.
+#
+# Note that `sphinx` alone is already present in that environment -- the root `test` group
+# carries it for the other suites -- and `sphinx-needs` is NOT, because it is a `[project]`
+# dependency of the workspace ROOT and `uv export --only-group test` deliberately excludes
+# it. It is named here anyway: this file states what THIS package needs, and a future change
+# to the `test` group must not be able to take it away silently.
+#
+# The specifiers are the member's own `sphinx` extra, verbatim, so the cell tests the range
+# the package actually claims.
+sphinx>=7.4
+sphinx-needs>=8.5.0,<9

@@ -1,0 +1,526 @@
+:hide-navigation:
+
+.. _configuration:
+
+Configuration
+=============
+The following options can be set inside the ``conf.py`` file of your Sphinx project.
+
+.. contents::
+   :local:
+
+.. _tr_rootdir:
+
+tr_rootdir
+----------
+``tr_rootdir`` takes a path, which is used as *root dir* for all provided file paths in other directives.
+
+By default ``tr_rootdir`` contains the configuration folder of your Sphinx project (The one with ``conf.py`` in it).
+
+.. _tr_file:
+
+tr_file
+-------
+``tr_file`` allows to specify a custom directive name and need-configuration for ``test-file``.
+
+Instead of using ``.. test-file::`` you may want to use ``.. test-path::``.
+
+It may get also important to solve directive name conflicts with other Sphinx extensions.
+
+By default ``tr_file`` is set to::
+
+   ['test-file', 'testfile', 'test-file', 'TF_', '#ffffff', 'node']
+
+All of the following arguments must be set:
+
+1. **directive name**
+2. **need directive name**
+3. **need print name**
+4. **need id prefix**
+5. **need color**
+6. **need plantuml style**
+
+The parameters **2-6** are used to configure the underlying Sphinx-needs.
+See it's
+`documentation about needs_types <https://sphinx-needs.readthedocs.io/en/latest/configuration.html#needs-types>`_
+for more details.
+
+.. _tr_suite:
+
+tr_suite
+--------
+
+``tr_suite`` allows to specify a custom directive name and need-configuration for ``test-suite``.
+
+Instead of using ``.. test-suite::`` you may want to use ``.. test-container::``.
+
+By default ``tr_suite`` is set to::
+
+   ['test-suite', 'testsuite', 'test-suite', 'TS_', '#cccccc', 'node']
+
+Please read :ref:`tr_file` for more details.
+
+.. _tr_case:
+
+tr_case
+-------
+
+``tr_case`` allows to specify a custom directive name and need-configuration for ``test-case``.
+
+Instead of using ``.. test-case::`` you may want to use ``.. test-run::``.
+
+By default ``tr_case`` is set to::
+
+   ['test-case', 'testcase', 'test-case', 'TC_', '#999999', 'node']
+
+Please read :ref:`tr_file` for more details.
+
+.. _tr_report_template:
+
+tr_report_template
+------------------
+
+``tr_report_template`` allows to specify a custom template for testcase visualisation. Provide a relative path
+(from conf.py) or provide an absolute path to your template.
+
+**A simple example with a scrambled order:**
+
+.. literalinclude:: ./custom_test_report_template.txt
+   :language: rst
+
+.. _tr_suite_id_length:
+
+tr_suite_id_length
+------------------
+.. versionadded:: 1.0.1
+
+Defines the length of the calculated ID for test suites.
+
+This may be needed, if a junit-xml files contains many test suites.
+
+Default: **3**
+
+.. _tr_case_id_length:
+
+tr_case_id_length
+------------------
+.. versionadded:: 1.0.1
+
+Defines the length of the calculated ID for test cases.
+
+This may be needed, if a junit-xml files contains many test cases.
+
+Default: **5**
+
+
+.. _tr_file_option:
+
+tr_file_option
+--------------
+
+Name of the Sphinx-Needs field that carries the path of the test-result *report*
+(the file given to the directive).
+
+Renaming it frees the field names ``file`` and ``line`` for the *test source*
+location, see :ref:`tr_source_file_option`.
+
+Default: **file**
+
+.. _tr_source_file_option:
+
+tr_source_file_option
+---------------------
+.. versionadded:: 2.0.0
+
+Name of the Sphinx-Needs field that carries the source file of a test case,
+taken from the ``file`` attribute of the JUnit/googletest ``<testcase>``
+element.
+
+The default avoids a collision with :ref:`tr_file_option`. To spell the source
+location verbatim as ``file`` and ``line`` -- as some metamodels require --
+rename the report field instead:
+
+.. code-block:: python
+
+   tr_file_option = "report_file"
+   tr_source_file_option = "file"
+   tr_source_line_option = "line"
+
+Each of the three options must name a field of its own -- not one of the other
+two, and not a fixed field such as ``case`` or ``result`` -- or the build stops
+with a configuration error. For the :ref:`build needs command <cli>` to write
+the renamed fields as well, put the renames in ``ubproject.toml``
+(:ref:`tr_config_from_toml`): it cannot see ``conf.py``.
+
+The field is empty when the XML carries no ``file`` attribute. With pytest this
+is the norm: it emits ``file``/``line`` only with ``junit_family = xunit1`` (or
+``legacy``), while its default ``xunit2`` filters those attributes out.
+
+Default: **case_file**
+
+.. _tr_source_line_option:
+
+tr_source_line_option
+---------------------
+.. versionadded:: 2.0.0
+
+Name of the Sphinx-Needs field that carries the source line of a test case,
+taken from the ``line`` attribute of the ``<testcase>`` element.
+See :ref:`tr_source_file_option`.
+
+Default: **case_line**
+
+.. _tr_deterministic_case_ids:
+
+tr_deterministic_case_ids
+-------------------------
+.. versionadded:: 2.0.0
+
+Derive test-case IDs from the source location and the case name instead of
+hashing the need's type, title and content.
+
+The default ID includes the need content, which carries the failure text -- so
+the ID of a test case changes when the test starts failing differently. That
+breaks anything holding a reference to it: build caches, a link authored from a
+test specification to its expected result, and diffs of an exported needs.json.
+
+With this option enabled, IDs have the form
+``{type}__{Classname__Casename}_{hash}``, where the hash is derived from the
+source file and the case name. Both ID-producing paths honour it: the
+``test-case`` directive and the IDs generated by ``:auto_cases:``. An explicitly
+authored ``:id:`` always wins. Test-suite IDs are unaffected.
+
+Two notes when enabling it:
+
+* The IDs are lowercase, which the Sphinx-Needs default ``needs_id_regex``
+  (``^[A-Z0-9_]{5,}``) rejects for local needs. Relax it, for example to
+  ``^[A-Za-z0-9_-]{6,}``.
+* googletest parameterised suites put ``/`` into class and case names. The
+  readable part of the ID is reduced to ``[A-Za-z0-9_]`` so it stays a legal ID
+  and HTML anchor.
+
+Default: **False**
+
+.. _tr_extra_options:
+
+tr_extra_options
+----------------
+.. versionadded:: 1.2.0
+
+Defines extra options you can use in `test-file` `test-case` and `test-suite`.
+These options also have to be registered in either needs_extra_options or needs_extra_links.
+
+**Example**
+
+.. code-block:: python
+
+   # In conf.py
+   tr_extra_options = ['more_info', 'related_to', 'priority']
+
+   # Define as regular options
+   needs_extra_options = ['more_info', 'priority']
+
+You can then use these options in your directives:
+
+.. code-block:: rst
+
+   .. test-file:: Enhanced test data
+      :file: path/to/test_data.xml
+      :id: TESTFILE_EXTRA
+      :more_info: This is additional information about the test
+      :priority: high
+
+   This test file contains enhanced metadata using custom extra options.
+
+**Mapping JUnit XML ``<properties>`` to fields**
+
+When importing JUnit XML files, ``tr_extra_options`` also controls which ``<property>``
+elements inside ``<testcase>`` and ``<testsuite>`` blocks are surfaced as sphinx-needs
+fields. Only property names listed here are imported; all others are silently ignored.
+
+.. code-block:: xml
+
+   <!-- Example JUnit XML -->
+   <testcase name="test_login">
+     <properties>
+       <property name="priority" value="high"/>
+       <property name="verifies" value="REQ_001,REQ_002"/>
+     </properties>
+   </testcase>
+
+.. code-block:: python
+
+   # conf.py – surface "priority" as a sphinx-needs field
+   tr_extra_options = ["priority"]
+   needs_extra_options = ["priority"]
+
+See :ref:`tr_property_link_types` to map properties to sphinx-needs link fields instead.
+
+.. _tr_property_link_types:
+
+tr_property_link_types
+----------------------
+.. versionadded:: 1.3.0
+
+Maps a JUnit XML ``<property>`` name to a sphinx-needs link field. When a test case or
+suite contains a matching property, its comma-separated values are converted to
+semicolon-separated need IDs and merged into the specified link field.
+
+.. code-block:: python
+
+   # conf.py
+   tr_property_link_types = {
+       "verifies": "links",   # comma-separated IDs → need links
+   }
+
+With this configuration a ``<property name="verifies" value="REQ_001,REQ_002"/>`` in
+a ``<testcase>`` results in ``links: REQ_001;REQ_002`` on the generated need.
+
+Multiple properties can map to different link fields:
+
+.. code-block:: python
+
+   tr_property_link_types = {
+       "verifies": "links",
+       "blocks":   "blocks_back",
+   }
+
+.. note::
+
+   The property name does **not** need to be listed in :ref:`tr_extra_options` when it
+   is used exclusively for link mapping. Only add it there if you also want the raw
+   value to appear as a plain text field on the need.
+
+.. _tr_import_encoding:
+
+tr_import_encoding
+------------------
+.. versionadded:: 1.0.3
+
+Defines the encoding for imported files, e.g. in custom templates.
+
+Default: **utf8**
+
+.. _tr_json_mapping:
+
+tr_json_mapping
+---------------
+.. versionadded:: 1.0.3
+
+Takes a mapping configuration, which defines how to map the JSON structure to the internal structure used by
+``Sphinx-Test-Reports``.
+
+``tr_json_mapping`` is a dictionary, where the first key is a name for the configuration.
+The name is currently just a placeholder and the first config is used for all JSON imports.
+
+Two mappings must be configured as dictionary, one for ``testsuite`` and one for the nested ``testcase``.
+
+The key of this dictionary elements is the **internal** name and fix.
+
+The value is a tuple, containing a **selector list** and a **default value**, if the selector does not find any data.
+
+The **selector** is a list, where each entry is representing one level of the data structure.
+If the entry is a string, it is used as a key for a dict. If it is a integer number, it is taken as position
+of a list.
+
+**JSON example**
+
+.. code-block:: python
+
+   {
+       "level_1": {
+           "level_2": [
+               {"value": "Hello!"}
+               {"value": "Bye Bye!"}
+           ]
+       }
+   }
+
+Given the above JSON example, the following "selector" will address the value ``Bye Bye!``::
+
+   ["level_1", "level_2", 1, "value"]
+
+Additional meta-data
+~~~~~~~~~~~~~~~~~~~~
+The JSON Parser allows to set additional options for the created test-case, for instance
+a status, tags or even the ID of the test case.
+
+Just use the name in the ``tr_json_mapping`` and make sure new options
+are registered via ``needs_extra_options``.
+
+Default data
+~~~~~~~~~~~~
+The mapping of ``tr_json_mapping`` allows to set a default value, if the key can't be found in the
+json data itself.
+However, with :ref:`tr_extra_options` exists another way to set defaults, defined
+by the directives like ``need-file`` and co.
+
+If this directive-default shall be taken, set the default value in ``tr_json_mapping`` to
+``""`` (empty string) or ``None``.
+
+ID from result file
+~~~~~~~~~~~~~~~~~~~
+If the ``id`` for the Sphinx-Needs test-case object shall be taken from the JSON result file,
+just create a mapping for it::
+
+   "id": (["id"], None)
+
+Do not set a default value in this case, otherwise multiple objects with the same ID (the default value)
+may be created, which is not allowed by Sphinx-Needs.
+
+If no ``id`` value is set by the Parser, Sphinx-Test-Reports will automatically
+fall back to its default implementation and generate a hash-based id.
+
+
+Example config
+~~~~~~~~~~~~~~
+
+This example contains **all** internal elements and a mapping as example.
+For ``testsuite`` the value ``testcases`` defines the location of nested testcases.
+
+An example of a JSON file, which supports the below configuration, can be seen in :ref:`json_example`.
+
+.. code-block:: python
+
+   tr_json_mapping = {
+      "json_config_1": {
+         "testsuite": {
+            "name":        (["name"], "unknown"),
+            "tests":       (["tests"], "unknown"),
+            "errors":      (["errors"], "unknown"),
+            "failures":    (["failures"], "unknown"),
+            "skips":       (["skips"], "unknown"),
+            "passed":      (["passed"], "unknown"),
+            "time":        (["time"], "unknown"),
+            "testcases":   (["testcase"], "unknown"),
+         },
+         "testcase": {
+            "name":        (["name"], "unknown"),
+            "classname":   (["classname"], "unknown"),
+            "file":        (["file"], "unknown"),
+            "line":        (["line"], "unknown"),
+            "time":        (["time"], "unknown"),
+            "result":      (["result"], "unknown"),
+            "type":        (["type"], "unknown"),
+            "text":        (["text"], "unknown"),
+            "message":     (["message"], "unknown"),
+            "system-out":  (["system-out"], "unknown"),
+            "id":          (["id"], None),
+            "my-option":   (["my_opt"], "default"),
+         }
+      }
+   }
+
+Declarative configuration (ubproject.toml)
+------------------------------------------
+.. versionadded:: 2.0.0
+
+All of the above can also be configured declaratively, in the
+``[test_reports]`` section of your project's ``ubproject.toml`` -- the same
+shared file other useblocks tooling (sphinx-needs, sphinx-codelinks,
+sphinx-mounts, ubCode) reads. It describes the project once, so every tool
+acting on it works from the same settings instead of each restating them.
+
+.. code-block:: toml
+
+   [test_reports]
+   file_option = "report_file"
+   source_file_option = "file"
+   source_line_option = "line"
+   deterministic_case_ids = true
+   extra_options = ["more_info", "priority"]
+   property_link_types = { request = "req" }
+   # Base directory the directives look their report files up under -- not an
+   # output directory. Relative to this file, see Paths below.
+   rootdir = "docs"
+
+   # Need types: named tables (recommended) ...
+   [test_reports.case]
+   directive = "test-case"
+   type = "testcase"
+   name = "Test-Case"
+   prefix = "TC_"
+   color = "#999999"
+   style = "rectangle"
+
+   # ... or the positional list spelling of conf.py:
+   # case = ["test-case", "testcase", "Test-Case", "TC_", "#999999", "rectangle"]
+
+**Keys.** Every key is named like its ``tr_*`` config value without the prefix
+(``file_option`` configures ``tr_file_option``, and so on). The build applies
+them all; the :ref:`build needs command <cli>` reads the three field-name keys
+(``file_option``, ``source_file_option``, ``source_line_option``) and
+``extra_options`` as well, so the needs it writes have the shape of the needs
+the build creates and carry exactly the fields the build accepts -- and it
+refuses a file whose path fields share a name or take a fixed field's, as the
+build does. A key carrying the
+wrong type is an error -- that is the typo class this validation exists to
+catch. An *unknown* key is reported as a warning and ignored: the file is
+shared with tools on independent release cadences, so a key this version does
+not model must not take your build down.
+
+The ``[test_reports.build.needs]`` sub-table holds the settings of the
+:ref:`build needs command <cli-declarative>`. The build validates it along with
+the rest of the section -- so a typo is caught whichever consumer reads the file
+first -- but never applies it to a ``tr_*`` value. One rule spans both:
+``need_type`` in that table and the ``type`` of ``case`` name the same need
+type, and a file setting them to different values is rejected. Any other sub-table is an unknown key like any other --
+reported and ignored.
+
+**Warnings.** The two warnings this feature emits carry a type, so either can
+be silenced through Sphinx's ``suppress_warnings`` in a project that builds
+with ``-W``: ``test_reports.unknown_key`` for the unknown-key report above, and
+``test_reports.missing_config`` for an explicitly named file that does not
+exist (see :ref:`tr_config_from_toml`). A known key with the wrong type is an
+error, not a warning, and cannot be suppressed.
+
+**Precedence.** ``-D`` on the ``sphinx-build`` command line beats the TOML
+file, which beats ``conf.py``, which beats the built-in default. The
+declarative file is the source of truth for the project; the command line stays
+the per-invocation escape hatch.
+
+**Paths.** ``rootdir`` (:ref:`tr_rootdir`) is the directory the relative report
+paths in the directives are resolved against -- with ``rootdir = "docs"``,
+``.. test-file:: reports/pytest.xml`` reads ``docs/reports/pytest.xml``. It is
+an input location, not an output directory: nothing is written there.
+``report_template`` (:ref:`tr_report_template`) names a custom template file.
+Relative values of both are resolved against the directory containing the TOML
+file (not against ``conf.py`` or the working directory), so both consumers
+resolve them identically and the file stays self-describing when moved as a
+unit.
+
+**Deterministic IDs.** A build that imports a ``needs.json`` carrying
+deterministic case IDs, next to locally created test-case needs, must set
+``deterministic_case_ids = true`` so both ID schemes agree.
+
+.. _tr_config_from_toml:
+
+tr_config_from_toml
+~~~~~~~~~~~~~~~~~~~
+.. versionadded:: 2.0.0
+
+Name of the declarative configuration file whose ``[test_reports]`` section is
+applied to the ``tr_*`` values above. Defaults to ``ubproject.toml``.
+
+With the default name, the file is searched for in your ``confdir`` and its
+parent directories, up to the repository root (the directory holding ``.git``).
+That is what lets the canonical layout work -- the shared ``ubproject.toml`` at
+the repository root, ``conf.py`` in ``docs/`` -- and lets a tool started
+anywhere below the root find exactly the same file by searching upward in the
+same way. Only the repository root bounds the search: a ``pyproject.toml`` on
+the way up does not, so a ``docs/`` directory with its own ``pyproject.toml``
+and the documentation of a workspace member in a monorepo
+(``packages/<name>/docs/conf.py``) both find the file at the root. A missing
+default file is not an error; ``sphinx-build -v`` reports where the search
+ended.
+
+Set to any other value to name a file explicitly; it is resolved against the
+``confdir``, is not searched for, and a warning of type
+``test_reports.missing_config`` is emitted if it does not exist -- the build
+then runs on the ``conf.py`` configuration. Set to ``None`` to switch
+declarative configuration off entirely.
+
+.. code-block:: python
+
+   tr_config_from_toml = "../ubproject.toml"   # explicit path
+   tr_config_from_toml = None                  # disable

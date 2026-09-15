@@ -24,6 +24,14 @@ coverage:
         flags: [codelinks]
         target: auto
         threshold: 0.5%
+      # sphinx-test-reports, uploaded by the same cell with `flags: reports`, from its own
+      # `--cov-report=xml:reports.xml`. `target: auto` for the third time and the same
+      # reason: this package arrived with an import and its number has never been measured
+      # here
+      reports:
+        flags: [reports]
+        target: auto
+        threshold: 0.5%
     patch:
       default:
         target: 67%

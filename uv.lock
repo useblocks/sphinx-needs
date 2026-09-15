@@ -21,6 +21,7 @@ members = [
     "sphinx-needs-testkit",
     "sphinx-needs-workspace",
     "sphinx-needs-workspace-tools",
+    "sphinx-test-reports",
 ]
 
 [[package]]
@@ -2928,6 +2929,7 @@ dependencies = [
     { name = "sphinx-mounts" },
     { name = "sphinx-needs" },
     { name = "sphinx-needs-workspace-tools" },
+    { name = "sphinx-test-reports" },
 ]
 
 [package.optional-dependencies]
@@ -2942,6 +2944,9 @@ docs-codelinks = [
 ]
 docs-mounts = [
     { name = "sphinx-mounts", extra = ["docs"] },
+]
+docs-reports = [
+    { name = "sphinx-test-reports", extra = ["docs"] },
 ]
 plotting = [
     { name = "sphinx-needs", extra = ["plotting"] },
@@ -2976,6 +2981,7 @@ benchmark = [
     { name = "pytest-xdist" },
     { name = "pyyaml" },
     { name = "responses" },
+    { name = "sphinx-design" },
     { name = "sphinx-needs-testkit" },
     { name = "sphinxcontrib-mermaid" },
     { name = "sphinxcontrib-plantuml" },
@@ -3002,6 +3008,7 @@ dev = [
     { name = "pytest-xdist" },
     { name = "pyyaml" },
     { name = "responses" },
+    { name = "sphinx-design" },
     { name = "sphinx-needs-testkit" },
     { name = "sphinxcontrib-mermaid" },
     { name = "sphinxcontrib-plantuml" },
@@ -3035,6 +3042,7 @@ test = [
     { name = "pytest-xdist" },
     { name = "pyyaml" },
     { name = "responses" },
+    { name = "sphinx-design" },
     { name = "sphinx-needs-testkit" },
     { name = "sphinxcontrib-mermaid" },
     { name = "sphinxcontrib-plantuml" },
@@ -3066,8 +3074,10 @@ requires-dist = [
     { name = "sphinx-needs", extras = ["theme-pds"], marker = "extra == 'theme-pds'", editable = "packages/sphinx-needs" },
     { name = "sphinx-needs", extras = ["theme-rtd"], marker = "extra == 'theme-rtd'", editable = "packages/sphinx-needs" },
     { name = "sphinx-needs-workspace-tools", virtual = "tools" },
+    { name = "sphinx-test-reports", editable = "packages/sphinx-test-reports" },
+    { name = "sphinx-test-reports", extras = ["docs"], marker = "extra == 'docs-reports'", editable = "packages/sphinx-test-reports" },
 ]
-provides-extras = ["plotting", "docs", "docs-mounts", "docs-codelinks", "codelinks-libclang", "theme-im", "theme-furo", "theme-pds", "theme-rtd"]
+provides-extras = ["plotting", "docs", "docs-mounts", "docs-codelinks", "docs-reports", "codelinks-libclang", "theme-im", "theme-furo", "theme-pds", "theme-rtd"]
 
 [package.metadata.requires-dev]
 benchmark = [
@@ -3085,6 +3095,7 @@ benchmark = [
     { name = "pytest-xdist", specifier = "~=3.0" },
     { name = "pyyaml", specifier = "~=6.0" },
     { name = "responses", specifier = ">=0.22,<0.27" },
+    { name = "sphinx-design", specifier = ">=0.6.1" },
     { name = "sphinx-needs-testkit", editable = "packages/sphinx-needs-testkit" },
     { name = "sphinxcontrib-mermaid", specifier = ">=1.0.0" },
     { name = "sphinxcontrib-plantuml", specifier = ">=0.30,<1" },
@@ -3108,6 +3119,7 @@ dev = [
     { name = "pytest-xdist", specifier = "~=3.0" },
     { name = "pyyaml", specifier = "~=6.0" },
     { name = "responses", specifier = ">=0.22,<0.27" },
+    { name = "sphinx-design", specifier = ">=0.6.1" },
     { name = "sphinx-needs-testkit", editable = "packages/sphinx-needs-testkit" },
     { name = "sphinxcontrib-mermaid", specifier = ">=1.0.0" },
     { name = "sphinxcontrib-plantuml", specifier = ">=0.30,<1" },
@@ -3132,6 +3144,7 @@ test = [
     { name = "pytest-xdist", specifier = "~=3.0" },
     { name = "pyyaml", specifier = "~=6.0" },
     { name = "responses", specifier = ">=0.22,<0.27" },
+    { name = "sphinx-design", specifier = ">=0.6.1" },
     { name = "sphinx-needs-testkit", editable = "packages/sphinx-needs-testkit" },
     { name = "sphinxcontrib-mermaid", specifier = ">=1.0.0" },
     { name = "sphinxcontrib-plantuml", specifier = ">=0.30,<1" },
@@ -3193,6 +3206,52 @@ sdist = { url = "https://files.pythonhosted.org/packages/e2/e4/fe443fdf8a13e2a53
 wheels = [
     { url = "https://files.pythonhosted.org/packages/86/ff/a6c6ab520fefd9f786b1c86480524929ed5a02077e4d2dc4a437a15a76ee/sphinx_syntax_example-0.2.0-py3-none-any.whl", hash = "sha256:e2ff213562e5c2148f2bd76a904dd90153329e83ef3883b2949bcdaaff9af4b4", size = 16036, upload-time = "2026-07-27T19:32:30.792Z" },
 ]
+
+[[package]]
+name = "sphinx-test-reports"
+version = "2.0.0"
+source = { editable = "packages/sphinx-test-reports" }
+dependencies = [
+    { name = "lxml" },
+]
+
+[package.optional-dependencies]
+docs = [
+    { name = "packaging" },
+    { name = "pillow" },
+    { name = "sphinx", version = "7.4.7", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-22-sphinx-needs-workspace-sphinx-7' or extra == 'group-22-sphinx-needs-workspace-typing' or (extra == 'group-22-sphinx-needs-workspace-sphinx-8' and extra == 'group-22-sphinx-needs-workspace-sphinx-9')" },
+    { name = "sphinx", version = "8.2.3", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.12' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (python_full_version < '3.12' and extra != 'group-22-sphinx-needs-workspace-sphinx-7' and extra != 'group-22-sphinx-needs-workspace-typing') or extra == 'group-22-sphinx-needs-workspace-sphinx-8' or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-9' and extra == 'group-22-sphinx-needs-workspace-typing')" },
+    { name = "sphinx", version = "9.1.0", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (python_full_version >= '3.12' and extra != 'group-22-sphinx-needs-workspace-sphinx-7' and extra != 'group-22-sphinx-needs-workspace-sphinx-8' and extra != 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-9' and extra == 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-sphinx-8') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-8' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (extra == 'group-22-sphinx-needs-workspace-sphinx-8' and extra == 'group-22-sphinx-needs-workspace-typing')" },
+    { name = "sphinx-design" },
+    { name = "sphinx-immaterial" },
+    { name = "sphinx-needs" },
+    { name = "sphinxcontrib-plantuml" },
+]
+pytest = [
+    { name = "pytest" },
+]
+sphinx = [
+    { name = "sphinx", version = "7.4.7", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-22-sphinx-needs-workspace-sphinx-7' or extra == 'group-22-sphinx-needs-workspace-typing' or (extra == 'group-22-sphinx-needs-workspace-sphinx-8' and extra == 'group-22-sphinx-needs-workspace-sphinx-9')" },
+    { name = "sphinx", version = "8.2.3", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.12' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (python_full_version < '3.12' and extra != 'group-22-sphinx-needs-workspace-sphinx-7' and extra != 'group-22-sphinx-needs-workspace-typing') or extra == 'group-22-sphinx-needs-workspace-sphinx-8' or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-9' and extra == 'group-22-sphinx-needs-workspace-typing')" },
+    { name = "sphinx", version = "9.1.0", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (python_full_version >= '3.12' and extra != 'group-22-sphinx-needs-workspace-sphinx-7' and extra != 'group-22-sphinx-needs-workspace-sphinx-8' and extra != 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-9' and extra == 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-sphinx-8') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-8' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (extra == 'group-22-sphinx-needs-workspace-sphinx-8' and extra == 'group-22-sphinx-needs-workspace-typing')" },
+    { name = "sphinx-needs" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "lxml" },
+    { name = "packaging", marker = "extra == 'docs'" },
+    { name = "pillow", marker = "extra == 'docs'" },
+    { name = "pytest", marker = "extra == 'pytest'", specifier = ">=7.0" },
+    { name = "sphinx", marker = "extra == 'docs'" },
+    { name = "sphinx", marker = "extra == 'sphinx'", specifier = ">=7.4" },
+    { name = "sphinx-design", marker = "extra == 'docs'" },
+    { name = "sphinx-immaterial", marker = "extra == 'docs'" },
+    { name = "sphinx-needs", marker = "extra == 'docs'", editable = "packages/sphinx-needs" },
+    { name = "sphinx-needs", marker = "extra == 'sphinx'", editable = "packages/sphinx-needs" },
+    { name = "sphinxcontrib-plantuml", marker = "extra == 'docs'" },
+]
+provides-extras = ["sphinx", "pytest", "docs"]
 
 [[package]]
 name = "sphinxcontrib-applehelp"

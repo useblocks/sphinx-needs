@@ -1,0 +1,9 @@
+<testsuites>
+  <testsuite name="empty_props_suite" tests="2" failures="0" errors="0" skipped="0" time="1.0">
+    <properties/>
+    <testcase classname="tests.core" name="test_with_empty_properties" time="0.5">
+      <properties></properties>
+    </testcase>
+    <testcase classname="tests.core" name="test_without_properties_element" time="0.5"/>
+  </testsuite>
+</testsuites>
