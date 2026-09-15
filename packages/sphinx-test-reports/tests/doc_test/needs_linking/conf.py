@@ -21,8 +21,6 @@ import sys
 import sphinx_needs
 from packaging.version import Version
 
-sys.path.insert(0, os.path.abspath("../../sphinxcontrib"))
-
 # -- General configuration ------------------------------------------------
 
 # If your documentation testreport a minimal Sphinx version, state it here.

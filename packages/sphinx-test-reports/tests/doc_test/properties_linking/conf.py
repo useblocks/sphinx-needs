@@ -4,8 +4,6 @@ import sys
 import sphinx_needs
 from packaging.version import Version
 
-sys.path.insert(0, os.path.abspath("../../sphinxcontrib"))
-
 extensions = ["sphinx_needs", "sphinxcontrib.test_reports"]
 
 needs_types = [

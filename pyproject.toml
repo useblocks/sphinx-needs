@@ -29,6 +29,7 @@ dependencies = [
   "sphinx-needs",
   "sphinx-mounts",
   "sphinx-codelinks",
+  "sphinx-test-reports",
   "sphinx-needs-workspace-tools",
 ]
 
@@ -46,6 +47,10 @@ docs = ["sphinx-needs[docs]"]
 docs-mounts = ["sphinx-mounts[docs]"]
 # and so does sphinx-codelinks
 docs-codelinks = ["sphinx-codelinks[docs]"]
+# and so does sphinx-test-reports. Of the three EXTENSION packages its docs build is the
+# only one that needs a renderer: 13 `needflow` directives across three pages. (sphinx-needs'
+# own docs render too, and far more.)
+docs-reports = ["sphinx-test-reports[docs]"]
 # sphinx-codelinks' optional preprocessor-aware C/C++ engine. CI drives it from the
 # `codelinks-libclang` GROUP below rather than through this line -- a group composes with
 # `--no-default-groups --group test --group sphinx-N` without changing the shape of the
@@ -61,6 +66,7 @@ theme-rtd = ["sphinx-needs[theme-rtd]"]
 sphinx-needs = { workspace = true }
 sphinx-mounts = { workspace = true }
 sphinx-codelinks = { workspace = true }
+sphinx-test-reports = { workspace = true }
 sphinx-needs-workspace-tools = { workspace = true }
 sphinx-needs-testkit = { workspace = true }
 
@@ -126,6 +132,10 @@ test = [
   "sphinxcontrib-mermaid>=1.0.0",    # sphinx-mounts: path-directive rendering
   # sphinx-codelinks: `tests/test_cmd.py` WRITES toml, and the stdlib's tomllib only reads
   "toml>=0.10.2",
+  # sphinx-test-reports: the three `custom_tr_*` test projects load `sphinx_design` as a
+  # Sphinx extension, so without it those three tests ERROR at setup in every cell. It was
+  # in that package's own `test` extra, which the root's shared `test` group replaces
+  "sphinx-design>=0.6.1",
   # sphinx-codelinks: `tests/data/sphinx` and `tests/data/needextend_demo` set
   # `html_theme = "furo"` and `test_src_trace.py` builds the first, so this is a test
   # dependency there rather than a docs one. It costs nothing in the lock -- it is already
@@ -240,6 +250,11 @@ markers = [
   "jstest: marks tests as JavaScript test (deselect with '-m \"not jstest\"')",
   "benchmark: marks tests as expensive benchmark test (deselect with '-m \"not benchmark\"')",
   "bazel: tests that require a Bazel installation on PATH (deselect with '-m \"not bazel\"')",
+  # sphinx-test-reports', relocated from that member's own `[tool.pytest.ini_options]`,
+  # which check (7) refuses here: 8 sites / 25 tests carry it, and without the entry every
+  # one of them raises `PytestUnknownMarkWarning`. The `toolchain-free` CI job is what
+  # deselects them, in an environment with no Sphinx at all
+  "toolchain: needs the documentation toolchain (Sphinx, sphinx-needs) installed (deselect with '-m \"not toolchain\"')",
 ]
 filterwarnings = [
   "ignore:.*removed in Python 3.14.*:DeprecationWarning",
@@ -260,6 +275,8 @@ src = [
   "packages/sphinx-mounts/src",
   "packages/sphinx-codelinks",
   "packages/sphinx-codelinks/src",
+  "packages/sphinx-test-reports",
+  "packages/sphinx-test-reports/src",
   "packages/sphinx-needs-testkit",
   "packages/sphinx-needs-testkit/src",
 ]
@@ -327,6 +344,7 @@ include = [
   # named it: sphinx_mounts is the only module under it
   "packages/sphinx-mounts/src",
   "packages/sphinx-codelinks/src",
+  "packages/sphinx-test-reports/src",
   "tools/src",
   ".github/scripts",
   "scripts",
@@ -612,6 +630,58 @@ executor = { type = "uv", frozen = true, no-group = "dev", group = [
 ] }
 env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-9" }
 
+# sphinx-test-reports. The short name is `reports`, not `test-reports`: the naming rule
+# takes the distribution name minus its `sphinx-` prefix, which here would collide with the
+# task verb and give `test-test-reports`.
+#
+# `pytest tests` NAMES its path, unlike the sphinx-needs tasks which pass `--ignore=`
+# instead -- and here that is not a style choice. Eight modules of this package's own SOURCE
+# are called `test_*.py` (`test_reports.py`, and `directives/test_case.py`, `test_common.py`,
+# `test_env.py`, `test_file.py`, `test_report.py`, `test_results.py`, `test_suite.py`), so a
+# bare `pytest` from the package directory collects `src/` and tries to import the extension
+# as a test module. The cost is the documented one: poe APPENDS trailing words, so
+# `poe test-reports tests/test_cli_convert.py` runs that file IN ADDITION to the suite
+# rather than instead of it (`-k` and `-m` behave as expected).
+#
+# `deps = ["fetch-plantuml"]` is NOT here and that is deliberate: no test document in this
+# suite carries a rendering directive, so nothing in it needs `java` or a jar (the dead
+# 8.6 MB `tests/doc_test/utils/plantuml.jar` left with the import). `docs-reports` below
+# does render, and declares it.
+[tool.poe.tasks.test-reports]
+help = "Run the sphinx-test-reports suite against the default (newest) sphinx; trailing args go to pytest"
+cmd = "pytest tests"
+cwd = "packages/sphinx-test-reports"
+
+[tool.poe.tasks.test-reports-sphinx7]
+help = "Run the sphinx-test-reports suite against sphinx 7.4 (set UV_PYTHON to pick the interpreter)"
+cmd = "pytest tests"
+cwd = "packages/sphinx-test-reports"
+executor = { type = "uv", frozen = true, no-group = "dev", group = [
+  "test",
+  "sphinx-7",
+] }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-7" }
+
+[tool.poe.tasks.test-reports-sphinx8]
+help = "Run the sphinx-test-reports suite against sphinx 8.2 (set UV_PYTHON to pick the interpreter)"
+cmd = "pytest tests"
+cwd = "packages/sphinx-test-reports"
+executor = { type = "uv", frozen = true, no-group = "dev", group = [
+  "test",
+  "sphinx-8",
+] }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-8" }
+
+[tool.poe.tasks.test-reports-sphinx9]
+help = "Run the sphinx-test-reports suite against sphinx 9.1 (python >= 3.12; set UV_PYTHON to pick the interpreter)"
+cmd = "pytest tests"
+cwd = "packages/sphinx-test-reports"
+executor = { type = "uv", frozen = true, no-group = "dev", group = [
+  "test",
+  "sphinx-9",
+] }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-9" }
+
 # BARE, not `typecheck-needs`: the naming rule suffixes a task that acts on ONE package,
 # and this one checks the whole repository -- both packages plus the tooling -- out of a
 # single `[tool.ty]` configuration and a single environment. Splitting it per package would
@@ -623,7 +693,7 @@ help = "Type-check every package with ty against the oldest supported sphinx (th
 # but it is NOT a fence on `src.include` above: ty intersects the two, so a stale `include`
 # makes this check zero files and exit 0. The canary step in ci.yaml's Lint job is what
 # guards that.
-cmd = "ty check packages/sphinx-needs/src/sphinx_needs packages/sphinx-mounts/src/sphinx_mounts packages/sphinx-codelinks/src/sphinx_codelinks tools/src .github/scripts scripts --python .venvs/typing"
+cmd = "ty check packages/sphinx-needs/src/sphinx_needs packages/sphinx-mounts/src/sphinx_mounts packages/sphinx-codelinks/src/sphinx_codelinks packages/sphinx-test-reports/src tools/src .github/scripts scripts --python .venvs/typing"
 executor = { type = "uv", frozen = true, no-group = "dev", group = ["typing"] }
 env = { UV_PROJECT_ENVIRONMENT = ".venvs/typing" }
 
@@ -741,6 +811,19 @@ help = "Import every sphinx-codelinks module from its built wheel, with dependen
 # `compat-requirements.txt`
 cmd = "python tools/src/sn_tools/import_check.py sphinx-codelinks --extra libclang"
 
+[tool.poe.tasks.build-reports]
+help = "Build the sphinx-test-reports sdist + wheel into dist/sphinx-test-reports"
+cmd = "uv build --package sphinx-test-reports --no-sources -o dist/sphinx-test-reports"
+
+[tool.poe.tasks.import-check-reports]
+help = "Import every sphinx-test-reports module from its built wheel, with dependencies as PUBLISHED"
+# `--extra sphinx`, because this is the first member in the workspace whose RUNTIME
+# dependencies are optional: the bare wheel's `Requires-Dist` is `lxml` alone, and
+# `sphinxcontrib.test_reports.test_reports` imports sphinx-needs. Without the extra the
+# walk fails 6 of its 25 modules. The release workflow's compat cell gets the same two
+# names from this member's `compat-requirements.txt`
+cmd = "python tools/src/sn_tools/import_check.py sphinx-test-reports --extra sphinx"
+
 # There is no `smoke-mounts`. `scripts/smoke_needs.py`'s reason for existing is that 88% of
 # the sphinx-needs wheel by file count is non-Python payload that no test run touches;
 # sphinx-mounts' wheel has none at all, so `import-check-mounts` plus the release
@@ -794,6 +877,29 @@ help = "Delete the built sphinx-codelinks HTML docs, then build them again from 
 sequence = [
   { script = "shutil:rmtree('packages/sphinx-codelinks/docs/_build/html', ignore_errors=True)" },
   { ref = "docs-codelinks" },
+]
+
+[tool.poe.tasks.docs-reports]
+help = "Build the sphinx-test-reports HTML docs"
+# These docs RENDER: 13 `needflow` directives across `filter.rst`, `functions.rst` and
+# `examples/index.rst`, so `java` and graphviz's `dot` both have to be on PATH and the jar
+# has to be there. That is unlike both SIBLING extensions, whose docs draw nothing -- but
+# not unlike sphinx-needs' own docs, which carry 48 needflow directives and declare this
+# same dep. `docs/conf.py` resolves it
+# through its own copy of the three-route chain (PLANTUML_JAR, then vendor/plantuml/, then
+# a `plantuml` executable), the way `packages/sphinx-needs/docs/conf.py` does and for the
+# same reason: a docs build must not import a test-only member
+deps = ["fetch-plantuml"]
+cmd = "sphinx-build -nW --keep-going -b html docs docs/_build/html -T"
+cwd = "packages/sphinx-test-reports"
+executor = { type = "uv", frozen = true, no-group = "dev", extra = "docs-reports" }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/docs-reports" }
+
+[tool.poe.tasks.docs-reports-clean]
+help = "Delete the built sphinx-test-reports HTML docs, then build them again from scratch"
+sequence = [
+  { script = "shutil:rmtree('packages/sphinx-test-reports/docs/_build/html', ignore_errors=True)" },
+  { ref = "docs-reports" },
 ]
 
 [tool.poe.tasks.docs-needs-clean]

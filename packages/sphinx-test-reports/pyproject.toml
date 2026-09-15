@@ -1,7 +1,3 @@
-[build-system]
-requires = ["flit_core >=3.4,<4"]
-build-backend = "flit_core.buildapi"
-
 [project]
 name = "sphinx-test-reports"
 version = "2.0.0"
@@ -22,7 +18,12 @@ classifiers = [
   "Topic :: Documentation",
 ]
 keywords = ["sphinx", "documentation", "test-reports"]
-requires-python = ">=3.11"
+# EQUAL to the workspace root's `requires-python`, deliberately: `check_workspace.py`
+# check (3) compares the two strings for EQUALITY, so the `,<4` is not cosmetic -- uv
+# resolves one lock against the root, and a member out of step with it still locks, builds
+# and publishes; the gap shows up only as an install failure for a user on an interpreter
+# inside it. This package declared a bare `>=3.11` before the import.
+requires-python = ">=3.11,<4"
 dependencies = ["lxml"]
 
 [project.optional-dependencies]
@@ -31,166 +32,68 @@ dependencies = ["lxml"]
 # dependency; the lazy
 # `setup` in `__init__.py` enforces these floors when the extension is loaded,
 # since an extra is opt-in and pip never sees them otherwise.
-sphinx = ["sphinx>=7.4", "sphinx-needs>=6.0.1"]
+#
+# TIGHT tracking on the sibling, not a compatibility range: sphinx-needs is a member of
+# this workspace, and `check_workspace.py` check (4) requires
+# `>=<the sibling's current version>,<<its next major>` on every intra-workspace edge --
+# including one declared in an extra. uv never validates a specifier it resolves through
+# `workspace = true` (uv#9811), so the floor is the only statement of what was actually
+# tested, and `propagate_floors.py` moves it at each sphinx-needs release. The published
+# 2.0.0 said `>=6.0.1`; narrowing it is what the import costs, and the changelog says so.
+sphinx = ["sphinx>=7.4", "sphinx-needs>=8.5.0,<9"]
 # The pytest plugin (sphinxcontrib.test_reports.pytest_plugin); pytest is not
 # a dependency of the extension or the converter. 7.0 is where everything the
 # plugin uses exists (pytest.Config/Item/Mark, Config.stash,
 # issue_config_time_warning). pytest before 7.3.2 does not run on Python 3.12
-# at all -- that floor is pytest's own, not this one's; the nox session
-# plugin_floor runs the plugin's tests on the oldest pytest of each Python.
+# at all -- that floor is pytest's own, not this one's; the `toolchain-free` CI job runs
+# the plugin's tests with no documentation toolchain installed at all.
 pytest = ["pytest>=7.0"]
-test = [
-  "beautifulsoup4",
-  "nox>=2025.2.9",
-  "packaging",
-  "pytest-xdist",
-  "pytest>=7.0",
-  "pytest-cov",
-  "sphinx>=7.4",
-  "sphinx-needs>=6.0.1",
-  "sphinx_design",
-  "sphinxcontrib-plantuml",
-]
+# There is no `test` extra any more: the workspace's test tooling is the ROOT's shared
+# `test` dependency group, which every cell and the release compat cell install, and
+# `check_workspace.py` check (7) refuses a `[dependency-groups]` table here. `nox` and
+# `packaging` went with the noxfile the CI matrix replaced.
+#
+# An EXTRA rather than a group for the docs, because Read the Docs installs extras and
+# cannot install PEP 735 groups: its `python.install` block takes `extra_requirements`.
+# The root re-exports it as `docs-reports` -- uv resolves `--extra` against the project,
+# which is the workspace root, so an extra that lives only here is not reachable by name.
 docs = [
   "packaging",
   "pillow",
   "sphinx-design",
   "sphinx-immaterial",
-  "sphinx-needs>=6",
+  "sphinx-needs>=8.5.0,<9",
   "sphinx",
   "sphinxcontrib-plantuml",
 ]
 
-[dependency-groups]
-dev = [
-  "pre-commit~=3.0",
-  "nox>=2025.2.9",
-  "mypy>=1.16.0",
-  # Stubs for docutils, which ships none: without them every directive
-  # option spec is untyped and `test_reports.py` cannot be checked.
-  "types-docutils>=0.21",
-  # pytest: mypy type-checks the pytest plugin, so `uv sync --group dev` (the
-  # CI mypy job) has to be able to follow its imports.
-  "pytest>=7.0",
-]
+[project.urls]
+Homepage = "https://sphinx-test-reports.readthedocs.io/en/latest/"
+Documentation = "https://sphinx-test-reports.readthedocs.io/en/latest/"
+Repository = "https://github.com/useblocks/sphinx-needs"
+Issues = "https://github.com/useblocks/sphinx-needs/issues"
+Changelog = "https://github.com/useblocks/sphinx-needs/blob/master/packages/sphinx-test-reports/docs/changelog.rst"
 
 [project.scripts]
 test-reports = "sphinxcontrib.test_reports.cli:main"
 
+[build-system]
+requires = ["flit_core >=3.4,<4"]
+build-backend = "flit_core.buildapi"
+
+# The import name is NOT the distribution name with `-` -> `_`: this package installs into
+# the `sphinxcontrib` PEP 420 namespace, which is why this table exists at all.
+# `check_workspace.Member.module` and `tools/src/sn_tools/import_check.py` both read it;
+# `release.yaml` is taught to read it too, because its `${DIST//-/_}` derivation would
+# otherwise name a module that does not exist. See this package's `AGENTS.md` for what the
+# DOTTED name costs today -- check (5) prints no line for this member.
 [tool.flit.module]
 name = "sphinxcontrib.test_reports"
 
-[tool.pytest.ini_options]
-markers = [
-  "toolchain: needs the documentation toolchain (Sphinx, sphinx-needs) installed; deselected by the toolchain_free nox session",
-]
-
-[project.urls]
-Homepage = "https://github.com/useblocks/sphinx-test-reports"
-Repository = "https://github.com/useblocks/sphinx-test-reports.git"
-Documentation = "https://sphinx-test-reports.readthedocs.io/en/latest/"
-download-url = "http://pypi.python.org/pypi/sphinx-test-reports"
-
-[tool.ruff.lint]
-# TODO enable and fix commented rules
-extend-select = [
-  "B",    # flake8-bugbear
-  "C4",   # flake8-comprehensions
-  "FURB", # refurb (modernising code)
-  "I",    # isort
-  "ICN",  # flake8-import-conventions
-  "ISC",  # flake8-implicit-str-concat
-  "N",    # pep8-naming
-  "PERF", # perflint (performance anti-patterns)
-  "PGH",  # pygrep-hooks
-  "PIE",  # flake8-pie
-  # "PL",   # pylint
-  # "PTH",  # flake8-use-pathlib
-  # "RUF",  # Ruff-specific rules
-  # "SIM",  # flake8-simplify
-  "SLF", # private member access
-  # "UP",   # pyupgrade
-  # "T20",  # flake8-print
-]
-
-[tool.mypy]
-packages = ["sphinxcontrib.test_reports"]
-strict = true
-show_error_codes = true
-# TODO: reactivate below files and fix issues in future PRs (#114)
-exclude = [
-  "^sphinxcontrib/test_reports/__init__\\.py$",
-  "^sphinxcontrib/test_reports/config\\.py$",
-  "^sphinxcontrib/test_reports/directives/__init__\\.py$",
-  "^sphinxcontrib/test_reports/directives/test_case\\.py$",
-  "^sphinxcontrib/test_reports/directives/test_common\\.py$",
-  "^sphinxcontrib/test_reports/directives/test_env\\.py$",
-  "^sphinxcontrib/test_reports/directives/test_file\\.py$",
-  "^sphinxcontrib/test_reports/directives/test_report\\.py$",
-  "^sphinxcontrib/test_reports/directives/test_results\\.py$",
-  "^sphinxcontrib/test_reports/directives/test_suite\\.py$",
-  "^sphinxcontrib/test_reports/environment\\.py$",
-  "^sphinxcontrib/test_reports/exceptions\\.py$",
-  "^sphinxcontrib/test_reports/functions",
-  "^sphinxcontrib/test_reports/jsonparser\\.py$",
-  "^sphinxcontrib/test_reports/junitparser\\.py$",
-]
-# Disallow dynamic typing
-disallow_any_unimported = true
-disallow_any_expr = true
-disallow_any_decorated = true
-disallow_any_generics = true
-disallow_any_explicit = true
-disallow_subclassing_any = true
-
-# Disallow untyped definitions and calls
-disallow_untyped_calls = true
-disallow_untyped_defs = true
-# disallow_incomplete_defs = true
-# check_untyped_defs = true
-# disallow_untyped_decorators = true
-
-
-# # None and optional handling
-# no_implicit_optional = true
-
-# # Configuring warnings
-# warn_unused_ignores = true
-# warn_no_return = true
-# warn_return_any = true
-# warn_redundant_casts = true
-
-# # Misc things
-# strict_equality = true
-
-# # Config file
-# warn_unused_configs = true
-
-# The two modules that talk to something untyped by construction:
-# `test_reports.py` to the sphinx-needs API (which ships no py.typed) and to
-# `tr_*` config values read off the Sphinx config with `getattr`; `cli.py` to
-# `argparse.Namespace`, whose attributes are `Any`. Nearly every expression in
-# them is therefore `Any`, which `disallow_any_expr` cannot accept and no
-# amount of local annotation fixes. The flag also has no counterpart in `ty`,
-# which the sphinx-needs workspace uses, so relaxing it here costs nothing
-# there. Every other strict check still applies -- annotations and real type
-# errors are caught, which the `exclude` entries this replaces prevented.
-[[tool.mypy.overrides]]
-module = [
-  "sphinxcontrib.test_reports.test_reports",
-  "sphinxcontrib.test_reports.cli",
-]
-disallow_any_expr = false
-
-# The pytest plugin decorates arbitrary test functions (Callable[..., object],
-# whose `...` is an Any) and reads pytest's Any-typed config API; everything
-# else stays strict. Both module names: `packages` above yields the full one,
-# a file passed on the command line loses the `sphinxcontrib` prefix because
-# that directory is a namespace package.
-[[tool.mypy.overrides]]
-module = [
-  "sphinxcontrib.test_reports.pytest_plugin",
-  "test_reports.pytest_plugin",
-]
-disallow_any_expr = false
-disallow_any_explicit = false
+# Deliberately NO `[tool.flit.sdist]`: this distribution's sdist already ships the module
+# and nothing else, which is byte-for-byte the shape published on PyPI.
+# Everything else -- ruff, ty, pytest and the dependency groups -- is the ROOT's, and
+# `check_workspace.py` check (7) refuses those tables here: a member `[tool.ruff]` does not
+# extend the root's configuration, it replaces it. The `toolchain` pytest marker this
+# package declared moved to the root's `markers` list with the rest of the pytest
+# configuration; `[tool.mypy]` went because the workspace type-checks with ty.
