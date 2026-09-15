@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10.0.1
+      - uses: astral-sh/setup-uv@v10.1.0
         with:
           enable-cache: true
           # the pinned interpreter (root `.python-version`) is not on the runner image, so
@@ -254,7 +254,7 @@ jobs:
             sphinx-group: "sphinx-9"
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10.0.1
+      - uses: astral-sh/setup-uv@v10.1.0
         with:
           enable-cache: true
           cache-suffix: ${{ matrix.python-version }}-${{ matrix.sphinx-group }}
@@ -285,7 +285,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10.0.1
+      - uses: astral-sh/setup-uv@v10.1.0
         with:
           enable-cache: true
           # 3.12+: on 3.11 the lock resolves sphinx 8.2, and this job wants the newest sphinx
@@ -383,7 +383,7 @@ jobs:
         # history, so the default shallow checkout is enough -- but it does need `.git`,
         # so this job must not be given `fetch-depth: 0`-free surprises like a
         # `sparse-checkout` that omits it
-      - uses: astral-sh/setup-uv@v10.0.1
+      - uses: astral-sh/setup-uv@v10.1.0
         with:
           enable-cache: true
           cache-suffix: docs-codelinks
@@ -425,7 +425,7 @@ jobs:
     # precisely the change that breaks a docs build.
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10.0.1
+      - uses: astral-sh/setup-uv@v10.1.0
         with:
           enable-cache: true
           cache-suffix: docs-reports
@@ -483,7 +483,7 @@ jobs:
     # surface of its own.
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10.0.1
+      - uses: astral-sh/setup-uv@v10.1.0
         with:
           enable-cache: true
           cache-suffix: toolchain-free
@@ -529,7 +529,7 @@ jobs:
       - uses: actions/checkout@v7
       - name: Install graphviz
         run: sudo apt-get install graphviz
-      - uses: astral-sh/setup-uv@v10.0.1
+      - uses: astral-sh/setup-uv@v10.1.0
         with:
           enable-cache: true
           cache-suffix: bazel
@@ -570,7 +570,7 @@ jobs:
       - uses: actions/checkout@v7
       - name: Install graphviz
         run: sudo apt-get install graphviz
-      - uses: astral-sh/setup-uv@v10.0.1
+      - uses: astral-sh/setup-uv@v10.1.0
         with:
           enable-cache: true
           # the declared `requires-python` floor: the throwaway environment the wheel is
