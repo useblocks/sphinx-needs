@@ -5,6 +5,8 @@ from subprocess import STDOUT, check_output
 import pytest
 import sphinx
 
+from sphinx_needs_testkit import sphinx_build_command
+
 sphinx_version = int(
     sphinx.__version__.split(".")[0] + sphinx.__version__.split(".")[1]
 )
@@ -117,7 +119,7 @@ def test_doc_env_report_warning_build_html(test_app):
     app = test_app
     output = str(
         check_output(
-            ["sphinx-build", "-a", "-E", "-b", "html", app.srcdir, app.outdir],
+            sphinx_build_command("-a", "-E", "-b", "html", app.srcdir, app.outdir),
             stderr=STDOUT,
             universal_newlines=True,
         )

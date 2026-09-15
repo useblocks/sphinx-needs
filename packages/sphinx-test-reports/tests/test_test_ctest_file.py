@@ -2,6 +2,8 @@ from pathlib import Path
 
 import pytest
 
+from sphinx_needs_testkit import sphinx_build_command
+
 
 @pytest.mark.parametrize(
     "test_app",
@@ -29,7 +31,7 @@ def test_test_ctest_file(test_app):
     out_dir = srcdir / "_build"
 
     out = subprocess.run(
-        ["sphinx-build", "-M", "html", srcdir, out_dir],
+        sphinx_build_command("-M", "html", srcdir, out_dir),
         capture_output=True,
         check=False,
     )

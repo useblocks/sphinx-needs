@@ -106,6 +106,16 @@ def test_runs():
     assert True
 """
 
+# `-p no:playwright` in the innermost session below. That session is started in process by
+# a test that is itself running under a pytest which has every installed plugin loaded, and
+# pytest-playwright -- the workspace's `js` group, which the default `dev` group includes --
+# keeps a module-global soft-assertion scope in its `pytest_runtest_call` wrapper. A session
+# nested inside that one dies with "nested soft assertion scopes are not supported". Every CI
+# cell syncs `--no-default-groups --group test --group sphinx-N`, where the plugin is absent,
+# so without this the suite is green in CI and red in a developer's default environment.
+#
+# It has to stay ONE line: `test_an_inner_session_that_fails_to_configure_leaves_it_intact`
+# derives its own fixture from this string by replacing `str(inner)]) == 0`.
 NESTED = """
 import pytest
 from sphinxcontrib.test_reports.pytest_plugin import add_test_properties
@@ -121,7 +131,7 @@ def test_inner_session(tmp_path):
     inner = tmp_path / "test_inner.py"
     inner.write_text("def test_inner():\\n    assert True\\n")
     (tmp_path / "pytest.ini").write_text("[pytest]\\n")
-    assert pytest.main(["-q", "-p", "no:cacheprovider", "-p", "PLUGIN", str(inner)]) == 0
+    assert pytest.main(["-q", "-p", "no:cacheprovider", "-p", "no:playwright", "-p", "PLUGIN", str(inner)]) == 0
 
 
 @add_test_properties(partially_verifies=["REQ_2"])

@@ -3,6 +3,8 @@ from pathlib import Path
 import pytest
 from bs4 import BeautifulSoup
 
+from sphinx_needs_testkit import sphinx_build_command
+
 
 @pytest.mark.parametrize(
     "test_app",
@@ -30,7 +32,7 @@ def test_test_file_needs_extra_options_no_warning(test_app):
     out_dir = srcdir / "_build"
 
     out = subprocess.run(
-        ["sphinx-build", "-M", "html", srcdir, out_dir],
+        sphinx_build_command("-M", "html", srcdir, out_dir),
         capture_output=True,
         check=False,
     )
