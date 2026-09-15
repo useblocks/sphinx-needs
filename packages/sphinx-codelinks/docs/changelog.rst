@@ -49,6 +49,11 @@ New and Improved
   whose ``sphinxcontrib-typer`` imported a ``typer.rich_utils`` name that 0.26.8 removed;
   the ``docs`` extra now requires ``sphinxcontrib-typer`` 0.9.1 or newer, which tracks
   the new typer and declares its own floor on it.
+- ⬆️ ``click`` is no longer a dependency. The line existed only to cap it below 8.2, working
+  around click 8.2.0 printing an empty error when ``codelinks`` ran with no arguments -- an
+  incompatibility in the typer of the time. This package never imported click itself, and
+  the typer it requires no longer depends on click at all, so the cap was pinning a package
+  nothing used; dropping it removes click from the environment.
 
 - 🐛 ``sphinx_codelinks.__version__`` reported ``"0.1.0"``.
 

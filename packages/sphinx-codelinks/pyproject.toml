@@ -19,7 +19,6 @@ dependencies = [
   "comment-parser>=1.2.4",
   "ignore-python>=0.3.3",
   "typer>=0.16.0",
-  "click < 8.2",           # click 8.2.* produces empty errors if no args are given
   "jsonschema",
   "sphinx>=7.4,<10",
   # TIGHT tracking, not a compatibility range: sphinx-needs is a sibling in the workspace
