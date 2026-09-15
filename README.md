@@ -10,6 +10,8 @@ definitions and the CI workflows.
 |---|---|---|
 | [`packages/sphinx-needs`](packages/sphinx-needs) | [`sphinx-needs`](https://pypi.org/project/sphinx-needs/) | the Sphinx extension for managing requirements and specifications — [documentation](https://sphinx-needs.readthedocs.io), [README](packages/sphinx-needs/README.rst) |
 | [`packages/sphinx-mounts`](packages/sphinx-mounts) | [`sphinx-mounts`](https://pypi.org/project/sphinx-mounts/) | the Sphinx extension that mounts external source trees into a build without copying or symlinking — [documentation](https://sphinx-mounts.useblocks.com), [README](packages/sphinx-mounts/README.md) |
+| [`packages/sphinx-codelinks`](packages/sphinx-codelinks) | [`sphinx-codelinks`](https://pypi.org/project/sphinx-codelinks/) | fast source-code traceability for sphinx-needs — it scans source files for comment markers, turns them into needs, and links documentation to exact source lines — [documentation](https://codelinks.useblocks.com), [README](packages/sphinx-codelinks/README.md) |
+| [`packages/sphinx-test-reports`](packages/sphinx-test-reports) | [`sphinx-test-reports`](https://pypi.org/project/sphinx-test-reports/) | test results as needs: JUnit/ctest/googletest XML and tox-envreport JSON become needs in a build, and a `test-reports` command turns the same reports into a `needs.json` without running Sphinx — [documentation](https://sphinx-test-reports.readthedocs.io), [README](packages/sphinx-test-reports/README.rst) |
 
 ## Why one repository, and why still several packages
 

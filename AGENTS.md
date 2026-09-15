@@ -24,6 +24,7 @@ the shim.
 | its documentation | `packages/sphinx-needs/docs/` (changelog: `docs/changelog.rst`) |
 | sphinx-mounts' behaviour, tests, documentation | `packages/sphinx-mounts/{src/sphinx_mounts,tests,docs}/` — start at [`packages/sphinx-mounts/AGENTS.md`](packages/sphinx-mounts/AGENTS.md) |
 | sphinx-codelinks' behaviour, tests, documentation | `packages/sphinx-codelinks/{src/sphinx_codelinks,tests,docs}/` — start at [`packages/sphinx-codelinks/AGENTS.md`](packages/sphinx-codelinks/AGENTS.md) |
+| sphinx-test-reports' behaviour, tests, documentation | `packages/sphinx-test-reports/{src/sphinxcontrib/test_reports,tests,docs}/` — start at [`packages/sphinx-test-reports/AGENTS.md`](packages/sphinx-test-reports/AGENTS.md) |
 | the fixtures, helpers and renderer resolution three suites share | `packages/sphinx-needs-testkit/` — a member this repository never publishes, installed through the root's `test` group and loaded by each suite's `tests/conftest.py` as a pytest plugin |
 | the two conformance corpora | `packages/sphinx-needs/tests/conformance/` (needflow) and `packages/sphinx-mounts/tests/fixtures/variant_condition_conformance.toml` (variant conditions) — both shared byte-for-byte with ubCode, which is their repository of record; do not reformat either (`.gitattributes` plus the yamlfmt and taplo excludes protect them) |
 | a package's metadata, dependencies and extras | `packages/<pkg>/pyproject.toml` |
@@ -35,7 +36,7 @@ the shim.
 | the PlantUML renderer | `vendor/plantuml/` — `pin.toml` (version + sha256, the one place either is written), the committed `plantuml-<version>.jar` it names, and a `README.md`. `uv run poe verify-plantuml` fences the two against each other |
 | CI | `.github/workflows/`, and `.github/scripts/` for the three checks that must run *inside* a CI environment |
 | the docker image | `docker/` — a repository-level deliverable, like the workflows |
-| Read the Docs | sphinx-needs: `.readthedocs.yml`, and it stays at the root under that exact name — the configuration path applies to every version, so moving it makes older tags unbuildable. sphinx-mounts: `packages/sphinx-mounts/.readthedocs.yaml`, and sphinx-codelinks: `packages/sphinx-codelinks/.readthedocs.yaml`, each of which its own RTD project points at; every path inside those is relative to the REPOSITORY root, not to the file |
+| Read the Docs | sphinx-needs: `.readthedocs.yml`, and it stays at the root under that exact name — the configuration path applies to every version, so moving it makes older tags unbuildable. sphinx-mounts: `packages/sphinx-mounts/.readthedocs.yaml`, sphinx-codelinks: `packages/sphinx-codelinks/.readthedocs.yaml`, and sphinx-test-reports: `packages/sphinx-test-reports/.readthedocs.yaml`, each of which its own RTD project points at; every path inside those is relative to the REPOSITORY root, not to the file |
 
 **`tools/` is the workspace's tooling — a virtual member, never released, whose manifest
 declares the tooling's dependencies; `.github/scripts/` keeps only the checks that must
@@ -77,12 +78,14 @@ uv run poe                            # list every task with its help
 uv run poe test-needs -k <expr>       # trailing words are appended to the task's command
 uv run poe test-mounts                # the sphinx-mounts suite (bazel tests deselected)
 uv run poe test-codelinks             # the sphinx-codelinks suite (adds the libclang group)
+uv run poe test-reports               # the sphinx-test-reports suite
 uv run poe lint                       # every prek hook over the whole tree
 uv run poe typecheck                  # ty over both packages, against the oldest supported sphinx
 uv run poe typecheck-js-needs         # tsc over the vendored needstable.js (needs node)
 uv run poe docs-needs                 # the furo docs build
 uv run poe docs-mounts                # the sphinx-mounts docs build
 uv run poe docs-codelinks             # the sphinx-codelinks docs build
+uv run poe docs-reports               # the sphinx-test-reports docs build (renders; needs java + dot)
 uv run poe smoke-needs                # build the wheel and test the built package
 uv run poe verify-plantuml            # the committed PlantUML jar is the one its pin names
 uv run poe fetch-plantuml             # download it -- a bump step; otherwise a hash check
@@ -146,6 +149,13 @@ neither the jar nor the pin — `vendor/` is outside the directory flit builds t
 — so a docs build out of the tarball takes the `PLANTUML_JAR` or `plantuml`-on-`PATH` route,
 and a packager who runs the suite does so from a repository snapshot, where the jar, the pin
 and the testkit all are. The sdist is ≈7.4 MB rather than 28.
+
+**sphinx-test-reports is the two cases at once**: its SUITE needs neither renderer (no test
+document carries a rendering directive, and the dead 8.6 MB jar its tests used to carry left
+with the import), while `docs-reports` DOES render — 13 `needflow` directives — so it needs
+`java` and `dot`, and its `.readthedocs.yaml` keeps `apt_packages` where both SIBLING
+extensions' have none. (sphinx-needs' own docs render too, and more: 48 needflow
+directives.)
 
 **sphinx-codelinks needs NEITHER renderer**: nothing in that package draws a diagram, its
 docs build installs no `apt_packages` and its CI cell asks for graphviz only because it
@@ -225,12 +235,13 @@ the rootdir, so the tasks carry `--ignore=performance` instead of naming `tests`
 the task's own command would be *added* to yours rather than replaced by it.)
 
 **A bare `pytest` at the root collects sphinx-needs' suite and the tooling's — not
-sphinx-mounts' and not sphinx-codelinks'.** Their `tests` directories are deliberately
-absent from `testpaths`: all three packages ship a `tests/__init__.py`, so under
+sphinx-mounts', not sphinx-codelinks' and not sphinx-test-reports'.** Their `tests` directories are deliberately
+absent from `testpaths`: all four packages ship a `tests/__init__.py`, so under
 `--import-mode=importlib` every `conftest.py` resolves to the module name `tests.conftest`
 and a rootdir-invoked pytest refuses the second outright — listing one there collects
-*nothing*, rather than more. Run those suites through `poe test-mounts` and
-`poe test-codelinks` (which cd into the package), the way CI does with an explicit path.
+*nothing*, rather than more. Run those suites through `poe test-mounts`,
+`poe test-codelinks` and `poe test-reports` (which cd into the package), the way CI does
+with an explicit path.
 The Lint job's "Check a bare root pytest still collects" step is what keeps the list
 honest.
 
@@ -385,12 +396,14 @@ history (`git blame` follows renames on its own and needs nothing), and
 the sphinx-mounts import landed as.
 
 **The imported packages' files are the opposite case and need no `--follow`.**
-sphinx-mounts' and sphinx-codelinks' histories were imported in 2026-09 through
-`git filter-repo`, which rewrote the paths in every historical commit, so from this
-repository's point of view those files were always at `packages/sphinx-mounts/` and
-`packages/sphinx-codelinks/` — a plain `git log <path>` (and GitHub's per-file *History*
+sphinx-mounts', sphinx-codelinks' and sphinx-test-reports' histories were imported in
+2026-09 through `git filter-repo`, which rewrote the paths in every historical commit, so
+from this repository's point of view those files were always at `packages/sphinx-mounts/`,
+`packages/sphinx-codelinks/` and `packages/sphinx-test-reports/` — a plain `git log <path>` (and GitHub's per-file *History*
 button) shows the whole thing. `packages/<dist>/design/import-commit-map.txt` maps every
-hash the old repository had to its hash here, for both of them.
+hash the old repository had to its hash here, for all three of them. sphinx-test-reports' map
+also records the one way its import is NOT byte-for-byte faithful: three PlantUML jar blobs
+were stripped from its history.
 
 To rebase a pull request opened before the move, use
 `git rebase -X find-renames=15% origin/master`, and never `git rebase --apply`, `git am`
@@ -409,7 +422,7 @@ move's pull request.
 
 Every issue and pull request carries one or more `pkg:` labels naming what it concerns:
 `pkg: <package>` (today `pkg: sphinx-needs`, `pkg: sphinx-mounts`,
-`pkg: sphinx-codelinks` and `pkg: sphinx-needs-testkit`) or `pkg: workspace` for the repository
+`pkg: sphinx-codelinks`, `pkg: sphinx-test-reports` and `pkg: sphinx-needs-testkit`) or `pkg: workspace` for the repository
 itself — workflows, CI, release, docker, tooling, the workspace root. Pull requests get
 theirs automatically from the paths they touch (`.github/labeler.yml`); the issue forms
 set it from their "Package" dropdown (`.github/issue-labeler.yml`). **An issue created

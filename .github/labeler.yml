@@ -15,6 +15,9 @@
 'pkg: sphinx-codelinks':
   - changed-files:
       - any-glob-to-any-file: 'packages/sphinx-codelinks/**'
+'pkg: sphinx-test-reports':
+  - changed-files:
+      - any-glob-to-any-file: 'packages/sphinx-test-reports/**'
 'pkg: sphinx-needs-testkit':
   - changed-files:
       - any-glob-to-any-file: 'packages/sphinx-needs-testkit/**'
