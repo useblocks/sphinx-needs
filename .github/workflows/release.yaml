@@ -49,7 +49,7 @@ jobs:
           # for the default depth-1 -- 14 seconds on a workflow whose compat cell takes
           # minutes, and the alternative is a check that cannot run
           fetch-depth: 0
-      - uses: astral-sh/setup-uv@v10.0.1
+      - uses: astral-sh/setup-uv@v10.1.0
       # `--no-project`: this fence reads the manifests, so it must not need an environment
       # built from them. It is also the only thing between a mistyped tag and an
       # unprotected environment, so it runs before anything else is built.
@@ -73,7 +73,7 @@ jobs:
         # skip without `dot`. This mirrors the core test cells in ci.yaml; java, which the
         # vendored plantuml jar needs, is already on the ubuntu runner image
         run: sudo apt-get install graphviz
-      - uses: astral-sh/setup-uv@v10.0.1
+      - uses: astral-sh/setup-uv@v10.1.0
         with:
           # no `enable-cache`: setup-uv's own default is `auto`, which caches on
           # GitHub-hosted runners EXCEPT for release, tag push and a few other events --
@@ -222,7 +222,7 @@ jobs:
         with:
           name: dist
           path: dist/
-      - uses: astral-sh/setup-uv@v10.0.1
+      - uses: astral-sh/setup-uv@v10.1.0
       # `always`, not `automatic`: `automatic` falls back to unauthenticated, and even a
       # dry run then exits 0 -- so a missing OIDC token would look like success.
       # `--no-attestations` only suppresses uploading attestation FILES that already sit
