@@ -10,7 +10,7 @@ import json
 import operator
 import os
 from functools import reduce
-from typing import Any, Dict, List
+from typing import Any
 
 from sphinxcontrib.test_reports.results import normalize_result
 
@@ -49,7 +49,7 @@ class JsonParser:
         # But to be compatible with the API, we need to return True
         return True
 
-    def parse(self) -> List[Dict[str, Any]]:
+    def parse(self) -> list[dict[str, Any]]:
         """
         Creates a common python list of object, no matter what information are
         supported by the parsed json file for test results junit().
@@ -57,7 +57,7 @@ class JsonParser:
         :return: list of test suites as dictionaries
         """
 
-        def parse_testcase(json_dict) -> Dict[str, Any]:
+        def parse_testcase(json_dict) -> dict[str, Any]:
             tc_mapping = self.json_mapping.get("testcase")
             tc_dict = {
                 k: dict_get(json_dict, v[0], v[1]) for k, v in tc_mapping.items()
@@ -72,7 +72,7 @@ class JsonParser:
                 tc_dict["result"] = normalize_result(result)
             return tc_dict
 
-        def parse_testsuite(json_dict) -> Dict[str, Any]:
+        def parse_testsuite(json_dict) -> dict[str, Any]:
             ts_mapping = self.json_mapping.get("testsuite")
             ts_dict = {
                 k: dict_get(json_dict, v[0], v[1])

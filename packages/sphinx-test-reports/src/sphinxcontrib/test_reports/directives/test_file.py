@@ -1,11 +1,12 @@
 import hashlib
+from typing import Any
 
 from docutils import nodes
 from docutils.parsers.rst import directives
-from sphinx_needs.api import add_need
-from sphinx_needs.utils import add_doc
 
 import sphinxcontrib.test_reports.directives.test_suite
+from sphinx_needs.api import add_need
+from sphinx_needs.utils import add_doc
 from sphinxcontrib.test_reports.directives.test_common import TestCommonDirective
 from sphinxcontrib.test_reports.exceptions import TestReportIncompleteConfigurationError
 
@@ -49,7 +50,7 @@ class TestFileDirective(TestCommonDirective):
             content = nodes.error()
             para = nodes.paragraph()
             text_string = f"Test file not found: {self.test_file}"
-            text = nodes.Text(text_string, text_string)
+            text = nodes.Text(text_string)
             para += text
             content.append(para)
             main_section.append(content)
@@ -65,6 +66,13 @@ class TestFileDirective(TestCommonDirective):
 
         main_section = []
         docname = self.state.document.settings.env.docname
+        # The fields whose NAMES come from configuration -- the renameable report-path
+        # field and the configured extra options -- in one mapping. `dict[str, Any]`
+        # because `add_need` types each keyword parameter separately.
+        report_fields: dict[str, Any] = {
+            self.report_file_field(): self.test_file_given,
+            **self.extra_options,
+        }
         main_section += add_need(
             self.app,
             self.state,
@@ -84,20 +92,16 @@ class TestFileDirective(TestCommonDirective):
             skipped=skipped,
             failed=failed,
             errors=errors,
-            **{self.report_file_field(): self.test_file_given},
-            **self.extra_options,
+            **report_fields,
         )
 
-        if (
-            "auto_cases" in self.options.keys()
-            and "auto_suites" not in self.options.keys()
-        ):
+        if "auto_cases" in self.options and "auto_suites" not in self.options:
             raise TestReportIncompleteConfigurationError(
                 "option auto_cases must be used together with "
                 "auto_suites for test-file directives."
             )
 
-        if "auto_suites" in self.options.keys():
+        if "auto_suites" in self.options:
             for suite in self.results:
                 suite_id = self.test_id
                 suite_id += (

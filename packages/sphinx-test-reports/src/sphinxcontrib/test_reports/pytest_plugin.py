@@ -46,8 +46,9 @@ is only ever loaded by pytest.
 from __future__ import annotations
 
 import re
+from collections.abc import Callable, Generator, Mapping, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Callable, Generator, Mapping, Sequence
+from typing import TYPE_CHECKING
 
 import pluggy
 import pytest

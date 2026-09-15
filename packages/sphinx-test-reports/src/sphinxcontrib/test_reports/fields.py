@@ -16,7 +16,7 @@ declared whether or not the cases at hand happen to populate it, the way
 sphinx-needs declares every registered field.
 """
 
-from typing import Iterable, Mapping
+from collections.abc import Iterable, Mapping
 
 from sphinxcontrib.test_reports.results import CANONICAL_RESULTS
 

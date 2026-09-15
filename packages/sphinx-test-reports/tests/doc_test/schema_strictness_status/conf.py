@@ -1,6 +1,3 @@
-import os
-import sys
-
 # -- General configuration ------------------------------------------------
 
 extensions = ["sphinx_needs", "sphinxcontrib.test_reports"]

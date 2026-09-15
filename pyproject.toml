@@ -372,6 +372,15 @@ allowed-unresolved-imports = [
   # sphinx-codelinks' optional libclang engine: `clang.cindex` ships no py.typed and sits
   # behind the `libclang` extra at runtime, so the typing floor deliberately lacks it
   "clang.**",
+  # sphinx-test-reports' pytest plugin. The `typing` environment deliberately has no
+  # pytest -- it pins the oldest supported sphinx and docutils and nothing else it does
+  # not need -- so the plugin's own imports cannot resolve there. The plugin IS type-checked
+  # otherwise; what is unresolved is the runner it plugs into, which is exactly the shape
+  # `clang.**` above has. `_pytest.junitxml` is pytest's private junitxml writer, which the
+  # plugin reaches for behind a `TYPE_CHECKING` guard and a try/except
+  "pytest",
+  "pluggy",
+  "_pytest.**",
   "matplotlib",
   "matplotlib.**",
   "requests_file",

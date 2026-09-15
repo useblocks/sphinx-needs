@@ -8,16 +8,13 @@ from sphinx.config import Config
 from sphinx.util import logging
 
 # from docutils import nodes
-# sphinx-needs ships no py.typed marker and no stubs exist, so every import
-# from it is untyped to mypy. Nothing to fix on this side.
-from sphinx_needs.api import (  # type: ignore[import-untyped]
+from sphinx_needs.api import (
     add_dynamic_function,
     add_need_type,
 )
-from sphinx_needs.exceptions import (  # type: ignore[import-untyped]
+from sphinx_needs.exceptions import (
     NeedsApiConfigWarning,
 )
-
 from sphinxcontrib.test_reports.directives.test_case import TestCase, TestCaseDirective
 from sphinxcontrib.test_reports.directives.test_env import EnvReport, EnvReportDirective
 from sphinxcontrib.test_reports.directives.test_file import TestFile, TestFileDirective
@@ -63,7 +60,11 @@ try:
     def _register_field(app: Sphinx, name: str, role: str | None = None) -> None:
         type_, description = declaration(name, role)
         try:
-            _add_field(name, description, schema={"type": type_})
+            # sphinx-needs types `schema=` as a union of TypedDicts; this passes the
+            # equivalent plain mapping, which is what it has always passed. Narrowing it
+            # properly means importing `FieldSchemaTypes` from `sphinx_needs.schema.config`
+            # -- an internal path the ImportError fallback below cannot depend on.
+            _add_field(name, description, schema={"type": type_})  # ty: ignore[invalid-argument-type]
         except NeedsApiConfigWarning:
             # Already registered, e.g. via needs_fields or needs_extra_options
             # in conf.py. Anything else is a real error and must surface.
@@ -80,7 +81,11 @@ except ImportError:
         type_, description = declaration(name, role)
         try:
             _add_extra_option(
-                app, name, description=description, schema={"type": type_}
+                # the same plain mapping, and the same reason, as the `_add_field` call above
+                app,
+                name,
+                description=description,
+                schema={"type": type_},  # ty: ignore[invalid-argument-type]
             )
         except NeedsApiConfigWarning:
             logging.getLogger(__name__).debug(
@@ -246,7 +251,7 @@ def register_tr_extra_options(app: Sphinx) -> None:
                 spec[option_name] = directives.unchanged
                 log.debug(f"Registered {option_name} with {direc}")
                 log.debug(f"{direc}.option_spec now has keys: {list(spec.keys())}")
-            direc.option_spec = spec
+            direc.option_spec = spec  # ty: ignore[invalid-assignment]
 
 
 def _command_line_overrides(config: Config) -> set[str]:
@@ -347,7 +352,7 @@ def tr_preparation(app: Sphinx, *args: object) -> None:
     # back the same way (see `test_common.py`). One narrow ignore for the
     # attachment; the rest of the function works on a typed mapping.
     types: dict[str, list[str]] = getattr(app, "tr_types", None) or {}
-    app.tr_types = types  # type: ignore[attr-defined]
+    app.tr_types = types  # ty: ignore[unresolved-attribute]
 
     # Collects the configured test-report node types
     types[app.config.tr_file[0]] = app.config.tr_file[1:]

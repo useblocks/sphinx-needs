@@ -14,7 +14,6 @@
 # import os
 # import sys
 import datetime
-import os
 
 # sys.path.insert(0, os.path.abspath('.'))
 
@@ -49,16 +48,10 @@ extensions = [
 
 tr_import_encoding = "utf8"
 
-cwd = os.getcwd()
-plantuml = "java -jar %s" % os.path.join(cwd, "utils/plantuml.jar")
-
-# If we are running on windows, we need to manipulate the path,
-# otherwise plantuml will have problems.
-if os.name == "nt":
-    plantuml = plantuml.replace("/", "\\")
-    plantuml = plantuml.replace("\\", "\\\\")
-
-plantuml_output_format = "png"
+# No `plantuml` setting: no document in these test projects renders a diagram, and the
+# 8.6 MB `tests/doc_test/utils/plantuml.jar` this pointed at left with the import -- it was
+# dead before the move too, resolving `utils/plantuml.jar` against pytest's rootdir, where
+# no `utils/` has ever existed.
 
 
 # Add any paths that contain templates here, relative to this directory.

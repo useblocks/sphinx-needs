@@ -128,7 +128,7 @@ class TestLoader:
 
     def test_a_non_table_needs_artifact_is_rejected(self, tmp_path):
         _write(tmp_path, '[test_reports.build]\nneeds = "yes"\n')
-        with pytest.raises(TomlConfigError, match="build.needs"):
+        with pytest.raises(TomlConfigError, match=r"build.needs"):
             load_project_config(tmp_path / DEFAULT_TOML_FILENAME)
 
     def test_build_needs_unknown_key_is_reported_but_not_fatal(self, tmp_path):
@@ -180,11 +180,11 @@ class TestLoader:
             style = "rectangle"
             """,
         )
-        with pytest.raises(TomlConfigError, match="'testcase'.*'check'"):
+        with pytest.raises(TomlConfigError, match=r"'testcase'.*'check'"):
             load_project_config(tmp_path / DEFAULT_TOML_FILENAME)
         # ... and the mirror: need_type set, case left at its default.
         _write(tmp_path, '[test_reports.build.needs]\nneed_type = "check"\n')
-        with pytest.raises(TomlConfigError, match="'check'.*'testcase'"):
+        with pytest.raises(TomlConfigError, match=r"'check'.*'testcase'"):
             load_project_config(tmp_path / DEFAULT_TOML_FILENAME)
 
     def test_without_a_convert_table_the_case_type_is_free(self, tmp_path):

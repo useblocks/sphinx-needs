@@ -442,14 +442,14 @@ class TestPropertyValues:
         }
 
     def test_a_list_for_a_single_valued_property_is_an_error(self, score_model):
-        with pytest.raises(TypeError, match="test_type.*single value"):
+        with pytest.raises(TypeError, match=r"test_type.*single value"):
             properties_mapping(test_type=["a", "b"])
 
     def test_an_unconfigured_keyword_takes_a_single_value(self, score_model):
         assert properties_mapping(Owner="team-a") == {"Owner": "team-a"}
 
     def test_a_list_under_an_unconfigured_keyword_is_an_error(self, score_model):
-        with pytest.raises(TypeError, match="Satisfies.*test_reports_properties"):
+        with pytest.raises(TypeError, match=r"Satisfies.*test_reports_properties"):
             properties_mapping(Satisfies=["REQ_1", "REQ_2"])
 
     def test_the_xml_name_of_a_configured_property_works_as_keyword(self, score_model):
@@ -468,9 +468,9 @@ class TestPropertyValues:
     def test_every_item_of_a_list_must_be_a_string(self, score_model):
         # A list of lists is one indentation away in a spec file; it used to be
         # written as its repr and split into bogus IDs on the build side.
-        with pytest.raises(TypeError, match="partially_verifies.*item.*list"):
+        with pytest.raises(TypeError, match=r"partially_verifies.*item.*list"):
             properties_mapping(partially_verifies=[["REQ_1", "REQ_2"]])
-        with pytest.raises(TypeError, match="item.*int"):
+        with pytest.raises(TypeError, match=r"item.*int"):
             properties_mapping(partially_verifies=[1, 2])
 
     def test_an_empty_list_under_any_keyword_writes_nothing(self, score_model):
@@ -482,7 +482,7 @@ class TestPropertyValues:
         assert properties_mapping(Owner=[None, ""], fully_verifies=["R"]) == {
             "FullyVerifies": "R"
         }
-        with pytest.raises(TypeError, match="test_type.*single value"):
+        with pytest.raises(TypeError, match=r"test_type.*single value"):
             properties_mapping(test_type=["a"])
 
     def test_an_empty_nested_list_is_not_written_as_brackets(self, score_model):
@@ -567,7 +567,7 @@ def test_both(broken):
 
 class TestBadShape:
     def test_a_bad_shape_errors_the_case_at_setup(self, pytester):
-        result, root = _run(
+        result, _root = _run(
             pytester,
             "from sphinxcontrib.test_reports.pytest_plugin import add_test_properties\n\n@add_test_properties(test_type=['a', 'b'])\ndef test_shape():\n    assert True\n",
         )

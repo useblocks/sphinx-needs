@@ -1,6 +1,3 @@
-import os
-import sys
-
 extensions = ["sphinx_needs", "sphinxcontrib.test_reports"]
 
 source_suffix = ".rst"

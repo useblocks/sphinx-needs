@@ -1,7 +1,7 @@
 import os
 
 from sphinx.application import Sphinx
-from sphinx.util.console import brown  # type: ignore[import-not-found]
+from sphinx.util.console import brown
 from sphinx.util.display import status_iterator
 from sphinx.util.osutil import copyfile, ensuredir
 

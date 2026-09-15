@@ -1,11 +1,12 @@
 import hashlib
+from typing import Any
 
 from docutils import nodes
 from docutils.parsers.rst import directives
-from sphinx_needs.api import add_need
-from sphinx_needs.utils import add_doc
 
 import sphinxcontrib.test_reports.directives.test_case
+from sphinx_needs.api import add_need
+from sphinx_needs.utils import add_doc
 from sphinxcontrib.test_reports.directives.test_common import TestCommonDirective
 from sphinxcontrib.test_reports.exceptions import TestReportInvalidOptionError
 
@@ -91,6 +92,13 @@ class TestSuiteDirective(TestCommonDirective):
 
         main_section = []
         docname = self.state.document.settings.env.docname
+        # The fields whose NAMES come from configuration -- the renameable report-path
+        # field and the configured extra options -- in one mapping. `dict[str, Any]`
+        # because `add_need` types each keyword parameter separately.
+        report_fields: dict[str, Any] = {
+            self.report_file_field(): self.test_file_given,
+            **self.extra_options,
+        }
         main_section += add_need(
             self.app,
             self.state,
@@ -110,8 +118,7 @@ class TestSuiteDirective(TestCommonDirective):
             skipped=skipped,
             failed=failed,
             errors=errors,
-            **{self.report_file_field(): self.test_file_given},
-            **self.extra_options,
+            **report_fields,
         )
 
         # TODO double nested logic
@@ -137,18 +144,16 @@ class TestSuiteDirective(TestCommonDirective):
                     options["links"] = options["links"] + ";" + self.test_id
 
                 arguments = [suite["name"]]
-                suite_directive = (
-                    sphinxcontrib.test_reports.directives.test_suite.TestSuiteDirective(
-                        self.app.config.tr_suite[0],
-                        arguments,
-                        options,
-                        "",
-                        self.lineno,  # no content
-                        self.content_offset,
-                        self.block_text,
-                        self.state,
-                        self.state_machine,
-                    )
+                suite_directive = TestSuiteDirective(
+                    self.app.config.tr_suite[0],
+                    arguments,
+                    options,
+                    "",
+                    self.lineno,  # no content
+                    self.content_offset,
+                    self.block_text,
+                    self.state,
+                    self.state_machine,
                 )
 
                 is_nested = len(suite_obj["testsuites"]) > 0
@@ -159,7 +164,7 @@ class TestSuiteDirective(TestCommonDirective):
                 access_count += 1
 
         # suite has testcases
-        if "auto_cases" in self.options.keys() and len(suite_obj["testcases"]) > 0:
+        if "auto_cases" in self.options and len(suite_obj["testcases"]) > 0:
             case_count = 0
 
             for case in suite["testcases"]:

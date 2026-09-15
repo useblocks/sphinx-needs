@@ -16,8 +16,8 @@ the commit a CI job is converting for.
 import argparse
 import json
 import sys
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Mapping, Sequence
 
 from sphinxcontrib.test_reports.junitparser import JUnitParser
 from sphinxcontrib.test_reports.needs_export import (
@@ -378,8 +378,8 @@ def _resolve_settings(
     because a diagnostic has to name the flag or the TOML key the user actually
     wrote.
     """
-    resolved: "dict[str, object]" = {}
-    sources: "dict[str, str]" = {}
+    resolved: dict[str, object] = {}
+    sources: dict[str, str] = {}
     for key in CONVERSION_KEYS:
         flag = getattr(arguments, _DESTS.get(key, key))
         if flag is not None:
@@ -518,7 +518,7 @@ def _build_needs(arguments: argparse.Namespace) -> int:
         )
         return 2
 
-    reports: "list[Report]" = []
+    reports: list[Report] = []
     for name in arguments.files:
         path = Path(name)
         if not path.is_file():
@@ -527,8 +527,8 @@ def _build_needs(arguments: argparse.Namespace) -> int:
         try:
             # The parser is not typed yet (#114), so both calls are
             # untyped to mypy; nothing to fix from this side.
-            parsed = JUnitParser(str(path)).parse()  # type: ignore[no-untyped-call]
-        except Exception as error:  # noqa: BLE001 - report, never traceback
+            parsed = JUnitParser(str(path)).parse()
+        except Exception as error:
             print(f"error: {path}: {error}", file=sys.stderr)
             return 1
         _warn_about_empty_report(path, parsed)

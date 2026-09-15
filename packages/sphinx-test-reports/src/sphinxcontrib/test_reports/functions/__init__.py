@@ -14,7 +14,7 @@ def tr_link(app, need, needs, test_option, target_option, *args, **kwargs):
             if (
                 test_opt == need_target[target_option]
                 and test_opt is not None
-                and len(test_opt) > 0  # fmt: skip
+                and len(test_opt) > 0
             ):
                 links.append(need_target["id"])
 

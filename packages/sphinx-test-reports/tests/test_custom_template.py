@@ -47,4 +47,6 @@ def test_custom_koi8_template(test_app):
     print(html)
 
     assert "бцдеф" in html
-    assert "Testfбlle" in html
+    # The Cyrillic letter in the string below is deliberate: this fixture
+    # asserts koi8-r decoding, so ruff's confusable check is suppressed.
+    assert "Testfбlle" in html  # noqa: RUF001

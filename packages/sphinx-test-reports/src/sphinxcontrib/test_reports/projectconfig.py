@@ -35,8 +35,9 @@ sphinx-mounts takes for ``[[source.mounts]]``.
 """
 
 import tomllib
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
-from typing import Callable, Mapping, NoReturn, Sequence
+from typing import NoReturn
 
 from sphinxcontrib.test_reports.fields import RESERVED_NAMES
 

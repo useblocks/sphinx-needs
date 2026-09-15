@@ -1,8 +1,6 @@
-import os
-import sys
+from packaging.version import Version
 
 import sphinx_needs
-from packaging.version import Version
 
 extensions = ["sphinx_needs", "sphinxcontrib.test_reports"]
 

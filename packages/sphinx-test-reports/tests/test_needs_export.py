@@ -53,7 +53,7 @@ class TestDuplicateCases:
             ("a.xml", [{"name": "s", "testcases": [_case(), _case("test_y")]}]),
             ("b.xml", [{"name": "s", "testcases": [_case()]}]),
         ]
-        with pytest.raises(ValueError, match="1 test case.*testcase__Suite__test_x"):
+        with pytest.raises(ValueError, match=r"1 test case.*testcase__Suite__test_x"):
             build_needs_file(reports)
 
     def test_distinct_cases_are_all_kept(self):

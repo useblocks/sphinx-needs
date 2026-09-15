@@ -44,7 +44,7 @@ def test_parse_json_data():
         }
     }
 
-    mapping = list(json_mapping.values())[0]
+    mapping = next(iter(json_mapping.values()))
     parser = JsonParser(json_path, json_mapping=mapping)
     results = parser.parse()
     assert results is not None

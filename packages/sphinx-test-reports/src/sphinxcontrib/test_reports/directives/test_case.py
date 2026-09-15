@@ -1,8 +1,10 @@
+from typing import Any
+
 from docutils import nodes
 from docutils.parsers.rst import directives
+
 from sphinx_needs.api import add_need
 from sphinx_needs.utils import add_doc
-
 from sphinxcontrib.test_reports.config import DEFAULT_OPTIONS
 from sphinxcontrib.test_reports.directives.test_common import TestCommonDirective
 from sphinxcontrib.test_reports.exceptions import TestReportInvalidOptionError
@@ -185,6 +187,15 @@ class TestCaseDirective(TestCommonDirective):
         docname = self.state.document.settings.env.docname
 
         main_section = []
+        # The fields whose NAMES come from configuration, in one mapping: the report-path
+        # field is renameable, the source-location pair with it, and the configured extra
+        # options are arbitrary. `dict[str, Any]` because `add_need` types each keyword
+        # parameter separately and none of these names is known here.
+        report_fields: dict[str, Any] = {
+            self.report_file_field(): self.test_file_given,
+            **self.source_location_fields(case),
+            **self.extra_options,
+        }
         # Merge all options including extra ones
         main_section += add_need(
             self.app,
@@ -207,9 +218,7 @@ class TestCaseDirective(TestCommonDirective):
             result=result,
             time=time_str,
             style=style,
-            **{self.report_file_field(): self.test_file_given},
-            **self.source_location_fields(case),
-            **self.extra_options,
+            **report_fields,
         )
 
         add_doc(self.env, docname)

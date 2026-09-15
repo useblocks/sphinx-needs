@@ -134,12 +134,15 @@ class EnvReportDirective(Directive):
                         if opt not in self.data_option_list:
                             del temp_dict2[enviro][opt]
 
-                # option check
-                for opt in self.data_option_list:
-                    if opt not in temp_dict2[enviro]:
-                        logger.warning(
-                            f"option '{opt}' is not present in '{enviro}' environment file"
-                        )
+                    # option check. Inside the guard, like the `:raw:`-without-`:env:`
+                    # branch above: `:data:` is optional, and iterating it unguarded is a
+                    # TypeError for a `test-env` written with `:raw:` and `:env:` but no
+                    # `:data:`.
+                    for opt in self.data_option_list:
+                        if opt not in temp_dict2[enviro]:
+                            logger.warning(
+                                f"option '{opt}' is not present in '{enviro}' environment file"
+                            )
 
                 del temp_dict
 

@@ -17,8 +17,9 @@ import os
 # import os
 import sys
 
-import sphinx_needs
 from packaging.version import Version
+
+import sphinx_needs
 
 sys.path.append(os.path.abspath("."))
 

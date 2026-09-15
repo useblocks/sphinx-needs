@@ -5,12 +5,17 @@ A Common directive, from which all other test directives inherit the shared func
 # fmt: off
 import os
 import pathlib
-from importlib.metadata import version
+from typing import Any
 
 from docutils.parsers.rst import Directive
 from sphinx.util import logging
-from sphinx_needs.config import NeedsSphinxConfig
 
+# `_make_hashed_id` has been sphinx-needs' spelling since its 4.0; the import narrowed to
+# `sphinx-needs>=8.5.0,<9` at the workspace import, so the `make_hashed_id` fallback this
+# used to carry could no longer run -- and no longer resolves, since the name is gone from
+# `sphinx_needs.api` entirely (measured against 8.5.0).
+from sphinx_needs.api.need import _make_hashed_id
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinxcontrib.test_reports.exceptions import (
     SphinxError,
     TestReportFileNotSetError,
@@ -18,14 +23,6 @@ from sphinxcontrib.test_reports.exceptions import (
 from sphinxcontrib.test_reports.identity import deterministic_case_id
 from sphinxcontrib.test_reports.jsonparser import JsonParser
 from sphinxcontrib.test_reports.junitparser import JUnitParser
-
-sn_major_version = int(version("sphinx-needs").split('.')[0])
-
-if sn_major_version >= 4:
-    from sphinx_needs.api.need import _make_hashed_id
-else:
-    from sphinx_needs.api import make_hashed_id
-
 
 # fmt: on
 
@@ -42,23 +39,41 @@ class TestCommonDirective(Directive):
         if not hasattr(self.app, "testreport_data"):
             self.app.testreport_data = {}
 
-        self.test_file = None
-        self.results = None
-        self.docname = None
-        self.test_name = None
-        self.test_id = None
-        self.test_content = None
-        self.test_file_given = None
-        self.test_links = None
-        self.test_tags = None
-        self.test_status = None
-        self.collapse = None
-        self.need_type = None
-        self.extra_options = None
+        # Every one of these is populated by `prepare_basic_options` (and `results` by
+        # `load_test_file`) before any directive reads it. Declared here with the type each
+        # one actually holds, because the bare `None` they used to start as is what the
+        # subclasses' `self.results[0]`, `for x in self.results`, `self.extra_options[k]`
+        # and `add_need(title=self.test_name, ...)` were all being type-checked against.
+        # `test_file` and `test_id` start EMPTY rather than `None`: both are required, and
+        # the two guards that enforced that are now falsiness checks. For `test_id` that is
+        # exactly identical behaviour. For `test_file` it is NOT, and the difference is a
+        # bug fix: `prepare_basic_options` runs before `load_test_file` in all four
+        # directives, so `test_file_given = self.test_file[:]` raised TypeError on a
+        # directive written without `:file:` before the guard in `load_test_file` could
+        # ever be reached -- that guard was dead code. The slice is now a no-op and the
+        # guard is live, so such a directive raises TestReportFileNotSetError, a
+        # SphinxError.
+        self.test_file: str = ""
+        #: Whatever the JUnit/JSON parser returned -- untyped by construction.
+        self.results: Any = None
+        self.docname: str = ""
+        self.test_name: str = ""
+        self.test_id: str = ""
+        self.test_content: str = ""
+        self.test_file_given: str = ""
+        self.test_links: str = ""
+        self.test_tags: str = ""
+        self.test_status: str | None = None
+        self.collapse: bool | str = False
+        self.need_type: str = ""
+        #: Values read off the Sphinx config and the report, so `Any` rather than `str`:
+        #: this mapping is splatted into `add_need`, whose keyword parameters are typed
+        #: individually, and a `dict[str, str]` would be checked against every one of them.
+        self.extra_options: dict[str, Any] = {}
 
         self.log = logging.getLogger(__name__)
 
-    def report_file_field(self):
+    def report_file_field(self) -> str:
         """Need field carrying the XML report path (renameable via config).
 
         Renaming it is what frees ``file``/``line`` for the *test source*
@@ -67,7 +82,7 @@ class TestCommonDirective(Directive):
         """
         return getattr(self.app.config, "tr_file_option", "file")
 
-    def source_location_fields(self, case):
+    def source_location_fields(self, case: Any) -> dict[str, Any]:
         """Need fields for the ``<testcase>`` file/line attributes.
 
         The parser reports ``"unknown"``/``-1`` when the attributes are absent,
@@ -116,7 +131,7 @@ class TestCommonDirective(Directive):
 
         :return: None
         """
-        if self.test_file is None:
+        if not self.test_file:
             raise TestReportFileNotSetError("Option test_file must be set.")
 
         test_path = pathlib.Path(self.test_file)
@@ -131,9 +146,9 @@ class TestCommonDirective(Directive):
             )
             return None
 
-        if self.test_file not in self.app.testreport_data.keys():
+        if self.test_file not in self.app.testreport_data:
             if os.path.splitext(self.test_file)[1] == ".json":
-                mapping = list(self.app.config.tr_json_mapping.values())[0]
+                mapping = next(iter(self.app.config.tr_json_mapping.values()))
                 parser = JsonParser(self.test_file, json_mapping=mapping)
             else:
                 parser = JUnitParser(self.test_file)
@@ -153,29 +168,24 @@ class TestCommonDirective(Directive):
         self.test_content = "\n".join(self.content)
         if self.name != "test-report":
             self.need_type = self.app.tr_types[self.name][0]
-            if sn_major_version >= 4:
-                hashed_id = _make_hashed_id(
-                    self.need_type,
-                    self.test_name,
-                    self.test_content,
-                    NeedsSphinxConfig(self.app.config),
-                )
-            else:  # Sphinx-Needs < 4
-                hashed_id = make_hashed_id(
-                    self.app, self.need_type, self.test_name, self.test_content
-                )
+            hashed_id = _make_hashed_id(
+                self.need_type,
+                self.test_name,
+                self.test_content,
+                NeedsSphinxConfig(self.app.config),
+            )
 
             self.test_id = self.options.get(
                 "id",
                 hashed_id,
             )
         else:
-            self.test_id = self.options.get("id")
+            self.test_id = self.options.get("id", "")
 
-        if self.test_id is None:
+        if not self.test_id:
             raise SphinxError("ID must be set for test-report.")
 
-        self.test_file = self.options.get("file")
+        self.test_file = self.options.get("file", "")
         self.test_file_given = self.test_file[:]
 
         self.test_links = self.options.get("links", "")

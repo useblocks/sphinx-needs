@@ -4,7 +4,7 @@ JUnit XML parser
 
 import os
 
-from lxml import etree, objectify
+from lxml import etree, objectify  # ty: ignore[unresolved-import]
 
 from sphinxcontrib.test_reports.results import normalize_result
 

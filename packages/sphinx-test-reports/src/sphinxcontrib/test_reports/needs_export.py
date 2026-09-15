@@ -22,7 +22,7 @@ Three rules shape the output:
 
 import re
 import textwrap
-from typing import Callable, Iterable, Iterator, Mapping, Sequence, Union
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 
 from sphinxcontrib.test_reports.fields import case_needs_schema
 from sphinxcontrib.test_reports.identity import (
@@ -35,7 +35,7 @@ from sphinxcontrib.test_reports.remote import DEFAULT_URL_PATTERN, source_url
 
 #: A need field value as it appears in needs.json. ``None`` is the value of an
 #: exported property the case does not carry, as the build leaves it.
-FieldValue = Union[str, list[str], None]
+FieldValue = str | list[str] | None
 NeedItem = dict[str, FieldValue]
 
 #: A parsed report: the path it was read from, and its top-level suites. The
