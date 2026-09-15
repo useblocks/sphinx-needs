@@ -6,6 +6,83 @@ Changelog
 Unreleased
 ----------
 
+New and Improved
+................
+
+- 🔧 Sphinx-Test-Reports now lives in the Sphinx-Needs repository, as
+  `packages/sphinx-test-reports <https://github.com/useblocks/sphinx-needs/tree/master/packages/sphinx-test-reports>`__.
+
+  The whole of ``useblocks/sphinx-test-reports``' history came with it, rewritten so that
+  every historical commit already places its files under that directory: ``git log`` and
+  ``git blame`` read the full history there with no ``--follow``, and
+  ``packages/sphinx-test-reports/design/import-commit-map.txt`` maps every hash the old
+  repository had to its hash in the new one.
+
+  - **The repository** is now https://github.com/useblocks/sphinx-needs. Pull requests and
+    branches are opened there, under ``packages/sphinx-test-reports/``.
+  - **Issues** move with it. New ones carry the ``pkg: sphinx-test-reports`` label, which
+    the issue forms' "Package" dropdown sets.
+  - **Release tags** are prefixed: ``sphinx-test-reports-v2.0.0`` rather than ``2.0.0``.
+    Six of the ten historical bare names collided with existing Sphinx-Needs releases, so
+    the prefix is load-bearing rather than tidy.
+  - **The published package does not change.** The distribution is still
+    ``sphinx-test-reports``, the import is still ``sphinxcontrib.test_reports``, and the
+    ``test-reports`` command is still the same command.
+
+- 🔧 The shipped default ``tr_report_template`` ends with a ``literalinclude`` of itself,
+  by a path relative to the including document. **That is still broken for your project**
+  and this release does not fix it: ``literalinclude`` resolves against the document doing
+  the including, which for you is somewhere in your own docs tree, so no path written here
+  can be right for both. What changed is that this package's own documentation build
+  resolves it again after the move into the Sphinx-Needs workspace. The shipped template's
+  self-include is tracked separately; until it is resolved, a project that wants the
+  warning gone can copy the template -- which is what ``tr_report_template`` is for -- and
+  remove the ``literalinclude`` directive at its end, BOTH of its lines (the directive and
+  its ``:language: rst`` option), or the whole *Template* section. Removing only the first
+  line silences the warning but publishes a stray ``language: rst`` field list.
+
+- 🐛 A ``test-env`` directive written with ``:raw:`` and ``:env:`` but no ``:data:`` raised
+  ``TypeError`` instead of rendering: that branch iterated the data-option list outside the
+  guard its sibling branch keeps it inside.
+
+- 👌 The error node for a missing test file no longer passes a second argument to
+  ``docutils``' ``Text()``. That argument (``rawsource``) is ignored, deprecated, and due to
+  be removed in Docutils 2.0; on every docutils this package supports it still works, so
+  this was never a visible bug -- only a ``DeprecationWarning`` on each missing-file error.
+
+- 🐛 A directive written without a ``:file:`` option raised an unhandled ``TypeError``
+  instead of a readable error. The check that was meant to catch it could never run: it sat
+  two lines below a slice of the missing value, which raised first. It now raises
+  ``TestReportFileNotSetError`` like every other configuration mistake.
+
+What the move costs, stated rather than left to the CI diff
+............................................................
+
+- **Sphinx-Needs is now tested at ONE version, not five.** The retired ``noxfile.py`` ran the
+  suite against Sphinx-Needs 6.0.1, 6.3.0, 7.0.0, 8.0.0 and 8.5.0; in the workspace the
+  suite runs against the sibling in the tree, across Sphinx 7.4, 8.2 and 9.1 instead. With
+  it, **the declared floor narrows from** ``sphinx-needs>=6.0.1`` **to**
+  ``sphinx-needs>=8.5.0,<9`` in the ``sphinx`` extra (and from ``>=6`` in ``docs``). That is
+  the workspace's tight-tracking policy for a dependency on a sibling, and it is enforced;
+  it means this release supports a narrower range of Sphinx-Needs than 2.0.0 did.
+- **Five ruff rule families are no longer enforced here** -- ``FURB``, ``PERF``, ``PGH``,
+  ``PIE`` and ``SLF`` -- because the workspace has one shared rule set and they are not in
+  it. All five were at zero violations, so nothing changed in the code; what changed is that
+  a new violation would no longer be caught.
+- **The** ``plugin_floor`` **lane is gone for now**: the pytest plugin is no longer tested
+  against the oldest pytest of each Python. The ``toolchain_free`` lane survives, as a CI
+  job that installs the package with no documentation toolchain at all and asserts it.
+- **mypy is replaced by ty**, which checks the whole package -- the mypy configuration
+  excluded fifteen modules.
+- **Beyond those five families, four rules this package enabled are now ignored**
+  (``B904``, ``ICN001``, ``ISC004``, ``N818``) because the shared set ignores them. All
+  four are at zero violations, so nothing in the code changed.
+- **The documentation is no longer link-checked.** The retired CI ran ``linkcheck``; the
+  workspace's link-check job is scoped to Sphinx-Needs' own documentation. Tracked as a
+  follow-up.
+- **Three formatting hooks retired with the old pre-commit configuration**:
+  ``end-of-file-fixer``, ``trailing-whitespace`` and ``pretty-format-json``.
+
 .. _`release:2.0.0`:
 
 2.0.0
