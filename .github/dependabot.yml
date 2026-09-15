@@ -21,6 +21,26 @@ updates:
       prefix: ⬆️
     schedule:
       interval: monthly
+    # `increase-if-necessary`, because the default (`auto`, which is `increase` for a project
+    # that has a lockfile) EDITS MANIFESTS EVEN WHEN NOTHING REQUIRES IT, and every specifier
+    # in this workspace's manifests is a decision: floors are series (`ty~=0.0.80`,
+    # `types-docutils~=0.20.0`), caps carry their reason as a comment, and the
+    # intra-workspace floors are moved by `propagate_floors.py` at release time. Measured on
+    # the 2026-09 batch (#1940): `auto` raised sphinx-needs' `matplotlib>=3.3.0` -- the floor
+    # of a user-facing extra, which already allowed the new release -- to `>=3.11.2`, the
+    # newest release; an earlier batch rewrote `~=0.20.0` as `>=0.20,<0.24`.
+    #
+    # With this, a requirement that already allows the new release is left alone and only
+    # the lock moves. A release OUTSIDE a range (44 of the 97 external specifiers here carry
+    # a cap or a series) still produces a pull request that widens the range -- and that is
+    # wanted: it is the one signal that a new major exists, and the review of that pull
+    # request is where a stale reason comment or a widened series gets re-expressed by hand.
+    # `lockfile-only` was considered and rejected for exactly that reason: it never edits a
+    # manifest, but it also never proposes such a release, so the workspace would sit on an
+    # old series until a user noticed. The `ignore` rules below are unaffected: they stop
+    # the lock-only updates the manifests WOULD allow but the test matrix and the typing
+    # floor do not want.
+    versioning-strategy: increase-if-necessary
     ignore:
       # the `sphinx-7`, `sphinx-8` and `sphinx-9` dependency groups pin one series each,
       # on purpose: they are the test matrix, and which three series are tested is a
