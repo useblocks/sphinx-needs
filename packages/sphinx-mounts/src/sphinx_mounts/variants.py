@@ -807,11 +807,11 @@ class _PestRecogniser:
             self._ws_star()
             while True:
                 item = self.pos
-                if not (
-                    self._at(",")
-                    and (self._ws_star() or True)
-                    and self._literal_single()
-                ):
+                if not self._at(","):
+                    self.pos = item
+                    break
+                self._ws_star()
+                if not self._literal_single():
                     self.pos = item
                     break
                 self._ws_star()

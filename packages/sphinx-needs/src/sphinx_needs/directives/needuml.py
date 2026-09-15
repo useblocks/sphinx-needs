@@ -628,17 +628,12 @@ def is_element_of_need(node: nodes.Element) -> str:
     :returns: Need ID is string or an empty string
 
     """
-    is_element_of = ""
-    while not is_element_of:
+    while True:
         if isinstance(node, nodes.table) and "need" in node["classes"]:
-            is_element_of = node["ids"][0]
-            break
-        else:
-            if not node.parent:
-                break
-            node = node.parent
-
-    return is_element_of
+            return node["ids"][0]
+        if not node.parent:
+            return ""
+        node = node.parent
 
 
 @measure_time("needuml")

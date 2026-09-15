@@ -314,7 +314,7 @@ class LayoutHandler:
 
         func = self.grids[self.layout["grid"]]
         if callable(func):
-            func()  # ty: ignore[call-top-callable]
+            func()
         else:
             func["func"](**func["configs"])  # ty: ignore[call-non-callable, invalid-argument-type]
 
