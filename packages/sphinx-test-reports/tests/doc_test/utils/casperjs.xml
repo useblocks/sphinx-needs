@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites duration="50.5">
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/agent.js" package="tests/suites/casper/agent" tests="3" time="0.256">
+        <testcase classname="tests/suites/casper/agent" name="Default user agent matches /CasperJS/" time="0.103"/>
+        <testcase classname="tests/suites/casper/agent" name="Default user agent matches /plop/" time="0.146"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/alert.js" package="tests/suites/casper/alert" tests="1" time="0.449">
+        <testcase classname="tests/suites/casper/alert" name="alert event has been intercepted" time="0.449"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/auth.js" package="tests/suites/casper/auth" tests="8" time="0.101">
+        <testcase classname="tests/suites/casper/auth" name="Subject equals the expected value" time="0.1"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/capture.js" package="tests/suites/casper/capture" tests="4" time="0.945">
+        <testcase classname="tests/suites/casper/capture" name="Casper.capture() captured a screenshot" time="0.681"/>
+        <testcase classname="tests/suites/casper/capture" name="Casper.captureBase64() rendered a page capture as base64" time="0.174"/>
+        <testcase classname="tests/suites/casper/capture" name="Casper.captureBase64() rendered a capture from a selector as base64" time="0.046"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/click.js" package="tests/suites/casper/click" tests="22" time="1.211">
+        <testcase classname="tests/suites/casper/click" name="Casper.click() can click on a link" time="0.405"/>
+        <testcase classname="tests/suites/casper/click" name="Casper.thenClick() can click on a link" time="0.2"/>
+        <testcase classname="tests/suites/casper/click" name="Casper.click() can click an `href=&quot;javascript:` link" time="0.204"/>
+        <testcase classname="tests/suites/casper/click" name="Casper.click() can click an `href=&quot;#&quot;` link" time="0.002"/>
+        <testcase classname="tests/suites/casper/click" name="Casper.click() can click an `onclick=&quot;.*; return false&quot;` link" time="0.001"/>
+        <testcase classname="tests/suites/casper/click" name="Casper.click() can click an unobstrusive js handled link" time="0.001"/>
+        <testcase classname="tests/suites/casper/click" name="Casper.click() has clicked an `href=&quot;javascript:` link" time="0"/>
+        <testcase classname="tests/suites/casper/click" name="Casper.click() has clicked an `href=&quot;#&quot;` link" time="0"/>
+        <testcase classname="tests/suites/casper/click" name="Casper.click() has clicked an `onclick=&quot;.*; return false&quot;` link" time="0.001"/>
+        <testcase classname="tests/suites/casper/click" name="Casper.click() has clicked an unobstrusive js handled link" time="0"/>
+        <testcase classname="tests/suites/casper/click" name="Casper.clickLabel() can click an `href=&quot;javascript:` link" time="0.193"/>
+        <testcase classname="tests/suites/casper/click" name="Casper.clickLabel() can click an `href=&quot;#&quot;` link" time="0.001"/>
+        <testcase classname="tests/suites/casper/click" name="Casper.clickLabel() can click an `onclick=&quot;.*; return false&quot;` link" time="0.001"/>
+        <testcase classname="tests/suites/casper/click" name="Casper.clickLabel() can click an unobstrusive js handled link" time="0.001"/>
+        <testcase classname="tests/suites/casper/click" name="Casper.clickLabel() has clicked an `href=&quot;javascript:` link" time="0.001"/>
+        <testcase classname="tests/suites/casper/click" name="Casper.clickLabel() has clicked an `href=&quot;#&quot;` link" time="0"/>
+        <testcase classname="tests/suites/casper/click" name="Casper.clickLabel() has clicked an `onclick=&quot;.*; return false&quot;` link" time="0"/>
+        <testcase classname="tests/suites/casper/click" name="Casper.clickLabel() has clicked an unobstrusive js handled link" time="0"/>
+        <testcase classname="tests/suites/casper/click" name="Mouse.down() has pressed button to the specified position" time="0.095"/>
+        <testcase classname="tests/suites/casper/click" name="Mouse.up() has released button to the specified position" time="0.002"/>
+        <testcase classname="tests/suites/casper/click" name="Mouse.move() has moved to the specified position" time="0.001"/>
+        <testcase classname="tests/suites/casper/click" name="Casper.click() sets the focus on clicked element" time="0.102"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/confirm.js" package="tests/suites/casper/confirm" tests="2" time="0.496">
+        <testcase classname="tests/suites/casper/confirm" name="confirmation received" time="0.398"/>
+        <testcase classname="tests/suites/casper/confirm" name="confirmation message is ok" time="0.098"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/debug.js" package="tests/suites/casper/debug" tests="2" time="0.303">
+        <testcase classname="tests/suites/casper/debug" name="Casper.getHTML() retrieves inner HTML by default" time="0.302"/>
+        <testcase classname="tests/suites/casper/debug" name="Casper.getHTML() can retrieve outer HTML" time="0.001"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/elementattribute.js" package="tests/suites/casper/elementattribute" tests="1" time="0.4">
+        <testcase classname="tests/suites/casper/elementattribute" name="Casper.getElementAttribute() works as intended" time="0.4"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/encode.js" package="tests/suites/casper/encode" tests="2" time="0.41">
+        <testcase classname="tests/suites/casper/encode" name="Casper.base64encode() can retrieve base64 contents" time="0.405"/>
+        <testcase classname="tests/suites/casper/encode" name="Casper.download() downloads a file" time="0.005"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/evaluate.js" package="tests/suites/casper/evaluate" tests="13" time="0.395">
+        <testcase classname="tests/suites/casper/evaluate" name="Casper.evaluate() handles passed argument context correcly" time="0.189"/>
+        <testcase classname="tests/suites/casper/evaluate" name="Casper.evaluate() handles evaluation with no context passed" time="0"/>
+        <testcase classname="tests/suites/casper/evaluate" name="Casper.evaluate() accepts natural arguments context" time="0.001"/>
+        <testcase classname="tests/suites/casper/evaluate" name="Casper.thenEvaluate() sets args" time="0.202"/>
+        <testcase classname="tests/suites/casper/evaluate" name="Casper.thenEvaluate() sets args the same way evaluate() does" time="0"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/events.js" package="tests/suites/casper/events" tests="5" time="0.194">
+        <testcase classname="tests/suites/casper/events" name="on() has set an event handler" time="0.193"/>
+        <testcase classname="tests/suites/casper/events" name="emit() emits an event" time="0"/>
+        <testcase classname="tests/suites/casper/events" name="setFilter() has set a filter" time="0.001"/>
+        <testcase classname="tests/suites/casper/events" name="filter() filters a value" time="0"/>
+        <testcase classname="tests/suites/casper/events" name="filter() applies the correct context" time="0"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/exists.js" package="tests/suites/casper/exists" tests="1" time="0.302">
+        <testcase classname="tests/suites/casper/exists" name="Casper.exists() can check if an element exists" time="0.302"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/fetchtext.js" package="tests/suites/casper/fetchtext" tests="1" time="0.401">
+        <testcase classname="tests/suites/casper/fetchtext" name="Casper.fetchText() can retrieve text contents" time="0.401"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/flow.coffee" package="tests/suites/casper/flow" tests="13" time="4.775">
+        <testcase classname="tests/suites/casper/flow" name="step 1" time="0.467"/>
+        <testcase classname="tests/suites/casper/flow" name="step 1.1" time="0.501"/>
+        <testcase classname="tests/suites/casper/flow" name="step 1.1.1" time="0.3"/>
+        <testcase classname="tests/suites/casper/flow" name="step 1.1.1.1" time="0.301"/>
+        <testcase classname="tests/suites/casper/flow" name="step 1.1.2.1" time="0.101"/>
+        <testcase classname="tests/suites/casper/flow" name="step 1.2" time="0.5"/>
+        <testcase classname="tests/suites/casper/flow" name="step 2" time="0.301"/>
+        <testcase classname="tests/suites/casper/flow" name="step 3 sucessfully timed out" time="1.103"/>
+        <testcase classname="tests/suites/casper/flow" name="step 4" time="0.1"/>
+        <testcase classname="tests/suites/casper/flow" name="step 4.1" time="0.4"/>
+        <testcase classname="tests/suites/casper/flow" name="step 4.1.1" time="0.4"/>
+        <testcase classname="tests/suites/casper/flow" name="step 5.2" time="0.201"/>
+        <testcase classname="tests/suites/casper/flow" name="last step" time="0.1"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/formfill.js" package="tests/suites/casper/formfill" tests="19" time="1.341">
+        <testcase classname="tests/suites/casper/formfill" name="Casper.fill() can fill an input[type=text] form field" time="0.346"/>
+        <testcase classname="tests/suites/casper/formfill" name="Casper.fill() can fill an input[type=password] form field" time="0.001"/>
+        <testcase classname="tests/suites/casper/formfill" name="Casper.fill() can fill a textarea form field" time="0"/>
+        <testcase classname="tests/suites/casper/formfill" name="Casper.fill() can pick a value from a select form field" time="0.001"/>
+        <testcase classname="tests/suites/casper/formfill" name="Casper.fill() can check a form checkbox" time="0"/>
+        <testcase classname="tests/suites/casper/formfill" name="Casper.fill() can check a form radio button 1/2" time="0.001"/>
+        <testcase classname="tests/suites/casper/formfill" name="Casper.fill() can check a form radio button 2/2" time="0"/>
+        <testcase classname="tests/suites/casper/formfill" name="Casper.fill() can select a file to upload" time="0"/>
+        <testcase classname="tests/suites/casper/formfill" name="Casper.fill() can fill a list of checkboxes" time="0.001"/>
+        <testcase classname="tests/suites/casper/formfill" name="Casper.getFormValues() retrieves filled values" time="0.089"/>
+        <testcase classname="tests/suites/casper/formfill" name="Casper.fill() input[type=email] field was submitted" time="0.102"/>
+        <testcase classname="tests/suites/casper/formfill" name="Casper.fill() input[type=password] field was submitted" time="0.001"/>
+        <testcase classname="tests/suites/casper/formfill" name="Casper.fill() textarea field was submitted" time="0.001"/>
+        <testcase classname="tests/suites/casper/formfill" name="Casper.fill() input[type=checkbox] field was submitted" time="0"/>
+        <testcase classname="tests/suites/casper/formfill" name="Casper.fill() input[type=radio] field was submitted" time="0.001"/>
+        <testcase classname="tests/suites/casper/formfill" name="Casper.fill() select field was submitted" time="0"/>
+        <testcase classname="tests/suites/casper/formfill" name="Casper.fill() raises an exception when unable to fill a form" time="0.197"/>
+        <testcase classname="tests/suites/casper/formfill" name="Casper.fill() handles multiple forms" time="0.299"/>
+        <testcase classname="tests/suites/casper/formfill" name="Casper.fill() handles array syntax field names" time="0.301"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/frames.js" package="tests/suites/casper/frames" tests="14" time="2.002">
+        <testcase classname="tests/suites/casper/frames" name="Page title is: &quot;CasperJS frame 1&quot;" time="0.604"/>
+        <testcase classname="tests/suites/casper/frames" name="Found an element matching: #f1" time="0"/>
+        <testcase classname="tests/suites/casper/frames" name="No element found matching selector: #f2" time="0.001"/>
+        <testcase classname="tests/suites/casper/frames" name="__utils__ object is available in child frame" time="0"/>
+        <testcase classname="tests/suites/casper/frames" name="Page title is: &quot;CasperJS frame 2&quot;" time="0.298"/>
+        <testcase classname="tests/suites/casper/frames" name="Found an element matching: #f2" time="0.001"/>
+        <testcase classname="tests/suites/casper/frames" name="No element found matching selector: #f1" time="0"/>
+        <testcase classname="tests/suites/casper/frames" name="__utils__ object is available in other child frame" time="0.001"/>
+        <testcase classname="tests/suites/casper/frames" name="Page title is: &quot;CasperJS frame 3&quot;" time="0.297"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/global.js" package="tests/suites/casper/global" tests="3" time="0.309">
+        <testcase classname="tests/suites/casper/global" name="Casper.getGlobal() can retrieve a remote global variable" time="0.307"/>
+        <testcase classname="tests/suites/casper/global" name="Casper.getGlobal() can retrieves a serializable object" time="0.001"/>
+        <testcase classname="tests/suites/casper/global" name="Casper.getGlobal() does not fail trying to encode an unserializable global" time="0.001"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/headers.js" package="tests/suites/casper/headers" tests="4" time="0.599">
+        <testcase classname="tests/suites/casper/headers" name="No response available on local page" time="0.395"/>
+        <testcase classname="tests/suites/casper/headers" name="Checking existing header (case sensitive)" time="0.203"/>
+        <testcase classname="tests/suites/casper/headers" name="Checking existing header (case insensitive)" time="0.001"/>
+        <testcase classname="tests/suites/casper/headers" name="Checking unexisting header" time="0"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/history.js" package="tests/suites/casper/history" tests="4" time="1.098">
+        <testcase classname="tests/suites/casper/history" name="Casper.back() can go back an history step" time="0.801"/>
+        <testcase classname="tests/suites/casper/history" name="Casper.forward() can go forward an history step" time="0.2"/>
+        <testcase classname="tests/suites/casper/history" name="Casper.history contains urls" time="0.097"/>
+        <testcase classname="tests/suites/casper/history" name="Casper.history has the correct first url" time="0"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/hooks.js" package="tests/suites/casper/hooks" tests="5" time="0.505">
+        <testcase classname="tests/suites/casper/hooks" name="Casper.options.onStepComplete() is called on step complete" time="0.305"/>
+        <testcase classname="tests/suites/casper/hooks" name="Casper.options.onResourceRequested() retrieve a request object" time="0.198"/>
+        <testcase classname="tests/suites/casper/hooks" name="Casper.options.onResourceRequested() retrieve a valid request object" time="0.001"/>
+        <testcase classname="tests/suites/casper/hooks" name="Casper.options.onResourceReceived() retrieve a resource object" time="0.001"/>
+        <testcase classname="tests/suites/casper/hooks" name="Casper.options.onResourceReceived() retrieve a valid resource object" time="0"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/keys.js" package="tests/suites/casper/keys" tests="2" time="0.522">
+        <testcase classname="tests/suites/casper/keys" name="Casper.sendKeys() sends keys to given input" time="0.522"/>
+        <testcase classname="tests/suites/casper/keys" name="Casper.sendKeys() sends keys to given textarea" time="0"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/logging.js" package="tests/suites/casper/logging" tests="4" time="0.578">
+        <testcase classname="tests/suites/casper/logging" name="Casper.log() adds a log entry" time="0.177"/>
+        <testcase classname="tests/suites/casper/logging" name="ClientUtils.log() adds a log entry" time="0.304"/>
+        <testcase classname="tests/suites/casper/logging" name="ClientUtils.log() adds a log entry at a given level" time="0.001"/>
+        <testcase classname="tests/suites/casper/logging" name="Casper.log() logged messages" time="0.096"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/mouseevents.js" package="tests/suites/casper/mouseevents" tests="16" time="0.41">
+        <testcase classname="tests/suites/casper/mouseevents" name="CasperUtils.mouseEvent() can dispatch a mousedown event" time="0.403"/>
+        <testcase classname="tests/suites/casper/mouseevents" name="CasperUtils.mouseEvent() can dispatch a mousedown event handled by unobstrusive js" time="0.001"/>
+        <testcase classname="tests/suites/casper/mouseevents" name="CasperUtils.mouseEvent() can dispatch a mouseup event" time="0.001"/>
+        <testcase classname="tests/suites/casper/mouseevents" name="CasperUtils.mouseEvent() can dispatch a mouseup event handled by unobstrusive js" time="0.001"/>
+        <testcase classname="tests/suites/casper/mouseevents" name="CasperUtils.mouseEvent() can dispatch a mouseover event" time="0"/>
+        <testcase classname="tests/suites/casper/mouseevents" name="CasperUtils.mouseEvent() can dispatch a mouseover event handled by unobstrusive js" time="0.001"/>
+        <testcase classname="tests/suites/casper/mouseevents" name="CasperUtils.mouseEvent() can dispatch a mouseout event" time="0.001"/>
+        <testcase classname="tests/suites/casper/mouseevents" name="CasperUtils.mouseEvent() can dispatch a mouseout event handled by unobstrusive js" time="0"/>
+        <testcase classname="tests/suites/casper/mouseevents" name="CasperUtils.mouseEvent() triggered mousedown" time="0.001"/>
+        <testcase classname="tests/suites/casper/mouseevents" name="CasperUtils.mouseEvent() triggered mousedown via unobstrusive js" time="0"/>
+        <testcase classname="tests/suites/casper/mouseevents" name="CasperUtils.mouseEvent() triggered mouseup" time="0"/>
+        <testcase classname="tests/suites/casper/mouseevents" name="CasperUtils.mouseEvent() triggered mouseup via unobstrusive js" time="0.001"/>
+        <testcase classname="tests/suites/casper/mouseevents" name="CasperUtils.mouseEvent() triggered mouseover" time="0"/>
+        <testcase classname="tests/suites/casper/mouseevents" name="CasperUtils.mouseEvent() triggered mouseover via unobstrusive js" time="0"/>
+        <testcase classname="tests/suites/casper/mouseevents" name="CasperUtils.mouseEvent() triggered mouseout" time="0"/>
+        <testcase classname="tests/suites/casper/mouseevents" name="CasperUtils.mouseEvent() triggered mouseout via unobstrusive js" time="0"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/onerror.js" package="tests/suites/casper/onerror" tests="2" time="0.395">
+        <testcase classname="tests/suites/casper/onerror" name="page.error event has been caught OK" time="0.395"/>
+        <testcase classname="tests/suites/casper/onerror" name="page.error retrieves correct stack trace" time="0"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/open.js" package="tests/suites/casper/open" tests="16" time="1.406">
+        <testcase classname="tests/suites/casper/open" name="Casper.open() used the expected GET settings" time="0.198"/>
+        <testcase classname="tests/suites/casper/open" name="Casper.open() used the expected POST settings" time="0.002"/>
+        <testcase classname="tests/suites/casper/open" name="Casper.open() used the expected PUT settings" time="0.001"/>
+        <testcase classname="tests/suites/casper/open" name="Casper.open() used the expected HTTP auth settings" time="0.001"/>
+        <testcase classname="tests/suites/casper/open" name="Casper.open() can open and load a location using GET" time="0.103"/>
+        <testcase classname="tests/suites/casper/open" name="Casper.open() can open and load a location using POST" time="0.099"/>
+        <testcase classname="tests/suites/casper/open" name="Casper.open() can open and load a location using PUT" time="0.1"/>
+        <testcase classname="tests/suites/casper/open" name="Casper.open() can open and load a location using HTTP auth" time="0.1"/>
+        <testcase classname="tests/suites/casper/open" name="Casper.thenOpen() used the expected GET settings" time="0.101"/>
+        <testcase classname="tests/suites/casper/open" name="Casper.thenOpen() can open and load a location using GET" time="0.1"/>
+        <testcase classname="tests/suites/casper/open" name="Casper.thenOpen() used the expected POST settings" time="0.101"/>
+        <testcase classname="tests/suites/casper/open" name="Casper.thenOpen() can open and load a location using POST" time="0.101"/>
+        <testcase classname="tests/suites/casper/open" name="Casper.thenOpen() used the expected PUT settings" time="0.098"/>
+        <testcase classname="tests/suites/casper/open" name="Casper.thenOpen() can open and load a location using PUT" time="0.102"/>
+        <testcase classname="tests/suites/casper/open" name="Casper.thenOpen() used the expected HTTP auth settings" time="0.098"/>
+        <testcase classname="tests/suites/casper/open" name="Casper.thenOpen() can open and load a location using HTTP auth" time="0.101"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/popup.js" package="tests/suites/casper/popup" tests="25" time="3.11">
+        <testcase classname="tests/suites/casper/popup" name="&quot;popup.created&quot; event is fired" time="0.308"/>
+        <testcase classname="tests/suites/casper/popup" name="&quot;popup.created&quot; event callback get a popup page instance" time="0.001"/>
+        <testcase classname="tests/suites/casper/popup" name="&quot;popup.loaded&quot; event is fired" time="0.022"/>
+        <testcase classname="tests/suites/casper/popup" name="&quot;popup.loaded&quot; is triggered when popup content is actually loaded" time="0"/>
+        <testcase classname="tests/suites/casper/popup" name="Casper.waitForPopup() waits for a popup being created" time="0.47"/>
+        <testcase classname="tests/suites/casper/popup" name="A popup has been added" time="0.001"/>
+        <testcase classname="tests/suites/casper/popup" name="A popup is a WebPage" time="0"/>
+        <testcase classname="tests/suites/casper/popup" name="Casper.withPopup() switched to popup as current active one" time="0.202"/>
+        <testcase classname="tests/suites/casper/popup" name="Casper.withPopup() has client utils injected" time="0.001"/>
+        <testcase classname="tests/suites/casper/popup" name="Casper.withPopup() can perform assertions on the DOM" time="0.001"/>
+        <testcase classname="tests/suites/casper/popup" name="Casper.withPopup() can perform assertions on the DOM using XPath" time="0"/>
+        <testcase classname="tests/suites/casper/popup" name="Casper.withPopup() has reverted to main page after using the popup" time="0.196"/>
+        <testcase classname="tests/suites/casper/popup" name="&quot;popup.closed&quot; event is fired" time="0.102"/>
+        <testcase classname="tests/suites/casper/popup" name="Popup is removed when closed" time="0.103"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/prompt.js" package="tests/suites/casper/prompt" tests="1" time="0.501">
+        <testcase classname="tests/suites/casper/prompt" name="prompted value has been received" time="0.501"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/request.js" package="tests/suites/casper/request" tests="3" time="0.502">
+        <testcase classname="tests/suites/casper/request" name="Casper.open() sets no custom header by default" time="0.3"/>
+        <testcase classname="tests/suites/casper/request" name="Casper.open() can set a custom header" time="0.102"/>
+        <testcase classname="tests/suites/casper/request" name="Casper.open() custom headers option is not persistent" time="0.1"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/resources.coffee" package="tests/suites/casper/resources" tests="5" time="1.616">
+        <testcase classname="tests/suites/casper/resources" name="only one resource found" time="0.415"/>
+        <testcase classname="tests/suites/casper/resources" name="two resources found" time="1.201"/>
+        <testcase classname="tests/suites/casper/resources" name="phantom image found via test RegExp" time="0"/>
+        <testcase classname="tests/suites/casper/resources" name="phantom image found via test Function" time="0"/>
+        <testcase classname="tests/suites/casper/resources" name="phantom image found via test String" time="0"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/scripts.js" package="tests/suites/casper/scripts" tests="6" time="0.993">
+        <testcase classname="tests/suites/casper/scripts" name="Casper.includeRemoteScripts() includes a first remote script on start" time="0.789"/>
+        <testcase classname="tests/suites/casper/scripts" name="Casper.includeRemoteScripts() includes a second remote script on start" time="0.001"/>
+        <testcase classname="tests/suites/casper/scripts" name="Casper.includeRemoteScripts() includes a really remote file on first step" time="0"/>
+        <testcase classname="tests/suites/casper/scripts" name="Casper.includeRemoteScripts() includes a first remote script on second step" time="0.201"/>
+        <testcase classname="tests/suites/casper/scripts" name="Casper.includeRemoteScripts() includes a second remote script on second step" time="0.001"/>
+        <testcase classname="tests/suites/casper/scripts" name="Casper.includeRemoteScripts() includes a really remote file on second step" time="0.001"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/start.js" package="tests/suites/casper/start" tests="4" time="0.4">
+        <testcase classname="tests/suites/casper/start" name="Casper.start() started" time="0.197"/>
+        <testcase classname="tests/suites/casper/start" name="Casper.start() can chain a next step" time="0.202"/>
+        <testcase classname="tests/suites/casper/start" name="Casper.start() opened the passed url" time="0.001"/>
+        <testcase classname="tests/suites/casper/start" name="Casper.start() injects ClientUtils instance within remote DOM" time="0"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/steps.js" package="tests/suites/casper/steps" tests="8" time="0.808">
+        <testcase classname="tests/suites/casper/steps" name="Casper.then() can add a new step" time="0.2"/>
+        <testcase classname="tests/suites/casper/steps" name="Casper.thenOpen() can add a new step" time="0"/>
+        <testcase classname="tests/suites/casper/steps" name="Casper.thenOpen() can add a new step for opening, plus another step" time="0.001"/>
+        <testcase classname="tests/suites/casper/steps" name="Casper.each() passes a contextualized index" time="0.001"/>
+        <testcase classname="tests/suites/casper/steps" name="Casper.then() added a new step" time="0.305"/>
+        <testcase classname="tests/suites/casper/steps" name="Casper.thenOpen() opened a location and executed a step" time="0.301"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/urls.js" package="tests/suites/casper/urls" tests="6" time="0.696">
+        <testcase classname="tests/suites/casper/urls" name="HTTP status code is: 200" time="0.496"/>
+        <testcase classname="tests/suites/casper/urls" name="Casper.getCurrentUrl() retrieves a raw unicode URL" time="0.001"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/viewport.js" package="tests/suites/casper/viewport" tests="3" time="0.098">
+        <testcase classname="tests/suites/casper/viewport" name="Casper.viewport() can change the width of page viewport" time="0.097"/>
+        <testcase classname="tests/suites/casper/viewport" name="Casper.viewport() can change the height of page viewport" time="0"/>
+        <testcase classname="tests/suites/casper/viewport" name="Casper.viewport() validates viewport size data" time="0.001"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/visible.js" package="tests/suites/casper/visible" tests="4" time="1.502">
+        <testcase classname="tests/suites/casper/visible" name="Casper.visible() can detect if an element is visible" time="0.303"/>
+        <testcase classname="tests/suites/casper/visible" name="Casper.visible() can detect if an element is invisible" time="0"/>
+        <testcase classname="tests/suites/casper/visible" name="Casper.waitWhileVisible() can wait while an element is visible" time="1.198"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/wait.js" package="tests/suites/casper/wait" tests="3" time="6.212">
+        <testcase classname="tests/suites/casper/wait" name="Casper.wait() can wait for a given amount of time" time="1.505"/>
+        <testcase classname="tests/suites/casper/wait" name="Casper.waitFor() can wait for something to happen" time="2.303"/>
+        <testcase classname="tests/suites/casper/wait" name="Casper.waitForText() can wait for text" time="2.404"/>
+    </testsuite>
+    <testsuite failures="0" name="Untitled suite in /Users/niko/Sites/casperjs/tests/suites/casper/xpath.js" package="tests/suites/casper/xpath" tests="6" time="0.608">
+        <testcase classname="tests/suites/casper/xpath" name="XPath selector can find an element" time="0.406"/>
+        <testcase classname="tests/suites/casper/xpath" name="XPath selector does not retrieve an unexistent element" time="0.001"/>
+        <testcase classname="tests/suites/casper/xpath" name="selectXPath() shortcut can find an element as well" time="0.001"/>
+        <testcase classname="tests/suites/casper/xpath" name="Correct number of elements are found" time="0.001"/>
+        <testcase classname="tests/suites/casper/xpath" name="Clicking XPath works as expected" time="0.196"/>
+        <testcase classname="tests/suites/casper/xpath" name="Casper.fill() can fill an input[type=text] form field" time="0.003"/>
+    </testsuite>
+</testsuites>

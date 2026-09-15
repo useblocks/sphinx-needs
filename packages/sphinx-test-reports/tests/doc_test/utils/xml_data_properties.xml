@@ -1,0 +1,34 @@
+<testsuites>
+  <testsuite name="acceptance_tests" tests="4" failures="1" errors="0" skipped="1" time="12.345">
+    <properties>
+      <property name="environment" value="staging"/>
+      <property name="build_id" value="build-7742"/>
+    </properties>
+    <testcase classname="tests.auth" name="test_login_valid" time="1.200">
+      <properties>
+        <property name="verifies" value="REQ_AUTH_001,REQ_AUTH_002"/>
+        <property name="priority" value="high"/>
+      </properties>
+    </testcase>
+    <testcase classname="tests.auth" name="test_login_invalid" time="0.800">
+      <properties>
+        <property name="verifies" value="REQ_AUTH_003"/>
+      </properties>
+    </testcase>
+    <testcase classname="tests.auth" name="test_logout" time="0.500">
+      <failure type="AssertionError">Expected redirect to /login</failure>
+    </testcase>
+    <testcase classname="tests.auth" name="test_session_timeout" time="0.100">
+      <skipped type="skip" message="not yet implemented"/>
+    </testcase>
+  </testsuite>
+  <testsuite name="api_tests" tests="2" failures="0" errors="0" skipped="0" time="3.500">
+    <testcase classname="tests.api" name="test_get_users" time="2.000">
+      <properties>
+        <property name="verifies" value="REQ_API_010,REQ_API_011,REQ_API_012"/>
+        <property name="category" value="integration"/>
+      </properties>
+    </testcase>
+    <testcase classname="tests.api" name="test_create_user" time="1.500"/>
+  </testsuite>
+</testsuites>

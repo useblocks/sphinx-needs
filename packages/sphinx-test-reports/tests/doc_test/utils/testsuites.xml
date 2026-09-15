@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="6" failures="1" disabled="0" errors="0" time="0.001" timestamp="2022-08-15T09:08:41.743" name="AllTests">
+  <testsuite name="TimerTest" tests="4" failures="0" disabled="0" skipped="0" errors="0" time="0" timestamp="2022-08-15T09:08:41.743">
+    <testcase name="test_Timer_increment" status="run" result="completed" time="0" timestamp="2022-08-15T09:08:41.743" classname="TimerTest" />
+    <testcase name="test_Timer_checkTime" status="run" result="completed" time="0" timestamp="2022-08-15T09:08:41.743" classname="TimerTest" />
+    <testcase name="test_Timer_getdT" status="run" result="completed" time="0" timestamp="2022-08-15T09:08:41.743" classname="TimerTest" />
+    <testcase name="test_Timer_getCurrentTime" status="run" result="completed" time="0" timestamp="2022-08-15T09:08:41.743" classname="TimerTest" />
+  </testsuite>
+  <testsuite name="TimerCounterImplTest" tests="2" failures="1" disabled="0" skipped="0" errors="0" time="0.001" timestamp="2022-08-15T09:08:41.743">
+    <testcase name="CheckTimerFunction_Init" status="run" result="completed" time="0" timestamp="2022-08-15T09:08:41.743" classname="TimerCounterImplTest">
+      <failure message="C:\CPPComponent\CPPTimeCounter\tst\tests\UT\test_c_TimeCounter_timecounter_5msImpl.cpp:85&#x0A;Expected equality of these values:&#x0A;  TimerValue&#x0A;    Which is: 500&#x0A;  testOuputs.m_TimerCurrentValue&#x0A;    Which is: 0" type=""><![CDATA[C:\CPPComponent\CPPTimeCounter\tst\tests\UT\test_c_TimeCounter_timecounter_5msImpl.cpp:85
+Expected equality of these values:
+  TimerValue
+    Which is: 500
+  testOuputs.m_TimerCurrentValue
+    Which is: 0]]></failure>
+      <failure message="C:\CPPComponent\CPPTimeCounter\tst\tests\UT\test_c_TimeCounter_timecounter_5msImpl.cpp:86&#x0A;Expected equality of these values:&#x0A;  TimeReached&#x0A;    Which is: true&#x0A;  testOuputs.m_TimeReached&#x0A;    Which is: false" type=""><![CDATA[C:\CPPComponent\CPPTimeCounter\tst\tests\UT\test_c_TimeCounter_timecounter_5msImpl.cpp:86
+Expected equality of these values:
+  TimeReached
+    Which is: true
+  testOuputs.m_TimeReached
+    Which is: false]]></failure>
+    </testcase>
+    <testcase name="CheckTimerFunction_StartTimer" status="run" result="completed" time="0.001" timestamp="2022-08-15T09:08:41.743" classname="TimerCounterImplTest" />
+  </testsuite>
+  <testsuite name="Another Test" tests="4" failures="0" disabled="0" skipped="0" errors="0" time="0" timestamp="2022-08-15T09:08:41.743">
+    <testcase name="test_Another_increment" status="run" result="completed" time="0" timestamp="2022-08-15T09:08:41.743" classname="AnotherTest" />
+    <testcase name="test_Another_checkTime" status="run" result="completed" time="0" timestamp="2022-08-15T09:08:41.743" classname="AnotherTest" />
+    <testcase name="test_Another_getdT" status="run" result="completed" time="0" timestamp="2022-08-15T09:08:41.743" classname="AnotherTest" />
+    <testcase name="test_Another_getCurrentTime" status="run" result="completed" time="0" timestamp="2022-08-15T09:08:41.743" classname="AnotherTest" />
+  </testsuite>
+</testsuites>

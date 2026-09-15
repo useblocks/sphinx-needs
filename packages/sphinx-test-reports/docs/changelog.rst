@@ -1,0 +1,364 @@
+:hide-navigation:
+
+Changelog
+=========
+
+Unreleased
+----------
+:Released: under development
+
+.. _`release:2.0.0`:
+
+2.0.0
+-----
+:Released: 11.09.2026
+
+A major release. ``pip install sphinx-test-reports`` no longer installs Sphinx
+and Sphinx-Needs, Python 3.10 is no longer supported, Sphinx-Needs 6.0.1 and
+Sphinx 7.4 are the oldest supported versions, and a failed test case's
+``result`` is spelled ``failed`` rather than ``failure``. What the bare package
+gains in return is a life outside a documentation build: a ``test-reports``
+command that turns test-result XML into a ``needs.json`` without running
+Sphinx, and a pytest plugin that writes the XML shape this extension reads. A
+project can also be described once, declaratively, in the ``[test_reports]``
+section of ``ubproject.toml`` instead of being restated in ``conf.py``.
+
+Upgrading a documentation project means adding the extra to its install line:
+``pip install "sphinx-test-reports[sphinx]"``. Beyond that, only a project that
+names the old ``failure`` result has to change anything: a filter on the value,
+a custom ``tr_report_template`` copied from the shipped one, and custom CSS on
+the ``tr_failure`` class.
+
+* Breaking: ``pip install sphinx-test-reports`` no longer installs Sphinx and
+  Sphinx-Needs. They are the new ``sphinx`` extra, so the install line of a
+  documentation project becomes ``pip install "sphinx-test-reports[sphinx]"``.
+  The bare package brings only ``lxml``, the dependency of the ``test-reports``
+  command, which runs in test runners and build actions that have no
+  documentation toolchain; the pytest plugin, the ``pytest`` extra, runs there
+  too. An extra is opt-in, so the extension now checks the installed toolchain
+  against the versions the extra declares when Sphinx loads it: a missing or
+  older Sphinx or Sphinx-Needs stops the build with a message naming the
+  install line, instead of a traceback from inside a directive.
+  `#159 <https://github.com/useblocks/sphinx-test-reports/pull/159>`_
+* Breaking: Python 3.10 is no longer supported. It reached the end of upstream
+  support, and dropping it lets the package read TOML with ``tomllib`` from the
+  standard library instead of carrying a backport.
+  `#147 <https://github.com/useblocks/sphinx-test-reports/pull/147>`_
+* Breaking: sphinx-needs 6.0.1 and Sphinx 7.4 are the oldest supported
+  versions. 6.0.1 is the first release whose ``add_extra_option`` takes a
+  schema, which this extension registers its fields with; sphinx-needs 6 itself
+  requires Sphinx 7.4. The compatibility branches for older releases are gone.
+  `#150 <https://github.com/useblocks/sphinx-test-reports/pull/150>`_
+* Breaking: a failed test case now carries the ``result`` value ``failed``
+  instead of ``failure``, so that every state is spelled the same way -- as a
+  participle, like the ``passed``, ``skipped`` and ``disabled`` beside it, and
+  like the ``failed`` count on a test-file and test-suite need. ``failure`` was
+  never a chosen name: it was the name of the JUnit ``<failure>`` element,
+  passed through by the parser. The full vocabulary is now ``passed``,
+  ``failed``, ``error``, ``skipped``, ``disabled``; ``error`` is unchanged,
+  because it agrees with the ``errors`` count beside it. **Three things in a
+  project have to be updated:** a filter naming the value
+  (``'failure' == result`` becomes ``'failed' == result``), a custom
+  ``tr_report_template``, which contains two such filters in the shipped
+  template it was copied from, and custom CSS targeting the generated
+  ``tr_failure`` class, which is now ``tr_failed`` (the stylesheet still
+  carries rules for both, so the colours survive either way). The value is also
+  what ``test-reports build needs`` writes into ``needs.json``, so a consumer
+  of that file -- a schema, a metamodel validator -- has to be updated with it.
+  `#161 <https://github.com/useblocks/sphinx-test-reports/pull/161>`_
+* Feature: New ``test-reports build needs`` command line interface, converting
+  test-result XML into a ``needs.json`` without running Sphinx, so the
+  conversion can run as a cacheable build action and the documentation build
+  only imports the result. Its settings come from the
+  ``[test_reports.build.needs]`` table of ``ubproject.toml``, with flags for
+  per-invocation overrides. See :ref:`cli`.
+  `#148 <https://github.com/useblocks/sphinx-test-reports/pull/148>`_
+* Feature: A pytest plugin (``-p sphinxcontrib.test_reports.pytest_plugin``)
+  gives every test case the source location an editor shows -- pytest's
+  ``file``/``line`` counted from 1, Bazel's runfiles prefix cut, a runtime
+  override for file-driven tests -- and requirement-link ``<properties>`` from
+  an ``add_test_properties`` decorator or an ``apply_test_metadata`` runtime
+  helper, for cases skipped at setup and under pytest-xdist too. Which
+  properties exist, their XML names and which take lists is the
+  ``test_reports_properties`` pytest ini option; S-CORE's model, which the
+  plugin was ported from, is the documented example. The plugin is the
+  ``pytest`` extra: ``pip install "sphinx-test-reports[pytest]"`` installs it
+  and pytest, without the documentation toolchain. See :ref:`pytest_plugin`.
+  `#151 <https://github.com/useblocks/sphinx-test-reports/pull/151>`_
+* Feature: Declarative configuration in the ``[test_reports]`` section of
+  ``ubproject.toml``, the file shared with the other useblocks tooling, so a
+  project is described once instead of being restated in ``conf.py``. The file
+  is searched for upwards from the ``confdir``, stopping at the repository
+  root; the new ``tr_config_from_toml`` names or disables it. Precedence is
+  ``-D`` > ``ubproject.toml`` > ``conf.py`` > default. See
+  :ref:`tr_config_from_toml`.
+  `#145 <https://github.com/useblocks/sphinx-test-reports/pull/145>`_
+* Feature: The produced ``needs.json`` declares every field it uses in a
+  ``needs_schema``, as Sphinx-Needs does for the files a build writes, so a
+  consumer can read the type of a field from the artifact instead of from a
+  Sphinx build with the extension loaded. The declarations and the fields the
+  extension registers come from one table, so the two cannot drift apart.
+  `#148 <https://github.com/useblocks/sphinx-test-reports/pull/148>`_
+* Feature: Support the googletest XML dialect: ``status="notrun"`` is reported
+  as ``disabled`` instead of ``passed``, all ``<failure>``/``<skipped>`` parts
+  of a test case are kept instead of only the first, ``RecordProperty`` values
+  in attribute form are read (on ``<testcase>`` for googletest < 1.8.1 and on
+  ``<testsuite>`` for suite-level properties up to 1.15.x), and ``timestamp``,
+  ``value_param`` and ``type_param`` are parsed. ``<system-err>`` is captured.
+  `#141 <https://github.com/useblocks/sphinx-test-reports/pull/141>`_
+* Feature: The source location of a test case is available as Sphinx-Needs
+  fields, configurable via the new ``tr_source_file_option`` and
+  ``tr_source_line_option``.
+  `#142 <https://github.com/useblocks/sphinx-test-reports/pull/142>`_
+* Feature: New ``tr_deterministic_case_ids`` option derives test-case IDs from
+  the source location instead of the need content, so an ID no longer changes
+  when a test starts failing differently.
+  `#143 <https://github.com/useblocks/sphinx-test-reports/pull/143>`_
+* Improvement: both parsers now map their input onto the one ``result``
+  vocabulary instead of each passing its own through, so a JSON report written
+  against the JUnit dialect no longer produces a different ``result`` than the
+  XML it mirrors. A state this package does not know is still passed through
+  untouched, so a ``tr_json_mapping`` pointing at a report with a vocabulary of
+  its own keeps working.
+  `#161 <https://github.com/useblocks/sphinx-test-reports/pull/161>`_
+* Bugfix: ``tr_file_option`` is now honoured by the directives, not only by the
+  field registration. Renaming the field previously produced needs carrying an
+  unregistered field.
+  `#142 <https://github.com/useblocks/sphinx-test-reports/pull/142>`_
+* Bugfix: ``tr_file_option``, ``tr_source_file_option`` and
+  ``tr_source_line_option`` may no longer name a fixed field such as ``case``
+  or ``result``, in ``conf.py`` or in the declarative file. The build
+  previously stopped with a bare ``TypeError`` from inside a directive.
+  `#148 <https://github.com/useblocks/sphinx-test-reports/pull/148>`_
+* Support: ``result_text`` and ``remote_url`` are registered as need fields by
+  the extension, so a ``needs.json`` the ``build needs`` command produced
+  imports without dropping them. A project that registered ``remote_url``
+  itself keeps its own registration.
+  `#148 <https://github.com/useblocks/sphinx-test-reports/pull/148>`_
+* Support: ``packaging`` is no longer a runtime dependency. The last import of
+  it under ``sphinxcontrib/`` is gone, so the ``docs`` and ``test`` extras,
+  whose ``conf.py`` files still use it, declare it instead.
+  `#154 <https://github.com/useblocks/sphinx-test-reports/pull/154>`_
+* Testing: CI installs the package with the ``pytest`` extra alone and runs the
+  converter's and the pytest plugin's tests without Sphinx -- on the newest
+  pytest and on the oldest the plugin supports -- so a toolchain import
+  creeping into either import chain, or Sphinx creeping back into a dependency
+  list, fails the build.
+  `#159 <https://github.com/useblocks/sphinx-test-reports/pull/159>`_
+* Testing: Run the test suite against sphinx-needs 8.5.0. The matrix
+  previously topped out at 8.0.0, so the release a fresh install resolves to
+  was untested.
+  `#158 <https://github.com/useblocks/sphinx-test-reports/pull/158>`_
+* Known: Sphinx 9 renders a configuration error raised from the declarative
+  file -- a wrong type, a rename onto a fixed field, a disagreeing need type
+  -- as its crash report rather than as a one-line message; the message is in
+  the report. A typo in ``[test_reports.build.needs]`` is reported the same
+  way, and so is a missing or outdated toolchain refused when the extension
+  loads.
+  `#148 <https://github.com/useblocks/sphinx-test-reports/pull/148>`_
+
+.. _`release:1.4.0`:
+
+1.4.0
+-----
+:Released: 16.06.2026
+
+This release adds Sphinx-Needs 8 support and the ability to map JUnit XML
+``<properties>`` onto Sphinx-Needs fields and links. It also registers every
+field that Sphinx-Test-Reports adds with a typed schema, so unset fields no
+longer trigger false-positive ``unevaluatedProperties: false`` schema-validation
+warnings, and it fixes JUnit ``<error>`` test cases being reported as passed.
+
+* Feature: Map JUnit XML ``<properties>`` to Sphinx-Needs fields and links via
+  the new ``tr_property_link_types`` and ``tr_extra_options`` options.
+  `#135 <https://github.com/useblocks/sphinx-test-reports/pull/135>`_
+* Improvement: Support Sphinx-Needs 8 by registering fields through the new
+  ``add_field`` API, falling back to ``add_extra_option`` on older versions.
+  `#133 <https://github.com/useblocks/sphinx-test-reports/pull/133>`_
+* Bugfix: Register ``file``, ``suite``, ``case``, ``case_name``,
+  ``case_parameter`` and ``classname`` with a typed (string) schema so they
+  default to an unset/``None`` value and are stripped before schema validation.
+  Previously they were registered untyped and defaulted to ``""``, which caused
+  false-positive ``Unevaluated properties are not allowed`` warnings on needs
+  that did not set them when a schema used ``unevaluatedProperties: false``.
+  `#133 <https://github.com/useblocks/sphinx-test-reports/pull/133>`_
+* Bugfix: Handle the JUnit ``<error>`` result state in ``parse_testcase()``;
+  ``<error>`` test cases were previously misclassified as ``passed``.
+  `#134 <https://github.com/useblocks/sphinx-test-reports/pull/134>`_
+* Testing: Run the test suite against Sphinx-Needs 6.3.0.
+  `#130 <https://github.com/useblocks/sphinx-test-reports/pull/130>`_
+* Testing: Add a regression test that a strict schema ignores unpopulated
+  Sphinx-Test-Reports fields.
+  `#137 <https://github.com/useblocks/sphinx-test-reports/pull/137>`_
+* Docs: Clarify the Sphinx-Needs type names (``testfile``, ``testsuite``,
+  ``testcase``) versus the hyphenated directives.
+  `#136 <https://github.com/useblocks/sphinx-test-reports/pull/136>`_
+* Docs: Note that numeric ``cases`` filtering requires Sphinx-Needs >= 6.
+  `#139 <https://github.com/useblocks/sphinx-test-reports/pull/139>`_
+
+.. _`release:1.3.2`:
+
+1.3.2
+-----
+:Released: 13.11.2025
+
+This release improves Sphinx-Test-Reports compatibility with Sphinx and
+fixes some Sphinx related deprecation warnings.
+
+* Bugfix: Fix deprecation warnings with Sphinx 8.
+  `#128 <https://github.com/useblocks/sphinx-test-reports/pull/128>`_
+
+.. _`release:1.3.1`:
+
+1.3.1
+-----
+:Released: 02.10.2025
+:Full Changelog: `v1.3.0...v1.3.1 <https://github.com/useblocks/sphinx-test-reports/compare/1.3.0...ac4d771777b0af46919acf31f7cd34178d0b46d5>`__
+
+* Support Sphinx-Needs 6 schema validation
+  `#122 <https://github.com/useblocks/sphinx-test-reports/pull/122>`_
+
+1.3.0
+-----
+:Released: 28.09.2025
+
+This release makes Sphinx-Test-Reports compatible with Sphinx-Needs 5.1 and
+introduces several maintenance improvements.
+
+* Improvement: Support for Sphinx-Needs 5.1.
+  `#119 <https://github.com/useblocks/sphinx-test-reports/pull/119>`_
+* Bugfix: Fix plantuml on RTD.
+  `#115 <https://github.com/useblocks/sphinx-test-reports/pull/115>`_
+* Maintenance: Removed py38 from classifiers.
+  `#116 <https://github.com/useblocks/sphinx-test-reports/pull/116>`_
+* Maintenance: Activate mypy.
+  `#113 <https://github.com/useblocks/sphinx-test-reports/pull/113>`_
+* Maintenance: Remove baumpfleger.
+  `#112 <https://github.com/useblocks/sphinx-test-reports/pull/112>`_
+* Maintenance: Clean makefile.
+  `#111 <https://github.com/useblocks/sphinx-test-reports/pull/111>`_
+* Maintenance: Use flit.
+  `#110 <https://github.com/useblocks/sphinx-test-reports/pull/110>`_
+* Maintenance: Added all_good job.
+  `#109 <https://github.com/useblocks/sphinx-test-reports/pull/109>`_
+* Maintenance: Add standard hooks.
+  `#106 <https://github.com/useblocks/sphinx-test-reports/pull/106>`_
+* Maintenance: Add yamlfmt.
+  `#105 <https://github.com/useblocks/sphinx-test-reports/pull/105>`_
+* Maintenance: Introduce ruff.
+  `#104 <https://github.com/useblocks/sphinx-test-reports/pull/104>`_
+* Maintenance: Add taplo pre-commit.
+  `#103 <https://github.com/useblocks/sphinx-test-reports/pull/103>`_
+
+
+1.2.0
+-----
+:Released: 27.03.2025
+
+* Improvement: Introducing :ref:`tr_extra_options` for setting custom options in all derrived
+  test-cases from ``test-file`` and co.
+  `#96 <https://github.com/useblocks/sphinx-test-reports/issues/96>`_
+* Improvement: JSON-Parser allows to set custom options in test-cases, like ``status`` or even ``id``.
+  See :ref:`tr_json_mapping` for examples. `#99 <https://github.com/useblocks/sphinx-test-reports/issues/99>`_
+
+1.1.0
+-----
+:Released: 17.01.2025
+
+* Bugfix: Compatible with Sphinx-Needs >= 4.0.
+* Bugfix: Path handling is os independent.
+* Improvement: Referenced target_option in `tr_link` can contain a comma separated list.
+* Improvement: The new :ref:`json_parser` is introduced.
+* Improvement: Template file encoding could be configured. See :ref:`tr_import_encoding`.
+  `#60 <https://github.com/useblocks/sphinx-test-reports/issues/60>`_
+*  Improvement: Supporting JSON files containing test results: :ref:`json_parser`.
+*  Improvement: Implemented :ref:`tr_json_mapping` config option for JSON mapping.
+
+1.0.2
+-----
+:Released: 21.12.2022 🎄
+
+* Bugfix: Links in `test-suite` and co. do not raise error.
+  `#51 <https://github.com/useblocks/sphinx-test-reports/issues/51>`_
+* Improvement: Allows empty text and message fields, which allows integration of ctest junit files
+  `#49 <https://github.com/useblocks/sphinx-test-reports/issues/49>`_
+
+1.0.1
+-----
+:Released: 04.11.2022
+
+* Improvement: ID length can be configured to avoid conflicts. See :ref:`tr_suite_id_length` and :ref:`tr_case_id_length`.
+  `#45 <https://github.com/useblocks/sphinx-test-reports/issues/45>`_
+* Bugfix: Multiple testsuites get documented correctly.
+  `#40 <https://github.com/useblocks/sphinx-test-reports/issues/40>`_
+
+1.0.0
+-----
+:Released: 26.09.2022
+
+* Improvement: Supporting `Sphinx-Needs <https://sphinx-needs.readthedocs.io/en/latest/>`__ ``>= 1.01`` only.
+* Improvement: Migrated nosetests to pytest.
+
+0.3.7
+-----
+:Released: 09.06.2022
+
+* Improvement: Nested test suites are supported (like in Robot Framework 5.0)
+  `#30 <https://github.com/useblocks/sphinx-test-reports/issues/30>`_
+
+0.3.6
+-----
+:Released: 12.11.2021
+
+* Improvement: Added support for parallel modes.
+  `#20 <https://github.com/useblocks/sphinx-test-reports/issues/20>`_
+* Improvement: Support getting skipped tests.
+  `#18 <https://github.com/useblocks/sphinx-test-reports/issues/18>`_
+
+0.3.5
+-----
+:Released: 18.06.2021
+
+* Bugfix: Minor bugfixes
+
+0.3.4
+-----
+:Released: 30.04.2021 (Recalled, contains major bugs)
+
+* Bugfix: Removed Sphinx 4 deprecation warnings
+
+0.3.3
+-----
+* Improvement: Added :ref:`test-report` directive.
+* Improvement: Introduces :ref:`tr_file`, :ref:`tr_suite` and :ref:`tr_case` options to customize names.
+* Improvement: Not found files will throw warning instead of exception so that build goes on.
+* Improvement: Provides css_classes ``tr_passed``, ``tr_failure``, ``tr_skipped`` to colorize needs and their rows in tables.
+* Bugfix: Stabilised extension initialisation phase.
+
+
+0.3.1
+-----
+* Improvement: Support of case and table colors based on ``result``.
+* Bugfix: Hash-Id for autogenerated test-cases size was increased.
+
+
+0.3.0
+-----
+* Improvement: Using `sphinx-needs <https://sphinx-needs.readthedocs.io/en/latest/>`_ for data representation
+  and filtering.
+* Improvement: New directives :ref:`test-file`, :ref:`test-suite` and :ref:`test-case`.
+* Improvement: New possibilities to :ref:`filter test data <filter>`.
+* Improvement: Much better documentation.
+
+0.2.1
+-----
+* Skipped support für Python < 3.5.
+* Bugfix: junit-file-format of pytest > 5.1.0 supported. `#8 <https://github.com/useblocks/sphinx-test-reports/issues/8>`_
+
+
+0.2.0
+-----
+
+**Initial start for the changelog**
+
+* Improvement: added directive ``:test-env:`` to take tox-envreport.json as input and create a table.
