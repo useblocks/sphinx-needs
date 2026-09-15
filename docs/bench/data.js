@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789508894108,
+  "lastUpdate": 1789511026533,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -20952,6 +20952,42 @@ window.BENCHMARK_DATA = {
             "value": 39.411266714,
             "unit": "s",
             "extra": "Commit: c62de4fdb218de44a673bca9134986e1ea00e5ec\nBranch: master\nTime: 2026-09-15T23:47:07+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0aa2e95798810487d14c00d51cea3c0787dc4594",
+          "message": "🔧 Stop dependabot rewriting manifest ranges it does not need to: versioning-strategy increase-if-necessary for the uv ecosystem (#1942)\n\nOne line in `.github/dependabot.yml`: `versioning-strategy:\nincrease-if-necessary` for the uv ecosystem, with the reason written\nnext to it. (First opened as `lockfile-only`; changed after weighing the\ncost below.)\n\n### Why\n\nDependabot's default strategy for a project with a lockfile is\n`increase`: it rewrites the manifest requirement to match the new\nrelease even when the requirement already allows it. Every specifier in\nthis workspace's manifests is a decision, so that is the wrong strategy\nhere. Floors are series (`ty~=0.0.80`, `types-docutils~=0.20.0`), caps\ncarry their reason as a comment, and the intra-workspace floors are\nmoved by `propagate_floors.py` at release time.\n\nThe 2026-09 batch, #1940, is the measurement. As proposed it raised\nsphinx-needs' `matplotlib>=3.3.0`, the floor of the user-facing\n`plotting` extra, to `>=3.11.2`, the newest release, although the floor\nalready allowed it. An earlier batch rewrote `~=0.20.0` as\n`>=0.20,<0.24`, which is why the `types-docutils` ignore rule exists.\n\n### What changes\n\nWith `increase-if-necessary`, a requirement that already allows the new\nrelease is left alone and only the lock moves. A release outside a range\nstill produces a pull request that widens the range.\n\nThat second half is kept on purpose. 44 of the 97 external specifiers in\nthese manifests carry a cap or a series, many of them runtime caps on\nsphinx-needs' user-facing dependencies (`jsonschema-rs<0.54`,\n`requests-file<4`, `pydata-sphinx-theme<0.20`, `sphinx-immaterial<0.14`,\n`pytest<10`, ...). The widening pull request is the one signal that a\nnew major of one of them exists, and its review is where a stale reason\ncomment or a widened `~=` series gets re-expressed by hand.\n`lockfile-only` was considered and rejected for exactly this: it never\nedits a manifest, but it also never proposes such a release, so the\nworkspace would sit on an old series until a user noticed.\n\nThe `ignore` rules stay and are unaffected: they stop lock-only updates\nthat the manifests *would* allow but the test matrix and the typing\nfloor do not want (a sphinx minor inside `>=7.4,<10`, a `types-docutils`\nminor inside its series). The member-name ignores stay for their own\nreason (dependabot-core#14004).\n\n### Applied to last night's batch\n\nUnder this strategy #1940 would have been: matplotlib and uv as\nlock-only updates, and the click bump as a widening of `click < 8.2` for\nreview. That cap turned out to pin a package nothing uses, and #1943\ndrops it deliberately.\n\n### Caveat\n\nThe options reference lists `uv` as supporting `versioning-strategy` and\nlists the values for the option as a whole; it notes an ecosystem may\nnot support every value. If uv does not accept this one, dependabot\nrejects the configuration visibly on its settings page rather than doing\nanything silently, and `lockfile-only` is the fallback.\n\n### Checked\n\n`uv run poe lint` 8/8 (yamlfmt included). No lock change: the file is\nconfiguration only.",
+          "timestamp": "2026-09-16T00:22:25+02:00",
+          "tree_id": "f1027a5d50efb2558a5cd8ef822ebc1c250fb726",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/0aa2e95798810487d14c00d51cea3c0787dc4594"
+        },
+        "date": 1789511017692,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.15431140900000173,
+            "unit": "s",
+            "extra": "Commit: 0aa2e95798810487d14c00d51cea3c0787dc4594\nBranch: master\nTime: 2026-09-16T00:22:25+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 54.07850195499998,
+            "unit": "s",
+            "extra": "Commit: 0aa2e95798810487d14c00d51cea3c0787dc4594\nBranch: master\nTime: 2026-09-16T00:22:25+02:00"
           }
         ]
       }
