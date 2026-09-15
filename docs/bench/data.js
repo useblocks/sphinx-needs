@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789508345110,
+  "lastUpdate": 1789508894108,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -20916,6 +20916,42 @@ window.BENCHMARK_DATA = {
             "value": 56.288447872999996,
             "unit": "s",
             "extra": "Commit: a8c6c23f0a0599887033a28f784f495b9dcf770a\nBranch: master\nTime: 2026-09-15T23:37:39+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c62de4fdb218de44a673bca9134986e1ea00e5ec",
+          "message": "⬆️ Bump types-requests from 2.33.0.20260712 to 2.33.0.20260906 (#1941)\n\nBumps [types-requests](https://github.com/python/typeshed) from\n2.33.0.20260712 to 2.33.0.20260906.\n<details>\n<summary>Commits</summary>\n<ul>\n<li>See full diff in <a\nhref=\"https://github.com/python/typeshed/commits\">compare view</a></li>\n</ul>\n</details>\n<br />\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-09-15T23:47:07+02:00",
+          "tree_id": "f6fe94c4216fd2edd76568dcb7010be880ff817e",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/c62de4fdb218de44a673bca9134986e1ea00e5ec"
+        },
+        "date": 1789508887328,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.11316503700000169,
+            "unit": "s",
+            "extra": "Commit: c62de4fdb218de44a673bca9134986e1ea00e5ec\nBranch: master\nTime: 2026-09-15T23:47:07+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 39.411266714,
+            "unit": "s",
+            "extra": "Commit: c62de4fdb218de44a673bca9134986e1ea00e5ec\nBranch: master\nTime: 2026-09-15T23:47:07+02:00"
           }
         ]
       }
