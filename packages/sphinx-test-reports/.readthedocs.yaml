@@ -1,31 +1,90 @@
+# Read the Docs configuration for the sphinx-test-reports project.
+#
+# It lives HERE, next to the package, and the sphinx-test-reports RTD project points at it
+# with its per-project "Build configuration file" setting (`readthedocs_yaml_path`). The
+# sphinx-needs project keeps the repository-root `.readthedocs.yml` and must NOT be
+# repointed: that setting applies to every version a project builds, so moving an existing
+# project's config path makes every pre-move tag unbuildable.
+#
+# EVERY PATH BELOW IS RELATIVE TO THE REPOSITORY ROOT, not to this file -- RTD's monorepo
+# guide is explicit about it -- which is why they all start `packages/sphinx-test-reports/`.
 version: 2
 
 build:
-  os: ubuntu-22.04
+  # These apt packages ARE needed, unlike both SIBLING extensions', whose configs
+  # deliberately install none: 13 `needflow` directives across `filter.rst`,
+  # `functions.rst` and `examples/index.rst` need graphviz's `dot`, and PlantUML needs a
+  # JDK. (sphinx-needs' own docs render too, and its config installs the same two.) The jar itself
+  # comes from the checkout -- `vendor/plantuml/` is outside this package, so
+  # `python.install` below does not carry it, but RTD checks out the whole repository, so
+  # the relative path `docs/conf.py` resolves finds it and nothing is downloaded.
+  os: ubuntu-24.04
   apt_packages:
     - default-jdk
     - graphviz
   tools:
-    python: "3.12"
+    python: "3.13"
   jobs:
-    pre_create_environment:
-      - echo "DOT details"
-      - which dot
-
-# Build documentation in the "docs/" directory with Sphinx
+    post_checkout:
+      # Every pull request against this repository builds every Read the Docs project it
+      # has. A pull request that leaves `packages/sphinx-test-reports/` untouched has
+      # nothing for this one to build, so cancel it. Exit code 183 is Read the Docs'
+      # documented "skip" code
+      # (https://docs.readthedocs.com/platform/stable/guides/build/skip-build.html): the
+      # build is recorded as `cancelled`, and the commit status sent to GitHub is `success`
+      # with the description "Read the Docs build skipped", so no pull request is ever
+      # blocked by it.
+      #
+      # Why a plain two-dot `git diff` and not a merge base: Read the Docs clones the
+      # default branch with `--depth 1` and then fetches the pull-request head with
+      # `--depth 50`, so `origin/master` is a shallow root with no ancestry and
+      # `git merge-base` has nothing to walk. The diff therefore compares against master's
+      # CURRENT tip: if master moved and touched this package, the build runs although the
+      # pull request did not touch it. That is the safe direction; it never skips a build
+      # that was needed.
+      #
+      # `packages/sphinx-test-reports/` is ALMOST the complete set of inputs, and the one
+      # exception is deliberate: `docs/conf.py` also reads `vendor/plantuml/pin.toml` and
+      # the jar beside it. A bump there changes only which renderer version draws the
+      # diagrams, never whether the build succeeds, so it is not worth widening the filter
+      # and rebuilding this project for every workspace-level commit.
+      - |
+        if [ "$READTHEDOCS_VERSION_TYPE" != "external" ]; then
+          exit 0
+        fi
+        if ! git rev-parse --verify --quiet origin/master > /dev/null; then
+          echo "origin/master is not available in this clone; building to be safe"
+          exit 0
+        fi
+        if git diff --quiet origin/master -- packages/sphinx-test-reports/; then
+          echo "nothing under packages/sphinx-test-reports/ changed; skipping this build (exit 183)"
+          exit 183
+        fi
 
 sphinx:
-  configuration: docs/conf.py
+  # `docs/conf.py` is IN the source directory, so Read the Docs' own invocation
+  # (`sphinx-build -b html <confdir> …`, with no `-c`) finds it.
+  configuration: packages/sphinx-test-reports/docs/conf.py
   builder: html
+  # the same strictness the `docs-reports` poe task uses. Note it is `-W` without `-n`:
+  # the poe task and CI add the nitpicky flag, so they are the stricter gate of the two.
   fail_on_warning: true
-
-# Optional but recommended, declare the Python requirements required
-# to build your documentation
-# See https://docs.readthedocs.io/en/stable/guides/reproducible-builds.html
 
 python:
   install:
+    # The workspace sibling FIRST, from this checkout. Read the Docs runs these entries in
+    # order with pip, and a member installed on its own would resolve `sphinx-needs` from
+    # PyPI -- the released version, not the one beside it -- so a docs build here could
+    # pass or fail on code the workspace does not have. With the sibling already installed
+    # the member's requirement is satisfied and pip fetches nothing (tight tracking keeps
+    # the checkout's version inside the member's floor and cap).
     - method: pip
-      path: .
+      path: packages/sphinx-needs
+    - method: pip
+      path: packages/sphinx-test-reports
       extra_requirements:
+        # the MEMBER's extra, not the root's `docs-reports` pass-through: RTD pip-installs
+        # the package directory itself, so the name it resolves is the member's own. An
+        # extra rather than a dependency group, because `python.install` has no way to
+        # install a PEP 735 group
         - docs
