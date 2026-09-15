@@ -309,6 +309,10 @@ class TestLoader:
         hasattr(os, "geteuid") and os.geteuid() == 0,
         reason="root reads unreadable files",
     )
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="os.chmod on Windows only sets the read-only attribute; the file stays readable",
+    )
     def test_unreadable_file_is_a_config_error(self, tmp_path):
         # is_file() succeeding does not mean the open will; an unwrapped
         # OSError would surface as a traceback instead of a config error.
@@ -453,7 +457,9 @@ class TestLoader:
         assert config["report_template"] == str(subdir / "templates" / "report.txt")
 
     def test_absolute_paths_stay_untouched(self, tmp_path):
-        _write(tmp_path, f'[test_reports]\nrootdir = "{tmp_path}"\n')
+        # a TOML literal string: in a basic string a Windows path's backslashes
+        # are escape sequences ("\U" starts a unicode escape) and the file is invalid
+        _write(tmp_path, f"[test_reports]\nrootdir = '{tmp_path}'\n")
         config = load_project_config(tmp_path / DEFAULT_TOML_FILENAME)
         assert config["rootdir"] == str(tmp_path)
 
