@@ -127,10 +127,7 @@ def log_warning(
     # Since sphinx in v7.3, sphinx will show warning types if `show_warning_types=True` is set,
     # and in v8.0 this was made the default.
     if version_info < (8,):
-        if subtype:
-            message += f" [{type}.{subtype}]"
-        else:
-            message += f" [{type}]"
+        message += f" [{type}.{subtype}]"
 
     logger.warning(
         message,
@@ -156,10 +153,7 @@ def log_error(
     # Since sphinx in v7.3, sphinx will show warning types if `show_warning_types=True` is set,
     # and in v8.0 this was made the default.
     if version_info < (8,):
-        if subtype:
-            message += f" [{type}.{subtype}]"
-        else:
-            message += f" [{type}]"
+        message += f" [{type}.{subtype}]"
 
     logger.error(
         message,
