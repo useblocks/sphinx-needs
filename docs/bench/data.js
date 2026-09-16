@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789552187490,
+  "lastUpdate": 1789553187540,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -21096,6 +21096,42 @@ window.BENCHMARK_DATA = {
             "value": 34.577581844000065,
             "unit": "s",
             "extra": "Commit: 1957489788b6538035c1eabda46a22caa5b755f3\nBranch: master\nTime: 2026-09-16T11:48:47+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6e9a48fbd94063a2da67706365cfdfba96fd1ba0",
+          "message": "🔧 Dependabot: ignore docutils minor and major updates, the probe that fails every uv job (#1946)\n\nAdds `docutils` to the uv ecosystem's ignore list for major and minor\nupdates, beside `types-docutils`, and corrects a wrong claim #1944 made.\n\n### The error, and what it is not\n\nEvery rebase or recreate of #1940 errored with \"Dependabot can't resolve\nyour Python dependency files\", and so did the rebase job that ran after\n#1944 reverted `versioning-strategy`, under the default:\n\n```\nBecause sphinx>=7.4.0,<=7.4.7 depends on docutils>=0.20,<0.22 and\nsphinx-needs-workspace:typing depends on docutils==0.23, …\n```\n\n#1944 attributed the error to `increase-if-necessary`. That was wrong:\nthe same job fails under the default strategy. The comment in\n`dependabot.yml` and the paragraph in `AGENTS.md` now say so where the\nclaim was made.\n\n### What it is\n\ndocutils 0.23 has been out since May. What changed is #1871:\nsphinx-codelinks arrived with a bare `docutils` dependency, so docutils\nbecame a *direct, unpinned* dependency in dependabot's eyes, and\ndependabot now tries to lock 0.23. It does that by writing\n`docutils==0.23` on every requirement line it finds, including the\n`typing` group's `docutils~=0.20.0`, and uv correctly refuses that\nbeside `sphinx~=7.4`, which needs docutils below 0.22. The lock already\ncarries docutils at 0.20.1 in the typing split and 0.21.2 everywhere\nelse, which is exactly what `[tool.uv] conflicts` provides; dependabot\nhas no way to express \"0.20.x here, newest elsewhere\", and the uv\nupdater treats uv's refusal as fatal to the whole job. Group refreshes\nbefore #1871 (the 5 September batch, #1851) rebased fine.\n\n### The fix\n\ndocutils joins `types-docutils` under the same ignore: major and minor\nupdates ignored, patches inside the series still flow. The earlier\nrationale for leaving docutils unlisted, keeping new series flowing to\nthe main environment, never operated: dependabot only moves a lock entry\nfor a direct dependency, and docutils was not one until #1871, so the\ndefault environment sat on 0.21.2 with 0.23 out. It moves by hand now,\nwith `uv lock --upgrade-package docutils`, the way the typing series\nitself does.\n\n### Consequences for the strategy question\n\n`increase-if-necessary` (#1942) was reverted for a reason that turns out\nnot to hold, so it is untested rather than unusable. The comment records\nit as a candidate to retry once this rule has been seen to keep the jobs\ngreen; that is a separate decision and a separate pull request.\n\n### Proof after the merge\n\nThe dependabot run this config change triggers should complete green on\nthe Insights page, where the red \"Rebase update\" entries are. There is\nno open dependabot PR to refresh right now, so that run is the evidence.\n\n### Checked\n\n`uv run poe lint` 8/8. No lock change.",
+          "timestamp": "2026-09-16T12:04:58+02:00",
+          "tree_id": "55be6bcfcd8b2301434d4de4fb2194026211060c",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/6e9a48fbd94063a2da67706365cfdfba96fd1ba0"
+        },
+        "date": 1789553176726,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.15140397900000835,
+            "unit": "s",
+            "extra": "Commit: 6e9a48fbd94063a2da67706365cfdfba96fd1ba0\nBranch: master\nTime: 2026-09-16T12:04:58+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 55.53607211099998,
+            "unit": "s",
+            "extra": "Commit: 6e9a48fbd94063a2da67706365cfdfba96fd1ba0\nBranch: master\nTime: 2026-09-16T12:04:58+02:00"
           }
         ]
       }
