@@ -48,9 +48,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-plotting = ["matplotlib>=3.11.2"] # for needpie / needbar
+plotting = ["matplotlib>=3.3.0"] # for needpie / needbar
 docs = [
-  "matplotlib>=3.11.2",
+  "matplotlib>=3.3.0",
   "sphinxcontrib-plantuml~=0.0",
   "sphinx-copybutton~=0.5",
   "sphinxcontrib-programoutput~=0.17",
