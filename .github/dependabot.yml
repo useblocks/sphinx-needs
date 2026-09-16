@@ -72,6 +72,32 @@ updates:
         update-types:
           - version-update:semver-major
           - version-update:semver-minor
+      # The same class, found by PROBING rather than by waiting for the next failed job: for
+      # every direct dependency, `uv lock --dry-run --upgrade-package <name>==<newest on
+      # PyPI>` is exactly dependabot's universal pin, and it reproduces "Dependabot can't
+      # resolve your Python dependency files" byte for byte, in a second. Swept 2026-09-16 over
+      # all 67 direct dependencies: six more are unlockable at their newest release, each
+      # because that release needs sphinx>=8 or Python>=3.13 while the `sphinx-7` and `typing`
+      # splits pin sphinx 7.4 and the workspace supports 3.11. uv locks them at two versions
+      # across the splits, which is what `[tool.uv] conflicts` is for; dependabot cannot,
+      # and a group REFRESH dies on the first one it tries (creation jobs skip it, which is
+      # why batches still arrive and then cannot be rebased). Each `versions` range below is
+      # the exact set of releases that cannot be locked today, so that patch releases inside
+      # the current series still flow; every entry dissolves when sphinx 7.4 leaves the
+      # matrix (or, for comment-parser, when Python 3.12 does). Re-run the sweep before
+      # removing or adding one.
+      - dependency-name: myst-parser # 5.x needs sphinx>=8 (root `test` group, sphinx-7 cell)
+        versions: [">=5"]
+      - dependency-name: sphinxcontrib-typer # 0.10+ needs sphinx>=8 (sphinx-codelinks docs)
+        versions: [">=0.10"]
+      - dependency-name: comment-parser # 1.2.5+ needs Python>=3.13 (sphinx-codelinks runtime)
+        versions: [">=1.2.5"]
+      - dependency-name: jsonschema-rs # sphinx-needs caps it <0.54; widening is a decision
+        versions: [">=0.54"]
+      - dependency-name: pydata-sphinx-theme # sphinx-needs caps it <0.20; widening is a decision
+        versions: [">=0.20"]
+      - dependency-name: tree-sitter # sphinx-codelinks pins the 0.25 series
+        versions: [">=0.26"]
       # dependabot-core#14004: with a uv workspace, dependabot treats the members
       # themselves as PyPI dependencies. This member's name IS a real PyPI project,
       # so without this it would propose "updating" the local package to its own
