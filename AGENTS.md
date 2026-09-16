@@ -418,6 +418,18 @@ move's pull request.
 4. **Changelog**: update `packages/sphinx-needs/docs/changelog.rst`
 5. **Code quality**: `uv run poe lint` and `uv run poe typecheck` pass
 
+**Reviewing a dependabot pull request for the uv ecosystem: read the `pyproject.toml` hunks,
+not only the lock.** Dependabot's default strategy rewrites manifest specifiers alongside the
+lock, and every specifier in this workspace is a decision: it raises a floor to the new release
+even when the floor already allowed it (`matplotlib>=3.3.0` became `>=3.11.2` in #1940, on a
+user-facing extra), widens a cap past the comment that explains the cap (`click < 8.2` became
+`click<8.6`, breaking taplo's alignment, which is how Lint caught it), and turns a `~=` series
+into a `>=,<` pair. Keep the lock update, restore the specifier lines by hand on the dependabot
+branch, and relock; a cap or a series that really should move gets its own pull request with
+the reason re-checked (#1943 is the shape). `versioning-strategy` cannot fix this here: both
+alternatives were measured in #1942 and #1944, and `.github/dependabot.yml` says why the
+default stays.
+
 ## Issues and labels
 
 Every issue and pull request carries one or more `pkg:` labels naming what it concerns:
