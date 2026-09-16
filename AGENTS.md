@@ -109,8 +109,8 @@ every pyenv shim reports the version as missing inside this repository. `UV_PYTH
 **overrides** the file (measured: the environment variable wins for both `uv sync` and
 `uv run`), which is how the per-cell commands above pick their interpreter, and how CI's
 matrix cells do — `setup-uv`'s `python-version` input is documented as setting `UV_PYTHON`.
-CI's Lint job (and the monthly `prek-update` job) deliberately pass no such input, so they
-run on the pin, and Lint asserts the series it got equals the file.
+CI's Lint job (and the monthly `prek-update` and `uv-update` jobs) deliberately pass no
+such input, so they run on the pin, and Lint asserts the series it got equals the file.
 
 The machine needs `java` and graphviz's `dot` on `PATH` — the tests that render do not skip
 without them, so install graphviz as CI does (`apt-get install graphviz`). Rendering in the
@@ -418,18 +418,18 @@ move's pull request.
 4. **Changelog**: update `packages/sphinx-needs/docs/changelog.rst`
 5. **Code quality**: `uv run poe lint` and `uv run poe typecheck` pass
 
-**Reviewing a dependabot pull request for the uv ecosystem: read the `pyproject.toml` hunks,
-not only the lock.** Dependabot's default strategy rewrites manifest specifiers alongside the
-lock, and every specifier in this workspace is a decision: it raises a floor to the new release
-even when the floor already allowed it (`matplotlib>=3.3.0` became `>=3.11.2` in #1940, on a
-user-facing extra), widens a cap past the comment that explains the cap (`click < 8.2` became
-`click<8.6`, breaking taplo's alignment, which is how Lint caught it), and turns a `~=` series
-into a `>=,<` pair. Keep the lock update, restore the specifier lines by hand on the dependabot
-branch, and relock; a cap or a series that really should move gets its own pull request with
-the reason re-checked (#1943 is the shape). `versioning-strategy: increase-if-necessary` was
-tried in #1942 and reverted in #1944 when every dependabot job errored, but the error turned
-out to be a docutils probe that fails under the default too, now fenced by an ignore rule;
-`.github/dependabot.yml` records both, and why the option may return.
+**The uv lock is updated by a job, not by dependabot.** The monthly `UV update` workflow
+(`.github/workflows/uv-update.yaml`) runs `uv lock --upgrade` and opens a pull request. It
+moves the LOCK and nothing else — it asserts that no manifest changed — and it resolves each
+`[tool.uv] conflicts` split separately; `.github/dependabot.yml` says why dependabot could
+not. The body carries every package uv's lock diff reported, whether `prek run --all-files`
+was clean, and a **held-back list**: the direct dependencies a manifest range holds back. CI
+reviews the lock; a human reads the other two. The held-back list is where a cap or a series
+that should move gets a pull request of its own (#1943 is the shape), never a rider on the
+update. The hooks line is where a `ty` bump that changed diagnostics shows up red; ty has no
+pull request of its own any more, so fix it with `# ty: ignore[…]` comments added *and
+removed* (`error-on-warning` makes an unused suppression an error), never by loosening
+`[tool.ty]`. `github-actions` and the security alerts stay with dependabot.
 
 ## Issues and labels
 

@@ -4,6 +4,17 @@
 # https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
 
 version: 2
+
+# NO `uv` ecosystem below, deliberately: the lock is updated by the monthly `UV update`
+# workflow (.github/workflows/uv-update.yaml). Dependabot pins its candidate version on
+# every requirement line at once, and this workspace locks some packages at two versions
+# across its `[tool.uv] conflicts` splits (`docutils` 0.20.1 in `typing`, the newest
+# elsewhere) -- it cannot express that, and every refresh died with "Dependabot can't
+# resolve your Python dependency files". Its default strategy also rewrote manifest
+# specifiers nobody asked it to touch; the job never edits a manifest, and asserts it.
+# Security alerts and security-update pull requests are a separate repository feature
+# that reads uv.lock independently of this file, so the lock is still covered there.
+# The account: #1942, #1944, #1946, #1948 and the pull request that made this change.
 updates:
   - package-ecosystem: github-actions
     directory: /
@@ -11,102 +22,3 @@ updates:
       prefix: 🔧
     schedule:
       interval: monthly
-  # uv, not pip: this repository locks its development environment in uv.lock, and the
-  # uv ecosystem updates that lock. Minor and patch updates are batched into one monthly
-  # pull request; major updates fall outside the group and arrive one per dependency,
-  # so the bumps most likely to break something are the ones that come isolated.
-  - package-ecosystem: uv
-    directory: /
-    commit-message:
-      prefix: ⬆️
-    schedule:
-      interval: monthly
-    # NO `versioning-strategy` today. The default (`auto`, which is `increase` for a project
-    # with a lockfile) EDITS MANIFESTS even when nothing requires it: the 2026-09 batch (#1940)
-    # raised sphinx-needs' `matplotlib>=3.3.0` -- the floor of a user-facing extra that
-    # already allowed the new release -- to `>=3.11.2`, widened sphinx-codelinks' `click < 8.2`
-    # past the comment that explained the cap, and an earlier batch rewrote `~=0.20.0` as
-    # `>=0.20,<0.24`. Those rewrites are reviewed and undone BY HAND on the pull request; the
-    # root AGENTS.md says how. `increase-if-necessary` (#1942) would stop the gratuitous
-    # rewrites and was reverted (#1944) when every dependabot job errored after it -- but the
-    # error turned out to be the docutils probe described at the `docutils` ignore rule
-    # below, which fails under the default too, not the strategy. #1944's claim that the
-    # default "degrades to no update" was wrong. So the option is a candidate to retry once
-    # that rule has been seen to keep the jobs green. `lockfile-only` is not: it never edits a
-    # manifest, but it also never proposes a release outside a range, and 44 of the 97
-    # external specifiers here carry a cap or a series -- the widening pull request is the one
-    # signal that a new major of one of them exists.
-    ignore:
-      # the `sphinx-7`, `sphinx-8` and `sphinx-9` dependency groups pin one series each,
-      # on purpose: they are the test matrix, and which three series are tested is a
-      # decision taken by hand, alongside the CI cells and the `requires-python` markers
-      # that go with them. Patch updates inside a series still flow.
-      - dependency-name: sphinx
-        update-types:
-          - version-update:semver-major
-          - version-update:semver-minor
-      # the `typing` dependency group pins the oldest supported docutils series and the stubs
-      # that describe it, so the type checker runs against the floor. The stubs have no other
-      # job, so their series moves by hand, with the floor (`check_typing_floor.py` fails
-      # Lint when the two drift apart).
-      - dependency-name: types-docutils
-        update-types:
-          - version-update:semver-major
-          - version-update:semver-minor
-      # docutils itself, for the same series, and for a harder reason than the stubs. Until
-      # 2026-09 it was deliberately NOT listed, so that the main environment could take new
-      # docutils series -- a rationale that never operated: dependabot moves a lock entry only
-      # for a DIRECT dependency, and docutils was direct only through this group's series pin,
-      # so the default environment sat on 0.21.2 while 0.23 was out. Since sphinx-codelinks
-      # arrived (#1871) with a bare `docutils` dependency, docutils IS direct and unpinned, and
-      # dependabot tries to lock 0.23 -- by writing `docutils==0.23` on EVERY requirement line
-      # it finds, this group's `docutils~=0.20.0` included. uv correctly refuses that beside
-      # `sphinx~=7.4` (which needs docutils<0.22), and the uv updater treats the refusal as
-      # fatal to the whole job: "Dependabot can't resolve your Python dependency files", on
-      # every rebase or recreate of #1940 and on the run after #1944, under the default
-      # strategy. Dependabot cannot express "0.20.x here, newest elsewhere", which is what
-      # `[tool.uv] conflicts` gives uv; so major and minor are ignored, patches inside the
-      # series still flow, and the default environment's docutils moves when someone runs
-      # `uv lock --upgrade-package docutils`, the way the typing series itself moves by hand.
-      - dependency-name: docutils
-        update-types:
-          - version-update:semver-major
-          - version-update:semver-minor
-      # dependabot-core#14004: with a uv workspace, dependabot treats the members
-      # themselves as PyPI dependencies. This member's name IS a real PyPI project,
-      # so without this it would propose "updating" the local package to its own
-      # last release. It now covers two sites: the member itself, and the root's
-      # `dependencies = ["sphinx-needs"]`, which is how a bare `uv sync` installs it.
-      # Note this is a blanket ignore: it silences EVERY update of anything
-      # named `sphinx-needs` in the uv ecosystem, so a future member that legitimately
-      # depends on the published distribution would stop being bumped. Revisit then.
-      - dependency-name: sphinx-needs
-      # the second member, for exactly the same reason: `sphinx-mounts` is a real PyPI
-      # project as well as the name of a directory under `packages/`
-      - dependency-name: sphinx-mounts
-      # the third member, same reason again -- and here the blanket ignore above is worth
-      # rereading: sphinx-codelinks depends on the PUBLISHED sphinx-needs by name
-      # (`sphinx-needs>=8.5.0,<9`), and that specifier is a floor moved by hand at release
-      # time by `propagate_floors.py`, not by dependabot
-      - dependency-name: sphinx-codelinks
-      # the fourth member, same reason: `sphinx-test-reports` is a real PyPI project as
-      # well as a directory under `packages/`, and it names the published sphinx-needs by
-      # name in two extras (`sphinx-needs>=8.5.0,<9`) -- a floor `propagate_floors.py`
-      # moves at release time, not dependabot
-      - dependency-name: sphinx-test-reports
-      # the workspace root itself. Its name is not on PyPI at all, so there is nothing to
-      # bump to -- this pre-empts the same #14004 noise rather than fixing a live proposal
-      - dependency-name: sphinx-needs-workspace
-    groups:
-      # a dependency joins the first group whose pattern matches, so `ty` is listed first:
-      # its 0.0.x releases are patch bumps that can change diagnostics, and each one should
-      # be its own reviewable pull request rather than a rider in the monthly batch
-      ty:
-        patterns:
-          - ty
-      python-minor-and-patch:
-        patterns:
-          - "*"
-        update-types:
-          - minor
-          - patch
