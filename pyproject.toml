@@ -95,7 +95,7 @@ members = ["packages/*", "tools"]
 dev = [
   "prek>=0.5.2",
   "poethepoet~=0.48",
-  "uv>=0.12.9",
+  "uv>=0.12.13",
   { include-group = "test" },
   { include-group = "js" },
 ]
@@ -114,7 +114,7 @@ test = [
   # that a member reached this way carries `Private :: Do Not Upload`.
   "sphinx-needs-testkit",
   "defusedxml~=0.7.1",
-  "matplotlib>=3.3.0",
+  "matplotlib>=3.11.2",
   "pytest>=8,<10",
   "pytest-cov>=6,<8",
   "syrupy>=4,<7",
