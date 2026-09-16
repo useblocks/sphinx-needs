@@ -79,11 +79,12 @@ jobs:
             esac
             rm -f "$probe"
           done
-      - name: Type-check the needstable script
-        # tsc over `needstable.js`, the vendored browser script that is plain JavaScript
-        # typed through `// @ts-check` and JSDoc. The check is the one
-        # `packages/sphinx-needs/design/needstable-contract.md` §4 records; until now it was
-        # a by-hand step, so a JSDoc type could regress without anything going red (#1924).
+      - name: Type-check the browser scripts
+        # tsc over `needstable.js` and `sphinx_needs_collapse.js`, the two browser scripts
+        # this package ships, both plain JavaScript typed through `// @ts-check` and JSDoc.
+        # The check is the one `packages/sphinx-needs/design/needstable-contract.md` §4
+        # records; until now it was a by-hand step, so a JSDoc type could regress without
+        # anything going red (#1924). The collapse script joined the task with #1922.
         # The command -- and the typescript version it pins -- lives in the
         # `typecheck-js-needs` poe task and NOT here, so what a developer runs and what
         # blocks a pull request cannot drift; the pin matters because `npx -p typescript`

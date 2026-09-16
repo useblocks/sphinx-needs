@@ -4,7 +4,8 @@ The page under test is built by the ordinary ``test_app`` fixture and then opene
 off disk over ``file://`` -- nothing in it fetches, so no server is involved. What is
 asserted is ``src/sphinx_needs/libs/html/sphinx_needs_collapse.js``: on load it hides one of
 the two icons (and, in ``hide`` mode, the metadata rows) by adding ``collapse_is_hidden``,
-and a click on the control toggles all of them.
+and a click on the control toggles all of them. The last case covers its other half, the
+``a.no_link`` anchor whose click it prevents.
 """
 
 from __future__ import annotations
@@ -176,3 +177,41 @@ def test_collapse_button_in_import_doc(test_app: SphinxTestApp, page: Page) -> N
     assert {"show", "hide"} <= modes, (
         f"expected both collapse modes, met {sorted(modes)}"
     )
+
+
+@pytest.mark.jstest
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_collapse_no_link",
+        }
+    ],
+    indirect=True,
+)
+def test_no_link_anchor_does_not_navigate(test_app: SphinxTestApp, page: Page) -> None:
+    """The script's second, older half: a click on ``a.no_link`` is prevented.
+
+    It is the one branch the three cases above never reach, because no layout of this
+    extension emits that class any more -- ``no_link=True`` on the layout's ``image()``
+    writes ``no-scaled-link`` on the image. The project's page carries a raw-HTML anchor so
+    that the branch has markup to run on; without the ``preventDefault``, the click would
+    put the anchor's fragment in the URL.
+    """
+    app = test_app
+    app.build()
+
+    page_errors: list[str] = []
+    page.on("pageerror", lambda error: page_errors.append(error.message))
+
+    url = Path(app.outdir, "index.html").as_uri()
+    page.goto(url)
+
+    anchor = page.locator("a.no_link")
+    assert anchor.count() == 1, "the built page has no `a.no_link` to test"
+    assert anchor.get_attribute("href") == "#nowhere"
+
+    anchor.click()
+    assert page.url == url, "the click navigated"
+    assert not page_errors, f"the page raised: {page_errors}"
