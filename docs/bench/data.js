@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789553187540,
+  "lastUpdate": 1789553810820,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -21132,6 +21132,42 @@ window.BENCHMARK_DATA = {
             "value": 55.53607211099998,
             "unit": "s",
             "extra": "Commit: 6e9a48fbd94063a2da67706365cfdfba96fd1ba0\nBranch: master\nTime: 2026-09-16T12:04:58+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "743379e3c4bb339ef03e31afa2edf1f05cfc4d61",
+          "message": "⬆️ Drop sphinx-codelinks' click cap: it pinned a package nothing uses (#1943)\n\nRemoves one line from `packages/sphinx-codelinks/pyproject.toml`,\n`\"click < 8.2\"`, with a changelog bullet, and relocks. click leaves the\nlock entirely.\n\n### Why the cap existed, and why it is dead\n\nThe line's comment said: *click 8.2.* produces empty errors if no args\nare given*. That was click 8.2.0 against the typer of the time, and the\ncap kept `codelinks` printing its usage panel when run bare.\n\nTwo facts make it dead weight now, both measured on this branch:\n\n- this package never imports click itself (`git grep` over `src/`:\nnothing);\n- the typer it requires, 0.27.2 in the lock, depends on annotated-doc,\ncolorama, rich and shellingham, and not on click.\n\nSo the cap was the *only* reason click was installed at all, and `uv\nlock` drops click from the lock once the line goes.\n\n### Checked\n\nIn the synced environment, with click no longer importable:\n\n- `codelinks` with no arguments prints its usage panel and exits 2,\nexactly as before;\n- `codelinks nonsense` prints the \"No such command\" error panel, exactly\nas before;\n- `uv run poe test-codelinks`: 360 passed, 58 snapshots;\n- `uv run poe lint`: 8/8.\n\n### Context\n\nDependabot's 2026-09 batch (#1940) proposed lifting the cap to `<8.6`\npast the comment explaining it, which is what prompted re-checking\nwhether the cap still had a reason. #1942 stops dependabot rewriting\nmanifest specifiers like this in future; the deliberate lift is this\npull request. Precedent for the shape: #1896, the typer cap.",
+          "timestamp": "2026-09-16T12:15:37+02:00",
+          "tree_id": "c82e4d08a5823404e6855837261d5047d1d09425",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/743379e3c4bb339ef03e31afa2edf1f05cfc4d61"
+        },
+        "date": 1789553803417,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.15861588299998175,
+            "unit": "s",
+            "extra": "Commit: 743379e3c4bb339ef03e31afa2edf1f05cfc4d61\nBranch: master\nTime: 2026-09-16T12:15:37+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 45.46170249400001,
+            "unit": "s",
+            "extra": "Commit: 743379e3c4bb339ef03e31afa2edf1f05cfc4d61\nBranch: master\nTime: 2026-09-16T12:15:37+02:00"
           }
         ]
       }
