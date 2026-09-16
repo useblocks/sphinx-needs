@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789511026533,
+  "lastUpdate": 1789549832378,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -20988,6 +20988,42 @@ window.BENCHMARK_DATA = {
             "value": 54.07850195499998,
             "unit": "s",
             "extra": "Commit: 0aa2e95798810487d14c00d51cea3c0787dc4594\nBranch: master\nTime: 2026-09-16T00:22:25+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "cb9617779ccb62683f2095167a57892dd4bda945",
+          "message": "🔧 Dependabot: back to the default strategy, with the review rule written down (#1944)\n\nReverts #1942's `versioning-strategy: increase-if-necessary` and\nrecords, in two places, what was measured and what a reviewer does\ninstead.\n\n### What went wrong with #1942\n\nAfter the merge, every dependabot job for this repository errored with\n\"Dependabot can't resolve your Python dependency files\":\n\n```\nNo solution found when resolving dependencies for split (… included: sphinx-needs-workspace[group:typing] …):\n  Because sphinx>=7.4.0,<=7.4.7 depends on docutils>=0.20,<0.22 and\n  sphinx-needs-workspace:typing depends on docutils==0.23, …\n```\n\nThe mechanism, from dependabot-core's python update checker (which uv\nreuses): every strategy except `lockfile-only` *unlocks* a requirement\nbefore asking uv for the newest resolvable version. For the `typing`\ngroup's `docutils~=0.20.0` that asks uv to resolve docutils 0.23 beside\n`sphinx~=7.4`, which forbids anything above 0.21. Under the default\nstrategy that probe degrades to \"no update for docutils\" (which is why\nthe 2026-09 batch, #1940, came through with three updates and no\ndocutils); under `increase-if-necessary` it is fatal to the whole job.\nBoth refreshes of #1940 after the merge failed that way, and the run\ntriggered by the config change proposed nothing. Net effect: no\ndependabot updates of any kind.\n\n`lockfile-only` was the other candidate. It never unlocks, so it cannot\nhit this, and it never edits a manifest, but it also never proposes a\nrelease outside a range. 44 of the 97 external specifiers in these\nmanifests carry a cap or a series, and the widening pull request is the\none signal that a new major of one of them exists. Not worth the\nsilence.\n\n### What this does instead\n\n- `.github/dependabot.yml`: the option is removed, and the comment\nbeside the uv block records both measurements and why the default stays.\n- `AGENTS.md`: one paragraph under *Pull request requirements* telling a\nreviewer of a dependabot uv pull request to read the `pyproject.toml`\nhunks, not only the lock; what the default strategy does to floors, caps\nand `~=` series, with #1940's three cases as the examples; and the\nprocedure: keep the lock update, restore the specifier lines by hand on\nthe dependabot branch, relock, and give a cap or series that really\nshould move its own pull request (#1943 is the shape).\n\n### After the merge\n\nDependabot's run triggered by this config change should complete green\non the Insights page, which is the proof the jobs are back. #1940 then\ngets its specifier lines restored by hand and is merged as the lock\nupdate it should have been; #1943 drops the click cap on its own\nreasoning.\n\n### Checked\n\n`uv run poe lint` 8/8 (yamlfmt, taplo, check-readme included). No lock\nchange.",
+          "timestamp": "2026-09-16T11:09:18+02:00",
+          "tree_id": "fd7bd73478d50f4007abf91832689443968d58ca",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/cb9617779ccb62683f2095167a57892dd4bda945"
+        },
+        "date": 1789549823732,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.10363353499997174,
+            "unit": "s",
+            "extra": "Commit: cb9617779ccb62683f2095167a57892dd4bda945\nBranch: master\nTime: 2026-09-16T11:09:18+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 44.516217745999995,
+            "unit": "s",
+            "extra": "Commit: cb9617779ccb62683f2095167a57892dd4bda945\nBranch: master\nTime: 2026-09-16T11:09:18+02:00"
           }
         ]
       }
