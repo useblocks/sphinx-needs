@@ -21,22 +21,21 @@ updates:
       prefix: ⬆️
     schedule:
       interval: monthly
-    # NO `versioning-strategy`, deliberately, after measuring both alternatives (#1942, #1944).
-    # The default (`auto`, which is `increase` for a project with a lockfile) EDITS MANIFESTS
-    # even when nothing requires it: the 2026-09 batch (#1940) raised sphinx-needs'
-    # `matplotlib>=3.3.0` -- the floor of a user-facing extra that already allowed the new
-    # release -- to `>=3.11.2`, widened sphinx-codelinks' `click < 8.2` past the comment that
-    # explained the cap, and an earlier batch rewrote `~=0.20.0` as `>=0.20,<0.24`. Those
-    # rewrites are reviewed and undone BY HAND on the pull request; the root AGENTS.md says
-    # how. `increase-if-necessary` would stop the gratuitous rewrites, but it is not usable
-    # here: every strategy except lockfile-only UNLOCKS a requirement before asking uv for the
-    # newest resolvable version, and for the `typing` group's `docutils~=0.20.0` that asks uv
-    # to resolve docutils 0.23 beside `sphinx~=7.4`, which forbids it -- and under that
-    # strategy the failure is fatal to the WHOLE job ("Dependabot can't resolve your Python
-    # dependency files"), so no update of any kind arrives. `lockfile-only` never unlocks and
-    # never edits, but it also never proposes a release outside a range, and 44 of the 97
+    # NO `versioning-strategy` today. The default (`auto`, which is `increase` for a project
+    # with a lockfile) EDITS MANIFESTS even when nothing requires it: the 2026-09 batch (#1940)
+    # raised sphinx-needs' `matplotlib>=3.3.0` -- the floor of a user-facing extra that
+    # already allowed the new release -- to `>=3.11.2`, widened sphinx-codelinks' `click < 8.2`
+    # past the comment that explained the cap, and an earlier batch rewrote `~=0.20.0` as
+    # `>=0.20,<0.24`. Those rewrites are reviewed and undone BY HAND on the pull request; the
+    # root AGENTS.md says how. `increase-if-necessary` (#1942) would stop the gratuitous
+    # rewrites and was reverted (#1944) when every dependabot job errored after it -- but the
+    # error turned out to be the docutils probe described at the `docutils` ignore rule
+    # below, which fails under the default too, not the strategy. #1944's claim that the
+    # default "degrades to no update" was wrong. So the option is a candidate to retry once
+    # that rule has been seen to keep the jobs green. `lockfile-only` is not: it never edits a
+    # manifest, but it also never proposes a release outside a range, and 44 of the 97
     # external specifiers here carry a cap or a series -- the widening pull request is the one
-    # signal that a new major of one of them exists. So: the default, plus review.
+    # signal that a new major of one of them exists.
     ignore:
       # the `sphinx-7`, `sphinx-8` and `sphinx-9` dependency groups pin one series each,
       # on purpose: they are the test matrix, and which three series are tested is a
@@ -49,10 +48,27 @@ updates:
       # the `typing` dependency group pins the oldest supported docutils series and the stubs
       # that describe it, so the type checker runs against the floor. The stubs have no other
       # job, so their series moves by hand, with the floor (`check_typing_floor.py` fails
-      # Lint when the two drift apart). docutils itself is deliberately NOT listed: the main
-      # environment should keep taking new docutils series as sphinx allows them, and the
-      # occasional proposal to widen the floor line is closed by hand.
+      # Lint when the two drift apart).
       - dependency-name: types-docutils
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
+      # docutils itself, for the same series, and for a harder reason than the stubs. Until
+      # 2026-09 it was deliberately NOT listed, so that the main environment could take new
+      # docutils series -- a rationale that never operated: dependabot moves a lock entry only
+      # for a DIRECT dependency, and docutils was direct only through this group's series pin,
+      # so the default environment sat on 0.21.2 while 0.23 was out. Since sphinx-codelinks
+      # arrived (#1871) with a bare `docutils` dependency, docutils IS direct and unpinned, and
+      # dependabot tries to lock 0.23 -- by writing `docutils==0.23` on EVERY requirement line
+      # it finds, this group's `docutils~=0.20.0` included. uv correctly refuses that beside
+      # `sphinx~=7.4` (which needs docutils<0.22), and the uv updater treats the refusal as
+      # fatal to the whole job: "Dependabot can't resolve your Python dependency files", on
+      # every rebase or recreate of #1940 and on the run after #1944, under the default
+      # strategy. Dependabot cannot express "0.20.x here, newest elsewhere", which is what
+      # `[tool.uv] conflicts` gives uv; so major and minor are ignored, patches inside the
+      # series still flow, and the default environment's docutils moves when someone runs
+      # `uv lock --upgrade-package docutils`, the way the typing series itself moves by hand.
+      - dependency-name: docutils
         update-types:
           - version-update:semver-major
           - version-update:semver-minor

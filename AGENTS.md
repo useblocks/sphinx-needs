@@ -426,9 +426,10 @@ user-facing extra), widens a cap past the comment that explains the cap (`click 
 `click<8.6`, breaking taplo's alignment, which is how Lint caught it), and turns a `~=` series
 into a `>=,<` pair. Keep the lock update, restore the specifier lines by hand on the dependabot
 branch, and relock; a cap or a series that really should move gets its own pull request with
-the reason re-checked (#1943 is the shape). `versioning-strategy` cannot fix this here: both
-alternatives were measured in #1942 and #1944, and `.github/dependabot.yml` says why the
-default stays.
+the reason re-checked (#1943 is the shape). `versioning-strategy: increase-if-necessary` was
+tried in #1942 and reverted in #1944 when every dependabot job errored, but the error turned
+out to be a docutils probe that fails under the default too, now fenced by an ignore rule;
+`.github/dependabot.yml` records both, and why the option may return.
 
 ## Issues and labels
 
