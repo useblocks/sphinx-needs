@@ -1,0 +1,232 @@
+name: UV update
+
+on:
+  # monthly, an hour after `Prek update`'s `0 6 1 * *`, so both land on the same morning
+  # and neither is chained to the other
+  schedule:
+    - cron: "0 7 1 * *"
+  # so the first run after merge can be triggered by hand as a smoke test
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  update:
+    name: Update the lock
+    runs-on: ubuntu-latest
+    steps:
+      # the default GITHUB_TOKEN cannot be used for the writes below: a pull request it
+      # pushes does not trigger `pull_request` workflows, and master requires `Lint`,
+      # so such a pull request could never be merged
+      - name: Mint a token for the bot app
+        id: token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10.1.0
+        with:
+          enable-cache: true
+          # no `python-version` input, so uv reads the root `.python-version`; cache that
+          # interpreter rather than downloading it every month
+          cache-python: true
+
+      # `uv lock --upgrade` moves every entry in the ONE lock the workspace has, resolving
+      # each `[tool.uv] conflicts` split on its own -- which is the whole reason this job
+      # exists: dependabot pins its candidate on every requirement line at once and cannot
+      # express `docutils` 0.20.1 in the `typing` group beside 0.22.4 everywhere else.
+      #
+      # No cooldown. `--exclude-newer <7 days ago>`, the counterpart of prek-update's
+      # `--cooldown-days 7`, is a GLOBAL index cutoff: measured on 2026-09-16 it made the
+      # lock unresolvable (the `typing` group floors `ty>=0.0.80`, published inside the
+      # window), and with a cutoff recent enough to resolve it wrote `[options]
+      # exclude-newer` into uv.lock, after which a plain `uv lock --check` -- the `uv-lock`
+      # prek hook Lint runs -- rewrote the lock and failed. Details in the pull request.
+      - name: Upgrade the lock
+        id: update
+        run: |
+          # uv writes its `Updated <name> vA -> vB` lines to STDERR (measured), so the
+          # capture is `2>&1`, into RUNNER_TEMP rather than the tree: anything left in the
+          # working directory would be committed by the pull request step below
+          if ! uv lock --upgrade >"$RUNNER_TEMP/lock-upgrade.log" 2>&1; then
+            cat "$RUNNER_TEMP/lock-upgrade.log"
+            exit 1
+          fi
+          cat "$RUNNER_TEMP/lock-upgrade.log"
+          if git diff --quiet -- uv.lock; then
+            echo "no lock updates available; nothing to open a pull request for"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # This job moves the LOCK and nothing else -- the other half of why it replaces
+      # dependabot, whose default `versioning-strategy` rewrote manifest specifiers it had
+      # no reason to touch (#1940 raised `matplotlib>=3.3.0` to `>=3.11.2` on a user-facing
+      # extra and widened `click < 8.2` past the comment explaining the cap). Asserted, not
+      # assumed: a uv that started editing manifests fails this job rather than opening a
+      # pull request whose interesting hunk is the one nobody looked at.
+      - name: Assert no manifest was edited
+        id: assert
+        run: |
+          manifests=(pyproject.toml 'packages/*/pyproject.toml' tools/pyproject.toml)
+          if ! git diff --quiet -- "${manifests[@]}"; then
+            echo "::error::uv lock --upgrade edited a manifest; this job only ever moves uv.lock"
+            git diff --stat -- "${manifests[@]}"
+            exit 1
+          fi
+          echo "manifests untouched, as they must be"
+
+      # run the hooks against the new lock so that formatter and `--fix` churn arrives
+      # already applied. Findings that remain are reported, not fatal: a red but open pull
+      # request is the signal we want -- and the `ty` hook is where a ty release that
+      # changes diagnostics announces itself, which is why ty rides this batch instead of
+      # having a pull request of its own.
+      - name: Sync and run the hooks
+        id: hooks
+        if: steps.update.outputs.changed == 'true'
+        env:
+          PREK_COLOR: always
+        run: |
+          uv sync --frozen
+          if uv run --frozen prek run --all-files; then
+            echo "clean=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "clean=no" >> "$GITHUB_OUTPUT"
+          fi
+
+      # The signal a lock update cannot carry: releases the index has that the manifests'
+      # own caps and series exclude. `uv tree` reads the LOCK, so every extra and every
+      # conflicting group is in scope (`uv pip list --outdated` reads one installed
+      # environment and cannot see `theme-pds`'s `pydata-sphinx-theme` at all); `--depth 1`
+      # is each member's own requirements, so a transitive package held back by somebody
+      # else's cap stays out; and running it AFTER the upgrade means what is left is held
+      # back rather than merely pending.
+      - name: List what the manifests hold back
+        id: held
+        if: steps.update.outputs.changed == 'true'
+        run: |
+          # stderr to its OWN file, never into the parsed stream: a `warning:` landing between
+          # a member line and its requirements would be read as the next member and steal the
+          # "(required by ...)" attribution. `cat` it after, so it still shows in the job log
+          uv tree --outdated --frozen --depth 1 >"$RUNNER_TEMP/tree.txt" 2>"$RUNNER_TEMP/tree.err"
+          cat "$RUNNER_TEMP/tree.err"
+          # a member's own line is unindented; its requirements carry the box-drawing
+          # prefix, and only the outdated ones are annotated `(latest: vX)`
+          awk '
+            /^[(]/ { next }
+            /^[^ │├└]/ { member = $1; next }
+            /\(latest: / {
+              latest = $NF; gsub(/[()]/, "", latest)
+              where = member
+              if ($4 == "(extra:" || $4 == "(group:") {
+                tag = $5; sub(/\)$/, "", tag)
+                where = member " " substr($4, 2, 5) " " tag
+              }
+              print $2 "|" $3 "|" latest "|" where
+            }
+          ' "$RUNNER_TEMP/tree.txt" > "$RUNNER_TEMP/held-back.txt"
+          while IFS='|' read -r name locked latest where; do
+            # the specifiers this workspace writes for that name. The end of the name is
+            # anchored on a quote, an extras bracket or an operator, so `sphinx` does not
+            # collect `sphinx-needs`'s lines
+            esc=$(printf '%s' "$name" | sed 's/\./\\./g')
+            spec=$(grep -hoE "\"${esc}(\[[^]]*\])?(\"|[<>=!~;][^\"]*\")" \
+              pyproject.toml packages/*/pyproject.toml tools/pyproject.toml | sort -u | tr '\n' ' ')
+            spec="${spec% }"
+            printf -- '- `%s`: locked %s, newest %s, constraint %s (required by %s)\n' \
+              "$name" "$locked" "$latest" "${spec:-none found}" "$where"
+          done < "$RUNNER_TEMP/held-back.txt" > "$RUNNER_TEMP/held-back.md"
+          cat "$RUNNER_TEMP/held-back.md"
+
+      - name: Compose the pull request body
+        id: body
+        if: steps.update.outputs.changed == 'true'
+        env:
+          HOOKS_CLEAN: ${{ steps.hooks.outputs.clean }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          # "Updated docutils v0.20.1, v0.21.2 -> v0.20.1, v0.22.4" becomes one bullet whose
+          # link is the NEWEST version on the right-hand side; the pair is printed whole, so
+          # a split that gained or lost a version is readable rather than flattened.
+          #
+          # uv's lock diff reports THREE verbs, not one, and a package entering or leaving the
+          # graph is the most review-worthy line an update can carry -- so `Added` and `Removed`
+          # get bullets of their own. The last rule is the durable half: any OTHER
+          # "<Verb> <name> v<version>" line is reported as unrecognised rather than dropped, so
+          # the next verb uv invents makes the body say so instead of quietly shrinking.
+          # `Resolved 144 packages in 2s` and `Using CPython 3.13.0` do not match it -- neither
+          # has a `v` version in the third field.
+          # shellcheck disable=SC2016  # $2/$NF are awk fields, not shell expansions
+          bullets='
+            /^Updated? / {
+              name = $2; old = ""; new = ""; seen = 0
+              for (i = 3; i <= NF; i++) {
+                if ($i == "->") { seen = 1; continue }
+                if (seen) { new = new (new ? " " : "") $i } else { old = old (old ? " " : "") $i }
+              }
+              link = new; sub(/^.*, /, "", link); sub(/^v/, "", link)
+              printf "- [%s](https://pypi.org/project/%s/%s/): %s -> %s\n", name, name, link, old, new
+              next
+            }
+            /^Added / {
+              link = $3; sub(/^v/, "", link)
+              printf "- **added** [%s](https://pypi.org/project/%s/%s/) %s\n", $2, $2, link, $3
+              next
+            }
+            /^Removed / {
+              printf "- **removed** `%s` %s\n", $2, $3
+              next
+            }
+            /^[A-Z][a-z]+ [A-Za-z0-9._-]+ v[0-9]/ {
+              printf "- unrecognised uv line: `%s`\n", $0
+            }
+          '
+          {
+            echo "body<<PR_BODY_EOF"
+            echo "\`uv lock --upgrade\`, run by the monthly \`UV update\` workflow — every line uv's"
+            echo "lock diff reported, updates, additions and removals alike. Only \`uv.lock\` is"
+            echo "touched: the job asserts that no manifest changed, so every specifier here is still"
+            echo "the one someone chose by hand."
+            echo
+            awk "$bullets" "$RUNNER_TEMP/lock-upgrade.log"
+            echo
+            echo "hooks clean after the upgrade: ${HOOKS_CLEAN} — see [the workflow run](${RUN_URL})"
+            echo
+            echo "### Held back by a manifest range"
+            echo
+            if [ -s "$RUNNER_TEMP/held-back.md" ]; then
+              cat "$RUNNER_TEMP/held-back.md"
+              echo
+              echo "Direct dependencies only, from \`uv tree --outdated --depth 1\` after the upgrade,"
+              echo "at the versions the DEFAULT resolution locks — a package held back only in a matrix"
+              echo "split (\`docutils\` 0.20.1 in \`typing\`, \`myst-parser\` 4.x in \`sphinx-7\`) is not listed."
+              echo "The constraint column is every specifier this workspace writes for that name. What"
+              echo "actually blocks the newer release may be one of those, a cap elsewhere in the graph,"
+              echo "or a \`[tool.uv] conflicts\` split; \`uv lock --upgrade-package <name>\` names it."
+              echo "Widening one is a pull request of its own, with the reason re-checked — never a"
+              echo "rider on this one."
+            else
+              echo "Nothing: every direct dependency is at the newest release the index has."
+            fi
+            echo
+            echo "Opened by the scheduled \`UV update\` workflow."
+            echo "PR_BODY_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      # a fixed branch means a re-run updates the existing pull request instead of
+      # opening a second one
+      - name: Open the pull request
+        if: steps.update.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ steps.token.outputs.token }}
+          branch: uv-update
+          delete-branch: true
+          commit-message: "⬆️ Update the uv lock (monthly)"
+          title: "⬆️ Update the uv lock (monthly)"
+          body: ${{ steps.body.outputs.body }}
