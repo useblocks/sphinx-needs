@@ -419,7 +419,8 @@ move's pull request.
 5. **Code quality**: `uv run poe lint` and `uv run poe typecheck` pass
 
 **The uv lock is updated by a job, not by dependabot.** The monthly `UV update` workflow
-(`.github/workflows/uv-update.yaml`) runs `uv lock --upgrade` and opens a pull request. It
+(`.github/workflows/uv-update.yaml`) runs `uv lock --upgrade` and opens a pull request,
+labelled `pkg: workspace` by the job itself (the labeler skips lock-only changes). It
 moves the LOCK and nothing else — it asserts that no manifest changed — and it resolves each
 `[tool.uv] conflicts` split separately; `.github/dependabot.yml` says why dependabot could
 not. The body carries every package uv's lock diff reported, whether `prek run --all-files`
