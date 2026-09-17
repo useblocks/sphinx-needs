@@ -51,3 +51,17 @@ def test_the_workflow_that_replaced_it() -> None:
     assert update is not None, [step.get("id") for step in steps]
     invocation = re.search(r"^\s*(if ! )?uv lock --upgrade\b", update["run"], re.M)
     assert invocation, update["run"]
+
+
+def test_the_pull_request_is_labelled() -> None:
+    """The labeler skips lock-only pull requests on purpose (`.github/labeler.yml` says
+    why), so the job has to label its own -- the rehearsal, #1970, arrived with none."""
+    document = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
+    steps = [step for job in document["jobs"].values() for step in job["steps"]]
+    opener = next(
+        step
+        for step in steps
+        if str(step.get("uses", "")).startswith("peter-evans/create-pull-request")
+    )
+    labels = [label.strip() for label in opener["with"]["labels"].splitlines()]
+    assert "pkg: workspace" in labels, labels

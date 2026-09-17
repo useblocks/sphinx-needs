@@ -191,7 +191,9 @@ jobs:
             echo "\`uv lock --upgrade\`, run by the monthly \`UV update\` workflow — every line uv's"
             echo "lock diff reported, updates, additions and removals alike. Only \`uv.lock\` is"
             echo "touched: the job asserts that no manifest changed, so every specifier here is still"
-            echo "the one someone chose by hand."
+            echo "the one someone chose by hand. A pair that LOST a version (\`v0.20.1, v0.21.2 -> v0.20.1,"
+            echo "v0.22.4\`) is a matrix cell that moved, and not necessarily up: uv unifies its splits on"
+            echo "versions already chosen, so a cell whose cap excludes the newest takes the other survivor."
             echo
             awk "$bullets" "$RUNNER_TEMP/lock-upgrade.log"
             echo
@@ -230,3 +232,8 @@ jobs:
           commit-message: "⬆️ Update the uv lock (monthly)"
           title: "⬆️ Update the uv lock (monthly)"
           body: ${{ steps.body.outputs.body }}
+          # the labeler skips lock-only pull requests on purpose (.github/labeler.yml), so
+          # this one labels its own; the rehearsal (#1970) arrived with none
+          labels: |
+            pkg: workspace
+            dependencies

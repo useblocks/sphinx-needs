@@ -4,7 +4,8 @@
 # publishes, and a change to the shared test layer is still that package's change.
 # uv.lock is deliberately absent from the repository entry -- a member's dependency
 # change relocks it, and that is not a repository concern -- so a lock-only pull request
-# gets no label and is labelled by hand. The repository entry is an allow-list with no
+# gets no label from here: the monthly `UV update` job labels its own (`pkg: workspace`),
+# and any other is labelled by hand. The repository entry is an allow-list with no
 # test behind it: a new root-level file or directory needs a line here.
 'pkg: sphinx-needs':
   - changed-files:
