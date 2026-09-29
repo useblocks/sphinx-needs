@@ -72,17 +72,18 @@ fail as a plain `ModuleNotFoundError`, and `tests/test_aliases.py` walks the rea
 to hold that. **There is no `src/sphinxcontrib/__init__.py`, and there must never be
 one**: `sphinxcontrib` is a PEP 420 namespace other distributions install into.
 
-### hatchling, and the fence on the built wheel
+### hatchling, and the fence on the built artefacts
 
 This is the one member that builds with hatchling: its wheel ships two top-level packages,
 and flit ships one and drops the other without a word. An editable install reads `src/`, so
 a build configuration that lost the aliases would leave every test green. The
-`toolchain-free` job is therefore where the artefact is checked -- it builds the wheel,
-fails when a tracked file under `src/` is missing from it or when it ships
-`sphinxcontrib/__init__.py`, and runs its modules against that wheel. A new top-level
-package needs a line in `[tool.hatch.build.targets.wheel]` AND
-`[tool.hatch.build.targets.sdist]`; the sdist list is what keeps `tests/` and `docs/` out
-of the tarball.
+`toolchain-free` job is therefore where the artefacts are checked. It builds in the
+release's shape -- the sdist, then the wheel FROM the sdist, so the sdist's include list
+decides what the wheel ships -- and fails when either lacks a tracked file under `src/`,
+when the sdist carries anything outside `src/` beyond its metadata files, or when the wheel
+ships `sphinxcontrib/__init__.py` or a licence file other than `LICENSE`; then it runs its
+modules against that wheel. A new top-level package needs a line in
+`[tool.hatch.build.targets.wheel]` AND `[tool.hatch.build.targets.sdist]`.
 
 ### The suite needs no renderer; the DOCS need two
 

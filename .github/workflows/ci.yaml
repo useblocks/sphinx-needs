@@ -488,28 +488,47 @@ jobs:
           enable-cache: true
           cache-suffix: toolchain-free
           cache-python: true
-      - name: Build the wheel, and check it ships every file under src/
-        # The fence on the ARTEFACT. Every other job installs this member editable, which
+      - name: Build the sdist and wheel as the release does, and check both
+        # The fence on the ARTEFACTS. Every other job installs this member editable, which
         # reads `src/`, so a build configuration that dropped a package -- the
         # `sphinxcontrib/test_reports/` aliases most of all, which flit would drop without a
-        # word -- would leave the whole suite green over a broken wheel. Every tracked file
-        # under `src/` must be in the wheel, and nothing may claim `sphinxcontrib` itself,
-        # which is a PEP 420 namespace other distributions install into
+        # word -- would leave the whole suite green over a broken release. So this builds in
+        # `release.yaml`'s shape (no `--wheel`: uv builds the sdist, then the wheel FROM the
+        # sdist, so the sdist's include list decides what the wheel ships) and checks:
+        # - the sdist holds every tracked file under `src/`, and outside `src/` only the
+        #   metadata files listed below (downstream packagers build from it);
+        # - the wheel holds every tracked file under `src/`, both `__init__.py`s, no
+        #   `sphinxcontrib/__init__.py` (a PEP 420 namespace other distributions install
+        #   into), and exactly one licence file, `LICENSE`
         run: |
-          uv build --package sphinx-test-reports --no-sources --wheel -o /tmp/str-dist
+          uv build --package sphinx-test-reports --no-sources -o /tmp/str-dist
           git ls-files packages/sphinx-test-reports/src | uv run --no-project python -c "
-          import pathlib, sys, zipfile
-          (wheel,) = pathlib.Path('/tmp/str-dist').glob('*.whl')
-          shipped = set(zipfile.ZipFile(wheel).namelist())
+          import pathlib, sys, tarfile, zipfile
+          dist = pathlib.Path('/tmp/str-dist')
+          (wheel,) = dist.glob('*.whl')
+          (sdist,) = dist.glob('*.tar.gz')
           wanted = {line.strip().split('/src/', 1)[1] for line in sys.stdin if line.strip()}
-          missing = sorted(wanted - shipped)
-          errors = [f'missing from {wheel.name}: {name}' for name in missing]
+          errors = []
+          # the sdist: <name>-<version>/src/..., plus exactly these metadata files
+          metadata = {'pyproject.toml', 'README.rst', 'LICENSE', 'PKG-INFO', '.gitignore'}
+          with tarfile.open(sdist) as tar:
+              members = [m.name.split('/', 1)[1] for m in tar.getmembers() if m.isfile()]
+          in_src = {name.removeprefix('src/') for name in members if name.startswith('src/')}
+          errors += [f'missing from {sdist.name}: src/{name}' for name in sorted(wanted - in_src)]
+          errors += [f'{sdist.name} ships a file outside src/ that is not metadata: {name}'
+                     for name in sorted(n for n in members if not n.startswith('src/') and n not in metadata)]
+          # the wheel, built from that sdist
+          shipped = set(zipfile.ZipFile(wheel).namelist())
+          errors += [f'missing from {wheel.name}: {name}' for name in sorted(wanted - shipped)]
           for name in ('sphinx_test_reports/__init__.py', 'sphinxcontrib/test_reports/__init__.py'):
               if name not in wanted or name not in shipped:
                   errors.append(f'{name} is not in both the checkout and {wheel.name}')
           if 'sphinxcontrib/__init__.py' in shipped:
               errors.append('the wheel ships sphinxcontrib/__init__.py, which ends the namespace')
-          print(f'{wheel.name}: {len(wanted)} files under src/, {len(missing)} missing')
+          licences = sorted(n.split('/licenses/', 1)[1] for n in shipped if '.dist-info/licenses/' in n)
+          if licences != ['LICENSE']:
+              errors.append(f'{wheel.name} ships licence files {licences}, not exactly LICENSE')
+          print(f'{sdist.name}: {len(members)} files; {wheel.name}: {len(shipped)} entries; {len(wanted)} tracked files under src/')
           sys.exit('\\n'.join(errors) if errors else 0)
           "
       - name: Build an environment with no documentation toolchain in it

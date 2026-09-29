@@ -83,9 +83,10 @@ test-reports = "sphinx_test_reports.cli:main"
 # packages: `sphinx_test_reports`, and `sphinxcontrib/test_reports/`, the aliases that keep
 # the pre-3.0 import name working until 4.0. flit ships exactly one module and silently
 # drops the second -- no error, no warning, and every `conf.py` still naming the old
-# extension would break on the first release. The `toolchain-free` CI job builds the wheel
-# and fails when either package is missing, because an editable install reads `src/` and
-# would keep every test green over a broken wheel.
+# extension would break on the first release. The `toolchain-free` CI job builds the sdist
+# and the wheel the way the release does (the wheel FROM the sdist) and fails when either
+# is missing a tracked file under `src/`, because an editable install reads `src/` and would
+# keep every test green over a broken release.
 [build-system]
 requires = ["hatchling >=1.27,<2"]
 build-backend = "hatchling.build"
@@ -98,7 +99,8 @@ packages = ["src/sphinx_test_reports", "src/sphinxcontrib"]
 # hatchling's sdist default is the whole project directory; this list keeps the shape the
 # flit sdists had -- the module trees plus the metadata files, and NOT `tests/`, `docs/`
 # or `design/`. hatchling adds one file flit did not, the repository's `.gitignore`, and
-# no setting removes it.
+# no setting removes it. The wheel is built from this sdist, so a tree missing here is
+# missing from the wheel too; the `toolchain-free` job fences both lists.
 [tool.hatch.build.targets.sdist]
 only-include = ["src/sphinx_test_reports", "src/sphinxcontrib"]
 
