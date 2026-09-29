@@ -131,8 +131,8 @@ jobs:
           "
       - name: Check the typing floor is the floor it claims to be
         # .venvs/typing exists because the `ty` hook ran the typecheck task above; the
-        # stubs must match the installed docutils, and that docutils must be the lowest
-        # series the floor sphinx accepts
+        # stubs must match the installed docutils, and that docutils must be the workspace's
+        # floor, the highest docutils floor that sphinx or any installed member declares
         env:
           UV_PROJECT_ENVIRONMENT: .venvs/typing
         run: uv run --frozen --no-sync --no-group dev --group typing python .github/scripts/check_typing_floor.py

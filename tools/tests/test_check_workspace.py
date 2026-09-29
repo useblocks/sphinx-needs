@@ -838,3 +838,223 @@ def test_several_root_owned_tables_are_all_reported(workspace, capsys) -> None:
     assert run(root) == 1
     out = capsys.readouterr().out
     assert out.count("::error") == 3, out
+
+
+# --- (8) the docutils floor is the `typing` group's series, and uncapped -----------------
+
+TYPING = {"typing": ["sphinx~=7.4", "docutils~=0.21.0", "types-docutils~=0.21.0"]}
+
+
+def import_docutils(root: Path, member: str, line: str = "from docutils import nodes"):
+    """Give a scratch member a shipped module that imports docutils."""
+    module = root / "packages" / member / "src" / member.replace("-", "_")
+    module.mkdir(parents=True, exist_ok=True)
+    (module / "directive.py").write_text(
+        f'"""scratch."""\n\n{line}\n', encoding="utf-8"
+    )
+
+
+def test_a_floor_matching_the_typing_group_is_green(workspace, capsys) -> None:
+    root = workspace(
+        {
+            "acme-core": {"version": "1.0.0", "dependencies": ["docutils>=0.21"]},
+            "acme-reports": {
+                "version": "1.0.0",
+                "optional_dependencies": {"sphinx": ["docutils>=0.21.2"]},
+            },
+        },
+        root_groups=TYPING,
+    )
+    import_docutils(root, "acme-core")
+    import_docutils(root, "acme-reports")
+    assert run(root) == 0
+    assert (
+        "every docutils floor is the `typing` group's 0.21, uncapped: acme-core, "
+        "acme-reports[sphinx]"
+    ) in capsys.readouterr().out
+
+
+def test_no_member_using_docutils_needs_no_typing_floor(workspace, capsys) -> None:
+    """Nothing to compare, so nothing is asked of the root -- but it is said, not silent."""
+    root = workspace({"acme-core": {"version": "1.0.0"}})
+    assert run(root) == 0
+    assert "no member declares or imports docutils" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        "from docutils import nodes",
+        "import docutils",
+        "import docutils.nodes",
+        "    from docutils.parsers.rst import directives  # inside a function",
+    ],
+)
+def test_a_member_importing_docutils_must_declare_it(workspace, capsys, line) -> None:
+    """Case (a): the member inherits whatever floor its host happens to have."""
+    root = workspace({"acme-core": {"version": "1.0.0"}}, root_groups=TYPING)
+    import_docutils(root, "acme-core", line)
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert (
+        "::error file=packages/acme-core/pyproject.toml::"
+        "packages/acme-core/src/acme_core/directive.py imports docutils, but acme-core "
+        "declares no docutils requirement"
+    ) in out
+    assert "Declare `docutils>=0.21`" in out
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        "import docutils_extra",
+        "# from docutils import nodes",
+        'text = "import docutils"',
+    ],
+)
+def test_only_a_real_import_counts(workspace, capsys, line) -> None:
+    root = workspace({"acme-core": {"version": "1.0.0"}}, root_groups=TYPING)
+    import_docutils(root, "acme-core", line)
+    assert run(root) == 0
+
+
+def test_a_declaration_in_an_extra_satisfies_an_import(workspace, capsys) -> None:
+    """sphinx-test-reports' shape: its core install must stay docutils-free, so the
+    floor lives in the extra that installs the Sphinx toolchain."""
+    root = workspace(
+        {
+            "acme-reports": {
+                "version": "1.0.0",
+                "dependencies": ["lxml"],
+                "optional_dependencies": {"sphinx": ["sphinx>=7.4", "docutils>=0.21"]},
+            }
+        },
+        root_groups=TYPING,
+    )
+    import_docutils(root, "acme-reports")
+    assert run(root) == 0
+
+
+def test_a_bare_docutils_requirement_is_an_error(workspace, capsys) -> None:
+    """Case (b): sphinx-codelinks' old `"docutils",  # constrained by user or Sphinx`."""
+    root = workspace(
+        {"acme-core": {"version": "1.0.0", "dependencies": ["docutils"]}},
+        root_groups=TYPING,
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert out.count("::error") == 1, out
+    assert "acme-core -> `docutils` has no `>=` floor" in out
+    assert "Write `docutils>=0.21`" in out
+
+
+def test_a_floor_in_another_series_is_an_error(workspace, capsys) -> None:
+    """Case (c): the #1970 shape, one side of the pair moved without the other."""
+    root = workspace(
+        {"acme-core": {"version": "1.0.0", "dependencies": ["docutils>=0.20"]}},
+        root_groups=TYPING,
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert (
+        "acme-core -> `docutils>=0.20` floors docutils at 0.20, but the root `typing` "
+        "group type-checks against docutils 0.21"
+    ) in out
+
+
+def test_a_higher_floor_is_an_error_too(workspace, capsys) -> None:
+    """Equal, not merely at-least: a member floored above the typing group is
+    type-checked against an API older than the one it promises."""
+    root = workspace(
+        {"acme-core": {"version": "1.0.0", "dependencies": ["docutils>=0.22"]}},
+        root_groups=TYPING,
+    )
+    assert run(root) == 1
+    assert "floors docutils at 0.22" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    ("spec", "cap"),
+    [
+        ("docutils>=0.21,<0.23", "<0.23"),
+        ("docutils>=0.21,<=0.22.4", "<=0.22.4"),
+        ("docutils~=0.21.0", "~=0.21.0"),
+        ("docutils==0.21.2", "==0.21.2"),
+    ],
+)
+def test_an_upper_bound_is_an_error(workspace, capsys, spec, cap) -> None:
+    """Case (d): sphinx caps docutils per series itself."""
+    root = workspace(
+        {"acme-core": {"version": "1.0.0", "dependencies": [spec]}},
+        root_groups=TYPING,
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert f"puts an upper bound on docutils ({cap})" in out
+    assert "sphinx caps docutils per series itself" in out
+
+
+def test_an_extra_is_held_to_the_same_rules(workspace, capsys) -> None:
+    root = workspace(
+        {
+            "acme-core": {
+                "version": "1.0.0",
+                "optional_dependencies": {"sphinx": ["docutils>=0.20,<0.22"]},
+            }
+        },
+        root_groups=TYPING,
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert out.count("::error") == 2, out
+    assert "acme-core[sphinx] -> `docutils<0.22,>=0.20` puts an upper bound" in out
+    assert "floors docutils at 0.20" in out
+
+
+def test_a_typing_group_without_docutils_is_an_error(workspace, capsys) -> None:
+    """Not a silent pass: the members' floors would be compared against nothing."""
+    root = workspace(
+        {"acme-core": {"version": "1.0.0", "dependencies": ["docutils>=0.21"]}},
+        root_groups={"typing": ["sphinx~=7.4"]},
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert (
+        "::error file=pyproject.toml::the `typing` group has no docutils entry" in out
+    )
+
+
+def test_no_typing_group_at_all_is_an_error(workspace, capsys) -> None:
+    root = workspace(
+        {"acme-core": {"version": "1.0.0", "dependencies": ["docutils>=0.21"]}},
+        root_groups={"test": ["pytest"]},
+    )
+    assert run(root) == 1
+    assert "there is no `typing` dependency group" in capsys.readouterr().out
+
+
+def test_a_typing_docutils_entry_without_a_series_is_an_error(
+    workspace, capsys
+) -> None:
+    root = workspace(
+        {"acme-core": {"version": "1.0.0", "dependencies": ["docutils>=0.21"]}},
+        root_groups={"typing": ["docutils"]},
+    )
+    assert run(root) == 1
+    assert "names no docutils series" in capsys.readouterr().out
+
+
+def test_every_docutils_mistake_is_reported_in_one_run(workspace, capsys) -> None:
+    root = workspace(
+        {
+            "acme-a": {"version": "1.0.0", "dependencies": ["docutils"]},
+            "acme-b": {"version": "1.0.0", "dependencies": ["docutils>=0.20"]},
+            "acme-c": {"version": "1.0.0", "dependencies": ["docutils>=0.21,<0.23"]},
+            "acme-d": {"version": "1.0.0"},
+        },
+        root_groups=TYPING,
+    )
+    import_docutils(root, "acme-d")
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert out.count("::error") == 4, out

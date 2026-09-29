@@ -1,4 +1,4 @@
-"""Assert the seven facts that hold this uv workspace together, from the manifests alone.
+"""Assert the eight facts that hold this uv workspace together, from the manifests alone.
 
 Each of these is a pair of statements in two different files that must agree, and each has
 a failure mode that no other gate in this repository can see:
@@ -69,6 +69,20 @@ a failure mode that no other gate in this repository can see:
    lock does not change, every command still exits 0, and the only symptom is a rule that
    stopped being enforced.
 
+8. **every member's docutils floor is the `typing` group's series, and nothing caps it.**
+   The root's `typing` group is where ty type-checks the workspace, against the oldest
+   docutils it claims to support; a member's `docutils>=X` is what it promises its users.
+   The two are the same claim written twice, so their `major.minor` series must be equal.
+   A member whose shipped source (`src/**/*.py`) imports docutils has to declare it -- in
+   `dependencies` or in an extra -- and the declaration has to carry a `>=` floor: a bare
+   `docutils` lets a resolver pick any series at all, which is how the `sphinx-7` and
+   `sphinx-8` cells were once relocked down to docutils 0.20, where the image directive
+   records no line number. And no upper bound (`<`, `<=`, `~=`, `==`): sphinx caps docutils
+   per series itself, so a member's cap only duplicates its host's, and holds users back the
+   moment the two disagree. The lock cannot see a floor that is too low (it resolves the
+   newest release that fits), and `.github/scripts/check_typing_floor.py` only sees the
+   members installed into `.venvs/typing` -- so this is the fence on the declarations.
+
 Every failure is reported before the script exits, each on its own `::error file=...::`
 line, so one run names every mistake rather than the first one.
 
@@ -88,6 +102,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import re
 import sys
 import tomllib
 from collections.abc import Set as AbstractSet
@@ -107,6 +122,15 @@ ROOT_MANIFEST = "pyproject.toml"
 # the one an error message recommends
 PRIVATE_PREFIX = "Private ::"
 PRIVATE_CLASSIFIER = "Private :: Do Not Upload"
+
+# Check (8): the root dependency group that pins the type-checking floor, the distribution
+# whose floor it pins, how a member's shipped source is recognised as importing it, and the
+# specifier operators that put a ceiling on a requirement
+TYPING_GROUP = "typing"
+DOCUTILS = "docutils"
+IMPORTS_DOCUTILS = re.compile(r"^\s*(from|import) docutils\b", re.MULTILINE)
+UPPER_BOUND_OPERATORS = frozenset({"<", "<=", "~=", "==", "==="})
+LOWER_BOUND_OPERATORS = frozenset({">=", "~=", "==", "==="})
 
 # Configuration the ROOT owns, for the whole workspace, with the reason a copy in a member
 # is worse than a duplicate. Each key is a table path: everything nested under it is covered
@@ -709,6 +733,152 @@ def check_module_version(root: Path, members: list[Member], report: Report) -> N
             )
 
 
+def series(version: Version) -> str:
+    return f"{version.major}.{version.minor}"
+
+
+def typing_docutils_series(manifest: dict[str, Any], report: Report) -> str | None:
+    """The docutils series the root `typing` group pins (`~=0.21.0` -> `0.21`), or None.
+
+    Every way of not having one is an error of its own rather than a silent pass: a fence
+    that compared the members' floors against nothing would be green for every tree.
+    """
+    specs = manifest.get("dependency-groups", {}).get(TYPING_GROUP)
+    if specs is None:
+        report.error(
+            ROOT_MANIFEST,
+            f"there is no `{TYPING_GROUP}` dependency group, so there is no type-checking "
+            f"floor to hold the members' {DOCUTILS} floors to. The group installs the "
+            f"oldest supported sphinx and {DOCUTILS} into `.venvs/typing`",
+        )
+        return None
+    for spec in specs:
+        if not isinstance(spec, str):
+            continue
+        try:
+            requirement = Requirement(spec)
+        except InvalidRequirement:
+            continue  # not this check's to report; uv would refuse the lock
+        if canonicalize_name(requirement.name) != DOCUTILS:
+            continue
+        lower = [
+            Version(s.version)
+            for s in requirement.specifier
+            if s.operator in LOWER_BOUND_OPERATORS
+        ]
+        if not lower:
+            report.error(
+                ROOT_MANIFEST,
+                f"the `{TYPING_GROUP}` group's `{spec}` names no {DOCUTILS} series, so the "
+                "type-checking floor is whatever the resolver picks. Pin the series, "
+                f"`{DOCUTILS}~=X.Y.0`, beside `types-{DOCUTILS}~=X.Y.0`",
+            )
+            return None
+        return series(max(lower))
+    report.error(
+        ROOT_MANIFEST,
+        f"the `{TYPING_GROUP}` group has no {DOCUTILS} entry, so ty type-checks against "
+        f"whatever {DOCUTILS} sphinx happens to pull in, and the members' {DOCUTILS} floors "
+        f"have nothing to agree with. Add `{DOCUTILS}~=X.Y.0` (and `types-{DOCUTILS}~=X.Y.0`)",
+    )
+    return None
+
+
+def docutils_importer(root: Path, member: Member) -> str | None:
+    """The first shipped source file of this member that imports docutils, if any.
+
+    Read as text, never imported: the members are not installed where this runs.
+    """
+    source = member.path / "src"
+    if not source.is_dir():
+        return None
+    for path in sorted(source.rglob("*.py")):
+        if IMPORTS_DOCUTILS.search(path.read_text(encoding="utf-8")):
+            return path.relative_to(root).as_posix()
+    return None
+
+
+def check_docutils_floor(
+    root: Path, manifest: dict[str, Any], members: list[Member], report: Report
+) -> None:
+    """(8) every member's docutils floor is the `typing` group's series, and uncapped."""
+    declared: dict[str, list[tuple[str | None, Requirement]]] = {}
+    importers: dict[str, str] = {}
+    for member in members:
+        for extra, spec in member.requirements():
+            try:
+                requirement = Requirement(spec)
+            except InvalidRequirement:
+                continue  # check (4) has already named it
+            if canonicalize_name(requirement.name) == DOCUTILS:
+                declared.setdefault(member.key, []).append((extra, requirement))
+        importer = docutils_importer(root, member)
+        if importer is not None:
+            importers[member.key] = importer
+    if not declared and not importers:
+        report.ok(f"no member declares or imports {DOCUTILS}")
+        return
+
+    before = report.failures
+    want = typing_docutils_series(manifest, report)
+    for member in sorted(members, key=lambda m: m.key):
+        if member.key in importers and member.key not in declared:
+            report.error(
+                member.relative,
+                f"{importers[member.key]} imports {DOCUTILS}, but {member.name} declares "
+                f"no {DOCUTILS} requirement, in `dependencies` or in any extra -- so it "
+                "inherits whatever floor its host happens to have, which is not the floor "
+                f"the `{TYPING_GROUP}` group type-checks. Declare "
+                f"`{DOCUTILS}>={want or 'X.Y'}`",
+            )
+        for extra, requirement in declared.get(member.key, []):
+            where = f"{member.name}{f'[{extra}]' if extra else ''} -> `{requirement}`"
+            caps = sorted(
+                str(s)
+                for s in requirement.specifier
+                if s.operator in UPPER_BOUND_OPERATORS
+            )
+            floors = [
+                Version(s.version) for s in requirement.specifier if s.operator == ">="
+            ]
+            fix = f"`{DOCUTILS}>={want or 'X.Y'}`"
+            if caps:
+                report.error(
+                    member.relative,
+                    f"{where} puts an upper bound on {DOCUTILS} ({', '.join(caps)}). "
+                    f"sphinx caps {DOCUTILS} per series itself, so a member's cap only "
+                    "duplicates its host's, and holds users back from a release their "
+                    f"sphinx accepts the moment the two disagree. Write {fix}",
+                )
+            if not floors:
+                report.error(
+                    member.relative,
+                    f"{where} has no `>=` floor, so it promises to work with any "
+                    f"{DOCUTILS} a resolver picks -- including a series older than the one "
+                    f"the `{TYPING_GROUP}` group type-checks against. Write {fix}",
+                )
+                continue
+            floor = series(max(floors))
+            if want is not None and floor != want:
+                report.error(
+                    member.relative,
+                    f"{where} floors {DOCUTILS} at {floor}, but the root `{TYPING_GROUP}` "
+                    f"group type-checks against {DOCUTILS} {want}. The two are one claim "
+                    "-- the oldest docutils this workspace supports -- so they move "
+                    f"together: write {fix}, or move the `{TYPING_GROUP}` group's "
+                    f"`{DOCUTILS}` and `types-{DOCUTILS}` entries",
+                )
+    if report.failures == before:
+        report.ok(
+            f"every {DOCUTILS} floor is the `{TYPING_GROUP}` group's {want}, uncapped: "
+            + ", ".join(
+                f"{member}{f'[{extra}]' if extra else ''}"
+                for member, entries in sorted(declared.items())
+                for extra, _ in entries
+            )
+        )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Check the workspace's manifests agree with each other.",
@@ -747,6 +917,7 @@ def main(argv: list[str] | None = None) -> int:
     check_module_version(root, members, report)
     check_private_classifier(members, routes, report)
     check_root_owned_tables(members, report)
+    check_docutils_floor(root, manifest, members, report)
     return 1 if report.failures else 0
 
 
