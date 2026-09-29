@@ -269,6 +269,27 @@ def test_decorated():
             ]
         )
 
+    def test_the_old_filter_line_must_move_with_the_p_line(self, pytester) -> None:
+        # `-p` already names the new module, the old filter line is still there, and the
+        # project makes warnings errors: resolving the filter's category imports the alias
+        # for the first time INSIDE pytest's filter parsing, and its FutureWarning stops the
+        # run with a usage error that names the move. Loud rather than silent, so it is
+        # fenced here and documented, not worked around.
+        result, report = self._run(
+            pytester,
+            f"{NEW}.pytest_plugin",
+            family="xunit2",
+            ini=f"filterwarnings =\n    error\n    ignore::{self.OLD_PLUGIN}.TestReportsConfigWarning\n",
+        )
+        assert result.ret == pytest.ExitCode.USAGE_ERROR
+        assert not report.exists()
+        result.stderr.fnmatch_lines(
+            [
+                f"*ignore::{self.OLD_PLUGIN}.TestReportsConfigWarning*",
+                f"*FutureWarning: {self.OLD_PLUGIN} has moved to {NEW}.pytest_plugin*",
+            ]
+        )
+
 
 OLD_PROJECT = {"buildername": "html", "srcdir": "doc_test/old_extension_name"}
 #: The warning's text, which every supported Sphinx prints ...
@@ -377,11 +398,36 @@ class TestExtensionAlias:
         assert passed.returncode == 0, passed.stderr
 
 
-def _make_old_project(make_app, tmp_path: Path, confoverrides: dict):
+@pytest.mark.toolchain
+def test_the_deprecation_comes_before_a_toolchain_error(
+    make_app, tmp_path, monkeypatch
+) -> None:
+    """A project that names the old extension with an outdated toolchain sees the
+    deprecation first, then the real extension's toolchain error, which names the new one.
+    """
+    import io
+
+    from sphinx.errors import ExtensionError
+
+    from sphinx_test_reports import toolchain
+
+    monkeypatch.setattr(
+        toolchain, "unmet_requirements", lambda: ["sphinx-needs 5.1.0 < 8.5.0"]
+    )
+    warning = io.StringIO()
+    with pytest.raises(ExtensionError, match=f"Could not load extension {NEW}"):
+        _make_old_project(make_app, tmp_path, {}, warning=warning)
+    # the error aborted the application, so the warning stream holds only what came first
+    _assert_the_deprecation_once(warning.getvalue())
+
+
+def _make_old_project(make_app, tmp_path: Path, confoverrides: dict, **kwargs):
     import shutil
 
     tests = Path(__file__).parent
     shutil.copytree(tests / "doc_test" / "utils", tmp_path / "utils")
     srcdir = tmp_path / "old_extension_name"
     shutil.copytree(tests / "doc_test" / "old_extension_name", srcdir)
-    return make_app(buildername="html", srcdir=srcdir, confoverrides=confoverrides)
+    return make_app(
+        buildername="html", srcdir=srcdir, confoverrides=confoverrides, **kwargs
+    )

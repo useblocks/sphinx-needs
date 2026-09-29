@@ -8,8 +8,11 @@ with a warning that names the new one:
   documentation build shows, fails under ``-W`` and silences with ``suppress_warnings``;
 * ``pytest_plugin``, ``junitparser`` and ``jsonparser``, one file each next to this
   one, which put the REAL module into :data:`sys.modules` under the old name and raise
-  one :class:`FutureWarning` (not a :class:`DeprecationWarning`, which Python's default
-  filters hide outside ``__main__``) attributed to the importing line.
+  one :class:`FutureWarning` per process (not a :class:`DeprecationWarning`, which
+  Python's default filters hide outside ``__main__``). It is attributed to the
+  ``import`` statement that names the module; ``importlib.import_module``, and pytest
+  when it loads a ``-p`` or ``pytest_plugins`` name, are frames of their own and take
+  the attribution instead.
 
 Every other ``sphinxcontrib.test_reports.<module>`` fails as an ordinary missing
 module: there is deliberately no finder here that would alias the rest.
@@ -30,7 +33,7 @@ if TYPE_CHECKING:
 __all__ = ["setup"]
 
 #: The extension this name stands for.
-NEW_NAME = "sphinx_test_reports"
+_NEW_NAME = "sphinx_test_reports"
 
 
 def __getattr__(name: str) -> object:
@@ -43,17 +46,18 @@ def _setup(app: Sphinx) -> dict[str, Any]:
     from sphinx.util import logging
 
     logging.getLogger(__name__).warning(
-        f"the extension name {__name__!r} is deprecated: write {NEW_NAME!r} in the "
+        f"the extension name {__name__!r} is deprecated: write {_NEW_NAME!r} in the "
         "extensions list of conf.py instead. The old name stops working in "
         "sphinx-test-reports 4.0.",
         type="test_reports",
         subtype="deprecated",
     )
-    # Through Sphinx rather than by calling the real `setup`: a conf.py that lists
-    # both names then registers the extension once, and the real package's own lazy
-    # `setup` -- with its toolchain check -- is what runs.
-    app.setup_extension(NEW_NAME)
-    extension = app.extensions[NEW_NAME]
+    # After the warning, so a toolchain error from the real `setup` has the deprecation
+    # line above it. Through Sphinx rather than by calling the real `setup`: a conf.py
+    # that lists both names then registers the extension once, and the real package's
+    # own lazy `setup` -- with its toolchain check -- is what runs.
+    app.setup_extension(_NEW_NAME)
+    extension = app.extensions[_NEW_NAME]
     # `Extension` pops these three out of the metadata it keeps; hand back all of it.
     return {
         **extension.metadata,
