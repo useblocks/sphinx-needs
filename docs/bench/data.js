@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790712623677,
+  "lastUpdate": 1790713655411,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -21456,6 +21456,42 @@ window.BENCHMARK_DATA = {
             "value": 52.505860358999996,
             "unit": "s",
             "extra": "Commit: d4a4998faa57867f6ae94cf890dfb4049079e513\nBranch: master\nTime: 2026-09-29T22:07:35+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c59d5ae07d75ec9be92cdd85c73041343f7edd90",
+          "message": "🧪 Make sphinx-codelinks' suite catch tree-sitter 0.26.0's Point crash (#1981)\n\nsphinx-codelinks pins `tree-sitter~=0.25.1`, which keeps out 0.26.0, but\nnothing in the suite knew why. In 0.26.0, `Point.row` and `.column`\nreturn a borrowed reference: an int above 256, beyond CPython's cached\nsmall ints, is freed early and the heap is corrupted. codelinks reads\n`start_point.row` for every marker it reports, and `end_point.row` to\ntie YAML and JSONC inline comments to their structure. The suite stayed\ngreen at 0.26.0 (360 passed, 0 skipped) because no fixture reaches line\n257, while `poe docs-codelinks` and `codelinks analyse\ndocs/ubproject.toml` died with exit 139.\n\n**The test**, `tests/test_analyse_long_source.py`, generates a C++, a\nYAML and a JSONC file with hundreds of markers from row 300 on: one-line\nneeds, need-id references and marked-rst blocks for C++, inline and\nown-line markers for YAML and JSONC. It runs `SourceAnalyse` in a child\ninterpreter and asserts every reported row exactly, plus the\ninline-comment scope for YAML and JSONC. The child interpreter is what\nturns a native crash into one clean failure naming the exit code and\npy-tree-sitter#472, instead of killing the pytest run. About 0.4 s per\ncase.\n\n**Proof it bites**: at the locked 0.25.2, 3 passed. With\n`tree-sitter==0.26.0` installed into the same environment, the module\nwas run five times: 5 of 5 runs red, 15 of 15 cases, each `exit code -11\n(SIGSEGV)`. YAML and JSONC with every extractor switched off, so that\nonly the scope association reads points, also crash, 3 of 3 each.\nRestored with `uv sync --frozen`, green again. Re-checked independently\nbefore opening this: green at 0.25.2, red at 0.26.0 with the named\nmessage, green after restoring.\n\n**The pin comment** now says why the floor is 0.25.1 (0.25.0 segfaulted\non linux-arm, py-tree-sitter#386) and why 0.26.0 stays out. When 0.26.1\nships, the range becomes `>=0.25.1,!=0.26.0,<0.27`, and this test is\nwhat proves it. No lock change: `uv lock --check` is a no-op.\n\n**Checked:** `poe test-codelinks` 363 passed, 0 skipped; `poe lint`,\n`poe typecheck`, the tooling tests and `poe docs-codelinks` pass. No\nchangelog entry, since users see nothing.\n\nUpstream: report\nhttps://github.com/tree-sitter/py-tree-sitter/issues/472 (closed), fix\nhttps://github.com/tree-sitter/py-tree-sitter/pull/466 (merged\n2026-07-08), release request\nhttps://github.com/tree-sitter/py-tree-sitter/issues/500 (open). PyPI's\nnewest is still 0.26.0.\n\nFound on the way and filed separately: a one-line marked-rst block is\nreported one row too low, at every tree-sitter version. The test uses\nmulti-line blocks, which are numbered correctly, and a comment in it\nsays why.",
+          "timestamp": "2026-09-29T22:25:39+02:00",
+          "tree_id": "801f6b62b35058b3f449ad9ce236b58b5a82ccde",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/c59d5ae07d75ec9be92cdd85c73041343f7edd90"
+        },
+        "date": 1790713611292,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.09139220800000203,
+            "unit": "s",
+            "extra": "Commit: c59d5ae07d75ec9be92cdd85c73041343f7edd90\nBranch: master\nTime: 2026-09-29T22:25:39+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 49.642426613,
+            "unit": "s",
+            "extra": "Commit: c59d5ae07d75ec9be92cdd85c73041343f7edd90\nBranch: master\nTime: 2026-09-29T22:25:39+02:00"
           }
         ]
       }
