@@ -494,12 +494,14 @@ jobs:
         # `sphinxcontrib/test_reports/` aliases most of all, which flit would drop without a
         # word -- would leave the whole suite green over a broken release. So this builds in
         # `release.yaml`'s shape (no `--wheel`: uv builds the sdist, then the wheel FROM the
-        # sdist, so the sdist's include list decides what the wheel ships) and checks:
-        # - the sdist holds every tracked file under `src/`, and outside `src/` only the
+        # sdist, so the sdist's include list bounds what the wheel ships) and checks:
+        # - the sdist holds every tracked file under `src/`, and outside `src/` exactly the
         #   metadata files listed below (downstream packagers build from it);
-        # - the wheel holds every tracked file under `src/`, both `__init__.py`s, no
-        #   `sphinxcontrib/__init__.py` (a PEP 420 namespace other distributions install
-        #   into), and exactly one licence file, `LICENSE`
+        # - the wheel holds every tracked file under `src/`, both `__init__.py`s, nothing at
+        #   its top level but the two packages and its dist-info, nothing under
+        #   `sphinxcontrib/` but `test_reports/` -- in particular no `sphinxcontrib/__init__.py`
+        #   (a PEP 420 namespace other distributions install into) -- and exactly one
+        #   licence file, `LICENSE`
         run: |
           uv build --package sphinx-test-reports --no-sources -o /tmp/str-dist
           git ls-files packages/sphinx-test-reports/src | uv run --no-project python -c "
@@ -509,14 +511,18 @@ jobs:
           (sdist,) = dist.glob('*.tar.gz')
           wanted = {line.strip().split('/src/', 1)[1] for line in sys.stdin if line.strip()}
           errors = []
-          # the sdist: <name>-<version>/src/..., plus exactly these metadata files
-          metadata = {'pyproject.toml', 'README.rst', 'LICENSE', 'PKG-INFO', '.gitignore'}
+          # the sdist: <name>-<version>/src/..., plus exactly these metadata files; the
+          # repository-root .gitignore that hatchling adds is allowed, not required
+          required = {'pyproject.toml', 'README.rst', 'LICENSE', 'PKG-INFO'}
+          allowed = required | {'.gitignore'}
           with tarfile.open(sdist) as tar:
               members = [m.name.split('/', 1)[1] for m in tar.getmembers() if m.isfile()]
           in_src = {name.removeprefix('src/') for name in members if name.startswith('src/')}
+          outside = {name for name in members if not name.startswith('src/')}
           errors += [f'missing from {sdist.name}: src/{name}' for name in sorted(wanted - in_src)]
+          errors += [f'missing from {sdist.name}: {name}' for name in sorted(required - outside)]
           errors += [f'{sdist.name} ships a file outside src/ that is not metadata: {name}'
-                     for name in sorted(n for n in members if not n.startswith('src/') and n not in metadata)]
+                     for name in sorted(outside - allowed)]
           # the wheel, built from that sdist
           shipped = set(zipfile.ZipFile(wheel).namelist())
           errors += [f'missing from {wheel.name}: {name}' for name in sorted(wanted - shipped)]
@@ -525,6 +531,14 @@ jobs:
                   errors.append(f'{name} is not in both the checkout and {wheel.name}')
           if 'sphinxcontrib/__init__.py' in shipped:
               errors.append('the wheel ships sphinxcontrib/__init__.py, which ends the namespace')
+          errors += [f'{wheel.name} ships {name} under the sphinxcontrib namespace, outside test_reports/'
+                     for name in sorted(shipped)
+                     if name.startswith('sphinxcontrib/') and not name.startswith('sphinxcontrib/test_reports/')
+                     and name != 'sphinxcontrib/__init__.py']
+          top = {name.split('/', 1)[0] for name in shipped}
+          dist_info = {name for name in top if name.endswith('.dist-info')}
+          if len(dist_info) != 1 or top - dist_info != {'sphinx_test_reports', 'sphinxcontrib'}:
+              errors.append(f'{wheel.name} top level is {sorted(top)}, not exactly the two packages and one dist-info')
           licences = sorted(n.split('/licenses/', 1)[1] for n in shipped if '.dist-info/licenses/' in n)
           if licences != ['LICENSE']:
               errors.append(f'{wheel.name} ships licence files {licences}, not exactly LICENSE')
