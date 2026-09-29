@@ -190,6 +190,7 @@ def test_doc_df_calc_sum(test_app):
     assert "43210" in html  # all hours
     assert "3210" in html  # hours of linked needs
     assert "210" in html  # hours of filtered needs
+    assert "3010" in html  # hours of specs linked from an open story (uses `needs`)
 
 
 @pytest.mark.parametrize(
