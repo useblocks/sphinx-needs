@@ -29,7 +29,7 @@ Sphinx Config
 
    # Configuration for source tracing project "src"
    [codelinks.projects.src]
-   remote_url_pattern = "https://github.com/useblocks/sphinx-codelinks/blob/{commit}/{path}#L{line}"
+   remote_url_pattern = "https://github.com/useblocks/sphinx-needs/blob/{commit}/{path}#L{line}"
 
    [codelinks.projects.src.source_discover]
    src_dir = "../tests/doc_test/minimum_config" # Relative path from this TOML file to the source directory

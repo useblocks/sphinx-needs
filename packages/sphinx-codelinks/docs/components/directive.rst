@@ -36,14 +36,14 @@ Regarding the **file** and **directory** options:
 Example
 -------
 
-With the following configuration for a demo source code project `dcdc <https://github.com/useblocks/sphinx-codelinks/tree/main/tests/data/dcdc>`_,
+With the following configuration for a demo source code project `dcdc <https://github.com/useblocks/sphinx-needs/tree/master/packages/sphinx-codelinks/tests/data/dcdc>`_,
 
 .. code-block:: toml
    :caption: ubproject.toml
 
    # Configuration for source tracing project "dcdc"
    [codelinks.projects.dcdc]
-   remote_url_pattern = "https://github.com/useblocks/sphinx-codelinks/blob/{commit}/{path}#L{line}" # URL pattern for remote source code
+   remote_url_pattern = "https://github.com/useblocks/sphinx-needs/blob/{commit}/{path}#L{line}" # URL pattern for remote source code
 
    [codelinks.projects.dcdc.source_discover]
    src_dir = "../tests/data/dcdc" # Relative path from this TOML file to the source directory
