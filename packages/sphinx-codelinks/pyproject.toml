@@ -34,8 +34,9 @@ dependencies = [
   "tree-sitter-cpp>=0.23.4",
   "giturlparse>=0.12.0",
   "tree-sitter-python>=0.23.6",
-  # Compiling issue on manylinux aarch64 image, so install from git instead of Pypi
-  # https://github.com/tree-sitter/py-tree-sitter/issues/386#issuecomment-3101430799
+  # >=0.25.1: 0.25.0 segfaulted on linux-arm, https://github.com/tree-sitter/py-tree-sitter/issues/386
+  # Not 0.26.0: its Point getters return a borrowed ref, corrupting the heap past row 256 (py-tree-sitter#472,
+  # fixed by #466, unreleased at 2026-09-29). Once 0.26.1 ships: `>=0.25.1,!=0.26.0,<0.27`, proven by test_analyse_long_source.py
   "tree-sitter~=0.25.1",
   "tree-sitter-c-sharp>=0.23.1",
   "tree-sitter-yaml>=0.7.1",
