@@ -314,8 +314,9 @@ $ echo $?
 0
 ```
 
-It IS a CI gate here: `uv run poe typecheck-js-needs` runs exactly that command with the
-typescript version pinned in the task, and the Lint job runs the task (#1924) — so run the
+It IS a CI gate here: `uv run poe typecheck-js-needs` runs that command over every browser
+script the package ships (this file and `sphinx_needs_collapse.js`), with the typescript
+version pinned in the task, and the Lint job runs the task (#1924) — so run the
 task after editing the file, and bump the compiler by editing that one literal. A consumer
 with a JavaScript toolchain can run the unpinned command above on its vendored copy.
 
