@@ -494,7 +494,7 @@
   
   Failed validating "pattern" in schema["properties"]["efforts"]
   
-  On instance:
+  On instance["properties"]["efforts"]["pattern"]:
       "^IMPL_(?!SAFE)"
   '''
 # ---
@@ -534,7 +534,7 @@
   
   Failed validating "pattern" in schema["properties"]["links"]["items"]
   
-  On instance:
+  On instance["properties"]["links"]["items"]["pattern"]:
       "^IMPL_(?!SAFE)"
   '''
 # ---
@@ -598,7 +598,7 @@
   
   Failed validating "pattern" in schema["properties"]["id"]
   
-  On instance:
+  On instance["properties"]["id"]["pattern"]:
       "^IMPL_(?!SAFE)"
   '''
 # ---
@@ -609,7 +609,7 @@
   
   Failed validating "pattern" in schema["properties"]["id"]
   
-  On instance:
+  On instance["properties"]["id"]["pattern"]:
       "^(?>test)$"
   '''
 # ---
@@ -620,7 +620,7 @@
   
   Failed validating "pattern" in schema["properties"]["id"]
   
-  On instance:
+  On instance["properties"]["id"]["pattern"]:
       "^IMPL_(SAFE)_\\1"
   '''
 # ---
@@ -631,7 +631,7 @@
   
   Failed validating "pattern" in schema["properties"]["id"]
   
-  On instance:
+  On instance["properties"]["id"]["pattern"]:
       "^test(?#comment)$"
   '''
 # ---
@@ -642,7 +642,7 @@
   
   Failed validating "pattern" in schema["properties"]["id"]
   
-  On instance:
+  On instance["properties"]["id"]["pattern"]:
       "^(?(1)yes|no)$"
   '''
 # ---
@@ -653,7 +653,7 @@
   
   Failed validating "pattern" in schema["properties"]["id"]
   
-  On instance:
+  On instance["properties"]["id"]["pattern"]:
       "^test(?+1)$"
   '''
 # ---
@@ -664,7 +664,7 @@
   
   Failed validating "pattern" in schema["properties"]["id"]
   
-  On instance:
+  On instance["properties"]["id"]["pattern"]:
       "^test(?&name)$"
   '''
 # ---
@@ -675,7 +675,7 @@
   
   Failed validating "pattern" in schema["properties"]["id"]
   
-  On instance:
+  On instance["properties"]["id"]["pattern"]:
       "^(test)?(?(1)yes|no)$"
   '''
 # ---
@@ -686,7 +686,7 @@
   
   Failed validating "pattern" in schema["properties"]["id"]
   
-  On instance:
+  On instance["properties"]["id"]["pattern"]:
       "^IMPL_(?!SAFE)"
   '''
 # ---
