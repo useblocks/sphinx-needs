@@ -85,6 +85,7 @@ _RUNFILES_PREFIX = re.compile(r"^(?:.*[\\/])?_main[\\/]")
 #: taken out again before pytest writes the properties -- on the process that
 #: holds the XML writer, which under pytest-xdist is the controller, not the
 #: worker the test ran on. Maps the entry name to the attribute it sets.
+#: They are documented wire names, not the import path, and did not move with it.
 _OVERRIDES = {
     "sphinxcontrib.test_reports:file": "file",
     "sphinxcontrib.test_reports:line": "line",

@@ -488,10 +488,37 @@ jobs:
           enable-cache: true
           cache-suffix: toolchain-free
           cache-python: true
+      - name: Build the wheel, and check it ships every file under src/
+        # The fence on the ARTEFACT. Every other job installs this member editable, which
+        # reads `src/`, so a build configuration that dropped a package -- the
+        # `sphinxcontrib/test_reports/` aliases most of all, which flit would drop without a
+        # word -- would leave the whole suite green over a broken wheel. Every tracked file
+        # under `src/` must be in the wheel, and nothing may claim `sphinxcontrib` itself,
+        # which is a PEP 420 namespace other distributions install into
+        run: |
+          uv build --package sphinx-test-reports --no-sources --wheel -o /tmp/str-dist
+          git ls-files packages/sphinx-test-reports/src | uv run --no-project python -c "
+          import pathlib, sys, zipfile
+          (wheel,) = pathlib.Path('/tmp/str-dist').glob('*.whl')
+          shipped = set(zipfile.ZipFile(wheel).namelist())
+          wanted = {line.strip().split('/src/', 1)[1] for line in sys.stdin if line.strip()}
+          missing = sorted(wanted - shipped)
+          errors = [f'missing from {wheel.name}: {name}' for name in missing]
+          for name in ('sphinx_test_reports/__init__.py', 'sphinxcontrib/test_reports/__init__.py'):
+              if name not in wanted or name not in shipped:
+                  errors.append(f'{name} is not in both the checkout and {wheel.name}')
+          if 'sphinxcontrib/__init__.py' in shipped:
+              errors.append('the wheel ships sphinxcontrib/__init__.py, which ends the namespace')
+          print(f'{wheel.name}: {len(wanted)} files under src/, {len(missing)} missing')
+          sys.exit('\\n'.join(errors) if errors else 0)
+          "
       - name: Build an environment with no documentation toolchain in it
+        # from the wheel checked above, so the modules below -- the aliases among them --
+        # run against the artefact, not against the checkout
         run: |
           uv venv /tmp/toolchain-free
-          uv pip install --python /tmp/toolchain-free --no-sources "packages/sphinx-test-reports[pytest]"
+          wheel=$(ls /tmp/str-dist/*.whl)
+          uv pip install --python /tmp/toolchain-free --no-sources "${wheel}[pytest]"
       - name: Assert the toolchain really is absent
         # the fence's fence. Without this the job would still pass with Sphinx installed,
         # and would be testing nothing it claims to test.
@@ -507,6 +534,7 @@ jobs:
         # registered, so `-m "not toolchain"` deselects rather than warning.
         run: |
           /tmp/toolchain-free/bin/python -m pytest -q -m "not toolchain" \
+            packages/sphinx-test-reports/tests/test_aliases.py \
             packages/sphinx-test-reports/tests/test_cli_config.py \
             packages/sphinx-test-reports/tests/test_cli_convert.py \
             packages/sphinx-test-reports/tests/test_identity.py \

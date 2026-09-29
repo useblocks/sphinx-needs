@@ -4,6 +4,8 @@ version = "2.0.0"
 description = "Sphinx extension for showing test results and test environment information inside sphinx documentations"
 readme = "README.rst"
 license = { text = "MIT" }
+# Named, because hatchling's default globs would ship AUTHORS as a licence file too.
+license-files = ["LICENSE"]
 authors = [{ name = "team useblocks", email = "info@useblocks.com" }]
 classifiers = [
   "Framework :: Sphinx",
@@ -95,7 +97,8 @@ packages = ["src/sphinx_test_reports", "src/sphinxcontrib"]
 
 # hatchling's sdist default is the whole project directory; this list keeps the shape the
 # flit sdists had -- the module trees plus the metadata files, and NOT `tests/`, `docs/`
-# or `design/`.
+# or `design/`. hatchling adds one file flit did not, the repository's `.gitignore`, and
+# no setting removes it.
 [tool.hatch.build.targets.sdist]
 only-include = ["src/sphinx_test_reports", "src/sphinxcontrib"]
 
