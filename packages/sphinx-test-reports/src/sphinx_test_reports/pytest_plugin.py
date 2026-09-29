@@ -92,7 +92,7 @@ _OVERRIDES = {
 }
 
 #: Registration name of the per-session hook object, :class:`_XmlShape`.
-_HOOKS = "sphinxcontrib.test_reports.xml_shape"
+_HOOKS = "sphinx_test_reports.xml_shape"
 
 Recorder = Callable[[str, str], None]
 
