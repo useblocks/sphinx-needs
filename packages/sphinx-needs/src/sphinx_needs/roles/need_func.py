@@ -10,7 +10,7 @@ from sphinx.environment import BuildEnvironment
 from sphinx.util.docutils import SphinxRole
 
 from sphinx_needs.data import SphinxNeedsData
-from sphinx_needs.need_item import NeedItem
+from sphinx_needs.need_item import NeedItem, NeedLink
 from sphinx_needs.utils import add_doc
 
 
@@ -41,7 +41,10 @@ class NeedFunc(nodes.Inline, nodes.Element):
             self,
         )
         if isinstance(func_return, list):
-            func_return = ", ".join(str(el) for el in func_return)
+            func_return = ", ".join(
+                el.to_link_string() if isinstance(el, NeedLink) else str(el)
+                for el in func_return
+            )
 
         return nodes.Text("" if func_return is None else str(func_return))
 
