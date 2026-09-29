@@ -11,7 +11,7 @@ Improvements
 ............
 
 - ✨ New dynamic function :ref:`links_from_filter`, which links to every need that passes
-  a :ref:`filter_string`
+  a :ref:`filter_string` (:pr:`1984`)
 
   ``:links: [[links_from_filter("type == 'req' and status == 'open'")]]`` links a need to
   all open requirements. The need that contains the call, and its own parts, are left out
@@ -23,7 +23,7 @@ Bug fixes
 .........
 
 - 🐛 :ref:`copy` with ``upper=True`` or ``lower=True`` now changes the case of a list
-  option item by item **(changed output)**
+  option item by item **(changed output)** (:pr:`1984`)
 
   The whole list used to be converted to its printed form first, so
   ``:tags: [[copy("tags", "SRC_1", upper=True)]]`` on a need tagged ``alpha, beta``
@@ -31,14 +31,14 @@ Bug fixes
   :ref:`ndf` role showed the same text. It now gives the two tags ``ALPHA`` and
   ``BETA``, shown as ``ALPHA, BETA``. Values that are not lists are unaffected.
 
-- 🐛 ``c.this_doc()`` now works in the ``filter`` of :ref:`copy`
+- 🐛 ``c.this_doc()`` now works in the ``filter`` of :ref:`copy` (:pr:`1984`)
 
   The filter was evaluated without the document it was written in, so ``c.this_doc()``
   ended in a ``this_doc can not be used in this context`` warning, nothing passed the
   filter, and ``copy`` silently copied from the current need instead. It now selects
   the needs in the document of the current need.
 
-- 🐛 :ref:`ndf` shows the links a dynamic function returns as need IDs
+- 🐛 :ref:`ndf` shows the links a dynamic function returns as need IDs (:pr:`1984`)
 
   A function returning links, such as :ref:`links_content`, was shown as
   ``NeedLink(id='REQ_1', part=None, condition=None)``. It is now shown as ``REQ_1``,
