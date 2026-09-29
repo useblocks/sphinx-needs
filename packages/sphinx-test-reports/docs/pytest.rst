@@ -35,10 +35,11 @@ The plugin is the ``pytest`` extra of the package: ``pip install
    The module is ``sphinx_test_reports.pytest_plugin``. The pre-3.0 name,
    ``sphinxcontrib.test_reports.pytest_plugin``, still loads the same plugin
    until 4.0, with a ``FutureWarning`` at start-up asking for the new one. That
-   warning comes before pytest installs its own filters, so only
-   ``PYTHONWARNINGS=ignore::FutureWarning`` or
-   ``python -W ignore::FutureWarning -m pytest`` silence it. A
-   ``filterwarnings`` line written against the old name keeps matching, because
+   warning comes before pytest installs its own filters, so only Python's own
+   options silence it: ``PYTHONWARNINGS=ignore::FutureWarning``, which
+   pytest-xdist's workers inherit, or
+   ``python -W ignore::FutureWarning -m pytest``, which reaches the main process
+   only. A ``filterwarnings`` line written against the old name keeps matching, because
    resolving it imports the old name; change it together with the ``-p`` line.
    With ``-p`` already on the new name, that import happens inside pytest's
    filter parsing, and under ``filterwarnings = error`` its ``FutureWarning``

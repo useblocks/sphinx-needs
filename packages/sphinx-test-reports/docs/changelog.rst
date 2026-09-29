@@ -15,7 +15,10 @@ The import name moves
   either changes.
 
   Four old names keep working until **4.0**, each with a warning that names its
-  replacement. 4.0 turns all four into errors that say the same thing.
+  replacement. 4.0 turns all four into errors that say the same thing. Under pytest's
+  ``filterwarnings = error`` the ``FutureWarning`` below is an error already, like any
+  other deprecation: a ``conftest.py`` whose ``pytest_plugins`` names the old plugin, or a
+  test module importing an old parser name, stops the run.
 
   - **The extension**, ``extensions = ["sphinxcontrib.test_reports"]``, loads the real one
     and emits a Sphinx warning of type ``test_reports.deprecated`` (Sphinx 8 and later print
@@ -47,8 +50,9 @@ The import name moves
   pytest's command line, or ``warnings.filterwarnings("ignore", category=FutureWarning)``
   in Python. The one that ``-p``, ``addopts`` or ``PYTEST_PLUGINS`` prints at start-up
   comes before pytest installs any filter, so only Python's own options reach it:
-  ``PYTHONWARNINGS=ignore::FutureWarning``, or
-  ``python -W ignore::FutureWarning -m pytest``. In every case the fix is the new name.
+  ``PYTHONWARNINGS=ignore::FutureWarning``, which pytest-xdist's workers inherit, or
+  ``python -W ignore::FutureWarning -m pytest``, which reaches the main process only. In
+  every case the fix is the new name.
 
   **Every other** ``sphinxcontrib.test_reports.<module>`` **import breaks now**, as an
   ordinary ``ImportError`` (``ModuleNotFoundError`` for an ``import`` statement):
