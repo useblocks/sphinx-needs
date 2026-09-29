@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790711905407,
+  "lastUpdate": 1790711968238,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -21312,6 +21312,42 @@ window.BENCHMARK_DATA = {
             "value": 56.868840118,
             "unit": "s",
             "extra": "Commit: 1b0399b4c9999b888d28e2f9945f2f3e81ccd95c\nBranch: master\nTime: 2026-09-29T21:56:58+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a0303b67ce3102f89d6663ce8bfd5a4e51221be7",
+          "message": "🔧 One held-back row per package in the monthly lock pull request (#1979)\n\nThe held-back list in the monthly `UV update` pull request printed one\nrow per member that requires a package, so once #1977 had every member\ndeclare `docutils>=0.21`, #1970's list carried five identical docutils\nrows. The list now has one row per package and locked version, naming\nevery member that requires it:\n\n```\n- `docutils`: locked v0.22.4, newest v0.23, constraint \"docutils>=0.21\" \"docutils>=0.22; python_version >= '3.12'\" \"docutils~=0.21.0\" (required by sphinx-test-reports extra sphinx, sphinx-needs-testkit, sphinx-needs, sphinx-mounts, sphinx-codelinks)\n```\n\nA package locked at two versions keeps two rows, each with its own\nmembers, so a split that holds one member back is still visible.\n\nChecked by running the step exactly as written, extracted from the\nworkflow file, against a real `uv tree --outdated --frozen --depth 1` of\nmaster: 13 rows before, 8 after, one per distinct package, with every\nattribution kept. A stubbed `uv tree` with docutils at 0.21.2 under two\nmembers and 0.22.4 under a third gave two rows. The tooling tests and\nthe hooks pass.",
+          "timestamp": "2026-09-29T21:58:07+02:00",
+          "tree_id": "c98d3bd23d429f5457a02a68e6d4f572211da406",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/a0303b67ce3102f89d6663ce8bfd5a4e51221be7"
+        },
+        "date": 1790711960471,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.11254783399999724,
+            "unit": "s",
+            "extra": "Commit: a0303b67ce3102f89d6663ce8bfd5a4e51221be7\nBranch: master\nTime: 2026-09-29T21:58:07+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 54.868059388999995,
+            "unit": "s",
+            "extra": "Commit: a0303b67ce3102f89d6663ce8bfd5a4e51221be7\nBranch: master\nTime: 2026-09-29T21:58:07+02:00"
           }
         ]
       }
