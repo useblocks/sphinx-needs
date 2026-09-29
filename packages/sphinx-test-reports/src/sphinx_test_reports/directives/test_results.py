@@ -3,7 +3,7 @@ import os
 from docutils import nodes
 from docutils.parsers.rst import Directive
 
-from sphinxcontrib.test_reports.junitparser import JUnitParser
+from sphinx_test_reports.junitparser import JUnitParser
 
 
 class TestResults(nodes.General, nodes.Element):

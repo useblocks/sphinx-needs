@@ -833,7 +833,7 @@ cmd = "uv build --package sphinx-test-reports --no-sources -o dist/sphinx-test-r
 help = "Import every sphinx-test-reports module from its built wheel, with dependencies as PUBLISHED"
 # `--extra sphinx`, because this is the first member in the workspace whose RUNTIME
 # dependencies are optional: the bare wheel's `Requires-Dist` is `lxml` alone, and
-# `sphinxcontrib.test_reports.test_reports` imports sphinx-needs. Without the extra the
+# `sphinx_test_reports.test_reports` imports sphinx-needs. Without the extra the
 # walk fails 6 of its 25 modules. The release workflow's compat cell gets the same two
 # names from this member's `compat-requirements.txt`
 cmd = "python tools/src/sn_tools/import_check.py sphinx-test-reports --extra sphinx"

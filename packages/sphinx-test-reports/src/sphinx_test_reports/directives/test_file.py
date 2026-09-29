@@ -4,11 +4,11 @@ from typing import Any
 from docutils import nodes
 from docutils.parsers.rst import directives
 
-import sphinxcontrib.test_reports.directives.test_suite
+import sphinx_test_reports.directives.test_suite
 from sphinx_needs.api import add_need
 from sphinx_needs.utils import add_doc
-from sphinxcontrib.test_reports.directives.test_common import TestCommonDirective
-from sphinxcontrib.test_reports.exceptions import TestReportIncompleteConfigurationError
+from sphinx_test_reports.directives.test_common import TestCommonDirective
+from sphinx_test_reports.exceptions import TestReportIncompleteConfigurationError
 
 
 class TestFile(nodes.General, nodes.Element):
@@ -129,7 +129,7 @@ class TestFileDirective(TestCommonDirective):
 
                 arguments = [suite["name"]]
                 suite_directive = (
-                    sphinxcontrib.test_reports.directives.test_suite.TestSuiteDirective(
+                    sphinx_test_reports.directives.test_suite.TestSuiteDirective(
                         self.app.config.tr_suite[0],
                         arguments,
                         options,

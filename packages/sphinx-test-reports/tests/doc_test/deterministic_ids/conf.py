@@ -1,4 +1,4 @@
-extensions = ["sphinx_needs", "sphinxcontrib.test_reports"]
+extensions = ["sphinx_needs", "sphinx_test_reports"]
 
 source_suffix = ".rst"
 master_doc = "index"

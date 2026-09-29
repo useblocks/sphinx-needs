@@ -26,7 +26,7 @@
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 
-extensions = ["sphinx_needs", "sphinxcontrib.test_reports"]
+extensions = ["sphinx_needs", "sphinx_test_reports"]
 
 tr_json_mapping = {
     "json_config_1": {

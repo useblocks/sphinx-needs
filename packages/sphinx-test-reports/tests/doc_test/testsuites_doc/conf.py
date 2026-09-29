@@ -30,7 +30,7 @@ import sphinx_needs
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 
-extensions = ["sphinx_needs", "sphinxcontrib.test_reports"]
+extensions = ["sphinx_needs", "sphinx_test_reports"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]

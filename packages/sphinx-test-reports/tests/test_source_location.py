@@ -114,8 +114,8 @@ class TestFieldNameCollisionIsRejected:
             self.__dict__.update(values)
 
     def test_report_and_source_file_sharing_a_name_is_an_error(self):
-        from sphinxcontrib.test_reports.exceptions import InvalidConfigurationError
-        from sphinxcontrib.test_reports.test_reports import check_field_name_collisions
+        from sphinx_test_reports.exceptions import InvalidConfigurationError
+        from sphinx_test_reports.test_reports import check_field_name_collisions
 
         config = self._Config(
             tr_file_option="file",
@@ -130,8 +130,8 @@ class TestFieldNameCollisionIsRejected:
         assert "tr_source_file_option" in str(exc.value)
 
     def test_source_file_and_source_line_sharing_a_name_is_an_error(self):
-        from sphinxcontrib.test_reports.exceptions import InvalidConfigurationError
-        from sphinxcontrib.test_reports.test_reports import check_field_name_collisions
+        from sphinx_test_reports.exceptions import InvalidConfigurationError
+        from sphinx_test_reports.test_reports import check_field_name_collisions
 
         config = self._Config(
             tr_file_option="report_file",
@@ -145,8 +145,8 @@ class TestFieldNameCollisionIsRejected:
     def test_a_rename_onto_a_fixed_field_is_an_error(self):
         # The same failure as two options sharing a name: every test-case
         # directive passes `case` to add_need already.
-        from sphinxcontrib.test_reports.exceptions import InvalidConfigurationError
-        from sphinxcontrib.test_reports.test_reports import check_field_name_collisions
+        from sphinx_test_reports.exceptions import InvalidConfigurationError
+        from sphinx_test_reports.test_reports import check_field_name_collisions
 
         config = self._Config(
             tr_file_option="case",
@@ -161,7 +161,7 @@ class TestFieldNameCollisionIsRejected:
         assert "'case'" in str(exc.value)
 
     def test_distinct_names_are_accepted(self):
-        from sphinxcontrib.test_reports.test_reports import check_field_name_collisions
+        from sphinx_test_reports.test_reports import check_field_name_collisions
 
         config = self._Config(
             tr_file_option="report_file",

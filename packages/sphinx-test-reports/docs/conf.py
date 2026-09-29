@@ -54,7 +54,7 @@ needs_css = "dark.css"
 # ones.
 extensions = [
     "sphinx_needs",
-    "sphinxcontrib.test_reports",
+    "sphinx_test_reports",
     "sphinxcontrib.plantuml",
     "sphinx_design",
     "sphinx_immaterial",

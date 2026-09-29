@@ -6,7 +6,7 @@ import os
 
 from lxml import etree, objectify  # ty: ignore[unresolved-import]
 
-from sphinxcontrib.test_reports.results import normalize_result
+from sphinx_test_reports.results import normalize_result
 
 #: Attributes the JUnit/googletest dialects define themselves. Every *other*
 #: attribute is a ``RecordProperty`` value in attribute form: googletest wrote
@@ -50,7 +50,7 @@ TESTSUITE_KNOWN_ATTRIBUTES = frozenset(
 #: ``<testcase>`` children carrying a result, in the precedence order used to
 #: classify a case that has more than one kind of them. These are XML element
 #: names, not ``result`` values -- ``<failure>`` is read as the result
-#: ``failed`` (see :mod:`sphinxcontrib.test_reports.results`).
+#: ``failed`` (see :mod:`sphinx_test_reports.results`).
 RESULT_PART_KINDS = ("skipped", "failure", "error")
 
 

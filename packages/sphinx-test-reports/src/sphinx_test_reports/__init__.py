@@ -2,7 +2,7 @@
 
 ``setup`` is resolved lazily (PEP 562) so that importing a submodule of this
 package does not import Sphinx: the ``test-reports`` command and
-:mod:`sphinxcontrib.test_reports.projectconfig` are used where the
+:mod:`sphinx_test_reports.projectconfig` are used where the
 documentation toolchain is not installed -- it is the ``sphinx`` extra of the
 package, not a dependency -- and every import of a submodule runs this file
 first. Sphinx still finds ``setup`` through normal attribute access when it
@@ -11,18 +11,22 @@ loads this package as an extension.
 Resolving ``setup`` is also where the toolchain is checked. An extra is opt-in,
 so a project that installs the bare package into an environment already holding
 an older Sphinx or sphinx-needs never shows pip the extra's version floors;
-:mod:`sphinxcontrib.test_reports.toolchain` enforces them here instead, with
+:mod:`sphinx_test_reports.toolchain` enforces them here instead, with
 the install line in the message.
 """
 
-__all__ = ["setup"]
+__all__ = ["__version__", "setup"]
+
+#: Checked against ``[project] version`` by ``check_workspace.py`` and stamped by
+#: ``poe bump``; the extension's metadata reads it from here.
+__version__ = "2.0.0"
 
 
 def __getattr__(name: str) -> object:
     if name != "setup":
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
-    from sphinxcontrib.test_reports.toolchain import INSTALL_HINT, unmet_requirements
+    from sphinx_test_reports.toolchain import INSTALL_HINT, unmet_requirements
 
     unmet = unmet_requirements()
     if unmet:
@@ -41,7 +45,7 @@ def __getattr__(name: str) -> object:
         raise ExtensionError(message)
 
     try:
-        from sphinxcontrib.test_reports.test_reports import setup
+        from sphinx_test_reports.test_reports import setup
     except ImportError as error:
         # Sphinx wraps an ImportError from importing the *package* in a clean
         # "Could not import extension" message, but fetches `setup` with

@@ -16,13 +16,13 @@ from sphinx.util import logging
 # `sphinx_needs.api` entirely (measured against 8.5.0).
 from sphinx_needs.api.need import _make_hashed_id
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinxcontrib.test_reports.exceptions import (
+from sphinx_test_reports.exceptions import (
     SphinxError,
     TestReportFileNotSetError,
 )
-from sphinxcontrib.test_reports.identity import deterministic_case_id
-from sphinxcontrib.test_reports.jsonparser import JsonParser
-from sphinxcontrib.test_reports.junitparser import JUnitParser
+from sphinx_test_reports.identity import deterministic_case_id
+from sphinx_test_reports.jsonparser import JsonParser
+from sphinx_test_reports.junitparser import JUnitParser
 
 # fmt: on
 

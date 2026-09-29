@@ -2,7 +2,7 @@ from packaging.version import Version
 
 import sphinx_needs
 
-extensions = ["sphinx_needs", "sphinxcontrib.test_reports"]
+extensions = ["sphinx_needs", "sphinx_test_reports"]
 
 needs_types = [
     {

@@ -19,15 +19,15 @@ import sys
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
-from sphinxcontrib.test_reports.junitparser import JUnitParser
-from sphinxcontrib.test_reports.needs_export import (
+from sphinx_test_reports.junitparser import JUnitParser
+from sphinx_test_reports.needs_export import (
     DEFAULT_VERSION,
     Report,
     build_needs_file,
     iter_cases,
     optional,
 )
-from sphinxcontrib.test_reports.projectconfig import (
+from sphinx_test_reports.projectconfig import (
     CONVERSION_KEYS,
     DEFAULT_NEED_TYPE,
     DEFAULT_TOML_FILENAME,
@@ -40,7 +40,7 @@ from sphinxcontrib.test_reports.projectconfig import (
     load_project_config,
     needs_settings,
 )
-from sphinxcontrib.test_reports.remote import (
+from sphinx_test_reports.remote import (
     DEFAULT_URL_PATTERN,
     check_url_pattern,
     normalise_remote_url,

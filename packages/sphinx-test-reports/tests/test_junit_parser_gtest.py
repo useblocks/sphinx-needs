@@ -23,7 +23,7 @@ xml_gtest_path = os.path.join(
 
 
 def _suites():
-    from sphinxcontrib.test_reports.junitparser import JUnitParser
+    from sphinx_test_reports.junitparser import JUnitParser
 
     return JUnitParser(xml_gtest_path).parse()
 

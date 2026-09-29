@@ -11,8 +11,8 @@ import xml.etree.ElementTree as ET
 
 import pytest
 
-from sphinxcontrib.test_reports import pytest_plugin
-from sphinxcontrib.test_reports.pytest_plugin import (
+from sphinx_test_reports import pytest_plugin
+from sphinx_test_reports.pytest_plugin import (
     Property,
     apply_test_metadata,
     clean_source_path,
@@ -20,7 +20,7 @@ from sphinxcontrib.test_reports.pytest_plugin import (
     properties_mapping,
 )
 
-PLUGIN = "sphinxcontrib.test_reports.pytest_plugin"
+PLUGIN = "sphinx_test_reports.pytest_plugin"
 
 #: S-CORE's model, as the docs show it: the profile most of these tests run with.
 SCORE_PROFILE = """\
@@ -32,7 +32,7 @@ test_reports_properties =
 """
 
 DECORATED = """
-from sphinxcontrib.test_reports.pytest_plugin import add_test_properties
+from sphinx_test_reports.pytest_plugin import add_test_properties
 
 @add_test_properties(
     partially_verifies=["REQ_1", "REQ_2"],
@@ -50,7 +50,7 @@ def test_plain():
 
 RUNTIME = """
 import pytest
-from sphinxcontrib.test_reports.pytest_plugin import apply_test_metadata
+from sphinx_test_reports.pytest_plugin import apply_test_metadata
 
 @pytest.mark.parametrize("spec", ["a.rst", "b.rst"])
 def test_driven_by_a_file(spec, record_property):
@@ -64,7 +64,7 @@ def test_driven_by_a_file(spec, record_property):
 """
 
 RUNTIME_COMPAT = """
-from sphinxcontrib.test_reports.pytest_plugin import apply_test_metadata
+from sphinx_test_reports.pytest_plugin import apply_test_metadata
 
 def test_score_style(record_property, record_xml_attribute):
     apply_test_metadata(
@@ -78,7 +78,7 @@ def test_score_style(record_property, record_xml_attribute):
 
 SKIPPED = """
 import pytest
-from sphinxcontrib.test_reports.pytest_plugin import add_test_properties
+from sphinx_test_reports.pytest_plugin import add_test_properties
 
 
 @pytest.fixture(scope="module")
@@ -118,7 +118,7 @@ def test_runs():
 # derives its own fixture from this string by replacing `str(inner)]) == 0`.
 NESTED = """
 import pytest
-from sphinxcontrib.test_reports.pytest_plugin import add_test_properties
+from sphinx_test_reports.pytest_plugin import add_test_properties
 
 
 @add_test_properties(partially_verifies=["REQ_1"])
@@ -154,7 +154,7 @@ def test_strict():
 """
 
 STACKED = """
-from sphinxcontrib.test_reports.pytest_plugin import add_test_properties
+from sphinx_test_reports.pytest_plugin import add_test_properties
 
 
 @add_test_properties(test_type="requirements-based", Owner="team-a")
@@ -175,7 +175,7 @@ def test_stacked():
 """
 
 CUSTOM = """
-from sphinxcontrib.test_reports.pytest_plugin import add_test_properties
+from sphinx_test_reports.pytest_plugin import add_test_properties
 
 @add_test_properties(satisfies=["REQ_1", "REQ_2"], reviewers=["ann", "bob"], Owner="x")
 def test_custom():
@@ -412,7 +412,7 @@ class TestPropertyModel:
         # nor loses the properties, which are written at setup.
         pytester.makepyfile(
             helpers=(
-                "from sphinxcontrib.test_reports.pytest_plugin import add_test_properties\n"
+                "from sphinx_test_reports.pytest_plugin import add_test_properties\n"
                 "\n"
                 '@add_test_properties(partially_verifies=["REQ_1"], test_type="interface-test")\n'
                 "def test_from_helper():\n"
@@ -561,7 +561,7 @@ class TestRuntimeMetadata:
 
 BAD_SHAPE_AND_BROKEN_FIXTURE = """
 import pytest
-from sphinxcontrib.test_reports.pytest_plugin import add_test_properties
+from sphinx_test_reports.pytest_plugin import add_test_properties
 
 
 @pytest.fixture
@@ -579,7 +579,7 @@ class TestBadShape:
     def test_a_bad_shape_errors_the_case_at_setup(self, pytester):
         result, _root = _run(
             pytester,
-            "from sphinxcontrib.test_reports.pytest_plugin import add_test_properties\n\n@add_test_properties(test_type=['a', 'b'])\ndef test_shape():\n    assert True\n",
+            "from sphinx_test_reports.pytest_plugin import add_test_properties\n\n@add_test_properties(test_type=['a', 'b'])\ndef test_shape():\n    assert True\n",
         )
         result.assert_outcomes(errors=1)
         result.stdout.fnmatch_lines(["*TypeError*'test_type' takes a single value*"])

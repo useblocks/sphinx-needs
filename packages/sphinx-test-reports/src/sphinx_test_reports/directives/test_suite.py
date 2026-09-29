@@ -4,11 +4,11 @@ from typing import Any
 from docutils import nodes
 from docutils.parsers.rst import directives
 
-import sphinxcontrib.test_reports.directives.test_case
+import sphinx_test_reports.directives.test_case
 from sphinx_needs.api import add_need
 from sphinx_needs.utils import add_doc
-from sphinxcontrib.test_reports.directives.test_common import TestCommonDirective
-from sphinxcontrib.test_reports.exceptions import TestReportInvalidOptionError
+from sphinx_test_reports.directives.test_common import TestCommonDirective
+from sphinx_test_reports.exceptions import TestReportInvalidOptionError
 
 
 class TestSuite(nodes.General, nodes.Element):
@@ -202,7 +202,7 @@ class TestSuiteDirective(TestCommonDirective):
 
                 arguments = [case["name"]]
                 case_directive = (
-                    sphinxcontrib.test_reports.directives.test_case.TestCaseDirective(
+                    sphinx_test_reports.directives.test_case.TestCaseDirective(
                         self.app.config.tr_case[0],
                         arguments,
                         options,

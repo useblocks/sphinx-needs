@@ -149,13 +149,13 @@ jobs:
         # `prepare-cell` must, or `uv run --no-sync` silently creates an empty environment
         # and the step dies on an import error four steps from the cause.
         #
-        # `--cov=sphinxcontrib.test_reports` is the IMPORT name, which is not the
-        # distribution name with `-`->`_` for this member -- it installs into the
-        # `sphinxcontrib` PEP 420 namespace. This cell needs no new tool: nothing in this
+        # `--cov=sphinx_test_reports` measures the real package only; the old-name aliases
+        # under `sphinxcontrib/test_reports/` are exercised by the suite but not counted.
+        # This cell needs no new tool: nothing in this
         # suite renders a diagram, so neither the graphviz nor the PlantUML the cell
         # already installs for sphinx-mounts is for it.
         if: ${{ !cancelled() && steps.prepare.outcome == 'success' }}
-        run: uv run --no-sync pytest -v packages/sphinx-test-reports/tests --durations=25 --cov=sphinxcontrib.test_reports --cov-report=xml:reports.xml --cov-report=term-missing
+        run: uv run --no-sync pytest -v packages/sphinx-test-reports/tests --durations=25 --cov=sphinx_test_reports --cov-report=xml:reports.xml --cov-report=term-missing
       - name: "sphinx-test-reports: upload to Codecov"
         if: inputs.upload-coverage && github.event.pull_request.head.repo.full_name == github.repository && github.repository == 'useblocks/sphinx-needs' && github.actor != 'dependabot[bot]'
         uses: codecov/codecov-action@v7
