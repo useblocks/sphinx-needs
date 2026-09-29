@@ -3,6 +3,17 @@ on:
   push:
     branches:
       - master
+
+# Every run pushes the `benchmarks` branch twice: the action's auto-push, then `Push
+# changes`, a minute later, from the `benchmarks` ref that auto-push left behind. Two
+# master pushes seconds apart therefore race: run 34214401911 had its second push rejected
+# ("fetch first") because run 34214423253, started 16 s later, had pushed in between. One
+# group for the workflow queues the later run instead; `cancel-in-progress: false` never
+# stops a run that is already pushing.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 jobs:
   benchmarks:
     name: "Benchmark time & memory"
