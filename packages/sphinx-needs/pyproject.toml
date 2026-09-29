@@ -38,6 +38,7 @@ classifiers = [
 requires-python = ">=3.11,<4"
 dependencies = [
   "sphinx>=7.4,<10",
+  "docutils>=0.21",                # the `typing` group's series
   "requests-file>=2.1,<4.0",       # external links
   "requests~=2.32",                # external links
   "jsonschema-rs>=0.37.1,<0.54.0", # schema validation

@@ -49,6 +49,7 @@ requires-python = ">=3.11,<4"
 dependencies = [
   "pytest>=8,<10",   # the fixtures and the `pytest_addoption` hook
   "sphinx>=7.4,<10", # SphinxTestApp, and `strip_colors` for the warning normalisation
+  "docutils>=0.21",  # the `typing` group's series
   "syrupy>=4,<7",    # the single-file doctree snapshot extension
 ]
 

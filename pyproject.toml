@@ -171,8 +171,8 @@ typing = [
   # the type-checking floor: the oldest supported sphinx and docutils series, resolved from
   # the lock like every other environment, plus the stubs ty needs for docutils and requests
   "sphinx~=7.4",
-  "docutils~=0.20.0",
-  "types-docutils~=0.20.0",
+  "docutils~=0.21.0",
+  "types-docutils~=0.21.0",
   "types-requests",
   # sphinx-codelinks: without these two, `jsonschema.validate` and the pygments imports are
   # untyped, and its five `# ty: ignore[...]` comments suppress nothing -- which the

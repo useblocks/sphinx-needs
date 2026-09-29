@@ -9,7 +9,7 @@ maintainers = [
 license = { file = "LICENSE" }
 readme = "README.md"
 requires-python = ">=3.11,<4"
-dependencies = ["sphinx>=7.4,<10", "ignore-python>=0.3.3"]
+dependencies = ["sphinx>=7.4,<10", "docutils>=0.21", "ignore-python>=0.3.3"]
 keywords = ["sphinx", "documentation", "mount", "bazel", "monorepo"]
 classifiers = [
   "Development Status :: 4 - Beta",
