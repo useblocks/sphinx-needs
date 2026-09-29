@@ -10,6 +10,11 @@ Unreleased
   sphinx-mounts can be used from the same environment as the other useblocks Sphinx
   extensions. The CI matrix runs the floor against Sphinx 7.4, 8 and 9 (9.0.x is the last
   series that installs on 3.11), on Linux and Windows.
+- **docutils 0.21 or newer is now required** (previously whatever Sphinx accepted, which is
+  0.20 for Sphinx 7.4 and 8.x). Under docutils 0.20 an ``image`` or ``figure`` whose file
+  cannot be read is reported without a line number, because that release's image directive
+  records no source line on its node, so the warning could not point into the mounted file.
+  The requirement has no upper bound: Sphinx caps docutils per series itself.
 
 .. _`release:0.2.0`:
 

@@ -55,6 +55,12 @@ New and Improved
   two lines below a slice of the missing value, which raised first. It now raises
   ``TestReportFileNotSetError`` like every other configuration mistake.
 
+- ⬆️ The ``sphinx`` extra now requires docutils 0.21 or newer, the floor the whole
+  Sphinx-Needs workspace declares and type-checks against (previously whatever Sphinx
+  accepted, which is 0.20 for Sphinx 7.4 and 8.x). The extension checks the extra's floors
+  when it loads, so it now refuses docutils 0.20 with the install line; the ``test-reports``
+  command and the pytest plugin still install no docutils at all.
+
 What the move costs, stated rather than left to the CI diff
 ............................................................
 

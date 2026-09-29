@@ -54,6 +54,10 @@ New and Improved
   incompatibility in the typer of the time. This package never imported click itself, and
   the typer it requires no longer depends on click at all, so the cap was pinning a package
   nothing used; dropping it removes click from the environment.
+- ⬆️ docutils 0.21 or newer is now required. The line was a bare ``docutils`` that left the
+  floor to Sphinx, which accepts 0.20; it is now ``docutils>=0.21``, the floor the whole
+  Sphinx-Needs workspace declares and type-checks against. There is no upper bound: Sphinx
+  caps docutils per series itself.
 
 - 🐛 ``sphinx_codelinks.__version__`` reported ``"0.1.0"``.
 
