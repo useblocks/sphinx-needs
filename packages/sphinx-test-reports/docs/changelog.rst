@@ -23,24 +23,37 @@ The import name moves
     therefore FAILS on it: write ``"sphinx_test_reports"`` in ``conf.py``, or add
     ``suppress_warnings = ["test_reports.deprecated"]`` until you can. Listing both names
     loads the extension once.
-  - **The pytest plugin**, ``-p sphinxcontrib.test_reports.pytest_plugin``, loads the real
-    plugin and raises a ``FutureWarning`` at start-up. A filter written against the old name
-    -- ``ignore::sphinxcontrib.test_reports.pytest_plugin.TestReportsConfigWarning`` --
-    still matches. Naming the plugin under BOTH names stops pytest with "Plugin already
-    registered under a different name"; keep one.
+  - **The pytest plugin**, ``-p sphinxcontrib.test_reports.pytest_plugin`` (and the same
+    name in ``addopts``, ``PYTEST_PLUGINS`` or a ``conftest.py``'s ``pytest_plugins``),
+    loads the real plugin and raises a ``FutureWarning`` at start-up -- once per process, so
+    once more for each pytest-xdist worker. A filter written against the old name --
+    ``ignore::sphinxcontrib.test_reports.pytest_plugin.TestReportsConfigWarning`` -- still
+    matches, because resolving it imports the alias. Change it together with the ``-p``
+    line: once ``-p`` names the new module, that import happens inside pytest's own filter
+    parsing, and under ``filterwarnings = error`` the alias's ``FutureWarning`` stops pytest
+    with a usage error. Naming the plugin under BOTH names, in ``-p``, ``addopts`` or
+    ``pytest_plugins``, stops pytest with "Plugin already registered under a different
+    name"; keep one.
   - **The parsers**, ``sphinxcontrib.test_reports.junitparser`` and
     ``sphinxcontrib.test_reports.jsonparser``, are the real modules under the old name,
-    with a ``FutureWarning`` at the line that imports them. Their classes, and a
-    ``mock.patch`` target through the old path, are the real ones.
+    with a ``FutureWarning`` (once per process) that points at the ``import`` statement
+    naming them -- at ``importlib`` itself when they are loaded with
+    ``importlib.import_module``. Their classes, and a ``mock.patch`` target through the old
+    path, are the real ones.
 
-  The ``FutureWarning`` is silenced by ``filterwarnings = ignore::FutureWarning`` (or a
-  narrower filter on its message) in the pytest configuration, ``-W ignore::FutureWarning``
-  on the command line, or ``warnings.filterwarnings("ignore", category=FutureWarning)``
-  in Python -- but the fix is the new import.
+  The ``FutureWarning`` from a parser import, or from ``pytest_plugins`` in a
+  ``conftest.py``, is silenced by ``filterwarnings = ignore::FutureWarning`` (or a narrower
+  filter on its message) in the pytest configuration, ``-W ignore::FutureWarning`` on
+  pytest's command line, or ``warnings.filterwarnings("ignore", category=FutureWarning)``
+  in Python. The one that ``-p``, ``addopts`` or ``PYTEST_PLUGINS`` prints at start-up
+  comes before pytest installs any filter, so only Python's own options reach it:
+  ``PYTHONWARNINGS=ignore::FutureWarning``, or
+  ``python -W ignore::FutureWarning -m pytest``. In every case the fix is the new name.
 
   **Every other** ``sphinxcontrib.test_reports.<module>`` **import breaks now**, as an
-  ordinary ``ModuleNotFoundError``: ``projectconfig``, ``identity``, ``results``, the
-  directives and the rest were never documented as an API. The module is the same under
+  ordinary ``ImportError`` (``ModuleNotFoundError`` for an ``import`` statement):
+  ``projectconfig``, ``identity``, ``results``, the directives and the rest were never
+  documented as an API. The module is the same under
   the new name -- ``sphinxcontrib.test_reports.projectconfig`` is
   ``sphinx_test_reports.projectconfig``.
 
@@ -74,7 +87,7 @@ New and Improved
     the prefix is load-bearing rather than tidy.
   - **The distribution does not change.** It is still ``sphinx-test-reports``, and the
     ``test-reports`` command is still the same command. The import name does change, in
-    this same release: see below.
+    this same release: see *The import name moves* above.
 
 - 🔧 The shipped default ``tr_report_template`` ends with a ``literalinclude`` of itself,
   by a path relative to the including document. **That is still broken for your project**

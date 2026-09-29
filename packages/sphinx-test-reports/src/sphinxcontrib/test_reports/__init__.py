@@ -4,7 +4,7 @@ The package is :mod:`sphinx_test_reports` now. Four old names still resolve, eac
 with a warning that names the new one:
 
 * this package, as a Sphinx extension (``extensions = ["sphinxcontrib.test_reports"]``),
-  which warns through Sphinx's logger as ``[test_reports.deprecated]`` -- the channel a
+  which warns through Sphinx's logger, type ``test_reports.deprecated`` -- the channel a
   documentation build shows, fails under ``-W`` and silences with ``suppress_warnings``;
 * ``pytest_plugin``, ``junitparser`` and ``jsonparser``, one file each next to this
   one, which put the REAL module into :data:`sys.modules` under the old name and raise
@@ -14,8 +14,8 @@ with a warning that names the new one:
   when it loads a ``-p`` or ``pytest_plugins`` name, are frames of their own and take
   the attribution instead.
 
-Every other ``sphinxcontrib.test_reports.<module>`` fails as an ordinary missing
-module: there is deliberately no finder here that would alias the rest.
+Every other ``sphinxcontrib.test_reports.<module>`` fails as an ordinary import
+error: there is deliberately no finder here that would alias the rest.
 
 ``setup`` is resolved lazily (PEP 562), so importing one of the module aliases does
 not import Sphinx: ``junitparser`` and ``pytest_plugin`` are used where the

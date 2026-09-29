@@ -64,11 +64,11 @@ docs/                   # conf.py sits IN the source dir; changelog.rst is stamp
 
 The package was `sphinxcontrib.test_reports` until 3.0. `src/sphinxcontrib/test_reports/`
 keeps exactly four old names working until 4.0: the package as a Sphinx extension, which
-warns through Sphinx's logger as `[test_reports.deprecated]` and loads the real extension
+warns through Sphinx's logger (type `test_reports.deprecated`) and loads the real extension
 with `app.setup_extension`, and `pytest_plugin`, `junitparser` and `jsonparser`, one file
 each, which put the REAL module into `sys.modules` under the old name with one
-`FutureWarning`. **Do not add a finder or a catch-all**: every other old name is meant to
-fail as a plain `ModuleNotFoundError`, and `tests/test_aliases.py` walks the real package
+`FutureWarning` per process. **Do not add a finder or a catch-all**: every other old name is meant to
+fail as a plain `ImportError`, and `tests/test_aliases.py` walks the real package
 to hold that. **There is no `src/sphinxcontrib/__init__.py`, and there must never be
 one**: `sphinxcontrib` is a PEP 420 namespace other distributions install into.
 

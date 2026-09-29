@@ -46,8 +46,8 @@ After that the extension must be added to the ``conf.py`` file::
 .. versionchanged:: 3.0.0
    The extension is ``sphinx_test_reports``. Before 3.0 it was
    ``sphinxcontrib.test_reports``, and that name still loads the extension
-   until 4.0, with a ``[test_reports.deprecated]`` warning asking for the new
-   one. A build run with ``-W`` fails on that warning: rename the entry, or add
+   until 4.0, with a warning of type ``test_reports.deprecated`` asking for
+   the new one. A build run with ``-W`` fails on that warning: rename the entry, or add
    ``suppress_warnings = ["test_reports.deprecated"]`` to ``conf.py`` until you
    can. See the :doc:`changelog </changelog>` for the other old names.
 
