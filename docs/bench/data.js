@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790705612872,
+  "lastUpdate": 1790709389304,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -21240,6 +21240,42 @@ window.BENCHMARK_DATA = {
             "value": 58.626088017,
             "unit": "s",
             "extra": "Commit: 57b1ff7053d759a02fedcffbc10cf6836ff0abc5\nBranch: master\nTime: 2026-09-29T20:12:00+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "261989b0917f731beb4d61d0412eda0c471272b1",
+          "message": "⬆️ Floor docutils at 0.21 across the workspace, and fence it (#1977)\n\n### What changes\n\n- `docutils>=0.21`, a lower bound only, in sphinx-needs, sphinx-mounts,\nsphinx-codelinks (replacing its bare `docutils`), sphinx-needs-testkit,\nand sphinx-test-reports' `sphinx` extra. sphinx-test-reports' core\ninstall stays docutils-free.\n- The root `typing` group moves to `docutils~=0.21.0` and\n`types-docutils~=0.21.0`. ty reports nothing new.\n- The root `sphinx-9` group gains `docutils>=0.22; python_version >=\n'3.12'`, so the newest-sphinx cell tests the newest docutils that sphinx\naccepts. Without it uv unifies every split on the `typing` group's\nseries (0.21.2 satisfies every sphinx), and after the next `uv lock\n--upgrade` nothing in the workspace would test docutils 0.22.\n- The lock: docutils 0.21.2 for `typing`, `sphinx-7` and `sphinx-8`\n(0.20.1 is gone), and 0.22.4 for `sphinx-9` and the default environment\non Python 3.12 and newer (0.21.2 below 3.12); types-docutils\n0.21.0.20250809. Nothing else moves, and docutils is already in the\nshape a `uv lock --upgrade` gives it.\n\n### Why\n\nThe first `UV update` run (#1970) relocked the `sphinx-7` and `sphinx-8`\ncells from docutils 0.21.2 down to 0.20.1, and the default environment\nand the `sphinx-9` group on Python 3.11 with them. uv resolves each\nconflict split preferring versions another split already chose, and the\n`typing` group pinned `docutils~=0.20.0`. Under 0.20.1 one sphinx-mounts\ntest fails: docutils 0.20's `image` and `figure` directives record no\nline of their own (0.21 added it in `Image.run` and `Figure.run`), so a\nwarning about an unreadable image can lose its line number, and a\nfigure's can point at the wrong line. That reproduces with plain Sphinx\n8.2.3 and no extension at all. Nothing declared a docutils floor, so\nnothing stopped the resolver; now every member declares the floor its\nusers actually need.\n\n### New fences\n\n- `check_workspace.py` check (8): a member whose shipped source imports\ndocutils must declare it, in `dependencies` or an extra; every\ndeclaration needs a `>=` floor in the `typing` group's series and no\nupper bound, because sphinx caps docutils per series itself. A `typing`\ngroup without a docutils series is an error of its own. 22 new tests.\n- `check_typing_floor.py`: the typing environment's docutils must equal\nthe workspace floor, the highest of sphinx's declared floor and every\ninstalled member's, and the error names the declarations that set it.\n- sphinx-test-reports' load-time toolchain check reads its extra, so the\nextension now also refuses docutils 0.20 with the install line.\n- Not fenced, deliberately: check (8) reads the members, not the root's\ngroups, so the `sphinx-9` line is held by its comment.\n\n### How it was checked\n\nEvery fence was mutation-tested (a bare `docutils`, a floor in the wrong\nseries, a cap, a missing declaration for an importer, the `typing` group\nleft at 0.20, a 0.20 typing environment): each goes red with a message\nnaming the member. A scratch `uv lock --upgrade` of this branch gives\nthe lock shape above, and of master reproduces #1970's downgrade. In the\ndefault environment on docutils 0.22.4 the sphinx-needs,\nsphinx-codelinks, sphinx-test-reports and sphinx-mounts suites pass, as\ndo sphinx-mounts and sphinx-test-reports in the `sphinx-7`, `sphinx-8`\nand `sphinx-9` cells.\n\n### Changelog\n\n- sphinx-mounts, sphinx-codelinks, sphinx-test-reports: one bullet each\nunder `Unreleased`.\n- sphinx-needs, for the 9.0.0 entry written at release time: `- ⬆️\ndocutils 0.21 or newer is now required (previously whatever Sphinx\naccepted, 0.20 for Sphinx 7.4 through 9.0); no upper bound, Sphinx caps\ndocutils per series.`\n\n### After merge\n\nRe-dispatch `UV update`; #1970 goes green.",
+          "timestamp": "2026-09-29T21:15:02+02:00",
+          "tree_id": "7b62e3969dc2f8bee46eaf35391dd2d585dcb8d5",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/261989b0917f731beb4d61d0412eda0c471272b1"
+        },
+        "date": 1790709378955,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1571335189999985,
+            "unit": "s",
+            "extra": "Commit: 261989b0917f731beb4d61d0412eda0c471272b1\nBranch: master\nTime: 2026-09-29T21:15:02+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 53.57409639900001,
+            "unit": "s",
+            "extra": "Commit: 261989b0917f731beb4d61d0412eda0c471272b1\nBranch: master\nTime: 2026-09-29T21:15:02+02:00"
           }
         ]
       }
