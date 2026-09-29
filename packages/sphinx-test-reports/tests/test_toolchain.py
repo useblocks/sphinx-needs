@@ -102,7 +102,7 @@ class TestUnmetRequirements:
         names = sorted(
             requirement.name for requirement in toolchain.toolchain_requirements()
         )
-        assert names == ["sphinx", "sphinx-needs"]
+        assert names == ["docutils", "sphinx", "sphinx-needs"]
 
     def test_this_environment_meets_the_floors(self):
         assert toolchain.unmet_requirements() == []

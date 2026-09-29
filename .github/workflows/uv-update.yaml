@@ -38,7 +38,8 @@ jobs:
       # `uv lock --upgrade` moves every entry in the ONE lock the workspace has, resolving
       # each `[tool.uv] conflicts` split on its own -- which is the whole reason this job
       # exists: dependabot pins its candidate on every requirement line at once and cannot
-      # express `docutils` 0.20.1 in the `typing` group beside 0.22.4 everywhere else.
+      # express `docutils` 0.21.2 in the `typing`, `sphinx-7` and `sphinx-8` splits beside
+      # 0.22.4 in `sphinx-9`.
       #
       # No cooldown. `--exclude-newer <7 days ago>`, the counterpart of prek-update's
       # `--cooldown-days 7`, is a GLOBAL index cutoff: measured on 2026-09-16 it made the
@@ -206,7 +207,7 @@ jobs:
               echo
               echo "Direct dependencies only, from \`uv tree --outdated --depth 1\` after the upgrade,"
               echo "at the versions the DEFAULT resolution locks — a package held back only in a matrix"
-              echo "split (\`docutils\` 0.20.1 in \`typing\`, \`myst-parser\` 4.x in \`sphinx-7\`) is not listed."
+              echo "split (\`docutils\` 0.21.2 in \`typing\`, \`myst-parser\` 4.x in \`sphinx-7\`) is not listed."
               echo "The constraint column is every specifier this workspace writes for that name. What"
               echo "actually blocks the newer release may be one of those, a cap elsewhere in the graph,"
               echo "or a \`[tool.uv] conflicts\` split; \`uv lock --upgrade-package <name>\` names it."

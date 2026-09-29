@@ -166,13 +166,18 @@ benchmark = [
 # 3.11, which is why ci.yaml excludes that cell rather than letting it test another series.
 sphinx-7 = ["sphinx~=7.4"]
 sphinx-8 = ["sphinx~=8.2"]
-sphinx-9 = ["sphinx~=9.1; python_version >= '3.12'"]
+sphinx-9 = [
+  "sphinx~=9.1; python_version >= '3.12'",
+  # the newest-sphinx cell tests the newest docutils that sphinx accepts; without this line
+  # uv unifies every split on the `typing` group's docutils series
+  "docutils>=0.22; python_version >= '3.12'",
+]
 typing = [
   # the type-checking floor: the oldest supported sphinx and docutils series, resolved from
   # the lock like every other environment, plus the stubs ty needs for docutils and requests
   "sphinx~=7.4",
-  "docutils~=0.20.0",
-  "types-docutils~=0.20.0",
+  "docutils~=0.21.0",
+  "types-docutils~=0.21.0",
   "types-requests",
   # sphinx-codelinks: without these two, `jsonschema.validate` and the pygments imports are
   # untyped, and its five `# ty: ignore[...]` comments suppress nothing -- which the

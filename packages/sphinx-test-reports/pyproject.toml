@@ -40,7 +40,7 @@ dependencies = ["lxml"]
 # `workspace = true` (uv#9811), so the floor is the only statement of what was actually
 # tested, and `propagate_floors.py` moves it at each sphinx-needs release. The published
 # 2.0.0 said `>=6.0.1`; narrowing it is what the import costs, and the changelog says so.
-sphinx = ["sphinx>=7.4", "sphinx-needs>=8.5.0,<9"]
+sphinx = ["sphinx>=7.4", "docutils>=0.21", "sphinx-needs>=8.5.0,<9"]
 # The pytest plugin (sphinxcontrib.test_reports.pytest_plugin); pytest is not
 # a dependency of the extension or the converter. 7.0 is where everything the
 # plugin uses exists (pytest.Config/Item/Mark, Config.stash,
