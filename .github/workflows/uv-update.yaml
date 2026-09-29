@@ -38,8 +38,8 @@ jobs:
       # `uv lock --upgrade` moves every entry in the ONE lock the workspace has, resolving
       # each `[tool.uv] conflicts` split on its own -- which is the whole reason this job
       # exists: dependabot pins its candidate on every requirement line at once and cannot
-      # express `docutils` 0.21.2 in the `typing`, `sphinx-7` and `sphinx-8` splits beside 0.22.4 in
-      # `sphinx-9`.
+      # express `docutils` 0.21.2 in the `typing`, `sphinx-7` and `sphinx-8` splits beside
+      # 0.22.4 in `sphinx-9`.
       #
       # No cooldown. `--exclude-newer <7 days ago>`, the counterpart of prek-update's
       # `--cooldown-days 7`, is a GLOBAL index cutoff: measured on 2026-09-16 it made the

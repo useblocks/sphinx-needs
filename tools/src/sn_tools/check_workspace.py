@@ -75,13 +75,15 @@ a failure mode that no other gate in this repository can see:
    The two are the same claim written twice, so their `major.minor` series must be equal.
    A member whose shipped source (`src/**/*.py`) imports docutils has to declare it -- in
    `dependencies` or in an extra -- and the declaration has to carry a `>=` floor: a bare
-   `docutils` lets a resolver pick any series at all, which is how the `sphinx-7` and
-   `sphinx-8` cells were once relocked down to docutils 0.20, where a warning about an
-   unreadable image can lose its line number. And no upper bound (`<`, `<=`, `~=`, `==`):
-   sphinx caps docutils per series itself, so a member's cap only duplicates its host's, and
-   holds users back the moment the two disagree. The lock cannot see a floor that is too low (it resolves the
-   newest release that fits), and `.github/scripts/check_typing_floor.py` only sees the
-   members installed into `.venvs/typing` -- so this is the fence on the declarations.
+   `docutils` sets none, so nothing stops a resolution going below the series the `typing`
+   group checks. The first monthly lock update did exactly that to the `sphinx-7` and
+   `sphinx-8` cells, unifying them on the `typing` group's docutils 0.20, where a warning
+   about an unreadable image can lose its line number. And no upper bound (`<`, `<=`, `~=`,
+   `==`): sphinx caps docutils per series itself, so a member's cap only duplicates its
+   host's, and holds users back the moment the two disagree. A floor that is too low fails
+   nothing until some resolution picks the old series, and
+   `.github/scripts/check_typing_floor.py` only sees the members installed into
+   `.venvs/typing` -- so this is the fence on the declarations.
 
 Every failure is reported before the script exits, each on its own `::error file=...::`
 line, so one run names every mistake rather than the first one.

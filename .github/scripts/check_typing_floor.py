@@ -14,8 +14,9 @@ have, silently and green:
   with it; this is where forgetting that is caught. The members are the ones the root
   `pyproject.toml` lists under `[tool.uv.workspace] members`, and their floors are read from
   the installed metadata, as sphinx's is. A member declaring no docutils at all is not this
-  script's business: `tools/src/sn_tools/check_workspace.py` check (8) refuses that, and a
-  declared floor in another series than the `typing` group's, from the manifests alone.
+  script's business: `tools/src/sn_tools/check_workspace.py` check (8) refuses that when the
+  member's shipped source imports docutils, and refuses a declared floor in another series
+  than the `typing` group's, from the manifests alone.
 
 Usage: python .github/scripts/check_typing_floor.py
 """
