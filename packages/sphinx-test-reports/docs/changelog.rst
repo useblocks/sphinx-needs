@@ -6,6 +6,52 @@ Changelog
 Unreleased
 ----------
 
+The import name moves
+.....................
+
+- ♻️ The package is imported as ``sphinx_test_reports`` now, not
+  ``sphinxcontrib.test_reports``: the extension is ``extensions = ["sphinx_test_reports"]``
+  and the pytest plugin is ``-p sphinx_test_reports.pytest_plugin``. Nothing else about
+  either changes.
+
+  Four old names keep working until **4.0**, each with a warning that names its
+  replacement. 4.0 turns all four into errors that say the same thing.
+
+  - **The extension**, ``extensions = ["sphinxcontrib.test_reports"]``, loads the real one
+    and warns through Sphinx as ``[test_reports.deprecated]``. A build run with ``-W``
+    therefore FAILS on it: write ``"sphinx_test_reports"`` in ``conf.py``, or add
+    ``suppress_warnings = ["test_reports.deprecated"]`` until you can. Listing both names
+    loads the extension once.
+  - **The pytest plugin**, ``-p sphinxcontrib.test_reports.pytest_plugin``, loads the real
+    plugin and raises a ``FutureWarning`` at start-up. A filter written against the old name
+    -- ``ignore::sphinxcontrib.test_reports.pytest_plugin.TestReportsConfigWarning`` --
+    still matches. Naming the plugin under BOTH names stops pytest with "Plugin already
+    registered under a different name"; keep one.
+  - **The parsers**, ``sphinxcontrib.test_reports.junitparser`` and
+    ``sphinxcontrib.test_reports.jsonparser``, are the real modules under the old name,
+    with a ``FutureWarning`` at the line that imports them. Their classes, and a
+    ``mock.patch`` target through the old path, are the real ones.
+
+  The ``FutureWarning`` is silenced by ``filterwarnings = ignore::FutureWarning`` (or a
+  narrower filter on its message) in the pytest configuration, ``-W ignore::FutureWarning``
+  on the command line, or ``warnings.filterwarnings("ignore", category=FutureWarning)``
+  in Python -- but the fix is the new import.
+
+  **Every other** ``sphinxcontrib.test_reports.<module>`` **import breaks now**, as an
+  ordinary ``ModuleNotFoundError``: ``projectconfig``, ``identity``, ``results``, the
+  directives and the rest were never documented as an API. The module is the same under
+  the new name -- ``sphinxcontrib.test_reports.projectconfig`` is
+  ``sphinx_test_reports.projectconfig``.
+
+  The two ``user_properties`` names the pytest plugin reserves for its location override,
+  ``sphinxcontrib.test_reports:file`` and ``sphinxcontrib.test_reports:line``, are wire
+  names rather than the import path, and do not change.
+
+- 🔧 The package builds with hatchling instead of flit, because its wheel now ships two
+  top-level packages: ``sphinx_test_reports`` and the ``sphinxcontrib/test_reports/``
+  aliases. ``sphinxcontrib`` stays a namespace package. The package also gains
+  ``sphinx_test_reports.__version__``.
+
 New and Improved
 ................
 
@@ -25,9 +71,9 @@ New and Improved
   - **Release tags** are prefixed: ``sphinx-test-reports-v2.0.0`` rather than ``2.0.0``.
     Six of the ten historical bare names collided with existing Sphinx-Needs releases, so
     the prefix is load-bearing rather than tidy.
-  - **The published package does not change.** The distribution is still
-    ``sphinx-test-reports``, the import is still ``sphinxcontrib.test_reports``, and the
-    ``test-reports`` command is still the same command.
+  - **The distribution does not change.** It is still ``sphinx-test-reports``, and the
+    ``test-reports`` command is still the same command. The import name does change, in
+    this same release: see below.
 
 - 🔧 The shipped default ``tr_report_template`` ends with a ``literalinclude`` of itself,
   by a path relative to the including document. **That is still broken for your project**

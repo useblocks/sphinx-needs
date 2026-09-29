@@ -17,7 +17,7 @@ package, because it shapes the manifest, the CI and the split that is coming:
   JSON and create sphinx-needs items from them, plus the `tr_link` dynamic function;
 - **the converter** — a `test-reports` console script that turns the same reports into a
   `needs.json` **without running Sphinx at all**;
-- **the pytest plugin** — `sphinxcontrib.test_reports.pytest_plugin`, which writes the XML
+- **the pytest plugin** — `sphinx_test_reports.pytest_plugin`, which writes the XML
   shape the extension reads, including per-case properties for traceability.
 
 So **Sphinx and sphinx-needs are an `[project.optional-dependencies]` extra, not
@@ -30,16 +30,17 @@ described below.
 ## Package structure
 
 ```text
-pyproject.toml          # `[project]`, `[project.urls]`, `[project.scripts]` and
-                        #   `[tool.flit.module]`. NOT ruff, ty, pytest or dependency
+pyproject.toml          # `[project]`, `[project.urls]`, `[project.scripts]` and the
+                        #   hatch build tables. NOT ruff, ty, pytest or dependency
                         #   groups: those are the root's, and check (7) refuses them here
 compat-requirements.txt # released deps the compat cell needs -- see "Releasing" below
 .readthedocs.yaml       # this package's RTD project; its paths are REPOSITORY-root relative
 AUTHORS · LICENSE · README.rst
 design/                 # import-commit-map.txt: old hash -> new hash for the 2026-09 import
 
-src/sphinxcontrib/test_reports/
-├── __init__.py         # the lazy `setup` re-export; `sphinxcontrib` is a PEP 420 namespace
+src/sphinxcontrib/test_reports/   # the pre-3.0 name: four warning aliases, removed in 4.0
+src/sphinx_test_reports/
+├── __init__.py         # `__version__`, and the lazy `setup` re-export
 ├── test_reports.py     # the extension entry point: directives, config values, fields
 ├── cli.py              # the `test-reports` converter command
 ├── pytest_plugin.py    # the pytest plugin
@@ -59,31 +60,29 @@ docs/                   # conf.py sits IN the source dir; changelog.rst is stamp
 
 ## The things that are true here and nowhere else
 
-### The module name is DOTTED, and one workspace fence is silent because of it
+### The old import name is four aliases, and nothing else
 
-This package installs into the `sphinxcontrib` PEP 420 namespace, so its import name is
-`sphinxcontrib.test_reports` — not the distribution name with `-` → `_`. It says so in
-`[tool.flit.module] name`, and three readers honour that key: `check_workspace.Member.module`,
-`tools/src/sn_tools/import_check.py`, and (since this package's import) the `module=` step of
-`.github/workflows/release.yaml`.
+The package was `sphinxcontrib.test_reports` until 3.0. `src/sphinxcontrib/test_reports/`
+keeps exactly four old names working until 4.0: the package as a Sphinx extension, which
+warns through Sphinx's logger as `[test_reports.deprecated]` and loads the real extension
+with `app.setup_extension`, and `pytest_plugin`, `junitparser` and `jsonparser`, one file
+each, which put the REAL module into `sys.modules` under the old name with one
+`FutureWarning`. **Do not add a finder or a catch-all**: every other old name is meant to
+fail as a plain `ModuleNotFoundError`, and `tests/test_aliases.py` walks the real package
+to hold that. **There is no `src/sphinxcontrib/__init__.py`, and there must never be
+one**: `sphinxcontrib` is a PEP 420 namespace other distributions install into.
 
-**`check_workspace.py` check (5) prints NO line at all for this member, and that is expected
-today.** Every other member gets an `OK … __version__ == <version>` line; this one is absent,
-and absence is not something a reader notices — so it is written down here. Two independent
-reasons, either of which alone would be enough:
+### hatchling, and the fence on the built wheel
 
-1. `module_version()` joins `member.module` as ONE path component, so it looks for
-   `src/sphinxcontrib.test_reports/__init__.py` — a directory that cannot exist. A dotted
-   name can never resolve.
-2. **This package has no `__version__` literal anywhere.** `check_module_version` treats a
-   module without one as "not an error" by design, so even a non-dotted name would print
-   nothing until the literal exists. (`test_reports.py` carries a separate, hand-written
-   `VERSION = "2.0.0"`, which no gate reads.)
-
-What the gap costs is that `[project] version` and a module literal could drift apart —
-which is nil in practice while nothing bumps this member. **Both reasons dissolve together**
-when the package is renamed and gains a real `__version__`, which is the release that follows
-this import. Until then, do not read check (5)'s silence as a pass.
+This is the one member that builds with hatchling: its wheel ships two top-level packages,
+and flit ships one and drops the other without a word. An editable install reads `src/`, so
+a build configuration that lost the aliases would leave every test green. The
+`toolchain-free` job is therefore where the artefact is checked -- it builds the wheel,
+fails when a tracked file under `src/` is missing from it or when it ships
+`sphinxcontrib/__init__.py`, and runs its modules against that wheel. A new top-level
+package needs a line in `[tool.hatch.build.targets.wheel]` AND
+`[tool.hatch.build.targets.sdist]`; the sdist list is what keeps `tests/` and `docs/` out
+of the tarball.
 
 ### The suite needs no renderer; the DOCS need two
 
@@ -132,12 +131,14 @@ builds its own fixture from the same string by replacing the literal `str(inner)
 This is the shape to remember: **run the suite in the default `.venv` AND in a cell.** Green
 in one proves nothing about the other.
 
-### `tests/doc_test/utils/*.xml` contain the string `sphinxcontrib/` — leave them alone
+### The old name still appears in the tree, on purpose
 
-Three fixture files carry paths like `file="sphinxcontrib/test_reports/junitparser.py"`.
-They are **test data** describing a historical pytest run, not paths anything opens. A
-`src/`-move `sed` over the tree would corrupt them silently. `grep -rn 'sphinxcontrib/'` here
-finds them; that is expected.
+Three fixture files in `tests/doc_test/utils/` carry paths like
+`file="sphinxcontrib/test_reports/junitparser.py"`: **test data** describing a historical
+pytest run, not paths anything opens. The docs' `classname` examples match that data, and
+the pytest plugin's reserved `user_properties` names (`sphinxcontrib.test_reports:file`,
+`:line`) are documented wire names. None of them is an import path, so none moved with the
+package; a rename `sed` over the tree would corrupt them silently.
 
 ### The `ubproject.toml` discovery boundary inside a monorepo
 
@@ -166,8 +167,8 @@ and the plugin importable with no documentation toolchain.** It cannot be a `uv 
 structurally: the root's `[project] dependencies` name every member, those are installed in
 every environment, and sphinx-needs declares sphinx at runtime — so every environment this
 root can produce has Sphinx in it. The job builds one outside the project with
-`uv pip install --no-sources "packages/sphinx-test-reports[pytest]"`, asserts `sphinx`,
-`sphinx_needs` and `docutils` are all absent, and runs the ten toolchain-free modules with
+`uv pip install --no-sources` of the wheel it has just built and checked, asserts `sphinx`,
+`sphinx_needs` and `docutils` are all absent, and runs the toolchain-free modules with
 `-m "not toolchain"`. The `toolchain` marker itself lives in the ROOT's `markers` list.
 
 ## Releasing

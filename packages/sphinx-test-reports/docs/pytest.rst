@@ -28,8 +28,14 @@ The plugin is the ``pytest`` extra of the package: ``pip install
 .. code-block:: ini
 
    # pytest.ini / pyproject.toml [tool.pytest.ini_options]
-   addopts = -p sphinxcontrib.test_reports.pytest_plugin
+   addopts = -p sphinx_test_reports.pytest_plugin
    junit_family = xunit1
+
+.. versionchanged:: 3.0.0
+   The module is ``sphinx_test_reports.pytest_plugin``. The pre-3.0 name,
+   ``sphinxcontrib.test_reports.pytest_plugin``, still loads the same plugin
+   until 4.0, with a ``FutureWarning`` at start-up asking for the new one; a
+   ``filterwarnings`` line written against the old name keeps matching.
 
 then run with ``--junitxml=report.xml`` as usual. ``junit_family = xunit1`` is
 required: pytest writes ``<testcase>`` attributes only under that family (its
@@ -48,7 +54,7 @@ Nothing else changes for tests that do not use the decorator below.
 The start-up notice is a ``TestReportsConfigWarning``. A project that turns
 warnings into errors (``filterwarnings = error``, ``-W error``) gets it as a
 clean usage error instead;
-``ignore::sphinxcontrib.test_reports.pytest_plugin.TestReportsConfigWarning``
+``ignore::sphinx_test_reports.pytest_plugin.TestReportsConfigWarning``
 silences it.
 
 Declaring the properties
@@ -94,7 +100,7 @@ plugin this one was ported from:
 
    # pytest.ini
    [pytest]
-   addopts = -p sphinxcontrib.test_reports.pytest_plugin
+   addopts = -p sphinx_test_reports.pytest_plugin
    junit_family = xunit1
    test_reports_properties =
        partially_verifies = PartiallyVerifies, list
@@ -106,7 +112,7 @@ plugin this one was ported from:
 
    # pyproject.toml
    [tool.pytest.ini_options]
-   addopts = "-p sphinxcontrib.test_reports.pytest_plugin"
+   addopts = "-p sphinx_test_reports.pytest_plugin"
    junit_family = "xunit1"
    test_reports_properties = [
        "partially_verifies = PartiallyVerifies, list",
@@ -146,7 +152,7 @@ With the S-CORE model declared:
 
 .. code-block:: python
 
-   from sphinxcontrib.test_reports.pytest_plugin import add_test_properties
+   from sphinx_test_reports.pytest_plugin import add_test_properties
 
    @add_test_properties(
        partially_verifies=["REQ_1", "REQ_2"],
@@ -220,7 +226,7 @@ of at the test function:
 
 .. code-block:: python
 
-   from sphinxcontrib.test_reports.pytest_plugin import apply_test_metadata
+   from sphinx_test_reports.pytest_plugin import apply_test_metadata
 
    @pytest.mark.parametrize("spec", SPECS)
    def test_spec(spec, record_property):

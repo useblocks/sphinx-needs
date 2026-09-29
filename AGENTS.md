@@ -292,6 +292,11 @@ than a manifest one: `flit build --use-vcs` tested `.git` for a *directory*, and
 worktree it is a file, so the sdist silently fell back to the module alone — no warning, a
 tenth of the size. Nothing runs `flit` directly any more.)
 
+**sphinx-test-reports is the one member built with hatchling**, because its wheel ships a
+second top-level package (the old-name aliases) and flit drops it silently; its sdist's
+contents are `[tool.hatch.build.targets.sdist]` in its manifest, and its `AGENTS.md` has
+the fence.
+
 ## Releasing a package
 
 Every distribution under `packages/` releases independently — with one exception, the

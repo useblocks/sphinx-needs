@@ -40,8 +40,16 @@ install line above.
 After that the extension must be added to the ``conf.py`` file::
 
    extensions = ['sphinx_needs',
-                 'sphinxcontrib.test_reports',
+                 'sphinx_test_reports',
                  'sphinxcontrib.plantuml']
+
+.. versionchanged:: 3.0.0
+   The extension is ``sphinx_test_reports``. Before 3.0 it was
+   ``sphinxcontrib.test_reports``, and that name still loads the extension
+   until 4.0, with a ``[test_reports.deprecated]`` warning asking for the new
+   one. A build run with ``-W`` fails on that warning: rename the entry, or add
+   ``suppress_warnings = ["test_reports.deprecated"]`` to ``conf.py`` until you
+   can. See the :doc:`changelog </changelog>` for the other old names.
 
 Please note, ``Sphinx-Test-Report`` is based on the
 `Sphinx-needs extension <https://sphinx-needs.readthedocs.io/en/latest/>`_.
