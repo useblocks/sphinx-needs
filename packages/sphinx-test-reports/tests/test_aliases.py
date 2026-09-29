@@ -299,10 +299,20 @@ MESSAGE = f"the extension name '{OLD}' is deprecated"
 DEPRECATED = "[test_reports.deprecated]"
 
 
+#: The prefix Sphinx gives every warning raised while an extension's `setup` runs. It is
+#: counted on every Sphinx, so a second, differently worded warning from the alias is
+#: seen on 7.4 too, where there is no type suffix to count. The one exception is 7.4's
+#: `-W` abort, which prints the first warning under ``Warning, treated as error:`` without
+#: the prefix -- and, since it aborts, never a second one.
+SETTING_UP = f"while setting up extension {OLD}"
+TREATED_AS_ERROR = "Warning, treated as error:"
+
+
 def _assert_the_deprecation_once(output: str) -> None:
     import sphinx
 
     assert output.count(MESSAGE) == 1, output
+    assert output.count(SETTING_UP) + output.count(TREATED_AS_ERROR) == 1, output
     if sphinx.version_info >= (8,):
         assert output.count(DEPRECATED) == 1, output
 
