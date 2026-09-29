@@ -76,10 +76,10 @@ a failure mode that no other gate in this repository can see:
    A member whose shipped source (`src/**/*.py`) imports docutils has to declare it -- in
    `dependencies` or in an extra -- and the declaration has to carry a `>=` floor: a bare
    `docutils` lets a resolver pick any series at all, which is how the `sphinx-7` and
-   `sphinx-8` cells were once relocked down to docutils 0.20, where the image directive
-   records no line number. And no upper bound (`<`, `<=`, `~=`, `==`): sphinx caps docutils
-   per series itself, so a member's cap only duplicates its host's, and holds users back the
-   moment the two disagree. The lock cannot see a floor that is too low (it resolves the
+   `sphinx-8` cells were once relocked down to docutils 0.20, where a warning about an
+   unreadable image can lose its line number. And no upper bound (`<`, `<=`, `~=`, `==`):
+   sphinx caps docutils per series itself, so a member's cap only duplicates its host's, and
+   holds users back the moment the two disagree. The lock cannot see a floor that is too low (it resolves the
    newest release that fits), and `.github/scripts/check_typing_floor.py` only sees the
    members installed into `.venvs/typing` -- so this is the fence on the declarations.
 

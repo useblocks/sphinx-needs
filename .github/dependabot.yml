@@ -8,8 +8,8 @@ version: 2
 # NO `uv` ecosystem below, deliberately: the lock is updated by the monthly `UV update`
 # workflow (.github/workflows/uv-update.yaml). Dependabot pins its candidate version on
 # every requirement line at once, and this workspace locks some packages at two versions
-# across its `[tool.uv] conflicts` splits (`docutils` 0.21.2 in `typing`, the newest
-# elsewhere) -- it cannot express that, and every refresh died with "Dependabot can't
+# across its `[tool.uv] conflicts` splits (`docutils` 0.21.2 wherever an older sphinx caps
+# it, the newest elsewhere) -- it cannot express that, and every refresh died with "Dependabot can't
 # resolve your Python dependency files". Its default strategy also rewrote manifest
 # specifiers nobody asked it to touch; the job never edits a manifest, and asserts it.
 # Security alerts and security-update pull requests are a separate repository feature
