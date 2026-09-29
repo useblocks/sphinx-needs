@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789677374353,
+  "lastUpdate": 1790705612872,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -21204,6 +21204,42 @@ window.BENCHMARK_DATA = {
             "value": 47.510929612,
             "unit": "s",
             "extra": "Commit: 58bcb59d861da95f2aca79f343e8bae6ec5c1250\nBranch: master\nTime: 2026-09-17T22:34:58+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "57b1ff7053d759a02fedcffbc10cf6836ff0abc5",
+          "message": "🔧 Label the monthly uv-lock pull request, and say what a lost version in a pair means (#1971)\n\nTwo things the rehearsal of the `UV update` job (#1951's first dispatch,\nwhich opened #1970) showed about the pull request it opens.\n\n**It arrived with no `pkg:` label.** `.github/labeler.yml` leaves\n`uv.lock` out of the repository entry on purpose (a member's dependency\nchange relocks it, and that is not a repository concern), so a lock-only\npull request gets nothing from the labeler and was, until now, labelled\nby hand — dependabot's were. The job's pull request IS a repository\nconcern, so the job now passes `labels: pkg: workspace, dependencies` to\n`create-pull-request`, the labeler's comment says so, `AGENTS.md`'s\nparagraph on the job gains the clause, and\n`tools/tests/test_dependabot_config.py` fences the input\n(mutation-tested: dropping the `pkg: workspace` line fails it).\n\n**A version pair that loses a member is a downgrade nobody flagged.**\n#1970's body reads\n\n```\ndocutils: v0.20.1, v0.21.2 -> v0.20.1, v0.22.4\n```\n\nwhich is an upgrade for the default resolution and a DOWNGRADE for the\n`sphinx-7` and `sphinx-8` cells: sphinx 7.4 and 8.2 cap docutils below\n0.22, and `uv lock --upgrade` unified those splits on the 0.20.1 the\n`typing` group already pins rather than keeping 0.21.2 (the same\nhappened to `pydata-sphinx-theme`, `v0.17.1, v0.19.0 -> v0.17.1`, for\nthe default resolution). The job's fixed prose now says what a lost\nversion in a pair means, with that example, so a reviewer reads the pair\nas cells moving rather than as a package moving up. The docutils case\nitself — the two cells went red on one sphinx-mounts test that needs the\nline number docutils 0.21 started stamping on image nodes — is a floor\ndecision, handled separately; nothing here changes the lock.\n\nNo behaviour of the update itself changes: same command, same assertion\nthat no manifest moved, same body otherwise.",
+          "timestamp": "2026-09-29T20:12:00+02:00",
+          "tree_id": "60d7a62a4c7c42861208d6a1e637873b2511e926",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/57b1ff7053d759a02fedcffbc10cf6836ff0abc5"
+        },
+        "date": 1790705603349,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.15643425499999353,
+            "unit": "s",
+            "extra": "Commit: 57b1ff7053d759a02fedcffbc10cf6836ff0abc5\nBranch: master\nTime: 2026-09-29T20:12:00+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 58.626088017,
+            "unit": "s",
+            "extra": "Commit: 57b1ff7053d759a02fedcffbc10cf6836ff0abc5\nBranch: master\nTime: 2026-09-29T20:12:00+02:00"
           }
         ]
       }
