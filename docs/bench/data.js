@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790711968238,
+  "lastUpdate": 1790712213026,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -21348,6 +21348,42 @@ window.BENCHMARK_DATA = {
             "value": 54.868059388999995,
             "unit": "s",
             "extra": "Commit: a0303b67ce3102f89d6663ce8bfd5a4e51221be7\nBranch: master\nTime: 2026-09-29T21:58:07+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "130600081+glaziermag@users.noreply.github.com",
+            "name": "glaziermag",
+            "username": "glaziermag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8d9cbabbc399cceee0d937335cf701bd96914987",
+          "message": "🔧 Serialise Benchmark runs: two master pushes 16 s apart raced on the `benchmarks` branch (run 34214401911) (#1972)\n\nBenchmark run\n[34214401911](https://github.com/useblocks/sphinx-needs/actions/runs/34214401911)\n(master `aaa815d9`, 2026-09-08) went red at `Push changes`:\n\n```\n ! [rejected]        benchmarks -> benchmarks (fetch first)\n```\n\nNothing regressed. Run\n[34214423253](https://github.com/useblocks/sphinx-needs/actions/runs/34214423253)\n(`72e41f6b`) started 16 s later, and its `Store benchmark result` pushed\n`benchmarks` at 10:16:08–10:16:18, between the first run's auto-push\n(10:15:54) and its `Push changes` (10:16:46), which still had the ref\nauto-push left behind. Every run pushes that branch twice with the\nmemory benchmark in between, and `benchmark.yaml` has no `concurrency`\nblock, so any two master pushes inside that window race.\n\nFix: one concurrency group for the workflow with `cancel-in-progress:\nfalse`, so a later run queues instead of pushing over the running one.\nGitHub replaces a queued run with a newer one, so in a burst of three\npushes the middle commit gets no data point; if you would rather keep\nevery point, the alternative is a fetch-and-retry around the two pushes.\n\nDrafted with LLM assistance.\n\nCo-authored-by: Chris Sewell <chrisj_sewell@hotmail.com>",
+          "timestamp": "2026-09-29T22:02:20+02:00",
+          "tree_id": "02b5431f81b0ef6a88b96040f2368b5b38befa16",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/8d9cbabbc399cceee0d937335cf701bd96914987"
+        },
+        "date": 1790712204864,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.09850487200000657,
+            "unit": "s",
+            "extra": "Commit: 8d9cbabbc399cceee0d937335cf701bd96914987\nBranch: master\nTime: 2026-09-29T22:02:20+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 41.316486349000016,
+            "unit": "s",
+            "extra": "Commit: 8d9cbabbc399cceee0d937335cf701bd96914987\nBranch: master\nTime: 2026-09-29T22:02:20+02:00"
           }
         ]
       }
