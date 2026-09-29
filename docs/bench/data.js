@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790709389304,
+  "lastUpdate": 1790711905407,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -21276,6 +21276,42 @@ window.BENCHMARK_DATA = {
             "value": 53.57409639900001,
             "unit": "s",
             "extra": "Commit: 261989b0917f731beb4d61d0412eda0c471272b1\nBranch: master\nTime: 2026-09-29T21:15:02+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "323730973+useblocks-automation[bot]@users.noreply.github.com",
+            "name": "useblocks-automation[bot]",
+            "username": "useblocks-automation[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1b0399b4c9999b888d28e2f9945f2f3e81ccd95c",
+          "message": "⬆️ Update the uv lock (monthly) (#1970)\n\n`uv lock --upgrade`, run by the monthly `UV update` workflow — every\nline uv's\nlock diff reported, updates, additions and removals alike. Only\n`uv.lock` is\ntouched: the job asserts that no manifest changed, so every specifier\nhere is still\nthe one someone chose by hand. A pair that LOST a version (`v0.20.1,\nv0.21.2 -> v0.20.1,\nv0.22.4`) is a matrix cell that moved, and not necessarily up: uv\nunifies its splits on\nversions already chosen, so a cell whose cap excludes the newest takes\nthe other survivor.\n\n- [contourpy](https://pypi.org/project/contourpy/1.4.0/): v1.3.3 ->\nv1.3.3, v1.4.0\n- [coverage](https://pypi.org/project/coverage/7.16.2/): v7.16.0 ->\nv7.16.2\n- [fonttools](https://pypi.org/project/fonttools/4.66.1/): v4.64.0 ->\nv4.66.1\n- [greenlet](https://pypi.org/project/greenlet/3.5.6/): v3.5.5 -> v3.5.6\n- [idna](https://pypi.org/project/idna/3.20/): v3.19 -> v3.20\n- [numpy](https://pypi.org/project/numpy/2.5.3/): v2.4.6, v2.5.2 ->\nv2.4.6, v2.5.3\n- [platformdirs](https://pypi.org/project/platformdirs/4.12.2/): v4.11.7\n-> v4.12.2\n- [playwright](https://pypi.org/project/playwright/1.63.0/): v1.62.0 ->\nv1.63.0\n- [prek](https://pypi.org/project/prek/0.5.4/): v0.5.3 -> v0.5.4\n-\n[pydata-sphinx-theme](https://pypi.org/project/pydata-sphinx-theme/0.17.1/):\nv0.17.1, v0.19.0 -> v0.17.1\n- [pyparsing](https://pypi.org/project/pyparsing/3.3.3/): v3.3.2 ->\nv3.3.3\n- [soupsieve](https://pypi.org/project/soupsieve/2.10/): v2.9.2 -> v2.10\n- [syrupy](https://pypi.org/project/syrupy/6.1.1/): v6.0.0 -> v6.1.1\n- [ty](https://pypi.org/project/ty/0.0.84/): v0.0.80 -> v0.0.84\n- [urllib3](https://pypi.org/project/urllib3/2.8.0/): v2.7.0 -> v2.8.0\n- [uv](https://pypi.org/project/uv/0.12.20/): v0.12.13 -> v0.12.20\n\nhooks clean after the upgrade: yes — see [the workflow\nrun](https://github.com/useblocks/sphinx-needs/actions/runs/36617944003)\n\n### Held back by a manifest range\n\n- `docutils`: locked v0.22.4, newest v0.23, constraint \"docutils>=0.21\"\n\"docutils>=0.22; python_version >= '3.12'\" \"docutils~=0.21.0\" (required\nby sphinx-test-reports extra sphinx)\n- `docutils`: locked v0.22.4, newest v0.23, constraint \"docutils>=0.21\"\n\"docutils>=0.22; python_version >= '3.12'\" \"docutils~=0.21.0\" (required\nby sphinx-needs-testkit)\n- `docutils`: locked v0.22.4, newest v0.23, constraint \"docutils>=0.21\"\n\"docutils>=0.22; python_version >= '3.12'\" \"docutils~=0.21.0\" (required\nby sphinx-needs)\n- `jsonschema-rs`: locked v0.53.0, newest v0.58.2, constraint\n\"jsonschema-rs>=0.37.1,<0.54.0\" (required by sphinx-needs)\n- `pydata-sphinx-theme`: locked v0.17.1, newest v0.22.0, constraint\n\"pydata-sphinx-theme>=0.15.2,<0.20.0\" (required by sphinx-needs extra\ntheme-pds)\n- `docutils`: locked v0.22.4, newest v0.23, constraint \"docutils>=0.21\"\n\"docutils>=0.22; python_version >= '3.12'\" \"docutils~=0.21.0\" (required\nby sphinx-mounts)\n- `docutils`: locked v0.22.4, newest v0.23, constraint \"docutils>=0.21\"\n\"docutils>=0.22; python_version >= '3.12'\" \"docutils~=0.21.0\" (required\nby sphinx-codelinks)\n- `tree-sitter`: locked v0.25.2, newest v0.26.0, constraint\n\"tree-sitter~=0.25.1\" (required by sphinx-codelinks)\n- `sphinxcontrib-typer`: locked v0.9.2, newest v0.10.0, constraint\n\"sphinxcontrib-typer>=0.9.1\" (required by sphinx-codelinks extra docs)\n\nDirect dependencies only, from `uv tree --outdated --depth 1` after the\nupgrade,\nat the versions the DEFAULT resolution locks — a package held back only\nin a matrix\nsplit (`docutils` 0.21.2 in `typing`, `myst-parser` 4.x in `sphinx-7`)\nis not listed.\nThe constraint column is every specifier this workspace writes for that\nname. What\nactually blocks the newer release may be one of those, a cap elsewhere\nin the graph,\nor a `[tool.uv] conflicts` split; `uv lock --upgrade-package <name>`\nnames it.\nWidening one is a pull request of its own, with the reason re-checked —\nnever a\nrider on this one.\n\nOpened by the scheduled `UV update` workflow.\n\nCo-authored-by: chrisjsewell <2997570+chrisjsewell@users.noreply.github.com>",
+          "timestamp": "2026-09-29T21:56:58+02:00",
+          "tree_id": "6a18c7f911b1060aafd29eb5180b69600290b8aa",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/1b0399b4c9999b888d28e2f9945f2f3e81ccd95c"
+        },
+        "date": 1790711896833,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.11681557400000031,
+            "unit": "s",
+            "extra": "Commit: 1b0399b4c9999b888d28e2f9945f2f3e81ccd95c\nBranch: master\nTime: 2026-09-29T21:56:58+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 56.868840118,
+            "unit": "s",
+            "extra": "Commit: 1b0399b4c9999b888d28e2f9945f2f3e81ccd95c\nBranch: master\nTime: 2026-09-29T21:56:58+02:00"
           }
         ]
       }
