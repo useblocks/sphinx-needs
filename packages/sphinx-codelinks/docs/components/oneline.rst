@@ -11,7 +11,7 @@ to simplify the effort required to create a need in source code.
 
 **Additional examples and use cases:**
 
-For more comprehensive examples and advanced configurations, see the `test cases <https://github.com/useblocks/sphinx-codelinks/tree/main/tests>`__.
+For more comprehensive examples and advanced configurations, see the `test cases <https://github.com/useblocks/sphinx-needs/tree/master/packages/sphinx-codelinks/tests>`__.
 
 Start and End sequences
 -----------------------
