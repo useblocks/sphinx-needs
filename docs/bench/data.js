@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790712213026,
+  "lastUpdate": 1790712466871,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -21384,6 +21384,42 @@ window.BENCHMARK_DATA = {
             "value": 41.316486349000016,
             "unit": "s",
             "extra": "Commit: 8d9cbabbc399cceee0d937335cf701bd96914987\nBranch: master\nTime: 2026-09-29T22:02:20+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2aef7e434b9308ab3aaf344fedb8e80c4de5ea47",
+          "message": "⬆️ Widen sphinx-needs' jsonschema-rs cap to <0.59 and lock 0.58.2 (#1980)\n\nFrom #1970's held-back list. sphinx-needs capped `jsonschema-rs` at\n`<0.54.0`, and that cap was not a compatibility decision: dependabot's\n`increase` strategy wrote it in #1851, and it held the lock at 0.53.0\nwhile 0.54.0 to 0.58.2 were released, all in September. This widens it\nto `>=0.37.1,<0.59`, keeping the floor and, since the project is\npre-1.0, a next-minor cap. It relocks with `uv lock --upgrade-package\njsonschema-rs`: 0.53.0 to 0.58.2, nothing else moves. The rest of the\nmanifest hunk is taplo realigning the comment column, whitespace only.\n\n**API.** The upstream Python changelog lists no breaking change to what\nsphinx-needs calls: `validator_for`, `Validator`, `ValidationError`,\n`RegexOptions`, and `Draft7Validator` in `needsfile.py`.\n\n**Entries that touch behaviour**\n- 0.55.0, Fixed: \"`absolute_keyword_location` naming the sibling keyword\nwhose validator carries the check …\": no visible effect here, no\nsnapshot changed.\n- 0.57.0, Fixed: \"The instance path of a schema build error, which was\nempty instead of naming the keyword location that failed to compile.\":\n**visible**, see below.\n- 0.58.2, Fixed: \"`schema_path` of errors under a `$ref` or\n`$dynamicRef` to a named schema pointing at the resource root instead of\nthat schema.\": no visible effect here, no snapshot changed.\n\n**Snapshots.** 11 of 240 schema snapshots changed, all in\n`tests/schema/__snapshots__/test_schema.ambr` and all the same one-line\nchange, in the `test_schema_config` cases whose `pattern` does not\ncompile under the safe regex options (look-arounds, back-references,\natomic groups, conditionals, subroutine calls):\n\n```diff\n-  On instance:\n+  On instance[\"properties\"][\"id\"][\"pattern\"]:\n```\n\n`[\"efforts\"]` and `[\"links\"][\"items\"]` appear in the extra-option and\nlink cases. That is the 0.57.0 fix: compiling a schema with an invalid\n`pattern` through `validator_for`, the error's instance path is empty on\n0.53.0 and 0.56.0 and names the keyword from 0.57.1 on (0.57.0 itself\nwas replaced by 0.57.1 for a packaging issue). The Python-3.12-gated\n`test_generate_schema` snapshot is unchanged.\n\n**What users see.** A `needs_schema_definitions`, `needs_extra_options`\nor `needs_extra_links` schema whose regex `pattern` is rejected now says\nwhere in the schema the pattern is, `On\ninstance[\"properties\"][\"id\"][\"pattern\"]:`, instead of a bare `On\ninstance:`. Nothing else in sphinx-needs' output changes.\n\n**sphinx-needs 9.0.0 changelog draft line:** `- ⬆️ Allow jsonschema-rs\nup to 0.58: an invalid regex ``pattern`` in a schema now names its\nlocation in the error (``On instance[\"properties\"][\"id\"][\"pattern\"]:``)\nrather than ``On instance:``.`\n\n**Checked:** `poe lint`, `poe typecheck`, the tooling tests, `poe\ntest-needs -n 4` (1805 passed), the Python 3.12 schema run (182 passed),\nand `poe import-check-needs` against jsonschema-rs 0.58.2 from PyPI.\n\n#1970, the monthly lock update, also edits `uv.lock`; whichever lands\nsecond relocks.",
+          "timestamp": "2026-09-29T22:06:22+02:00",
+          "tree_id": "e58f3e1d8ca8a9b8007124e82c8f8539d114b6d2",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/2aef7e434b9308ab3aaf344fedb8e80c4de5ea47"
+        },
+        "date": 1790712458935,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.09947483999999918,
+            "unit": "s",
+            "extra": "Commit: 2aef7e434b9308ab3aaf344fedb8e80c4de5ea47\nBranch: master\nTime: 2026-09-29T22:06:22+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 55.701277815000005,
+            "unit": "s",
+            "extra": "Commit: 2aef7e434b9308ab3aaf344fedb8e80c4de5ea47\nBranch: master\nTime: 2026-09-29T22:06:22+02:00"
           }
         ]
       }
