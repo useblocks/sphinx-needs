@@ -117,7 +117,9 @@ jobs:
           uv tree --outdated --frozen --depth 1 >"$RUNNER_TEMP/tree.txt" 2>"$RUNNER_TEMP/tree.err"
           cat "$RUNNER_TEMP/tree.err"
           # a member's own line is unindented; its requirements carry the box-drawing
-          # prefix, and only the outdated ones are annotated `(latest: vX)`
+          # prefix, and only the outdated ones are annotated `(latest: vX)`. One row per
+          # package and locked version, naming every member that requires it: a floor every
+          # member declares (docutils) would otherwise be listed once per member
           awk '
             /^[(]/ { next }
             /^[^ │├└]/ { member = $1; next }
@@ -128,8 +130,11 @@ jobs:
                 tag = $5; sub(/\)$/, "", tag)
                 where = member " " substr($4, 2, 5) " " tag
               }
-              print $2 "|" $3 "|" latest "|" where
+              key = $2 "|" $3
+              if (!(key in row)) { order[++n] = key; row[key] = key "|" latest; by[key] = where }
+              else if (index(", " by[key] ", ", ", " where ", ") == 0) { by[key] = by[key] ", " where }
             }
+            END { for (i = 1; i <= n; i++) print row[order[i]] "|" by[order[i]] }
           ' "$RUNNER_TEMP/tree.txt" > "$RUNNER_TEMP/held-back.txt"
           while IFS='|' read -r name locked latest where; do
             # the specifiers this workspace writes for that name. The end of the name is
