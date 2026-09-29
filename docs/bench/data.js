@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790713655411,
+  "lastUpdate": 1790714209368,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -21492,6 +21492,42 @@ window.BENCHMARK_DATA = {
             "value": 49.642426613,
             "unit": "s",
             "extra": "Commit: c59d5ae07d75ec9be92cdd85c73041343f7edd90\nBranch: master\nTime: 2026-09-29T22:25:39+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f95e37bcbe4bc561e729bddad8aa5f601ea69ede",
+          "message": "📚 Point sphinx-codelinks' living doc links at the monorepo (#1983)\n\nFive links in the sphinx-codelinks docs still pointed at\n`useblocks/sphinx-codelinks`, which is about to be archived. Unlike the\nrest, these were not pinned to a commit, so after the archive they would\nshow the old repository's frozen `main` rather than the code the docs\ndescribe:\n\n- the \"test cases\" links in `components/oneline.rst` and\n`components/write.rst`, now `packages/sphinx-codelinks/tests` on this\nrepository's `master`;\n- the `dcdc` demo project link in `components/directive.rst`, now\n`packages/sphinx-codelinks/tests/data/dcdc`;\n- the `remote_url_pattern` examples in `basics/quickstart.rst` and\n`components/directive.rst`, now\n`https://github.com/useblocks/sphinx-needs/blob/{commit}/{path}#L{line}`,\nwhich is what the docs' own `ubproject.toml` already uses.\n\nThe other links into the old repository are example outputs pinned to a\ncommit (`blob/951e40e…`, `blob/fa5a912…`, `blob/26b3011…`). They stay as\nthey are: an archived repository remains readable, and each of those\ncommits still exists there.\n\nAll three new link targets return 200, `poe docs-codelinks` builds with\nno warnings, and the hooks pass.",
+          "timestamp": "2026-09-29T22:35:15+02:00",
+          "tree_id": "11a592215d5a7a214730ba3cacb01d86e821812a",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/f95e37bcbe4bc561e729bddad8aa5f601ea69ede"
+        },
+        "date": 1790714199302,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.14257603699999777,
+            "unit": "s",
+            "extra": "Commit: f95e37bcbe4bc561e729bddad8aa5f601ea69ede\nBranch: master\nTime: 2026-09-29T22:35:15+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.021439033,
+            "unit": "s",
+            "extra": "Commit: f95e37bcbe4bc561e729bddad8aa5f601ea69ede\nBranch: master\nTime: 2026-09-29T22:35:15+02:00"
           }
         ]
       }
