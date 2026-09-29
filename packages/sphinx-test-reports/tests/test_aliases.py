@@ -271,7 +271,19 @@ def test_decorated():
 
 
 OLD_PROJECT = {"buildername": "html", "srcdir": "doc_test/old_extension_name"}
+#: The warning's text, which every supported Sphinx prints ...
+MESSAGE = f"the extension name '{OLD}' is deprecated"
+#: ... and its type and subtype, which Sphinx appends only from 8.0 on. On 7.4 the
+#: `suppress_warnings` test is what proves them.
 DEPRECATED = "[test_reports.deprecated]"
+
+
+def _assert_the_deprecation_once(output: str) -> None:
+    import sphinx
+
+    assert output.count(MESSAGE) == 1, output
+    if sphinx.version_info >= (8,):
+        assert output.count(DEPRECATED) == 1, output
 
 
 def _needs(app) -> dict:
@@ -289,7 +301,7 @@ class TestExtensionAlias:
         app = test_app
         app.build()
         warnings_ = app._warning.getvalue()
-        assert warnings_.count(DEPRECATED) == 1, warnings_
+        _assert_the_deprecation_once(warnings_)
         assert f"extension {OLD}" in warnings_
         assert f"'{NEW}'" in warnings_
         assert "4.0" in warnings_
@@ -329,7 +341,7 @@ class TestExtensionAlias:
         app.build()
         warnings_ = app._warning.getvalue()
         # the deprecation, and nothing about a directive or config value registered twice
-        assert warnings_.count(DEPRECATED) == 1, warnings_
+        _assert_the_deprecation_once(warnings_)
         assert warnings_.count("WARNING") == 1, warnings_
         assert "OLDNAME_TF_1" in _needs(app)
 
@@ -347,7 +359,7 @@ class TestExtensionAlias:
             check=False,
         )
         assert failed.returncode != 0
-        assert DEPRECATED in failed.stderr
+        _assert_the_deprecation_once(failed.stderr)
         passed = subprocess.run(
             sphinx_build_command(
                 "-W",

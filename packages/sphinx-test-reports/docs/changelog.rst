@@ -18,7 +18,8 @@ The import name moves
   replacement. 4.0 turns all four into errors that say the same thing.
 
   - **The extension**, ``extensions = ["sphinxcontrib.test_reports"]``, loads the real one
-    and warns through Sphinx as ``[test_reports.deprecated]``. A build run with ``-W``
+    and emits a Sphinx warning of type ``test_reports.deprecated`` (Sphinx 8 and later print
+    it as ``[test_reports.deprecated]``). A build run with ``-W``
     therefore FAILS on it: write ``"sphinx_test_reports"`` in ``conf.py``, or add
     ``suppress_warnings = ["test_reports.deprecated"]`` until you can. Listing both names
     loads the extension once.
