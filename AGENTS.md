@@ -25,8 +25,9 @@ the shim.
 | sphinx-mounts' behaviour, tests, documentation | `packages/sphinx-mounts/{src/sphinx_mounts,tests,docs}/` — start at [`packages/sphinx-mounts/AGENTS.md`](packages/sphinx-mounts/AGENTS.md) |
 | sphinx-codelinks' behaviour, tests, documentation | `packages/sphinx-codelinks/{src/sphinx_codelinks,tests,docs}/` — start at [`packages/sphinx-codelinks/AGENTS.md`](packages/sphinx-codelinks/AGENTS.md) |
 | sphinx-test-reports' behaviour, tests, documentation | `packages/sphinx-test-reports/{src/sphinx_test_reports,tests,docs}/` — start at [`packages/sphinx-test-reports/AGENTS.md`](packages/sphinx-test-reports/AGENTS.md) |
+| how every tool reads `ubproject.toml` — finding, anchoring, `[variants]`, the variant-data merge | `packages/ubproject/{src/ubproject,tests,design}/` — start at [`packages/ubproject/AGENTS.md`](packages/ubproject/AGENTS.md) |
 | the fixtures, helpers and renderer resolution three suites share | `packages/sphinx-needs-testkit/` — a member this repository never publishes, installed through the root's `test` group and loaded by each suite's `tests/conftest.py` as a pytest plugin |
-| the two conformance corpora | `packages/sphinx-needs/tests/conformance/` (needflow) and `packages/sphinx-mounts/tests/fixtures/variant_condition_conformance.toml` (variant conditions) — both shared byte-for-byte with ubCode, which is their repository of record; do not reformat either (`.gitattributes` plus the yamlfmt and taplo excludes protect them) |
+| the three conformance corpora | `packages/sphinx-needs/tests/conformance/` (needflow) and `packages/sphinx-mounts/tests/fixtures/variant_condition_conformance.toml` (variant conditions), whose repository of record is ubCode, and `packages/ubproject/tests/fixtures/ubproject_reading_conformance.toml` (reading `ubproject.toml`), whose record is THIS repository and which ubCode vendors — all shared byte-for-byte; do not reformat any of them (`.gitattributes` plus the yamlfmt and taplo excludes protect them) |
 | a package's metadata, dependencies and extras | `packages/<pkg>/pyproject.toml` |
 | dependency groups (`test`, `benchmark`, `sphinx-7/8/9`, `typing`) | the root `pyproject.toml` — they are shared, and a group cannot be composed across the root/member boundary |
 | lint, format, type-check, pytest and task configuration | the root `pyproject.toml` |
@@ -69,6 +70,15 @@ member unreleasable, and neither is `package = false`:
 tag is the only thing that starts the release workflow, that is the fence, not a
 belt-and-braces extra — and the manifest carries `Private :: Do Not Upload`, which PyPI
 rejects on upload, for the by-hand path.
+
+**`packages/ubproject` is a library every other member will depend on, and it depends on
+nothing**: standard library only, no Sphinx, fenced by its own `tests/test_imports.py` and
+by CI's `toolchain-free` job, which runs its suite where Sphinx is not installed. Its
+contract is its conformance corpus (ubCode vendors it) plus `design/reading-contract.md`;
+it decides no policy — discovery, warnings and `-D` stay with each consumer. No member
+depends on it yet: every `--no-sources` gate resolves a consumer from the index, so the
+consumers arrive one pull request each after its first release, and from then on each
+release of it re-floors all of them.
 
 ## Commands
 
@@ -235,12 +245,12 @@ the rootdir, so the tasks carry `--ignore=performance` instead of naming `tests`
 the task's own command would be *added* to yours rather than replaced by it.)
 
 **A bare `pytest` at the root collects sphinx-needs' suite and the tooling's — not
-sphinx-mounts', not sphinx-codelinks' and not sphinx-test-reports'.** Their `tests` directories are deliberately
-absent from `testpaths`: all four packages ship a `tests/__init__.py`, so under
+sphinx-mounts', sphinx-codelinks', sphinx-test-reports' or ubproject's.** Their `tests` directories are deliberately
+absent from `testpaths`: every package ships a `tests/__init__.py`, so under
 `--import-mode=importlib` every `conftest.py` resolves to the module name `tests.conftest`
 and a rootdir-invoked pytest refuses the second outright — listing one there collects
 *nothing*, rather than more. Run those suites through `poe test-mounts`,
-`poe test-codelinks` and `poe test-reports` (which cd into the package), the way CI does
+`poe test-codelinks`, `poe test-reports` and `poe test-ubproject` (which cd into the package), the way CI does
 with an explicit path.
 The Lint job's "Check a bare root pytest still collects" step is what keeps the list
 honest.
@@ -441,7 +451,7 @@ removed* (`error-on-warning` makes an unused suppression an error), never by loo
 
 Every issue and pull request carries one or more `pkg:` labels naming what it concerns:
 `pkg: <package>` (today `pkg: sphinx-needs`, `pkg: sphinx-mounts`,
-`pkg: sphinx-codelinks`, `pkg: sphinx-test-reports` and `pkg: sphinx-needs-testkit`) or `pkg: workspace` for the repository
+`pkg: sphinx-codelinks`, `pkg: sphinx-test-reports`, `pkg: sphinx-needs-testkit` and `pkg: ubproject`) or `pkg: workspace` for the repository
 itself — workflows, CI, release, docker, tooling, the workspace root. Pull requests get
 theirs automatically from the paths they touch (`.github/labeler.yml`); the issue forms
 set it from their "Package" dropdown (`.github/issue-labeler.yml`). **An issue created
