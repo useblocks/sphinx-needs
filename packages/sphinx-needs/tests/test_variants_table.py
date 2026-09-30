@@ -581,7 +581,7 @@ def test_a_missing_toml_data_file_fails_at_application_creation(
     """A data file declared in the TOML is loaded while the TOML is read, and a missing
     one is reported in ``ub_project``'s words, naming the TOML and the table.
 
-    The ``conf.py`` route keeps sphinx-needs' own message
+    The ``conf.py`` route reports it in the same words, without the prefix
     (``test_variant_data_integration.py``).
     """
     key = "variant_data_file" if table == "needs" else "data_file"

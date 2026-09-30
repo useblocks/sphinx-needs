@@ -7,6 +7,8 @@ from pathlib import Path
 
 import pytest
 
+import sphinx_needs.variant_data
+import ub_project
 from sphinx_needs.variant_data import (
     VariantDataProxy,
     deep_merge,
@@ -15,6 +17,20 @@ from sphinx_needs.variant_data import (
     validate_variant_data,
 )
 from ub_project import ProjectConfigError
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "validate_variant_data",
+        "load_variant_data_file",
+        "deep_merge",
+        "resolve_variant_data",
+    ],
+)
+def test_quartet_is_ub_projects(name: str) -> None:
+    """The four functions are ub-project's own objects, re-exported: one copy."""
+    assert getattr(sphinx_needs.variant_data, name) is getattr(ub_project, name)
 
 
 class TestVariantDataProxy:

@@ -11,6 +11,7 @@ from syrupy.extensions.json import JSONSnapshotExtension
 
 from sphinx_needs.exceptions import NeedsConfigException
 from sphinx_needs_testkit import assert_no_warnings, build_warnings
+from ub_project import ProjectConfigError
 
 
 @pytest.mark.parametrize(
@@ -283,6 +284,130 @@ def test_variant_data_file_missing_fails_at_application_creation(
     assert str(excinfo.value) == (
         f"variant data file not found: {srcdir / 'variant_data.json'}"
     )
+
+
+#: A ``file_content`` that makes the data file a directory.
+_DIRECTORY = object()
+
+
+@pytest.mark.parametrize(
+    ("file_content", "expected"),
+    [
+        pytest.param(
+            _DIRECTORY, "variant data file {file} is a directory", id="directory"
+        ),
+        pytest.param(
+            b'{"x": "\xff"}',
+            "variant data file {file} is not valid JSON: 'utf-8' codec can't decode "
+            "byte 0xff in position 7: invalid start byte",
+            id="non_utf8",
+        ),
+    ],
+)
+def test_unreadable_variant_data_file_is_a_config_error(
+    tmp_path, make_app, file_content, expected
+):
+    """A directory, or a file that is not UTF-8, is a ``NeedsConfigException`` naming
+    the file, like every other bad data file; both used to escape as a raw
+    ``ExtensionError`` wrapping an ``OSError`` or a ``UnicodeDecodeError``."""
+    srcdir = tmp_path / "src"
+    srcdir.mkdir()
+    (srcdir / "conf.py").write_text(
+        'extensions = ["sphinx_needs"]\nneeds_variant_data_file = "vd.json"\n',
+        encoding="utf-8",
+    )
+    (srcdir / "index.rst").write_text("Title\n=====\n", encoding="utf-8")
+    if file_content is _DIRECTORY:
+        (srcdir / "vd.json").mkdir()
+    else:
+        (srcdir / "vd.json").write_bytes(file_content)
+
+    with pytest.raises(NeedsConfigException) as excinfo:
+        make_app(srcdir=srcdir, freshenv=True)
+
+    assert str(excinfo.value) == expected.format(file=srcdir / "vd.json")
+    assert isinstance(excinfo.value.__cause__, ProjectConfigError)
+
+
+@pytest.mark.parametrize(
+    ("conf", "confoverrides"),
+    [
+        pytest.param('needs_variant_data_file = ""', {}, id="conf"),
+        pytest.param(
+            'needs_variant_data_file = "missing.json"',
+            {"needs_variant_data_file": ""},
+            id="confoverride",
+        ),
+    ],
+)
+def test_empty_variant_data_file_means_no_file(tmp_path, make_app, conf, confoverrides):
+    """``""`` is "no file" on the ``conf.py`` / ``-D`` route, as ``None`` is, and the
+    inline data is used alone, with no error."""
+    srcdir = tmp_path / "src"
+    srcdir.mkdir()
+    (srcdir / "conf.py").write_text(
+        textwrap.dedent(f"""\
+            extensions = ["sphinx_needs"]
+            needs_variant_data = {{"edition": "pro"}}
+            {conf}
+            """),
+        encoding="utf-8",
+    )
+    (srcdir / "index.rst").write_text(
+        "Title\n=====\n\nEdition: :variant:`edition`\n", encoding="utf-8"
+    )
+
+    app = make_app(srcdir=srcdir, freshenv=True, confoverrides=confoverrides)
+    app.build()
+
+    assert_no_warnings(app)
+    assert app.config.needs_variant_data == {"edition": "pro"}
+    assert "Edition: pro" in Path(app.outdir, "index.html").read_text()
+
+
+@pytest.mark.parametrize(
+    "file_content",
+    [
+        pytest.param(None, id="missing"),
+        pytest.param(b"{not json", id="malformed"),
+        pytest.param(b'["not", "an", "object"]', id="list"),
+        pytest.param(b'{"x": null}', id="bad_value"),
+        pytest.param(b'{"x": [1, "a"]}', id="mixed_array"),
+        pytest.param(b'{"x": "\xff"}', id="non_utf8"),
+        pytest.param(b"", id="empty"),
+        pytest.param(_DIRECTORY, id="directory"),
+    ],
+)
+def test_bad_variant_data_file_reads_the_same_on_both_routes(
+    tmp_path, make_app, file_content
+):
+    """The same bad data file, declared in the toml file or in ``conf.py``, is refused
+    in the same words: the toml route only prefixes them with the file and the table."""
+    srcdir = tmp_path / "src"
+    srcdir.mkdir()
+    (srcdir / "index.rst").write_text("Title\n=====\n", encoding="utf-8")
+    (srcdir / "ubproject.toml").write_text(
+        '[variants]\ndata_file = "vd.json"\n', encoding="utf-8"
+    )
+    if file_content is _DIRECTORY:
+        (srcdir / "vd.json").mkdir()
+    elif isinstance(file_content, bytes):
+        (srcdir / "vd.json").write_bytes(file_content)
+
+    messages = []
+    for conf in (
+        'needs_from_toml = "ubproject.toml"',
+        'needs_variant_data_file = "vd.json"',
+    ):
+        (srcdir / "conf.py").write_text(
+            f'extensions = ["sphinx_needs"]\n{conf}\n', encoding="utf-8"
+        )
+        with pytest.raises(NeedsConfigException) as excinfo:
+            make_app(srcdir=srcdir, freshenv=True)
+        messages.append(str(excinfo.value))
+
+    toml_message, conf_message = messages
+    assert toml_message == f"{srcdir / 'ubproject.toml'}: [variants]: {conf_message}"
 
 
 def test_variant_data_file_confoverride_wins_over_toml(
