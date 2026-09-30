@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790787966104,
+  "lastUpdate": 1790792202410,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -21816,6 +21816,42 @@ window.BENCHMARK_DATA = {
             "value": 53.76529741600007,
             "unit": "s",
             "extra": "Commit: 7c098e12fdb588b7eb7b8c0472deedef53747a7a\nBranch: master\nTime: 2026-09-30T19:04:37+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "af8aa9cd7208b8b4a4374fac0a4027c10a8c24ce",
+          "message": "♻️ sphinx-needs: one copy of the variant-data functions, ub-project's (#1998)\n\nsphinx-needs carried its own `validate_variant_data`,\n`load_variant_data_file`, `deep_merge` and `resolve_variant_data`;\nub-project\n(a runtime dependency since #1996) carries the one copy of the contract.\nThis deletes sphinx-needs' bodies and uses ub-project's.\n\n**Deleted:** the four function bodies and `_SCALAR_TYPES` in\n`sphinx_needs/variant_data.py`. The four names stay importable there as\nplain re-exports of `ub_project`'s objects (a test pins `is`).\n\n**Stays sphinx-needs':** `VariantDataError`, `VariantDataParsed`,\n`lookup_variant_data`, `VariantDataProxy` — the `var` proxy for\nfilters and `.. if::`, the `<{ var.* }>` lookup and its error — and the\nboundary: `resolve_variant_data_config` (priority 11) maps\n`\"\"` to no file (ub-project's reading contract §10.1) and re-raises\n`ProjectConfigError` — and the one `ValueError` ub-project lets through,\nan integer past Python's conversion limit\n(#1995) — as `NeedsConfigException`, exactly the pair the TOML route\ncatches at priority 10.\n\n**The five observable changes** (each pinned by a test):\n1. Error texts on the `conf.py` / `-D` route are ub-project's — the TOML\nroute's words:\n\n   | before | after |\n   |---|---|\n| `Variant data file not found: <p>` | `variant data file not found:\n<p>` |\n| `Invalid JSON in <p>: …` | `variant data file <p> is not valid JSON:\n…` |\n| `Variant data file must contain a JSON object, got list` | `variant\ndata file <p> must hold a JSON object, got list` |\n| `var.x: expected str/bool/int/float/list/dict, got NoneType` |\n`variant data file <p>: var.x: a value must be a str, bool, int or\nfloat, an array or a table, got NoneType` (inline: without the file\nprefix) |\n| `var.x[1]: expected int, got str (arrays must be uniform type)` |\n`var.x[1]: an array must hold one type, expected int but got str` |\n| `var: expected a dict, got str` | `var: variant data must be a table,\ngot str` |\n| `var: all keys must be strings, got int` | `var: keys must be strings,\ngot int 1` |\n2. A directory or non-UTF-8 data file: raw `ExtensionError` →\n`NeedsConfigException` naming the file (exit code 2 both).\n3. The four functions raise `ub_project.ProjectConfigError`, not\n`VariantDataError` (six unit tests moved; their regexes already\nmatched).\n4. The resolved `needs_variant_data` is a new top-level dict, even with\nno file (nested tables are still the `conf.py` objects) —\n   observable only by identity.\n5. A data file that cannot be read (permission denied): raw\n`ExtensionError` → `NeedsConfigException … cannot be read` (exit code 2\nboth).\n\nEverything else is identical: the old and new quartets were run over the\nsame 44 inputs (validate / load / merge / resolve): same\naccept/reject set and same merge results on every row, the only outcome\ndifference being `resolve(inline, \"\")`, which the resolver's\n`\"\"` → `None` mapping keeps as \"no file\".\n\n**Route parity:** the same bad data file declared in the TOML and in\n`conf.py` now produces the same message, the TOML one only\nprefixed `<toml>: [variants]: ` — pinned over eight bad-file shapes. The\noversized-integer case reads the same on both routes with\nno prefix at all (ub-project raises it bare) and is pinned as exact\nequality.\n\nNo manifest or lock change (`ub-project>=1.1.0` already declared;\n`import-check-needs` against PyPI's 1.1.0 is green). Nothing under\n`packages/ub-project`.\n\n### Review\nOne adversarial reviewer (110 inputs and 25 whole builds through\nmaster's code and this branch's: identical accept/reject sets and merge\nresults; only the enumerated class and wording differences), one fix\nround (the fifth change, the `ValueError` catch, three pins) and a\nvalidation round. Found on the way and filed: #1995 (ub-project's bare\n`ValueError`, and its `/dev/null` message) and #1997 (a\n`UV_PYTHON` cell run re-syncs the root `.venv` through the\n`fetch-plantuml` deps task).",
+          "timestamp": "2026-09-30T20:15:13+02:00",
+          "tree_id": "b1be304e3ca804b8169befab255a58faec7790f4",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/af8aa9cd7208b8b4a4374fac0a4027c10a8c24ce"
+        },
+        "date": 1790792191392,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.10955577600000055,
+            "unit": "s",
+            "extra": "Commit: af8aa9cd7208b8b4a4374fac0a4027c10a8c24ce\nBranch: master\nTime: 2026-09-30T20:15:13+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 51.517635823999996,
+            "unit": "s",
+            "extra": "Commit: af8aa9cd7208b8b4a4374fac0a4027c10a8c24ce\nBranch: master\nTime: 2026-09-30T20:15:13+02:00"
           }
         ]
       }
