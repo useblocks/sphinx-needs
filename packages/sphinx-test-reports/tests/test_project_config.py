@@ -15,7 +15,7 @@ from shutil import copytree
 
 import pytest
 
-from sphinxcontrib.test_reports.projectconfig import (
+from sphinx_test_reports.projectconfig import (
     BRIDGE_KEYS,
     BUILD_TABLE,
     DEFAULT_FIELD_NAMES,
@@ -514,7 +514,7 @@ class TestSphinxBridge:
 
         from sphinx.application import Sphinx
 
-        from sphinxcontrib.test_reports.exceptions import InvalidConfigurationError
+        from sphinx_test_reports.exceptions import InvalidConfigurationError
 
         docs = tmp_path / "docs"
         with pytest.raises(InvalidConfigurationError, match="suite_id_length"):
@@ -881,7 +881,7 @@ class TestSphinxFree:
         code = (
             "import sys\n"
             "sys.modules['sphinx'] = None\n"  # any `import sphinx...` now fails
-            "import sphinxcontrib.test_reports.projectconfig\n"
+            "import sphinx_test_reports.projectconfig\n"
         )
         result = subprocess.run(
             [sys.executable, "-c", code], capture_output=True, text=True
@@ -900,7 +900,7 @@ class TestSphinxFree:
         code = (
             "import sys\n"
             "sys.modules['sphinx_needs'] = None\n"  # `from sphinx_needs...` fails
-            "import sphinxcontrib.test_reports as pkg\n"
+            "import sphinx_test_reports as pkg\n"
             "from sphinx.errors import ExtensionError\n"
             "try:\n"
             "    pkg.setup\n"
@@ -914,9 +914,7 @@ class TestSphinxFree:
         )
         assert result.returncode == 0, result.stderr
         message = result.stdout.strip()
-        assert message.startswith(
-            "Could not import extension sphinxcontrib.test_reports"
-        )
+        assert message.startswith("Could not import extension sphinx_test_reports")
         assert message.count("(exception:") == 1
         assert "sphinx_needs" in message
         assert 'pip install "sphinx-test-reports[sphinx]"' in message

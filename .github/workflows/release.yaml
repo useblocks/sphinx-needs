@@ -155,15 +155,13 @@ jobs:
           # FileNotFoundError on a runner or -- worse, locally -- silently use whatever
           # `sphinx-build` an activated virtualenv happens to have left on PATH
           export PATH="/tmp/compat/bin:$PATH"
-          # The distribution name IS the directory name, but it is NOT always the module
-          # name with `-`->`_`: sphinx-test-reports installs into the `sphinxcontrib`
-          # PEP 420 namespace and declares `[tool.flit.module] name =
-          # "sphinxcontrib.test_reports"`, for which the derivation below yields
-          # `sphinx_test_reports` -- a module that does not exist, so the walk would fail
-          # with `ModuleNotFoundError` on every release of it. `check_workspace.Member.module`
-          # has honoured that key from the start and this step now does too, falling back to
-          # the derivation for every member that declares no such table (all three others).
-          # The comment this replaces predicted exactly this member.
+          # The distribution name IS the directory name, but a flit member MAY declare a
+          # module name that is not it with `-`->`_` (`[tool.flit.module] name`), and the
+          # derivation alone would then name a module that does not exist, failing the walk
+          # with `ModuleNotFoundError` on every release. `check_workspace.Member.module` and
+          # `import_check.py` honour that key, and so does this step, falling back to the
+          # derivation for every member that declares no such table -- which today is all
+          # of them.
           module=$(/tmp/compat/bin/python - "$DIST" <<'PYEOF'
           import pathlib, sys, tomllib
 

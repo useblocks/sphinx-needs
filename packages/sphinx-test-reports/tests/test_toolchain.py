@@ -14,8 +14,8 @@ from io import StringIO
 
 import pytest
 
-import sphinxcontrib.test_reports as package
-from sphinxcontrib.test_reports import toolchain
+import sphinx_test_reports as package
+from sphinx_test_reports import toolchain
 
 DECLARED = [
     "lxml",
@@ -113,7 +113,7 @@ class TestLazySetup:
     """Sphinx resolves ``setup`` through getattr(); the check runs first."""
 
     def test_a_sufficient_toolchain_resolves_setup(self):
-        from sphinxcontrib.test_reports.test_reports import setup
+        from sphinx_test_reports.test_reports import setup
 
         assert package.setup is setup
 
@@ -124,7 +124,7 @@ class TestLazySetup:
         with pytest.raises(ExtensionError) as info:
             _ = package.setup
         message = str(info.value)
-        assert message.startswith("Could not load extension sphinxcontrib.test_reports")
+        assert message.startswith("Could not load extension sphinx_test_reports")
         assert VIOLATION in message
         assert toolchain.INSTALL_HINT in message
         # Nothing was imported, so there is no exception to wrap; the message
@@ -143,7 +143,7 @@ class TestLazySetup:
 
         monkeypatch.setattr(toolchain, "unmet_requirements", lambda: [VIOLATION])
         (tmp_path / "conf.py").write_text(
-            'extensions = ["sphinxcontrib.test_reports"]\n', encoding="utf-8"
+            'extensions = ["sphinx_test_reports"]\n', encoding="utf-8"
         )
         (tmp_path / "index.rst").write_text("Index\n=====\n", encoding="utf-8")
         with pytest.raises(ExtensionError, match=r"sphinx-test-reports\[sphinx\]"):

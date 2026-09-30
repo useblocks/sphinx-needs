@@ -54,34 +54,34 @@ class TestNormalisation:
     """One function decides the vocabulary, so both parsers cannot disagree."""
 
     def test_the_junit_failure_element_name_becomes_failed(self):
-        from sphinxcontrib.test_reports.results import normalize_result
+        from sphinx_test_reports.results import normalize_result
 
         assert normalize_result("failure") == "failed"
 
     def test_normalising_the_canonical_spelling_changes_nothing(self):
         """Normalisation runs on already-canonical values too, so it must be
         idempotent -- a JSON report may already spell the result ``failed``."""
-        from sphinxcontrib.test_reports.results import normalize_result
+        from sphinx_test_reports.results import normalize_result
 
         assert normalize_result("failed") == "failed"
 
     @pytest.mark.parametrize("result", ["passed", "skipped", "error", "disabled"])
     def test_the_other_states_are_already_canonical(self, result):
-        from sphinxcontrib.test_reports.results import normalize_result
+        from sphinx_test_reports.results import normalize_result
 
         assert normalize_result(result) == result
 
     def test_a_vocabulary_this_extension_does_not_know_is_left_alone(self):
         """``tr_json_mapping`` points at an arbitrary report, so a project may
         feed in states of its own. Rewriting those would break its filters."""
-        from sphinxcontrib.test_reports.results import normalize_result
+        from sphinx_test_reports.results import normalize_result
 
         assert normalize_result("flaky") == "flaky"
 
     def test_the_canonical_states_are_the_documented_ones(self):
         """Ordered, because the declared field description is built from it and
         the converter's output has to be byte-stable."""
-        from sphinxcontrib.test_reports.results import CANONICAL_RESULTS
+        from sphinx_test_reports.results import CANONICAL_RESULTS
 
         assert CANONICAL_RESULTS == (
             "passed",
@@ -100,8 +100,8 @@ class TestDeclaredSchema:
     """
 
     def test_the_result_declaration_names_every_state(self):
-        from sphinxcontrib.test_reports.fields import declaration
-        from sphinxcontrib.test_reports.results import CANONICAL_RESULTS
+        from sphinx_test_reports.fields import declaration
+        from sphinx_test_reports.results import CANONICAL_RESULTS
 
         _, description = declaration("result")
 
@@ -112,7 +112,7 @@ class TestJUnitParser:
     """The JUnit dialect is where the old spelling came from."""
 
     def test_a_failure_child_yields_the_failed_result(self):
-        from sphinxcontrib.test_reports.junitparser import JUnitParser
+        from sphinx_test_reports.junitparser import JUnitParser
 
         suite = JUnitParser(XML_PATH).parse()[0]
 
@@ -122,7 +122,7 @@ class TestJUnitParser:
         """``kind`` reports which element the evidence came from -- the
         converter capitalises it into the evidence heading -- so it stays the
         XML name even though ``result`` no longer is."""
-        from sphinxcontrib.test_reports.junitparser import JUnitParser
+        from sphinx_test_reports.junitparser import JUnitParser
 
         suite = JUnitParser(XML_PATH).parse()[0]
 
@@ -134,7 +134,7 @@ class TestJsonParser:
     parser's, so the same report content has to produce the same result."""
 
     def test_the_failure_spelling_in_a_json_report_is_normalised(self):
-        from sphinxcontrib.test_reports.jsonparser import JsonParser
+        from sphinx_test_reports.jsonparser import JsonParser
 
         parser = JsonParser(JSON_PATH, json_mapping=JSON_MAPPING)
         suite = parser.parse()[0]
@@ -142,7 +142,7 @@ class TestJsonParser:
         assert suite["testcases"][0]["result"] == "failed"
 
     def test_the_results_needing_no_normalisation_are_untouched(self):
-        from sphinxcontrib.test_reports.jsonparser import JsonParser
+        from sphinx_test_reports.jsonparser import JsonParser
 
         parser = JsonParser(JSON_PATH, json_mapping=JSON_MAPPING)
         suite = parser.parse()[0]

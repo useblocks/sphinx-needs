@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 from docutils import nodes
 
-from sphinxcontrib.test_reports.exceptions import TestReportFileNotSetError
+from sphinx_test_reports.exceptions import TestReportFileNotSetError
 
 #: docutils' deprecation for ``Text()``'s second argument. ONE constant, shared by the fence in
 #: the missing-file test and by its positive control, so that the two cannot drift apart. It is
@@ -81,7 +81,7 @@ def test_a_missing_test_file_renders_an_error_node(test_app):
     measured. The filter below is what makes this a fence. It turns exactly that
     deprecation into an error, and only when it is raised from this package's own code:
     docutils warns with ``stacklevel=2``, which attributes the warning to the caller, so
-    ``module=`` matches ``sphinxcontrib.test_reports.directives.test_file`` -- and the same
+    ``module=`` matches ``sphinx_test_reports.directives.test_file`` -- and the same
     deprecation raised from Sphinx or sphinx-needs during the build is left alone. Both
     directions were measured.
     """
@@ -91,7 +91,7 @@ def test_a_missing_test_file_renders_an_error_node(test_app):
             "error",
             message=RAWSOURCE_DEPRECATION,
             category=DeprecationWarning,
-            module=r"sphinxcontrib\.test_reports",
+            module=r"sphinx_test_reports",
         )
         app.build()
     html = Path(app.outdir / "index.html").read_text()

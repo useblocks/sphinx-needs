@@ -4,6 +4,8 @@ version = "2.0.0"
 description = "Sphinx extension for showing test results and test environment information inside sphinx documentations"
 readme = "README.rst"
 license = { text = "MIT" }
+# Named, because hatchling's default globs would ship AUTHORS as a licence file too.
+license-files = ["LICENSE"]
 authors = [{ name = "team useblocks", email = "info@useblocks.com" }]
 classifiers = [
   "Framework :: Sphinx",
@@ -41,7 +43,7 @@ dependencies = ["lxml"]
 # tested, and `propagate_floors.py` moves it at each sphinx-needs release. The published
 # 2.0.0 said `>=6.0.1`; narrowing it is what the import costs, and the changelog says so.
 sphinx = ["sphinx>=7.4", "docutils>=0.21", "sphinx-needs>=8.5.0,<9"]
-# The pytest plugin (sphinxcontrib.test_reports.pytest_plugin); pytest is not
+# The pytest plugin (sphinx_test_reports.pytest_plugin); pytest is not
 # a dependency of the extension or the converter. 7.0 is where everything the
 # plugin uses exists (pytest.Config/Item/Mark, Config.stash,
 # issue_config_time_warning). pytest before 7.3.2 does not run on Python 3.12
@@ -75,23 +77,35 @@ Issues = "https://github.com/useblocks/sphinx-needs/issues"
 Changelog = "https://github.com/useblocks/sphinx-needs/blob/master/packages/sphinx-test-reports/docs/changelog.rst"
 
 [project.scripts]
-test-reports = "sphinxcontrib.test_reports.cli:main"
+test-reports = "sphinx_test_reports.cli:main"
 
+# hatchling rather than flit, for this member alone. The wheel ships TWO top-level
+# packages: `sphinx_test_reports`, and `sphinxcontrib/test_reports/`, the aliases that keep
+# the pre-3.0 import name working until 4.0. flit ships exactly one module and silently
+# drops the second -- no error, no warning, and every `conf.py` still naming the old
+# extension would break on the first release. The `toolchain-free` CI job builds the sdist
+# and the wheel the way the release does (the wheel FROM the sdist) and fails when either
+# is missing a tracked file under `src/`, because an editable install reads `src/` and would
+# keep every test green over a broken release.
 [build-system]
-requires = ["flit_core >=3.4,<4"]
-build-backend = "flit_core.buildapi"
+requires = ["hatchling >=1.27,<2"]
+build-backend = "hatchling.build"
 
-# The import name is NOT the distribution name with `-` -> `_`: this package installs into
-# the `sphinxcontrib` PEP 420 namespace, which is why this table exists at all.
-# `check_workspace.Member.module` and `tools/src/sn_tools/import_check.py` both read it;
-# `release.yaml` is taught to read it too, because its `${DIST//-/_}` derivation would
-# otherwise name a module that does not exist. See this package's `AGENTS.md` for what the
-# DOTTED name costs today -- check (5) prints no line for this member.
-[tool.flit.module]
-name = "sphinxcontrib.test_reports"
+# No `sphinxcontrib/__init__.py` anywhere: `sphinxcontrib` stays a PEP 420 namespace, which
+# other distributions (sphinxcontrib-plantuml, ...) install into as well.
+[tool.hatch.build.targets.wheel]
+packages = ["src/sphinx_test_reports", "src/sphinxcontrib"]
 
-# Deliberately NO `[tool.flit.sdist]`: this distribution's sdist already ships the module
-# and nothing else, which is byte-for-byte the shape published on PyPI.
+# hatchling's sdist default is the whole project directory; this list keeps the shape the
+# flit sdists had -- the module trees plus the metadata files, and NOT `tests/`, `docs/`
+# or `design/`. hatchling adds one file flit did not, the repository's `.gitignore`, and
+# no setting removes it. The wheel is built from this sdist, so a tree missing here is
+# missing from the wheel too; the `toolchain-free` job fences both lists.
+[tool.hatch.build.targets.sdist]
+only-include = ["src/sphinx_test_reports", "src/sphinxcontrib"]
+
+# The module name is the distribution name with `-` -> `_`, so there is no module table:
+# `check_workspace.Member.module`, `import_check.py` and `release.yaml` all derive it.
 # Everything else -- ruff, ty, pytest and the dependency groups -- is the ROOT's, and
 # `check_workspace.py` check (7) refuses those tables here: a member `[tool.ruff]` does not
 # extend the root's configuration, it replaces it. The `toolchain` pytest marker this

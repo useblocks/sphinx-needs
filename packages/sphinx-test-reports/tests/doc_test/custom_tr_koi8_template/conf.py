@@ -41,7 +41,7 @@ release = "0.3.6"
 # ones.
 extensions = [
     "sphinx_needs",
-    "sphinxcontrib.test_reports",
+    "sphinx_test_reports",
     "sphinxcontrib.plantuml",
     "sphinx_design",
 ]

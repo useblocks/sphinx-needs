@@ -24,7 +24,7 @@ the shim.
 | its documentation | `packages/sphinx-needs/docs/` (changelog: `docs/changelog.rst`) |
 | sphinx-mounts' behaviour, tests, documentation | `packages/sphinx-mounts/{src/sphinx_mounts,tests,docs}/` — start at [`packages/sphinx-mounts/AGENTS.md`](packages/sphinx-mounts/AGENTS.md) |
 | sphinx-codelinks' behaviour, tests, documentation | `packages/sphinx-codelinks/{src/sphinx_codelinks,tests,docs}/` — start at [`packages/sphinx-codelinks/AGENTS.md`](packages/sphinx-codelinks/AGENTS.md) |
-| sphinx-test-reports' behaviour, tests, documentation | `packages/sphinx-test-reports/{src/sphinxcontrib/test_reports,tests,docs}/` — start at [`packages/sphinx-test-reports/AGENTS.md`](packages/sphinx-test-reports/AGENTS.md) |
+| sphinx-test-reports' behaviour, tests, documentation | `packages/sphinx-test-reports/{src/sphinx_test_reports,tests,docs}/` — start at [`packages/sphinx-test-reports/AGENTS.md`](packages/sphinx-test-reports/AGENTS.md) |
 | the fixtures, helpers and renderer resolution three suites share | `packages/sphinx-needs-testkit/` — a member this repository never publishes, installed through the root's `test` group and loaded by each suite's `tests/conftest.py` as a pytest plugin |
 | the two conformance corpora | `packages/sphinx-needs/tests/conformance/` (needflow) and `packages/sphinx-mounts/tests/fixtures/variant_condition_conformance.toml` (variant conditions) — both shared byte-for-byte with ubCode, which is their repository of record; do not reformat either (`.gitattributes` plus the yamlfmt and taplo excludes protect them) |
 | a package's metadata, dependencies and extras | `packages/<pkg>/pyproject.toml` |
@@ -291,6 +291,11 @@ nothing a docs build left behind is there. (Until flit 4 this was a worktree haz
 than a manifest one: `flit build --use-vcs` tested `.git` for a *directory*, and in a
 worktree it is a file, so the sdist silently fell back to the module alone — no warning, a
 tenth of the size. Nothing runs `flit` directly any more.)
+
+**sphinx-test-reports is the one member built with hatchling**, because its wheel ships a
+second top-level package (the old-name aliases) and flit drops it silently; its sdist's
+contents are `[tool.hatch.build.targets.sdist]` in its manifest, and its `AGENTS.md` has
+the fence.
 
 ## Releasing a package
 

@@ -39,7 +39,7 @@ from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import NoReturn
 
-from sphinxcontrib.test_reports.fields import RESERVED_NAMES
+from sphinx_test_reports.fields import RESERVED_NAMES
 
 #: Default file the configuration is read from. Looked up by walking up from
 #: the ``confdir`` (Sphinx) or the working directory (a converter); see

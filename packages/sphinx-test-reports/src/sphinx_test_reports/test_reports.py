@@ -15,31 +15,32 @@ from sphinx_needs.api import (
 from sphinx_needs.exceptions import (
     NeedsApiConfigWarning,
 )
-from sphinxcontrib.test_reports.directives.test_case import TestCase, TestCaseDirective
-from sphinxcontrib.test_reports.directives.test_env import EnvReport, EnvReportDirective
-from sphinxcontrib.test_reports.directives.test_file import TestFile, TestFileDirective
-from sphinxcontrib.test_reports.directives.test_report import (
+from sphinx_test_reports import __version__
+from sphinx_test_reports.directives.test_case import TestCase, TestCaseDirective
+from sphinx_test_reports.directives.test_env import EnvReport, EnvReportDirective
+from sphinx_test_reports.directives.test_file import TestFile, TestFileDirective
+from sphinx_test_reports.directives.test_report import (
     TestReport,
     TestReportDirective,
 )
-from sphinxcontrib.test_reports.directives.test_results import (
+from sphinx_test_reports.directives.test_results import (
     TestResults,
     TestResultsDirective,
 )
-from sphinxcontrib.test_reports.directives.test_suite import (
+from sphinx_test_reports.directives.test_suite import (
     TestSuite,
     TestSuiteDirective,
 )
-from sphinxcontrib.test_reports.environment import install_styles_static_files
-from sphinxcontrib.test_reports.exceptions import InvalidConfigurationError
-from sphinxcontrib.test_reports.fields import (
+from sphinx_test_reports.environment import install_styles_static_files
+from sphinx_test_reports.exceptions import InvalidConfigurationError
+from sphinx_test_reports.fields import (
     FIELDS,
     RENAMEABLE_FIELDS,
     RESERVED_NAMES,
     declaration,
 )
-from sphinxcontrib.test_reports.functions import tr_link
-from sphinxcontrib.test_reports.projectconfig import (
+from sphinx_test_reports.functions import tr_link
+from sphinx_test_reports.projectconfig import (
     BRIDGE_KEYS,
     DEFAULT_FIELD_NAMES,
     DEFAULT_TOML_FILENAME,
@@ -51,7 +52,7 @@ from sphinxcontrib.test_reports.projectconfig import (
 
 # fmt: on
 
-VERSION = "2.0.0"
+VERSION = __version__
 
 try:
     # sphinx-needs >= 7.0: fields are registered through add_field.

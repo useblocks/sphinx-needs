@@ -11,8 +11,8 @@ from pathlib import Path
 
 import pytest
 
-from sphinxcontrib.test_reports.cli import _DEFAULTS, main
-from sphinxcontrib.test_reports.projectconfig import (
+from sphinx_test_reports.cli import _DEFAULTS, main
+from sphinx_test_reports.projectconfig import (
     CONVERSION_KEYS,
     DEFAULT_TOML_FILENAME,
 )

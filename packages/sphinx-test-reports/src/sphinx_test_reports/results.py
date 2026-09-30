@@ -10,7 +10,7 @@ element of their own were invented as participles (``passed``, and ``disabled``
 for googletest's ``status="notrun"``). The JSON parser passed its report's own
 value through untouched. So the same outcome could arrive under two spellings,
 and a single test case was ``failure`` while the count of them on its suite was
-``failed`` (:data:`~sphinxcontrib.test_reports.fields.FIELDS`).
+``failed`` (:data:`~sphinx_test_reports.fields.FIELDS`).
 
 ``error`` stays a noun-state deliberately: it agrees with the ``errors`` count
 beside it and with pytest, which spells that outcome ``error`` too. The pair
@@ -29,7 +29,7 @@ toolchain installed.
 #: consumers that never load this extension.
 #:
 #: A tuple, in the order a reader wants them rather than alphabetically:
-#: :func:`~sphinxcontrib.test_reports.fields.declaration` renders it into the
+#: :func:`~sphinx_test_reports.fields.declaration` renders it into the
 #: declared description of the field, and the converter's output has to be
 #: byte-stable, which a set's iteration order is not.
 CANONICAL_RESULTS: tuple[str, ...] = (

@@ -7,12 +7,12 @@ cases lost but the file valid, a URL that looks right and 404s.
 
 import pytest
 
-from sphinxcontrib.test_reports.needs_export import (
+from sphinx_test_reports.needs_export import (
     build_content,
     build_need,
     build_needs_file,
 )
-from sphinxcontrib.test_reports.remote import (
+from sphinx_test_reports.remote import (
     check_url_pattern,
     normalise_remote_url,
     source_url,

@@ -14,7 +14,7 @@ Three rules shape the output:
   also writes into the files it produces itself, so the type of a field is
   readable from the artifact instead of only from a Sphinx build with this
   extension loaded. The declarations come from
-  :mod:`sphinxcontrib.test_reports.fields`, the same table the extension
+  :mod:`sphinx_test_reports.fields`, the same table the extension
   registers its fields from.
 * **Nothing depends on the wall clock or on dict ordering**, so the file is a
   cacheable build artifact and a diffable piece of evidence.
@@ -24,14 +24,14 @@ import re
 import textwrap
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 
-from sphinxcontrib.test_reports.fields import case_needs_schema
-from sphinxcontrib.test_reports.identity import (
+from sphinx_test_reports.fields import case_needs_schema
+from sphinx_test_reports.identity import (
     UNKNOWN,
     deterministic_case_id,
     split_case_name,
 )
-from sphinxcontrib.test_reports.projectconfig import DEFAULT_FIELD_NAMES
-from sphinxcontrib.test_reports.remote import DEFAULT_URL_PATTERN, source_url
+from sphinx_test_reports.projectconfig import DEFAULT_FIELD_NAMES
+from sphinx_test_reports.remote import DEFAULT_URL_PATTERN, source_url
 
 #: A need field value as it appears in needs.json. ``None`` is the value of an
 #: exported property the case does not carry, as the build leaves it.
@@ -178,7 +178,7 @@ def build_need(
     :data:`DEFAULT_FIELD_NAMES`) -- and so are the values: the title is the
     case name and ``result`` keeps the parser's spelling (``failed``, which is
     also a documented field value and the ``tr_failed`` CSS class, see
-    :mod:`sphinxcontrib.test_reports.results`), so that a need imported from
+    :mod:`sphinx_test_reports.results`), so that a need imported from
     the produced ``needs.json`` and one created locally from the same report
     are indistinguishable to a schema, a filter or a ``needtable``.
 

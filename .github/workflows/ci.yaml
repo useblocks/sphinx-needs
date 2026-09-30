@@ -61,7 +61,7 @@ jobs:
         # ONE probe at a time, and one per package: with both planted at once a gate that had
         # dropped one package would still go red on the other and look healthy.
         run: |
-          probes="packages/sphinx-needs/src/sphinx_needs/_ty_gate_probe.py packages/sphinx-mounts/src/sphinx_mounts/_ty_gate_probe.py packages/sphinx-codelinks/src/sphinx_codelinks/_ty_gate_probe.py packages/sphinx-test-reports/src/sphinxcontrib/test_reports/_ty_gate_probe.py"
+          probes="packages/sphinx-needs/src/sphinx_needs/_ty_gate_probe.py packages/sphinx-mounts/src/sphinx_mounts/_ty_gate_probe.py packages/sphinx-codelinks/src/sphinx_codelinks/_ty_gate_probe.py packages/sphinx-test-reports/src/sphinx_test_reports/_ty_gate_probe.py"
           # shellcheck disable=SC2064
           trap "rm -f $probes" EXIT
           for probe in $probes; do
@@ -488,10 +488,70 @@ jobs:
           enable-cache: true
           cache-suffix: toolchain-free
           cache-python: true
+      - name: Build the sdist and wheel as the release does, and check both
+        # The fence on the ARTEFACTS. Every other job installs this member editable, which
+        # reads `src/`, so a build configuration that dropped a package -- the
+        # `sphinxcontrib/test_reports/` aliases most of all, which flit would drop without a
+        # word -- would leave the whole suite green over a broken release. So this builds in
+        # `release.yaml`'s shape (no `--wheel`: uv builds the sdist, then the wheel FROM the
+        # sdist, so the sdist's include list bounds what the wheel ships) and checks:
+        # - the sdist holds every tracked file under `src/`, and outside `src/` exactly the
+        #   metadata files listed below (downstream packagers build from it);
+        # - the wheel holds every tracked file under `src/`, both `__init__.py`s, nothing at
+        #   its top level but the two packages and its dist-info, nothing under
+        #   `sphinxcontrib/` but `test_reports/` -- in particular no `sphinxcontrib/__init__.py`
+        #   (a PEP 420 namespace other distributions install into) -- and exactly one
+        #   licence file, `LICENSE`
+        run: |
+          uv build --package sphinx-test-reports --no-sources -o /tmp/str-dist
+          git ls-files packages/sphinx-test-reports/src | uv run --no-project python -c "
+          import pathlib, sys, tarfile, zipfile
+          dist = pathlib.Path('/tmp/str-dist')
+          (wheel,) = dist.glob('*.whl')
+          (sdist,) = dist.glob('*.tar.gz')
+          wanted = {line.strip().split('/src/', 1)[1] for line in sys.stdin if line.strip()}
+          errors = []
+          # the sdist: <name>-<version>/src/..., plus exactly these metadata files; the
+          # repository-root .gitignore that hatchling adds is allowed, not required
+          required = {'pyproject.toml', 'README.rst', 'LICENSE', 'PKG-INFO'}
+          allowed = required | {'.gitignore'}
+          with tarfile.open(sdist) as tar:
+              members = [m.name.split('/', 1)[1] for m in tar.getmembers() if m.isfile()]
+          in_src = {name.removeprefix('src/') for name in members if name.startswith('src/')}
+          outside = {name for name in members if not name.startswith('src/')}
+          errors += [f'missing from {sdist.name}: src/{name}' for name in sorted(wanted - in_src)]
+          errors += [f'missing from {sdist.name}: {name}' for name in sorted(required - outside)]
+          errors += [f'{sdist.name} ships a file outside src/ that is not metadata: {name}'
+                     for name in sorted(outside - allowed)]
+          # the wheel, built from that sdist
+          shipped = set(zipfile.ZipFile(wheel).namelist())
+          errors += [f'missing from {wheel.name}: {name}' for name in sorted(wanted - shipped)]
+          for name in ('sphinx_test_reports/__init__.py', 'sphinxcontrib/test_reports/__init__.py'):
+              if name not in wanted or name not in shipped:
+                  errors.append(f'{name} is not in both the checkout and {wheel.name}')
+          if 'sphinxcontrib/__init__.py' in shipped:
+              errors.append('the wheel ships sphinxcontrib/__init__.py, which ends the namespace')
+          errors += [f'{wheel.name} ships {name} under the sphinxcontrib namespace, outside test_reports/'
+                     for name in sorted(shipped)
+                     if name.startswith('sphinxcontrib/') and not name.startswith('sphinxcontrib/test_reports/')
+                     and name != 'sphinxcontrib/__init__.py']
+          top = {name.split('/', 1)[0] for name in shipped}
+          dist_info = {name for name in top if name.endswith('.dist-info')}
+          if len(dist_info) != 1 or top - dist_info != {'sphinx_test_reports', 'sphinxcontrib'}:
+              errors.append(f'{wheel.name} top level is {sorted(top)}, not exactly the two packages and one dist-info')
+          licences = sorted(n.split('/licenses/', 1)[1] for n in shipped if '.dist-info/licenses/' in n)
+          if licences != ['LICENSE']:
+              errors.append(f'{wheel.name} ships licence files {licences}, not exactly LICENSE')
+          print(f'{sdist.name}: {len(members)} files; {wheel.name}: {len(shipped)} entries; {len(wanted)} tracked files under src/')
+          sys.exit('\\n'.join(errors) if errors else 0)
+          "
       - name: Build an environment with no documentation toolchain in it
+        # from the wheel checked above, so the modules below -- the aliases among them --
+        # run against the artefact, not against the checkout
         run: |
           uv venv /tmp/toolchain-free
-          uv pip install --python /tmp/toolchain-free --no-sources "packages/sphinx-test-reports[pytest]"
+          wheel=$(ls /tmp/str-dist/*.whl)
+          uv pip install --python /tmp/toolchain-free --no-sources "${wheel}[pytest]"
       - name: Assert the toolchain really is absent
         # the fence's fence. Without this the job would still pass with Sphinx installed,
         # and would be testing nothing it claims to test.
@@ -507,6 +567,7 @@ jobs:
         # registered, so `-m "not toolchain"` deselects rather than warning.
         run: |
           /tmp/toolchain-free/bin/python -m pytest -q -m "not toolchain" \
+            packages/sphinx-test-reports/tests/test_aliases.py \
             packages/sphinx-test-reports/tests/test_cli_config.py \
             packages/sphinx-test-reports/tests/test_cli_convert.py \
             packages/sphinx-test-reports/tests/test_identity.py \

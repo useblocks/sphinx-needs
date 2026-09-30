@@ -22,7 +22,7 @@ xml_error_path = os.path.join(
 
 
 def test_init_parser():
-    from sphinxcontrib.test_reports.junitparser import JUnitParser
+    from sphinx_test_reports.junitparser import JUnitParser
 
     parser = JUnitParser(xml_path)
 
@@ -30,7 +30,7 @@ def test_init_parser():
 
 
 def test_xml_object():
-    from sphinxcontrib.test_reports.junitparser import JUnitParser
+    from sphinx_test_reports.junitparser import JUnitParser
 
     parser = JUnitParser(xml_path)
     obj = parser.junit_xml_object
@@ -40,7 +40,7 @@ def test_xml_object():
 
 
 def test_parse_easy_xml():
-    from sphinxcontrib.test_reports.junitparser import JUnitParser
+    from sphinx_test_reports.junitparser import JUnitParser
 
     parser = JUnitParser(xml_path)
     assert hasattr(parser, "parse")
@@ -54,7 +54,7 @@ def test_parse_easy_xml():
 
 
 def test_parse_nosetest_xml():
-    from sphinxcontrib.test_reports.junitparser import JUnitParser
+    from sphinx_test_reports.junitparser import JUnitParser
 
     parser = JUnitParser(xml_nose_path)
     assert hasattr(parser, "parse")
@@ -73,7 +73,7 @@ def test_parse_nosetest_xml():
 
 
 def test_parse_pytest_xml():
-    from sphinxcontrib.test_reports.junitparser import JUnitParser
+    from sphinx_test_reports.junitparser import JUnitParser
 
     parser = JUnitParser(xml_pytest_path)
     assert hasattr(parser, "parse")
@@ -94,7 +94,7 @@ def test_parse_pytest_xml():
 
 
 def test_parse_pytest_51_xml():
-    from sphinxcontrib.test_reports.junitparser import JUnitParser
+    from sphinx_test_reports.junitparser import JUnitParser
 
     parser = JUnitParser(xml_pytest51_path)
     assert hasattr(parser, "parse")
@@ -105,7 +105,7 @@ def test_parse_pytest_51_xml():
 
 
 def test_parse_pytest_61_gets_test_suite_attributes():
-    from sphinxcontrib.test_reports.junitparser import JUnitParser
+    from sphinx_test_reports.junitparser import JUnitParser
 
     parser = JUnitParser(xml_pytest62_path)
     test_suites = parser.parse()
@@ -123,7 +123,7 @@ def test_parse_pytest_61_gets_test_suite_attributes():
 
 
 def test_parse_ctest_xml():
-    from sphinxcontrib.test_reports.junitparser import JUnitParser
+    from sphinx_test_reports.junitparser import JUnitParser
 
     parser = JUnitParser(xml_ctest_path)
     test_suites = parser.parse()
@@ -154,7 +154,7 @@ def test_parse_ctest_xml():
 
 
 def test_parse_error_xml():
-    from sphinxcontrib.test_reports.junitparser import JUnitParser
+    from sphinx_test_reports.junitparser import JUnitParser
 
     parser = JUnitParser(xml_error_path)
     test_suites = parser.parse()
@@ -189,7 +189,7 @@ xml_runner_error_path = os.path.join(
 
 
 def _runner_error_case(name):
-    from sphinxcontrib.test_reports.junitparser import JUnitParser
+    from sphinx_test_reports.junitparser import JUnitParser
 
     suite = JUnitParser(xml_runner_error_path).parse()[0]
     return next(case for case in suite["testcases"] if case["name"] == name)
@@ -237,7 +237,7 @@ def test_a_passing_testcase_next_to_errors_is_still_passed():
 
 
 def test_error_counts_are_taken_from_the_testsuite():
-    from sphinxcontrib.test_reports.junitparser import JUnitParser
+    from sphinx_test_reports.junitparser import JUnitParser
 
     suite = JUnitParser(xml_runner_error_path).parse()[0]
 

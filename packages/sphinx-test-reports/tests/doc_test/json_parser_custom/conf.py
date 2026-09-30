@@ -30,7 +30,7 @@ import sphinx_needs
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 
-extensions = ["sphinx_needs", "sphinxcontrib.test_reports"]
+extensions = ["sphinx_needs", "sphinx_test_reports"]
 
 if Version(sphinx_needs.__version__) >= Version("7.0.0"):
     needs_fields = {"priority": {"nullable": True}}

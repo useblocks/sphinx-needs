@@ -25,7 +25,7 @@ PYTEST_XML = UTILS / "pytest_data.xml"
 
 def _convert(tmp_path, *args, xml=GTEST_XML):
     """Run the converter and return (exit_code, parsed output or None)."""
-    from sphinxcontrib.test_reports.cli import main
+    from sphinx_test_reports.cli import main
 
     output = tmp_path / "needs.json"
     code = main(["build", "needs", str(xml), "--output", str(output), *args])
@@ -52,7 +52,7 @@ class TestNoSphinxImport:
     def test_importing_the_cli_does_not_import_sphinx(self):
         script = (
             "import sys;"
-            "import sphinxcontrib.test_reports.cli;"
+            "import sphinx_test_reports.cli;"
             "leaked = sorted(m for m in sys.modules"
             " if m == 'sphinx' or m.startswith(('sphinx.', 'sphinx_needs')));"
             "print(','.join(leaked))"
@@ -108,7 +108,7 @@ class TestEnvelope:
         assert "created" not in data["versions"][data["current_version"]]
 
     def test_output_is_byte_stable_across_runs(self, tmp_path):
-        from sphinxcontrib.test_reports.cli import main
+        from sphinx_test_reports.cli import main
 
         first = tmp_path / "first.json"
         second = tmp_path / "second.json"
@@ -122,7 +122,7 @@ class TestEnvelope:
 
 class TestNeedContent:
     def test_ids_match_the_deterministic_scheme(self, tmp_path):
-        from sphinxcontrib.test_reports.identity import deterministic_case_id
+        from sphinx_test_reports.identity import deterministic_case_id
 
         _, data = _convert(tmp_path)
 
@@ -244,7 +244,7 @@ class TestLinkProperties:
         assert need["partially_verifies"] == []
 
     def test_malformed_link_property_is_rejected(self, tmp_path):
-        from sphinxcontrib.test_reports.cli import main
+        from sphinx_test_reports.cli import main
 
         code = main(
             [
@@ -307,7 +307,7 @@ class TestRemoteUrls:
     def test_credentials_in_the_remote_url_are_not_written(self, tmp_path):
         # GitLab's CI_REPOSITORY_URL embeds the job token; the base lands in
         # every need of a cached artifact and, imported, in published HTML.
-        from sphinxcontrib.test_reports.cli import main
+        from sphinx_test_reports.cli import main
 
         output = tmp_path / "needs.json"
         code = main(
@@ -405,7 +405,7 @@ class TestUrlPatternErrors:
 
 class TestMultipleInputs:
     def test_several_reports_are_merged_into_one_file(self, tmp_path):
-        from sphinxcontrib.test_reports.cli import main
+        from sphinx_test_reports.cli import main
 
         output = tmp_path / "needs.json"
         code = main(
@@ -419,7 +419,7 @@ class TestMultipleInputs:
     def test_the_same_report_given_twice_is_refused(self, tmp_path, capsys):
         # Silently collapsing the repeats would produce a valid file that has
         # lost half its evidence -- the worst outcome for a cached artifact.
-        from sphinxcontrib.test_reports.cli import main
+        from sphinx_test_reports.cli import main
 
         output = tmp_path / "needs.json"
         code = main(
@@ -440,7 +440,7 @@ class TestMultipleInputs:
         assert "testcase__" in message
 
     def test_a_missing_input_file_exits_nonzero(self, tmp_path):
-        from sphinxcontrib.test_reports.cli import main
+        from sphinx_test_reports.cli import main
 
         code = main(
             [
@@ -458,7 +458,7 @@ class TestMultipleInputs:
 class TestDiagnostics:
     def test_absent_line_attributes_warn_about_junit_family(self, tmp_path, capsys):
         """pytest's default junit_family drops file/line; say so, don't guess."""
-        from sphinxcontrib.test_reports.cli import main
+        from sphinx_test_reports.cli import main
 
         main(
             [
@@ -484,7 +484,7 @@ class TestDiagnostics:
         assert "junit_family" in capsys.readouterr().err
 
     def test_reports_with_line_attributes_do_not_warn(self, tmp_path, capsys):
-        from sphinxcontrib.test_reports.cli import main
+        from sphinx_test_reports.cli import main
 
         main(["build", "needs", str(GTEST_XML), "--output", str(tmp_path / "out.json")])
 
@@ -517,7 +517,7 @@ def test_the_cli_is_runnable_as_a_module():
         [
             sys.executable,
             "-m",
-            "sphinxcontrib.test_reports.cli",
+            "sphinx_test_reports.cli",
             "build",
             "needs",
             "--help",
@@ -547,7 +547,7 @@ def test_console_script_is_installed():
 @pytest.mark.parametrize("flag", ["--remote-url", "--commit"])
 def test_url_synthesis_needs_both_parts(tmp_path, flag):
     """Half the metadata cannot produce a URL; fail loudly instead of guessing."""
-    from sphinxcontrib.test_reports.cli import main
+    from sphinx_test_reports.cli import main
 
     code = main(
         [

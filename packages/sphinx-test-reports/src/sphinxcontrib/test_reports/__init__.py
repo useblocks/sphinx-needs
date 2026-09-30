@@ -1,66 +1,67 @@
-"""Sphinx-Test-Reports.
+"""The pre-3.0 name of sphinx-test-reports, kept working until 4.0.
 
-``setup`` is resolved lazily (PEP 562) so that importing a submodule of this
-package does not import Sphinx: the ``test-reports`` command and
-:mod:`sphinxcontrib.test_reports.projectconfig` are used where the
-documentation toolchain is not installed -- it is the ``sphinx`` extra of the
-package, not a dependency -- and every import of a submodule runs this file
-first. Sphinx still finds ``setup`` through normal attribute access when it
-loads this package as an extension.
+The package is :mod:`sphinx_test_reports` now. Four old names still resolve, each
+with a warning that names the new one:
 
-Resolving ``setup`` is also where the toolchain is checked. An extra is opt-in,
-so a project that installs the bare package into an environment already holding
-an older Sphinx or sphinx-needs never shows pip the extra's version floors;
-:mod:`sphinxcontrib.test_reports.toolchain` enforces them here instead, with
-the install line in the message.
+* this package, as a Sphinx extension (``extensions = ["sphinxcontrib.test_reports"]``),
+  which warns through Sphinx's logger, type ``test_reports.deprecated`` -- the channel a
+  documentation build shows, fails under ``-W`` and silences with ``suppress_warnings``;
+* ``pytest_plugin``, ``junitparser`` and ``jsonparser``, one file each next to this
+  one, which put the REAL module into :data:`sys.modules` under the old name and raise
+  one :class:`FutureWarning` per process (not a :class:`DeprecationWarning`, which
+  Python's default filters hide outside ``__main__``). It is attributed to the
+  ``import`` statement that names the module; ``importlib.import_module``, and pytest
+  when it loads a ``-p`` or ``pytest_plugins`` name, are frames of their own and take
+  the attribution instead.
+
+Every other ``sphinxcontrib.test_reports.<module>`` fails as an ordinary import
+error: there is deliberately no finder here that would alias the rest.
+
+``setup`` is resolved lazily (PEP 562), so importing one of the module aliases does
+not import Sphinx: ``junitparser`` and ``pytest_plugin`` are used where the
+documentation toolchain is not installed, and every import of a submodule runs this
+file first.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from sphinx.application import Sphinx
+
 __all__ = ["setup"]
+
+#: The extension this name stands for.
+_NEW_NAME = "sphinx_test_reports"
 
 
 def __getattr__(name: str) -> object:
     if name != "setup":
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    return _setup
 
-    from sphinxcontrib.test_reports.toolchain import INSTALL_HINT, unmet_requirements
 
-    unmet = unmet_requirements()
-    if unmet:
-        # Before the import: an outdated sphinx-needs may well import and fail
-        # only later, inside a directive, with a traceback that does not say
-        # why. Sphinx fetches `setup` with getattr(), which only tolerates
-        # AttributeError, so the error reaches the user as it is raised here.
-        message = (
-            f"Could not load extension {__name__}: {'; '.join(unmet)}. "
-            f"Install the Sphinx extension's dependencies with: {INSTALL_HINT}"
-        )
-        try:
-            from sphinx.errors import ExtensionError
-        except ImportError:
-            raise ImportError(message) from None
-        raise ExtensionError(message)
+def _setup(app: Sphinx) -> dict[str, Any]:
+    from sphinx.util import logging
 
-    try:
-        from sphinxcontrib.test_reports.test_reports import setup
-    except ImportError as error:
-        # Sphinx wraps an ImportError from importing the *package* in a clean
-        # "Could not import extension" message, but fetches `setup` with
-        # getattr(), which only tolerates AttributeError. Resolving lazily
-        # would let a missing sphinx-needs escape as a raw traceback, so the
-        # message Sphinx would have produced is raised here instead -- when
-        # Sphinx is there to receive it -- naming the extra that installs the
-        # toolchain, the likely cause. The wrapped exception goes in the second
-        # argument only: ExtensionError.__str__ renders it as
-        # "(exception: ...)", so spelling it out in the message too would print
-        # it twice.
-        try:
-            from sphinx.errors import ExtensionError
-        except ImportError:
-            raise error from None
-        raise ExtensionError(
-            f"Could not import extension {__name__}; the Sphinx extension's "
-            f"dependencies are an extra, install them with: {INSTALL_HINT}",
-            error,
-        ) from error
-
-    return setup
+    logging.getLogger(__name__).warning(
+        f"the extension name {__name__!r} is deprecated: write {_NEW_NAME!r} in the "
+        "extensions list of conf.py instead. The old name stops working in "
+        "sphinx-test-reports 4.0.",
+        type="test_reports",
+        subtype="deprecated",
+    )
+    # After the warning, so a toolchain error from the real `setup` has the deprecation
+    # line above it. Through Sphinx rather than by calling the real `setup`: a conf.py
+    # that lists both names then registers the extension once, and the real package's
+    # own lazy `setup` -- with its toolchain check -- is what runs.
+    app.setup_extension(_NEW_NAME)
+    extension = app.extensions[_NEW_NAME]
+    # `Extension` pops these three out of the metadata it keeps; hand back all of it.
+    return {
+        **extension.metadata,
+        "version": extension.version,
+        "parallel_read_safe": extension.parallel_read_safe,
+        "parallel_write_safe": extension.parallel_write_safe,
+    }
