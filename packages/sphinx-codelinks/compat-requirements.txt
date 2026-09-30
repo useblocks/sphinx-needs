@@ -14,14 +14,15 @@
 # without this line `clang.cindex` is absent -- and that failure is LOUD, not silent:
 # `release.yaml` runs the `import_check` walk BEFORE pytest, and the walk fails outright
 # on `sphinx_codelinks.analyse.preproc`, whose `__init__` imports the libclang loader
-# eagerly (`FAIL 1 of 21 modules failed to import`, exit 1, under the step's default
-# `bash -e`). Measured. So deleting this line does not give a green 301/26 run -- it turns
-# the release of sphinx-codelinks red, by name, before the suite starts.
+# eagerly (`FAIL 1 of ... modules failed to import`, exit 1, under the step's default
+# `bash -e`). Measured. So deleting this line does not give a green run with those
+# tests skipped -- it turns the release of sphinx-codelinks red, by name, before the
+# suite starts.
 #
-# What the line buys on top of that loud failure is the 56 tests behind
-# `pytest.importorskip("clang.cindex")`: with it the compat cell reports 359 passed, and
-# without it -- if the walk were ever removed or reordered -- it would report
-# `303 passed, 26 skipped`.
+# What the line buys on top of that loud failure is the tests behind
+# `pytest.importorskip("clang.cindex")`: with it the compat cell runs them, and without
+# it -- if the walk were ever removed or reordered -- they would skip rather than fail,
+# and the cell would look green.
 #
 # The floor is 18 -- what has actually been run here -- rather than the extra's 16, which
 # states the wider range the published package supports.

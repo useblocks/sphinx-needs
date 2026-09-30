@@ -177,11 +177,10 @@ directives.)
 **sphinx-codelinks needs NEITHER renderer**: nothing in that package draws a diagram, its
 docs build installs no `apt_packages` and its CI cell asks for graphviz only because it
 shares a cell with sphinx-mounts. What it does need is `git` on `PATH` — its suite builds
-real repositories and a real `git worktree` — and, for the 56 tests behind the optional
+real repositories and a real `git worktree` — and, for the tests behind the optional
 preprocessor-aware C/C++ engine, the `libclang` wheel: a root dependency group,
 `codelinks-libclang`, which every `test-codelinks*` task adds for you. Without it those
-tests SKIP rather than fail, so a run that lacked it looks green
-(`303 passed, 26 skipped` instead of `359 passed`).
+tests SKIP rather than fail, so a run that lacked it looks green.
 `bazel` (or `bazelisk`) is the other optional binary — without it the `bazel`-marked tests
 skip, and `test-mounts` deselects them anyway. The browser tests (`-m jstest`, which
 `test-needs` excludes) additionally need a browser, and it is not a package: `uv run poe

@@ -37,7 +37,7 @@ design/                 # import-commit-map.txt: old hash -> new hash for the 20
 src/sphinx_codelinks/   # Main source code
 ├── __init__.py         # `__version__` (public, in `__all__`) and the Sphinx `setup()`
 ├── cmd.py              # CLI commands using Typer
-├── config.py           # Configuration dataclasses + TypedDicts, and the TOML loader
+├── config.py           # Configuration dataclasses + TypedDicts, and the TOML loader, `load_codelinks_table`
 ├── logger.py           # Logging utilities
 ├── needextend_write.py # Write RST files with Sphinx-Needs directives
 ├── analyse/            # Code analysis module
@@ -60,7 +60,7 @@ src/sphinx_codelinks/   # Main source code
 tests/                  # Test suite -- `tests/__init__.py` is why this path is NOT in the
 ├── __init__.py         #   root `testpaths` (see the root AGENTS.md)
 ├── conftest.py         # Pytest fixtures and configuration
-├── test_*.py           # 16 test modules
+├── test_*.py           # 17 test modules
 ├── __snapshots__/      # Syrupy snapshot test fixtures
 ├── data/               # Test data and fixtures
 └── doc_test/           # minimal Sphinx projects for the integration tests
@@ -89,36 +89,32 @@ cell.
 **`test-codelinks` syncs the group into the DEFAULT `.venv`.** It has no
 `UV_PROJECT_ENVIRONMENT` of its own, unlike its three `-sphinx7/8/9` siblings, so the wheel
 lands in the environment every other command uses — and the next plain `uv sync --frozen`
-prunes it out again (`Uninstalled 1 package: - libclang==18.1.1`). So the two numbers only
+prunes it out again (`Uninstalled 1 package: - libclang==18.1.1`). So the two results only
 appear either side of that sync, and this is the sequence that shows both:
 
 ```bash
-uv run poe test-codelinks                                            # 359 passed
+uv run poe test-codelinks                                            # every test runs, none skipped
 uv sync --frozen                                                     # removes libclang again
-uv run --frozen --no-sync pytest packages/sphinx-codelinks/tests     # 303 passed, 26 skipped
+uv run --frozen --no-sync pytest packages/sphinx-codelinks/tests     # green, the libclang tests skipped
 ```
 
 **Both runs are green, and only the first tested the engine.** The four modules that need
 it carry `pytest.importorskip("clang.cindex")`, so a run without the group skips politely
 rather than failing — which means a task or a CI line that quietly lost the group would
 look like a pass. (CI is fenced: the Extensions cell asserts `import clang.cindex` right
-after its sync.) If you are changing anything under `analyse/preproc/`, check the number.
+after its sync.) If you are changing anything under `analyse/preproc/`, check that nothing
+skipped.
 
 The summary prints **26 skipped**, not 56: three of the four guards are module-level
 `pytest.importorskip`, which pytest reports as one skip per module and never collects the
 tests inside. 56 is how many test cases stop running.
 
-### This package caps `click` and `typer`, and nothing else in the lock does
+### It reads `ubproject.toml` through `ub-project`
 
-`click < 8.2` (8.2 produces empty errors when the CLI is given no arguments) and
-`typer >=0.16.0,<0.26.8` (0.26.8 removed `rich_utils.STYLE_METAVAR`, which
-`sphinxcontrib-typer` still imports for the docs build). Measured across every
-`requires-dist` in `uv.lock`: **no other workspace MEMBER names either**, and for `click`
-no package in the lock does at all. `typer`, `rich` and `shellingham` are named by third
-parties there — `sphinxcontrib-typer` (which is exactly what the `typer` cap exists for),
-`typer` itself, `memray` and `textual` — so the `typer` cap is the one that could bind on
-someone else. The direction to watch is the reverse one: the day a root, `test` or `dev`
-dependency wants `click>=8.2`, `uv lock` will fail and the reason will be here.
+`load_codelinks_table` in `config.py` is ub-project's `load_toml` + `select_table`, and both
+readers call it; `src/` imports no `tomllib`. It returns raw values: relative paths are
+anchored with ub-project's `anchor` where they are used, never in the loader. (`click` is no
+longer a dependency and `typer` is no longer capped — the changelog's `Unreleased` says why.)
 
 ## Documentation
 
@@ -182,7 +178,7 @@ def form_https_url(
 **No `--` before the pytest arguments.** poe appends trailing words to the task's command
 verbatim and forwards a `--` along with them, and pytest then reads `--snapshot-update` as
 a file path: `poe test-codelinks -- --collect-only -q` collects **0 items**, where
-`poe test-codelinks --collect-only -q` collects 359.
+`poe test-codelinks --collect-only -q` collects the whole suite.
 
 ### Test Structure
 
@@ -328,7 +324,7 @@ The extension connects to these Sphinx events (in execution order):
 
 1. **sphinx-needs Dependency**: The extension requires sphinx-needs and checks for its presence in `setup()`. It adds extra options (`project`, `file`, `directory`, URL fields) and a custom need type (`srctrace`).
 
-2. **TOML Configuration**: Configuration can be loaded from a TOML file specified in `conf.py` via `src_trace_config_from_toml`. The TOML is parsed and values are set on the Sphinx config object.
+2. **TOML Configuration**: Configuration can be loaded from a TOML file specified in `conf.py` via `src_trace_config_from_toml`. The TOML is parsed and values are set on the Sphinx config object, except a key given with `-D` — `src_trace_projects` and `src_trace_outdir` excepted (`NOT_OVERRIDABLE_FROM_D`): Sphinx refuses a `-D` for both yet keeps it in `config.overrides`.
 
 3. **Source Page Generation**: The `generate_code_page()` function yields tuples of `(pagename, context, template)` for each traced source file, allowing Sphinx to generate standalone HTML pages with syntax-highlighted source code and line-number anchors.
 
@@ -351,7 +347,9 @@ the shape a TOML file may carry, and a `@dataclass` holding the loaded, validate
 - validation is `jsonschema`'s `validate(instance=…, schema=…)` per field, against a
   schema each config class returns from its own `get_schema`, collected by its
   `check_schema` and `check_*` methods into a list of error strings — not raised
-- the TOML loader is `load_config_from_toml` in `cmd.py`
+- the TOML loader is `load_codelinks_table` (ub-project's `load_toml` + `select_table`),
+  which both `load_config_from_toml`s — the Sphinx hook in `sphinx_extension/source_tracing.py`
+  and the CLI's in `cmd.py` — call
 
 #### Source Discovery (`source_discover/`)
 

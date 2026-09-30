@@ -1,5 +1,4 @@
 import json
-import tomllib
 from collections import deque
 from os import linesep
 from pathlib import Path
@@ -14,6 +13,7 @@ from sphinx_codelinks.config import (
     CodeLinksProjectConfigType,
     anchor_preproc_paths,
     generate_project_configs,
+    load_codelinks_table,
 )
 from sphinx_codelinks.logger import configure_cli, logger
 from sphinx_codelinks.needextend_write import MarkedObjType, convert_marked_content
@@ -23,6 +23,7 @@ from sphinx_codelinks.source_discover.config import (
     SourceDiscoverConfigType,
 )
 from sphinx_codelinks.source_discover.source_discover import SourceDiscover
+from ub_project import ProjectConfigError, anchor
 
 app = typer.Typer(
     no_args_is_help=True, context_settings={"help_option_names": ["-h", "--help"]}
@@ -134,8 +135,8 @@ def analyse(  # for CLI, so it needs the branches
             raise typer.BadParameter(f"{linesep.join(errors)}")
 
         # src dir shall be relevant to the config file's location
-        src_discover_config.src_dir = (
-            config.parent / src_discover_config.src_dir
+        src_discover_config.src_dir = anchor(
+            src_discover_config.src_dir, config.parent
         ).resolve()
 
         src_discover = SourceDiscover(src_discover_config)
@@ -147,8 +148,8 @@ def analyse(  # for CLI, so it needs the branches
 
         # git_root shall be relative to the config file's location (like src_dir)
         if analyse_config.git_root is not None:
-            analyse_config.git_root = (
-                config.parent / analyse_config.git_root
+            analyse_config.git_root = anchor(
+                analyse_config.git_root, config.parent
             ).resolve()
 
         # preprocessor compile_commands / include dirs are relative to the config
@@ -329,15 +330,16 @@ def write_rst(  # for CLI, so it takes as many as it requires
 
 def load_config_from_toml(toml_file: Path) -> CodeLinksConfigType:
     try:
-        with toml_file.open("rb") as f:
-            toml_data = tomllib.load(f)
-
-    except Exception as e:
+        codelink_dict = load_codelinks_table(toml_file)
+    except ProjectConfigError as error:
+        # ub-project's message already names the file and says what is wrong
+        raise typer.BadParameter(str(error)) from error
+    except Exception as error:
+        # the TOML parser can also fail with an exception ``load_toml`` does not wrap (a
+        # RecursionError on a pathologically nested file): still a usage error
         raise typer.BadParameter(
-            f"Failed to load CodeLinks configuration from {toml_file}"
-        ) from e
-
-    codelink_dict = toml_data.get("codelinks")
+            f"Failed to load CodeLinks configuration from {toml_file}: {error}"
+        ) from error
 
     if not codelink_dict:
         raise typer.BadParameter(f"No 'codelinks' section found in {toml_file}")

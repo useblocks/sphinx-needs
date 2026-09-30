@@ -21,8 +21,8 @@ What a cloud environment for this repository needs, measured on the Ubuntu 24.04
   needflow tests fail rather than skip. Nothing else is needed: `prek` and `poe` come from
   `uv sync`. `libclang` is not a system package here and does not belong in this script:
   it is a 23 MiB wheel behind the root `codelinks-libclang` dependency group, which
-  `poe test-codelinks` adds for you. Without it 56 of sphinx-codelinks' 359 tests skip
-  rather than fail, so a run that lacked it would look green.
+  `poe test-codelinks` adds for you. Without it the libclang-gated tests of
+  sphinx-codelinks skip rather than fail, so a run that lacked it would look green.
 - **Environment variables**: none to set on the environment. `.claude/settings.json` sets
   `UV_HTTP_TIMEOUT=180` for every Claude Code session, cloud ones included (committed
   project settings are read there): uv's 30 s default is not enough for this lock through

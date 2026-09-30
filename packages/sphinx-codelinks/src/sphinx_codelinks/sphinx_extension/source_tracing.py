@@ -1,5 +1,4 @@
 import contextlib
-import tomllib
 from collections.abc import Iterator  # only in python 3.11 afterwards
 from pathlib import Path
 from timeit import default_timer as timer  # Used for timing measurements
@@ -21,6 +20,7 @@ from sphinx_codelinks.config import (
     check_configuration,
     file_lineno_href,
     generate_project_configs,
+    load_codelinks_table,
 )
 from sphinx_codelinks.logger import configure_sphinx
 from sphinx_codelinks.sphinx_extension import debug
@@ -30,8 +30,15 @@ from sphinx_codelinks.sphinx_extension.directives.src_trace import (
 )
 from sphinx_codelinks.sphinx_extension.html_wrapper import html_wrapper
 from sphinx_needs.api import add_field, add_need_type
+from ub_project import ProjectConfigError
 
 logger = logging.getLogger(__name__)
+
+#: The ``[codelinks]`` keys a ``-D`` never suppresses. Sphinx refuses a ``-D`` for
+#: these two -- ``projects`` is a dict, ``outdir`` has a ``Path`` default ("unsupported
+#: type") -- yet keeps the key in ``config.overrides``, so skipping the TOML value would
+#: honour an override that was never applied.
+NOT_OVERRIDABLE_FROM_D = ("projects", "outdir")
 
 
 def _register_sn_field(name: str, description: str) -> None:
@@ -148,9 +155,16 @@ def load_config_from_toml(app: Sphinx, config: _SphinxConfig) -> None:
     """Load the configuration from a TOML file, if defined in conf.py.
 
     The default ``ubproject.toml`` is shared with other useblocks tools, which
-    may use the file without any ``[codelinks]`` configuration. It is therefore
-    silently ignored when it does not exist or has no ``[codelinks]`` table,
-    whereas a missing explicitly configured file emits a warning.
+    may use the file without any ``[codelinks]`` configuration. The default is
+    the value ``ubproject.toml`` exactly -- left unset, or written in conf.py as
+    that string (a string comparison, not a file comparison) -- and is silently
+    ignored when it does not exist or has no ``[codelinks]`` table. Any other
+    value, ``./ubproject.toml`` included, is an explicit file and warns in both
+    cases. A file that exists but cannot be read or parsed warns either way, as
+    any configured file did at 1.4.0: it is broken for every tool that reads it.
+
+    Every warning here is ``codelinks.config``, so ``suppress_warnings`` can
+    silence them.
     """
     src_trc_sphinx_config = CodeLinksConfig.from_sphinx(config)
     if src_trc_sphinx_config.config_from_toml is None:
@@ -165,20 +179,37 @@ def load_config_from_toml(app: Sphinx, config: _SphinxConfig) -> None:
     if not toml_file.exists():
         if not default_file:
             logger.warning(
-                f"Source tracing configuration file {toml_file} does not exist. Using configuration from conf.py."
+                f"Source tracing configuration file {toml_file} does not exist. Using configuration from conf.py.",
+                type="codelinks",
+                subtype="config",
             )
         return
     try:
-        with toml_file.open("rb") as f:
-            toml_data = tomllib.load(f)
-        toml_data = toml_data["codelinks"]
-        if not isinstance(toml_data, dict):
-            raise Exception(f"data must be a dict in {toml_file}")
-
-    except Exception as e:
+        toml_data = load_codelinks_table(toml_file)
+    except ProjectConfigError as error:
+        # ub-project's message names the file itself
+        logger.warning(
+            f"Failed to load source tracing configuration: {error}",
+            type="codelinks",
+            subtype="config",
+        )
+        return
+    except Exception as error:
+        # the TOML parser can also fail with a RecursionError, which ``load_toml`` does
+        # not wrap and whose text names no file. Either way the file only warns -- the
+        # default one too.
+        logger.warning(
+            f"Failed to load source tracing configuration from {toml_file}: {error}",
+            type="codelinks",
+            subtype="config",
+        )
+        return
+    if toml_data is None:
         if not default_file:
             logger.warning(
-                f"Failed to load source tracing configuration from {toml_file}: {e}"
+                f"Source tracing configuration file {toml_file} has no [codelinks] table. Using configuration from conf.py.",
+                type="codelinks",
+                subtype="config",
             )
         return
 
@@ -191,8 +222,18 @@ def set_config_to_sphinx(
     src_trace_config: CodeLinksConfigType, config: _SphinxConfig
 ) -> None:
     allowed_keys = CodeLinksConfig.field_names()
+    # A value given on the command line (``-D src_trace_<key>=...``, which Sphinx
+    # keeps in ``config.overrides``) wins over the TOML. Only the full confval
+    # name counts: a bare ``-D set_local_url=0`` names no confval, Sphinx ignores
+    # it, and the TOML value has to stand.
+    overridden: set[str] = set()
+    config_overrides = getattr(config, "overrides", None)
+    if isinstance(config_overrides, dict):
+        overridden = {str(key) for key in config_overrides}
     for key, value in src_trace_config.items():
         if key not in allowed_keys:
+            continue
+        if key not in NOT_OVERRIDABLE_FROM_D and f"src_trace_{key}" in overridden:
             continue
         if key == "projects":
             src_trace_projects: dict[str, CodeLinksProjectConfigType] = cast(

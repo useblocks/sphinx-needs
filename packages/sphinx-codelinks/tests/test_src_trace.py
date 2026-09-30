@@ -1,10 +1,12 @@
 # @Test suite for Sphinx extension source tracing functionality, TEST_EXT_1, test, [IMPL_LNK_1, IMPL_ONE_1, IMPL_MRST_1]
+import os
 import shutil
 from collections.abc import Callable
 from dataclasses import fields
 from pathlib import Path
 
 import pytest
+import sphinx
 from sphinx.environment import CONFIG_OK
 from sphinx.testing.util import SphinxTestApp
 
@@ -370,3 +372,473 @@ def test_explicit_toml_config_missing_warns(
     warnings = build_warnings(app)
     assert len(warnings) == 1, warnings
     assert "does not exist" in warnings[0]
+
+
+# -- the TOML reader: what a -D value, a corrupt file and the typed warnings do ----------
+
+#: Sphinx 8 renders a warning's ``[type.subtype]`` itself; 7.4 appends nothing, so on
+#: 7.4 the reader's warnings are asserted by their phrase and count only
+_SHOWS_WARNING_TYPES = sphinx.version_info >= (8,)
+
+_LOAD_FAILED = "Failed to load source tracing configuration"
+
+
+def _write_conf(project: Path, extra: str) -> None:
+    conf_py = project / "conf.py"
+    conf_py.write_text(conf_py.read_text(encoding="utf-8") + extra, encoding="utf-8")
+
+
+def _assert_one_config_warning(app: SphinxTestApp, phrase: str) -> None:
+    warnings = build_warnings(app)
+    assert len(warnings) == 1, warnings
+    assert phrase in warnings[0]
+    if _SHOWS_WARNING_TYPES:
+        assert "[codelinks.config]" in warnings[0]
+
+
+@pytest.mark.parametrize(
+    ("key", "toml_value", "override"),
+    [
+        ("set_local_url", "true", False),
+        ("set_remote_url", "true", False),
+        ("local_url_field", '"toml-url"', "cli-url"),
+        ("remote_url_field", '"toml-remote"', "cli-remote"),
+        ("debug_measurement", "true", False),
+        ("debug_filters", "true", False),
+    ],
+)
+def test_command_line_override_beats_the_toml(
+    minimal_sphinx_project: Path,
+    make_app: Callable[..., SphinxTestApp],
+    key: str,
+    toml_value: str,
+    override: object,
+) -> None:
+    """``-D src_trace_<key>`` wins over the same key in ``[codelinks]``.
+
+    ``confoverrides`` is what ``-D`` becomes: Sphinx stores both in ``config.overrides``.
+    """
+    (minimal_sphinx_project / "ubproject.toml").write_text(
+        f"[codelinks]\n{key} = {toml_value}\n", encoding="utf-8"
+    )
+    app = make_app(
+        srcdir=minimal_sphinx_project,
+        freshenv=True,
+        confoverrides={f"src_trace_{key}": override},
+    )
+
+    assert app.config[f"src_trace_{key}"] == override
+
+
+def test_refused_outdir_override_keeps_the_toml_value(
+    minimal_sphinx_project: Path,
+    make_app: Callable[..., SphinxTestApp],
+) -> None:
+    """Sphinx refuses ``-D src_trace_outdir`` (its default is a ``Path``: "unsupported
+    type") but keeps it in ``config.overrides``: an override that was never applied must
+    not suppress the TOML value."""
+    (minimal_sphinx_project / "ubproject.toml").write_text(
+        '[codelinks]\noutdir = "toml-out"\n', encoding="utf-8"
+    )
+    app = make_app(
+        srcdir=minimal_sphinx_project,
+        freshenv=True,
+        confoverrides={"src_trace_outdir": "cli-out"},
+    )
+
+    assert app.config.src_trace_outdir == "toml-out"
+
+
+def test_not_overridable_from_d_is_exactly_what_sphinx_refuses(
+    minimal_sphinx_project: Path,
+    make_app: Callable[..., SphinxTestApp],
+) -> None:
+    """The keys exempt from the ``-D`` skip are exactly the codelinks confvals Sphinx
+    refuses to take from ``-D`` -- detected per confval by Sphinx's own
+    "cannot override ... 'src_trace_<key>'" warning, with a value ("1") every confval
+    Sphinx does accept can convert."""
+    from sphinx_codelinks.sphinx_extension.source_tracing import (
+        NOT_OVERRIDABLE_FROM_D,
+    )
+
+    refused = set()
+    for item in fields(CodeLinksConfig):
+        app = make_app(
+            srcdir=minimal_sphinx_project,
+            freshenv=True,
+            confoverrides={f"src_trace_{item.name}": "1"},
+        )
+        if any(
+            "cannot override" in warning and f"'src_trace_{item.name}'" in warning
+            for warning in build_warnings(app)
+        ):
+            refused.add(item.name)
+
+    assert refused == set(NOT_OVERRIDABLE_FROM_D)
+
+
+def test_override_of_one_key_leaves_the_other_toml_keys(
+    minimal_sphinx_project: Path,
+    make_app: Callable[..., SphinxTestApp],
+) -> None:
+    """``-D`` on one key skips that key only: the rest of ``[codelinks]`` still loads."""
+    (minimal_sphinx_project / "ubproject.toml").write_text(
+        "[codelinks]\n"
+        "set_local_url = true\n"
+        'local_url_field = "toml-url"\n'
+        "[codelinks.projects.tomlproj.source_discover]\n"
+        'src_dir = "./"\n',
+        encoding="utf-8",
+    )
+    app = make_app(
+        srcdir=minimal_sphinx_project,
+        freshenv=True,
+        confoverrides={"src_trace_set_local_url": False},
+    )
+
+    assert app.config.src_trace_set_local_url is False
+    assert app.config.src_trace_local_url_field == "toml-url"
+    assert list(app.config.src_trace_projects) == ["tomlproj"]
+
+
+def test_command_line_override_of_config_from_toml_beats_the_toml(
+    minimal_sphinx_project: Path,
+    make_app: Callable[..., SphinxTestApp],
+) -> None:
+    """The eighth key: a ``config_from_toml`` inside the file no longer rewrites the
+    file name given with ``-D``."""
+    (minimal_sphinx_project / "cl.toml").write_text(
+        '[codelinks]\nconfig_from_toml = "deep/x.toml"\n', encoding="utf-8"
+    )
+    app = make_app(
+        srcdir=minimal_sphinx_project,
+        freshenv=True,
+        confoverrides={"src_trace_config_from_toml": "cl.toml"},
+    )
+
+    assert app.config.src_trace_config_from_toml == "cl.toml"
+
+
+def test_bare_name_override_does_not_suppress_the_toml(
+    minimal_sphinx_project: Path,
+    make_app: Callable[..., SphinxTestApp],
+) -> None:
+    """``-D set_local_url=0`` names no confval -- Sphinx warns and ignores it -- so the
+    TOML value stands; only ``src_trace_<key>`` counts as an override."""
+    (minimal_sphinx_project / "ubproject.toml").write_text(
+        "[codelinks]\nset_local_url = true\n", encoding="utf-8"
+    )
+    app = make_app(
+        srcdir=minimal_sphinx_project,
+        freshenv=True,
+        confoverrides={"set_local_url": False},
+    )
+
+    assert app.config.src_trace_set_local_url is True
+
+
+def test_refused_projects_override_keeps_the_toml_projects(
+    minimal_sphinx_project: Path,
+    make_app: Callable[..., SphinxTestApp],
+) -> None:
+    """``-D src_trace_projects=x`` is refused by Sphinx (a dict cannot be overridden
+    whole) but stays in ``config.overrides``: the TOML's projects must still load."""
+    (minimal_sphinx_project / "ubproject.toml").write_text(
+        '[codelinks.projects.tomlproj.source_discover]\nsrc_dir = "./"\n',
+        encoding="utf-8",
+    )
+    app = make_app(
+        srcdir=minimal_sphinx_project,
+        freshenv=True,
+        confoverrides={"src_trace_projects": "x"},
+    )
+
+    assert list(app.config.src_trace_projects) == ["tomlproj"]
+
+
+@pytest.mark.parametrize(
+    ("override", "expected"),
+    [
+        pytest.param({"src_trace_local_url_field": "cli-url"}, "cli-url", id="D-wins"),
+        pytest.param({}, "toml-url", id="conf.py-vs-toml-unchanged"),
+    ],
+)
+def test_command_line_then_toml_then_conf_py(
+    minimal_sphinx_project: Path,
+    make_app: Callable[..., SphinxTestApp],
+    override: dict[str, str],
+    expected: str,
+) -> None:
+    """One key set in all three places: ``-D`` > TOML > conf.py."""
+    _write_conf(minimal_sphinx_project, 'src_trace_local_url_field = "conf-url"\n')
+    (minimal_sphinx_project / "ubproject.toml").write_text(
+        '[codelinks]\nlocal_url_field = "toml-url"\n', encoding="utf-8"
+    )
+    app = make_app(srcdir=minimal_sphinx_project, freshenv=True, confoverrides=override)
+
+    assert app.config.src_trace_local_url_field == expected
+
+
+def _syntax_error(path: Path) -> None:
+    path.write_text("[codelinks\n", encoding="utf-8")
+
+
+def _not_utf8(path: Path) -> None:
+    path.write_bytes(b'[codelinks]\nlocal_url_field = "caf\xe9"\n')
+
+
+def _a_directory(path: Path) -> None:
+    path.mkdir()
+
+
+def _not_a_table(path: Path) -> None:
+    path.write_text('codelinks = "x"\n', encoding="utf-8")
+
+
+_CORRUPT_FILES = [
+    pytest.param(_syntax_error, id="syntax-error"),
+    pytest.param(_not_utf8, id="not-utf8"),
+    pytest.param(_a_directory, id="a-directory"),
+    pytest.param(_not_a_table, id="codelinks-not-a-table"),
+]
+
+
+@pytest.mark.parametrize("corrupt", _CORRUPT_FILES)
+def test_corrupt_default_ubproject_toml_warns(
+    minimal_sphinx_project: Path,
+    make_app: Callable[..., SphinxTestApp],
+    corrupt: Callable[[Path], None],
+) -> None:
+    """A default ubproject.toml that exists but cannot be read or parsed warns, as any
+    configured file did at 1.4.0 -- only a missing file or table is silent."""
+    corrupt(minimal_sphinx_project / "ubproject.toml")
+    app = make_app(srcdir=minimal_sphinx_project, freshenv=True)
+    app.build()
+
+    assert app.config.src_trace_projects == {}
+    _assert_one_config_warning(app, _LOAD_FAILED)
+
+
+@pytest.mark.parametrize(
+    ("name", "conf_extra"),
+    [
+        pytest.param("ubproject.toml", "", id="default"),
+        pytest.param(
+            "cl.toml", 'src_trace_config_from_toml = "cl.toml"\n', id="explicit"
+        ),
+    ],
+)
+def test_too_deeply_nested_toml_warns_naming_the_file(
+    minimal_sphinx_project: Path,
+    make_app: Callable[..., SphinxTestApp],
+    name: str,
+    conf_extra: str,
+) -> None:
+    """The TOML parser can fail with an exception ub-project does not wrap (a
+    ``RecursionError``): still one ``codelinks.config`` warning, naming the file since
+    Python's text does not, and the build completes."""
+    _write_conf(minimal_sphinx_project, conf_extra)
+    (minimal_sphinx_project / name).write_text(
+        "x = " + "[" * 5000 + "]" * 5000 + "\n", encoding="utf-8"
+    )
+    app = make_app(srcdir=minimal_sphinx_project, freshenv=True)
+    app.build()
+
+    _assert_one_config_warning(app, _LOAD_FAILED)
+    assert name in build_warnings(app)[0]
+
+
+def test_explicit_toml_syntax_error_names_the_file_once(
+    minimal_sphinx_project: Path,
+    make_app: Callable[..., SphinxTestApp],
+) -> None:
+    """ub-project's message already names the file; the warning does not repeat it."""
+    _write_conf(minimal_sphinx_project, 'src_trace_config_from_toml = "cl.toml"\n')
+    _syntax_error(minimal_sphinx_project / "cl.toml")
+    app = make_app(srcdir=minimal_sphinx_project, freshenv=True)
+    app.build()
+
+    _assert_one_config_warning(app, _LOAD_FAILED)
+    assert build_warnings(app)[0].count("cl.toml") == 1
+
+
+@pytest.mark.parametrize(
+    "state",
+    [
+        pytest.param(None, id="missing"),
+        pytest.param(
+            lambda path: path.write_text("[needs]\n", encoding="utf-8"),
+            id="no-codelinks-table",
+        ),
+    ],
+)
+def test_default_name_written_in_conf_py_is_still_the_default(
+    minimal_sphinx_project: Path,
+    make_app: Callable[..., SphinxTestApp],
+    state: Callable[[Path], object] | None,
+) -> None:
+    """``src_trace_config_from_toml = "ubproject.toml"`` names the shared default: absent
+    or without ``[codelinks]`` it is silent, as when the name is left unset."""
+    _write_conf(
+        minimal_sphinx_project, 'src_trace_config_from_toml = "ubproject.toml"\n'
+    )
+    if state is not None:
+        state(minimal_sphinx_project / "ubproject.toml")
+    app = make_app(srcdir=minimal_sphinx_project, freshenv=True)
+    app.build()
+
+    assert_no_warnings(app)
+
+
+@pytest.mark.parametrize(
+    ("state", "phrase"),
+    [
+        pytest.param(None, "does not exist", id="missing"),
+        pytest.param(
+            lambda path: path.write_text("[needs]\n", encoding="utf-8"),
+            "has no [codelinks] table",
+            id="no-codelinks-table",
+        ),
+    ],
+)
+def test_other_spelling_of_the_default_name_is_explicit(
+    minimal_sphinx_project: Path,
+    make_app: Callable[..., SphinxTestApp],
+    state: Callable[[Path], object] | None,
+    phrase: str,
+) -> None:
+    """The default is the value ``ubproject.toml`` EXACTLY: ``./ubproject.toml`` names
+    the same file but is an explicit configuration, so missing or without
+    ``[codelinks]`` it warns."""
+    _write_conf(
+        minimal_sphinx_project, 'src_trace_config_from_toml = "./ubproject.toml"\n'
+    )
+    if state is not None:
+        state(minimal_sphinx_project / "ubproject.toml")
+    app = make_app(srcdir=minimal_sphinx_project, freshenv=True)
+    app.build()
+
+    _assert_one_config_warning(app, phrase)
+
+
+def test_explicit_toml_without_codelinks_table_warns(
+    minimal_sphinx_project: Path,
+    make_app: Callable[..., SphinxTestApp],
+) -> None:
+    """An explicitly configured file without ``[codelinks]`` warns, and says so."""
+    _write_conf(minimal_sphinx_project, 'src_trace_config_from_toml = "cl.toml"\n')
+    (minimal_sphinx_project / "cl.toml").write_text(
+        "[needs]\nid_required = true\n", encoding="utf-8"
+    )
+    app = make_app(srcdir=minimal_sphinx_project, freshenv=True)
+    app.build()
+
+    _assert_one_config_warning(app, "has no [codelinks] table")
+
+
+@pytest.mark.parametrize(
+    "state",
+    [
+        pytest.param(None, id="missing"),
+        pytest.param(_syntax_error, id="syntax-error"),
+        pytest.param(
+            lambda path: path.write_text("[needs]\n", encoding="utf-8"),
+            id="no-codelinks-table",
+        ),
+    ],
+)
+def test_reader_warnings_are_suppressible(
+    minimal_sphinx_project: Path,
+    make_app: Callable[..., SphinxTestApp],
+    state: Callable[[Path], object] | None,
+) -> None:
+    """Every warning of the reader carries ``codelinks.config``."""
+    _write_conf(
+        minimal_sphinx_project,
+        'src_trace_config_from_toml = "cl.toml"\n'
+        'suppress_warnings = ["codelinks.config"]\n',
+    )
+    if state is not None:
+        state(minimal_sphinx_project / "cl.toml")
+    app = make_app(srcdir=minimal_sphinx_project, freshenv=True)
+    app.build()
+
+    assert_no_warnings(app)
+
+
+_MARKER = "# @Found here {tag}, IMPL_{tag}, impl\n"
+
+
+def _traced_project(root: Path, conf_extra: str, files: dict[str, str]) -> None:
+    """A project whose index traces project ``p``; ``files`` maps a relative path to
+    its content, and a ``LINK:<target>`` content makes that path a symlink."""
+    (root / "conf.py").write_text(
+        "extensions = ['sphinx_needs', 'sphinx_codelinks']\n"
+        "exclude_patterns = ['_build']\n" + conf_extra,
+        encoding="utf-8",
+    )
+    (root / "index.rst").write_text(
+        "T\n=\n\n.. src-trace::\n   :project: p\n", encoding="utf-8"
+    )
+    for relative, content in files.items():
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if content.startswith("LINK:"):
+            try:
+                os.symlink(content[len("LINK:") :], path)
+            except (OSError, NotImplementedError) as error:
+                pytest.skip(f"cannot create a symlink here: {error}")
+        else:
+            path.write_text(content, encoding="utf-8")
+
+
+_PROJECT_P = '[codelinks.projects.p.source_discover]\nsrc_dir = "./src"\ncomment_type = "python"\n'
+
+
+def test_symlinked_toml_anchors_at_the_links_directory(
+    tmp_path: Path,
+    make_app: Callable[..., SphinxTestApp],
+) -> None:
+    """A relative path in a TOML reached through a symlink is anchored at the LINK's
+    directory -- ``confdir / Path(config_from_toml).parent`` -- not the target's."""
+    _traced_project(
+        tmp_path,
+        "src_trace_config_from_toml = 'cl.toml'\n",
+        {
+            "other/sub/real.toml": _PROJECT_P,
+            "cl.toml": "LINK:" + str(Path("other", "sub", "real.toml")),
+            "src/a.py": _MARKER.format(tag="LINKDIR"),
+            "other/sub/src/a.py": _MARKER.format(tag="REALDIR"),
+        },
+    )
+    app = make_app(srcdir=tmp_path, freshenv=True)
+    app.build()
+
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    assert "IMPL_LINKDIR" in html
+    assert "IMPL_REALDIR" not in html
+
+
+def test_config_from_toml_set_in_the_toml_moves_the_anchor(
+    tmp_path: Path,
+    make_app: Callable[..., SphinxTestApp],
+) -> None:
+    """A PIN of today's behaviour, not an endorsement: ``config_from_toml`` is a key the
+    TOML may set, and when it does the use-site anchor moves to that name's directory
+    (the named file is never read)."""
+    _traced_project(
+        tmp_path,
+        "",
+        {
+            "ubproject.toml": _PROJECT_P
+            + "[codelinks]\nconfig_from_toml = 'deep/x.toml'\n",
+            "src/a.py": _MARKER.format(tag="CONFDIR"),
+            "deep/src/a.py": _MARKER.format(tag="DEEPDIR"),
+        },
+    )
+    app = make_app(srcdir=tmp_path, freshenv=True)
+    app.build()
+
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    assert "IMPL_DEEPDIR" in html
+    assert "IMPL_CONFDIR" not in html
