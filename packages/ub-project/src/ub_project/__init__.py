@@ -36,7 +36,7 @@ from ub_project.variants import (
     read_variants,
 )
 
-__version__ = "1.0.0.dev0"
+__version__ = "1.0.0"
 
 __all__ = [
     "DEFAULT_FILENAME",
