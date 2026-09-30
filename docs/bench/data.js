@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790776210939,
+  "lastUpdate": 1790776818828,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -21600,6 +21600,42 @@ window.BENCHMARK_DATA = {
             "value": 44.434054712000005,
             "unit": "s",
             "extra": "Commit: 288b29067246d98055c0bf08ffe9f93c0aaab151\nBranch: master\nTime: 2026-09-30T15:48:49+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0a7ab9a547f561dbc6af70966710cf5406264837",
+          "message": "🚀 Release ub-project 1.0.0 (#1987)\n\nThe release pull request for `ub-project` 1.0.0, the first release of\nthe shared `ubproject.toml` reader added in #1986. Made with\n`uv run poe bump ub-project --to 1.0.0`: the manifest version,\n`__version__`, and the changelog's `Unreleased` section stamped as 1.0.0\nwith today's date. The summary paragraph under the heading was already\nwritten; one article is corrected.\n\n**The lock** changes one line, the member's own version. `bump`'s relock\nalso re-derived the resolution markers of the excluded\n`py3.11 × sphinx-9` cells (the churn the monthly `uv lock --upgrade`\nreverts, measured on #1986), so that part is not taken; the\none-line lock passes `uv lock --check` on uv 0.12.15 and 0.12.9.\n\n**After the merge**, from master:\n\n```\ngh workflow run release.yaml -f tag=ub-project-v1.0.0     # the rehearsal: plan + build, never publishes\ngit tag ub-project-v1.0.0 && git push origin ub-project-v1.0.0\n```\n\nThe publish job needs two things that are not in this repository: the\npending trusted publisher on PyPI for `ub-project` (owner\n`useblocks`, repository `sphinx-needs`, workflow `release.yaml`,\nenvironment `pypi-ub-project`), and the `pypi-ub-project` GitHub\nenvironment with the `ub-project-v*` tag rule. If the tag is pushed\nbefore they exist, the publish step fails and can be re-run from\nthe same tag once they do; nothing is uploaded until it succeeds.\n\n**Then** the consumer PRs can start: sphinx-test-reports first, then\nsphinx-needs, sphinx-mounts and sphinx-codelinks, one each.",
+          "timestamp": "2026-09-30T15:58:52+02:00",
+          "tree_id": "a21b221b8d3551b2c36fbca8032c60ad3bee5819",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/0a7ab9a547f561dbc6af70966710cf5406264837"
+        },
+        "date": 1790776809713,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1094162129999745,
+            "unit": "s",
+            "extra": "Commit: 0a7ab9a547f561dbc6af70966710cf5406264837\nBranch: master\nTime: 2026-09-30T15:58:52+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 53.82033201399997,
+            "unit": "s",
+            "extra": "Commit: 0a7ab9a547f561dbc6af70966710cf5406264837\nBranch: master\nTime: 2026-09-30T15:58:52+02:00"
           }
         ]
       }
