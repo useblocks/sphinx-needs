@@ -582,6 +582,8 @@ def load_codelinks_table(path: Path) -> dict[str, object] | None:
     :return: The table, or ``None`` when the file has no ``codelinks`` key.
     :raises ub_project.ProjectConfigError: If the file cannot be read, is not UTF-8
         or not valid TOML, or if ``codelinks`` is not a table.
+    :raises RecursionError: For a pathologically nested file, which ``load_toml``
+        does not wrap -- why both callers also catch ``Exception``.
     """
     return select_table(load_toml(path), CODELINKS_TABLE, source=path)
 
@@ -723,10 +725,12 @@ class CodeLinksConfig:
     )
     """Path to a TOML file to load configuration from.
 
-    Defaults to ``ubproject.toml`` next to :file:`conf.py`. A default file that
-    is missing or has no ``[codelinks]`` table is silently ignored; a missing
-    explicitly configured file, or any file that exists but cannot be read or
-    parsed, triggers a ``codelinks.config`` warning.
+    Defaults to ``ubproject.toml`` next to :file:`conf.py`. A file of that name
+    is the shared default whether or not conf.py spells it out: missing, or
+    without a ``[codelinks]`` table, it is silently ignored. A file that exists
+    but cannot be read or parsed warns (``codelinks.config``), as any configured
+    file did at 1.4.0. Any other name is explicit: missing, without the table,
+    or unreadable, it warns.
     """
 
     set_local_url: bool = field(

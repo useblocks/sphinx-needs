@@ -60,7 +60,7 @@ src/sphinx_codelinks/   # Main source code
 tests/                  # Test suite -- `tests/__init__.py` is why this path is NOT in the
 ├── __init__.py         #   root `testpaths` (see the root AGENTS.md)
 ├── conftest.py         # Pytest fixtures and configuration
-├── test_*.py           # 16 test modules
+├── test_*.py           # 17 test modules
 ├── __snapshots__/      # Syrupy snapshot test fixtures
 ├── data/               # Test data and fixtures
 └── doc_test/           # minimal Sphinx projects for the integration tests
@@ -93,9 +93,9 @@ prunes it out again (`Uninstalled 1 package: - libclang==18.1.1`). So the two nu
 appear either side of that sync, and this is the sequence that shows both:
 
 ```bash
-uv run poe test-codelinks                                            # 393 passed
+uv run poe test-codelinks                                            # every test runs, none skipped
 uv sync --frozen                                                     # removes libclang again
-uv run --frozen --no-sync pytest packages/sphinx-codelinks/tests     # 337 passed, 26 skipped
+uv run --frozen --no-sync pytest packages/sphinx-codelinks/tests     # green, the libclang tests skipped
 ```
 
 **Both runs are green, and only the first tested the engine.** The four modules that need
@@ -177,7 +177,7 @@ def form_https_url(
 **No `--` before the pytest arguments.** poe appends trailing words to the task's command
 verbatim and forwards a `--` along with them, and pytest then reads `--snapshot-update` as
 a file path: `poe test-codelinks -- --collect-only -q` collects **0 items**, where
-`poe test-codelinks --collect-only -q` collects 393.
+`poe test-codelinks --collect-only -q` collects the whole suite.
 
 ### Test Structure
 
@@ -323,7 +323,7 @@ The extension connects to these Sphinx events (in execution order):
 
 1. **sphinx-needs Dependency**: The extension requires sphinx-needs and checks for its presence in `setup()`. It adds extra options (`project`, `file`, `directory`, URL fields) and a custom need type (`srctrace`).
 
-2. **TOML Configuration**: Configuration can be loaded from a TOML file specified in `conf.py` via `src_trace_config_from_toml`. The TOML is parsed and values are set on the Sphinx config object, except a key given with `-D` (`src_trace_projects` excepted: Sphinx refuses a whole-dict override).
+2. **TOML Configuration**: Configuration can be loaded from a TOML file specified in `conf.py` via `src_trace_config_from_toml`. The TOML is parsed and values are set on the Sphinx config object, except a key given with `-D` — `src_trace_projects` and `src_trace_outdir` excepted (`NOT_OVERRIDABLE_FROM_D`): Sphinx refuses a `-D` for both yet keeps it in `config.overrides`.
 
 3. **Source Page Generation**: The `generate_code_page()` function yields tuples of `(pagename, context, template)` for each traced source file, allowing Sphinx to generate standalone HTML pages with syntax-highlighted source code and line-number anchors.
 

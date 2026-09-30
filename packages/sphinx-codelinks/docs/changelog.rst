@@ -151,11 +151,15 @@ New and Improved
 
   A default file that does not exist or contains no ``[codelinks]`` table is silently
   ignored, so existing projects without ``ubproject.toml`` keep building without new
-  warnings. A file that exists but cannot be read or parsed -- invalid TOML, not UTF-8,
-  a directory, or a ``codelinks`` key that is not a table -- triggers a
-  ``codelinks.config`` warning, the default file included, as an explicitly configured
-  file always did. The documentation project itself now stores its codelinks
-  configuration in ``ubproject.toml``.
+  warnings. A file named ``ubproject.toml`` is the default whether the name is left at
+  its default or written in :file:`conf.py`, so a 1.4.0 project that wrote
+  ``src_trace_config_from_toml = "ubproject.toml"`` no longer gets a warning for a
+  missing file or a missing table. A file that exists but cannot be read or parsed --
+  invalid TOML, not UTF-8, a directory, a ``codelinks`` key that is not a table -- warns
+  (``codelinks.config``) whatever its name, as any configured file did at 1.4.0; any
+  other file name is explicit and also warns when missing or without the table. The
+  documentation project itself now stores its codelinks configuration in
+  ``ubproject.toml``.
 
 - 🐛 A value given on the command line with ``-D`` now overrides the TOML file.
 
@@ -166,8 +170,10 @@ New and Improved
   leaves the TOML value alone. ``src_trace_projects`` always comes from :file:`conf.py`
   or the TOML: Sphinx refuses to override a dictionary setting with ``-D``, and the
   dotted ``-D src_trace_projects.<name>=...`` form is not supported. Sphinx refuses
-  ``-D src_trace_outdir`` too, whose default is a path; the extension does not use that
-  value.
+  ``-D src_trace_outdir`` too, whose default is a path, and the TOML value then stands.
+  A ``-D`` value Sphinx cannot convert (``-D src_trace_set_local_url=yes`` on
+  Sphinx 8.2 or newer) is now reported by Sphinx instead of being silently replaced by
+  the TOML, as it already was without a TOML.
 
 - 👌 ``ubproject.toml`` is read through `ub-project <https://pypi.org/project/ub-project/>`__,
   the shared reader of the Sphinx-Needs family, which is now a dependency
