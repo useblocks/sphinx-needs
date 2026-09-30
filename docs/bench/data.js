@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790714209368,
+  "lastUpdate": 1790773955172,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -21528,6 +21528,42 @@ window.BENCHMARK_DATA = {
             "value": 60.021439033,
             "unit": "s",
             "extra": "Commit: f95e37bcbe4bc561e729bddad8aa5f601ea69ede\nBranch: master\nTime: 2026-09-29T22:35:15+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "de2a0b43c18ae4d2961dca06221bd63a5d78f4b6",
+          "message": "♻️ Rename sphinx-test-reports' import package to `sphinx_test_reports`, keeping four warning aliases until 4.0 (#1985)\n\nsphinx-test-reports' import package moves from\n`sphinxcontrib.test_reports` to `sphinx_test_reports`. It is still one\ndistribution, so\nnothing is split here. The split into the Sphinx extension and a\nSphinx-free core is the next step, and it is still waiting on the core's\nname. Nothing is released between the two: 3.0.0 ships both.\n\n**What moves.** `src/sphinxcontrib/test_reports/` becomes\n`src/sphinx_test_reports/`, and every import and import-path string\nmoves with it.\nThree kinds of string stay as they are, because they are data rather\nthan import paths:\n- the JUnit XML fixtures;\n- the docs' `classname` examples that match that data;\n- the plugin's reserved `user_properties` names\n`sphinxcontrib.test_reports:file` and `:line`.\n\nThe package gains `__version__`, so `check_workspace.py` check (5) and\n`poe bump` now cover it.\n\n**What is aliased, and how it warns.** The old name keeps four surfaces\nworking until 4.0.\n- **The extension.** `extensions = [\"sphinxcontrib.test_reports\"]` emits\na Sphinx warning of type `test_reports.deprecated`. Sphinx 8 and\nlater tag the line `[test_reports.deprecated]`; 7.4 prints it untagged.\n- It then loads the real extension through `app.setup_extension`, so\nlisting both names registers it once.\n- A `-W` build fails on the warning, and `suppress_warnings =\n[\"test_reports.deprecated\"]` silences it.\n- **`pytest_plugin`, `junitparser` and `jsonparser`.** Under the old\nname these are the real module objects, so classes are identical and\n  `mock.patch` through the old path works.\n- Each raises one `FutureWarning` per process, which under pytest-xdist\nmeans once per worker too. A `DeprecationWarning` would be hidden\nby Python's default filters. For an `import` statement the warning\npoints at the user's line.\n- The warning that `-p`, `addopts` or `PYTEST_PLUGINS` prints comes\nbefore pytest installs any filter, so only Python's own options\nreach it. `PYTHONWARNINGS=ignore::FutureWarning` reaches pytest-xdist's\nworkers too; `python -W ignore::FutureWarning -m pytest`\nreaches the main process only. Pytest's own filters silence the other\ncases.\n- Under pytest's `filterwarnings = error` the `FutureWarning` is an\nerror like any other deprecation. A `conftest.py` whose\n`pytest_plugins` names the old plugin, or a test module importing an old\nparser name, stops the run.\n- The old\n`ignore::sphinxcontrib.test_reports.pytest_plugin.TestReportsConfigWarning`\nfilter still matches, but it has to move with the\n`-p` line. Under `filterwarnings = error`, a new `-p` together with the\nold filter is a usage error that names the move.\n\n**What breaks now.**\n- Every other `sphinxcontrib.test_reports.<module>` import fails as a\nplain `ImportError` (`ModuleNotFoundError` for an `import`\nstatement), with no warning. `projectconfig`, `identity`, `results`, the\ndirectives and the rest were never documented as an API.\n- Naming the plugin under both names, in `-p`, `addopts` or\n`pytest_plugins`, stops pytest with \"Plugin already registered under a\n  different name\".\n\n**The 4.0 plan.** The four aliases become errors that give the same fix,\nand a later major removes them.\n\n**Build.** This member moves to hatchling, the only member that does.\nflit ships one top-level package and would drop the aliases without\na word. The sdist keeps its shape: the two module trees plus\n`pyproject.toml`, `README.rst`, `LICENSE`, `PKG-INFO` and hatchling's\ncopy of\nthe repository `.gitignore`. The wheel's METADATA moves to\n`Metadata-Version: 2.5`. PyPI already hosts 2.5 wheels, and `uv publish\n--dry-run` (the release's uploader) reads and accepts this one.\n`sphinxcontrib` stays a PEP 420 namespace, as in 2.0.0: measured with\nSphinx's six `sphinxcontrib-*` dependencies and\n`sphinxcontrib-plantuml` installed beside this wheel, both in one\nsite-packages and split across two path entries, every package imports\nand a build using `sphinxcontrib.plantuml` together with the old\nextension name renders.\n\n**How it is proven.**\n- `tests/test_aliases.py` covers:\n- identity, the warning's category and where it is attributed,\n`__spec__`, and patching;\n  - every unaliased module failing plainly;\n  - default filters, in a subprocess;\n  - importing without Sphinx;\n- `-p`, both names, and the old filter before and after the move,\nthrough pytester;\n- old-name builds: warned, failing under `-W`, suppressed, and with both\nnames listed;\n  - the deprecation coming before a toolchain error.\n- The `toolchain-free` job builds the sdist and the wheel the way\n`release.yaml` does. uv builds the wheel from the sdist, so the sdist's\n  include list bounds what ships. The job then checks both artefacts:\n  - every tracked `src/` file is in each;\n  - outside `src/`, the sdist holds exactly its metadata files;\n- the wheel's top level is the two packages and its dist-info, with\nnothing under `sphinxcontrib/` but `test_reports/` (so no\n    `sphinxcontrib/__init__.py`), and exactly one licence file.\n\nIts modules then run against that wheel. Before this, every job\ninstalled the member editable, which reads `src/` and would stay green\n  over a broken wheel.\n- Every new fence was shown red under a deliberate mutation. Two review\nrounds added their own mutations, and a local reproduction of the\n  release's build job ran the suite against the installed wheel.\n- `import-check-reports` gains `--extra pytest`. It was already red on\nmaster, because `pytest_plugin` imports `pluggy`.",
+          "timestamp": "2026-09-30T15:11:11+02:00",
+          "tree_id": "3277c090a7293fbe4c8a6224cfd760f15901848a",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/de2a0b43c18ae4d2961dca06221bd63a5d78f4b6"
+        },
+        "date": 1790773944422,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.28450661400000143,
+            "unit": "s",
+            "extra": "Commit: de2a0b43c18ae4d2961dca06221bd63a5d78f4b6\nBranch: master\nTime: 2026-09-30T15:11:11+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 51.334695507999996,
+            "unit": "s",
+            "extra": "Commit: de2a0b43c18ae4d2961dca06221bd63a5d78f4b6\nBranch: master\nTime: 2026-09-30T15:11:11+02:00"
           }
         ]
       }
