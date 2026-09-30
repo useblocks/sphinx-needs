@@ -335,8 +335,9 @@ sphinx-needs' policy: `-D`-overridden keys are removed from both locations befor
 each finding is mapped to a `needs.*` warning subtype (the legacy location to a `-v` line),
 a `ProjectConfigError` is re-raised as `NeedsConfigException`, and the declared keys are
 written to the two confvals one by one (the file through `_abs_path`), so that
-`resolve_variant_data_config` (priority 11) still merges them with `conf.py` values per key,
-with sphinx-needs' own `variant_data.py`.
+`resolve_variant_data_config` (priority 11) still merges them with `conf.py` values per key.
+That merge is ub-project's too (`resolve_variant_data`, with `""` mapped to no file and the same
+re-raise): `variant_data.py` keeps only the `var` proxy, the `<{ var.* }>` lookup and its error.
 
 #### Environment Setup (`env-before-read-docs`)
 
