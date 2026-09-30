@@ -3,8 +3,19 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:1.1.0`:
+
+1.1.0
+-----
+
+:Released: 2026-09-30
+
+One addition, for the consumer that is next in line. sphinx-needs is about to read its
+variant data through this package, and a sphinx-needs project may keep its configuration
+under a prefix (``needs_from_toml_table``); such a project now has a place for
+``[variants]`` too. ubCode is unaffected -- it has no prefix -- and the conformance corpus
+gains three cases (57 to 60), all Python-only, so a vendored copy is due a refresh but
+its runner skips them.
 
 - **``[variants]`` under a consumer's prefix.** ``read_variants`` takes
   ``variants_table``, the path of ``[variants]`` as ``needs_table`` is the path of

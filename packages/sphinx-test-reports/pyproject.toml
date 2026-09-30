@@ -26,7 +26,7 @@ keywords = ["sphinx", "documentation", "test-reports"]
 # and publishes; the gap shows up only as an install failure for a user on an interpreter
 # inside it. This package declared a bare `>=3.11` before the import.
 requires-python = ">=3.11,<4"
-dependencies = ["lxml", "ub-project>=1.0.0,<2"]
+dependencies = ["lxml", "ub-project>=1.1.0,<2"]
 
 [project.optional-dependencies]
 # The Sphinx extension. The `test-reports` command and the pytest plugin run
