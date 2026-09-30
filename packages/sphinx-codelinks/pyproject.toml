@@ -28,6 +28,7 @@ dependencies = [
   # so the floor is the only statement of what was actually tested, and the cap is what
   # stops a future major being co-installed with a wheel written against this one.
   "sphinx-needs>=8.5.0,<9",
+  "ub-project>=1.1.0,<2",
   "jinja2",
   "pygments",
   "docutils>=0.21",             # the `typing` group's series

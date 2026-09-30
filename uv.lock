@@ -2750,6 +2750,7 @@ dependencies = [
     { name = "tree-sitter-rust" },
     { name = "tree-sitter-yaml" },
     { name = "typer" },
+    { name = "ub-project" },
 ]
 
 [package.optional-dependencies]
@@ -2794,6 +2795,7 @@ requires-dist = [
     { name = "tree-sitter-rust", specifier = ">=0.23.0" },
     { name = "tree-sitter-yaml", specifier = ">=0.7.1" },
     { name = "typer", specifier = ">=0.16.0" },
+    { name = "ub-project", editable = "packages/ub-project" },
 ]
 provides-extras = ["libclang", "docs"]
 
