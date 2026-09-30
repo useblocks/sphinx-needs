@@ -28,7 +28,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "ubproject_reading_conformanc
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 57
+EXPECTED_CASE_COUNT = 60
 
 #: The placeholder a case's ``toml`` uses for the absolute path of its own directory.
 CASE_DIR = "{case_dir}"
@@ -128,14 +128,17 @@ def test_case(case: dict[str, Any], tmp_path: Path) -> None:
     case_dir = tmp_path
     toml_path = _write_case(case, case_dir)
     expect = case["expect"]
-    needs_table = case.get("needs_table", "needs")
+    tables = {
+        "needs_table": case.get("needs_table", "needs"),
+        "variants_table": case.get("variants_table", "variants"),
+    }
 
     if expect.get("error", False):
         with pytest.raises(ProjectConfigError):
-            read_variants(load_toml(toml_path), toml_path, needs_table=needs_table)
+            read_variants(load_toml(toml_path), toml_path, **tables)
         return
 
-    result = read_variants(load_toml(toml_path), toml_path, needs_table=needs_table)
+    result = read_variants(load_toml(toml_path), toml_path, **tables)
     assert result.data == expect["variant_data"]
     if "variant_data_file" in expect:
         expected_file = case_dir.joinpath(*expect["variant_data_file"].split("/"))
