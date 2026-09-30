@@ -1,0 +1,45 @@
+[project]
+name = "ubproject"
+version = "1.0.0"
+description = "The shared reader for ubproject.toml and its variant data, for the sphinx-needs family and ubCode"
+authors = [{ name = "team useblocks", email = "info@useblocks.com" }]
+license = { file = "LICENSE" }
+readme = "README.rst"
+requires-python = ">=3.11,<4"
+# EMPTY, and that is the package's whole contract with its consumers: `tomllib` and `json`
+# are the standard library, and a dependency here -- Sphinx above all -- would reach every
+# tool that reads the file, including the ones that run with no documentation toolchain.
+# `tests/test_imports.py` fences the import graph, and the `toolchain-free` CI job runs the
+# suite in an environment with no Sphinx in it
+dependencies = []
+keywords = ["ubproject", "sphinx-needs", "ubcode", "configuration", "variants"]
+# NOT `Framework :: Sphinx`: nothing here depends on Sphinx
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Documentation",
+  "Topic :: Software Development :: Documentation",
+  "Typing :: Typed",
+]
+
+[project.urls]
+Repository = "https://github.com/useblocks/sphinx-needs"
+Issues = "https://github.com/useblocks/sphinx-needs/issues"
+Changelog = "https://github.com/useblocks/sphinx-needs/blob/master/packages/ubproject/docs/changelog.rst"
+
+[build-system]
+requires = ["flit_core >=3.4,<5"]
+build-backend = "flit_core.buildapi"
+
+# Deliberately NO `[tool.flit.sdist]`: the wheel carries the module and its `py.typed`
+# marker and nothing else. Everything else -- ruff, ty, pytest and the dependency groups --
+# is the ROOT's, and `tools/src/sn_tools/check_workspace.py` refuses those tables here.
