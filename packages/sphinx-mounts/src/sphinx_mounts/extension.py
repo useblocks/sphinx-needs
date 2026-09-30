@@ -1414,7 +1414,9 @@ def _resolve_variant_map(
     * **present, with an EMPTY map**: the file is read (findings unreported:
       sphinx-needs reports its own file) only for
       :func:`_guard_mispointed_needs` to decide whether the empty map is a
-      loss. The empty map is the answer unless the guard refuses.
+      loss. The empty map is the answer unless the guard refuses. When
+      sphinx-needs is pointed at this file, the file is read as sphinx-needs
+      read it: without the keys ``-D`` overrode (:func:`_without_overridden`).
 
     **Two anchors, not one.** A relative data file declared in the TOML —
     ``[variants] data_file`` or ``[needs] variant_data_file`` — is joined to
@@ -1454,24 +1456,73 @@ def _resolve_variant_map(
         return None
     if resolved:
         return resolved
-    _guard_mispointed_needs(
-        app, config, spec, gates, toml=_read_toml_variants(spec, present=True)
+    pointer = _needs_toml_pointer(app, config)
+    document = (
+        _without_overridden(spec.document, config)
+        if pointer == spec.toml_path
+        else spec.document
     )
+    toml = _read_toml_variants(spec, present=True, document=document)
+    _guard_mispointed_needs(app, config, spec, gates, toml=toml, pointer=pointer)
     return resolved
 
 
-def _read_toml_variants(spec: VariantSourcesConfig, *, present: bool) -> VariantsResult:
+#: The keys of ``[variants]`` and, in the same order, their legacy ``[needs]``
+#: spellings — which, prefixed with ``needs_``, are the confvals ``-D`` sets.
+_VARIANT_KEY_PAIRS = (("data", "variant_data"), ("data_file", "variant_data_file"))
+
+
+def _without_overridden(
+    document: Mapping[str, Any], config: Config
+) -> Mapping[str, Any]:
+    """*document* without the variant keys ``-D`` overrode, as sphinx-needs reads it.
+
+    This mirrors sphinx-needs' own rule for the file it is pointed at
+    (``_load_variants_from_toml``): a key named in ``config.overrides`` — as the
+    bare ``variant_data_file`` or as the confval ``needs_variant_data_file``,
+    exact names — is removed from BOTH locations, top-level ``[variants]`` and
+    ``[needs]``, before the read, whether or not Sphinx applied the override.
+    It is applied only to the file sphinx-needs is pointed at, because that is
+    the file sphinx-needs removed it from; a file sphinx-needs is not reading
+    keeps every declaration. The document is copied along the path, never
+    modified.
+    """
+    overrides = getattr(config, "overrides", None)
+    overridden = (
+        {str(key) for key in overrides} if isinstance(overrides, dict) else set()
+    )
+    result = document
+    for key, legacy_key in _VARIANT_KEY_PAIRS:
+        if legacy_key not in overridden and f"needs_{legacy_key}" not in overridden:
+            continue
+        for table, name in (("variants", key), ("needs", legacy_key)):
+            current = result.get(table)
+            if isinstance(current, Mapping) and name in current:
+                stripped = {k: v for k, v in current.items() if k != name}
+                result = {**result, table: stripped}
+    return result
+
+
+def _read_toml_variants(
+    spec: VariantSourcesConfig,
+    *,
+    present: bool,
+    document: Mapping[str, Any] | None = None,
+) -> VariantsResult:
     """Read the file's variant data through ``ub_project``, top-level tables.
 
     No ``needs_from_toml_table`` prefix: that is sphinx-needs' option, and
     this extension reads the file whole. Findings are reported only when
     sphinx-needs is absent (*present* false); when it is present they are
-    its to report, for the file it reads.
+    its to report, for the file it reads. *document* replaces the parsed file
+    (the ``-D``-stripped copy, :func:`_without_overridden`).
 
     :raises VariantRuleError: If ``ub_project`` refuses the variant data.
     """
     try:
-        result = read_variants(spec.document, spec.toml_path)
+        result = read_variants(
+            spec.document if document is None else document, spec.toml_path
+        )
     except (ProjectConfigError, ValueError) as exc:
         # ValueError: what `ub_project` lets through unwrapped — a data file
         # holding an integer beyond Python's conversion limit (#1995)
@@ -1525,19 +1576,6 @@ def _needs_table_prefix(config: Config) -> str | None:
     return ".".join(str(segment) for segment in prefix)
 
 
-def _variant_data_overridden(config: Config) -> bool:
-    """Whether ``-D`` set any ``needs_variant_data*`` value.
-
-    ``needs_variant_data_file``, ``needs_variant_data`` and the dotted
-    ``needs_variant_data.<key>`` form all begin with the same string. Read as
-    sphinx-needs reads it: ``config.overrides``, tolerating its absence.
-    """
-    overrides = getattr(config, "overrides", None)
-    if not isinstance(overrides, dict):
-        return False
-    return any(str(key).startswith("needs_variant_data") for key in overrides)
-
-
 def _guard_mispointed_needs(
     app: Sphinx,
     config: Config,
@@ -1545,6 +1583,7 @@ def _guard_mispointed_needs(
     gates: tuple[_MountGate, ...],
     *,
     toml: VariantsResult,
+    pointer: Path | None,
 ) -> None:
     """Refuse a project whose variant data is declared but never read.
 
@@ -1576,15 +1615,16 @@ def _guard_mispointed_needs(
 
     **One cell past the pointer check is still a loss**: sphinx-needs pointed
     at this file, the file declaring ``[variants]`` with a NON-empty map, and
-    sphinx-needs' map empty anyway. A sphinx-needs that reads ``[variants]``
-    either refuses the table or resolves exactly the file's map, so this is
-    reachable only by one that does not read it — every release before 9.0.0,
-    or any release scoped away from the top-level table by
-    ``needs_from_toml_table`` — and it is refused too, unless ``-D`` set a
-    ``needs_variant_data*`` value: sphinx-needs applies ``-D`` before it reads
-    the file and this reader does not, so an overridden map may be
-    legitimately empty where the file's is not. The legacy location needs no
-    such cell: every supported sphinx-needs reads ``[needs]``.
+    sphinx-needs' map empty anyway. *toml* was read as sphinx-needs read the
+    file — a key overridden with ``-D`` removed from both locations, exactly as
+    sphinx-needs removes it — so an override cannot make this cell fire, and
+    cannot hide a ``[variants]`` table an old sphinx-needs never read. A
+    sphinx-needs pointed at this file resolves the file's own map unless it did
+    not READ the table: because it predates 9.0.0, because it abandoned the
+    file on a ``[needs]`` error before reaching ``[variants]``, or because
+    ``needs_from_toml_table`` scopes it to another table. It is refused. The
+    legacy location needs no such cell: every supported sphinx-needs reads
+    ``[needs]``.
 
     It used to ride a *suppressible* ``mounts.variant_rule_unevaluable``
     warning per rule. That contradicts this key's own rule, argued in three
@@ -1598,13 +1638,8 @@ def _guard_mispointed_needs(
     """
     if toml.location is None:
         return
-    pointer = _needs_toml_pointer(app, config)
     if pointer == spec.toml_path:
-        if (
-            toml.location == "variants"
-            and toml.data
-            and not _variant_data_overridden(config)
-        ):
+        if toml.location == "variants" and toml.data:
             raise VariantRuleError(_unread_variants_message(config, spec, gates))
         # Correctly wired, and the data is simply empty. Not this guard's
         # business — the per-rule warn-and-exclude reports it instead.
