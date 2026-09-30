@@ -519,7 +519,9 @@ def load_config_from_toml(app: Sphinx, config: Config) -> None:
         return
     try:
         toml_doc = load_toml(toml_file)
-    except ProjectConfigError as e:
+    except Exception as e:
+        # not only ProjectConfigError: tomllib can also fail with a RecursionError, for
+        # example, which ``load_toml`` does not wrap; either way the file only warns
         log_warning(
             LOGGER,
             f"Error loading 'needs_from_toml' file: {e}",
@@ -663,7 +665,8 @@ def _load_variants_from_toml(
         result = read_variants(
             doc, toml_file, needs_table=needs_table, variants_table=variants_table
         )
-    except ProjectConfigError as error:
+    except (ProjectConfigError, ValueError) as error:
+        # ValueError: a table path ub_project refuses, an empty needs_from_toml_table entry
         raise NeedsConfigException(str(error)) from error
 
     for diagnostic in result.diagnostics:
