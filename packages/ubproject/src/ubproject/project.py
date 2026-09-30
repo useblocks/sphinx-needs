@@ -15,7 +15,6 @@ a logger.
 
 from __future__ import annotations
 
-import json
 import re
 import tomllib
 from collections.abc import Callable, Mapping, Sequence
@@ -45,6 +44,17 @@ _DIST_MARKERS = ("pyproject.toml",)
 
 #: A TOML bare key; any other key is written quoted (:func:`render_path`).
 _BARE_KEY = re.compile(r"[A-Za-z0-9_-]+")
+
+#: The TOML basic-string escapes with a short form; other control characters use ``\\uXXXX``.
+_TOML_ESCAPES = {
+    '"': '\\"',
+    "\\": "\\\\",
+    "\b": "\\b",
+    "\t": "\\t",
+    "\n": "\\n",
+    "\f": "\\f",
+    "\r": "\\r",
+}
 
 #: ``tomllib.TOMLDecodeError`` bound through an annotation, so that the ``except`` clause
 #: below is typed as precisely as everything else in the module.
@@ -156,14 +166,33 @@ def load_toml(path: Path) -> dict[str, object]:
     return data
 
 
+def _basic_string(key: str) -> str:
+    """*key* as a TOML basic string: only ``"``, ``\\`` and control characters escaped.
+
+    Everything else is written as itself -- ``café`` is ``"café"``, not the ``\\u00e9``
+    that ``json.dumps`` would produce -- because that is how the user wrote the key.
+    """
+    out = []
+    for char in key:
+        if char in _TOML_ESCAPES:
+            out.append(_TOML_ESCAPES[char])
+        elif ord(char) < 0x20 or ord(char) == 0x7F:
+            out.append(f"\\u{ord(char):04X}")
+        else:
+            out.append(char)
+    return '"' + "".join(out) + '"'
+
+
 def render_path(segments: Sequence[str]) -> str:
     """Spell a table path the way TOML does: dotted, a segment that is not a bare key quoted.
 
-    ``("tool", "acme.docs", "needs")`` renders as ``tool."acme.docs".needs`` -- joined
-    naively it would read as four segments, and name a table that does not exist.
+    A segment matching ``[A-Za-z0-9_-]+`` is written bare; any other is a TOML basic string
+    (:func:`_basic_string`). ``("tool", "acme.docs", "needs")`` renders as
+    ``tool."acme.docs".needs`` -- joined naively it would read as four segments, and name
+    a table that does not exist.
     """
     return ".".join(
-        segment if _BARE_KEY.fullmatch(segment) else json.dumps(segment)
+        segment if _BARE_KEY.fullmatch(segment) else _basic_string(segment)
         for segment in segments
     )
 

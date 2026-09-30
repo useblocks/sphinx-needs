@@ -71,7 +71,7 @@ class Diagnostic:
     """A non-fatal finding, returned for the consumer to report -- or not.
 
     ``code``, ``path`` and ``message`` are those of ubCode's ``ConfigResolutionDiagnostic``
-    (whose ``code`` carries a ``config.`` prefix), so that the conformance corpus can compare
+    (whose ``code``, where it has one, carries a ``config.`` prefix), so that the conformance corpus can compare
     the two readers' findings by ``code`` and ``path``; ``severity`` is this package's.
     """
 

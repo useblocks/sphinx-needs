@@ -265,8 +265,9 @@ jobs:
           # already carries this release's entry (it is stamped in the release pull request,
           # before the tag), so the link is correct the moment the release is created. The
           # anchor is the `_release:<version>` label the changelog stamps. "Has one" is read
-          # off the tree: `packages/<dist>/.readthedocs.yaml`, or -- for sphinx-needs alone,
-          # whose configuration has to stay at the repository root -- `.readthedocs.yml`.
+          # off the tree -- `packages/<dist>/.readthedocs.yaml` exists -- except for
+          # sphinx-needs, which is matched by NAME: its configuration is the root
+          # `.readthedocs.yml`, which has to stay there, and that file is not consulted.
           # A member with none (ubproject has consumers, not users, and no docs site) gets
           # its changelog FILE at the tag instead, which exists the moment the tag does
           if [ -f "packages/$DIST/.readthedocs.yaml" ] || [ "$DIST" = sphinx-needs ]; then

@@ -22,9 +22,16 @@
 #   - a case carrying `needs_table` is PYTHON-ONLY: it describes a consumer that nests its
 #     `[needs]` table under a prefix, which ubCode cannot express (its `[needs]` is always
 #     top-level). ubCode's runner skips those cases
-#   - diagnostic codes are compared as the BARE subcode below. ubCode's diagnostics carry
-#     them under its `config.` prefix (`config.variant_data_location`); its runner strips
-#     `config.` before comparing
+#   - diagnostic codes are compared as the BARE subcode below. ubCode's diagnostics are to
+#     carry them under its `config.` prefix (`config.variant_data_location`; its
+#     variant-data diagnostics carry no code today); its runner strips `config.` before
+#     comparing
+#   - a diagnostic `path` is dotted, one segment per key: a segment matching
+#     `[A-Za-z0-9_-]+` is a TOML bare key, any other a TOML basic string with TOML's
+#     escapes (`"` and backslash escaped, control characters as `\t`-style or `\uXXXX`,
+#     everything else as itself), so `variants."café"` and not `variants."caf\u00e9"`.
+#     The `path` values below are TOML literal strings ('...'), so each is compared
+#     character for character, its inner double quotes included
 #   - integers are within the signed 64-bit range; beyond it the behaviour is unspecified
 #
 # `packages/ubproject/tests/test_conformance.py` runs every `[[case]]` against the Python
@@ -405,6 +412,22 @@ diagnostics = [
   { code = "variants_unknown_key", path = "variants.future_key" },
   { code = "variants_unknown_key", path = "variants.other" },
   { code = "variant_data_legacy_location", path = "needs.variant_data_file" },
+]
+
+[[case]]
+name = "unknown-keys-are-rendered-as-toml"
+why = "a path segment that is not a bare key is a TOML basic string, written as the user wrote it: dotted and non-ASCII keys"
+toml = '''
+[variants]
+data = {}
+"a.b" = 1
+"café" = 2
+'''
+[case.expect]
+variant_data = {}
+diagnostics = [
+  { code = "variants_unknown_key", path = 'variants."a.b"' },
+  { code = "variants_unknown_key", path = 'variants."café"' },
 ]
 
 [[case]]

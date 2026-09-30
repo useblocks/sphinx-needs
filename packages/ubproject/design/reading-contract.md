@@ -95,7 +95,8 @@ existing behaviour, moved here unchanged.
 2. A segment that is **absent** makes the whole path absent (`None`). A segment that is
    present but **not a table** is an `UbprojectError` naming the dotted path so far — never
    read as absent. A path is spelled as TOML spells it: a segment that is not a bare key
-   is quoted (`tool."acme.docs".needs`), in messages and in diagnostic paths (§7.2).
+   is quoted by the rule in §7.2 (`tool."acme.docs".needs`), in messages and in diagnostic
+   paths.
    Enforced by: `…::test_an_absent_table_is_none`,
    `…::test_a_segment_that_is_not_a_table_is_an_error`,
    `…::test_the_last_segment_not_a_table_is_an_error`; corpus:
@@ -194,9 +195,10 @@ edition = "pro"
    `code`, `path` and `message` are those of ubCode's `ConfigResolutionDiagnostic`;
    `severity` is this package's. Hard failures are never diagnostics (§1.4).
 2. The codes are fixed, and they are the **bare subcodes**. ubCode is to carry them under
-   its own `config.` prefix (`config.variant_data_location`), by its convention for every
-   configuration diagnostic; the corpus compares the bare subcode, and ubCode's runner
-   strips `config.` before comparing.
+   its own `config.` prefix (`config.variant_data_location`), by its convention for
+   fine-grained configuration diagnostics (`code` is optional there, and its variant-data
+   diagnostics carry none today); the corpus compares the bare subcode, and ubCode's
+   runner strips `config.` before comparing.
 
    | code | severity | `path` | when |
    | --- | --- | --- | --- |
@@ -207,9 +209,18 @@ edition = "pro"
    `variant_data_legacy_location` is **informational and takes no side**: sphinx-needs
    will warn on it to move its users, ubCode will not because it supports several
    sphinx-needs versions at once. A path under a prefix carries the prefix
-   (`tool.acme.needs.variant_data`), and a segment that is not a TOML bare key is quoted
-   (`tool."acme.docs".needs.variant_data`, `variants."a.b"`).
-   Enforced by: `tests/test_variants.py::TestDiagnostics` (codes, paths, severities);
+   (`tool.acme.needs.variant_data`).
+
+   **Path spelling, for every reader.** A `path` is dotted, one segment per key. A segment
+   matching `[A-Za-z0-9_-]+` is written as a TOML bare key; any other is written as a TOML
+   basic string with TOML's escapes — `"` and `\` backslash-escaped, control characters as
+   `\b \t \n \f \r` or `\uXXXX` — and every other character as itself: `variants."a.b"`,
+   `variants."café"`, `tool."acme.docs".needs.variant_data`. A rendered segment is TOML
+   that names the same key again. ubCode is to render the same.
+   Enforced by: `tests/test_variants.py::TestDiagnostics` (codes, paths, severities;
+   `test_a_non_bare_key_is_a_toml_basic_string_in_the_path` for the examples,
+   `test_a_rendered_path_reads_back_as_the_same_key` for the escapes); corpus:
+   `unknown-keys-are-rendered-as-toml`;
    corpus: every non-refusal case compares codes and paths.
 3. Order is stable — unknown keys sorted, then location findings in `variant_data`,
    `variant_data_file` order — but a second reader need not reproduce it: the corpus

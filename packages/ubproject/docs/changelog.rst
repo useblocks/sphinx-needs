@@ -27,7 +27,8 @@ is published.
 - **One copy of the variant-data merge.** ``validate_variant_data``,
   ``load_variant_data_file``, ``deep_merge`` and ``resolve_variant_data``, to replace the
   copies in sphinx-needs and sphinx-mounts once they adopt it. ``resolve_variant_data`` always returns a new
-  mapping, and every error names the dotted path and the rule it broke.
+  mapping; every value error names the dotted path and every file error names the file,
+  each with the rule it broke.
 - **Standard library only.** No Sphinx, no docutils and no sibling distribution, so tools
   that run without the documentation toolchain can use it.
 - **A conformance corpus**, ``tests/fixtures/ubproject_reading_conformance.toml``: the

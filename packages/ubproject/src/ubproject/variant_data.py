@@ -2,7 +2,7 @@
 
 The one copy of these four functions for the sphinx-needs family, to replace the copies
 sphinx-needs and sphinx-mounts carry once they adopt it (mounts' copy exists so that it
-never depends on sphinx-needs). Measured, the two copies differ in five places, and this
+never depends on sphinx-needs). Measured, the two copies differ in six places, and this
 one takes a side on each:
 
 * :func:`resolve_variant_data` always returns a FRESH merged mapping -- never one of its
@@ -17,7 +17,9 @@ one takes a side on each:
   consumers do, so a consumer maps ``""`` to ``None`` before calling this);
 * :func:`deep_merge` returns plain ``dict`` s at every level it builds, where both copies
   returned the input's own mapping type (``.copy()``) -- unobservable through TOML or JSON,
-  which only produce plain dicts.
+  which only produce plain dicts;
+* :func:`load_variant_data_file` takes a ``str`` path as well as a ``Path`` (sphinx-needs';
+  mounts' copy refused a ``str`` with ``AttributeError``).
 """
 
 from __future__ import annotations

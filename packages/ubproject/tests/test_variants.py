@@ -8,6 +8,7 @@ Python-side types -- and name each precedence state so that a regression reads a
 from __future__ import annotations
 
 import json
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -181,6 +182,28 @@ class TestDiagnostics:
             (VARIANTS_UNKNOWN_KEY, "variants.future"),
             (VARIANT_DATA_LEGACY_LOCATION, "needs.variant_data"),
         ]
+
+    def test_a_non_bare_key_is_a_toml_basic_string_in_the_path(
+        self, tmp_path: Path
+    ) -> None:
+        """The contract's own example, §7.2: `variants."a.b"`, and a non-ASCII key as written."""
+        result = _read(tmp_path, '[variants]\ndata = {}\n"a.b" = 1\n"café" = 2\n')
+        assert _codes(result.diagnostics) == [
+            (VARIANTS_UNKNOWN_KEY, 'variants."a.b"'),
+            (VARIANTS_UNKNOWN_KEY, 'variants."café"'),
+        ]
+
+    @pytest.mark.parametrize(
+        "key", ['a"b', "a\\b", "tab\there", "bell\x07", "é.ü", "plain"]
+    )
+    def test_a_rendered_path_reads_back_as_the_same_key(
+        self, tmp_path: Path, key: str
+    ) -> None:
+        """Whatever the key, its rendered segment is TOML that names that key again."""
+        result = read_variants({"variants": {key: 1}}, tmp_path / "ubproject.toml")
+        (diagnostic,) = result.diagnostics
+        segment = diagnostic.path.removeprefix("variants.")
+        assert tomllib.loads(f"{segment} = 1") == {key: 1}
 
     def test_the_diagnostic_is_a_value(self) -> None:
         one = Diagnostic("c", "p", "m", "info")

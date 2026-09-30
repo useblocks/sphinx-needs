@@ -28,7 +28,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "ubproject_reading_conformanc
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 56
+EXPECTED_CASE_COUNT = 57
 
 #: The placeholder a case's ``toml`` uses for the absolute path of its own directory.
 CASE_DIR = "{case_dir}"
