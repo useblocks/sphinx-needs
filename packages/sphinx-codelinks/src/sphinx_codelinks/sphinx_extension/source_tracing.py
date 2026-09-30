@@ -30,8 +30,15 @@ from sphinx_codelinks.sphinx_extension.directives.src_trace import (
 )
 from sphinx_codelinks.sphinx_extension.html_wrapper import html_wrapper
 from sphinx_needs.api import add_field, add_need_type
+from ub_project import ProjectConfigError
 
 logger = logging.getLogger(__name__)
+
+#: The ``[codelinks]`` keys a ``-D`` never suppresses. Sphinx refuses a ``-D`` for
+#: these two -- ``projects`` is a dict, ``outdir`` has a ``Path`` default ("unsupported
+#: type") -- yet keeps the key in ``config.overrides``, so skipping the TOML value would
+#: honour an override that was never applied.
+NOT_OVERRIDABLE_FROM_D = ("projects", "outdir")
 
 
 def _register_sn_field(name: str, description: str) -> None:
@@ -177,12 +184,20 @@ def load_config_from_toml(app: Sphinx, config: _SphinxConfig) -> None:
         return
     try:
         toml_data = load_codelinks_table(toml_file)
-    except Exception as error:
-        # Not only ub-project's ProjectConfigError, which names the file itself:
-        # the TOML parser can also fail with a RecursionError, which ``load_toml`` does not
-        # wrap. Either way the file only warns -- the default one too.
+    except ProjectConfigError as error:
+        # ub-project's message names the file itself
         logger.warning(
             f"Failed to load source tracing configuration: {error}",
+            type="codelinks",
+            subtype="config",
+        )
+        return
+    except Exception as error:
+        # the TOML parser can also fail with a RecursionError, which ``load_toml`` does
+        # not wrap and whose text names no file. Either way the file only warns -- the
+        # default one too.
+        logger.warning(
+            f"Failed to load source tracing configuration from {toml_file}: {error}",
             type="codelinks",
             subtype="config",
         )
@@ -216,10 +231,7 @@ def set_config_to_sphinx(
     for key, value in src_trace_config.items():
         if key not in allowed_keys:
             continue
-        # ``projects`` is never skipped: Sphinx refuses to override a dict confval
-        # whole, but keeps the refused ``-D src_trace_projects=...`` in
-        # ``config.overrides`` -- skipping would drop every TOML project.
-        if key != "projects" and f"src_trace_{key}" in overridden:
+        if key not in NOT_OVERRIDABLE_FROM_D and f"src_trace_{key}" in overridden:
             continue
         if key == "projects":
             src_trace_projects: dict[str, CodeLinksProjectConfigType] = cast(
