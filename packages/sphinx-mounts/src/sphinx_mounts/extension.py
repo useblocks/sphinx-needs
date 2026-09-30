@@ -37,7 +37,7 @@ from sphinx_mounts.config import (
     normalise_condition,
     parse_mounts,
 )
-from sphinx_mounts.logging import MOUNT_GATED_CODE, log_warning
+from sphinx_mounts.logging import MOUNT_GATED_CODE, WarningTopics, log_warning
 from sphinx_mounts.mounter import (
     DocRoot,
     _build_walker,
@@ -49,11 +49,17 @@ from sphinx_mounts.mounter import (
 )
 from sphinx_mounts.variants import (
     VariantConditionError,
-    VariantDataError,
     VariantEvalError,
     interpret,
-    resolve_variant_data,
     validate,
+)
+from ub_project import (
+    VARIANT_DATA_LOCATION,
+    VARIANTS_UNKNOWN_KEY,
+    ProjectConfigError,
+    VariantsResult,
+    read_variants,
+    resolve_variant_data,
 )
 
 logger = logging.getLogger(__name__)
@@ -962,12 +968,13 @@ def _on_load_variants(app: Sphinx, config: Config) -> None:
     variant_data = _resolve_variant_map(app, config, spec, gates)
     if variant_data is None:
         # DEFENSIVE, and known to be so. `_resolve_variant_map` returns None
-        # only when sphinx-needs is PRESENT and this reader's own
-        # `resolve_variant_data` raises — and the two validators are deliberate
-        # mirrors, so on every supported sphinx-needs the identical failure is
-        # raised first, at its own priority 10, and the build never gets here.
+        # only when sphinx-needs is PRESENT and resolving ITS confvals raises
+        # — and sphinx-needs validates the same values (from 9.0.0 with the
+        # same `ub_project` functions, before that with a deliberate mirror),
+        # so on every supported sphinx-needs the identical failure is raised
+        # first, at its own priority 10 or 11, and the build never gets here.
         # Four constructions were tried against sphinx-needs 8.3.0 and all four
-        # aborted earlier. It is kept because the mirroring is a property of
+        # aborted earlier. It is kept because that agreement is a property of
         # two projects on independent release cadences, not an invariant this
         # one can enforce, and because what it guards is a gating key: the arm
         # that stops existing is the arm that publishes.
@@ -1364,6 +1371,16 @@ def _anchor_at_confdir(raw: Any, confdir: Path) -> Path:
     return (confdir / candidate).resolve()
 
 
+#: How each ``ub_project`` finding is reported when this extension is the only
+#: reader of the file (sphinx-needs absent). A code missing here — the legacy
+#: location's, and any a newer ``ub_project`` adds — goes to ``-v`` output: a
+#: finding this version cannot know about must not fail a ``-W`` build.
+_VARIANT_DIAGNOSTIC_TOPICS: dict[str, WarningTopics] = {
+    VARIANT_DATA_LOCATION: "variant_data_location",
+    VARIANTS_UNKNOWN_KEY: "unknown_key",
+}
+
+
 def _resolve_variant_map(
     app: Sphinx,
     config: Config,
@@ -1372,60 +1389,115 @@ def _resolve_variant_map(
 ) -> dict[str, Any] | None:
     """Compute the merged variant map, or ``None`` to stand down.
 
-    The read rule, in one paragraph: take ``needs_variant_data`` and
-    ``needs_variant_data_file`` off the config; when the attributes are
-    **absent** — sphinx-needs is not installed — fall back to the ``[needs]``
-    table of the same TOML file this extension already reads. Then
-    *unconditionally* deep-merge the file under the inline values. On a
-    sphinx-needs that already resolved, the re-merge is a proven no-op; on
-    8.3.1 and earlier it supplies the merge sphinx-needs has not performed yet;
-    with sphinx-needs absent it is the whole computation. So there is no
-    version gate, no import and no feature detection, and the answer always
-    agrees with whatever sphinx-needs computed.
+    The read rule: whenever sphinx-needs is installed, its map is the answer,
+    so that the two tools cannot disagree about which documents exist; the
+    file is read here only when nothing else computes the map, or to check
+    that an empty map from sphinx-needs is not a loss. Three routes, told
+    apart by the config alone — no import of sphinx-needs, no version gate:
 
-    **Two anchors, not one.** A relative ``variant_data_file`` declared in the
-    TOML is absolutised against the TOML's own directory (sphinx-needs' own
-    ``toml_convert`` does the same); one declared in ``conf.py`` or with ``-D``
-    is absolutised against ``confdir``. Reading only one anchor means reading
-    the wrong file for one of the two routes.
+    * **sphinx-needs absent** (its confvals are not registered — not
+      installed, or not in ``extensions``): ``ub_project.read_variants``
+      reads ``[variants]``, or the legacy ``[needs] variant_data*``, from the
+      top level of the file this extension already reads, and its findings
+      are reported here, since nothing else will. Its map is already merged.
+    * **present, with a non-empty map**: ``needs_variant_data`` deep-merged
+      over ``needs_variant_data_file``, exactly as before ``[variants]``
+      existed, and the TOML's variant data is not read. The merge is
+      ``ub_project``'s ``resolve_variant_data``, and it is idempotent
+      (``packages/ub-project/tests/test_variant_data.py``:
+      ``TestDeepMerge::test_is_idempotent`` and
+      ``TestResolve::test_is_idempotent_over_an_already_merged_inline_map``):
+      on a sphinx-needs that already resolved (from the release after 8.3.1)
+      re-merging its map changes nothing, and on 8.3.1 and earlier, where
+      ``needs_variant_data`` still holds the inline half only, it supplies
+      the merge sphinx-needs has not performed yet.
+    * **present, with an EMPTY map**: the file is read (findings unreported:
+      sphinx-needs reports its own file) only for
+      :func:`_guard_mispointed_needs` to decide whether the empty map is a
+      loss. The empty map is the answer unless the guard refuses.
 
-    Returns ``None`` when the data is unreadable **and sphinx-needs is
-    present**: it will raise its own ``NeedsConfigException`` for the same
-    file, so reporting here would be a second message for one problem. The
-    build stops on its error, not on a fold this reader skipped.
+    **Two anchors, not one.** A relative data file declared in the TOML —
+    ``[variants] data_file`` or ``[needs] variant_data_file`` — is joined to
+    the TOML's own directory by ``ub_project`` (sphinx-needs anchors its TOML
+    values there too); a ``needs_variant_data_file`` declared in ``conf.py``
+    or with ``-D`` is absolutised against ``confdir``
+    (:func:`_anchor_data_file`). Reading only one anchor means reading the
+    wrong file for one of the two routes.
+
+    Returns ``None`` when sphinx-needs is present and its confvals cannot be
+    resolved: it raises its own ``NeedsConfigException`` for the same values,
+    so reporting here would be a second message for one problem.
+
+    :raises VariantRuleError: If this extension reads the file and cannot
+        read its variant data, or if the guard refuses.
     """
     present = hasattr(config, "needs_variant_data") or hasattr(
         config, "needs_variant_data_file"
     )
-    if present:
-        inline = getattr(config, "needs_variant_data", None)
-        raw_file = getattr(config, "needs_variant_data_file", None)
-        file_ref = _anchor_data_file(raw_file, Path(app.confdir))
-    else:
-        inline = spec.variant_data
-        file_ref = spec.variant_data_file
+    if not present:
+        return _read_toml_variants(spec, present=False).data
+    inline = getattr(config, "needs_variant_data", None)
+    raw_file = getattr(config, "needs_variant_data_file", None)
     try:
-        resolved = resolve_variant_data(inline, file_ref)
-    except VariantDataError as exc:
-        if present:
-            logger.info(
-                "sphinx-mounts: the variant data could not be read (%s); "
-                "sphinx-needs reports this itself, so the `variant_sources` "
-                "fold stands down rather than reporting it twice.",
-                exc,
-            )
-            return None
+        resolved = resolve_variant_data(
+            inline, _anchor_data_file(raw_file, Path(app.confdir))
+        )
+    except (ProjectConfigError, ValueError) as exc:
+        # ValueError: what `ub_project` lets through unwrapped — a data file
+        # holding an integer beyond Python's conversion limit (#1995)
+        logger.info(
+            "sphinx-mounts: the variant data could not be read (%s); "
+            "sphinx-needs reports this itself, so the `variant_sources` "
+            "fold stands down rather than reporting it twice.",
+            exc,
+        )
+        return None
+    if resolved:
+        return resolved
+    _guard_mispointed_needs(
+        app, config, spec, gates, toml=_read_toml_variants(spec, present=True)
+    )
+    return resolved
+
+
+def _read_toml_variants(spec: VariantSourcesConfig, *, present: bool) -> VariantsResult:
+    """Read the file's variant data through ``ub_project``, top-level tables.
+
+    No ``needs_from_toml_table`` prefix: that is sphinx-needs' option, and
+    this extension reads the file whole. Findings are reported only when
+    sphinx-needs is absent (*present* false); when it is present they are
+    its to report, for the file it reads.
+
+    :raises VariantRuleError: If ``ub_project`` refuses the variant data.
+    """
+    try:
+        result = read_variants(spec.document, spec.toml_path)
+    except (ProjectConfigError, ValueError) as exc:
+        # ValueError: what `ub_project` lets through unwrapped — a data file
+        # holding an integer beyond Python's conversion limit (#1995)
+        who = (
+            "sphinx-needs resolved no variant data from this file — it is not "
+            "pointed at it, or it does not read this table (a sphinx-needs "
+            "before 9.0.0 does not read `[variants]`) — so nothing else will "
+            "stop the build for this"
+            if present
+            else "sphinx-needs is not installed, so nothing else will report this"
+        )
         msg = (
             f"sphinx-mounts: the variant data could not be read, so there is "
             f"no defensible answer to which files this variant contains: "
-            f"{exc}. sphinx-needs is not installed, so nothing else will "
-            f"report this. [mounts.variant_data_unreadable]"
+            f"{exc}. {who}. [mounts.variant_data_unreadable]"
         )
         raise VariantRuleError(msg) from exc
-    _guard_mispointed_needs(
-        app, config, spec, gates, present=present, resolved=resolved
-    )
-    return resolved
+    if not present:
+        for diagnostic in result.diagnostics:
+            message = f"sphinx-mounts: {diagnostic.message}"
+            topic = _VARIANT_DIAGNOSTIC_TOPICS.get(diagnostic.code)
+            if topic is None:
+                logger.verbose(message)
+            else:
+                log_warning(logger, message, topic)
+    return result
 
 
 def _needs_toml_pointer(app: Sphinx, config: Config) -> Path | None:
@@ -1443,14 +1515,36 @@ def _needs_toml_pointer(app: Sphinx, config: Config) -> Path | None:
     return (Path(app.confdir) / candidate).resolve()
 
 
+def _needs_table_prefix(config: Config) -> str | None:
+    """sphinx-needs' ``needs_from_toml_table``, dotted, or ``None`` when unset."""
+    prefix = getattr(config, "needs_from_toml_table", None)
+    if not prefix:
+        return None
+    if isinstance(prefix, str):
+        return prefix
+    return ".".join(str(segment) for segment in prefix)
+
+
+def _variant_data_overridden(config: Config) -> bool:
+    """Whether ``-D`` set any ``needs_variant_data*`` value.
+
+    ``needs_variant_data_file``, ``needs_variant_data`` and the dotted
+    ``needs_variant_data.<key>`` form all begin with the same string. Read as
+    sphinx-needs reads it: ``config.overrides``, tolerating its absence.
+    """
+    overrides = getattr(config, "overrides", None)
+    if not isinstance(overrides, dict):
+        return False
+    return any(str(key).startswith("needs_variant_data") for key in overrides)
+
+
 def _guard_mispointed_needs(
     app: Sphinx,
     config: Config,
     spec: VariantSourcesConfig,
     gates: tuple[_MountGate, ...],
     *,
-    present: bool,
-    resolved: dict[str, Any],
+    toml: VariantsResult,
 ) -> None:
     """Refuse a project whose variant data is declared but never read.
 
@@ -1458,9 +1552,11 @@ def _guard_mispointed_needs(
     knowable at this point: at least one variant-gating key is declared —
     ``[[source.variant_sources]]`` rules, ``if`` on a mount entry, or both, the
     caller having already returned when neither is — sphinx-needs is
-    **present** (so its resolved map is what this reader must agree with), the
-    TOML **declares** variant data, that map came out **empty**, and
-    sphinx-needs' own ``needs_from_toml`` does **not** point at this file.
+    **present** (so its resolved map is what this reader must agree with),
+    that map came out **empty** (the caller calls this only then), the TOML
+    **declares** variant data (*toml* read a location: ``[variants]`` or the
+    legacy ``[needs] variant_data*``), and sphinx-needs' own
+    ``needs_from_toml`` does **not** point at this file.
 
     The first conjunct used to read "rules are declared", and the caller used to
     enforce it by standing down before this function whenever a project had no
@@ -1471,12 +1567,24 @@ def _guard_mispointed_needs(
     cannot happen, is the same defect this key's own diagnostics were shaped to
     avoid.
 
-    The last conjunct is the one that makes the guard safe to fire. Without it
-    the guard read "the map is empty" and refused a correctly wired project
-    whose data legitimately *is* empty — an empty ``[needs.variant_data]``
-    placeholder, or a base-variant ``variant_data_file`` of ``{}`` — and told
-    it to apply a fix its ``conf.py`` already contained. A hard error whose
-    message names no remedy is the worst shape a fail-closed refusal can take.
+    The pointer conjunct is the one that makes the guard safe to fire. Without
+    it the guard read "the map is empty" and refused a correctly wired project
+    whose data legitimately *is* empty — an empty ``[variants.data]``
+    placeholder, or a base-variant data file of ``{}`` — and told it to apply
+    a fix its ``conf.py`` already contained. A hard error whose message names
+    no remedy is the worst shape a fail-closed refusal can take.
+
+    **One cell past the pointer check is still a loss**: sphinx-needs pointed
+    at this file, the file declaring ``[variants]`` with a NON-empty map, and
+    sphinx-needs' map empty anyway. A sphinx-needs that reads ``[variants]``
+    either refuses the table or resolves exactly the file's map, so this is
+    reachable only by one that does not read it — every release before 9.0.0,
+    or any release scoped away from the top-level table by
+    ``needs_from_toml_table`` — and it is refused too, unless ``-D`` set a
+    ``needs_variant_data*`` value: sphinx-needs applies ``-D`` before it reads
+    the file and this reader does not, so an overridden map may be
+    legitimately empty where the file's is not. The legacy location needs no
+    such cell: every supported sphinx-needs reads ``[needs]``.
 
     It used to ride a *suppressible* ``mounts.variant_rule_unevaluable``
     warning per rule. That contradicts this key's own rule, argued in three
@@ -1488,11 +1596,16 @@ def _guard_mispointed_needs(
     A project that legitimately supplies the map from ``conf.py`` or ``-D``
     cannot reach this either: its resolved map is not empty.
     """
-    declares = spec.variant_data is not None or spec.variant_data_file is not None
-    if not (present and declares and not resolved):
+    if toml.location is None:
         return
     pointer = _needs_toml_pointer(app, config)
     if pointer == spec.toml_path:
+        if (
+            toml.location == "variants"
+            and toml.data
+            and not _variant_data_overridden(config)
+        ):
+            raise VariantRuleError(_unread_variants_message(config, spec, gates))
         # Correctly wired, and the data is simply empty. Not this guard's
         # business — the per-rule warn-and-exclude reports it instead.
         return
@@ -1501,9 +1614,10 @@ def _guard_mispointed_needs(
         if pointer is not None
         else "sphinx-needs was never pointed at it"
     )
+    table = "`[variants]`" if toml.location == "variants" else "`[needs] variant_data`"
     declared, consequence = _declared_gating_keys(spec, gates)
     msg = (
-        f"sphinx-mounts: `{spec.toml_path}` declares `[needs] variant_data` "
+        f"sphinx-mounts: `{spec.toml_path}` declares {table} "
         f"and {declared}, but {where}, so it resolved an EMPTY variant map: "
         f"{consequence}, and the whole gated document set would silently "
         f"disappear.\n"
@@ -1514,6 +1628,43 @@ def _guard_mispointed_needs(
         f"documents exist. [mounts.variant_data_unreadable]"
     )
     raise VariantRuleError(msg)
+
+
+def _unread_variants_message(
+    config: Config, spec: VariantSourcesConfig, gates: tuple[_MountGate, ...]
+) -> str:
+    """The refusal of a ``[variants]`` table that sphinx-needs, pointed here, did not read."""
+    declared, consequence = _declared_gating_keys(spec, gates)
+    prefix = _needs_table_prefix(config)
+    if prefix:
+        cause = (
+            f"`needs_from_toml_table` scopes sphinx-needs to `[{prefix}.variants]`, "
+            f"and this file's `[variants]` is top-level, so sphinx-needs does "
+            f"not read it."
+        )
+        remedy = (
+            f"Move the table under the prefix, to `[{prefix}.variants]`, or stop "
+            f"setting `needs_from_toml_table`."
+        )
+    else:
+        cause = (
+            "The installed sphinx-needs does not read `[variants]`: support "
+            "arrived in sphinx-needs 9.0.0, and earlier releases read only "
+            "`[needs] variant_data` and `variant_data_file`."
+        )
+        remedy = (
+            "Upgrade sphinx-needs to 9.0.0 or later, or keep the two keys in "
+            "`[needs]` until you can."
+        )
+    return (
+        f"sphinx-mounts: `{spec.toml_path}` declares variant data in "
+        f"`[variants]`, and sphinx-needs is pointed at this file, but it "
+        f"resolved an EMPTY variant map where the file yields a non-empty "
+        f"one. {cause} Because the file also declares {declared}, "
+        f"{consequence}, and the whole gated document set would silently "
+        f"disappear.\n"
+        f"{remedy} [mounts.variant_data_unreadable]"
+    )
 
 
 def _declared_gating_keys(
