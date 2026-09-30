@@ -208,7 +208,7 @@ def test_the_legacy_location_is_one_verbose_line(make_app, tmp_path):
 
 def test_a_variants_key_that_is_not_a_table_is_refused(make_app, tmp_path):
     """O8: ``variants = "x"`` read as "no variant data" would be the silent loss."""
-    confdir = _project(tmp_path, RULES + '\nvariants = "x"\n')
+    confdir = _project(tmp_path, 'variants = "x"\n' + RULES)
     message = _refusal(make_app, confdir)
     assert "[variants]" in message, message
     assert "sphinx-needs is not installed" in message, message
@@ -233,7 +233,7 @@ def test_a_malformed_variants_table_is_refused(make_app, tmp_path, tail: str):
 
 def test_a_needs_key_that_is_not_a_table_is_refused(make_app, tmp_path):
     """O10: ``needs = "x"`` used to be silently no data, and every rule excluded."""
-    confdir = _project(tmp_path, RULES + '\nneeds = "x"\n')
+    confdir = _project(tmp_path, 'needs = "x"\n' + RULES)
     message = _refusal(make_app, confdir)
     assert "[needs]" in message, message
 
@@ -333,6 +333,32 @@ def test_a_prefixed_sphinx_needs_is_refused_naming_the_prefix(make_app, tmp_path
     assert "needs_from_toml_table" in message, message
     assert "[tool.variants]" in message, message
     assert "9.0.0" not in message, message
+
+
+@pytest.mark.parametrize(
+    ("from_toml", "module"),
+    [
+        ("None", "needs_stub_vt_bad_unpointed"),
+        ("'ubproject.toml'", "needs_stub_vt_bad_old"),
+    ],
+    ids=["unpointed", "pointed-but-not-reading-variants"],
+)
+def test_a_malformed_variants_table_is_refused_when_sphinx_needs_has_no_map(
+    make_app, tmp_path, from_toml: str, module: str
+):
+    """O9 with sphinx-needs present: it read nothing here, so it refuses nothing.
+
+    Both ways sphinx-needs can end up with an empty map beside this file --
+    never pointed at it, or pointed but not reading ``[variants]`` -- leave
+    the malformed table to this extension, and the message must be true of
+    either.
+    """
+    confdir = _project(tmp_path, RULES + '\n[variants]\ndata_file = "nope.json"\n')
+    _stub_conf(confdir, module, inline="{}", file_ref="None", from_toml=from_toml)
+    message = _refusal(make_app, confdir)
+    assert "nope.json" in message, message
+    assert "resolved no variant data from this file" in message, message
+    assert "not installed" not in message, message
 
 
 @pytest.mark.parametrize(
