@@ -46,6 +46,7 @@ dependencies = [
   "sphinxcontrib-jquery~=4.0",   # sphinx_needs_collapse.js is still jQuery
   "typing-extensions>=4.14.0",   # for `**kwargs: Unpack[...]` (PEP 692), which typing supports from 3.12
   "minijinja~=2.15",             # lightweight jinja2-compatible template engine
+  "ub-project>=1.1.0,<2",        # reads the `[variants]` table of `needs_from_toml`
 ]
 
 [project.optional-dependencies]
