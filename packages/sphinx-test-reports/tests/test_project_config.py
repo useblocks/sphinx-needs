@@ -750,6 +750,25 @@ class TestDiscovery:
         monkeypatch.chdir(docs)
         assert find_project_config(Path(".")) == config
 
+    def test_a_symlinked_start_walks_the_link_s_parents(self, tmp_path):
+        # The start is made absolute WITHOUT resolving: a symlinked docs/
+        # belongs to the repository it is linked into, not to the one its
+        # target lives in. The only case here that tells the two apart --
+        # tmp_path is already resolved, so every other start is too.
+        repo = tmp_path / "repo"
+        (repo / ".git").mkdir(parents=True)
+        config = _write(repo, "[test_reports]\n")
+        elsewhere = tmp_path / "elsewhere"
+        (elsewhere / ".git").mkdir(parents=True)
+        target = elsewhere / "docs"
+        target.mkdir()
+        link = repo / "docs"
+        try:
+            link.symlink_to(target, target_is_directory=True)
+        except OSError:  # Windows without the symlink privilege
+            pytest.skip("creating a symlink needs a privilege this account lacks")
+        assert find_project_config(link) == config
+
 
 class TestPathAnchoring:
     """Relative paths anchor at the TOML file's directory, as given."""
