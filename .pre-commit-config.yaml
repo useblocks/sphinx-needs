@@ -4,10 +4,17 @@ repos:
     rev: v0.9.3
     hooks:
       - id: taplo-format
-        # the variant-condition conformance corpus is shared byte-for-byte with ubCode,
-        # which pins its digest, so a formatter local to this repository must not rewrite
-        # it. taplo's current defaults happen to leave it alone; this says it is deliberate
-        exclude: ^packages/sphinx-mounts/tests/fixtures/variant_condition_conformance\.toml$
+        # the two TOML conformance corpora are shared byte-for-byte with ubCode, so a
+        # formatter local to this repository must not rewrite them. taplo's current
+        # defaults happen to leave the variant-condition one alone; the ubproject reading
+        # corpus they do NOT -- measured: every expectation line past taplo's column limit
+        # is rewrapped across several lines, eleven of them -- and a vendored copy that
+        # differs by one byte fails its digest fence on the other side
+        exclude: |-
+          (?x)^(
+            packages/sphinx-mounts/tests/fixtures/variant_condition_conformance\.toml|
+            packages/ubproject/tests/fixtures/ubproject_reading_conformance\.toml
+          )$
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.16.5
@@ -20,9 +27,15 @@ repos:
     rev: v0.21.0
     hooks:
       - id: yamlfmt
-        # the conformance corpus is shared byte-for-byte with ubCode and checksummed in
-        # its own manifest, so a formatter local to this repository must not rewrite it
-        exclude: ^packages/sphinx-needs/tests/conformance/
+        # the conformance corpora are shared byte-for-byte with ubCode, so a formatter
+        # local to this repository must not rewrite them. yamlfmt only matches YAML today,
+        # so the ubproject reading corpus (TOML) is listed to state the intent rather than
+        # because the hook would reach it
+        exclude: |-
+          (?x)^(
+            packages/sphinx-needs/tests/conformance/|
+            packages/ubproject/tests/fixtures/ubproject_reading_conformance\.toml$
+          )
 
   - repo: local
     hooks:
