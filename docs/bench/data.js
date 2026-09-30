@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790776818828,
+  "lastUpdate": 1790780240566,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -21636,6 +21636,42 @@ window.BENCHMARK_DATA = {
             "value": 53.82033201399997,
             "unit": "s",
             "extra": "Commit: 0a7ab9a547f561dbc6af70966710cf5406264837\nBranch: master\nTime: 2026-09-30T15:58:52+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6d35c57fc3996259c55229ad5ecbacaca92643d0",
+          "message": "🔧 release: no generated notes for a member's first release (#1988)\n\nA member's first release has no previous tag of its own, and the notes\nstep then omitted `previous_tag_name`, so GitHub compared against the\nrepository's previous tag, whatever package it belonged to: `ub-project\nv1.0.0` shipped listing sixty pull requests since `8.5.0`, nearly all\nanother package's (its notes are now trimmed by hand).\n\nWith this change a first release generates no notes at all: the body is\nthe changelog link plus one line saying it is the first release. Every\nlater release is unchanged: it passes the member's own previous tag, as\nbefore.\n\nThe step only runs on a real tag, so it cannot be rehearsed; the shell\nwas exercised locally on both branches with a stub `gh`, and actionlint\npasses. The next first release is the parked `ub-test-reports`.",
+          "timestamp": "2026-09-30T16:54:33+02:00",
+          "tree_id": "ff921ba4cce48a6fa7d562a86fcdcff1270d1b18",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/6d35c57fc3996259c55229ad5ecbacaca92643d0"
+        },
+        "date": 1790780135801,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07770493200000317,
+            "unit": "s",
+            "extra": "Commit: 6d35c57fc3996259c55229ad5ecbacaca92643d0\nBranch: master\nTime: 2026-09-30T16:54:33+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 38.463899387,
+            "unit": "s",
+            "extra": "Commit: 6d35c57fc3996259c55229ad5ecbacaca92643d0\nBranch: master\nTime: 2026-09-30T16:54:33+02:00"
           }
         ]
       }
