@@ -725,12 +725,12 @@ class CodeLinksConfig:
     )
     """Path to a TOML file to load configuration from.
 
-    Defaults to ``ubproject.toml`` next to :file:`conf.py`. A file of that name
-    is the shared default whether or not conf.py spells it out: missing, or
-    without a ``[codelinks]`` table, it is silently ignored. A file that exists
-    but cannot be read or parsed warns (``codelinks.config``), as any configured
-    file did at 1.4.0. Any other name is explicit: missing, without the table,
-    or unreadable, it warns.
+    Defaults to ``ubproject.toml`` next to :file:`conf.py`. The default is the
+    value ``ubproject.toml`` exactly -- left unset, or written in conf.py as that
+    string: missing, or without a ``[codelinks]`` table, it is silently ignored.
+    Any other value, ``./ubproject.toml`` included, is an explicit file and warns
+    in both cases. A file that exists but cannot be read or parsed warns
+    (``codelinks.config``) either way, as any configured file did at 1.4.0.
     """
 
     set_local_url: bool = field(

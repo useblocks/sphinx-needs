@@ -155,12 +155,13 @@ def load_config_from_toml(app: Sphinx, config: _SphinxConfig) -> None:
     """Load the configuration from a TOML file, if defined in conf.py.
 
     The default ``ubproject.toml`` is shared with other useblocks tools, which
-    may use the file without any ``[codelinks]`` configuration. A file of that
-    name is the default whether or not conf.py spells it out, and is silently
+    may use the file without any ``[codelinks]`` configuration. The default is
+    the value ``ubproject.toml`` exactly -- left unset, or written in conf.py as
+    that string (a string comparison, not a file comparison) -- and is silently
     ignored when it does not exist or has no ``[codelinks]`` table. Any other
-    name is explicit and warns in both cases. A file that exists but cannot be
-    read or parsed warns whatever its name, as any configured file did at 1.4.0:
-    it is broken for every tool that reads it.
+    value, ``./ubproject.toml`` included, is an explicit file and warns in both
+    cases. A file that exists but cannot be read or parsed warns either way, as
+    any configured file did at 1.4.0: it is broken for every tool that reads it.
 
     Every warning here is ``codelinks.config``, so ``suppress_warnings`` can
     silence them.

@@ -151,13 +151,14 @@ New and Improved
 
   A default file that does not exist or contains no ``[codelinks]`` table is silently
   ignored, so existing projects without ``ubproject.toml`` keep building without new
-  warnings. A file named ``ubproject.toml`` is the default whether the name is left at
-  its default or written in :file:`conf.py`, so a 1.4.0 project that wrote
+  warnings. The default is the value ``ubproject.toml`` exactly -- left unset, or
+  written in :file:`conf.py` as that string -- so a 1.4.0 project that wrote
   ``src_trace_config_from_toml = "ubproject.toml"`` no longer gets a warning for a
-  missing file or a missing table. A file that exists but cannot be read or parsed --
-  invalid TOML, not UTF-8, a directory, a ``codelinks`` key that is not a table -- warns
-  (``codelinks.config``) whatever its name, as any configured file did at 1.4.0; any
-  other file name is explicit and also warns when missing or without the table. The
+  missing file or a missing table. Any other value, ``./ubproject.toml`` included, is an
+  explicit file and warns when missing or without the table. A file that exists but
+  cannot be read or parsed -- invalid TOML, not UTF-8, a directory, a ``codelinks`` key
+  that is not a table -- warns (``codelinks.config``) either way, as any configured file
+  did at 1.4.0. The
   documentation project itself now stores its codelinks configuration in
   ``ubproject.toml``.
 

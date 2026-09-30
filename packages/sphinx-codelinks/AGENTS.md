@@ -89,7 +89,7 @@ cell.
 **`test-codelinks` syncs the group into the DEFAULT `.venv`.** It has no
 `UV_PROJECT_ENVIRONMENT` of its own, unlike its three `-sphinx7/8/9` siblings, so the wheel
 lands in the environment every other command uses — and the next plain `uv sync --frozen`
-prunes it out again (`Uninstalled 1 package: - libclang==18.1.1`). So the two numbers only
+prunes it out again (`Uninstalled 1 package: - libclang==18.1.1`). So the two results only
 appear either side of that sync, and this is the sequence that shows both:
 
 ```bash
@@ -102,7 +102,8 @@ uv run --frozen --no-sync pytest packages/sphinx-codelinks/tests     # green, th
 it carry `pytest.importorskip("clang.cindex")`, so a run without the group skips politely
 rather than failing — which means a task or a CI line that quietly lost the group would
 look like a pass. (CI is fenced: the Extensions cell asserts `import clang.cindex` right
-after its sync.) If you are changing anything under `analyse/preproc/`, check the number.
+after its sync.) If you are changing anything under `analyse/preproc/`, check that nothing
+skipped.
 
 The summary prints **26 skipped**, not 56: three of the four guards are module-level
 `pytest.importorskip`, which pytest reports as one skip per module and never collects the

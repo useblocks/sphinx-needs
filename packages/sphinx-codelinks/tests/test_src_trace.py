@@ -690,6 +690,37 @@ def test_default_name_written_in_conf_py_is_still_the_default(
     assert_no_warnings(app)
 
 
+@pytest.mark.parametrize(
+    ("state", "phrase"),
+    [
+        pytest.param(None, "does not exist", id="missing"),
+        pytest.param(
+            lambda path: path.write_text("[needs]\n", encoding="utf-8"),
+            "has no [codelinks] table",
+            id="no-codelinks-table",
+        ),
+    ],
+)
+def test_other_spelling_of_the_default_name_is_explicit(
+    minimal_sphinx_project: Path,
+    make_app: Callable[..., SphinxTestApp],
+    state: Callable[[Path], object] | None,
+    phrase: str,
+) -> None:
+    """The default is the value ``ubproject.toml`` EXACTLY: ``./ubproject.toml`` names
+    the same file but is an explicit configuration, so missing or without
+    ``[codelinks]`` it warns."""
+    _write_conf(
+        minimal_sphinx_project, 'src_trace_config_from_toml = "./ubproject.toml"\n'
+    )
+    if state is not None:
+        state(minimal_sphinx_project / "ubproject.toml")
+    app = make_app(srcdir=minimal_sphinx_project, freshenv=True)
+    app.build()
+
+    _assert_one_config_warning(app, phrase)
+
+
 def test_explicit_toml_without_codelinks_table_warns(
     minimal_sphinx_project: Path,
     make_app: Callable[..., SphinxTestApp],
