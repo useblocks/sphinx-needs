@@ -22,6 +22,7 @@ from sphinx_codelinks.source_discover.source_discover import SourceDiscover
 from sphinx_codelinks.sphinx_extension.debug import measure_time
 from sphinx_needs.api import add_need
 from sphinx_needs.utils import add_doc
+from ub_project import anchor
 
 logger = logging.getLogger(__name__)
 
@@ -118,11 +119,11 @@ class SourceTracingDirective(SphinxDirective):
         conf_dir = Path(self.env.app.confdir)
         if src_trace_sphinx_config.config_from_toml:
             src_trace_toml_path = Path(src_trace_sphinx_config.config_from_toml)
-            conf_dir = conf_dir / src_trace_toml_path.parent
+            conf_dir = anchor(src_trace_toml_path.parent, conf_dir)
         # git_root shall be relative to the config file's location (if provided)
         git_root = base_analyse_config.git_root
         if git_root:
-            git_root = (conf_dir / git_root).resolve()
+            git_root = anchor(git_root, conf_dir).resolve()
         # preprocessor compile_commands / include dirs are relative to the config
         # file's location too (like src_dir / git_root).
         preprocessor = base_analyse_config.preprocessor
@@ -251,9 +252,9 @@ class SourceTracingDirective(SphinxDirective):
         # if config toml file is used, src dir is relative to the config toml
         if src_trace_sphinx_config.config_from_toml:
             src_trace_toml_path = Path(src_trace_sphinx_config.config_from_toml)
-            conf_dir = conf_dir / src_trace_toml_path.parent
+            conf_dir = anchor(src_trace_toml_path.parent, conf_dir)
 
-        src_dir = (conf_dir / src_discover_config.src_dir).resolve()
+        src_dir = anchor(src_discover_config.src_dir, conf_dir).resolve()
         return src_dir
 
     def render_needs(

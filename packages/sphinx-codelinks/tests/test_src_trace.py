@@ -403,7 +403,6 @@ def _assert_one_config_warning(app: SphinxTestApp, phrase: str) -> None:
         ("set_remote_url", "true", False),
         ("local_url_field", '"toml-url"', "cli-url"),
         ("remote_url_field", '"toml-remote"', "cli-remote"),
-        ("outdir", '"toml-out"', "cli-out"),
         ("debug_measurement", "true", False),
         ("debug_filters", "true", False),
     ],
@@ -429,6 +428,27 @@ def test_command_line_override_beats_the_toml(
     )
 
     assert app.config[f"src_trace_{key}"] == override
+
+
+def test_refused_outdir_override_leaves_the_default(
+    minimal_sphinx_project: Path,
+    make_app: Callable[..., SphinxTestApp],
+) -> None:
+    """A PIN of the measured cell, not an endorsement: Sphinx refuses
+    ``-D src_trace_outdir`` (its default is a ``Path``: "unsupported type") but keeps it
+    in ``config.overrides``, so the TOML's ``outdir`` is skipped as well and the default
+    stands. Inert for a build: the extension never reads ``src_trace_outdir`` (the CLI,
+    which does, has no ``-D``)."""
+    (minimal_sphinx_project / "ubproject.toml").write_text(
+        '[codelinks]\noutdir = "toml-out"\n', encoding="utf-8"
+    )
+    app = make_app(
+        srcdir=minimal_sphinx_project,
+        freshenv=True,
+        confoverrides={"src_trace_outdir": "cli-out"},
+    )
+
+    assert app.config.src_trace_outdir == Path("output")
 
 
 def test_command_line_override_of_config_from_toml_beats_the_toml(

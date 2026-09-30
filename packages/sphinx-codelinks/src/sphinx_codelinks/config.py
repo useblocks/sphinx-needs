@@ -14,6 +14,7 @@ from sphinx_codelinks.source_discover.config import (
     SourceDiscoverSectionConfigType,
 )
 from sphinx_codelinks.source_discover.source_discover import SourceDiscover
+from ub_project import anchor, load_toml, select_table
 
 UNIX_NEWLINE = "\n"
 
@@ -168,16 +169,17 @@ def anchor_preproc_paths(preproc: PreprocessorConfig, base: Path) -> Preprocesso
     """Resolve a preprocessor config's ``compile_commands`` and ``includes``
     against ``base`` (the config file's directory), so a relative path resolves
     against the TOML file rather than the process CWD — matching ``src_dir`` /
-    ``git_root``. Absolute paths are left unchanged.
+    ``git_root``. An absolute path is not anchored, but it is resolved too
+    (symlinks followed, ``..`` folded), like every other path here.
     """
     return replace(
         preproc,
         compile_commands=(
-            (base / preproc.compile_commands).resolve()
+            anchor(preproc.compile_commands, base).resolve()
             if preproc.compile_commands is not None
             else None
         ),
-        includes=[(base / inc).resolve() for inc in preproc.includes],
+        includes=[anchor(inc, base).resolve() for inc in preproc.includes],
     )
 
 
@@ -564,6 +566,26 @@ class SourceAnalyseConfig:
 # ubCode checker, ...) read as well, so all tools see the same projects.
 DEFAULT_CONFIG_TOML: str = "ubproject.toml"
 
+#: The table of the TOML file that both readers, the Sphinx extension and the CLI,
+#: take their configuration from.
+CODELINKS_TABLE: str = "codelinks"
+
+
+def load_codelinks_table(path: Path) -> dict[str, object] | None:
+    """Parse *path* and return its ``[codelinks]`` table, through ub-project.
+
+    The values are returned RAW: relative paths are anchored where they are used
+    (the Sphinx extension anchors at ``confdir / Path(config_from_toml).parent``,
+    unresolved), never here.
+
+    :param path: The TOML file.
+    :return: The table, or ``None`` when the file has no ``codelinks`` key.
+    :raises ub_project.ProjectConfigError: If the file cannot be read, is not UTF-8
+        or not valid TOML, or if ``codelinks`` is not a table.
+    """
+    return select_table(load_toml(path), CODELINKS_TABLE, source=path)
+
+
 SRC_TRACE_CACHE: str = "src_trace_cache"
 
 
@@ -703,7 +725,8 @@ class CodeLinksConfig:
 
     Defaults to ``ubproject.toml`` next to :file:`conf.py`. A default file that
     is missing or has no ``[codelinks]`` table is silently ignored; a missing
-    explicitly configured file triggers a warning.
+    explicitly configured file, or any file that exists but cannot be read or
+    parsed, triggers a ``codelinks.config`` warning.
     """
 
     set_local_url: bool = field(
