@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790802492025,
+  "lastUpdate": 1790809632036,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -21888,6 +21888,42 @@ window.BENCHMARK_DATA = {
             "value": 55.777138406999995,
             "unit": "s",
             "extra": "Commit: d0edd0e9e9d911b094a4ad011f914d2a502391d4\nBranch: master\nTime: 2026-09-30T23:06:45+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "caea4b80af8f7323a83fecd502b0a37ce4864800",
+          "message": "✨ sphinx-codelinks: read ubproject.toml through ub-project, and let -D override the TOML (#2005)\n\n## What\n\nsphinx-codelinks now reads `ubproject.toml` through `ub-project`, the\nshared reader of the sphinx-needs family, and gains it as a runtime\ndependency (`ub-project>=1.1.0,<2`). One loader,\n`config.load_codelinks_table(path)` — ub-project's `load_toml` +\n`select_table(…,\n\"codelinks\")` — serves both readers, the Sphinx extension's\n`config-inited` hook and `codelinks analyse`; `src/` no longer imports\n`tomllib`. The loader returns raw values: relative paths are still\nanchored where they are used, now through ub-project's `anchor`\n(identical to the `/` join it replaces, by construction), with every\n`.resolve()` kept.\n\nTwo behaviour fixes ride on it: a `-D` value is no longer overwritten by\nthe TOML, and a default `ubproject.toml` that exists but is broken\nwarns again, as any configured file that could not be read did at 1.4.0.\n\n## Behaviour (enumerated)\n\n1. **`-D src_trace_<key>` beats the TOML.** For `set_local_url`,\n`set_remote_url`, `local_url_field`, `remote_url_field`,\n`debug_measurement`, `debug_filters` and `config_from_toml`, \"the TOML\nsets it and `-D` is given\" now yields the `-D` value. The order is\n`-D` > TOML > conf.py > default, as in sphinx-needs. Only the full\nconfval name counts — a bare `-D set_local_url=0`, which Sphinx rejects\nas unknown, leaves the TOML value alone. `projects` and `outdir` are\nnever skipped (`NOT_OVERRIDABLE_FROM_D`): Sphinx refuses a `-D` for\nboth (a dict; a `Path`-typed default) yet keeps the key in\n`config.overrides`, so skipping would honour an override that was never\napplied — a TOML `projects` or `outdir` stands, as before. A `-D` value\nSphinx cannot convert (`-D src_trace_set_local_url=yes`, Sphinx ≥\n8.2) is now reported by Sphinx (rc 2) instead of being silently replaced\nby the TOML — as it already was without a TOML.\n2. **A broken `ubproject.toml` warns** (invalid TOML, not UTF-8, a\ndirectory, `codelinks` not a table, a pathologically nested file):\nunder `-W` these builds fail, where master's (unreleased) behaviour\nbuilt silently without the `[codelinks]` table.\n3. **The reader's warnings are typed `codelinks.config`** — a\n`[codelinks.config]` suffix on Sphinx ≥ 8 — so\n   `suppress_warnings = [\"codelinks.config\"]` silences them.\n4. **Messages**: a broken file's warning names the file once and says\nwhat is wrong (`<p>: invalid TOML: …`, `not valid UTF-8 TOML`,\n`cannot be read`, `[codelinks] must be a table, got str`; a nested file:\n`… from <p>: maximum recursion depth exceeded`); an explicit file\nwithout the table says `… has no [codelinks] table. Using configuration\nfrom conf.py.` instead of `'codelinks'`; `codelinks analyse`\nshows why a file could not be loaded instead of only that it could not,\nand reports `codelinks = 0/[]/false` as \"must be a table\" rather\nthan \"No 'codelinks' section\". Exit codes are unchanged in every cell\nexcept the ones in items 1 and 2: every CLI exit code is unchanged,\n   including rc 2 for a pathologically nested file.\n5. **`ub-project>=1.1.0,<2`** is a runtime dependency — declared\ndirectly, because PyPI's sphinx-needs 8.5.0 does not bring it.\n\nNo existing test or snapshot expectation moved.\n\n## The default file (what 1.4.0 did, what master does, what this ships)\n\n- **1.4.0**: no default; every failure of a configured file warned —\nincluding a file configured as\n`src_trace_config_from_toml = \"ubproject.toml\"`, missing, without\n`[codelinks]`, or broken.\n- **master (unreleased, #102)**: the default became `ubproject.toml`,\nrecognised by NAME (a string comparison), so any failure of a file\nof that name was silent — whether the name was left at its default or\nwritten in conf.py.\n- **this PR**: the default is the value `ubproject.toml` exactly — left\nunset, or written in conf.py as that string (the reader compares\nstrings, not files). That file may be absent or have no `[codelinks]`\ntable — both silent (the intent of #102, kept: other tools share\nthe file). Any other value, `./ubproject.toml` or an absolute path to\nthe same file included, is an explicit file: missing or without the\ntable, it warns. A file that exists but cannot be read or parsed warns\n(`codelinks.config`) either way, as 1.4.0 warned for a corrupt\nconfigured file. The trade, stated: a 1.4.0 project that wrote\n`\"ubproject.toml\"` out keeps the corrupt-file warning but no\nlonger gets one for a missing file or a missing table. The #102\nchangelog bullet is amended in place to say so.\n\n## Not in this PR\n\n- A conf.py-only `src_trace_projects` (no TOML at all) crashes every\nbuild that uses `src-trace` with `KeyError: 'source_discover_config'`\n— pre-existing on master and unrelated (the conversion only runs on the\nTOML path); to be filed separately.\n- Unknown keys inside `[codelinks]`: the extension skips them silently,\nthe CLI refuses them — the two readers disagree today, and a\n  follow-up decides both together.\n- `config_from_toml` remains a key the TOML itself may set (it moves the\nanchor without reading the named file); pinned by a test so the\n  follow-up that retires it changes a fenced thing.\n- `check_sphinx_configuration`'s bare `raise Exception` for a schema\nerror (and the \"filed\" typo in its message) — validation, not reading.\n\n## Docs\n\n`components/configuration.rst`: the `-D` precedence rule (with\n`src_trace_projects` and `src_trace_outdir` as the two keys `-D` cannot\nset), the default-name rule, and the `codelinks.config` type.\n`changelog.rst` `Unreleased`: the default-file bullet amended, plus a\nbullet\neach for the `-D` fix and the ub-project reader. The package\n`AGENTS.md`: the loader's home, the `-D` exception, the stale\nclick/typer caps\nsection, 17 test modules. The root `AGENTS.md`, root `CLAUDE.md` and\n`compat-requirements.txt` describe the libclang-gated tests without\ncounts that go stale.\n\n## Tests\n\n39 new cases (31 Sphinx-level through `make_app`, 8 CLI through\n`CliRunner`); 28 of them fail against master. The other 11 pass there\nand are pins: a bare-name `-D`; a refused `-D src_trace_projects`; a\nrefused `-D src_trace_outdir`; the conf.py-vs-TOML order; the CLI's\nempty table; the CLI's missing table; the CLI's nested file; a symlinked\nTOML anchoring at the link's directory; a TOML-set\n`config_from_toml`; and the default name written out, missing and\nwithout the table (2). Each pin is proven by a mutation that turns it\nred. One test asserts that the keys exempt from the `-D` skip\nare exactly the codelinks confvals Sphinx refuses from `-D`, detected\nper confval from Sphinx's own warning, on 7.4 / 8.2 / 9.1.\n402 passed with libclang, 0 skipped (the sphinx-7 and sphinx-8 cells\nwere run at 400, one commit earlier; the last commit adds two test\ncases and changes no reader logic).\n\n## Toolchain\n\nThe lock is master's plus the two lines of the `sphinx-codelinks` block\n(not a relock); `uv lock --check` passes on uv 0.12.15 and 0.12.9.\n`poe check-workspace`, `poe import-check-codelinks` (24 modules,\n`ub-project==1.1.0` and `sphinx-needs==8.5.0` from PyPI) and\n`poe docs-codelinks` (`-nW`) pass. The version (1.4.0) is unchanged; no\nrelease.",
+          "timestamp": "2026-10-01T01:05:52+02:00",
+          "tree_id": "9ce97f10d2416bd6646172ed62ec6e7299b2f345",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/caea4b80af8f7323a83fecd502b0a37ce4864800"
+        },
+        "date": 1790809622806,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.09958663399999068,
+            "unit": "s",
+            "extra": "Commit: caea4b80af8f7323a83fecd502b0a37ce4864800\nBranch: master\nTime: 2026-10-01T01:05:52+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 50.16707198999998,
+            "unit": "s",
+            "extra": "Commit: caea4b80af8f7323a83fecd502b0a37ce4864800\nBranch: master\nTime: 2026-10-01T01:05:52+02:00"
           }
         ]
       }
