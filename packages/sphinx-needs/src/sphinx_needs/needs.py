@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import contextlib
 import json
-import tomllib
 from collections.abc import Callable
 from copy import deepcopy
 from itertools import chain
@@ -128,7 +127,7 @@ from sphinx_needs.environment import (
 from sphinx_needs.exceptions import NeedsConfigException
 from sphinx_needs.external_needs import load_external_needs
 from sphinx_needs.functions import NEEDS_COMMON_FUNCTIONS
-from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
 from sphinx_needs.needs_schema import (
     FieldLiteralValue,
     FieldSchema,
@@ -165,6 +164,14 @@ from sphinx_needs.variant_data import (
     resolve_variant_data,
 )
 from sphinx_needs.warnings import process_warnings
+from ub_project import (
+    VARIANT_DATA_LOCATION,
+    VARIANTS_UNKNOWN_KEY,
+    ProjectConfigError,
+    load_toml,
+    read_variants,
+    select_table,
+)
 
 VERSION = __version__
 
@@ -489,6 +496,10 @@ def load_config_from_toml(app: Sphinx, config: Config) -> None:
 
     All configs starting with "schema_" are loaded from a dedicated
     "schema" table in the toml file.
+
+    The variant data is read by ``ub_project`` (:func:`_load_variants_from_toml`), from
+    the ``[variants]`` table or its legacy location, the ``variant_data*`` keys of the
+    ``[needs]`` table.
     """
     needs_config = NeedsSphinxConfig(config)
     if needs_config.from_toml is None:
@@ -507,8 +518,19 @@ def load_config_from_toml(app: Sphinx, config: Config) -> None:
         )
         return
     try:
-        with toml_file.open("rb") as f:
-            toml_data = tomllib.load(f)
+        toml_doc = load_toml(toml_file)
+    except Exception as e:
+        # not only ProjectConfigError: tomllib can also fail with a RecursionError, for
+        # example, which ``load_toml`` does not wrap; either way the file only warns
+        log_warning(
+            LOGGER,
+            f"Error loading 'needs_from_toml' file: {e}",
+            "config",
+            None,
+        )
+        return
+    try:
+        toml_data: Any = toml_doc
         for key in (*toml_path, "needs"):
             toml_data = toml_data[key]
         assert isinstance(toml_data, dict), "Data must be a dict"
@@ -518,13 +540,18 @@ def load_config_from_toml(app: Sphinx, config: Config) -> None:
             )
 
     except Exception as e:
-        log_warning(
-            LOGGER,
-            f"Error loading 'needs_from_toml' file: {e}",
-            "config",
-            None,
-        )
-        return
+        # a file holding a variants table and no needs table is read: the variant data
+        # may be all it configures
+        if isinstance(e, KeyError) and _is_present(toml_doc, (*toml_path, "variants")):
+            toml_data = {}
+        else:
+            log_warning(
+                LOGGER,
+                f"Error loading 'needs_from_toml' file: {e}",
+                "config",
+                None,
+            )
+            return
 
     allowed_keys = NeedsSphinxConfig.field_names()
     overridden_keys: set[str] = set()
@@ -534,6 +561,9 @@ def load_config_from_toml(app: Sphinx, config: Config) -> None:
 
     for key, value in toml_data.items():
         if key not in allowed_keys:
+            continue
+        if key in _LEGACY_VARIANT_KEYS:
+            # read with [variants] by _load_variants_from_toml, which decides the location
             continue
         config_key = "needs_" + key
         # Keep values passed via sphinx-build -D (confoverrides) untouched.
@@ -551,6 +581,121 @@ def load_config_from_toml(app: Sphinx, config: Config) -> None:
             continue
         config["needs_schema_"][key] = NeedsSphinxConfig.convert_field_value(
             key, value, toml_file.parent, "schema_"
+        )
+
+    _load_variants_from_toml(
+        config, toml_doc, toml_file, tuple(toml_path), overridden_keys
+    )
+
+
+#: The keys of ``[variants]`` and, in the same order, their legacy ``[needs]`` spellings,
+#: which are also the names of the confvals they set (with the ``needs_`` prefix).
+_VARIANT_KEYS = ("data", "data_file")
+_LEGACY_VARIANT_KEYS = ("variant_data", "variant_data_file")
+
+#: The warning subtype of each ``ub_project`` diagnostic code that is a warning here.
+_VARIANT_DIAGNOSTIC_SUBTYPES: dict[str, WarningSubTypes] = {
+    VARIANT_DATA_LOCATION: "variant_data_location",
+    VARIANTS_UNKNOWN_KEY: "variants_unknown_key",
+}
+
+
+def _is_present(doc: dict[str, object], path: tuple[str, ...]) -> bool:
+    """Whether *doc* holds something (a table or not) at *path*."""
+    current: object = doc
+    for key in path:
+        if not isinstance(current, dict) or key not in current:
+            return False
+        current = current[key]
+    return True
+
+
+def _without_key(
+    doc: dict[str, object], path: tuple[str, ...], key: str
+) -> dict[str, object]:
+    """*doc* without *key* in the table at *path*, which is copied along the path only.
+
+    *doc* is returned itself when there is nothing to remove, so the parsed document is
+    never modified.
+    """
+    if not path:
+        return {k: v for k, v in doc.items() if k != key} if key in doc else doc
+    child = doc.get(path[0])
+    if not isinstance(child, dict):
+        return doc
+    new_child = _without_key(child, path[1:], key)
+    return doc if new_child is child else {**doc, path[0]: new_child}
+
+
+def _load_variants_from_toml(
+    config: Config,
+    toml_doc: dict[str, object],
+    toml_file: Path,
+    prefix: tuple[str, ...],
+    overridden_keys: set[str],
+) -> None:
+    """Read the variant data of the ``needs_from_toml`` file, through ``ub_project``.
+
+    ``[<prefix>.variants]`` is the current location and ``[<prefix>.needs]
+    variant_data*`` the legacy one; ``ub_project`` decides which one is read, WHOLE, and
+    reports the other's keys. What stays here is sphinx-needs' policy:
+
+    - a key overridden with ``-D`` is removed from both locations before the read, so it
+      neither opens a file nor decides the location, just as a ``-D`` overrides any
+      other ``[needs]`` key one at a time;
+    - each declared key of the location read is written to its confval, as the
+      ``[needs]`` loop wrote it, and the merge with ``conf.py`` values and the file load
+      stay with :func:`resolve_variant_data_config`, which therefore reads the data file
+      a second time. Writing the merged map instead would override a ``conf.py`` value
+      for a key the TOML does not set, which must fill that gap;
+    - the findings are reported as warnings, except the legacy location, which is
+      reported with ``-v`` only for now.
+
+    :raises NeedsConfigException: If ``ub_project`` refuses the variant data, or a table
+        path with an empty ``needs_from_toml_table`` entry.
+    """
+    needs_table = (*prefix, "needs")
+    variants_table = (*prefix, "variants")
+    doc = toml_doc
+    for key, legacy_key in zip(_VARIANT_KEYS, _LEGACY_VARIANT_KEYS, strict=True):
+        if legacy_key in overridden_keys or f"needs_{legacy_key}" in overridden_keys:
+            doc = _without_key(doc, variants_table, key)
+            doc = _without_key(doc, needs_table, legacy_key)
+
+    try:
+        result = read_variants(
+            doc, toml_file, needs_table=needs_table, variants_table=variants_table
+        )
+    except (ProjectConfigError, ValueError) as error:
+        # ValueError: a table path ub_project refuses (an empty needs_from_toml_table
+        # entry), and any it lets through unwrapped -- a data file holding an integer
+        # beyond Python's conversion limit, until ub-project names the file itself (#1995)
+        raise NeedsConfigException(str(error)) from error
+
+    for diagnostic in result.diagnostics:
+        subtype = _VARIANT_DIAGNOSTIC_SUBTYPES.get(diagnostic.code)
+        if subtype is None:
+            # the legacy location, and any finding a newer ub-project may add, which
+            # must not fail a `-W` build that this version cannot know about
+            LOGGER.verbose(diagnostic.message)
+        else:
+            log_warning(LOGGER, diagnostic.message, subtype, None)
+
+    if result.location is None:
+        return
+    if result.location == "variants":
+        table, keys = select_table(doc, variants_table), _VARIANT_KEYS
+    else:
+        table, keys = select_table(doc, needs_table), _LEGACY_VARIANT_KEYS
+    assert table is not None, "a location that was read is a table"
+    inline_key, file_key = keys
+    if (inline := table.get(inline_key)) is not None:
+        config["needs_variant_data"] = inline
+    if (file_value := table.get(file_key)) is not None:
+        # today's converter (``_abs_path``), so the confval's string is what the [needs]
+        # loop wrote; ``result.data_file`` is joined, not resolved
+        config["needs_variant_data_file"] = NeedsSphinxConfig.convert_field_value(
+            "variant_data_file", file_value, toml_file.parent
         )
 
 

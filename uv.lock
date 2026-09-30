@@ -2907,6 +2907,7 @@ dependencies = [
     { name = "sphinx-data-viewer" },
     { name = "sphinxcontrib-jquery" },
     { name = "typing-extensions" },
+    { name = "ub-project" },
 ]
 
 [package.optional-dependencies]
@@ -2958,6 +2959,7 @@ requires-dist = [
     { name = "sphinxcontrib-plantuml", marker = "extra == 'docs'", specifier = "~=0.0" },
     { name = "sphinxcontrib-programoutput", marker = "extra == 'docs'", specifier = "~=0.17" },
     { name = "typing-extensions", specifier = ">=4.14.0" },
+    { name = "ub-project", editable = "packages/ub-project" },
 ]
 provides-extras = ["plotting", "docs", "theme-im", "theme-furo", "theme-pds", "theme-rtd"]
 

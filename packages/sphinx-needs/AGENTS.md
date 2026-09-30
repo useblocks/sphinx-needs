@@ -328,6 +328,16 @@ app.connect("config-inited", merge_default_configs)               # Merge defaul
 app.connect("config-inited", check_configuration, priority=600)   # Validate config
 ```
 
+**Variant data in the TOML comes through `ub-project`** (`read_variants`, a runtime
+dependency): it decides which location is read — `[<prefix>.variants]`, or the legacy
+`[<prefix>.needs] variant_data*` — and validates it. What stays in `load_config_from_toml` is
+sphinx-needs' policy: `-D`-overridden keys are removed from both locations before the read,
+each finding is mapped to a `needs.*` warning subtype (the legacy location to a `-v` line),
+a `ProjectConfigError` is re-raised as `NeedsConfigException`, and the declared keys are
+written to the two confvals one by one (the file through `_abs_path`), so that
+`resolve_variant_data_config` (priority 11) still merges them with `conf.py` values per key,
+with sphinx-needs' own `variant_data.py`.
+
 #### Environment Setup (`env-before-read-docs`)
 
 ```python

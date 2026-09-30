@@ -1,0 +1,47 @@
+"$schema" = "https://ubcode.useblocks.com/ubproject.schema.json"
+
+# Build-context tags, available as `build_tags` in filter/variant expressions.
+build_tags = ["html"]
+
+# Run with `ubc script <name>` (e.g. `ubc script build`).
+[scripts]
+# Build with ubCode:
+build = "ubc build index ."
+needs = "ubc build needs -o needs.json"
+report = "ubc report needs_overview.html.j2"
+# Build with Sphinx + Sphinx-Needs (requires https://docs.astral.sh/uv).
+# sphinx-needs >= 7 for the dict `[needs.links]` / `[needs.fields]` config; no
+# upper bound so it tracks releases (verified against sphinx-needs 8.x).
+sphinx = "uv run --no-project --with 'sphinx,sphinx-needs>=7' sphinx-build -W -b html . _build"
+rm_build = "rm -rf _build"
+"sphinx:clean" = { chain = ["rm_build", "sphinx"] }
+
+[[needs.types]]
+directive = "req"
+title = "Requirement"
+prefix = "REQ"
+
+[needs]
+# Base "150%" variant data, shared by every build. Inline `[needs.variant_data]`
+# keys below deep-merge on top of (and override) this file.
+variant_data_file = "variants.json"
+
+# Named variant expressions, referenced as `<<name: ...>>` in field values.
+variants = { is_html = "'html' in build_tags" }
+
+# Inline variant data: extends/overrides `variants.json`.
+[needs.variant_data]
+edition = "pro"
+
+# `parse_variants = true` enables `<<...>>` variant functions and
+# `<{ var.* }>` variant-data references in a field's value.
+[needs.fields.status]
+parse_variants = true
+default = ""
+
+[needs.fields.platform_note]
+description = "Note describing the active platform"
+type = "string"
+nullable = true
+default = ""
+parse_variants = true

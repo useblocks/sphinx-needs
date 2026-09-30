@@ -1,0 +1,8 @@
+{
+  "platform": "linux",
+  "archs": ["x86", "arm"],
+  "build": {
+    "compiler": "gcc",
+    "debug": false
+  }
+}
