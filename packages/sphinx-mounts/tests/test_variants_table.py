@@ -130,6 +130,21 @@ def test_both_locations_read_variants_and_warn_once(make_app, tmp_path):
     assert _pages(app) >= GATED_PAGES
 
 
+def test_both_locations_warn_once_per_ignored_key(make_app, tmp_path):
+    """Both ``[needs]`` keys beside ``[variants]``: two keys ignored, two warnings."""
+    toml = (
+        MIGRATED
+        + '\n[needs]\nvariant_data_file = "x86.json"\n'
+        + '\n[needs.variant_data]\nedition = "basic"\n'
+    )
+    confdir = _project(tmp_path, toml)
+    (confdir / "x86.json").write_text(json.dumps({"cpu": "x86"}), encoding="utf-8")
+    app = _build(make_app, confdir)
+    warnings = app._warning.getvalue()
+    assert warnings.count("mounts.variant_data_location") == 2, warnings
+    assert _pages(app) >= GATED_PAGES
+
+
 def test_the_location_warning_is_suppressed_by_its_own_name(make_app, tmp_path):
     """O6's warning fails ``-W``, so it has to be silenceable on its own."""
     toml = MIGRATED + '\n[needs]\nvariant_data_file = "x86.json"\n'
@@ -291,10 +306,11 @@ def test_a_variants_table_sphinx_needs_is_not_reading_is_refused(make_app, tmp_p
 def test_a_sphinx_needs_that_does_not_read_variants_is_refused(make_app, tmp_path):
     """O4, the new refusal: pointed at this file, and it still came back empty.
 
-    A sphinx-needs that reads ``[variants]`` and is pointed at this file either
-    refuses the table itself or resolves exactly the map this file yields. An
-    empty map beside a non-empty file is therefore only reachable by one that
-    does not read ``[variants]`` -- every release before 9.0.0.
+    A sphinx-needs pointed at this file resolves the file's own map unless it
+    did not READ the ``[variants]`` table — because it predates 9.0.0, or
+    because it abandoned the file on a ``[needs]`` error before reaching
+    ``[variants]``. This extension cannot tell the two apart without importing
+    sphinx-needs, so the message names both.
     """
     confdir = _project(tmp_path, MIGRATED)
     _stub_conf(
@@ -307,58 +323,80 @@ def test_a_sphinx_needs_that_does_not_read_variants_is_refused(make_app, tmp_pat
     message = _refusal(make_app, confdir)
     assert "`[variants]`" in message, message
     assert "EMPTY variant map" in message, message
-    assert "9.0.0" in message, message
-    assert "`[needs]`" in message, "the other remedy: keep the keys in [needs]"
+    assert "before 9.0.0 does not read it" in message, "cause 1: the version"
+    assert "could not load this file's `[needs]` table" in message, "cause 2"
+    assert "`needs.config`" in message, "points at sphinx-needs' own warning"
+    assert "`[needs]` until you can" in message, "the other remedy"
     assert "[[source.variant_sources]]" in message, "the gating key is named"
     assert "needs_from_toml_table" not in message, message
 
 
-def test_a_prefixed_sphinx_needs_is_refused_naming_the_prefix(make_app, tmp_path):
+@pytest.mark.parametrize(
+    ("prefix", "rendered", "module"),
+    [
+        ("['tool']", "[tool.variants]", "needs_stub_vt_prefixed"),
+        ("['tool', 'a.b']", '[tool."a.b".variants]', "needs_stub_vt_prefixed_dotted"),
+        ("['']", '["".variants]', "needs_stub_vt_prefixed_empty"),
+    ],
+    ids=["one-segment", "segment-with-a-dot", "empty-segment"],
+)
+def test_a_prefixed_sphinx_needs_is_refused_naming_the_prefix(
+    make_app, tmp_path, prefix: str, rendered: str, module: str
+):
     """O4's other cause: ``needs_from_toml_table`` scopes sphinx-needs away.
 
     With a prefix, sphinx-needs reads ``[<prefix>.variants]`` and never the
     top-level table this extension reads. Upgrading would change nothing, so
-    the message must not say to.
+    the message must not say to. Any non-empty prefix takes this branch — an
+    empty segment included, which sphinx-needs cannot read at all — and the
+    table is named as TOML spells it, so a segment holding a dot is quoted.
     """
     confdir = _project(tmp_path, MIGRATED)
     _stub_conf(
         confdir,
-        "needs_stub_vt_prefixed",
+        module,
         inline="{}",
         file_ref="None",
         from_toml="'ubproject.toml'",
-        from_toml_table="['tool']",
+        from_toml_table=prefix,
     )
     message = _refusal(make_app, confdir)
     assert "needs_from_toml_table" in message, message
-    assert "[tool.variants]" in message, message
+    assert rendered in message, message
     assert "9.0.0" not in message, message
 
 
 @pytest.mark.parametrize(
-    ("from_toml", "module"),
+    ("table", "from_toml", "module", "remedy"),
     [
-        ("None", "needs_stub_vt_bad_unpointed"),
-        ("'ubproject.toml'", "needs_stub_vt_bad_old"),
+        ("variants", "None", "needs_stub_vt_bad_unpointed", True),
+        ("variants", "'other.toml'", "needs_stub_vt_bad_elsewhere", True),
+        ("variants", "'ubproject.toml'", "needs_stub_vt_bad_old", False),
+        ("needs", "None", "needs_stub_vt_bad_legacy_unpointed", True),
     ],
-    ids=["unpointed", "pointed-but-not-reading-variants"],
+    ids=["unpointed", "elsewhere", "pointed-but-empty", "legacy-unpointed"],
 )
-def test_a_malformed_variants_table_is_refused_when_sphinx_needs_has_no_map(
-    make_app, tmp_path, from_toml: str, module: str
+def test_a_malformed_table_is_refused_when_sphinx_needs_has_no_map(
+    make_app, tmp_path, table: str, from_toml: str, module: str, remedy: bool
 ):
-    """O9 with sphinx-needs present: it read nothing here, so it refuses nothing.
+    """O9 with sphinx-needs present: it resolved nothing here, so it refuses nothing.
 
-    Both ways sphinx-needs can end up with an empty map beside this file --
-    never pointed at it, or pointed but not reading ``[variants]`` -- leave
-    the malformed table to this extension, and the message must be true of
-    either.
+    sphinx-needs ends up with an empty map beside this file when it is not
+    pointed at it, is pointed at another file, could not load this file's
+    ``[needs]`` table, or predates ``[variants]``; the message must be true of
+    each. When sphinx-needs is not reading this file at all, the pointing is
+    half the problem, so the refusal also names the one-line fix the guard
+    would have named.
     """
-    confdir = _project(tmp_path, RULES + '\n[variants]\ndata_file = "nope.json"\n')
+    key = "data_file" if table == "variants" else "variant_data_file"
+    confdir = _project(tmp_path, RULES + f'\n[{table}]\n{key} = "nope.json"\n')
+    (confdir / "other.toml").write_text("", encoding="utf-8")
     _stub_conf(confdir, module, inline="{}", file_ref="None", from_toml=from_toml)
     message = _refusal(make_app, confdir)
     assert "nope.json" in message, message
-    assert "resolved no variant data from this file" in message, message
+    assert "did not resolve this file's variant data" in message, message
     assert "not installed" not in message, message
+    assert ('needs_from_toml = "ubproject.toml"' in message) is remedy, message
 
 
 @pytest.mark.parametrize(
@@ -391,25 +429,99 @@ def test_a_legitimately_empty_variants_table_is_not_refused(
     assert "hostgated.html" not in _pages(app)
 
 
+@pytest.mark.parametrize("spelling", ["needs_variant_data_file", "variant_data_file"])
 @pytest.mark.parametrize(
-    ("overrides", "module"),
-    [
-        ({"needs_variant_data_file": "empty.json"}, "needs_stub_vt_dash_d"),
-        ({"needs_variant_data.edition": "basic"}, "needs_stub_vt_dash_d_dotted"),
-    ],
-    ids=["data-file", "dotted-inline-key"],
+    ("table", "key"),
+    [("needs", "variant_data_file"), ("variants", "data_file")],
+    ids=["legacy", "variants"],
 )
-def test_a_dash_d_override_is_not_mistaken_for_an_old_sphinx_needs(
-    make_app, tmp_path, overrides: dict[str, str], module: str
+def test_a_dash_d_over_a_missing_data_file_is_honoured(
+    make_app, tmp_path, table: str, key: str, spelling: str
 ):
-    """``-D needs_variant_data*`` may legitimately empty what the file fills.
+    """``-D`` replaces the file's data file, so a missing one is not read.
 
-    sphinx-needs drops a ``-D``'d key from both locations before it reads the
-    file, so its map can be empty where this extension's own read -- which
-    does not apply ``-D`` -- is not. Without the exemption a correct 9.0
-    project run with ``-D`` would be refused as an old sphinx-needs.
+    sphinx-needs, pointed at this file, removes a ``-D``'d key from both of its
+    locations before it reads the file — under either spelling, the confval's
+    or the bare key's — so the missing file named there is never opened. This
+    extension removes it the same way when sphinx-needs is pointed here, and
+    the build is the override's: an empty map, warn-and-exclude.
+    """
+    confdir = _project(tmp_path, RULES + f'\n[{table}]\n{key} = "nope.json"\n')
+    (confdir / "empty.json").write_text("{}", encoding="utf-8")
+    _stub_conf(
+        confdir,
+        f"needs_stub_vt_dd_missing_{table}_{len(spelling)}",
+        inline="{}",
+        file_ref="None",
+        from_toml="'ubproject.toml'",
+    )
+    app = _build(make_app, confdir, confoverrides={spelling: "empty.json"})
+    assert "mounts.variant_rule_unevaluable" in app._warning.getvalue()
+    assert "hostgated.html" not in _pages(app)
+
+
+def test_an_old_sphinx_needs_run_with_dash_d_still_loses_the_inline_table(
+    make_app, tmp_path
+):
+    """``-D`` removes the data FILE only; ``[variants.data]`` still has a map.
+
+    sphinx-needs 9.0 pointed here with ``-D needs_variant_data_file=…`` would
+    read ``[variants.data]`` and resolve it — a non-empty map. An empty map in
+    that state is an old sphinx-needs that never read ``[variants]``, so the
+    override cannot excuse it: the inline table would be lost.
     """
     confdir = _project(tmp_path, MIGRATED)
+    (confdir / "empty.json").write_text("{}", encoding="utf-8")
+    _stub_conf(
+        confdir,
+        "needs_stub_vt_dd_old",
+        inline="{}",
+        file_ref="None",
+        from_toml="'ubproject.toml'",
+    )
+    message = _refusal(
+        make_app, confdir, confoverrides={"needs_variant_data_file": "empty.json"}
+    )
+    assert "EMPTY variant map" in message, message
+
+
+@pytest.mark.parametrize(
+    ("toml_tail", "overrides", "module"),
+    [
+        (
+            '[variants]\ndata_file = "vd.json"\n',
+            {"needs_variant_data_file": "empty.json"},
+            "needs_stub_vt_dd_file",
+        ),
+        (
+            '[variants]\ndata_file = "vd.json"\n',
+            {"variant_data_file": "empty.json"},
+            "needs_stub_vt_dd_file_bare",
+        ),
+        (
+            '[variants.data]\nedition = "pro"\n',
+            {"needs_variant_data": "x"},
+            "needs_stub_vt_dd_data",
+        ),
+        (
+            '[variants.data]\nedition = "pro"\n',
+            {"variant_data": "x"},
+            "needs_stub_vt_dd_data_bare",
+        ),
+    ],
+    ids=["data-file", "bare-data-file", "inline", "bare-inline"],
+)
+def test_a_dash_d_override_of_every_declared_key_is_not_refused(
+    make_app, tmp_path, toml_tail: str, overrides: dict[str, str], module: str
+):
+    """The override removes the only declared key, so nothing is left to lose.
+
+    Under either spelling, and for the inline table even when Sphinx refuses
+    to apply a string over a dictionary confval: sphinx-needs removes the key
+    whenever it is in ``config.overrides``, so its empty map is exactly what a
+    9.0 sphinx-needs resolves here, and refusing it would be a false refusal.
+    """
+    confdir = _project(tmp_path, RULES + "\n" + toml_tail)
     (confdir / "empty.json").write_text("{}", encoding="utf-8")
     _stub_conf(
         confdir,
@@ -420,6 +532,84 @@ def test_a_dash_d_override_is_not_mistaken_for_an_old_sphinx_needs(
     )
     app = _build(make_app, confdir, confoverrides=overrides)
     assert "hostgated.html" not in _pages(app), "the override is honoured"
+
+
+def test_a_dash_d_does_not_excuse_a_file_sphinx_needs_is_not_reading(
+    make_app, tmp_path
+):
+    """The removal applies to the file sphinx-needs reads, and only to it.
+
+    Unpointed, sphinx-needs removed nothing from this file — and the bare key
+    was not even applied to a confval — so the file keeps its declaration and
+    the guard refuses the mispointing, exactly as without the override.
+    """
+    confdir = _project(tmp_path, RULES + '\n[needs]\nvariant_data_file = "vd.json"\n')
+    (confdir / "empty.json").write_text("{}", encoding="utf-8")
+    _stub_conf(confdir, "needs_stub_vt_dd_unpointed", inline="{}", file_ref="None")
+    message = _refusal(
+        make_app, confdir, confoverrides={"variant_data_file": "empty.json"}
+    )
+    assert "never pointed at it" in message, message
+
+
+def test_a_dotted_dash_d_lands_on_the_confval_map(make_app, tmp_path):
+    """Sphinx folds ``-D needs_variant_data.<key>=…`` into the confval itself.
+
+    The map is then non-empty, sphinx-needs' map is taken, and the file's
+    variant data is not read at all.
+    """
+    confdir = _project(tmp_path, MIGRATED)
+    _stub_conf(
+        confdir,
+        "needs_stub_vt_dash_d_dotted",
+        inline="{}",
+        file_ref="None",
+        from_toml="'ubproject.toml'",
+    )
+    app = _build(
+        make_app, confdir, confoverrides={"needs_variant_data.edition": "basic"}
+    )
+    assert "hostgated.html" not in _pages(app), "edition = basic, from -D"
+
+
+def test_a_non_path_confval_data_file_is_refused(make_app, tmp_path):
+    """sphinx-needs 8.3.1 copies ``variant_data_file = 1`` into the confval as is.
+
+    Standing down would skip every rule and publish what they gate, so the
+    value is refused, naming it, rather than reaching ``Path(1)``.
+    """
+    confdir = _project(tmp_path, MIGRATED)
+    _stub_conf(
+        confdir,
+        "needs_stub_vt_file_int",
+        inline="{}",
+        file_ref="1",
+        from_toml="'ubproject.toml'",
+    )
+    message = _refusal(make_app, confdir)
+    assert "needs_variant_data_file" in message, message
+    assert "int" in message, message
+
+
+def test_a_legacy_inline_table_sphinx_needs_resolved_empty_is_not_refused(
+    make_app, tmp_path
+):
+    """The new cell is ``[variants]``-only: every supported sphinx-needs reads ``[needs]``.
+
+    A pointed sphinx-needs with an empty map beside a non-empty
+    ``[needs.variant_data]`` got there some other way (``-D``, or a map written
+    by another extension), and is not told to upgrade.
+    """
+    confdir = _project(tmp_path, RULES + '\n[needs.variant_data]\nedition = "pro"\n')
+    _stub_conf(
+        confdir,
+        "needs_stub_vt_legacy_empty",
+        inline="{}",
+        file_ref="None",
+        from_toml="'ubproject.toml'",
+    )
+    app = _build(make_app, confdir)
+    assert "hostgated.html" not in _pages(app)
 
 
 def test_both_locations_are_not_reported_twice_when_sphinx_needs_has_a_map(
