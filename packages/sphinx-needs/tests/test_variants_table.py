@@ -171,6 +171,10 @@ def test_only_a_missing_needs_table_goes_on_to_variants(build, toml, message):
 @pytest.mark.parametrize(
     ("toml", "message"),
     [
+        # the interpreter's text, and only its stable start: a RecursionError says
+        # "maximum recursion depth exceeded in comparison" when the limit trips inside
+        # a comparison rather than a call, which depends on the stack depth at that
+        # moment (it differed between a local run and a CI cell)
         pytest.param(
             f"x = {'[' * 3000}{']' * 3000}\n",
             "maximum recursion depth exceeded",
@@ -180,9 +184,7 @@ def test_only_a_missing_needs_table_goes_on_to_variants(build, toml, message):
         # the one the other case raises
         pytest.param(
             f"x = {'1' * 5000}\n",
-            "Exceeds the limit (4300 digits) for integer string conversion: "
-            "value has 5000 digits; use sys.set_int_max_str_digits() to increase "
-            "the limit",
+            "Exceeds the limit (4300 digits) for integer string conversion",
             id="integer-limit",
         ),
     ],
@@ -192,9 +194,11 @@ def test_an_unparseable_toml_only_warns_whatever_the_error(build, toml, message)
     (Python's integer-conversion limit), neither of which ``load_toml`` wraps; each is a
     warning, like every other TOML that cannot be parsed."""
     app = build({"conf.py": TOML_CONF, "ubproject.toml": toml})
-    assert build_warnings(app) == [
-        f"WARNING: Error loading 'needs_from_toml' file: {message} [needs.config]"
-    ]
+    (warning,) = build_warnings(app)
+    assert warning.startswith(
+        f"WARNING: Error loading 'needs_from_toml' file: {message}"
+    )
+    assert warning.endswith(" [needs.config]")
 
 
 def test_neither_table_keeps_todays_warning(build):
