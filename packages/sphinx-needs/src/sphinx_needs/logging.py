@@ -60,6 +60,8 @@ WarningSubTypes = Literal[
     "unknown_external_keys",
     "unknown_import_keys",
     "variant",
+    "variant_data_location",
+    "variants_unknown_key",
     "warnings",
 ]
 
@@ -109,6 +111,8 @@ WarningSubTypeDescription: dict[WarningSubTypes, str] = {
     "unknown_external_keys": "Unknown keys found in external need data",
     "unknown_import_keys": "Unknown keys found in imported need data",
     "variant": "Error processing variant in need field",
+    "variant_data_location": "Variant data set in both ``[variants]`` and ``[needs]``; the ``[needs]`` keys are ignored",
+    "variants_unknown_key": "Unknown key in the ``[variants]`` table",
     "warnings": "Need warning check failed for one or more needs",
 }
 
