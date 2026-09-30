@@ -121,7 +121,82 @@ For example to read from a ``[tool.needs]`` table:
 
    needs_from_toml_table = ["tool"]
 
-.. caution:: Any configuration specifying relative paths in the toml file will be resolved relative to the directory containing the :file:`conf.py` file.
+Relative paths in the toml file are resolved relative to the directory containing the toml file,
+not the one containing the :file:`conf.py` file.
+A relative path set in :file:`conf.py`, or with ``-D`` on the command line, stays relative to the Sphinx ``confdir``.
+
+.. _`needs_from_toml_variants`:
+
+Variant data: the ``[variants]`` table
+++++++++++++++++++++++++++++++++++++++
+
+.. versionadded:: 9.0.0
+
+The variant data of :ref:`needs_variant_data` and :ref:`needs_variant_data_file` has a table of its own in the toml file,
+``[variants]``, which other tools reading the same file share:
+
+.. code-block:: toml
+
+   [variants]
+   data_file = "variants/base.json"  # a JSON file, relative to this file's directory
+   [variants.data]                   # deep-merged over the file: these values win
+   edition = "pro"
+
+``data`` is the inline table (:ref:`needs_variant_data`) and ``data_file`` the file (:ref:`needs_variant_data_file`);
+either may be given alone. Any other key in ``[variants]`` is ignored and reported as a ``needs.variants_unknown_key`` warning.
+
+**The legacy location.** Before ``[variants]`` existed, the same two values were read from the ``[needs]`` table,
+as ``variant_data`` and ``variant_data_file``, and they still are.
+A build with ``-v`` says, for each key, when the data comes from there.
+A later release will deprecate the legacy location, so move the two keys when convenient:
+
+.. code-block:: toml
+
+   # the legacy location
+   [needs]
+   variant_data_file = "variants/base.json"
+   [needs.variant_data]
+   edition = "pro"
+
+   # the same data in [variants]
+   [variants]
+   data_file = "variants/base.json"
+   [variants.data]
+   edition = "pro"
+
+**One location is read, whole.** When ``[variants]`` holds ``data`` or ``data_file``, both values come from ``[variants]``:
+a ``variant_data`` or ``variant_data_file`` left in ``[needs]`` is ignored, with one ``needs.variant_data_location`` warning per key.
+A file from one table is never merged under an inline table from the other.
+
+**conf.py and -D, key by key.** As for every other option, the toml overrides :file:`conf.py` one key at a time:
+a ``needs_variant_data`` in :file:`conf.py` still applies when the toml sets no inline table,
+and a ``needs_variant_data_file`` when the toml sets no file; the file is then loaded and the inline table merged over it, as usual.
+``-D needs_variant_data_file=...`` replaces the toml's file, in either location, without opening it, and the toml's inline table still applies.
+
+**With needs_from_toml_table**, the prefix applies to both tables:
+with ``needs_from_toml_table = ["tool"]`` they are ``[tool.needs]`` and ``[tool.variants]``,
+which is what lets the configuration live in a :file:`pyproject.toml`, whose top level is reserved for other uses.
+A top-level ``[variants]`` is then someone else's table, and is not read.
+
+.. code-block:: toml
+
+   # pyproject.toml, with needs_from_toml = "pyproject.toml" and needs_from_toml_table = ["tool"]
+   [tool.needs]
+   id_required = true
+
+   [tool.variants.data]
+   edition = "pro"
+
+A ``variants`` key that is not a table, a ``data_file`` that is not one non-empty path, or a data file that is missing
+or does not hold valid variant data fails the build, naming the toml file and the table.
+Both warnings above can be suppressed on their own, see :ref:`config-warnings`.
+
+.. note::
+
+   `ubCode <https://ubcode.useblocks.com/>`__ and `sphinx-mounts <https://sphinx-mounts.useblocks.com/>`__
+   do not read ``[variants]`` yet.
+   A project that is also built or checked by either keeps its variant data in ``[needs]``
+   until the release of that tool that reads ``[variants]``.
 
 .. _`needs_include_needs`:
 
@@ -629,6 +704,8 @@ The ``var`` namespace can also be referenced directly within need field values u
 
 Default: ``{}``
 
+In a :ref:`toml file <needs_from_toml>` the inline table is ``data`` in the :ref:`[variants] table <needs_from_toml_variants>`.
+
 .. seealso::
 
    :ref:`needs_variant_data_file` for loading variant data from a JSON file.
@@ -651,6 +728,8 @@ If both ``needs_variant_data_file`` and ``needs_variant_data`` are set, the file
 and the inline dictionary is deep-merged on top (inline values win on conflict).
 
 The path is resolved relative to the Sphinx ``confdir`` (the directory containing ``conf.py``).
+In a :ref:`toml file <needs_from_toml>` the file is ``data_file`` in the :ref:`[variants] table <needs_from_toml_variants>`,
+and it is resolved relative to the directory containing the toml file.
 
 The file is read once per build, during configuration initialisation, so a missing file
 or one whose contents are not valid variant data fails the build before any document is
