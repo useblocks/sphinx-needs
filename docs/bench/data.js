@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790780923107,
+  "lastUpdate": 1790782646322,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -21708,6 +21708,42 @@ window.BENCHMARK_DATA = {
             "value": 51.186531585999994,
             "unit": "s",
             "extra": "Commit: 3c3a326ec161df4b5afee68e918dcb43397da31e\nBranch: master\nTime: 2026-09-30T17:07:15+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "28d984c68bd2902fef268fe20645e19b703263b5",
+          "message": "✨ ub-project: read `[variants]` under a consumer's prefix (`variants_table`) (#1992)\n\nA consumer that nests its configuration under a prefix — sphinx-needs'\n`needs_from_toml_table`, i.e. `[tool.needs]` in a\n`pyproject.toml` — could not move its variant data to `[variants]`: the\nreader looked for `[variants]` only at the top level, and\nPEP 518 reserves a `pyproject.toml`'s top-level tables.\n\n**What changes**\n\n- `read_variants(root_table, toml_path, *, needs_table=\"needs\",\nvariants_table=\"variants\")`: `variants_table` takes what\n`needs_table` takes (dotted, or a sequence of keys for a segment with a\ndot). A consumer that prefixes its configuration passes both\ntables under the prefix (`tool.acme.needs`, `tool.acme.variants`); a\n`variants` table anywhere else is someone else's — not read,\nnot reported, exactly as a top-level `[needs]` is under a prefixed\n`needs_table` today.\n- Diagnostic paths and messages name the table where the consumer put\nit: `tool.acme.variants.bogus`,\n`tool.\"acme.docs\".variants.bogus`, \"`[tool.acme.variants]` data must be\na table\", \"… because `[tool.acme.variants]` is set …\",\n\"… `[tool.acme.variants]` data is the current one\". The `[needs]` side\nalready did this; the two are now symmetric.\n- `design/reading-contract.md` §6.2, §7.2 and §9.4, and an `Unreleased`\nchangelog entry.\n\n**What stays**\n\n- Every existing call behaves as before: the default is the top-level\n`[variants]`. Codes, `VARIANTS_TABLE` and\n`VariantsResult.location` (the kind, `\"variants\"`/`\"needs\"`) are\nunchanged. A consumer that prefixes only `[needs]` still reads\n  `[variants]` at the top level (`prefix-with-variants-set`).\n- The version stays 1.0.0; 1.1.0 is the follow-up release PR, after\nwhich sphinx-needs can depend on `ub-project>=1.1.0,<2`.\n\n**The corpus, 57 → 60**\n(`tests/fixtures/ubproject_reading_conformance.toml`): a new optional\ncase key `variants_table`, Python-only\nlike `needs_table`; `prefix-with-variants-set`'s `why` sharpened; three\ncases added — `prefix-with-prefixed-variants`,\n`prefix-ignores-a-top-level-variants`,\n`prefix-unknown-key-path-carries-the-prefix`. No existing case's bytes\nchanged. **ubCode owes a\nre-vendor** (the header changed); its runner is otherwise unaffected,\nsince it skips every case carrying `needs_table`, which all three\nnew cases do.\n\nWhy now: sphinx-needs is about to read `[variants]` through this package\n(the next pull request), and its `needs_from_toml_table`\nusers are the population this unblocks. Reviewed by one adversarial\nreviewer (report in the orchestration record).",
+          "timestamp": "2026-09-30T17:36:17+02:00",
+          "tree_id": "e46a577731df49eba81689da4532bcd738f15168",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/28d984c68bd2902fef268fe20645e19b703263b5"
+        },
+        "date": 1790782637554,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.08988771299999598,
+            "unit": "s",
+            "extra": "Commit: 28d984c68bd2902fef268fe20645e19b703263b5\nBranch: master\nTime: 2026-09-30T17:36:17+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 40.54850892600001,
+            "unit": "s",
+            "extra": "Commit: 28d984c68bd2902fef268fe20645e19b703263b5\nBranch: master\nTime: 2026-09-30T17:36:17+02:00"
           }
         ]
       }
