@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790780240566,
+  "lastUpdate": 1790780923107,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -21672,6 +21672,42 @@ window.BENCHMARK_DATA = {
             "value": 38.463899387,
             "unit": "s",
             "extra": "Commit: 6d35c57fc3996259c55229ad5ecbacaca92643d0\nBranch: master\nTime: 2026-09-30T16:54:33+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3c3a326ec161df4b5afee68e918dcb43397da31e",
+          "message": "♻️ sphinx-test-reports: read ubproject.toml through ub-project (#1989)\n\nsphinx-test-reports becomes the first consumer of\n[`ub-project`](https://pypi.org/project/ub-project/) 1.0.0, the shared\n`ubproject.toml` reader that #1986 extracted from this package's\n`projectconfig.py` and #1987 released.\n\n**What moved.** `projectconfig.py`'s own find/load/anchor plumbing is\ndeleted:\n- `find_project_config`, `_boundary`, `_marker`, `_read_toml`, the two\nmarker tuples and the `tomllib` import;\n- in their place, `find_project_config` is ub-project's walk,\nre-exported;\n- the file is parsed by `ub_project.load_toml`;\n- relative `rootdir` / `report_template` values are joined by\n`ub_project.anchor`;\n- `DEFAULT_TOML_FILENAME` is `ub_project.DEFAULT_FILENAME` under the\nname this package has always exported.\n\n**What stayed.** Everything that is this package's policy stays here:\nthe `[test_reports]` model, its key types, the\nnormalisation, unknown-key warnings, the need-type and field-name\nchecks, and `TomlConfigError`. A `ProjectConfigError` is\nre-raised at the loader as `TomlConfigError(str(error))`, so the Sphinx\nbridge and the converter catch exactly what they caught\nbefore. `TomlConfigError` deliberately does not subclass it, to keep\nub-project's exception off this package's surface.\n\n**No behaviour change, and how that is shown.**\n- Every existing expectation passes unmodified\n(`test_project_config.py`, `test_cli_config.py`, `test_cli_convert.py`,\n  `test_toolchain.py`). The diff only adds test lines.\n- The messages are identical: ub-project's `load_toml` uses the same\nf-strings.\n- Absolute paths are left as the string they were -- tested with a\ntrailing and a doubled separator, the two forms a\n  round trip through `Path` would strip.\n- The one difference is a fix: a file that is not UTF-8 used to escape\nas a bare `UnicodeDecodeError` and is now a\n  configuration error naming the file.\n\nNew tests hold the boundary for invalid TOML, an unreadable file and a\nnon-UTF-8 file, through the loader, the converter (exit 2)\nand the Sphinx bridge. A symlinked-start discovery case pins that the\nwalk never `resolve()`s its start; none of the existing\n14 could tell the difference. One `is` assertion pins that\n`find_project_config` is ub-project's own object, not a copy\nof the walk.\n\n**The new dependency.** `ub-project>=1.0.0,<2` at runtime, tight-tracked\nas `check_workspace` (4) requires. It is standard\nlibrary only, so `pip install sphinx-test-reports` still installs no\nSphinx. The lock gains only the edge (+2 lines;\n`uv lock --check` passes on 0.12.15 and 0.12.9).\n\n**Toolchain-free.** The `toolchain-free` job installs the built\ntest-reports wheel and `packages/ub-project` in one\n`--no-sources` resolution. The path requirement satisfies the wheel's\n`ub-project>=1.0.0,<2`, so the modules run against the\ncheckout's ub-project, built as a wheel. PyPI's 1.0.0 is what the\nrelease compat cell installs, and a local reproduction of\nthat cell passes (25/25 modules, 487 tests).",
+          "timestamp": "2026-09-30T17:07:15+02:00",
+          "tree_id": "5c439156bf90b310e6d61de48b61fbdcbbc9a012",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/3c3a326ec161df4b5afee68e918dcb43397da31e"
+        },
+        "date": 1790780912085,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.09967996199999618,
+            "unit": "s",
+            "extra": "Commit: 3c3a326ec161df4b5afee68e918dcb43397da31e\nBranch: master\nTime: 2026-09-30T17:07:15+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 51.186531585999994,
+            "unit": "s",
+            "extra": "Commit: 3c3a326ec161df4b5afee68e918dcb43397da31e\nBranch: master\nTime: 2026-09-30T17:07:15+02:00"
           }
         ]
       }
