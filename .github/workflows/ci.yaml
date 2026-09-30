@@ -470,6 +470,11 @@ jobs:
     # declares, asserts that sphinx, sphinx_needs and docutils are all absent, and runs the
     # modules that do not need a build.
     #
+    # The environment is on Python 3.11, the workspace floor: both packages it runs claim
+    # `>=3.11`, and no other cell runs either of them there -- the matrix cells vary the
+    # sphinx series on the pinned interpreter -- so the job that proves "no toolchain"
+    # proves the floor too.
+    #
     # ubproject, the shared reader for `ubproject.toml`, is installed into the SAME
     # environment and its whole suite runs here: its contract is to import nothing outside
     # the standard library, so that every tool reading the file -- this converter included
@@ -556,7 +561,7 @@ jobs:
         # from the wheel checked above, so the modules below -- the aliases among them --
         # run against the artefact, not against the checkout
         run: |
-          uv venv /tmp/toolchain-free
+          uv venv --python 3.11 /tmp/toolchain-free
           wheel=$(ls /tmp/str-dist/*.whl)
           uv pip install --python /tmp/toolchain-free --no-sources "${wheel}[pytest]" packages/ubproject
       - name: Assert the toolchain really is absent
