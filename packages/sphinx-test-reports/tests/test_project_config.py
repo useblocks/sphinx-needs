@@ -15,6 +15,7 @@ from shutil import copytree
 
 import pytest
 
+import ub_project
 from sphinx_test_reports.projectconfig import (
     BRIDGE_KEYS,
     BUILD_TABLE,
@@ -457,12 +458,25 @@ class TestLoader:
         assert config["rootdir"] == str(subdir / "docs")
         assert config["report_template"] == str(subdir / "templates" / "report.txt")
 
-    def test_absolute_paths_stay_untouched(self, tmp_path):
+    @pytest.mark.parametrize(
+        "suffix",
+        [
+            pytest.param("", id="plain"),
+            # the two forms ``Path`` normalises away: a round trip through it
+            # would return ``/a/b`` for ``/a/b/`` and ``/a/b`` for ``/a//b``,
+            # so these are the cases that tell "left as the string it was"
+            # from "anchored, and absolute already"
+            pytest.param(os.sep, id="trailing-separator"),
+            pytest.param(f"{os.sep}{os.sep}x", id="doubled-separator"),
+        ],
+    )
+    def test_absolute_paths_stay_untouched(self, tmp_path, suffix):
         # a TOML literal string: in a basic string a Windows path's backslashes
         # are escape sequences ("\U" starts a unicode escape) and the file is invalid
-        _write(tmp_path, f"[test_reports]\nrootdir = '{tmp_path}'\n")
+        value = f"{tmp_path}{suffix}"
+        _write(tmp_path, f"[test_reports]\nrootdir = '{value}'\n")
         config = load_project_config(tmp_path / DEFAULT_TOML_FILENAME)
-        assert config["rootdir"] == str(tmp_path)
+        assert config["rootdir"] == value
 
 
 def _not_utf8(tmp_path):
@@ -495,6 +509,11 @@ class TestSharedReaderBoundary:
         # package's public surface
         assert not issubclass(TomlConfigError, ProjectConfigError)
         assert not issubclass(ProjectConfigError, TomlConfigError)
+
+    def test_the_walk_is_the_shared_reader_s_own(self):
+        # re-exported, not copied: a local fork of the walk would pass every
+        # discovery test and drift from the reader the other members use
+        assert find_project_config is ub_project.find_project_config
 
     def test_invalid_toml(self, tmp_path):
         message = self._assert_re_raised(_write(tmp_path, "[test-reports\n"))
