@@ -1,9 +1,9 @@
 """The reader, held to the shared conformance corpus.
 
 ``tests/fixtures/ubproject_reading_conformance.toml`` is the executable half of
-``design/reading-contract.md``. This package is its repository of record and ubCode
-vendors it, so every case here is a statement both readers are held to. Two things are
-asserted and both matter:
+``design/reading-contract.md``. This package is its repository of record and ubCode is to
+vendor it, so every case here is a statement both readers are to be held to. Two things
+are asserted and both matter:
 
 * every case's outcome -- the merged map, the anchored data file and the findings, or a
   refusal;

@@ -4,8 +4,8 @@ repos:
     rev: v0.9.3
     hooks:
       - id: taplo-format
-        # the two TOML conformance corpora are shared byte-for-byte with ubCode, so a
-        # formatter local to this repository must not rewrite them. taplo's current
+        # the two TOML conformance corpora are (or, for the ubproject one, are to be) shared
+        # byte-for-byte with ubCode, so a formatter local to this repository must not rewrite them. taplo's current
         # defaults happen to leave the variant-condition one alone; the ubproject reading
         # corpus they do NOT -- measured: every expectation line past taplo's column limit
         # is rewrapped across several lines, eleven of them -- and a vendored copy that
@@ -27,8 +27,8 @@ repos:
     rev: v0.21.0
     hooks:
       - id: yamlfmt
-        # the conformance corpora are shared byte-for-byte with ubCode, so a formatter
-        # local to this repository must not rewrite them. yamlfmt only matches YAML today,
+        # the conformance corpora are (or are to be) shared byte-for-byte with ubCode, so a
+        # formatter local to this repository must not rewrite them. yamlfmt only matches YAML today,
         # so the ubproject reading corpus (TOML) is listed to state the intent rather than
         # because the hook would reach it
         exclude: |-
