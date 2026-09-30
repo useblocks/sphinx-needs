@@ -223,19 +223,24 @@ def _write_variant_data_file_project(
 @pytest.mark.parametrize(
     ("file_content", "expected"),
     [
+        pytest.param(None, "variant data file not found: {file}", id="missing"),
         pytest.param(
-            None, ("Variant data file not found", "variant_data.json"), id="missing"
+            "{not json",
+            "variant data file {file} is not valid JSON: Expecting property name "
+            "enclosed in double quotes: line 1 column 2 (char 1)",
+            id="malformed",
         ),
         pytest.param(
-            "{not json", ("Invalid JSON in", "variant_data.json"), id="malformed"
+            '["not", "an", "object"]',
+            "variant data file {file} must hold a JSON object, got list",
+            id="list",
         ),
-        # The two shape errors below come from the validator, which is not told which
-        # file the data was read from, so their messages name no file. Naming it there
-        # would be an improvement (a follow-up), so this test does not pin the absence.
         pytest.param(
-            '["not", "an", "object"]', ("must contain a JSON object",), id="list"
+            '{"x": null}',
+            "variant data file {file}: var.x: a value must be a str, bool, int or "
+            "float, an array or a table, got NoneType",
+            id="bad_value",
         ),
-        pytest.param('{"x": null}', ("expected str/bool/int/float",), id="bad_value"),
     ],
 )
 def test_variant_data_file_errors_fail_the_build(
@@ -243,10 +248,11 @@ def test_variant_data_file_errors_fail_the_build(
 ):
     """A missing or malformed variant data file fails the build.
 
-    Only the phase in which this is reported changed; the exception type -- and so
-    the severity -- and the message are unchanged, which is what is pinned here by
-    wrapping both the application creation and the build. The phase itself is pinned
-    separately, by ``test_variant_data_file_missing_fails_at_application_creation``.
+    The exception type -- and so the severity -- is ``NeedsConfigException``, as it
+    always was, and the message is ``ub_project``'s, the words the toml route uses too:
+    pinned here by wrapping both the application creation and the build. The phase is
+    pinned separately, by
+    ``test_variant_data_file_missing_fails_at_application_creation``.
     """
     srcdir = _write_variant_data_file_project(tmpdir, write_fixture_files, file_content)
 
@@ -254,8 +260,7 @@ def test_variant_data_file_errors_fail_the_build(
         app = make_app(srcdir=srcdir, freshenv=True)
         app.build()
 
-    for fragment in expected:
-        assert fragment in str(excinfo.value)
+    assert str(excinfo.value) == expected.format(file=srcdir / "variant_data.json")
 
 
 def test_variant_data_file_missing_fails_at_application_creation(
@@ -275,8 +280,9 @@ def test_variant_data_file_missing_fails_at_application_creation(
     with pytest.raises(NeedsConfigException) as excinfo:
         make_app(srcdir=srcdir, freshenv=True)
 
-    assert "Variant data file not found" in str(excinfo.value)
-    assert "variant_data.json" in str(excinfo.value)
+    assert str(excinfo.value) == (
+        f"variant data file not found: {srcdir / 'variant_data.json'}"
+    )
 
 
 def test_variant_data_file_confoverride_wins_over_toml(

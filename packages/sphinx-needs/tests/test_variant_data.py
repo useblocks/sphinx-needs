@@ -8,13 +8,13 @@ from pathlib import Path
 import pytest
 
 from sphinx_needs.variant_data import (
-    VariantDataError,
     VariantDataProxy,
     deep_merge,
     load_variant_data_file,
     resolve_variant_data,
     validate_variant_data,
 )
+from ub_project import ProjectConfigError
 
 
 class TestVariantDataProxy:
@@ -71,22 +71,22 @@ class TestValidateVariantData:
         validate_variant_data({"cpu": "arm", "nested": {"key": "val"}})
 
     def test_non_dict_raises(self) -> None:
-        with pytest.raises(VariantDataError):
+        with pytest.raises(ProjectConfigError):
             validate_variant_data("not a dict")  # type: ignore[arg-type]
 
     def test_non_string_key_raises(self) -> None:
-        with pytest.raises(VariantDataError):
+        with pytest.raises(ProjectConfigError):
             validate_variant_data({123: "val"})  # type: ignore[dict-item]
 
     def test_bool_int_array_not_mixed(self) -> None:
         """bool and int must not be conflated in arrays (bool is subclass of int)."""
-        with pytest.raises(VariantDataError, match=r"expected int.*got bool"):
+        with pytest.raises(ProjectConfigError, match=r"expected int.*got bool"):
             validate_variant_data({"vals": [1, True, 2]})
-        with pytest.raises(VariantDataError, match=r"expected bool.*got int"):
+        with pytest.raises(ProjectConfigError, match=r"expected bool.*got int"):
             validate_variant_data({"vals": [True, 1, False]})
 
     def test_none_value_raises(self) -> None:
-        with pytest.raises(VariantDataError, match="got NoneType"):
+        with pytest.raises(ProjectConfigError, match="got NoneType"):
             validate_variant_data({"x": None})
 
 
@@ -117,13 +117,13 @@ class TestLoadVariantDataFile:
         assert result == data
 
     def test_missing_file_raises(self) -> None:
-        with pytest.raises(VariantDataError, match="not found"):
+        with pytest.raises(ProjectConfigError, match="not found"):
             load_variant_data_file("/nonexistent/path.json")
 
     def test_invalid_json_raises(self, tmp_path: Path) -> None:
         f = tmp_path / "bad.json"
         f.write_text("{invalid")
-        with pytest.raises(VariantDataError):
+        with pytest.raises(ProjectConfigError):
             load_variant_data_file(str(f))
 
 

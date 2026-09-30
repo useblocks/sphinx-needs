@@ -158,11 +158,7 @@ from sphinx_needs.schema.process import process_schemas
 from sphinx_needs.services.github import GithubService
 from sphinx_needs.string_links import compile_string_links
 from sphinx_needs.utils import node_match
-from sphinx_needs.variant_data import (
-    VariantDataError,
-    VariantDataProxy,
-    resolve_variant_data,
-)
+from sphinx_needs.variant_data import VariantDataProxy
 from sphinx_needs.warnings import process_warnings
 from ub_project import (
     VARIANT_DATA_LOCATION,
@@ -170,6 +166,7 @@ from ub_project import (
     ProjectConfigError,
     load_toml,
     read_variants,
+    resolve_variant_data,
     select_table,
 )
 
@@ -900,10 +897,15 @@ def resolve_variant_data_config(app: Sphinx, config: Config) -> None:
             file_path = str(Path(app.confdir) / file_path)
 
         try:
-            resolved = resolve_variant_data(needs_config.variant_data, file_path)
-        except VariantDataError as e:
-            raise NeedsConfigException(str(e)) from e
-        # Store the resolved result back so downstream code sees the merged dict
+            # ``""`` means "no file" on this route, as ``None`` does: ub_project reads
+            # ``""`` as a path, so it is mapped here (its reading contract, section 10.1)
+            resolved = resolve_variant_data(
+                needs_config.variant_data, Path(file_path) if file_path else None
+            )
+        except ProjectConfigError as error:
+            raise NeedsConfigException(str(error)) from error
+        # Store the resolved result back so downstream code sees the merged dict (always
+        # a fresh one, never the inline dict itself)
         needs_config.variant_data = resolved
 
     # Cache the variant data proxy for use in filter expressions

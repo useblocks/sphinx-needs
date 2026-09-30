@@ -1,26 +1,29 @@
-"""Variant data loading, validation, and proxy for filter expressions.
+"""Variant data references, lookup, and proxy for filter expressions.
 
 This module provides:
-- Validation of variant data structures
-- Loading variant data from JSON files
-- Deep-merging of variant data dicts
+- :class:`VariantDataParsed` and :func:`lookup_variant_data` for ``<{ var.* }>`` references
 - :class:`VariantDataProxy` for dotted attribute access in filter eval contexts
+
+Validating, loading, merging and resolving variant data is ``ub_project``'s.
 """
 
 from __future__ import annotations
 
-import json
 from collections.abc import Iterator
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any
 
-# Allowed scalar types for leaf values
-_SCALAR_TYPES = (str, bool, int, float)
+# ub-project's own functions, re-exported under the names this module always had: they
+# raise its ``ProjectConfigError``, not ``VariantDataError``, and the caller with a Sphinx
+# vocabulary (``resolve_variant_data_config``) turns that into a ``NeedsConfigException``.
+from ub_project import deep_merge as deep_merge
+from ub_project import load_variant_data_file as load_variant_data_file
+from ub_project import resolve_variant_data as resolve_variant_data
+from ub_project import validate_variant_data as validate_variant_data
 
 
 class VariantDataError(Exception):
-    """Raised when variant data fails validation."""
+    """Raised when a ``var.*`` reference cannot be resolved against the variant data."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -89,107 +92,6 @@ def lookup_variant_data(data: dict[str, Any], expression: str) -> Any:
             f"('var.{'.'.join(traversed)}'); access a leaf value instead"
         )
     return current
-
-
-def validate_variant_data(data: dict[str, Any], path: str = "var") -> None:
-    """Validate that data conforms to allowed shape.
-
-    :param data: The data to validate.
-    :param path: The dotted path prefix for error messages.
-    :raises VariantDataError: If data contains invalid types.
-    """
-    if not isinstance(data, dict):
-        raise VariantDataError(f"{path}: expected a dict, got {type(data).__name__}")
-    for key, value in data.items():
-        if not isinstance(key, str):
-            raise VariantDataError(
-                f"{path}: all keys must be strings, got {type(key).__name__}"
-            )
-        full = f"{path}.{key}"
-        if isinstance(value, dict):
-            validate_variant_data(value, full)
-        elif isinstance(value, list):
-            if not value:
-                continue  # empty list is fine
-            first_type = type(value[0])
-            if first_type not in _SCALAR_TYPES:
-                raise VariantDataError(
-                    f"{full}: array elements must be str/bool/int/float, "
-                    f"got {first_type.__name__}"
-                )
-            for i, item in enumerate(value):
-                if type(item) is not first_type:
-                    raise VariantDataError(
-                        f"{full}[{i}]: expected {first_type.__name__}, "
-                        f"got {type(item).__name__} (arrays must be uniform type)"
-                    )
-        elif not isinstance(value, _SCALAR_TYPES):
-            raise VariantDataError(
-                f"{full}: expected str/bool/int/float/list/dict, "
-                f"got {type(value).__name__}"
-            )
-
-
-def load_variant_data_file(path: str | Path) -> dict[str, Any]:
-    """Load and validate variant data from a JSON file.
-
-    :param path: Path to a JSON file.
-    :returns: The validated data dictionary.
-    :raises VariantDataError: If the file is missing or contains invalid data.
-    """
-    file_path = Path(path)
-    if not file_path.exists():
-        raise VariantDataError(f"Variant data file not found: {file_path}")
-    with file_path.open("r", encoding="utf-8") as f:
-        try:
-            data = json.load(f)
-        except json.JSONDecodeError as exc:
-            raise VariantDataError(f"Invalid JSON in {file_path}: {exc}") from exc
-    if not isinstance(data, dict):
-        raise VariantDataError(
-            f"Variant data file must contain a JSON object, got {type(data).__name__}"
-        )
-    validate_variant_data(data)
-    return data
-
-
-def deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
-    """Deep-merge override into base (override wins at leaf level).
-
-    :param base: The base dictionary.
-    :param override: The override dictionary (wins on conflict).
-    :returns: A new merged dictionary.
-    """
-    result = base.copy()
-    for key, value in override.items():
-        if key in result and isinstance(result[key], dict) and isinstance(value, dict):
-            result[key] = deep_merge(result[key], value)
-        else:
-            result[key] = value
-    return result
-
-
-def resolve_variant_data(
-    variant_data: dict[str, Any],
-    variant_data_file: str | None,
-) -> dict[str, Any]:
-    """Resolve variant data from inline config and/or file.
-
-    File is loaded first, then inline values are deep-merged on top.
-
-    :param variant_data: Inline variant data dict from config.
-    :param variant_data_file: Optional path to a JSON file.
-    :returns: The fully resolved and validated variant data dict.
-    :raises VariantDataError: If validation fails.
-    """
-    base: dict[str, Any] = {}
-    if variant_data_file:
-        base = load_variant_data_file(variant_data_file)
-    if variant_data:
-        validate_variant_data(variant_data)
-    if base and variant_data:
-        return deep_merge(base, variant_data)
-    return variant_data or base
 
 
 class VariantDataProxy:
