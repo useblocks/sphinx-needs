@@ -233,7 +233,8 @@ edition = "pro"
    `test_a_non_bare_key_is_a_toml_basic_string_in_the_path` for the examples,
    `test_a_rendered_path_reads_back_as_the_same_key` for the escapes),
    `tests/test_variants.py::TestPrefix` (`test_the_unknown_key_path_carries_a_non_bare_prefix`,
-   and one message test per finding and the type error); corpus:
+   one message test per finding, and `test_the_type_error_names_the_prefixed_variants_table`
+   for the `data` and `data_file` type errors and the wrapped resolve error); corpus:
    `unknown-keys-are-rendered-as-toml`, `prefix-unknown-key-path-carries-the-prefix`;
    corpus: every non-refusal case compares codes and paths.
 3. Order is stable — unknown keys sorted, then location findings in `variant_data`,

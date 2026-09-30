@@ -263,13 +263,24 @@ class TestPrefix:
             (VARIANT_DATA_LOCATION, "tool.acme.needs.variant_data")
         ]
 
+    @pytest.mark.parametrize(
+        "toml",
+        [
+            "[variants]\nbogus = 1\n[variants.data]\nedition = 'pro'\n",
+            # not even a table: the name is only this contract's where the
+            # consumer put it, so a top-level `variants` under a prefix is
+            # not the refusal it would be at the default path
+            "variants = 'x'\n",
+        ],
+        ids=["a-table", "not-a-table"],
+    )
     def test_a_top_level_variants_is_ignored_under_a_prefixed_variants_table(
-        self, tmp_path: Path
+        self, tmp_path: Path, toml: str
     ) -> None:
         """Someone else's table: not read, and not reported -- like a top-level [needs]."""
         result = _read(
             tmp_path,
-            "[variants]\nbogus = 1\n[variants.data]\nedition = 'pro'\n",
+            toml,
             needs_table="tool.acme.needs",
             variants_table="tool.acme.variants",
         )
@@ -320,16 +331,32 @@ class TestPrefix:
         assert diagnostic.code == VARIANT_DATA_LEGACY_LOCATION
         assert "[tool.acme.variants] data is the current one" in diagnostic.message
 
+    @pytest.mark.parametrize(
+        ("toml", "match"),
+        [
+            (
+                "[tool.acme.variants]\ndata = 'x'\n",
+                r"\[tool\.acme\.variants\] data must be a table, got str",
+            ),
+            (
+                "[tool.acme.variants]\ndata_file = ['vd.json']\n",
+                r"\[tool\.acme\.variants\] data_file must be one non-empty path string",
+            ),
+            # the wrapped error from resolving the data: the prefix survives the wrap
+            (
+                "[tool.acme.variants]\ndata_file = 'nope.json'\n",
+                r"\[tool\.acme\.variants\]: variant data file not found",
+            ),
+        ],
+        ids=["data", "data_file", "resolve"],
+    )
     def test_the_type_error_names_the_prefixed_variants_table(
-        self, tmp_path: Path
+        self, tmp_path: Path, toml: str, match: str
     ) -> None:
-        with pytest.raises(
-            ProjectConfigError,
-            match=r"\[tool\.acme\.variants\] data must be a table, got str",
-        ):
+        with pytest.raises(ProjectConfigError, match=match):
             _read(
                 tmp_path,
-                "[tool.acme.variants]\ndata = 'x'\n",
+                toml,
                 needs_table="tool.acme.needs",
                 variants_table="tool.acme.variants",
             )

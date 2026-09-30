@@ -58,7 +58,8 @@
 #   files        - optional; other files, relative to the case directory, and their text
 #   needs_table  - optional; the dotted path of the legacy table. Default "needs".
 #                  Python-only (see the rules above)
-#   variants_table - optional; the dotted path of the `[variants]` table. Default
+#   variants_table
+#                - optional; the dotted path of the `[variants]` table. Default
 #                  "variants". Python-only (see the rules above)
 #   [case.expect]
 #     error             - true when the reader must REFUSE the input: every other
