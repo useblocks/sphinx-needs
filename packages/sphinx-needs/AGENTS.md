@@ -336,8 +336,10 @@ each finding is mapped to a `needs.*` warning subtype (the legacy location to a 
 a `ProjectConfigError` is re-raised as `NeedsConfigException`, and the declared keys are
 written to the two confvals one by one (the file through `_abs_path`), so that
 `resolve_variant_data_config` (priority 11) still merges them with `conf.py` values per key.
-That merge is ub-project's too (`resolve_variant_data`, with `""` mapped to no file and the same
-re-raise): `variant_data.py` keeps only the `var` proxy, the `<{ var.* }>` lookup and its error.
+That merge is ub-project's too (`resolve_variant_data`, with `""` mapped to no file). Both routes
+catch the same pair, `ProjectConfigError` and `ValueError` (#1995), and raise `NeedsConfigException`;
+the TOML route's message carries its `[variants]:` / `[needs]:` prefix. `variant_data.py` keeps the
+`var` proxy, the `<{ var.* }>` reference and its lookup and error, and re-exports ub-project's four.
 
 #### Environment Setup (`env-before-read-docs`)
 

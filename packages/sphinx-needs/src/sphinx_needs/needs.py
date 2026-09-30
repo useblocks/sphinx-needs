@@ -906,8 +906,8 @@ def resolve_variant_data_config(app: Sphinx, config: Config) -> None:
             # ValueError: what ub_project lets through unwrapped -- a data file holding an
             # integer beyond Python's conversion limit, until it names the file itself (#1995)
             raise NeedsConfigException(str(error)) from error
-        # Store the resolved result back so downstream code sees the merged dict (always
-        # a fresh one, never the inline dict itself)
+        # Store the resolved result back so downstream code sees the merged dict (a new
+        # top-level dict, never the inline dict itself; nested tables may be shared)
         needs_config.variant_data = resolved
 
     # Cache the variant data proxy for use in filter expressions
