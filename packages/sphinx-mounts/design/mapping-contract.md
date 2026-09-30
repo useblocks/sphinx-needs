@@ -1032,8 +1032,10 @@ Which map is used depends on sphinx-needs, and is decided from the config alone
   `[variants]` yields a non-empty map. When sphinx-needs is pointed at this
   file, the file is read as sphinx-needs read it: a key overridden with `-D`
   (bare or `needs_`-prefixed, exact names) is removed from both locations first,
-  exactly as sphinx-needs removes it, so an override can neither make that cell
-  fire nor hide a `[variants]` table an old sphinx-needs never read; a file
+  exactly as sphinx-needs removes it, so an override cannot make that cell fire;
+  because the key is removed as sphinx-needs 9.0 removes it, on an older
+  sphinx-needs an override of `variant_data` / `needs_variant_data` also drops a
+  `[variants.data]` that release never read; a file
   sphinx-needs is not reading keeps every declaration. The cell is reachable only
   by a sphinx-needs that did not READ the table — because it predates 9.0.0,
   because it abandoned the file on a `[needs]` error before reaching `[variants]`,

@@ -25,11 +25,13 @@ wording is that package's to change.
 from __future__ import annotations
 
 import ast
+import copy
 import json
 from pathlib import Path
 
 import pytest
 
+from sphinx_mounts import extension as mount_extension
 from sphinx_mounts import warnings as mount_warnings
 from sphinx_mounts.config import VariantRuleError
 from tests.test_variant_sources import _build, _pages, _stub_conf, make_project
@@ -337,8 +339,24 @@ def test_a_sphinx_needs_that_does_not_read_variants_is_refused(make_app, tmp_pat
         ("['tool']", "[tool.variants]", "needs_stub_vt_prefixed"),
         ("['tool', 'a.b']", '[tool."a.b".variants]', "needs_stub_vt_prefixed_dotted"),
         ("['']", '["".variants]', "needs_stub_vt_prefixed_empty"),
+        ("['tool-x']", "[tool-x.variants]", "needs_stub_vt_prefixed_dash"),
+        (
+            repr(['a"b\\c']),
+            '["a\\"b\\\\c".variants]',
+            "needs_stub_vt_prefixed_escapes",
+        ),
+        (repr(["t\x7f"]), '["t\\u007F".variants]', "needs_stub_vt_prefixed_del"),
+        ("1", '["1".variants]', "needs_stub_vt_prefixed_int"),
     ],
-    ids=["one-segment", "segment-with-a-dot", "empty-segment"],
+    ids=[
+        "one-segment",
+        "segment-with-a-dot",
+        "empty-segment",
+        "segment-with-a-dash",
+        "quote-and-backslash",
+        "delete-character",
+        "not-a-list",
+    ],
 )
 def test_a_prefixed_sphinx_needs_is_refused_naming_the_prefix(
     make_app, tmp_path, prefix: str, rendered: str, module: str
@@ -364,6 +382,7 @@ def test_a_prefixed_sphinx_needs_is_refused_naming_the_prefix(
     assert "needs_from_toml_table" in message, message
     assert rendered in message, message
     assert "9.0.0" not in message, message
+    assert "threw an exception" not in message, message
 
 
 @pytest.mark.parametrize(
@@ -397,6 +416,9 @@ def test_a_malformed_table_is_refused_when_sphinx_needs_has_no_map(
     assert "did not resolve this file's variant data" in message, message
     assert "not installed" not in message, message
     assert ('needs_from_toml = "ubproject.toml"' in message) is remedy, message
+    # this extension knows whether sphinx-needs is pointed here, so the
+    # clause offers that cause only when it is true
+    assert ("it is not pointed at it" in message) is remedy, message
 
 
 @pytest.mark.parametrize(
@@ -588,7 +610,73 @@ def test_a_non_path_confval_data_file_is_refused(make_app, tmp_path):
     )
     message = _refusal(make_app, confdir)
     assert "needs_variant_data_file" in message, message
-    assert "int" in message, message
+    assert "is 1 (of type int), not a path" in message, message
+
+
+def test_the_dash_d_removal_leaves_the_parsed_document_alone(
+    make_app, tmp_path, monkeypatch
+):
+    """The ``-D`` removal reads a copy; the parsed file itself is never modified."""
+    captured = []
+    original = mount_extension.load_variant_sources_from_toml
+
+    def capture(toml_path):
+        spec = original(toml_path)
+        if spec is not None:
+            captured.append((spec, copy.deepcopy(spec.document)))
+        return spec
+
+    monkeypatch.setattr(mount_extension, "load_variant_sources_from_toml", capture)
+    confdir = _project(
+        tmp_path,
+        RULES + '\n[variants]\ndata_file = "vd.json"\n'
+        '\n[needs]\nvariant_data_file = "vd.json"\n',
+    )
+    (confdir / "empty.json").write_text("{}", encoding="utf-8")
+    _stub_conf(
+        confdir,
+        "needs_stub_vt_dd_nomutate",
+        inline="{}",
+        file_ref="None",
+        from_toml="'ubproject.toml'",
+    )
+    _build(make_app, confdir, confoverrides={"needs_variant_data_file": "empty.json"})
+    assert captured, "the reader ran"
+    for spec, before in captured:
+        assert spec.document == before
+
+
+def test_a_path_object_confval_data_file_is_accepted(make_app, tmp_path):
+    """``conf.py`` may set ``needs_variant_data_file`` to a ``pathlib.Path``."""
+    confdir = _project(tmp_path, RULES, data={"edition": "pro", "cpu": "arm"})
+    _stub_conf(
+        confdir,
+        "needs_stub_vt_file_path",
+        inline="{}",
+        file_ref="__import__('pathlib').Path('vd.json')",
+        from_toml="'ubproject.toml'",
+    )
+    app = _build(make_app, confdir)
+    assert _pages(app) >= GATED_PAGES
+
+
+def test_an_empty_confval_data_file_means_no_file(make_app, tmp_path):
+    """``-D needs_variant_data_file=`` is "no file", not the configuration directory.
+
+    Read as a path it names a directory, the read fails, and the fold stands
+    down — which skips every rule and publishes what they gate.
+    """
+    confdir = _project(tmp_path, RULES)
+    _stub_conf(
+        confdir,
+        "needs_stub_vt_file_empty",
+        inline='{"edition": "basic", "cpu": "x86"}',
+        file_ref="None",
+        from_toml="'ubproject.toml'",
+    )
+    app = _build(make_app, confdir, confoverrides={"needs_variant_data_file": ""})
+    assert "stands down" not in app._status.getvalue()
+    assert not _pages(app) & GATED_PAGES, "edition basic, cpu x86: all gated off"
 
 
 def test_a_legacy_inline_table_sphinx_needs_resolved_empty_is_not_refused(

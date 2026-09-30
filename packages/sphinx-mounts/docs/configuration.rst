@@ -1236,9 +1236,10 @@ Sphinx-Needs is not loaded or resolved an empty map.
    (``needs_variant_data_file`` or ``variant_data_file``, ``needs_variant_data``
    or ``variant_data``) is removed from both locations before the check reads
    the file, exactly as Sphinx-Needs removes it; an override therefore cannot
-   make this check fire, and cannot hide a ``[variants]`` table an old
-   Sphinx-Needs never read. A file Sphinx-Needs is not reading keeps every
-   declaration.
+   make this check fire. Because the key is removed as Sphinx-Needs 9.0 removes
+   it, on an older Sphinx-Needs an override of ``variant_data`` or
+   ``needs_variant_data`` also drops a ``[variants.data]`` that release never
+   read. A file Sphinx-Needs is not reading keeps every declaration.
 
    One mid-migration shape is not caught: **both** locations set, and a
    Sphinx-Needs before 9.0.0 pointed at the file. Both tools then use

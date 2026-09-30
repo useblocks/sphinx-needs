@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import os
 import re
 import unicodedata
@@ -1536,11 +1535,16 @@ def _read_toml_variants(
     except (ProjectConfigError, ValueError) as exc:
         # ValueError: what `ub_project` lets through unwrapped — a data file
         # holding an integer beyond Python's conversion limit (#1995)
+        causes = (
+            "it could not load this file's `[needs]` table (see its "
+            "`needs.config` warning), or it predates 9.0.0 and does not read "
+            "`[variants]`"
+        )
+        if not pointed:
+            causes = f"it is not pointed at it, {causes}"
         who = (
-            "sphinx-needs did not resolve this file's variant data — it is not "
-            "pointed at it, it could not load this file's `[needs]` table (see "
-            "its `needs.config` warning), or it predates 9.0.0 and does not "
-            "read `[variants]` — so nothing else will stop the build for this"
+            f"sphinx-needs did not resolve this file's variant data — {causes} — "
+            f"so nothing else will stop the build for this"
             if present
             else "sphinx-needs is not installed, so nothing else will report this"
         )
@@ -1585,13 +1589,35 @@ def _needs_toml_pointer(app: Sphinx, config: Config) -> Path | None:
 _BARE_KEY = re.compile(r"[A-Za-z0-9_-]+")
 
 
+def _toml_string(text: str) -> str:
+    """*text* as a TOML basic string: ``"``, ``\\`` and every control escaped.
+
+    Escaped exactly as ``ub_project`` renders a table path (U+007F included,
+    as TOML requires); every other character is written as itself.
+    """
+    escapes = {
+        '"': '\\"',
+        "\\": "\\\\",
+        "\b": "\\b",
+        "\t": "\\t",
+        "\n": "\\n",
+        "\f": "\\f",
+        "\r": "\\r",
+    }
+    out = [
+        escapes[char]
+        if char in escapes
+        else f"\\u{ord(char):04X}"
+        if ord(char) < 0x20 or ord(char) == 0x7F
+        else char
+        for char in text
+    ]
+    return '"' + "".join(out) + '"'
+
+
 def _toml_key(segment: str) -> str:
     """One table-path segment as TOML spells it: bare, or a basic string."""
-    return (
-        segment
-        if _BARE_KEY.fullmatch(segment)
-        else json.dumps(segment, ensure_ascii=False)
-    )
+    return segment if _BARE_KEY.fullmatch(segment) else _toml_string(segment)
 
 
 def _needs_table_prefix(config: Config) -> str | None:
@@ -1601,13 +1627,19 @@ def _needs_table_prefix(config: Config) -> str | None:
     that keeps sphinx-needs off the top-level ``[variants]`` — an empty segment
     (``[""]``) included, rendered ``""``. A segment that is not a bare key is
     quoted, so ``["tool", "a.b"]`` is ``tool."a.b"``, not three segments.
-    (``ub_project`` renders paths the same way, but does not export it.)
+    (``ub_project`` renders paths the same way, but does not export it.) A
+    value that is not a list or a string is named as one quoted segment.
     """
     prefix = getattr(config, "needs_from_toml_table", None)
-    if prefix is None or len(prefix) == 0:
+    if prefix is None:
         return None
-    segments = [prefix] if isinstance(prefix, str) else list(prefix)
-    return ".".join(_toml_key(str(segment)) for segment in segments)
+    if isinstance(prefix, str):
+        return _toml_key(prefix) if prefix else None
+    if isinstance(prefix, (list, tuple)):
+        return ".".join(_toml_key(str(segment)) for segment in prefix) or None
+    # not a table path at all (sphinx-needs warns about it itself): named as
+    # one quoted segment rather than failing on it here
+    return _toml_string(str(prefix))
 
 
 def _guard_mispointed_needs(
@@ -1651,8 +1683,10 @@ def _guard_mispointed_needs(
     at this file, the file declaring ``[variants]`` with a NON-empty map, and
     sphinx-needs' map empty anyway. *toml* was read as sphinx-needs read the
     file — a key overridden with ``-D`` removed from both locations, exactly as
-    sphinx-needs removes it — so an override cannot make this cell fire, and
-    cannot hide a ``[variants]`` table an old sphinx-needs never read. A
+    sphinx-needs removes it — so an override cannot make this cell fire; the
+    key it names is removed as sphinx-needs 9.0 removes it, so on an older
+    sphinx-needs an override of ``variant_data`` / ``needs_variant_data`` also
+    drops a ``[variants.data]`` that release never read. A
     sphinx-needs pointed at this file resolves the file's own map unless it did
     not READ the table: because it predates 9.0.0, because it abandoned the
     file on a ``[needs]`` error before reaching ``[variants]``, or because
@@ -1784,8 +1818,8 @@ def _anchor_data_file(raw: Any, confdir: Path) -> Path | None:
         # unvalidated. Refused, never stood down on: the stand-down skips every
         # rule, which would publish everything they gate.
         msg = (
-            f"sphinx-mounts: `needs_variant_data_file` is {raw!r}, a "
-            f"{type(raw).__name__}, not a path, so there is no defensible answer "
+            f"sphinx-mounts: `needs_variant_data_file` is {raw!r} (of type "
+            f"{type(raw).__name__}), not a path, so there is no defensible answer "
             f"to which files this variant contains. Set `variant_data_file` (or "
             f"`needs_variant_data_file`) to one path string. "
             f"[mounts.variant_data_unreadable]"

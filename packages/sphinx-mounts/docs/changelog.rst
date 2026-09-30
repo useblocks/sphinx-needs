@@ -38,8 +38,9 @@ Unreleased
     pointed at the file, a key overridden with ``-D`` (``needs_variant_data_file`` or
     ``variant_data_file``, ``needs_variant_data`` or ``variant_data``) is removed from
     both locations before the check, exactly as Sphinx-Needs removes it, so an
-    override can neither trigger the refusal nor hide a ``[variants]`` table an old
-    Sphinx-Needs never read. Not caught: both locations set with a Sphinx-Needs before
+    override cannot trigger the refusal; on an older Sphinx-Needs an override of
+    ``variant_data`` or ``needs_variant_data`` also drops a ``[variants.data]`` that
+    release never read. Not caught: both locations set with a Sphinx-Needs before
     9.0.0, where both tools use ``[needs]`` — unless a ``-D`` empties the ``[needs]``
     map.
 
