@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790782646322,
+  "lastUpdate": 1790783225594,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -21744,6 +21744,42 @@ window.BENCHMARK_DATA = {
             "value": 40.54850892600001,
             "unit": "s",
             "extra": "Commit: 28d984c68bd2902fef268fe20645e19b703263b5\nBranch: master\nTime: 2026-09-30T17:36:17+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1f023d1a4f7d91fb612a9e88af186abd4fbf4491",
+          "message": "🚀 Release ub-project 1.1.0 (#1993)\n\nThe release pull request for `ub-project` 1.1.0: the `variants_table`\nparameter from #1992, so that sphinx-needs (the next\nconsumer, its pull request follows this release) can read `[variants]`\nunder a `needs_from_toml_table` prefix. Made with\n`uv run poe bump ub-project --bump minor`: the manifest version,\n`__version__`, the changelog's `Unreleased` section stamped as\n1.1.0 with today's date, and — tight tracking — sphinx-test-reports'\nfloor propagated to `ub-project>=1.1.0,<2`. The summary\nparagraph under the heading is written by hand.\n\n**The lock** changes one line, the member's own version. The relock also\nre-derived ~110 fork-marker lines (the churn the\nmonthly `uv lock --upgrade` reverts, as on #1986 and #1987), so that\npart is not taken; the one-line lock passes `uv lock --check`\non uv 0.12.15 and 0.12.9.\n\nGates at the tip: lint, check-workspace (23 OK), `test-ub-project` 223,\n`test-reports` 490, `release-plan` (ub-project: release\npending 1.1.0; sphinx-test-reports: pending its own bump, unchanged by\nthis).\n\n**After the merge**, from master:\n\n```\ngh workflow run release.yaml -f tag=ub-project-v1.1.0     # the rehearsal: plan + build, never publishes\ngit tag ub-project-v1.1.0 && git push origin ub-project-v1.1.0\n```\n\nThe trusted publisher and the `pypi-ub-project` environment exist from\n1.0.0; nothing else is needed.",
+          "timestamp": "2026-09-30T17:45:46+02:00",
+          "tree_id": "67bfb2081d632a132f1da54e366557963c7d1946",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/1f023d1a4f7d91fb612a9e88af186abd4fbf4491"
+        },
+        "date": 1790783215392,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.08829528799998343,
+            "unit": "s",
+            "extra": "Commit: 1f023d1a4f7d91fb612a9e88af186abd4fbf4491\nBranch: master\nTime: 2026-09-30T17:45:46+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 45.59705262099999,
+            "unit": "s",
+            "extra": "Commit: 1f023d1a4f7d91fb612a9e88af186abd4fbf4491\nBranch: master\nTime: 2026-09-30T17:45:46+02:00"
           }
         ]
       }
