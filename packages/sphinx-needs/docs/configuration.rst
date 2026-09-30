@@ -197,10 +197,10 @@ Both warnings above can be suppressed on their own, see :ref:`config-warnings`.
 
 .. note::
 
-   `ubCode <https://ubcode.useblocks.com/>`__ and `sphinx-mounts <https://sphinx-mounts.useblocks.com/>`__
-   do not read ``[variants]`` yet.
-   A project that is also built or checked by either keeps its variant data in ``[needs]``
-   until the release of that tool that reads ``[variants]``.
+   `ubCode <https://ubcode.useblocks.com/>`__ does not read ``[variants]`` yet,
+   and `sphinx-mounts <https://sphinx-mounts.useblocks.com/>`__ reads it from its next release, 0.3.0.
+   A project that is also checked by ubCode, or built with an earlier sphinx-mounts,
+   keeps its variant data in ``[needs]`` until the release of that tool that reads ``[variants]``.
 
 .. _`needs_include_needs`:
 
