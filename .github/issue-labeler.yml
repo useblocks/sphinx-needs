@@ -7,8 +7,8 @@
 # patterns case-insensitive, like the workflow's `contains()` gate, so the two agree.
 'pkg: sphinx-needs':
   - '/### Package[^#]*\bsphinx-needs\b/i'
-# No two of `sphinx-needs`, `sphinx-mounts`, `sphinx-codelinks` and `sphinx-test-reports`
-# contains another as a \b-delimited word, so no two patterns can match one choice. Every
+# No two of `sphinx-needs`, `sphinx-mounts`, `sphinx-codelinks`, `sphinx-test-reports` and
+# `ub-project` contains another as a \b-delimited word, so no two patterns can match one choice. Every
 # pattern has to be present before its option is offered by a form, though: the workflow
 # runs with `sync-labels: 1`, so a pattern that is missing when its option is picked means
 # the label is synced away rather than merely not added
@@ -18,5 +18,7 @@
   - '/### Package[^#]*\bsphinx-codelinks\b/i'
 'pkg: sphinx-test-reports':
   - '/### Package[^#]*\bsphinx-test-reports\b/i'
+'pkg: ub-project':
+  - '/### Package[^#]*\bub-project\b/i'
 'pkg: workspace':
   - '/### Package[^#]*\bthe repository\b/i'

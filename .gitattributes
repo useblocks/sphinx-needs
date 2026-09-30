@@ -15,6 +15,12 @@ packages/sphinx-needs/tests/conformance/needflow/** text eol=lf
 # canonical on Windows regardless.
 packages/sphinx-mounts/tests/fixtures/variant_condition_conformance.toml text eol=lf
 
+# The `ubproject.toml` reading conformance corpus is the third, and the one this repository is the
+# repository of RECORD for: ubCode is to vendor it byte-for-byte, so its bytes must be the
+# same on every platform. Its `toml = '...'` bodies are case inputs, so a CRLF checkout would change
+# what the cases test.
+packages/ub-project/tests/fixtures/ubproject_reading_conformance.toml text eol=lf
+
 # The committed PlantUML jar. `text=auto` at the top would otherwise ask git to classify a
 # 30 MB zip on every checkout; git's own detection gets it right, and this states it.
 vendor/plantuml/*.jar binary

@@ -1,0 +1,864 @@
+# Conformance corpus for READING `ubproject.toml`: the `[variants]` table, its `[needs]`
+# fallback, path anchoring, and the variant-data merge and validation.
+#
+# Repository of record: useblocks/sphinx-needs (public)
+# Canonical path:       packages/ub-project/tests/fixtures/ubproject_reading_conformance.toml
+#
+# THIS copy is CANONICAL. ubCode is to vendor it byte-for-byte, with a provenance block
+# (this path, and the commit it was taken from) prepended and nothing else changed, and to
+# run it against its own reader -- which does not read `[variants]` yet. The corpus travels
+# public -> private, so vendoring with a recorded source commit is the sync mechanism:
+# ubCode's CI cannot fetch from this repository at test time, and a submodule of a public
+# repository in a private one would pin nothing either side can see.
+#
+# Do not reformat this file. `.gitattributes` pins its line endings, and the taplo and
+# yamlfmt hooks exclude it: every `toml = '''...'''` body below is the INPUT of a case, so a
+# formatter touching one silently changes what the case tests. A change here is a change to
+# the contract, and owes ubCode a re-vendor.
+#
+# Rules for every runner:
+#   - a case writes only inside its own directory: a `files` key or `toml_path` that would
+#     land outside it (`../x.json`) is a broken case, and the runner refuses it
+#   - a case carrying `needs_table` is PYTHON-ONLY: it describes a consumer that nests its
+#     `[needs]` table under a prefix, which ubCode cannot express (its `[needs]` is always
+#     top-level). ubCode's runner skips those cases
+#   - diagnostic codes are compared as the BARE subcode below. ubCode's diagnostics are to
+#     carry them under its `config.` prefix (`config.variant_data_location`; its
+#     variant-data diagnostics carry no code today); its runner strips `config.` before
+#     comparing
+#   - a diagnostic `path` is dotted, one segment per key: a segment matching
+#     `[A-Za-z0-9_-]+` is a TOML bare key, any other a TOML basic string with TOML's
+#     escapes (`"` and backslash escaped, control characters as `\t`-style or `\uXXXX`,
+#     everything else as itself), so `variants."café"` and not `variants."caf\u00e9"`.
+#     The `path` values below are TOML literal strings ('...'), so each is compared
+#     character for character, its inner double quotes included
+#   - integers are within the signed 64-bit range; beyond it the behaviour is unspecified
+#
+# `packages/ub-project/tests/test_conformance.py` runs every `[[case]]` against the Python
+# reader AND asserts the case COUNT, so a truncated copy is a red test rather than reduced
+# coverage. `design/reading-contract.md` beside it is the prose half of the same contract.
+#
+# Scope: what the shared reader owns -- which location is read, what each key may hold,
+# where a relative path is anchored, how the file and the inline table merge, which shapes
+# are valid, which findings are reported. NOT discovery (walking up versus reading a
+# `confdir` is each consumer's decision) and NOT the variant-condition grammar (that is
+# `variant_condition_conformance.toml`, a separate corpus).
+#
+# Each `[[case]]` has:
+#   name         - unique, kebab-case
+#   why          - one line saying what the case pins
+#   toml         - the file's content, written to `toml_path`. Every `{case_dir}` in it is
+#                  replaced by the absolute path of the case directory, in forward-slash
+#                  form, before the file is written -- the only way to state an ABSOLUTE
+#                  path that holds on every machine. Write such a path in a literal
+#                  ('...') string, so no backslash is ever read as an escape
+#   toml_path    - optional; where the file is written, relative to the case directory.
+#                  Default "ubproject.toml"
+#   files        - optional; other files, relative to the case directory, and their text
+#   needs_table  - optional; the dotted path of the legacy table. Default "needs".
+#                  Python-only (see the rules above)
+#   [case.expect]
+#     error             - true when the reader must REFUSE the input: every other
+#                         expectation is then absent. A refusal's message is not compared
+#     variant_data      - the merged variant map
+#     variant_data_file - the anchored data file, RELATIVE TO THE CASE DIRECTORY and
+#                         compared as a path joined onto it -- so an anchor that folded
+#                         `..` away fails the comparison
+#                         (`relative-file-with-parent-segment-is-joined`); symlink
+#                         resolution is fenced by the unit tests, since a case directory
+#                         holds no symlink. Absent when no data file is read
+#     diagnostics       - the findings, as `code` + `path` pairs, compared as a multiset.
+#                         Messages and severities are NOT compared: each reader words its
+#                         own, and each consumer decides what a finding is worth
+#
+# Diagnostic codes (bare subcodes), fixed by the contract:
+#   variant_data_location         - both locations are set; `path` names each ignored key
+#   variant_data_legacy_location  - the data came from the legacy location; `path` names
+#                                   each key read there. Informational: the reader takes no
+#                                   side on whether it deserves a warning
+#   variants_unknown_key          - a key `[variants]` does not define; `path` names it
+
+# --- which location is read ---------------------------------------------------------
+
+[[case]]
+name = "neither-location"
+why = "no variant data declared anywhere reads as the empty map, with no finding"
+toml = '''
+[project]
+name = "demo"
+'''
+[case.expect]
+variant_data = {}
+diagnostics = []
+
+[[case]]
+name = "variants-data-only"
+why = "an inline [variants.data] table is the whole map"
+toml = '''
+[variants.data]
+edition = "pro"
+'''
+[case.expect]
+variant_data = { edition = "pro" }
+diagnostics = []
+
+[[case]]
+name = "variants-file-only"
+why = "a [variants] data_file alone is the whole map"
+toml = '''
+[variants]
+data_file = "vd.json"
+'''
+files = { "vd.json" = '{"edition": "base", "cpu": "arm"}' }
+[case.expect]
+variant_data = { edition = "base", cpu = "arm" }
+variant_data_file = "vd.json"
+diagnostics = []
+
+[[case]]
+name = "variants-file-and-data"
+why = "the file is loaded first and the inline table is deep-merged on top: inline wins"
+toml = '''
+[variants]
+data_file = "vd.json"
+[variants.data]
+edition = "pro"
+build = { debug = true }
+'''
+files = { "vd.json" = '{"edition": "base", "cpu": "arm", "build": {"opt": 2, "debug": false}}' }
+[case.expect]
+variant_data = { edition = "pro", cpu = "arm", build = { opt = 2, debug = true } }
+variant_data_file = "vd.json"
+diagnostics = []
+
+[[case]]
+name = "needs-data-only"
+why = "the legacy inline table is read when [variants] declares nothing, and reported"
+toml = '''
+[needs.variant_data]
+edition = "pro"
+'''
+[case.expect]
+variant_data = { edition = "pro" }
+diagnostics = [{ code = "variant_data_legacy_location", path = "needs.variant_data" }]
+
+[[case]]
+name = "needs-file-only"
+why = "the legacy data file is read when [variants] declares nothing, and reported"
+toml = '''
+[needs]
+variant_data_file = "vd.json"
+'''
+files = { "vd.json" = '{"cpu": "arm"}' }
+[case.expect]
+variant_data = { cpu = "arm" }
+variant_data_file = "vd.json"
+diagnostics = [{ code = "variant_data_legacy_location", path = "needs.variant_data_file" }]
+
+[[case]]
+name = "needs-file-and-data"
+why = "the legacy location merges exactly as [variants] does, and each key read is reported"
+toml = '''
+[needs]
+id_required = true
+variant_data_file = "vd.json"
+[needs.variant_data]
+edition = "pro"
+'''
+files = { "vd.json" = '{"edition": "base", "cpu": "arm"}' }
+[case.expect]
+variant_data = { edition = "pro", cpu = "arm" }
+variant_data_file = "vd.json"
+diagnostics = [
+  { code = "variant_data_legacy_location", path = "needs.variant_data" },
+  { code = "variant_data_legacy_location", path = "needs.variant_data_file" },
+]
+
+# --- both locations set: [variants] is read WHOLE, every ignored key is named -------
+
+[[case]]
+name = "both-variants-data-needs-data"
+why = "[variants] wins; the ignored [needs] variant_data is named"
+toml = '''
+[variants.data]
+edition = "pro"
+[needs.variant_data]
+edition = "base"
+'''
+[case.expect]
+variant_data = { edition = "pro" }
+diagnostics = [{ code = "variant_data_location", path = "needs.variant_data" }]
+
+[[case]]
+name = "both-variants-data-needs-file"
+why = "whole-location: the [needs] file is NOT merged under the [variants] inline table"
+toml = '''
+[variants.data]
+edition = "pro"
+[needs]
+variant_data_file = "legacy.json"
+'''
+files = { "legacy.json" = '{"cpu": "arm"}' }
+[case.expect]
+variant_data = { edition = "pro" }
+diagnostics = [{ code = "variant_data_location", path = "needs.variant_data_file" }]
+
+[[case]]
+name = "both-variants-data-needs-both"
+why = "both ignored [needs] keys are named, one finding each"
+toml = '''
+[variants.data]
+edition = "pro"
+[needs]
+variant_data_file = "legacy.json"
+[needs.variant_data]
+cpu = "x86"
+'''
+files = { "legacy.json" = '{"cpu": "arm"}' }
+[case.expect]
+variant_data = { edition = "pro" }
+diagnostics = [
+  { code = "variant_data_location", path = "needs.variant_data" },
+  { code = "variant_data_location", path = "needs.variant_data_file" },
+]
+
+[[case]]
+name = "both-variants-file-needs-data"
+why = "whole-location: the [needs] inline table is NOT merged over the [variants] file"
+toml = '''
+[variants]
+data_file = "vd.json"
+[needs.variant_data]
+edition = "pro"
+'''
+files = { "vd.json" = '{"edition": "base"}' }
+[case.expect]
+variant_data = { edition = "base" }
+variant_data_file = "vd.json"
+diagnostics = [{ code = "variant_data_location", path = "needs.variant_data" }]
+
+[[case]]
+name = "both-variants-file-needs-file"
+why = "the [variants] file is read and the [needs] one is ignored and named"
+toml = '''
+[variants]
+data_file = "b.json"
+[needs]
+variant_data_file = "a.json"
+'''
+files = { "a.json" = '{"x": 1}', "b.json" = '{"x": 2}' }
+[case.expect]
+variant_data = { x = 2 }
+variant_data_file = "b.json"
+diagnostics = [{ code = "variant_data_location", path = "needs.variant_data_file" }]
+
+[[case]]
+name = "both-variants-file-needs-both"
+why = "every [needs] key is ignored when [variants] declares any"
+toml = '''
+[variants]
+data_file = "b.json"
+[needs]
+variant_data_file = "a.json"
+[needs.variant_data]
+x = 3
+'''
+files = { "a.json" = '{"x": 1}', "b.json" = '{"x": 2}' }
+[case.expect]
+variant_data = { x = 2 }
+variant_data_file = "b.json"
+diagnostics = [
+  { code = "variant_data_location", path = "needs.variant_data" },
+  { code = "variant_data_location", path = "needs.variant_data_file" },
+]
+
+[[case]]
+name = "both-variants-both-needs-data"
+why = "a full [variants] and a legacy inline table: the legacy one is ignored and named"
+toml = '''
+[variants]
+data_file = "vd.json"
+[variants.data]
+edition = "pro"
+[needs.variant_data]
+edition = "base"
+cpu = "x86"
+'''
+files = { "vd.json" = '{"cpu": "arm"}' }
+[case.expect]
+variant_data = { edition = "pro", cpu = "arm" }
+variant_data_file = "vd.json"
+diagnostics = [{ code = "variant_data_location", path = "needs.variant_data" }]
+
+[[case]]
+name = "both-variants-both-needs-file"
+why = "a full [variants] and a legacy data file: the legacy one is ignored and named"
+toml = '''
+[variants]
+data_file = "vd.json"
+[variants.data]
+edition = "pro"
+[needs]
+variant_data_file = "legacy.json"
+'''
+files = { "vd.json" = '{"cpu": "arm"}', "legacy.json" = '{"cpu": "x86", "extra": true}' }
+[case.expect]
+variant_data = { edition = "pro", cpu = "arm" }
+variant_data_file = "vd.json"
+diagnostics = [{ code = "variant_data_location", path = "needs.variant_data_file" }]
+
+[[case]]
+name = "both-variants-both-needs-both"
+why = "both locations complete: [variants] is read whole and both legacy keys are named"
+toml = '''
+[variants]
+data_file = "b.json"
+[variants.data]
+y = "new"
+[needs]
+variant_data_file = "a.json"
+[needs.variant_data]
+y = "old"
+'''
+files = { "a.json" = '{"x": 1}', "b.json" = '{"x": 2}' }
+[case.expect]
+variant_data = { x = 2, y = "new" }
+variant_data_file = "b.json"
+diagnostics = [
+  { code = "variant_data_location", path = "needs.variant_data" },
+  { code = "variant_data_location", path = "needs.variant_data_file" },
+]
+
+[[case]]
+name = "ignored-location-is-not-read"
+why = "the ignored [needs] data file is never opened, so its absence is no error"
+toml = '''
+[variants.data]
+edition = "pro"
+[needs]
+variant_data_file = "does-not-exist.json"
+'''
+[case.expect]
+variant_data = { edition = "pro" }
+diagnostics = [{ code = "variant_data_location", path = "needs.variant_data_file" }]
+
+# --- what counts as declaring [variants] ---------------------------------------------
+
+[[case]]
+name = "empty-variants-table-alone"
+why = "an empty [variants] table declares nothing: the empty map, no finding"
+toml = '''
+[variants]
+'''
+[case.expect]
+variant_data = {}
+diagnostics = []
+
+[[case]]
+name = "empty-variants-table-falls-back"
+why = "an empty [variants] table cannot switch a project's [needs] data off"
+toml = '''
+[variants]
+[needs.variant_data]
+edition = "pro"
+'''
+[case.expect]
+variant_data = { edition = "pro" }
+diagnostics = [{ code = "variant_data_legacy_location", path = "needs.variant_data" }]
+
+[[case]]
+name = "empty-inline-table-declares-variants"
+why = "`data = {}` IS a declaration: the key is present, so [variants] is read (and is empty)"
+toml = '''
+[variants]
+data = {}
+[needs.variant_data]
+edition = "pro"
+'''
+[case.expect]
+variant_data = {}
+diagnostics = [{ code = "variant_data_location", path = "needs.variant_data" }]
+
+# --- unknown keys in [variants]: tolerated, reported ---------------------------------
+
+[[case]]
+name = "unknown-key-beside-data"
+why = "a key another tool version may read is reported, never an error"
+toml = '''
+[variants]
+sources = ["a", "b"]
+[variants.data]
+edition = "pro"
+'''
+[case.expect]
+variant_data = { edition = "pro" }
+diagnostics = [{ code = "variants_unknown_key", path = "variants.sources" }]
+
+[[case]]
+name = "unknown-keys-only-fall-back"
+why = "a [variants] holding only unknown keys declares nothing: the fallback still applies"
+toml = '''
+[variants]
+future_key = 1
+other = "x"
+[needs]
+variant_data_file = "vd.json"
+'''
+files = { "vd.json" = '{"cpu": "arm"}' }
+[case.expect]
+variant_data = { cpu = "arm" }
+variant_data_file = "vd.json"
+diagnostics = [
+  { code = "variants_unknown_key", path = "variants.future_key" },
+  { code = "variants_unknown_key", path = "variants.other" },
+  { code = "variant_data_legacy_location", path = "needs.variant_data_file" },
+]
+
+[[case]]
+name = "unknown-keys-are-rendered-as-toml"
+why = "a path segment that is not a bare key is a TOML basic string, written as the user wrote it: dotted and non-ASCII keys"
+toml = '''
+[variants]
+data = {}
+"a.b" = 1
+"café" = 2
+'''
+[case.expect]
+variant_data = {}
+diagnostics = [
+  { code = "variants_unknown_key", path = 'variants."a.b"' },
+  { code = "variants_unknown_key", path = 'variants."café"' },
+]
+
+[[case]]
+name = "legacy-spelling-inside-variants-is-unknown"
+why = "`variant_data` is the [needs] spelling; inside [variants] it is an unknown key"
+toml = '''
+[variants]
+variant_data = { edition = "pro" }
+'''
+[case.expect]
+variant_data = {}
+diagnostics = [{ code = "variants_unknown_key", path = "variants.variant_data" }]
+
+# --- the legacy table under a prefix -------------------------------------------------
+
+[[case]]
+name = "needs-under-a-dotted-prefix"
+why = "a consumer that nests its [needs] table reads the legacy keys there, and the path says so"
+needs_table = "tool.acme.needs"
+toml = '''
+[tool.acme.needs]
+variant_data_file = "vd.json"
+[tool.acme.needs.variant_data]
+edition = "pro"
+'''
+files = { "vd.json" = '{"edition": "base", "cpu": "arm"}' }
+[case.expect]
+variant_data = { edition = "pro", cpu = "arm" }
+variant_data_file = "vd.json"
+diagnostics = [
+  { code = "variant_data_legacy_location", path = "tool.acme.needs.variant_data" },
+  { code = "variant_data_legacy_location", path = "tool.acme.needs.variant_data_file" },
+]
+
+[[case]]
+name = "prefix-ignores-a-top-level-needs"
+why = "with a prefix, a top-level [needs] table is someone else's and is not read"
+needs_table = "tool.acme.needs"
+toml = '''
+[needs.variant_data]
+edition = "pro"
+'''
+[case.expect]
+variant_data = {}
+diagnostics = []
+
+[[case]]
+name = "prefix-with-variants-set"
+why = "[variants] stays top-level whatever the prefix, and wins over the prefixed legacy keys"
+needs_table = "tool.acme.needs"
+toml = '''
+[variants.data]
+edition = "pro"
+[tool.acme.needs.variant_data]
+edition = "base"
+'''
+[case.expect]
+variant_data = { edition = "pro" }
+diagnostics = [{ code = "variant_data_location", path = "tool.acme.needs.variant_data" }]
+
+[[case]]
+name = "prefix-segment-not-a-table"
+why = "a prefix segment that is not a table is refused, not read as absent"
+needs_table = "tool.acme.needs"
+toml = '''
+[tool]
+acme = "not a table"
+'''
+[case.expect]
+error = true
+
+# --- anchoring -----------------------------------------------------------------------
+
+[[case]]
+name = "relative-file-anchors-at-the-toml-directory"
+why = "a relative data_file is anchored at the TOML's own directory, not the case or working directory"
+toml_path = "docs/ubproject.toml"
+toml = '''
+[variants]
+data_file = "vd.json"
+'''
+files = { "docs/vd.json" = '{"cpu": "arm"}' }
+[case.expect]
+variant_data = { cpu = "arm" }
+variant_data_file = "docs/vd.json"
+diagnostics = []
+
+[[case]]
+name = "relative-file-with-parent-segment-is-joined"
+why = "`..` is joined, not folded away: the anchor is the TOML's directory plus the value, as written"
+toml_path = "docs/ubproject.toml"
+toml = '''
+[variants]
+data_file = "../shared/vd.json"
+'''
+files = { "shared/vd.json" = '{"cpu": "arm"}' }
+[case.expect]
+variant_data = { cpu = "arm" }
+variant_data_file = "docs/../shared/vd.json"
+diagnostics = []
+
+[[case]]
+name = "absolute-file-is-untouched"
+why = "an absolute data_file is used as written, wherever the TOML lives"
+toml_path = "docs/ubproject.toml"
+toml = '''
+[variants]
+data_file = '{case_dir}/abs/vd.json'
+'''
+files = { "abs/vd.json" = '{"cpu": "arm"}' }
+[case.expect]
+variant_data = { cpu = "arm" }
+variant_data_file = "abs/vd.json"
+diagnostics = []
+
+[[case]]
+name = "legacy-relative-file-anchors-at-the-toml-directory"
+why = "the legacy location anchors exactly as [variants] does"
+toml_path = "docs/ubproject.toml"
+toml = '''
+[needs]
+variant_data_file = "vd.json"
+'''
+files = { "docs/vd.json" = '{"cpu": "arm"}' }
+[case.expect]
+variant_data = { cpu = "arm" }
+variant_data_file = "docs/vd.json"
+diagnostics = [{ code = "variant_data_legacy_location", path = "needs.variant_data_file" }]
+
+# --- the merge -----------------------------------------------------------------------
+
+[[case]]
+name = "merge-table-replaced-by-scalar"
+why = "a scalar replaces a table wholesale: the merge recurses only when BOTH sides are tables"
+toml = '''
+[variants]
+data_file = "vd.json"
+data = { build = "release" }
+'''
+files = { "vd.json" = '{"build": {"opt": 2, "debug": false}}' }
+[case.expect]
+variant_data = { build = "release" }
+variant_data_file = "vd.json"
+diagnostics = []
+
+[[case]]
+name = "merge-scalar-replaced-by-table"
+why = "a table replaces a scalar wholesale"
+toml = '''
+[variants]
+data_file = "vd.json"
+data = { build = { opt = 3 } }
+'''
+files = { "vd.json" = '{"build": "release"}' }
+[case.expect]
+variant_data = { build = { opt = 3 } }
+variant_data_file = "vd.json"
+diagnostics = []
+
+[[case]]
+name = "merge-array-replaced-not-appended"
+why = "an array replaces an array entirely; arrays are never concatenated or merged by index"
+toml = '''
+[variants]
+data_file = "vd.json"
+data = { tags = ["c"] }
+'''
+files = { "vd.json" = '{"tags": ["a", "b"]}' }
+[case.expect]
+variant_data = { tags = ["c"] }
+variant_data_file = "vd.json"
+diagnostics = []
+
+[[case]]
+name = "merge-nested-partial"
+why = "nested tables merge key by key, four levels deep"
+toml = '''
+[variants]
+data_file = "vd.json"
+[variants.data.deep.a.b]
+c = 9
+'''
+files = { "vd.json" = '{"deep": {"a": {"b": {"c": 1, "d": 2}, "e": 3}}}' }
+[case.expect]
+variant_data = { deep = { a = { b = { c = 9, d = 2 }, e = 3 } } }
+variant_data_file = "vd.json"
+diagnostics = []
+
+[[case]]
+name = "merge-false-overrides-true"
+why = "a false inline value is a value, not an absence"
+toml = '''
+[variants]
+data_file = "vd.json"
+data = { debug = false }
+'''
+files = { "vd.json" = '{"debug": true}' }
+[case.expect]
+variant_data = { debug = false }
+variant_data_file = "vd.json"
+diagnostics = []
+
+[[case]]
+name = "merge-empty-file-side"
+why = "an empty JSON object merges to the inline table"
+toml = '''
+[variants]
+data_file = "vd.json"
+data = { edition = "pro" }
+'''
+files = { "vd.json" = '{}' }
+[case.expect]
+variant_data = { edition = "pro" }
+variant_data_file = "vd.json"
+diagnostics = []
+
+[[case]]
+name = "merge-empty-inline-side"
+why = "an empty inline table merges to the file"
+toml = '''
+[variants]
+data_file = "vd.json"
+data = {}
+'''
+files = { "vd.json" = '{"edition": "base"}' }
+[case.expect]
+variant_data = { edition = "base" }
+variant_data_file = "vd.json"
+diagnostics = []
+
+[[case]]
+name = "merge-idempotent-re-merge"
+why = "merging an already-merged map over the same file changes nothing"
+toml = '''
+[variants]
+data_file = "vd.json"
+[variants.data]
+edition = "pro"
+cpu = "arm"
+build = { opt = 2, debug = true }
+'''
+files = { "vd.json" = '{"edition": "base", "cpu": "arm", "build": {"opt": 2, "debug": false}}' }
+[case.expect]
+variant_data = { edition = "pro", cpu = "arm", build = { opt = 2, debug = true } }
+variant_data_file = "vd.json"
+diagnostics = []
+
+# --- validation ----------------------------------------------------------------------
+
+[[case]]
+name = "valid-every-shape"
+why = "scalars of every type, empty and uniform arrays, nested and empty tables are all valid"
+toml = '''
+[variants.data]
+s = "x"
+b = true
+i = 1
+f = 1.5
+empty_list = []
+strings = ["a", "b"]
+ints = [1, 2]
+empty_map = {}
+nested = { deep = { x = 1 } }
+'''
+[case.expect]
+variant_data = { s = "x", b = true, i = 1, f = 1.5, empty_list = [], strings = ["a", "b"], ints = [1, 2], empty_map = {}, nested = { deep = { x = 1 } } }
+diagnostics = []
+
+[[case]]
+name = "invalid-mixed-array"
+why = "an array must hold one type"
+toml = '''
+[variants.data]
+mixed = [1, "a"]
+'''
+[case.expect]
+error = true
+
+[[case]]
+name = "invalid-bool-int-array"
+why = "bool and int are different types in an array, although Python's bool is an int"
+toml = '''
+[variants.data]
+flags = [1, true]
+'''
+[case.expect]
+error = true
+
+[[case]]
+name = "invalid-int-float-array"
+why = "int and float are different types in an array"
+toml = '''
+[variants.data]
+levels = [1, 1.5]
+'''
+[case.expect]
+error = true
+
+[[case]]
+name = "invalid-array-of-tables"
+why = "array elements must be scalars"
+toml = '''
+[variants.data]
+items = [{ x = 1 }]
+'''
+[case.expect]
+error = true
+
+[[case]]
+name = "invalid-datetime-value"
+why = "a TOML date-time is not a variant value"
+toml = '''
+[variants.data]
+released = 2026-09-30T12:00:00Z
+'''
+[case.expect]
+error = true
+
+[[case]]
+name = "invalid-null-in-file"
+why = "a JSON null is not a variant value; the file is held to the inline table's rules"
+toml = '''
+[variants]
+data_file = "vd.json"
+'''
+files = { "vd.json" = '{"build": {"opt": null}}' }
+[case.expect]
+error = true
+
+[[case]]
+name = "invalid-file-value-overridden-by-valid-inline"
+why = "the file is validated on its own, before the merge: an inline value cannot rescue an invalid file value"
+toml = '''
+[variants]
+data_file = "vd.json"
+data = { levels = [1, 2] }
+'''
+files = { "vd.json" = '{"levels": [1, "two"]}' }
+[case.expect]
+error = true
+
+[[case]]
+name = "invalid-file-not-an-object"
+why = "a JSON array as the data file is refused (the unit tests pin that the object rule is the reason)"
+toml = '''
+[variants]
+data_file = "vd.json"
+'''
+files = { "vd.json" = '[1, 2]' }
+[case.expect]
+error = true
+
+[[case]]
+name = "invalid-file-not-json"
+why = "an undecodable data file is refused"
+toml = '''
+[variants]
+data_file = "vd.json"
+'''
+files = { "vd.json" = '{not json' }
+[case.expect]
+error = true
+
+[[case]]
+name = "missing-data-file"
+why = "a data file that does not exist is refused, in the location that is read"
+toml = '''
+[variants]
+data_file = "absent.json"
+'''
+[case.expect]
+error = true
+
+[[case]]
+name = "missing-legacy-data-file"
+why = "the legacy location refuses a missing data file too"
+toml = '''
+[needs]
+variant_data_file = "absent.json"
+'''
+[case.expect]
+error = true
+
+# --- what each key may hold ----------------------------------------------------------
+
+[[case]]
+name = "data-file-is-one-string-not-a-list"
+why = "data_file is ONE path; a list is refused rather than read as its first entry"
+toml = '''
+[variants]
+data_file = ["a.json", "b.json"]
+'''
+files = { "a.json" = '{"x": 1}', "b.json" = '{"x": 2}' }
+[case.expect]
+error = true
+
+[[case]]
+name = "data-file-empty-string"
+why = "an empty data_file is refused (the unit tests pin that the non-empty rule is the reason)"
+toml = '''
+[variants]
+data_file = ""
+'''
+[case.expect]
+error = true
+
+[[case]]
+name = "data-not-a-table"
+why = "[variants] data must be a table"
+toml = '''
+[variants]
+data = "edition=pro"
+'''
+[case.expect]
+error = true
+
+[[case]]
+name = "variants-not-a-table"
+why = "the name is this contract's: a non-table `variants` is refused, not read as absent"
+toml = '''
+variants = ["pro"]
+'''
+[case.expect]
+error = true
+
+[[case]]
+name = "legacy-data-not-a-table"
+why = "the legacy variant_data must be a table too"
+toml = '''
+[needs]
+variant_data = "edition=pro"
+'''
+[case.expect]
+error = true

@@ -30,6 +30,7 @@ dependencies = [
   "sphinx-mounts",
   "sphinx-codelinks",
   "sphinx-test-reports",
+  "ub-project",
   "sphinx-needs-workspace-tools",
 ]
 
@@ -67,6 +68,7 @@ sphinx-needs = { workspace = true }
 sphinx-mounts = { workspace = true }
 sphinx-codelinks = { workspace = true }
 sphinx-test-reports = { workspace = true }
+ub-project = { workspace = true }
 sphinx-needs-workspace-tools = { workspace = true }
 sphinx-needs-testkit = { workspace = true }
 
@@ -284,6 +286,8 @@ src = [
   "packages/sphinx-test-reports/src",
   "packages/sphinx-needs-testkit",
   "packages/sphinx-needs-testkit/src",
+  "packages/ub-project",
+  "packages/ub-project/src",
 ]
 
 [tool.ruff.lint]
@@ -350,6 +354,7 @@ include = [
   "packages/sphinx-mounts/src",
   "packages/sphinx-codelinks/src",
   "packages/sphinx-test-reports/src",
+  "packages/ub-project/src",
   "tools/src",
   ".github/scripts",
   "scripts",
@@ -696,6 +701,17 @@ executor = { type = "uv", frozen = true, no-group = "dev", group = [
 ] }
 env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-9" }
 
+# ub-project. The short name is the whole distribution name: there is no `sphinx-` prefix to
+# drop. ONE task and no `-sphinxN` cells: the package depends on nothing but the standard
+# library, so a sphinx series is not an axis it has. The environment that matters is the one
+# WITHOUT Sphinx, and that is ci.yaml's `toolchain-free` job, which runs this suite there.
+# No path is named, like `test-mounts`: `poe test-ub-project tests/test_variants.py` narrows
+# the run rather than adding to it, and nothing under `src/` is called `test_*.py`
+[tool.poe.tasks.test-ub-project]
+help = "Run the ub-project suite; trailing args go to pytest"
+cmd = "pytest"
+cwd = "packages/ub-project"
+
 # BARE, not `typecheck-needs`: the naming rule suffixes a task that acts on ONE package,
 # and this one checks the whole repository -- both packages plus the tooling -- out of a
 # single `[tool.ty]` configuration and a single environment. Splitting it per package would
@@ -707,7 +723,7 @@ help = "Type-check every package with ty against the oldest supported sphinx (th
 # but it is NOT a fence on `src.include` above: ty intersects the two, so a stale `include`
 # makes this check zero files and exit 0. The canary step in ci.yaml's Lint job is what
 # guards that.
-cmd = "ty check packages/sphinx-needs/src/sphinx_needs packages/sphinx-mounts/src/sphinx_mounts packages/sphinx-codelinks/src/sphinx_codelinks packages/sphinx-test-reports/src tools/src .github/scripts scripts --python .venvs/typing"
+cmd = "ty check packages/sphinx-needs/src/sphinx_needs packages/sphinx-mounts/src/sphinx_mounts packages/sphinx-codelinks/src/sphinx_codelinks packages/sphinx-test-reports/src packages/ub-project/src/ub_project tools/src .github/scripts scripts --python .venvs/typing"
 executor = { type = "uv", frozen = true, no-group = "dev", group = ["typing"] }
 env = { UV_PROJECT_ENVIRONMENT = ".venvs/typing" }
 
@@ -838,6 +854,16 @@ help = "Import every sphinx-test-reports module from its built wheel, with depen
 # pytest and pluggy. The release workflow's compat cell gets the toolchain from this
 # member's `compat-requirements.txt`, and pytest from the root `test` group it installs
 cmd = "python tools/src/sn_tools/import_check.py sphinx-test-reports --extra sphinx --extra pytest"
+
+[tool.poe.tasks.build-ub-project]
+help = "Build the ub-project sdist + wheel into dist/ub-project"
+cmd = "uv build --package ub-project --no-sources -o dist/ub-project"
+
+[tool.poe.tasks.import-check-ub-project]
+help = "Import every ub_project module from its built wheel, in an environment of its own"
+# the wheel declares no dependencies at all, so what this proves is that the ARTEFACT is
+# complete -- every module present and importable -- rather than a sibling's API
+cmd = "python tools/src/sn_tools/import_check.py ub-project"
 
 # There is no `smoke-mounts`. `scripts/smoke_needs.py`'s reason for existing is that 88% of
 # the sphinx-needs wheel by file count is non-Python payload that no test run touches;

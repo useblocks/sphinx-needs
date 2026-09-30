@@ -61,7 +61,7 @@ jobs:
         # ONE probe at a time, and one per package: with both planted at once a gate that had
         # dropped one package would still go red on the other and look healthy.
         run: |
-          probes="packages/sphinx-needs/src/sphinx_needs/_ty_gate_probe.py packages/sphinx-mounts/src/sphinx_mounts/_ty_gate_probe.py packages/sphinx-codelinks/src/sphinx_codelinks/_ty_gate_probe.py packages/sphinx-test-reports/src/sphinx_test_reports/_ty_gate_probe.py"
+          probes="packages/sphinx-needs/src/sphinx_needs/_ty_gate_probe.py packages/sphinx-mounts/src/sphinx_mounts/_ty_gate_probe.py packages/sphinx-codelinks/src/sphinx_codelinks/_ty_gate_probe.py packages/sphinx-test-reports/src/sphinx_test_reports/_ty_gate_probe.py packages/ub-project/src/ub_project/_ty_gate_probe.py"
           # shellcheck disable=SC2064
           trap "rm -f $probes" EXIT
           for probe in $probes; do
@@ -459,7 +459,7 @@ jobs:
         working-directory: packages/sphinx-test-reports
 
   toolchain-free:
-    name: Toolchain-free (sphinx-test-reports)
+    name: Toolchain-free (sphinx-test-reports, ub-project)
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -469,6 +469,18 @@ jobs:
     # only thing that keeps it true: it installs the package with the dependencies it
     # declares, asserts that sphinx, sphinx_needs and docutils are all absent, and runs the
     # modules that do not need a build.
+    #
+    # The environment is on Python 3.11, the workspace floor: both packages it runs claim
+    # `>=3.11`, and no other cell runs either of them there -- the matrix cells vary the
+    # sphinx series on the pinned interpreter -- so the job that proves "no toolchain"
+    # proves the floor too.
+    #
+    # ubproject, the shared reader for `ubproject.toml`, is installed into the SAME
+    # environment and its whole suite runs here: its contract is to import nothing outside
+    # the standard library, so that every tool reading the file -- this converter included
+    # -- can use it without the toolchain. The assertion below runs after both installs, so
+    # it covers both. It has no other CI cell: with no Sphinx dependency, a sphinx series is
+    # not an axis it has.
     #
     # It CANNOT be a matrix cell, and that is structural rather than a configuration gap:
     # the root's `[project] dependencies` name every member, `[project] dependencies` are
@@ -549,9 +561,9 @@ jobs:
         # from the wheel checked above, so the modules below -- the aliases among them --
         # run against the artefact, not against the checkout
         run: |
-          uv venv /tmp/toolchain-free
+          uv venv --python 3.11 /tmp/toolchain-free
           wheel=$(ls /tmp/str-dist/*.whl)
-          uv pip install --python /tmp/toolchain-free --no-sources "${wheel}[pytest]"
+          uv pip install --python /tmp/toolchain-free --no-sources "${wheel}[pytest]" packages/ub-project
       - name: Assert the toolchain really is absent
         # the fence's fence. Without this the job would still pass with Sphinx installed,
         # and would be testing nothing it claims to test.
@@ -578,6 +590,13 @@ jobs:
             packages/sphinx-test-reports/tests/test_pytest_plugin.py \
             packages/sphinx-test-reports/tests/test_result_vocabulary.py \
             packages/sphinx-test-reports/tests/test_toolchain.py
+      - name: Run the ub-project suite
+        # A step of its own so that a red check names the suite. (One run over both would
+        # collect today -- measured -- but only because this suite has no `conftest.py`:
+        # add one and it resolves to `tests.conftest` beside test-reports', the collision
+        # the root `testpaths` comment describes.) The installed wheel is what is imported
+        # -- `src/` is never on `sys.path` -- so this also tests the artefact
+        run: /tmp/toolchain-free/bin/python -m pytest -q packages/ub-project/tests
 
   bazel:
     name: Mounts Bazel integration

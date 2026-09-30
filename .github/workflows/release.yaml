@@ -3,9 +3,9 @@ name: Release
 # ONE workflow for every distribution in this workspace. The tag says which:
 # `<dist>-v<version>`, where <dist> is a directory name under `packages/`.
 #
-# The filename is load-bearing and must not change: all four PyPI projects
-# (sphinx-needs, sphinx-mounts, sphinx-codelinks, sphinx-test-reports) name
-# `release.yaml` in their trusted-publisher entries.
+# The filename is load-bearing and must not change: every publishable member's PyPI project
+# (sphinx-needs, sphinx-mounts, sphinx-codelinks, sphinx-test-reports, ub-project) names
+# `release.yaml` in its trusted-publisher entry.
 #
 # The leading `*` in the tag filter is deliberately loose -- GitHub's tag filters are globs,
 # not regexes, and cannot express "one of these four names" -- and the `plan` job is what
@@ -260,14 +260,24 @@ jobs:
           fi
           gh api "repos/$GITHUB_REPOSITORY/releases/generate-notes" \
             "${args[@]}" --jq .body > /tmp/generated-notes.md
-          # `en/latest` rather than a version slug: `latest` tracks the default branch,
-          # which already carries this release's changelog entry (the entry is stamped in
-          # the release pull request, before the tag), so the link is correct the moment
-          # the release is created and does not wait for Read the Docs to build the tag.
-          # The anchor is the `_release:<version>` label the changelog stamps
+          # A member with a Read the Docs project gets its rendered changelog page: `en/latest`
+          # rather than a version slug, because `latest` tracks the default branch, which
+          # already carries this release's entry (it is stamped in the release pull request,
+          # before the tag), so the link is correct the moment the release is created. The
+          # anchor is the `_release:<version>` label the changelog stamps. "Has one" is read
+          # off the tree -- `packages/<dist>/.readthedocs.yaml` exists -- except for
+          # sphinx-needs, which is matched by NAME: its configuration is the root
+          # `.readthedocs.yml`, which has to stay there, and that file is not consulted.
+          # A member with none (ub-project has consumers, not users, and no docs site) gets
+          # its changelog FILE at the tag instead, which exists the moment the tag does
+          if [ -f "packages/$DIST/.readthedocs.yaml" ] || [ "$DIST" = sphinx-needs ]; then
+            changelog="https://$DIST.readthedocs.io/en/latest/changelog.html#release-${VERSION//./-}"
+          else
+            changelog="https://github.com/$GITHUB_REPOSITORY/blob/$TAG/packages/$DIST/docs/changelog.rst"
+          fi
           {
             echo "Changelog:"
-            echo "<https://$DIST.readthedocs.io/en/latest/changelog.html#release-${VERSION//./-}>"
+            echo "<$changelog>"
             echo
             cat /tmp/generated-notes.md
           } > /tmp/notes.md
