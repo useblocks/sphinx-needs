@@ -1,6 +1,7 @@
 # @Test suite for CLI commands including analyse, discover, and write, TEST_CLI_1, test, [IMPL_CLI_ANALYZE, IMPL_CLI_DISCOVER, IMPL_CLI_WRITE]
 import json
 import re
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -463,3 +464,67 @@ git_root = "{fake_git_root.as_posix()}"
         marked_content = json.load(f)
     # Verify the content was analysed using the correct git_root
     assert len(marked_content["test_project"]) > 0
+
+
+# -- the TOML reader of `codelinks analyse` ----------------------------------------------
+
+
+def _analyse(tmp_path: Path, toml_text: str) -> tuple[int, str]:
+    config = tmp_path / "cl.toml"
+    config.write_text(toml_text, encoding="utf-8")
+    result = runner.invoke(app, ["analyse", str(config), "--outdir", str(tmp_path)])
+    return result.exit_code, _normalize_output(result.output)
+
+
+def test_analyse_toml_syntax_error_shows_the_reason(tmp_path: Path) -> None:
+    """The parser's own message reaches the user, not only "Failed to load"."""
+    broken = "[codelinks\n"
+    with pytest.raises(tomllib.TOMLDecodeError) as parse_error:
+        tomllib.loads(broken)
+
+    exit_code, output = _analyse(tmp_path, broken)
+
+    assert exit_code == 2
+    assert _normalize_output(str(parse_error.value)) in output
+
+
+@pytest.mark.parametrize(
+    ("value", "type_name"),
+    [('"x"', "str"), ("0", "int"), ("[]", "list"), ("false", "bool")],
+)
+def test_analyse_codelinks_not_a_table(
+    tmp_path: Path, value: str, type_name: str
+) -> None:
+    """``codelinks`` that is not a table is named as such, for a falsy value too."""
+    exit_code, output = _analyse(tmp_path, f"codelinks = {value}\n")
+
+    assert exit_code == 2
+    assert f"[codelinks] must be a table, got {type_name}" in output
+    assert "No 'codelinks' section" not in output
+
+
+@pytest.mark.parametrize(
+    "toml_text",
+    [
+        pytest.param("[codelinks]\n", id="empty-table"),
+        pytest.param("[needs]\nid_required = true\n", id="no-table"),
+    ],
+)
+def test_analyse_without_codelinks_configuration(
+    tmp_path: Path, toml_text: str
+) -> None:
+    """A missing or empty ``[codelinks]`` keeps today's words."""
+    exit_code, output = _analyse(tmp_path, toml_text)
+
+    assert exit_code == 2
+    assert "No 'codelinks' section found" in output
+
+
+def test_analyse_too_deeply_nested_toml_is_a_bad_parameter(tmp_path: Path) -> None:
+    """``tomllib`` can fail with an exception ub-project does not wrap (a
+    ``RecursionError`` on a pathologically nested file): still a usage error, rc 2,
+    never a traceback."""
+    exit_code, _output = _analyse(tmp_path, "x = " + "[" * 5000 + "]" * 5000 + "\n")
+
+    # 1 would be the uncaught exception; typer reports a BadParameter as 2
+    assert exit_code == 2
