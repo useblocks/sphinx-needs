@@ -9,7 +9,7 @@ What this module deliberately does NOT decide is policy. Whether a consumer walk
 find the file or reads it from its ``confdir``, whether a missing file is worth a warning,
 whether a ``-D`` on the command line beats a key in the file: those are the consumer's
 decisions, and they differ today for reasons each consumer owns. This module provides the
-mechanisms, and reports through return values and :class:`UbprojectError` -- never through
+mechanisms, and reports through return values and :class:`ProjectConfigError` -- never through
 a logger.
 """
 
@@ -61,7 +61,7 @@ _TOML_ESCAPES = {
 _TOML_DECODE_ERROR: type[Exception] = tomllib.TOMLDecodeError
 
 
-class UbprojectError(Exception):
+class ProjectConfigError(Exception):
     """The one exception this package raises, for every hard failure.
 
     Each message names the file (or the dotted path inside it) and the rule that was
@@ -141,12 +141,12 @@ def _marker(directory: Path, markers: tuple[str, ...]) -> str | None:
 
 
 def load_toml(path: Path) -> dict[str, object]:
-    """Parse *path*, reporting every failure as an :class:`UbprojectError` naming it.
+    """Parse *path*, reporting every failure as an :class:`ProjectConfigError` naming it.
 
     A missing file is a failure here too: whether an absent file is fine is the
     consumer's decision, taken before it calls this.
 
-    :raises UbprojectError: If the file cannot be read, is not UTF-8, or is not valid TOML.
+    :raises ProjectConfigError: If the file cannot be read, is not UTF-8, or is not valid TOML.
     """
     try:
         with path.open("rb") as handle:
@@ -154,15 +154,15 @@ def load_toml(path: Path) -> dict[str, object]:
             data: dict[str, object] = tomllib.load(handle)
     except _TOML_DECODE_ERROR as error:
         msg = f"{path}: invalid TOML: {error}"
-        raise UbprojectError(msg) from error
+        raise ProjectConfigError(msg) from error
     except UnicodeDecodeError as error:
         # tomllib decodes the bytes itself, and a file saved in another encoding raises
         # neither of the two errors around it
         msg = f"{path}: not valid UTF-8 TOML: {error}"
-        raise UbprojectError(msg) from error
+        raise ProjectConfigError(msg) from error
     except OSError as error:
         msg = f"{path}: cannot be read: {error}"
-        raise UbprojectError(msg) from error
+        raise ProjectConfigError(msg) from error
     return data
 
 
@@ -226,7 +226,7 @@ def select_table(
         keys.
     :param source: The file *data* came from, for error messages only.
     :return: The table, or ``None`` when any segment of the path is absent.
-    :raises UbprojectError: If a segment is present but is not a table.
+    :raises ProjectConfigError: If a segment is present but is not a table.
     """
     segments = table_path(table)
     current: Mapping[str, object] = data
@@ -238,7 +238,7 @@ def select_table(
             where = "" if source is None else f"{source}: "
             dotted = render_path(segments[: depth + 1])
             msg = f"{where}[{dotted}] must be a table, got {type(value).__name__}"
-            raise UbprojectError(msg)
+            raise ProjectConfigError(msg)
         current = value
     return dict(current)
 

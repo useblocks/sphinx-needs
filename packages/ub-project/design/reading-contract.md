@@ -1,4 +1,4 @@
-# The ubproject reading contract
+# The `ubproject.toml` reading contract
 
 This document is the **normative** specification of how the parts of `ubproject.toml`
 that more than one tool reads are read: finding and loading the file, selecting a table,
@@ -34,7 +34,7 @@ corpus and the tests change in the same commit. Every rule names the test that e
    Enforced by: `tests/test_imports.py::test_no_sphinx_docutils_or_sibling_is_imported`,
    `tests/test_imports.py::test_only_the_standard_library_is_imported`, and CI's
    `toolchain-free` job, which runs this suite where Sphinx is not installed.
-4. Every hard failure is an `UbprojectError` whose message names the file (or the dotted
+4. Every hard failure is an `ProjectConfigError` whose message names the file (or the dotted
    path inside the data) and the rule broken. Nothing else is raised for a problem with
    the file's bytes, syntax or values. Pathological depth (input nested ~1 000 levels,
    which Python's recursion limit refuses) is out of contract.
@@ -79,7 +79,7 @@ existing behaviour, moved here unchanged.
 ## 3. Loading — `load_toml`
 
 1. The file is parsed as UTF-8 TOML 1.0. Invalid TOML, bytes that are not UTF-8, a
-   missing file, a directory and an unreadable file are each an `UbprojectError` naming
+   missing file, a directory and an unreadable file are each an `ProjectConfigError` naming
    the file.
    Enforced by: `tests/test_project.py::TestLoadToml` (all six tests, including
    `test_a_non_utf8_file_names_the_file`).
@@ -93,7 +93,7 @@ existing behaviour, moved here unchanged.
    `…::test_a_sequence_path_can_hold_a_dotted_key`,
    `…::test_a_malformed_path_is_the_callers_mistake`.
 2. A segment that is **absent** makes the whole path absent (`None`). A segment that is
-   present but **not a table** is an `UbprojectError` naming the dotted path so far — never
+   present but **not a table** is an `ProjectConfigError` naming the dotted path so far — never
    read as absent. A path is spelled as TOML spells it: a segment that is not a bare key
    is quoted by the rule in §7.2 (`tool."acme.docs".needs`), in messages and in diagnostic
    paths.
@@ -297,5 +297,5 @@ What a consumer has to do that this package deliberately does not:
    file". This package takes `Path | None` and refuses an empty `data_file` in the TOML
    (§6.1), so a consumer keeps its own route's meaning by mapping `""` to `None` itself.
 2. **Decide what each finding is worth** (§7): warn, log at a verbose level, or drop.
-3. **Re-raise `UbprojectError` in its own vocabulary** (§1.4): a Sphinx configuration
+3. **Re-raise `ProjectConfigError` in its own vocabulary** (§1.4): a Sphinx configuration
    error, a non-zero exit.

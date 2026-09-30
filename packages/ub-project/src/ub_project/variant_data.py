@@ -10,7 +10,7 @@ one takes a side on each:
   (mounts' behaviour; sphinx-needs handed back the inline object when there was no file);
 * the error wording is the set below, each message naming the dotted path (``var.a.b``)
   and the rule it broke;
-* every failure to load the file is an :class:`~ubproject.project.UbprojectError`
+* every failure to load the file is an :class:`~ub_project.project.ProjectConfigError`
   (mounts'; sphinx-needs let ``OSError`` and ``UnicodeDecodeError`` escape);
 * an empty path is not "no file": the API takes ``Path | None``, and ``""`` names nothing
   (mounts'; sphinx-needs read ``""`` as no file -- on the ``conf.py``/``-D`` route BOTH
@@ -29,7 +29,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from ubproject.project import UbprojectError
+from ub_project.project import ProjectConfigError
 
 #: The types a leaf value, or every element of an array, may have. ``bool`` is listed
 #: although it is an ``int``: an array is checked by EXACT type, so ``[1, True]`` is mixed.
@@ -47,15 +47,15 @@ def validate_variant_data(data: object, path: str = "var") -> None:
 
     :param data: The value to check.
     :param path: The dotted path of *data*, for the error message.
-    :raises UbprojectError: On the first violation, naming its dotted path.
+    :raises ProjectConfigError: On the first violation, naming its dotted path.
     """
     if not isinstance(data, dict):
         msg = f"{path}: variant data must be a table, got {type(data).__name__}"
-        raise UbprojectError(msg)
+        raise ProjectConfigError(msg)
     for key, value in data.items():
         if not isinstance(key, str):
             msg = f"{path}: keys must be strings, got {type(key).__name__} {key!r}"
-            raise UbprojectError(msg)
+            raise ProjectConfigError(msg)
         full = f"{path}.{key}"
         if isinstance(value, dict):
             validate_variant_data(value, full)
@@ -66,7 +66,7 @@ def validate_variant_data(data: object, path: str = "var") -> None:
                 f"{full}: a value must be a {_SCALARS}, an array or a table, "
                 f"got {type(value).__name__}"
             )
-            raise UbprojectError(msg)
+            raise ProjectConfigError(msg)
 
 
 def _validate_array(value: list[Any], path: str) -> None:
@@ -76,14 +76,14 @@ def _validate_array(value: list[Any], path: str) -> None:
     first = type(value[0])
     if first not in _SCALAR_TYPES:
         msg = f"{path}: array elements must be a {_SCALARS}, got {first.__name__}"
-        raise UbprojectError(msg)
+        raise ProjectConfigError(msg)
     for index, item in enumerate(value):
         if type(item) is not first:
             msg = (
                 f"{path}[{index}]: an array must hold one type, expected "
                 f"{first.__name__} but got {type(item).__name__}"
             )
-            raise UbprojectError(msg)
+            raise ProjectConfigError(msg)
 
 
 def load_variant_data_file(path: Path | str) -> dict[str, Any]:
@@ -91,35 +91,35 @@ def load_variant_data_file(path: Path | str) -> dict[str, Any]:
 
     :param path: The file, already anchored by the caller.
     :return: The validated mapping.
-    :raises UbprojectError: If the file is missing or unreadable, is not JSON, does not
+    :raises ProjectConfigError: If the file is missing or unreadable, is not JSON, does not
         hold a JSON object, or holds one of the wrong shape.
     """
     file = Path(path)
     if file.is_dir():
         msg = f"variant data file {file} is a directory"
-        raise UbprojectError(msg)
+        raise ProjectConfigError(msg)
     if not file.is_file():
         msg = f"variant data file not found: {file}"
-        raise UbprojectError(msg)
+        raise ProjectConfigError(msg)
     try:
         raw: object = json.loads(file.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, UnicodeDecodeError) as error:
         msg = f"variant data file {file} is not valid JSON: {error}"
-        raise UbprojectError(msg) from error
+        raise ProjectConfigError(msg) from error
     except OSError as error:
         msg = f"variant data file {file} cannot be read: {error}"
-        raise UbprojectError(msg) from error
+        raise ProjectConfigError(msg) from error
     if not isinstance(raw, dict):
         msg = (
             f"variant data file {file} must hold a JSON object, "
             f"got {type(raw).__name__}"
         )
-        raise UbprojectError(msg)
+        raise ProjectConfigError(msg)
     try:
         validate_variant_data(raw)
-    except UbprojectError as error:
+    except ProjectConfigError as error:
         msg = f"variant data file {file}: {error}"
-        raise UbprojectError(msg) from error
+        raise ProjectConfigError(msg) from error
     return raw
 
 
@@ -154,7 +154,7 @@ def resolve_variant_data(
     :param inline: The inline table; ``None`` and an empty table both mean "none".
     :param data_file: An ALREADY ANCHORED path, or ``None``.
     :return: A fresh mapping, never *inline* itself, even when there is no file.
-    :raises UbprojectError: If the file or the inline table is malformed.
+    :raises ProjectConfigError: If the file or the inline table is malformed.
     """
     base: dict[str, Any] = {}
     if data_file is not None:

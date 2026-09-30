@@ -22,9 +22,9 @@
 'pkg: sphinx-needs-testkit':
   - changed-files:
       - any-glob-to-any-file: 'packages/sphinx-needs-testkit/**'
-'pkg: ubproject':
+'pkg: ub-project':
   - changed-files:
-      - any-glob-to-any-file: 'packages/ubproject/**'
+      - any-glob-to-any-file: 'packages/ub-project/**'
 'pkg: workspace':
   - changed-files:
       - any-glob-to-any-file:

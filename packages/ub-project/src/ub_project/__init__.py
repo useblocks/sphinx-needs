@@ -9,25 +9,25 @@ distribution.
 It decides no policy. Discovery (walk up or read the ``confdir``), whether a finding is
 worth a warning, and how ``-D`` / ``-c`` on a command line interact with the file are each
 consumer's to decide; this package returns what it found and raises
-:class:`UbprojectError` for what it cannot accept.
+:class:`ProjectConfigError` for what it cannot accept.
 """
 
-from ubproject.project import (
+from ub_project.project import (
     DEFAULT_FILENAME,
-    UbprojectError,
+    ProjectConfigError,
     anchor,
     find_project_config,
     load_toml,
     select_table,
     table_path,
 )
-from ubproject.variant_data import (
+from ub_project.variant_data import (
     deep_merge,
     load_variant_data_file,
     resolve_variant_data,
     validate_variant_data,
 )
-from ubproject.variants import (
+from ub_project.variants import (
     VARIANT_DATA_LEGACY_LOCATION,
     VARIANT_DATA_LOCATION,
     VARIANTS_UNKNOWN_KEY,
@@ -44,7 +44,7 @@ __all__ = [
     "VARIANT_DATA_LEGACY_LOCATION",
     "VARIANT_DATA_LOCATION",
     "Diagnostic",
-    "UbprojectError",
+    "ProjectConfigError",
     "VariantsResult",
     "__version__",
     "anchor",

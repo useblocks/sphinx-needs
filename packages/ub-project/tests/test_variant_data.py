@@ -3,7 +3,7 @@
 Ported from both copies this package replaces -- ``packages/sphinx-needs/tests/
 test_variant_data.py`` and ``packages/sphinx-mounts/tests/test_variant_data.py`` -- with
 the two differences between those copies ruled: :func:`resolve_variant_data` always
-returns a fresh mapping, and every failure is an :class:`UbprojectError` whose message
+returns a fresh mapping, and every failure is an :class:`ProjectConfigError` whose message
 names the dotted path and the rule.
 """
 
@@ -15,8 +15,8 @@ from typing import Any
 
 import pytest
 
-from ubproject import (
-    UbprojectError,
+from ub_project import (
+    ProjectConfigError,
     deep_merge,
     load_variant_data_file,
     resolve_variant_data,
@@ -103,22 +103,24 @@ class TestValidate:
     def test_invalid_shapes_name_the_path_and_the_rule(
         self, data: Any, match: str
     ) -> None:
-        with pytest.raises(UbprojectError, match=match):
+        with pytest.raises(ProjectConfigError, match=match):
             validate_variant_data(data)
 
     def test_bool_and_int_are_not_conflated_in_an_array(self) -> None:
         """``bool`` is an ``int`` subclass; an array is checked by EXACT type."""
-        with pytest.raises(UbprojectError, match=r"expected int but got bool"):
+        with pytest.raises(ProjectConfigError, match=r"expected int but got bool"):
             validate_variant_data({"vals": [1, True, 2]})
-        with pytest.raises(UbprojectError, match=r"expected bool but got int"):
+        with pytest.raises(ProjectConfigError, match=r"expected bool but got int"):
             validate_variant_data({"vals": [True, 1, False]})
 
     def test_int_and_float_are_not_conflated_in_an_array(self) -> None:
-        with pytest.raises(UbprojectError, match=r"expected int but got float"):
+        with pytest.raises(ProjectConfigError, match=r"expected int but got float"):
             validate_variant_data({"vals": [1, 1.5]})
 
     def test_the_path_prefix_is_the_callers(self) -> None:
-        with pytest.raises(UbprojectError, match=r"^needs\.variant_data\.build\.opt:"):
+        with pytest.raises(
+            ProjectConfigError, match=r"^needs\.variant_data\.build\.opt:"
+        ):
             validate_variant_data({"build": {"opt": None}}, "needs.variant_data")
 
 
@@ -133,38 +135,40 @@ class TestLoad:
 
     def test_a_missing_file(self, tmp_path: Path) -> None:
         path = tmp_path / "absent.json"
-        with pytest.raises(UbprojectError, match="variant data file not found") as info:
+        with pytest.raises(
+            ProjectConfigError, match="variant data file not found"
+        ) as info:
             load_variant_data_file(path)
         assert str(path) in str(info.value)
 
     def test_a_directory_is_reported_as_one(self, tmp_path: Path) -> None:
-        with pytest.raises(UbprojectError, match="is a directory") as info:
+        with pytest.raises(ProjectConfigError, match="is a directory") as info:
             load_variant_data_file(tmp_path)
         assert str(tmp_path) in str(info.value)
 
     def test_undecodable_json(self, tmp_path: Path) -> None:
         path = tmp_path / "vd.json"
         path.write_text("{not json", encoding="utf-8")
-        with pytest.raises(UbprojectError, match="is not valid JSON") as info:
+        with pytest.raises(ProjectConfigError, match="is not valid JSON") as info:
             load_variant_data_file(path)
         assert str(path) in str(info.value)
 
     def test_undecodable_bytes(self, tmp_path: Path) -> None:
         path = tmp_path / "vd.json"
         path.write_bytes(b'{"a": "\xff"}')
-        with pytest.raises(UbprojectError, match="is not valid JSON"):
+        with pytest.raises(ProjectConfigError, match="is not valid JSON"):
             load_variant_data_file(path)
 
     @pytest.mark.parametrize("payload", [[1, 2], "text", 3, None])
     def test_the_top_level_must_be_an_object(
         self, tmp_path: Path, payload: object
     ) -> None:
-        with pytest.raises(UbprojectError, match="must hold a JSON object"):
+        with pytest.raises(ProjectConfigError, match="must hold a JSON object"):
             load_variant_data_file(_write(tmp_path, payload))
 
     def test_the_file_is_held_to_the_same_shape_rules(self, tmp_path: Path) -> None:
         path = _write(tmp_path, {"build": {"tags": [1, "x"]}})
-        with pytest.raises(UbprojectError) as info:
+        with pytest.raises(ProjectConfigError) as info:
             load_variant_data_file(path)
         message = str(info.value)
         assert str(path) in message
@@ -254,11 +258,11 @@ class TestResolve:
         assert resolve_variant_data({}, None) == {}
 
     def test_a_malformed_inline_map(self) -> None:
-        with pytest.raises(UbprojectError, match="an array must hold one type"):
+        with pytest.raises(ProjectConfigError, match="an array must hold one type"):
             resolve_variant_data({"a": [1, "x"]}, None)
 
     def test_a_missing_file(self, tmp_path: Path) -> None:
-        with pytest.raises(UbprojectError, match="not found"):
+        with pytest.raises(ProjectConfigError, match="not found"):
             resolve_variant_data({"a": 1}, tmp_path / "absent.json")
 
     def test_returns_a_fresh_mapping_with_no_file(self) -> None:

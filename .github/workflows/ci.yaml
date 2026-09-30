@@ -61,7 +61,7 @@ jobs:
         # ONE probe at a time, and one per package: with both planted at once a gate that had
         # dropped one package would still go red on the other and look healthy.
         run: |
-          probes="packages/sphinx-needs/src/sphinx_needs/_ty_gate_probe.py packages/sphinx-mounts/src/sphinx_mounts/_ty_gate_probe.py packages/sphinx-codelinks/src/sphinx_codelinks/_ty_gate_probe.py packages/sphinx-test-reports/src/sphinx_test_reports/_ty_gate_probe.py packages/ubproject/src/ubproject/_ty_gate_probe.py"
+          probes="packages/sphinx-needs/src/sphinx_needs/_ty_gate_probe.py packages/sphinx-mounts/src/sphinx_mounts/_ty_gate_probe.py packages/sphinx-codelinks/src/sphinx_codelinks/_ty_gate_probe.py packages/sphinx-test-reports/src/sphinx_test_reports/_ty_gate_probe.py packages/ub-project/src/ub_project/_ty_gate_probe.py"
           # shellcheck disable=SC2064
           trap "rm -f $probes" EXIT
           for probe in $probes; do
@@ -459,7 +459,7 @@ jobs:
         working-directory: packages/sphinx-test-reports
 
   toolchain-free:
-    name: Toolchain-free (sphinx-test-reports, ubproject)
+    name: Toolchain-free (sphinx-test-reports, ub-project)
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -563,7 +563,7 @@ jobs:
         run: |
           uv venv --python 3.11 /tmp/toolchain-free
           wheel=$(ls /tmp/str-dist/*.whl)
-          uv pip install --python /tmp/toolchain-free --no-sources "${wheel}[pytest]" packages/ubproject
+          uv pip install --python /tmp/toolchain-free --no-sources "${wheel}[pytest]" packages/ub-project
       - name: Assert the toolchain really is absent
         # the fence's fence. Without this the job would still pass with Sphinx installed,
         # and would be testing nothing it claims to test.
@@ -590,13 +590,13 @@ jobs:
             packages/sphinx-test-reports/tests/test_pytest_plugin.py \
             packages/sphinx-test-reports/tests/test_result_vocabulary.py \
             packages/sphinx-test-reports/tests/test_toolchain.py
-      - name: Run the ubproject suite
+      - name: Run the ub-project suite
         # A step of its own so that a red check names the suite. (One run over both would
         # collect today -- measured -- but only because this suite has no `conftest.py`:
         # add one and it resolves to `tests.conftest` beside test-reports', the collision
         # the root `testpaths` comment describes.) The installed wheel is what is imported
         # -- `src/` is never on `sys.path` -- so this also tests the artefact
-        run: /tmp/toolchain-free/bin/python -m pytest -q packages/ubproject/tests
+        run: /tmp/toolchain-free/bin/python -m pytest -q packages/ub-project/tests
 
   bazel:
     name: Mounts Bazel integration

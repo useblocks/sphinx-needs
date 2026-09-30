@@ -2,7 +2,7 @@
 # fallback, path anchoring, and the variant-data merge and validation.
 #
 # Repository of record: useblocks/sphinx-needs (public)
-# Canonical path:       packages/ubproject/tests/fixtures/ubproject_reading_conformance.toml
+# Canonical path:       packages/ub-project/tests/fixtures/ubproject_reading_conformance.toml
 #
 # THIS copy is CANONICAL. ubCode is to vendor it byte-for-byte, with a provenance block
 # (this path, and the commit it was taken from) prepended and nothing else changed, and to
@@ -34,7 +34,7 @@
 #     character for character, its inner double quotes included
 #   - integers are within the signed 64-bit range; beyond it the behaviour is unspecified
 #
-# `packages/ubproject/tests/test_conformance.py` runs every `[[case]]` against the Python
+# `packages/ub-project/tests/test_conformance.py` runs every `[[case]]` against the Python
 # reader AND asserts the case COUNT, so a truncated copy is a red test rather than reduced
 # coverage. `design/reading-contract.md` beside it is the prose half of the same contract.
 #

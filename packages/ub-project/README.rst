@@ -1,9 +1,13 @@
-ubproject
-=========
+ub-project
+==========
 
-The shared reader for ``ubproject.toml``, the declarative file that describes a project to
-every useblocks tool: the sphinx-needs family of Sphinx extensions (sphinx-needs,
-sphinx-mounts, sphinx-codelinks, sphinx-test-reports), their command lines, and ubCode.
+A library for the sphinx-needs family, which the extensions pull in -- not a Sphinx
+extension, and nothing to add to ``conf.py``.
+
+It is the shared reader for ``ubproject.toml``, the declarative file that describes a
+project to every useblocks tool: the sphinx-needs family of Sphinx extensions
+(sphinx-needs, sphinx-mounts, sphinx-codelinks, sphinx-test-reports), their command lines,
+and ubCode.
 
 It holds the parts of that file more than one tool reads, so that they are read one way:
 
@@ -24,7 +28,7 @@ The three calls
 
    from pathlib import Path
 
-   from ubproject import find_project_config, load_toml, read_variants
+   from ub_project import find_project_config, load_toml, read_variants
 
    toml_path = find_project_config(Path.cwd())   # or the path your tool is configured with
    if toml_path is not None:
@@ -34,7 +38,7 @@ The three calls
        result.location      # "variants", "needs" or None
        result.diagnostics   # findings to report -- or not
 
-Every hard failure is an ``UbprojectError`` whose message names the file and the rule that
+Every hard failure is an ``ProjectConfigError`` whose message names the file and the rule that
 was broken.
 
 ``[variants]``

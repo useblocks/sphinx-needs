@@ -22,7 +22,7 @@ members = [
     "sphinx-needs-workspace",
     "sphinx-needs-workspace-tools",
     "sphinx-test-reports",
-    "ubproject",
+    "ub-project",
 ]
 
 [[package]]
@@ -2993,7 +2993,7 @@ dependencies = [
     { name = "sphinx-needs" },
     { name = "sphinx-needs-workspace-tools" },
     { name = "sphinx-test-reports" },
-    { name = "ubproject" },
+    { name = "ub-project" },
 ]
 
 [package.optional-dependencies]
@@ -3141,7 +3141,7 @@ requires-dist = [
     { name = "sphinx-needs-workspace-tools", virtual = "tools" },
     { name = "sphinx-test-reports", editable = "packages/sphinx-test-reports" },
     { name = "sphinx-test-reports", extras = ["docs"], marker = "extra == 'docs-reports'", editable = "packages/sphinx-test-reports" },
-    { name = "ubproject", editable = "packages/ubproject" },
+    { name = "ub-project", editable = "packages/ub-project" },
 ]
 provides-extras = ["plotting", "docs", "docs-mounts", "docs-codelinks", "docs-reports", "codelinks-libclang", "theme-im", "theme-furo", "theme-pds", "theme-rtd"]
 
@@ -3842,9 +3842,9 @@ wheels = [
 ]
 
 [[package]]
-name = "ubproject"
+name = "ub-project"
 version = "1.0.0.dev0"
-source = { editable = "packages/ubproject" }
+source = { editable = "packages/ub-project" }
 
 [[package]]
 name = "urllib3"

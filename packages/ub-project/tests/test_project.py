@@ -1,4 +1,4 @@
-"""Find, load, select and anchor: :mod:`ubproject.project`."""
+"""Find, load, select and anchor: :mod:`ub_project.project`."""
 
 from __future__ import annotations
 
@@ -8,9 +8,9 @@ from pathlib import Path
 
 import pytest
 
-from ubproject import (
+from ub_project import (
     DEFAULT_FILENAME,
-    UbprojectError,
+    ProjectConfigError,
     anchor,
     find_project_config,
     load_toml,
@@ -205,27 +205,27 @@ class TestLoadToml:
 
     def test_invalid_toml_names_the_file(self, tmp_path: Path) -> None:
         path = _write(tmp_path, "[variants\n")
-        with pytest.raises(UbprojectError, match="invalid TOML") as info:
+        with pytest.raises(ProjectConfigError, match="invalid TOML") as info:
             load_toml(path)
         assert str(path) in str(info.value)
 
     def test_a_missing_file_names_the_file(self, tmp_path: Path) -> None:
         path = tmp_path / DEFAULT_FILENAME
-        with pytest.raises(UbprojectError, match="cannot be read") as info:
+        with pytest.raises(ProjectConfigError, match="cannot be read") as info:
             load_toml(path)
         assert str(path) in str(info.value)
 
     def test_a_non_utf8_file_names_the_file(self, tmp_path: Path) -> None:
         path = tmp_path / DEFAULT_FILENAME
         path.write_bytes('[project]\nname = "café"\n'.encode("latin-1"))
-        with pytest.raises(UbprojectError, match="not valid UTF-8 TOML") as info:
+        with pytest.raises(ProjectConfigError, match="not valid UTF-8 TOML") as info:
             load_toml(path)
         assert str(path) in str(info.value)
 
     def test_a_directory_is_not_readable_as_the_file(self, tmp_path: Path) -> None:
         path = tmp_path / DEFAULT_FILENAME
         path.mkdir()
-        with pytest.raises(UbprojectError, match="cannot be read"):
+        with pytest.raises(ProjectConfigError, match="cannot be read"):
             load_toml(path)
 
     @pytest.mark.skipif(
@@ -240,7 +240,7 @@ class TestLoadToml:
         path = _write(tmp_path, "[variants]\n")
         path.chmod(0o000)
         try:
-            with pytest.raises(UbprojectError, match="cannot be read") as info:
+            with pytest.raises(ProjectConfigError, match="cannot be read") as info:
                 load_toml(path)
         finally:
             path.chmod(0o644)
@@ -272,7 +272,7 @@ class TestSelectTable:
 
     def test_a_segment_that_is_not_a_table_is_an_error(self, tmp_path: Path) -> None:
         source = tmp_path / DEFAULT_FILENAME
-        with pytest.raises(UbprojectError) as info:
+        with pytest.raises(ProjectConfigError) as info:
             select_table(self.DATA, "tool.flat.needs", source=source)
         message = str(info.value)
         assert "[tool.flat] must be a table, got str" in message
@@ -280,7 +280,7 @@ class TestSelectTable:
 
     def test_the_last_segment_not_a_table_is_an_error(self) -> None:
         with pytest.raises(
-            UbprojectError, match=r"\[needs\.id_required\] must be a table"
+            ProjectConfigError, match=r"\[needs\.id_required\] must be a table"
         ):
             select_table(self.DATA, "needs.id_required")
 

@@ -1,4 +1,4 @@
-# AGENTS.md — packages/ubproject
+# AGENTS.md — packages/ub-project
 
 The delta for this package. Everything repository-level — the workspace layout, the
 commands, the lock, lint/format/type-check configuration, the release recipe, the pull
@@ -20,9 +20,9 @@ read it before changing behaviour.
 ```text
 pyproject.toml            # `[project]` and `[build-system]` ONLY; `dependencies = []`
 README.rst · LICENSE
-src/ubproject/
+src/ub_project/
 ├── __init__.py           # the public API, re-exported; `__version__`
-├── project.py            # find / load / select / anchor, and `UbprojectError`
+├── project.py            # find / load / select / anchor, and `ProjectConfigError`
 ├── variants.py           # `read_variants`, `Diagnostic`, `VariantsResult`, the codes
 ├── variant_data.py       # validate / load / deep_merge / resolve
 └── py.typed
@@ -40,9 +40,9 @@ There is no documentation site and no command line: the package has consumers, n
 ## Commands
 
 ```bash
-uv run poe test-ubproject              # the suite (no sphinx axis: it has no Sphinx)
-uv run poe import-check-ubproject      # import every module from the built wheel
-uv run poe build-ubproject             # sdist + wheel into dist/ubproject
+uv run poe test-ub-project              # the suite (no sphinx axis: it has no Sphinx)
+uv run poe import-check-ub-project      # import every module from the built wheel
+uv run poe build-ub-project             # sdist + wheel into dist/ub-project
 ```
 
 ## Rules
@@ -53,7 +53,7 @@ uv run poe build-ubproject             # sdist + wheel into dist/ubproject
   `toolchain-free` job runs this suite where Sphinx is not installed.
 - **Mechanisms, not policy.** Nothing here logs, reads a Sphinx config, handles `-D` or
   `-c`, or decides discovery. Findings are returned as `Diagnostic` values and failures
-  raised as `UbprojectError`; the consumer decides what either is worth.
+  raised as `ProjectConfigError`; the consumer decides what either is worth.
 - **The corpus is canonical here.** `tests/fixtures/ubproject_reading_conformance.toml` is
   the contract ubCode is to vendor byte-for-byte. Change it only together with the behaviour,
   `design/reading-contract.md` and `EXPECTED_CASE_COUNT`, and say in the pull request that
@@ -63,5 +63,5 @@ uv run poe build-ubproject             # sdist + wheel into dist/ubproject
   an explicit `encoding`, so that it holds on Windows too — its consumers' suites run
   there, and ubCode's users are on every platform.
 - **A release re-floors every consumer.** Once the extensions depend on this package, each
-  release of it rewrites their `ubproject>=` floor (`propagate_floors.py`) and shows them
+  release of it rewrites their `ub-project>=` floor (`propagate_floors.py`) and shows them
   as pending in `poe release-plan`. Batch changes accordingly.

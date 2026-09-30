@@ -29,7 +29,7 @@ it cannot switch a project's ``[needs]`` data off.
 Diagnostics are RETURNED, never logged, and the package takes no side on them: whether
 the legacy location deserves a warning is the consumer's policy (sphinx-needs will warn,
 to move users; ubCode will not, because it supports several sphinx-needs versions at
-once). Hard failures raise :class:`~ubproject.project.UbprojectError`.
+once). Hard failures raise :class:`~ub_project.project.ProjectConfigError`.
 """
 
 from __future__ import annotations
@@ -39,14 +39,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
 
-from ubproject.project import (
-    UbprojectError,
+from ub_project.project import (
+    ProjectConfigError,
     anchor,
     render_path,
     select_table,
     table_path,
 )
-from ubproject.variant_data import resolve_variant_data
+from ub_project.variant_data import resolve_variant_data
 
 #: The top-level table this module reads.
 VARIANTS_TABLE = "variants"
@@ -114,7 +114,7 @@ def read_variants(
     :param needs_table: Where the legacy keys live inside *root_table*, dotted or as a
         sequence of keys -- ``"tool.acme.needs"`` for a project that nests its sphinx-needs
         configuration under a prefix.
-    :raises UbprojectError: If a table or key has the wrong type, if the inline data is
+    :raises ProjectConfigError: If a table or key has the wrong type, if the inline data is
         malformed, or if the data file of the location read is missing or malformed.
     """
     needs_path = table_path(needs_table)
@@ -187,7 +187,7 @@ def read_variants(
             f"{toml_path}: {where} {inline_key} must be a table, "
             f"got {type(inline).__name__}"
         )
-        raise UbprojectError(msg)
+        raise ProjectConfigError(msg)
     file_value = table.get(file_key)
     data_file: Path | None = None
     if file_value is not None:
@@ -201,13 +201,13 @@ def read_variants(
                 f"{toml_path}: {where} {file_key} must be one non-empty path string, "
                 f"got {got}"
             )
-            raise UbprojectError(msg)
+            raise ProjectConfigError(msg)
         data_file = anchor(file_value, toml_path.parent)
     try:
         data = resolve_variant_data(inline, data_file)
-    except UbprojectError as error:
+    except ProjectConfigError as error:
         msg = f"{toml_path}: {where}: {error}"
-        raise UbprojectError(msg) from error
+        raise ProjectConfigError(msg) from error
     return VariantsResult(
         data=data,
         data_file=data_file,

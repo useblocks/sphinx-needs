@@ -23,8 +23,8 @@ import pytest
 PROBE = """
 import json, pkgutil, sys
 before = set(sys.modules)
-import ubproject
-for info in pkgutil.walk_packages(ubproject.__path__, "ubproject."):
+import ub_project
+for info in pkgutil.walk_packages(ub_project.__path__, "ub_project."):
     __import__(info.name)
 added = sorted({name.partition(".")[0] for name in set(sys.modules) - before})
 print(json.dumps(added))
@@ -56,6 +56,6 @@ def test_only_the_standard_library_is_imported(imported: list[str]) -> None:
     foreign = [
         name
         for name in imported
-        if name != "ubproject" and name not in sys.stdlib_module_names
+        if name != "ub_project" and name not in sys.stdlib_module_names
     ]
     assert foreign == []

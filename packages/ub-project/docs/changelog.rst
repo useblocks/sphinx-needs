@@ -14,7 +14,7 @@ is published.
 - **Find, load, select, anchor.** ``find_project_config`` walks up from a directory to the
   repository root (outside a repository, to the distribution root) and returns the first
   ``ubproject.toml``; ``load_toml`` reads it, reporting every failure as an
-  ``UbprojectError`` naming the file; ``select_table`` picks a dotted table such as
+  ``ProjectConfigError`` naming the file; ``select_table`` picks a dotted table such as
   ``tool.acme.needs``; ``anchor`` joins a relative path onto the file's directory and
   never resolves it.
 - **The** ``[variants]`` **table.** ``read_variants`` reads ``[variants] data`` (an inline

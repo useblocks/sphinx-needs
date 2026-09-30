@@ -1,4 +1,4 @@
-"""The ``[variants]`` reader and its ``[needs]`` fallback: :func:`ubproject.read_variants`.
+"""The ``[variants]`` reader and its ``[needs]`` fallback: :func:`ub_project.read_variants`.
 
 The conformance corpus covers the same ground as data, for two readers at once; these tests
 pin what the corpus does not compare -- ``location``, severities, message content, the
@@ -13,12 +13,12 @@ from pathlib import Path
 
 import pytest
 
-from ubproject import (
+from ub_project import (
     VARIANT_DATA_LEGACY_LOCATION,
     VARIANT_DATA_LOCATION,
     VARIANTS_UNKNOWN_KEY,
     Diagnostic,
-    UbprojectError,
+    ProjectConfigError,
     load_toml,
     read_variants,
 )
@@ -321,6 +321,6 @@ class TestRefusals:
     def test_refusals_name_the_file_and_the_rule(
         self, tmp_path: Path, toml: str, match: str
     ) -> None:
-        with pytest.raises(UbprojectError, match=match) as info:
+        with pytest.raises(ProjectConfigError, match=match) as info:
             _read(tmp_path, toml)
         assert str(tmp_path / "ubproject.toml") in str(info.value)

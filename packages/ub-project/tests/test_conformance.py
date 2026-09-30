@@ -20,7 +20,7 @@ from typing import Any
 
 import pytest
 
-from ubproject import UbprojectError, load_toml, read_variants
+from ub_project import ProjectConfigError, load_toml, read_variants
 
 CORPUS_PATH = Path(__file__).parent / "fixtures" / "ubproject_reading_conformance.toml"
 
@@ -75,7 +75,8 @@ def test_the_corpus_header_records_where_it_is_canonical() -> None:
     """ubCode's copy names this path; the header must keep saying this one is canonical."""
     header = CORPUS_PATH.read_text(encoding="utf-8")
     assert (
-        "packages/ubproject/tests/fixtures/ubproject_reading_conformance.toml" in header
+        "packages/ub-project/tests/fixtures/ubproject_reading_conformance.toml"
+        in header
     )
     assert "THIS copy is CANONICAL" in header
 
@@ -130,7 +131,7 @@ def test_case(case: dict[str, Any], tmp_path: Path) -> None:
     needs_table = case.get("needs_table", "needs")
 
     if expect.get("error", False):
-        with pytest.raises(UbprojectError):
+        with pytest.raises(ProjectConfigError):
             read_variants(load_toml(toml_path), toml_path, needs_table=needs_table)
         return
 
