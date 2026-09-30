@@ -29,12 +29,18 @@ def _read(
     toml: str,
     files: dict[str, object] | None = None,
     needs_table: str = "needs",
+    variants_table: str = "variants",
 ):
     for name, payload in (files or {}).items():
         (tmp_path / name).write_text(json.dumps(payload), encoding="utf-8")
     toml_path = tmp_path / "ubproject.toml"
     toml_path.write_text(toml, encoding="utf-8")
-    return read_variants(load_toml(toml_path), toml_path, needs_table=needs_table)
+    return read_variants(
+        load_toml(toml_path),
+        toml_path,
+        needs_table=needs_table,
+        variants_table=variants_table,
+    )
 
 
 def _codes(diagnostics: tuple[Diagnostic, ...]) -> list[tuple[str, str]]:
@@ -237,6 +243,113 @@ class TestPrefix:
         assert _codes(result.diagnostics) == [
             (VARIANT_DATA_LEGACY_LOCATION, 'tool."acme.docs".needs.variant_data')
         ]
+
+    def test_prefixed_variants_win_over_the_prefixed_legacy_keys(
+        self, tmp_path: Path
+    ) -> None:
+        result = _read(
+            tmp_path,
+            "[tool.acme.variants]\ndata_file = 'vd.json'\n"
+            "[tool.acme.variants.data]\nedition = 'pro'\n"
+            "[tool.acme.needs.variant_data]\nedition = 'base'\n",
+            {"vd.json": {"edition": "file", "cpu": "arm"}},
+            needs_table="tool.acme.needs",
+            variants_table="tool.acme.variants",
+        )
+        assert result.location == "variants"
+        assert result.data == {"edition": "pro", "cpu": "arm"}
+        assert result.data_file == tmp_path / "vd.json"
+        assert _codes(result.diagnostics) == [
+            (VARIANT_DATA_LOCATION, "tool.acme.needs.variant_data")
+        ]
+
+    def test_a_top_level_variants_is_ignored_under_a_prefixed_variants_table(
+        self, tmp_path: Path
+    ) -> None:
+        """Someone else's table: not read, and not reported -- like a top-level [needs]."""
+        result = _read(
+            tmp_path,
+            "[variants]\nbogus = 1\n[variants.data]\nedition = 'pro'\n",
+            needs_table="tool.acme.needs",
+            variants_table="tool.acme.variants",
+        )
+        assert result.location is None
+        assert result.data == {}
+        assert result.diagnostics == ()
+
+    def test_the_unknown_key_path_carries_a_non_bare_prefix(
+        self, tmp_path: Path
+    ) -> None:
+        data = {"tool": {"acme.docs": {"variants": {"data": {}, "bogus": 1}}}}
+        result = read_variants(
+            data,
+            tmp_path / "ubproject.toml",
+            needs_table=("tool", "acme.docs", "needs"),
+            variants_table=("tool", "acme.docs", "variants"),
+        )
+        assert result.location == "variants"
+        assert _codes(result.diagnostics) == [
+            (VARIANTS_UNKNOWN_KEY, 'tool."acme.docs".variants.bogus')
+        ]
+        assert '[tool."acme.docs".variants]' in result.diagnostics[0].message
+
+    def test_the_location_warning_names_the_prefixed_variants_table(
+        self, tmp_path: Path
+    ) -> None:
+        result = _read(
+            tmp_path,
+            "[tool.acme.variants.data]\nedition = 'pro'\n"
+            "[tool.acme.needs]\nvariant_data_file = 'vd.json'\n",
+            needs_table="tool.acme.needs",
+            variants_table="tool.acme.variants",
+        )
+        (diagnostic,) = result.diagnostics
+        assert diagnostic.code == VARIANT_DATA_LOCATION
+        assert "because [tool.acme.variants] is set" in diagnostic.message
+
+    def test_the_legacy_info_names_the_prefixed_variants_table(
+        self, tmp_path: Path
+    ) -> None:
+        result = _read(
+            tmp_path,
+            "[tool.acme.needs.variant_data]\nedition = 'base'\n",
+            needs_table="tool.acme.needs",
+            variants_table="tool.acme.variants",
+        )
+        (diagnostic,) = result.diagnostics
+        assert diagnostic.code == VARIANT_DATA_LEGACY_LOCATION
+        assert "[tool.acme.variants] data is the current one" in diagnostic.message
+
+    def test_the_type_error_names_the_prefixed_variants_table(
+        self, tmp_path: Path
+    ) -> None:
+        with pytest.raises(
+            ProjectConfigError,
+            match=r"\[tool\.acme\.variants\] data must be a table, got str",
+        ):
+            _read(
+                tmp_path,
+                "[tool.acme.variants]\ndata = 'x'\n",
+                needs_table="tool.acme.needs",
+                variants_table="tool.acme.variants",
+            )
+
+    @pytest.mark.parametrize(
+        ("toml", "match"),
+        [
+            (
+                "[tool.acme]\nvariants = 'x'\n",
+                r"\[tool\.acme\.variants\] must be a table, got str",
+            ),
+            ("[tool]\nacme = 1\n", r"\[tool\.acme\] must be a table, got int"),
+        ],
+        ids=["the-table", "a-segment"],
+    )
+    def test_a_prefixed_variants_table_that_is_not_a_table_is_refused(
+        self, tmp_path: Path, toml: str, match: str
+    ) -> None:
+        with pytest.raises(ProjectConfigError, match=match):
+            _read(tmp_path, toml, variants_table="tool.acme.variants")
 
 
 class TestAnchoring:
