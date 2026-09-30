@@ -245,8 +245,11 @@ jobs:
         # the plan, rather than by `gh release create --generate-notes`: this repository's
         # tags belong to several packages, so letting GitHub pick "the previous tag" would
         # compare a sphinx-needs release against whatever another package tagged last.
-        # `previous_tag` is empty for a package's first release, and the parameter is then
-        # omitted so GitHub falls back to its own choice.
+        # `previous_tag` is empty for a package's first release. No notes are generated then:
+        # without the parameter GitHub falls back to the repository's previous tag, whatever
+        # package it belongs to, and lists every pull request since -- ub-project v1.0.0
+        # shipped with sixty of them, nearly all another package's. A first release has no
+        # "changes since"; its changelog entry is the whole story.
         env:
           GH_TOKEN: ${{ github.token }}
           DIST: ${{ needs.plan.outputs.dist }}
@@ -254,12 +257,13 @@ jobs:
           PREVIOUS_TAG: ${{ needs.plan.outputs.previous_tag }}
         run: |
           set -euo pipefail
-          args=(-f tag_name="$TAG" -f target_commitish="$GITHUB_SHA")
           if [ -n "$PREVIOUS_TAG" ]; then
-            args+=(-f previous_tag_name="$PREVIOUS_TAG")
+            gh api "repos/$GITHUB_REPOSITORY/releases/generate-notes" \
+              -f tag_name="$TAG" -f target_commitish="$GITHUB_SHA" \
+              -f previous_tag_name="$PREVIOUS_TAG" --jq .body > /tmp/generated-notes.md
+          else
+            echo "The first release of $DIST." > /tmp/generated-notes.md
           fi
-          gh api "repos/$GITHUB_REPOSITORY/releases/generate-notes" \
-            "${args[@]}" --jq .body > /tmp/generated-notes.md
           # A member with a Read the Docs project gets its rendered changelog page: `en/latest`
           # rather than a version slug, because `latest` tracks the default branch, which
           # already carries this release's entry (it is stamped in the release pull request,
