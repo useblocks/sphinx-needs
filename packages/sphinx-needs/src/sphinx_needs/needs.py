@@ -79,7 +79,12 @@ from sphinx_needs.directives.needgantt import (
     NeedganttDirective,
     process_needgantt,
 )
-from sphinx_needs.directives.needif import IfDirective
+from sphinx_needs.directives.needif import (
+    ElifDirective,
+    ElseDirective,
+    IfDirective,
+    StripIfChainMarkers,
+)
 from sphinx_needs.directives.needimport import Needimport, NeedimportDirective
 from sphinx_needs.directives.needlist import (
     Needlist,
@@ -309,8 +314,13 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.add_directive("needreport", NeedReportDirective)
     app.add_directive("needuml", NeedumlDirective)
     app.add_directive("if", IfDirective)
+    app.add_directive("elif", ElifDirective)
+    app.add_directive("else", ElseDirective)
     app.add_directive("needarch", NeedarchDirective)
     app.add_directive("list2need", List2NeedDirective)
+
+    # the `if` / `elif` / `else` chain markers must be gone before `doctree-read`
+    app.add_transform(StripIfChainMarkers)
 
     ########################################################################
     # ROLES

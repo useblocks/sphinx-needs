@@ -4,6 +4,40 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+Improvements
+............
+
+- ✨ The :ref:`if <if>` directive gains :ref:`elif <elif>` and :ref:`else <else>` branches
+
+  An ``if`` may now be followed by any number of ``elif`` branches and one ``else``, as
+  in Python. At most one branch of such a chain is included, and the others are never
+  parsed, so the needs inside them are never created:
+
+  .. code-block:: rst
+
+     .. if:: var.arch == "arm"
+
+        ARM content.
+
+     .. elif:: var.arch == "x86"
+
+        x86 content.
+
+     .. else::
+
+        Content for every other architecture.
+
+  The branches must be siblings, separated by nothing but comments. Once a branch is
+  taken, later ``elif`` conditions are not evaluated. Every mistake warns under
+  ``needs.if`` and fails closed: a condition that cannot be evaluated, an ``elif`` or
+  ``else`` with no ``if`` before it or one after an ``else``, and an ``else`` given a
+  condition each skip their branch and the rest of the chain, so a typo in a condition
+  never renders the ``else`` fallback in its place. Chains work in reStructuredText and
+  in MyST Markdown. `ubCode`_ does not support ``elif`` and ``else`` yet.
+
 .. _`release:8.5.0`:
 
 8.5.0
