@@ -140,14 +140,24 @@ edition = "pro"
    `data-file-is-one-string-not-a-list`, `data-file-empty-string`.
 2. **The legacy location** is `[needs] variant_data` (a table) and
    `[needs] variant_data_file` (one path), held to the same types. The `[needs]` table's
-   path is a parameter, so a consumer that nests it (`[tool.acme.needs]`) reads it there;
-   `[variants]` is always read from the top level of the table given. The prefix is a
-   Python consumer's option (sphinx-needs' `needs_from_toml_table`); ubCode's `[needs]` is
-   always top-level, so the corpus cases that carry `needs_table` are Python-only (§9.4).
-   Enforced by: `tests/test_variants.py::TestPrefix`, `TestRefusals`
+   path is a parameter, so a consumer that nests it (`[tool.acme.needs]`) reads it there.
+   `[variants]`' path is a parameter too (`variants_table`, default the top level): a
+   consumer that prefixes its configuration passes BOTH tables under the prefix
+   (`[tool.acme.needs]` and `[tool.acme.variants]`; sphinx-needs will, since a
+   `pyproject.toml` cannot carry a top-level `[variants]`), and one that prefixes only
+   `[needs]` reads `[variants]` at the top level. A `needs` or `variants` table at the
+   other location is someone else's: not read, and not reported. A missing prefix segment
+   makes the table absent; one that is not a table is refused (§4.2). The prefix is a
+   Python consumer's option (sphinx-needs' `needs_from_toml_table`); ubCode's tables are
+   always top-level, so the corpus cases that carry `needs_table` or `variants_table` are
+   Python-only (§9.4).
+   Enforced by: `tests/test_variants.py::TestPrefix` (including
+   `test_prefixed_variants_win_over_the_prefixed_legacy_keys` and
+   `test_a_top_level_variants_is_ignored_under_a_prefixed_variants_table`), `TestRefusals`
    (`legacy-data-not-a-table`, `legacy-data-file-not-a-string`); corpus:
    `needs-under-a-dotted-prefix`, `prefix-ignores-a-top-level-needs`,
-   `prefix-with-variants-set`, `legacy-data-not-a-table`.
+   `prefix-with-variants-set`, `prefix-with-prefixed-variants`,
+   `prefix-ignores-a-top-level-variants`, `legacy-data-not-a-table`.
 3. **Declaring.** A location is *declared* when at least one of its two keys is set to a
    value — including `data = {}`. A `[variants]` table holding neither (empty, or only
    unknown keys) declares nothing, so it can never switch a project's `[needs]` data off.
@@ -177,8 +187,9 @@ edition = "pro"
 5. **`[variants]` is refused if it is not a table.** The name is this contract's; reading
    `variants = [...]` as "no variant data" would be exactly the silent vanishing the table
    exists to end.
-   Enforced by: `tests/test_variants.py::TestRefusals` (`variants-not-a-table`); corpus:
-   `variants-not-a-table`.
+   Enforced by: `tests/test_variants.py::TestRefusals` (`variants-not-a-table`),
+   `tests/test_variants.py::TestPrefix::test_a_prefixed_variants_table_that_is_not_a_table_is_refused`;
+   corpus: `variants-not-a-table`.
 6. **Unknown keys inside `[variants]` are tolerated**, each reported as
    `variants_unknown_key`, never an error: several tool versions read this table at once,
    and one that aborted on a key from a newer version would take the whole build down.
@@ -209,7 +220,8 @@ edition = "pro"
    `variant_data_legacy_location` is **informational and takes no side**: sphinx-needs
    will warn on it to move its users, ubCode will not because it supports several
    sphinx-needs versions at once. A path under a prefix carries the prefix
-   (`tool.acme.needs.variant_data`).
+   (`tool.acme.needs.variant_data`, `tool.acme.variants.bogus`), and so does every message
+   naming the table (`[tool.acme.variants] data must be a table`).
 
    **Path spelling, for every reader.** A `path` is dotted, one segment per key. A segment
    matching `[A-Za-z0-9_-]+` is written as a TOML bare key; any other is written as a TOML
@@ -219,8 +231,10 @@ edition = "pro"
    that names the same key again. ubCode is to render the same.
    Enforced by: `tests/test_variants.py::TestDiagnostics` (codes, paths, severities;
    `test_a_non_bare_key_is_a_toml_basic_string_in_the_path` for the examples,
-   `test_a_rendered_path_reads_back_as_the_same_key` for the escapes); corpus:
-   `unknown-keys-are-rendered-as-toml`;
+   `test_a_rendered_path_reads_back_as_the_same_key` for the escapes),
+   `tests/test_variants.py::TestPrefix` (`test_the_unknown_key_path_carries_a_non_bare_prefix`,
+   and one message test per finding and the type error); corpus:
+   `unknown-keys-are-rendered-as-toml`, `prefix-unknown-key-path-carries-the-prefix`;
    corpus: every non-refusal case compares codes and paths.
 3. Order is stable — unknown keys sorted, then location findings in `variant_data`,
    `variant_data_file` order — but a second reader need not reproduce it: the corpus
@@ -281,8 +295,8 @@ edition = "pro"
    `…::test_every_case_has_a_complete_expectation`,
    `…::test_the_corpus_header_records_where_it_is_canonical`.
 4. **Rules for every runner** (stated in the header too): a case writes only inside its
-   own directory; a case carrying `needs_table` is Python-only and ubCode's runner skips
-   it; codes compare as the bare subcode; integers beyond the signed 64-bit range are
+   own directory; a case carrying `needs_table` or `variants_table` is Python-only and
+   ubCode's runner skips it; codes compare as the bare subcode; integers beyond the signed 64-bit range are
    unspecified. A refusal is compared as a refusal, not by its reason — two rows
    (`data-file-empty-string`, `invalid-file-not-an-object`) would refuse for another
    reason too, and the unit tests pin their actual rule.
