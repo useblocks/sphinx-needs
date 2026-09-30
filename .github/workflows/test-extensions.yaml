@@ -165,3 +165,12 @@ jobs:
           flags: reports
           files: ./reports.xml
           fail_ci_if_error: true
+      - name: "ubproject: pytest"
+        # The shared `ubproject.toml` reader, which every extension above is to depend on.
+        # Its suite takes under a second and needs nothing this cell does not already have;
+        # it is here for the Windows cell -- path anchoring, symlinks and the walk up are
+        # the platform-sensitive part of it -- and runs in every cell because a step that
+        # ran in one would need a condition to explain. The `toolchain-free` job in ci.yaml
+        # stays the run that proves it imports no Sphinx. Same `if:` as the step above
+        if: ${{ !cancelled() && steps.prepare.outcome == 'success' }}
+        run: uv run --no-sync pytest -v packages/ubproject/tests

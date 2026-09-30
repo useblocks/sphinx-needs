@@ -61,7 +61,7 @@ jobs:
         # ONE probe at a time, and one per package: with both planted at once a gate that had
         # dropped one package would still go red on the other and look healthy.
         run: |
-          probes="packages/sphinx-needs/src/sphinx_needs/_ty_gate_probe.py packages/sphinx-mounts/src/sphinx_mounts/_ty_gate_probe.py packages/sphinx-codelinks/src/sphinx_codelinks/_ty_gate_probe.py packages/sphinx-test-reports/src/sphinx_test_reports/_ty_gate_probe.py"
+          probes="packages/sphinx-needs/src/sphinx_needs/_ty_gate_probe.py packages/sphinx-mounts/src/sphinx_mounts/_ty_gate_probe.py packages/sphinx-codelinks/src/sphinx_codelinks/_ty_gate_probe.py packages/sphinx-test-reports/src/sphinx_test_reports/_ty_gate_probe.py packages/ubproject/src/ubproject/_ty_gate_probe.py"
           # shellcheck disable=SC2064
           trap "rm -f $probes" EXIT
           for probe in $probes; do
