@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790773955172,
+  "lastUpdate": 1790776210939,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -21564,6 +21564,42 @@ window.BENCHMARK_DATA = {
             "value": 51.334695507999996,
             "unit": "s",
             "extra": "Commit: de2a0b43c18ae4d2961dca06221bd63a5d78f4b6\nBranch: master\nTime: 2026-09-30T15:11:11+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "288b29067246d98055c0bf08ffe9f93c0aaab151",
+          "message": "✨ Add ub-project, the shared reader for ubproject.toml and variant data (no consumers yet) (#1986)\n\nAdds a new workspace member, `packages/ub-project` (distribution\n`ub-project`, import `ub_project`): one implementation of the parts of\n`ubproject.toml` that more than one tool reads. The\nfour Sphinx extensions in this repository will depend on it, and ubCode\nis to be held to the same behaviour through a conformance corpus.\nIt uses the standard library only. This is the first slice of the\nshared-package work; no existing member changes.\n\n**Naming.** `sphinx-*` is a Sphinx extension; `ub-*` is a useblocks\npackage that is not one, whether a tool (the future\n`ub-test-reports`) or a library like this one. The name does not say\nwhich; the README and classifiers do. The rule is now a paragraph in\n`AGENTS.md`.\n\n**What it holds**\n- **Find, load, select, anchor.** `find_project_config` is\nsphinx-test-reports' walk up to the repository root (outside a\nrepository, the\ndistribution root), moved unchanged. `load_toml` turns every failure, a\nnon-UTF-8 file included, into an `ProjectConfigError` naming the\nfile. `select_table` takes a dotted or sequence table path. `anchor`\njoins a relative path onto the TOML's directory and never resolves\n  or folds `..`; an absolute value is returned untouched.\n- **The top-level `[variants]` table.** `read_variants` reads\n`[variants] data` (an inline table) and `data_file` (one path), falling\nback\nto `[needs] variant_data` / `variant_data_file`. Precedence is\nwhole-location: when both are declared, `[variants]` is read and every\nignored `[needs]` key is reported. Findings are returned as\n`Diagnostic(code, path, message, severity)`, never logged:\n`variant_data_location`, `variant_data_legacy_location` (informational:\nsphinx-needs will warn on it, ubCode will not) and\n`variants_unknown_key`. These are the bare subcodes; ubCode is to carry\nthem under its `config.` prefix. A diagnostic's `path` is\nspelled as TOML: a segment matching `[A-Za-z0-9_-]+` is bare, any other\nis a basic string (`variants.\"a.b\"`, `variants.\"café\"`), so\n  both runners produce the same string.\n- **One copy of the variant-data quartet** (`validate_variant_data`,\n`load_variant_data_file`, `deep_merge`, `resolve_variant_data`), to\nreplace the copies in sphinx-needs and sphinx-mounts once they adopt it.\nThe contract lists every difference from the two copies.\n\n**Deliberately out:** the variant-condition evaluator; any `-D` or `-c`\nhandling; any discovery policy beyond providing the walk; logging;\nSphinx, docutils or any member as a dependency.\n\n**Version scheme and release path.** The tree is `1.0.0.dev0` and the\nchangelog keeps an `Unreleased` section. The 1.0.0 release is\n`poe bump ub-project --to 1.0.0` on master, which stamps the manifest,\n`__version__`, the changelog and the lock; then a release pull\nrequest; then the `ub-project-v1.0.0` tag. The release fences enforce\nthis path: the plan job now refuses a tag naming a development\nversion (`ub-project-v1.0.0.dev0`), which PyPI would otherwise accept,\nand `poe release-plan` prints the bump for a dev tree rather than\nproposing a tag. That fence is new in\n`tools/src/sn_tools/release_plan.py`, with tests; a member sits at\n`X.Y.Z.devN` between releases.\n\n**Sequence.** Every `--no-sources` gate resolves a consumer's\ndependencies from the index, so no member can depend on `ub-project`\nuntil\n1.0.0 is published. After the release, one PR per consumer:\nsphinx-test-reports, sphinx-needs, sphinx-mounts, sphinx-codelinks. From\nthen on each `ub-project` release re-floors every consumer through\n`propagate_floors.py`.\n\n**How it is proven**\n- `design/reading-contract.md`: the normative rules, each naming the\ntest or corpus case that enforces it, plus a section for consumers.\n- `tests/fixtures/ubproject_reading_conformance.toml`: 57 cases,\ncanonical here and to be vendored by ubCode. Its header states the\nrunner rules (stay inside the case directory; `needs_table` cases are\nPython-only; codes compare bare; integers beyond i64 are\nunspecified). An LF pin and the taplo and yamlfmt excludes protect its\nbytes: taplo, measured, would rewrap eleven of its lines.\n- 209 tests. A fresh-interpreter test fails on any import outside the\nstandard library. The suite runs in the `toolchain-free` job\n(no Sphinx installed, now on Python 3.11, the workspace floor) and in\nevery Extensions cell, Windows included. The Lint job's type-gate\n  canary probes this package too.\n- Mutation-proved across the build and two review rounds: seventeen\nmutants, each turning a named test red, plus the reviewers' own.\n- `release.yaml` links a member's changelog on Read the Docs only when\nthe member has an RTD project; otherwise it links the changelog\n  file at the tag. `ub-project` has no docs site by design.\n\n**Lock.** +8 lines: master's lock plus the `ub-project` entries. It\npasses `uv lock --check` on uv 0.12.15 and 0.12.9, and plain\n`uv lock` leaves it unchanged.",
+          "timestamp": "2026-09-30T15:48:49+02:00",
+          "tree_id": "915f6a5243b30a5a20b8226b8cc7c9c9d6cafc60",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/288b29067246d98055c0bf08ffe9f93c0aaab151"
+        },
+        "date": 1790776203019,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.09746118900000056,
+            "unit": "s",
+            "extra": "Commit: 288b29067246d98055c0bf08ffe9f93c0aaab151\nBranch: master\nTime: 2026-09-30T15:48:49+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 44.434054712000005,
+            "unit": "s",
+            "extra": "Commit: 288b29067246d98055c0bf08ffe9f93c0aaab151\nBranch: master\nTime: 2026-09-30T15:48:49+02:00"
           }
         ]
       }
