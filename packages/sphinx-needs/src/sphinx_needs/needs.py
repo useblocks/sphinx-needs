@@ -651,7 +651,8 @@ def _load_variants_from_toml(
     - the findings are reported as warnings, except the legacy location, which is
       reported with ``-v`` only for now.
 
-    :raises NeedsConfigException: If ``ub_project`` refuses the variant data.
+    :raises NeedsConfigException: If ``ub_project`` refuses the variant data, or a table
+        path with an empty ``needs_from_toml_table`` entry.
     """
     needs_table = (*prefix, "needs")
     variants_table = (*prefix, "variants")

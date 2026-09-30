@@ -121,9 +121,10 @@ For example to read from a ``[tool.needs]`` table:
 
    needs_from_toml_table = ["tool"]
 
-Relative paths in the toml file are resolved relative to the directory containing the toml file,
-not the one containing the :file:`conf.py` file.
-A relative path set in :file:`conf.py`, or with ``-D`` on the command line, stays relative to the Sphinx ``confdir``.
+A relative path given in the toml file for an option that names a file or folder sphinx-needs reads or writes —
+:ref:`needs_file`, :ref:`needs_css`, :ref:`needs_template_folder`, :ref:`needs_variant_data_file`,
+the ``json_path`` of :ref:`needs_external_needs`, :ref:`needs_schema_definitions_from_json` and :ref:`needs_schema_debug_path` —
+is resolved relative to the directory containing the toml file, not the one containing the :file:`conf.py` file.
 
 .. _`needs_from_toml_variants`:
 
@@ -144,6 +145,8 @@ The variant data of :ref:`needs_variant_data` and :ref:`needs_variant_data_file`
 
 ``data`` is the inline table (:ref:`needs_variant_data`) and ``data_file`` the file (:ref:`needs_variant_data_file`);
 either may be given alone. Any other key in ``[variants]`` is ignored and reported as a ``needs.variants_unknown_key`` warning.
+A toml file may hold ``[variants]`` and no ``[needs]`` table at all: it is read,
+and even an empty ``[variants]`` stops the warning a toml file without a ``[needs]`` table otherwise gets.
 
 **The legacy location.** Before ``[variants]`` existed, the same two values were read from the ``[needs]`` table,
 as ``variant_data`` and ``variant_data_file``, and they still are.
@@ -169,8 +172,8 @@ a ``variant_data`` or ``variant_data_file`` left in ``[needs]`` is ignored, with
 A file from one table is never merged under an inline table from the other.
 
 **conf.py and -D, key by key.** As for every other option, the toml overrides :file:`conf.py` one key at a time:
-a ``needs_variant_data`` in :file:`conf.py` still applies when the toml sets no inline table,
-and a ``needs_variant_data_file`` when the toml sets no file; the file is then loaded and the inline table merged over it, as usual.
+a ``needs_variant_data`` in :file:`conf.py` still applies when the location read sets no inline table,
+and a ``needs_variant_data_file`` when it sets no file; the file is then loaded and the inline table merged over it, as usual.
 ``-D needs_variant_data_file=...`` replaces the toml's file, in either location, without opening it, and the toml's inline table still applies.
 
 **With needs_from_toml_table**, the prefix applies to both tables:
@@ -187,7 +190,8 @@ A top-level ``[variants]`` is then someone else's table, and is not read.
    [tool.variants.data]
    edition = "pro"
 
-A ``variants`` key that is not a table, a ``data_file`` that is not one non-empty path, or a data file that is missing
+A ``variants`` key that is not a table, an inline table that is not valid variant data,
+a ``data_file`` that is not one non-empty path, or a data file that is missing
 or does not hold valid variant data fails the build, naming the toml file and the table.
 Both warnings above can be suppressed on their own, see :ref:`config-warnings`.
 
@@ -731,9 +735,10 @@ The path is resolved relative to the Sphinx ``confdir`` (the directory containin
 In a :ref:`toml file <needs_from_toml>` the file is ``data_file`` in the :ref:`[variants] table <needs_from_toml_variants>`,
 and it is resolved relative to the directory containing the toml file.
 
-The file is read once per build, during configuration initialisation, so a missing file
-or one whose contents are not valid variant data fails the build before any document is
-read. The merged result becomes the value of :ref:`needs_variant_data`, which means it is
+The file is read during configuration initialisation (a file named in the toml file is read
+twice there: once when the toml file is read, and once when the variant data is resolved),
+so a missing file or one whose contents are not valid variant data fails the build before
+any document is read. The merged result becomes the value of :ref:`needs_variant_data`, which means it is
 also what Sphinx compares between builds: editing the file changes the configuration and
 re-reads every document, while leaving it alone no longer does.
 
