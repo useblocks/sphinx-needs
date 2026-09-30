@@ -991,10 +991,13 @@ class VariantRule:
 class VariantSourcesConfig:
     """Everything the variant reader takes out of one TOML file.
 
-    Deliberately only three things, and never a general ``[source]`` bridge:
-    the rule array, the source roots the rules anchor at, and the ``[needs]``
-    variant-data fallback. ``mapping-contract.md`` §1 rule 5 — nesting under
-    ``[source]`` implies no inheritance — still holds for everything else.
+    Deliberately only the rule array and the source roots the rules anchor
+    at, never a general ``[source]`` bridge — ``mapping-contract.md`` §1 rule
+    5, nesting under ``[source]`` implies no inheritance, still holds — plus
+    the parsed document itself, for ``ub_project`` to read the variant data
+    from. That read is deferred to the fold, past its "nothing gated" return:
+    it opens the data file, and a project that gates nothing must not have a
+    file it never uses opened, let alone refused.
 
     Fields:
         toml_path: The file these values came from.
@@ -1004,22 +1007,20 @@ class VariantSourcesConfig:
         declared: Whether the ``variant_sources`` key was present at all. An
             empty array is a declaration ("this project has no rules") and is
             distinct from an absent key, exactly as ``mounts = []`` is.
-        variant_data: The ``[needs] variant_data`` table, or ``None``.
-        variant_data_file: The ``[needs] variant_data_file`` path, anchored at
-            the TOML's own directory (the anchor sphinx-needs' own
-            ``toml_convert`` applies to the same key).
+        document: The whole parsed TOML document. ``[variants]`` and the
+            legacy ``[needs] variant_data*`` keys are read from its top level
+            by ``ub_project.read_variants``.
     """
 
     toml_path: Path
     source_root: Path
     rules: tuple[VariantRule, ...]
     declared: bool
-    variant_data: dict[str, Any] | None
-    variant_data_file: Path | None
+    document: Mapping[str, Any]
 
 
 def load_variant_sources_from_toml(toml_path: Path) -> VariantSourcesConfig | None:
-    """Read ``[[source.variant_sources]]`` and its data fallback from a TOML file.
+    """Read ``[[source.variant_sources]]`` from a TOML file, keeping the document.
 
     .. code-block:: toml
 
@@ -1030,16 +1031,17 @@ def load_variant_sources_from_toml(toml_path: Path) -> VariantSourcesConfig | No
        if = "var.edition == 'pro'"
        files = ["reference/pro/**/*.rst"]
 
-       [needs]                          # read only when sphinx-needs is absent
-       variant_data_file = "variants.json"
+       [variants]                       # the variant data, read by ub_project
+       data_file = "variants.json"
 
-       [needs.variant_data]
+       [variants.data]
        edition = "basic"
 
-    **Only these keys are read.** This is not a general ``[source]`` bridge:
-    everything else under ``[source]`` belongs to whichever tool owns it, and
-    ``[needs]`` is consulted purely as a fallback for the variant map when
-    sphinx-needs is not installed to provide it.
+    **Only these keys are read here.** This is not a general ``[source]``
+    bridge: everything else under ``[source]`` belongs to whichever tool owns
+    it. The variant data — ``[variants]``, or its legacy location ``[needs]
+    variant_data*`` — is not read here at all: the document is carried on
+    the result, and ``ub_project`` reads it only where a variant map is needed.
 
     :param toml_path: Absolute path to a TOML file. May or may not exist.
     :return: The parsed values, or ``None`` when the file does not exist.
@@ -1059,8 +1061,6 @@ def load_variant_sources_from_toml(toml_path: Path) -> VariantSourcesConfig | No
     source = source if isinstance(source, Mapping) else {}
     project = data.get("project")
     project = project if isinstance(project, Mapping) else {}
-    needs = data.get("needs")
-    needs = needs if isinstance(needs, Mapping) else {}
 
     raw_rules = source.get("variant_sources")
     declared = "variant_sources" in source
@@ -1071,10 +1071,7 @@ def load_variant_sources_from_toml(toml_path: Path) -> VariantSourcesConfig | No
         source_root=_extract_source_root(source, project, toml_path),
         rules=rules,
         declared=declared,
-        variant_data=_extract_variant_data(needs.get("variant_data"), toml_path),
-        variant_data_file=_extract_variant_data_file(
-            needs.get("variant_data_file"), toml_path
-        ),
+        document=data,
     )
 
 
@@ -1176,40 +1173,3 @@ def _extract_variant_rule(entry: Any, index: int, toml_path: Path) -> VariantRul
         )
         raise TomlConfigError(msg)
     return VariantRule(index=index, condition=condition, files=tuple(files))
-
-
-def _extract_variant_data(raw: Any, toml_path: Path) -> dict[str, Any] | None:
-    """Pick ``[needs] variant_data`` out of the file, checking only its type."""
-    if raw is None:
-        return None
-    if not isinstance(raw, Mapping):
-        msg = (
-            f"sphinx-mounts: `[needs] variant_data` in {toml_path} must be a "
-            f"table; got {type(raw).__name__}."
-        )
-        raise TomlConfigError(msg)
-    return dict(raw)
-
-
-def _extract_variant_data_file(raw: Any, toml_path: Path) -> Path | None:
-    """Anchor ``[needs] variant_data_file`` at the TOML's own directory.
-
-    This is the first of the **two anchors** a reader of this key has to
-    reproduce. sphinx-needs absolutises a TOML-declared ``variant_data_file``
-    against the TOML file's directory (its ``toml_convert`` metadata), and
-    leaves a ``conf.py``- or ``-D``-declared one to be absolutised against
-    ``confdir``. Reading only one of the two anchors means reading the wrong
-    file for one of the two routes.
-    """
-    if raw is None:
-        return None
-    if not isinstance(raw, str):
-        msg = (
-            f"sphinx-mounts: `[needs] variant_data_file` in {toml_path} must "
-            f"be a string; got {type(raw).__name__}."
-        )
-        raise TomlConfigError(msg)
-    candidate = Path(raw)
-    if candidate.is_absolute():
-        return candidate.resolve()
-    return (toml_path.parent / candidate).resolve()

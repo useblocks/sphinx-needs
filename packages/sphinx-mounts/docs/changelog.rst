@@ -15,6 +15,78 @@ Unreleased
   directives do not record their own line, so a warning about an unreadable image or figure
   can point at the wrong line, or at none. The requirement has no upper bound: Sphinx caps
   docutils per series itself.
+- **The variant data is read from** ``[variants]``, the table of ``ubproject.toml``
+  every tool reading the file shares (:ref:`variant-sources`); the legacy
+  ``[needs] variant_data`` and ``variant_data_file`` keys are still read, and when both
+  locations are set ``[variants]`` wins, whole. What changes for a project that declares
+  its variant data only in ``[variants]``:
+
+  - with Sphinx-Needs not installed, or installed but not in ``extensions``, its gated
+    content is now built — before, the table was not read, every rule reported an
+    unknown key, and the gated files and mounts were silently excluded;
+  - with Sphinx-Needs installed but never pointed at the file, or pointed at another
+    file, the build is refused (``mounts.variant_data_unreadable``), as it already was
+    for ``[needs]``;
+  - **new refusal:** with a Sphinx-Needs pointed at the file that did not read
+    ``[variants]`` — a release before 9.0.0, a later one that could not load the file's
+    ``[needs]`` table (see its ``needs.config`` warning), or one whose
+    ``needs_from_toml_table`` sends it to ``[<prefix>.variants]`` — the build is refused
+    rather than silently excluding the gated content. Upgrade Sphinx-Needs and fix any
+    ``[needs]`` error it reports, keep the keys in ``[needs]`` until you can, or move
+    the table under the prefix. This also covers an empty ``conf.py`` map beside a
+    non-empty ``[variants]`` on a Sphinx-Needs before 9.0.0. When Sphinx-Needs is
+    pointed at the file, a key overridden with ``-D`` (``needs_variant_data_file`` or
+    ``variant_data_file``, ``needs_variant_data`` or ``variant_data``) is removed from
+    both locations before the check, exactly as Sphinx-Needs removes it, so an
+    override cannot trigger the refusal; on an older Sphinx-Needs an override of
+    ``variant_data`` or ``needs_variant_data`` also drops a ``[variants.data]`` that
+    release never read. Not caught: both locations set with a Sphinx-Needs before
+    9.0.0, where both tools use ``[needs]`` — unless a ``-D`` empties the ``[needs]``
+    map.
+
+  Well-formed ``[needs]`` projects build exactly as before in every installation.
+- **Two new warnings, reported only when Sphinx-Needs is not installed, or installed but
+  not in** ``extensions`` (when it is loaded, it reports on its own file):
+  ``mounts.variant_data_location`` when both locations are set, one per ignored
+  ``[needs]`` key, and ``mounts.unknown_key`` for an unknown key in ``[variants]``. The
+  first fails a ``-W`` build that passed before (both locations set used to read
+  ``[needs]`` silently). The second does so only when the data is in ``[needs]`` and
+  ``[variants]`` holds nothing but unknown keys; a project with data in ``[variants]``
+  already failed ``-W`` before, on ``mounts.variant_rule_unevaluable``. Suppress them with
+  ``suppress_warnings = ["mounts.variant_data_location"]`` or
+  ``["mounts.unknown_key"]``. Data read from the legacy location is one line with ``-v``,
+  not a warning.
+- **The variant data is read by** ``ub-project``, the shared reader of
+  ``ubproject.toml``, which is now a dependency (``ub-project>=1.1.0,<2``);
+  sphinx-mounts' private copy of the variant-data functions and its
+  ``VariantDataError`` are gone. What that changes:
+
+  - newly refused when sphinx-mounts reads the variant data (Sphinx-Needs not loaded,
+    or loaded with an empty map): a ``variants`` key that is not a table,
+    a malformed ``[variants]`` table (a ``data_file`` that is missing, empty, or not
+    valid variant data), and a ``needs`` key that is not a table while a variant-gating
+    key is declared — each was silently read as no data before;
+  - **less strict:** a malformed ``[needs] variant_data`` or ``variant_data_file``
+    shape is no longer refused by a build that does not use it — one that declares no
+    variant-gating key, or one where Sphinx-Needs supplies a non-empty map (for
+    instance from ``conf.py``). Sphinx-Needs, when pointed at the file, still refuses
+    it;
+  - the messages for unreadable variant data are ``ub-project``'s, and name the TOML
+    file and table: a directory is reported as a directory rather than as missing,
+    ``variant_data_file = ""`` is refused as empty rather than read as the TOML's
+    own directory, a JSON integer too large to convert is a clean
+    ``mounts.variant_data_unreadable`` refusal rather than a raw handler traceback,
+    and — with Sphinx-Needs not loaded — a ``[needs] variant_data`` or
+    ``variant_data_file`` of the wrong type is ``mounts.variant_data_unreadable``
+    rather than a ``TomlConfigError``;
+  - a ``needs_variant_data_file`` that is not a path at all (Sphinx-Needs 8.3.1 copies
+    the TOML's ``variant_data_file`` into it unvalidated) is refused as
+    ``mounts.variant_data_unreadable``, naming the value, rather than failing with a raw
+    handler traceback;
+  - a data file named in ``ubproject.toml`` that is missing or malformed, with
+    Sphinx-Needs installed but not reading that file, is now reported as the read error
+    itself — still a refusal, and the message still names the one-line
+    ``needs_from_toml`` fix.
 
 .. _`release:0.2.0`:
 

@@ -1,4 +1,4 @@
-"""Variant conditions and variant data — the ``[[source.variant_sources]]`` engine.
+"""Variant conditions — the ``[[source.variant_sources]]`` engine.
 
 **Import discipline: this module is deliberately dependency-free.** It imports
 nothing from :mod:`sphinx_mounts`, nothing from Sphinx and nothing from
@@ -15,9 +15,7 @@ typed ``mounts.*`` warnings, ``config.root_doc`` — belongs in
 :mod:`sphinx_mounts.config` or :mod:`sphinx_mounts.extension`, which catch the
 plain exceptions raised here and re-raise them in Sphinx's vocabulary.
 
-Two halves:
-
-**The condition engine** (:func:`validate`, :func:`interpret`) is an
+The condition engine (:func:`validate`, :func:`interpret`) is an
 *interpreter*, not an :func:`eval` with a small globals dict. ``ast.parse``
 produces one tree; :func:`validate` walks it against a whitelist, and
 :func:`interpret` walks the *same* tree over the plain merged mapping. There
@@ -26,23 +24,16 @@ nothing is ever executed. That turns the whitelist's completeness from a
 *security* property into a *correctness* one: a node type the interpreter does
 not handle raises :class:`VariantEvalError` instead of running.
 
-**The variant-data reader** (:func:`resolve_variant_data`) is a private copy of
-sphinx-needs' ``deep_merge`` / ``validate_variant_data`` /
-``load_variant_data_file`` semantics. The copy exists so that sphinx-mounts
-never imports, depends on, or version-gates against sphinx-needs, and it cannot
-disagree with it: ``deep_merge(file, inline)`` is idempotent, so re-merging an
-already-merged map is a proven no-op. See :func:`resolve_variant_data`.
+The merged mapping it evaluates over — the variant map — is not computed
+here: it comes from sphinx-needs when that is installed, and otherwise from
+``ub_project``, the shared reader of ``ubproject.toml`` (see
+:func:`sphinx_mounts.extension._resolve_variant_map`).
 """
 
 from __future__ import annotations
 
 import ast
-import json
-from pathlib import Path
 from typing import Any
-
-#: Leaf value types the variant data may hold.
-_SCALAR_TYPES = (str, bool, int, float)
 
 
 class VariantConditionError(Exception):
@@ -60,14 +51,6 @@ class VariantEvalError(Exception):
     statically knowable, so it is reported and the rule is treated as FALSE —
     the warn-and-exclude contract the ``.. if::`` directive already has, and
     the safe direction for a key whose purpose is keeping content out.
-    """
-
-
-class VariantDataError(Exception):
-    """The variant data itself is unreadable or malformed.
-
-    Deliberately the same name sphinx-needs uses for the same condition, so a
-    reader comparing the two implementations is not misled by a rename.
     """
 
 
@@ -1529,142 +1512,3 @@ def _interpret(node: ast.AST, data: dict[str, Any]) -> bool:
 def evaluate(expr: str, data: dict[str, Any]) -> bool:
     """Validate and evaluate ``expr`` in one call."""
     return interpret(validate(expr), data)
-
-
-# ---------------------------------------------------------------------------
-# Variant data — a private copy of sphinx-needs' semantics
-# ---------------------------------------------------------------------------
-
-
-def validate_variant_data(data: Any, path: str = "var") -> None:
-    """Check that ``data`` has the shape a variant map is allowed to have.
-
-    Keys must be strings; leaves must be ``str`` / ``bool`` / ``int`` /
-    ``float``; a list must be empty or uniform-scalar; nested mappings recurse.
-
-    :raises VariantDataError: On any violation, naming the dotted path.
-    """
-    if not isinstance(data, dict):
-        msg = f"{path}: expected a mapping, got {type(data).__name__}"
-        raise VariantDataError(msg)
-    for key, value in data.items():
-        if not isinstance(key, str):
-            msg = f"{path}: all keys must be strings, got {type(key).__name__}"
-            raise VariantDataError(msg)
-        full = f"{path}.{key}"
-        if isinstance(value, dict):
-            validate_variant_data(value, full)
-        elif isinstance(value, list):
-            _validate_variant_list(value, full)
-        elif not isinstance(value, _SCALAR_TYPES):
-            msg = (
-                f"{full}: expected str/bool/int/float/list/mapping, "
-                f"got {type(value).__name__}"
-            )
-            raise VariantDataError(msg)
-
-
-def _validate_variant_list(value: list[Any], full: str) -> None:
-    """An array must be empty, or uniform and scalar."""
-    if not value:
-        return
-    first_type = type(value[0])
-    if first_type not in _SCALAR_TYPES:
-        msg = (
-            f"{full}: array elements must be str/bool/int/float, "
-            f"got {first_type.__name__}"
-        )
-        raise VariantDataError(msg)
-    for index, item in enumerate(value):
-        if type(item) is not first_type:
-            msg = (
-                f"{full}[{index}]: expected {first_type.__name__}, got "
-                f"{type(item).__name__} (arrays must be uniform type)"
-            )
-            raise VariantDataError(msg)
-
-
-def load_variant_data_file(path: Path) -> dict[str, Any]:
-    """Load a variant-data JSON file and validate its shape.
-
-    JSON only, and the top level must be an object — the same three failures
-    sphinx-needs reports (missing file, undecodable JSON, non-object).
-
-    :raises VariantDataError: On any of them.
-    """
-    if not path.is_file():
-        msg = f"variant data file not found: {path}"
-        raise VariantDataError(msg)
-    try:
-        raw = json.loads(path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
-        msg = f"invalid JSON in {path}: {exc}"
-        raise VariantDataError(msg) from exc
-    except OSError as exc:  # pragma: no cover - defensive
-        msg = f"could not read {path}: {exc}"
-        raise VariantDataError(msg) from exc
-    if not isinstance(raw, dict):
-        msg = (
-            f"variant data file must contain a JSON object, "
-            f"got {type(raw).__name__}: {path}"
-        )
-        raise VariantDataError(msg)
-    validate_variant_data(raw)
-    return raw
-
-
-def deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
-    """Deep-merge ``override`` into ``base``; ``override`` wins at the leaves.
-
-    Recurses **only when both sides are mappings**. Everything else is a
-    wholesale replacement — a list replaces a list entirely, a scalar replaces
-    a mapping and vice versa. That is sphinx-needs' rule, reproduced exactly,
-    and it is what makes the merge idempotent (see
-    :func:`resolve_variant_data`).
-    """
-    result = base.copy()
-    for key, value in override.items():
-        existing = result.get(key)
-        if key in result and isinstance(existing, dict) and isinstance(value, dict):
-            result[key] = deep_merge(existing, value)
-        else:
-            result[key] = value
-    return result
-
-
-def resolve_variant_data(
-    inline: Any,
-    file_ref: Path | None,
-) -> dict[str, Any]:
-    """Compute the merged variant map: file first, inline deep-merged on top.
-
-    The merge is **unconditional**, and that is the whole trick. Three worlds
-    have to give the same answer:
-
-    * sphinx-needs absent — nothing else computes the map, so this is the whole
-      computation;
-    * sphinx-needs installed but not yet resolving at ``config-inited``
-      (every release up to and including 8.3.1) — ``needs_variant_data`` holds
-      the *inline* half only, and this supplies the merge it has not performed;
-    * sphinx-needs resolving at ``config-inited`` (post-#1787) —
-      ``needs_variant_data`` is already merged, and re-merging it is a no-op,
-      because ``deep_merge(file, already_merged) == already_merged`` for every
-      shape ``deep_merge`` can produce.
-
-    So there is no version sniffing, no import of sphinx-needs and no feature
-    detection, and the answer always agrees with whatever sphinx-needs computed.
-    ``tests/test_variant_data.py`` pins all three cells plus the idempotency.
-
-    :param inline: The inline mapping (``needs_variant_data`` or the TOML's
-        ``[needs.variant_data]`` table). ``None`` and ``{}`` both mean "none".
-    :param file_ref: An **already anchored** absolute path, or ``None``. The
-        two anchors are the caller's business — see
-        :func:`sphinx_mounts.config.load_variant_sources_from_toml`.
-    :raises VariantDataError: If the file or the inline mapping is malformed.
-    """
-    base: dict[str, Any] = {}
-    if file_ref is not None:
-        base = load_variant_data_file(file_ref)
-    if inline:
-        validate_variant_data(inline)
-    return deep_merge(base, inline or {})

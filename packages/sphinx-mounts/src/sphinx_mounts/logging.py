@@ -51,6 +51,7 @@ WarningTopics = Literal[
     "toctree_index",
     "unknown_key",
     "unknown_suffix",
+    "variant_data_location",
     "variant_rule_dropped",
     "variant_rule_unevaluable",
 ]
@@ -60,8 +61,11 @@ WarningTopics = Literal[
 #: because they appear in user-facing message text and users grep for them.
 #:
 #: ``mounts.variant_data_unreadable``
-#:     The variant data file is missing, undecodable, or not a JSON object,
-#:     and sphinx-needs is not installed to report it. A hard
+#:     The variant data this extension reads is malformed — a table or key of
+#:     the wrong type, or a data file that is missing or not valid variant
+#:     data — and nothing else will refuse it; or sphinx-needs is installed and
+#:     resolved an EMPTY map for a file that declares variant data (never
+#:     pointed at it, pointed elsewhere, or not reading ``[variants]``). A hard
 #:     ``VariantRuleError``: with no variant map there is no defensible answer
 #:     to "which files does this variant contain".
 #: ``mounts.variant_root_doc``

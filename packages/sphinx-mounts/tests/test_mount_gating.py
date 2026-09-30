@@ -1192,6 +1192,10 @@ def test_the_unreadable_data_stand_down_gates_off_with_its_own_remedy(
     assert "mount_gate_unevaluable" in warning, warning
     assert "the variant data could not be read" in warning, warning
     assert "nothing about the mount has to change" in warning, warning
+    # sphinx-needs is present, so the unreadable file is ITS to report: the
+    # stand-down says so on the status stream and adds no refusal of its own
+    status = app._status.getvalue()
+    assert "fold stands down rather than reporting it twice" in status, status
 
 
 def test_the_unreadable_data_stand_down_still_strips_a_live_mount(make_app, tmp_path):

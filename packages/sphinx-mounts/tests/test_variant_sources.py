@@ -1471,7 +1471,7 @@ def setup(app):
     app.add_config_value("needs_variant_data", {inline}, "env")
     app.add_config_value("needs_variant_data_file", {file_ref}, "env")
     app.add_config_value("needs_from_toml", {from_toml}, "env")
-    return {{"parallel_read_safe": True, "parallel_write_safe": True}}
+{extra}    return {{"parallel_read_safe": True, "parallel_write_safe": True}}
 """
 
 
@@ -1481,6 +1481,7 @@ def _stub_conf(
     inline: str,
     file_ref: str,
     from_toml: str = "None",
+    from_toml_table: str | None = None,
 ) -> None:
     """Register the two sphinx-needs confvals without sphinx-needs.
 
@@ -1493,10 +1494,21 @@ def _stub_conf(
     survives a ``SphinxTestApp``'s ``sys.path`` restore, so two tests sharing a
     stub name would silently share the first one's confval defaults — and the
     second test would then pass or fail for the wrong reason.
+
+    ``from_toml_table``, when given, also registers ``needs_from_toml_table``
+    with that Python literal as its value -- the prefix sphinx-needs puts in
+    front of both of its tables.
     """
+    extra = (
+        ""
+        if from_toml_table is None
+        else f'    app.add_config_value("needs_from_toml_table", {from_toml_table}, "env")\n'
+    )
     _write(
         confdir / f"{module}.py",
-        NEEDS_STUB.format(inline=inline, file_ref=file_ref, from_toml=from_toml),
+        NEEDS_STUB.format(
+            inline=inline, file_ref=file_ref, from_toml=from_toml, extra=extra
+        ),
     )
     conf = confdir / "conf.py"
     conf.write_text(
