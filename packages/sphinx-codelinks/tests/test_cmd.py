@@ -49,11 +49,16 @@ runner = CliRunner()
 
 
 def _normalize_output(text: str) -> str:
-    """Normalize rich panel output by collapsing box-drawing chars and whitespace.
+    """Normalize rich panel output: strip ANSI escapes, then collapse box-drawing
+    chars and whitespace.
 
     Typer wraps error messages in rich panels whose line breaks depend on terminal
-    width, which can cause substring assertions to fail.
+    width, which can cause substring assertions to fail. And typer forces a colour
+    terminal when ``GITHUB_ACTIONS`` is set, so on CI the panel also carries ANSI
+    escape codes -- including between the halves of a wrapped line -- which have to go
+    first, before the whitespace between the halves can collapse.
     """
+    text = re.sub(r"\x1b\[[0-9;?]*[A-Za-z]", "", text)
     # Remove box-drawing characters (─│╭╮╯╰) and collapse resulting whitespace
     text = re.sub(r"[─│╭╮╯╰]", " ", text)
     return re.sub(r"\s+", " ", text).strip()
