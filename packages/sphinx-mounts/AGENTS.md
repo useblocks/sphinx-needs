@@ -54,6 +54,7 @@ src/sphinx_mounts/
 ├── extension.py        # Sphinx event handlers, including the TOML loader
 ├── config.py           # MountConfig dataclass, hand-rolled validation
 ├── dialect.py          # the variant-condition dialect
+├── variants.py         # the variant-condition engine (the map comes from ub-project)
 ├── logging.py          # typed `mounts.*` warning helpers (suppress_warnings)
 ├── warnings.py         # warning topics
 └── mounter.py          # core logic -- discovers external files and injects them

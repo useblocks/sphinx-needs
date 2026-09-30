@@ -381,8 +381,9 @@ or repurposed without a breaking release.
 | `mounts.mount_gate_unevaluable` | a mount `if` is declared where this reader never evaluates one (§13) | whole mount gated off |
 | `mounts.path_escape` | a reference leaves the bundle root, `path_check = "warn"` (the default) | reported only |
 | `mounts.toctree_index` | `toctree_index` exceeds the toctrees present | mount left unwired, its docs marked orphan |
-| `mounts.unknown_key` | a mount entry or a `variant_sources` entry carries an unmodelled key (§4) | reported only; the key is ignored |
+| `mounts.unknown_key` | a mount entry or a `variant_sources` entry carries an unmodelled key (§4), or the `[variants]` table does (§12.6) | reported only; the key is ignored |
 | `mounts.unknown_suffix` | a listed file has no registered suffix | whole mount skipped |
+| `mounts.variant_data_location` | sphinx-needs absent, and the variant data is set both in `[variants]` and in the legacy `[needs]` keys (§12.6) | reported once per ignored `[needs]` key; `[variants]` is read |
 | `mounts.variant_rule_dropped` | a variant rule lists no files (§12) | rule dropped; document set unchanged |
 | `mounts.variant_rule_unevaluable` | a rule's or a mount's condition cannot be evaluated (§12, §13) | reported **and** what it gates is excluded |
 
@@ -581,7 +582,7 @@ implementation rather than one already in the field.
 | A gated-off mount that provides `root_doc` (§13.7) | **Not guarded.** The mount is gated, the root document goes with it, and Sphinx aborts with a message blaming the source directory. | Refused (`config.mount_excludes_root`) when a gated mount is the only root that would CONTRIBUTE `root_doc` — decided at configuration time as an approximation of the walker's admission rule, answering "does not contribute" and standing down wherever the two could differ. It can refuse in two shapes only: a `files` mount in either mode (the list IS the selection), and a `dir` mount with `gitignore = false` in classic mode. A mount respecting ignore files is never refused over (ignore semantics are the walker's); in parser mode the router owns inclusion, so the guard stands down; and it stands down for any project declaring a rule that is false for this variant, because rule-driven removal is settled in a later fold. The suppressing side over-approximates the other way: any candidate file on disk under the host root, or under a live mount claiming the docname — symlinks and all — is reason enough to stay silent. | This reader's root-document guard runs at configuration time and cannot know what a mount will produce (§12.8 records the same limit for a rule-narrowed mount). ubCode's guard is deliberately NARROWER than "a gated mount has a file named like `root_doc`": an unsuppressible refusal is reserved for the shapes it can prove match the walk, and every undecidable input degrades to the ordinary missing-root-document path instead. |
 | The root-document guard (§12.4) | **Stronger on suffixes, WEAKER on mounts.** The candidate suffixes are the project's registered ones — the `source_suffix` confval UNION the extension registry — so the candidate paths are the real ones, including an extension-registered `.md`. But a root document provided by a MOUNT is not covered: the guard runs at configuration time and cannot know what a mount will produce (§12.8 states the same limitation). | Best-effort on suffixes — they are inferred from the project's discovery `include` globs, so a project whose only include glob is unreadable *and* whose root document has an exotic suffix keeps the pre-guard behaviour — and it DOES cover mount-resident root documents. | Neither guard is a superset of the other, and an earlier version of this row claimed one was. Each reader is stronger on the axis its own architecture makes cheap: registered suffixes here, a resolved document set there. |
 | Non-identity source-root layouts (§12.7) | Refused (`mounts.variant_layout`) when rules are declared and the source root is not `srcdir`. | Supported: rule globs are re-anchored per source root, and ubCode has no single `srcdir` to disagree with. | Sphinx has exactly one source directory, and a prefix-shifted rewrite has no correct form for a basename-matching rule. So some layouts that work in ubCode need one extra line (`[source] dir`) here. The alternative — gating only the root that happens to coincide — is the failure the key exists to prevent. |
-| Where the merged variant map comes from (§12.6) | Computed by this reader: the file is deep-merged under the inline table unconditionally, whether or not sphinx-needs is installed. | Computed by ubCode from the same two keys. | **Parity in result, by different routes.** The merge is idempotent, so when sphinx-needs is present its resolved value is this reader's *input* and the re-merge is a no-op. That is what lets sphinx-mounts never import, depend on, or version-gate against sphinx-needs while always agreeing with it. |
+| Where the merged variant map comes from (§12.6) | sphinx-needs absent: read from `[variants]`, or the legacy `[needs] variant_data*` keys, through `ub-project`. sphinx-needs present: its resolved map, deep-merged again (a no-op once it has merged). | Computed by ubCode from the legacy `[needs]` keys; it does not read `[variants]` yet. | **Parity in result for the legacy location, by different routes.** The merge is idempotent, so when sphinx-needs is present its resolved value is this reader's *input* and the re-merge is a no-op. That is what lets sphinx-mounts never import, depend on, or version-gate against sphinx-needs while always agreeing with it. A file that declares its variant data only in `[variants]` is read here and not there until ubCode's reader of the table ships; `ub-project`'s conformance corpus is the contract both are to be held to. |
 | A variant-excluded toctree reference (§12.6) | Sphinx's own record is downgraded to **INFO** and reworded, carrying `mounts.variant_excluded_reference`. | Its own informational `toctree.variant_excluded` code. | **Parity in severity**, different mechanism: ubCode emits its own diagnostic where this reader has to reclassify one Sphinx already emitted. Both name the rule that removed the document, and both are informational because a shared index listing every variant's pages is the normal 150% shape. |
 
 Two entries are worth reading twice, because the disagreement is about *which
@@ -750,7 +751,7 @@ a build, failing open is the one outcome that must not be possible.
 | `mounts.variant_glob_dialect` | a glob that is EMPTY or ends with a path separator; uses `{a,b}` alternation; climbs with `..`; is an absolute path; carries a `?` beside a separator; or carries more than six zero-widening `**` components. Every test runs against the pattern with its `[...]` character classes blanked out, because a `?` or a `{` inside a class is a literal character in all three engines |
 | `mounts.variant_layout` | rules are declared but the source root they anchor at is not `srcdir` (§12.7) |
 | `mounts.variant_root_doc` | a rule that is false for this variant would exclude `root_doc` |
-| `mounts.variant_data_unreadable` | the variant data file is missing, undecodable or not a JSON object, and sphinx-needs is not installed to report it itself |
+| `mounts.variant_data_unreadable` | the variant data this reader reads (§12.6) is malformed — a `variants` or `needs` key, or a key inside them, of the wrong type, or a data file that is missing or not valid variant data — and nothing else will stop the build for it; or sphinx-needs is present and resolved an EMPTY map for a file that declares variant data, because it is not pointed at this file or does not read `[variants]` (§12.6) |
 
 The one **safe** drop is an empty `files` list (`mounts.variant_rule_dropped`):
 a rule that named nothing has nothing to leak, so dropping it leaves the
@@ -992,21 +993,57 @@ rule is **false**, so its files are excluded.
 ### 12.6 The variant map, and the two anchors
 
 Conditions are evaluated against a merged mapping: the JSON object named by
-`[needs] variant_data_file` first, with `[needs] variant_data` deep-merged on
-top. The merge recurses **only when both sides are mappings**; anything else is
-a wholesale replacement. Keys must be strings, leaves must be
-`str` / `bool` / `int` / `float`, and a list must be empty or uniform-scalar.
+`[variants] data_file` first, with `[variants] data` deep-merged on top. The
+legacy location, `[needs] variant_data_file` and `[needs] variant_data`, is
+still read. Precedence is **whole-location**: when `[variants]` declares either
+key, both come from `[variants]` and the `[needs]` keys are ignored; otherwise
+both come from `[needs]`. The merge recurses **only when both sides are
+mappings**; anything else is a wholesale replacement. Keys must be strings,
+leaves must be `str` / `bool` / `int` / `float`, and a list must be empty or
+uniform-scalar.
 
-sphinx-mounts computes this itself rather than depending on sphinx-needs, and
-performs the merge **unconditionally**. That is safe because the merge is
-idempotent — `deep_merge(file, already_merged) == already_merged` — so when
-sphinx-needs has already resolved, its result is the input and the re-merge
-changes nothing. A second reader may take the same route or depend on
-sphinx-needs; it must not do both halfway.
+None of that is computed here: it is `ub-project`'s (its
+`design/reading-contract.md` §6 and §8), and sphinx-mounts takes it from there
+rather than depending on sphinx-needs. Only the **top-level** tables are read:
+`needs_from_toml_table` is sphinx-needs' option, and its prefix is sphinx-needs'
+alone.
 
-**Two anchors.** A relative `variant_data_file` declared in the TOML resolves
-against the **TOML file's own directory** (the same anchor §3 gives mount paths);
-one declared in `conf.py` or overridden with `-D` resolves against **confdir**.
+Which map is used depends on sphinx-needs, and is decided from the config alone
+— no import, no version gate:
+
+- **sphinx-needs absent** (its confvals are not registered): `ub-project` reads
+  the file, and its findings are reported here — `mounts.variant_data_location`
+  for a `[needs]` key ignored because `[variants]` is set,
+  `mounts.unknown_key` for an unknown key in `[variants]`, and a `-v` line for
+  data read from the legacy location. Anything it refuses is
+  `mounts.variant_data_unreadable`.
+- **sphinx-needs present, with a non-empty map**: that map, deep-merged over
+  `needs_variant_data_file` again. The merge is idempotent —
+  `deep_merge(file, already_merged) == already_merged` — so when sphinx-needs has
+  already resolved, its result is the input and the re-merge changes nothing;
+  on releases that have not yet merged at `config-inited` it supplies the merge.
+  The file's own variant data is not read.
+- **sphinx-needs present, with an EMPTY map**: the file is read (its findings are
+  not reported: sphinx-needs reports on the file it reads) only to decide
+  whether the empty map is a loss, which is refused as
+  `mounts.variant_data_unreadable` when the file declares variant data and
+  sphinx-needs is not pointed at it — or is pointed at it, the file's
+  `[variants]` yields a non-empty map, and no `needs_variant_data*` value was
+  set with `-D`: a sphinx-needs that reads `[variants]` either refuses the table
+  or resolves exactly its map, so that cell is reachable only by one that does
+  not read it (every release before 9.0.0, or one scoped to
+  `[<prefix>.variants]`). Both locations set with a sphinx-needs before 9.0.0 is
+  not caught: both tools then use `[needs]`.
+
+A second reader may take the same route or depend on sphinx-needs; it must not
+do both halfway.
+
+**Two anchors.** A relative data file declared in the TOML — `[variants]
+data_file` or `[needs] variant_data_file` — is **joined** to the TOML file's
+own directory by `ub-project` (the same anchor §3 gives mount paths, but not
+resolved: `..` and symlink segments the user wrote are kept, and the reader's
+diagnostics name the joined path; the file opened is the same either way). One
+declared in `conf.py` or overridden with `-D` resolves against **confdir**.
 Reading only one of the two means reading the wrong file for one of the routes.
 
 Finally, a rule that removes a document leaves toctree entries naming it
