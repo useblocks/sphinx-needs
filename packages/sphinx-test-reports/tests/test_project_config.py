@@ -27,6 +27,7 @@ from sphinx_test_reports.projectconfig import (
     load_project_config,
     needs_settings,
 )
+from ub_project import ProjectConfigError
 
 
 def _write(tmp_path, toml_source, name=DEFAULT_TOML_FILENAME):
@@ -464,6 +465,66 @@ class TestLoader:
         assert config["rootdir"] == str(tmp_path)
 
 
+def _not_utf8(tmp_path):
+    """A file saved in Latin-1: ``é`` is the lone byte 0xE9, which UTF-8 refuses."""
+    config = tmp_path / DEFAULT_TOML_FILENAME
+    config.write_bytes("[test_reports]\nfile_option = 'café'\n".encode("latin-1"))
+    return config
+
+
+class TestSharedReaderBoundary:
+    """ub-project reads the file; its exception never leaves this package.
+
+    Both consumers catch :class:`TomlConfigError` and nothing else, so a
+    ``ProjectConfigError`` escaping the loader would reach the user as a
+    traceback. Each case asserts the exact type and that the message is the
+    shared reader's, word for word.
+    """
+
+    def _assert_re_raised(self, config):
+        with pytest.raises(TomlConfigError) as caught:
+            load_project_config(config)
+        assert type(caught.value) is TomlConfigError
+        cause = caught.value.__cause__
+        assert isinstance(cause, ProjectConfigError)
+        assert str(caught.value) == str(cause)
+        return str(caught.value)
+
+    def test_the_two_exceptions_are_unrelated(self):
+        # a subclass either way round would put ub-project's exception on this
+        # package's public surface
+        assert not issubclass(TomlConfigError, ProjectConfigError)
+        assert not issubclass(ProjectConfigError, TomlConfigError)
+
+    def test_invalid_toml(self, tmp_path):
+        message = self._assert_re_raised(_write(tmp_path, "[test-reports\n"))
+        assert message.startswith(f"{tmp_path / DEFAULT_TOML_FILENAME}: invalid TOML: ")
+
+    @pytest.mark.skipif(
+        hasattr(os, "geteuid") and os.geteuid() == 0,
+        reason="root reads unreadable files",
+    )
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="os.chmod on Windows only sets the read-only attribute; the file stays readable",
+    )
+    def test_unreadable_file(self, tmp_path):
+        config = _write(tmp_path, "[test_reports]\nfile_option = 'f'\n")
+        config.chmod(0o000)
+        try:
+            message = self._assert_re_raised(config)
+        finally:
+            config.chmod(0o644)
+        assert message.startswith(f"{config}: cannot be read: ")
+
+    def test_a_file_that_is_not_utf8(self, tmp_path):
+        # New with ub-project: before it, the decode error escaped the loader
+        # as a bare UnicodeDecodeError.
+        config = _not_utf8(tmp_path)
+        message = self._assert_re_raised(config)
+        assert message.startswith(f"{config}: not valid UTF-8 TOML: ")
+
+
 @pytest.mark.toolchain
 class TestSphinxBridge:
     """The build reads the same section and honours the same precedence."""
@@ -518,6 +579,26 @@ class TestSphinxBridge:
 
         docs = tmp_path / "docs"
         with pytest.raises(InvalidConfigurationError, match="suite_id_length"):
+            Sphinx(
+                srcdir=docs,
+                confdir=docs,
+                outdir=docs / "_build" / "html",
+                doctreedir=docs / "_build" / "doctrees",
+                buildername="html",
+                freshenv=True,
+            )
+
+    def test_bridge_rejects_a_file_that_is_not_utf8(self, tmp_path):
+        """The shared reader's refusal aborts the build like any other."""
+        copytree(Path(__file__).parent / "doc_test" / "basic_doc", tmp_path / "docs")
+        docs = tmp_path / "docs"
+        _not_utf8(docs)
+
+        from sphinx.application import Sphinx
+
+        from sphinx_test_reports.exceptions import InvalidConfigurationError
+
+        with pytest.raises(InvalidConfigurationError, match="not valid UTF-8 TOML"):
             Sphinx(
                 srcdir=docs,
                 confdir=docs,

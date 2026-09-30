@@ -32,54 +32,42 @@ reader does not model is routine rather than a mistake -- and aborting on it
 would take down every build of the project on every older sphinx-test-reports,
 including builds the key would not have changed. This is the same posture
 sphinx-mounts takes for ``[[source.mounts]]``.
+
+**Finding, loading and anchoring are ub-project's**, the shared reader every
+useblocks tool uses for the file: :func:`find_project_config` is its walk,
+re-exported unchanged, and the file is parsed and relative paths joined by its
+``load_toml`` and ``anchor``. Everything about ``[test_reports]`` -- the keys,
+their types, the normalisation, the error policy above -- is this package's.
+ub-project's ``ProjectConfigError`` never leaves this module: it is re-raised
+as :class:`TomlConfigError` with the same message, the one exception both
+consumers handle.
 """
 
-import tomllib
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import NoReturn
 
 from sphinx_test_reports.fields import RESERVED_NAMES
+from ub_project import DEFAULT_FILENAME, ProjectConfigError, anchor, load_toml
+
+# Re-exported: the Sphinx bridge, the converter and the tests import the walk
+# from here. It raises nothing of its own, so it needs no wrapper.
+from ub_project import find_project_config as find_project_config
 
 #: Default file the configuration is read from. Looked up by walking up from
 #: the ``confdir`` (Sphinx) or the working directory (a converter); see
 #: :func:`find_project_config`. ``ubproject.toml`` is the convention shared
 #: with other useblocks tooling so a single declarative file describes the
 #: project to every downstream consumer -- Sphinx, ubCode, a converter --
-#: without
-#: any of them having to execute Python.
-DEFAULT_TOML_FILENAME = "ubproject.toml"
+#: without any of them having to execute Python. ub-project's
+#: ``DEFAULT_FILENAME``, under the name this package has always exported.
+DEFAULT_TOML_FILENAME = DEFAULT_FILENAME
 
 #: The section this extension owns inside the shared file. Spelled
 #: ``snake_case`` like every other section of ``ubproject.schema.json``
 #: (``build_tags``, ``format_rst``, ``needs_json``, ``rst_lint``, ...); note
 #: that ``[reports]`` is already taken, and means report *templates*.
 SECTION = "test_reports"
-
-#: Directory entries that end the upward search of :func:`find_project_config`.
-#: A directory carrying one is the repository root, and nothing above it belongs
-#: to the project, so a consumer never adopts the configuration of an unrelated
-#: parent. ``pyproject.toml`` is deliberately *not* a marker: it marks a Python
-#: distribution, not the project. A ``docs/`` directory with its own
-#: ``pyproject.toml`` beside ``conf.py``, or a workspace member in a monorepo
-#: (``packages/<name>/pyproject.toml`` with the docs below it), sits *inside*
-#: the project whose shared file is at the repository root, and a marker there
-#: would end the search before it reached the file -- silently. It does bound
-#: the walk where there is no repository at all, see :data:`_DIST_MARKERS`.
-#: ``ubproject.toml`` itself is not listed -- finding it is the success case,
-#: checked first in every directory.
-_ROOT_MARKERS = (".git",)
-
-#: Directory entries that end the search when *no* :data:`_ROOT_MARKERS` marker
-#: exists anywhere above the starting directory. A tree outside any repository
-#: -- an unpacked sdist, a CI artefact directory, an exported docs tree -- has
-#: nothing to bound the walk, so it would reach the filesystem root and adopt
-#: the configuration of whatever unrelated directory happens to sit above it.
-#: The distribution root is the outermost thing that still belongs to such a
-#: tree. It bounds the search only as a fallback, never inside a repository:
-#: there, a ``pyproject.toml`` on the way up is a workspace member or a
-#: ``docs/`` dependency set, and must not end the search.
-_DIST_MARKERS = ("pyproject.toml",)
 
 #: Section keys bridged onto their ``tr_*`` Sphinx config values.
 BRIDGE_KEYS = (
@@ -213,11 +201,6 @@ _TYPE_ENTRY_FIELDS = ("directive", "type", "name", "prefix", "color", "style")
 #: inside a normalised entry.
 _TYPE_FIELD_INDEX = _TYPE_ENTRY_FIELDS.index("type")
 
-#: ``tomllib.TOMLDecodeError`` bound through an annotation: the attribute
-#: expression itself is typed loosely enough to trip the strict ``Any`` bans,
-#: and an ``except`` clause has no annotation of its own to absorb it.
-_TOML_DECODE_ERROR: type[Exception] = tomllib.TOMLDecodeError
-
 
 class TomlConfigError(Exception):
     """Raised when the declarative config cannot be parsed or is malformed.
@@ -227,78 +210,6 @@ class TomlConfigError(Exception):
     ``InvalidConfigurationError`` to abort the build; a non-Sphinx consumer
     reports it and exits non-zero.
     """
-
-
-def find_project_config(
-    start: Path,
-    filename: str = DEFAULT_TOML_FILENAME,
-    report: Callable[[str], None] | None = None,
-) -> Path | None:
-    """Search *start* and its parents for *filename*.
-
-    The declarative file conventionally sits at the repository root while its
-    consumers run from below it -- ``conf.py`` in ``docs/``, a build action
-    from wherever CI invoked it -- so anchoring strictly at the caller's own
-    directory would leave the shared file unread by one of them, silently.
-
-    The walk ends at the first directory holding *filename*, or at the project
-    boundary when that does not hold the file either: nothing above the
-    boundary belongs to the project, so a consumer never adopts the
-    configuration of an unrelated parent. The boundary is the repository root
-    (:data:`_ROOT_MARKERS`), or -- outside any repository only -- the
-    distribution root (:data:`_DIST_MARKERS`); see both for why a
-    ``pyproject.toml`` bounds the one case and not the other.
-
-    :param start: Directory to start from. Made absolute -- without resolving
-        symlinks -- so that a relative path has parents to walk.
-    :param report: Called with one message when the search ends without the
-        file, naming the directory whose marker ended it. Callers pass their
-        own logger so this module stays Sphinx-free; ``None`` discards it. A
-        missing file is not necessarily a problem -- most projects have none
-        -- but a fruitless search must not be silent, or a misplaced file
-        cannot be diagnosed.
-    :return: The file, or ``None`` when the search reached the project boundary
-        or the filesystem root without finding one.
-    """
-    start = start.absolute()
-    directories = (start, *start.parents)
-    boundary, described = _boundary(directories)
-    for directory in directories:
-        candidate = directory / filename
-        if candidate.is_file():
-            return candidate
-        if directory == boundary:
-            break
-    if report is not None:
-        report(f"no {filename} in {start} or its parents up to {described}")
-    return None
-
-
-def _boundary(directories: tuple[Path, ...]) -> tuple[Path | None, str]:
-    """The directory the upward search must not walk past, and its description.
-
-    A repository root anywhere above the start wins: inside a repository the
-    only thing that bounds the project is the repository itself. Only when
-    there is none does the distribution root bound the walk -- which is what
-    keeps a tree outside any repository from reaching the filesystem root.
-    """
-    for markers, label in (
-        (_ROOT_MARKERS, "repository"),
-        (_DIST_MARKERS, "distribution"),
-    ):
-        for directory in directories:
-            marker = _marker(directory, markers)
-            if marker is not None:
-                return directory, f"the {label} root {directory} (holding {marker})"
-    return None, "the filesystem root"
-
-
-def _marker(directory: Path, markers: tuple[str, ...]) -> str | None:
-    """The entry of *markers* that *directory* holds, if any."""
-    for marker in markers:
-        if (directory / marker).exists():
-            return marker
-    return None
 
 
 def load_project_config(
@@ -321,7 +232,14 @@ def load_project_config(
     """
     if not path.is_file():
         return None
-    data = _read_toml(path)
+    try:
+        # ``is_file()`` succeeding does not mean the read will: the file may be
+        # unreadable, not UTF-8, or replaced between the check and the open.
+        data = load_toml(path)
+    except ProjectConfigError as error:
+        # Both consumers handle TomlConfigError and nothing else, and
+        # ub-project's exception is not part of this package's surface.
+        raise TomlConfigError(str(error)) from error
 
     section = data.get(SECTION)
     if section is None:
@@ -331,29 +249,6 @@ def load_project_config(
         raise TomlConfigError(msg)
 
     return _normalise_section(section, path, warn)
-
-
-def _read_toml(path: Path) -> dict[str, object]:
-    """Parse *path*, reporting every read failure as a ``TomlConfigError``.
-
-    ``is_file()`` succeeding does not mean the open will: the file may be
-    unreadable, or replaced between the check and the open. Both consumers
-    handle ``TomlConfigError`` and neither handles a bare ``OSError``, so an
-    unwrapped one surfaces as a traceback instead of a configuration error.
-    """
-    try:
-        with path.open("rb") as handle:
-            # tomllib is typed ``-> dict[str, Any]``; everything downstream of
-            # here is ``object`` so the strict Any bans hold for the rest of
-            # the module.
-            data: dict[str, object] = tomllib.load(handle)
-    except _TOML_DECODE_ERROR as error:
-        msg = f"{path}: invalid TOML: {error}"
-        raise TomlConfigError(msg) from error
-    except OSError as error:
-        msg = f"{path}: cannot be read: {error}"
-        raise TomlConfigError(msg) from error
-    return data
 
 
 def _normalise_section(
@@ -709,15 +604,17 @@ def _normalise_type_entry(key: str, value: object, path: Path) -> list[str]:
 def _anchor_paths(section: dict[str, object], base: Path) -> dict[str, object]:
     """Anchor :data:`PATH_KEYS` at *base* (the TOML file's directory).
 
-    Joined, deliberately not ``resolve()``d: *base* is already absolute, and
-    this module does not touch the filesystem to second-guess the form of the
-    path it was handed. Whether symlinks in it are collapsed is the consumer's
-    decision -- Sphinx resolves its ``confdir`` before the bridge ever runs, a
-    converter may pass its working directory as is -- and the loader must not
-    make that decision behind their back.
+    Through ub-project's ``anchor``, which joins and deliberately never calls
+    ``resolve()``: *base* is already absolute, and this module does not
+    touch the filesystem to second-guess the form of the path it was handed.
+    Whether symlinks in it are collapsed is the consumer's decision -- Sphinx
+    resolves its ``confdir`` before the bridge ever runs, a converter may pass
+    its working directory as is -- and the loader must not make that decision
+    behind their back. An absolute value is left as the string it was, not
+    round-tripped through ``Path``.
     """
     for key in PATH_KEYS:
         value = section.get(key)
         if isinstance(value, str) and not Path(value).is_absolute():
-            section[key] = str(base / value)
+            section[key] = str(anchor(value, base))
     return section
