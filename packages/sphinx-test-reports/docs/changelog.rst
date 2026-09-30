@@ -125,6 +125,14 @@ New and Improved
   floors when it loads, so it now refuses docutils 0.20 with the install line; the
   ``test-reports`` command and the pytest plugin still install no docutils at all.
 
+- ♻️ The ``ubproject.toml`` reader is now `ub-project <https://pypi.org/project/ub-project/>`__,
+  the shared reader every useblocks tool uses for the file, and a new runtime dependency
+  (standard library only, so the ``test-reports`` command and the pytest plugin still run
+  without Sphinx). Nothing changes in behaviour: the walk up to the repository root, the
+  anchoring of relative paths at the file's directory and every message are as before. One
+  failure that used to escape as a traceback is now reported like the others: a file that
+  is not UTF-8 is a configuration error naming the file.
+
 What the move costs, stated rather than left to the CI diff
 ............................................................
 

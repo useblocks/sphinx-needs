@@ -21,11 +21,11 @@ package, because it shapes the manifest, the CI and the split that is coming:
   shape the extension reads, including per-case properties for traceability.
 
 So **Sphinx and sphinx-needs are an `[project.optional-dependencies]` extra, not
-dependencies**: `pip install sphinx-test-reports` gets you `lxml` and the last two surfaces;
-`pip install "sphinx-test-reports[sphinx]"` gets you the extension. The published wheel's
-`Requires-Dist` is `lxml` alone. Two things in this repository exist because of that — the
-`toolchain-free` CI job and this package's `compat-requirements.txt` — and both are
-described below.
+dependencies**: `pip install sphinx-test-reports` gets you `lxml`, `ub-project` and the
+last two surfaces; `pip install "sphinx-test-reports[sphinx]"` gets you the extension. The
+published wheel's `Requires-Dist` is those two alone. Two things in this repository exist
+because of that — the `toolchain-free` CI job and this package's `compat-requirements.txt`
+— and both are described below.
 
 ## Package structure
 
@@ -47,7 +47,7 @@ src/sphinx_test_reports/
 ├── junitparser.py · jsonparser.py · results.py · identity.py · fields.py
 │                       # the toolchain-free core: parsers, the result vocabulary, the
 │                       #   deterministic case IDs, the one field table both writers share
-├── projectconfig.py    # the `[test_reports]` ubproject.toml model and its discovery walk
+├── projectconfig.py    # the `[test_reports]` ubproject.toml model, read through ub-project
 ├── needs_export.py · remote.py · config.py · environment.py · exceptions.py · toolchain.py
 ├── directives/         # one module per directive, all inheriting TestCommonDirective
 ├── functions/          # `tr_link`, a sphinx-needs dynamic function
@@ -142,17 +142,20 @@ the pytest plugin's reserved `user_properties` names (`sphinxcontrib.test_report
 `:line`) are documented wire names. None of them is an import path, so none moved with the
 package; a rename `sed` over the tree would corrupt them silently.
 
-### The `ubproject.toml` discovery boundary inside a monorepo
+### `ubproject.toml` is read through `ub-project`
 
-`projectconfig.find_project_config()` walks UP from the start directory and stops at the
-first `ubproject.toml`, else at the project boundary — `.git`, and only where no `.git`
-exists anywhere above, `pyproject.toml`. **A `pyproject.toml` on the way up never ends the
-walk inside a repository**, deliberately, so a member at `packages/<name>/pyproject.toml`
-is understood to sit inside the project whose shared file is at the repository root. So the
-behaviour is identical before and after the import. Two consequences: a repository-root
-`ubproject.toml` (there is none today) would be picked up by every consumer under
-`packages/`, and the boundary tests are unaffected because they build under `tmp_path`,
-outside any repository.
+`projectconfig.py` finds, loads and anchors the file through `ub-project`, the workspace's
+shared reader (a runtime dependency, standard library only): `find_project_config` is its
+walk re-exported, and `load_toml` and `anchor` do the reading and the joining. What stays
+here is this package's policy — the `[test_reports]` keys, their types, the normalisation,
+unknown keys warned rather than fatal — and **`TomlConfigError`, which is still the only
+exception either consumer catches**: `load_project_config` re-raises ub-project's
+`ProjectConfigError` as it with the same message, and must never be made a subclass of it.
+The walk stops at the first `ubproject.toml`, else at `.git`, and only where no `.git`
+exists anywhere above, at `pyproject.toml` — so a member's `packages/<name>/pyproject.toml`
+never ends it, and a repository-root `ubproject.toml` (there is none today) would be picked
+up by every consumer under `packages/`. `packages/ub-project/design/reading-contract.md` is
+the specification; a change the walk or the anchoring needs belongs there, not here.
 
 ## Testing
 

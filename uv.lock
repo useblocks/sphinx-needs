@@ -3282,6 +3282,7 @@ version = "2.0.0"
 source = { editable = "packages/sphinx-test-reports" }
 dependencies = [
     { name = "lxml" },
+    { name = "ub-project" },
 ]
 
 [package.optional-dependencies]
@@ -3322,6 +3323,7 @@ requires-dist = [
     { name = "sphinx-needs", marker = "extra == 'docs'", editable = "packages/sphinx-needs" },
     { name = "sphinx-needs", marker = "extra == 'sphinx'", editable = "packages/sphinx-needs" },
     { name = "sphinxcontrib-plantuml", marker = "extra == 'docs'" },
+    { name = "ub-project", editable = "packages/ub-project" },
 ]
 provides-extras = ["sphinx", "pytest", "docs"]
 

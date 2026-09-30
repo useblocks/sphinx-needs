@@ -848,9 +848,10 @@ cmd = "uv build --package sphinx-test-reports --no-sources -o dist/sphinx-test-r
 [tool.poe.tasks.import-check-reports]
 help = "Import every sphinx-test-reports module from its built wheel, with dependencies as PUBLISHED"
 # `--extra sphinx`, because this is the first member in the workspace whose RUNTIME
-# dependencies are optional: the bare wheel's `Requires-Dist` is `lxml` alone, and
-# `sphinx_test_reports.test_reports` imports sphinx-needs. Without the extra the
-# walk fails 6 of its 25 modules. `--extra pytest` too, for `pytest_plugin`, which imports
+# dependencies are optional: the bare wheel's `Requires-Dist` is `lxml` and `ub-project`, and
+# `sphinx_test_reports.test_reports` imports sphinx-needs. Without the extra the walk
+# fails on every module that imports sphinx or docutils (the directives, the bridge,
+# the environment and the exceptions). `--extra pytest` too, for `pytest_plugin`, which imports
 # pytest and pluggy. The release workflow's compat cell gets the toolchain from this
 # member's `compat-requirements.txt`, and pytest from the root `test` group it installs
 cmd = "python tools/src/sn_tools/import_check.py sphinx-test-reports --extra sphinx --extra pytest"

@@ -299,6 +299,28 @@ class TestDiagnostics:
         assert code == 2
         assert "build.needs.tags" in capsys.readouterr().err
 
+    @pytest.mark.parametrize(
+        ("content", "reason"),
+        [
+            (b"[test_reports\n", "invalid TOML"),
+            (
+                "[test_reports]\nfile_option = 'caf\u00e9'\n".encode("latin-1"),
+                "not valid UTF-8 TOML",
+            ),
+        ],
+        ids=["invalid-toml", "not-utf8"],
+    )
+    def test_an_unparseable_file_is_an_error(self, tmp_path, capsys, content, reason):
+        # the shared reader refuses it; the command reports it as its own
+        # error and exits 2, never with a traceback
+        (tmp_path / DEFAULT_TOML_FILENAME).write_bytes(content)
+        code, _ = run_convert(tmp_path, [])
+        assert code == 2
+        assert (
+            f"error: {tmp_path / DEFAULT_TOML_FILENAME}: {reason}: "
+            in capsys.readouterr().err
+        )
+
     def test_wrong_type_elsewhere_in_the_section_is_an_error_too(
         self, tmp_path, capsys
     ):
