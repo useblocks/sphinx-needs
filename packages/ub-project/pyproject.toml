@@ -1,6 +1,6 @@
 [project]
 name = "ub-project"
-version = "1.0.0.dev0"
+version = "1.0.0"
 description = "The shared reader for ubproject.toml and its variant data, for the sphinx-needs family and ubCode"
 authors = [{ name = "team useblocks", email = "info@useblocks.com" }]
 license = { file = "LICENSE" }

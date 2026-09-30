@@ -3,8 +3,12 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:1.0.0`:
+
+1.0.0
+-----
+
+:Released: 2026-09-30
 
 The first release, as **1.0.0**: the shared reader for ``ubproject.toml`` across the
 sphinx-needs family and ubCode. It has no consumers yet -- sphinx-test-reports,
@@ -13,7 +17,7 @@ is published.
 
 - **Find, load, select, anchor.** ``find_project_config`` walks up from a directory to the
   repository root (outside a repository, to the distribution root) and returns the first
-  ``ubproject.toml``; ``load_toml`` reads it, reporting every failure as an
+  ``ubproject.toml``; ``load_toml`` reads it, reporting every failure as a
   ``ProjectConfigError`` naming the file; ``select_table`` picks a dotted table such as
   ``tool.acme.needs``; ``anchor`` joins a relative path onto the file's directory and
   never resolves it.
