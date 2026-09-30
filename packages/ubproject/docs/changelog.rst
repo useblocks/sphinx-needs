@@ -8,7 +8,7 @@ Unreleased
 
 The first release, as **1.0.0**: the shared reader for ``ubproject.toml`` across the
 sphinx-needs family and ubCode. It has no consumers yet -- sphinx-test-reports,
-sphinx-needs, sphinx-mounts and sphinx-codelinks adopt it one release each, after this one
+sphinx-needs, sphinx-mounts and sphinx-codelinks will adopt it one release each, after this one
 is published.
 
 - **Find, load, select, anchor.** ``find_project_config`` walks up from a directory to the
@@ -25,10 +25,11 @@ is published.
   ``variant_data_legacy_location`` and ``variants_unknown_key`` -- and never logged, so
   each consumer decides what they are worth.
 - **One copy of the variant-data merge.** ``validate_variant_data``,
-  ``load_variant_data_file``, ``deep_merge`` and ``resolve_variant_data``, replacing the
-  copies in sphinx-needs and sphinx-mounts. ``resolve_variant_data`` always returns a new
+  ``load_variant_data_file``, ``deep_merge`` and ``resolve_variant_data``, to replace the
+  copies in sphinx-needs and sphinx-mounts once they adopt it. ``resolve_variant_data`` always returns a new
   mapping, and every error names the dotted path and the rule it broke.
 - **Standard library only.** No Sphinx, no docutils and no sibling distribution, so tools
   that run without the documentation toolchain can use it.
 - **A conformance corpus**, ``tests/fixtures/ubproject_reading_conformance.toml``: the
-  executable half of the reading contract, held canonically here and vendored by ubCode.
+  executable half of the reading contract, held canonically here, which ubCode is to
+  vendor.

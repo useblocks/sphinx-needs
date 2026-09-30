@@ -9,8 +9,9 @@ not repeat it.
 
 The shared reader for `ubproject.toml`: finding and loading the file, selecting a table,
 anchoring relative paths, the `[variants]` table with its `[needs] variant_data*`
-fallback, and the one copy of the variant-data merge. Its consumers are the four Sphinx
-extensions in this repository and, through the conformance corpus, ubCode.
+fallback, and the one copy of the variant-data merge. Its consumers will be the four Sphinx
+extensions in this repository, one pull request each after its first release, and —
+through the conformance corpus, which it is to vendor — ubCode.
 [`design/reading-contract.md`](design/reading-contract.md) is the normative specification;
 read it before changing behaviour.
 
@@ -54,7 +55,7 @@ uv run poe build-ubproject             # sdist + wheel into dist/ubproject
   `-c`, or decides discovery. Findings are returned as `Diagnostic` values and failures
   raised as `UbprojectError`; the consumer decides what either is worth.
 - **The corpus is canonical here.** `tests/fixtures/ubproject_reading_conformance.toml` is
-  the contract ubCode vendors byte-for-byte. Change it only together with the behaviour,
+  the contract ubCode is to vendor byte-for-byte. Change it only together with the behaviour,
   `design/reading-contract.md` and `EXPECTED_CASE_COUNT`, and say in the pull request that
   ubCode owes a re-vendor. `.gitattributes` and the taplo/yamlfmt excludes protect its
   bytes; never reformat it.

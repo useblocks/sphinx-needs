@@ -27,7 +27,7 @@ the shim.
 | sphinx-test-reports' behaviour, tests, documentation | `packages/sphinx-test-reports/{src/sphinx_test_reports,tests,docs}/` — start at [`packages/sphinx-test-reports/AGENTS.md`](packages/sphinx-test-reports/AGENTS.md) |
 | how every tool reads `ubproject.toml` — finding, anchoring, `[variants]`, the variant-data merge | `packages/ubproject/{src/ubproject,tests,design}/` — start at [`packages/ubproject/AGENTS.md`](packages/ubproject/AGENTS.md) |
 | the fixtures, helpers and renderer resolution three suites share | `packages/sphinx-needs-testkit/` — a member this repository never publishes, installed through the root's `test` group and loaded by each suite's `tests/conftest.py` as a pytest plugin |
-| the three conformance corpora | `packages/sphinx-needs/tests/conformance/` (needflow) and `packages/sphinx-mounts/tests/fixtures/variant_condition_conformance.toml` (variant conditions), whose repository of record is ubCode, and `packages/ubproject/tests/fixtures/ubproject_reading_conformance.toml` (reading `ubproject.toml`), whose record is THIS repository and which ubCode vendors — all shared byte-for-byte; do not reformat any of them (`.gitattributes` plus the yamlfmt and taplo excludes protect them) |
+| the three conformance corpora | `packages/sphinx-needs/tests/conformance/` (needflow) and `packages/sphinx-mounts/tests/fixtures/variant_condition_conformance.toml` (variant conditions), whose repository of record is ubCode, and `packages/ubproject/tests/fixtures/ubproject_reading_conformance.toml` (reading `ubproject.toml`), whose record is THIS repository and which ubCode is to vendor — all shared byte-for-byte; do not reformat any of them (`.gitattributes` plus the yamlfmt and taplo excludes protect them) |
 | a package's metadata, dependencies and extras | `packages/<pkg>/pyproject.toml` |
 | dependency groups (`test`, `benchmark`, `sphinx-7/8/9`, `typing`) | the root `pyproject.toml` — they are shared, and a group cannot be composed across the root/member boundary |
 | lint, format, type-check, pytest and task configuration | the root `pyproject.toml` |
@@ -71,10 +71,10 @@ tag is the only thing that starts the release workflow, that is the fence, not a
 belt-and-braces extra — and the manifest carries `Private :: Do Not Upload`, which PyPI
 rejects on upload, for the by-hand path.
 
-**`packages/ubproject` is a library every other member will depend on, and it depends on
+**`packages/ubproject` is a library every extension will depend on, and it depends on
 nothing**: standard library only, no Sphinx, fenced by its own `tests/test_imports.py` and
 by CI's `toolchain-free` job, which runs its suite where Sphinx is not installed. Its
-contract is its conformance corpus (ubCode vendors it) plus `design/reading-contract.md`;
+contract is its conformance corpus (ubCode is to vendor it) plus `design/reading-contract.md`;
 it decides no policy — discovery, warnings and `-D` stay with each consumer. No member
 depends on it yet: every `--no-sources` gate resolves a consumer from the index, so the
 consumers arrive one pull request each after its first release, and from then on each

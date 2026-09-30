@@ -40,6 +40,6 @@ Changelog = "https://github.com/useblocks/sphinx-needs/blob/master/packages/ubpr
 requires = ["flit_core >=3.4,<5"]
 build-backend = "flit_core.buildapi"
 
-# Deliberately NO `[tool.flit.sdist]`: the wheel carries the module and its `py.typed`
-# marker and nothing else. Everything else -- ruff, ty, pytest and the dependency groups --
+# Deliberately NO `[tool.flit.sdist]`: flit's default sdist is the module, its `py.typed`
+# marker, README, LICENSE and this file, and nothing else (measured). Everything else -- ruff, ty, pytest and the dependency groups --
 # is the ROOT's, and `tools/src/sn_tools/check_workspace.py` refuses those tables here.

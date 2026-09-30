@@ -7,8 +7,8 @@ sphinx-mounts, sphinx-codelinks, sphinx-test-reports), their command lines, and 
 
 It holds the parts of that file more than one tool reads, so that they are read one way:
 
-- **finding, loading and anchoring** the file -- the walk up to the repository root, TOML
-  read with every failure named, a dotted table selected, and relative paths anchored at
+- **finding, loading and anchoring** the file -- the walk up to the repository root (or,
+  outside a repository, the distribution root), TOML read with every failure named, a dotted table selected, and relative paths anchored at
   the file's own directory;
 - **the** ``[variants]`` **table**, with the legacy ``[needs] variant_data*`` keys as its
   fallback;
@@ -66,5 +66,5 @@ The contract
 
 ``design/reading-contract.md`` is the normative specification, and
 ``tests/fixtures/ubproject_reading_conformance.toml`` is its executable half: a corpus of
-inputs and expected results that this package's suite runs, and that ubCode vendors and
-runs against its own reader.
+inputs and expected results that this package's suite runs, and that ubCode is to vendor
+and run against its own reader (its reader does not read ``[variants]`` yet).
