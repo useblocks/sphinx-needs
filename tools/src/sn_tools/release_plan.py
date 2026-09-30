@@ -25,7 +25,10 @@ Given a tag `<dist>-v<version>` it asserts, in order:
    member is refused for a related reason: the wheel would name a distribution that is
    never on PyPI;
 1. the tag parses, and `<dist>` is a member of this workspace;
-2. `<version>` is exactly the version that member declares -- the tag cannot publish
+2. `<version>` is a release, not a development version (`X.Y.Z.devN`, the state a member
+   sits in between releases): PyPI would accept one, so this is the only thing that stops
+   a tag on a dev tree publishing it. Pre-releases (`rc1`) are releases and pass. Then
+   `<version>` is exactly the version that member declares -- the tag cannot publish
    something the tree does not build;
 3. `<version>` is not already on PyPI (a re-tag of a published version is always a
    mistake). This is the one check `--rehearsal` downgrades to a notice, so that a
@@ -47,7 +50,8 @@ It also emits `previous_tag`, the release this one follows, for GitHub's
 With no `--tag` this is the **planner**, meant to be run before the release pull request
 rather than by CI. It prints the topological release order, then for every publishable
 member the last release tag, what PyPI has, the commits since that tag that touched the
-member's *shipped* code, and -- for each of its dependants -- the version of it the compat
+member's *shipped* code (for a development version, the `poe bump` that stamps its release
+rather than a tag), and -- for each of its dependants -- the version of it the compat
 cell would install from PyPI; then a suggested sequence with the exact commands.
 
 **The planner is advice and never a gate: it exits 0 whatever it finds**, and 1 only when
@@ -104,6 +108,20 @@ COMMIT_SEP = "\x1e"
 # names have to keep working), so `previous_tag` for sphinx-needs has to look in both
 # namespaces or the first prefixed release would generate notes against nothing.
 BARE_TAG_DIST = "sphinx-needs"
+
+
+def release_of(version: Version) -> str:
+    """The release a development version leads to: the version minus its `.devN` segment.
+
+    `1.0.0.dev0` -> `1.0.0`, `2.1.0rc1.dev3` -> `2.1.0rc1`. PEP 440 puts the dev segment
+    last in the normalised form, so dropping it is a string operation on that form.
+    """
+    return str(version).rsplit(".dev", 1)[0]
+
+
+def bump_to(name: str, version: Version) -> str:
+    """The command that stamps the release a development tree is heading for."""
+    return f"uv run poe bump {name} --to {release_of(version)}"
 
 
 class PlanError(RuntimeError):
@@ -543,7 +561,7 @@ class Status(NamedTuple):
     commits: list[tuple[str, str]]  # unreleased commits touching the shipped code
     paths: list[str]  # that shipped code, repository-relative
     root: Path  # the tree those paths and every git call below are relative to
-    verdict: int  # 1 up to date | 2 bump first | 3 ready to tag | 4 behind PyPI
+    verdict: int  # 1 up to date | 2 bump first | 3 ready to tag | 4 behind PyPI | 5 dev version
 
 
 def shipped_paths(root: Path, directory: Path) -> list[str]:
@@ -601,6 +619,10 @@ def status_of(
     # answer even though `declared` is (necessarily) published as well
     if latest is not None and declared < latest:
         verdict = 4
+    elif declared.is_devrelease:
+        # never "ready to tag": the plan job refuses a dev version, so the advice is the
+        # bump that stamps the release, whatever PyPI has
+        verdict = 5
     elif declared in published:
         verdict = 2 if commits else 1
     else:
@@ -674,6 +696,14 @@ def print_status(status: Status, directory: str) -> None:
             print(
                 f"  the tag {status.declared_tag} exists but PyPI has no {declared}: that release did not complete -- re-run the workflow from the tag, do not re-tag"
             )
+        if count:
+            print(f"  {count} commit{plural} since {since} touched its shipped code:")
+            print_commits(status.commits, "    ")
+    elif status.verdict == 5:
+        print(
+            f"  {declared} is a development version, not a release -- stamp the release before tagging:"
+        )
+        print(f"      {bump_to(name, declared)}")
         if count:
             print(f"  {count} commit{plural} since {since} touched its shipped code:")
             print_commits(status.commits, "    ")
@@ -785,7 +815,7 @@ def print_dependant(core: Status, dependant: Status, spec: str) -> None:
 
 def print_sequence(sequence: list[str], statuses: dict[str, Status]) -> None:
     """The topological order, filtered to what is actually pending, with the commands."""
-    pending = [name for name in sequence if statuses[name].verdict in (2, 3)]
+    pending = [name for name in sequence if statuses[name].verdict in (2, 3, 5)]
     settled = [name for name in sequence if statuses[name].verdict == 1]
     behind = [name for name in sequence if statuses[name].verdict == 4]
     print()
@@ -807,6 +837,10 @@ def print_sequence(sequence: list[str], statuses: dict[str, Status]) -> None:
             print(
                 f"       uv version --package {name} --bump {{patch|minor|major}} --no-sync"
             )
+        elif status.verdict == 5:
+            version = release_of(status.declared)
+            print(f"  {rank}. after a bump: {name}")
+            print(f"       {bump_to(name, status.declared)}")
         else:
             version = str(status.declared)
             print(f"  {rank}. {name} {version}")
@@ -910,7 +944,24 @@ def plan(args: argparse.Namespace) -> int:
             "refusing this tag is what makes that true -- there is nothing to release"
         )
 
-    # 2. the tag's version is the version this tree builds
+    # 2. the tag names a RELEASE. A development version is valid PEP 440 and PyPI would
+    #    take it, so nothing downstream stops it; and the tree matching the tag is exactly
+    #    the case to catch -- a member sits at `X.Y.Z.devN` between releases. Pre-releases
+    #    (`rc1`) are releases and pass. Fatal in a rehearsal too: it is not a PyPI answer
+    try:
+        tagged = Version(version)
+    except InvalidVersion:
+        tagged = None
+    if tagged is not None and tagged.is_devrelease:
+        print(
+            f"::error::tag `{args.tag}` names {dist} {version}, and "
+            f"{dist} {version} is a development version, which is never released; "
+            f"stamp the release on master first (`{bump_to(dist, tagged)}`, a release "
+            "pull request), then tag the merged commit"
+        )
+        return 1
+
+    # 2b. the tag's version is the version this tree builds
     declared = found[dist]["version"]
     if version != declared:
         print(

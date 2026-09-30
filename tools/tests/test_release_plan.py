@@ -438,6 +438,71 @@ def test_version_mismatch(workspace, capsys, offline, tag: str, said: str) -> No
     assert f"says acme-core {said}, but this tree builds 1.0.0" in out
 
 
+# --- a dev version is never a release ---------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("version", "release"),
+    [
+        ("1.0.0.dev0", "1.0.0"),
+        ("2.1.0rc1.dev3", "2.1.0rc1"),
+        ("1.0.0.post1.dev0", "1.0.0.post1"),
+    ],
+)
+@pytest.mark.parametrize("rehearsal", [False, True], ids=["tag", "rehearsal"])
+def test_a_tag_naming_a_dev_version_is_refused(
+    workspace, capsys, offline, version: str, release: str, rehearsal: bool
+) -> None:
+    """A dev version is by definition not a release: the tag is refused, and the fix named.
+
+    PyPI would take the upload -- a dev version is valid PEP 440 -- so nothing downstream
+    would stop it. The tree matching the tag is exactly the case this has to catch.
+    """
+    published(offline, {("acme-core", version): False})
+    root = workspace({"acme-core": {"version": version}})
+    args = ["--tag", f"acme-core-v{version}", *(["--rehearsal"] if rehearsal else [])]
+    assert run(root, *args) == 1
+    out = capsys.readouterr().out
+    assert f"acme-core {version} is a development version" in out
+    assert f"uv run poe bump acme-core --to {release}" in out
+
+
+def test_a_pre_release_tag_is_still_a_release(workspace, capsys, offline) -> None:
+    """`rc1` is a release (a pre-release one); only `.devN` is refused."""
+    published(offline, {("acme-core", "2.0.0rc1"): False})
+    root = workspace({"acme-core": {"version": "2.0.0rc1"}})
+    assert run(root, "--tag", "acme-core-v2.0.0rc1") == 0
+    assert "development version" not in capsys.readouterr().out
+
+
+def test_a_release_tag_against_a_dev_tree_is_a_version_mismatch(
+    workspace, capsys, offline
+) -> None:
+    root = workspace({"acme-core": {"version": "1.0.0.dev0"}})
+    assert run(root, "--tag", "acme-core-v1.0.0") == 1
+    assert (
+        "says acme-core 1.0.0, but this tree builds 1.0.0.dev0"
+        in capsys.readouterr().out
+    )
+
+
+def test_a_dev_tree_is_advised_to_bump_never_to_tag(workspace, capsys, offline) -> None:
+    """The planner never proposes a tag for a dev version; it prints the bump instead."""
+    history(offline, {"acme-core": [("aaa1111", "the feature")]})
+    root = workspace({"acme-core": {"version": "1.0.0.dev0"}})
+    assert run(root) == 0
+    out = capsys.readouterr().out
+    assert "1.0.0.dev0 is a development version, not a release" in out
+    assert "uv run poe bump acme-core --to 1.0.0" in out
+    assert "acme-core-v1.0.0.dev0" not in out
+    assert "aaa1111  the feature" in out
+    # the suggested sequence: the bump first, then the tag of the RELEASE it stamps
+    assert "1. after a bump: acme-core" in out
+    assert (
+        "tag:      git tag acme-core-v1.0.0 && git push origin acme-core-v1.0.0" in out
+    )
+
+
 # --- (3) not already published -----------------------------------------------------------
 
 
