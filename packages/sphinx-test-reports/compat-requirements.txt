@@ -8,8 +8,8 @@
 # here whose RUNTIME dependencies are optional. Its 2.0.0 release moved Sphinx and
 # sphinx-needs behind a `sphinx` extra -- so that the `test-reports` converter and the pytest
 # plugin install without a documentation toolchain -- and the compat cell installs a bare
-# wheel path with no extras. Measured on the built wheel: `Requires-Dist` is `lxml`, full
-# stop.
+# wheel path with no extras. Measured on the built wheel: `Requires-Dist` is `lxml` and
+# `ub-project`, full stop.
 #
 # Without these two lines the failure is LOUD rather than silent, which is the good case:
 # `release.yaml` runs the `import_check` walk BEFORE pytest, and that walk fails
