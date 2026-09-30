@@ -430,15 +430,13 @@ def test_command_line_override_beats_the_toml(
     assert app.config[f"src_trace_{key}"] == override
 
 
-def test_refused_outdir_override_leaves_the_default(
+def test_refused_outdir_override_keeps_the_toml_value(
     minimal_sphinx_project: Path,
     make_app: Callable[..., SphinxTestApp],
 ) -> None:
-    """A PIN of the measured cell, not an endorsement: Sphinx refuses
-    ``-D src_trace_outdir`` (its default is a ``Path``: "unsupported type") but keeps it
-    in ``config.overrides``, so the TOML's ``outdir`` is skipped as well and the default
-    stands. Inert for a build: the extension never reads ``src_trace_outdir`` (the CLI,
-    which does, has no ``-D``)."""
+    """Sphinx refuses ``-D src_trace_outdir`` (its default is a ``Path``: "unsupported
+    type") but keeps it in ``config.overrides``: an override that was never applied must
+    not suppress the TOML value."""
     (minimal_sphinx_project / "ubproject.toml").write_text(
         '[codelinks]\noutdir = "toml-out"\n', encoding="utf-8"
     )
@@ -448,7 +446,59 @@ def test_refused_outdir_override_leaves_the_default(
         confoverrides={"src_trace_outdir": "cli-out"},
     )
 
-    assert app.config.src_trace_outdir == Path("output")
+    assert app.config.src_trace_outdir == "toml-out"
+
+
+def test_not_overridable_from_d_is_exactly_what_sphinx_refuses(
+    minimal_sphinx_project: Path,
+    make_app: Callable[..., SphinxTestApp],
+) -> None:
+    """The keys exempt from the ``-D`` skip are exactly the codelinks confvals Sphinx
+    refuses to take from ``-D`` -- detected per confval by Sphinx's own
+    "cannot override ... 'src_trace_<key>'" warning, with a value ("1") every confval
+    Sphinx does accept can convert."""
+    from sphinx_codelinks.sphinx_extension.source_tracing import (
+        NOT_OVERRIDABLE_FROM_D,
+    )
+
+    refused = set()
+    for item in fields(CodeLinksConfig):
+        app = make_app(
+            srcdir=minimal_sphinx_project,
+            freshenv=True,
+            confoverrides={f"src_trace_{item.name}": "1"},
+        )
+        if any(
+            "cannot override" in warning and f"'src_trace_{item.name}'" in warning
+            for warning in build_warnings(app)
+        ):
+            refused.add(item.name)
+
+    assert refused == set(NOT_OVERRIDABLE_FROM_D)
+
+
+def test_override_of_one_key_leaves_the_other_toml_keys(
+    minimal_sphinx_project: Path,
+    make_app: Callable[..., SphinxTestApp],
+) -> None:
+    """``-D`` on one key skips that key only: the rest of ``[codelinks]`` still loads."""
+    (minimal_sphinx_project / "ubproject.toml").write_text(
+        "[codelinks]\n"
+        "set_local_url = true\n"
+        'local_url_field = "toml-url"\n'
+        "[codelinks.projects.tomlproj.source_discover]\n"
+        'src_dir = "./"\n',
+        encoding="utf-8",
+    )
+    app = make_app(
+        srcdir=minimal_sphinx_project,
+        freshenv=True,
+        confoverrides={"src_trace_set_local_url": False},
+    )
+
+    assert app.config.src_trace_set_local_url is False
+    assert app.config.src_trace_local_url_field == "toml-url"
+    assert list(app.config.src_trace_projects) == ["tomlproj"]
 
 
 def test_command_line_override_of_config_from_toml_beats_the_toml(
@@ -567,6 +617,77 @@ def test_corrupt_default_ubproject_toml_warns(
 
     assert app.config.src_trace_projects == {}
     _assert_one_config_warning(app, _LOAD_FAILED)
+
+
+@pytest.mark.parametrize(
+    ("name", "conf_extra"),
+    [
+        pytest.param("ubproject.toml", "", id="default"),
+        pytest.param(
+            "cl.toml", 'src_trace_config_from_toml = "cl.toml"\n', id="explicit"
+        ),
+    ],
+)
+def test_too_deeply_nested_toml_warns_naming_the_file(
+    minimal_sphinx_project: Path,
+    make_app: Callable[..., SphinxTestApp],
+    name: str,
+    conf_extra: str,
+) -> None:
+    """The TOML parser can fail with an exception ub-project does not wrap (a
+    ``RecursionError``): still one ``codelinks.config`` warning, naming the file since
+    Python's text does not, and the build completes."""
+    _write_conf(minimal_sphinx_project, conf_extra)
+    (minimal_sphinx_project / name).write_text(
+        "x = " + "[" * 5000 + "]" * 5000 + "\n", encoding="utf-8"
+    )
+    app = make_app(srcdir=minimal_sphinx_project, freshenv=True)
+    app.build()
+
+    _assert_one_config_warning(app, _LOAD_FAILED)
+    assert name in build_warnings(app)[0]
+
+
+def test_explicit_toml_syntax_error_names_the_file_once(
+    minimal_sphinx_project: Path,
+    make_app: Callable[..., SphinxTestApp],
+) -> None:
+    """ub-project's message already names the file; the warning does not repeat it."""
+    _write_conf(minimal_sphinx_project, 'src_trace_config_from_toml = "cl.toml"\n')
+    _syntax_error(minimal_sphinx_project / "cl.toml")
+    app = make_app(srcdir=minimal_sphinx_project, freshenv=True)
+    app.build()
+
+    _assert_one_config_warning(app, _LOAD_FAILED)
+    assert build_warnings(app)[0].count("cl.toml") == 1
+
+
+@pytest.mark.parametrize(
+    "state",
+    [
+        pytest.param(None, id="missing"),
+        pytest.param(
+            lambda path: path.write_text("[needs]\n", encoding="utf-8"),
+            id="no-codelinks-table",
+        ),
+    ],
+)
+def test_default_name_written_in_conf_py_is_still_the_default(
+    minimal_sphinx_project: Path,
+    make_app: Callable[..., SphinxTestApp],
+    state: Callable[[Path], object] | None,
+) -> None:
+    """``src_trace_config_from_toml = "ubproject.toml"`` names the shared default: absent
+    or without ``[codelinks]`` it is silent, as when the name is left unset."""
+    _write_conf(
+        minimal_sphinx_project, 'src_trace_config_from_toml = "ubproject.toml"\n'
+    )
+    if state is not None:
+        state(minimal_sphinx_project / "ubproject.toml")
+    app = make_app(srcdir=minimal_sphinx_project, freshenv=True)
+    app.build()
+
+    assert_no_warnings(app)
 
 
 def test_explicit_toml_without_codelinks_table_warns(

@@ -486,6 +486,8 @@ def test_analyse_toml_syntax_error_shows_the_reason(tmp_path: Path) -> None:
 
     assert exit_code == 2
     assert _normalize_output(str(parse_error.value)) in output
+    # ub-project's own words, not the catch-all's
+    assert "Failed to load" not in output
 
 
 @pytest.mark.parametrize(
@@ -501,6 +503,7 @@ def test_analyse_codelinks_not_a_table(
     assert exit_code == 2
     assert f"[codelinks] must be a table, got {type_name}" in output
     assert "No 'codelinks' section" not in output
+    assert "Failed to load" not in output
 
 
 @pytest.mark.parametrize(
