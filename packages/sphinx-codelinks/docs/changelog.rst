@@ -59,6 +59,13 @@ New and Improved
   Sphinx-Needs workspace declares and type-checks against. There is no upper bound: Sphinx
   caps docutils per series itself.
 
+- 🐛 ``src_trace_projects`` declared directly in ``conf.py`` are normalised before
+  ``src-trace`` reads them.
+
+  Projects configured without ``ubproject.toml`` now get the same typed
+  ``source_discover_config`` and ``analyse_config`` objects as TOML-backed projects, so a
+  ``src-trace`` directive no longer fails with ``KeyError: 'source_discover_config'``.
+
 - 🐛 ``sphinx_codelinks.__version__`` reported ``"0.1.0"``.
 
   It had said so since the first commit, through seven releases, while the distribution

@@ -795,6 +795,32 @@ def _traced_project(root: Path, conf_extra: str, files: dict[str, str]) -> None:
 _PROJECT_P = '[codelinks.projects.p.source_discover]\nsrc_dir = "./src"\ncomment_type = "python"\n'
 
 
+def test_conf_py_projects_are_normalized_for_src_trace(
+    tmp_path: Path,
+    make_app: Callable[..., SphinxTestApp],
+) -> None:
+    """Projects declared in ``conf.py`` get the same typed config as TOML projects."""
+    _traced_project(
+        tmp_path,
+        "src_trace_config_from_toml = None\n"
+        "src_trace_projects = {\n"
+        "    'p': {\n"
+        "        'source_discover': {\n"
+        "            'src_dir': './src',\n"
+        "            'comment_type': 'python',\n"
+        "        },\n"
+        "        'analyse': {},\n"
+        "    },\n"
+        "}\n",
+        {"src/a.py": _MARKER.format(tag="CONFPY")},
+    )
+    app = make_app(srcdir=tmp_path, freshenv=True)
+    app.build()
+
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    assert "IMPL_CONFPY" in html
+
+
 def test_symlinked_toml_anchors_at_the_links_directory(
     tmp_path: Path,
     make_app: Callable[..., SphinxTestApp],
