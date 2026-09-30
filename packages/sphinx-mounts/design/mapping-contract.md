@@ -383,7 +383,7 @@ or repurposed without a breaking release.
 | `mounts.toctree_index` | `toctree_index` exceeds the toctrees present | mount left unwired, its docs marked orphan |
 | `mounts.unknown_key` | a mount entry or a `variant_sources` entry carries an unmodelled key (§4), or the `[variants]` table does (§12.6) | reported only; the key is ignored |
 | `mounts.unknown_suffix` | a listed file has no registered suffix | whole mount skipped |
-| `mounts.variant_data_location` | sphinx-needs absent, and the variant data is set both in `[variants]` and in the legacy `[needs]` keys (§12.6) | reported once per ignored `[needs]` key; `[variants]` is read |
+| `mounts.variant_data_location` | sphinx-needs absent (not installed, or not in `extensions`), and the variant data is set both in `[variants]` and in the legacy `[needs]` keys (§12.6) | reported once per ignored `[needs]` key; `[variants]` is read |
 | `mounts.variant_rule_dropped` | a variant rule lists no files (§12) | rule dropped; document set unchanged |
 | `mounts.variant_rule_unevaluable` | a rule's or a mount's condition cannot be evaluated (§12, §13) | reported **and** what it gates is excluded |
 
@@ -751,7 +751,7 @@ a build, failing open is the one outcome that must not be possible.
 | `mounts.variant_glob_dialect` | a glob that is EMPTY or ends with a path separator; uses `{a,b}` alternation; climbs with `..`; is an absolute path; carries a `?` beside a separator; or carries more than six zero-widening `**` components. Every test runs against the pattern with its `[...]` character classes blanked out, because a `?` or a `{` inside a class is a literal character in all three engines |
 | `mounts.variant_layout` | rules are declared but the source root they anchor at is not `srcdir` (§12.7) |
 | `mounts.variant_root_doc` | a rule that is false for this variant would exclude `root_doc` |
-| `mounts.variant_data_unreadable` | the variant data this reader reads (§12.6) is malformed — a `variants` or `needs` key, or a key inside them, of the wrong type, or a data file that is missing or not valid variant data — and nothing else will stop the build for it; or sphinx-needs is present and resolved an EMPTY map for a file that declares variant data, because it is not pointed at this file or does not read `[variants]` (§12.6) |
+| `mounts.variant_data_unreadable` | the variant data this reader reads (§12.6) is malformed — a `variants` or `needs` key, or a key inside them, of the wrong type, or a data file that is missing or not valid variant data — and nothing else will stop the build for it; or sphinx-needs is present and resolved an EMPTY map for a file that declares variant data, because it is not pointed at this file or did not read `[variants]` (§12.6); or `needs_variant_data_file` is not a path at all |
 
 The one **safe** drop is an empty `files` list (`mounts.variant_rule_dropped`):
 a rule that named nothing has nothing to leak, so dropping it leaves the
@@ -1011,7 +1011,8 @@ alone.
 Which map is used depends on sphinx-needs, and is decided from the config alone
 — no import, no version gate:
 
-- **sphinx-needs absent** (its confvals are not registered): `ub-project` reads
+- **sphinx-needs absent** (its confvals are not registered: not installed, or not in
+  `extensions`): `ub-project` reads
   the file, and its findings are reported here — `mounts.variant_data_location`
   for a `[needs]` key ignored because `[variants]` is set,
   `mounts.unknown_key` for an unknown key in `[variants]`, and a `-v` line for
@@ -1027,13 +1028,21 @@ Which map is used depends on sphinx-needs, and is decided from the config alone
   not reported: sphinx-needs reports on the file it reads) only to decide
   whether the empty map is a loss, which is refused as
   `mounts.variant_data_unreadable` when the file declares variant data and
-  sphinx-needs is not pointed at it — or is pointed at it, the file's
-  `[variants]` yields a non-empty map, and no `needs_variant_data*` value was
-  set with `-D`: a sphinx-needs that reads `[variants]` either refuses the table
-  or resolves exactly its map, so that cell is reachable only by one that does
-  not read it (every release before 9.0.0, or one scoped to
-  `[<prefix>.variants]`). Both locations set with a sphinx-needs before 9.0.0 is
-  not caught: both tools then use `[needs]`.
+  sphinx-needs is not pointed at it — or is pointed at it and the file's
+  `[variants]` yields a non-empty map. When sphinx-needs is pointed at this
+  file, the file is read as sphinx-needs read it: a key overridden with `-D`
+  (bare or `needs_`-prefixed, exact names) is removed from both locations first,
+  exactly as sphinx-needs removes it, so an override can neither make that cell
+  fire nor hide a `[variants]` table an old sphinx-needs never read; a file
+  sphinx-needs is not reading keeps every declaration. The cell is reachable only
+  by a sphinx-needs that did not READ the table — because it predates 9.0.0,
+  because it abandoned the file on a `[needs]` error before reaching `[variants]`,
+  or because `needs_from_toml_table` scopes it to `[<prefix>.variants]`. A
+  `needs_variant_data_file` that is not a path (sphinx-needs 8.3.1 copies the
+  TOML's value unvalidated) is refused too, never stood down on. Both locations
+  set with a sphinx-needs before 9.0.0 is
+  not caught — both tools then use `[needs]` — unless a `-D` empties the `[needs]`
+  map, when the cell above reads `[variants]` and refuses.
 
 A second reader may take the same route or depend on sphinx-needs; it must not
 do both halfway.

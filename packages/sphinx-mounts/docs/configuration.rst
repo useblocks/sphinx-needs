@@ -1188,8 +1188,9 @@ than depending on Sphinx-Needs, so the rules work whether or not Sphinx-Needs is
 installed. When it *is* installed, its own resolved map is used instead, so the
 two tools cannot disagree about which documents exist.
 
-**What is reported, and when.** Only when Sphinx-Needs is not installed: when it
-is, it reports on the file it reads, and a second report would be noise.
+**What is reported, and when.** Only when Sphinx-Needs is not installed, or is
+installed but not in ``extensions``: when it is loaded, it reports on the file it
+reads, and a second report would be noise.
 
 - Both locations set: one ``mounts.variant_data_location`` warning per ignored
   ``[needs]`` key.
@@ -1204,7 +1205,7 @@ a table, a ``data`` that is not a table, a ``data_file`` that is not one
 non-empty path, or a data file that is missing or does not hold valid variant
 data fails the build (``mounts.variant_data_unreadable``) whenever sphinx-mounts
 reads the variant data — that is, when the file declares a variant-gating key and
-Sphinx-Needs is not installed or resolved an empty map.
+Sphinx-Needs is not loaded or resolved an empty map.
 
 .. note::
 
@@ -1217,23 +1218,34 @@ Sphinx-Needs is not installed or resolved an empty map.
    **refused**, not merely warned about, when this file declares variant data
    in either location: the map would be empty, every rule would report an
    unknown key and exclude, and the whole gated document set would disappear.
-   The message names the one-line fix. A project that supplies the map from
-   ``conf.py`` or ``-D`` instead is unaffected — its map is not empty.
+   The message names the one-line fix. A project that supplies a non-empty map
+   from ``conf.py`` or ``-D`` instead is unaffected; an EMPTY ``conf.py`` map
+   beside a non-empty ``[variants]`` is refused on a Sphinx-Needs before 9.0.0
+   (it never read the table), as below.
 
-   The same holds for a Sphinx-Needs that **is** pointed at this file but does
-   not read its ``[variants]`` table: every release before 9.0.0, or any
-   release whose ``needs_from_toml_table`` sends it to ``[<prefix>.variants]``.
-   It resolves an empty map where the file yields a non-empty one, and the
-   build is refused with a message naming the cause and the fix — upgrade
-   Sphinx-Needs, or keep the two keys in ``[needs]`` until you can; or move the
-   table under the prefix. A ``-D needs_variant_data_file=…`` (or any other
-   ``needs_variant_data`` override) exempts the build from this check, because
-   an override can legitimately empty the map the file fills.
+   The same holds for a Sphinx-Needs that **is** pointed at this file but did
+   not read its ``[variants]`` table: a release before 9.0.0 does not read it, a
+   later one does not when it could not load the file's ``[needs]`` table (its
+   ``needs.config`` warning says why), and any release whose
+   ``needs_from_toml_table`` sends it to ``[<prefix>.variants]`` reads that one
+   instead. It resolves an empty map where the file yields a non-empty one, and
+   the build is refused with a message naming the cause and the fix — upgrade
+   Sphinx-Needs and fix any ``[needs]`` error it reports, or keep the two keys in
+   ``[needs]`` until you can; or move the table under the prefix. When
+   Sphinx-Needs is pointed at this file, a key overridden with ``-D``
+   (``needs_variant_data_file`` or ``variant_data_file``, ``needs_variant_data``
+   or ``variant_data``) is removed from both locations before the check reads
+   the file, exactly as Sphinx-Needs removes it; an override therefore cannot
+   make this check fire, and cannot hide a ``[variants]`` table an old
+   Sphinx-Needs never read. A file Sphinx-Needs is not reading keeps every
+   declaration.
 
    One mid-migration shape is not caught: **both** locations set, and a
    Sphinx-Needs before 9.0.0 pointed at the file. Both tools then use
    ``[needs]``, and ``[variants]`` is lost with no more than the per-rule
-   warnings. Finish the move, or require Sphinx-Needs 9.0.0 or later.
+   warnings — unless a ``-D`` empties the ``[needs]`` map, in which case the
+   check above reads ``[variants]`` and refuses. Finish the move, or require
+   Sphinx-Needs 9.0.0 or later.
 
    The sibling corner has no diagnostic and is worth knowing about:
    :ref:`sources-from-toml` and ``needs_from_toml`` may point at **different
@@ -1827,7 +1839,8 @@ at once), and escalated to a failed build:
      - a file-list entry has no extension registered in
        ``source_suffix``; the whole mount is skipped
    * - ``mounts.variant_data_location``
-     - Sphinx-Needs is not installed, and ``ubproject.toml`` sets the variant
+     - Sphinx-Needs is not installed or not in ``extensions``, and
+       ``ubproject.toml`` sets the variant
        data both in ``[variants]`` and in the legacy ``[needs]`` keys;
        ``[variants]`` is read, and each ignored ``[needs]`` key is reported
    * - ``mounts.variant_rule_dropped``
@@ -1849,7 +1862,7 @@ or a key inside them, of the wrong type, or a data file that is missing or not
 valid variant data — and nothing else will stop the build for it; or
 Sphinx-Needs is installed and resolved an empty map for a file that declares
 variant data, because it was never pointed at this file, reads another one, or
-does not read ``[variants]``). Two more mark an **INFO** record rather than a
+did not read ``[variants]``; or ``needs_variant_data_file`` is not a path at all). Two more mark an **INFO** record rather than a
 warning: ``mounts.variant_excluded_reference``, the :ref:`downgraded toctree
 reference <variant-sources>`, and ``mounts.mount_gated``, the record of a
 :ref:`gated-off mount <mount-gating>`.
