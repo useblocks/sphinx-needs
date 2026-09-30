@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import os
+import sys
 import textwrap
 from pathlib import Path
 
@@ -288,6 +290,32 @@ def test_variant_data_file_missing_fails_at_application_creation(
 
 #: A ``file_content`` that makes the data file a directory.
 _DIRECTORY = object()
+#: A ``file_content`` that makes the data file one that cannot be read.
+_UNREADABLE = object()
+#: A data file holding an integer beyond Python's int-string conversion limit.
+_HUGE_INT = b'{"x": ' + b"1" * 5000 + b"}"
+
+_SKIP_UNLESS_CHMOD_WORKS = [
+    pytest.mark.skipif(
+        hasattr(os, "geteuid") and os.geteuid() == 0,
+        reason="root reads a file whatever its permissions",
+    ),
+    pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="os.chmod on Windows only sets the read-only attribute; the file stays readable",
+    ),
+]
+
+
+def _write_data_file(path: Path, file_content: object) -> None:
+    """Write the data file: ``None`` leaves it missing, a sentinel shapes it."""
+    if file_content is _DIRECTORY:
+        path.mkdir()
+    elif file_content is _UNREADABLE:
+        path.write_text("{}", encoding="utf-8")
+        path.chmod(0o000)
+    elif isinstance(file_content, bytes):
+        path.write_bytes(file_content)
 
 
 @pytest.mark.parametrize(
@@ -302,14 +330,22 @@ _DIRECTORY = object()
             "byte 0xff in position 7: invalid start byte",
             id="non_utf8",
         ),
+        pytest.param(
+            _UNREADABLE,
+            "variant data file {file} cannot be read: [Errno 13] Permission denied: "
+            "'{file}'",
+            id="noperm",
+            marks=_SKIP_UNLESS_CHMOD_WORKS,
+        ),
     ],
 )
 def test_unreadable_variant_data_file_is_a_config_error(
     tmp_path, make_app, file_content, expected
 ):
-    """A directory, or a file that is not UTF-8, is a ``NeedsConfigException`` naming
-    the file, like every other bad data file; both used to escape as a raw
-    ``ExtensionError`` wrapping an ``OSError`` or a ``UnicodeDecodeError``."""
+    """A directory, a file that is not UTF-8, or one that cannot be read, is a
+    ``NeedsConfigException`` naming the file, like every other bad data file; all three
+    used to escape as a raw ``ExtensionError`` wrapping an ``OSError`` or a
+    ``UnicodeDecodeError``."""
     srcdir = tmp_path / "src"
     srcdir.mkdir()
     (srcdir / "conf.py").write_text(
@@ -317,16 +353,66 @@ def test_unreadable_variant_data_file_is_a_config_error(
         encoding="utf-8",
     )
     (srcdir / "index.rst").write_text("Title\n=====\n", encoding="utf-8")
-    if file_content is _DIRECTORY:
-        (srcdir / "vd.json").mkdir()
-    else:
-        (srcdir / "vd.json").write_bytes(file_content)
+    _write_data_file(srcdir / "vd.json", file_content)
 
     with pytest.raises(NeedsConfigException) as excinfo:
         make_app(srcdir=srcdir, freshenv=True)
 
     assert str(excinfo.value) == expected.format(file=srcdir / "vd.json")
     assert isinstance(excinfo.value.__cause__, ProjectConfigError)
+
+
+def test_variant_data_file_with_an_oversized_integer_is_a_config_error(
+    tmp_path, make_app
+):
+    """An integer beyond Python's int-string conversion limit is a ``ValueError`` that
+    ub_project lets through unwrapped (#1995); the resolver re-raises it as a
+    ``NeedsConfigException``, rather than a raw ``ExtensionError``, and in the same
+    words as the toml route -- which, as ub_project names neither the file nor the
+    table here, carry no prefix on either route."""
+    srcdir = tmp_path / "src"
+    srcdir.mkdir()
+    (srcdir / "index.rst").write_text("Title\n=====\n", encoding="utf-8")
+    (srcdir / "ubproject.toml").write_text(
+        '[variants]\ndata_file = "vd.json"\n', encoding="utf-8"
+    )
+    _write_data_file(srcdir / "vd.json", _HUGE_INT)
+
+    messages = []
+    for conf in (
+        'needs_variant_data_file = "vd.json"',
+        'needs_from_toml = "ubproject.toml"',
+    ):
+        (srcdir / "conf.py").write_text(
+            f'extensions = ["sphinx_needs"]\n{conf}\n', encoding="utf-8"
+        )
+        with pytest.raises(NeedsConfigException) as excinfo:
+            make_app(srcdir=srcdir, freshenv=True)
+        assert isinstance(excinfo.value.__cause__, ValueError)
+        messages.append(str(excinfo.value))
+
+    conf_message, toml_message = messages
+    assert conf_message.startswith("Exceeds the limit"), conf_message
+    assert toml_message == conf_message
+
+
+def test_invalid_inline_variant_data_without_a_file_fails_the_build(tmp_path, make_app):
+    """Inline data is validated when no data file is set, too."""
+    srcdir = tmp_path / "src"
+    srcdir.mkdir()
+    (srcdir / "conf.py").write_text(
+        'extensions = ["sphinx_needs"]\nneeds_variant_data = {"x": None}\n',
+        encoding="utf-8",
+    )
+    (srcdir / "index.rst").write_text("Title\n=====\n", encoding="utf-8")
+
+    with pytest.raises(NeedsConfigException) as excinfo:
+        make_app(srcdir=srcdir, freshenv=True)
+
+    assert str(excinfo.value) == (
+        "var.x: a value must be a str, bool, int or float, an array or a table, "
+        "got NoneType"
+    )
 
 
 @pytest.mark.parametrize(
@@ -376,6 +462,7 @@ def test_empty_variant_data_file_means_no_file(tmp_path, make_app, conf, confove
         pytest.param(b'{"x": "\xff"}', id="non_utf8"),
         pytest.param(b"", id="empty"),
         pytest.param(_DIRECTORY, id="directory"),
+        pytest.param(_UNREADABLE, id="noperm", marks=_SKIP_UNLESS_CHMOD_WORKS),
     ],
 )
 def test_bad_variant_data_file_reads_the_same_on_both_routes(
@@ -389,10 +476,7 @@ def test_bad_variant_data_file_reads_the_same_on_both_routes(
     (srcdir / "ubproject.toml").write_text(
         '[variants]\ndata_file = "vd.json"\n', encoding="utf-8"
     )
-    if file_content is _DIRECTORY:
-        (srcdir / "vd.json").mkdir()
-    elif isinstance(file_content, bytes):
-        (srcdir / "vd.json").write_bytes(file_content)
+    _write_data_file(srcdir / "vd.json", file_content)
 
     messages = []
     for conf in (
