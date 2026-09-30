@@ -3,6 +3,16 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+- **``[variants]`` under a consumer's prefix.** ``read_variants`` takes
+  ``variants_table``, the path of ``[variants]`` as ``needs_table`` is the path of
+  ``[needs]``, so a consumer that nests its configuration (``[tool.acme.needs]`` in a
+  ``pyproject.toml``, where a top-level ``[variants]`` is not allowed) reads
+  ``[tool.acme.variants]`` beside it; diagnostic paths and messages name the table there.
+  The default, and every existing call, is unchanged.
+
 .. _`release:1.0.0`:
 
 1.0.0

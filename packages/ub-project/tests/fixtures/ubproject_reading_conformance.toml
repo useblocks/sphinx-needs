@@ -19,9 +19,10 @@
 # Rules for every runner:
 #   - a case writes only inside its own directory: a `files` key or `toml_path` that would
 #     land outside it (`../x.json`) is a broken case, and the runner refuses it
-#   - a case carrying `needs_table` is PYTHON-ONLY: it describes a consumer that nests its
-#     `[needs]` table under a prefix, which ubCode cannot express (its `[needs]` is always
-#     top-level). ubCode's runner skips those cases
+#   - a case carrying `needs_table` OR `variants_table` is PYTHON-ONLY: it describes a
+#     consumer that nests its `[needs]` (or `[variants]`) table under a prefix, which
+#     ubCode cannot express (both of its tables are always top-level). ubCode's runner
+#     skips those cases
 #   - diagnostic codes are compared as the BARE subcode below. ubCode's diagnostics are to
 #     carry them under its `config.` prefix (`config.variant_data_location`; its
 #     variant-data diagnostics carry no code today); its runner strips `config.` before
@@ -57,6 +58,9 @@
 #   files        - optional; other files, relative to the case directory, and their text
 #   needs_table  - optional; the dotted path of the legacy table. Default "needs".
 #                  Python-only (see the rules above)
+#   variants_table
+#                - optional; the dotted path of the `[variants]` table. Default
+#                  "variants". Python-only (see the rules above)
 #   [case.expect]
 #     error             - true when the reader must REFUSE the input: every other
 #                         expectation is then absent. A refusal's message is not compared
@@ -476,7 +480,7 @@ diagnostics = []
 
 [[case]]
 name = "prefix-with-variants-set"
-why = "[variants] stays top-level whatever the prefix, and wins over the prefixed legacy keys"
+why = "a consumer that prefixes only the legacy table reads [variants] at the top level, where it wins over the prefixed legacy keys"
 needs_table = "tool.acme.needs"
 toml = '''
 [variants.data]
@@ -487,6 +491,48 @@ edition = "base"
 [case.expect]
 variant_data = { edition = "pro" }
 diagnostics = [{ code = "variant_data_location", path = "tool.acme.needs.variant_data" }]
+
+[[case]]
+name = "prefix-with-prefixed-variants"
+why = "a consumer that prefixes both tables reads [variants] under the prefix, where it wins over the prefixed legacy keys"
+needs_table = "tool.acme.needs"
+variants_table = "tool.acme.variants"
+toml = '''
+[tool.acme.variants.data]
+edition = "pro"
+[tool.acme.needs.variant_data]
+edition = "base"
+'''
+[case.expect]
+variant_data = { edition = "pro" }
+diagnostics = [{ code = "variant_data_location", path = "tool.acme.needs.variant_data" }]
+
+[[case]]
+name = "prefix-ignores-a-top-level-variants"
+why = "with a prefixed variants_table, a top-level [variants] table is someone else's and is not read"
+needs_table = "tool.acme.needs"
+variants_table = "tool.acme.variants"
+toml = '''
+[variants.data]
+edition = "pro"
+'''
+[case.expect]
+variant_data = {}
+diagnostics = []
+
+[[case]]
+name = "prefix-unknown-key-path-carries-the-prefix"
+why = "an unknown key in a prefixed [variants] table is reported at its path under the prefix"
+needs_table = "tool.acme.needs"
+variants_table = "tool.acme.variants"
+toml = '''
+[tool.acme.variants]
+data = {}
+bogus = 1
+'''
+[case.expect]
+variant_data = {}
+diagnostics = [{ code = "variants_unknown_key", path = "tool.acme.variants.bogus" }]
 
 [[case]]
 name = "prefix-segment-not-a-table"
