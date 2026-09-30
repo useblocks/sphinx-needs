@@ -11,6 +11,7 @@ Improvements
 ............
 
 - ✨ The :ref:`if <if>` directive gains :ref:`elif <elif>` and :ref:`else <else>` branches
+  (:pr:`1999`)
 
   An ``if`` may now be followed by any number of ``elif`` branches and one ``else``, as
   in Python. At most one branch of such a chain is included, and the others are never
