@@ -667,7 +667,9 @@ def _load_variants_from_toml(
             doc, toml_file, needs_table=needs_table, variants_table=variants_table
         )
     except (ProjectConfigError, ValueError) as error:
-        # ValueError: a table path ub_project refuses, an empty needs_from_toml_table entry
+        # ValueError: a table path ub_project refuses (an empty needs_from_toml_table
+        # entry), and any it lets through unwrapped -- a data file holding an integer
+        # beyond Python's conversion limit, until ub-project names the file itself (#1995)
         raise NeedsConfigException(str(error)) from error
 
     for diagnostic in result.diagnostics:

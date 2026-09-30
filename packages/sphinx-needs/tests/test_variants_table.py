@@ -168,16 +168,32 @@ def test_only_a_missing_needs_table_goes_on_to_variants(build, toml, message):
     assert app.config.needs_id_required is False
 
 
-def test_a_deeply_nested_toml_only_warns(build, tmp_path):
-    """``tomllib`` gives up on deep nesting with a ``RecursionError``, which ``load_toml``
-    does not wrap; it is a warning, like every other TOML that cannot be parsed."""
-    depth = 3000
-    app = build(
-        {"conf.py": TOML_CONF, "ubproject.toml": f"x = {'[' * depth}{']' * depth}\n"}
-    )
+@pytest.mark.parametrize(
+    ("toml", "message"),
+    [
+        pytest.param(
+            f"x = {'[' * 3000}{']' * 3000}\n",
+            "maximum recursion depth exceeded",
+            id="deeply-nested",
+        ),
+        # two different exception classes, so that the catch cannot be narrowed to
+        # the one the other case raises
+        pytest.param(
+            f"x = {'1' * 5000}\n",
+            "Exceeds the limit (4300 digits) for integer string conversion: "
+            "value has 5000 digits; use sys.set_int_max_str_digits() to increase "
+            "the limit",
+            id="integer-limit",
+        ),
+    ],
+)
+def test_an_unparseable_toml_only_warns_whatever_the_error(build, toml, message):
+    """``tomllib`` can fail with a ``RecursionError`` (deep nesting) or a ``ValueError``
+    (Python's integer-conversion limit), neither of which ``load_toml`` wraps; each is a
+    warning, like every other TOML that cannot be parsed."""
+    app = build({"conf.py": TOML_CONF, "ubproject.toml": toml})
     assert build_warnings(app) == [
-        "WARNING: Error loading 'needs_from_toml' file: "
-        "maximum recursion depth exceeded [needs.config]"
+        f"WARNING: Error loading 'needs_from_toml' file: {message} [needs.config]"
     ]
 
 
@@ -308,6 +324,7 @@ def test_an_empty_prefix_segment_is_a_configuration_error(make_app, tmp_path):
     assert str(excinfo.value) == (
         "invalid table path ('', 'needs'): expected one or more non-empty segments"
     )
+    assert isinstance(excinfo.value.__cause__, ValueError)
 
 
 # --- both locations, the legacy location, unknown keys --------------------------------
