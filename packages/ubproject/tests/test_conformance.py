@@ -28,7 +28,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "ubproject_reading_conformanc
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 55
+EXPECTED_CASE_COUNT = 56
 
 #: The placeholder a case's ``toml`` uses for the absolute path of its own directory.
 CASE_DIR = "{case_dir}"
@@ -80,18 +80,52 @@ def test_the_corpus_header_records_where_it_is_canonical() -> None:
     assert "THIS copy is CANONICAL" in header
 
 
-@pytest.mark.parametrize("case", CASES, ids=[case["name"] for case in CASES])
-def test_case(case: dict[str, Any], tmp_path: Path) -> None:
-    case_dir = tmp_path
+def _inside(case_dir: Path, relative: str) -> Path:
+    """The case-directory path for *relative*, refusing one that would land outside it.
+
+    The header's rule for every runner: a case writes only inside its own directory, so a
+    typo such as ``../x.json`` is a broken case, not a file written somewhere else.
+    """
+    path = case_dir.joinpath(*relative.split("/"))
+    if not path.resolve().is_relative_to(case_dir.resolve()):
+        msg = f"{relative!r} is outside the case directory"
+        raise AssertionError(msg)
+    return path
+
+
+def _write_case(case: dict[str, Any], case_dir: Path) -> Path:
+    """Write the case's files and its TOML; return the TOML's path."""
     for relative, text in case.get("files", {}).items():
-        path = case_dir.joinpath(*relative.split("/"))
+        path = _inside(case_dir, relative)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text, encoding="utf-8")
-    toml_path = case_dir.joinpath(*case.get("toml_path", "ubproject.toml").split("/"))
+    toml_path = _inside(case_dir, case.get("toml_path", "ubproject.toml"))
     toml_path.parent.mkdir(parents=True, exist_ok=True)
     toml_path.write_text(
         case["toml"].replace(CASE_DIR, case_dir.as_posix()), encoding="utf-8"
     )
+    return toml_path
+
+
+@pytest.mark.parametrize(
+    "escape",
+    [{"files": {"../x.json": "{}"}}, {"toml_path": "../ubproject.toml"}],
+    ids=["files", "toml_path"],
+)
+def test_a_case_cannot_write_outside_its_directory(
+    escape: dict[str, Any], tmp_path: Path
+) -> None:
+    case_dir = tmp_path / "case"
+    case_dir.mkdir()
+    with pytest.raises(AssertionError, match="outside the case directory"):
+        _write_case({"toml": "", **escape}, case_dir)
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["case"]
+
+
+@pytest.mark.parametrize("case", CASES, ids=[case["name"] for case in CASES])
+def test_case(case: dict[str, Any], tmp_path: Path) -> None:
+    case_dir = tmp_path
+    toml_path = _write_case(case, case_dir)
     expect = case["expect"]
     needs_table = case.get("needs_table", "needs")
 

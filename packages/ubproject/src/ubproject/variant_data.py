@@ -1,16 +1,23 @@
 """Variant data: validate it, load it from a JSON file, merge it, resolve it.
 
-The ONE copy of these four functions for the sphinx-needs family. Until this package,
-sphinx-needs and sphinx-mounts each carried their own (mounts' existed so that it would
-never depend on sphinx-needs), and they differed in two places, both ruled here:
+The one copy of these four functions for the sphinx-needs family, to replace the copies
+sphinx-needs and sphinx-mounts carry once they adopt it (mounts' copy exists so that it
+never depends on sphinx-needs). Measured, the two copies differ in five places, and this
+one takes a side on each:
 
 * :func:`resolve_variant_data` always returns a FRESH merged mapping -- never one of its
-  arguments -- so that it is a pure function a consumer can store and change freely at the
-  top level;
+  arguments -- so that a consumer can store and change it freely at the top level
+  (mounts' behaviour; sphinx-needs handed back the inline object when there was no file);
 * the error wording is the set below, each message naming the dotted path (``var.a.b``)
-  and the rule it broke.
-
-Every failure is an :class:`~ubproject.project.UbprojectError`.
+  and the rule it broke;
+* every failure to load the file is an :class:`~ubproject.project.UbprojectError`
+  (mounts'; sphinx-needs let ``OSError`` and ``UnicodeDecodeError`` escape);
+* an empty path is not "no file": the API takes ``Path | None``, and ``""`` names nothing
+  (mounts'; sphinx-needs read ``""`` as no file -- on the ``conf.py``/``-D`` route BOTH
+  consumers do, so a consumer maps ``""`` to ``None`` before calling this);
+* :func:`deep_merge` returns plain ``dict`` s at every level it builds, where both copies
+  returned the input's own mapping type (``.copy()``) -- unobservable through TOML or JSON,
+  which only produce plain dicts.
 """
 
 from __future__ import annotations
@@ -86,6 +93,9 @@ def load_variant_data_file(path: Path | str) -> dict[str, Any]:
         hold a JSON object, or holds one of the wrong shape.
     """
     file = Path(path)
+    if file.is_dir():
+        msg = f"variant data file {file} is a directory"
+        raise UbprojectError(msg)
     if not file.is_file():
         msg = f"variant data file not found: {file}"
         raise UbprojectError(msg)
@@ -120,8 +130,9 @@ def deep_merge(base: Mapping[str, Any], override: Mapping[str, Any]) -> dict[str
     ``deep_merge(base, deep_merge(base, override)) == deep_merge(base, override)`` -- so
     re-merging an already-merged map is a no-op.
 
-    Neither argument is modified. The result is a new mapping at every level the merge
-    recursed into; a value taken whole from one side is that side's object, not a copy.
+    Neither argument is modified, and the result is a new mapping at every level the merge
+    recursed into. (Not a contract, and not something a second reader can reproduce: a
+    value taken whole from one side is, in this implementation, that side's object.)
     """
     result = dict(base)
     for key, value in override.items():

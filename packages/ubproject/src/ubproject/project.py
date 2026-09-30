@@ -2,7 +2,7 @@
 
 **Nothing in this package may import Sphinx, docutils or any other distribution** -- only
 the standard library. The file describes a project to tools that run with no documentation
-toolchain installed (a converter, a build action, ubCode's own Python-side tests), and a
+toolchain installed (a converter, a build action, a CI step that only reads the file), and a
 shared reader that pulled Sphinx in would take that away from all of them at once.
 
 What this module deliberately does NOT decide is policy. Whether a consumer walks up to
@@ -15,6 +15,8 @@ a logger.
 
 from __future__ import annotations
 
+import json
+import re
 import tomllib
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
@@ -40,6 +42,9 @@ _ROOT_MARKERS = (".git",)
 #: above it. The distribution root is the outermost thing that still belongs to such a
 #: tree.
 _DIST_MARKERS = ("pyproject.toml",)
+
+#: A TOML bare key; any other key is written quoted (:func:`render_path`).
+_BARE_KEY = re.compile(r"[A-Za-z0-9_-]+")
 
 #: ``tomllib.TOMLDecodeError`` bound through an annotation, so that the ``except`` clause
 #: below is typed as precisely as everything else in the module.
@@ -131,7 +136,7 @@ def load_toml(path: Path) -> dict[str, object]:
     A missing file is a failure here too: whether an absent file is fine is the
     consumer's decision, taken before it calls this.
 
-    :raises UbprojectError: If the file cannot be read or is not valid TOML.
+    :raises UbprojectError: If the file cannot be read, is not UTF-8, or is not valid TOML.
     """
     try:
         with path.open("rb") as handle:
@@ -140,10 +145,27 @@ def load_toml(path: Path) -> dict[str, object]:
     except _TOML_DECODE_ERROR as error:
         msg = f"{path}: invalid TOML: {error}"
         raise UbprojectError(msg) from error
+    except UnicodeDecodeError as error:
+        # tomllib decodes the bytes itself, and a file saved in another encoding raises
+        # neither of the two errors around it
+        msg = f"{path}: not valid UTF-8 TOML: {error}"
+        raise UbprojectError(msg) from error
     except OSError as error:
         msg = f"{path}: cannot be read: {error}"
         raise UbprojectError(msg) from error
     return data
+
+
+def render_path(segments: Sequence[str]) -> str:
+    """Spell a table path the way TOML does: dotted, a segment that is not a bare key quoted.
+
+    ``("tool", "acme.docs", "needs")`` renders as ``tool."acme.docs".needs`` -- joined
+    naively it would read as four segments, and name a table that does not exist.
+    """
+    return ".".join(
+        segment if _BARE_KEY.fullmatch(segment) else json.dumps(segment)
+        for segment in segments
+    )
 
 
 def table_path(table: str | Sequence[str]) -> tuple[str, ...]:
@@ -185,7 +207,7 @@ def select_table(
             return None
         if not isinstance(value, dict):
             where = "" if source is None else f"{source}: "
-            dotted = ".".join(segments[: depth + 1])
+            dotted = render_path(segments[: depth + 1])
             msg = f"{where}[{dotted}] must be a table, got {type(value).__name__}"
             raise UbprojectError(msg)
         current = value

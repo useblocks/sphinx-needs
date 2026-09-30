@@ -39,7 +39,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
 
-from ubproject.project import UbprojectError, anchor, select_table, table_path
+from ubproject.project import (
+    UbprojectError,
+    anchor,
+    render_path,
+    select_table,
+    table_path,
+)
 from ubproject.variant_data import resolve_variant_data
 
 #: The top-level table this module reads.
@@ -49,8 +55,9 @@ VARIANTS_TABLE = "variants"
 VARIANTS_KEYS = ("data", "data_file")
 LEGACY_KEYS = ("variant_data", "variant_data_file")
 
-#: Diagnostic codes. Fixed: consumers suppress and test against them, and ubCode's
-#: diagnostics carry the same strings.
+#: Diagnostic codes. Fixed: consumers suppress and test against them. They are the BARE
+#: subcodes; ubCode is to carry them under its own ``config.`` prefix
+#: (``config.variant_data_location``), and the conformance corpus compares the bare form.
 VARIANT_DATA_LOCATION = "variant_data_location"
 VARIANT_DATA_LEGACY_LOCATION = "variant_data_legacy_location"
 VARIANTS_UNKNOWN_KEY = "variants_unknown_key"
@@ -63,8 +70,9 @@ Location = Literal["variants", "needs"]
 class Diagnostic:
     """A non-fatal finding, returned for the consumer to report -- or not.
 
-    The fields are those of ubCode's ``ConfigResolutionDiagnostic``, so that the
-    conformance corpus can compare the two readers' findings by ``code`` and ``path``.
+    ``code``, ``path`` and ``message`` are those of ubCode's ``ConfigResolutionDiagnostic``
+    (whose ``code`` carries a ``config.`` prefix), so that the conformance corpus can compare
+    the two readers' findings by ``code`` and ``path``; ``severity`` is this package's.
     """
 
     code: str
@@ -110,7 +118,7 @@ def read_variants(
         malformed, or if the data file of the location read is missing or malformed.
     """
     needs_path = table_path(needs_table)
-    needs_dotted = ".".join(needs_path)
+    needs_dotted = render_path(needs_path)
 
     diagnostics: list[Diagnostic] = []
     # an error, not something to skip, when `variants` is not a table: the name is this
@@ -121,7 +129,7 @@ def read_variants(
         diagnostics.append(
             Diagnostic(
                 code=VARIANTS_UNKNOWN_KEY,
-                path=f"{VARIANTS_TABLE}.{key}",
+                path=render_path((VARIANTS_TABLE, key)),
                 message=(
                     f"{toml_path}: ignoring unknown key {key!r} in [{VARIANTS_TABLE}]; "
                     f"this version reads {' and '.join(VARIANTS_KEYS)}"
@@ -130,9 +138,11 @@ def read_variants(
             )
         )
     needs = select_table(root_table, needs_path, source=toml_path) or {}
-    declared_legacy = [key for key in LEGACY_KEYS if key in needs]
+    # "declared" is "set to a value": TOML has no null, and a Python caller's `None` means
+    # absent everywhere else in this package (`select_table` included)
+    declared_legacy = [key for key in LEGACY_KEYS if needs.get(key) is not None]
 
-    if any(key in variants for key in VARIANTS_KEYS):
+    if any(variants.get(key) is not None for key in VARIANTS_KEYS):
         location: Location = "variants"
         table, keys, where = variants, VARIANTS_KEYS, f"[{VARIANTS_TABLE}]"
         for key in declared_legacy:

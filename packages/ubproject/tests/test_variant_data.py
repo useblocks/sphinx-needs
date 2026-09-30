@@ -137,9 +137,10 @@ class TestLoad:
             load_variant_data_file(path)
         assert str(path) in str(info.value)
 
-    def test_a_directory_is_not_found(self, tmp_path: Path) -> None:
-        with pytest.raises(UbprojectError, match="variant data file not found"):
+    def test_a_directory_is_reported_as_one(self, tmp_path: Path) -> None:
+        with pytest.raises(UbprojectError, match="is a directory") as info:
             load_variant_data_file(tmp_path)
+        assert str(tmp_path) in str(info.value)
 
     def test_undecodable_json(self, tmp_path: Path) -> None:
         path = tmp_path / "vd.json"

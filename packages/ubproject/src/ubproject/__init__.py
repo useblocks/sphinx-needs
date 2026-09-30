@@ -1,9 +1,10 @@
 """The shared reader for ``ubproject.toml`` and its variant data.
 
 One implementation of the parts of ``ubproject.toml`` that more than one tool reads -- the
-sphinx-needs family of Sphinx extensions, their command lines, and ubCode, which is held to
-the same behaviour by the conformance corpus in this package's tests. Standard library
-only: no Sphinx, no docutils, no sibling distribution.
+sphinx-needs family of Sphinx extensions and their command lines, which will depend on it,
+and ubCode, which is to be held to the same behaviour through the conformance corpus in
+this package's tests. Standard library only: no Sphinx, no docutils, no sibling
+distribution.
 
 It decides no policy. Discovery (walk up or read the ``confdir``), whether a finding is
 worth a warning, and how ``-D`` / ``-c`` on a command line interact with the file are each
@@ -35,7 +36,7 @@ from ubproject.variants import (
     read_variants,
 )
 
-__version__ = "1.0.0"
+__version__ = "1.0.0.dev0"
 
 __all__ = [
     "DEFAULT_FILENAME",

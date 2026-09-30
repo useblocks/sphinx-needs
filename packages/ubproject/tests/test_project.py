@@ -171,7 +171,28 @@ class TestFindProjectConfig:
         docs = tmp_path / "docs"
         docs.mkdir()
         monkeypatch.chdir(docs)
-        assert find_project_config(Path()) == config
+        found = find_project_config(Path())
+        assert found is not None
+        # compared resolved on both sides: a Windows TEMP can be an 8.3 short name, which
+        # `Path().absolute()` after a chdir spells differently from `tmp_path`
+        assert found.resolve() == config.resolve()
+
+    def test_a_symlinked_start_walks_the_link_s_parents(self, tmp_path: Path) -> None:
+        """The start is made absolute WITHOUT resolving: a symlinked ``docs/`` belongs to
+        the repository it is linked into, not to the one its target lives in."""
+        repo = tmp_path / "repo"
+        (repo / ".git").mkdir(parents=True)
+        config = _write(repo)
+        elsewhere = tmp_path / "elsewhere"
+        (elsewhere / ".git").mkdir(parents=True)
+        target = elsewhere / "docs"
+        target.mkdir()
+        link = repo / "docs"
+        try:
+            link.symlink_to(target, target_is_directory=True)
+        except OSError:  # pragma: no cover - Windows without the symlink privilege
+            pytest.skip("creating a symlink needs a privilege this account lacks")
+        assert find_project_config(link) == config
 
 
 class TestLoadToml:
@@ -191,6 +212,13 @@ class TestLoadToml:
     def test_a_missing_file_names_the_file(self, tmp_path: Path) -> None:
         path = tmp_path / DEFAULT_FILENAME
         with pytest.raises(UbprojectError, match="cannot be read") as info:
+            load_toml(path)
+        assert str(path) in str(info.value)
+
+    def test_a_non_utf8_file_names_the_file(self, tmp_path: Path) -> None:
+        path = tmp_path / DEFAULT_FILENAME
+        path.write_bytes('[project]\nname = "café"\n'.encode("latin-1"))
+        with pytest.raises(UbprojectError, match="not valid UTF-8 TOML") as info:
             load_toml(path)
         assert str(path) in str(info.value)
 
@@ -282,6 +310,29 @@ class TestAnchor:
         base = tmp_path / "docs"
         assert anchor(str(absolute), base) == absolute
         assert anchor(absolute, base) == absolute
+
+    def test_an_absolute_value_with_a_parent_segment_is_untouched(
+        self, tmp_path: Path
+    ) -> None:
+        absolute = (tmp_path / "a" / ".." / "b" / "vd.json").absolute()
+        anchored = anchor(str(absolute), tmp_path / "docs")
+        assert anchored == absolute
+        assert ".." in anchored.parts
+
+    def test_an_absolute_value_through_a_symlink_is_untouched(
+        self, tmp_path: Path
+    ) -> None:
+        real = tmp_path / "real"
+        real.mkdir()
+        link = tmp_path / "link"
+        try:
+            link.symlink_to(real, target_is_directory=True)
+        except OSError:  # pragma: no cover - Windows without the symlink privilege
+            pytest.skip("creating a symlink needs a privilege this account lacks")
+        absolute = (link / "vd.json").absolute()
+        anchored = anchor(absolute, tmp_path / "docs")
+        assert anchored == absolute
+        assert anchored != anchored.resolve()
 
     def test_a_parent_segment_is_kept(self, tmp_path: Path) -> None:
         base = tmp_path / "docs"

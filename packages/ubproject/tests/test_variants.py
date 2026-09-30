@@ -89,6 +89,25 @@ class TestPrecedence:
         assert result.location == "needs"
         assert result.data == {"edition": "pro"}
 
+    def test_a_none_value_declares_nothing(self, tmp_path: Path) -> None:
+        """TOML has no null; a Python caller's ``None`` is absent, as in ``select_table``."""
+        toml_path = tmp_path / "ubproject.toml"
+        result = read_variants(
+            {
+                "variants": {"data": None, "data_file": None},
+                "needs": {"variant_data": {"x": 1}},
+            },
+            toml_path,
+        )
+        assert result.location == "needs"
+        assert result.data == {"x": 1}
+        assert _codes(result.diagnostics) == [
+            (VARIANT_DATA_LEGACY_LOCATION, "needs.variant_data")
+        ]
+        nothing = read_variants({"needs": {"variant_data": None}}, toml_path)
+        assert nothing.location is None
+        assert nothing.diagnostics == ()
+
     def test_an_empty_inline_table_is_a_declaration(self, tmp_path: Path) -> None:
         result = _read(
             tmp_path, '[variants]\ndata = {}\n[needs.variant_data]\nedition = "pro"\n'
@@ -190,8 +209,10 @@ class TestPrefix:
             data, toml_path, needs_table=("tool", "acme.docs", "needs")
         )
         assert result.data == {"x": 1}
+        # a segment that is not a TOML bare key is quoted, as TOML itself spells it:
+        # `tool.acme.docs.needs` would name a different, four-level table
         assert _codes(result.diagnostics) == [
-            (VARIANT_DATA_LEGACY_LOCATION, "tool.acme.docs.needs.variant_data")
+            (VARIANT_DATA_LEGACY_LOCATION, 'tool."acme.docs".needs.variant_data')
         ]
 
 

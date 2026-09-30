@@ -4,16 +4,28 @@
 # Repository of record: useblocks/sphinx-needs (public)
 # Canonical path:       packages/ubproject/tests/fixtures/ubproject_reading_conformance.toml
 #
-# THIS copy is CANONICAL. ubCode vendors it byte-for-byte, with a provenance block (this
-# path, and the commit it was taken from) prepended and nothing else changed. The corpus
-# travels public -> private, so vendoring with a recorded source commit is the sync
-# mechanism: ubCode's CI cannot fetch from this repository at test time, and a submodule of
-# a public repository in a private one would pin nothing either side can see.
+# THIS copy is CANONICAL. ubCode is to vendor it byte-for-byte, with a provenance block
+# (this path, and the commit it was taken from) prepended and nothing else changed, and to
+# run it against its own reader -- which does not read `[variants]` yet. The corpus travels
+# public -> private, so vendoring with a recorded source commit is the sync mechanism:
+# ubCode's CI cannot fetch from this repository at test time, and a submodule of a public
+# repository in a private one would pin nothing either side can see.
 #
 # Do not reformat this file. `.gitattributes` pins its line endings, and the taplo and
 # yamlfmt hooks exclude it: every `toml = '''...'''` body below is the INPUT of a case, so a
 # formatter touching one silently changes what the case tests. A change here is a change to
 # the contract, and owes ubCode a re-vendor.
+#
+# Rules for every runner:
+#   - a case writes only inside its own directory: a `files` key or `toml_path` that would
+#     land outside it (`../x.json`) is a broken case, and the runner refuses it
+#   - a case carrying `needs_table` is PYTHON-ONLY: it describes a consumer that nests its
+#     `[needs]` table under a prefix, which ubCode cannot express (its `[needs]` is always
+#     top-level). ubCode's runner skips those cases
+#   - diagnostic codes are compared as the BARE subcode below. ubCode's diagnostics carry
+#     them under its `config.` prefix (`config.variant_data_location`); its runner strips
+#     `config.` before comparing
+#   - integers are within the signed 64-bit range; beyond it the behaviour is unspecified
 #
 # `packages/ubproject/tests/test_conformance.py` runs every `[[case]]` against the Python
 # reader AND asserts the case COUNT, so a truncated copy is a red test rather than reduced
@@ -36,20 +48,23 @@
 #   toml_path    - optional; where the file is written, relative to the case directory.
 #                  Default "ubproject.toml"
 #   files        - optional; other files, relative to the case directory, and their text
-#   needs_table  - optional; the dotted path of the legacy table. Default "needs"
+#   needs_table  - optional; the dotted path of the legacy table. Default "needs".
+#                  Python-only (see the rules above)
 #   [case.expect]
 #     error             - true when the reader must REFUSE the input: every other
 #                         expectation is then absent. A refusal's message is not compared
 #     variant_data      - the merged variant map
 #     variant_data_file - the anchored data file, RELATIVE TO THE CASE DIRECTORY and
-#                         compared as a path joined onto it -- so an anchor that resolved
-#                         symlinks or folded `..` away fails the comparison. Absent when
-#                         no data file is read
+#                         compared as a path joined onto it -- so an anchor that folded
+#                         `..` away fails the comparison
+#                         (`relative-file-with-parent-segment-is-joined`); symlink
+#                         resolution is fenced by the unit tests, since a case directory
+#                         holds no symlink. Absent when no data file is read
 #     diagnostics       - the findings, as `code` + `path` pairs, compared as a multiset.
 #                         Messages and severities are NOT compared: each reader words its
 #                         own, and each consumer decides what a finding is worth
 #
-# Diagnostic codes, fixed by the contract:
+# Diagnostic codes (bare subcodes), fixed by the contract:
 #   variant_data_location         - both locations are set; `path` names each ignored key
 #   variant_data_legacy_location  - the data came from the legacy location; `path` names
 #                                   each key read there. Informational: the reader takes no
@@ -720,8 +735,20 @@ files = { "vd.json" = '{"build": {"opt": null}}' }
 error = true
 
 [[case]]
+name = "invalid-file-value-overridden-by-valid-inline"
+why = "the file is validated on its own, before the merge: an inline value cannot rescue an invalid file value"
+toml = '''
+[variants]
+data_file = "vd.json"
+data = { levels = [1, 2] }
+'''
+files = { "vd.json" = '{"levels": [1, "two"]}' }
+[case.expect]
+error = true
+
+[[case]]
 name = "invalid-file-not-an-object"
-why = "the data file must hold a JSON object"
+why = "a JSON array as the data file is refused (the unit tests pin that the object rule is the reason)"
 toml = '''
 [variants]
 data_file = "vd.json"
@@ -776,7 +803,7 @@ error = true
 
 [[case]]
 name = "data-file-empty-string"
-why = "an empty data_file names no file and is refused"
+why = "an empty data_file is refused (the unit tests pin that the non-empty rule is the reason)"
 toml = '''
 [variants]
 data_file = ""
