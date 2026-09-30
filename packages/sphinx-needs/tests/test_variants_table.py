@@ -154,6 +154,8 @@ def test_the_prefix_scopes_the_variants_table(build):
                 'needs_from_toml_table = ["tool"]',
             ),
             "pyproject.toml": """\
+                [variants]
+                data_file = "never-opened.json"
                 [variants.data]
                 edition = "top-level"
                 cpu = "top-level"
