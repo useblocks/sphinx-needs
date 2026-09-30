@@ -17,8 +17,10 @@ from pathlib import Path
 
 import pytest
 
+import sphinx_needs.needs
 from sphinx_needs.exceptions import NeedsConfigException
 from sphinx_needs_testkit import assert_no_warnings, build_warnings
+from ub_project import Diagnostic, ProjectConfigError
 
 TESTS_DIR = Path(__file__).parent
 
@@ -131,6 +133,54 @@ def test_variants_without_a_needs_table_is_read(build):
     assert app.config.needs_variant_data == {"edition": "pro", "cpu": "arm"}
 
 
+@pytest.mark.parametrize("toml", ["[variants]\n", "variants = {}\n"])
+def test_even_an_empty_variants_table_without_needs_is_silent(build, toml):
+    """An empty ``[variants]`` declares nothing, but it is there: no ``'needs'`` warning,
+    and nothing read."""
+    app = build({"conf.py": TOML_CONF, "ubproject.toml": toml})
+    assert_no_warnings(app)
+    assert app.config.needs_variant_data == {}
+
+
+@pytest.mark.parametrize(
+    ("toml", "message"),
+    [
+        pytest.param(
+            "needs = 1\n[variants.data]\nedition = 'pro'\n",
+            "Data must be a dict",
+            id="needs-not-a-table",
+        ),
+        pytest.param(
+            "[needs]\nid_required = true\nschema = 1\n[variants.data]\nedition = 'pro'\n",
+            "'schema' table must be a dict",
+            id="schema-not-a-table",
+        ),
+    ],
+)
+def test_only_a_missing_needs_table_goes_on_to_variants(build, toml, message):
+    """A ``[needs]`` table that is there but broken ends the read with today's warning,
+    ``[variants]`` or not; only a MISSING ``[needs]`` goes on to read ``[variants]``."""
+    app = build({"conf.py": TOML_CONF, "ubproject.toml": toml})
+    assert build_warnings(app) == [
+        f"WARNING: Error loading 'needs_from_toml' file: {message} [needs.config]"
+    ]
+    assert app.config.needs_variant_data == {}
+    assert app.config.needs_id_required is False
+
+
+def test_a_deeply_nested_toml_only_warns(build, tmp_path):
+    """``tomllib`` gives up on deep nesting with a ``RecursionError``, which ``load_toml``
+    does not wrap; it is a warning, like every other TOML that cannot be parsed."""
+    depth = 3000
+    app = build(
+        {"conf.py": TOML_CONF, "ubproject.toml": f"x = {'[' * depth}{']' * depth}\n"}
+    )
+    assert build_warnings(app) == [
+        "WARNING: Error loading 'needs_from_toml' file: "
+        "maximum recursion depth exceeded [needs.config]"
+    ]
+
+
 def test_neither_table_keeps_todays_warning(build):
     app = build({"conf.py": TOML_CONF, "ubproject.toml": 'other = "x"\n'})
     assert build_warnings(app) == [
@@ -200,6 +250,66 @@ def test_the_prefix_scopes_the_legacy_location_and_its_warning(build):
     assert app.config.needs_variant_data == {"edition": "pro", "cpu": "x86"}
 
 
+def test_the_prefixed_variants_table_without_a_prefixed_needs_is_read(build):
+    """The migrated ``pyproject.toml``: ``[tool.variants]`` and no ``[tool.needs]``."""
+    app = build(
+        {
+            "conf.py": _conf(
+                'needs_from_toml = "pyproject.toml"',
+                'needs_from_toml_table = ["tool"]',
+            ),
+            "pyproject.toml": """\
+                [tool.other]
+                x = 1
+                [tool.variants.data]
+                edition = "pro"
+                """,
+        }
+    )
+    assert_no_warnings(app)
+    assert app.config.needs_variant_data == {"edition": "pro"}
+
+
+def test_a_top_level_variants_does_not_stand_in_for_the_prefixed_needs(build):
+    """Under a prefix, a top-level ``[variants]`` is someone else's: with no
+    ``[tool.needs]`` and no ``[tool.variants]`` the file warns ``'needs'`` as today."""
+    app = build(
+        {
+            "conf.py": _conf(
+                'needs_from_toml = "pyproject.toml"',
+                'needs_from_toml_table = ["tool"]',
+            ),
+            "pyproject.toml": """\
+                [variants.data]
+                edition = "top-level"
+                [tool.other]
+                x = 1
+                """,
+        }
+    )
+    assert build_warnings(app) == [
+        "WARNING: Error loading 'needs_from_toml' file: 'needs' [needs.config]"
+    ]
+    assert app.config.needs_variant_data == {}
+
+
+def test_an_empty_prefix_segment_is_a_configuration_error(make_app, tmp_path):
+    srcdir = _write(
+        tmp_path / "src",
+        {
+            "conf.py": _conf(
+                'needs_from_toml = "ubproject.toml"', 'needs_from_toml_table = [""]'
+            ),
+            "ubproject.toml": '["".needs]\nid_required = false\n',
+        },
+    )
+    with pytest.raises(NeedsConfigException) as excinfo:
+        make_app(srcdir=srcdir, freshenv=True)
+    assert str(excinfo.value) == (
+        "invalid table path ('', 'needs'): expected one or more non-empty segments"
+    )
+
+
 # --- both locations, the legacy location, unknown keys --------------------------------
 
 BOTH_TOML = """\
@@ -249,6 +359,30 @@ def test_both_locations_warning_is_silenced_by_its_own_subtype(build):
     )
     assert_no_warnings(app)
     assert app.config.needs_variant_data == {"edition": "pro", "cpu": "arm"}
+
+
+def test_both_locations_with_disjoint_keys_read_nothing_from_needs(build):
+    """``[variants]`` wins WHOLE: a ``[needs]`` file is not merged under a ``[variants]``
+    inline table, even when the two tables set different keys."""
+    app = build(
+        {
+            "conf.py": TOML_CONF,
+            "ubproject.toml": """\
+                [needs]
+                variant_data_file = "x86.json"
+                [variants.data]
+                edition = "pro"
+                """,
+            "x86.json": {"cpu": "x86"},
+        }
+    )
+    assert build_warnings(app) == [
+        "WARNING: <srcdir>/ubproject.toml: [needs] variant_data_file is ignored because "
+        "[variants] is set, and only one location is read; remove the [needs] key "
+        "[needs.variant_data_location]"
+    ]
+    assert app.config.needs_variant_data == {"edition": "pro"}
+    assert app.config.needs_variant_data_file is None
 
 
 def _quickstart(tmp_path: Path) -> Path:
@@ -330,6 +464,36 @@ def test_an_unknown_variants_key_is_silenced_by_its_own_subtype(build):
     assert_no_warnings(app)
 
 
+def test_a_finding_this_version_does_not_know_is_a_v_line(build, monkeypatch):
+    """A newer ub-project may return a code this version cannot know; it must not fail
+    a ``-W`` build, so it is reported with ``-v`` only, whatever its severity."""
+    read_variants = sphinx_needs.needs.read_variants
+
+    def with_a_new_code(*args, **kwargs):
+        result = read_variants(*args, **kwargs)
+        new = Diagnostic(
+            code="a_code_from_the_future",
+            path="variants.x",
+            message="a finding from a newer ub-project",
+            severity="warning",
+        )
+        return type(result)(
+            data=result.data,
+            data_file=result.data_file,
+            location=result.location,
+            diagnostics=(*result.diagnostics, new),
+        )
+
+    monkeypatch.setattr(sphinx_needs.needs, "read_variants", with_a_new_code)
+    app = build(
+        {"conf.py": TOML_CONF, "ubproject.toml": '[variants.data]\nedition = "pro"\n'},
+        verbosity=1,
+    )
+    assert_no_warnings(app)
+    assert "a finding from a newer ub-project" in app._status.getvalue()
+    assert app.config.needs_variant_data == {"edition": "pro"}
+
+
 # --- refusals ------------------------------------------------------------------------
 
 
@@ -361,6 +525,16 @@ def test_an_unknown_variants_key_is_silenced_by_its_own_subtype(build):
             "[needs] variant_data_file must be one non-empty path string, got list",
             id="needs-data-file-list",
         ),
+        pytest.param(
+            '[needs]\nvariant_data = "x"\n',
+            "[needs] variant_data must be a table, got str",
+            id="needs-data-not-a-table",
+        ),
+        pytest.param(
+            '[needs.variant_data]\nx = [1, "a"]\n',
+            "[needs]: var.x[1]: an array must hold one type, expected int but got str",
+            id="needs-data-mixed-array",
+        ),
     ],
 )
 def test_refused_variant_configuration_fails_the_build(
@@ -369,12 +543,14 @@ def test_refused_variant_configuration_fails_the_build(
     """``ub_project`` refuses these, and the refusal is a ``NeedsConfigException``.
 
     ``variants = "x"`` used to be ignored; ``variant_data_file = ""`` or a list crashed in
-    the resolver with an ``ExtensionError`` naming neither the file nor the key.
+    the resolver with an ``ExtensionError`` naming neither the file nor the key; invalid
+    inline data was refused later, by the resolver, in sphinx-needs' own words.
     """
     srcdir = _write(tmp_path / "src", {"conf.py": TOML_CONF, "ubproject.toml": toml})
     with pytest.raises(NeedsConfigException) as excinfo:
         make_app(srcdir=srcdir, freshenv=True)
     assert str(excinfo.value) == f"{srcdir / 'ubproject.toml'}: {message}"
+    assert isinstance(excinfo.value.__cause__, ProjectConfigError)
 
 
 @pytest.mark.parametrize("table", ["needs", "variants"])
