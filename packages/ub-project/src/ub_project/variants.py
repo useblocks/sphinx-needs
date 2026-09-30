@@ -1,4 +1,4 @@
-"""The top-level ``[variants]`` table, with the ``[needs] variant_data*`` fallback.
+"""The ``[variants]`` table, with the ``[needs] variant_data*`` fallback.
 
 ``[variants]`` holds the project's variant data for every tool that reads it::
 
@@ -30,6 +30,10 @@ Diagnostics are RETURNED, never logged, and the package takes no side on them: w
 the legacy location deserves a warning is the consumer's policy (sphinx-needs will warn,
 to move users; ubCode will not, because it supports several sphinx-needs versions at
 once). Hard failures raise :class:`~ub_project.project.ProjectConfigError`.
+
+A consumer that nests its configuration under a prefix (``[tool.acme.needs]`` in a
+``pyproject.toml``, where PEP 518 reserves the top level) passes both tables' paths, and
+every diagnostic path and message names the table as the consumer placed it.
 """
 
 from __future__ import annotations
@@ -48,7 +52,7 @@ from ub_project.project import (
 )
 from ub_project.variant_data import resolve_variant_data
 
-#: The top-level table this module reads.
+#: The default path of the table this module reads: the top level of the document.
 VARIANTS_TABLE = "variants"
 
 #: The keys of ``[variants]``, and their legacy spellings in ``[needs]``, in that order.
@@ -104,34 +108,39 @@ def read_variants(
     toml_path: Path,
     *,
     needs_table: str | Sequence[str] = "needs",
+    variants_table: str | Sequence[str] = VARIANTS_TABLE,
 ) -> VariantsResult:
     """Read the project's variant data from ``[variants]``, or from the legacy location.
 
-    :param root_table: The parsed TOML document (or the table a consumer's prefix
-        selected): ``[variants]`` is read from its top level.
+    :param root_table: The parsed TOML document.
     :param toml_path: The file *root_table* came from. Relative ``data_file`` values are
         anchored at its directory, and error messages name it.
     :param needs_table: Where the legacy keys live inside *root_table*, dotted or as a
         sequence of keys -- ``"tool.acme.needs"`` for a project that nests its sphinx-needs
         configuration under a prefix.
+    :param variants_table: Where ``[variants]`` lives inside *root_table*, in the same
+        forms -- ``"tool.acme.variants"`` beside a prefixed *needs_table*. A ``variants``
+        table anywhere else is not read, and not reported.
     :raises ProjectConfigError: If a table or key has the wrong type, if the inline data is
         malformed, or if the data file of the location read is missing or malformed.
     """
     needs_path = table_path(needs_table)
     needs_dotted = render_path(needs_path)
+    variants_path = table_path(variants_table)
+    variants_dotted = render_path(variants_path)
 
     diagnostics: list[Diagnostic] = []
     # an error, not something to skip, when `variants` is not a table: the name is this
     # contract's, and a `variants = "..."` read as "no variant data" would be the silent
     # vanishing the table exists to end
-    variants = select_table(root_table, VARIANTS_TABLE, source=toml_path) or {}
+    variants = select_table(root_table, variants_path, source=toml_path) or {}
     for key in sorted(set(variants) - set(VARIANTS_KEYS)):
         diagnostics.append(
             Diagnostic(
                 code=VARIANTS_UNKNOWN_KEY,
-                path=render_path((VARIANTS_TABLE, key)),
+                path=render_path((*variants_path, key)),
                 message=(
-                    f"{toml_path}: ignoring unknown key {key!r} in [{VARIANTS_TABLE}]; "
+                    f"{toml_path}: ignoring unknown key {key!r} in [{variants_dotted}]; "
                     f"this version reads {' and '.join(VARIANTS_KEYS)}"
                 ),
                 severity="warning",
@@ -144,7 +153,7 @@ def read_variants(
 
     if any(variants.get(key) is not None for key in VARIANTS_KEYS):
         location: Location = "variants"
-        table, keys, where = variants, VARIANTS_KEYS, f"[{VARIANTS_TABLE}]"
+        table, keys, where = variants, VARIANTS_KEYS, f"[{variants_dotted}]"
         for key in declared_legacy:
             diagnostics.append(
                 Diagnostic(
@@ -152,7 +161,7 @@ def read_variants(
                     path=f"{needs_dotted}.{key}",
                     message=(
                         f"{toml_path}: [{needs_dotted}] {key} is ignored because "
-                        f"[{VARIANTS_TABLE}] is set, and only one location is read; "
+                        f"[{variants_dotted}] is set, and only one location is read; "
                         f"remove the [{needs_dotted}] key"
                     ),
                     severity="warning",
@@ -169,7 +178,7 @@ def read_variants(
                     path=f"{needs_dotted}.{key}",
                     message=(
                         f"{toml_path}: variant data is read from its legacy location "
-                        f"[{needs_dotted}] {key}; [{VARIANTS_TABLE}] {current} is the "
+                        f"[{needs_dotted}] {key}; [{variants_dotted}] {current} is the "
                         "current one"
                     ),
                     severity="info",
