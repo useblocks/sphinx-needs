@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790783225594,
+  "lastUpdate": 1790787966104,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -21780,6 +21780,42 @@ window.BENCHMARK_DATA = {
             "value": 45.59705262099999,
             "unit": "s",
             "extra": "Commit: 1f023d1a4f7d91fb612a9e88af186abd4fbf4491\nBranch: master\nTime: 2026-09-30T17:45:46+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7c098e12fdb588b7eb7b8c0472deedef53747a7a",
+          "message": "✨ sphinx-needs: read variant data from `[variants]` through ub-project, keeping `[needs] variant_data*` (#1996)\n\nsphinx-needs becomes a consumer of `ub-project` (≥ 1.1.0) for the\nvariant data in the `needs_from_toml` file. A project may now\ndeclare its variant data in a top-level `[variants]` table — or\n`[<prefix>.variants]` under `needs_from_toml_table` — and the legacy\n`[needs] variant_data` / `variant_data_file` keys keep working, reported\nonly as a `-v` line.\n\n### What changes (each pinned by a test in\n`tests/test_variants_table.py`)\n1. `[variants] data` / `data_file` (and `[<prefix>.variants]`) are read.\n2. Both locations declared → `[variants]` wins whole; one\n`needs.variant_data_location` warning per ignored `[needs]` key.\n3. Data read from `[needs]` → one `-v` line per key; nothing without\n`-v`; `-W` stays green (ubCode's quickstart `variants` template,\n   copied verbatim, is the test).\n4. An unknown key in `[variants]` → a `needs.variants_unknown_key`\nwarning, silenced by exactly that subtype.\n5. `variants = <not a table>` → `NeedsConfigException` (was silently\nignored).\n6. A file with `[variants]` and no `[needs]` table is read (it used to\nwarn `'needs'` and read nothing) — even an empty\n`[variants]` (or `variants = {}`), which declares nothing, turns that\nwarning (rc 1 under `-W`) into silence.\n7. Bad TOML-declared variant data — the inline table or the file — is\nrefused while the TOML is read, in ub-project's words\n(`<toml>: [needs] variant_data must be a table, got str`, `<toml>:\n[needs]: variant data file not found: <p>`); the same\n`NeedsConfigException`, except a directory or non-UTF-8 data file, which\nused to escape as a raw `ExtensionError`. The\n   `conf.py` route is untouched.\n8. The bad-TOML warning's tail is ub-project's text; a non-UTF-8 file\nand a directory get a clear message.\n9. `variant_data_file = \"\"` or a list in the TOML →\n`NeedsConfigException` naming the key (was an `ExtensionError`\ntraceback).\n\nAlso: an empty segment in `needs_from_toml_table` (`[\"\"]`) is now a\nconfiguration error (`NeedsConfigException`), where a\n`[\"\".needs]` table used to be read. A TOML that cannot be parsed at all\nstill only warns, whatever the parser raised (pinned with a deeply\nnested array and an\ninteger past Python's conversion limit — two exception classes, so the\ncatch cannot be narrowed to one).\n\n### What stays byte-identical, and how that is shown\nEvery existing test passes unmodified (1805 → 1847 = 1805 + 42 new, the\nsame 11 skips). `-D` overrides one key: an overridden key is\nremoved from both locations before the read, so it neither opens a file\nnor decides the location. `conf.py` values still lose to\nthe location read per key and fill the gaps it leaves — the reader\nwrites the declared keys of the location read to the two confvals one by\none, and `resolve_variant_data_config` merges them exactly as before\n(the data file is therefore read twice). The data-file confval\nis still written through `_abs_path`, so its string (resolved, symlinks\nfollowed) is unchanged. Every existing warning text and\nsubtype is unchanged. Seven mutations of the reader (merged map written,\n`-D` strip dropped, prefix ignored, missing-`[needs]`\ncontinuation dropped, joined path written, both-set warning on\n`needs.config`, legacy line as a warning) each turn a named test red,\nand so do eight more for the edges (the `[needs]` loop reading the\nignored keys, the continuation checking the wrong table or\nswallowing any error, the parse narrowed, the empty-segment `ValueError`\nescaping, the cause dropped, an unknown code warning,\nan empty `[variants]` not counting).\n\n### The dependency\n`ub-project>=1.1.0,<2`, a runtime dependency (stdlib-only). The lock\ncarries the two-line edge only; `uv lock --check` passes on\nuv 0.12.15 and 0.12.9. `import-check-needs` resolves `ub-project==1.1.0`\nfrom PyPI.\n\n### The prefix\nWith `needs_from_toml_table = [\"tool\"]` the tables are `[tool.needs]`\nand `[tool.variants]`, because a `pyproject.toml` reserves its\ntop level; a top-level `[variants]` is then someone else's table and is\nneither read nor reported — the contract's rule\n(`reading-contract.md` §6.2), and the one ubCode (which has no prefix)\nagrees with.\n\n### The `-v` line and what follows\nThe legacy location is only a verbose line in this release, so projects\ncreated by ubCode's quickstart keep building under `-W`. A\nlater release adds a `needs.variant_data_legacy_location` warning, after\nubCode's reader release; ubCode and sphinx-mounts do not\nread `[variants]` yet, and the docs say a project built by either keeps\n`[needs]` until they do.\n\n### Docs\nA `[variants]` subsection under `needs_from_toml` in\n`configuration.rst`, cross-linked from `needs_variant_data` and\n`needs_variant_data_file`; the two new subtypes appear in the generated\nwarnings list. The `needs_from_toml` caution that said\nrelative TOML paths resolve against the `conf.py` directory is\ncorrected: they resolve against the TOML's own directory (and did).\nThe changelog entry is written at release time.\n\n### Review\nTwo adversarial reviewers, one fix round and a validation round; the\nrefuter's differential ran the recon's 122 constructions through\nmaster's reader and this one side by side. Two things found on the way\nare filed rather than fixed here: #1991 (a dotted\n`-D needs_variant_data.key=…` is lost under a TOML inline table —\npre-existing, and inherited by `[variants]` identically) and #1995\n(ub-project lets a bare `ValueError` through for an oversized integer in\na data file; this reader reports it as a configuration error\nuntil ub-project names the file itself).",
+          "timestamp": "2026-09-30T19:04:37+02:00",
+          "tree_id": "b64eb67ee28df91afd03b34b13f9af33b57cb61a",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/7c098e12fdb588b7eb7b8c0472deedef53747a7a"
+        },
+        "date": 1790787957202,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.11029691300007016,
+            "unit": "s",
+            "extra": "Commit: 7c098e12fdb588b7eb7b8c0472deedef53747a7a\nBranch: master\nTime: 2026-09-30T19:04:37+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 53.76529741600007,
+            "unit": "s",
+            "extra": "Commit: 7c098e12fdb588b7eb7b8c0472deedef53747a7a\nBranch: master\nTime: 2026-09-30T19:04:37+02:00"
           }
         ]
       }
