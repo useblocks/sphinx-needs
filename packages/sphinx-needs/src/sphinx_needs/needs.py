@@ -639,13 +639,13 @@ def _load_variants_from_toml(
     reports the other's keys. What stays here is sphinx-needs' policy:
 
     - a key overridden with ``-D`` is removed from both locations before the read, so it
-      neither opens a file nor decides the location, exactly as a ``-D`` overrides one
-      ``[needs]`` key today;
+      neither opens a file nor decides the location, just as a ``-D`` overrides any
+      other ``[needs]`` key one at a time;
     - each declared key of the location read is written to its confval, as the
       ``[needs]`` loop wrote it, and the merge with ``conf.py`` values and the file load
       stay with :func:`resolve_variant_data_config`, which therefore reads the data file
-      a second time. Writing the merged map instead would drop a ``conf.py`` value the
-      TOML does not set, which today fills the gap per key;
+      a second time. Writing the merged map instead would override a ``conf.py`` value
+      for a key the TOML does not set, which must fill that gap;
     - the findings are reported as warnings, except the legacy location, which is
       reported with ``-v`` only for now.
 
