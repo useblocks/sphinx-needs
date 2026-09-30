@@ -24,7 +24,7 @@ src_trace_config_from_toml
 
 Specifies the path to a `TOML file <https://toml.io>`__ containing **Sphinx-CodeLinks** configuration options. This allows you to maintain configuration in a separate file for better organization.
 
-**Type:** ``str`` (relative path to the directory where conf.py is located)
+**Type:** ``str`` (relative to the directory where conf.py is located; an absolute path also works)
 **Default:** ``"ubproject.toml"``
 
 .. code-block:: python
@@ -37,8 +37,11 @@ When using a TOML configuration file:
 - Configuration options are placed under a ``[codelinks]`` section
 - The ``src_trace_`` prefix is omitted in the TOML file
 - TOML configuration overrides settings in :file:`conf.py`
+- A value given on the command line with ``-D`` (``sphinx-build -D src_trace_set_local_url=0``) overrides both.
+  ``src_trace_projects`` can only come from :file:`conf.py` or the TOML -- the dotted ``-D`` form is not supported --
+  and Sphinx refuses ``-D src_trace_outdir`` as well
 
-.. note:: ``ubproject.toml`` is the shared ubCode project file, which other useblocks tools (e.g. Sphinx-Needs via ``needs_from_toml`` or the ubCode checker in VS Code) read as well. Keeping the ``[codelinks]`` configuration in this file makes all tools aware of the configured projects. If the default file does not exist or contains no ``[codelinks]`` section, it is silently ignored and the configuration from :file:`conf.py` is used. Only a TOML file that was explicitly configured but cannot be loaded triggers a Sphinx warning.
+.. note:: ``ubproject.toml`` is the shared ubCode project file, which other useblocks tools (e.g. Sphinx-Needs via ``needs_from_toml`` or the ubCode checker in VS Code) read as well. Keeping the ``[codelinks]`` configuration in this file makes all tools aware of the configured projects. If the default file does not exist or contains no ``[codelinks]`` section, it is silently ignored and the configuration from :file:`conf.py` is used. A file that exists but cannot be read or parsed triggers a warning, the default file included, and so does an explicitly configured file that is missing or has no ``[codelinks]`` section. These warnings are of type ``codelinks.config``, so ``suppress_warnings = ["codelinks.config"]`` silences them.
 
 .. caution:: Relative paths specified in the TOML file are resolved relative to the directory containing the TOML file, not the Sphinx project root.
 

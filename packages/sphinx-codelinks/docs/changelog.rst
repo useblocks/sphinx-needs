@@ -151,9 +151,39 @@ New and Improved
 
   A default file that does not exist or contains no ``[codelinks]`` table is silently
   ignored, so existing projects without ``ubproject.toml`` keep building without new
-  warnings. Only a TOML file that was explicitly configured but cannot be loaded
-  triggers a Sphinx warning, as before. The documentation project itself now stores
-  its codelinks configuration in ``ubproject.toml``.
+  warnings. A file that exists but cannot be read or parsed -- invalid TOML, not UTF-8,
+  a directory, or a ``codelinks`` key that is not a table -- triggers a
+  ``codelinks.config`` warning, the default file included, as an explicitly configured
+  file always did. The documentation project itself now stores its codelinks
+  configuration in ``ubproject.toml``.
+
+- 🐛 A value given on the command line with ``-D`` now overrides the TOML file.
+
+  ``sphinx-build -D src_trace_set_local_url=0`` was silently overwritten by a
+  ``set_local_url`` in the ``[codelinks]`` table. The order is now ``-D`` > TOML >
+  :file:`conf.py` > default, as in Sphinx-Needs. Only the full ``src_trace_<key>`` name
+  counts: a bare ``-D set_local_url=0``, which Sphinx rejects as an unknown setting,
+  leaves the TOML value alone. ``src_trace_projects`` always comes from :file:`conf.py`
+  or the TOML: Sphinx refuses to override a dictionary setting with ``-D``, and the
+  dotted ``-D src_trace_projects.<name>=...`` form is not supported. Sphinx refuses
+  ``-D src_trace_outdir`` too, whose default is a path; the extension does not use that
+  value.
+
+- 👌 ``ubproject.toml`` is read through `ub-project <https://pypi.org/project/ub-project/>`__,
+  the shared reader of the Sphinx-Needs family, which is now a dependency
+  (``ub-project>=1.1.0,<2``).
+
+  Both the Sphinx extension and ``codelinks analyse`` parse the file and select the
+  ``[codelinks]`` table through it, and relative paths are anchored through its
+  ``anchor``, at the same directories as before. What changes is what a broken file
+  says: every message names the file and the problem (``invalid TOML``,
+  ``not valid UTF-8``, ``[codelinks] must be a table, got str``), an explicitly
+  configured file without a ``[codelinks]`` table says so instead of printing
+  ``'codelinks'``, and ``codelinks analyse`` shows why a file could not be loaded rather
+  than only that it could not -- a ``codelinks`` key that is ``0``, ``false`` or ``[]``
+  is now reported as not a table instead of as a missing section. The extension's
+  warnings about its configuration file carry the type ``codelinks.config``, so
+  ``suppress_warnings = ["codelinks.config"]`` silences them.
 
 .. _`release:1.4.0`:
 
