@@ -128,7 +128,8 @@ class _BranchDirective(SphinxDirective):
 
         placeholder = _BranchPlaceholder()
         placeholder.kind = kind
-        # an argument of only whitespace is no condition
+        # an argument of only whitespace is no condition: docutils and MyST already drop
+        # a whitespace-only argument; kept as the contract's guard
         has_condition = bool(self.arguments and self.arguments[0].strip())
         placeholder.condition = self.arguments[0] if has_condition else None
         placeholder.content = self.content
@@ -181,7 +182,7 @@ class ChooseDirective(SphinxDirective):
     The content may hold only ``when`` and ``otherwise`` directives and comments.
     Every mistake is warned about once, and skips the whole ``choose``:
     content that is neither a branch nor a comment, a branch inside another
-    directive or supplied through an include,
+    directive or supplied through an include, no branch at all,
     a ``when`` without a condition, an ``otherwise`` with one,
     an ``otherwise`` that is not the last branch or is not the only one,
     variant data that is not configured,
@@ -214,6 +215,8 @@ class ChooseDirective(SphinxDirective):
     has_content = True
 
     def run(self) -> Sequence[nodes.Node]:
+        # docutils and MyST already drop a whitespace-only argument; kept as the
+        # contract's guard
         if self.arguments and self.arguments[0].strip():
             self._warn(
                 f"'choose' directive takes no argument, got {self.arguments[0]!r} "
@@ -375,9 +378,11 @@ class ChooseDirective(SphinxDirective):
                 )
                 return None
             if branch.kind == "otherwise" and branch.condition is not None:
+                # the text is named: it may be content that the parser took for the
+                # argument (written on the line after the directive, with no blank line)
                 self._warn(
-                    "'otherwise' directive takes no condition; the whole choose is "
-                    "skipped",
+                    "'otherwise' directive takes no condition, got "
+                    f"{branch.condition!r}; the whole choose is skipped",
                     branch.location,
                 )
                 return None

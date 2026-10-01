@@ -29,7 +29,6 @@ _CONF_MYST = (
 )
 
 _HAS_MYST = importlib.util.find_spec("myst_parser") is not None
-_HAS_SPHINX_DESIGN = importlib.util.find_spec("sphinx_design") is not None
 
 
 def _project(
@@ -235,6 +234,45 @@ _WARNINGS = {
             ),
         ),
     ),
+    # the check order: the condition faults, in document order, come before the count
+    # and the position of the `otherwise`, which come in that order
+    "two otherwise, then a when without a condition": _Expected(
+        ".. choose::\n\n"
+        "   .. otherwise::\n\n      SKIPPED_D1\n\n"
+        "   .. otherwise::\n\n      SKIPPED_D2\n\n"
+        "   .. when::\n\n      SKIPPED_FORGOTTEN_CONDITION\n",
+        (
+            (
+                "'when' directive has no condition (use 'otherwise' for the default)"
+                + _SKIP,
+                "   .. when::",
+            ),
+        ),
+    ),
+    "an otherwise with a condition, a when, then a bare otherwise": _Expected(
+        ".. choose::\n\n"
+        "   .. otherwise:: var.debug\n\n      SKIPPED_FIRST\n\n"
+        "   .. when:: var.arch == 'abc'\n\n      SKIPPED_ABC\n\n"
+        "   .. otherwise::\n\n      SKIPPED_LAST\n",
+        (
+            (
+                "'otherwise' directive takes no condition, got 'var.debug'" + _SKIP,
+                "   .. otherwise:: var.debug",
+            ),
+        ),
+    ),
+    # both bare: the first line ends in spaces only so that the two lines differ
+    "two bare otherwise and nothing else": _Expected(
+        ".. choose::\n\n"
+        "   .. otherwise::  \n\n      SKIPPED_D1\n\n"
+        "   .. otherwise::\n\n      SKIPPED_D2\n",
+        (
+            (
+                "'choose' directive has more than one 'otherwise'" + _SKIP,
+                "   .. otherwise::",
+            ),
+        ),
+    ),
     # a forgotten condition on the last `when` would make a catch-all of it: refused,
     # since the default is written as an `otherwise`
     "when without a condition": _Expected(
@@ -256,7 +294,7 @@ _WARNINGS = {
         "   .. otherwise:: var.debug\n\n      SKIPPED_OTHERWISE\n",
         (
             (
-                "'otherwise' directive takes no condition" + _SKIP,
+                "'otherwise' directive takes no condition, got 'var.debug'" + _SKIP,
                 "   .. otherwise:: var.debug",
             ),
         ),
@@ -766,7 +804,6 @@ def test_choose_restores_its_depth_when_its_body_raises(test_app):
 _TAB_PARENT = "The parent of a 'tab-item' should be a 'tab-set'"
 
 
-@pytest.mark.skipif(not _HAS_SPHINX_DESIGN, reason="needs sphinx-design")
 @pytest.mark.parametrize(
     "test_app",
     [
@@ -800,6 +837,10 @@ def test_tab_item_in_the_taken_when_warns_as_in_a_true_if(test_app):
     limitation the docs of both directives describe, with the same warning for both,
     and the remedy they give: a ``choose`` inside the ``tab-item`` does not warn.
     """
+    # no skip: sphinx-design is in the shared `test` group, and if it ever leaves it,
+    # this test must fail rather than stop pinning the documented limitation
+    import sphinx_design  # noqa: F401
+
     app = test_app
     app.build()
     warnings = build_warnings(app)
@@ -1166,7 +1207,21 @@ _MYST_WARNINGS = {
     "otherwise with a condition, backticks": (
         "````{choose}\n```{when} var.arch == 'xyz'\nSKIPPED_XYZ\n```\n"
         "```{otherwise} var.debug\nSKIPPED_OTHERWISE\n```\n````\n",
-        "'otherwise' directive takes no condition" + _SKIP,
+        "'otherwise' directive takes no condition, got 'var.debug'" + _SKIP,
+        "```{otherwise} var.debug",
+    ),
+    # the check order, as in reStructuredText
+    "two otherwise, then a when without a condition, backticks": (
+        "````{choose}\n```{otherwise}\nSKIPPED_D1\n```\n```{otherwise}\nSKIPPED_D2\n```\n"
+        "```{when}\nSKIPPED_FORGOTTEN_CONDITION\n```\n````\n",
+        "'when' directive has no condition (use 'otherwise' for the default)" + _SKIP,
+        "```{when}",
+    ),
+    "an otherwise with a condition, a when, then a bare otherwise, backticks": (
+        "````{choose}\n```{otherwise} var.debug\nSKIPPED_FIRST\n```\n"
+        "```{when} var.arch == 'abc'\nSKIPPED_ABC\n```\n"
+        "```{otherwise}\nSKIPPED_LAST\n```\n````\n",
+        "'otherwise' directive takes no condition, got 'var.debug'" + _SKIP,
         "```{otherwise} var.debug",
     ),
     "unevaluable condition, backticks": (

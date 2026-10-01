@@ -13,7 +13,7 @@ Its branches are ``when`` and ``otherwise`` directives:
 when no test holds and there is no ``otherwise``, nothing is rendered.
 The content of every other branch is never parsed,
 so the needs inside it are never created.
-The names and their meaning are those of ``choose`` / ``when`` / ``otherwise`` in XSLT, JSTL and MSBuild.
+The names are those of ``choose`` / ``when`` / ``otherwise`` in XSLT, JSTL and MSBuild, which run their tests the same way.
 
 .. code-block:: rst
 
@@ -164,7 +164,8 @@ The mistakes are:
 - A branch is supplied through an include rather than written in the body of the ``choose``
   (the warning points at the branch in the included file).
 - A ``when`` has no condition: write the default as an ``otherwise``.
-- An ``otherwise`` is given a condition.
+- An ``otherwise`` is given a condition. The warning names it:
+  content written on the line right after ``.. otherwise::``, with no blank line between, is read as one.
 - The ``choose`` has more than one ``otherwise``, or an ``otherwise`` that is not its last branch.
 - The ``choose`` has no ``when`` or ``otherwise`` at all.
 - The ``choose`` is given an argument: the conditions go on the ``when`` directives.
