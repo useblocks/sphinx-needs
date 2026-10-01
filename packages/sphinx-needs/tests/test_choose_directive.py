@@ -299,6 +299,31 @@ _WARNINGS = {
             ),
         ),
     ),
+    # the condition faults are in document order: the otherwise's comes first here
+    "an otherwise with a condition, then a when without one": _Expected(
+        ".. choose::\n\n"
+        "   .. otherwise:: var.debug\n\n      SKIPPED_FIRST\n\n"
+        "   .. when::\n\n      SKIPPED_FORGOTTEN_CONDITION\n",
+        (
+            (
+                "'otherwise' directive takes no condition, got 'var.debug'" + _SKIP,
+                "   .. otherwise:: var.debug",
+            ),
+        ),
+    ),
+    # the children are checked before the condition faults: the stray paragraph after
+    # a when without a condition is what is reported
+    "a when without a condition, then a stray paragraph": _Expected(
+        ".. choose::\n\n"
+        "   .. when::\n\n      SKIPPED_FORGOTTEN_CONDITION\n\n"
+        "   A stray paragraph.\n",
+        (
+            (
+                _ONLY_BRANCHES + ", got <paragraph>" + _SKIP,
+                "   A stray paragraph.",
+            ),
+        ),
+    ),
     "paragraph in the body": _Expected(
         ".. choose::\n\n"
         "   .. when:: True\n\n      SKIPPED_BRANCH\n\n"
@@ -1221,6 +1246,12 @@ _MYST_WARNINGS = {
         "````{choose}\n```{otherwise} var.debug\nSKIPPED_FIRST\n```\n"
         "```{when} var.arch == 'abc'\nSKIPPED_ABC\n```\n"
         "```{otherwise}\nSKIPPED_LAST\n```\n````\n",
+        "'otherwise' directive takes no condition, got 'var.debug'" + _SKIP,
+        "```{otherwise} var.debug",
+    ),
+    "an otherwise with a condition, then a when without one, backticks": (
+        "````{choose}\n```{otherwise} var.debug\nSKIPPED_FIRST\n```\n"
+        "```{when}\nSKIPPED_FORGOTTEN_CONDITION\n```\n````\n",
         "'otherwise' directive takes no condition, got 'var.debug'" + _SKIP,
         "```{otherwise} var.debug",
     ),
