@@ -69,18 +69,35 @@ As example, here is a shorten list of tests results from the Sphinx-pytest examp
 Content
 -------
 
+Test reports come in two distributions: **sphinx-test-reports**, the Sphinx extension, and
+**ub-test-reports**, the converter, the pytest plugin and the parsers, which run without
+Sphinx and which the extension depends on. The version this site shows is the
+extension's; ub-test-reports has its own, and its own changelog below.
+
 .. toctree::
    :maxdepth: 2
+   :caption: The Sphinx extension
 
    install
    directives/index
    configuration
-   cli
-   pytest
-   parsers
    filter
    functions
    examples/index
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Without Sphinx (ub-test-reports)
+
+   cli
+   pytest
+   parsers
+   ub-test-reports-changelog
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Support
+
    support
    changelog
 

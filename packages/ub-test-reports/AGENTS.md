@@ -27,12 +27,17 @@ uv run poe build-ub-test-reports          # sdist + wheel into dist/ub-test-repo
 
 - **Nothing here may import Sphinx, sphinx-needs or docutils** — not at module level and
   not in a function body, because the converter runs as a build action and the plugin
-  inside a test run, and neither has a documentation toolchain. A default `.venv` cannot
-  catch a violation: every environment the workspace root produces has Sphinx in it. CI's
-  `toolchain-free` job is the fence — it installs the built wheel where the toolchain is
-  absent and runs the whole suite there.
+  inside a test run, and neither has a documentation toolchain. Every environment the
+  workspace root produces has Sphinx in it, so the default `.venv` sees only a module-level
+  import in the converter's import chain (a subprocess test lists `sys.modules`); a
+  function-body import passes there. CI's `toolchain-free` job is the fence — it installs
+  the built wheel where the toolchain is absent and runs the whole suite there.
 - **`ub-project` is its `ubproject.toml` reader.** Finding, loading and anchoring the file
-  come from there; what stays here is the `[test_reports]` policy and `TomlConfigError`.
+  come from there (`packages/ub-project/design/reading-contract.md` is the specification);
+  what stays here is the `[test_reports]` policy -- keys, types, normalisation, unknown keys
+  warned rather than fatal -- and **`TomlConfigError`, the only exception either consumer
+  catches**: `load_project_config` re-raises ub-project's `ProjectConfigError` as it, with
+  the same message, and it must never be made a subclass of it.
 - **The `[test_reports]` model is a parity surface**: ubCode reads the same table and is
   held to the same behaviour. A behaviour change in it — keys, types, normalisation,
   defaults — says so in the changelog, so ubCode can follow.
@@ -48,5 +53,12 @@ uv run poe build-ub-test-reports          # sdist + wheel into dist/ub-test-repo
   suite reads nothing from another member's tree and runs from the installed wheel; some of
   them also exist under sphinx-test-reports' `tests/doc_test/utils/`, where its test
   projects and docs read them. Neither copy ships in an sdist.
+- **One plugin test drives an in-process pytest session, and the default `.venv` breaks
+  it.** `tests/test_pytest_plugin.py`'s `NESTED` source starts `pytest.main()` inside a
+  `pytester` session, where every installed plugin loads; pytest-playwright (the root `js`
+  group, in the default `dev` group) refuses the nested soft-assertion scope. So it passes
+  `-p no:playwright`, and that line has to stay ONE line: a sibling test builds its own
+  source from it by replacing the literal `str(inner)]) == 0`. Run the suite in the default
+  `.venv` AND in a cell — green in one proves nothing about the other.
 - **Tests build paths with `Path`** and read and write text with an explicit `encoding`, so
   that the suite holds on Windows too.

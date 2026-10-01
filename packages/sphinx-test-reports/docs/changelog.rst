@@ -6,13 +6,67 @@ Changelog
 Unreleased
 ----------
 
+The Sphinx-free half is its own distribution, ub-test-reports
+.............................................................
+
+- ‼️ The ``test-reports`` converter, the pytest plugin, the parsers, the result
+  vocabulary, the deterministic case IDs and the ``[test_reports]`` model of
+  ``ubproject.toml`` are now **ub-test-reports** 1.0.0, a distribution of their own with no
+  Sphinx in it, imported as ``ub_test_reports``. They moved unchanged::
+
+     pip install ub-test-reports              # the test-reports command
+     pip install "ub-test-reports[pytest]"    # and the pytest plugin
+
+  sphinx-test-reports is the Sphinx extension alone, and depends on ub-test-reports, so
+  both still arrive with it.
+
+- ‼️ **pip install sphinx-test-reports brings Sphinx, Sphinx-Needs, docutils and
+  ub-test-reports again.** This reverses 2.0.0's install-footprint change: the extension's
+  dependencies are hard dependencies now, not the ``sphinx`` extra. A CI job or a Bazel
+  action that installed sphinx-test-reports only for the ``test-reports`` command or the
+  pytest plugin now gets the whole documentation toolchain -- and a resolver conflict
+  wherever that environment pins another Sphinx. Install ``ub-test-reports`` there instead:
+  it is the same command and the same plugin, without the toolchain.
+
+- The ``sphinx`` extra is accepted and ignored until 4.0 -- ``pip install
+  "sphinx-test-reports[sphinx]"`` installs exactly what the bare line does -- and the
+  ``pytest`` extra passes through to ``ub-test-reports[pytest]`` until 4.0, so 2.0.0's
+  documented install lines keep working.
+
+- ‼️ **The pytest plugin is** ``-p ub_test_reports.pytest_plugin``. Its pluggy registration
+  name is now ``ub_test_reports.xml_shape`` and the configuration warnings it issues start
+  with ``ub_test_reports.pytest_plugin:`` (2.0.0: ``sphinxcontrib.test_reports.xml_shape``
+  and ``sphinxcontrib.test_reports.pytest_plugin:``); a warning filter matching that text
+  needs the new prefix. The two ``user_properties`` wire names it reserves do not change.
+
+- ‼️ **The old module names need the extension.** ``sphinxcontrib.test_reports.junitparser``,
+  ``.jsonparser`` and ``.pytest_plugin`` (below) are shipped by sphinx-test-reports, so they
+  resolve only where it is installed -- which now means with Sphinx. On 2.0.0 a Sphinx-free
+  environment could ``pip install sphinx-test-reports`` and import them; on 3.0 such an
+  environment installs ``ub-test-reports`` and imports ``ub_test_reports.junitparser`` (and
+  so on). With only ub-test-reports installed the old names fail as a plain
+  ``ModuleNotFoundError: No module named 'sphinxcontrib'``.
+
+- 🔧 The load-time toolchain check is gone. It existed because the toolchain was an opt-in
+  extra pip never saw; as hard dependencies, pip resolves the floors itself. An environment
+  whose Sphinx-Needs is downgraded below the floor AFTER installing now fails with a
+  traceback from inside a directive rather than a one-line error naming the install line;
+  ``pip check`` (or ``uv pip check``) names the conflict. The extension itself still refuses
+  a Sphinx older than 7.4 when it loads, with Sphinx's own version error. With the check went
+  ``compat-requirements.txt``, which the release's compatibility cell needed only while the
+  toolchain was optional.
+
+- The modules that moved were ``sphinx_test_reports.<module>`` only in this unreleased
+  version -- 2.0.0 shipped them as ``sphinxcontrib.test_reports.<module>`` -- so no alias is
+  kept for the ``sphinx_test_reports`` spelling; the old names that do keep working are the
+  four below.
+
 The import name moves
 .....................
 
-- ♻️ The package is imported as ``sphinx_test_reports`` now, not
-  ``sphinxcontrib.test_reports``: the extension is ``extensions = ["sphinx_test_reports"]``
-  and the pytest plugin is ``-p sphinx_test_reports.pytest_plugin``. Nothing else about
-  either changes.
+- ♻️ The extension is imported as ``sphinx_test_reports`` now, not
+  ``sphinxcontrib.test_reports``: ``extensions = ["sphinx_test_reports"]``. The pytest
+  plugin and the parsers moved further, to ``ub_test_reports`` (above).
 
   Four old names keep working until **4.0**, each with a warning that names its
   replacement. 4.0 turns all four into errors that say the same thing. Under pytest's
@@ -28,7 +82,8 @@ The import name moves
     loads the extension once.
   - **The pytest plugin**, ``-p sphinxcontrib.test_reports.pytest_plugin`` (and the same
     name in ``addopts``, ``PYTEST_PLUGINS`` or a ``conftest.py``'s ``pytest_plugins``),
-    loads the real plugin and raises a ``FutureWarning`` at start-up -- once per process, so
+    loads the real plugin, ``ub_test_reports.pytest_plugin``, and raises a ``FutureWarning``
+    at start-up -- once per process, so
     once more for each pytest-xdist worker. A filter written against the old name --
     ``ignore::sphinxcontrib.test_reports.pytest_plugin.TestReportsConfigWarning`` -- still
     matches, because resolving it imports the alias. Change it together with the ``-p``
@@ -38,7 +93,8 @@ The import name moves
     ``pytest_plugins``, stops pytest with "Plugin already registered under a different
     name"; keep one.
   - **The parsers**, ``sphinxcontrib.test_reports.junitparser`` and
-    ``sphinxcontrib.test_reports.jsonparser``, are the real modules under the old name,
+    ``sphinxcontrib.test_reports.jsonparser``, are the real modules --
+    ``ub_test_reports.junitparser`` and ``ub_test_reports.jsonparser`` -- under the old name,
     with a ``FutureWarning`` (once per process) that points at the ``import`` statement
     naming them -- at ``importlib`` itself when they are loaded with
     ``importlib.import_module``. Their classes, and a ``mock.patch`` target through the old
@@ -58,8 +114,8 @@ The import name moves
   ordinary ``ImportError`` (``ModuleNotFoundError`` for an ``import`` statement):
   ``projectconfig``, ``identity``, ``results``, the directives and the rest were never
   documented as an API. The module is the same under
-  the new name -- ``sphinxcontrib.test_reports.projectconfig`` is
-  ``sphinx_test_reports.projectconfig``.
+  its new name -- ``sphinxcontrib.test_reports.projectconfig`` is
+  ``ub_test_reports.projectconfig``, and the directives are under ``sphinx_test_reports``.
 
   The two ``user_properties`` names the pytest plugin reserves for its location override,
   ``sphinxcontrib.test_reports:file`` and ``sphinxcontrib.test_reports:line``, are wire
@@ -89,9 +145,10 @@ New and Improved
   - **Release tags** are prefixed: ``sphinx-test-reports-v2.0.0`` rather than ``2.0.0``.
     Six of the ten historical bare names collided with existing Sphinx-Needs releases, so
     the prefix is load-bearing rather than tidy.
-  - **The distribution does not change.** It is still ``sphinx-test-reports``, and the
-    ``test-reports`` command is still the same command. The import name does change, in
-    this same release: see *The import name moves* above.
+  - **The distribution keeps its name.** It is still ``sphinx-test-reports``, and the
+    ``test-reports`` command is still the same command, now shipped by ub-test-reports,
+    which it depends on. The import names do change, in this same release: see the two
+    sections above.
 
 - 🔧 The shipped default ``tr_report_template`` ends with a ``literalinclude`` of itself,
   by a path relative to the including document. **That is still broken for your project**
@@ -119,16 +176,15 @@ New and Improved
   two lines below a slice of the missing value, which raised first. It now raises
   ``TestReportFileNotSetError`` like every other configuration mistake.
 
-- ⬆️ The ``sphinx`` extra now requires docutils 0.21 or newer, the floor the whole
+- ⬆️ The extension now requires docutils 0.21 or newer, as a dependency, the floor the whole
   Sphinx-Needs workspace declares and type-checks against (previously whatever Sphinx
-  accepted, which is 0.20 for Sphinx 7.4 through 9.0). The extension checks the extra's
-  floors when it loads, so it now refuses docutils 0.20 with the install line; the
-  ``test-reports`` command and the pytest plugin still install no docutils at all.
+  accepted, which is 0.20 for Sphinx 7.4 through 9.0). The ``test-reports`` command and the
+  pytest plugin, which are ub-test-reports, install no docutils at all.
 
 - ♻️ The ``ubproject.toml`` reader is now `ub-project <https://pypi.org/project/ub-project/>`__,
-  the shared reader every useblocks tool uses for the file, and a new runtime dependency
-  (standard library only, so the ``test-reports`` command and the pytest plugin still run
-  without Sphinx). Nothing changes in behaviour: the walk up to the repository root, the
+  the shared reader every useblocks tool uses for the file, and a runtime dependency of
+  ub-test-reports, where the ``[test_reports]`` model now lives (standard library only, so
+  the ``test-reports`` command and the pytest plugin still run without Sphinx). Nothing changes in behaviour: the walk up to the repository root, the
   anchoring of relative paths at the file's directory and every message are as before. One
   failure that used to escape as a traceback is now reported like the others: a file that
   is not UTF-8 is a configuration error naming the file.
@@ -140,16 +196,17 @@ What the move costs, stated rather than left to the CI diff
   suite against Sphinx-Needs 6.0.1, 6.3.0, 7.0.0, 8.0.0 and 8.5.0; in the workspace the
   suite runs against the sibling in the tree, across Sphinx 7.4, 8.2 and 9.1 instead. With
   it, **the declared floor narrows from** ``sphinx-needs>=6.0.1`` **to**
-  ``sphinx-needs>=8.5.0,<9`` in the ``sphinx`` extra (and from ``>=6`` in ``docs``). That is
+  ``sphinx-needs>=8.5.0,<9`` (and from ``>=6`` in ``docs``). That is
   the workspace's tight-tracking policy for a dependency on a sibling, and it is enforced;
   it means this release supports a narrower range of Sphinx-Needs than 2.0.0 did.
 - **Five ruff rule families are no longer enforced here** -- ``FURB``, ``PERF``, ``PGH``,
   ``PIE`` and ``SLF`` -- because the workspace has one shared rule set and they are not in
   it. All five were at zero violations, so nothing changed in the code; what changed is that
   a new violation would no longer be caught.
-- **The** ``plugin_floor`` **lane is gone for now**: the pytest plugin is no longer tested
-  against the oldest pytest of each Python. The ``toolchain_free`` lane survives, as a CI
-  job that installs the package with no documentation toolchain at all and asserts it.
+- **Both retired nox lanes have CI jobs**, now that the plugin is ub-test-reports': the
+  ``toolchain_free`` lane is a job that installs ub-test-reports with no documentation
+  toolchain at all, asserts it, and runs that package's whole suite; the ``plugin_floor``
+  lane runs the same suite on pytest 7.0.1 (Python 3.11) and 7.3.2 (Python 3.12).
 - **mypy is replaced by ty**, which checks the whole package -- the mypy configuration
   excluded fifteen modules.
 - **Beyond those five families, four rules this package enabled are now ignored**

@@ -8,6 +8,7 @@
 # -- Path setup --------------------------------------------------------------
 
 import datetime
+import importlib.metadata
 import os
 import shutil
 
@@ -35,10 +36,13 @@ now = datetime.datetime.now()
 copyright = f"team useblocks, 2017-{now.year}"
 author = "team useblocks"
 
+# The full version, including alpha/beta/rc tags: the EXTENSION's, read from the installed
+# distribution so it cannot drift from the manifest. ub-test-reports, which this site
+# documents too, has its own version line; the index page says so
+release = importlib.metadata.version("sphinx-test-reports")
 # The short X.Y version
-version = "2.0"
-# The full version, including alpha/beta/rc tags
-release = "2.0.0"
+_release = Version(release)
+version = f"{_release.major}.{_release.minor}"
 
 needs_id_regex = ".*"
 needs_css = "dark.css"
