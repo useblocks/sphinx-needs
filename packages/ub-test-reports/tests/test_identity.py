@@ -17,7 +17,7 @@ The expected values below were computed with S-CORE's own implementation
 
 import pytest
 
-from sphinx_test_reports.identity import (
+from ub_test_reports.identity import (
     PLACEHOLDER_FILE,
     case_display_name,
     deterministic_case_id,

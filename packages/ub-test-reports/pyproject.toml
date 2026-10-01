@@ -1,0 +1,60 @@
+[project]
+name = "ub-test-reports"
+version = "1.0.0"
+description = "Test results as needs without Sphinx: report parsers, the needs.json converter and the pytest plugin"
+authors = [{ name = "team useblocks", email = "info@useblocks.com" }]
+license = { file = "LICENSE" }
+readme = "README.rst"
+requires-python = ">=3.11,<4"
+# NO Sphinx, docutils or sphinx-needs, and that is the package's whole contract: the
+# converter runs as a build action and the plugin inside a test run, neither of which has a
+# documentation toolchain. ub-project is the `ubproject.toml` reader, TIGHT-tracked like
+# every intra-workspace edge (`check_workspace.py` check (4)); `propagate_floors.py` moves
+# the floor at each ub-project release. The `toolchain-free` CI job installs the built wheel
+# where Sphinx is absent and runs the whole suite there
+dependencies = ["lxml", "ub-project>=1.1.0,<2"]
+keywords = ["test-reports", "junit", "needs.json", "sphinx-needs", "pytest"]
+# NOT `Framework :: Sphinx`: nothing here depends on Sphinx
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Framework :: Pytest",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Software Development :: Testing",
+  "Typing :: Typed",
+]
+
+[project.optional-dependencies]
+# The pytest plugin (`-p ub_test_reports.pytest_plugin`); pytest is not a dependency of the
+# converter. 7.0 is where everything the plugin uses exists (pytest.Config/Item/Mark,
+# Config.stash, issue_config_time_warning). pytest before 7.3.2 does not run on Python
+# 3.12 at all -- that floor is pytest's own, not this one's. The `plugin-floor` CI job runs
+# the whole suite on pytest 7.0.1 (Python 3.11) and 7.3.2 (Python 3.12).
+pytest = ["pytest>=7.0"]
+
+[project.scripts]
+test-reports = "ub_test_reports.cli:main"
+
+[project.urls]
+Documentation = "https://sphinx-test-reports.readthedocs.io/en/latest/"
+Repository = "https://github.com/useblocks/sphinx-needs"
+Issues = "https://github.com/useblocks/sphinx-needs/issues"
+Changelog = "https://github.com/useblocks/sphinx-needs/blob/master/packages/ub-test-reports/docs/changelog.rst"
+
+[build-system]
+requires = ["flit_core >=3.4,<5"]
+build-backend = "flit_core.buildapi"
+
+# Deliberately NO `[tool.flit.sdist]`: flit's default sdist is the module (with its
+# `py.typed` marker and `schemas/JUnit.xsd`), README, LICENSE and this file, and nothing
+# else -- so neither `tests/` (and its fixture copies) nor `docs/` ships. Everything else --
+# ruff, ty, pytest and the dependency groups -- is the ROOT's, and
+# `tools/src/sn_tools/check_workspace.py` refuses those tables here.

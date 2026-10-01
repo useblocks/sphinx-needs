@@ -1,15 +1,17 @@
 """The pre-3.0 name of sphinx-test-reports, kept working until 4.0.
 
-The package is :mod:`sphinx_test_reports` now. Four old names still resolve, each
-with a warning that names the new one:
+The extension is :mod:`sphinx_test_reports` now, and the parsers and the pytest plugin are
+:mod:`ub_test_reports`, the ``ub-test-reports`` distribution it depends on. Four old names
+still resolve, each with a warning that names the new one:
 
 * this package, as a Sphinx extension (``extensions = ["sphinxcontrib.test_reports"]``),
   which warns through Sphinx's logger, type ``test_reports.deprecated`` -- the channel a
   documentation build shows, fails under ``-W`` and silences with ``suppress_warnings``;
 * ``pytest_plugin``, ``junitparser`` and ``jsonparser``, one file each next to this
-  one, which put the REAL module into :data:`sys.modules` under the old name and raise
-  one :class:`FutureWarning` per process (not a :class:`DeprecationWarning`, which
-  Python's default filters hide outside ``__main__``). It is attributed to the
+  one, which put the REAL module (``ub_test_reports.<name>``) into :data:`sys.modules`
+  under the old name and raise one :class:`FutureWarning` per process (not a
+  :class:`DeprecationWarning`, which Python's default filters hide outside
+  ``__main__``). It is attributed to the
   ``import`` statement that names the module; ``importlib.import_module``, and pytest
   when it loads a ``-p`` or ``pytest_plugins`` name, are frames of their own and take
   the attribution instead.
@@ -18,9 +20,9 @@ Every other ``sphinxcontrib.test_reports.<module>`` fails as an ordinary import
 error: there is deliberately no finder here that would alias the rest.
 
 ``setup`` is resolved lazily (PEP 562), so importing one of the module aliases does
-not import Sphinx: ``junitparser`` and ``pytest_plugin`` are used where the
-documentation toolchain is not installed, and every import of a submodule runs this
-file first.
+not import Sphinx -- every import of a submodule runs this file first, and a test run
+that loads ``-p sphinxcontrib.test_reports.pytest_plugin`` has no use for a Sphinx
+import.
 """
 
 from __future__ import annotations
@@ -52,10 +54,10 @@ def _setup(app: Sphinx) -> dict[str, Any]:
         type="test_reports",
         subtype="deprecated",
     )
-    # After the warning, so a toolchain error from the real `setup` has the deprecation
-    # line above it. Through Sphinx rather than by calling the real `setup`: a conf.py
-    # that lists both names then registers the extension once, and the real package's
-    # own lazy `setup` -- with its toolchain check -- is what runs.
+    # After the warning, so an error from the real `setup` has the deprecation line above
+    # it. Through Sphinx rather than by calling the real `setup`: a conf.py that lists both
+    # names then registers the extension once, and the real package's own `setup` is what
+    # runs.
     app.setup_extension(_NEW_NAME)
     extension = app.extensions[_NEW_NAME]
     # `Extension` pops these three out of the metadata it keeps; hand back all of it.

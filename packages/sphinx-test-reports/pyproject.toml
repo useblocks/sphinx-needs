@@ -26,30 +26,35 @@ keywords = ["sphinx", "documentation", "test-reports"]
 # and publishes; the gap shows up only as an install failure for a user on an interpreter
 # inside it. This package declared a bare `>=3.11` before the import.
 requires-python = ">=3.11,<4"
-dependencies = ["lxml", "ub-project>=1.1.0,<2"]
+# HARD dependencies: this package is the Sphinx extension and nothing else. The converter,
+# the pytest plugin, the parsers and the `[test_reports]` model are `ub-test-reports`, which
+# runs without the documentation toolchain and is the dependency that brings `lxml` and
+# `ub-project` along.
+#
+# TIGHT tracking on both siblings, not a compatibility range: sphinx-needs and
+# ub-test-reports are members of this workspace, and `check_workspace.py` check (4)
+# requires `>=<the sibling's current version>,<<its next major>` on every intra-workspace
+# edge. uv never validates a specifier it resolves through `workspace = true` (uv#9811), so
+# the floor is the only statement of what was actually tested, and `propagate_floors.py`
+# moves it at each sibling release (it moved ub-test-reports' from the `1.0.0.dev0` the split
+# PR declared to `1.0.0` in the core's release pull request). The published 2.0.0 said
+# `sphinx-needs>=6.0.1`; narrowing it is what the import costs, and the changelog says so.
+dependencies = [
+  "sphinx>=7.4",
+  "docutils>=0.21",
+  "sphinx-needs>=8.5.0,<9",
+  "ub-test-reports>=1.0.0,<2",
+]
 
 [project.optional-dependencies]
-# The Sphinx extension. The `test-reports` command and the pytest plugin run
-# without the documentation toolchain, so it is an extra rather than a
-# dependency; the lazy
-# `setup` in `__init__.py` enforces these floors when the extension is loaded,
-# since an extra is opt-in and pip never sees them otherwise.
-#
-# TIGHT tracking on the sibling, not a compatibility range: sphinx-needs is a member of
-# this workspace, and `check_workspace.py` check (4) requires
-# `>=<the sibling's current version>,<<its next major>` on every intra-workspace edge --
-# including one declared in an extra. uv never validates a specifier it resolves through
-# `workspace = true` (uv#9811), so the floor is the only statement of what was actually
-# tested, and `propagate_floors.py` moves it at each sphinx-needs release. The published
-# 2.0.0 said `>=6.0.1`; narrowing it is what the import costs, and the changelog says so.
-sphinx = ["sphinx>=7.4", "docutils>=0.21", "sphinx-needs>=8.5.0,<9"]
-# The pytest plugin (sphinx_test_reports.pytest_plugin); pytest is not
-# a dependency of the extension or the converter. 7.0 is where everything the
-# plugin uses exists (pytest.Config/Item/Mark, Config.stash,
-# issue_config_time_warning). pytest before 7.3.2 does not run on Python 3.12
-# at all -- that floor is pytest's own, not this one's; the `toolchain-free` CI job runs
-# the plugin's tests with no documentation toolchain installed at all.
-pytest = ["pytest>=7.0"]
+# Accepted and ignored until 4.0: 2.0.0 documented `pip install "sphinx-test-reports[sphinx]"`
+# when the toolchain was an extra, and an install line that names a missing extra warns
+# under both pip and uv. The toolchain is a dependency now
+sphinx = []
+# A pass-through until 4.0: 2.0.0 documented `pip install "sphinx-test-reports[pytest]"` for
+# the plugin, which is `ub-test-reports[pytest]` now. Kept so that line still installs
+# pytest; check (4) wants the extra's specifier spelled with the same tight floor
+pytest = ["ub-test-reports[pytest]>=1.0.0,<2"]
 # There is no `test` extra any more: the workspace's test tooling is the ROOT's shared
 # `test` dependency group, which every cell and the release compat cell install, and
 # `check_workspace.py` check (7) refuses a `[dependency-groups]` table here. `nox` and
@@ -76,9 +81,6 @@ Repository = "https://github.com/useblocks/sphinx-needs"
 Issues = "https://github.com/useblocks/sphinx-needs/issues"
 Changelog = "https://github.com/useblocks/sphinx-needs/blob/master/packages/sphinx-test-reports/docs/changelog.rst"
 
-[project.scripts]
-test-reports = "sphinx_test_reports.cli:main"
-
 # hatchling rather than flit, for this member alone. The wheel ships TWO top-level
 # packages: `sphinx_test_reports`, and `sphinxcontrib/test_reports/`, the aliases that keep
 # the pre-3.0 import name working until 4.0. flit ships exactly one module and silently
@@ -86,7 +88,8 @@ test-reports = "sphinx_test_reports.cli:main"
 # extension would break on the first release. The `toolchain-free` CI job builds the sdist
 # and the wheel the way the release does (the wheel FROM the sdist) and fails when either
 # is missing a tracked file under `src/`, because an editable install reads `src/` and would
-# keep every test green over a broken release.
+# keep every test green over a broken release. (The job is named for ub-test-reports, whose
+# suite it runs without Sphinx; this fence only reads archives, so it needs no toolchain.)
 [build-system]
 requires = ["hatchling >=1.27,<2"]
 build-backend = "hatchling.build"
@@ -108,6 +111,5 @@ only-include = ["src/sphinx_test_reports", "src/sphinxcontrib"]
 # `check_workspace.Member.module`, `import_check.py` and `release.yaml` all derive it.
 # Everything else -- ruff, ty, pytest and the dependency groups -- is the ROOT's, and
 # `check_workspace.py` check (7) refuses those tables here: a member `[tool.ruff]` does not
-# extend the root's configuration, it replaces it. The `toolchain` pytest marker this
-# package declared moved to the root's `markers` list with the rest of the pytest
-# configuration; `[tool.mypy]` went because the workspace type-checks with ty.
+# extend the root's configuration, it replaces it. `[tool.mypy]` went because the workspace
+# type-checks with ty.

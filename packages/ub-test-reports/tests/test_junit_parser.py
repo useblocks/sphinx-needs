@@ -1,28 +1,24 @@
 import os
 
-xml_path = os.path.join(os.path.dirname(__file__), "doc_test/utils", "xml_data.xml")
-xml_pytest_path = os.path.join(
-    os.path.dirname(__file__), "doc_test/utils", "pytest_data.xml"
-)
+xml_path = os.path.join(os.path.dirname(__file__), "fixtures", "xml_data.xml")
+xml_pytest_path = os.path.join(os.path.dirname(__file__), "fixtures", "pytest_data.xml")
 xml_pytest51_path = os.path.join(
-    os.path.dirname(__file__), "doc_test/utils", "pytest_data_5_1.xml"
+    os.path.dirname(__file__), "fixtures", "pytest_data_5_1.xml"
 )
 xml_pytest62_path = os.path.join(
-    os.path.dirname(__file__), "doc_test/utils", "pytest_data_6_2.xml"
+    os.path.dirname(__file__), "fixtures", "pytest_data_6_2.xml"
 )
 
-xml_nose_path = os.path.join(
-    os.path.dirname(__file__), "doc_test/utils", "nose_data.xml"
-)
+xml_nose_path = os.path.join(os.path.dirname(__file__), "fixtures", "nose_data.xml")
 
-xml_ctest_path = os.path.join(os.path.dirname(__file__), "doc_test/utils", "ctest.xml")
+xml_ctest_path = os.path.join(os.path.dirname(__file__), "fixtures", "ctest.xml")
 xml_error_path = os.path.join(
-    os.path.dirname(__file__), "doc_test/utils", "xml_data_error.xml"
+    os.path.dirname(__file__), "fixtures", "xml_data_error.xml"
 )
 
 
 def test_init_parser():
-    from sphinx_test_reports.junitparser import JUnitParser
+    from ub_test_reports.junitparser import JUnitParser
 
     parser = JUnitParser(xml_path)
 
@@ -30,7 +26,7 @@ def test_init_parser():
 
 
 def test_xml_object():
-    from sphinx_test_reports.junitparser import JUnitParser
+    from ub_test_reports.junitparser import JUnitParser
 
     parser = JUnitParser(xml_path)
     obj = parser.junit_xml_object
@@ -40,7 +36,7 @@ def test_xml_object():
 
 
 def test_parse_easy_xml():
-    from sphinx_test_reports.junitparser import JUnitParser
+    from ub_test_reports.junitparser import JUnitParser
 
     parser = JUnitParser(xml_path)
     assert hasattr(parser, "parse")
@@ -54,7 +50,7 @@ def test_parse_easy_xml():
 
 
 def test_parse_nosetest_xml():
-    from sphinx_test_reports.junitparser import JUnitParser
+    from ub_test_reports.junitparser import JUnitParser
 
     parser = JUnitParser(xml_nose_path)
     assert hasattr(parser, "parse")
@@ -73,7 +69,7 @@ def test_parse_nosetest_xml():
 
 
 def test_parse_pytest_xml():
-    from sphinx_test_reports.junitparser import JUnitParser
+    from ub_test_reports.junitparser import JUnitParser
 
     parser = JUnitParser(xml_pytest_path)
     assert hasattr(parser, "parse")
@@ -94,7 +90,7 @@ def test_parse_pytest_xml():
 
 
 def test_parse_pytest_51_xml():
-    from sphinx_test_reports.junitparser import JUnitParser
+    from ub_test_reports.junitparser import JUnitParser
 
     parser = JUnitParser(xml_pytest51_path)
     assert hasattr(parser, "parse")
@@ -105,7 +101,7 @@ def test_parse_pytest_51_xml():
 
 
 def test_parse_pytest_61_gets_test_suite_attributes():
-    from sphinx_test_reports.junitparser import JUnitParser
+    from ub_test_reports.junitparser import JUnitParser
 
     parser = JUnitParser(xml_pytest62_path)
     test_suites = parser.parse()
@@ -123,7 +119,7 @@ def test_parse_pytest_61_gets_test_suite_attributes():
 
 
 def test_parse_ctest_xml():
-    from sphinx_test_reports.junitparser import JUnitParser
+    from ub_test_reports.junitparser import JUnitParser
 
     parser = JUnitParser(xml_ctest_path)
     test_suites = parser.parse()
@@ -154,7 +150,7 @@ def test_parse_ctest_xml():
 
 
 def test_parse_error_xml():
-    from sphinx_test_reports.junitparser import JUnitParser
+    from ub_test_reports.junitparser import JUnitParser
 
     parser = JUnitParser(xml_error_path)
     test_suites = parser.parse()
@@ -184,12 +180,12 @@ def test_parse_error_xml():
 
 
 xml_runner_error_path = os.path.join(
-    os.path.dirname(__file__), "doc_test/utils", "runner_error_data.xml"
+    os.path.dirname(__file__), "fixtures", "runner_error_data.xml"
 )
 
 
 def _runner_error_case(name):
-    from sphinx_test_reports.junitparser import JUnitParser
+    from ub_test_reports.junitparser import JUnitParser
 
     suite = JUnitParser(xml_runner_error_path).parse()[0]
     return next(case for case in suite["testcases"] if case["name"] == name)
@@ -237,10 +233,55 @@ def test_a_passing_testcase_next_to_errors_is_still_passed():
 
 
 def test_error_counts_are_taken_from_the_testsuite():
-    from sphinx_test_reports.junitparser import JUnitParser
+    from ub_test_reports.junitparser import JUnitParser
 
     suite = JUnitParser(xml_runner_error_path).parse()[0]
 
     assert suite["errors"] == 2
     assert suite["failures"] == 0
     assert suite["passed"] == 1
+
+
+#: The smallest report the shipped Apache Ant JUnit schema accepts: every required
+#: attribute of `<testsuite>` and `<testcase>`, and the four child elements in order.
+CONFORMING_REPORT = """\
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="suite" timestamp="2026-10-01T12:00:00" hostname="host" tests="1"
+           failures="0" errors="0" time="0.1">
+  <properties/>
+  <testcase name="test_one" classname="pkg.Suite" time="0.1"/>
+  <system-out/>
+  <system-err/>
+</testsuite>
+"""
+
+
+class TestSchemaValidation:
+    """`validate()` reads `schemas/JUnit.xsd` from the installed package.
+
+    The schema is package data, so it is what an artefact check must not lose: these
+    tests are the ones that fail when a built wheel ships without it.
+    """
+
+    def test_the_shipped_schema_accepts_a_conforming_report(self, tmp_path):
+        from pathlib import Path
+
+        from ub_test_reports.junitparser import JUnitParser
+
+        report = tmp_path / "conforming.xml"
+        report.write_text(CONFORMING_REPORT, encoding="utf-8")
+        parser = JUnitParser(str(report))
+
+        assert Path(parser.junit_xsd_path).is_file()
+        assert parser.validate() is True
+
+    def test_the_shipped_schema_rejects_a_report_without_its_required_attributes(
+        self,
+    ):
+        from ub_test_reports.junitparser import JUnitParser
+
+        # pytest's report has no `hostname` or `timestamp` on its `<testsuite>`
+        parser = JUnitParser(xml_pytest_path)
+
+        assert parser.validate() is False
+        assert len(parser.xmlschema.error_log) > 0

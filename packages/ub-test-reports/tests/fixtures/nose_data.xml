@@ -1,0 +1,7 @@
+<testsuite name="nosetests" tests="5" errors="0" failures="0" skip="0">
+    <testcase classname="test_basic_doc" name="test_doc_build_html" time="0.283"/>
+    <testcase classname="test_dummy" name="test_dummy" time="0.000"/>
+    <testcase classname="test_empty_doc" name="test_doc_build_html" time="0.108"/>
+    <testcase classname="test_junit_parser" name="test_init_parser" time="0.001"/>
+    <testcase classname="test_junit_parser" name="test_xml_object" time="0.001"/>
+</testsuite>

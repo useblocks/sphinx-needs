@@ -17,7 +17,7 @@ repos:
           )$
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.16.5
+    rev: v0.16.8
     hooks:
       - id: ruff-check
         args: [--fix]
@@ -62,7 +62,7 @@ repos:
         files: ^(packages/[^/]+/(src/|pyproject\.toml$)|pyproject\.toml$|uv\.lock$)
 
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.12.9
+    rev: "0.12.18"
     hooks:
       # keeps the committed uv.lock in step with pyproject.toml;
       # it only runs when pyproject.toml, uv.lock or uv.toml changes

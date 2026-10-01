@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+    <testsuite name="pytest62" errors="0" failures="2" skipped="3" tests="6" time="4.088" timestamp="2021-07-26T21:55:11.026268" hostname="hostname">
+        <testcase classname="test_example" name="test_pass" time="0.006" />
+        <testcase classname="test_example" name="test_fail" time="0.002">
+            <failure message="assert False">def test_fail ():
+&gt;       assert False
+E       assert False
+
+test_example.py:11: AssertionError</failure>
+        </testcase>
+        <testcase classname="test_example" name="test_skip" time="0.012">
+            <skipped type="pytest.skip" message="An example reason">~/test_example.py:13: An example reason</skipped>
+        </testcase>
+        <testcase classname="test_example" name="test_skipif" time="0.018">
+            <skipped type="pytest.skip" message="An example reason">~/test_example.py:17: An example reason</skipped>
+        </testcase>
+        <testcase classname="test_example" name="test_xfail" time="0.003">
+            <skipped type="pytest.xfail" message="[NOTRUN] An example reason" />
+        </testcase>
+        <testcase classname="test_example" name="test_error" time="0.018">
+            <failure message="Exception: Bang!">def test_error():
+&gt;       raise Exception("Bang!")
+E       Exception: Bang!
+
+test_example.py:31: Exception</failure>
+        </testcase>
+    </testsuite>
+</testsuites>

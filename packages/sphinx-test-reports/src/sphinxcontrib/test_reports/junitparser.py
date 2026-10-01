@@ -1,4 +1,4 @@
-"""Deprecated: the old name of :mod:`sphinx_test_reports.junitparser`, removed in 4.0.
+"""Deprecated: the old name of :mod:`ub_test_reports.junitparser`, removed in 4.0.
 
 Importing it gives the real module -- the same object, so classes and ``mock.patch``
 targets written against the old path keep working, and warning filters naming it keep
@@ -12,10 +12,10 @@ only these, are aliased.
 import sys
 import warnings
 
-from sphinx_test_reports import junitparser as _module
+from ub_test_reports import junitparser as _module
 
 warnings.warn(
-    "sphinxcontrib.test_reports.junitparser has moved to sphinx_test_reports.junitparser; "
+    "sphinxcontrib.test_reports.junitparser has moved to ub_test_reports.junitparser; "
     "import it from there. The old name stops working in sphinx-test-reports 4.0.",
     FutureWarning,
     # 2 is the frame that ran the import: `warnings` skips importlib's frozen bootstrap

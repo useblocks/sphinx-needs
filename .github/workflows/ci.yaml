@@ -61,7 +61,7 @@ jobs:
         # ONE probe at a time, and one per package: with both planted at once a gate that had
         # dropped one package would still go red on the other and look healthy.
         run: |
-          probes="packages/sphinx-needs/src/sphinx_needs/_ty_gate_probe.py packages/sphinx-mounts/src/sphinx_mounts/_ty_gate_probe.py packages/sphinx-codelinks/src/sphinx_codelinks/_ty_gate_probe.py packages/sphinx-test-reports/src/sphinx_test_reports/_ty_gate_probe.py packages/ub-project/src/ub_project/_ty_gate_probe.py"
+          probes="packages/sphinx-needs/src/sphinx_needs/_ty_gate_probe.py packages/sphinx-mounts/src/sphinx_mounts/_ty_gate_probe.py packages/sphinx-codelinks/src/sphinx_codelinks/_ty_gate_probe.py packages/sphinx-test-reports/src/sphinx_test_reports/_ty_gate_probe.py packages/ub-test-reports/src/ub_test_reports/_ty_gate_probe.py packages/ub-project/src/ub_project/_ty_gate_probe.py"
           # shellcheck disable=SC2064
           trap "rm -f $probes" EXIT
           for probe in $probes; do
@@ -459,23 +459,27 @@ jobs:
         working-directory: packages/sphinx-test-reports
 
   toolchain-free:
-    name: Toolchain-free (sphinx-test-reports, ub-project)
+    name: Toolchain-free (ub-test-reports, ub-project)
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    # sphinx-test-reports' converter (`test-reports`) and its pytest plugin are meant to run
-    # where the documentation toolchain is NOT installed -- that is why Sphinx and
-    # sphinx-needs are an EXTRA of that package rather than dependencies. This job is the
-    # only thing that keeps it true: it installs the package with the dependencies it
-    # declares, asserts that sphinx, sphinx_needs and docutils are all absent, and runs the
-    # modules that do not need a build.
+    # ub-test-reports -- the converter (`test-reports`), the pytest plugin, the parsers and the
+    # `[test_reports]` model -- is a DISTRIBUTION that must run where the documentation
+    # toolchain is NOT installed: a build action and a test run have none. Nothing else keeps
+    # that true at run time. This job installs the core's built wheel with the dependencies it
+    # declares, asserts that sphinx, sphinx_needs and docutils are all absent, and runs its
+    # WHOLE suite there. The suite's own `tests/test_imports.py` refuses any import STATEMENT
+    # naming the toolchain, in every environment; what this job adds is what a static walk
+    # cannot see -- a dependency that drags Sphinx in, an import spelled dynamically -- on
+    # the lines a test reaches, and the plugin's pytester subprocess runs, all without the
+    # toolchain.
     #
     # The environment is on Python 3.11, the workspace floor: both packages it runs claim
     # `>=3.11`, and no other cell runs either of them there -- the matrix cells vary the
     # sphinx series on the pinned interpreter -- so the job that proves "no toolchain"
     # proves the floor too.
     #
-    # ubproject, the shared reader for `ubproject.toml`, is installed into the SAME
+    # ub-project, the shared reader for `ubproject.toml`, is installed into the SAME
     # environment and its whole suite runs here: its contract is to import nothing outside
     # the standard library, so that every tool reading the file -- this converter included
     # -- can use it without the toolchain. The assertion below runs after both installs, so
@@ -489,10 +493,9 @@ jobs:
     # groups are asked for. The environment is therefore built OUTSIDE the project with
     # `uv pip install --no-sources`, exactly as `release.yaml`'s compat cell builds its own.
     #
-    # It replaces the `toolchain_free` session of the noxfile the import retired. That
-    # noxfile's other lane, `plugin_floor` (the plugin on the oldest pytest of each Python),
-    # is deliberately NOT here: it belongs with the release that makes the plugin a shipped
-    # surface of its own.
+    # The extension, sphinx-test-reports, has hard Sphinx dependencies now, so nothing of it
+    # runs here; only its artefact fence does, because that fence reads archives and needs
+    # no toolchain. The plugin's oldest-pytest lane is `plugin-floor` below.
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.2.0
@@ -500,8 +503,48 @@ jobs:
           enable-cache: true
           cache-suffix: toolchain-free
           cache-python: true
-      - name: Build the sdist and wheel as the release does, and check both
-        # The fence on the ARTEFACTS. Every other job installs this member editable, which
+      - name: Build ub-test-reports' sdist and wheel as the release does, and check both
+        # The fence on the core's ARTEFACTS, in `release.yaml`'s shape (no `--wheel`: the
+        # wheel is built FROM the sdist). flit ships one module, so what is checked is that it
+        # is the right one and complete -- every tracked file under `src/`, `schemas/JUnit.xsd`
+        # (which the XML validation reads at run time) and `py.typed` among them -- that the
+        # wheel's top level is exactly `ub_test_reports` and its dist-info, and that the sdist
+        # carries neither `tests/` (with its fixture copies) nor `docs/`
+        run: |
+          uv build --package ub-test-reports --no-sources -o /tmp/core-dist
+          git ls-files packages/ub-test-reports/src | uv run --no-project python -c "
+          import pathlib, sys, tarfile, zipfile
+          dist = pathlib.Path('/tmp/core-dist')
+          (wheel,) = dist.glob('*.whl')
+          (sdist,) = dist.glob('*.tar.gz')
+          wanted = {line.strip().split('/src/', 1)[1] for line in sys.stdin if line.strip()}
+          errors = []
+          for name in ('ub_test_reports/__init__.py', 'ub_test_reports/schemas/JUnit.xsd', 'ub_test_reports/py.typed'):
+              if name not in wanted:
+                  errors.append(f'{name} is not tracked under src/')
+          with tarfile.open(sdist) as tar:
+              members = [m.name.split('/', 1)[1] for m in tar.getmembers() if m.isfile()]
+          in_src = {name.removeprefix('src/') for name in members if name.startswith('src/')}
+          errors += [f'missing from {sdist.name}: src/{name}' for name in sorted(wanted - in_src)]
+          errors += [f'{sdist.name} ships {name}' for name in sorted(members)
+                     if name.startswith(('tests/', 'docs/'))]
+          shipped = set(zipfile.ZipFile(wheel).namelist())
+          errors += [f'missing from {wheel.name}: {name}' for name in sorted(wanted - shipped)]
+          top = {name.split('/', 1)[0] for name in shipped}
+          dist_info = {name for name in top if name.endswith('.dist-info')}
+          if len(dist_info) != 1 or top - dist_info != {'ub_test_reports'}:
+              errors.append(f'{wheel.name} top level is {sorted(top)}, not exactly ub_test_reports and one dist-info')
+          licences = sorted(n.split('/licenses/', 1)[1] for n in shipped if '.dist-info/licenses/' in n)
+          if licences != ['LICENSE']:
+              errors.append(f'{wheel.name} ships licence files {licences}, not exactly LICENSE')
+          print(f'{sdist.name}: {len(members)} files; {wheel.name}: {len(shipped)} entries; {len(wanted)} tracked files under src/')
+          sys.exit('\\n'.join(errors) if errors else 0)
+          "
+      - name: Build sphinx-test-reports' sdist and wheel as the release does, and check both
+        # The fence on the extension's ARTEFACTS. It only reads archives, so it needs no
+        # toolchain and lives here rather than in a job of its own; nothing below installs
+        # this wheel -- the extension needs Sphinx, and the release's compat cell walks and
+        # tests it. Every other job installs this member editable, which
         # reads `src/`, so a build configuration that dropped a package -- the
         # `sphinxcontrib/test_reports/` aliases most of all, which flit would drop without a
         # word -- would leave the whole suite green over a broken release. So this builds in
@@ -558,45 +601,99 @@ jobs:
           sys.exit('\\n'.join(errors) if errors else 0)
           "
       - name: Build an environment with no documentation toolchain in it
-        # from the wheel checked above, so the modules below -- the aliases among them --
-        # run against the artefact, not against the checkout
+        # from the core's wheel checked above, so its suite runs against the artefact, not
+        # against the checkout. `pytest-xdist` so that the plugin's three xdist tests run
+        # here instead of skipping on `importorskip`
         run: |
           uv venv --python 3.11 /tmp/toolchain-free
-          wheel=$(ls /tmp/str-dist/*.whl)
-          uv pip install --python /tmp/toolchain-free --no-sources "${wheel}[pytest]" packages/ub-project
-      - name: Assert the toolchain really is absent
+          wheel=$(ls /tmp/core-dist/*.whl)
+          uv pip install --python /tmp/toolchain-free --no-sources "${wheel}[pytest]" pytest-xdist packages/ub-project
+      - name: Assert the toolchain really is absent, and pytest-xdist present
         # the fence's fence. Without this the job would still pass with Sphinx installed,
-        # and would be testing nothing it claims to test.
+        # and would be testing nothing it claims to test. pytest-xdist the other way round:
+        # without it the plugin's three xdist tests skip on `importorskip` and the job
+        # stays green
         run: |
           /tmp/toolchain-free/bin/python -c "
           import importlib.util, sys
           present = [m for m in ('sphinx', 'sphinx_needs', 'docutils') if importlib.util.find_spec(m)]
-          sys.exit(f'toolchain installed: {present}' if present else 0)
+          if present:
+              sys.exit(f'toolchain installed: {present}')
+          if importlib.util.find_spec('xdist') is None:
+              sys.exit(\"pytest-xdist is not installed: the plugin's three xdist tests would skip\")
           "
-      - name: Run the modules that need no documentation build
-        # From the REPOSITORY ROOT, so pytest's rootdir is this repository and the root
-        # `[tool.pytest.ini_options]` applies -- which is where the `toolchain` marker is
-        # registered, so `-m "not toolchain"` deselects rather than warning.
-        run: |
-          /tmp/toolchain-free/bin/python -m pytest -q -m "not toolchain" \
-            packages/sphinx-test-reports/tests/test_aliases.py \
-            packages/sphinx-test-reports/tests/test_cli_config.py \
-            packages/sphinx-test-reports/tests/test_cli_convert.py \
-            packages/sphinx-test-reports/tests/test_identity.py \
-            packages/sphinx-test-reports/tests/test_junit_parser.py \
-            packages/sphinx-test-reports/tests/test_junit_parser_gtest.py \
-            packages/sphinx-test-reports/tests/test_needs_export.py \
-            packages/sphinx-test-reports/tests/test_project_config.py \
-            packages/sphinx-test-reports/tests/test_pytest_plugin.py \
-            packages/sphinx-test-reports/tests/test_result_vocabulary.py \
-            packages/sphinx-test-reports/tests/test_toolchain.py
+      - name: Run the ub-test-reports suite
+        # WHOLE, with no marker and no file list: every test of the core must pass without the
+        # toolchain. From the repository root, so the root `[tool.pytest.ini_options]` applies.
+        # The installed wheel is what is imported -- `src/` is never on `sys.path` under
+        # `--import-mode=importlib` -- so this tests the artefact. `-rs` prints any skip.
+        run: /tmp/toolchain-free/bin/python -m pytest -q -rs packages/ub-test-reports/tests
       - name: Run the ub-project suite
         # A step of its own so that a red check names the suite. (One run over both would
-        # collect today -- measured -- but only because this suite has no `conftest.py`:
-        # add one and it resolves to `tests.conftest` beside test-reports', the collision
-        # the root `testpaths` comment describes.) The installed wheel is what is imported
-        # -- `src/` is never on `sys.path` -- so this also tests the artefact
+        # collect today -- measured -- but only because this suite has no `conftest.py`: add
+        # one and it resolves to `tests.conftest` beside ub-test-reports', and pytest stops
+        # with "Plugin already registered under a different name", measured too.) The
+        # installed wheel is what is imported -- `src/` is never on `sys.path` -- so this also
+        # tests the artefact
         run: /tmp/toolchain-free/bin/python -m pytest -q packages/ub-project/tests
+
+  plugin-floor:
+    name: Plugin floor (pytest ${{ matrix.pytest }}, Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    # ub-test-reports' pytest plugin declares `pytest>=7.0` (its `pytest` extra), and every
+    # other job runs the newest pytest. This runs the core's whole suite on the oldest pytest
+    # each floor Python can take: 7.0.1 on 3.11, and 7.3.2 on 3.12, the first pytest that runs
+    # there at all. Same environment shape as `toolchain-free` -- the built wheel, no
+    # toolchain -- with pytest pinned.
+    #
+    # From the package directory -- pytest still finds the root's `pyproject.toml`
+    # configuration there -- because from the root pytest 7.3.2 loads the conftest of every
+    # `testpaths` entry (sphinx-needs') and dies on its imports (measured). `pytest-xdist` is not
+    # pinned: the newest (3.8.0, measured) declares `pytest>=7.0` and passes on both pins, so
+    # the plugin's three xdist tests run rather than skip.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python: "3.11"
+            pytest: "7.0.1"
+          - python: "3.12"
+            pytest: "7.3.2"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          enable-cache: true
+          cache-suffix: plugin-floor-${{ matrix.python }}
+          cache-python: true
+      - name: Build an environment with the oldest pytest and no documentation toolchain
+        run: |
+          uv build --package ub-test-reports --no-sources --wheel -o /tmp/core-dist
+          uv venv --python ${{ matrix.python }} /tmp/plugin-floor
+          wheel=$(ls /tmp/core-dist/*.whl)
+          uv pip install --python /tmp/plugin-floor --no-sources "${wheel}[pytest]" \
+            "pytest==${{ matrix.pytest }}" pytest-xdist packages/ub-project
+      - name: Assert the pin, pytest-xdist present, and the toolchain absent
+        # the pin's positive control: a resolver that moved pytest would make this job test
+        # the newest pytest again while still reporting the floor. pytest-xdist: a resolver
+        # that could no longer place one next to the pinned pytest would make the plugin's
+        # three xdist tests skip, green
+        run: |
+          /tmp/plugin-floor/bin/python -c "
+          import importlib.util, sys
+          import pytest
+          if pytest.__version__ != '${{ matrix.pytest }}':
+              sys.exit(f'pytest {pytest.__version__} is installed, not ${{ matrix.pytest }}')
+          if importlib.util.find_spec('xdist') is None:
+              sys.exit(\"pytest-xdist is not installed: the plugin's three xdist tests would skip\")
+          present = [m for m in ('sphinx', 'sphinx_needs', 'docutils') if importlib.util.find_spec(m)]
+          sys.exit(f'toolchain installed: {present}' if present else 0)
+          "
+      - name: Run the ub-test-reports suite
+        working-directory: packages/ub-test-reports
+        run: /tmp/plugin-floor/bin/python -m pytest -q -rs tests
 
   bazel:
     name: Mounts Bazel integration
@@ -677,6 +774,7 @@ jobs:
       - docs-codelinks
       - docs-reports
       - toolchain-free
+      - plugin-floor
       - bazel
       - smoke-needs
 

@@ -3,26 +3,29 @@
 Installation
 ============
 
-The package has three consumers, and each installs a different part of it.
+Test reports come in two distributions, and each consumer installs the one it needs.
 
-A documentation project needs the Sphinx extension, and with it the
-documentation toolchain -- Sphinx and
-`Sphinx-Needs <https://sphinx-needs.readthedocs.io/en/latest/>`_ -- which is
-the ``sphinx`` extra of the package::
-
-   pip install "sphinx-test-reports[sphinx]"
-
-A test runner that should write the XML shape the extension reads installs the
-:ref:`pytest plugin <pytest_plugin>` as the ``pytest`` extra, which adds pytest
-and nothing of the documentation toolchain::
-
-   pip install "sphinx-test-reports[pytest]"
-
-A build action that only runs the :ref:`test-reports command <cli>`, which
-turns test results into a ``needs.json`` without a Sphinx build, installs the
-bare package, whose single dependency is ``lxml``::
+A documentation project needs the Sphinx extension, **sphinx-test-reports**. It brings the
+documentation toolchain -- Sphinx, docutils and
+`Sphinx-Needs <https://sphinx-needs.readthedocs.io/en/latest/>`_ -- and ub-test-reports
+with it::
 
    pip install sphinx-test-reports
+
+A build action that only runs the :ref:`test-reports command <cli>`, which turns test
+results into a ``needs.json`` without a Sphinx build, installs **ub-test-reports**, which
+has no Sphinx in it (its dependencies are ``lxml`` and ``ub-project``)::
+
+   pip install ub-test-reports
+
+A test runner that should write the XML shape the extension reads installs the
+:ref:`pytest plugin <pytest_plugin>`, ub-test-reports' ``pytest`` extra, which adds pytest
+and nothing of the documentation toolchain::
+
+   pip install "ub-test-reports[pytest]"
+
+ub-test-reports has its own version number and
+`changelog <https://github.com/useblocks/sphinx-needs/blob/master/packages/ub-test-reports/docs/changelog.rst>`__.
 
 .. versionchanged:: 2.0.0
    ``pip install sphinx-test-reports`` -- without an extra -- no longer
@@ -30,12 +33,17 @@ bare package, whose single dependency is ``lxml``::
    ``sphinx`` extra to its install line; a test runner or a build action that
    has no documentation toolchain no longer gets one.
 
-The ``sphinx`` extra also states the supported versions: Sphinx 7.4 and
-Sphinx-Needs 6.0.1 or later. An extra is opt-in, so a project that keeps
-installing the bare package into an environment holding an older toolchain
-would never be told by ``pip``; the extension therefore checks the installed
-versions when Sphinx loads it and stops the build with a message naming the
-install line above.
+.. versionchanged:: 3.0.0
+   The converter, the pytest plugin and the parsers moved to their own distribution,
+   ub-test-reports, and ``pip install sphinx-test-reports`` installs Sphinx, docutils and
+   Sphinx-Needs again: they are dependencies of the extension, not an extra. A test runner
+   or a build action that installed sphinx-test-reports for the command or the plugin
+   installs ub-test-reports instead. The ``sphinx`` extra is accepted and ignored, and the
+   ``pytest`` extra installs ``ub-test-reports[pytest]``, until 4.0.
+
+The extension supports Sphinx 7.4 or later, docutils 0.21 or later and Sphinx-Needs 8.5
+(``>=8.5.0,<9``); ``pip`` resolves those as it installs it, and the extension itself
+refuses an older Sphinx when it loads.
 
 After that the extension must be added to the ``conf.py`` file::
 

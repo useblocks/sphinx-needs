@@ -421,6 +421,11 @@ shared file other useblocks tooling (sphinx-needs, sphinx-codelinks,
 sphinx-mounts, ubCode) reads. It describes the project once, so every tool
 acting on it works from the same settings instead of each restating them.
 
+The section's model -- its keys, their types, how they are normalised and which are
+rejected -- belongs to ub-test-reports (``ub_test_reports.projectconfig``), so the
+:ref:`build needs command <cli>` and the extension read it identically; the extension
+applies it to the ``tr_*`` values below when a build starts.
+
 .. code-block:: toml
 
    [test_reports]

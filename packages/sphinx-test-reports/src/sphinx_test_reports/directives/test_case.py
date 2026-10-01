@@ -8,7 +8,7 @@ from sphinx_needs.utils import add_doc
 from sphinx_test_reports.config import DEFAULT_OPTIONS
 from sphinx_test_reports.directives.test_common import TestCommonDirective
 from sphinx_test_reports.exceptions import TestReportInvalidOptionError
-from sphinx_test_reports.identity import split_case_name
+from ub_test_reports.identity import split_case_name
 
 
 class TestCase(nodes.General, nodes.Element):
