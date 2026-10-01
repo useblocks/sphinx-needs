@@ -919,8 +919,8 @@ def test_only_a_real_import_counts(workspace, capsys, line) -> None:
 
 
 def test_a_declaration_in_an_extra_satisfies_an_import(workspace, capsys) -> None:
-    """sphinx-test-reports' shape: its core install must stay docutils-free, so the
-    floor lives in the extra that installs the Sphinx toolchain."""
+    """The shape sphinx-test-reports 2.0.0 had: its core install had to stay
+    docutils-free, so the floor lived in the extra that installed the Sphinx toolchain."""
     root = workspace(
         {
             "acme-reports": {

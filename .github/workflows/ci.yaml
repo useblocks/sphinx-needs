@@ -466,9 +466,12 @@ jobs:
     # ub-test-reports -- the converter (`test-reports`), the pytest plugin, the parsers and the
     # `[test_reports]` model -- is a DISTRIBUTION that must run where the documentation
     # toolchain is NOT installed: a build action and a test run have none. Nothing else keeps
-    # that true. This job installs the core's built wheel with the dependencies it declares,
-    # asserts that sphinx, sphinx_needs and docutils are all absent, and runs its WHOLE suite
-    # there: a module-level or a function-body import of the toolchain fails it.
+    # that true at run time. This job installs the core's built wheel with the dependencies it
+    # declares, asserts that sphinx, sphinx_needs and docutils are all absent, and runs its
+    # WHOLE suite there. The suite's own `tests/test_imports.py` refuses any import STATEMENT
+    # naming the toolchain, in every environment; what this job adds is what a static walk
+    # cannot see -- a dependency that drags Sphinx in, an import spelled dynamically -- and
+    # the plugin's pytester subprocess runs, all without the toolchain.
     #
     # The environment is on Python 3.11, the workspace floor: both packages it runs claim
     # `>=3.11`, and no other cell runs either of them there -- the matrix cells vary the
@@ -625,12 +628,12 @@ jobs:
         # `--import-mode=importlib` -- so this tests the artefact. `-rs` prints any skip.
         run: /tmp/toolchain-free/bin/python -m pytest -q -rs packages/ub-test-reports/tests
       - name: Run the ub-project suite
-        # A step of its own, and it has to be: both suites have a `tests/__init__.py`, so one
-        # run over both resolves this suite beside ub-test-reports' `tests/conftest.py` under
-        # the one module name `tests.conftest` and stops with "Plugin already registered under
-        # a different name" (measured). A step per suite also names the red one. The installed
-        # wheel is what is imported -- `src/` is never on `sys.path` -- so this also tests the
-        # artefact
+        # A step of its own so that a red check names the suite. (One run over both would
+        # collect today -- measured -- but only because this suite has no `conftest.py`: add
+        # one and it resolves to `tests.conftest` beside ub-test-reports', and pytest stops
+        # with "Plugin already registered under a different name", measured too.) The
+        # installed wheel is what is imported -- `src/` is never on `sys.path` -- so this also
+        # tests the artefact
         run: /tmp/toolchain-free/bin/python -m pytest -q packages/ub-project/tests
 
   plugin-floor:
@@ -644,9 +647,9 @@ jobs:
     # there at all. Same environment shape as `toolchain-free` -- the built wheel, no
     # toolchain -- with pytest pinned.
     #
-    # From the PACKAGE directory, as the release's compat cell runs a suite: run from the
-    # repository root, pytest 7.3.2 loads the conftest of every root `testpaths` entry --
-    # sphinx-needs' among them -- and dies on its imports (measured). `pytest-xdist` is not
+    # From the package directory -- pytest still finds the root's `pyproject.toml`
+    # configuration there -- because from the root pytest 7.3.2 loads the conftest of every
+    # `testpaths` entry (sphinx-needs') and dies on its imports (measured). `pytest-xdist` is not
     # pinned: the newest (3.8.0, measured) declares `pytest>=7.0` and passes on both pins, so
     # the plugin's three xdist tests run rather than skip.
     strategy:

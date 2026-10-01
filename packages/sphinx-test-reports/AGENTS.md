@@ -145,7 +145,10 @@ longer has.
 **ub-test-reports releases first.** This package's floor on the core is tight-tracked, so
 the core's release pull request (`poe bump ub-test-reports …`) rewrites it, and every
 release gate here resolves the core from PyPI: `poe import-check-reports`, the release
-plan and the compat cell are red until the core version this tree names is published.
+plan and the compat cell are red until the core version this tree names is published. The
+core's documentation lives on this package's site, so that site's Read the Docs project
+must build THIS repository (`packages/sphinx-test-reports/.readthedocs.yaml`) before the
+core's first tag — until then its PyPI page links a site with no page about it.
 
 ## What the move into this workspace cost, deliberately
 

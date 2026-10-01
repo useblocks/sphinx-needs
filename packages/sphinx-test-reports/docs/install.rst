@@ -24,7 +24,8 @@ and nothing of the documentation toolchain::
 
    pip install "ub-test-reports[pytest]"
 
-ub-test-reports has its own version number and :doc:`changelog </ub-test-reports-changelog>`.
+ub-test-reports has its own version number and
+`changelog <https://github.com/useblocks/sphinx-needs/blob/master/packages/ub-test-reports/docs/changelog.rst>`__.
 
 .. versionchanged:: 2.0.0
    ``pip install sphinx-test-reports`` -- without an extra -- no longer

@@ -1,14 +1,4 @@
-"""Tests for the Sphinx-free ``test-reports build needs`` CLI (TR-A).
-
-This is the keystone of the build-system story: a test-XML to needs.json
-conversion that runs as a build action *outside* Sphinx, so the docs build only
-imports the result. Two properties are load-bearing and therefore tested
-explicitly rather than assumed:
-
-* the CLI must not import Sphinx -- otherwise a Bazel action pulls the whole
-  documentation toolchain into the test-result conversion;
-* the output must be byte-stable, because it is a cached build artifact and
-  qualification evidence.
+"""The ``test-reports build needs`` CLI's output, inside Sphinx (TR-A).
 
 This is the half that needs Sphinx: the converter's output checked against sphinx-needs'
 schema and imported into a build. The converter's own tests are ub-test-reports',

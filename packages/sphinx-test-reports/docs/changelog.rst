@@ -28,6 +28,15 @@ The Sphinx-free half is its own distribution, ub-test-reports
   wherever that environment pins another Sphinx. Install ``ub-test-reports`` there instead:
   it is the same command and the same plugin, without the toolchain.
 
+- ‼️ **The** ``test-reports`` **command belongs to ub-test-reports now**, so a tool installer
+  that takes the command from the package you name finds none in sphinx-test-reports:
+  ``pipx install sphinx-test-reports`` fails with "No apps associated with package
+  sphinx-test-reports", and ``uv tool install sphinx-test-reports`` with "No executables are
+  provided by package sphinx-test-reports". Name ``ub-test-reports`` there (``pipx install
+  ub-test-reports``, ``uv tool install ub-test-reports``), and in anything else that looks
+  the script up in the installing package's own metadata. ``pip install
+  sphinx-test-reports`` still puts ``test-reports`` on the path, through the dependency.
+
 - The ``sphinx`` extra is accepted and ignored until 4.0 -- ``pip install
   "sphinx-test-reports[sphinx]"`` installs exactly what the bare line does -- and the
   ``pytest`` extra passes through to ``ub-test-reports[pytest]`` until 4.0, so 2.0.0's
@@ -49,10 +58,10 @@ The Sphinx-free half is its own distribution, ub-test-reports
 
 - 🔧 The load-time toolchain check is gone. It existed because the toolchain was an opt-in
   extra pip never saw; as hard dependencies, pip resolves the floors itself. An environment
-  whose Sphinx-Needs is downgraded below the floor AFTER installing now fails with a
-  traceback from inside a directive rather than a one-line error naming the install line;
-  ``pip check`` (or ``uv pip check``) names the conflict. The extension itself still refuses
-  a Sphinx older than 7.4 when it loads, with Sphinx's own version error. With the check went
+  whose Sphinx-Needs is downgraded below the floor AFTER installing is no longer refused:
+  the extension does not check, so a below-floor Sphinx-Needs runs untested (it may work, it
+  may fail anywhere); ``pip check`` (or ``uv pip check``) names the conflict. The extension
+  itself still refuses a Sphinx older than 7.4 when it loads. With the check went
   ``compat-requirements.txt``, which the release's compatibility cell needed only while the
   toolchain was optional.
 

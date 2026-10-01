@@ -27,11 +27,13 @@ uv run poe build-ub-test-reports          # sdist + wheel into dist/ub-test-repo
 
 - **Nothing here may import Sphinx, sphinx-needs or docutils** — not at module level and
   not in a function body, because the converter runs as a build action and the plugin
-  inside a test run, and neither has a documentation toolchain. Every environment the
-  workspace root produces has Sphinx in it, so the default `.venv` sees only a module-level
-  import in the converter's import chain (a subprocess test lists `sys.modules`); a
-  function-body import passes there. CI's `toolchain-free` job is the fence — it installs
-  the built wheel where the toolchain is absent and runs the whole suite there.
+  inside a test run, and neither has a documentation toolchain. `tests/test_imports.py`
+  refuses any import STATEMENT naming the toolchain (or the extension), at any depth and in
+  every environment, whether or not a test reaches the line; three subprocess tests also
+  check that importing the CLI's chain, the plugin and `projectconfig` loads none of it.
+  CI's `toolchain-free` job is the fence for what a static walk cannot see — a dependency
+  that drags Sphinx in, an import spelled dynamically — and for the plugin's subprocess runs:
+  it installs the built wheel where the toolchain is absent and runs the whole suite there.
 - **`ub-project` is its `ubproject.toml` reader.** Finding, loading and anchoring the file
   come from there (`packages/ub-project/design/reading-contract.md` is the specification);
   what stays here is the `[test_reports]` policy -- keys, types, normalisation, unknown keys
