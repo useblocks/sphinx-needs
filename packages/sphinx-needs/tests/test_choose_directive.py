@@ -29,6 +29,7 @@ _CONF_MYST = (
 )
 
 _HAS_MYST = importlib.util.find_spec("myst_parser") is not None
+_HAS_SPHINX_DESIGN = importlib.util.find_spec("sphinx_design") is not None
 
 
 def _project(
@@ -760,6 +761,67 @@ def test_choose_restores_its_depth_when_its_body_raises(test_app):
     html = Path(app.outdir, "index.html").read_text()
     assert "SWALLOWED" in html
     assert "SKIPPED" not in html
+
+
+_TAB_PARENT = "The parent of a 'tab-item' should be a 'tab-set'"
+
+
+@pytest.mark.skipif(not _HAS_SPHINX_DESIGN, reason="needs sphinx-design")
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            ".. tab-set::\n\n"
+            "   .. if:: var.debug\n\n"
+            "      .. tab-item:: IF_TAB\n\n         TAKEN_IF_TAB_BODY\n\n"
+            ".. tab-set::\n\n"
+            "   .. choose::\n\n"
+            "      .. when:: var.debug\n\n"
+            "         .. tab-item:: WHEN_TAB\n\n            TAKEN_WHEN_TAB_BODY\n\n"
+            "      .. otherwise::\n\n         SKIPPED_TAB\n\n"
+            ".. tab-set::\n\n"
+            "   .. tab-item:: CHOOSE_INSIDE_TAB\n\n"
+            "      .. choose::\n\n"
+            "         .. when:: var.debug\n\n            TAKEN_INSIDE_TAB\n",
+            conf=_CONF.replace(
+                "extensions = ['sphinx_needs']",
+                "extensions = ['sphinx_needs', 'sphinx_design']",
+            ),
+        )
+    ],
+    indirect=True,
+)
+def test_tab_item_in_the_taken_when_warns_as_in_a_true_if(test_app):
+    """A ``tab-item`` in the taken branch warns exactly as one in a true ``if`` does.
+
+    The content of the taken branch, like the body of a true ``if``, is parsed into
+    a detached container, so sphinx-design's ``tab-item`` does not see the
+    ``tab-set`` around the directive and warns about its parent. This pins the
+    limitation the docs of both directives describe, with the same warning for both,
+    and the remedy they give: a ``choose`` inside the ``tab-item`` does not warn.
+    """
+    app = test_app
+    app.build()
+    warnings = build_warnings(app)
+    assert len(warnings) == 2, warnings
+    source = Path(app.srcdir, "index.rst").read_text()
+    if_warning, when_warning = warnings
+    assert if_warning.startswith(
+        f"<srcdir>/index.rst:{_line_of(source, '      .. tab-item:: IF_TAB')}: WARNING: "
+    ), if_warning
+    assert when_warning.startswith(
+        f"<srcdir>/index.rst:{_line_of(source, '         .. tab-item:: WHEN_TAB')}: "
+        "WARNING: "
+    ), when_warning
+    assert _TAB_PARENT in if_warning, if_warning
+    assert (
+        if_warning.split(": WARNING: ", 1)[1] == when_warning.split(": WARNING: ", 1)[1]
+    )
+    html = Path(app.outdir, "index.html").read_text()
+    for word in ("TAKEN_IF_TAB_BODY", "TAKEN_WHEN_TAB_BODY", "TAKEN_INSIDE_TAB"):
+        assert word in html, word
+    assert "SKIPPED" not in html
+    _assert_no_choose_nodes(app)
 
 
 # One condition language: `when` evaluates exactly what `if` does

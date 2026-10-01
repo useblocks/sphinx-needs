@@ -107,6 +107,8 @@ Behavior
   Use :ref:`filter` for need-aware filtering.
 - **Incremental builds**: If a document is re-read (e.g., because the source
   changed), all ``if`` directives in it are re-evaluated.
+- **Parsed on its own**: the body does not see where the ``if`` stands, so a sphinx-design
+  ``tab-item`` in a true ``if`` warns that its parent should be a ``tab-set``, even inside one.
 
 Warnings
 --------
