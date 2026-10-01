@@ -144,8 +144,8 @@ class MatchDirective(SphinxDirective):
     a default ``case`` that is not the last or is not the only one,
     variant data that is not configured,
     and a condition that cannot be evaluated before a case is taken.
-    A typo in the condition of the case that should be taken
-    therefore never renders a later case, or the default, in its place.
+    So a mistake that makes a condition unevaluable, such as a misspelt key
+    or a syntax error, never renders a later case or the default in its place.
 
     Example::
 
@@ -294,7 +294,10 @@ class MatchDirective(SphinxDirective):
                 # reported by docutils or MyST when it was created: skip, silently
                 return None
             else:
-                tagname = child.tagname if isinstance(child, nodes.Element) else "#text"
+                offender = self._offender(children[index:])
+                tagname = (
+                    offender.tagname if isinstance(offender, nodes.Element) else "#text"
+                )
                 self._warn(
                     "'match' directive may contain only 'case' directives and "
                     f"comments, got <{tagname}>; the whole match is skipped",
@@ -323,6 +326,24 @@ class MatchDirective(SphinxDirective):
             return None
 
         return cases
+
+    @staticmethod
+    def _offender(candidates: Sequence[nodes.Node]) -> nodes.Node:
+        """The node a warning about the first of ``candidates`` names.
+
+        A need directive emits a target before the need,
+        which carries no line and is nothing the author wrote:
+        such leading targets are passed over, so that the warning names the need.
+
+        :param candidates: The offending child and the children after it.
+        """
+        for node in candidates:
+            if isinstance(node, nodes.target) and not get_source_line(node)[1]:
+                continue
+            if isinstance(node, _CasePlaceholder | nodes.comment):
+                break
+            return node
+        return candidates[0]
 
     def _location_of(self, candidates: Sequence[nodes.Node]) -> nodes.Node | str | None:
         """Where to report the first of ``candidates``.

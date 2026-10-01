@@ -209,7 +209,8 @@ _WARNINGS = {
         ".. match::\n\n"
         "   .. case:: False\n\n      SKIPPED_FALSE\n\n"
         "   .. case::\n\n      SKIPPED_D1\n\n"
-        # only whitespace after `::` is no condition either: the second default
+        # the second default is refused (its directive line ends in spaces, which the
+        # parser strips: it is a default like the first)
         "   .. case::  \n\n      SKIPPED_D2\n",
         (
             (
@@ -274,6 +275,11 @@ _WARNINGS = {
                 ".. case:: True",
             ),
         ),
+    ),
+    # the counterpart of an orphan `else`: a default case outside every match
+    "default case outside a match": _Expected(
+        "Para.\n\n.. case::\n\n   SKIPPED_STRAY_DEFAULT\n",
+        (("'case' directive outside a 'match'", ".. case::"),),
     ),
     "case loose in the taken case": _Expected(
         ".. match::\n\n"
@@ -404,6 +410,21 @@ _WARNINGS = {
         ),
         conf=_CONF_NO_VARIANT_DATA,
     ),
+    # the structure is checked before the configuration: a match that is wrong in both
+    # ways gets the one structural warning, at the case, and its body is still parsed
+    "variant data not configured, and a misplaced default": _Expected(
+        ".. match::\n\n"
+        "   .. case::\n\n      SKIPPED_DEFAULT\n\n"
+        "   .. case:: var.arch == 'abc'\n\n      SKIPPED_ABC\n",
+        (
+            (
+                "'match' directive has a default 'case' (a 'case' with no condition) "
+                "that is not its last 'case'" + _SKIP,
+                "   .. case::",
+            ),
+        ),
+        conf=_CONF_NO_VARIANT_DATA,
+    ),
     # the cases of a match are written in its body: an include may not supply them,
     # and the warning points at the case in the included file
     "cases from an include": _Expected(
@@ -423,12 +444,13 @@ _WARNINGS = {
         located_in="cases.txt",
     ),
     # content outside a case is parsed with the body, so the need directive runs;
-    # the match removes the need again (the target is the first node it emits)
+    # the match removes the need again
     "need directly in the body": _Expected(
         ".. match::\n\n"
         "   .. req:: Directly in the match body\n      :id: REQ_DIRECT\n\n"
         "   .. case:: True\n\n      SKIPPED\n",
-        (("got <target>" + _SKIP, "   .. req:: Directly in the match body"),),
+        # named after the need, not the target without a line that it emits first
+        (("got <Need>" + _SKIP, "   .. req:: Directly in the match body"),),
     ),
     # a case that is not taken is never parsed, exactly as the body of a false `if`
     "errors in an untaken case are never reported": _Expected(
@@ -526,6 +548,108 @@ def test_match_warnings_are_suppressible(test_app):
     app.build()
     assert_no_warnings(app)
     assert "SKIPPED" not in Path(app.outdir, "index.html").read_text()
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            ".. req:: Written before the match\n   :id: REQ_BEFORE\n\n"
+            ".. match::\n\n"
+            "   .. req:: Directly in the match body\n      :id: REQ_STRAY\n\n"
+            "   .. case::\n\n      SKIPPED_DEFAULT\n\n"
+            ".. req:: Written after the match\n   :id: REQ_AFTER\n",
+            # read before `index`, so its need is older than every need of `index`
+            extra=(
+                (
+                    "aaa.rst",
+                    ":orphan:\n\nEarlier\n=======\n\n"
+                    ".. req:: In an earlier document\n   :id: REQ_EARLIER\n",
+                ),
+            ),
+        )
+    ],
+    indirect=True,
+)
+def test_match_rollback_removes_only_the_stray_needs(test_app):
+    """The rollback removes the needs the body created, the newest ones, and no other.
+
+    The needs written before the ``match``, in its own document and in an earlier one,
+    are older entries of the same mapping, and must survive.
+    """
+    app = test_app
+    app.build()
+    (warning,) = build_warnings(app)
+    source = Path(app.srcdir, "index.rst").read_text()
+    line = _line_of(source, "   .. req:: Directly in the match body")
+    assert warning.startswith(f"<srcdir>/index.rst:{line}: WARNING: "), warning
+    assert "got <Need>" in warning
+    needs = SphinxNeedsData(app.env).get_needs_view()
+    assert sorted(needs) == ["REQ_AFTER", "REQ_BEFORE", "REQ_EARLIER"]
+
+
+_SWALLOW_CONF = (
+    _CONF
+    + """
+from docutils import nodes
+from sphinx.util.docutils import SphinxDirective
+
+
+class Boom(SphinxDirective):
+    def run(self):
+        raise RuntimeError("boom")
+
+
+class Swallow(SphinxDirective):
+    has_content = True
+
+    def run(self):
+        node = nodes.container()
+        try:
+            self.state.nested_parse(self.content, self.content_offset, node)
+        except RuntimeError:
+            return [nodes.paragraph(text="SWALLOWED")]
+        return [node]
+
+
+def setup(app):
+    app.add_directive("boom", Boom)
+    app.add_directive("swallow", Swallow)
+"""
+)
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            ".. swallow::\n\n"
+            "   .. match::\n\n"
+            "      .. case::\n\n         SKIPPED_X\n\n"
+            "      .. boom::\n\n"
+            ".. case:: True\n\n   SKIPPED_LOOSE_AFTER\n",
+            conf=_SWALLOW_CONF,
+        )
+    ],
+    indirect=True,
+)
+def test_match_restores_its_depth_when_its_body_raises(test_app):
+    """An exception out of a ``match`` body leaves no ``match`` open behind it.
+
+    A directive of the project catches what a directive in the body raised;
+    the ``case`` after it is outside every ``match`` and must still be reported,
+    rather than collected as a placeholder that would reach the writer.
+    """
+    app = test_app
+    app.build()
+    (warning,) = build_warnings(app)
+    source = Path(app.srcdir, "index.rst").read_text()
+    line = _line_of(source, ".. case:: True")
+    assert warning.startswith(f"<srcdir>/index.rst:{line}: WARNING: "), warning
+    assert "'case' directive outside a 'match'" in warning
+    html = Path(app.outdir, "index.html").read_text()
+    assert "SWALLOWED" in html
+    assert "SKIPPED" not in html
 
 
 # One condition language: `case` evaluates exactly what `if` does
@@ -694,7 +818,7 @@ SKIPPED_M5_OUTER
 :::::
 ::::::
 
-## A default with trailing spaces
+## A default whose fence line ends in spaces is a default
 
 ::::{match}
 :::{case} False
@@ -802,6 +926,11 @@ _MYST_WARNINGS = {
         "Para.\n\n```{case} True\nSKIPPED_STRAY\n```\n",
         "'case' directive outside a 'match'",
         "```{case} True",
+    ),
+    "default case outside a match, backticks": (
+        "Para.\n\n```{case}\nSKIPPED_STRAY_DEFAULT\n```\n",
+        "'case' directive outside a 'match'",
+        "```{case}",
     ),
     "case outside a match, colons": (
         "Para.\n\n:::{case} True\nSKIPPED_STRAY\n:::\n",

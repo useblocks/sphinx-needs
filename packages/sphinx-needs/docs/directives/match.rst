@@ -134,9 +134,9 @@ a Python expression over the ``var`` namespace, with no built-in functions
 (see the ``if`` directive's :ref:`if_expression_context`).
 A result that is not a ``bool`` is warned about and then used as its truth value, as for ``if``.
 
-A condition must fit on one line:
-docutils joins a wrapped directive argument with a line break,
-which makes the expression a syntax error.
+A condition wrapped onto a second line is joined with a line break,
+which is a syntax error unless the break falls inside brackets;
+keep conditions on one line.
 
 Warnings
 --------
@@ -149,8 +149,10 @@ The mistakes are:
 
 - ``needs_variant_data`` is not configured, even when the ``match`` holds only a default.
 - A condition cannot be evaluated (a syntax error, an unknown key, etc.) before a case is taken.
-  So a typo in the condition of the case that should be included
-  never includes a later case, or the default, in its place.
+  So a mistake that makes a condition unevaluable, such as a misspelt key or a syntax error,
+  never renders a later case or the default in its place.
+  (A mistake that leaves a valid condition, such as a misspelt value, cannot be told apart
+  from a condition that is false.)
 - The ``match`` contains something that is neither a ``case`` nor a comment.
   A line of only punctuation, such as ``---`` between two cases, is such content too.
 - A ``case`` is written inside another directive in the ``match`` rather than directly in it.

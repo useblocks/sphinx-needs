@@ -39,10 +39,11 @@ Improvements
   new ``needs.match`` type and skips the whole ``match``: content outside a case (any
   need it creates is removed again), a ``case`` inside another directive or supplied
   through an include, a misplaced or second default, an argument on ``match``, variant
-  data that is not configured, and a condition that cannot be evaluated — so a typo in
-  a condition never renders the default in its place. Works in
-  reStructuredText and in MyST Markdown. The undocumented warning ``if`` gives for a
-  condition whose result is not a bool is now listed in its documentation.
+  data that is not configured, and a condition that cannot be evaluated — so a mistake
+  that makes a condition unevaluable, such as a misspelt key or a syntax error, never
+  renders a later case or the default in its place. Works in reStructuredText and in
+  MyST Markdown. The undocumented warning ``if`` gives for a condition whose result is
+  not a bool is now listed in its documentation.
 
 .. _`release:8.5.0`:
 
