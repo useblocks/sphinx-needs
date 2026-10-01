@@ -27,8 +27,8 @@ build:
   jobs:
     post_checkout:
       # Every pull request against this repository builds every Read the Docs project it
-      # has. A pull request that leaves `packages/sphinx-test-reports/` untouched has
-      # nothing for this one to build, so cancel it. Exit code 183 is Read the Docs'
+      # has. A pull request that leaves `packages/sphinx-test-reports/` and
+      # `packages/ub-test-reports/` untouched has nothing for this one to build, so cancel it. Exit code 183 is Read the Docs'
       # documented "skip" code
       # (https://docs.readthedocs.com/platform/stable/guides/build/skip-build.html): the
       # build is recorded as `cancelled`, and the commit status sent to GitHub is `success`
@@ -43,8 +43,9 @@ build:
       # pull request did not touch it. That is the safe direction; it never skips a build
       # that was needed.
       #
-      # `packages/sphinx-test-reports/` is ALMOST the complete set of inputs, and the one
-      # exception is deliberate: `docs/conf.py` also reads `vendor/plantuml/pin.toml` and
+      # The two packages are ALMOST the complete set of inputs -- ub-test-reports is one because
+      # this site documents it, includes its changelog, and installs it from the checkout
+      # above -- and the one exception is deliberate: `docs/conf.py` also reads `vendor/plantuml/pin.toml` and
       # the jar beside it. A bump there changes only which renderer version draws the
       # diagrams, never whether the build succeeds, so it is not worth widening the filter
       # and rebuilding this project for every workspace-level commit.
@@ -56,8 +57,8 @@ build:
           echo "origin/master is not available in this clone; building to be safe"
           exit 0
         fi
-        if git diff --quiet origin/master -- packages/sphinx-test-reports/; then
-          echo "nothing under packages/sphinx-test-reports/ changed; skipping this build (exit 183)"
+        if git diff --quiet origin/master -- packages/sphinx-test-reports/ packages/ub-test-reports/; then
+          echo "nothing under packages/sphinx-test-reports/ or packages/ub-test-reports/ changed; skipping this build (exit 183)"
           exit 183
         fi
 
