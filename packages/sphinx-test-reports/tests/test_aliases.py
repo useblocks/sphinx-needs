@@ -3,12 +3,12 @@
 ``sphinxcontrib.test_reports`` keeps four names until 4.0: the package itself as a Sphinx
 extension, which warns through Sphinx's logger as ``[test_reports.deprecated]``, and the
 ``pytest_plugin``, ``junitparser`` and ``jsonparser`` modules, which ARE the real modules
-and raise one ``FutureWarning`` at the importing line. Every other old module name fails
-as an ordinary missing module.
+-- in ``ub_test_reports``, the core this extension depends on -- and raise one
+``FutureWarning`` at the importing line. Every other old module name, of either package,
+fails as an ordinary missing module.
 
-The module tests run where the documentation toolchain is not installed (the
-``toolchain-free`` CI job runs this file against the BUILT wheel); the builds carry the
-``toolchain`` mark.
+Neither real package is imported at module level here: the extension's root imports Sphinx
+eagerly, and the walk below needs only where the two packages are.
 """
 
 from __future__ import annotations
@@ -19,15 +19,17 @@ import subprocess
 import sys
 import textwrap
 import warnings
+from importlib.util import find_spec
 from pathlib import Path
 from unittest import mock
 
 import pytest
 
-import sphinx_test_reports
-
 OLD = "sphinxcontrib.test_reports"
+#: the extension, which the old EXTENSION name loads
 NEW = "sphinx_test_reports"
+#: the core, where the three old MODULE names point
+CORE = "ub_test_reports"
 
 #: The aliased modules, each with one public name to check identity and patching by.
 ALIASES = {
@@ -36,20 +38,33 @@ ALIASES = {
     "jsonparser": "JsonParser",
 }
 
-#: Every other module of the real package, walked rather than listed, so a module added
-#: later is covered without anyone remembering this file. Read off the files rather than
+
+def _root(package: str) -> Path:
+    """The directory of *package*, found without importing it."""
+    spec = find_spec(package)
+    assert spec is not None, package
+    assert spec.origin is not None, package
+    return Path(spec.origin).parent
+
+
+#: Every other module of BOTH real packages -- the extension and the core -- walked rather
+#: than listed, so a module added later to either is covered without anyone remembering
+#: this file: under the old name each one must fail plainly. Read off the files rather than
 #: through `pkgutil`, which imports each subpackage -- and `directives` imports Sphinx.
-_ROOT = Path(sphinx_test_reports.__file__).parent
+_ROOTS = [_root(NEW), _root(CORE)]
 UNALIASED = sorted(
-    name
-    for name in (
-        ".".join(path.relative_to(_ROOT).with_suffix("").parts).removesuffix(
-            ".__init__"
+    {
+        name
+        for root in _ROOTS
+        for name in (
+            ".".join(path.relative_to(root).with_suffix("").parts).removesuffix(
+                ".__init__"
+            )
+            for path in root.rglob("*.py")
+            if path.name != "__init__.py" or path.parent != root
         )
-        for path in _ROOT.rglob("*.py")
-        if path.name != "__init__.py" or path.parent != _ROOT
-    )
-    if name not in ALIASES
+        if name not in ALIASES
+    }
 )
 
 
@@ -84,16 +99,17 @@ def _restore_old_names():
 
 
 def test_every_real_module_is_either_aliased_or_walked() -> None:
-    # the fence's fence: an empty walk would make the unaliased tests pass vacuously
-    assert "identity" in UNALIASED
-    assert "directives.test_case" in UNALIASED
+    # the fence's fence: an empty walk would make the unaliased tests pass vacuously, and
+    # a walk of one root would leave the other package's old names unchecked
+    assert "identity" in UNALIASED  # the core's
+    assert "directives.test_case" in UNALIASED  # the extension's
     assert set(ALIASES).isdisjoint(UNALIASED)
 
 
 @pytest.mark.parametrize("module", sorted(ALIASES))
 def test_the_alias_is_the_real_module(module: str) -> None:
     imported, _ = _import_old(module)
-    real = importlib.import_module(f"{NEW}.{module}")
+    real = importlib.import_module(f"{CORE}.{module}")
     assert imported is real
     assert sys.modules[f"{OLD}.{module}"] is real
     assert getattr(sys.modules[OLD], module) is real
@@ -108,7 +124,7 @@ def test_the_alias_warns_once_at_the_importing_line(module: str) -> None:
     (warning,) = caught
     assert (warning.filename, warning.lineno) == ("<caller>", 1)
     message = str(warning.message)
-    assert f"{OLD}.{module} has moved to {NEW}.{module}" in message
+    assert f"{OLD}.{module} has moved to {CORE}.{module}" in message
     assert "4.0" in message
 
 
@@ -124,17 +140,17 @@ def test_a_second_import_does_not_warn_again(module: str) -> None:
 @pytest.mark.parametrize("module", sorted(ALIASES))
 def test_the_real_module_keeps_its_own_spec(module: str) -> None:
     _import_old(module)
-    real = importlib.import_module(f"{NEW}.{module}")
-    assert real.__name__ == f"{NEW}.{module}"
+    real = importlib.import_module(f"{CORE}.{module}")
+    assert real.__name__ == f"{CORE}.{module}"
     assert real.__spec__ is not None
-    assert real.__spec__.name == f"{NEW}.{module}"
+    assert real.__spec__.name == f"{CORE}.{module}"
 
 
 @pytest.mark.parametrize("module", sorted(ALIASES))
 def test_patching_through_the_old_path_reaches_the_real_module(module: str) -> None:
     _import_old(module)
     name = ALIASES[module]
-    real = importlib.import_module(f"{NEW}.{module}")
+    real = importlib.import_module(f"{CORE}.{module}")
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", FutureWarning)
         with mock.patch(f"{OLD}.{module}.{name}") as patched:
@@ -152,6 +168,7 @@ def test_an_unaliased_old_name_fails_plainly(module: str) -> None:
     assert excinfo.value.name is not None
     assert excinfo.value.name.startswith(OLD)
     assert NEW not in str(excinfo.value)
+    assert CORE not in str(excinfo.value)
 
 
 def _run_user_code(tmp_path: Path, source: str) -> subprocess.CompletedProcess[str]:
@@ -211,7 +228,7 @@ class TestPytestPlugin:
     OLD_PLUGIN = f"{OLD}.pytest_plugin"
 
     SOURCE = """
-from sphinx_test_reports.pytest_plugin import add_test_properties
+from ub_test_reports.pytest_plugin import add_test_properties
 
 @add_test_properties(test_type="unit")
 def test_decorated():
@@ -234,7 +251,7 @@ def test_decorated():
         result, report = self._run(pytester, self.OLD_PLUGIN)
         result.assert_outcomes(passed=1)
         result.stderr.fnmatch_lines(
-            [f"*FutureWarning: {self.OLD_PLUGIN} has moved to {NEW}.pytest_plugin*"]
+            [f"*FutureWarning: {self.OLD_PLUGIN} has moved to {CORE}.pytest_plugin*"]
         )
         xml = report.read_text(encoding="utf-8")
         # the plugin's hooks ran: the property is written, and written once
@@ -259,13 +276,13 @@ def test_decorated():
         assert result.ret == pytest.ExitCode.USAGE_ERROR
 
     def test_both_names_fail_loudly_naming_both(self, pytester) -> None:
-        result, report = self._run(pytester, f"{NEW}.pytest_plugin", self.OLD_PLUGIN)
+        result, report = self._run(pytester, f"{CORE}.pytest_plugin", self.OLD_PLUGIN)
         assert result.ret != 0
         assert not report.exists()
         result.stderr.fnmatch_lines(
             [
                 "*Plugin already registered under a different name: "
-                f"{self.OLD_PLUGIN}=<module '{NEW}.pytest_plugin'*"
+                f"{self.OLD_PLUGIN}=<module '{CORE}.pytest_plugin'*"
             ]
         )
 
@@ -277,7 +294,7 @@ def test_decorated():
         # fenced here and documented, not worked around.
         result, report = self._run(
             pytester,
-            f"{NEW}.pytest_plugin",
+            f"{CORE}.pytest_plugin",
             family="xunit2",
             ini=f"filterwarnings =\n    error\n    ignore::{self.OLD_PLUGIN}.TestReportsConfigWarning\n",
         )
@@ -286,7 +303,7 @@ def test_decorated():
         result.stderr.fnmatch_lines(
             [
                 f"*ignore::{self.OLD_PLUGIN}.TestReportsConfigWarning*",
-                f"*FutureWarning: {self.OLD_PLUGIN} has moved to {NEW}.pytest_plugin*",
+                f"*FutureWarning: {self.OLD_PLUGIN} has moved to {CORE}.pytest_plugin*",
             ]
         )
 
@@ -323,7 +340,6 @@ def _needs(app) -> dict:
     return dict(SphinxNeedsData(app.env).get_needs_view())
 
 
-@pytest.mark.toolchain
 class TestExtensionAlias:
     """``extensions = ["sphinxcontrib.test_reports"]`` builds, and says so."""
 
@@ -340,7 +356,9 @@ class TestExtensionAlias:
         # the real extension is registered, and its metadata is what the alias reports
         real = app.extensions[NEW]
         alias = app.extensions[OLD]
-        assert alias.version == real.version == sphinx_test_reports.__version__
+        from sphinx_test_reports import __version__
+
+        assert alias.version == real.version == __version__
         assert alias.parallel_read_safe == real.parallel_read_safe
 
     @pytest.mark.parametrize(
@@ -406,29 +424,6 @@ class TestExtensionAlias:
             check=False,
         )
         assert passed.returncode == 0, passed.stderr
-
-
-@pytest.mark.toolchain
-def test_the_deprecation_comes_before_a_toolchain_error(
-    make_app, tmp_path, monkeypatch
-) -> None:
-    """A project that names the old extension with an outdated toolchain sees the
-    deprecation first, then the real extension's toolchain error, which names the new one.
-    """
-    import io
-
-    from sphinx.errors import ExtensionError
-
-    from sphinx_test_reports import toolchain
-
-    monkeypatch.setattr(
-        toolchain, "unmet_requirements", lambda: ["sphinx-needs 5.1.0 < 8.5.0"]
-    )
-    warning = io.StringIO()
-    with pytest.raises(ExtensionError, match=f"Could not load extension {NEW}"):
-        _make_old_project(make_app, tmp_path, {}, warning=warning)
-    # the error aborted the application, so the warning stream holds only what came first
-    _assert_the_deprecation_once(warning.getvalue())
 
 
 def _make_old_project(make_app, tmp_path: Path, confoverrides: dict, **kwargs):

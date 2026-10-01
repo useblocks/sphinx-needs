@@ -25,7 +25,7 @@ class TestParserExtractsTestcaseProperties:
     """JUnitParser must extract <properties> from <testcase> elements."""
 
     def test_testcase_with_properties_returns_dict(self):
-        from sphinx_test_reports.junitparser import JUnitParser
+        from ub_test_reports.junitparser import JUnitParser
 
         parser = JUnitParser(xml_properties_path)
         results = parser.parse()
@@ -38,7 +38,7 @@ class TestParserExtractsTestcaseProperties:
         assert tc["properties"]["priority"] == "high"
 
     def test_testcase_with_single_property(self):
-        from sphinx_test_reports.junitparser import JUnitParser
+        from ub_test_reports.junitparser import JUnitParser
 
         parser = JUnitParser(xml_properties_path)
         results = parser.parse()
@@ -49,7 +49,7 @@ class TestParserExtractsTestcaseProperties:
         assert tc["properties"] == {"verifies": "REQ_AUTH_003"}
 
     def test_testcase_without_properties_returns_empty_dict(self):
-        from sphinx_test_reports.junitparser import JUnitParser
+        from ub_test_reports.junitparser import JUnitParser
 
         parser = JUnitParser(xml_properties_path)
         results = parser.parse()
@@ -60,7 +60,7 @@ class TestParserExtractsTestcaseProperties:
         assert tc["properties"] == {}
 
     def test_testcase_skipped_without_properties_returns_empty_dict(self):
-        from sphinx_test_reports.junitparser import JUnitParser
+        from ub_test_reports.junitparser import JUnitParser
 
         parser = JUnitParser(xml_properties_path)
         results = parser.parse()
@@ -72,7 +72,7 @@ class TestParserExtractsTestcaseProperties:
         assert tc["properties"] == {}
 
     def test_multiple_suites_testcase_properties(self):
-        from sphinx_test_reports.junitparser import JUnitParser
+        from ub_test_reports.junitparser import JUnitParser
 
         parser = JUnitParser(xml_properties_path)
         results = parser.parse()
@@ -84,7 +84,7 @@ class TestParserExtractsTestcaseProperties:
         assert tc["properties"]["category"] == "integration"
 
     def test_testcase_without_any_properties_element(self):
-        from sphinx_test_reports.junitparser import JUnitParser
+        from ub_test_reports.junitparser import JUnitParser
 
         parser = JUnitParser(xml_properties_path)
         results = parser.parse()
@@ -99,7 +99,7 @@ class TestParserExtractsTestsuiteProperties:
     """JUnitParser must extract <properties> from <testsuite> elements."""
 
     def test_testsuite_with_properties(self):
-        from sphinx_test_reports.junitparser import JUnitParser
+        from ub_test_reports.junitparser import JUnitParser
 
         parser = JUnitParser(xml_properties_path)
         results = parser.parse()
@@ -112,7 +112,7 @@ class TestParserExtractsTestsuiteProperties:
         assert suite["properties"]["build_id"] == "build-7742"
 
     def test_testsuite_without_properties(self):
-        from sphinx_test_reports.junitparser import JUnitParser
+        from ub_test_reports.junitparser import JUnitParser
 
         parser = JUnitParser(xml_properties_path)
         results = parser.parse()
@@ -127,7 +127,7 @@ class TestParserBackwardCompatibility:
     """Adding properties extraction must not break existing XML without properties."""
 
     def test_existing_xml_still_parses(self):
-        from sphinx_test_reports.junitparser import JUnitParser
+        from ub_test_reports.junitparser import JUnitParser
 
         parser = JUnitParser(xml_no_properties_path)
         results = parser.parse()
@@ -141,7 +141,7 @@ class TestParserBackwardCompatibility:
             assert tc["properties"] == {}
 
     def test_existing_testcase_fields_unchanged(self):
-        from sphinx_test_reports.junitparser import JUnitParser
+        from ub_test_reports.junitparser import JUnitParser
 
         parser = JUnitParser(xml_no_properties_path)
         results = parser.parse()
@@ -152,7 +152,7 @@ class TestParserBackwardCompatibility:
         assert tc["result"] == "passed"
 
     def test_existing_failure_testcase_unchanged(self):
-        from sphinx_test_reports.junitparser import JUnitParser
+        from ub_test_reports.junitparser import JUnitParser
 
         parser = JUnitParser(xml_no_properties_path)
         results = parser.parse()
@@ -271,7 +271,7 @@ class TestParserHandlesEmptyProperties:
     """JUnitParser must not crash on empty <properties/> elements."""
 
     def test_empty_testsuite_properties_element(self):
-        from sphinx_test_reports.junitparser import JUnitParser
+        from ub_test_reports.junitparser import JUnitParser
 
         parser = JUnitParser(xml_empty_properties_path)
         results = parser.parse()
@@ -281,7 +281,7 @@ class TestParserHandlesEmptyProperties:
         assert suite["properties"] == {}
 
     def test_empty_testcase_properties_element(self):
-        from sphinx_test_reports.junitparser import JUnitParser
+        from ub_test_reports.junitparser import JUnitParser
 
         parser = JUnitParser(xml_empty_properties_path)
         results = parser.parse()
@@ -291,7 +291,7 @@ class TestParserHandlesEmptyProperties:
         assert tc["properties"] == {}
 
     def test_testcase_without_properties_alongside_empty(self):
-        from sphinx_test_reports.junitparser import JUnitParser
+        from ub_test_reports.junitparser import JUnitParser
 
         parser = JUnitParser(xml_empty_properties_path)
         results = parser.parse()

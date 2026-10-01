@@ -11,13 +11,13 @@ from pathlib import Path
 
 import pytest
 
-from sphinx_test_reports.cli import _DEFAULTS, main
-from sphinx_test_reports.projectconfig import (
+from ub_test_reports.cli import _DEFAULTS, main
+from ub_test_reports.projectconfig import (
     CONVERSION_KEYS,
     DEFAULT_TOML_FILENAME,
 )
 
-UTILS = Path(__file__).parent / "doc_test" / "utils"
+UTILS = Path(__file__).parent / "fixtures"
 PYTEST_XML = str(UTILS / "pytest_data.xml")
 GTEST_XML = str(UTILS / "gtest_data.xml")  # carries <property> elements
 

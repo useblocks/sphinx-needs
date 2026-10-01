@@ -17,13 +17,11 @@ produced wrong data before:
 
 import os
 
-xml_gtest_path = os.path.join(
-    os.path.dirname(__file__), "doc_test/utils", "gtest_data.xml"
-)
+xml_gtest_path = os.path.join(os.path.dirname(__file__), "fixtures", "gtest_data.xml")
 
 
 def _suites():
-    from sphinx_test_reports.junitparser import JUnitParser
+    from ub_test_reports.junitparser import JUnitParser
 
     return JUnitParser(xml_gtest_path).parse()
 
