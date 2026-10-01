@@ -18,7 +18,7 @@ sphinx-needs declares every registered field.
 
 from collections.abc import Iterable, Mapping
 
-from sphinx_test_reports.results import CANONICAL_RESULTS
+from ub_test_reports.results import CANONICAL_RESULTS
 
 #: ``name -> (JSON type, description)`` for every field declared under a fixed
 #: name. The build registers all of them, on test-file, test-suite and
@@ -56,7 +56,7 @@ FIELDS: dict[str, tuple[str, str]] = {
 
 #: ``role -> (JSON type, description)`` for the fields whose *name* the
 #: configuration chooses; the roles are the keys of
-#: :data:`~sphinx_test_reports.projectconfig.DEFAULT_FIELD_NAMES`.
+#: :data:`~ub_test_reports.projectconfig.DEFAULT_FIELD_NAMES`.
 #: Keying them by role rather than by name is what lets the description follow
 #: a renamed field.
 RENAMEABLE_FIELDS: dict[str, tuple[str, str]] = {

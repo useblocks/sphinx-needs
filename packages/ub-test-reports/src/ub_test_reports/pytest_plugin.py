@@ -1,6 +1,6 @@
 """pytest plugin: shape the JUnit XML the way this extension reads it.
 
-Enable it with ``-p sphinx_test_reports.pytest_plugin`` (or in
+Enable it with ``-p ub_test_reports.pytest_plugin`` (or in
 ``addopts``) and write the report with ``--junitxml`` under
 ``junit_family = xunit1``. Two things then happen to every ``<testcase>``:
 
@@ -92,7 +92,7 @@ _OVERRIDES = {
 }
 
 #: Registration name of the per-session hook object, :class:`_XmlShape`.
-_HOOKS = "sphinx_test_reports.xml_shape"
+_HOOKS = "ub_test_reports.xml_shape"
 
 Recorder = Callable[[str, str], None]
 
@@ -357,7 +357,7 @@ class TestReportsConfigWarning(pytest.PytestWarning):
     Issued once at start-up. Where the project turns warnings into errors
     (``filterwarnings = error``, ``-W error``) it becomes a clean usage error
     rather than a traceback;
-    ``ignore::sphinx_test_reports.pytest_plugin.TestReportsConfigWarning``
+    ``ignore::ub_test_reports.pytest_plugin.TestReportsConfigWarning``
     silences it.
     """
 
@@ -376,7 +376,7 @@ def _report_family(config: pytest.Config) -> str | None:
 
 def _notify(config: pytest.Config, message: str) -> None:
     """Issue *message* as :class:`TestReportsConfigWarning` at configure time."""
-    warning = TestReportsConfigWarning(f"sphinx_test_reports.pytest_plugin: {message}")
+    warning = TestReportsConfigWarning(f"ub_test_reports.pytest_plugin: {message}")
     try:
         config.issue_config_time_warning(warning, stacklevel=3)
     except TestReportsConfigWarning as error:
@@ -401,7 +401,7 @@ def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line(
         "markers",
         f"{MARKER}(properties): properties written to the JUnit XML of the "
-        "test; attached by sphinx_test_reports.pytest_plugin.add_test_properties",
+        "test; attached by ub_test_reports.pytest_plugin.add_test_properties",
     )
     lines: Sequence[str] = config.getini(OPTION)
     try:

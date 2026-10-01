@@ -23,6 +23,7 @@ members = [
     "sphinx-needs-workspace-tools",
     "sphinx-test-reports",
     "ub-project",
+    "ub-test-reports",
 ]
 
 [[package]]
@@ -3000,6 +3001,7 @@ dependencies = [
     { name = "sphinx-needs-workspace-tools" },
     { name = "sphinx-test-reports" },
     { name = "ub-project" },
+    { name = "ub-test-reports" },
 ]
 
 [package.optional-dependencies]
@@ -3148,6 +3150,7 @@ requires-dist = [
     { name = "sphinx-test-reports", editable = "packages/sphinx-test-reports" },
     { name = "sphinx-test-reports", extras = ["docs"], marker = "extra == 'docs-reports'", editable = "packages/sphinx-test-reports" },
     { name = "ub-project", editable = "packages/ub-project" },
+    { name = "ub-test-reports", editable = "packages/ub-test-reports" },
 ]
 provides-extras = ["plotting", "docs", "docs-mounts", "docs-codelinks", "docs-reports", "codelinks-libclang", "theme-im", "theme-furo", "theme-pds", "theme-rtd"]
 
@@ -3287,8 +3290,13 @@ name = "sphinx-test-reports"
 version = "2.0.0"
 source = { editable = "packages/sphinx-test-reports" }
 dependencies = [
-    { name = "lxml" },
-    { name = "ub-project" },
+    { name = "docutils", version = "0.21.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' or extra == 'group-22-sphinx-needs-workspace-sphinx-7' or extra == 'group-22-sphinx-needs-workspace-sphinx-8' or extra == 'group-22-sphinx-needs-workspace-typing'" },
+    { name = "docutils", version = "0.22.4", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (python_full_version >= '3.12' and extra != 'group-22-sphinx-needs-workspace-sphinx-7' and extra != 'group-22-sphinx-needs-workspace-sphinx-8' and extra != 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-9' and extra == 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-sphinx-8') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-8' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (extra == 'group-22-sphinx-needs-workspace-sphinx-8' and extra == 'group-22-sphinx-needs-workspace-typing')" },
+    { name = "sphinx", version = "7.4.7", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.12' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or extra == 'group-22-sphinx-needs-workspace-sphinx-7' or extra == 'group-22-sphinx-needs-workspace-typing' or (extra == 'group-22-sphinx-needs-workspace-sphinx-8' and extra == 'group-22-sphinx-needs-workspace-sphinx-9')" },
+    { name = "sphinx", version = "8.2.3", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.12' and extra != 'group-22-sphinx-needs-workspace-sphinx-7' and extra != 'group-22-sphinx-needs-workspace-sphinx-9' and extra != 'group-22-sphinx-needs-workspace-typing') or extra == 'group-22-sphinx-needs-workspace-sphinx-8' or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-9' and extra == 'group-22-sphinx-needs-workspace-typing')" },
+    { name = "sphinx", version = "9.1.0", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (python_full_version >= '3.12' and extra != 'group-22-sphinx-needs-workspace-sphinx-7' and extra != 'group-22-sphinx-needs-workspace-sphinx-8' and extra != 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-9' and extra == 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-sphinx-8') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-8' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (extra == 'group-22-sphinx-needs-workspace-sphinx-8' and extra == 'group-22-sphinx-needs-workspace-typing')" },
+    { name = "sphinx-needs" },
+    { name = "ub-test-reports" },
 ]
 
 [package.optional-dependencies]
@@ -3304,32 +3312,23 @@ docs = [
     { name = "sphinxcontrib-plantuml" },
 ]
 pytest = [
-    { name = "pytest" },
-]
-sphinx = [
-    { name = "docutils", version = "0.21.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' or extra == 'group-22-sphinx-needs-workspace-sphinx-7' or extra == 'group-22-sphinx-needs-workspace-sphinx-8' or extra == 'group-22-sphinx-needs-workspace-typing'" },
-    { name = "docutils", version = "0.22.4", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (python_full_version >= '3.12' and extra != 'group-22-sphinx-needs-workspace-sphinx-7' and extra != 'group-22-sphinx-needs-workspace-sphinx-8' and extra != 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-9' and extra == 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-sphinx-8') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-8' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (extra == 'group-22-sphinx-needs-workspace-sphinx-8' and extra == 'group-22-sphinx-needs-workspace-typing')" },
-    { name = "sphinx", version = "7.4.7", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.12' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or extra == 'group-22-sphinx-needs-workspace-sphinx-7' or extra == 'group-22-sphinx-needs-workspace-typing' or (extra == 'group-22-sphinx-needs-workspace-sphinx-8' and extra == 'group-22-sphinx-needs-workspace-sphinx-9')" },
-    { name = "sphinx", version = "8.2.3", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.12' and extra != 'group-22-sphinx-needs-workspace-sphinx-7' and extra != 'group-22-sphinx-needs-workspace-sphinx-9' and extra != 'group-22-sphinx-needs-workspace-typing') or extra == 'group-22-sphinx-needs-workspace-sphinx-8' or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-9' and extra == 'group-22-sphinx-needs-workspace-typing')" },
-    { name = "sphinx", version = "9.1.0", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (python_full_version >= '3.12' and extra != 'group-22-sphinx-needs-workspace-sphinx-7' and extra != 'group-22-sphinx-needs-workspace-sphinx-8' and extra != 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-9' and extra == 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-sphinx-8') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-8' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (extra == 'group-22-sphinx-needs-workspace-sphinx-8' and extra == 'group-22-sphinx-needs-workspace-typing')" },
-    { name = "sphinx-needs" },
+    { name = "ub-test-reports", extra = ["pytest"] },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "docutils", marker = "extra == 'sphinx'", specifier = ">=0.21" },
-    { name = "lxml" },
+    { name = "docutils", specifier = ">=0.21" },
     { name = "packaging", marker = "extra == 'docs'" },
     { name = "pillow", marker = "extra == 'docs'" },
-    { name = "pytest", marker = "extra == 'pytest'", specifier = ">=7.0" },
+    { name = "sphinx", specifier = ">=7.4" },
     { name = "sphinx", marker = "extra == 'docs'" },
-    { name = "sphinx", marker = "extra == 'sphinx'", specifier = ">=7.4" },
     { name = "sphinx-design", marker = "extra == 'docs'" },
     { name = "sphinx-immaterial", marker = "extra == 'docs'" },
+    { name = "sphinx-needs", editable = "packages/sphinx-needs" },
     { name = "sphinx-needs", marker = "extra == 'docs'", editable = "packages/sphinx-needs" },
-    { name = "sphinx-needs", marker = "extra == 'sphinx'", editable = "packages/sphinx-needs" },
     { name = "sphinxcontrib-plantuml", marker = "extra == 'docs'" },
-    { name = "ub-project", editable = "packages/ub-project" },
+    { name = "ub-test-reports", editable = "packages/ub-test-reports" },
+    { name = "ub-test-reports", extras = ["pytest"], marker = "extra == 'pytest'", editable = "packages/ub-test-reports" },
 ]
 provides-extras = ["sphinx", "pytest", "docs"]
 
@@ -3853,6 +3852,28 @@ wheels = [
 name = "ub-project"
 version = "1.1.0"
 source = { editable = "packages/ub-project" }
+
+[[package]]
+name = "ub-test-reports"
+version = "1.0.0.dev0"
+source = { editable = "packages/ub-test-reports" }
+dependencies = [
+    { name = "lxml" },
+    { name = "ub-project" },
+]
+
+[package.optional-dependencies]
+pytest = [
+    { name = "pytest" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "lxml" },
+    { name = "pytest", marker = "extra == 'pytest'", specifier = ">=7.0" },
+    { name = "ub-project", editable = "packages/ub-project" },
+]
+provides-extras = ["pytest"]
 
 [[package]]
 name = "urllib3"

@@ -12,7 +12,7 @@ import os
 from functools import reduce
 from typing import Any
 
-from sphinx_test_reports.results import normalize_result
+from ub_test_reports.results import normalize_result
 
 
 def dict_get(root, items, default=None):

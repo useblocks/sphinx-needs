@@ -20,9 +20,9 @@ from sphinx_test_reports.exceptions import (
     SphinxError,
     TestReportFileNotSetError,
 )
-from sphinx_test_reports.identity import deterministic_case_id
-from sphinx_test_reports.jsonparser import JsonParser
-from sphinx_test_reports.junitparser import JUnitParser
+from ub_test_reports.identity import deterministic_case_id
+from ub_test_reports.jsonparser import JsonParser
+from ub_test_reports.junitparser import JUnitParser
 
 # fmt: on
 

@@ -47,12 +47,12 @@ from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import NoReturn
 
-from sphinx_test_reports.fields import RESERVED_NAMES
 from ub_project import DEFAULT_FILENAME, ProjectConfigError, anchor, load_toml
 
 # Re-exported: the Sphinx bridge, the converter and the tests import the walk
 # from here. It raises nothing of its own, so it needs no wrapper.
 from ub_project import find_project_config as find_project_config
+from ub_test_reports.fields import RESERVED_NAMES
 
 #: Default file the configuration is read from. Looked up by walking up from
 #: the ``confdir`` (Sphinx) or the working directory (a converter); see
