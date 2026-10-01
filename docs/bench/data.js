@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790840101670,
+  "lastUpdate": 1790843680637,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -21960,6 +21960,42 @@ window.BENCHMARK_DATA = {
             "value": 54.13243552,
             "unit": "s",
             "extra": "Commit: 39b73156909cfa282f6e19b3fdaba0fffbcbc676\nBranch: master\nTime: 2026-10-01T09:27:17+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f91d8cf2194ea790fe4f72650558814d3f360ae3",
+          "message": "🚀 Release ub-test-reports 1.0.0 (#2019)\n\nThe first release of `ub-test-reports`, the Sphinx-free core carved out\nof sphinx-test-reports in #2009 — stamped by `poe bump ub-test-reports\n--to 1.0.0`:\n\n- `packages/ub-test-reports/pyproject.toml` `version = \"1.0.0\"` and\n`ub_test_reports.__version__`;\n- the changelog entry (`release:1.0.0`, `:Released: 2026-10-01`, the\nsummary paragraph written by hand);\n- the extension's two `ub-test-reports` specifiers → `>=1.0.0,<2`\n(`propagate_floors`; the split PR had to say `>=1.0.0.dev0` because\n`check_workspace` check (4) refuses a floor the tree does not build);\n- `uv.lock`: the one version line, not `bump`'s relock (224 lines of\nfork-marker churn; the one-line lock passes `uv lock --check` on 0.12.15\nand 0.12.9 and a plain `uv lock` leaves it alone — measured in #2009's\nreview);\n- the root README row links PyPI; two comments that named the dev\nversion updated.\n\nGates: `poe lint` ✓ (incl. `check-workspace`, `uv-lock`), `poe\ntest-ub-test-reports` 351 ✓, `poe test-reports` 150 ✓, `poe\nimport-check-ub-test-reports` 11 modules ✓, `release_plan.py --tag\nub-test-reports-v1.0.0` ✓ (\"not on PyPI yet\"; first release, no previous\ntag → no generated notes, #1988).\n\n**After the merge, before the tag** (`git tag ub-test-reports-v1.0.0 &&\ngit push origin ub-test-reports-v1.0.0` from master):\n- [x] PyPI pending trusted publisher `ub-test-reports`\n(`useblocks/sphinx-needs`, `release.yaml`, environment\n`pypi-ub-test-reports`)\n- [x] GitHub environment `pypi-ub-test-reports`, tag rule\n`ub-test-reports-v*`\n- [ ] Repoint the `sphinx-test-reports` Read the Docs project at\n`useblocks/sphinx-needs` (`readthedocs_yaml_path =\npackages/sphinx-test-reports/.readthedocs.yaml`) — the core's README and\n`Documentation` URL point at that site's \"Without Sphinx\" section, which\nthe archived old repository it still builds does not have.\n\nThen sphinx-needs' release (the planner wants it before\nsphinx-test-reports), then `poe bump sphinx-test-reports --bump major` →\n3.0.0.",
+          "timestamp": "2026-10-01T10:33:15+02:00",
+          "tree_id": "1300d6507188dd2e610d70c4374d47b00529c7a6",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/f91d8cf2194ea790fe4f72650558814d3f360ae3"
+        },
+        "date": 1790843672597,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.11956224499999735,
+            "unit": "s",
+            "extra": "Commit: f91d8cf2194ea790fe4f72650558814d3f360ae3\nBranch: master\nTime: 2026-10-01T10:33:15+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 56.639066635000006,
+            "unit": "s",
+            "extra": "Commit: f91d8cf2194ea790fe4f72650558814d3f360ae3\nBranch: master\nTime: 2026-10-01T10:33:15+02:00"
           }
         ]
       }
