@@ -4,11 +4,12 @@ name: Release
 # `<dist>-v<version>`, where <dist> is a directory name under `packages/`.
 #
 # The filename is load-bearing and must not change: every publishable member's PyPI project
-# (sphinx-needs, sphinx-mounts, sphinx-codelinks, sphinx-test-reports, ub-project) names
-# `release.yaml` in its trusted-publisher entry.
+# (sphinx-needs, sphinx-mounts, sphinx-codelinks, sphinx-test-reports, ub-project,
+# ub-test-reports) names `release.yaml` in its trusted-publisher entry -- ub-test-reports' is
+# created, as a pending publisher, before its first tag.
 #
 # The leading `*` in the tag filter is deliberately loose -- GitHub's tag filters are globs,
-# not regexes, and cannot express "one of these four names" -- and the `plan` job is what
+# not regexes, and cannot express "one of these names" -- and the `plan` job is what
 # refuses everything else. That order matters: GitHub *creates* an environment that a
 # workflow names and that does not exist, with no protection rules at all, so
 # `environment: pypi-${{ needs.plan.outputs.dist }}` is a fence only for the names that

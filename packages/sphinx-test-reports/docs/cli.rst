@@ -4,7 +4,7 @@ Command line interface
 ======================
 .. versionadded:: 2.0.0
 
-``Sphinx-Test-Reports`` ships a ``test-reports`` command that converts
+``ub-test-reports`` ships a ``test-reports`` command that converts
 test-result XML into a ``needs.json`` **without running Sphinx**.
 
 Why this exists: parsing test results inside a documentation build couples the
@@ -13,10 +13,15 @@ be cached by a build system, and the data is unavailable to anything else. The
 CLI splits the computation out; the documentation build only imports the result.
 
 The command imports no Sphinx code at all, so it can run as a build action in an
-environment that has no documentation toolchain installed. Installed as
-``pip install sphinx-test-reports`` -- without the ``sphinx`` extra the
-:doc:`extension needs </install>` -- the package brings a single dependency,
-``lxml``.
+environment that has no documentation toolchain installed. Install it as
+``pip install ub-test-reports``, whose dependencies are ``lxml`` and ``ub-project``
+(see :doc:`/install`); sphinx-test-reports depends on it, so the command is also there
+wherever the extension is.
+
+.. versionchanged:: 3.0.0
+   The command is shipped by ub-test-reports, not sphinx-test-reports. On 2.0.0 the bare
+   ``pip install sphinx-test-reports`` was the way to get it without Sphinx; that line now
+   brings the documentation toolchain.
 
 Converting a report
 -------------------

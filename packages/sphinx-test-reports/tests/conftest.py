@@ -1,21 +1,15 @@
 """Pytest conftest module containing common test configuration and fixtures."""
 
-import importlib.util
 import shutil
 from pathlib import Path
 from tempfile import mkdtemp
 
 import pytest
 
-# The documentation toolchain is an extra of the package, and the converter's
-# and the pytest plugin's tests run where it is not installed (the
-# `toolchain_free` and `plugin_floor` nox sessions), so Sphinx's fixtures are
-# loaded only where Sphinx is. Tests that need a build carry the `toolchain`
-# mark and are deselected there. `pytester`, which the plugin's tests drive,
-# ships with pytest itself.
-pytest_plugins = (
-    ["sphinx.testing.fixtures"] if importlib.util.find_spec("sphinx") else []
-) + ["pytester"]
+# Sphinx is a dependency of this package, so its fixtures are always there. `pytester`,
+# which the alias tests drive the old plugin name with, ships with pytest itself. (The
+# converter's and the plugin's own suite is ub-test-reports', and runs without Sphinx.)
+pytest_plugins = ["sphinx.testing.fixtures", "pytester"]
 
 
 def copy_srcdir_to_tmpdir(srcdir, tmp):

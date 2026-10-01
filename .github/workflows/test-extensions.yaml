@@ -165,6 +165,24 @@ jobs:
           flags: reports
           files: ./reports.xml
           fail_ci_if_error: true
+      - name: "ub-test-reports: pytest"
+        # sphinx-test-reports' Sphinx-free core: the converter, the pytest plugin, the parsers
+        # and the `[test_reports]` model. Here for every cell's platform and interpreter --
+        # Windows above all, where the converter's path handling and the plugin's source
+        # locations are the platform-sensitive part -- and for coverage under a flag of its
+        # own; `toolchain-free` in ci.yaml stays the run that proves it imports no Sphinx.
+        # Same `if:` as the steps above
+        if: ${{ !cancelled() && steps.prepare.outcome == 'success' }}
+        run: uv run --no-sync pytest -v packages/ub-test-reports/tests --cov=ub_test_reports --cov-report=xml:ub-test-reports.xml --cov-report=term-missing
+      - name: "ub-test-reports: upload to Codecov"
+        if: inputs.upload-coverage && github.event.pull_request.head.repo.full_name == github.repository && github.repository == 'useblocks/sphinx-needs' && github.actor != 'dependabot[bot]'
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          name: ub-test-reports-pytests
+          flags: ub-test-reports
+          files: ./ub-test-reports.xml
+          fail_ci_if_error: true
       - name: "ub-project: pytest"
         # The shared `ubproject.toml` reader, which every extension above is to depend on.
         # Its suite takes under a second and needs nothing this cell does not already have;

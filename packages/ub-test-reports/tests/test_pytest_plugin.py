@@ -5,14 +5,15 @@ and the resulting JUnit XML inspected. The property model comes from the
 ``test_reports_properties`` ini option; S-CORE's is the profile most tests use.
 """
 
+import re
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
 
 import pytest
 
-from sphinx_test_reports import pytest_plugin
-from sphinx_test_reports.pytest_plugin import (
+from ub_test_reports import pytest_plugin
+from ub_test_reports.pytest_plugin import (
     Property,
     apply_test_metadata,
     clean_source_path,
@@ -20,7 +21,7 @@ from sphinx_test_reports.pytest_plugin import (
     properties_mapping,
 )
 
-PLUGIN = "sphinx_test_reports.pytest_plugin"
+PLUGIN = "ub_test_reports.pytest_plugin"
 
 #: S-CORE's model, as the docs show it: the profile most of these tests run with.
 SCORE_PROFILE = """\
@@ -32,7 +33,7 @@ test_reports_properties =
 """
 
 DECORATED = """
-from sphinx_test_reports.pytest_plugin import add_test_properties
+from ub_test_reports.pytest_plugin import add_test_properties
 
 @add_test_properties(
     partially_verifies=["REQ_1", "REQ_2"],
@@ -50,7 +51,7 @@ def test_plain():
 
 RUNTIME = """
 import pytest
-from sphinx_test_reports.pytest_plugin import apply_test_metadata
+from ub_test_reports.pytest_plugin import apply_test_metadata
 
 @pytest.mark.parametrize("spec", ["a.rst", "b.rst"])
 def test_driven_by_a_file(spec, record_property):
@@ -64,7 +65,7 @@ def test_driven_by_a_file(spec, record_property):
 """
 
 RUNTIME_COMPAT = """
-from sphinx_test_reports.pytest_plugin import apply_test_metadata
+from ub_test_reports.pytest_plugin import apply_test_metadata
 
 def test_score_style(record_property, record_xml_attribute):
     apply_test_metadata(
@@ -78,7 +79,7 @@ def test_score_style(record_property, record_xml_attribute):
 
 SKIPPED = """
 import pytest
-from sphinx_test_reports.pytest_plugin import add_test_properties
+from ub_test_reports.pytest_plugin import add_test_properties
 
 
 @pytest.fixture(scope="module")
@@ -118,7 +119,7 @@ def test_runs():
 # derives its own fixture from this string by replacing `str(inner)]) == 0`.
 NESTED = """
 import pytest
-from sphinx_test_reports.pytest_plugin import add_test_properties
+from ub_test_reports.pytest_plugin import add_test_properties
 
 
 @add_test_properties(partially_verifies=["REQ_1"])
@@ -154,7 +155,7 @@ def test_strict():
 """
 
 STACKED = """
-from sphinx_test_reports.pytest_plugin import add_test_properties
+from ub_test_reports.pytest_plugin import add_test_properties
 
 
 @add_test_properties(test_type="requirements-based", Owner="team-a")
@@ -175,7 +176,7 @@ def test_stacked():
 """
 
 CUSTOM = """
-from sphinx_test_reports.pytest_plugin import add_test_properties
+from ub_test_reports.pytest_plugin import add_test_properties
 
 @add_test_properties(satisfies=["REQ_1", "REQ_2"], reviewers=["ann", "bob"], Owner="x")
 def test_custom():
@@ -337,6 +338,27 @@ class TestXmlShape:
         result.stdout.fnmatch_lines(["*junit_family is 'xunit2'*xunit1*"])
         assert _cases(root)["test_plain"].get("file") is None
 
+    def test_the_names_it_prints_are_ub_test_reports(self, pytester):
+        # Both are documented in the changelog as changed from 2.0.0's
+        # `sphinxcontrib.test_reports...`: the prefix of the warnings it issues (what a
+        # user's warning filter matches) and the name its hook object is registered under.
+        source = (
+            "def test_registered(request):\n"
+            "    assert request.config.pluginmanager.has_plugin('ub_test_reports.xml_shape')\n"
+        )
+        result, _ = _run(pytester, source, family="xunit2")
+        result.assert_outcomes(passed=1)
+        messages = [
+            line.split("TestReportsConfigWarning: ", 1)[1]
+            for line in result.stdout.lines
+            if "TestReportsConfigWarning: " in line
+        ]
+        assert messages
+        assert all(
+            re.match(r"^ub_test_reports\.pytest_plugin: ", message)
+            for message in messages
+        ), messages
+
 
 class TestPropertyModel:
     """The model is pytest configuration; the plugin ships no names of its own."""
@@ -412,7 +434,7 @@ class TestPropertyModel:
         # nor loses the properties, which are written at setup.
         pytester.makepyfile(
             helpers=(
-                "from sphinx_test_reports.pytest_plugin import add_test_properties\n"
+                "from ub_test_reports.pytest_plugin import add_test_properties\n"
                 "\n"
                 '@add_test_properties(partially_verifies=["REQ_1"], test_type="interface-test")\n'
                 "def test_from_helper():\n"
@@ -558,10 +580,37 @@ class TestRuntimeMetadata:
         assert _properties(case) == {}
         assert (case.get("file"), case.get("line")) == ("specs/a.rst", "7")
 
+    def test_the_location_travels_under_the_documented_wire_names(self, score_model):
+        # The two names are a documented wire format, not the import path: they did not
+        # move when the plugin did, and must not change.
+        recorded = []
+        apply_test_metadata(
+            record_property=lambda name, value: recorded.append((name, value)),
+            metadata={},
+            file="specs/a.rst",
+            line=7,
+        )
+        assert recorded == [
+            ("sphinxcontrib.test_reports:file", "specs/a.rst"),
+            ("sphinxcontrib.test_reports:line", "7"),
+        ]
+
+    def test_a_property_under_a_wire_name_is_read_as_the_location(self, pytester):
+        source = (
+            "def test_direct(record_property):\n"
+            "    record_property('sphinxcontrib.test_reports:file', 'specs/b.rst')\n"
+            "    record_property('sphinxcontrib.test_reports:line', '3')\n"
+        )
+        result, root = _run(pytester, source)
+        result.assert_outcomes(passed=1)
+        case = _cases(root)["test_direct"]
+        assert _properties(case) == {}
+        assert (case.get("file"), case.get("line")) == ("specs/b.rst", "3")
+
 
 BAD_SHAPE_AND_BROKEN_FIXTURE = """
 import pytest
-from sphinx_test_reports.pytest_plugin import add_test_properties
+from ub_test_reports.pytest_plugin import add_test_properties
 
 
 @pytest.fixture
@@ -579,7 +628,7 @@ class TestBadShape:
     def test_a_bad_shape_errors_the_case_at_setup(self, pytester):
         result, _root = _run(
             pytester,
-            "from sphinx_test_reports.pytest_plugin import add_test_properties\n\n@add_test_properties(test_type=['a', 'b'])\ndef test_shape():\n    assert True\n",
+            "from ub_test_reports.pytest_plugin import add_test_properties\n\n@add_test_properties(test_type=['a', 'b'])\ndef test_shape():\n    assert True\n",
         )
         result.assert_outcomes(errors=1)
         result.stdout.fnmatch_lines(["*TypeError*'test_type' takes a single value*"])

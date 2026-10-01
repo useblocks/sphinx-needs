@@ -33,14 +33,14 @@ from sphinx_test_reports.directives.test_suite import (
 )
 from sphinx_test_reports.environment import install_styles_static_files
 from sphinx_test_reports.exceptions import InvalidConfigurationError
-from sphinx_test_reports.fields import (
+from sphinx_test_reports.functions import tr_link
+from ub_test_reports.fields import (
     FIELDS,
     RENAMEABLE_FIELDS,
     RESERVED_NAMES,
     declaration,
 )
-from sphinx_test_reports.functions import tr_link
-from sphinx_test_reports.projectconfig import (
+from ub_test_reports.projectconfig import (
     BRIDGE_KEYS,
     DEFAULT_FIELD_NAMES,
     DEFAULT_TOML_FILENAME,
@@ -101,6 +101,7 @@ def setup(app: Sphinx) -> dict[str, object]:
     * test_env
     * test_report
     """
+    app.require_sphinx((7, 4))
 
     # Name of the need field carrying the path of the XML *report*.
     app.add_config_value("tr_file_option", DEFAULT_FIELD_NAMES["file_option"], "html")

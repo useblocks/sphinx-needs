@@ -30,6 +30,7 @@ dependencies = [
   "sphinx-mounts",
   "sphinx-codelinks",
   "sphinx-test-reports",
+  "ub-test-reports",
   "ub-project",
   "sphinx-needs-workspace-tools",
 ]
@@ -68,6 +69,7 @@ sphinx-needs = { workspace = true }
 sphinx-mounts = { workspace = true }
 sphinx-codelinks = { workspace = true }
 sphinx-test-reports = { workspace = true }
+ub-test-reports = { workspace = true }
 ub-project = { workspace = true }
 sphinx-needs-workspace-tools = { workspace = true }
 sphinx-needs-testkit = { workspace = true }
@@ -257,11 +259,6 @@ markers = [
   "jstest: marks tests as JavaScript test (deselect with '-m \"not jstest\"')",
   "benchmark: marks tests as expensive benchmark test (deselect with '-m \"not benchmark\"')",
   "bazel: tests that require a Bazel installation on PATH (deselect with '-m \"not bazel\"')",
-  # sphinx-test-reports', relocated from that member's own `[tool.pytest.ini_options]`,
-  # which check (7) refuses here: 8 sites / 25 tests carry it, and without the entry every
-  # one of them raises `PytestUnknownMarkWarning`. The `toolchain-free` CI job is what
-  # deselects them, in an environment with no Sphinx at all
-  "toolchain: needs the documentation toolchain (Sphinx, sphinx-needs) installed (deselect with '-m \"not toolchain\"')",
 ]
 filterwarnings = [
   "ignore:.*removed in Python 3.14.*:DeprecationWarning",
@@ -284,6 +281,8 @@ src = [
   "packages/sphinx-codelinks/src",
   "packages/sphinx-test-reports",
   "packages/sphinx-test-reports/src",
+  "packages/ub-test-reports",
+  "packages/ub-test-reports/src",
   "packages/sphinx-needs-testkit",
   "packages/sphinx-needs-testkit/src",
   "packages/ub-project",
@@ -354,6 +353,7 @@ include = [
   "packages/sphinx-mounts/src",
   "packages/sphinx-codelinks/src",
   "packages/sphinx-test-reports/src",
+  "packages/ub-test-reports/src",
   "packages/ub-project/src",
   "tools/src",
   ".github/scripts",
@@ -382,7 +382,7 @@ allowed-unresolved-imports = [
   # sphinx-codelinks' optional libclang engine: `clang.cindex` ships no py.typed and sits
   # behind the `libclang` extra at runtime, so the typing floor deliberately lacks it
   "clang.**",
-  # sphinx-test-reports' pytest plugin. The `typing` environment deliberately has no
+  # ub-test-reports' pytest plugin. The `typing` environment deliberately has no
   # pytest -- it pins the oldest supported sphinx and docutils and nothing else it does
   # not need -- so the plugin's own imports cannot resolve there. The plugin IS type-checked
   # otherwise; what is unresolved is the runner it plugs into, which is exactly the shape
@@ -712,6 +712,18 @@ help = "Run the ub-project suite; trailing args go to pytest"
 cmd = "pytest"
 cwd = "packages/ub-project"
 
+# ub-test-reports, the Sphinx-free core of sphinx-test-reports. Like ub-project's, the
+# short name keeps the whole distribution name (the naming rule drops only a `sphinx-`
+# prefix), and there are no `-sphinxN` cells: the package has no Sphinx, and the environment
+# that matters is the one WITHOUT it -- ci.yaml's `toolchain-free` job, which runs this
+# suite there from the built wheel. No path is named: nothing under its `src/` is called
+# `test_*.py`, unlike the extension's, so `poe test-ub-test-reports tests/test_cli_config.py`
+# narrows the run rather than adding to it
+[tool.poe.tasks.test-ub-test-reports]
+help = "Run the ub-test-reports suite; trailing args go to pytest"
+cmd = "pytest"
+cwd = "packages/ub-test-reports"
+
 # BARE, not `typecheck-needs`: the naming rule suffixes a task that acts on ONE package,
 # and this one checks the whole repository -- both packages plus the tooling -- out of a
 # single `[tool.ty]` configuration and a single environment. Splitting it per package would
@@ -723,7 +735,7 @@ help = "Type-check every package with ty against the oldest supported sphinx (th
 # but it is NOT a fence on `src.include` above: ty intersects the two, so a stale `include`
 # makes this check zero files and exit 0. The canary step in ci.yaml's Lint job is what
 # guards that.
-cmd = "ty check packages/sphinx-needs/src/sphinx_needs packages/sphinx-mounts/src/sphinx_mounts packages/sphinx-codelinks/src/sphinx_codelinks packages/sphinx-test-reports/src packages/ub-project/src/ub_project tools/src .github/scripts scripts --python .venvs/typing"
+cmd = "ty check packages/sphinx-needs/src/sphinx_needs packages/sphinx-mounts/src/sphinx_mounts packages/sphinx-codelinks/src/sphinx_codelinks packages/sphinx-test-reports/src packages/ub-test-reports/src/ub_test_reports packages/ub-project/src/ub_project tools/src .github/scripts scripts --python .venvs/typing"
 executor = { type = "uv", frozen = true, no-group = "dev", group = ["typing"] }
 env = { UV_PROJECT_ENVIRONMENT = ".venvs/typing" }
 
@@ -847,14 +859,22 @@ cmd = "uv build --package sphinx-test-reports --no-sources -o dist/sphinx-test-r
 
 [tool.poe.tasks.import-check-reports]
 help = "Import every sphinx-test-reports module from its built wheel, with dependencies as PUBLISHED"
-# `--extra sphinx`, because this is the first member in the workspace whose RUNTIME
-# dependencies are optional: the bare wheel's `Requires-Dist` is `lxml` and `ub-project`, and
-# `sphinx_test_reports.test_reports` imports sphinx-needs. Without the extra the walk
-# fails on every module that imports sphinx or docutils (the directives, the bridge,
-# the environment and the exceptions). `--extra pytest` too, for `pytest_plugin`, which imports
-# pytest and pluggy. The release workflow's compat cell gets the toolchain from this
-# member's `compat-requirements.txt`, and pytest from the root `test` group it installs
-cmd = "python tools/src/sn_tools/import_check.py sphinx-test-reports --extra sphinx --extra pytest"
+# No extras: the wheel's `Requires-Dist` is the toolchain (sphinx, docutils, sphinx-needs)
+# and the core, `ub-test-reports`, all hard. The walk covers `sphinx_test_reports` only --
+# the converter and the plugin are the core's, checked by `import-check-ub-test-reports`.
+# RED until ub-test-reports is on PyPI, by design: the resolution is the published one, and
+# that is the release order (the core first, then this package)
+cmd = "python tools/src/sn_tools/import_check.py sphinx-test-reports"
+
+[tool.poe.tasks.build-ub-test-reports]
+help = "Build the ub-test-reports sdist + wheel into dist/ub-test-reports"
+cmd = "uv build --package ub-test-reports --no-sources -o dist/ub-test-reports"
+
+[tool.poe.tasks.import-check-ub-test-reports]
+help = "Import every ub_test_reports module from its built wheel, with dependencies as PUBLISHED"
+# `--extra pytest` for `pytest_plugin`, which imports pytest and pluggy; nothing else in the
+# wheel needs more than its `Requires-Dist` (lxml, ub-project)
+cmd = "python tools/src/sn_tools/import_check.py ub-test-reports --extra pytest"
 
 [tool.poe.tasks.build-ub-project]
 help = "Build the ub-project sdist + wheel into dist/ub-project"

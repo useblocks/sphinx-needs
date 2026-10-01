@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  A test report as a *runner* synthesizes it when the test binary never produced
+  one itself: killed by a signal, crashed, or timed out. googletest does not
+  emit <error> at all, so this deliberately lives outside gtest_data.xml.
+  Bazel writes a report of this shape from the test log when a test binary dies.
+-->
+<testsuites>
+  <testsuite name="crash_suite" tests="3" failures="0" errors="2" disabled="0" time="30.11">
+    <testcase name="KilledBySigterm" classname="CrashSuite" status="run" time="30.0" file="src/crash_test.cc" line="7">
+      <error message="exited with error code 143"><![CDATA[Received SIGTERM
+Test terminated after the 30s timeout]]></error>
+      <system-err><![CDATA[shutting down worker pool]]></system-err>
+    </testcase>
+    <testcase name="ReportsTwoErrors" classname="CrashSuite" status="run" time="0.1" file="src/crash_test.cc" line="19">
+      <error message="first error"><![CDATA[detail one]]></error>
+      <error message="second error"><![CDATA[detail two]]></error>
+    </testcase>
+    <testcase name="Survivor" classname="CrashSuite" status="run" time="0.01" file="src/crash_test.cc" line="30"/>
+  </testsuite>
+</testsuites>

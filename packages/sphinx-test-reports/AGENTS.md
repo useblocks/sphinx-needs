@@ -8,50 +8,37 @@ not of the workspace.
 
 ## Project Overview
 
-sphinx-test-reports turns test results into needs. It has **three surfaces, and only one of
-them is a Sphinx extension** — which is the single most important thing to know about this
-package, because it shapes the manifest, the CI and the split that is coming:
-
-- **the extension** — `test-file`, `test-suite`, `test-case`, `test-report`, `test-results`
-  and `test-env` directives, which read JUnit / ctest / googletest XML and tox-envreport
-  JSON and create sphinx-needs items from them, plus the `tr_link` dynamic function;
-- **the converter** — a `test-reports` console script that turns the same reports into a
-  `needs.json` **without running Sphinx at all**;
-- **the pytest plugin** — `sphinx_test_reports.pytest_plugin`, which writes the XML
-  shape the extension reads, including per-case properties for traceability.
-
-So **Sphinx and sphinx-needs are an `[project.optional-dependencies]` extra, not
-dependencies**: `pip install sphinx-test-reports` gets you `lxml`, `ub-project` and the
-last two surfaces; `pip install "sphinx-test-reports[sphinx]"` gets you the extension. The
-published wheel's `Requires-Dist` is those two alone. Two things in this repository exist
-because of that — the `toolchain-free` CI job and this package's `compat-requirements.txt`
-— and both are described below.
+sphinx-test-reports is **the Sphinx extension, and only that**: the `test-file`,
+`test-suite`, `test-case`, `test-report`, `test-results` and `test-env` directives, which read
+JUnit / ctest / googletest XML and tox-envreport JSON and create sphinx-needs items from
+them, plus the `tr_link` dynamic function. **Its dependencies are hard** — Sphinx, docutils,
+sphinx-needs and `ub-test-reports`. The converter (`test-reports`), the pytest plugin, the
+parsers, the result vocabulary, the deterministic IDs and the `[test_reports]` model are
+**ub-test-reports** ([`packages/ub-test-reports/`](../ub-test-reports/AGENTS.md)), which
+runs without Sphinx and which this package depends on; a change to any of those belongs
+there. `[sphinx]` (empty) and `[pytest]` (a pass-through to `ub-test-reports[pytest]`) stay
+as extras only so that 2.0.0's install lines keep working until 4.0.
 
 ## Package structure
 
 ```text
-pyproject.toml          # `[project]`, `[project.urls]`, `[project.scripts]` and the
-                        #   hatch build tables. NOT ruff, ty, pytest or dependency
-                        #   groups: those are the root's, and check (7) refuses them here
-compat-requirements.txt # released deps the compat cell needs -- see "Releasing" below
+pyproject.toml          # `[project]`, `[project.urls]` and the hatch build tables. NOT
+                        #   ruff, ty, pytest or dependency groups: those are the root's,
+                        #   and check (7) refuses them here
 .readthedocs.yaml       # this package's RTD project; its paths are REPOSITORY-root relative
 AUTHORS · LICENSE · README.rst
 design/                 # import-commit-map.txt: old hash -> new hash for the 2026-09 import
 
 src/sphinxcontrib/test_reports/   # the pre-3.0 name: four warning aliases, removed in 4.0
 src/sphinx_test_reports/
-├── __init__.py         # `__version__`, and the lazy `setup` re-export
-├── test_reports.py     # the extension entry point: directives, config values, fields
-├── cli.py              # the `test-reports` converter command
-├── pytest_plugin.py    # the pytest plugin
-├── junitparser.py · jsonparser.py · results.py · identity.py · fields.py
-│                       # the toolchain-free core: parsers, the result vocabulary, the
-│                       #   deterministic case IDs, the one field table both writers share
-├── projectconfig.py    # the `[test_reports]` ubproject.toml model, read through ub-project
-├── needs_export.py · remote.py · config.py · environment.py · exceptions.py · toolchain.py
+├── __init__.py         # `__version__` FIRST, then the eager `setup` import -- the order is
+│                       #   load-bearing: `test_reports` imports `__version__` from here
+├── test_reports.py     # the extension entry point: directives, config values, the bridge
+│                       #   that applies ub-test-reports' `[test_reports]` model
+├── config.py · environment.py · exceptions.py
 ├── directives/         # one module per directive, all inheriting TestCommonDirective
 ├── functions/          # `tr_link`, a sphinx-needs dynamic function
-├── css/ · schemas/JUnit.xsd
+├── css/
 └── directives/test_report_template.txt   # the DEFAULT tr_report_template -- it SHIPS
 
 tests/                  # `tests/__init__.py` is why this path is not in the root testpaths
@@ -66,24 +53,27 @@ The package was `sphinxcontrib.test_reports` until 3.0. `src/sphinxcontrib/test_
 keeps exactly four old names working until 4.0: the package as a Sphinx extension, which
 warns through Sphinx's logger (type `test_reports.deprecated`) and loads the real extension
 with `app.setup_extension`, and `pytest_plugin`, `junitparser` and `jsonparser`, one file
-each, which put the REAL module into `sys.modules` under the old name with one
-`FutureWarning` per process. **Do not add a finder or a catch-all**: every other old name is meant to
-fail as a plain `ImportError`, and `tests/test_aliases.py` walks the real package
-to hold that. **There is no `src/sphinxcontrib/__init__.py`, and there must never be
+each, which put the REAL module -- `ub_test_reports.<name>`, in the core -- into
+`sys.modules` under the old name with one `FutureWarning` per process. **Do not add a finder
+or a catch-all**: every other old name is meant to fail as a plain `ImportError`, and
+`tests/test_aliases.py` walks BOTH real packages, this one and ub-test-reports, to hold that
+-- so a module added to either is covered without anyone remembering the file. **There is no `src/sphinxcontrib/__init__.py`, and there must never be
 one**: `sphinxcontrib` is a PEP 420 namespace other distributions install into.
 
 ### hatchling, and the fence on the built artefacts
 
 This is the one member that builds with hatchling: its wheel ships two top-level packages,
 and flit ships one and drops the other without a word. An editable install reads `src/`, so
-a build configuration that lost the aliases would leave every test green. The
-`toolchain-free` job is therefore where the artefacts are checked. It builds in the
-release's shape -- the sdist, then the wheel FROM the sdist, so the sdist's include list
-bounds what the wheel ships -- and fails when either lacks a tracked file under `src/`,
-when the sdist's files outside `src/` are not exactly its metadata files, or when the
-wheel's top level is anything but the two packages and its dist-info, it ships anything
-under `sphinxcontrib/` but `test_reports/`, or a licence file other than `LICENSE`; then it
-runs its modules against that wheel. A new top-level package needs a line in
+a build configuration that lost the aliases would leave every test green. CI's
+`toolchain-free` job is therefore where the artefacts are checked -- the job is named for
+ub-test-reports, whose suite it runs without Sphinx, and this fence lives there because it
+only reads archives. It builds in the release's shape -- the sdist, then the wheel FROM the
+sdist, so the sdist's include list bounds what the wheel ships -- and fails when either lacks
+a tracked file under `src/`, when the sdist's files outside `src/` are not exactly its
+metadata files, or when the wheel's top level is anything but the two packages and its
+dist-info, it ships anything under `sphinxcontrib/` but `test_reports/`, or a licence file
+other than `LICENSE`. Nothing installs that wheel there: it needs the toolchain, and the
+release's compat cell is what walks and tests it. A new top-level package needs a line in
 `[tool.hatch.build.targets.wheel]` AND `[tool.hatch.build.targets.sdist]`.
 
 ### The suite needs no renderer; the DOCS need two
@@ -119,43 +109,21 @@ The short name is **`reports`**, not `test-reports`: the naming rule takes the d
 name minus its `sphinx-` prefix, which here would collide with the task verb and give
 `test-test-reports`.
 
-### One test drives an in-process pytest session, and the default environment breaks it
-
-`tests/test_pytest_plugin.py`'s `NESTED` fixture starts a `pytest.main()` *inside* a
-`pytester` session. In a developer's default `.venv` that process has every installed plugin
-loaded, and **pytest-playwright** — from the root `js` group, which the default `dev` group
-includes — keeps a module-global soft-assertion scope, so the nested session dies with
-*nested soft assertion scopes are not supported*. Every CI cell syncs
-`--no-default-groups --group test --group sphinx-N`, where the plugin is absent. The fixture
-therefore passes `-p no:playwright`, and **that line has to stay one line**: a sibling test
-builds its own fixture from the same string by replacing the literal `str(inner)]) == 0`.
-
-This is the shape to remember: **run the suite in the default `.venv` AND in a cell.** Green
-in one proves nothing about the other.
-
 ### The old name still appears in the tree, on purpose
 
-Three fixture files in `tests/doc_test/utils/` carry paths like
-`file="sphinxcontrib/test_reports/junitparser.py"`: **test data** describing a historical
-pytest run, not paths anything opens. The docs' `classname` examples match that data, and
+Fixture files in `tests/doc_test/utils/` (and their copies under ub-test-reports'
+`tests/fixtures/`) carry paths like `file="sphinxcontrib/test_reports/junitparser.py"`:
+**test data** describing a historical pytest run, not paths anything opens. The docs' `classname` examples match that data, and
 the pytest plugin's reserved `user_properties` names (`sphinxcontrib.test_reports:file`,
 `:line`) are documented wire names. None of them is an import path, so none moved with the
 package; a rename `sed` over the tree would corrupt them silently.
 
-### `ubproject.toml` is read through `ub-project`
+### `ubproject.toml` is read by ub-test-reports
 
-`projectconfig.py` finds, loads and anchors the file through `ub-project`, the workspace's
-shared reader (a runtime dependency, standard library only): `find_project_config` is its
-walk re-exported, and `load_toml` and `anchor` do the reading and the joining. What stays
-here is this package's policy — the `[test_reports]` keys, their types, the normalisation,
-unknown keys warned rather than fatal — and **`TomlConfigError`, which is still the only
-exception either consumer catches**: `load_project_config` re-raises ub-project's
-`ProjectConfigError` as it with the same message, and must never be made a subclass of it.
-The walk stops at the first `ubproject.toml`, else at `.git`, and only where no `.git`
-exists anywhere above, at `pyproject.toml` — so a member's `packages/<name>/pyproject.toml`
-never ends it, and a repository-root `ubproject.toml` (there is none today) would be picked
-up by every consumer under `packages/`. `packages/ub-project/design/reading-contract.md` is
-the specification; a change the walk or the anchoring needs belongs there, not here.
+The `[test_reports]` model -- keys, types, normalisation, `TomlConfigError` -- is
+`ub_test_reports.projectconfig`, read through `ub-project`; the core's `AGENTS.md` has its
+rules. What is here is the bridge in `test_reports.py` that applies it to the `tr_*` values
+at `config-inited`, and `-D` precedence over it.
 
 ## Testing
 
@@ -167,21 +135,20 @@ The suite spawns Sphinx builds in three places, and all three go through
 `tests/test_subprocess_fence.py` is what keeps that true; it reads SOURCE, because a site
 that spawns the bare word passes in every environment where `PATH` happens to be right.
 
-**`toolchain-free` (a CI job in `ci.yaml`, not a cell) is the fence that keeps the converter
-and the plugin importable with no documentation toolchain.** It cannot be a `uv sync` cell,
-structurally: the root's `[project] dependencies` name every member, those are installed in
-every environment, and sphinx-needs declares sphinx at runtime — so every environment this
-root can produce has Sphinx in it. The job builds one outside the project with
-`uv pip install --no-sources` of the wheel it has just built and checked, asserts `sphinx`,
-`sphinx_needs` and `docutils` are all absent, and runs the toolchain-free modules with
-`-m "not toolchain"`. The `toolchain` marker itself lives in the ROOT's `markers` list.
+**This suite always has Sphinx**, and every test in it may use it: the converter's and the
+plugin's tests are ub-test-reports' and run without the toolchain there. A test of a
+Sphinx-free module does not belong here — not even split by a marker, which this package no
+longer has.
 
 ## Releasing
 
-`compat-requirements.txt` names `sphinx` and `sphinx-needs`, and unlike both siblings' it
-covers the package's **own runtime** requirements rather than a test-only need — because they
-are optional. The compat cell installs a bare wheel path with no extras, so without that file
-the `import_check` walk fails `6 of 25 modules` on `sphinx_needs` before pytest even starts.
+**ub-test-reports releases first.** This package's floor on the core is tight-tracked, so
+the core's release pull request (`poe bump ub-test-reports …`) rewrites it, and every
+release gate here resolves the core from PyPI: `poe import-check-reports`, the release
+plan and the compat cell are red until the core version this tree names is published. The
+core's documentation lives on this package's site, so that site's Read the Docs project
+must build THIS repository (`packages/sphinx-test-reports/.readthedocs.yaml`) before the
+core's first tag — until then its PyPI page links a site with no page about it.
 
 ## What the move into this workspace cost, deliberately
 
@@ -193,8 +160,8 @@ Recorded here because none of it is visible in a diff:
 - **Five ruff rule families left**: `FURB`, `PERF`, `PGH`, `PIE`, `SLF`, which this package
   enabled and the root's shared set does not. All five are at zero violations today, which
   is exactly why the loss would otherwise be silent.
-- **`plugin_floor`** — the plugin against the oldest pytest of each Python — has no
-  replacement yet. It returns with the release that makes the plugin a shipped surface.
+- **`plugin_floor`** — the plugin against the oldest pytest of each Python — returned as
+  `ci.yaml`'s `plugin-floor` job when the plugin moved to ub-test-reports.
 - **mypy left for ty**, with the whole package checked rather than the 15-entry `exclude`
   the mypy configuration carried.
 - **Beyond those five families, the root `extend-ignore`s `B904`, `ICN001`, `ISC004` and

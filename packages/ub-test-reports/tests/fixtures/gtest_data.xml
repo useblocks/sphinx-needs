@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="5" failures="1" disabled="1" errors="0" time="0.035" timestamp="2026-08-31T10:00:00" name="AllTests">
+  <testsuite name="MathTest" tests="3" failures="1" disabled="1" errors="0" time="0.02" timestamp="2026-08-31T10:00:00" Owner="platform-team" Component="math">
+    <testcase name="Addition" file="src/math_test.cc" line="12" status="run" result="completed" time="0.001" timestamp="2026-08-31T10:00:01" classname="MathTest">
+      <properties>
+        <property name="PartiallyVerifies" value="REQ_1, REQ_2"/>
+        <property name="TestType" value="requirements-based"/>
+      </properties>
+    </testcase>
+    <testcase name="Subtraction" file="src/math_test.cc" line="20" status="run" result="completed" time="0.002" classname="MathTest">
+      <failure message="src/math_test.cc:22&#10;Expected equality of these values:&#10;  1&#10;  2" type=""><![CDATA[src/math_test.cc:22
+Expected equality of these values:
+  1
+  2]]></failure>
+      <failure message="src/math_test.cc:23&#10;Expected: true" type=""><![CDATA[src/math_test.cc:23
+Expected: true
+  Actual: false]]></failure>
+      <system-out><![CDATA[computing sums]]></system-out>
+      <system-err><![CDATA[overflow guard hit]]></system-err>
+    </testcase>
+    <testcase name="DISABLED_Division" file="src/math_test.cc" line="30" status="notrun" result="suppressed" time="0" classname="MathTest"/>
+  </testsuite>
+  <testsuite name="ParamTest/0" tests="2" failures="0" disabled="0" errors="0" time="0.015">
+    <testcase name="Works/0" file="src/param_test.cc" line="8" status="run" result="completed" time="0.004" classname="ParamTest/0" value_param="42" type_param="int"/>
+    <testcase name="Legacy" file="src/param_test.cc" line="14" status="run" result="skipped" time="0.001" classname="ParamTest/0" Requirement="REQ_9" TestType="interface-test">
+      <skipped message="Skipped via GTEST_SKIP"><![CDATA[src/param_test.cc:15
+not applicable on this platform]]></skipped>
+      <skipped message="second skip part"><![CDATA[trailing detail]]></skipped>
+    </testcase>
+  </testsuite>
+</testsuites>

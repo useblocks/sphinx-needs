@@ -1,0 +1,12 @@
+<testsuite name="error_suite" tests="4" errors="1" failures="1" skips="0">
+    <testcase classname="foo1" name="ASuccessfulTest" time="0.001"/>
+    <testcase classname="foo2" name="AFailingTest" time="0.002">
+        <failure type="AssertionError" message="expected true">some failure details</failure>
+    </testcase>
+    <testcase classname="foo3" name="AnErrorTest" time="0.003">
+        <error type="RuntimeError" message="unexpected crash">stack trace here</error>
+    </testcase>
+    <testcase classname="foo4" name="ASkippedTest" time="0.000">
+        <skipped type="skip" message="not applicable"/>
+    </testcase>
+</testsuite>

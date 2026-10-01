@@ -11,7 +11,7 @@ Under pytest's default ``junit_family = xunit2`` no ``<testcase>`` carries the
 of ``tr_deterministic_case_ids``). Under ``xunit1`` pytest writes them, but
 counts the line from 0, keeps Bazel's runfiles prefix, and has no way to point
 a case at the file that drove it. And nothing records the requirements a test
-verifies. ``Sphinx-Test-Reports`` ships a small pytest plugin that takes care
+verifies. ``ub-test-reports`` ships a small pytest plugin that takes care
 of both.
 
 The plugin is generic: which properties exist, what they are called in the XML
@@ -21,20 +21,22 @@ is the worked example below.
 Enabling it
 -----------
 
-The plugin is the ``pytest`` extra of the package: ``pip install
-"sphinx-test-reports[pytest]"`` installs it without the documentation toolchain
-(see :doc:`/install`). Enable it in the pytest configuration:
+The plugin is part of ub-test-reports, the Sphinx-free distribution, and its ``pytest``
+extra brings pytest: ``pip install "ub-test-reports[pytest]"`` installs it without the
+documentation toolchain (see :doc:`/install`). Enable it in the pytest configuration:
 
 .. code-block:: ini
 
    # pytest.ini / pyproject.toml [tool.pytest.ini_options]
-   addopts = -p sphinx_test_reports.pytest_plugin
+   addopts = -p ub_test_reports.pytest_plugin
    junit_family = xunit1
 
 .. versionchanged:: 3.0.0
-   The module is ``sphinx_test_reports.pytest_plugin``. The pre-3.0 name,
-   ``sphinxcontrib.test_reports.pytest_plugin``, still loads the same plugin
-   until 4.0, with a ``FutureWarning`` at start-up asking for the new one. That
+   The module is ``ub_test_reports.pytest_plugin``, in the ub-test-reports distribution;
+   ``pip install "sphinx-test-reports[pytest]"`` still installs it, until 4.0. The pre-3.0
+   name, ``sphinxcontrib.test_reports.pytest_plugin``, still loads the same plugin until
+   4.0 wherever sphinx-test-reports is installed, with a ``FutureWarning`` at start-up
+   asking for the new one. That
    warning comes before pytest installs its own filters, so only Python's own
    options silence it: ``PYTHONWARNINGS=ignore::FutureWarning``, which
    pytest-xdist's workers inherit, or
@@ -62,7 +64,7 @@ Nothing else changes for tests that do not use the decorator below.
 The start-up notice is a ``TestReportsConfigWarning``. A project that turns
 warnings into errors (``filterwarnings = error``, ``-W error``) gets it as a
 clean usage error instead;
-``ignore::sphinx_test_reports.pytest_plugin.TestReportsConfigWarning``
+``ignore::ub_test_reports.pytest_plugin.TestReportsConfigWarning``
 silences it.
 
 Declaring the properties
@@ -108,7 +110,7 @@ plugin this one was ported from:
 
    # pytest.ini
    [pytest]
-   addopts = -p sphinx_test_reports.pytest_plugin
+   addopts = -p ub_test_reports.pytest_plugin
    junit_family = xunit1
    test_reports_properties =
        partially_verifies = PartiallyVerifies, list
@@ -120,7 +122,7 @@ plugin this one was ported from:
 
    # pyproject.toml
    [tool.pytest.ini_options]
-   addopts = "-p sphinx_test_reports.pytest_plugin"
+   addopts = "-p ub_test_reports.pytest_plugin"
    junit_family = "xunit1"
    test_reports_properties = [
        "partially_verifies = PartiallyVerifies, list",
@@ -160,7 +162,7 @@ With the S-CORE model declared:
 
 .. code-block:: python
 
-   from sphinx_test_reports.pytest_plugin import add_test_properties
+   from ub_test_reports.pytest_plugin import add_test_properties
 
    @add_test_properties(
        partially_verifies=["REQ_1", "REQ_2"],
@@ -234,7 +236,7 @@ of at the test function:
 
 .. code-block:: python
 
-   from sphinx_test_reports.pytest_plugin import apply_test_metadata
+   from ub_test_reports.pytest_plugin import apply_test_metadata
 
    @pytest.mark.parametrize("spec", SPECS)
    def test_spec(spec, record_property):
