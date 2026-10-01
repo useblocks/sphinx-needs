@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790859664424,
+  "lastUpdate": 1790859812629,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -22032,6 +22032,42 @@ window.BENCHMARK_DATA = {
             "value": 55.99841841,
             "unit": "s",
             "extra": "Commit: 63623bda9bca60ffdadcabccedd6190641b56696\nBranch: master\nTime: 2026-10-01T14:59:40+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "323730973+useblocks-automation[bot]@users.noreply.github.com",
+            "name": "useblocks-automation[bot]",
+            "username": "useblocks-automation[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "cc0ffe0a313e807c5a9587e4454e82803d4b21f8",
+          "message": "⬆️ Update the uv lock (monthly) (#2012)\n\n`uv lock --upgrade`, run by the monthly `UV update` workflow — every\nline uv's\nlock diff reported, updates, additions and removals alike. Only\n`uv.lock` is\ntouched: the job asserts that no manifest changed, so every specifier\nhere is still\nthe one someone chose by hand. A pair that LOST a version (`v0.20.1,\nv0.21.2 -> v0.20.1,\nv0.22.4`) is a matrix cell that moved, and not necessarily up: uv\nunifies its splits on\nversions already chosen, so a cell whose cap excludes the newest takes\nthe other survivor.\n\n-\n[charset-normalizer](https://pypi.org/project/charset-normalizer/3.5.2/):\nv3.5.1 -> v3.5.2\n- [jsonschema-rs](https://pypi.org/project/jsonschema-rs/0.58.3/):\nv0.58.2 -> v0.58.3\n- [uv](https://pypi.org/project/uv/0.12.21/): v0.12.20 -> v0.12.21\n\nhooks clean after the upgrade: yes — see [the workflow\nrun](https://github.com/useblocks/sphinx-needs/actions/runs/36837175174)\n\n### Held back by a manifest range\n\n- `docutils`: locked v0.22.4, newest v0.23, constraint \"docutils>=0.21\"\n\"docutils>=0.22; python_version >= '3.12'\" \"docutils~=0.21.0\" (required\nby sphinx-test-reports, sphinx-needs-testkit, sphinx-needs,\nsphinx-mounts, sphinx-codelinks)\n- `pydata-sphinx-theme`: locked v0.17.1, newest v0.22.0, constraint\n\"pydata-sphinx-theme>=0.15.2,<0.20.0\" (required by sphinx-needs extra\ntheme-pds)\n- `tree-sitter`: locked v0.25.2, newest v0.26.0, constraint\n\"tree-sitter~=0.25.1\" (required by sphinx-codelinks)\n- `sphinxcontrib-typer`: locked v0.9.2, newest v0.10.0, constraint\n\"sphinxcontrib-typer>=0.9.1\" (required by sphinx-codelinks extra docs)\n\nDirect dependencies only, from `uv tree --outdated --depth 1` after the\nupgrade,\nat the versions the DEFAULT resolution locks — a package held back only\nin a matrix\nsplit (`docutils` 0.21.2 in `typing`, `myst-parser` 4.x in `sphinx-7`)\nis not listed.\nThe constraint column is every specifier this workspace writes for that\nname. What\nactually blocks the newer release may be one of those, a cap elsewhere\nin the graph,\nor a `[tool.uv] conflicts` split; `uv lock --upgrade-package <name>`\nnames it.\nWidening one is a pull request of its own, with the reason re-checked —\nnever a\nrider on this one.\n\nOpened by the scheduled `UV update` workflow.\n\nCo-authored-by: chrisjsewell <2997570+chrisjsewell@users.noreply.github.com>",
+          "timestamp": "2026-10-01T15:00:18+02:00",
+          "tree_id": "d07bc890e8fdaf38d32a8fabbf096c952ce551b2",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/cc0ffe0a313e807c5a9587e4454e82803d4b21f8"
+        },
+        "date": 1790859803569,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.12029493699999705,
+            "unit": "s",
+            "extra": "Commit: cc0ffe0a313e807c5a9587e4454e82803d4b21f8\nBranch: master\nTime: 2026-10-01T15:00:18+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 51.69669807999999,
+            "unit": "s",
+            "extra": "Commit: cc0ffe0a313e807c5a9587e4454e82803d4b21f8\nBranch: master\nTime: 2026-10-01T15:00:18+02:00"
           }
         ]
       }
