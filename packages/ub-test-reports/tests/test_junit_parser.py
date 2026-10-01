@@ -240,3 +240,48 @@ def test_error_counts_are_taken_from_the_testsuite():
     assert suite["errors"] == 2
     assert suite["failures"] == 0
     assert suite["passed"] == 1
+
+
+#: The smallest report the shipped Apache Ant JUnit schema accepts: every required
+#: attribute of `<testsuite>` and `<testcase>`, and the four child elements in order.
+CONFORMING_REPORT = """\
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="suite" timestamp="2026-10-01T12:00:00" hostname="host" tests="1"
+           failures="0" errors="0" time="0.1">
+  <properties/>
+  <testcase name="test_one" classname="pkg.Suite" time="0.1"/>
+  <system-out/>
+  <system-err/>
+</testsuite>
+"""
+
+
+class TestSchemaValidation:
+    """`validate()` reads `schemas/JUnit.xsd` from the installed package.
+
+    The schema is package data, so it is what an artefact check must not lose: these
+    tests are the ones that fail when a built wheel ships without it.
+    """
+
+    def test_the_shipped_schema_accepts_a_conforming_report(self, tmp_path):
+        from pathlib import Path
+
+        from ub_test_reports.junitparser import JUnitParser
+
+        report = tmp_path / "conforming.xml"
+        report.write_text(CONFORMING_REPORT, encoding="utf-8")
+        parser = JUnitParser(str(report))
+
+        assert Path(parser.junit_xsd_path).is_file()
+        assert parser.validate() is True
+
+    def test_the_shipped_schema_rejects_a_report_without_its_required_attributes(
+        self,
+    ):
+        from ub_test_reports.junitparser import JUnitParser
+
+        # pytest's report has no `hostname` or `timestamp` on its `<testsuite>`
+        parser = JUnitParser(xml_pytest_path)
+
+        assert parser.validate() is False
+        assert len(parser.xmlschema.error_log) > 0
