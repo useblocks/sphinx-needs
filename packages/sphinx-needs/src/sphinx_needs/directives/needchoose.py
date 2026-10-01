@@ -208,8 +208,8 @@ class ChooseDirective(SphinxDirective):
     """
 
     required_arguments = 0
-    # declared only to be refused: with no argument declared, MyST would move the text
-    # into the content and docutils would reject the directive, so neither could say why
+    # declared only to be refused: with no argument declared, docutils and MyST both move
+    # the text into the content, which would then be reported only as a stray paragraph
     optional_arguments = 1
     final_argument_whitespace = True
     has_content = True
