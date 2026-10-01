@@ -148,12 +148,13 @@ which renders its content from the need-node cache.
 
          SKIPPED_P5B_IN_NEED_DEFAULT
 
-X1 the cases come from an include
----------------------------------
+X1 a whole match in an included file
+------------------------------------
 
-.. match::
+The match and its cases are written in the same (included) file,
+which is fine; cases an include supplies to a match written elsewhere are refused.
 
-   .. include:: cases.txt
+.. include:: included_match.txt
 
 X2 an include inside the taken case
 -----------------------------------

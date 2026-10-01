@@ -1,0 +1,9 @@
+.. match::
+
+   .. case:: var.arch == "xyz"
+
+      SKIPPED_X1_IN_INCLUDED_MATCH
+
+   .. case::
+
+      TAKEN_X1_INCLUDED_MATCH_DEFAULT

@@ -1,6 +1,7 @@
 """Directives for including one of several branches of content based on variant data.
 
-A ``match`` holds ``case`` directives and comments, and nothing else.
+A ``match`` holds ``case`` directives and comments, written in its own body,
+and nothing else.
 The first ``case`` whose condition holds is included;
 a ``case`` with no condition is the default, and must be the last.
 
@@ -68,6 +69,8 @@ class _CasePlaceholder(nodes.Element):
     """The ``lineno`` of the ``case`` directive."""
     location: str | None
     """Where warnings about the case are reported."""
+    source: str | None
+    """The file the ``case`` directive is written in, as docutils or MyST reports it."""
 
 
 class _MatchBody(nodes.Element):
@@ -118,6 +121,7 @@ class CaseDirective(SphinxDirective):
         placeholder.content_offset = self.content_offset
         placeholder.lineno = self.lineno
         placeholder.location = self.get_location()
+        placeholder.source = self.get_source_info()[0]
         return [placeholder]
 
 
@@ -126,8 +130,9 @@ class MatchDirective(SphinxDirective):
 
     The content may hold only ``case`` directives and comments.
     Every mistake is warned about once, and skips the whole ``match``:
-    content that is neither a ``case`` nor a comment, a default ``case``
-    that is not the last or is not the only one, variant data that is not configured,
+    content that is neither a ``case`` nor a comment, a ``case`` supplied through an
+    include, a default ``case`` that is not the last or is not the only one,
+    variant data that is not configured,
     and a condition that cannot be evaluated before a case is taken.
     A typo in the condition of the case that should be taken
     therefore never renders a later case, or the default, in its place.
@@ -164,7 +169,7 @@ class MatchDirective(SphinxDirective):
             )
             return []
 
-        cases = self._collect_cases()
+        cases = self._collect_cases(self.get_source_info()[0])
         if cases is None:
             return []
 
@@ -234,9 +239,15 @@ class MatchDirective(SphinxDirective):
 
         return list(body.children)
 
-    def _collect_cases(self) -> list[_CasePlaceholder] | None:
+    def _collect_cases(self, source: str | None, /) -> list[_CasePlaceholder] | None:
         """Parse the body and check its structure.
 
+        The cases must be written in the body itself:
+        a ``case`` an ``.. include::`` supplies is refused,
+        so that one ``match`` is one directive in one file.
+
+        :param source: The file this ``match`` is written in,
+            as its cases report theirs.
         :return: The cases, in order,
             or ``None`` if the body is not a valid ``match`` (a warning has been emitted).
         """
@@ -244,6 +255,14 @@ class MatchDirective(SphinxDirective):
         cases: list[_CasePlaceholder] = []
         for index, child in enumerate(children):
             if isinstance(child, _CasePlaceholder):
+                if child.source != source:
+                    self._warn(
+                        "'case' supplied through an include is not supported (write "
+                        "the cases in the body of the 'match'); the whole match is "
+                        "skipped",
+                        child.location,
+                    )
+                    return None
                 cases.append(child)
             elif isinstance(child, nodes.comment):
                 continue

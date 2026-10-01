@@ -38,6 +38,7 @@ def _project(
     conf: str = _CONF,
     myst: bool = False,
     other: str | None = None,
+    extra: tuple[tuple[str, str], ...] = (),
 ) -> dict[str, object]:
     """An inline project whose root document is a title followed by ``body``.
 
@@ -45,11 +46,13 @@ def _project(
     :param conf: The ``conf.py``.
     :param myst: Write the documents as MyST Markdown (``.md``) rather than RST.
     :param other: The source of a second document, ``other``, if there is one.
+    :param extra: Further files, as ``(name, text)``, such as files to include.
     """
     suffix, title = (".md", "# Test\n\n") if myst else (".rst", "Test\n====\n\n")
     files = [(Path("conf.py"), conf), (Path("index" + suffix), title + body)]
     if other is not None:
         files.append((Path("other" + suffix), other))
+    files.extend((Path(name), text) for name, text in extra)
     return {"buildername": "html", "files": files}
 
 
@@ -118,7 +121,7 @@ def test_match_directive(test_app):
         "TAKEN_P5_OUTER",
         "TAKEN_P5_INNER_DEFAULT",
         "TAKEN_P5B_IN_NEED",
-        "TAKEN_X1_DEFAULT_FROM_INCLUDE",
+        "TAKEN_X1_INCLUDED_MATCH_DEFAULT",
         "TAKEN_X2_INCLUDED_TEXT",
         "TAKEN_X2_AFTER_INCLUDE",
         "TAKEN_X2_AFTER_MATCH",
@@ -168,9 +171,22 @@ class _Expected(NamedTuple):
     #: the ids the needs view must hold
     needs: tuple[str, ...] = ()
     conf: str = _CONF
+    #: further files of the project, as ``(name, text)``
+    extra: tuple[tuple[str, str], ...] = ()
+    #: the file the warnings are located in
+    located_in: str = "index.rst"
 
 
 _SKIP = "; the whole match is skipped"
+
+_INCLUDED_CASE = (
+    "'case' supplied through an include is not supported "
+    "(write the cases in the body of the 'match')" + _SKIP
+)
+_CASES_TXT = (
+    '.. case:: var.arch == "xyz"\n\n   SKIPPED_X1_FROM_INCLUDE\n\n'
+    ".. case::\n\n   SKIPPED_X1_DEFAULT_FROM_INCLUDE\n"
+)
 
 _WARNINGS = {
     "default not last": _Expected(
@@ -355,6 +371,24 @@ _WARNINGS = {
         ),
         conf=_CONF_NO_VARIANT_DATA,
     ),
+    # the cases of a match are written in its body: an include may not supply them,
+    # and the warning points at the case in the included file
+    "cases from an include": _Expected(
+        ".. match::\n\n   .. include:: cases.txt\n",
+        ((_INCLUDED_CASE, '.. case:: var.arch == "xyz"'),),
+        extra=(("cases.txt", _CASES_TXT),),
+        located_in="cases.txt",
+    ),
+    # the structure is checked before any condition: a true case written in place
+    # before the included ones is not taken either
+    "a case from an include after a true case": _Expected(
+        ".. match::\n\n"
+        "   .. case:: True\n\n      SKIPPED_IN_PLACE\n\n"
+        "   .. include:: cases.txt\n",
+        ((_INCLUDED_CASE, '.. case:: var.arch == "xyz"'),),
+        extra=(("cases.txt", _CASES_TXT),),
+        located_in="cases.txt",
+    ),
     # content outside a case is parsed with the body, so the need directive runs;
     # the match removes the need again (the target is the first node it emits)
     "need directly in the body": _Expected(
@@ -382,7 +416,10 @@ _WARNINGS = {
 
 @pytest.mark.parametrize(
     ("test_app", "expected"),
-    [(_project(case.body, conf=case.conf), case) for case in _WARNINGS.values()],
+    [
+        (_project(case.body, conf=case.conf, extra=case.extra), case)
+        for case in _WARNINGS.values()
+    ],
     ids=list(_WARNINGS),
     indirect=["test_app"],
 )
@@ -392,10 +429,10 @@ def test_match_warnings(test_app, expected: _Expected):
     app.build()
     warnings = build_warnings(app)
     assert len(warnings) == len(expected.warnings), warnings
-    source = Path(app.srcdir, "index.rst").read_text()
+    source = Path(app.srcdir, expected.located_in).read_text()
     for warning, (text, line) in zip(warnings, expected.warnings, strict=True):
         assert warning.startswith(
-            f"<srcdir>/index.rst:{_line_of(source, line)}: WARNING: "
+            f"<srcdir>/{expected.located_in}:{_line_of(source, line)}: WARNING: "
         ), warning
         assert text in warning, warning
         assert warning.endswith(" [needs.match]"), warning
@@ -649,6 +686,22 @@ TAKEN_M7_IN_NEED
 :::
 ::::
 :::::
+
+## A whole match in an included file
+
+```{include} included_match.txt
+```
+"""
+
+_MYST_INCLUDED_MATCH = """\
+::::{match}
+:::{case} var.arch == "xyz"
+SKIPPED_M8_IN_INCLUDED_MATCH
+:::
+:::{case}
+TAKEN_M8_INCLUDED_MATCH_DEFAULT
+:::
+::::
 """
 
 
@@ -661,6 +714,7 @@ TAKEN_M7_IN_NEED
             conf=_CONF_MYST,
             myst=True,
             other="# Other\n\n```{needextract}\n:filter: id == 'REQ_M_HOST'\n```\n",
+            extra=(("included_match.txt", _MYST_INCLUDED_MATCH),),
         )
     ],
     indirect=True,
@@ -681,6 +735,7 @@ def test_match_in_myst(test_app):
         "TAKEN_M5_INNER_DEFAULT",
         "TAKEN_M6_DEFAULT",
         "TAKEN_M7_IN_NEED",
+        "TAKEN_M8_INCLUDED_MATCH_DEFAULT",
     ]
     assert [word for word in taken if word not in html] == []
     assert "SKIPPED_" not in html
@@ -796,5 +851,42 @@ def test_match_warnings_in_myst(test_app, text: str, line: str | None):
         assert warning.startswith(
             f"<srcdir>/index.md:{_line_of(source, line)}: WARNING: "
         ), warning
+    assert "SKIPPED" not in Path(app.outdir, "index.html").read_text()
+    _assert_no_match_nodes(app)
+
+
+@pytest.mark.skipif(not _HAS_MYST, reason="needs myst-parser")
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            "::::{match}\n:::{case} True\nSKIPPED_IN_PLACE\n:::\n\n"
+            "```{include} cases.txt\n```\n::::\n",
+            conf=_CONF_MYST,
+            myst=True,
+            extra=(
+                (
+                    "cases.txt",
+                    ':::{case} var.arch == "xyz"\nSKIPPED_X1_FROM_INCLUDE\n:::\n'
+                    ":::{case}\nSKIPPED_X1_DEFAULT_FROM_INCLUDE\n:::\n",
+                ),
+            ),
+        )
+    ],
+    indirect=True,
+)
+def test_match_refuses_included_cases_in_myst(test_app):
+    """In MyST too, a ``case`` an ``{include}`` supplies is refused, in the included file.
+
+    MyST reports the lines of an included file one late (the case on line 1 is
+    reported on line 2, with colon and backtick fences alike), so only the file is
+    asserted.
+    """
+    app = test_app
+    app.build()
+    (warning,) = build_warnings(app)
+    assert warning.startswith("<srcdir>/cases.txt:"), warning
+    assert _INCLUDED_CASE in warning, warning
+    assert warning.endswith(" [needs.match]"), warning
     assert "SKIPPED" not in Path(app.outdir, "index.html").read_text()
     _assert_no_match_nodes(app)

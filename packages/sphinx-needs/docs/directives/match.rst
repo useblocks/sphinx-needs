@@ -107,10 +107,16 @@ Rules
   and the needs it would create are removed again.
   A ``case`` belongs directly in a ``match``:
   one anywhere else, including one written loose in the content of another ``case``, is a mistake too.
+- **The cases are written in place.**
+  Every ``case`` of a ``match`` is written in the body of that ``match``, in the same file,
+  so that one choice is one directive in one place.
+  An ``.. include::`` (in MyST, an ``{include}``) may not supply the cases;
+  it may be used inside the content of a case,
+  and a whole ``match`` may stand in an included file.
 - **The included case is ordinary content.**
   It may hold headings, which become sections where the ``match`` stands,
   needs, any other directive, and further ``match`` directives.
-  An ``.. include::`` may supply the cases of a ``match``, or part of the content of a case,
+  An ``.. include::`` may supply part of the content of a case,
   and a ``match`` may stand in the content of a need.
 - **Parse-time evaluation**, as for ``if``:
   the content of a ``case`` that is not included is never parsed,
@@ -143,6 +149,8 @@ The mistakes are:
   So a typo in the condition of the case that should be included
   never includes a later case, or the default, in its place.
 - The ``match`` contains something that is neither a ``case`` nor a comment.
+- A ``case`` is supplied through an include rather than written in the body of the ``match``
+  (the warning points at the ``case`` in the included file).
 - The ``match`` has more than one default ``case``, or a default that is not its last ``case``.
 - The ``match`` has no ``case`` at all.
 - The ``match`` is given an argument: the conditions go on the cases.
