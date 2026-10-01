@@ -101,8 +101,11 @@ class _BranchDirective(SphinxDirective):
     The content is not parsed here: the ``choose`` parses it if it takes the branch.
     Both directives declare one optional argument, and the ``choose`` checks it,
     so that a missing condition on a ``when``, or one on an ``otherwise``,
-    is warned about once, in the words of this extension, at the branch,
-    rather than by docutils (or MyST) with an error of its own.
+    is warned about once, in the words of this extension, at the branch:
+    a required argument would make docutils (or MyST) reject a ``when`` without one
+    with an error of its own, and with no argument declared at all,
+    both would move a condition written on an ``otherwise`` into its content,
+    where it would be taken, silently, as the default's first paragraph.
     """
 
     branch_kind: ClassVar[_BranchKind]
