@@ -98,6 +98,13 @@ links_from_content
 
 .. autofunction:: sphinx_needs.functions.common.links_from_content
 
+.. _links_from_filter:
+
+links_from_filter
+~~~~~~~~~~~~~~~~~
+
+.. autofunction:: sphinx_needs.functions.common.links_from_filter
+
 
 Develop own functions
 ---------------------

@@ -316,3 +316,465 @@ def test_need_func_role_removed(test_app):
     warning_records = build_warnings(app)
     assert len(warning_records) == 1, warning_records
     assert 'Unknown interpreted text role "need_func"' in warning_records[0]
+
+
+# -- ``copy`` with ``upper``/``lower`` on a list option -----------------------
+#
+# They used to case the list's printed form, so a list of two tags became ONE tag,
+# ``"['ALPHA', 'BETA']"``; they now case each item.
+
+COPY_CASE_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+"""
+
+COPY_CASE_INDEX = """\
+Copy with a case change
+=======================
+
+.. req:: Source
+   :id: SRC_1
+   :tags: Alpha, beta
+   :status: Open
+
+   Tags as text: :ndf:`copy("tags", upper=True)`
+
+.. spec:: Upper-cased tags
+   :id: UPPER
+   :tags: [[copy("tags", "SRC_1", upper=True)]]
+   :status: [[copy("status", "SRC_1", upper=True)]]
+
+.. spec:: Lower-cased tags
+   :id: LOWER
+   :tags: [[copy("tags", "SRC_1", lower=True)]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), COPY_CASE_CONF),
+                (Path("index.rst"), COPY_CASE_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_doc_df_copy_case_of_a_list(test_app):
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+
+    needs = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf-8"))
+    needs = needs["versions"][""]["needs"]
+
+    assert needs["UPPER"]["tags"] == ["ALPHA", "BETA"]
+    assert needs["LOWER"]["tags"] == ["alpha", "beta"]
+    # a value that is not a list is cased as before
+    assert needs["UPPER"]["status"] == "OPEN"
+
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    assert "Tags as text: ALPHA, BETA" in html
+
+
+# -- ``copy`` with ``c.this_doc()`` in its filter ----------------------------------
+#
+# The source is the first need in the document of the current need, not the first need
+# of the project. The filter used to be evaluated without a document, so ``c.this_doc()``
+# failed and ``copy`` fell back to copying from the current need.
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), COPY_CASE_CONF),
+                (
+                    Path("index.rst"),
+                    "Copy in this document\n=====================\n\n"
+                    ".. toctree::\n\n   a_other\n\n"
+                    ".. req:: Source in this document\n"
+                    "   :id: COPY_THIS_DOC\n"
+                    "   :status: here\n\n"
+                    ".. spec:: Copier\n"
+                    "   :id: COPY_TARGET\n"
+                    '   :status: [[copy("status", filter="c.this_doc() and type == \'req\'")]]\n',
+                ),
+                # read first, so without c.this_doc() it would be the source
+                (
+                    Path("a_other.rst"),
+                    "Other document\n==============\n\n"
+                    ".. req:: Source in another document\n"
+                    "   :id: COPY_OTHER_DOC\n"
+                    "   :status: elsewhere\n",
+                ),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_doc_df_copy_filter_this_doc(test_app):
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+
+    needs = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf-8"))
+    needs = needs["versions"][""]["needs"]
+
+    assert needs["COPY_TARGET"]["status"] == "here"
+
+
+# -- ``links_from_filter`` ------------------------------------------------------
+#
+# No filter below reads a field that is itself a dynamic function: those are
+# resolved need by need, so what such a filter sees depends on the order of the needs.
+
+LINKS_FROM_FILTER_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+"""
+
+LINKS_FROM_FILTER_INDEX = """\
+Links from a filter
+===================
+
+.. req:: Open requirement with a part
+   :id: LFF_R1
+   :status: open
+
+   Part: :np:`(p1) part one`
+
+.. req:: Open requirement
+   :id: LFF_R2
+   :status: open
+
+.. req:: Closed requirement
+   :id: LFF_R3
+   :status: closed
+
+.. spec:: Collector
+   :id: LFF_COLL
+   :links: [[links_from_filter("type == 'req' and status == 'open'")]]
+
+.. spec:: Collector matching itself
+   :id: LFF_SELF_EX
+   :links: [[links_from_filter("id == 'LFF_R2' or id == 'LFF_SELF_EX'")]]
+
+.. spec:: Collector matching itself, kept
+   :id: LFF_SELF_IN
+   :links: [[links_from_filter("id == 'LFF_R2' or id == 'LFF_SELF_IN'", include_self=True)]]
+
+.. spec:: Parts not searched
+   :id: LFF_PARTS_DEF
+   :links: [[links_from_filter("id_parent == 'LFF_R1'")]]
+
+.. spec:: Parts searched
+   :id: LFF_PARTS_IN
+   :links: [[links_from_filter("id_parent == 'LFF_R1'", include_parts=True)]]
+
+.. spec:: Parts searched, own parts excluded
+   :id: LFF_OWN_EX
+   :links: [[links_from_filter("id_parent == 'LFF_R1' or id_parent == 'LFF_OWN_EX'", include_parts=True)]]
+
+   Own part: :np:`(q1) own part`
+
+.. spec:: Parts searched, own parts kept
+   :id: LFF_OWN_IN
+   :links: [[links_from_filter("id_parent == 'LFF_OWN_IN'", include_parts=True, include_self=True)]]
+
+   Own part: :np:`(q1) own part`
+
+.. spec:: Nothing found, allowed
+   :id: LFF_NONE
+   :links: [[links_from_filter("status == 'nonexistent'", allow_empty=True)]]
+
+.. spec:: Links as text
+   :id: LFF_NDF
+
+   Open requirements: :ndf:`links_from_filter("type == 'req' and status == 'open'")`
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), LINKS_FROM_FILTER_CONF),
+                (Path("index.rst"), LINKS_FROM_FILTER_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_doc_df_links_from_filter(test_app):
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+
+    needs = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf-8"))
+    needs = needs["versions"][""]["needs"]
+
+    # several needs found, in document order, and linked back
+    assert needs["LFF_COLL"]["links"] == ["LFF_R1", "LFF_R2"]
+    assert "LFF_COLL" in needs["LFF_R1"]["links_back"]
+    assert "LFF_COLL" in needs["LFF_R2"]["links_back"]
+    assert "LFF_COLL" not in needs["LFF_R3"]["links_back"]
+
+    # the collector itself is excluded unless include_self=True
+    assert needs["LFF_SELF_EX"]["links"] == ["LFF_R2"]
+    assert needs["LFF_SELF_IN"]["links"] == ["LFF_R2", "LFF_SELF_IN"]
+
+    # parts are searched only with include_parts=True
+    assert needs["LFF_PARTS_DEF"]["links"] == ["LFF_R1"]
+    assert needs["LFF_PARTS_IN"]["links"] == ["LFF_R1", "LFF_R1.p1"]
+    # the collector's own parts count as itself
+    assert needs["LFF_OWN_EX"]["links"] == ["LFF_R1", "LFF_R1.p1"]
+    assert needs["LFF_OWN_IN"]["links"] == ["LFF_OWN_IN", "LFF_OWN_IN.q1"]
+
+    # nothing found, and allow_empty=True keeps it silent
+    assert needs["LFF_NONE"]["links"] == []
+
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    assert "Open requirements: LFF_R1, LFF_R2" in html
+
+
+LINKS_FROM_FILTER_EMPTY_INDEX = """\
+Links from an empty filter
+==========================
+
+.. req:: Requirement
+   :id: LFF_R1
+
+.. spec:: Collector
+   :id: LFF_COLL
+   :links: [[links_from_filter("")]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), LINKS_FROM_FILTER_CONF),
+                (Path("index.rst"), LINKS_FROM_FILTER_EMPTY_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_doc_df_links_from_filter_empty(test_app):
+    app = test_app
+    app.build()
+
+    warning_records = build_warnings(app)
+    assert len(warning_records) == 1, warning_records
+    assert "links_from_filter needs a non-empty filter" in warning_records[0]
+    assert "[needs.dynamic_function]" in warning_records[0]
+
+    needs = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf-8"))
+    assert needs["versions"][""]["needs"]["LFF_COLL"]["links"] == []
+
+
+LINKS_FROM_FILTER_NO_MATCH_INDEX = """\
+Links from a filter which finds nothing
+=======================================
+
+.. req:: Requirement
+   :id: LFF_R1
+
+.. spec:: Nothing found
+   :id: LFF_NONE
+   :links: [[links_from_filter("status == 'nonexistent'")]]
+
+.. spec:: Only itself found
+   :id: LFF_ONLY_SELF
+   :links: [[links_from_filter("id == 'LFF_ONLY_SELF'")]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), LINKS_FROM_FILTER_CONF),
+                (Path("index.rst"), LINKS_FROM_FILTER_NO_MATCH_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_doc_df_links_from_filter_no_match(test_app):
+    app = test_app
+    app.build()
+
+    warning_records = build_warnings(app)
+    assert len(warning_records) == 2, warning_records
+    assert all("[needs.links_from_filter]" in w for w in warning_records)
+    assert "index.rst:7:" in warning_records[0]
+    assert "no need passed the filter \"status == 'nonexistent'\"" in warning_records[0]
+    assert "index.rst:11:" in warning_records[1]
+    assert "unless include_self=True" in warning_records[1]
+
+    needs = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf-8"))
+    needs = needs["versions"][""]["needs"]
+    assert needs["LFF_NONE"]["links"] == []
+    assert needs["LFF_ONLY_SELF"]["links"] == []
+
+
+# ``links_from_filter`` replacing a project's own function, which linked a need to
+# every system requirement in its own directory:
+#
+#     path = need["docname"].replace("index", "")
+#     for nd in needs.values():
+#         if not nd["is_external"] and nd["docname"].startswith(path) and nd["type"] == ...:
+#             links.append(nd["id"])
+#
+# The filter cuts the docname after its last "/" instead of removing the string
+# "index", so a collector outside an ``index`` document finds its directory too.
+
+LINKS_FROM_FILTER_SYSTEM_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_types = [
+    {"directive": "sysreq", "title": "System requirement", "prefix": "SR_"},
+    {"directive": "sysarch", "title": "System architecture", "prefix": "SA_"},
+]
+"""
+
+LINKS_FROM_FILTER_SYSTEM_FILTER = (
+    "not is_external and docname"
+    # the collector's directory: its docname up to and including the last "/"
+    ' and docname.startswith(current_need["docname"][: current_need["docname"].rfind("/") + 1])'
+    ' and type == "sysreq"'
+)
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), LINKS_FROM_FILTER_SYSTEM_CONF),
+                (
+                    Path("index.rst"),
+                    "Root\n====\n\n.. toctree::\n\n   system/index\n",
+                ),
+                # listed first, so that ``system/`` exists for the files below it
+                (
+                    Path("system/index.rst"),
+                    "System\n======\n\n.. toctree::\n\n"
+                    "   central_locking/index\n"
+                    "   central_locking/details\n"
+                    "   other/index\n",
+                ),
+                (
+                    Path("system/central_locking/index.rst"),
+                    "Central locking\n===============\n\n"
+                    ".. sysreq:: Lock\n   :id: SR_LOCK\n\n"
+                    ".. sysarch:: Locking architecture\n   :id: SA_LOCK\n"
+                    f"   :links: [[links_from_filter('{LINKS_FROM_FILTER_SYSTEM_FILTER}')]]\n",
+                ),
+                (
+                    Path("system/central_locking/details.rst"),
+                    "Details\n=======\n\n"
+                    ".. sysreq:: Unlock\n   :id: SR_UNLOCK\n\n"
+                    ".. sysarch:: Unlocking architecture\n   :id: SA_UNLOCK\n"
+                    f"   :links: [[links_from_filter('{LINKS_FROM_FILTER_SYSTEM_FILTER}')]]\n",
+                ),
+                (
+                    Path("system/other/index.rst"),
+                    "Other\n=====\n\n"
+                    ".. sysreq:: Other\n   :id: SR_OTHER\n\n"
+                    ".. sysarch:: Other architecture\n   :id: SA_OTHER\n"
+                    f"   :links: [[links_from_filter('{LINKS_FROM_FILTER_SYSTEM_FILTER}')]]\n",
+                ),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_doc_df_links_from_filter_system_requirements(test_app):
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+
+    needs = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf-8"))
+    needs = needs["versions"][""]["needs"]
+
+    # every system requirement in the collector's directory, whichever document holds it
+    assert needs["SA_LOCK"]["links"] == ["SR_LOCK", "SR_UNLOCK"]
+    assert needs["SA_OTHER"]["links"] == ["SR_OTHER"]
+    # not an ``index`` document: ``replace("index", "")`` would have found SR_UNLOCK only
+    assert needs["SA_UNLOCK"]["links"] == ["SR_LOCK", "SR_UNLOCK"]
+
+
+# ``links_from_filter`` linking to the needs in the same file and the same chapter.
+# ``sections`` runs from the need's own section up to the document title, so equal
+# lists mean the same chapter under the same parents; ``c.this_doc()`` is still needed,
+# because another file can repeat every title.
+
+LINKS_FROM_FILTER_CHAPTER = (
+    "[[links_from_filter('c.this_doc() and sections == current_need[\"sections\"]')]]"
+)
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), LINKS_FROM_FILTER_CONF),
+                (
+                    Path("index.rst"),
+                    "Vehicle\n=======\n\n.. toctree::\n\n   other\n\n"
+                    "Braking\n-------\n\n"
+                    ".. req:: Brake\n   :id: LFF_BRAKE\n\n"
+                    ".. req:: Brake light\n   :id: LFF_BRAKE_LIGHT\n\n"
+                    ".. spec:: Braking collector\n   :id: LFF_BRAKE_SPEC\n"
+                    f"   :links: {LINKS_FROM_FILTER_CHAPTER}\n\n"
+                    "Emergency braking\n~~~~~~~~~~~~~~~~~\n\n"
+                    ".. req:: Emergency brake\n   :id: LFF_EMERGENCY\n\n"
+                    "Steering\n--------\n\n"
+                    ".. req:: Steer\n   :id: LFF_STEER\n\n"
+                    ".. spec:: Steering collector\n   :id: LFF_STEER_SPEC\n"
+                    f"   :links: {LINKS_FROM_FILTER_CHAPTER}\n",
+                ),
+                # the same document title and chapter, in another file
+                (
+                    Path("other.rst"),
+                    "Vehicle\n=======\n\n"
+                    "Braking\n-------\n\n"
+                    ".. req:: Brake in another file\n   :id: LFF_BRAKE_OTHER\n",
+                ),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_doc_df_links_from_filter_same_file_and_chapter(test_app):
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+
+    needs = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf-8"))
+    needs = needs["versions"][""]["needs"]
+
+    # only c.this_doc() tells these two apart
+    assert needs["LFF_BRAKE_OTHER"]["sections"] == needs["LFF_BRAKE"]["sections"]
+
+    # not the collector itself, not the subchapter, not the same chapter in other.rst
+    assert needs["LFF_BRAKE_SPEC"]["links"] == ["LFF_BRAKE", "LFF_BRAKE_LIGHT"]
+    assert needs["LFF_STEER_SPEC"]["links"] == ["LFF_STEER"]

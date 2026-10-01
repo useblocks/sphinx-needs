@@ -134,8 +134,8 @@ def copy(
 
     :param option: Name of the option to copy
     :param need_id: id of the need, which contains the source option. If None, current need is taken
-    :param upper: Is set to True, copied value will be uppercase
-    :param lower: Is set to True, copied value will be lowercase
+    :param upper: Is set to True, copied value will be uppercase (each item, for a list)
+    :param lower: Is set to True, copied value will be lowercase (each item, for a list)
     :param filter: :ref:`filter_string`, which first result is used as copy source.
     :return: string of copied need option
     """
@@ -152,6 +152,7 @@ def copy(
             filter,
             need,
             location=location,
+            origin_docname=need["docname"] if need else None,
         )
         if result:
             need = result[0]
@@ -164,6 +165,8 @@ def copy(
 
     value = need[option]
 
+    if isinstance(value, list | tuple) and (lower or upper):
+        return [str(item).lower() if lower else str(item).upper() for item in value]
     if lower:
         return str(value).lower()
     if upper:
@@ -543,3 +546,124 @@ def links_from_content(
         return filtered_links
 
     return raw_links
+
+
+def links_from_filter(
+    app: Sphinx,
+    need: NeedItem | NeedPartItem | None,
+    needs: NeedsMutable | NeedsView,
+    filter: str,
+    include_self: bool = False,
+    include_parts: bool = False,
+    allow_empty: bool = False,
+) -> list[NeedLink]:
+    """
+    Links to all needs which pass the filter.
+
+    .. versionadded:: 8.6.0
+
+    By default the need which contains the call is not linked, even if it passes the
+    filter, and neither are its own parts. Set ``include_self=True`` to keep them.
+
+    By default only whole needs are searched. Set ``include_parts=True`` to search the
+    parts of every need as well; a part that passes the filter is linked as
+    ``<need id>.<part id>``.
+
+    By default a ``needs.links_from_filter`` warning is emitted if nothing is linked,
+    including when the current need is the only one that passes the filter.
+    Set ``allow_empty=True`` to accept an empty result silently.
+
+    .. syntax-example::
+
+        .. req:: Open requirement
+           :id: LFF_REQ_1
+           :status: open
+
+           Contains a part: :np:`(p1) open part`
+
+        .. req:: Another open requirement
+           :id: LFF_REQ_2
+           :status: open
+
+        .. spec:: Collector of open needs
+           :id: LFF_SPEC_1
+           :status: open
+           :links: [[links_from_filter("status == 'open' and id.startswith('LFF_')")]]
+
+           Links to ``LFF_REQ_1`` and ``LFF_REQ_2``, but not to itself.
+           Without ``id.startswith('LFF_')`` it would link to every open need in the project.
+
+        .. spec:: Collector of requirements and their parts
+           :id: LFF_SPEC_2
+           :links: [[links_from_filter("id_parent.startswith('LFF_REQ')", include_parts=True)]]
+
+           Links to ``LFF_REQ_1``, ``LFF_REQ_1.p1`` and ``LFF_REQ_2``.
+
+    ``c.this_doc()`` in the filter selects the needs in the document of the current need.
+    For example, ``c.this_doc() and sections == current_need["sections"]`` links to the
+    needs in the same chapter of the same file. It cannot be used in :ref:`ndf` outside
+    a need.
+
+    Dynamic functions are resolved need by need, so a filter which reads a field that is
+    itself set by a dynamic function on another need sees that field resolved or
+    unresolved, depending on the order of the needs. So it can also find nothing, and
+    warn, where it would find needs after they have been resolved.
+
+    :param filter: :ref:`filter_string`, which a need must pass to be linked.
+    :param include_self: If True, the current need and its own parts are linked too, if they pass the filter.
+    :param include_parts: If True, the parts of every need are searched as well.
+    :param allow_empty: If True, no warning is emitted when nothing is linked.
+    :return: List of links to the found needs and parts
+    """
+    if not filter or not filter.strip():
+        raise ValueError("links_from_filter needs a non-empty filter")
+
+    candidates: list[NeedItem | NeedPartItem] = []
+    for candidate in needs.values():
+        candidates.append(candidate)
+        if include_parts:
+            candidates.extend(candidate.iter_part_items())
+
+    location = (need["docname"], need["lineno"]) if need and need["docname"] else None
+    results = filter_needs_and_parts(
+        candidates,
+        NeedsSphinxConfig(app.config),
+        filter,
+        need,
+        location=location,
+        origin_docname=need["docname"] if need else None,
+    )
+
+    links: list[NeedLink] = []
+    self_excluded = False
+    for result in results:
+        if (
+            not include_self
+            and need is not None
+            and (
+                result["id_complete"] == need["id"]
+                or (result["is_part"] and result["id_parent"] == need["id"])
+            )
+        ):
+            self_excluded = True
+            continue
+        if result["is_part"]:
+            link = NeedLink(id=result["id_parent"], part=result["id"])
+        else:
+            link = NeedLink(id=result["id"])
+        if link not in links:
+            links.append(link)
+
+    if not links and not allow_empty:
+        hint = (
+            "; only the current need passed it, which is excluded unless include_self=True"
+            if self_excluded
+            else ""
+        )
+        log_warning(
+            logger,
+            f"links_from_filter: no need passed the filter {filter!r}{hint}",
+            "links_from_filter",
+            location=location,
+        )
+    return links
