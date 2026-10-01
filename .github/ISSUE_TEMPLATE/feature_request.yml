@@ -14,6 +14,7 @@ body:
         - sphinx-mounts
         - sphinx-codelinks
         - sphinx-test-reports
+        - ub-test-reports
         - ub-project
         - the repository (workflows, CI, release, docker, tooling)
     validations:

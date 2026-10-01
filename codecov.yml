@@ -1,7 +1,6 @@
-# One repository, three packages, three coverage uploads -- so three flags with targets of
-# their own. Without them all three would land on the `default` status and a young
-# package's coverage would be averaged into a mature one's 80%, moving a gate nobody
-# decided to move.
+# One repository, one coverage upload per package -- so one flag each, with a target of its
+# own. Without them every upload would land on the `default` status and a young package's
+# coverage would be averaged into a mature one's 80%, moving a gate nobody decided to move.
 coverage:
   status:
     project:
@@ -30,6 +29,14 @@ coverage:
       # here
       reports:
         flags: [reports]
+        target: auto
+        threshold: 0.5%
+      # ub-test-reports, sphinx-test-reports' Sphinx-free core, uploaded by the same cell with
+      # `flags: ub-test-reports`. `target: auto` because its statements MOVED out of
+      # `reports` when the core was split off -- that flag's number moves with them, and
+      # neither number says anything about a change in coverage on that pull request
+      ub-test-reports:
+        flags: [ub-test-reports]
         target: auto
         threshold: 0.5%
     patch:

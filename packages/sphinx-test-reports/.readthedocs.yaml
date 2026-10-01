@@ -72,14 +72,19 @@ sphinx:
 
 python:
   install:
-    # The workspace sibling FIRST, from this checkout. Read the Docs runs these entries in
-    # order with pip, and a member installed on its own would resolve `sphinx-needs` from
-    # PyPI -- the released version, not the one beside it -- so a docs build here could
-    # pass or fail on code the workspace does not have. With the sibling already installed
-    # the member's requirement is satisfied and pip fetches nothing (tight tracking keeps
-    # the checkout's version inside the member's floor and cap).
+    # The workspace siblings FIRST, from this checkout. Read the Docs runs these entries in
+    # order with pip, and a member installed on its own would resolve `sphinx-needs` and
+    # `ub-test-reports` from PyPI -- the released versions, not the ones beside it -- so a
+    # docs build here could pass or fail on code the workspace does not have, and between a
+    # core change and its release pip finds no matching `ub-test-reports` at all (measured:
+    # "Could not find a version that satisfies the requirement ub-test-reports<2,>=1.0.0.dev0").
+    # With the siblings already installed the member's requirements are satisfied and pip
+    # fetches neither (tight tracking keeps the checkout's versions inside the member's floors
+    # and caps).
     - method: pip
       path: packages/sphinx-needs
+    - method: pip
+      path: packages/ub-test-reports
     - method: pip
       path: packages/sphinx-test-reports
       extra_requirements:
