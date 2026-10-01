@@ -1,6 +1,6 @@
 [project]
 name = "ub-test-reports"
-version = "1.0.0.dev0"
+version = "1.0.0"
 description = "Test results as needs without Sphinx: report parsers, the needs.json converter and the pytest plugin"
 authors = [{ name = "team useblocks", email = "info@useblocks.com" }]
 license = { file = "LICENSE" }

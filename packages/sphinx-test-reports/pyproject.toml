@@ -36,14 +36,14 @@ requires-python = ">=3.11,<4"
 # requires `>=<the sibling's current version>,<<its next major>` on every intra-workspace
 # edge. uv never validates a specifier it resolves through `workspace = true` (uv#9811), so
 # the floor is the only statement of what was actually tested, and `propagate_floors.py`
-# moves it at each sibling release -- ub-test-reports' `1.0.0.dev0` becomes `1.0.0` in the
-# core's own release pull request. The published 2.0.0 said `sphinx-needs>=6.0.1`;
-# narrowing it is what the import costs, and the changelog says so.
+# moves it at each sibling release (it moved ub-test-reports' from the `1.0.0.dev0` the split
+# PR declared to `1.0.0` in the core's release pull request). The published 2.0.0 said
+# `sphinx-needs>=6.0.1`; narrowing it is what the import costs, and the changelog says so.
 dependencies = [
   "sphinx>=7.4",
   "docutils>=0.21",
   "sphinx-needs>=8.5.0,<9",
-  "ub-test-reports>=1.0.0.dev0,<2",
+  "ub-test-reports>=1.0.0,<2",
 ]
 
 [project.optional-dependencies]
@@ -54,7 +54,7 @@ sphinx = []
 # A pass-through until 4.0: 2.0.0 documented `pip install "sphinx-test-reports[pytest]"` for
 # the plugin, which is `ub-test-reports[pytest]` now. Kept so that line still installs
 # pytest; check (4) wants the extra's specifier spelled with the same tight floor
-pytest = ["ub-test-reports[pytest]>=1.0.0.dev0,<2"]
+pytest = ["ub-test-reports[pytest]>=1.0.0,<2"]
 # There is no `test` extra any more: the workspace's test tooling is the ROOT's shared
 # `test` dependency group, which every cell and the release compat cell install, and
 # `check_workspace.py` check (7) refuses a `[dependency-groups]` table here. `nox` and
