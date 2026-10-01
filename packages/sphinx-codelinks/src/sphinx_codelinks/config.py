@@ -637,6 +637,9 @@ class CodeLinksConfig:
     @classmethod
     def from_sphinx(cls, sphinx_config: _SphinxConfig) -> "CodeLinksConfig":
         obj = cls()
+        src_trace_projects = getattr(sphinx_config, "src_trace_projects", None)
+        if isinstance(src_trace_projects, dict):
+            generate_project_configs(src_trace_projects)
         super().__setattr__(obj, "_sphinx_config", sphinx_config)
         return obj
 
