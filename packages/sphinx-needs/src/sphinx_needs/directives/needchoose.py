@@ -1,13 +1,14 @@
 """Directives for including one of several branches of content based on variant data.
 
-A ``choose`` holds ``when`` directives and comments, written in its own body,
-and nothing else.
+A ``choose`` holds ``when`` and ``otherwise`` directives (its branches) and comments,
+written in its own body, and nothing else.
 The first ``when`` whose condition holds is included;
-a ``when`` with no condition is the default, and must be the last.
+an ``otherwise``, which takes no condition, is the default,
+and must be the last branch.
 
-A ``when`` does not parse its content.
+A branch does not parse its content.
 Inside a ``choose`` body it returns a transient :class:`_BranchPlaceholder`
-carrying its condition and its raw content,
+carrying its kind, its condition and its raw content,
 and the ``choose`` parses its own body into a detached :class:`_ChooseBody`
 that it never returns.
 Having seen every branch at once, the ``choose`` checks the structure,
@@ -27,6 +28,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from itertools import islice
+from typing import ClassVar, Literal
 
 from docutils import nodes
 from docutils.parsers.rst.states import RSTState
@@ -45,37 +47,47 @@ LOGGER = get_logger(__name__)
 _DEPTH_KEY = "sphinx_needs_choose_depth"
 """The ``env.temp_data`` key counting the ``choose`` bodies being parsed.
 
-A ``when`` is a child of a ``choose`` body exactly when the count is above 0.
+A branch is a child of a ``choose`` body exactly when the count is above 0.
 A ``choose`` raises it only around the parse of its own body,
 and parses the content of the branch it takes at 0,
-so a ``when`` written loose in a branch's content is reported as well.
+so a branch written loose in a branch's content is reported as well.
 """
+
+_BranchKind = Literal["when", "otherwise"]
+"""The directive a branch is written with."""
 
 
 class _BranchPlaceholder(nodes.Element):
-    """What a ``when`` leaves in the body of its ``choose``; it never reaches a doctree.
+    """What a branch leaves in the body of its ``choose``; it never reaches a doctree.
 
     The payload is held in plain Python attributes rather than docutils attributes:
     the ``choose`` reads it once and discards it with the body.
     """
 
+    kind: _BranchKind
+    """The directive the branch is written with."""
     condition: str | None
-    """The condition, or ``None`` for the default branch."""
+    """The condition, or ``None`` if the directive has none (or only whitespace).
+
+    The ``choose`` refuses a ``when`` without one and an ``otherwise`` with one,
+    so after its checks ``None`` marks the ``otherwise``.
+    """
     content: StringList
     """The raw content of the branch, parsed only if the branch is taken."""
     content_offset: int
-    """The ``content_offset`` of the ``when`` directive."""
+    """The ``content_offset`` of the branch directive."""
     lineno: int
-    """The ``lineno`` of the ``when`` directive."""
+    """The ``lineno`` of the branch directive."""
     location: str | None
     """Where warnings about the branch are reported."""
     source: str | None
-    """The file the ``when`` directive is written in, as docutils or MyST reports it."""
+    """The file the branch directive is written in, as docutils or MyST reports it."""
     owner: nodes.Element | None
-    """The node the ``when`` directive's result is appended to.
+    """The node the branch directive's result is appended to.
 
-    That is the body of its ``choose`` exactly when the ``when`` is written directly in it,
-    rather than inside another directive whose content was parsed into a node of its own.
+    That is the body of its ``choose`` exactly when the branch is written directly
+    in it, rather than inside another directive whose content was parsed into a node
+    of its own.
     """
 
 
@@ -83,25 +95,18 @@ class _ChooseBody(nodes.Element):
     """The detached node a ``choose`` parses its own body into; it is never returned."""
 
 
-class WhenDirective(SphinxDirective):
-    """One branch of a ``choose``, included if it is the first whose condition holds.
+class _BranchDirective(SphinxDirective):
+    """What ``when`` and ``otherwise`` share: a deferred branch of a ``choose``.
 
-    The directive argument is a condition, exactly as for the ``if`` directive;
-    a ``when`` with no argument is the default of its ``choose``.
-    Its content is not parsed here: the ``choose`` parses it if it takes the branch.
-
-    Example::
-
-        .. choose::
-
-           .. when:: var.arch == "arm"
-
-              ARM content.
-
-           .. when::
-
-              Content for every other architecture.
+    The content is not parsed here: the ``choose`` parses it if it takes the branch.
+    Both directives declare one optional argument, and the ``choose`` checks it,
+    so that a missing condition on a ``when``, or one on an ``otherwise``,
+    is warned about once, in the words of this extension, at the branch,
+    rather than by docutils (or MyST) with an error of its own.
     """
+
+    branch_kind: ClassVar[_BranchKind]
+    """The directive name, which the placeholder and the warnings carry."""
 
     required_arguments = 0
     optional_arguments = 1
@@ -109,18 +114,21 @@ class WhenDirective(SphinxDirective):
     has_content = True
 
     def run(self) -> Sequence[nodes.Node]:
+        kind = self.branch_kind
         if self.env.temp_data.get(_DEPTH_KEY, 0) <= 0:
+            article = "an" if kind == "otherwise" else "a"
             log_warning(
                 LOGGER,
-                "'when' directive outside a 'choose' (a 'when' must be a direct child "
-                "of a 'choose'); its content is skipped",
+                f"'{kind}' directive outside a 'choose' ({article} '{kind}' must be a "
+                "direct child of a 'choose'); its content is skipped",
                 "choose",
                 location=self.get_location(),
             )
             return []
 
         placeholder = _BranchPlaceholder()
-        # an argument of only whitespace is no condition: the default branch
+        placeholder.kind = kind
+        # an argument of only whitespace is no condition
         has_condition = bool(self.arguments and self.arguments[0].strip())
         placeholder.condition = self.arguments[0] if has_condition else None
         placeholder.content = self.content
@@ -134,18 +142,52 @@ class WhenDirective(SphinxDirective):
         return [placeholder]
 
 
-class ChooseDirective(SphinxDirective):
-    """Include the content of the first ``when`` whose condition holds.
+class WhenDirective(_BranchDirective):
+    """A branch of a ``choose``, included if it is the first whose condition holds.
 
-    The content may hold only ``when`` directives and comments.
+    The directive argument is a condition, exactly as for the ``if`` directive,
+    and a ``when`` must have one: its ``choose`` refuses a ``when`` without one,
+    since ``otherwise`` is the default.
+
+    Example::
+
+        .. choose::
+
+           .. when:: var.arch == "arm"
+
+              ARM content.
+
+           .. otherwise::
+
+              Content for every other architecture.
+    """
+
+    branch_kind = "when"
+
+
+class OtherwiseDirective(_BranchDirective):
+    """The default branch of a ``choose``, included when no ``when`` before it holds.
+
+    It takes no condition (its ``choose`` refuses one), must be the last branch,
+    and a ``choose`` has at most one.
+    """
+
+    branch_kind = "otherwise"
+
+
+class ChooseDirective(SphinxDirective):
+    """Include the first ``when`` whose condition holds, or else the ``otherwise``.
+
+    The content may hold only ``when`` and ``otherwise`` directives and comments.
     Every mistake is warned about once, and skips the whole ``choose``:
-    content that is neither a ``when`` nor a comment, a ``when`` inside another
+    content that is neither a branch nor a comment, a branch inside another
     directive or supplied through an include,
-    a default ``when`` that is not the last or is not the only one,
+    a ``when`` without a condition, an ``otherwise`` with one,
+    an ``otherwise`` that is not the last branch or is not the only one,
     variant data that is not configured,
     and a condition that cannot be evaluated before a branch is taken.
     So a mistake that makes a condition unevaluable, such as a misspelt key
-    or a syntax error, never renders a later branch or the default in its place.
+    or a syntax error, never renders a later branch or the ``otherwise`` in its place.
 
     Example::
 
@@ -159,14 +201,14 @@ class ChooseDirective(SphinxDirective):
 
               x86 content.
 
-           .. when::
+           .. otherwise::
 
               Content for every other architecture.
     """
 
     required_arguments = 0
-    # reserved, and refused: with no argument declared, MyST would move the text into
-    # the content and docutils would reject the directive, so neither could say why
+    # declared only to be refused: with no argument declared, MyST would move the text
+    # into the content and docutils would reject the directive, so neither could say why
     optional_arguments = 1
     final_argument_whitespace = True
     has_content = True
@@ -192,6 +234,7 @@ class ChooseDirective(SphinxDirective):
 
         for branch in branches:
             if branch.condition is None:
+                # the otherwise: the checks leave no other branch without a condition
                 return self._parse_branch(branch)
             taken = evaluate_variant_condition(
                 self.env,
@@ -201,7 +244,7 @@ class ChooseDirective(SphinxDirective):
                 location=branch.location,
             )
             if taken is None:
-                # poisoned: no later branch is evaluated or taken, the default included
+                # poisoned: no later branch is evaluated or taken, nor the otherwise
                 return []
             if taken:
                 # the first branch that holds wins; the later ones are not evaluated
@@ -255,15 +298,18 @@ class ChooseDirective(SphinxDirective):
         """Parse the body and check its structure.
 
         The branches must be written in the body itself:
-        a ``when`` inside another directive (one whose content is parsed into a node
+        a branch inside another directive (one whose content is parsed into a node
         of its own, even if it then returns that node's children, such as a true ``if``)
-        is refused, and so is a ``when`` an ``.. include::`` supplies,
+        is refused, and so is a branch an ``.. include::`` supplies,
         so that one ``choose`` is one directive in one file.
+        Then every ``when`` must have a condition and the ``otherwise`` none,
+        and there may be one ``otherwise`` at most, as the last branch.
 
         :param source: The file this ``choose`` is written in,
             as its branches report theirs.
         :return: The branches, in order,
-            or ``None`` if the body is not a valid ``choose`` (a warning has been emitted).
+            or ``None`` if the body is not a valid ``choose``
+            (a warning has been emitted).
         """
         body = self._parse_body()
         children = list(body.children)
@@ -274,16 +320,17 @@ class ChooseDirective(SphinxDirective):
                 # also when the include stands inside another directive
                 if child.source != source:
                     self._warn(
-                        "'when' supplied through an include is not supported (write "
-                        "the branches in the body of the 'choose'); the whole choose "
-                        "is skipped",
+                        f"'{child.kind}' supplied through an include is not supported "
+                        "(write the branches in the body of the 'choose'); the whole "
+                        "choose is skipped",
                         child.location,
                     )
                     return None
                 if child.owner is not body:
                     self._warn(
-                        "'when' directive is not a direct child of its 'choose' (it is "
-                        "inside another directive); the whole choose is skipped",
+                        f"'{child.kind}' directive is not a direct child of its "
+                        "'choose' (it is inside another directive); the whole choose "
+                        "is skipped",
                         child.location,
                     )
                     return None
@@ -307,29 +354,47 @@ class ChooseDirective(SphinxDirective):
                     offender.tagname if isinstance(offender, nodes.Element) else "#text"
                 )
                 self._warn(
-                    "'choose' directive may contain only 'when' directives and "
-                    f"comments, got <{tagname}>; the whole choose is skipped",
+                    "'choose' directive may contain only 'when' and 'otherwise' "
+                    f"directives and comments, got <{tagname}>; the whole choose is "
+                    "skipped",
                     self._location_of(children[index:]),
                 )
                 return None
 
         if not branches:
-            self._warn("'choose' directive has no 'when'")
+            self._warn("'choose' directive has no 'when' or 'otherwise'")
             return None
 
-        defaults = [branch for branch in branches if branch.condition is None]
-        if len(defaults) > 1:
+        for branch in branches:
+            if branch.kind == "when" and branch.condition is None:
+                # a forgotten condition must not make a catch-all of this branch
+                self._warn(
+                    "'when' directive has no condition (use 'otherwise' for the "
+                    "default); the whole choose is skipped",
+                    branch.location,
+                )
+                return None
+            if branch.kind == "otherwise" and branch.condition is not None:
+                self._warn(
+                    "'otherwise' directive takes no condition; the whole choose is "
+                    "skipped",
+                    branch.location,
+                )
+                return None
+
+        otherwises = [branch for branch in branches if branch.kind == "otherwise"]
+        if len(otherwises) > 1:
             self._warn(
-                "'choose' directive has more than one default 'when' (a 'when' with "
-                "no condition); the whole choose is skipped",
-                defaults[1].location,
+                "'choose' directive has more than one 'otherwise'; the whole choose "
+                "is skipped",
+                otherwises[1].location,
             )
             return None
-        if defaults and defaults[0] is not branches[-1]:
+        if otherwises and otherwises[0] is not branches[-1]:
             self._warn(
-                "'choose' directive has a default 'when' (a 'when' with no condition) "
-                "that is not its last 'when'; the whole choose is skipped",
-                defaults[0].location,
+                "'choose' directive has an 'otherwise' that is not its last branch; "
+                "the whole choose is skipped",
+                otherwises[0].location,
             )
             return None
 
@@ -376,7 +441,7 @@ class ChooseDirective(SphinxDirective):
 
         It is parsed outside every ``choose`` body (at depth 0),
         whatever encloses this ``choose``,
-        so that a ``when`` written loose in it is reported rather than collected.
+        so that a branch written loose in it is reported rather than collected.
 
         :param branch: The branch that is taken.
         :return: The parsed nodes.

@@ -4,6 +4,6 @@
 
       SKIPPED_X1_IN_INCLUDED_CHOOSE
 
-   .. when::
+   .. otherwise::
 
       TAKEN_X1_INCLUDED_CHOOSE_DEFAULT

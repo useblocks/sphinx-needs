@@ -1,4 +1,4 @@
-"""Tests for the ``.. choose::`` and ``.. when::`` directives."""
+"""Tests for the ``.. choose::``, ``.. when::`` and ``.. otherwise::`` directives."""
 
 from __future__ import annotations
 
@@ -102,7 +102,7 @@ def _section_titles(app, docname: str) -> list[list[str]]:
     indirect=True,
 )
 def test_choose_directive(test_app):
-    """First true branch wins, the default, needs, sections, nesting and includes.
+    """First true branch wins, the otherwise, needs, sections, nesting and includes.
 
     The project builds without a single warning,
     although a branch after a taken one has a condition that is not Python
@@ -179,44 +179,84 @@ class _Expected(NamedTuple):
 
 _SKIP = "; the whole choose is skipped"
 
-_NOT_DIRECT = (
-    "'when' directive is not a direct child of its 'choose' (it is inside another "
-    "directive)" + _SKIP
+
+def _not_direct(kind: str) -> str:
+    """The warning about a branch of the kind ``kind`` inside another directive."""
+    return (
+        f"'{kind}' directive is not a direct child of its 'choose' "
+        "(it is inside another directive)" + _SKIP
+    )
+
+
+def _included(kind: str) -> str:
+    """The warning about a branch of the kind ``kind`` that an include supplies."""
+    return (
+        f"'{kind}' supplied through an include is not supported "
+        "(write the branches in the body of the 'choose')" + _SKIP
+    )
+
+
+_NOT_DIRECT = _not_direct("when")
+_INCLUDED_BRANCH = _included("when")
+_ONLY_BRANCHES = (
+    "'choose' directive may contain only 'when' and 'otherwise' directives and comments"
 )
-_INCLUDED_BRANCH = (
-    "'when' supplied through an include is not supported "
-    "(write the branches in the body of the 'choose')" + _SKIP
-)
+_NO_BRANCH = "'choose' directive has no 'when' or 'otherwise'"
 _BRANCHES_TXT = (
     '.. when:: var.arch == "xyz"\n\n   SKIPPED_X1_FROM_INCLUDE\n\n'
-    ".. when::\n\n   SKIPPED_X1_DEFAULT_FROM_INCLUDE\n"
+    ".. otherwise::\n\n   SKIPPED_X1_DEFAULT_FROM_INCLUDE\n"
 )
 
 _WARNINGS = {
-    "default not last": _Expected(
+    "otherwise not last": _Expected(
         ".. choose::\n\n"
-        "   .. when::\n\n      SKIPPED_DEFAULT\n\n"
+        "   .. otherwise::\n\n      SKIPPED_DEFAULT\n\n"
         "   .. when:: True\n\n      SKIPPED_TRUE\n",
         (
             (
-                "'choose' directive has a default 'when' (a 'when' with no condition) "
-                "that is not its last 'when'" + _SKIP,
+                "'choose' directive has an 'otherwise' that is not its last branch"
+                + _SKIP,
+                "   .. otherwise::",
+            ),
+        ),
+    ),
+    "two otherwise": _Expected(
+        ".. choose::\n\n"
+        "   .. when:: False\n\n      SKIPPED_FALSE\n\n"
+        "   .. otherwise::\n\n      SKIPPED_D1\n\n"
+        # the second otherwise is refused as a second one: its directive line ends in
+        # spaces, which is no condition, so it is not refused as having one
+        "   .. otherwise::  \n\n      SKIPPED_D2\n",
+        (
+            (
+                "'choose' directive has more than one 'otherwise'" + _SKIP,
+                "   .. otherwise::  ",
+            ),
+        ),
+    ),
+    # a forgotten condition on the last `when` would make a catch-all of it: refused,
+    # since the default is written as an `otherwise`
+    "when without a condition": _Expected(
+        ".. choose::\n\n"
+        "   .. when:: var.arch == 'xyz'\n\n      SKIPPED_XYZ\n\n"
+        "   .. when::\n\n      SKIPPED_FORGOTTEN_CONDITION\n",
+        (
+            (
+                "'when' directive has no condition (use 'otherwise' for the default)"
+                + _SKIP,
                 "   .. when::",
             ),
         ),
     ),
-    "two defaults": _Expected(
+    # a true condition: an `otherwise` that took it as a `when` would render it
+    "otherwise with a condition": _Expected(
         ".. choose::\n\n"
-        "   .. when:: False\n\n      SKIPPED_FALSE\n\n"
-        "   .. when::\n\n      SKIPPED_D1\n\n"
-        # the second default is refused (its directive line ends in spaces, which the
-        # parser strips: it is a default like the first)
-        "   .. when::  \n\n      SKIPPED_D2\n",
+        "   .. when:: var.arch == 'xyz'\n\n      SKIPPED_XYZ\n\n"
+        "   .. otherwise:: var.debug\n\n      SKIPPED_OTHERWISE\n",
         (
             (
-                "'choose' directive has more than one default 'when' (a 'when' with "
-                "no condition)" + _SKIP,
-                "   .. when::  ",
+                "'otherwise' directive takes no condition" + _SKIP,
+                "   .. otherwise:: var.debug",
             ),
         ),
     ),
@@ -226,13 +266,12 @@ _WARNINGS = {
         "   A stray paragraph.\n",
         (
             (
-                "'choose' directive may contain only 'when' directives and comments, "
-                "got <paragraph>" + _SKIP,
+                _ONLY_BRANCHES + ", got <paragraph>" + _SKIP,
                 "   A stray paragraph.",
             ),
         ),
     ),
-    # exactly one warning: the branch inside the note is not a stray, it is in a choose body
+    # exactly one warning: the branch in the note is not a stray, it is in a choose body
     "note wrapping a branch": _Expected(
         ".. choose::\n\n"
         "   .. note::\n\n      .. when:: True\n\n         SKIPPED_IN_NOTE\n",
@@ -244,7 +283,7 @@ _WARNINGS = {
         ".. choose::\n\n"
         "   .. if:: var.debug\n\n"
         "      .. when:: var.arch == 'x86'\n\n         SKIPPED_X86\n\n"
-        "      .. when::\n\n         SKIPPED_DEFAULT_FROM_IF\n",
+        "      .. otherwise::\n\n         SKIPPED_DEFAULT_FROM_IF\n",
         ((_NOT_DIRECT, "      .. when:: var.arch == 'x86'"),),
     ),
     "branch inside rst-class": _Expected(
@@ -253,20 +292,28 @@ _WARNINGS = {
         "      .. when:: var.arch == 'abc'\n\n         SKIPPED_FROM_RST_CLASS\n",
         ((_NOT_DIRECT, "      .. when:: var.arch == 'abc'"),),
     ),
+    # the warnings name the kind of the branch
+    "otherwise inside a true if": _Expected(
+        ".. choose::\n\n"
+        "   .. when:: False\n\n      SKIPPED_FALSE\n\n"
+        "   .. if:: var.debug\n\n"
+        "      .. otherwise::\n\n         SKIPPED_DEFAULT_FROM_IF\n",
+        ((_not_direct("otherwise"), "      .. otherwise::"),),
+    ),
     # a line of one to three punctuation characters makes docutils emit an INFO
     # message, which is never shown, before the paragraph: the paragraph is reported
     "rule line between branches": _Expected(
         ".. choose::\n\n"
         "   .. when:: var.arch == 'x86'\n\n      SKIPPED_X86\n\n"
         "   ---\n\n"
-        "   .. when::\n\n      SKIPPED_DEFAULT\n",
+        "   .. otherwise::\n\n      SKIPPED_DEFAULT\n",
         (("got <paragraph>" + _SKIP, "   ---"),),
     ),
     "three dots in the body": _Expected(
-        ".. choose::\n\n   ...\n\n   .. when::\n\n      SKIPPED_DEFAULT\n",
+        ".. choose::\n\n   ...\n\n   .. otherwise::\n\n      SKIPPED_DEFAULT\n",
         (("got <paragraph>" + _SKIP, "   ..."),),
     ),
-    "branch outside a choose": _Expected(
+    "when outside a choose": _Expected(
         "Para.\n\n.. when:: True\n\n   SKIPPED_STRAY\n",
         (
             (
@@ -276,10 +323,16 @@ _WARNINGS = {
             ),
         ),
     ),
-    # the counterpart of an orphan `else`: a default branch outside every choose
-    "default branch outside a choose": _Expected(
-        "Para.\n\n.. when::\n\n   SKIPPED_STRAY_DEFAULT\n",
-        (("'when' directive outside a 'choose'", ".. when::"),),
+    # the counterpart of an orphan `else`: an otherwise outside every choose
+    "otherwise outside a choose": _Expected(
+        "Para.\n\n.. otherwise::\n\n   SKIPPED_STRAY_DEFAULT\n",
+        (
+            (
+                "'otherwise' directive outside a 'choose' (an 'otherwise' must be a "
+                "direct child of a 'choose'); its content is skipped",
+                ".. otherwise::",
+            ),
+        ),
     ),
     "branch loose in the taken branch": _Expected(
         ".. choose::\n\n"
@@ -289,9 +342,9 @@ _WARNINGS = {
         taken=("TAKEN_OUTER",),
     ),
     # two independent mistakes, two warnings: a choose written directly in another
-    # choose's body, whose taken branch holds a loose branch. The taken branch is parsed
-    # outside every choose body, so the loose branch is reported and cannot become a branch
-    # of the OUTER choose, which then has none.
+    # choose's body, whose taken branch holds a loose branch. The taken branch is
+    # parsed outside every choose body, so the loose branch is reported and cannot
+    # become a branch of the OUTER choose, which then has none.
     "branch loose in the taken branch of a misplaced choose": _Expected(
         ".. choose::\n\n"
         "   .. choose::\n\n"
@@ -299,14 +352,14 @@ _WARNINGS = {
         "         .. when:: True\n\n            SKIPPED_LOOSE\n",
         (
             ("'when' directive outside a 'choose'", "         .. when:: True"),
-            ("'choose' directive has no 'when'", ".. choose::"),
+            (_NO_BRANCH, ".. choose::"),
         ),
     ),
-    "unevaluable first branch poisons the default": _Expected(
+    "unevaluable first branch poisons the otherwise": _Expected(
         ".. choose::\n\n"
         "   .. when:: this is not python !!!\n\n      SKIPPED_1\n\n"
         "   .. when:: True\n\n      SKIPPED_2\n\n"
-        "   .. when::\n\n      SKIPPED_DEFAULT\n",
+        "   .. otherwise::\n\n      SKIPPED_DEFAULT\n",
         (
             (
                 "'when' directive expression failed: 'this is not python !!!' — ",
@@ -318,7 +371,7 @@ _WARNINGS = {
         ".. choose::\n\n"
         "   .. when:: var.arch == 'xyz'\n\n      SKIPPED_1\n\n"
         "   .. when:: var.no_such_key == 1\n\n      SKIPPED_2\n\n"
-        "   .. when::\n\n      SKIPPED_DEFAULT\n",
+        "   .. otherwise::\n\n      SKIPPED_DEFAULT\n",
         (
             (
                 "'when' directive expression failed: 'var.no_such_key == 1' — "
@@ -330,7 +383,7 @@ _WARNINGS = {
     "builtins blocked": _Expected(
         ".. choose::\n\n"
         "   .. when:: __import__('os').system('echo pwned')\n\n      SKIPPED\n\n"
-        "   .. when::\n\n      SKIPPED_DEFAULT\n",
+        "   .. otherwise::\n\n      SKIPPED_DEFAULT\n",
         (
             (
                 "'when' directive expression failed: "
@@ -343,7 +396,7 @@ _WARNINGS = {
     "non-bool is coerced and taken": _Expected(
         ".. choose::\n\n"
         "   .. when:: var.count\n\n      TAKEN_NONBOOL\n\n"
-        "   .. when::\n\n      SKIPPED_DEFAULT\n",
+        "   .. otherwise::\n\n      SKIPPED_DEFAULT\n",
         (
             (
                 "'when' directive expression did not return a bool, got int: 5 "
@@ -355,7 +408,7 @@ _WARNINGS = {
     ),
     "empty string condition": _Expected(
         '.. choose::\n\n   .. when:: ""\n\n      SKIPPED_EMPTY\n\n'
-        "   .. when::\n\n      TAKEN_DEFAULT\n",
+        "   .. otherwise::\n\n      TAKEN_DEFAULT\n",
         (
             (
                 "'when' directive expression did not return a bool, got str: '' "
@@ -377,17 +430,17 @@ _WARNINGS = {
     ),
     "empty choose": _Expected(
         ".. choose::\n\nTAKEN_AFTER_EMPTY\n",
-        (("'choose' directive has no 'when'", ".. choose::"),),
+        ((_NO_BRANCH, ".. choose::"),),
         taken=("TAKEN_AFTER_EMPTY",),
     ),
     "only comments": _Expected(
         ".. choose::\n\n   .. just a comment\n\n   .. and another\n",
-        (("'choose' directive has no 'when'", ".. choose::"),),
+        ((_NO_BRANCH, ".. choose::"),),
     ),
     "variant data not configured": _Expected(
         ".. choose::\n\n"
         "   .. when:: var.arch == 'abc'\n\n      SKIPPED_1\n\n"
-        "   .. when::\n\n      SKIPPED_DEFAULT\n",
+        "   .. otherwise::\n\n      SKIPPED_DEFAULT\n",
         (
             (
                 "'choose' directive used but needs_variant_data is not configured"
@@ -399,8 +452,8 @@ _WARNINGS = {
     ),
     # nothing is evaluated here, and still the choose warns and renders nothing:
     # the "used but not configured" rule holds for every choose
-    "variant data not configured, only a default": _Expected(
-        ".. choose::\n\n   .. when::\n\n      SKIPPED_DEFAULT_ONLY\n",
+    "variant data not configured, only an otherwise": _Expected(
+        ".. choose::\n\n   .. otherwise::\n\n      SKIPPED_DEFAULT_ONLY\n",
         (
             (
                 "'choose' directive used but needs_variant_data is not configured"
@@ -412,14 +465,26 @@ _WARNINGS = {
     ),
     # the structure is checked before the configuration: a choose that is wrong in both
     # ways gets the one structural warning, at the branch, and its body is still parsed
-    "variant data not configured, and a misplaced default": _Expected(
+    "variant data not configured, and a misplaced otherwise": _Expected(
         ".. choose::\n\n"
-        "   .. when::\n\n      SKIPPED_DEFAULT\n\n"
+        "   .. otherwise::\n\n      SKIPPED_DEFAULT\n\n"
         "   .. when:: var.arch == 'abc'\n\n      SKIPPED_ABC\n",
         (
             (
-                "'choose' directive has a default 'when' (a 'when' with no condition) "
-                "that is not its last 'when'" + _SKIP,
+                "'choose' directive has an 'otherwise' that is not its last branch"
+                + _SKIP,
+                "   .. otherwise::",
+            ),
+        ),
+        conf=_CONF_NO_VARIANT_DATA,
+    ),
+    # and a when without a condition is a structural mistake too, warned at the when
+    "variant data not configured, and a when without a condition": _Expected(
+        ".. choose::\n\n   .. when::\n\n      SKIPPED_FORGOTTEN_CONDITION\n",
+        (
+            (
+                "'when' directive has no condition (use 'otherwise' for the default)"
+                + _SKIP,
                 "   .. when::",
             ),
         ),
@@ -442,6 +507,14 @@ _WARNINGS = {
         ((_INCLUDED_BRANCH, '.. when:: var.arch == "xyz"'),),
         extra=(("branches.txt", _BRANCHES_TXT),),
         located_in="branches.txt",
+    ),
+    "an otherwise from an include": _Expected(
+        ".. choose::\n\n"
+        "   .. when:: False\n\n      SKIPPED_FALSE\n\n"
+        "   .. include:: otherwise.txt\n",
+        ((_included("otherwise"), ".. otherwise::"),),
+        extra=(("otherwise.txt", ".. otherwise::\n\n   SKIPPED_FROM_INCLUDE\n"),),
+        located_in="otherwise.txt",
     ),
     # content outside a branch is parsed with the body, so the need directive runs;
     # the choose removes the need again
@@ -505,7 +578,7 @@ def test_choose_warnings(test_app, expected: _Expected):
             ".. choose::\n\n"
             "   .. when:: var.arch == 'x86'\n\n      SKIPPED_X86\n\n"
             "   ---\n\n"
-            "   .. when::\n\n      SKIPPED_DEFAULT\n",
+            "   .. otherwise::\n\n      SKIPPED_DEFAULT\n",
             extra=(("docutils.conf", "[general]\nreport_level: 1\n"),),
         )
     ],
@@ -542,7 +615,7 @@ def test_choose_info_message_is_never_a_reported_error(test_app, monkeypatch):
             _project(
                 ".. choose::\n\n"
                 "   .. cas:: True\n\n      SKIPPED\n\n"
-                "   .. when::\n\n      SKIPPED_DEFAULT\n"
+                "   .. otherwise::\n\n      SKIPPED_DEFAULT\n"
             ),
             'Unknown directive type "cas"',
         ),
@@ -559,7 +632,7 @@ def test_choose_info_message_is_never_a_reported_error(test_app, monkeypatch):
     indirect=["test_app"],
 )
 def test_choose_body_error_reported_once(test_app, error: str):
-    """A mistake docutils reports in the body skips the choose without a second warning."""
+    """A mistake docutils reports in the body skips the choose and warns only once."""
     app = test_app
     app.build()
     (warning,) = build_warnings(app)
@@ -580,7 +653,7 @@ def test_choose_body_error_reported_once(test_app, error: str):
     indirect=True,
 )
 def test_choose_warnings_are_suppressible(test_app):
-    """Every ``choose`` / ``when`` warning is of the ``needs.choose`` type."""
+    """Every warning of the three directives is of the ``needs.choose`` type."""
     app = test_app
     app.build()
     assert_no_warnings(app)
@@ -594,7 +667,7 @@ def test_choose_warnings_are_suppressible(test_app):
             ".. req:: Written before the choose\n   :id: REQ_BEFORE\n\n"
             ".. choose::\n\n"
             "   .. req:: Directly in the choose body\n      :id: REQ_STRAY\n\n"
-            "   .. when::\n\n      SKIPPED_DEFAULT\n\n"
+            "   .. otherwise::\n\n      SKIPPED_DEFAULT\n\n"
             ".. req:: Written after the choose\n   :id: REQ_AFTER\n",
             # read before `index`, so its need is older than every need of `index`
             extra=(
@@ -662,7 +735,7 @@ def setup(app):
         _project(
             ".. swallow::\n\n"
             "   .. choose::\n\n"
-            "      .. when::\n\n         SKIPPED_X\n\n"
+            "      .. otherwise::\n\n         SKIPPED_X\n\n"
             "      .. boom::\n\n"
             ".. when:: True\n\n   SKIPPED_LOOSE_AFTER\n",
             conf=_SWALLOW_CONF,
@@ -787,7 +860,7 @@ SKIPPED_M1_SECOND_TRUE
 :::{when} this is not python !!!
 SKIPPED_M1_INVALID_SYNTAX
 :::
-:::{when}
+:::{otherwise}
 SKIPPED_M1_DEFAULT
 :::
 ::::
@@ -803,7 +876,7 @@ SKIPPED_M2_FALSE
 
 +++
 
-:::{when}
+:::{otherwise}
 TAKEN_M2_DEFAULT
 :::
 ::::
@@ -845,23 +918,23 @@ TAKEN_M5_OUTER
 :::{when} var.arch == "xyz"
 SKIPPED_M5_INNER
 :::
-:::{when}
+:::{otherwise}
 TAKEN_M5_INNER_DEFAULT
 :::
 ::::
 :::::
-:::::{when}
+:::::{otherwise}
 SKIPPED_M5_OUTER
 :::::
 ::::::
 
-## A default whose fence line ends in spaces is a default
+## An otherwise whose fence line ends in spaces has no condition
 
 ::::{choose}
 :::{when} False
 SKIPPED_M6
 :::
-:::{when}\x20\x20\x20
+:::{otherwise}\x20\x20\x20
 TAKEN_M6_DEFAULT
 :::
 ::::
@@ -892,7 +965,7 @@ _MYST_INCLUDED_CHOOSE = """\
 :::{when} var.arch == "xyz"
 SKIPPED_M8_IN_INCLUDED_CHOOSE
 :::
-:::{when}
+:::{otherwise}
 TAKEN_M8_INCLUDED_CHOOSE_DEFAULT
 :::
 ::::
@@ -959,17 +1032,18 @@ def test_choose_in_myst(test_app):
 # MyST reports a directive nested in a colon fence one line late (its own quirk, the
 # same for a `{note}` in a `{note}`), so only the backtick spellings assert a line
 _MYST_WARNINGS = {
-    "branch outside a choose, backticks": (
+    "when outside a choose, backticks": (
         "Para.\n\n```{when} True\nSKIPPED_STRAY\n```\n",
         "'when' directive outside a 'choose'",
         "```{when} True",
     ),
-    "default branch outside a choose, backticks": (
-        "Para.\n\n```{when}\nSKIPPED_STRAY_DEFAULT\n```\n",
-        "'when' directive outside a 'choose'",
-        "```{when}",
+    "otherwise outside a choose, backticks": (
+        "Para.\n\n```{otherwise}\nSKIPPED_STRAY_DEFAULT\n```\n",
+        "'otherwise' directive outside a 'choose' (an 'otherwise' must be a direct "
+        "child of a 'choose'); its content is skipped",
+        "```{otherwise}",
     ),
-    "branch outside a choose, colons": (
+    "when outside a choose, colons": (
         "Para.\n\n:::{when} True\nSKIPPED_STRAY\n:::\n",
         "'when' directive outside a 'choose'",
         None,
@@ -993,13 +1067,13 @@ _MYST_WARNINGS = {
     # an HTML comment is raw HTML, not a comment
     "html comment between branches, backticks": (
         "````{choose}\n```{when} False\nSKIPPED\n```\n\n<!-- an HTML comment -->\n\n"
-        "```{when}\nSKIPPED_DEFAULT\n```\n````\n",
+        "```{otherwise}\nSKIPPED_DEFAULT\n```\n````\n",
         "got <raw>" + _SKIP,
         "<!-- an HTML comment -->",
     ),
     "html comment between branches, colons": (
         "::::{choose}\n:::{when} False\nSKIPPED\n:::\n\n<!-- an HTML comment -->\n\n"
-        ":::{when}\nSKIPPED_DEFAULT\n:::\n::::\n",
+        ":::{otherwise}\nSKIPPED_DEFAULT\n:::\n::::\n",
         "got <raw>" + _SKIP,
         None,
     ),
@@ -1013,15 +1087,35 @@ _MYST_WARNINGS = {
         "'choose' directive takes no argument, got 'var.arch'",
         None,
     ),
+    "when without a condition, backticks": (
+        "````{choose}\n```{when} var.arch == 'xyz'\nSKIPPED_XYZ\n```\n"
+        "```{when}\nSKIPPED_FORGOTTEN_CONDITION\n```\n````\n",
+        "'when' directive has no condition (use 'otherwise' for the default)" + _SKIP,
+        "```{when}",
+    ),
+    # a fence line that ends in spaces gives a blank condition, which is none
+    "when with a blank condition, colons": (
+        "::::{choose}\n:::{when} var.arch == 'xyz'\nSKIPPED_XYZ\n:::\n"
+        ":::{when}\x20\x20\x20\nSKIPPED_BLANK_CONDITION\n:::\n::::\n",
+        "'when' directive has no condition (use 'otherwise' for the default)" + _SKIP,
+        None,
+    ),
+    # MyST would fold the text into the content of a directive without an argument
+    "otherwise with a condition, backticks": (
+        "````{choose}\n```{when} var.arch == 'xyz'\nSKIPPED_XYZ\n```\n"
+        "```{otherwise} var.debug\nSKIPPED_OTHERWISE\n```\n````\n",
+        "'otherwise' directive takes no condition" + _SKIP,
+        "```{otherwise} var.debug",
+    ),
     "unevaluable condition, backticks": (
         "````{choose}\n```{when} invalid !!!\nSKIPPED\n```\n"
-        "```{when}\nSKIPPED_DEFAULT\n```\n````\n",
+        "```{otherwise}\nSKIPPED_DEFAULT\n```\n````\n",
         "'when' directive expression failed: 'invalid !!!'",
         "```{when} invalid !!!",
     ),
     "unevaluable condition, colons": (
         "::::{choose}\n:::{when} invalid !!!\nSKIPPED\n:::\n"
-        ":::{when}\nSKIPPED_DEFAULT\n:::\n::::\n",
+        ":::{otherwise}\nSKIPPED_DEFAULT\n:::\n::::\n",
         "'when' directive expression failed: 'invalid !!!'",
         None,
     ),
@@ -1081,7 +1175,7 @@ def test_choose_warnings_in_myst(test_app, text: str, line: str | None):
                 (
                     "branches.txt",
                     ':::{when} var.arch == "xyz"\nSKIPPED_X1_FROM_INCLUDE\n:::\n'
-                    ":::{when}\nSKIPPED_X1_DEFAULT_FROM_INCLUDE\n:::\n",
+                    ":::{otherwise}\nSKIPPED_X1_DEFAULT_FROM_INCLUDE\n:::\n",
                 ),
             ),
         )
@@ -1089,7 +1183,7 @@ def test_choose_warnings_in_myst(test_app, text: str, line: str | None):
     indirect=True,
 )
 def test_choose_refuses_included_branches_in_myst(test_app):
-    """In MyST too, a ``when`` an ``{include}`` supplies is refused, in the included file.
+    """In MyST too, a branch an ``{include}`` supplies is refused, in the included file.
 
     MyST reports the lines of an included file one late (the branch on line 1 is
     reported on line 2, with colon and backtick fences alike), so only the file is

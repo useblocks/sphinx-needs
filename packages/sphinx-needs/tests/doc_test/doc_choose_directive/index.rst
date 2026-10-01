@@ -29,12 +29,12 @@ so the invalid one and the unknown key cannot warn.
 
       SKIPPED_P1_UNKNOWN_KEY
 
-   .. when::
+   .. otherwise::
 
       SKIPPED_P1_DEFAULT
 
-P2 default taken when no branch holds
--------------------------------------
+P2 the otherwise is taken when no condition holds
+-------------------------------------------------
 
 .. choose::
 
@@ -44,12 +44,12 @@ P2 default taken when no branch holds
 
    .. a comment between two branches
 
-   .. when::
+   .. otherwise::
 
       TAKEN_P2_DEFAULT
 
-P2b no branch holds and there is no default
--------------------------------------------
+P2b no condition holds and there is no otherwise
+------------------------------------------------
 
 .. choose::
 
@@ -78,9 +78,9 @@ P3 needs in branches
       .. req:: In the taken branch
          :id: REQ_P3_TAKEN
 
-   .. when::
+   .. otherwise::
 
-      .. req:: In a default that is not taken
+      .. req:: In an otherwise that is not taken
          :id: REQ_P3_DEFAULT_SKIPPED
 
 P4 sections in the taken branch
@@ -95,7 +95,7 @@ P4 sections in the taken branch
 
       TAKEN_P4_SECTION_BODY
 
-   .. when::
+   .. otherwise::
 
       P4 skipped heading
       ~~~~~~~~~~~~~~~~~~
@@ -117,11 +117,11 @@ P5 nested choose
 
             SKIPPED_P5_INNER
 
-         .. when::
+         .. otherwise::
 
             TAKEN_P5_INNER_DEFAULT
 
-   .. when::
+   .. otherwise::
 
       SKIPPED_P5_OUTER
 
@@ -144,7 +144,7 @@ which renders its content from the need-node cache.
 
          TAKEN_P5B_IN_NEED
 
-      .. when::
+      .. otherwise::
 
          SKIPPED_P5B_IN_NEED_DEFAULT
 
@@ -167,7 +167,7 @@ X2 an include inside the taken branch
 
       TAKEN_X2_AFTER_INCLUDE
 
-   .. when::
+   .. otherwise::
 
       SKIPPED_X2_DEFAULT
 
