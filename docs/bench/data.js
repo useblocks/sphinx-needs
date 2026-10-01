@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790843680637,
+  "lastUpdate": 1790859664424,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -21996,6 +21996,42 @@ window.BENCHMARK_DATA = {
             "value": 56.639066635000006,
             "unit": "s",
             "extra": "Commit: f91d8cf2194ea790fe4f72650558814d3f360ae3\nBranch: master\nTime: 2026-10-01T10:33:15+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "323730973+useblocks-automation[bot]@users.noreply.github.com",
+            "name": "useblocks-automation[bot]",
+            "username": "useblocks-automation[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "63623bda9bca60ffdadcabccedd6190641b56696",
+          "message": "🔧 Update pre-commit hook versions (#2010)\n\nHook revisions updated by `prek update --cooldown-days 7`:\n\n- https://github.com/astral-sh/ruff-pre-commit: `v0.16.5` -> `v0.16.8`\n- https://github.com/astral-sh/uv-pre-commit: `0.12.9` -> `\"0.12.18\"`\n\nhooks clean after autofix: yes — see [the workflow\nrun](https://github.com/useblocks/sphinx-needs/actions/runs/36837178572)\n\nOpened by the scheduled `Prek update` workflow.\n\nCo-authored-by: chrisjsewell <2997570+chrisjsewell@users.noreply.github.com>",
+          "timestamp": "2026-10-01T14:59:40+02:00",
+          "tree_id": "2eda2990884a4455e37bbe16a34366d1766a142c",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/63623bda9bca60ffdadcabccedd6190641b56696"
+        },
+        "date": 1790859655690,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.10889319399999664,
+            "unit": "s",
+            "extra": "Commit: 63623bda9bca60ffdadcabccedd6190641b56696\nBranch: master\nTime: 2026-10-01T14:59:40+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 55.99841841,
+            "unit": "s",
+            "extra": "Commit: 63623bda9bca60ffdadcabccedd6190641b56696\nBranch: master\nTime: 2026-10-01T14:59:40+02:00"
           }
         ]
       }
