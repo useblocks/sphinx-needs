@@ -4,6 +4,21 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+Bug fixes
+.........
+
+- 🐛 The ``filter`` of :ref:`calc_sum` can now use ``needs`` (:pr:`1453`)
+
+  The filter was evaluated without the list of all needs, although a
+  :ref:`filter_string` documents it, so a filter such as
+  ``any(id in s["links"] for s in needs if s["type"] == "story")`` ended in a
+  ``name 'needs' is not defined`` warning for every need and the value was summed as if
+  there were no filter. It now sees the same ``needs`` as the filter of a
+  :ref:`needtable` or :ref:`needlist`.
+
 .. _`release:8.5.0`:
 
 8.5.0

@@ -26,3 +26,16 @@ DYNAMIC FUNCTIONS
 
 .. spec:: Result 3
    :amount: [[calc_sum('hours', filter='id in ["TEST_1","TEST_2"]')]]
+
+.. story:: Open story
+   :id: US_OPEN
+   :status: open
+   :links: TEST_1, TEST_3
+
+.. story:: Done story
+   :id: US_DONE
+   :status: done
+   :links: TEST_2
+
+.. spec:: Result 4
+   :amount: [[calc_sum('hours', filter='any(id in s["links"] for s in needs if s["type"] == "story" and s["status"] == "open")')]]
