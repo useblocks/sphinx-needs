@@ -14,4 +14,4 @@ __all__ = ["__version__"]
 
 #: Checked against ``[project] version`` by ``check_workspace.py`` and stamped by
 #: ``poe bump``.
-__version__ = "1.0.0.dev0"
+__version__ = "1.0.0"

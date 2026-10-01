@@ -3855,7 +3855,7 @@ source = { editable = "packages/ub-project" }
 
 [[package]]
 name = "ub-test-reports"
-version = "1.0.0.dev0"
+version = "1.0.0"
 source = { editable = "packages/ub-test-reports" }
 dependencies = [
     { name = "lxml" },
