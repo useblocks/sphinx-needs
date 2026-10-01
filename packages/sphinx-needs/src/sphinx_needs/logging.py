@@ -82,7 +82,7 @@ WarningSubTypeDescription: dict[WarningSubTypes, str] = {
     "filter_func": "Error loading needs filter function",
     "filter": "Error processing needs filter",
     "github": "Error in processing GitHub service directive",
-    "if": "Error in processing if directive",
+    "if": "Error in processing if/elif/else directive",
     "import_need": "Failed to import a need",
     "layout": "Error occurred during layout rendering of a need",
     "link_condition_failed": "Link condition not satisfied by targeted need",

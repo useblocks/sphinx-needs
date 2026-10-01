@@ -24,6 +24,7 @@ from sphinx_needs.data import (
     NeedsPartType,
     SphinxNeedsData,
 )
+from sphinx_needs.directives.needif import strip_if_chain_markers
 from sphinx_needs.directives.needuml import Needuml, NeedumlException
 from sphinx_needs.exceptions import InvalidNeedException, NeedsInvalidFilter
 from sphinx_needs.filter_common import (
@@ -868,6 +869,9 @@ def _create_need_node(
     need_parts = find_parts(node_need)
     update_need_with_parts(env, data, need_parts)
 
+    # the cache is filled before any transform runs, so the chain markers in the need's
+    # content (complete by now) must go here rather than in `StripIfChainMarkers`
+    strip_if_chain_markers(node_need)
     SphinxNeedsData(env).set_need_node(data["id"], node_need)
 
     return_nodes.append(node_need)
