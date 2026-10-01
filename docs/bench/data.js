@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790809632036,
+  "lastUpdate": 1790840101670,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -21924,6 +21924,42 @@ window.BENCHMARK_DATA = {
             "value": 50.16707198999998,
             "unit": "s",
             "extra": "Commit: caea4b80af8f7323a83fecd502b0a37ce4864800\nBranch: master\nTime: 2026-10-01T01:05:52+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "39b73156909cfa282f6e19b3fdaba0fffbcbc676",
+          "message": "‼️ Split sphinx-test-reports: the Sphinx-free core becomes ub-test-reports 1.0.0 (#2009)\n\nsphinx-test-reports has carried two products since 2.0.0: a Sphinx\nextension, and a converter and pytest plugin that must run without\nSphinx. This PR makes the second its own distribution,\n**ub-test-reports** (`packages/ub-test-reports`, import\n`ub_test_reports`, at `1.0.0.dev0`), and leaves sphinx-test-reports as\nthe Sphinx extension with hard dependencies on Sphinx, docutils,\nsphinx-needs and the core. By the `sphinx-*`/`ub-*` naming rule it is a\ntool, not a Sphinx extension: no `Framework :: Sphinx`, nothing to add\nto `conf.py`.\n\n**What moved** (with `git mv`, so `git log` follows): `cli`, `fields`,\n`identity`, `jsonparser`, `junitparser`, `needs_export`,\n`projectconfig`, `pytest_plugin`, `remote`, `results` and\n`schemas/JUnit.xsd`. Inside them only imports, docstring references and\nthe names the plugin prints changed (renames at 95–100 % similarity).\nThe plugin's wire names `sphinxcontrib.test_reports:file|line` are\nunchanged and are now pinned by tests. `lxml` and `ub-project` go with\nthe modules that import them.\n\n**What changes for users** (the extension's changelog states each of\nthese):\n\n- `pip install sphinx-test-reports` brings Sphinx, Sphinx-Needs and\ndocutils again. This reverses 2.0.0's install-footprint change. A CI job\nor Bazel action that installed it only for `test-reports` or the plugin\nshould install `ub-test-reports` instead.\n- The `test-reports` command belongs to ub-test-reports. `pipx install\nsphinx-test-reports` and `uv tool install sphinx-test-reports` now find\nno command (measured; the messages are quoted in the changelog): name\n`ub-test-reports` there, and in anything else that looks the script up\nin the installing package's own metadata. `pip install\nsphinx-test-reports` still puts `test-reports` on the path, through the\ndependency.\n- `[sphinx]` is accepted and ignored, and `[pytest]` passes through to\n`ub-test-reports[pytest]`, until 4.0 — so 2.0.0's documented install\nlines keep working (dropping either makes them warn and silently skip\npytest under both pip and uv, measured).\n- The plugin is `-p ub_test_reports.pytest_plugin`. Its registration\nname is `ub_test_reports.xml_shape` and its warning prefix\n`ub_test_reports.pytest_plugin:` (both pinned).\n- The old\n`sphinxcontrib.test_reports.{junitparser,jsonparser,pytest_plugin}`\nnames still work until 4.0 (one `FutureWarning`, naming the core\nmodule), but only where the extension is installed — and so Sphinx. With\nonly the core installed they are a plain `ModuleNotFoundError`.\n`sphinx_test_reports.<module>` for the moved modules was never released\n(PyPI's newest is 2.0.0), so it needs no alias.\n- The load-time toolchain check (`toolchain.py`) is gone: the\ndependencies are hard, so pip resolves the floors. A sphinx-needs\ndowngraded in place after installing is no longer refused — it runs\nuntested; `pip check` names the conflict. The extension calls\n`app.require_sphinx((7, 4))`. `compat-requirements.txt` is deleted (its\ntwo lines are `Requires-Dist` now).\n- Unchanged: `extensions = [\"sphinx_test_reports\"]` and its old alias;\nthe `tr_*` values and `tr_config_from_toml`; the docs site (one site;\nthe core's pages form a \"Without Sphinx\" section, its changelog is\nlinked, not included — `bump`'s `release:` labels would collide).\n\n**Tests:** core 351 (324 moved, 10 new for the JSON parser — a core\nmodule whose only tests were Sphinx builds — 2 for the wire names, 2 for\nthe shipped XSD, which turned out to have no reader under test, 1 for\nthe printed names, 12 for a static `ast` walk refusing any toolchain\nimport at any depth), extension 150, deleted 15 (`test_toolchain.py` and\nthe two tests of the lazy check). The `toolchain` marker is gone. The\ncore reads its own copies of 13 fixtures; the extension's\n`doc_test/utils/` and the docs' `:file:` paths are untouched.\n`test_aliases.py` walks both packages.\n\n**CI:** `toolchain-free` is now \"(ub-test-reports, ub-project)\": the\ncore's artefact fence (flit; one top-level package, the XSD, `py.typed`,\nno `tests/` in the sdist), the extension's existing hatchling\ntwo-package fence, then the whole core suite from the built wheel in a\nvenv with no toolchain and with `pytest-xdist` — asserted present, so\nthe three xdist tests that have been skipping silently in that job run.\nNew `plugin-floor` job: the same shape on pytest 7.0.1 / Python 3.11 and\npytest 7.3.2 / 3.12 (the `[pytest]` extra's floor; the lane the import\nretired), in `check`. Also: a `ub-test-reports` Codecov flag (`reports`\nwill read about a point lower because statements moved — not a required\nstatus), the type-gate canary probe, the labelers and issue forms, and\nthe extension's `.readthedocs.yaml` installing\n`packages/ub-test-reports` from the checkout before the extension (pip\nknows nothing of workspace sources; without the line an RTD build cannot\nresolve an unpublished core — measured) and rebuilding when the core\nchanges.\n\n**Lock:** master's lock plus the semantic entries, +38/−17; `uv lock\n--check` passes on 0.12.15 and 0.12.9 (the hook's rev) and a plain `uv\nlock` leaves it byte-identical.\n\n**Release order (tagging order):** 1. this PR; 2. the core's release PR\n— `poe bump ub-test-reports --to 1.0.0`, which also moves the\nextension's two `ub-test-reports` specifiers to `>=1.0.0,<2` through\n`propagate_floors` (ship the one-line `uv.lock` version change, not\n`bump`'s 224-line relock — measured to pass both `lock --check`s); tag\n`ub-test-reports-v1.0.0`; 3. sphinx-needs' release (`release-plan`\nalready requires it before sphinx-test-reports); 4. `poe bump\nsphinx-test-reports --bump major`, tag `sphinx-test-reports-v3.0.0`. The\nextension's floor is spelled `ub-test-reports>=1.0.0.dev0,<2` in this PR\nbecause `check_workspace` check (4) refuses `>=1.0.0` while the tree\nbuilds a dev version.\n\n**Red by design until the core is on PyPI:** `poe import-check-reports`\n(`ub-test-reports was not found in the package registry`) and the\nextension's release gates (the plan job: \"Release it first\"; the compat\ncell's PyPI resolution). Every PR-time gate is green with the core\nunpublished — measured by replaying both CI jobs from the committed\nYAML, the cells (including sphinx 7.4 on 3.11), `docs-reports` under\n`-nW`, and the release build job in both orders with the core supplied\nas if published.\n\n**Review:** recon, two adversarial reviewers, one fix round, one\nvalidation round, all recorded. One claim fell: the changelog's first\ndraft said a below-floor sphinx-needs \"fails with a traceback from a\ndirective\"; nine test projects built green on 8.4.0 and 6.3.0, so it now\nsays what was measured.\n\n**Before merging / before the first tag:**\n\n- [x] `pkg: ub-test-reports` label created (applied by hand here; the\nlabeler reads master's config).\n- [ ] Before `ub-test-reports-v1.0.0`: the GitHub environment\n`pypi-ub-test-reports` (tag rule `ub-test-reports-v*`) and the PyPI\npending trusted publisher for `ub-test-reports`\n(`useblocks/sphinx-needs`, `release.yaml`, environment\n`pypi-ub-test-reports`).\n- [ ] Before `ub-test-reports-v1.0.0`: repoint the `sphinx-test-reports`\nRead the Docs project at `useblocks/sphinx-needs`\n(`readthedocs_yaml_path =\npackages/sphinx-test-reports/.readthedocs.yaml`) and confirm `latest`\nrenders the \"Without Sphinx\" section — today it still builds the\narchived old repository, and the core's README and `Documentation` URL\npoint at it.\n- [ ] Core release PR: link the README rows to PyPI.\n\nChangelogs: `packages/sphinx-test-reports/docs/changelog.rst`\n(Unreleased, rewritten in place where the split made it false) and\n`packages/ub-test-reports/docs/changelog.rst` (Unreleased, one entry).",
+          "timestamp": "2026-10-01T09:27:17+02:00",
+          "tree_id": "233584a014e1351202936a5cfdcae37be8beddc9",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/39b73156909cfa282f6e19b3fdaba0fffbcbc676"
+        },
+        "date": 1790840093882,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.10135073899999725,
+            "unit": "s",
+            "extra": "Commit: 39b73156909cfa282f6e19b3fdaba0fffbcbc676\nBranch: master\nTime: 2026-10-01T09:27:17+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 54.13243552,
+            "unit": "s",
+            "extra": "Commit: 39b73156909cfa282f6e19b3fdaba0fffbcbc676\nBranch: master\nTime: 2026-10-01T09:27:17+02:00"
           }
         ]
       }
