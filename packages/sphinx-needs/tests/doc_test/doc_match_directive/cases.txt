@@ -1,0 +1,7 @@
+.. case:: var.arch == "xyz"
+
+   SKIPPED_X1_FROM_INCLUDE
+
+.. case::
+
+   TAKEN_X1_DEFAULT_FROM_INCLUDE
