@@ -179,6 +179,20 @@ def test_no_srcdir_means_no_rewrite() -> None:
     assert build_warnings(stream) == [f"{SRCDIR}/index.rst:5: WARNING: x [needs.a]"]
 
 
+def test_a_posix_spelt_location_under_a_windows_srcdir_is_rewritten() -> None:
+    """docutils writes the path of an ``.. include::``\ d file with ``/`` on every platform
+    (``utils.relative_path``), so on Windows a warning located in such a file starts with
+    ``C:/…`` while the source directory is ``C:\\…``. The ``choose`` rows that locate a
+    warning in an included file failed every Windows cell of CI on exactly this before the
+    POSIX spelling was rewritten too. A Linux run cannot tell the two spellings apart, so
+    the Windows source directory is given by hand; the helper never touches the file
+    system."""
+    stream = "C:/Users/x/src/branches.txt:1: WARNING: a message [needs.choose]\n"
+    assert build_warnings(stream, srcdir="C:\\Users\\x\\src") == [
+        "<srcdir>/branches.txt:1: WARNING: a message [needs.choose]"
+    ]
+
+
 # ------------------------------------------------------------------------------ warning_count
 
 

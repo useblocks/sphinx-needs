@@ -70,7 +70,10 @@ def build_warnings(
 
     * ANSI colour codes stripped (``strip_colors``);
     * the source directory rewritten to ``<srcdir>/``, so an assertion can name a file
-      without knowing which temporary directory the fixture chose;
+      without knowing which temporary directory the fixture chose -- in its POSIX spelling
+      too, because docutils writes the path of an ``.. include::``\ d file with ``/`` on
+      every platform (``utils.relative_path``), so on Windows a warning located in such a
+      file starts with ``C:/…`` where the source directory is ``C:\…``;
     * one entry per warning record, **including its location**, with a multi-line message
       kept whole rather than split into one entry per line -- see :data:`_RECORD_START` for
       what "record" means here and where the heuristic stops holding;
@@ -101,8 +104,11 @@ def build_warnings(
         # through `Path`, so a caller that passes a string with a trailing separator still
         # gets the rewrite (`app.srcdir` is a Path and never has one)
         root = str(Path(srcdir))
-        for separator in (os.sep, "/"):
-            text = text.replace(root + separator, "<srcdir>/")
+        # the POSIX spelling matters on Windows only, where `root` carries backslashes:
+        # an included file's location is written with "/" (see the docstring)
+        posix_root = root.replace("\\", "/")
+        for prefix in dict.fromkeys((root + os.sep, root + "/", posix_root + "/")):
+            text = text.replace(prefix, "<srcdir>/")
 
     records: list[str] = []
     for line in text.splitlines():
