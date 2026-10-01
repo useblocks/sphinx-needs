@@ -3,10 +3,11 @@
 A static walk, not an import: it reads every module's source, so it refuses an import
 statement -- at module level, in a function body, in a ``try`` arm or under
 ``TYPE_CHECKING`` -- whether or not any test reaches that line, and in every environment,
-the default one (which has Sphinx installed) included. String-spelled
-``importlib.import_module("...")`` and ``__import__("...")`` calls are read too. What a
-static walk cannot see -- a dependency that drags Sphinx in, an import spelled some other
-way -- is what CI's ``toolchain-free`` job is for.
+the default one (which has Sphinx installed) included. ``importlib.import_module("...")``
+and ``__import__("...")`` calls are read too, when the module name is a positional string
+literal (a keyword argument, a variable, an f-string or the ``package`` argument are not).
+What a static walk cannot see -- a dependency that drags Sphinx in, an import spelled some
+other way -- is what CI's ``toolchain-free`` job is for, on the lines a test reaches.
 """
 
 import ast

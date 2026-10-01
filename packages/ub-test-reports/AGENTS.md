@@ -30,10 +30,11 @@ uv run poe build-ub-test-reports          # sdist + wheel into dist/ub-test-repo
   inside a test run, and neither has a documentation toolchain. `tests/test_imports.py`
   refuses any import STATEMENT naming the toolchain (or the extension), at any depth and in
   every environment, whether or not a test reaches the line; three subprocess tests also
-  check that importing the CLI's chain, the plugin and `projectconfig` loads none of it.
+  check that importing the CLI's chain, the plugin and `projectconfig` loads no Sphinx.
   CI's `toolchain-free` job is the fence for what a static walk cannot see — a dependency
-  that drags Sphinx in, an import spelled dynamically — and for the plugin's subprocess runs:
-  it installs the built wheel where the toolchain is absent and runs the whole suite there.
+  that drags Sphinx in, an import spelled dynamically — on the lines a test reaches, and for
+  the plugin's subprocess runs: it installs the built wheel where the toolchain is absent and
+  runs the whole suite there.
 - **`ub-project` is its `ubproject.toml` reader.** Finding, loading and anchoring the file
   come from there (`packages/ub-project/design/reading-contract.md` is the specification);
   what stays here is the `[test_reports]` policy -- keys, types, normalisation, unknown keys

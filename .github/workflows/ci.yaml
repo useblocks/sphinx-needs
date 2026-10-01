@@ -470,8 +470,9 @@ jobs:
     # declares, asserts that sphinx, sphinx_needs and docutils are all absent, and runs its
     # WHOLE suite there. The suite's own `tests/test_imports.py` refuses any import STATEMENT
     # naming the toolchain, in every environment; what this job adds is what a static walk
-    # cannot see -- a dependency that drags Sphinx in, an import spelled dynamically -- and
-    # the plugin's pytester subprocess runs, all without the toolchain.
+    # cannot see -- a dependency that drags Sphinx in, an import spelled dynamically -- on
+    # the lines a test reaches, and the plugin's pytester subprocess runs, all without the
+    # toolchain.
     #
     # The environment is on Python 3.11, the workspace floor: both packages it runs claim
     # `>=3.11`, and no other cell runs either of them there -- the matrix cells vary the

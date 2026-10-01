@@ -32,7 +32,7 @@ The Sphinx-free half is its own distribution, ub-test-reports
   that takes the command from the package you name finds none in sphinx-test-reports:
   ``pipx install sphinx-test-reports`` fails with "No apps associated with package
   sphinx-test-reports", and ``uv tool install sphinx-test-reports`` with "No executables are
-  provided by package sphinx-test-reports". Name ``ub-test-reports`` there (``pipx install
+  provided by package \`sphinx-test-reports\`". Name ``ub-test-reports`` there (``pipx install
   ub-test-reports``, ``uv tool install ub-test-reports``), and in anything else that looks
   the script up in the installing package's own metadata. ``pip install
   sphinx-test-reports`` still puts ``test-reports`` on the path, through the dependency.
