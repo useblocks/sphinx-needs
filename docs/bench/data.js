@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790859812629,
+  "lastUpdate": 1790887409181,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -22068,6 +22068,42 @@ window.BENCHMARK_DATA = {
             "value": 51.69669807999999,
             "unit": "s",
             "extra": "Commit: cc0ffe0a313e807c5a9587e4454e82803d4b21f8\nBranch: master\nTime: 2026-10-01T15:00:18+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "110906681+kocaemre@users.noreply.github.com",
+            "name": "Emre K.",
+            "username": "kocaemre"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "16f247c1cbaca136e26b40b54f72b88c44e7ab03",
+          "message": "🐛 Normalize conf.py codelinks projects (#2008)\n\n## Summary\n\n- Normalize `src_trace_projects` loaded from `conf.py` before\n`src-trace` reads a project.\n- Add a regression that builds a `src-trace` page from `conf.py`-only\nproject config.\n- Add an Unreleased changelog entry for the crash fix.\n\nCloses #2006.\n\n## Tests\n\n- RED: `uv run poe test-codelinks tests/test_src_trace.py -k\nconf_py_projects_are_normalized_for_src_trace` failed with `KeyError:\n'source_discover_config'` before the fix.\n- GREEN: `uv run poe test-codelinks tests/test_src_trace.py -k\nconf_py_projects_are_normalized_for_src_trace` passed.\n- `uv run poe test-codelinks tests/test_src_trace.py` passed: 403\npassed.\n- `uv run poe lint` passed.\n- `uv run poe typecheck` passed.\n- `git diff --check` passed.\n\nSigned-off-by: Emre K <110906681+kocaemre@users.noreply.github.com>",
+          "timestamp": "2026-10-01T22:42:05+02:00",
+          "tree_id": "edca941aa025cdee11168d59be8ce8e3f18d6a1f",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/16f247c1cbaca136e26b40b54f72b88c44e7ab03"
+        },
+        "date": 1790887401716,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.094278383999999,
+            "unit": "s",
+            "extra": "Commit: 16f247c1cbaca136e26b40b54f72b88c44e7ab03\nBranch: master\nTime: 2026-10-01T22:42:05+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 38.516246542,
+            "unit": "s",
+            "extra": "Commit: 16f247c1cbaca136e26b40b54f72b88c44e7ab03\nBranch: master\nTime: 2026-10-01T22:42:05+02:00"
           }
         ]
       }
