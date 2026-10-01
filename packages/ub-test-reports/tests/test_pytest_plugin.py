@@ -5,6 +5,7 @@ and the resulting JUnit XML inspected. The property model comes from the
 ``test_reports_properties`` ini option; S-CORE's is the profile most tests use.
 """
 
+import re
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
@@ -336,6 +337,27 @@ class TestXmlShape:
         result, root = _run(pytester, DECORATED, family="xunit2")
         result.stdout.fnmatch_lines(["*junit_family is 'xunit2'*xunit1*"])
         assert _cases(root)["test_plain"].get("file") is None
+
+    def test_the_names_it_prints_are_ub_test_reports(self, pytester):
+        # Both are documented in the changelog as changed from 2.0.0's
+        # `sphinxcontrib.test_reports...`: the prefix of the warnings it issues (what a
+        # user's warning filter matches) and the name its hook object is registered under.
+        source = (
+            "def test_registered(request):\n"
+            "    assert request.config.pluginmanager.has_plugin('ub_test_reports.xml_shape')\n"
+        )
+        result, _ = _run(pytester, source, family="xunit2")
+        result.assert_outcomes(passed=1)
+        messages = [
+            line.split("TestReportsConfigWarning: ", 1)[1]
+            for line in result.stdout.lines
+            if "TestReportsConfigWarning: " in line
+        ]
+        assert messages
+        assert all(
+            re.match(r"^ub_test_reports\.pytest_plugin: ", message)
+            for message in messages
+        ), messages
 
 
 class TestPropertyModel:

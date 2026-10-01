@@ -200,7 +200,10 @@ def test_the_warning_is_visible_under_default_filters(tmp_path, module: str) -> 
     assert f"user_code.py:1: FutureWarning: {OLD}.{module} has moved" in result.stderr
 
 
-def test_the_aliases_import_without_sphinx(tmp_path) -> None:
+def test_the_aliases_import_without_loading_sphinx(tmp_path) -> None:
+    # This suite always has Sphinx installed, so what it proves is that the alias chain
+    # does not LOAD it: `-p sphinxcontrib.test_reports.pytest_plugin` must not pull the
+    # toolchain into every pytest run, which is what the lazy package root is for.
     result = _run_user_code(
         tmp_path,
         f"""\
@@ -208,6 +211,7 @@ def test_the_aliases_import_without_sphinx(tmp_path) -> None:
         import {OLD}
         import {OLD}.junitparser
         import {OLD}.jsonparser
+        import {OLD}.pytest_plugin
         loaded = sorted(m for m in ("sphinx", "sphinx_needs", "docutils") if m in sys.modules)
         assert not loaded, loaded
         """,

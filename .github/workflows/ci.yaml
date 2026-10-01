@@ -604,14 +604,19 @@ jobs:
           uv venv --python 3.11 /tmp/toolchain-free
           wheel=$(ls /tmp/core-dist/*.whl)
           uv pip install --python /tmp/toolchain-free --no-sources "${wheel}[pytest]" pytest-xdist packages/ub-project
-      - name: Assert the toolchain really is absent
+      - name: Assert the toolchain really is absent, and pytest-xdist present
         # the fence's fence. Without this the job would still pass with Sphinx installed,
-        # and would be testing nothing it claims to test.
+        # and would be testing nothing it claims to test. pytest-xdist the other way round:
+        # without it the plugin's three xdist tests skip on `importorskip` and the job
+        # stays green
         run: |
           /tmp/toolchain-free/bin/python -c "
           import importlib.util, sys
           present = [m for m in ('sphinx', 'sphinx_needs', 'docutils') if importlib.util.find_spec(m)]
-          sys.exit(f'toolchain installed: {present}' if present else 0)
+          if present:
+              sys.exit(f'toolchain installed: {present}')
+          if importlib.util.find_spec('xdist') is None:
+              sys.exit(\"pytest-xdist is not installed: the plugin's three xdist tests would skip\")
           "
       - name: Run the ub-test-reports suite
         # WHOLE, with no marker and no file list: every test of the core must pass without the
@@ -666,15 +671,19 @@ jobs:
           wheel=$(ls /tmp/core-dist/*.whl)
           uv pip install --python /tmp/plugin-floor --no-sources "${wheel}[pytest]" \
             "pytest==${{ matrix.pytest }}" pytest-xdist packages/ub-project
-      - name: Assert the pin, and that the toolchain is absent
+      - name: Assert the pin, pytest-xdist present, and the toolchain absent
         # the pin's positive control: a resolver that moved pytest would make this job test
-        # the newest pytest again while still reporting the floor
+        # the newest pytest again while still reporting the floor. pytest-xdist: a resolver
+        # that could no longer place one next to the pinned pytest would make the plugin's
+        # three xdist tests skip, green
         run: |
           /tmp/plugin-floor/bin/python -c "
           import importlib.util, sys
           import pytest
           if pytest.__version__ != '${{ matrix.pytest }}':
               sys.exit(f'pytest {pytest.__version__} is installed, not ${{ matrix.pytest }}')
+          if importlib.util.find_spec('xdist') is None:
+              sys.exit(\"pytest-xdist is not installed: the plugin's three xdist tests would skip\")
           present = [m for m in ('sphinx', 'sphinx_needs', 'docutils') if importlib.util.find_spec(m)]
           sys.exit(f'toolchain installed: {present}' if present else 0)
           "
