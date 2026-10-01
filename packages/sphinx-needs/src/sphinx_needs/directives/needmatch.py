@@ -31,7 +31,7 @@ from itertools import islice
 from docutils import nodes
 from docutils.parsers.rst.states import RSTState
 from docutils.statemachine import StringList
-from docutils.utils import get_source_line
+from docutils.utils import Reporter, get_source_line
 from sphinx.util.docutils import SphinxDirective
 from sphinx.util.nodes import nested_parse_with_titles
 
@@ -268,13 +268,8 @@ class MatchDirective(SphinxDirective):
         cases: list[_CasePlaceholder] = []
         for index, child in enumerate(children):
             if isinstance(child, _CasePlaceholder):
-                if child.owner is not body:
-                    self._warn(
-                        "'case' directive is not a direct child of its 'match' (it is "
-                        "inside another directive); the whole match is skipped",
-                        child.location,
-                    )
-                    return None
+                # the source first: a case an include supplies is reported as such,
+                # also when the include stands inside another directive
                 if child.source != source:
                     self._warn(
                         "'case' supplied through an include is not supported (write "
@@ -283,13 +278,24 @@ class MatchDirective(SphinxDirective):
                         child.location,
                     )
                     return None
+                if child.owner is not body:
+                    self._warn(
+                        "'case' directive is not a direct child of its 'match' (it is "
+                        "inside another directive); the whole match is skipped",
+                        child.location,
+                    )
+                    return None
                 cases.append(child)
             elif isinstance(child, nodes.comment):
                 continue
             elif isinstance(child, nodes.system_message):
-                if child["level"] < self.state.document.reporter.report_level:
-                    # below the report level, so it was never shown: judge what follows
-                    # it (docutils puts an INFO before the paragraph of a `---` line)
+                reported = max(
+                    self.state.document.reporter.report_level, Reporter.WARNING_LEVEL
+                )
+                if child["level"] < reported:
+                    # never shown as a problem (below the report level, or below WARNING
+                    # however low that level is set): judge what follows it instead
+                    # (docutils puts an INFO before the paragraph of a `---` line)
                     continue
                 # reported by docutils or MyST when it was created: skip, silently
                 return None

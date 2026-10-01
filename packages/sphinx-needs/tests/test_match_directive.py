@@ -499,6 +499,43 @@ def test_match_warnings(test_app, expected: _Expected):
 
 
 @pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            ".. match::\n\n"
+            "   .. case:: var.arch == 'x86'\n\n      SKIPPED_X86\n\n"
+            "   ---\n\n"
+            "   .. case::\n\n      SKIPPED_DEFAULT\n",
+            extra=(("docutils.conf", "[general]\nreport_level: 1\n"),),
+        )
+    ],
+    indirect=True,
+)
+def test_match_info_message_is_never_a_reported_error(test_app, monkeypatch):
+    """An INFO message in the body is not taken for an error docutils reported.
+
+    With ``report_level: 1`` in the project's ``docutils.conf`` the INFO before the
+    paragraph of a ``---`` line is shown, but as information, not as a warning,
+    so the paragraph must still be reported: otherwise the match would vanish
+    with ``-W`` green. ``sphinx-build`` points ``DOCUTILSCONFIG`` at the project's
+    ``docutils.conf``; this in-process build does it by hand.
+    """
+    app = test_app
+    monkeypatch.setenv("DOCUTILSCONFIG", str(Path(app.srcdir, "docutils.conf")))
+    app.build()
+    (warning,) = build_warnings(app)
+    source = Path(app.srcdir, "index.rst").read_text()
+    assert warning.startswith(
+        f"<srcdir>/index.rst:{_line_of(source, '   ---')}: WARNING: "
+    ), warning
+    assert "got <paragraph>" + _SKIP in warning, warning
+    assert warning.endswith(" [needs.match]"), warning
+    assert "SKIPPED" not in Path(app.outdir, "index.html").read_text()
+    # the INFO itself was shown, so the setting took effect
+    assert "Unexpected possible title overline or transition" in app._status.getvalue()
+
+
+@pytest.mark.parametrize(
     ("test_app", "error"),
     [
         (

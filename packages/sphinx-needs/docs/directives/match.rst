@@ -135,7 +135,7 @@ a Python expression over the ``var`` namespace, with no built-in functions
 A result that is not a ``bool`` is warned about and then used as its truth value, as for ``if``.
 
 A condition wrapped onto a second line is joined with a line break,
-which is a syntax error unless the break falls inside brackets;
+which is a syntax error unless the break falls inside brackets or is escaped with a backslash;
 keep conditions on one line.
 
 Warnings
@@ -175,5 +175,7 @@ the ``match`` is skipped all the same.
    ``default-role`` is one such directive, and so is a **false** ``if``:
    it returns nothing, so the cases written inside it vanish without a warning,
    unless the ``match`` is left with no ``case`` at all.
+   Nor is a MyST substitution: a ``{{ sub }}`` in a ``match`` whose definition holds ``case`` directives
+   is expanded in place, and its cases are taken without a warning.
    Needs are the one effect of content outside a case that is undone;
    any other (a label, a ``needextend``) stays, so keep every directive inside a ``case``.
