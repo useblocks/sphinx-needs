@@ -1,0 +1,9 @@
+.. choose::
+
+   .. when:: var.arch == "xyz"
+
+      SKIPPED_X1_IN_INCLUDED_CHOOSE
+
+   .. when::
+
+      TAKEN_X1_INCLUDED_CHOOSE_DEFAULT

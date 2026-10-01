@@ -10,38 +10,38 @@ Unreleased
 Improvements
 ............
 
-- ✨ New :ref:`match <match>` and ``case`` directives include one of several branches of
+- ✨ New :ref:`choose <choose>` and ``when`` directives include one of several branches of
   content, chosen by variant data (:pr:`2020`)
 
-  A ``match`` holds ``case`` directives, and the first ``case`` whose condition is true
-  is included; a ``case`` with no condition is the default, and must come last. The
-  other cases are never parsed, so the needs inside them are never created:
+  A ``choose`` holds ``when`` directives, and the first ``when`` whose condition is true
+  is included; a ``when`` with no condition is the default, and must come last. The
+  other branches are never parsed, so the needs inside them are never created:
 
   .. code-block:: rst
 
-     .. match::
+     .. choose::
 
-        .. case:: var.arch == "arm"
+        .. when:: var.arch == "arm"
 
            ARM content.
 
-        .. case:: var.arch == "x86"
+        .. when:: var.arch == "x86"
 
            x86 content.
 
-        .. case::
+        .. when::
 
            Content for every other architecture.
 
   Conditions are exactly those of the :ref:`if <if>` directive, evaluated by the same
-  code, and the conditions after the case that is taken are not evaluated. A ``match``
-  may contain only ``case`` directives and comments. Every mistake warns once under the
-  new ``needs.match`` type and skips the whole ``match``: content outside a case (any
-  need it creates is removed again), a ``case`` inside another directive or supplied
-  through an include, a misplaced or second default, an argument on ``match``, variant
+  code, and the conditions after the branch that is taken are not evaluated. A ``choose``
+  may contain only ``when`` directives and comments. Every mistake warns once under the
+  new ``needs.choose`` type and skips the whole ``choose``: content outside a branch (any
+  need it creates is removed again), a ``when`` inside another directive or supplied
+  through an include, a misplaced or second default, an argument on ``choose``, variant
   data that is not configured, and a condition that cannot be evaluated — so a mistake
   that makes a condition unevaluable, such as a misspelt key or a syntax error, never
-  renders a later case or the default in its place. Works in reStructuredText and in
+  renders a later branch or the default in its place. Works in reStructuredText and in
   MyST Markdown. The undocumented warning ``if`` gives for a condition whose result is
   not a bool is now listed in its documentation.
 

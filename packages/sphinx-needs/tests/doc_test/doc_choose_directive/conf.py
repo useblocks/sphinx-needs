@@ -1,4 +1,4 @@
-project = "needs_match_test"
+project = "needs_choose_test"
 version = "0.1.0"
 extensions = ["sphinx_needs"]
 

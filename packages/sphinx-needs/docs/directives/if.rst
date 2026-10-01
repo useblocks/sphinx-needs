@@ -12,7 +12,7 @@ The directive argument is a Python expression evaluated against the ``var``
 namespace (populated from :ref:`needs_variant_data`).
 If the expression evaluates to ``True``, the directive body is parsed and
 included in the document. Otherwise the entire body is skipped.
-To include one of several branches instead, use :ref:`match <match>`.
+To include one of several branches instead, use :ref:`choose <choose>`.
 
 .. code-block:: rst
 

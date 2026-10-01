@@ -59,6 +59,7 @@ from sphinx_needs.directives.need import (
     purge_needs,
 )
 from sphinx_needs.directives.needbar import Needbar, NeedbarDirective, process_needbar
+from sphinx_needs.directives.needchoose import ChooseDirective, WhenDirective
 from sphinx_needs.directives.needextend import Needextend, NeedextendDirective
 from sphinx_needs.directives.needextract import (
     Needextract,
@@ -86,7 +87,6 @@ from sphinx_needs.directives.needlist import (
     NeedlistDirective,
     process_needlist,
 )
-from sphinx_needs.directives.needmatch import CaseDirective, MatchDirective
 from sphinx_needs.directives.needpie import Needpie, NeedpieDirective, process_needpie
 from sphinx_needs.directives.needreport import NeedReportDirective
 from sphinx_needs.directives.needsequence import (
@@ -310,8 +310,8 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.add_directive("needreport", NeedReportDirective)
     app.add_directive("needuml", NeedumlDirective)
     app.add_directive("if", IfDirective)
-    app.add_directive("match", MatchDirective)
-    app.add_directive("case", CaseDirective)
+    app.add_directive("choose", ChooseDirective)
+    app.add_directive("when", WhenDirective)
     app.add_directive("needarch", NeedarchDirective)
     app.add_directive("list2need", List2NeedDirective)
 

@@ -24,7 +24,7 @@ def evaluate_variant_condition(
     subtype: WarningSubTypes,
     location: str | tuple[str | None, int | None] | nodes.Node | None,
 ) -> bool | None:
-    """Evaluate a variant condition, as the ``if`` directive and a ``case`` do.
+    """Evaluate a variant condition, as the ``if`` directive and a ``when`` do.
 
     The expression is Python, evaluated with ``var`` (the proxy over
     :confval:`needs_variant_data`) as its only name and no builtins.
