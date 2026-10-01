@@ -11,7 +11,7 @@ Improvements
 ............
 
 - ✨ New :ref:`match <match>` and ``case`` directives include one of several branches of
-  content, chosen by variant data (:pr:`NNNN`)
+  content, chosen by variant data (:pr:`2020`)
 
   A ``match`` holds ``case`` directives, and the first ``case`` whose condition is true
   is included; a ``case`` with no condition is the default, and must come last. The
