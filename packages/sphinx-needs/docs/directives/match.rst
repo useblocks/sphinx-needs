@@ -106,7 +106,10 @@ Rules
   Any other content outside a case is a mistake,
   and the needs it would create are removed again.
   A ``case`` belongs directly in a ``match``:
-  one anywhere else, including one written loose in the content of another ``case``, is a mistake too.
+  one anywhere else is a mistake too,
+  whether it is written loose in the content of another ``case``
+  or inside another directive in the ``match``,
+  even one that passes its content through, such as a true ``if`` or a ``rst-class``.
 - **The cases are written in place.**
   Every ``case`` of a ``match`` is written in the body of that ``match``, in the same file,
   so that one choice is one directive in one place.
@@ -149,6 +152,8 @@ The mistakes are:
   So a typo in the condition of the case that should be included
   never includes a later case, or the default, in its place.
 - The ``match`` contains something that is neither a ``case`` nor a comment.
+  A line of only punctuation, such as ``---`` between two cases, is such content too.
+- A ``case`` is written inside another directive in the ``match`` rather than directly in it.
 - A ``case`` is supplied through an include rather than written in the body of the ``match``
   (the warning points at the ``case`` in the included file).
 - The ``match`` has more than one default ``case``, or a default that is not its last ``case``.
@@ -163,7 +168,10 @@ the ``match`` is skipped all the same.
 
 .. note::
 
-   A directive that produces no node, such as ``default-role``,
-   written directly in a ``match`` is not detected: it still runs, and the ``match`` goes on.
+   A directive that produces no node, written directly in a ``match``, is not detected:
+   it still runs, and the ``match`` goes on.
+   ``default-role`` is one such directive, and so is a **false** ``if``:
+   it returns nothing, so the cases written inside it vanish without a warning,
+   unless the ``match`` is left with no ``case`` at all.
    Needs are the one effect of content outside a case that is undone;
    any other (a label, a ``needextend``) stays, so keep every directive inside a ``case``.

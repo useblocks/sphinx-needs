@@ -71,6 +71,12 @@ class _CasePlaceholder(nodes.Element):
     """Where warnings about the case are reported."""
     source: str | None
     """The file the ``case`` directive is written in, as docutils or MyST reports it."""
+    owner: nodes.Element | None
+    """The node the ``case`` directive's result is appended to.
+
+    That is the body of its ``match`` exactly when the ``case`` is written directly in it,
+    rather than inside another directive whose content was parsed into a node of its own.
+    """
 
 
 class _MatchBody(nodes.Element):
@@ -122,6 +128,9 @@ class CaseDirective(SphinxDirective):
         placeholder.lineno = self.lineno
         placeholder.location = self.get_location()
         placeholder.source = self.get_source_info()[0]
+        # docutils' `RSTState.parent` is this very node, and MyST's mock state machine
+        # holds the renderer's current node here, which is where MyST appends the result
+        placeholder.owner = self.state_machine.node
         return [placeholder]
 
 
@@ -130,8 +139,9 @@ class MatchDirective(SphinxDirective):
 
     The content may hold only ``case`` directives and comments.
     Every mistake is warned about once, and skips the whole ``match``:
-    content that is neither a ``case`` nor a comment, a ``case`` supplied through an
-    include, a default ``case`` that is not the last or is not the only one,
+    content that is neither a ``case`` nor a comment, a ``case`` inside another
+    directive or supplied through an include,
+    a default ``case`` that is not the last or is not the only one,
     variant data that is not configured,
     and a condition that cannot be evaluated before a case is taken.
     A typo in the condition of the case that should be taken
@@ -206,7 +216,7 @@ class MatchDirective(SphinxDirective):
             location=self.get_location() if location is None else location,
         )
 
-    def _parse_body(self) -> list[nodes.Node]:
+    def _parse_body(self) -> _MatchBody:
         """Parse the content into a detached node, with every ``case`` deferred.
 
         Because the content of every case is deferred,
@@ -214,7 +224,7 @@ class MatchDirective(SphinxDirective):
         written outside a case, which is a mistake that skips the whole ``match``:
         such needs are removed again, so that the mistake creates none.
 
-        :return: The children of the parsed body.
+        :return: The parsed body.
         """
         body = _MatchBody()
         body.document = self.state.document
@@ -237,13 +247,15 @@ class MatchDirective(SphinxDirective):
             for need_id in list(islice(reversed(needs), len(needs) - before)):
                 data.remove_need(need_id)
 
-        return list(body.children)
+        return body
 
     def _collect_cases(self, source: str | None, /) -> list[_CasePlaceholder] | None:
         """Parse the body and check its structure.
 
         The cases must be written in the body itself:
-        a ``case`` an ``.. include::`` supplies is refused,
+        a ``case`` inside another directive (one whose content is parsed into a node
+        of its own, even if it then returns that node's children, such as a true ``if``)
+        is refused, and so is a ``case`` an ``.. include::`` supplies,
         so that one ``match`` is one directive in one file.
 
         :param source: The file this ``match`` is written in,
@@ -251,10 +263,18 @@ class MatchDirective(SphinxDirective):
         :return: The cases, in order,
             or ``None`` if the body is not a valid ``match`` (a warning has been emitted).
         """
-        children = self._parse_body()
+        body = self._parse_body()
+        children = list(body.children)
         cases: list[_CasePlaceholder] = []
         for index, child in enumerate(children):
             if isinstance(child, _CasePlaceholder):
+                if child.owner is not body:
+                    self._warn(
+                        "'case' directive is not a direct child of its 'match' (it is "
+                        "inside another directive); the whole match is skipped",
+                        child.location,
+                    )
+                    return None
                 if child.source != source:
                     self._warn(
                         "'case' supplied through an include is not supported (write "
@@ -267,6 +287,10 @@ class MatchDirective(SphinxDirective):
             elif isinstance(child, nodes.comment):
                 continue
             elif isinstance(child, nodes.system_message):
+                if child["level"] < self.state.document.reporter.report_level:
+                    # below the report level, so it was never shown: judge what follows
+                    # it (docutils puts an INFO before the paragraph of a `---` line)
+                    continue
                 # reported by docutils or MyST when it was created: skip, silently
                 return None
             else:

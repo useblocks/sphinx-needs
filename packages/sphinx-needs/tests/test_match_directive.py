@@ -179,6 +179,10 @@ class _Expected(NamedTuple):
 
 _SKIP = "; the whole match is skipped"
 
+_NOT_DIRECT = (
+    "'case' directive is not a direct child of its 'match' (it is inside another "
+    "directive)" + _SKIP
+)
 _INCLUDED_CASE = (
     "'case' supplied through an include is not supported "
     "(write the cases in the body of the 'match')" + _SKIP
@@ -227,10 +231,39 @@ _WARNINGS = {
             ),
         ),
     ),
+    # exactly one warning: the case inside the note is not a stray, it is in a match body
     "note wrapping a case": _Expected(
         ".. match::\n\n"
         "   .. note::\n\n      .. case:: True\n\n         SKIPPED_IN_NOTE\n",
         (("got <note>" + _SKIP, "   .. note::"),),
+    ),
+    # a directive that returns the nodes of its content (a true `if`, `rst-class`)
+    # would hand its cases to the match: a case must be written directly in it
+    "cases inside a true if": _Expected(
+        ".. match::\n\n"
+        "   .. if:: var.debug\n\n"
+        "      .. case:: var.arch == 'x86'\n\n         SKIPPED_X86\n\n"
+        "      .. case::\n\n         SKIPPED_DEFAULT_FROM_IF\n",
+        ((_NOT_DIRECT, "      .. case:: var.arch == 'x86'"),),
+    ),
+    "case inside rst-class": _Expected(
+        ".. match::\n\n"
+        "   .. rst-class:: special\n\n"
+        "      .. case:: var.arch == 'abc'\n\n         SKIPPED_FROM_RST_CLASS\n",
+        ((_NOT_DIRECT, "      .. case:: var.arch == 'abc'"),),
+    ),
+    # a line of one to three punctuation characters makes docutils emit an INFO
+    # message, which is never shown, before the paragraph: the paragraph is reported
+    "rule line between cases": _Expected(
+        ".. match::\n\n"
+        "   .. case:: var.arch == 'x86'\n\n      SKIPPED_X86\n\n"
+        "   ---\n\n"
+        "   .. case::\n\n      SKIPPED_DEFAULT\n",
+        (("got <paragraph>" + _SKIP, "   ---"),),
+    ),
+    "three dots in the body": _Expected(
+        ".. match::\n\n   ...\n\n   .. case::\n\n      SKIPPED_DEFAULT\n",
+        (("got <paragraph>" + _SKIP, "   ..."),),
     ),
     "case outside a match": _Expected(
         "Para.\n\n.. case:: True\n\n   SKIPPED_STRAY\n",
@@ -824,6 +857,20 @@ _MYST_WARNINGS = {
         "::::{match}\n:::{case} invalid !!!\nSKIPPED\n:::\n"
         ":::{case}\nSKIPPED_DEFAULT\n:::\n::::\n",
         "'case' directive expression failed: 'invalid !!!'",
+        None,
+    ),
+    # an `{eval-rst}` block is parsed by docutils into a document of its own,
+    # so the case in it is not a direct child of the match
+    "case inside eval-rst, backticks": (
+        "````{match}\n```{eval-rst}\n.. case:: True\n\n   SKIPPED_FROM_EVAL_RST\n```\n"
+        "````\n",
+        _NOT_DIRECT,
+        ".. case:: True",
+    ),
+    "case inside eval-rst, colons": (
+        "::::{match}\n```{eval-rst}\n.. case:: True\n\n   SKIPPED_FROM_EVAL_RST\n```\n"
+        "::::\n",
+        _NOT_DIRECT,
         None,
     ),
 }
