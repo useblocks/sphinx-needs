@@ -12,6 +12,7 @@ The directive argument is a Python expression evaluated against the ``var``
 namespace (populated from :ref:`needs_variant_data`).
 If the expression evaluates to ``True``, the directive body is parsed and
 included in the document. Otherwise the entire body is skipped.
+To include one of several branches instead, use :ref:`match <match>`.
 
 .. code-block:: rst
 
@@ -77,6 +78,8 @@ The body may contain section headers and any valid reStructuredText:
 
       Content under a conditional heading.
 
+.. _if_expression_context:
+
 Expression context
 ------------------
 
@@ -112,3 +115,4 @@ The directive emits warnings (suppressible via ``suppress_warnings = ["needs.if"
 
 - ``needs_variant_data`` is not configured but the directive is used.
 - The expression raises an exception (syntax error, unknown key, etc.).
+- The expression does not return a bool (the result is still used, as its truth value).

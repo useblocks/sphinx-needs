@@ -19,6 +19,7 @@ Directives for conditional content:
    :maxdepth: 1
 
    if
+   match
 
 Directives for visualizing and analyzing needs:
 

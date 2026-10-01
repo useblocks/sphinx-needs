@@ -4,6 +4,45 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+Improvements
+............
+
+- ✨ New :ref:`match <match>` and ``case`` directives include one of several branches of
+  content, chosen by variant data (:pr:`NNNN`)
+
+  A ``match`` holds ``case`` directives, and the first ``case`` whose condition is true
+  is included; a ``case`` with no condition is the default, and must come last. The
+  other cases are never parsed, so the needs inside them are never created:
+
+  .. code-block:: rst
+
+     .. match::
+
+        .. case:: var.arch == "arm"
+
+           ARM content.
+
+        .. case:: var.arch == "x86"
+
+           x86 content.
+
+        .. case::
+
+           Content for every other architecture.
+
+  Conditions are exactly those of the :ref:`if <if>` directive, evaluated by the same
+  code, and the conditions after the case that is taken are not evaluated. A ``match``
+  may contain only ``case`` directives and comments. Every mistake warns once under the
+  new ``needs.match`` type and skips the whole ``match``: content outside a case (any
+  need it creates is removed again), a misplaced or second default, an argument on
+  ``match``, variant data that is not configured, and a condition that cannot be
+  evaluated — so a typo in a condition never renders the default in its place. Works in
+  reStructuredText and in MyST Markdown. The undocumented warning ``if`` gives for a
+  condition whose result is not a bool is now listed in its documentation.
+
 .. _`release:8.5.0`:
 
 8.5.0
