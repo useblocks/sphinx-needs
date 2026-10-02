@@ -59,6 +59,17 @@ New and Improved
   Sphinx-Needs workspace declares and type-checks against. There is no upper bound: Sphinx
   caps docutils per series itself.
 
+- 🐛 A marked-rst block with text before its start marker on the same line was reported
+  one row too low
+  (`#1982 <https://github.com/useblocks/sphinx-needs/issues/1982>`__).
+
+  The row of ``@rst`` was taken as the number of lines before it, and ``splitlines()``
+  counts a partial line too -- so a one-line block such as ``// @rst … @endrst``, or an
+  ``@rst`` behind a doxygen ``*`` prefix, landed on the row below. The row is now the
+  number of newlines before the marker. The source maps in ``marked_content.json`` and the
+  blob links built from them move up by one row for such blocks; a block whose ``@rst``
+  starts its own line is unaffected.
+
 - 🐛 ``src_trace_projects`` declared directly in ``conf.py`` are normalised before
   ``src-trace`` reads them.
 

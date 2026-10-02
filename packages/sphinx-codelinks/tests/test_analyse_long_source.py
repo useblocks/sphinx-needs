@@ -102,9 +102,7 @@ def _cpp_source() -> tuple[str, list[Marker]]:
         expected.append(Marker("need-id-refs", len(lines), f"REQ_CPP_{i}"))
         lines.append(f"   @need-ids: REQ_CPP_{i}")
         lines.append("*/")
-        # a marked-rst block, reported at the row of its start sequence. It sits on a line
-        # of its own: with text before it on that line, extract_rst reports the row
-        # below, which is a separate matter from the one this module fences
+        # a marked-rst block, reported at the row of its start sequence
         lines.append("/*")
         expected.append(Marker("rst", len(lines), f"rst_{i}"))
         lines.append("@rst")
