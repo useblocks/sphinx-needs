@@ -1339,7 +1339,15 @@ def test_remove_leading_sequences(text, leading_sequences, result):
 """,
             ["@rst", "@endrst"],
             """.. impl:: oneline rst text""",
-            {"row_offset": 0, "start_idx": 5, "end_idx": 31},
+            {"row_offset": 1, "start_idx": 5, "end_idx": 31},
+        ),
+        (
+            # a one-line block after a comment prefix: the text before the start
+            # marker holds no newline, so the block is on the comment's first row
+            """// @rst .. impl:: oneline rst text @endrst""",
+            ["@rst", "@endrst"],
+            """ .. impl:: oneline rst text """,
+            {"row_offset": 0, "start_idx": 7, "end_idx": 35},
         ),
     ],
 )
@@ -1347,6 +1355,7 @@ def test_extract_rst(text, rst_markers, rst_text, positions):
     extracted_rst = utils.extract_rst(text, rst_markers[0], rst_markers[1])
     assert extracted_rst is not None
     assert extracted_rst["rst_text"] == rst_text
+    assert extracted_rst["row_offset"] == positions["row_offset"]
     assert extracted_rst["start_idx"] == positions["start_idx"]
     assert extracted_rst["end_idx"] == positions["end_idx"]
 
