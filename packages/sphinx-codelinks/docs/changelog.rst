@@ -28,10 +28,8 @@ New and Improved
     *Package* dropdown with ``sphinx-codelinks`` among its options, and issues and pull
     requests concerning this package get a ``pkg: sphinx-codelinks`` label. Old issue URLs
     redirect.
-  - **The documentation** (in progress): https://codelinks.useblocks.com stays the address.
-    It is served by GitHub Pages from the old repository until the Read the Docs project
-    and the DNS move are done, and by Read the Docs afterwards; nothing changes for a
-    reader of that URL.
+  - **The documentation** (done): https://codelinks.useblocks.com stays the address, and
+    Read the Docs now builds and serves it from this repository.
   - **The old repository** will be archived rather than deleted, so every permalink and
     every ``git+https://…/sphinx-codelinks.git@<sha>`` pin keeps resolving. Repositories
     pinning ``@main`` will stop receiving updates and should re-point at PyPI or at
