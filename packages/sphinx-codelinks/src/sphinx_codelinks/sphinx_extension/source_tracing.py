@@ -7,6 +7,7 @@ from typing import Any, cast
 from sphinx.application import Sphinx
 from sphinx.config import Config as _SphinxConfig
 from sphinx.environment import BuildEnvironment
+from sphinx.errors import ConfigError
 from sphinx.util import logging
 from sphinx.util.fileutil import copy_asset
 
@@ -18,6 +19,7 @@ from sphinx_codelinks.config import (
     CodeLinksConfigType,
     CodeLinksProjectConfigType,
     check_configuration,
+    drop_unread_keys,
     file_lineno_href,
     generate_project_configs,
     load_codelinks_table,
@@ -213,6 +215,10 @@ def load_config_from_toml(app: Sphinx, config: _SphinxConfig) -> None:
             )
         return
 
+    def warn(message: str) -> None:
+        logger.warning(message, type="codelinks", subtype="config")
+
+    toml_data = drop_unread_keys(toml_data, toml_file, warn)
     set_config_to_sphinx(
         src_trace_config=cast(CodeLinksConfigType, toml_data), config=config
     )
@@ -282,7 +288,11 @@ def check_sphinx_configuration(app: Sphinx, _config: _SphinxConfig) -> None:
     config = CodeLinksConfig.from_sphinx(app.config)
     errors = check_configuration(config)
     if errors:
-        raise Exception("\n".join(errors))
+        # a ConfigError is reported as "Configuration error", without the crash banner
+        # Sphinx puts on any other exception a handler raises
+        raise ConfigError(
+            "Invalid sphinx-codelinks configuration:\n" + "\n".join(errors)
+        )
 
 
 def emit_warnings(

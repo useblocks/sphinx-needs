@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 import sphinx
 from sphinx.environment import CONFIG_OK
+from sphinx.errors import ConfigError
 from sphinx.testing.util import SphinxTestApp
 
 from sphinx_codelinks.analyse.projects import AnalyseProjects
@@ -67,10 +68,10 @@ from sphinx_needs_testkit import assert_no_warnings, build_warnings
                 "Schema validation error in field 'gitignore': '_true' is not of type 'boolean'",
                 "Schema validation error in field 'include': 345 is not of type 'string'",
                 "Schema validation error in field 'src_dir': ['../dcdc'] is not of type 'string'",
-                "Schema validation error in filed 'local_url_field': 789 is not of type 'string'",
-                "Schema validation error in filed 'remote_url_field': 555 is not of type 'string'",
-                "Schema validation error in filed 'set_local_url': 'fdd' is not of type 'boolean'",
-                "Schema validation error in filed 'set_remote_url': 'TrueString' is not of type 'boolean'",
+                "Schema validation error in field 'local_url_field': 789 is not of type 'string'",
+                "Schema validation error in field 'remote_url_field': 555 is not of type 'string'",
+                "Schema validation error in field 'set_local_url': 'fdd' is not of type 'boolean'",
+                "Schema validation error in field 'set_remote_url': 'TrueString' is not of type 'boolean'",
                 "OneLineCommentStyle configuration errors:",
                 "Schema validation error in need_fields 'title': 'list[]' is not one of ['str', 'list[str]']",
                 "remote_url_pattern must be a string",
@@ -845,16 +846,20 @@ def test_symlinked_toml_anchors_at_the_links_directory(
     assert "IMPL_REALDIR" not in html
 
 
-def test_config_from_toml_set_in_the_toml_moves_the_anchor(
+#: ``tmp_path`` is not a git repository, which a traced build warns about
+_NOT_A_REPOSITORY = 'suppress_warnings = ["codelinks.git_root"]\n'
+
+
+def test_config_from_toml_set_in_the_toml_is_ignored(
     tmp_path: Path,
     make_app: Callable[..., SphinxTestApp],
 ) -> None:
-    """A PIN of today's behaviour, not an endorsement: ``config_from_toml`` is a key the
-    TOML may set, and when it does the use-site anchor moves to that name's directory
-    (the named file is never read)."""
+    """``config_from_toml`` names the file to read, so a file cannot set it: the
+    reader skips it with a ``codelinks.config`` warning, and the use-site anchor stays
+    the directory of the file actually read (#2007)."""
     _traced_project(
         tmp_path,
-        "",
+        _NOT_A_REPOSITORY,
         {
             "ubproject.toml": _PROJECT_P
             + "[codelinks]\nconfig_from_toml = 'deep/x.toml'\n",
@@ -866,5 +871,121 @@ def test_config_from_toml_set_in_the_toml_moves_the_anchor(
     app.build()
 
     html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
-    assert "IMPL_DEEPDIR" in html
-    assert "IMPL_CONFDIR" not in html
+    assert "IMPL_CONFDIR" in html
+    assert "IMPL_DEEPDIR" not in html
+    assert app.config.src_trace_config_from_toml == "ubproject.toml"
+    _assert_one_config_warning(app, "config_from_toml")
+
+
+# -- keys the reader does not model: warned about and skipped, never refused (#2007) ----
+
+
+def test_unknown_codelinks_key_warns_and_is_skipped(
+    tmp_path: Path,
+    make_app: Callable[..., SphinxTestApp],
+) -> None:
+    """A ``[codelinks]`` key sphinx-codelinks does not know is named in one
+    ``codelinks.config`` warning and skipped; the rest of the table still applies."""
+    _traced_project(
+        tmp_path,
+        _NOT_A_REPOSITORY,
+        {
+            "ubproject.toml": _PROJECT_P + "[codelinks]\nbogus_key = 1\n",
+            "src/a.py": _MARKER.format(tag="KNOWN"),
+        },
+    )
+    app = make_app(srcdir=tmp_path, freshenv=True)
+    app.build()
+
+    assert "IMPL_KNOWN" in Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    assert not hasattr(app.config, "src_trace_bogus_key")
+    _assert_one_config_warning(app, "'bogus_key'")
+
+
+@pytest.mark.parametrize(
+    "key", ["bogus_key", "source_discover_config", "analyse_config"]
+)
+def test_unknown_project_key_warns_and_is_skipped(
+    tmp_path: Path,
+    make_app: Callable[..., SphinxTestApp],
+    key: str,
+) -> None:
+    """A key under ``projects.<name>`` that is not a project setting -- the two
+    runtime-built ``*_config`` entries included -- warns, naming the project, and the
+    project is still traced instead of failing the build on the schema."""
+    _traced_project(
+        tmp_path,
+        _NOT_A_REPOSITORY,
+        {
+            "ubproject.toml": _PROJECT_P + f"[codelinks.projects.p]\n{key} = 1\n",
+            "src/a.py": _MARKER.format(tag="KNOWN"),
+        },
+    )
+    app = make_app(srcdir=tmp_path, freshenv=True)
+    app.build()
+
+    assert "IMPL_KNOWN" in Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    _assert_one_config_warning(app, f"[codelinks.projects.p] key(s) ['{key}']")
+
+
+def test_unknown_key_warning_is_suppressible(
+    tmp_path: Path,
+    make_app: Callable[..., SphinxTestApp],
+) -> None:
+    _traced_project(
+        tmp_path,
+        'suppress_warnings = ["codelinks.config", "codelinks.git_root"]\n',
+        {
+            "ubproject.toml": _PROJECT_P
+            + "[codelinks]\nbogus_key = 1\nconfig_from_toml = 'x.toml'\n"
+            + "[codelinks.projects.p]\nbogus = 2\n",
+            "src/a.py": _MARKER.format(tag="KNOWN"),
+        },
+    )
+    app = make_app(srcdir=tmp_path, freshenv=True)
+    app.build()
+
+    assert_no_warnings(app)
+
+
+# -- a schema error is a configuration error, not a crash (#2007) -----------------------
+
+
+@pytest.mark.parametrize(
+    ("conf_extra", "toml_text", "phrase"),
+    [
+        pytest.param(
+            "",
+            '[codelinks]\nset_local_url = "yes"\n',
+            "field 'set_local_url': 'yes' is not of type 'boolean'",
+            id="toml-type",
+        ),
+        pytest.param(
+            "src_trace_config_from_toml = None\n"
+            "src_trace_projects = {'p': {'bogus': 1}}\n",
+            None,
+            "'bogus' was unexpected",
+            id="conf-py-project-key",
+        ),
+    ],
+)
+def test_schema_error_is_a_config_error(
+    minimal_sphinx_project: Path,
+    make_app: Callable[..., SphinxTestApp],
+    conf_extra: str,
+    toml_text: str | None,
+    phrase: str,
+) -> None:
+    """``check_sphinx_configuration`` raises ``ConfigError``, which Sphinx reports as
+    "Configuration error" -- not the ``ExtensionError`` crash banner a bare
+    ``Exception`` became."""
+    _write_conf(minimal_sphinx_project, conf_extra)
+    if toml_text is not None:
+        (minimal_sphinx_project / "ubproject.toml").write_text(
+            toml_text, encoding="utf-8"
+        )
+    with pytest.raises(ConfigError) as error:
+        make_app(srcdir=minimal_sphinx_project, freshenv=True)
+
+    assert phrase in str(error.value)
+    assert "filed" not in str(error.value)
