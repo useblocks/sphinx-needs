@@ -536,3 +536,45 @@ def test_analyse_too_deeply_nested_toml_is_a_bad_parameter(tmp_path: Path) -> No
 
     # 1 would be the uncaught exception; typer reports a BadParameter as 2
     assert exit_code == 2
+
+
+# -- keys the CLI reader does not model: warned about and skipped, never refused (#2007) -
+
+_CLI_PROJECT = (
+    "[codelinks.projects.p.source_discover]\n"
+    f"src_dir = {json.dumps(str(TEST_DIR / 'data' / 'oneline_comment_default'))}\n"
+    'comment_type = "cpp"\n'
+)
+
+
+@pytest.mark.parametrize(
+    ("extra", "phrase"),
+    [
+        pytest.param(
+            "[codelinks]\nbogus_key = 1\n",
+            "[codelinks] key(s) ['bogus_key']",
+            id="codelinks-key",
+        ),
+        pytest.param(
+            "[codelinks.projects.p]\nbogus = 1\n",
+            "[codelinks.projects.p] key(s) ['bogus']",
+            id="project-key",
+        ),
+        pytest.param(
+            "[codelinks]\nconfig_from_toml = 'x.toml'\n",
+            "config_from_toml",
+            id="config-from-toml",
+        ),
+    ],
+)
+def test_analyse_warns_about_and_skips_unread_keys(
+    tmp_path: Path, extra: str, phrase: str
+) -> None:
+    """The CLI reads the same table the extension does, with the same policy: a key it
+    does not model is a warning, not ``unexpected keyword argument`` and rc 2."""
+    exit_code, output = _analyse(tmp_path, _CLI_PROJECT + extra)
+
+    assert exit_code == 0, output
+    assert phrase in output
+    assert "unexpected keyword argument" not in output
+    assert (tmp_path / "marked_content.json").exists()

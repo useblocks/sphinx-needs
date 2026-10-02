@@ -12,6 +12,7 @@ from sphinx_codelinks.config import (
     CodeLinksConfigType,
     CodeLinksProjectConfigType,
     anchor_preproc_paths,
+    drop_unread_keys,
     generate_project_configs,
     load_codelinks_table,
 )
@@ -344,6 +345,11 @@ def load_config_from_toml(toml_file: Path) -> CodeLinksConfigType:
     if not codelink_dict:
         raise typer.BadParameter(f"No 'codelinks' section found in {toml_file}")
 
+    codelink_dict = drop_unread_keys(
+        codelink_dict,
+        toml_file,
+        lambda message: logger.warning(message, console=logger.err_console),
+    )
     return cast(CodeLinksConfigType, codelink_dict)
 
 

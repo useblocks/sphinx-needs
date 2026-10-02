@@ -199,6 +199,31 @@ New and Improved
   warnings about its configuration file carry the type ``codelinks.config``, so
   ``suppress_warnings = ["codelinks.config"]`` silences them.
 
+- 👌 A key in ``[codelinks]`` that this version does not know is now a warning in both
+  readers, and is skipped (`#2007 <https://github.com/useblocks/sphinx-needs/issues/2007>`__).
+
+  The two readers used to disagree. The extension skipped an unknown ``[codelinks]`` key
+  silently, and ``codelinks analyse`` refused it (``unexpected keyword argument``, exit
+  code 2). Under ``projects.<name>`` it was the other way round: the extension failed the
+  build and the CLI ignored the key. Now both warn and carry on, naming the table and the
+  keys. ``ubproject.toml`` is shared by several tools and by several versions of each, so
+  a key this version does not read is no reason to refuse the file. The extension's
+  warning is ``codelinks.config``. A project declared in :file:`conf.py` is still
+  checked strictly.
+
+- 🐛 ``config_from_toml`` set inside the TOML file is now ignored, with a
+  ``codelinks.config`` warning (`#2007 <https://github.com/useblocks/sphinx-needs/issues/2007>`__).
+
+  The key names the file to read, so the file cannot meaningfully set it. Before, it
+  never read the named file, but it silently moved the directory that relative paths in
+  the file are anchored at. Set it in :file:`conf.py` (``src_trace_config_from_toml``)
+  or with ``-D``.
+
+- 🐛 An invalid configuration (``set_local_url = "yes"``, an unknown key under a project
+  in :file:`conf.py`) is now reported as a Sphinx configuration error. Before, it was a
+  crash with the "please open an issue" banner. The message now reads ``field``, not
+  ``filed`` (`#2007 <https://github.com/useblocks/sphinx-needs/issues/2007>`__).
+
 .. _`release:1.4.0`:
 
 1.4.0
