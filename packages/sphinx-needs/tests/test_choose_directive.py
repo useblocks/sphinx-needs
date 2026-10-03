@@ -202,6 +202,18 @@ _ONLY_BRANCHES = (
     "'choose' directive may contain only 'when' and 'otherwise' directives and comments"
 )
 _NO_BRANCH = "'choose' directive has no 'when' or 'otherwise'"
+
+
+def _branch_like(kind: str, write: str) -> str:
+    """The warning about a comment that begins with ``kind`` and a colon."""
+    return (
+        f"'choose' directive has a comment that begins with '{kind}:' "
+        f"(a branch written with one colon? write {write})" + _SKIP
+    )
+
+
+_WHEN_LIKE = _branch_like("when", "'.. when:: <condition>'")
+_OTHERWISE_LIKE = _branch_like("otherwise", "'.. otherwise::'")
 _BRANCHES_TXT = (
     '.. when:: var.arch == "xyz"\n\n   SKIPPED_X1_FROM_INCLUDE\n\n'
     ".. otherwise::\n\n   SKIPPED_X1_DEFAULT_FROM_INCLUDE\n"
@@ -323,6 +335,45 @@ _WARNINGS = {
                 "   A stray paragraph.",
             ),
         ),
+    ),
+    # a branch written with one colon is a comment that swallows the content under it;
+    # comments are accepted, so for the variant it was written for (`abc`) the choose
+    # would render its otherwise, silently
+    "when with one colon": _Expected(
+        ".. choose::\n\n"
+        "   .. when: var.arch == 'abc'\n\n      SKIPPED_SWALLOWED_BRANCH\n\n"
+        "   .. otherwise::\n\n      SKIPPED_OTHERWISE\n",
+        ((_WHEN_LIKE, "   .. when: var.arch == 'abc'"),),
+    ),
+    "otherwise with one colon": _Expected(
+        ".. choose::\n\n"
+        "   .. when:: var.arch == 'xyz'\n\n      SKIPPED_XYZ\n\n"
+        "   .. otherwise:\n\n      SKIPPED_SWALLOWED_OTHERWISE\n",
+        ((_OTHERWISE_LIKE, "   .. otherwise:"),),
+    ),
+    # docutils needs a space (or the end of the line) after `::` for a directive
+    "when without the space after ::": _Expected(
+        ".. choose::\n\n"
+        "   .. when::var.arch == 'abc'\n\n      SKIPPED_SWALLOWED_BRANCH\n\n"
+        "   .. otherwise::\n\n      SKIPPED_OTHERWISE\n",
+        ((_WHEN_LIKE, "   .. when::var.arch == 'abc'"),),
+    ),
+    # the control: a comment that merely begins with the word is accepted
+    "a comment that starts with the word when": _Expected(
+        ".. choose::\n\n"
+        "   .. when we migrate, drop this\n\n"
+        "   .. when:: var.arch == 'abc'\n\n      TAKEN_AFTER_WORD_COMMENT\n\n"
+        "   .. otherwise::\n\n      SKIPPED_OTHERWISE\n",
+        (),
+        taken=("TAKEN_AFTER_WORD_COMMENT",),
+    ),
+    # it is a fault of a child, found with the others in document order, before the
+    # condition faults: after a when without a condition, the comment is reported
+    "a when without a condition, then a when with one colon": _Expected(
+        ".. choose::\n\n"
+        "   .. when::\n\n      SKIPPED_FORGOTTEN_CONDITION\n\n"
+        "   .. when: var.debug\n\n      SKIPPED_SWALLOWED_BRANCH\n",
+        ((_WHEN_LIKE, "   .. when: var.debug"),),
     ),
     "paragraph in the body": _Expected(
         ".. choose::\n\n"
@@ -1267,6 +1318,21 @@ _MYST_WARNINGS = {
         "'when' directive expression failed: 'invalid !!!'",
         None,
     ),
+    # a `%` line is a comment in MyST, under the same rule
+    "when with one colon, % comment": (
+        "````{choose}\n% when: var.arch == 'abc'\n"
+        "```{otherwise}\nSKIPPED_OTHERWISE\n```\n````\n",
+        _WHEN_LIKE,
+        "% when: var.arch == 'abc'",
+    ),
+    # the control: accepted, and its branch is taken (no warning)
+    "a % comment that starts with the word when": (
+        "````{choose}\n% when we migrate, drop this\n"
+        "```{when} var.arch == 'abc'\nTAKEN_AFTER_WORD_COMMENT\n```\n"
+        "```{otherwise}\nSKIPPED_OTHERWISE\n```\n````\n",
+        None,
+        None,
+    ),
     # an `{eval-rst}` block is parsed by docutils into a document of its own,
     # so the branch in it is not a direct child of the choose
     "branch inside eval-rst, backticks": (
@@ -1294,10 +1360,20 @@ _MYST_WARNINGS = {
     ids=list(_MYST_WARNINGS),
     indirect=["test_app"],
 )
-def test_choose_warnings_in_myst(test_app, text: str, line: str | None):
-    """The MyST spellings warn once each and fail closed, as in reStructuredText."""
+def test_choose_warnings_in_myst(test_app, text: str | None, line: str | None):
+    """The MyST spellings warn once each and fail closed, as in reStructuredText.
+
+    A row without a text is a control: it gives no warning, and its branch is taken.
+    """
     app = test_app
     app.build()
+    if text is None:
+        assert build_warnings(app) == []
+        html = Path(app.outdir, "index.html").read_text()
+        assert "TAKEN_" in html
+        assert "SKIPPED" not in html
+        _assert_no_choose_nodes(app)
+        return
     (warning,) = build_warnings(app)
     assert text in warning, warning
     assert warning.endswith(" [needs.choose]"), warning

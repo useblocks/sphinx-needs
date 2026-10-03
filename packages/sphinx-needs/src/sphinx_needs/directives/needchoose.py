@@ -26,6 +26,7 @@ one that ever escaped would make a writer fail loudly rather than render silentl
 
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
 from itertools import islice
 from typing import ClassVar, Literal
@@ -55,6 +56,18 @@ so a branch written loose in a branch's content is reported as well.
 
 _BranchKind = Literal["when", "otherwise"]
 """The directive a branch is written with."""
+
+_BRANCH_LIKE_COMMENT = re.compile(r"(when|otherwise)\s*:", re.IGNORECASE)
+"""The start of a comment that is a branch directive written with one colon.
+
+``.. when: <condition>`` (one colon) and ``.. when::<condition>`` (no space after
+``::``) are comments in reStructuredText, and swallow the indented content under them;
+both begin with ``when`` and a colon. Matched against the comment's text after its
+leading whitespace, so a comment that merely begins with the word is not matched.
+"""
+
+_BRANCH_DIRECTIVE_LINE = re.compile(r"(when|otherwise) ?::( |$)", re.IGNORECASE)
+"""What follows ``.. `` on a line that docutils reads as a branch directive."""
 
 
 class _BranchPlaceholder(nodes.Element):
@@ -342,7 +355,21 @@ class ChooseDirective(SphinxDirective):
                     return None
                 branches.append(child)
             elif isinstance(child, nodes.comment):
-                continue
+                like = _BRANCH_LIKE_COMMENT.match(child.astext().lstrip())
+                if like is None:
+                    continue
+                # a branch written with one colon would hand the choice to the otherwise
+                kind = like.group(1).lower()
+                write = (
+                    "'.. when:: <condition>'" if kind == "when" else "'.. otherwise::'"
+                )
+                self._warn(
+                    f"'choose' directive has a comment that begins with '{kind}:' "
+                    f"(a branch written with one colon? write {write}); the whole "
+                    "choose is skipped",
+                    self._branch_like_comment_location(child),
+                )
+                return None
             elif isinstance(child, nodes.system_message):
                 reported = max(
                     self.state.document.reporter.report_level, Reporter.WARNING_LEVEL
@@ -443,6 +470,60 @@ class ChooseDirective(SphinxDirective):
                 if source and line:
                     return node
         return self.get_location()
+
+    def _branch_like_comment_location(
+        self, comment: nodes.comment, /
+    ) -> nodes.Node | str | None:
+        """Where to report the first comment of the body that reads like a branch.
+
+        A comment carries no line of its own (docutils and MyST give it the line
+        being parsed when it is appended, which is after it, or the ``choose``'s),
+        so its line is found in the content of the ``choose``:
+        the first line at the level of the body whose comment text the rule matches.
+        That is the line of ``comment``, the first such comment the body holds.
+        Under docutils the lines of the body are those not indented,
+        and a line that docutils reads as a ``when`` or ``otherwise`` directive
+        (a name, an optional space, ``::``, then a space or the end of the line)
+        is not a comment;
+        under MyST, the lines of the body are those outside the fences
+        of the directives in it, and a ``%`` line (or a ``+++`` block break)
+        is a comment.
+
+        :param comment: The comment, used as the location if no line is found
+            (for one an include supplied).
+        :return: ``"<source>:<line>"``, or the fallback.
+        """
+        rst = isinstance(self.state, RSTState)
+        fence: str | None = None
+        for index, line in enumerate(self.content):
+            text: str | None = None
+            if rst:
+                markup = re.match(r"\.\.[ ]+(.*)", line)
+                text = markup.group(1) if markup else None
+                if text is not None and _BRANCH_DIRECTIVE_LINE.match(text):
+                    continue
+            elif fence is not None:
+                closing = line.rstrip()
+                if closing.startswith(fence) and set(closing) == {fence[0]}:
+                    fence = None
+                continue
+            elif opening := re.match(r"(`{3,}|~{3,}|:{3,})", line):
+                fence = opening.group(1)
+                continue
+            elif line.startswith("%"):
+                text = line[1:]
+            elif line.startswith("+++"):
+                text = line[3:]
+            if text is not None and _BRANCH_LIKE_COMMENT.match(text.lstrip()):
+                source, offset = self.content.info(index)
+                if not rst:
+                    # MyST numbers the lines of a directive's content from 0
+                    offset = self.lineno + index
+                if source and offset is not None:
+                    return f"{source}:{offset + 1}"
+                break
+        source, line = get_source_line(comment)
+        return comment if source and line else self.get_location()
 
     def _parse_branch(self, branch: _BranchPlaceholder) -> list[nodes.Node]:
         """Parse the content of the branch that is taken, with section titles allowed.

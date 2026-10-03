@@ -39,14 +39,14 @@ Improvements
   ``choose`` may contain only ``when`` and ``otherwise`` directives and comments. Every
   mistake warns once under the new ``needs.choose`` type and skips the whole
   ``choose``: content outside a branch (any need it creates is removed again), a branch
-  inside another directive or supplied through an include, no branch at all, a
-  ``when`` without a condition, an ``otherwise`` with one, a misplaced or second
-  ``otherwise``, an argument on ``choose``, variant data that is not configured, and a
-  condition that cannot be evaluated — so a mistake that makes a condition
-  unevaluable, such as a misspelt key or a syntax error, never renders a later branch
-  or the ``otherwise`` in its place. Works in reStructuredText and in MyST Markdown.
-  The undocumented warning ``if`` gives for a condition whose result is not a bool is
-  now listed in its documentation.
+  inside another directive or supplied through an include, a branch written with one
+  colon, no branch at all, a ``when`` without a condition, an ``otherwise`` with one, a
+  misplaced or second ``otherwise``, an argument on ``choose``, variant data that is
+  not configured, and a condition that cannot be evaluated — so a mistake that makes a
+  condition unevaluable, such as a misspelt key or a syntax error, never renders a later
+  branch or the ``otherwise`` in its place. Works in reStructuredText and in MyST
+  Markdown. The undocumented warning ``if`` gives for a condition whose result is not a
+  bool is now listed in its documentation.
 
 .. _`release:8.5.0`:
 

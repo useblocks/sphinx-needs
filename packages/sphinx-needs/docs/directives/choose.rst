@@ -160,6 +160,8 @@ The mistakes are:
   from a condition that is false.)
 - The ``choose`` contains something that is neither a ``when``, an ``otherwise`` nor a comment.
   A line of only punctuation, such as ``---`` between two branches, is such content too.
+- A comment that begins with ``when:`` or ``otherwise:``: a branch written with one colon,
+  or without the space after ``::``, is a comment in reStructuredText and would hand the choice to the ``otherwise``.
 - A branch is written inside another directive in the ``choose`` rather than directly in it.
 - A branch is supplied through an include rather than written in the body of the ``choose``
   (the warning points at the branch in the included file).
