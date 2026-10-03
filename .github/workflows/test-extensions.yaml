@@ -105,12 +105,8 @@ jobs:
         # `-m "not bazel"` deselects the two tests the `bazel` job owns
         run: uv run --no-sync pytest -v packages/sphinx-mounts/tests -m "not bazel" --durations=25 --cov=sphinx_mounts --cov-report=xml:mounts.xml --cov-report=term-missing
       - name: "sphinx-mounts: upload to Codecov"
-        # dependabot PRs get no secrets; without a token the upload fails and takes the required `check` gate with it.
-        # A push to master uploads too: Codecov compares a pull request against the newest ancestor that HAS a report,
-        # and between #2009 (which wrote the fork guard without a push case) and here no master commit had one, so
-        # every pull request was compared against a base from before that PR's package split and the `reports` flag
-        # read -0.74% on changes that never touched it
-        if: inputs.upload-coverage && github.repository == 'useblocks/sphinx-needs' && github.actor != 'dependabot[bot]' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        # dependabot PRs get no secrets; without a token the upload fails and takes the required `check` gate with it
+        if: inputs.upload-coverage && github.event.pull_request.head.repo.full_name == github.repository && github.repository == 'useblocks/sphinx-needs' && github.actor != 'dependabot[bot]'
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -139,7 +135,7 @@ jobs:
         if: ${{ !cancelled() && steps.prepare.outcome == 'success' }}
         run: uv run --no-sync pytest -v packages/sphinx-codelinks/tests --durations=25 --cov=sphinx_codelinks --cov-report=xml:codelinks.xml --cov-report=term-missing
       - name: "sphinx-codelinks: upload to Codecov"
-        if: inputs.upload-coverage && github.repository == 'useblocks/sphinx-needs' && github.actor != 'dependabot[bot]' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        if: inputs.upload-coverage && github.event.pull_request.head.repo.full_name == github.repository && github.repository == 'useblocks/sphinx-needs' && github.actor != 'dependabot[bot]'
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -161,7 +157,7 @@ jobs:
         if: ${{ !cancelled() && steps.prepare.outcome == 'success' }}
         run: uv run --no-sync pytest -v packages/sphinx-test-reports/tests --durations=25 --cov=sphinx_test_reports --cov-report=xml:reports.xml --cov-report=term-missing
       - name: "sphinx-test-reports: upload to Codecov"
-        if: inputs.upload-coverage && github.repository == 'useblocks/sphinx-needs' && github.actor != 'dependabot[bot]' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        if: inputs.upload-coverage && github.event.pull_request.head.repo.full_name == github.repository && github.repository == 'useblocks/sphinx-needs' && github.actor != 'dependabot[bot]'
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -179,7 +175,7 @@ jobs:
         if: ${{ !cancelled() && steps.prepare.outcome == 'success' }}
         run: uv run --no-sync pytest -v packages/ub-test-reports/tests --cov=ub_test_reports --cov-report=xml:ub-test-reports.xml --cov-report=term-missing
       - name: "ub-test-reports: upload to Codecov"
-        if: inputs.upload-coverage && github.repository == 'useblocks/sphinx-needs' && github.actor != 'dependabot[bot]' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        if: inputs.upload-coverage && github.event.pull_request.head.repo.full_name == github.repository && github.repository == 'useblocks/sphinx-needs' && github.actor != 'dependabot[bot]'
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
