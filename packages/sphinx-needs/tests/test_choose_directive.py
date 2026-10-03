@@ -351,6 +351,20 @@ _WARNINGS = {
         "   .. otherwise:\n\n      SKIPPED_SWALLOWED_OTHERWISE\n",
         ((_OTHERWISE_LIKE, "   .. otherwise:"),),
     ),
+    # the rule is case-insensitive, as directive names are
+    "When with one colon, capitalised": _Expected(
+        ".. choose::\n\n"
+        "   .. When: var.arch == 'abc'\n\n      SKIPPED_SWALLOWED_BRANCH\n\n"
+        "   .. otherwise::\n\n      SKIPPED_OTHERWISE\n",
+        ((_WHEN_LIKE, "   .. When: var.arch == 'abc'"),),
+    ),
+    # and tolerates whitespace before the colon
+    "when with a space before one colon": _Expected(
+        ".. choose::\n\n"
+        "   .. when : var.arch == 'abc'\n\n      SKIPPED_SWALLOWED_BRANCH\n\n"
+        "   .. otherwise::\n\n      SKIPPED_OTHERWISE\n",
+        ((_WHEN_LIKE, "   .. when : var.arch == 'abc'"),),
+    ),
     # docutils needs a space (or the end of the line) after `::` for a directive
     "when without the space after ::": _Expected(
         ".. choose::\n\n"
