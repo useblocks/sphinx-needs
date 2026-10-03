@@ -26,6 +26,7 @@ one that ever escaped would make a writer fail loudly rather than render silentl
 
 from __future__ import annotations
 
+import os
 import re
 from collections.abc import Sequence
 from itertools import islice
@@ -68,6 +69,30 @@ leading whitespace, so a comment that merely begins with the word is not matched
 
 _BRANCH_DIRECTIVE_LINE = re.compile(r"(when|otherwise) ?::( |$)", re.IGNORECASE)
 """What follows ``.. `` on a line that docutils reads as a branch directive."""
+
+
+def _absolute_source(source: str | None, /) -> str | None:
+    """``source`` made absolute, as Sphinx makes the source of a node's location.
+
+    docutils records an included file relative to the working directory
+    (``utils.relative_path``) whenever the two share their first two path components,
+    so the raw source of a directive in an included file may read ``../…``.
+    """
+    return os.path.abspath(source) if source else source
+
+
+def _absolute_location(location: str | nodes.Node | None, /) -> str | nodes.Node | None:
+    """A ``"<source>:<line>"`` location with its source made absolute.
+
+    Every location this module reports goes through here.
+    A node is returned as it is: Sphinx makes the source of a node absolute itself.
+    """
+    if not isinstance(location, str):
+        return location
+    source, colon, line = location.rpartition(":")
+    if not colon or not source or source == "<unknown>":
+        return location
+    return f"{_absolute_source(source)}:{line}"
 
 
 class _BranchPlaceholder(nodes.Element):
@@ -138,7 +163,7 @@ class _BranchDirective(SphinxDirective):
                 f"'{kind}' directive outside a 'choose' ({article} '{kind}' must be a "
                 "direct child of a 'choose'); its content is skipped",
                 "choose",
-                location=self.get_location(),
+                location=_absolute_location(self.get_location()),
             )
             return []
 
@@ -260,7 +285,7 @@ class ChooseDirective(SphinxDirective):
                 branch.condition,
                 directive="when",
                 subtype="choose",
-                location=branch.location,
+                location=_absolute_location(branch.location),
             )
             if taken is None:
                 # poisoned: no later branch is evaluated or taken, nor the otherwise
@@ -275,7 +300,9 @@ class ChooseDirective(SphinxDirective):
             LOGGER,
             message,
             "choose",
-            location=self.get_location() if location is None else location,
+            location=_absolute_location(
+                self.get_location() if location is None else location
+            ),
         )
 
     def _parse_body(self) -> _ChooseBody:
@@ -337,7 +364,7 @@ class ChooseDirective(SphinxDirective):
             if isinstance(child, _BranchPlaceholder):
                 # the source first: a branch an include supplies is reported as such,
                 # also when the include stands inside another directive
-                if child.source != source:
+                if _absolute_source(child.source) != _absolute_source(source):
                     self._warn(
                         f"'{child.kind}' supplied through an include is not supported "
                         "(write the branches in the body of the 'choose'); the whole "

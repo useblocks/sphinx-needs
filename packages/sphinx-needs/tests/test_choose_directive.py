@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 from pathlib import Path
 from typing import NamedTuple
 
@@ -10,7 +11,11 @@ import pytest
 from docutils import nodes
 
 from sphinx_needs.data import SphinxNeedsData
-from sphinx_needs.directives.needchoose import _BranchPlaceholder, _ChooseBody
+from sphinx_needs.directives.needchoose import (
+    _absolute_location,
+    _BranchPlaceholder,
+    _ChooseBody,
+)
 from sphinx_needs_testkit import assert_no_warnings, build_warnings
 
 _NEEDS_TYPES = (
@@ -1444,3 +1449,19 @@ def test_choose_refuses_included_branches_in_myst(test_app):
     assert warning.endswith(" [needs.choose]"), warning
     assert "SKIPPED" not in Path(app.outdir, "index.html").read_text()
     _assert_no_choose_nodes(app)
+
+
+def test_absolute_location():
+    """A ``<source>:<line>`` location is reported with an absolute source.
+
+    docutils gives an included file a path relative to the working directory
+    whenever the two share their first two path components (a checkout under
+    ``/tmp`` with its builds under ``/tmp``), which would read ``../…`` in a warning.
+    A node is left to Sphinx, which makes its source absolute itself.
+    """
+    relative = os.path.join("..", "x", "branches.txt")
+    assert _absolute_location(f"{relative}:1") == f"{os.path.abspath(relative)}:1"
+    absolute = os.path.abspath("index.rst")
+    assert _absolute_location(f"{absolute}:7") == f"{absolute}:7"
+    node = nodes.paragraph()
+    assert _absolute_location(node) is node
