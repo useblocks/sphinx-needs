@@ -637,6 +637,26 @@ _WARNINGS = {
     ),
     # the structure is checked before any condition: a true branch written in place
     # before the included ones is not taken either
+    # the two other exits that may report a location in an included file:
+    # an evaluation fault inside a choose the include holds, and a stray branch
+    "an unevaluable when in an included choose": _Expected(
+        ".. include:: inc.txt\n",
+        (("'when' directive expression failed", "   .. when:: invalid !!!"),),
+        extra=(
+            (
+                "inc.txt",
+                ".. choose::\n\n   .. when:: invalid !!!\n\n      SKIPPED_INC\n\n"
+                "   .. otherwise::\n\n      SKIPPED_INC_DEFAULT\n",
+            ),
+        ),
+        located_in="inc.txt",
+    ),
+    "a stray when in an included file": _Expected(
+        ".. include:: stray.txt\n",
+        (("'when' directive outside a 'choose'", ".. when:: True"),),
+        extra=(("stray.txt", ".. when:: True\n\n   SKIPPED_STRAY\n"),),
+        located_in="stray.txt",
+    ),
     "a branch from an include after a true branch": _Expected(
         ".. choose::\n\n"
         "   .. when:: True\n\n      SKIPPED_IN_PLACE\n\n"
@@ -688,9 +708,16 @@ _WARNINGS = {
     ids=list(_WARNINGS),
     indirect=["test_app"],
 )
-def test_choose_warnings(test_app, expected: _Expected):
-    """Each mistake warns exactly once, at the offending line, and fails closed."""
+def test_choose_warnings(test_app, expected: _Expected, monkeypatch):
+    """Each mistake warns exactly once, at the offending line, and fails closed.
+
+    Built from the source directory: docutils then records an included file relative
+    to the working directory (``branches.txt`` rather than an absolute path), which is
+    what the warnings must make absolute again, and what a build from a project's
+    own directory gives in practice.
+    """
     app = test_app
+    monkeypatch.chdir(app.srcdir)
     app.build()
     warnings = build_warnings(app)
     assert len(warnings) == len(expected.warnings), warnings
@@ -1388,12 +1415,16 @@ _MYST_WARNINGS = {
     ids=list(_MYST_WARNINGS),
     indirect=["test_app"],
 )
-def test_choose_warnings_in_myst(test_app, text: str | None, line: str | None):
+def test_choose_warnings_in_myst(
+    test_app, text: str | None, line: str | None, monkeypatch
+):
     """The MyST spellings warn once each and fail closed, as in reStructuredText.
 
     A row without a text is a control: it gives no warning, and its branch is taken.
+    Built from the source directory, as the reStructuredText rows are.
     """
     app = test_app
+    monkeypatch.chdir(app.srcdir)
     app.build()
     if text is None:
         assert build_warnings(app) == []

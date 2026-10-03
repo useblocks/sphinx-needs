@@ -75,8 +75,9 @@ def _absolute_source(source: str | None, /) -> str | None:
     """``source`` made absolute, as Sphinx makes the source of a node's location.
 
     docutils records an included file relative to the working directory
-    (``utils.relative_path``) whenever the two share their first two path components,
-    so the raw source of a directive in an included file may read ``../…``.
+    (``utils.relative_path``) whenever the two share their first two path components:
+    a build run from the project's own directory, the common case, gives ``docs/inc.txt``,
+    and a test run from a checkout under ``/tmp`` gives ``../…``.
     """
     return os.path.abspath(source) if source else source
 
