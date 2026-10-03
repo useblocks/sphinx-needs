@@ -16,6 +16,7 @@ def get_logger(name: str) -> SphinxLoggerAdapter:
 WarningSubTypes = Literal[
     "beta",
     "card_layout",
+    "choose",
     "config",
     "constraint",
     "create_need",
@@ -68,6 +69,7 @@ WarningSubTypes = Literal[
 WarningSubTypeDescription: dict[WarningSubTypes, str] = {
     "beta": "Beta feature, subject to change",
     "card_layout": "Invalid ``needs_card_layouts`` specification",
+    "choose": "Error in processing choose/when/otherwise directive",
     "config": "Invalid configuration",
     "constraint": "Constraint violation",
     "create_need": "Creation of a need from directive failed",

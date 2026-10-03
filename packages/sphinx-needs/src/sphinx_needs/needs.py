@@ -59,6 +59,11 @@ from sphinx_needs.directives.need import (
     purge_needs,
 )
 from sphinx_needs.directives.needbar import Needbar, NeedbarDirective, process_needbar
+from sphinx_needs.directives.needchoose import (
+    ChooseDirective,
+    OtherwiseDirective,
+    WhenDirective,
+)
 from sphinx_needs.directives.needextend import Needextend, NeedextendDirective
 from sphinx_needs.directives.needextract import (
     Needextract,
@@ -309,6 +314,9 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.add_directive("needreport", NeedReportDirective)
     app.add_directive("needuml", NeedumlDirective)
     app.add_directive("if", IfDirective)
+    app.add_directive("choose", ChooseDirective)
+    app.add_directive("when", WhenDirective)
+    app.add_directive("otherwise", OtherwiseDirective)
     app.add_directive("needarch", NeedarchDirective)
     app.add_directive("list2need", List2NeedDirective)
 
