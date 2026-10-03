@@ -360,9 +360,19 @@ class ChooseDirective(SphinxDirective):
                     continue
                 # a branch written with one colon would hand the choice to the otherwise
                 kind = like.group(1).lower()
-                write = (
-                    "'.. when:: <condition>'" if kind == "when" else "'.. otherwise::'"
-                )
+                # the hint follows the syntax the comment is written in
+                if isinstance(self.state, RSTState):
+                    write = (
+                        "'.. when:: <condition>'"
+                        if kind == "when"
+                        else "'.. otherwise::'"
+                    )
+                else:
+                    write = (
+                        "a '{when} <condition>' fence"
+                        if kind == "when"
+                        else "an '{otherwise}' fence"
+                    )
                 self._warn(
                     f"'choose' directive has a comment that begins with '{kind}:' "
                     f"(a branch written with one colon? write {write}); the whole "

@@ -214,6 +214,9 @@ def _branch_like(kind: str, write: str) -> str:
 
 _WHEN_LIKE = _branch_like("when", "'.. when:: <condition>'")
 _OTHERWISE_LIKE = _branch_like("otherwise", "'.. otherwise::'")
+# under MyST the hint names the fence
+_WHEN_LIKE_MYST = _branch_like("when", "a '{when} <condition>' fence")
+_OTHERWISE_LIKE_MYST = _branch_like("otherwise", "an '{otherwise}' fence")
 _BRANCHES_TXT = (
     '.. when:: var.arch == "xyz"\n\n   SKIPPED_X1_FROM_INCLUDE\n\n'
     ".. otherwise::\n\n   SKIPPED_X1_DEFAULT_FROM_INCLUDE\n"
@@ -1332,12 +1335,18 @@ _MYST_WARNINGS = {
         "'when' directive expression failed: 'invalid !!!'",
         None,
     ),
-    # a `%` line is a comment in MyST, under the same rule
+    # a `%` line is a comment in MyST, under the same rule; the hint names the fence
     "when with one colon, % comment": (
         "````{choose}\n% when: var.arch == 'abc'\n"
         "```{otherwise}\nSKIPPED_OTHERWISE\n```\n````\n",
-        _WHEN_LIKE,
+        _WHEN_LIKE_MYST,
         "% when: var.arch == 'abc'",
+    ),
+    "otherwise with one colon, % comment": (
+        "````{choose}\n```{when} var.arch == 'xyz'\nSKIPPED_XYZ\n```\n"
+        "% otherwise:\n````\n",
+        _OTHERWISE_LIKE_MYST,
+        "% otherwise:",
     ),
     # the control: accepted, and its branch is taken (no warning)
     "a % comment that starts with the word when": (
