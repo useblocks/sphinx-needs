@@ -109,7 +109,7 @@ Rules
   reStructuredText comments (``..``), and in MyST ``%`` comments and ``+++`` block breaks.
   In MyST, an HTML comment (``<!-- -->``) is raw HTML rather than a comment, so it is a mistake here.
   Any other content outside a branch is a mistake,
-  and the needs it would create are removed again.
+  refused before anything in the body is parsed, so nothing in it ever runs.
   A branch belongs directly in a ``choose``:
   one anywhere else is a mistake too,
   whether it is written loose in the content of another branch
@@ -160,12 +160,14 @@ The mistakes are:
   from a condition that is false.)
 - The ``choose`` contains something that is neither a ``when``, an ``otherwise`` nor a comment.
   A line of only punctuation, such as ``---`` between two branches, is such content too.
+  It is refused at its line before anything in the body is parsed,
+  so a directive there (a need, an ``.. include::``, a false ``if``) never runs.
 - A comment that begins with ``when:`` or ``otherwise:``: a branch written with one colon,
   or without the space after ``::``, is a comment in reStructuredText; a ``when`` written so would hand the choice
   to the ``otherwise``, and an ``otherwise`` written so would make the default vanish.
-- A branch is written inside another directive in the ``choose`` rather than directly in it.
-- A branch is supplied through an include rather than written in the body of the ``choose``
-  (the warning points at the branch in the included file).
+- A branch is written inside another directive in the ``choose`` rather than directly in it,
+  or supplied through an include: the directive or the include is such content,
+  and the warning points at its line (the included file is never read).
 - A ``when`` has no condition: write the default as an ``otherwise``.
 - An ``otherwise`` is given a condition. The warning names it:
   content written on the line right after ``.. otherwise::``, with no blank line between, is read as one.
@@ -175,21 +177,17 @@ The mistakes are:
 
 A ``when`` or an ``otherwise`` outside a ``choose`` warns as well, and its content is skipped.
 A condition whose result is not a ``bool`` warns, and its truth value is used.
-A mistake that docutils or MyST already reports in the content of a ``choose``,
-such as an unknown directive name, is not reported a second time;
-the ``choose`` is skipped all the same.
+A line that docutils or MyST would report, such as an unknown directive name,
+is refused by the ``choose`` before either parses it,
+so it is reported once, by the ``choose``, whatever the project's ``report_level``.
 
 .. note::
 
-   A directive that produces no node, written directly in a ``choose``, is not detected:
-   it still runs, and the ``choose`` goes on.
-   ``default-role`` is one such directive, and so is a **false** ``if``:
-   it returns nothing, so the branches written inside it vanish without a warning,
-   unless the ``choose`` is left with no branch at all.
-   Nor is a MyST substitution: a ``{{ sub }}`` in a ``choose`` whose definition holds branches
-   is expanded in place, and its branches are taken without a warning.
-   Needs are the one effect of content outside a branch that is undone;
-   any other (a label, a ``needextend``) stays, so keep every directive inside a branch.
+   The body of a ``choose`` is read line by line before it is parsed,
+   so content outside a branch is refused even where it would leave no trace in the document:
+   a directive that produces no node, such as ``default-role`` or a **false** ``if``,
+   and a MyST substitution reference (``{{ sub }}``), which is a line of text to the ``choose``,
+   whatever branches its definition holds.
 
 .. note::
 
