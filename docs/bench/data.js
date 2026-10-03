@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790887409181,
+  "lastUpdate": 1791020064433,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -22104,6 +22104,42 @@ window.BENCHMARK_DATA = {
             "value": 38.516246542,
             "unit": "s",
             "extra": "Commit: 16f247c1cbaca136e26b40b54f72b88c44e7ab03\nBranch: master\nTime: 2026-10-01T22:42:05+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1bae81ac1c04d70f1a4b8e5a645361daa8bf784a",
+          "message": "🧪 CI: upload coverage on pushes to master too (#2023)\n\nEvery Codecov upload step is guarded by\n`github.event.pull_request.head.repo.full_name == github.repository`, a\nguard against fork pull requests (#1229, August 2024) that has no value\non a push event. So no push to master has uploaded a report since then;\nmeasured on the CI run for `cc0ffe0`, all five \"upload to Codecov\" steps\nare skipped.\n\nCodecov compares a pull request against the newest ancestor that has a\nreport. That ancestor is now `d68d10d`, 35 commits back and from before\nthe sphinx-test-reports split (#2009), which moved statements out of the\n`reports` flag, so `codecov/project/reports` reads as a coverage drop\n(−0.74%) on every pull request, including ones that never touch the\npackage (#2020 is the current example). A looser threshold in\n`codecov.yml` would hide this one delta while the base kept drifting;\nthe cause is the missing upload.\n\n### What changes\n\n- The fork guard applies to pull-request events only:\n`(github.event_name != 'pull_request' ||\ngithub.event.pull_request.head.repo.full_name == github.repository)`. A\npush to master uploads under the repository's own secrets; the\ndependabot and repository checks are unchanged.\n- `fail_ci_if_error` is limited to pull requests, so a Codecov outage\ncannot turn master red.\n- The two `CODECOV_TOKEN` secret descriptions say when the steps read\nit.\n- The reason is recorded in the step comment, with the history (#1229\nwrote the guard, #2009 copied it onto the ub-test-reports step).\n\n### What to expect\n\nThe first push to master after this merges uploads a fresh report; pull\nrequests opened or rebased after that compare against it. Pull requests\nwhose base is older, #2020 included, keep their current `reports` status\nuntil they rebase or merge; it is not a finding about them.\n\nSplit out of #2020 at review's request; that branch reverts its copy of\nthe change.",
+          "timestamp": "2026-10-03T11:33:04+02:00",
+          "tree_id": "1693d3b3f781f0444b00ce983ec1faee66a2d12d",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/1bae81ac1c04d70f1a4b8e5a645361daa8bf784a"
+        },
+        "date": 1791020056564,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.10540711000000158,
+            "unit": "s",
+            "extra": "Commit: 1bae81ac1c04d70f1a4b8e5a645361daa8bf784a\nBranch: master\nTime: 2026-10-03T11:33:04+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 54.42149194999999,
+            "unit": "s",
+            "extra": "Commit: 1bae81ac1c04d70f1a4b8e5a645361daa8bf784a\nBranch: master\nTime: 2026-10-03T11:33:04+02:00"
           }
         ]
       }
