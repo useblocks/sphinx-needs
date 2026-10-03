@@ -12,6 +12,8 @@ from docutils import nodes
 
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.directives.needchoose import (
+    ChooseDirective,
+    OtherwiseDirective,
     _absolute_location,
     _BranchPlaceholder,
     _ChooseBody,
@@ -185,27 +187,18 @@ class _Expected(NamedTuple):
 _SKIP = "; the whole choose is skipped"
 
 
-def _not_direct(kind: str) -> str:
-    """The warning about a branch of the kind ``kind`` inside another directive."""
+def _stray(text: str) -> str:
+    """The warning about a line of the body that is neither a branch nor a comment.
+
+    The gate refuses it before anything in the body is parsed, at its line,
+    and names its text.
+    """
     return (
-        f"'{kind}' directive is not a direct child of its 'choose' "
-        "(it is inside another directive)" + _SKIP
+        "'choose' directive may contain only 'when' and 'otherwise' directives and "
+        f"comments, got {text!r}" + _SKIP
     )
 
 
-def _included(kind: str) -> str:
-    """The warning about a branch of the kind ``kind`` that an include supplies."""
-    return (
-        f"'{kind}' supplied through an include is not supported "
-        "(write the branches in the body of the 'choose')" + _SKIP
-    )
-
-
-_NOT_DIRECT = _not_direct("when")
-_INCLUDED_BRANCH = _included("when")
-_ONLY_BRANCHES = (
-    "'choose' directive may contain only 'when' and 'otherwise' directives and comments"
-)
 _NO_BRANCH = "'choose' directive has no 'when' or 'otherwise'"
 
 
@@ -337,12 +330,7 @@ _WARNINGS = {
         ".. choose::\n\n"
         "   .. when::\n\n      SKIPPED_FORGOTTEN_CONDITION\n\n"
         "   A stray paragraph.\n",
-        (
-            (
-                _ONLY_BRANCHES + ", got <paragraph>" + _SKIP,
-                "   A stray paragraph.",
-            ),
-        ),
+        ((_stray("A stray paragraph."), "   A stray paragraph."),),
     ),
     # a branch written with one colon is a comment that swallows the content under it;
     # comments are accepted, so for the variant it was written for (`abc`) the choose
@@ -373,6 +361,14 @@ _WARNINGS = {
         "   .. otherwise::\n\n      SKIPPED_OTHERWISE\n",
         ((_WHEN_LIKE, "   .. when : var.arch == 'abc'"),),
     ),
+    # docutils allows one space before `::`: with two the line is a comment that would
+    # swallow the branch, refused by the one-colon rule
+    "when with two spaces before the colons": _Expected(
+        ".. choose::\n\n"
+        "   .. when  :: var.debug\n\n      SKIPPED_SWALLOWED_BRANCH\n\n"
+        "   .. otherwise::\n\n      SKIPPED_OTHERWISE\n",
+        ((_WHEN_LIKE, "   .. when  :: var.debug"),),
+    ),
     # docutils needs a space (or the end of the line) after `::` for a directive
     "when without the space after ::": _Expected(
         ".. choose::\n\n"
@@ -401,54 +397,87 @@ _WARNINGS = {
         ".. choose::\n\n"
         "   .. when:: True\n\n      SKIPPED_BRANCH\n\n"
         "   A stray paragraph.\n",
-        (
-            (
-                _ONLY_BRANCHES + ", got <paragraph>" + _SKIP,
-                "   A stray paragraph.",
-            ),
-        ),
+        ((_stray("A stray paragraph."), "   A stray paragraph."),),
     ),
-    # exactly one warning: the branch in the note is not a stray, it is in a choose body
+    # a directive in the body is refused at its own line, before it runs: the branch
+    # in the note is never reached
     "note wrapping a branch": _Expected(
         ".. choose::\n\n"
         "   .. note::\n\n      .. when:: True\n\n         SKIPPED_IN_NOTE\n",
-        (("got <note>" + _SKIP, "   .. note::"),),
+        ((_stray(".. note::"), "   .. note::"),),
     ),
-    # a directive that returns the nodes of its content (a true `if`, `rst-class`)
-    # would hand its branches to the choose: a branch must be written directly in it
+    # a directive that would hand the nodes of its content to the choose (a true `if`,
+    # `rst-class`) is refused the same way: a branch must be written directly in it
     "branches inside a true if": _Expected(
         ".. choose::\n\n"
         "   .. if:: var.debug\n\n"
         "      .. when:: var.arch == 'x86'\n\n         SKIPPED_X86\n\n"
         "      .. otherwise::\n\n         SKIPPED_DEFAULT_FROM_IF\n",
-        ((_NOT_DIRECT, "      .. when:: var.arch == 'x86'"),),
+        ((_stray(".. if:: var.debug"), "   .. if:: var.debug"),),
     ),
     "branch inside rst-class": _Expected(
         ".. choose::\n\n"
         "   .. rst-class:: special\n\n"
         "      .. when:: var.arch == 'abc'\n\n         SKIPPED_FROM_RST_CLASS\n",
-        ((_NOT_DIRECT, "      .. when:: var.arch == 'abc'"),),
+        ((_stray(".. rst-class:: special"), "   .. rst-class:: special"),),
     ),
-    # the warnings name the kind of the branch
     "otherwise inside a true if": _Expected(
         ".. choose::\n\n"
         "   .. when:: False\n\n      SKIPPED_FALSE\n\n"
         "   .. if:: var.debug\n\n"
         "      .. otherwise::\n\n         SKIPPED_DEFAULT_FROM_IF\n",
-        ((_not_direct("otherwise"), "      .. otherwise::"),),
+        ((_stray(".. if:: var.debug"), "   .. if:: var.debug"),),
     ),
-    # a line of one to three punctuation characters makes docutils emit an INFO
-    # message, which is never shown, before the paragraph: the paragraph is reported
+    # a directive that produces no node used to pass unnoticed: a false `if` hid the
+    # branches in it and the otherwise was taken; now it is refused like any other
+    "a false if in the body": _Expected(
+        ".. choose::\n\n"
+        "   .. if:: False\n\n"
+        "      .. when:: True\n\n         SKIPPED_IN_FALSE_IF\n\n"
+        "   .. otherwise::\n\n      SKIPPED_OTHERWISE\n",
+        ((_stray(".. if:: False"), "   .. if:: False"),),
+    ),
+    "default-role in the body": _Expected(
+        ".. choose::\n\n"
+        "   .. default-role:: math\n\n"
+        "   .. otherwise::\n\n      SKIPPED_OTHERWISE\n",
+        ((_stray(".. default-role:: math"), "   .. default-role:: math"),),
+    ),
+    # a target and a substitution definition are not comments
+    "a label in the body": _Expected(
+        ".. choose::\n\n"
+        "   .. _label_in_the_body:\n\n"
+        "   .. otherwise::\n\n      SKIPPED_OTHERWISE\n",
+        ((_stray(".. _label_in_the_body:"), "   .. _label_in_the_body:"),),
+    ),
+    "a substitution definition in the body": _Expected(
+        ".. choose::\n\n"
+        "   .. |sub| replace:: text\n\n"
+        "   .. otherwise::\n\n      SKIPPED_OTHERWISE\n",
+        ((_stray(".. |sub| replace:: text"), "   .. |sub| replace:: text"),),
+    ),
+    # an empty comment ends at the blank line after it: the indented block that follows
+    # would be a block quote of the body, and the need in it would run
+    "a block quote after an empty comment": _Expected(
+        ".. choose::\n\n"
+        "   ..\n\n"
+        "      .. req:: In a block quote\n         :id: REQ_QUOTED\n\n"
+        "   .. otherwise::\n\n      SKIPPED_OTHERWISE\n",
+        # the stray's text keeps its indentation (the body is dedented by three)
+        ((_stray("   .. req:: In a block quote"), "      .. req:: In a block quote"),),
+    ),
+    # a line of one to three punctuation characters would make docutils emit an INFO
+    # message and a paragraph; it is refused before docutils sees it
     "rule line between branches": _Expected(
         ".. choose::\n\n"
         "   .. when:: var.arch == 'x86'\n\n      SKIPPED_X86\n\n"
         "   ---\n\n"
         "   .. otherwise::\n\n      SKIPPED_DEFAULT\n",
-        (("got <paragraph>" + _SKIP, "   ---"),),
+        ((_stray("---"), "   ---"),),
     ),
     "three dots in the body": _Expected(
         ".. choose::\n\n   ...\n\n   .. otherwise::\n\n      SKIPPED_DEFAULT\n",
-        (("got <paragraph>" + _SKIP, "   ..."),),
+        ((_stray("..."), "   ..."),),
     ),
     "when outside a choose": _Expected(
         "Para.\n\n.. when:: True\n\n   SKIPPED_STRAY\n",
@@ -478,19 +507,15 @@ _WARNINGS = {
         (("'when' directive outside a 'choose'", "      .. when:: True"),),
         taken=("TAKEN_OUTER",),
     ),
-    # two independent mistakes, two warnings: a choose written directly in another
-    # choose's body, whose taken branch holds a loose branch. The taken branch is
-    # parsed outside every choose body, so the loose branch is reported and cannot
-    # become a branch of the OUTER choose, which then has none.
+    # a choose written directly in another choose's body is a stray of the outer one,
+    # refused before it runs: one warning, and the loose branch in its taken branch is
+    # never reached
     "branch loose in the taken branch of a misplaced choose": _Expected(
         ".. choose::\n\n"
         "   .. choose::\n\n"
         "      .. when:: True\n\n"
         "         .. when:: True\n\n            SKIPPED_LOOSE\n",
-        (
-            ("'when' directive outside a 'choose'", "         .. when:: True"),
-            (_NO_BRANCH, ".. choose::"),
-        ),
+        ((_stray(".. choose::"), "   .. choose::"),),
     ),
     "unevaluable first branch poisons the otherwise": _Expected(
         ".. choose::\n\n"
@@ -627,16 +652,13 @@ _WARNINGS = {
         ),
         conf=_CONF_NO_VARIANT_DATA,
     ),
-    # the branches of a choose are written in its body: an include may not supply them,
-    # and the warning points at the branch in the included file
+    # the branches of a choose are written in its body: an include in it is refused at
+    # its own line, in the host, and the included file is never read
     "branches from an include": _Expected(
         ".. choose::\n\n   .. include:: branches.txt\n",
-        ((_INCLUDED_BRANCH, '.. when:: var.arch == "xyz"'),),
+        ((_stray(".. include:: branches.txt"), "   .. include:: branches.txt"),),
         extra=(("branches.txt", _BRANCHES_TXT),),
-        located_in="branches.txt",
     ),
-    # the structure is checked before any condition: a true branch written in place
-    # before the included ones is not taken either
     # the two other exits that may report a location in an included file:
     # an evaluation fault inside a choose the include holds, and a stray branch
     "an unevaluable when in an included choose": _Expected(
@@ -657,30 +679,64 @@ _WARNINGS = {
         extra=(("stray.txt", ".. when:: True\n\n   SKIPPED_STRAY\n"),),
         located_in="stray.txt",
     ),
+    # the gate and the structural checks report through the same helper, whose
+    # location must be absolute as well: a stray, and a branch fault, in a choose an
+    # include holds (docutils gives the included file a cwd-relative path)
+    "a stray in an included choose": _Expected(
+        ".. include:: stray_body.txt\n",
+        ((_stray("A stray paragraph."), "   A stray paragraph."),),
+        extra=(
+            (
+                "stray_body.txt",
+                ".. choose::\n\n   A stray paragraph.\n\n"
+                "   .. otherwise::\n\n      SKIPPED_STRAY_BODY\n",
+            ),
+        ),
+        located_in="stray_body.txt",
+    ),
+    "a when without a condition in an included choose": _Expected(
+        ".. include:: bare_when.txt\n",
+        (
+            (
+                "'when' directive has no condition (use 'otherwise' for the default)",
+                "   .. when::",
+            ),
+        ),
+        extra=(
+            (
+                "bare_when.txt",
+                ".. choose::\n\n   .. when::\n\n      SKIPPED_BARE_IN_INCLUDE\n",
+            ),
+        ),
+        located_in="bare_when.txt",
+    ),
+    # the body is read before any condition: a true branch written in place before
+    # the include is not taken either
     "a branch from an include after a true branch": _Expected(
         ".. choose::\n\n"
         "   .. when:: True\n\n      SKIPPED_IN_PLACE\n\n"
         "   .. include:: branches.txt\n",
-        ((_INCLUDED_BRANCH, '.. when:: var.arch == "xyz"'),),
+        ((_stray(".. include:: branches.txt"), "   .. include:: branches.txt"),),
         extra=(("branches.txt", _BRANCHES_TXT),),
-        located_in="branches.txt",
     ),
     "an otherwise from an include": _Expected(
         ".. choose::\n\n"
         "   .. when:: False\n\n      SKIPPED_FALSE\n\n"
         "   .. include:: otherwise.txt\n",
-        ((_included("otherwise"), ".. otherwise::"),),
+        ((_stray(".. include:: otherwise.txt"), "   .. include:: otherwise.txt"),),
         extra=(("otherwise.txt", ".. otherwise::\n\n   SKIPPED_FROM_INCLUDE\n"),),
-        located_in="otherwise.txt",
     ),
-    # content outside a branch is parsed with the body, so the need directive runs;
-    # the choose removes the need again
+    # content outside a branch is refused before it is parsed: the need never exists
     "need directly in the body": _Expected(
         ".. choose::\n\n"
         "   .. req:: Directly in the choose body\n      :id: REQ_DIRECT\n\n"
         "   .. when:: True\n\n      SKIPPED\n",
-        # named after the need, not the target without a line that it emits first
-        (("got <Need>" + _SKIP, "   .. req:: Directly in the choose body"),),
+        (
+            (
+                _stray(".. req:: Directly in the choose body"),
+                "   .. req:: Directly in the choose body",
+            ),
+        ),
     ),
     # a branch that is not taken is never parsed, exactly as the body of a false `if`
     "errors in an untaken branch are never reported": _Expected(
@@ -736,26 +792,32 @@ def test_choose_warnings(test_app, expected: _Expected, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "test_app",
+    ("test_app", "line"),
     [
-        _project(
-            ".. choose::\n\n"
-            "   .. when:: var.arch == 'x86'\n\n      SKIPPED_X86\n\n"
-            "   ---\n\n"
-            "   .. otherwise::\n\n      SKIPPED_DEFAULT\n",
-            extra=(("docutils.conf", "[general]\nreport_level: 1\n"),),
+        (
+            _project(
+                ".. choose::\n\n"
+                "   .. when:: var.arch == 'x86'\n\n      SKIPPED_X86\n\n"
+                f"   {line}\n\n"
+                "   .. otherwise::\n\n      SKIPPED_DEFAULT\n",
+                extra=(("docutils.conf", f"[general]\nreport_level: {level}\n"),),
+            ),
+            line,
         )
+        for level, line in ((1, "---"), (4, ".. wehn:: True"))
     ],
-    indirect=True,
+    ids=["a rule line, report level 1", "a misspelt directive, report level 4"],
+    indirect=["test_app"],
 )
-def test_choose_info_message_is_never_a_reported_error(test_app, monkeypatch):
-    """An INFO message in the body is not taken for an error docutils reported.
+def test_choose_refuses_a_stray_whatever_the_report_level(test_app, line, monkeypatch):
+    """A stray line is refused by the ``choose`` itself, before docutils parses it.
 
-    With ``report_level: 1`` in the project's ``docutils.conf`` the INFO before the
-    paragraph of a ``---`` line is shown, but as information, not as a warning,
-    so the paragraph must still be reported: otherwise the choose would vanish
-    with ``-W`` green. ``sphinx-build`` points ``DOCUTILSCONFIG`` at the project's
-    ``docutils.conf``; this in-process build does it by hand.
+    So the project's ``report_level`` (in its ``docutils.conf``) changes nothing:
+    at level 1 the INFO docutils would give a ``---`` line never appears, and at
+    level 4, which hides every docutils error, a misspelt branch is still refused
+    with a warning rather than letting the ``otherwise`` render with ``-W`` green.
+    ``sphinx-build`` points ``DOCUTILSCONFIG`` at the project's ``docutils.conf``;
+    this in-process build does it by hand.
     """
     app = test_app
     monkeypatch.setenv("DOCUTILSCONFIG", str(Path(app.srcdir, "docutils.conf")))
@@ -763,17 +825,17 @@ def test_choose_info_message_is_never_a_reported_error(test_app, monkeypatch):
     (warning,) = build_warnings(app)
     source = Path(app.srcdir, "index.rst").read_text()
     assert warning.startswith(
-        f"<srcdir>/index.rst:{_line_of(source, '   ---')}: WARNING: "
+        f"<srcdir>/index.rst:{_line_of(source, f'   {line}')}: WARNING: "
     ), warning
-    assert "got <paragraph>" + _SKIP in warning, warning
+    assert _stray(line) in warning, warning
     assert warning.endswith(" [needs.choose]"), warning
     assert "SKIPPED" not in Path(app.outdir, "index.html").read_text()
-    # the INFO itself was shown, so the setting took effect
-    assert "Unexpected possible title overline or transition" in app._status.getvalue()
+    # docutils never saw the line
+    assert "Unexpected possible title overline" not in app._status.getvalue()
 
 
 @pytest.mark.parametrize(
-    ("test_app", "error"),
+    ("test_app", "line", "error"),
     [
         (
             _project(
@@ -781,6 +843,7 @@ def test_choose_info_message_is_never_a_reported_error(test_app, monkeypatch):
                 "   .. cas:: True\n\n      SKIPPED\n\n"
                 "   .. otherwise::\n\n      SKIPPED_DEFAULT\n"
             ),
+            ".. cas:: True",
             'Unknown directive type "cas"',
         ),
         (
@@ -789,19 +852,27 @@ def test_choose_info_message_is_never_a_reported_error(test_app, monkeypatch):
                 "   Title\n   -----\n\n"
                 "   .. when:: True\n\n      SKIPPED\n"
             ),
+            "Title",
             "Unexpected section title",
         ),
     ],
     ids=["typo in a directive name", "section title in the body"],
     indirect=["test_app"],
 )
-def test_choose_body_error_reported_once(test_app, error: str):
-    """A mistake docutils reports in the body skips the choose and warns only once."""
+def test_choose_body_mistake_reported_once(test_app, line: str, error: str):
+    """A mistake in the body is refused once, by the ``choose``, at its line.
+
+    docutils never parses the line, so its own error for it never appears.
+    """
     app = test_app
     app.build()
     (warning,) = build_warnings(app)
-    assert error in warning
-    assert "needs.choose" not in warning
+    source = Path(app.srcdir, "index.rst").read_text()
+    assert warning.startswith(
+        f"<srcdir>/index.rst:{_line_of(source, f'   {line}')}: WARNING: "
+    ), warning
+    assert _stray(line) in warning, warning
+    assert error not in warning
     html = Path(app.outdir, "index.html").read_text()
     assert "SKIPPED" not in html
 
@@ -845,11 +916,12 @@ def test_choose_warnings_are_suppressible(test_app):
     ],
     indirect=True,
 )
-def test_choose_rollback_removes_only_the_stray_needs(test_app):
-    """The rollback removes the needs the body created, the newest ones, and no other.
+def test_choose_body_stray_need_never_runs(test_app):
+    """A need written directly in the body is refused before it is created.
 
-    The needs written before the ``choose``, in its own document and in an earlier one,
-    are older entries of the same mapping, and must survive.
+    Nothing in the body runs, so there is nothing to undo: the needs written before
+    the ``choose``, in its own document and in an earlier one, and after it are all
+    there, and the stray one never existed.
     """
     app = test_app
     app.build()
@@ -857,7 +929,7 @@ def test_choose_rollback_removes_only_the_stray_needs(test_app):
     source = Path(app.srcdir, "index.rst").read_text()
     line = _line_of(source, "   .. req:: Directly in the choose body")
     assert warning.startswith(f"<srcdir>/index.rst:{line}: WARNING: "), warning
-    assert "got <Need>" in warning
+    assert _stray(".. req:: Directly in the choose body") in warning
     needs = SphinxNeedsData(app.env).get_needs_view()
     assert sorted(needs) == ["REQ_AFTER", "REQ_BEFORE", "REQ_EARLIER"]
 
@@ -867,11 +939,6 @@ _SWALLOW_CONF = (
     + """
 from docutils import nodes
 from sphinx.util.docutils import SphinxDirective
-
-
-class Boom(SphinxDirective):
-    def run(self):
-        raise RuntimeError("boom")
 
 
 class Swallow(SphinxDirective):
@@ -887,7 +954,6 @@ class Swallow(SphinxDirective):
 
 
 def setup(app):
-    app.add_directive("boom", Boom)
     app.add_directive("swallow", Swallow)
 """
 )
@@ -900,20 +966,25 @@ def setup(app):
             ".. swallow::\n\n"
             "   .. choose::\n\n"
             "      .. otherwise::\n\n         SKIPPED_X\n\n"
-            "      .. boom::\n\n"
             ".. when:: True\n\n   SKIPPED_LOOSE_AFTER\n",
             conf=_SWALLOW_CONF,
         )
     ],
     indirect=True,
 )
-def test_choose_restores_its_depth_when_its_body_raises(test_app):
+def test_choose_restores_its_depth_when_its_body_raises(test_app, monkeypatch):
     """An exception out of a ``choose`` body leaves no ``choose`` open behind it.
 
-    A directive of the project catches what a directive in the body raised;
-    the ``when`` after it is outside every ``choose`` and must still be reported,
-    rather than collected as a placeholder that would reach the writer.
+    Only the branch directives run while the body is parsed, so the exception is
+    made to come from one: the ``otherwise`` raises, and a directive of the project
+    catches it. The ``when`` after it is outside every ``choose`` and must still be
+    reported, rather than collected as a placeholder that would reach the writer.
     """
+
+    def boom(self):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(OtherwiseDirective, "run", boom)
     app = test_app
     app.build()
     (warning,) = build_warnings(app)
@@ -1284,25 +1355,25 @@ _MYST_WARNINGS = {
     ),
     "paragraph in the body, backticks": (
         "````{choose}\n```{when} True\nSKIPPED\n```\n\nA stray paragraph.\n````\n",
-        "got <paragraph>" + _SKIP,
+        _stray("A stray paragraph."),
         "A stray paragraph.",
     ),
     "paragraph in the body, colons": (
         "::::{choose}\n:::{when} True\nSKIPPED\n:::\n\nA stray paragraph.\n::::\n",
-        "got <paragraph>" + _SKIP,
+        _stray("A stray paragraph."),
         None,
     ),
     # an HTML comment is raw HTML, not a comment
     "html comment between branches, backticks": (
         "````{choose}\n```{when} False\nSKIPPED\n```\n\n<!-- an HTML comment -->\n\n"
         "```{otherwise}\nSKIPPED_DEFAULT\n```\n````\n",
-        "got <raw>" + _SKIP,
+        _stray("<!-- an HTML comment -->"),
         "<!-- an HTML comment -->",
     ),
     "html comment between branches, colons": (
         "::::{choose}\n:::{when} False\nSKIPPED\n:::\n\n<!-- an HTML comment -->\n\n"
         ":::{otherwise}\nSKIPPED_DEFAULT\n:::\n::::\n",
-        "got <raw>" + _SKIP,
+        _stray("<!-- an HTML comment -->"),
         None,
     ),
     "choose with an argument, backticks": (
@@ -1388,19 +1459,31 @@ _MYST_WARNINGS = {
         None,
         None,
     ),
-    # an `{eval-rst}` block is parsed by docutils into a document of its own,
-    # so the branch in it is not a direct child of the choose
+    # an `{eval-rst}` block is a fence of another directive: refused at its line
     "branch inside eval-rst, backticks": (
         "````{choose}\n```{eval-rst}\n.. when:: True\n\n   SKIPPED_FROM_EVAL_RST\n```\n"
         "````\n",
-        _NOT_DIRECT,
-        ".. when:: True",
+        _stray("```{eval-rst}"),
+        "```{eval-rst}",
     ),
     "branch inside eval-rst, colons": (
         "::::{choose}\n```{eval-rst}\n.. when:: True\n\n   SKIPPED_FROM_EVAL_RST\n```\n"
         "::::\n",
-        _NOT_DIRECT,
+        _stray("```{eval-rst}"),
         None,
+    ),
+    # an opener indented four spaces is a code block: refused, named with its indentation
+    "an opener indented four spaces": (
+        "````{choose}\n    :::{when} var.debug\nSKIPPED\n:::\n````\n",
+        _stray("    :::{when} var.debug"),
+        "    :::{when} var.debug",
+    ),
+    # MyST takes the first word of the info string as the directive: with no space
+    # after the braces it is no directive, so no branch
+    "a branch fence without a space after the name": (
+        "````{choose}\n```{when}True\nSKIPPED\n```\n````\n",
+        _stray("```{when}True"),
+        "```{when}True",
     ),
 }
 
@@ -1466,20 +1549,342 @@ def test_choose_warnings_in_myst(
     indirect=True,
 )
 def test_choose_refuses_included_branches_in_myst(test_app):
-    """In MyST too, a branch an ``{include}`` supplies is refused, in the included file.
+    """In MyST too, an ``{include}`` in the body is refused at its line, in the host.
 
-    MyST reports the lines of an included file one late (the branch on line 1 is
-    reported on line 2, with colon and backtick fences alike), so only the file is
-    asserted.
+    The included file is never read.
     """
     app = test_app
     app.build()
     (warning,) = build_warnings(app)
-    assert warning.startswith("<srcdir>/branches.txt:"), warning
-    assert _INCLUDED_BRANCH in warning, warning
+    source = Path(app.srcdir, "index.md").read_text()
+    line = _line_of(source, "```{include} branches.txt")
+    assert warning.startswith(f"<srcdir>/index.md:{line}: WARNING: "), warning
+    assert _stray("```{include} branches.txt") in warning, warning
     assert warning.endswith(" [needs.choose]"), warning
     assert "SKIPPED" not in Path(app.outdir, "index.html").read_text()
     _assert_no_choose_nodes(app)
+
+
+@pytest.mark.skipif(not _HAS_MYST, reason="needs myst-parser")
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            "````{choose}\n{{ branches }}\n```{otherwise}\nSKIPPED_OTHERWISE\n```\n````\n",
+            conf=_CONF_MYST.replace(
+                "['colon_fence']", "['colon_fence', 'substitution']"
+            )
+            + "myst_substitutions = {'branches': "
+            "':::{when} True\\nSKIPPED_FROM_SUBSTITUTION\\n:::'}\n",
+            myst=True,
+        )
+    ],
+    indirect=True,
+)
+def test_choose_refuses_a_substitution_in_myst(test_app):
+    """A substitution reference in the body is a line of text to the ``choose``.
+
+    It is refused at its line, so the branches its definition holds are never taken,
+    and neither is the ``otherwise``.
+    """
+    app = test_app
+    app.build()
+    (warning,) = build_warnings(app)
+    source = Path(app.srcdir, "index.md").read_text()
+    line = _line_of(source, "{{ branches }}")
+    assert warning.startswith(f"<srcdir>/index.md:{line}: WARNING: "), warning
+    assert _stray("{{ branches }}") in warning, warning
+    assert "SKIPPED" not in Path(app.outdir, "index.html").read_text()
+    _assert_no_choose_nodes(app)
+
+
+_HOST_NEED = "```{req} Host\n:id: REQ_HOST\n:status: open\n```\n\n"
+
+
+@pytest.mark.skipif(not _HAS_MYST, reason="needs myst-parser")
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            _HOST_NEED + "::::{choose}\n:::{when} var.debug | var.debug\n|---|---|\n\n"
+            "(leak-label-table)=\n"
+            "```{req} Smuggled by a table\n:id: REQ_SMUGGLED_TABLE\n```\n\n"
+            "```{needextend} REQ_HOST\n:status: LEAKED_BY_TABLE\n```\n:::\n::::\n",
+            conf=_CONF_MYST,
+            myst=True,
+        )
+    ],
+    indirect=True,
+)
+def test_choose_refuses_an_opener_a_table_swallows_in_myst(test_app):
+    """An opener with a ``|`` and a delimiter row under it is a table to markdown-it.
+
+    markdown-it tries its ``table`` rule before any fence, so the lines after the
+    would-be opener are parsed in the body: the opener is refused instead, and the
+    need and the ``needextend`` under it never run.
+    """
+    app = test_app
+    app.build()
+    (warning,) = build_warnings(app)
+    source = Path(app.srcdir, "index.md").read_text()
+    line = _line_of(source, ":::{when} var.debug | var.debug")
+    assert warning.startswith(f"<srcdir>/index.md:{line}: WARNING: "), warning
+    assert _stray(":::{when} var.debug | var.debug") in warning, warning
+    needs = SphinxNeedsData(app.env).get_needs_view()
+    assert sorted(needs) == ["REQ_HOST"]
+    assert needs["REQ_HOST"]["status"] == "open"
+    _assert_no_choose_nodes(app)
+
+
+def _front_matter_project(front_matter: str, body: str, /) -> dict[str, object]:
+    """A MyST project whose root document starts with ``front_matter`` (YAML)."""
+    text = f"---\n{front_matter}---\n# Test\n\n{body}"
+    return {
+        "buildername": "html",
+        "files": [(Path("conf.py"), _CONF_MYST), (Path("index.md"), text)],
+    }
+
+
+_V6D_BODY = (
+    "::::{choose}\n% a comment, a paragraph here\n"
+    ":::{otherwise}\nSKIPPED_OTHERWISE\n:::\n::::\n\n"
+    "::::{choose}\n+++\n:::{otherwise}\nTAKEN_BREAK_STILL_A_COMMENT\n:::\n::::\n"
+)
+
+
+@pytest.mark.skipif(not _HAS_MYST, reason="needs myst-parser")
+@pytest.mark.parametrize(
+    ("test_app", "stray", "taken"),
+    [
+        (
+            # the front matter replaces the global extensions: no colons
+            _front_matter_project(
+                'myst:\n  enable_extensions: ["substitution"]\n',
+                "`````{choose}\n:::{when} True\n"
+                "```{req} Smuggled by front matter\n:id: REQ_SMUGGLED\n```\n"
+                ":::\n`````\n",
+            ),
+            ":::{when} True",
+            (),
+        ),
+        (
+            _project(
+                "::::{choose}\n```{when} True\n"
+                ":::{req} Smuggled by disable_syntax\n:id: REQ_SMUGGLED\n:::\n"
+                "```\n::::\n",
+                conf=_CONF_MYST + "myst_disable_syntax = ['fence']\n",
+                myst=True,
+            ),
+            "```{when} True",
+            (),
+        ),
+        (
+            # the front matter disables fences, conf.py does not
+            _front_matter_project(
+                'myst:\n  disable_syntax: ["fence"]\n',
+                "::::{choose}\n```{when} True\n"
+                ":::{req} Smuggled by the front matter\n:id: REQ_SMUGGLED\n:::\n"
+                "```\n::::\n",
+            ),
+            "```{when} True",
+            (),
+        ),
+        (
+            # a backtick branch in the same file is still taken
+            _project(
+                "````{choose}\n:::{when} True\n"
+                "```{req} Smuggled by disable_syntax\n:id: REQ_SMUGGLED\n```\n"
+                ":::\n````\n\n"
+                "````{choose}\n```{when} var.debug\nTAKEN_BACKTICK\n```\n````\n",
+                conf=_CONF_MYST + "myst_disable_syntax = ['colon_fence']\n",
+                myst=True,
+            ),
+            ":::{when} True",
+            ("TAKEN_BACKTICK",),
+        ),
+        (
+            # the `%` line is a paragraph; the block break is still a comment
+            _project(
+                _V6D_BODY,
+                conf=_CONF_MYST + "myst_disable_syntax = ['myst_line_comment']\n",
+                myst=True,
+            ),
+            "% a comment, a paragraph here",
+            ("TAKEN_BREAK_STILL_A_COMMENT",),
+        ),
+        (
+            _front_matter_project(
+                'myst:\n  disable_syntax: ["myst_line_comment"]\n', _V6D_BODY
+            ),
+            "% a comment, a paragraph here",
+            ("TAKEN_BREAK_STILL_A_COMMENT",),
+        ),
+        (
+            # the `+++` line is a paragraph; the `%` line is still a comment
+            _project(
+                "::::{choose}\n+++\n:::{otherwise}\nSKIPPED_OTHERWISE\n:::\n::::\n\n"
+                "::::{choose}\n% still a comment\n"
+                ":::{otherwise}\nTAKEN_COMMENT_STILL_A_COMMENT\n:::\n::::\n",
+                conf=_CONF_MYST + "myst_disable_syntax = ['myst_block_break']\n",
+                myst=True,
+            ),
+            "+++",
+            ("TAKEN_COMMENT_STILL_A_COMMENT",),
+        ),
+    ],
+    ids=[
+        "colon fences off in the front matter",
+        "fences disabled",
+        "fences disabled in the front matter",
+        "colon fences disabled",
+        "line comments disabled",
+        "line comments disabled in the front matter",
+        "block breaks disabled",
+    ],
+    indirect=["test_app"],
+)
+def test_choose_reads_the_documents_myst_config(
+    test_app, stray: str, taken: tuple[str, ...]
+):
+    """A branch, a comment or a block break counts only if the document's parser has it.
+
+    The document's configuration is the global one merged with its front matter
+    (whose ``enable_extensions`` replaces the global list), and ``disable_syntax``
+    can switch a fence kind, line comments or block breaks off: such a line is a
+    stray, so a need under an opener the parser does not have, which the parser
+    would run, never exists; the rest of the file is read as usual.
+    """
+    app = test_app
+    app.build()
+    (warning,) = build_warnings(app)
+    source = Path(app.srcdir, "index.md").read_text()
+    assert warning.startswith(
+        f"<srcdir>/index.md:{_line_of(source, stray)}: WARNING: "
+    ), warning
+    assert _stray(stray) in warning, warning
+    assert sorted(SphinxNeedsData(app.env).get_needs_view()) == []
+    html = Path(app.outdir, "index.html").read_text()
+    assert [word for word in taken if word not in html] == []
+    assert "SKIPPED" not in html
+    _assert_no_choose_nodes(app)
+
+
+_C1_CLOSER = (
+    "::::{choose}\n:::{when} False\nSKIPPED_WHEN\n    :::\n"
+    "```{req} Smuggled past a closer\n:id: REQ_SMUGGLED_CLOSER\n```\n"
+    "```{needextend} REQ_HOST\n:status: LEAKED_BY_CLOSER\n```\n:::\n::::\n\n"
+)
+_C1_TABLE = (
+    "::::{choose}\n:::{when} var.debug | var.debug\n    |---|---|\n\n"
+    "```{req} Smuggled past an indented delimiter row\n:id: REQ_SMUGGLED_TABLE\n```\n"
+    ":::\n::::\n"
+)
+
+
+@pytest.mark.skipif(not _HAS_MYST, reason="needs myst-parser")
+@pytest.mark.parametrize(
+    ("test_app", "strays"),
+    [
+        (
+            _project(
+                _HOST_NEED + _C1_CLOSER + _C1_TABLE,
+                conf=_CONF_MYST + "myst_disable_syntax = ['code']\n",
+                myst=True,
+            ),
+            (
+                "```{req} Smuggled past a closer",
+                ":::{when} var.debug | var.debug",
+            ),
+        ),
+        (
+            _front_matter_project(
+                'myst:\n  disable_syntax: ["code"]\n', _HOST_NEED + _C1_CLOSER
+            ),
+            ("```{req} Smuggled past a closer",),
+        ),
+    ],
+    ids=["the code rule disabled", "the code rule disabled in the front matter"],
+    indirect=["test_app"],
+)
+def test_choose_without_the_code_rule_in_myst(test_app, strays: tuple[str, ...]):
+    """Without markdown-it's ``code`` rule, indentation bounds no construct.
+
+    A closer indented four spaces then closes the branch, so the fence after it is
+    a stray of the body; a delimiter row indented four spaces makes the opener above
+    it a table header. Nothing under either runs: the host need keeps its status.
+    """
+    app = test_app
+    app.build()
+    warnings = build_warnings(app)
+    assert len(warnings) == len(strays), warnings
+    source = Path(app.srcdir, "index.md").read_text()
+    for warning, stray in zip(warnings, strays, strict=True):
+        assert warning.startswith(
+            f"<srcdir>/index.md:{_line_of(source, stray)}: WARNING: "
+        ), warning
+        assert _stray(stray) in warning, warning
+    needs = SphinxNeedsData(app.env).get_needs_view()
+    assert sorted(needs) == ["REQ_HOST"]
+    assert needs["REQ_HOST"]["status"] == "open"
+    assert "SKIPPED" not in Path(app.outdir, "index.html").read_text()
+    _assert_no_choose_nodes(app)
+
+
+@pytest.mark.skipif(not _HAS_MYST, reason="needs myst-parser")
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            "::::{choose}\n~~~{when} var.debug\nTAKEN_TILDE\n~~~\n::::\n\n"
+            "::::{choose}\n  % an indented comment\n"
+            ":::{otherwise}\nTAKEN_INDENTED_COMMENT\n:::\n::::\n\n"
+            "::::{choose}\n+ + +\n:::{otherwise}\nTAKEN_SPACED_BREAK\n:::\n::::\n\n"
+            "::::{choose}\n +++\n:::{otherwise}\nTAKEN_INDENTED_BREAK\n:::\n::::\n",
+            conf=_CONF_MYST,
+            myst=True,
+        )
+    ],
+    indirect=True,
+)
+def test_choose_accepts_the_myst_spellings_myst_accepts(test_app):
+    """A tilde branch, an indented ``%`` comment and indented or spaced block breaks."""
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    html = Path(app.outdir, "index.html").read_text()
+    taken = ["TAKEN_TILDE", "TAKEN_INDENTED_COMMENT", "TAKEN_SPACED_BREAK"]
+    taken.append("TAKEN_INDENTED_BREAK")
+    assert [word for word in taken if word not in html] == []
+    _assert_no_choose_nodes(app)
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            ".. choose::\n\n"
+            "   .. req:: Stray need\n      :id: REQ_UNGATED\n\n"
+            "   .. otherwise::\n\n      SKIPPED_OTHERWISE\n"
+        )
+    ],
+    indirect=True,
+)
+def test_choose_fails_closed_under_another_parser(test_app, monkeypatch):
+    """Under a parser the gate cannot read, the ``choose`` is refused unread."""
+    monkeypatch.setattr(ChooseDirective, "_syntax", lambda self: None)
+    app = test_app
+    app.build()
+    (warning,) = build_warnings(app)
+    source = Path(app.srcdir, "index.rst").read_text()
+    assert warning.startswith(
+        f"<srcdir>/index.rst:{_line_of(source, '.. choose::')}: WARNING: "
+    ), warning
+    assert (
+        "'choose' directive is supported under reStructuredText and MyST only" + _SKIP
+        in warning
+    ), warning
+    assert "SKIPPED" not in Path(app.outdir, "index.html").read_text()
+    assert sorted(SphinxNeedsData(app.env).get_needs_view()) == []
 
 
 def test_absolute_location():

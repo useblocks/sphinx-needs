@@ -6,11 +6,32 @@ The first ``when`` whose condition holds is included;
 an ``otherwise``, which takes no condition, is the default,
 and must be the last branch.
 
-A branch does not parse its content.
-Inside a ``choose`` body it returns a transient :class:`_BranchPlaceholder`
-carrying its kind, its condition and its raw content,
-and the ``choose`` parses its own body into a detached :class:`_ChooseBody`
-that it never returns.
+Before anything in its body is parsed, a ``choose`` reads the body's top-level lines
+(:func:`_gate`) and refuses the body at the first one that is neither the start of a
+branch, a comment, nor blank. So nothing written outside a branch ever runs:
+a need, a label, an ``.. include::`` or another extension's directive there
+is refused with a warning, never executed and undone.
+
+The gate's safety rule: it may refuse a line the parser would have accepted
+(a refused line is never parsed, and the author gets a warning),
+but it must never pass a line the parser would execute as something other than
+a branch or a comment, and it must never believe it is inside a branch where the
+parser is outside one (the lines it skips there would escape it).
+So what it accepts mirrors the parser's own spelling rules exactly,
+and where a MyST branch ends follows the CommonMark closing rule exactly.
+Under MyST it reads the document's own parser configuration (front matter included;
+the global configuration when the renderer does not expose it),
+so that it opens a branch only with a fence kind the document's parser has
+(colon, backtick or tilde), accepts ``%`` comments and ``+++`` block breaks indented
+up to three spaces as myst-parser does (at any indentation when the document's parser
+has its ``code`` rule disabled, as markdown-it then allows every construct),
+and refuses an opener that markdown-it would take for the header of a table.
+Under any other parser the ``choose`` is refused, with a warning: the gate
+could not read the body, and nothing in it may run unread.
+
+Then the body is parsed into a detached :class:`_ChooseBody` that is never returned.
+A branch does not parse its content: in the body it returns a transient
+:class:`_BranchPlaceholder` carrying its kind, its condition and its raw content.
 Having seen every branch at once, the ``choose`` checks the structure,
 evaluates the conditions in order with the evaluator of the ``if`` directive
 (:func:`~sphinx_needs.directives.needif.evaluate_variant_condition`),
@@ -29,18 +50,15 @@ from __future__ import annotations
 import os
 import re
 from collections.abc import Sequence
-from itertools import islice
-from typing import ClassVar, Literal
+from typing import ClassVar, Literal, NamedTuple
 
 from docutils import nodes
 from docutils.parsers.rst.states import RSTState
 from docutils.statemachine import StringList
-from docutils.utils import Reporter, get_source_line
 from sphinx.util.docutils import SphinxDirective
 from sphinx.util.nodes import nested_parse_with_titles
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.directives.needif import evaluate_variant_condition
 from sphinx_needs.logging import get_logger, log_warning
 
@@ -58,7 +76,9 @@ so a branch written loose in a branch's content is reported as well.
 _BranchKind = Literal["when", "otherwise"]
 """The directive a branch is written with."""
 
-_BRANCH_LIKE_COMMENT = re.compile(r"(when|otherwise)\s*:", re.IGNORECASE)
+_BRANCH_KINDS: frozenset[str] = frozenset(("when", "otherwise"))
+
+_ONE_COLON = re.compile(r"(when|otherwise)\s*:", re.IGNORECASE)
 """The start of a comment that is a branch directive written with one colon.
 
 ``.. when: <condition>`` (one colon) and ``.. when::<condition>`` (no space after
@@ -67,8 +87,254 @@ both begin with ``when`` and a colon. Matched against the comment's text after i
 leading whitespace, so a comment that merely begins with the word is not matched.
 """
 
-_BRANCH_DIRECTIVE_LINE = re.compile(r"(when|otherwise) ?::( |$)", re.IGNORECASE)
-"""What follows ``.. `` on a line that docutils reads as a branch directive."""
+# reStructuredText (docutils `parsers/rst/states.py`, `Body.patterns` and
+# `Body.explicit.constructs`, and `directives.directive`, which lower-cases the name)
+_RST_EXPLICIT = re.compile(r"\.\.( +|$)")
+"""docutils' explicit markup start: ``..`` and then spaces or the end of the line."""
+
+_RST_SIMPLENAME = r"(?:(?!_)\w)+(?:[-._+:](?:(?!_)\w)+)*"
+_RST_DIRECTIVE = re.compile(rf"\.\.[ ]+({_RST_SIMPLENAME})[ ]?::([ ]+|$)")
+"""docutils' directive line: a name, an optional space, ``::``, a space or the end."""
+
+# MyST (CommonMark fences, the `colon_fence` extension, and myst-parser's
+# `render_fence` / `render_colon_fence`, which take the first word of the stripped
+# info string as the directive when it is `{name}`)
+
+
+class _MystPatterns(NamedTuple):
+    """The line patterns of the MyST gate, for one indentation rule."""
+
+    opener: re.Pattern[str]
+    """The first line of a branch: a fence whose info string starts with the name."""
+    closer: re.Pattern[str]
+    """A line that may close a fence: a run of one fence character (its length and
+    character are compared with the opener's)."""
+    comment: re.Pattern[str]
+    """A line comment (myst's ``line_comment``), with its text."""
+    block_break: re.Pattern[str]
+    """The marker run of a block break (myst's ``block_break``): three ``+`` or more,
+    mixed with spaces and tabs."""
+    delimiter: re.Pattern[str]
+    """A line markdown-it may take for the delimiter row of a table."""
+
+
+def _myst_patterns(indent: str, /) -> _MystPatterns:
+    """The MyST gate's patterns, with ``indent`` as their leading whitespace."""
+    return _MystPatterns(
+        opener=re.compile(
+            indent + r"(:{3,}|`{3,}|~{3,})[ \t]*\{(when|otherwise)\}(?=\s|$)",
+            re.IGNORECASE,
+        ),
+        closer=re.compile(indent + r"(:+|`+|~+)[ \t]*"),
+        comment=re.compile(indent + r"%(.*)"),
+        block_break=re.compile(indent + r"\+[+ \t]*"),
+        delimiter=re.compile(indent + r"[|:-][|:\-\s]*"),
+    )
+
+
+# markdown-it-py's `StateBlock.is_code_block(line)` (3.0 and 4) is
+# `_code_enabled and sCount - blkIndent >= 4`, and every rule the gate mirrors asks it
+# (the fences and their closers, the colon fence through `mdit_py_plugins.utils`, the
+# table's two lines, `line_comment`, `block_break`): with the `code` rule enabled a
+# line indented four columns or more (a tab counts four) is a code block, and none of
+# those constructs; with `code` disabled, indentation bounds none of them.
+_MYST_INDENTED = _myst_patterns(r" {0,3}")
+"""The MyST gate's patterns while the ``code`` rule is enabled (the default)."""
+_MYST_UNBOUNDED = _myst_patterns(r"[ \t]*")
+"""The MyST gate's patterns while the ``code`` rule is disabled."""
+
+_TABLE_CELL = re.compile(r":?-+:?")
+
+
+class _Stray(NamedTuple):
+    """The first top-level line of a ``choose`` body that the gate refuses."""
+
+    index: int
+    """The line's index in the body."""
+    one_colon: _BranchKind | None
+    """The kind of branch the line is a comment for, written with one colon, if so."""
+
+
+def _gate(
+    lines: Sequence[str],
+    /,
+    *,
+    syntax: Literal["rst", "myst"],
+    colon_fence: bool = True,
+    fence: bool = True,
+    comment: bool = True,
+    block_break: bool = True,
+    code: bool = True,
+) -> _Stray | None:
+    """The first top-level line of a ``choose`` body that the parser must not see.
+
+    That is the first line that is neither a branch start, a comment, nor blank.
+
+    :param lines: The body, as the directive receives it.
+    :param syntax: The markup the body is written in.
+    :param colon_fence: Whether the document's MyST parser has colon fences
+        (without them, a ``:::`` line opens nothing).
+    :param fence: Whether it has backtick and tilde fences.
+    :param comment: Whether it has ``%`` line comments.
+    :param block_break: Whether it has ``+++`` block breaks.
+    :param code: Whether it has indented code blocks, which bound the indentation
+        of every other construct.
+    :return: That line, or ``None`` if the body holds only branches and comments.
+    """
+    if syntax == "rst":
+        return _gate_rst(lines)
+    return _gate_myst(
+        lines,
+        colon_fence=colon_fence,
+        fence=fence,
+        comment=comment,
+        block_break=block_break,
+        code=code,
+    )
+
+
+def _gate_rst(lines: Sequence[str], /) -> _Stray | None:
+    """The gate for a reStructuredText body, dedented and with tabs expanded.
+
+    Only lines at column 0 start a construct; an indented line belongs to the
+    explicit markup above it (a branch's content, a comment's text), except after
+    an empty comment followed by a blank line, which docutils ends there, so that
+    the indented block after it would be a block quote of the body.
+    A column-0 explicit markup line is classified as docutils classifies it:
+    a footnote or citation (``[``), a target (``_``) or a substitution definition
+    (``|``) is refused, which is stricter than docutils when the rest of the line
+    does not complete the construct; a directive is a branch start if it is
+    ``when`` or ``otherwise``, and refused otherwise; anything else is a comment.
+    """
+    owned = False
+    for index, line in enumerate(lines):
+        if not line.strip(" "):
+            continue
+        if line.startswith(" "):
+            if owned:
+                continue
+            return _Stray(index, None)
+        start = _RST_EXPLICIT.match(line)
+        if start is None:
+            return _Stray(index, None)
+        rest = line[start.end() :]
+        if rest[:1] in ("[", "_", "|"):
+            return _Stray(index, None)
+        directive = _RST_DIRECTIVE.match(line)
+        if directive is not None:
+            if directive.group(1).lower() not in _BRANCH_KINDS:
+                return _Stray(index, None)
+            owned = True
+            continue
+        if rest.startswith('end of inclusion from "'):
+            # docutils pops its include log for this comment rather than keeping it
+            return _Stray(index, None)
+        text = rest
+        if not text.strip(" "):
+            following = lines[index + 1] if index + 1 < len(lines) else ""
+            if not following.strip(" "):
+                # an empty comment: docutils ends it here
+                owned = False
+                continue
+            # the comment's text is the indented block on the next line, if any
+            text = following if following.startswith(" ") else ""
+        one_colon = _ONE_COLON.match(text.lstrip(" "))
+        if one_colon is not None:
+            return _Stray(index, _branch_kind(one_colon.group(1)))
+        owned = True
+    return None
+
+
+def _gate_myst(
+    lines: Sequence[str],
+    /,
+    *,
+    colon_fence: bool,
+    fence: bool,
+    comment: bool,
+    block_break: bool,
+    code: bool,
+) -> _Stray | None:
+    """The gate for a MyST body, under the document's own parser configuration.
+
+    A branch starts at a fence whose info string's first word is ``{when}`` or
+    ``{otherwise}``, indented at most three spaces: a colon fence when the document's
+    parser has ``colon_fence``, a backtick or tilde fence when it has ``fence``
+    (a backtick fence may not have a backtick in its info string). It ends at the
+    first later line of at least as many of the same fence character, indented at
+    most three spaces, with nothing but spaces or tabs after them (the CommonMark
+    closing rule); an unclosed branch runs to the end.
+    markdown-it tries its ``table`` rule before any fence: an opener with a ``|``
+    whose next line could be a table's delimiter row would be a table header, so it
+    is refused (stricter than markdown-it, which also requires as many cells in both
+    lines). Between branches, a ``%`` comment and a ``+++`` block break (three ``+``
+    or more, mixed with spaces and tabs), each indented at most three spaces, are
+    accepted as myst-parser's ``line_comment`` and ``block_break`` accept them.
+    "At most three spaces" holds while the parser has its ``code`` rule (a line
+    indented further is a code block, and none of these constructs); without it,
+    markdown-it lets every one of them be indented by any spaces and tabs,
+    and so does the gate.
+    """
+    patterns = _MYST_INDENTED if code else _MYST_UNBOUNDED
+    marker: str | None = None
+    for index, line in enumerate(lines):
+        if marker is not None:
+            closer = patterns.closer.fullmatch(line)
+            if closer is not None:
+                run = closer.group(1)
+                if run[0] == marker[0] and len(run) >= len(marker):
+                    marker = None
+            continue
+        if not line.strip(" \t"):
+            continue
+        opener = patterns.opener.match(line)
+        if opener is not None:
+            run = opener.group(1)
+            # a backtick fence may not have a backtick in its info string (CommonMark)
+            backtick_info = run[0] == "`" and "`" in line[opener.end(1) :]
+            enabled = colon_fence if run[0] == ":" else fence
+            following = lines[index + 1] if index + 1 < len(lines) else ""
+            table = _table_header(line, following, patterns.delimiter)
+            if not backtick_info and enabled and not table:
+                marker = run
+                continue
+            return _Stray(index, None)
+        text: str | None = None
+        if comment and (line_comment := patterns.comment.match(line)) is not None:
+            text = line_comment.group(1)
+        elif (
+            block_break
+            and (markers := patterns.block_break.match(line)) is not None
+            and markers.group(0).count("+") >= 3
+        ):
+            text = line[markers.end() :]
+        if text is None:
+            return _Stray(index, None)
+        one_colon = _ONE_COLON.match(text.strip())
+        if one_colon is not None:
+            return _Stray(index, _branch_kind(one_colon.group(1)))
+    return None
+
+
+def _table_header(line: str, following: str, delimiter: re.Pattern[str], /) -> bool:
+    """Whether markdown-it's ``table`` rule may take ``line`` for a table's header.
+
+    That needs a ``|`` in the line and, on the next, a delimiter row (``delimiter``:
+    indented as the ``code`` rule allows), made of ``|``, ``-``, ``:`` and whitespace
+    only, with a ``-``, and every cell between the ``|`` that is not empty of the form
+    ``:?-+:?``.
+    """
+    if "|" not in line or not delimiter.fullmatch(following):
+        return False
+    if "-" not in following:
+        return False
+    cells = [cell.strip() for cell in following.split("|")]
+    return all(_TABLE_CELL.fullmatch(cell) for cell in cells if cell)
+
+
+def _branch_kind(name: str, /) -> _BranchKind:
+    """The branch kind a directive name (in any case) stands for."""
+    return "when" if name.lower() == "when" else "otherwise"
 
 
 def _absolute_source(source: str | None, /) -> str | None:
@@ -119,15 +385,6 @@ class _BranchPlaceholder(nodes.Element):
     """The ``lineno`` of the branch directive."""
     location: str | None
     """Where warnings about the branch are reported."""
-    source: str | None
-    """The file the branch directive is written in, as docutils or MyST reports it."""
-    owner: nodes.Element | None
-    """The node the branch directive's result is appended to.
-
-    That is the body of its ``choose`` exactly when the branch is written directly
-    in it, rather than inside another directive whose content was parsed into a node
-    of its own.
-    """
 
 
 class _ChooseBody(nodes.Element):
@@ -178,10 +435,6 @@ class _BranchDirective(SphinxDirective):
         placeholder.content_offset = self.content_offset
         placeholder.lineno = self.lineno
         placeholder.location = self.get_location()
-        placeholder.source = self.get_source_info()[0]
-        # docutils' `RSTState.parent` is this very node, and MyST's mock state machine
-        # holds the renderer's current node here, which is where MyST appends the result
-        placeholder.owner = self.state_machine.node
         return [placeholder]
 
 
@@ -223,8 +476,8 @@ class ChooseDirective(SphinxDirective):
 
     The content may hold only ``when`` and ``otherwise`` directives and comments.
     Every mistake is warned about once, and skips the whole ``choose``:
-    content that is neither a branch nor a comment, a branch inside another
-    directive or supplied through an include, no branch at all,
+    content that is neither a branch nor a comment (refused before anything in the
+    body is parsed), a branch written with one colon, no branch at all,
     a ``when`` without a condition, an ``otherwise`` with one,
     an ``otherwise`` that is not the last branch or is not the only one,
     variant data that is not configured,
@@ -266,7 +519,10 @@ class ChooseDirective(SphinxDirective):
             )
             return []
 
-        branches = self._collect_branches(self.get_source_info()[0])
+        if not self._passes_gate():
+            return []
+
+        branches = self._collect_branches()
         if branches is None:
             return []
 
@@ -306,24 +562,109 @@ class ChooseDirective(SphinxDirective):
             ),
         )
 
+    def _syntax(self) -> Literal["rst", "myst"] | None:
+        """The markup the body is written in (``None``: a parser of another kind)."""
+        if isinstance(self.state, RSTState):
+            return "rst"
+        if type(self.state).__module__.split(".", 1)[0] == "myst_parser":
+            return "myst"
+        return None
+
+    def _passes_gate(self) -> bool:
+        """Read the body's top-level lines before anything in it is parsed.
+
+        The body is refused, with one warning at the line, at the first one that is
+        neither the start of a branch, a comment, nor blank.
+        Under a parser other than docutils' and MyST's the body cannot be read,
+        so the ``choose`` is refused, with one warning, and nothing in it is parsed.
+
+        :return: Whether the body may be parsed.
+        """
+        syntax = self._syntax()
+        if syntax is None:
+            self._warn(
+                "'choose' directive is supported under reStructuredText and MyST "
+                "only; the whole choose is skipped"
+            )
+            return False
+        stray = _gate(list(self.content), syntax=syntax, **self._myst_syntax())
+        if stray is None:
+            return True
+        source, offset = self.content.info(stray.index)
+        if syntax == "myst":
+            # MyST numbers the lines of a directive's content from 0
+            offset = self.lineno + stray.index
+        location = (
+            f"{source}:{offset + 1}"
+            if source and offset is not None
+            else self.get_location()
+        )
+        if stray.one_colon is not None:
+            kind = stray.one_colon
+            # the hint follows the syntax the comment is written in
+            if syntax == "rst":
+                write = (
+                    "'.. when:: <condition>'" if kind == "when" else "'.. otherwise::'"
+                )
+            else:
+                write = (
+                    "a '{when} <condition>' fence"
+                    if kind == "when"
+                    else "an '{otherwise}' fence"
+                )
+            self._warn(
+                f"'choose' directive has a comment that begins with '{kind}:' "
+                f"(a branch written with one colon? write {write}); the whole "
+                "choose is skipped",
+                location,
+            )
+            return False
+        # the indentation is kept: an opener indented four spaces is no branch
+        text = self.content[stray.index].rstrip()
+        shown = text if len(text) <= 40 else text[:40] + "…"
+        self._warn(
+            "'choose' directive may contain only 'when' and 'otherwise' directives "
+            f"and comments, got {shown!r}; the whole choose is skipped",
+            location,
+        )
+        return False
+
+    def _myst_syntax(self) -> dict[str, bool]:
+        """Which constructs the document's MyST parser has, for the gate.
+
+        The document's own configuration (the global one merged with its front matter,
+        whose ``enable_extensions`` replaces the global list) is held only by the
+        renderer the directive's state belongs to; without it, the global
+        ``myst_enable_extensions`` and ``myst_disable_syntax`` are read.
+        ``disable_syntax`` can switch off a fence kind, line comments, block breaks,
+        and the ``code`` rule, without which indentation bounds no construct.
+        """
+        config = getattr(getattr(self.state, "_renderer", None), "md_config", None)
+        if config is not None:
+            extensions = set(config.enable_extensions)
+            disabled = set(config.disable_syntax)
+        else:
+            extensions = set(getattr(self.env.config, "myst_enable_extensions", ()))
+            disabled = set(getattr(self.env.config, "myst_disable_syntax", ()))
+        return {
+            "colon_fence": "colon_fence" in extensions
+            and "colon_fence" not in disabled,
+            "fence": "fence" not in disabled,
+            "comment": "myst_line_comment" not in disabled,
+            "block_break": "myst_block_break" not in disabled,
+            "code": "code" not in disabled,
+        }
+
     def _parse_body(self) -> _ChooseBody:
         """Parse the content into a detached node, with every branch deferred.
 
-        Because the content of every branch is deferred,
-        a need created while the body is parsed can only come from content
-        written outside a branch, which is a mistake that skips the whole ``choose``:
-        such needs are removed again, so that the mistake creates none.
+        After the gate, the body holds only branches and comments,
+        so nothing else runs while it is parsed.
 
         :return: The parsed body.
         """
         body = _ChooseBody()
         body.document = self.state.document
-
-        data = SphinxNeedsData(self.env)
-        # outside the read phase no need can be added, so there is nothing to undo
-        needs = None if data.needs_is_post_processed else data.get_needs_mutable()
-        before = 0 if needs is None else len(needs)
-
         temp_data = self.env.temp_data
         depth = temp_data.get(_DEPTH_KEY, 0)
         temp_data[_DEPTH_KEY] = depth + 1
@@ -331,104 +672,30 @@ class ChooseDirective(SphinxDirective):
             self.state.nested_parse(self.content, self.content_offset, body)
         finally:
             temp_data[_DEPTH_KEY] = depth
-
-        if needs is not None and len(needs) > before:
-            # the newest entries are the ones the body added: O(new needs)
-            for need_id in list(islice(reversed(needs), len(needs) - before)):
-                data.remove_need(need_id)
-
         return body
 
-    def _collect_branches(
-        self, source: str | None, /
-    ) -> list[_BranchPlaceholder] | None:
+    def _collect_branches(self) -> list[_BranchPlaceholder] | None:
         """Parse the body and check its structure.
 
-        The branches must be written in the body itself:
-        a branch inside another directive (one whose content is parsed into a node
-        of its own, even if it then returns that node's children, such as a true ``if``)
-        is refused, and so is a branch an ``.. include::`` supplies,
-        so that one ``choose`` is one directive in one file.
-        Then every ``when`` must have a condition and the ``otherwise`` none,
+        Every ``when`` must have a condition and the ``otherwise`` none,
         and there may be one ``otherwise`` at most, as the last branch.
 
-        :param source: The file this ``choose`` is written in,
-            as its branches report theirs.
         :return: The branches, in order,
             or ``None`` if the body is not a valid ``choose``
             (a warning has been emitted).
         """
-        body = self._parse_body()
-        children = list(body.children)
         branches: list[_BranchPlaceholder] = []
-        for index, child in enumerate(children):
+        for child in self._parse_body().children:
             if isinstance(child, _BranchPlaceholder):
-                # the source first: a branch an include supplies is reported as such,
-                # also when the include stands inside another directive
-                if _absolute_source(child.source) != _absolute_source(source):
-                    self._warn(
-                        f"'{child.kind}' supplied through an include is not supported "
-                        "(write the branches in the body of the 'choose'); the whole "
-                        "choose is skipped",
-                        child.location,
-                    )
-                    return None
-                if child.owner is not body:
-                    self._warn(
-                        f"'{child.kind}' directive is not a direct child of its "
-                        "'choose' (it is inside another directive); the whole choose "
-                        "is skipped",
-                        child.location,
-                    )
-                    return None
                 branches.append(child)
-            elif isinstance(child, nodes.comment):
-                like = _BRANCH_LIKE_COMMENT.match(child.astext().lstrip())
-                if like is None:
-                    continue
-                # a branch written with one colon would hand the choice to the otherwise
-                kind = like.group(1).lower()
-                # the hint follows the syntax the comment is written in
-                if isinstance(self.state, RSTState):
-                    write = (
-                        "'.. when:: <condition>'"
-                        if kind == "when"
-                        else "'.. otherwise::'"
-                    )
-                else:
-                    write = (
-                        "a '{when} <condition>' fence"
-                        if kind == "when"
-                        else "an '{otherwise}' fence"
-                    )
-                self._warn(
-                    f"'choose' directive has a comment that begins with '{kind}:' "
-                    f"(a branch written with one colon? write {write}); the whole "
-                    "choose is skipped",
-                    self._branch_like_comment_location(child),
-                )
-                return None
-            elif isinstance(child, nodes.system_message):
-                reported = max(
-                    self.state.document.reporter.report_level, Reporter.WARNING_LEVEL
-                )
-                if child["level"] < reported:
-                    # never shown as a problem (below the report level, or below WARNING
-                    # however low that level is set): judge what follows it instead
-                    # (docutils puts an INFO before the paragraph of a `---` line)
-                    continue
-                # reported by docutils or MyST when it was created: skip, silently
-                return None
-            else:
-                offender = self._offender(children[index:])
-                tagname = (
-                    offender.tagname if isinstance(offender, nodes.Element) else "#text"
-                )
+            elif not isinstance(child, nodes.comment):
+                # past the gate only a message the parser made about a branch
+                # directive, or a node of an ungated parser, can be here
+                tagname = child.tagname if isinstance(child, nodes.Element) else "#text"
                 self._warn(
                     "'choose' directive may contain only 'when' and 'otherwise' "
                     f"directives and comments, got <{tagname}>; the whole choose is "
-                    "skipped",
-                    self._location_of(children[index:]),
+                    "skipped"
                 )
                 return None
 
@@ -472,96 +739,6 @@ class ChooseDirective(SphinxDirective):
             return None
 
         return branches
-
-    @staticmethod
-    def _offender(candidates: Sequence[nodes.Node]) -> nodes.Node:
-        """The node a warning about the first of ``candidates`` names.
-
-        A need directive emits a target before the need,
-        which carries no line and is nothing the author wrote:
-        such leading targets are passed over, so that the warning names the need.
-
-        :param candidates: The offending child and the children after it.
-        """
-        for node in candidates:
-            if isinstance(node, nodes.target) and not get_source_line(node)[1]:
-                continue
-            if isinstance(node, _BranchPlaceholder | nodes.comment):
-                break
-            return node
-        return candidates[0]
-
-    def _location_of(self, candidates: Sequence[nodes.Node]) -> nodes.Node | str | None:
-        """Where to report the first of ``candidates``.
-
-        That is the first node, in or under them, that knows its source and line:
-        the body is detached, so no node can inherit them from an ancestor,
-        and some nodes carry none of their own
-        (such as the target a need directive emits before the need).
-
-        :param candidates: The offending child and the children after it.
-        :return: That node, or the location of the ``choose`` if none has both.
-        """
-        for candidate in candidates:
-            for node in candidate.findall(nodes.Element):
-                source, line = get_source_line(node)
-                if source and line:
-                    return node
-        return self.get_location()
-
-    def _branch_like_comment_location(
-        self, comment: nodes.comment, /
-    ) -> nodes.Node | str | None:
-        """Where to report the first comment of the body that reads like a branch.
-
-        A comment carries no line of its own (docutils and MyST give it the line
-        being parsed when it is appended, which is after it, or the ``choose``'s),
-        so its line is found in the content of the ``choose``:
-        the first line at the level of the body whose comment text the rule matches.
-        That is the line of ``comment``, the first such comment the body holds.
-        Under docutils the lines of the body are those not indented,
-        and a line that docutils reads as a ``when`` or ``otherwise`` directive
-        (a name, an optional space, ``::``, then a space or the end of the line)
-        is not a comment;
-        under MyST, the lines of the body are those outside the fences
-        of the directives in it, and a ``%`` line (or a ``+++`` block break)
-        is a comment.
-
-        :param comment: The comment, used as the location if no line is found
-            (for one an include supplied).
-        :return: ``"<source>:<line>"``, or the fallback.
-        """
-        rst = isinstance(self.state, RSTState)
-        fence: str | None = None
-        for index, line in enumerate(self.content):
-            text: str | None = None
-            if rst:
-                markup = re.match(r"\.\.[ ]+(.*)", line)
-                text = markup.group(1) if markup else None
-                if text is not None and _BRANCH_DIRECTIVE_LINE.match(text):
-                    continue
-            elif fence is not None:
-                closing = line.rstrip()
-                if closing.startswith(fence) and set(closing) == {fence[0]}:
-                    fence = None
-                continue
-            elif opening := re.match(r"(`{3,}|~{3,}|:{3,})", line):
-                fence = opening.group(1)
-                continue
-            elif line.startswith("%"):
-                text = line[1:]
-            elif line.startswith("+++"):
-                text = line[3:]
-            if text is not None and _BRANCH_LIKE_COMMENT.match(text.lstrip()):
-                source, offset = self.content.info(index)
-                if not rst:
-                    # MyST numbers the lines of a directive's content from 0
-                    offset = self.lineno + index
-                if source and offset is not None:
-                    return f"{source}:{offset + 1}"
-                break
-        source, line = get_source_line(comment)
-        return comment if source and line else self.get_location()
 
     def _parse_branch(self, branch: _BranchPlaceholder) -> list[nodes.Node]:
         """Parse the content of the branch that is taken, with section titles allowed.
