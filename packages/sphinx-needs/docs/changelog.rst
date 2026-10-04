@@ -61,8 +61,9 @@ Bug fixes
   It is now the one ``directive expression failed`` warning of the ``if`` or ``when``,
   and the condition cannot be evaluated: the body is skipped, and a ``when`` skips its
   whole ``choose``, as for any other condition that fails.
-  A result whose repr raises, which ended the build too, is now reported with a
-  placeholder in the warning for a result that is not a bool, and its truth value is used.
+  A result whose truth value can be taken but whose repr raises, which ended the build too,
+  is now reported with a placeholder in the warning for a result that is not a bool,
+  and its truth value is used.
 
 - 🐛 An :ref:`if <if>` warning in an included file names that file by its absolute path
   **(changed output)** (:issue:`2027`)

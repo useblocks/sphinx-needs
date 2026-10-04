@@ -75,8 +75,8 @@ def evaluate_variant_condition(
     (taking the truth value of its result included),
     make the condition unevaluable;
     a result that is not a ``bool`` is warned about and then used as its truth value.
-    Reporting never changes the outcome:
-    a result whose repr raises is reported with a placeholder in its place.
+    Reporting a result never changes the outcome:
+    one whose repr raises is reported with a placeholder in its place.
 
     :param env: The build environment, whose config holds the variant data.
     :param expression: The condition, as written.
