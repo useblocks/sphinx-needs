@@ -7,6 +7,8 @@ custom fields -- without Sphinx; the extension's own suite covers the same repor
 build.
 """
 
+import builtins
+import json
 from pathlib import Path
 
 import pytest
@@ -103,6 +105,50 @@ class TestParse:
         # present but empty is the report's value, not the default
         assert cases[2]["status"] == ""
         assert cases[3]["status"] == "unknown"
+
+    def test_report_is_read_as_utf8_when_locale_default_is_not(
+        self, tmp_path, monkeypatch
+    ):
+        report = tmp_path / "report.json"
+        report.write_text(
+            json.dumps(
+                [
+                    {
+                        "name": "utf8 suite",
+                        "tests": 1,
+                        "errors": 0,
+                        "failures": 0,
+                        "skips": 0,
+                        "passed": 1,
+                        "time": 0.01,
+                        "testcase": [
+                            {
+                                "name": "emoji ✅",
+                                "classname": "UnicodeTests",
+                                "file": "test_unicode.py",
+                                "line": 1,
+                                "time": 0.01,
+                                "result": "passed",
+                            }
+                        ],
+                    }
+                ],
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+        real_open = builtins.open
+
+        def locale_defaulting_open(file, mode="r", *args, **kwargs):
+            if Path(file) == report and "b" not in mode and "encoding" not in kwargs:
+                kwargs["encoding"] = "cp1252"
+            return real_open(file, mode, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "open", locale_defaulting_open)
+
+        (suite,) = _parse(report, _mapping())
+
+        assert suite["testcases"][0]["name"] == "emoji ✅"
 
 
 class TestResultNormalisation:
