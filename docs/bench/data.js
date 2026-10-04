@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791098927650,
+  "lastUpdate": 1791099643184,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -22176,6 +22176,42 @@ window.BENCHMARK_DATA = {
             "value": 57.85435314799997,
             "unit": "s",
             "extra": "Commit: b4542f101942c358c71236aa0adc85454ea4bb74\nBranch: master\nTime: 2026-10-04T09:27:23+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "110906681+kocaemre@users.noreply.github.com",
+            "name": "Emre K.",
+            "username": "kocaemre"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e89edcc2e622141824bdc8220e441242f77a13a9",
+          "message": "🐛 fix: read JSON test reports as UTF-8 (#2024)\n\n## Summary\n- Read `ub_test_reports` JSON reports with `encoding=\"utf-8\"` instead of\nthe process locale.\n- Add a regression that simulates a non-UTF-8 locale default and\nverifies a non-ASCII test name round-trips.\n- Add an `ub-test-reports` changelog entry.\n\nFixes #2014.\n\n## Test plan\n- [x] RED: `uv run poe test-ub-test-reports tests/test_json_parser.py -k\nutf8` failed before the fix with `AssertionError: assert 'emoji âœ…' ==\n'emoji ✅'`.\n- [x] GREEN: `uv run poe test-ub-test-reports tests/test_json_parser.py\n-k utf8` — 1 passed, 10 deselected.\n- [x] GREEN: `uv run poe test-ub-test-reports tests/test_json_parser.py`\n— 11 passed.\n- [x] GREEN: `uv run poe test-ub-test-reports` — 350 passed, 2 skipped.\n- [x] GREEN: `uv run poe lint` — passed.\n- [x] GREEN: `git diff --check` — passed.\n\nSigned-off-by: Emre K <110906681+kocaemre@users.noreply.github.com>",
+          "timestamp": "2026-10-04T09:39:34+02:00",
+          "tree_id": "649dd2145f3bdfd39d5ac6cef7ebea3d350edc8a",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/e89edcc2e622141824bdc8220e441242f77a13a9"
+        },
+        "date": 1791099634722,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07754734499999927,
+            "unit": "s",
+            "extra": "Commit: e89edcc2e622141824bdc8220e441242f77a13a9\nBranch: master\nTime: 2026-10-04T09:39:34+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 40.681247107999994,
+            "unit": "s",
+            "extra": "Commit: e89edcc2e622141824bdc8220e441242f77a13a9\nBranch: master\nTime: 2026-10-04T09:39:34+02:00"
           }
         ]
       }
