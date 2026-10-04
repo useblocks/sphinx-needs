@@ -49,6 +49,30 @@ Improvements
   The undocumented warning ``if`` gives for a condition whose result is not a bool is
   now listed in its documentation.
 
+Bug fixes
+.........
+
+- 🐛 An :ref:`if <if>` condition whose result has no truth value is reported, instead of
+  ending the build **(changed output)** (:issue:`2025`, :pr:`2029`)
+
+  Taking the truth value of a result runs the result's own ``__bool__``, which may raise,
+  as it may for a value of :ref:`needs_variant_data` of a user-defined type.
+  That ended the build with a traceback, after the warning for a result that is not a bool.
+  It is now the one ``directive expression failed`` warning of the ``if`` or ``when``,
+  and the condition cannot be evaluated: the body is skipped, and a ``when`` skips its
+  whole ``choose``, as for any other condition that fails.
+  A result whose truth value can be taken but whose repr raises, which ended the build too,
+  is now reported with a placeholder in the warning for a result that is not a bool,
+  and its truth value is used.
+
+- 🐛 An :ref:`if <if>` warning in an included file names that file by its absolute path
+  **(changed output)** (:issue:`2027`, :pr:`2029`)
+
+  It named the file as docutils records it, relative to the working directory
+  (``docs/inc.txt`` for a build run from the project's parent directory),
+  where a ``when`` in the same file names it absolutely, as Sphinx names the file of a
+  node's location.
+
 .. _`release:8.5.0`:
 
 8.5.0

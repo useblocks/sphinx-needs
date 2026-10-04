@@ -165,6 +165,12 @@ The mistakes are:
 - A comment that begins with ``when:`` or ``otherwise:``: a branch written with one colon,
   or without the space after ``::``, is a comment in reStructuredText; a ``when`` written so would hand the choice
   to the ``otherwise``, and an ``otherwise`` written so would make the default vanish.
+  A branch written with no colon at all (``.. when var.debug``) is a comment, content and all,
+  that the ``choose`` cannot tell from any other, so it is not refused:
+  the ``choose`` goes on as if the branch were not there, without a warning,
+  so a later ``when`` or the ``otherwise`` may be taken in its place;
+  only a ``choose`` that it leaves with no branch warns, as having none.
+  In MyST, ``% when var.debug`` is a one-line comment, so the content after it is refused.
 - A branch is written inside another directive in the ``choose`` rather than directly in it,
   or supplied through an include: the directive or the include is such content,
   and the warning points at its line (the included file is never read).
