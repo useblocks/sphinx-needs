@@ -1,0 +1,4 @@
+TAKEN_X2_INCLUDED_TEXT
+
+.. req:: Included into the taken branch
+   :id: REQ_X2_INCLUDED

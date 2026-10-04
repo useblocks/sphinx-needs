@@ -4,6 +4,51 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+Improvements
+............
+
+- ✨ New :ref:`choose <choose>`, ``when`` and ``otherwise`` directives include one of
+  several branches of content, chosen by variant data (:pr:`2020`)
+
+  A ``choose`` runs its ``when`` tests in order, and the first ``when`` whose condition
+  is true is included; an ``otherwise``, the optional default, comes last; when no test
+  holds and there is no ``otherwise``, nothing is rendered. The other branches are never
+  parsed, so the needs inside them are never created:
+
+  .. code-block:: rst
+
+     .. choose::
+
+        .. when:: var.arch == "arm"
+
+           ARM content.
+
+        .. when:: var.arch == "x86"
+
+           x86 content.
+
+        .. otherwise::
+
+           Content for every other architecture.
+
+  Conditions are exactly those of the :ref:`if <if>` directive, evaluated by the same
+  code, and the conditions after the branch that is taken are not evaluated. A
+  ``choose`` may contain only ``when`` and ``otherwise`` directives and comments, and
+  nothing outside a branch is ever parsed. Every mistake warns once under the new
+  ``needs.choose`` type and skips the whole ``choose``: content outside a branch
+  (refused before the body is parsed, so nothing in it runs), a branch inside another
+  directive or supplied through an include, a branch written with one colon, no branch
+  at all, a ``when`` without a condition, an ``otherwise`` with one, a misplaced or
+  second ``otherwise``, an argument on ``choose``, variant data that is not configured,
+  and a condition that cannot be evaluated — so a mistake that makes a condition
+  unevaluable, such as a misspelt key or a syntax error, never renders a later branch
+  or the ``otherwise`` in its place. Works in reStructuredText and in MyST Markdown.
+  The undocumented warning ``if`` gives for a condition whose result is not a bool is
+  now listed in its documentation.
+
 .. _`release:8.5.0`:
 
 8.5.0
