@@ -42,6 +42,18 @@ def _absolute_location(location: str | nodes.Node | None, /) -> str | nodes.Node
     return f"{_absolute_source(source)}:{line}"
 
 
+def _reported_repr(value: object, /) -> str:
+    """``repr(value)`` for a warning, or a placeholder when the repr raises.
+
+    The repr is only the text of a warning, so its failure is reported in its place,
+    as ``<TypeName whose repr raised ExcName>``, rather than deciding anything.
+    """
+    try:
+        return repr(value)
+    except Exception as e:
+        return f"<{type(value).__name__} whose repr raised {type(e).__name__}>"
+
+
 def evaluate_variant_condition(
     env: BuildEnvironment,
     expression: str,
@@ -60,9 +72,11 @@ def evaluate_variant_condition(
 
     Every problem is warned about here, once, naming ``directive``:
     variant data that is not configured, and an expression that raises
-    (taking the truth value or the repr of its result included),
+    (taking the truth value of its result included),
     make the condition unevaluable;
     a result that is not a ``bool`` is warned about and then used as its truth value.
+    Reporting never changes the outcome:
+    a result whose repr raises is reported with a placeholder in its place.
 
     :param env: The build environment, whose config holds the variant data.
     :param expression: The condition, as written.
@@ -88,17 +102,10 @@ def evaluate_variant_condition(
     context: dict[str, object] = {"var": var_proxy, "__builtins__": {}}
     try:
         raw_result = eval(expression, context)
-        # the truth value and the repr of the result run its own code, which may raise
-        # (a NumPy array's ``__bool__`` does): both are taken here, so that such a
-        # result fails like any other expression, before anything is reported about it
+        # the truth value is part of the evaluation: it runs the result's own code,
+        # which may raise (a NumPy array's ``__bool__`` does), and such a result fails
+        # like any other expression, before anything is reported about it
         result = bool(raw_result)
-        not_a_bool = (
-            None
-            if isinstance(raw_result, bool)
-            else f"'{directive}' directive expression did not return a bool, "
-            f"got {type(raw_result).__name__}: {raw_result!r} "
-            f"(coercing to bool): {expression!r}"
-        )
     except Exception as e:
         log_warning(
             LOGGER,
@@ -108,8 +115,15 @@ def evaluate_variant_condition(
         )
         return None
 
-    if not_a_bool is not None:
-        log_warning(LOGGER, not_a_bool, subtype, location=location)
+    if not isinstance(raw_result, bool):
+        log_warning(
+            LOGGER,
+            f"'{directive}' directive expression did not return a bool, "
+            f"got {type(raw_result).__name__}: {_reported_repr(raw_result)} "
+            f"(coercing to bool): {expression!r}",
+            subtype,
+            location=location,
+        )
 
     return result
 

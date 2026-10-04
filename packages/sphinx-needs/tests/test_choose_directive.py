@@ -34,10 +34,11 @@ _CONF_MYST = (
     "extensions = ['sphinx_needs', 'myst_parser']\n"
     "myst_enable_extensions = ['colon_fence']\n" + _VARIANT_DATA + _NEEDS_TYPES
 )
-# a variant value whose truth value cannot be taken, as a NumPy array's cannot: an `int`,
-# so that the variant-data validation passes it, pickled as the plain `int` (Sphinx pickles
-# the configuration, and a class defined in `conf.py` cannot be found by name again)
-_CONF_AMBIGUOUS = (
+# variant values whose own code raises: `matrix`, whose truth value cannot be taken, as a
+# NumPy array's cannot, and `loud`, whose repr raises (its truth value is fine); each an
+# `int`, so that the variant-data validation passes it, pickled as the plain `int` (Sphinx
+# pickles the configuration, and a class defined in `conf.py` cannot be found by name again)
+_CONF_RAISING = (
     "extensions = ['sphinx_needs']\n"
     "class Ambiguous(int):\n"
     "    def __bool__(self):\n"
@@ -45,7 +46,12 @@ _CONF_AMBIGUOUS = (
     "                         ' is ambiguous')\n"
     "    def __reduce__(self):\n"
     "        return (int, (int(self),))\n"
-    "needs_variant_data = {'matrix': Ambiguous(3)}\n" + _NEEDS_TYPES
+    "class Loud(int):\n"
+    "    def __repr__(self):\n"
+    "        raise RuntimeError('repr exploded')\n"
+    "    def __reduce__(self):\n"
+    "        return (int, (int(self),))\n"
+    "needs_variant_data = {'matrix': Ambiguous(3), 'loud': Loud(3)}\n" + _NEEDS_TYPES
 )
 
 _HAS_MYST = importlib.util.find_spec("myst_parser") is not None
@@ -583,7 +589,24 @@ _WARNINGS = {
                 "   .. when:: var.matrix",
             ),
         ),
-        conf=_CONF_AMBIGUOUS,
+        conf=_CONF_RAISING,
+    ),
+    # a repr that raises is only the text of the warning: the result is reported with a
+    # placeholder, and its truth value is used, so the branch is taken
+    "a repr that raises does not decide": _Expected(
+        ".. choose::\n\n"
+        "   .. when:: var.loud\n\n      TAKEN_LOUD\n\n"
+        "   .. otherwise::\n\n      SKIPPED_DEFAULT\n",
+        (
+            (
+                "'when' directive expression did not return a bool, "
+                "got Loud: <Loud whose repr raised RuntimeError> "
+                "(coercing to bool): 'var.loud'",
+                "   .. when:: var.loud",
+            ),
+        ),
+        taken=("TAKEN_LOUD",),
+        conf=_CONF_RAISING,
     ),
     "non-bool is coerced and taken": _Expected(
         ".. choose::\n\n"

@@ -240,16 +240,22 @@ def test_if_non_bool_warns(test_app):
     # Content is still included (coercion works)
     assert "INCLUDED_VIA_TRUTHY_STRING" in html
     assert "INCLUDED_VIA_TRUTHY_INT" in html
-    # But warnings are emitted
-    warnings = app._warning.getvalue()
-    assert "did not return a bool" in warnings
+    # But warnings are emitted, one per directive, whole lines pinned
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:4: WARNING: 'if' directive expression did not return a bool, "
+        "got str: 'abc' (coercing to bool): 'var.arch' [needs.if]",
+        "<srcdir>/index.rst:8: WARNING: 'if' directive expression did not return a bool, "
+        "got int: 5 (coercing to bool): 'var.count' [needs.if]",
+    ]
 
 
-# A variant value whose truth value cannot be taken, as a NumPy array's cannot.
-# An ``int``, so that the variant-data validation (scalars, arrays, tables) passes it;
-# ``__reduce__`` pickles it as the plain ``int``, because Sphinx pickles the configuration
-# with the environment and a class defined in ``conf.py`` cannot be found by name again.
-_CONF_AMBIGUOUS = (
+# Variant values whose own code raises: ``matrix``, whose truth value cannot be taken,
+# as a NumPy array's cannot, and ``loud``, whose repr raises (its truth value is fine).
+# Each is an ``int``, so that the variant-data validation (scalars, arrays, tables)
+# passes it; ``__reduce__`` pickles it as the plain ``int``, because Sphinx pickles the
+# configuration with the environment and a class defined in ``conf.py`` cannot be found
+# by name again.
+_CONF_RAISING = (
     "extensions = ['sphinx_needs']\n"
     "class Ambiguous(int):\n"
     "    def __bool__(self):\n"
@@ -257,7 +263,12 @@ _CONF_AMBIGUOUS = (
     "                         ' is ambiguous')\n"
     "    def __reduce__(self):\n"
     "        return (int, (int(self),))\n"
-    "needs_variant_data = {'matrix': Ambiguous(3)}\n"
+    "class Loud(int):\n"
+    "    def __repr__(self):\n"
+    "        raise RuntimeError('repr exploded')\n"
+    "    def __reduce__(self):\n"
+    "        return (int, (int(self),))\n"
+    "needs_variant_data = {'matrix': Ambiguous(3), 'loud': Loud(3)}\n"
     "needs_types = []\n"
 )
 
@@ -275,7 +286,7 @@ _AMBIGUOUS_INDEX = (
         {
             "buildername": "html",
             "files": [
-                (Path("conf.py"), _CONF_AMBIGUOUS),
+                (Path("conf.py"), _CONF_RAISING),
                 (Path("index.rst"), _AMBIGUOUS_INDEX),
             ],
         }
@@ -303,6 +314,41 @@ def test_if_truth_value_that_raises_warns(test_app):
     html = Path(app.outdir, "index.html").read_text()
     assert "SKIPPED_AMBIGUOUS" not in html
     assert "TAKEN_AFTER_AMBIGUOUS" in html
+
+
+_LOUD_INDEX = "Test\n====\n\n.. if:: var.loud\n\n   TAKEN_LOUD\n"
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), _CONF_RAISING),
+                (Path("index.rst"), _LOUD_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_if_repr_that_raises_does_not_decide(test_app):
+    """A result whose repr raises is reported in place, and its truth value is used.
+
+    The repr is only the text of the warning for a result that is not a ``bool``,
+    so reporting must never change the outcome: the condition holds (``3`` is true),
+    the body is included, and the one warning names the type and the error instead.
+    """
+    app = test_app
+    app.build()
+    line = _LOUD_INDEX.splitlines().index(".. if:: var.loud") + 1
+    assert build_warnings(app) == [
+        f"<srcdir>/index.rst:{line}: WARNING: "
+        "'if' directive expression did not return a bool, "
+        "got Loud: <Loud whose repr raised RuntimeError> "
+        "(coercing to bool): 'var.loud' [needs.if]"
+    ]
+    assert "TAKEN_LOUD" in Path(app.outdir, "index.html").read_text()
 
 
 _INC_TXT = "Included\n\n.. if:: var.missing\n\n   SKIPPED_INC\n"
