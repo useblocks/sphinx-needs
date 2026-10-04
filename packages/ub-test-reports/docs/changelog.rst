@@ -3,6 +3,15 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+Fixed
+.....
+
+- 🐛 The JSON parser now reads report files as UTF-8 explicitly, so non-ASCII test names and
+  messages do not depend on the process locale on Windows.
+
 .. _`release:1.0.0`:
 
 1.0.0
