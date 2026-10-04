@@ -303,3 +303,48 @@ def test_if_truth_value_that_raises_warns(test_app):
     html = Path(app.outdir, "index.html").read_text()
     assert "SKIPPED_AMBIGUOUS" not in html
     assert "TAKEN_AFTER_AMBIGUOUS" in html
+
+
+_INC_TXT = "Included\n\n.. if:: var.missing\n\n   SKIPPED_INC\n"
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (
+                    Path("conf.py"),
+                    "extensions = ['sphinx_needs']\n"
+                    "needs_variant_data = {'arch': 'abc'}\n"
+                    "needs_types = []\n",
+                ),
+                (Path("index.rst"), "Test\n====\n\n.. include:: inc.txt\n"),
+                (Path("inc.txt"), _INC_TXT),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_if_warning_in_an_included_file(test_app, monkeypatch):
+    """A warning from an ``if`` in an included file names that file absolutely.
+
+    Built from the source directory, as the ``choose`` include rows are:
+    docutils then records an included file relative to the working directory
+    (``inc.txt`` rather than an absolute path), which the warning must make
+    absolute again, as Sphinx does for the location of a node.
+    """
+    app = test_app
+    monkeypatch.chdir(app.srcdir)
+    app.build()
+    warnings = build_warnings(app)
+    assert len(warnings) == 1, warnings
+    line = _INC_TXT.splitlines().index(".. if:: var.missing") + 1
+    assert warnings[0].startswith(f"<srcdir>/inc.txt:{line}: WARNING: "), warnings[0]
+    assert (
+        "'if' directive expression failed: 'var.missing' — "
+        "Unknown variant key: var.missing" in warnings[0]
+    ), warnings[0]
+    assert warnings[0].endswith(" [needs.if]"), warnings[0]
+    assert "SKIPPED_INC" not in Path(app.outdir, "index.html").read_text()

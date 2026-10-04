@@ -14,10 +14,10 @@ from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.directives.needchoose import (
     ChooseDirective,
     OtherwiseDirective,
-    _absolute_location,
     _BranchPlaceholder,
     _ChooseBody,
 )
+from sphinx_needs.directives.needif import _absolute_location
 from sphinx_needs_testkit import assert_no_warnings, build_warnings
 
 _NEEDS_TYPES = (

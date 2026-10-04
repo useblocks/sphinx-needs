@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from collections.abc import Sequence
 
 from docutils import nodes
@@ -13,6 +14,32 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
 
 LOGGER = get_logger(__name__)
+
+
+def _absolute_source(source: str | None, /) -> str | None:
+    """``source`` made absolute, as Sphinx makes the source of a node's location.
+
+    docutils records an included file relative to the working directory
+    (``utils.relative_path``) whenever the two share their first two path components:
+    a build run from the project's own directory, the common case, gives ``docs/inc.txt``,
+    and a test run from a checkout under ``/tmp`` gives ``../…``.
+    """
+    return os.path.abspath(source) if source else source
+
+
+def _absolute_location(location: str | nodes.Node | None, /) -> str | nodes.Node | None:
+    """A ``"<source>:<line>"`` location with its source made absolute.
+
+    Every location the ``if``, ``choose``, ``when`` and ``otherwise`` directives report
+    goes through here.
+    A node is returned as it is: Sphinx makes the source of a node absolute itself.
+    """
+    if not isinstance(location, str):
+        return location
+    source, colon, line = location.rpartition(":")
+    if not colon or not source or source == "<unknown>":
+        return location
+    return f"{_absolute_source(source)}:{line}"
 
 
 def evaluate_variant_condition(
@@ -113,7 +140,7 @@ class IfDirective(SphinxDirective):
             self.arguments[0],
             directive="if",
             subtype="if",
-            location=self.get_location(),
+            location=_absolute_location(self.get_location()),
         ):
             return []
 
