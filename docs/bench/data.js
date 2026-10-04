@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791099643184,
+  "lastUpdate": 1791123273463,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -22212,6 +22212,42 @@ window.BENCHMARK_DATA = {
             "value": 40.681247107999994,
             "unit": "s",
             "extra": "Commit: e89edcc2e622141824bdc8220e441242f77a13a9\nBranch: master\nTime: 2026-10-04T09:39:34+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2d6b8aa6a0c0cc89c4dd1f5adbc58d968af181cc",
+          "message": "🐛 sphinx-needs: harden the `if` / `when` evaluator and `if` locations (#2029)\n\nCloses #2025\nCloses #2027\nCloses #2026\n\nThree follow-ups to #2020, plus a review round.\n\n### `if` / `when`: a truth value that raises warns instead of ending the\nbuild (#2025)\n\n`evaluate_variant_condition`, the one evaluator of `if` and `when`, ran\nthe expression inside a `try` but took the result's truth value, and\nformatted its repr for the non-bool warning, outside it, so either could\nend the build with a traceback. The rule now is: **the truth value is\npart of the evaluation, and reporting never changes the outcome.**\n\n- A result whose `__bool__` raises is an expression that failed: one\n`directive expression failed` warning, under the existing subtype, and\nthe condition is unevaluable (an `if` skips its body, a `when` poisons\nits `choose`: no later branch and no `otherwise` is taken).\n- A result whose repr raises still has a truth value: it gets the one\nnon-bool warning, with `<TypeName whose repr raised ExcName>` in the\nrepr's place, and its truth value decides as for any non-bool result.\n\nEvery message whose repr works is byte-identical to before.\n\n`.. if:: var.matrix`, a variant value whose `__bool__` raises:\n\nbefore: index.rst:4: WARNING: 'if' directive expression did not return a\nbool, got Ambiguous: 3 (coercing to bool): 'var.matrix' [needs.if]\nValueError: The truth value of an array with more than one element is\nambiguous (build aborted)\nafter: index.rst:4: WARNING: 'if' directive expression failed:\n'var.matrix' — The truth value of an array with more than one element is\nambiguous [needs.if]\n\n`.. if:: var.loud`, a truthy variant value whose `__repr__` raises:\n\n    before: RuntimeError: repr exploded   (build aborted)\nafter: index.rst:4: WARNING: 'if' directive expression did not return a\nbool, got Loud: <Loud whose repr raised RuntimeError> (coercing to\nbool): 'var.loud' [needs.if]\n            (the body is included)\n\n(`when` likewise, `[needs.choose]`.)\nTests: `test_if_truth_value_that_raises_warns`,\n`test_if_repr_that_raises_does_not_decide`, the `choose` rows \"a truth\nvalue that raises poisons the otherwise\" and \"a repr that raises does\nnot decide\"; `test_if_non_bool_warns` now pins its two whole warning\nlines.\n\n### `if`: a warning from an included file is located absolutely (#2027)\n\n`_absolute_source` / `_absolute_location` move from `needchoose.py` to\n`needif.py` (one definition, imported by `needchoose.py`), and\n`IfDirective.run` routes its location through `_absolute_location`, as\n`choose` does.\n\n`sphinx-build` run from the project's parent, `docs/index.rst` including\n`docs/inc.txt`:\n\nbefore: docs/inc.txt:3: WARNING: 'if' directive expression failed:\n'var.missing' — Unknown variant key: var.missing [needs.if]\nafter: /abs/path/docs/inc.txt:3: WARNING: 'if' directive expression\nfailed: 'var.missing' — Unknown variant key: var.missing [needs.if]\n\n(the `when` in the same file was already `/abs/path/docs/inc.txt:9`.)\nTest: `test_if_warning_in_an_included_file`, the twin of the `choose`\ninclude rows (same plumbing).\nThe other sphinx-needs directives that report `self.get_location()` as\nit is (a need's own option warning, for example) still name an included\nfile relative to the working directory: #2028.\n\n### `choose`: the branch written with no colon, documented (#2026, docs\nonly)\n\nThe warnings-list bullet on comments that begin with `when:` /\n`otherwise:` now covers `.. when var.debug`: in reStructuredText it is a\ncomment, content and all, so the `choose` goes on as if the branch were\nnot there, without a warning (a later `when` or the `otherwise` may be\ntaken in its place), and only a `choose` it leaves with no branch warns.\nIn MyST, `% when var.debug` is a one-line comment, so the content after\nit is refused. The gate's rule is unchanged (widening it is a contract\nchange for both engines, per the issue).\n\n### Changelog (`Unreleased` → `Bug fixes`)\n\n- 🐛 An :ref:`if <if>` condition whose result has no truth value is\nreported, instead of ending the build **(changed output)**\n(:issue:`2025`, :pr:`2029`)\n- 🐛 An :ref:`if <if>` warning in an included file names that file by its\nabsolute path **(changed output)** (:issue:`2027`, :pr:`2029`)\n\n(each with its paragraph; see the diff.)\n\n### Checks\n\n`uv run poe test-needs -n 4` (full suite: 2076 passed, 13 skipped), the\ntwo directive files on Sphinx 7.4 (130 passed), `uv run poe lint`, `uv\nrun poe typecheck`, `uv run poe docs-needs` (no warning from the changed\npages). Each new test was red on the code before its fix, and the #2027\nlocation assertion is the only thing in the suite that catches that\nregression. Reviewed in two rounds (seven named claims attacked with the\nreviewer's own mutations; the review's two findings are the fourth\ncommit).\n\nWhen squashing, strip the `Co-authored-by` trailer GitHub proposes (the\ncommits carry the sandbox's git identity).\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+          "timestamp": "2026-10-04T16:13:15+02:00",
+          "tree_id": "18a854790453ad8002367b41beca5bf53f1bc655",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/2d6b8aa6a0c0cc89c4dd1f5adbc58d968af181cc"
+        },
+        "date": 1791123264358,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.10291003300000057,
+            "unit": "s",
+            "extra": "Commit: 2d6b8aa6a0c0cc89c4dd1f5adbc58d968af181cc\nBranch: master\nTime: 2026-10-04T16:13:15+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 49.65359279799998,
+            "unit": "s",
+            "extra": "Commit: 2d6b8aa6a0c0cc89c4dd1f5adbc58d968af181cc\nBranch: master\nTime: 2026-10-04T16:13:15+02:00"
           }
         ]
       }
