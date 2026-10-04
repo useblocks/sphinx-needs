@@ -34,6 +34,19 @@ _CONF_MYST = (
     "extensions = ['sphinx_needs', 'myst_parser']\n"
     "myst_enable_extensions = ['colon_fence']\n" + _VARIANT_DATA + _NEEDS_TYPES
 )
+# a variant value whose truth value cannot be taken, as a NumPy array's cannot: an `int`,
+# so that the variant-data validation passes it, pickled as the plain `int` (Sphinx pickles
+# the configuration, and a class defined in `conf.py` cannot be found by name again)
+_CONF_AMBIGUOUS = (
+    "extensions = ['sphinx_needs']\n"
+    "class Ambiguous(int):\n"
+    "    def __bool__(self):\n"
+    "        raise ValueError('The truth value of an array with more than one element'\n"
+    "                         ' is ambiguous')\n"
+    "    def __reduce__(self):\n"
+    "        return (int, (int(self),))\n"
+    "needs_variant_data = {'matrix': Ambiguous(3)}\n" + _NEEDS_TYPES
+)
 
 _HAS_MYST = importlib.util.find_spec("myst_parser") is not None
 
@@ -554,6 +567,23 @@ _WARNINGS = {
                 "   .. when:: __import__('os').system('echo pwned')",
             ),
         ),
+    ),
+    # taking the truth value of the result may raise as well (a NumPy array's does):
+    # the condition is unevaluable, as for any expression that fails, and poisons the
+    # choose; it is not also reported as a result that is not a bool
+    "a truth value that raises poisons the otherwise": _Expected(
+        ".. choose::\n\n"
+        "   .. when:: var.matrix\n\n      SKIPPED_AMBIGUOUS\n\n"
+        "   .. when:: True\n\n      SKIPPED_TRUE\n\n"
+        "   .. otherwise::\n\n      SKIPPED_DEFAULT\n",
+        (
+            (
+                "'when' directive expression failed: 'var.matrix' — "
+                "The truth value of an array with more than one element is ambiguous",
+                "   .. when:: var.matrix",
+            ),
+        ),
+        conf=_CONF_AMBIGUOUS,
     ),
     "non-bool is coerced and taken": _Expected(
         ".. choose::\n\n"

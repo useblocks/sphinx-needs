@@ -32,7 +32,8 @@ def evaluate_variant_condition(
     so that a condition means the same thing whichever of them it is written on.
 
     Every problem is warned about here, once, naming ``directive``:
-    variant data that is not configured, and an expression that raises,
+    variant data that is not configured, and an expression that raises
+    (taking the truth value or the repr of its result included),
     make the condition unevaluable;
     a result that is not a ``bool`` is warned about and then used as its truth value.
 
@@ -60,6 +61,17 @@ def evaluate_variant_condition(
     context: dict[str, object] = {"var": var_proxy, "__builtins__": {}}
     try:
         raw_result = eval(expression, context)
+        # the truth value and the repr of the result run its own code, which may raise
+        # (a NumPy array's ``__bool__`` does): both are taken here, so that such a
+        # result fails like any other expression, before anything is reported about it
+        result = bool(raw_result)
+        not_a_bool = (
+            None
+            if isinstance(raw_result, bool)
+            else f"'{directive}' directive expression did not return a bool, "
+            f"got {type(raw_result).__name__}: {raw_result!r} "
+            f"(coercing to bool): {expression!r}"
+        )
     except Exception as e:
         log_warning(
             LOGGER,
@@ -69,17 +81,10 @@ def evaluate_variant_condition(
         )
         return None
 
-    if not isinstance(raw_result, bool):
-        log_warning(
-            LOGGER,
-            f"'{directive}' directive expression did not return a bool, "
-            f"got {type(raw_result).__name__}: {raw_result!r} "
-            f"(coercing to bool): {expression!r}",
-            subtype,
-            location=location,
-        )
+    if not_a_bool is not None:
+        log_warning(LOGGER, not_a_bool, subtype, location=location)
 
-    return bool(raw_result)
+    return result
 
 
 class IfDirective(SphinxDirective):

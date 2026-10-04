@@ -6,6 +6,8 @@ from pathlib import Path
 
 import pytest
 
+from sphinx_needs_testkit import build_warnings
+
 
 @pytest.mark.parametrize(
     "test_app",
@@ -241,3 +243,63 @@ def test_if_non_bool_warns(test_app):
     # But warnings are emitted
     warnings = app._warning.getvalue()
     assert "did not return a bool" in warnings
+
+
+# A variant value whose truth value cannot be taken, as a NumPy array's cannot.
+# An ``int``, so that the variant-data validation (scalars, arrays, tables) passes it;
+# ``__reduce__`` pickles it as the plain ``int``, because Sphinx pickles the configuration
+# with the environment and a class defined in ``conf.py`` cannot be found by name again.
+_CONF_AMBIGUOUS = (
+    "extensions = ['sphinx_needs']\n"
+    "class Ambiguous(int):\n"
+    "    def __bool__(self):\n"
+    "        raise ValueError('The truth value of an array with more than one element'\n"
+    "                         ' is ambiguous')\n"
+    "    def __reduce__(self):\n"
+    "        return (int, (int(self),))\n"
+    "needs_variant_data = {'matrix': Ambiguous(3)}\n"
+    "needs_types = []\n"
+)
+
+_AMBIGUOUS_INDEX = (
+    "Test\n====\n\n"
+    ".. if:: var.matrix\n\n"
+    "   SKIPPED_AMBIGUOUS\n\n"
+    "TAKEN_AFTER_AMBIGUOUS\n"
+)
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), _CONF_AMBIGUOUS),
+                (Path("index.rst"), _AMBIGUOUS_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_if_truth_value_that_raises_warns(test_app):
+    """A result whose truth value cannot be taken is an expression that failed.
+
+    Taking the truth value runs the value's own ``__bool__``, which may raise
+    (a NumPy array's does): that must warn once, as any other failing expression,
+    and skip the body, rather than end the build with a traceback.
+    It is not also reported as a result that is not a ``bool``,
+    since no truth value was found to coerce it to.
+    """
+    app = test_app
+    app.build()
+    line = _AMBIGUOUS_INDEX.splitlines().index(".. if:: var.matrix") + 1
+    assert build_warnings(app) == [
+        f"<srcdir>/index.rst:{line}: WARNING: "
+        "'if' directive expression failed: 'var.matrix' — "
+        "The truth value of an array with more than one element is ambiguous"
+        " [needs.if]"
+    ]
+    html = Path(app.outdir, "index.html").read_text()
+    assert "SKIPPED_AMBIGUOUS" not in html
+    assert "TAKEN_AFTER_AMBIGUOUS" in html
