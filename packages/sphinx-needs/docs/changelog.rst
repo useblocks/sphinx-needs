@@ -49,6 +49,26 @@ Improvements
   The undocumented warning ``if`` gives for a condition whose result is not a bool is
   now listed in its documentation.
 
+Bug fixes
+.........
+
+- 🐛 An :ref:`if <if>` condition whose result has no truth value is reported, instead of
+  ending the build (:issue:`2025`)
+
+  Taking the truth value of a result runs the result's own ``__bool__``, which may raise,
+  as it may for a value of :ref:`needs_variant_data` that subclasses ``str``, ``int`` or
+  ``float``. That ended the build with a traceback, after the warning for a result that is
+  not a bool. It is now the one ``'if' directive expression failed`` warning, and the
+  condition cannot be evaluated: the body is skipped, and a ``when`` skips its whole
+  ``choose``, as for any other condition that fails.
+
+- 🐛 An :ref:`if <if>` warning in an included file names that file by its absolute path
+  **(changed output)** (:issue:`2027`)
+
+  It named the file as docutils records it, relative to the working directory
+  (``docs/inc.txt`` for a build run from the project's parent directory),
+  where a ``when`` in the same file, and every other Sphinx location, name it absolutely.
+
 .. _`release:8.5.0`:
 
 8.5.0
