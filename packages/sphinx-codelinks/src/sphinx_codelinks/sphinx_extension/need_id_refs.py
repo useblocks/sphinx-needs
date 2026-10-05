@@ -127,8 +127,7 @@ def attach_need_id_refs(
         if value is None:
             continue
         _need, urls = values.setdefault((ref.need_id, fields[ref.project]), (need, []))
-        if value not in urls:
-            urls.append(value)
+        urls.append(value)
         result.attached[ref.project] += 1
 
     for (_need_id, field_name), (need, urls) in values.items():
