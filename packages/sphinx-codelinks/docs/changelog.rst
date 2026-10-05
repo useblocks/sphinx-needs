@@ -87,6 +87,26 @@ New and Improved
   documentation build with ``-nW`` failed outright. Both shapes are now handled, with a
   regression test that builds a real worktree.
 
+- 🐛 The ``local-url`` and ``remote-url`` links render under ``sphinx-build -j N``, and each
+  project's ``remote-url`` links with that project's ``remote_url_pattern``
+  (`#2039 <https://github.com/useblocks/sphinx-needs/issues/2039>`__).
+
+  The ``src-trace`` directive wrote the two fields' ``needs_string_links`` entries into the
+  configuration while it was read. A parallel worker never hands such a write back, so
+  under ``-j N`` both fields rendered as plain text; every rebuild reported
+  ``The configuration has changed (… 'needs_string_links' …)`` and wrote every page again;
+  and with two projects whose ``remote_url_pattern`` differed, the project read last
+  decided every need's link. The entries are now registered once, at ``config-inited``.
+
+  ``remote-url`` now holds the URL it is named for. In ``needs.json`` its value is the
+  project's ``remote_url_pattern`` filled in for the marker
+  (``https://github.com/org/repo/blob/<commit>/src/a.cpp#L3``), where it used to be the
+  fragment ``src/a.cpp#L3``. The card is unchanged: it links to the same URL, named
+  ``src/a.cpp#L3`` -- the part after the commit, or the whole URL for a pattern with no
+  commit in its path. ``local-url`` is unchanged. A ``needextend`` that sets
+  ``remote-url`` to full URLs, as ``codelinks write rst -r remote-url`` generates, now
+  links to each URL as given instead of to the URL appended to itself.
+
 - 🔧 ``libclang`` is now genuinely optional for the test suite.
 
   It has always been an optional extra at runtime, and three test modules guarded it with
