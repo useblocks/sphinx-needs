@@ -107,15 +107,17 @@ New and Improved
   fragment ``src/a.cpp#L3``. The card links to the same URL; its name is now the part of
   the URL after the commit (``src/a.cpp#L3`` for GitHub and GitLab patterns,
   ``src/a.cpp#lines-3`` for Bitbucket), or the whole URL when the pattern has no commit in
-  its path. A value that is not a URL renders as text, as before. ``local-url`` is
-  unchanged. A ``needextend`` that sets ``remote-url`` to full URLs, as
+  its path. A value that is not a URL renders as text -- including a ``path#Lline`` value
+  from a ``needs.json`` built by an earlier release, which used to be linked through the
+  pattern. ``local-url`` is unchanged. A ``needextend`` that sets ``remote-url`` to full URLs, as
   ``codelinks write rst -r remote-url`` generates, now links to each URL as given instead
   of to the URL appended to itself.
 
   A ``remote_url_pattern`` containing ``,`` or ``;`` (gitweb's
   ``?p=repo.git;a=blob;f={path}``, for one) is not supported for rendering: Sphinx-Needs
   splits a string-linked value on those characters, so its link renders as several broken
-  ones. The build warns about such a pattern (``codelinks.remote_url_pattern``).
+  ones. The build warns about such a pattern (``codelinks.remote_url_pattern``;
+  ``suppress_warnings`` silences it, which a ``-W`` build needs).
 
 - 🔧 ``libclang`` is now genuinely optional for the test suite.
 
