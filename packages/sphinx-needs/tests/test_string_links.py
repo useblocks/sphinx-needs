@@ -1541,6 +1541,7 @@ def test_fold_claims_with_the_first_usable_entry(monkeypatch: Any) -> None:
             "callable": {**GOOD_LINK, "link_url": print, "options": ["status"]},
             "broken": {**broken, "options": ["status", "title"]},
             "good": {**GOOD_LINK, "options": ["status", "docname"]},
+            "good2": {**GOOD_LINK, "options": ["status"]},
             "later_broken": {**broken, "options": ["tags", "title"]},
             "later_good": {**GOOD_LINK, "options": ["tags"]},
         }
@@ -1552,7 +1553,8 @@ def test_fold_claims_with_the_first_usable_entry(monkeypatch: Any) -> None:
         assert field is not None
         return None if field.string_link is None else field.string_link.name
 
-    # the first usable entry takes a field from an unusable one ...
+    # the first usable entry takes a field from an unusable one, and keeps it from
+    # a later usable one ...
     assert rule("status") == "good"
     # ... an unusable one never takes a field, but holds one nobody usable names
     assert rule("title") == "broken"
@@ -1763,23 +1765,80 @@ def test_a_late_entry_that_does_not_compile_is_reported_even_if_it_claims_nothin
     assert 'href="https://tracker.example.com/AB-1"' in need_html(app)
 
 
+@pytest.mark.parametrize("key", ["regex", "link_url", "link_name"])
 def test_a_late_entry_that_cannot_be_pickled_is_reported_not_fatal(
-    make_app: Any, sphinx_test_tempdir: Any
+    key: str, make_app: Any, sphinx_test_tempdir: Any
 ) -> None:
-    """A late entry whose template is not a string (here a function) would put an
-    unpicklable value into the schema, which the environment is pickled with; it is
-    reported once and skipped instead, and the build succeeds."""
+    """A late entry whose regex or template is not a string (here a function) would
+    put an unpicklable value into the schema, which the environment is pickled with;
+    it is reported once and skipped instead, and the build succeeds."""
     app = build(
         make_app,
         sphinx_test_tempdir,
         {},
         extra=_late_table(
             "config.needs_string_links = {"
-            '"evil": {"regex": r"^(?P<value>.+)$", "link_url": lambda: "x",'
-            ' "link_name": "E", "options": ["ticket"]}}'
+            '"evil": {"regex": r"^(?P<value>.+)$", "link_url": "u", "link_name": "E",'
+            f' "options": ["ticket"], {key!r}: lambda: "x"}}}}'
         ),
     )
     assert len(_compile_failures(app, "evil")) == 1, build_warnings(app)
     meta = _meta_span(need_html(app), "ticket")
     assert "AB-1" in meta, meta
     assert "<a " not in meta, meta
+
+
+def test_a_late_bytes_pattern_is_refused_once(
+    make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """A late entry with a *bytes* pattern can never match a field value: it is
+    refused once, with the reason validation gives, and claims nothing -- so a field
+    only it names is not even split (it would be, by an entry that merely failed to
+    compile)."""
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {},
+        index=MULTI_INDEX,
+        extra=_late_table(
+            "config.needs_string_links = {"
+            '"raw": {"regex": re.compile(rb"^(?P<value>.+)$"), "link_url": "u",'
+            ' "link_name": "R", "options": ["tickets"]}}'
+        ),
+    )
+    failures = _compile_failures(app, "raw")
+    assert len(failures) == 1, build_warnings(app)
+    assert (
+        "'regex' is a bytes pattern, which can never match a field value"
+        in (failures[0])
+    )
+    assert "Problems dealing with string to link" not in "\n".join(build_warnings(app))
+    meta = _meta_span(need_html(app), "tickets")
+    assert "AB-1, AB-2; AB-3" in meta, meta
+    assert "<a " not in meta, meta
+
+
+def test_a_late_option_that_is_not_a_name_is_warned_about(
+    make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """A late entry whose ``options`` holds something other than a name -- here a list,
+    which cannot even be looked up -- warns about it, and the entry still applies to
+    the names it does list."""
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {},
+        extra=_late_table(
+            "config.needs_string_links = {"
+            '"odd": {"regex": r"^(?P<value>[A-Z]+-\\d+)$",'
+            ' "link_url": "https://tracker.example.com/{{value}}",'
+            ' "link_name": "T:{{value}}", "options": [["ticket"], "ticket"]}}'
+        ),
+    )
+    warnings = build_warnings(app)
+    assert [w for w in warnings if "needs_string_links['odd']" in w] == [
+        "WARNING: needs_string_links['odd']: 'options' names ['ticket'], which is not "
+        "a field that can carry a string link (an extra field, or a core field of the "
+        "field schema), so it is ignored. [needs.string_link]"
+    ], warnings
+    assert 'href="https://tracker.example.com/AB-1">T:AB-1</a>' in need_html(app)

@@ -343,13 +343,22 @@ def fold_string_links(schema: FieldsSchema, needs_config: NeedsSphinxConfig) -> 
 
     - an entry that compiles gives its rule to each field it names that has no rule,
       or only the rule of an entry that does not compile;
-    - an entry that does not compile -- or whose sources are not strings, which only an
-      entry written after validation can have -- is reported once, and gives its rule
-      only to a field that has none: the field's value is still split into items, as
-      it is for any field an entry names, but nothing links;
+    - an entry that does not compile is reported once, and gives its rule only to a
+      field that has none: the field's value is still split into items, as it is for
+      any field an entry names, but nothing links;
+    - an entry whose sources have the wrong type (a ``regex`` that is neither a string
+      nor a string pattern, or a template that is not a string), which only an entry
+      written after validation can have, is reported once and claims nothing -- its
+      rule could not be pickled, or a bytes pattern could never match -- so a field
+      only it names is not split;
     - a name with no :class:`~sphinx_needs.needs_schema.FieldSchema` (a link field, a
       core field outside the field schema, or no field at all) is warned about once
-      per entry, and ignored.
+      per entry, and ignored -- so a name an entry lists twice warns once.
+
+    Checking an entry written after validation here also means its problems are
+    reported once, when the schema is built: a compile failure no longer waits for the
+    first rendered need, and a bytes pattern is refused once rather than failing on
+    every rendered value.
 
     :param schema: The fields schema being built.
     :param needs_config: The sphinx-needs configuration.
@@ -369,9 +378,11 @@ def fold_string_links(schema: FieldsSchema, needs_config: NeedsSphinxConfig) -> 
             options = list(conf["options"])
             # only an entry written after validation can fail these: anything else
             # would be stored on the schema, which must pickle with the environment
-            if not isinstance(regex, str) and not (
-                isinstance(regex, re.Pattern) and isinstance(regex.pattern, str)
-            ):
+            if isinstance(regex, re.Pattern) and not isinstance(regex.pattern, str):
+                raise TypeError(
+                    "'regex' is a bytes pattern, which can never match a field value"
+                )
+            if not isinstance(regex, (str, re.Pattern)):
                 raise TypeError(f"'regex' is not a string or pattern: {regex!r}")
             for key, value in (("link_url", link_url), ("link_name", link_name)):
                 if not isinstance(value, str):
