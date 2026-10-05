@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791205664980,
+  "lastUpdate": 1791206156177,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -22284,6 +22284,42 @@ window.BENCHMARK_DATA = {
             "value": 58.275023934000004,
             "unit": "s",
             "extra": "Commit: c8aa1a7b570fa74627c9010abca67294f7c5bf76\nBranch: master\nTime: 2026-10-05T15:06:16+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8621e07e6e61b580e21210392f35a398a4689f44",
+          "message": "🔧 .gitignore: `ub-test-reports.xml`, the coverage file its CI step writes at the root (#2036)\n\nOne line in the root `.gitignore`: `ub-test-reports.xml`, the coverage\nreport the `ub-test-reports: pytest` step in `test-extensions.yaml`\nwrites at the repository root (`--cov-report=xml:ub-test-reports.xml`),\nbeside the four sibling files the list already names (`mounts.xml`,\n`codelinks.xml`, `reports.xml`, `ai-index.xml`). Noticed while adding\n`ai-index.xml` in #2031.\n\nCloses #2035",
+          "timestamp": "2026-10-05T15:14:30+02:00",
+          "tree_id": "07ca5a87056c225ae599b5089def5295d2503961",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/8621e07e6e61b580e21210392f35a398a4689f44"
+        },
+        "date": 1791206146628,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.11288816999999796,
+            "unit": "s",
+            "extra": "Commit: 8621e07e6e61b580e21210392f35a398a4689f44\nBranch: master\nTime: 2026-10-05T15:14:30+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 55.630950127000006,
+            "unit": "s",
+            "extra": "Commit: 8621e07e6e61b580e21210392f35a398a4689f44\nBranch: master\nTime: 2026-10-05T15:14:30+02:00"
           }
         ]
       }
