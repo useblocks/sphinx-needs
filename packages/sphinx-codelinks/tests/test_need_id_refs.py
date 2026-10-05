@@ -480,3 +480,18 @@ def test_records_of_an_unconfigured_project_warn_once(
     )
     assert sorted(build_warnings(app)) == sorted([DANGLING, ignored])
     assert _refs(app)["REQ_001"] == [_url(commit, 1), _url(commit, 3)]
+
+
+def test_a_user_declaration_of_the_field_names_the_cure(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """A ``needs_fields`` entry for the references field (the ``write rst`` route's
+    habit) warns with the cause and the cure, beside Sphinx-Needs' own duplicate."""
+    _project(tmp_path, append={"docs/conf.py": 'needs_fields = {"code_url": {}}\n'})
+    app = _build(tmp_path, make_app)
+
+    suffix = " [codelinks.config]" if _SHOWS_WARNING_TYPES else ""
+    assert (
+        "WARNING: codelinks registers 'code_url' for @need-ids references; remove the "
+        f"needs_fields declaration of it, or set ref_url_field{suffix}"
+    ) in build_warnings(app)

@@ -275,9 +275,17 @@ def update_sn_extra_options(_app: Sphinx, config: _SphinxConfig) -> None:
     # it. ``nullable`` with no default, so a need no reference names carries ``None``,
     # which is stripped before schema validation: a strict ``unevaluatedProperties:
     # false`` schema never sees the field on it (a ``[]`` default would not be stripped).
+    user_fields = _user_declared_fields(config)
     for field_name in sorted(
         set(need_id_refs_fields(src_trace_sphinx_config).values())
     ):
+        if field_name in user_fields:
+            logger.warning(
+                f"codelinks registers {field_name!r} for @need-ids references; remove "
+                "the needs_fields declaration of it, or set ref_url_field",
+                type="codelinks",
+                subtype="config",
+            )
         add_field(
             field_name,
             "Code references (@need-ids markers)",
@@ -285,6 +293,22 @@ def update_sn_extra_options(_app: Sphinx, config: _SphinxConfig) -> None:
             nullable=True,
             default=None,
         )
+
+
+def _user_declared_fields(config: _SphinxConfig) -> set[str]:
+    """The field names a user declares in ``needs_fields`` / ``needs_extra_options``."""
+    names: set[str] = set()
+    needs_fields = getattr(config, "needs_fields", None)
+    if isinstance(needs_fields, dict):
+        names.update(str(name) for name in needs_fields)
+    extra_options = getattr(config, "needs_extra_options", None)
+    if isinstance(extra_options, list | tuple):
+        for option in extra_options:
+            if isinstance(option, str):
+                names.add(option)
+            elif isinstance(option, dict) and isinstance(option.get("name"), str):
+                names.add(option["name"])
+    return names
 
 
 def update_sn_types(app: Sphinx, _config: _SphinxConfig) -> None:

@@ -243,6 +243,8 @@ def test_string_links_are_registered_before_sphinx_needs_compiles_them(
     url = GITHUB.format(commit=commit, path="srca/a.cpp", line=1)
     assert _card_links(html, "remote-url") == [url]
     assert _card_links(html, "local-url") == ["srca/a.html#L-1"]
+    # the local link's name: the value up to the extension, and the line
+    assert '<a class="reference external" href="srca/a.html#L-1">srca/a#L1</a>' in html
 
 
 def test_user_string_links_are_kept_and_not_mutated(
@@ -365,6 +367,24 @@ def test_pattern_with_a_separator_warns(
         "Sphinx-Needs splits string-linked values on ',' and ';', so this pattern's "
         f"links will not render as one link.{suffix}"
     ]
+
+
+def test_pattern_separator_warning_needs_remote_urls(
+    tmp_path: Path, make_app: Callable[..., SphinxTestApp]
+) -> None:
+    """With remote URLs off the pattern is never filled in: no warning."""
+    _project(tmp_path, patterns={"a": GITWEB})
+    toml = tmp_path / "docs" / "ubproject.toml"
+    toml.write_text(
+        toml.read_text(encoding="utf-8").replace(
+            "set_remote_url = true", "set_remote_url = false"
+        ),
+        encoding="utf-8",
+    )
+    app = make_app(srcdir=tmp_path / "docs", freshenv=True)
+    app.build()
+
+    assert_no_warnings(app)
 
 
 def test_pattern_separator_warning_is_suppressible(

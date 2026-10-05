@@ -54,15 +54,21 @@ New and Improved
   the result away: reaching the needs took ``codelinks analyse``, ``codelinks write rst``
   and an ``include`` of the generated ``needextend`` file. The references are now kept with
   the document hosting the directive and attached once every need is known, wherever it is
-  defined. Each referenced need gets one entry per reference, in source order: the
-  project's ``remote_url_pattern`` filled in for the marker's line, or the local link when
-  remote URLs are off. With local URLs only, a file referenced by ``@need-ids:`` is copied
-  into the output and gets a source page, as a file with a one-line need is. ``needs.json`` declares the field as a list; a need nothing
-  references carries ``null``, which a strict ``unevaluatedProperties: false`` schema
-  never sees. A user's ``needextend`` of the field wins. The unknown-id warning points at
-  the source line (``src/refs.cpp:5``), and each project reports
-  ``N references attached, M unknown``. The attach is on when local or remote URLs are,
-  as in ubCode; ``ref_url_field = ""`` switches it off for a project.
+  defined. Each referenced need gets one entry per reference, in source order -- once,
+  even when two directives or two projects scan the same file: the project's
+  ``remote_url_pattern`` filled in for the marker's line, or the local link when remote
+  URLs are off. With local URLs only, a file referenced by ``@need-ids:`` is copied into
+  the output and gets a source page, as a file with a one-line need is; under ``-j N`` the
+  local link's source page is not generated yet
+  (`#2044 <https://github.com/useblocks/sphinx-needs/issues/2044>`__). ``needs.json``
+  declares the field as a list; a need nothing references carries ``null``, which a
+  strict ``unevaluatedProperties: false`` schema never sees. The references replace a
+  value the need's own directive or a default gave the field; a user's ``needextend`` of
+  the field wins. The unknown-id warning points at the source line (``src/refs.cpp:5``),
+  and each project reports ``N references attached, M unknown``. The attach is on when
+  local or remote URLs are, as in ubCode; ``ref_url_field = ""`` switches it off for a
+  project. A changed source file updates ``needs.json`` on the next build; a referenced
+  need's card in another document is rewritten only when that document is.
   A comment that starts with a configured ``@need-ids:`` marker is a reference and never a
   one-line need, as in ubCode: on the default one-line style, whose start sequence ``@``
   matched it too, ``// @need-ids: A, B`` used to become a need with the id ``B`` (or stop
