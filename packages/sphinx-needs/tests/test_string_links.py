@@ -1212,3 +1212,368 @@ def test_an_entry_added_after_validation_still_renders(
         href = f'href="https://late.example.com/LATE-{n}">L:LATE-{n}</a>'
         assert href in _meta_span(_page(app, f"page{n}"), "lateopt")
         assert table.count(href) == 1, table
+
+
+# --------------------------------------------------------------------------
+# the rule on the field: what the schema carries, and the two behaviours the
+# move changes (disclosed in the changelog)
+# --------------------------------------------------------------------------
+
+STATUS_LINK = {
+    "regex": r"^(?P<value>\w+)$",
+    "link_url": "https://status.example.com/{{value}}",
+    "link_name": "S:{{value}}",
+    "options": ["status"],
+}
+
+SCHEMA_INDEX = """\
+String links
+============
+
+.. req:: A need
+   :id: SLINK_1
+   :status: open
+   :ticket: AB-1
+   :links: SLINK_2
+
+   Body.
+
+.. req:: Another need
+   :id: SLINK_2
+"""
+
+
+def test_the_field_schema_carries_the_rule(
+    make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """After a build, each claimed field's ``FieldSchema`` holds the rule of the first
+    entry naming it, as source strings; an unclaimed field has none, and a link field
+    cannot carry one at all."""
+    from sphinx_needs.data import SphinxNeedsData
+    from sphinx_needs.needs_schema import StringLinkRule
+
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {
+            "s": STATUS_LINK,
+            "t": GOOD_LINK,
+            # a later entry naming fields that already have a rule changes neither
+            "later": {**GOOD_LINK, "options": ["ticket", "status"]},
+        },
+        index=SCHEMA_INDEX,
+    )
+    assert warnings_of(app) == "", warnings_of(app)
+    schema = SphinxNeedsData(app.env).get_schema()
+
+    status = schema.get_core_field("status")
+    ticket = schema.get_extra_field("ticket")
+    assert status is not None
+    assert ticket is not None
+    assert status.string_link == StringLinkRule(
+        name="s",
+        regex=STATUS_LINK["regex"],
+        link_url=STATUS_LINK["link_url"],
+        link_name=STATUS_LINK["link_name"],
+    )
+    assert ticket.string_link is not None
+    assert ticket.string_link.name == "t"
+    other = schema.get_extra_field("other")
+    assert other is not None
+    assert other.string_link is None
+    title = schema.get_core_field("title")
+    assert title is not None
+    assert title.string_link is None
+    links = schema.get_link_field("links")
+    assert links is not None
+    assert not hasattr(links, "string_link")
+    # and the rendered page is what the rules say
+    html = need_html(app)
+    assert 'href="https://status.example.com/open">S:open</a>' in html
+    assert 'href="https://tracker.example.com/AB-1">T:AB-1</a>' in html
+
+
+def test_a_schema_carrying_rules_pickles(
+    make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """The schema is pickled with the build environment (to ``-j N`` workers, and to
+    disk), so its rules must survive ``pickle`` -- a compiled pattern included."""
+    import pickle
+
+    from sphinx_needs.data import SphinxNeedsData
+
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {
+            "s": STATUS_LINK,
+            "t": {
+                **GOOD_LINK,
+                "regex": re.compile(r"^(?P<value>[a-z]+-\d+)$", re.IGNORECASE),
+            },
+        },
+        index=SCHEMA_INDEX,
+    )
+    assert warnings_of(app) == "", warnings_of(app)
+    schema = SphinxNeedsData(app.env).get_schema()
+    loaded = pickle.loads(pickle.dumps(schema))
+
+    for name in ("status", "ticket"):
+        before = schema.get_core_field(name) or schema.get_extra_field(name)
+        after = loaded.get_core_field(name) or loaded.get_extra_field(name)
+        assert before is not None
+        assert after is not None
+        assert before.string_link is not None
+        assert after.string_link == before.string_link
+    ticket = loaded.get_extra_field("ticket")
+    assert ticket is not None
+    assert ticket.string_link is not None
+    assert isinstance(ticket.string_link.regex, re.Pattern)
+    assert ticket.string_link.regex.flags & re.IGNORECASE
+    # and the page rendered the compiled pattern's link, flags and all
+    assert 'href="https://tracker.example.com/AB-1"' in need_html(app)
+
+
+LATE_WRITERS = """
+from docutils.parsers.rst import Directive
+
+READ_LINK = {read!r}
+DIR_LINK = {dir!r}
+
+
+def _add_read_entry(app, env, docnames):
+    app.config.needs_string_links = {{**app.config.needs_string_links, "read": READ_LINK}}
+
+
+class _WriteConf(Directive):
+    def run(self):
+        config = self.state.document.settings.env.config
+        config.needs_string_links = {{**config.needs_string_links, "dir": DIR_LINK}}
+        return []
+
+
+def setup(app):
+    app.connect("env-before-read-docs", _add_read_entry, priority=900)
+    app.add_directive("writeconf", _WriteConf)
+"""
+
+LATE_INDEX = """\
+String links
+============
+
+.. writeconf::
+
+.. req:: A need
+   :id: SLINK_1
+   :ticket: AB-1
+   :readopt: R-1
+   :diropt: D-1
+
+   Body.
+
+.. needtable::
+   :columns: id;readopt;diropt
+   :style: table
+"""
+
+
+def test_an_entry_written_after_the_schema_is_built_does_not_render(
+    make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """The rules are taken from the table when the schema is built, at
+    ``env-before-read-docs``; an entry written after that -- by a handler of the same
+    event at a later priority, or by a directive while the documents are read -- is
+    not seen, in the meta area or in a needtable.
+
+    The directive-time write never rendered under ``-j N`` (each worker writes into its
+    own copy of the configuration); it now does not render serially either.
+    """
+    link = {
+        "regex": r"^(?P<value>.+)$",
+        "link_url": "https://{kind}.example.com/{{{{value}}}}",
+        "link_name": "{kind}:{{{{value}}}}",
+    }
+    read_link = {
+        **{k: v.format(kind="read") for k, v in link.items()},
+        "options": ["readopt"],
+    }
+    dir_link = {
+        **{k: v.format(kind="dir") for k, v in link.items()},
+        "options": ["diropt"],
+    }
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {"t": GOOD_LINK},
+        index=LATE_INDEX,
+        extra=(
+            "needs_fields['readopt'] = {'nullable': True}\n"
+            "needs_fields['diropt'] = {'nullable': True}\n"
+            + LATE_WRITERS.format(read=read_link, dir=dir_link)
+        ),
+    )
+    assert warnings_of(app) == "", warnings_of(app)
+    # both writers did write their entry
+    assert {"read", "dir"} <= set(app.config.needs_string_links)
+    html = need_html(app)
+    for field, value in (("readopt", "R-1"), ("diropt", "D-1")):
+        for surface in (_meta_span(html, field), _table_cell(html, field)):
+            assert value in surface, surface
+            assert "<a " not in surface, surface
+    # the entry that was there when the schema was built still links
+    assert 'href="https://tracker.example.com/AB-1">T:AB-1</a>' in html
+
+
+UNCLAIMABLE_CONF = """
+needs_layouts = {
+    "custom": {
+        "grid": "simple",
+        "layout": {
+            "head": ['<<meta("title")>>'],
+            "meta": ['<<meta("section_name")>>', '<<meta("links")>>'],
+        },
+    }
+}
+"""
+
+UNCLAIMABLE_INDEX = """\
+Section A
+=========
+
+.. req:: A need
+   :id: SLINK_1
+   :links: SLINK_2
+   :layout: custom
+
+   Body.
+
+.. req:: Another need
+   :id: SLINK_2
+   :layout: custom
+
+.. needtable::
+   :columns: id;section_name
+   :style: table
+"""
+
+
+def test_a_field_without_a_field_schema_cannot_carry_a_rule(
+    make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """``options`` naming a core field outside the field schema (``section_name``) or
+    a link field (``links``) warns while the configuration is read, and the value
+    renders as plain text: in a needtable, and through a custom layout's ``meta()``,
+    which used to link both."""
+    from sphinx_needs_testkit import create_src_files_in_tmpdir
+
+    every = {
+        "regex": r"^(?P<value>.+)$",
+        "link_url": "https://any.example.com/{{value}}",
+        "link_name": "ANY {{value}}",
+    }
+    srcdir = create_src_files_in_tmpdir(
+        [
+            (
+                Path("conf.py"),
+                conf_py(
+                    {
+                        "sec": {**every, "options": ["section_name"]},
+                        "lnk": {**every, "options": ["links"]},
+                    },
+                    UNCLAIMABLE_CONF,
+                ),
+            ),
+            (Path("index.rst"), UNCLAIMABLE_INDEX),
+        ],
+        sphinx_test_tempdir,
+    )
+    app = make_app(srcdir=srcdir, buildername="html")
+
+    # reported while the configuration is read, before anything is built
+    expected = [
+        f"needs_string_links[{entry!r}]: 'options' names {name!r}, which is neither an "
+        "extra field nor a core field of the field schema, so it is ignored. "
+        "[needs.string_link]"
+        for entry, name in (("sec", "section_name"), ("lnk", "links"))
+    ]
+    assert [w for w in build_warnings(app) if "needs_string_links" in w] == [
+        f"WARNING: {message}" for message in expected
+    ], build_warnings(app)
+
+    app.build()
+    html = need_html(app)
+    assert "any.example.com" not in html, html
+    assert "Section A" in _meta_span(html, "section_name")
+    assert "Section A" in _table_cell(html, "section_name")
+    assert "SLINK_2" in _meta_span(html, "links")
+
+
+# --------------------------------------------------------------------------
+# the fold itself
+# --------------------------------------------------------------------------
+
+
+def test_fold_is_defensive(monkeypatch: Any) -> None:
+    """The fold never raises: a name that was an extra field at validation but has no
+    ``FieldSchema`` when the schema is built warns once, a name validation already
+    warned about is skipped silently, and an entry written after validation in an
+    unusable shape is reported as a compile failure, once."""
+    from sphinx_needs import string_links as module
+    from sphinx_needs.needs_schema import FieldSchema, FieldsSchema
+
+    schema = FieldsSchema()
+    schema.add_core_field(FieldSchema(name="status", schema={"type": "string"}))
+    monkeypatch.setattr(module, "_NEEDS_CONFIG", SimpleNamespace(fields={"ghost": 1}))
+    messages: list[str] = []
+    monkeypatch.setattr(
+        module,
+        "log_warning",
+        lambda _logger, message, _subtype, _location, **_kwargs: messages.append(
+            message
+        ),
+    )
+    config = SimpleNamespace(
+        needs_string_links={
+            "broken": {"options": ["status"]},
+            "e": {**GOOD_LINK, "options": ["ghost", "docname", "status"]},
+        }
+    )
+    module.fold_string_links(schema, module.NeedsSphinxConfig(config))
+
+    assert len(messages) == 2, messages
+    assert messages[0].startswith("needs_string_links['broken']: passed validation")
+    assert messages[1] == (
+        "needs_string_links['e']: 'options' names 'ghost', "
+        "which has no field schema, so it is ignored."
+    )
+    status = schema.get_core_field("status")
+    assert status is not None
+    assert status.string_link is not None
+    assert status.string_link.name == "e"
+
+
+@pytest.mark.parametrize("value", [[], "", 0, None])
+def test_fold_of_a_table_that_is_not_a_dict_is_empty(value: Any) -> None:
+    """A table that is not a dict was already warned about, and claims nothing."""
+    from sphinx_needs import string_links as module
+    from sphinx_needs.needs_schema import FieldSchema, FieldsSchema
+
+    schema = FieldsSchema()
+    schema.add_core_field(FieldSchema(name="status", schema={"type": "string"}))
+    config = SimpleNamespace(needs_string_links=value)
+    module.fold_string_links(schema, module.NeedsSphinxConfig(config))
+    status = schema.get_core_field("status")
+    assert status is not None
+    assert status.string_link is None
+
+
+def test_field_schema_refuses_a_string_link_of_the_wrong_type() -> None:
+    """``string_link`` is type-checked on construction, like every other attribute."""
+    from sphinx_needs.needs_schema import FieldSchema
+
+    with pytest.raises(ValueError, match="string_link must be a StringLinkRule"):
+        FieldSchema(
+            name="status",
+            schema={"type": "string"},
+            string_link=GOOD_LINK,  # ty: ignore[invalid-argument-type]
+        )

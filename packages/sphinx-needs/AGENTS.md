@@ -212,7 +212,7 @@ This module defines the schema data structures that serve as the single source o
 - `FieldSchema` - Immutable dataclass defining a single field's schema, including:
   - `name`, `description`, `schema` (JSON Schema type/constraints)
   - `nullable`, `directive_option`, `parse_dynamic_functions`, `parse_variants`
-  - `allow_defaults`, `allow_extend`, `default`, `predicate_defaults`
+  - `allow_defaults`, `allow_extend`, `default`, `predicate_defaults`, `string_link`
   - Methods: `convert_directive_option()`, `type_check()`, `json_schema()`
 
 - `LinkSchema` - Immutable dataclass for link fields with similar structure to `FieldSchema`
