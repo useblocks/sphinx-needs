@@ -10,15 +10,18 @@ from sphinx.util.docutils import SphinxDirective
 
 from sphinx_codelinks.analyse.analyse import SourceAnalyse
 from sphinx_codelinks.analyse.models import OneLineNeed
+from sphinx_codelinks.analyse.references import NeedIdRef, need_id_ref_records
 from sphinx_codelinks.config import (
     CodeLinksConfig,
     CodeLinksProjectConfigType,
     anchor_preproc_paths,
     file_lineno_href,
+    need_id_refs_field,
 )
 from sphinx_codelinks.source_discover.config import SourceDiscoverConfig
 from sphinx_codelinks.source_discover.source_discover import SourceDiscover
 from sphinx_codelinks.sphinx_extension.debug import measure_time
+from sphinx_codelinks.sphinx_extension.need_id_refs import need_id_refs_store
 from sphinx_needs.api import add_need
 from sphinx_needs.utils import add_doc
 from ub_project import anchor
@@ -186,6 +189,14 @@ class SourceTracingDirective(SphinxDirective):
                 remote_src_dir = src_dir.relative_to(src_analyse.git_root)
             dirs["remote_src_dir"] = remote_src_dir
 
+        # keep the @need-ids references, to be attached once every need is known
+        if need_id_refs_field(src_trace_sphinx_config, src_trace_conf) is not None:
+            need_id_refs_store(self.env).setdefault(self.env.docname, []).extend(
+                self.collect_need_id_refs(
+                    src_analyse, project, dirs, local_url_field, remote_url_pattern
+                )
+            )
+
         # render needs from the source files
         rendered_needs = self.render_needs(
             src_analyse,
@@ -251,6 +262,51 @@ class SourceTracingDirective(SphinxDirective):
 
         src_dir = anchor(src_discover_config.src_dir, conf_dir).resolve()
         return src_dir
+
+    def collect_need_id_refs(
+        self,
+        src_analyse: SourceAnalyse,
+        project: str,
+        dirs: dict[str, Path],
+        local_url_field: str | None,
+        remote_url_pattern: str | None,
+    ) -> list[NeedIdRef]:
+        """The analysis' ``@need-ids:`` references, as records.
+
+        Their URLs follow the created needs' rules: the remote one fills the project's
+        ``remote_url_pattern`` exactly as a created need's does, and the local one names
+        the source copied into the build output, beside which its page is generated.
+        """
+        src_dir = dirs["src_dir"]
+
+        def remote_url(filepath: Path, line: int) -> str | None:
+            if remote_url_pattern is None:
+                return None
+            return remote_url_pattern.format(
+                commit=src_analyse.git_commit_rev,
+                path=str(dirs["remote_src_dir"] / filepath.relative_to(src_dir)),
+                line=line,
+            )
+
+        def local_url(filepath: Path, line: int) -> str | None:
+            if local_url_field is None:
+                return None
+            target_filepath = dirs["target_dir"] / filepath.relative_to(src_dir)
+            if str(target_filepath) not in file_lineno_href.mappings:
+                # copy the file and have its page generated, as for a created need
+                target_filepath.parent.mkdir(parents=True, exist_ok=True)
+                target_filepath.write_text(filepath.read_text())
+                file_lineno_href.mappings[str(target_filepath)] = {}
+            relative = target_filepath.relative_to(dirs["out_dir"]).as_posix()
+            return f"{relative}#L{line}"
+
+        return need_id_ref_records(
+            src_analyse.need_id_refs,
+            project=project,
+            root=src_analyse.git_root or src_dir,
+            remote_url=remote_url,
+            local_url=local_url,
+        )
 
     def render_needs(
         self,

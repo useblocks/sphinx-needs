@@ -31,6 +31,12 @@ from sphinx_codelinks.sphinx_extension.directives.src_trace import (
     SourceTracingDirective,
 )
 from sphinx_codelinks.sphinx_extension.html_wrapper import html_wrapper
+from sphinx_codelinks.sphinx_extension.need_id_refs import (
+    attach_on_post_processing,
+    merge_info,
+    need_id_refs_store,
+    purge_doc,
+)
 from sphinx_codelinks.sphinx_extension.string_links import register_string_links
 from sphinx_needs.api import add_field, add_need_type
 from ub_project import ProjectConfigError
@@ -101,6 +107,11 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.connect("config-inited", check_sphinx_configuration)
 
     app.connect("env-before-read-docs", prepare_env)
+    app.connect("env-purge-doc", purge_doc)
+    app.connect("env-merge-info", merge_info)
+    # after every need is collected and before needextend is applied: a user's
+    # needextend of the references field wins
+    app.connect("needs-before-post-processing", attach_on_post_processing)
     app.connect("html-collect-pages", generate_code_page)
     app.connect("html-page-context", add_custom_css)
     app.connect("builder-inited", builder_inited)
@@ -287,6 +298,7 @@ def prepare_env(
     Prepares the sphinx environment to store stc-trace internal data.
     """
     src_trace_sphinx_config = CodeLinksConfig.from_sphinx(app.config)
+    need_id_refs_store(env)
 
     # Set time measurement flag
     if src_trace_sphinx_config.debug_measurement:
