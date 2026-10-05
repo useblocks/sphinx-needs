@@ -5,6 +5,8 @@ It turns each into :class:`~sphinx_codelinks.analyse.references.NeedIdRef` recor
 keeps them in the environment under the document that hosts the directive
 (:func:`need_id_refs_store`): purged with that document, merged from ``-j N`` workers,
 pickled with the environment, so an unchanged rebuild re-reads nothing and still attaches.
+A project no directive traces has its records made by the configuration pass instead
+(``sphinx_extension/rediscovery.py``, which also connects the handlers).
 
 Once every need of every document is known, at Sphinx-Needs'
 ``needs-before-post-processing`` event, :func:`attach_need_id_refs` gives each referenced
@@ -183,11 +185,11 @@ def attach_need_id_refs(
     return result
 
 
-def attach_on_post_processing(app: Sphinx, needs: MutableMapping[str, Any]) -> None:
-    """Attach the stored records (``needs-before-post-processing``), warn about the
-    unknown ids, and report per project."""
-    store = need_id_refs_store(app.env)
-    refs = [ref for docname in sorted(store) for ref in store[docname]]
+def attach_and_report(
+    app: Sphinx, needs: MutableMapping[str, Any], refs: Iterable[NeedIdRef]
+) -> None:
+    """Attach ``refs`` to ``needs``, warn about the unknown ids, and report per project."""
+    refs = list(refs)
     if not refs:
         return
     codelinks_config = CodeLinksConfig.from_sphinx(app.config)

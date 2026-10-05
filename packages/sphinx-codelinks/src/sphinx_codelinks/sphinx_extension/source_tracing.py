@@ -31,11 +31,11 @@ from sphinx_codelinks.sphinx_extension.directives.src_trace import (
     SourceTracingDirective,
 )
 from sphinx_codelinks.sphinx_extension.html_wrapper import html_wrapper
-from sphinx_codelinks.sphinx_extension.need_id_refs import (
-    attach_on_post_processing,
-    need_id_refs_store,
-)
+from sphinx_codelinks.sphinx_extension.need_id_refs import need_id_refs_store
 from sphinx_codelinks.sphinx_extension.rediscovery import (
+    attach_on_post_processing,
+    config_only_refs_store,
+    find_affected_documents,
     find_outdated_scopes,
     merge_info,
     purge_doc,
@@ -115,6 +115,9 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.connect("env-get-outdated", find_outdated_scopes)
     app.connect("env-purge-doc", purge_doc)
     app.connect("env-merge-info", merge_info)
+    # after every read and merge: the projects no directive traces are scanned, and
+    # the documents whose needs' references changed are written
+    app.connect("env-updated", find_affected_documents)
     # after every need is collected and before needextend is applied: a user's
     # needextend of the references field wins
     app.connect("needs-before-post-processing", attach_on_post_processing)
@@ -330,6 +333,7 @@ def prepare_env(
     src_trace_sphinx_config = CodeLinksConfig.from_sphinx(app.config)
     need_id_refs_store(env)
     scope_store(env)
+    config_only_refs_store(env)
 
     # Set time measurement flag
     if src_trace_sphinx_config.debug_measurement:

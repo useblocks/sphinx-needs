@@ -278,7 +278,8 @@ def test_a_missing_source_directory_warns_once_and_builds(
     suffix = " [codelinks.need_id_ref]" if _SHOWS_WARNING_TYPES else ""
     for freshenv in (True, False):
         app = _build(tmp_path, make_app, freshenv=freshenv)
-        warnings = build_warnings(app)
+        # a second application in one process also re-registers Sphinx' own nodes
+        warnings = [w for w in build_warnings(app) if "is already registered" not in w]
         assert len(warnings) == 1, warnings
         assert warnings[0].startswith("WARNING: codelinks [src]: ")
         assert "nosuch" in warnings[0]
