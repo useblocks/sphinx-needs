@@ -386,14 +386,22 @@ def _git_common_dir(git_dir: Path) -> Path:
     return target
 
 
-def locate_git_root(src_dir: Path) -> Path | None:
-    """Traverse upwards to find git root."""
+def find_git_root(src_dir: Path) -> Path | None:
+    """The git root :func:`locate_git_root` finds, without its warning when none."""
     current = src_dir.resolve()
     parents = list(current.parents)
     parents.append(current)
     for parent in parents:
         if _git_dir(parent) is not None:
             return parent
+    return None
+
+
+def locate_git_root(src_dir: Path) -> Path | None:
+    """Traverse upwards to find git root."""
+    found = find_git_root(src_dir)
+    if found is not None:
+        return found
     logger.warning(
         f"git root is not found in the parent of {src_dir}",
         subtype="git_root",

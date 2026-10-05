@@ -397,35 +397,151 @@ def test_no_remote_url_without_a_git_root(
         assert refs["REQ_001"] == ["src/refs.cpp#L1", "src/refs.cpp#L3"]
     else:
         assert refs["REQ_001"] is None
+    records = [ref for refs in need_id_refs_store(app.env).values() for ref in refs]
+    assert records and {ref.root for ref in records} == {"src_dir"}
     git_root_warnings = [w for w in build_warnings(app) if "git root is not found" in w]
     assert len(git_root_warnings) == 1, build_warnings(app)
     assert not any("/blob/None" in json.dumps(need) for need in needs.values())
 
 
+@pytest.mark.parametrize("second", ["aaa", "two"])
 def test_two_projects_over_one_file_attach_each_reference_once(
-    tmp_path: Path, make_app: _MakeApp
+    tmp_path: Path, make_app: _MakeApp, second: str
 ) -> None:
     """Two projects whose source directories overlap analyse the same file: one entry
-    per reference, the first project by name keeping its URL, and the unknown id
-    warned once."""
+    per reference, the FIRST PROJECT BY NAME keeping its URL -- whichever document is
+    read first (``aaa`` sorts before ``src`` but is traced in the later document) --
+    and the unknown id warned once."""
     gitlab = "https://gitlab.example.com/demo/-/blob/{commit}/{path}#L{line}"
     commit = _project(
         tmp_path,
         toml_extra=(
-            "\n[codelinks.projects.two]\n"
+            f"\n[codelinks.projects.{second}]\n"
             f'remote_url_pattern = "{gitlab}"\n'
-            "[codelinks.projects.two.source_discover]\n"
+            f"[codelinks.projects.{second}.source_discover]\n"
             'src_dir = "../src"\n'
             'comment_type = "cpp"\n'
         ),
-        append={"docs/later.rst": "\n.. src-trace::\n   :project: two\n"},
+        append={"docs/later.rst": f"\n.. src-trace::\n   :project: {second}\n"},
     )
     app = _build(tmp_path, make_app)
 
     refs = _refs(app)
-    assert refs["REQ_001"] == [_url(commit, 1), _url(commit, 3)]
-    assert refs["REQ_002"] == [_url(commit, 3)]
+    if second == "aaa":
+        first = [
+            gitlab.format(commit=commit, path="src/refs.cpp", line=n) for n in (1, 3)
+        ]
+    else:
+        first = [_url(commit, 1), _url(commit, 3)]
+    assert refs["REQ_001"] == first
+    assert refs["REQ_002"] == first[1:]
     assert build_warnings(app) == [DANGLING]
+
+
+def test_two_fields_over_one_file_each_keep_their_list(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """Two projects over one file naming DIFFERENT fields: each field its own list (two
+    declared relations), and one unknown-id warning for the one marker."""
+    commit = _project(
+        tmp_path,
+        toml_extra=(
+            "\n[codelinks.projects.mirror]\n"
+            'ref_url_field = "test_url"\n'
+            f'remote_url_pattern = "{GITHUB}"\n'
+            "[codelinks.projects.mirror.source_discover]\n"
+            'src_dir = "../src"\n'
+            'comment_type = "cpp"\n'
+        ),
+        append={"docs/later.rst": "\n.. src-trace::\n   :project: mirror\n"},
+    )
+    app = _build(tmp_path, make_app)
+
+    needs = _json(app)["needs"]
+    assert needs["REQ_001"]["code_url"] == [_url(commit, 1), _url(commit, 3)]
+    assert needs["REQ_001"]["test_url"] == [_url(commit, 1), _url(commit, 3)]
+    assert build_warnings(app) == [DANGLING]
+
+
+def _two_roots(root: Path, *, git: bool) -> None:
+    """Two projects whose files share the relative path but are different files: two
+    git repositories (``repoa``, ``repob``), or two plain source directories."""
+    docs = root / "docs"
+    docs.mkdir(parents=True)
+    toml = [
+        "[codelinks]",
+        "set_local_url = true",
+        f"set_remote_url = {str(git).lower()}",
+    ]
+    for name in ("a", "b"):
+        src = root / f"repo{name}" / "src" if git else root / f"src{name}"
+        src.mkdir(parents=True)
+        (src / "main.cpp").write_text("// @need-ids: REQ_001\n", encoding="utf-8")
+        relative = f"../repo{name}/src" if git else f"../src{name}"
+        toml += [
+            f"[codelinks.projects.{name}]",
+            f'remote_url_pattern = "https://github.com/example/repo{name}/blob/'
+            '{commit}/{path}#L{line}"',
+            f"[codelinks.projects.{name}.source_discover]",
+            f'src_dir = "{relative}"',
+            'comment_type = "cpp"',
+        ]
+        if git:
+            repo = root / f"repo{name}"
+            _git(repo, "init", "--quiet")
+            _git(repo, "add", "-A")
+            _git(repo, "commit", "--quiet", "-m", "init")
+    (docs / "ubproject.toml").write_text("\n".join(toml) + "\n", encoding="utf-8")
+    (docs / "conf.py").write_text(
+        (FIXTURE / "docs" / "conf.py").read_text(encoding="utf-8"), encoding="utf-8"
+    )
+    (docs / "index.rst").write_text(
+        "Two roots\n=========\n\n.. req:: Cross-cutting\n   :id: REQ_001\n\n"
+        ".. src-trace::\n   :project: a\n\n.. src-trace::\n   :project: b\n",
+        encoding="utf-8",
+    )
+
+
+@pytest.mark.parametrize("git", [True, False], ids=["two-repositories", "two-src-dirs"])
+def test_same_relative_path_under_two_roots_is_two_files(
+    tmp_path: Path, make_app: _MakeApp, git: bool
+) -> None:
+    """``path`` is relative to each project's own root: ``src/main.cpp`` in two
+    repositories (or ``main.cpp`` in two source directories) is two files, so both
+    references are kept, and both projects report."""
+    _two_roots(tmp_path, git=git)
+    app = _build(tmp_path, make_app)
+
+    refs = _refs(app)["REQ_001"]
+    if git:
+        assert [url.split("/blob/")[0] for url in refs] == [
+            "https://github.com/example/repoa",
+            "https://github.com/example/repob",
+        ]
+        assert all(url.endswith("/src/main.cpp#L1") for url in refs)
+    else:
+        assert refs == ["srca/main.cpp#L1", "srcb/main.cpp#L1"]
+    status = app._status.getvalue()
+    assert "codelinks [a]: 1 reference attached, 0 unknown" in status
+    assert "codelinks [b]: 1 reference attached, 0 unknown" in status
+
+
+def test_no_remote_url_without_a_commit(tmp_path: Path, make_app: _MakeApp) -> None:
+    """A repository with no commit yet has no commit for the pattern: no remote URL,
+    no ``blob/None`` -- the local link instead (#2045)."""
+    _project(
+        tmp_path,
+        git=False,
+        files={"src/impl.cpp": "// @implemented before any commit, IMPL_NOCOMMIT\n"},
+    )
+    _git(tmp_path, "init", "--quiet")
+    _git(tmp_path, "remote", "add", "origin", "https://github.com/example/demo.git")
+    app = _build(tmp_path, make_app)
+
+    needs = _json(app)["needs"]
+    assert needs["IMPL_NOCOMMIT"]["remote-url"] is None
+    assert _refs(app)["REQ_001"] == ["src/refs.cpp#L1", "src/refs.cpp#L3"]
+    assert not any("/blob/None" in json.dumps(need) for need in needs.values())
 
 
 def test_copies_are_byte_identical(tmp_path: Path, make_app: _MakeApp) -> None:
@@ -486,12 +602,18 @@ def test_records_of_an_unconfigured_project_warn_once(
     assert _refs(app)["REQ_001"] == [_url(commit, 1), _url(commit, 3)]
 
 
+@pytest.mark.parametrize(
+    "declaration",
+    ['needs_fields = {"code_url": {}}', 'needs_extra_options = ["code_url"]'],
+    ids=["needs_fields", "needs_extra_options"],
+)
 def test_a_user_declaration_of_the_field_names_the_cure(
-    tmp_path: Path, make_app: _MakeApp
+    tmp_path: Path, make_app: _MakeApp, declaration: str
 ) -> None:
-    """A ``needs_fields`` entry for the references field (the ``write rst`` route's
-    habit) warns with the cause and the cure, beside Sphinx-Needs' own duplicate."""
-    _project(tmp_path, append={"docs/conf.py": 'needs_fields = {"code_url": {}}\n'})
+    """A ``needs_fields`` (or ``needs_extra_options``) entry for the references field
+    (the ``write rst`` route's habit) warns with the cause and the cure, beside
+    Sphinx-Needs' own duplicate."""
+    _project(tmp_path, append={"docs/conf.py": declaration + "\n"})
     app = _build(tmp_path, make_app)
 
     suffix = " [codelinks.config]" if _SHOWS_WARNING_TYPES else ""

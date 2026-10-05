@@ -202,10 +202,11 @@ class SourceTracingDirective(SphinxDirective):
             else:
                 remote_src_dir = src_dir.relative_to(src_analyse.git_root)
             dirs["remote_src_dir"] = remote_src_dir
-            if src_analyse.git_root is None:
-                # no git root, no remote URL (#2045): the pattern would be filled with
-                # commit None and the build machine's absolute path. ubCode writes none
-                # either; the analysis has already warned (codelinks.git_root).
+            if src_analyse.git_root is None or src_analyse.git_commit_rev is None:
+                # no git root, or a repository without a commit: no remote URL (#2045)
+                # -- the pattern would be filled with commit None (and, without a git
+                # root, the build machine's absolute path). ubCode writes none either;
+                # the analysis has already warned (codelinks.git_root / git_ref).
                 remote_url_pattern = None
 
         # keep the @need-ids references, to be attached once every need is known

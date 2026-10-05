@@ -17,7 +17,7 @@ from __future__ import annotations
 from collections import Counter
 from collections.abc import Iterable, Mapping, MutableMapping
 from dataclasses import dataclass, field
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 from sphinx.application import Sphinx
@@ -25,7 +25,13 @@ from sphinx.environment import BuildEnvironment
 from sphinx.util import logging
 
 from sphinx_codelinks.analyse.references import NeedIdRef
-from sphinx_codelinks.config import CodeLinksConfig, need_id_refs_fields
+from sphinx_codelinks.analyse.utils import find_git_root
+from sphinx_codelinks.config import (
+    CodeLinksConfig,
+    CodeLinksProjectConfigType,
+    need_id_refs_fields,
+)
+from ub_project import anchor
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +65,53 @@ def merge_info(
     for docname in docnames:
         if docname in theirs:
             mine[docname] = theirs[docname]
+
+
+def project_root(
+    confdir: str | Path,
+    codelinks_config: CodeLinksConfig,
+    project_config: CodeLinksProjectConfigType,
+) -> str | None:
+    """The directory a project's records' ``path`` is relative to, as POSIX, or ``None``.
+
+    Resolved as the ``src-trace`` directive resolves it: the configured ``git_root``, else
+    the git root above the source directory, else the source directory -- each anchored
+    at the configuration file's directory. It identifies the FILE behind a record's
+    root-relative ``path`` (two repositories may both hold ``src/main.cpp``), so it is
+    configuration of the consuming build, never data in the record.
+    """
+    discover = project_config.get("source_discover_config")
+    analyse = project_config.get("analyse_config")
+    if discover is None or analyse is None:
+        return None
+    try:
+        conf_dir = Path(confdir)
+        if codelinks_config.config_from_toml:
+            conf_dir = anchor(Path(codelinks_config.config_from_toml).parent, conf_dir)
+        src_dir = anchor(discover.src_dir, conf_dir).resolve()
+        if analyse.git_root is not None:
+            root = anchor(analyse.git_root, conf_dir).resolve()
+        else:
+            root = find_git_root(src_dir) or src_dir
+    except (OSError, TypeError, ValueError):
+        return None
+    return root.as_posix()
+
+
+def project_roots(
+    confdir: str | Path, codelinks_config: CodeLinksConfig
+) -> dict[str, str]:
+    """Each configured project whose root resolves, mapped to it (see :func:`project_root`)."""
+    projects = codelinks_config.projects
+    if not isinstance(projects, dict):
+        return {}
+    roots: dict[str, str] = {}
+    for name, project_config in projects.items():
+        if isinstance(project_config, dict):
+            root = project_root(confdir, codelinks_config, project_config)
+            if root is not None:
+                roots[name] = root
+    return roots
 
 
 def resolve_need_id(need_id: str, needs: Mapping[str, Any]) -> Any | None:
@@ -95,29 +148,35 @@ def attach_need_id_refs(
     needs: MutableMapping[str, Any],
     *,
     fields: Mapping[str, str],
+    roots: Mapping[str, str] | None = None,
 ) -> AttachResult:
     """Give each referenced need the URLs of its references.
 
     This is the seam a pre-analysed input file will feed: it takes the records and the
     needs, whatever produced the records, and nothing about the analysis or the
     directive. ``fields`` maps a project to its ``ref_url_field``; a record of a project
-    not in it is ignored, and the project reported in ``ignored_projects``.
+    not in it is ignored, and the project reported in ``ignored_projects``. ``roots``
+    maps a project to the directory its records' ``path`` is relative to (configuration,
+    like ``fields``); a project without one is a root of its own.
 
-    Records are deduplicated on ``(path, lineno, need_id)`` within a field, whatever
-    the project -- overlapping ``src-trace`` directives, or two projects whose source
-    directories overlap, analyse the same file twice; the first project by name keeps
-    the reference (and its URL) -- and ordered by ``(path, lineno, start_column)``. A
+    Records are deduplicated on ``(root, path, lineno, need_id)`` within a field,
+    whatever the project -- overlapping ``src-trace`` directives, or two projects whose
+    source directories overlap, analyse the same FILE twice; the first project by name
+    keeps the reference (and its URL). Files under different roots are different files,
+    each kept. Records are ordered by ``(path, lineno, start_column)``. A
     need gets one entry per reference: its remote URL, else its local one; projects
     naming the same field share one list. The need is not marked as modified, and an
     unreferenced need is left alone.
     """
-    unique: dict[tuple[str, str, int, str], NeedIdRef] = {}
+    roots = roots or {}
+    unique: dict[tuple[str, str, str, int, str], NeedIdRef] = {}
     ignored_projects: set[str] = set()
     for ref in sorted(refs, key=lambda ref: ref.project):
         if ref.project not in fields:
             ignored_projects.add(ref.project)
             continue
-        key = (fields[ref.project], ref.path, ref.lineno, ref.need_id)
+        root = roots.get(ref.project, f"<project {ref.project}>")
+        key = (fields[ref.project], root, ref.path, ref.lineno, ref.need_id)
         unique.setdefault(key, ref)
     ordered = sorted(
         unique.values(),
@@ -150,10 +209,17 @@ def attach_on_post_processing(app: Sphinx, needs: MutableMapping[str, Any]) -> N
     refs = [ref for docname in sorted(store) for ref in store[docname]]
     if not refs:
         return
-    fields = need_id_refs_fields(CodeLinksConfig.from_sphinx(app.config))
-    result = attach_need_id_refs(refs, needs, fields=fields)
+    codelinks_config = CodeLinksConfig.from_sphinx(app.config)
+    fields = need_id_refs_fields(codelinks_config)
+    roots = project_roots(app.confdir, codelinks_config)
+    result = attach_need_id_refs(refs, needs, fields=fields, roots=roots)
 
+    # one warning per located id, even when two fields cover one file
+    warned: set[tuple[str, int, str]] = set()
     for ref in result.unknown:
+        if (ref.path, ref.lineno, ref.need_id) in warned:
+            continue
+        warned.add((ref.path, ref.lineno, ref.need_id))
         logger.warning(
             f"@need-ids reference to unknown need {ref.need_id!r}",
             type="codelinks",
