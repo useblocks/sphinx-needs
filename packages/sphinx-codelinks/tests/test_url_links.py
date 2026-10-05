@@ -13,15 +13,20 @@ from collections.abc import Callable
 from pathlib import Path
 
 import pytest
+import sphinx
 from sphinx.testing.util import SphinxTestApp
 
 from sphinx_codelinks.sphinx_extension.string_links import url_string_link
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.string_links import compiled_string_links
-from sphinx_needs_testkit import assert_no_warnings
+from sphinx_needs_testkit import assert_no_warnings, build_warnings
 
 GITHUB = "https://github.com/example/demo/blob/{commit}/{path}#L{line}"
 GITLAB = "https://gitlab.example.com/demo/-/blob/{commit}/{path}?ref=b#L{line}"
+GITWEB = "https://git.example.com/?p=demo.git;a=blob;f={path};hb={commit}#l{line}"
+
+#: Sphinx 8 renders a warning's ``[type.subtype]`` itself; 7.4 does not
+_SHOWS_WARNING_TYPES = sphinx.version_info >= (8,)
 
 #: a conf.py ``setup`` recording ``needs_string_links`` just before Sphinx-Needs
 #: compiles them (its listener is at priority 551)
@@ -277,3 +282,41 @@ def test_rebuild_does_not_change_the_string_links(
     html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
     url = GITHUB.format(commit=commit, path="srca/a.cpp", line=1)
     assert _card_links(html, "remote-url") == [url]
+
+
+@pytest.mark.parametrize(
+    "pattern",
+    [
+        pytest.param(GITWEB, id="semicolon"),
+        pytest.param("https://example.com/{commit}/{path},view#L{line}", id="comma"),
+    ],
+)
+def test_pattern_with_a_separator_warns(
+    tmp_path: Path, make_app: Callable[..., SphinxTestApp], pattern: str
+) -> None:
+    """Sphinx-Needs splits a string-linked value on ``,`` and ``;``: a pattern holding
+    either cannot render as one link, and the configuration check says so."""
+    _project(tmp_path, patterns={"a": pattern})
+    app = make_app(srcdir=tmp_path / "docs", freshenv=True)
+    app.build()
+
+    suffix = " [codelinks.remote_url_pattern]" if _SHOWS_WARNING_TYPES else ""
+    assert build_warnings(app) == [
+        f"WARNING: Project 'a': remote_url_pattern {pattern!r} contains ',' or ';'. "
+        "Sphinx-Needs splits string-linked values on ',' and ';', so this pattern's "
+        f"links will not render as one link.{suffix}"
+    ]
+
+
+def test_pattern_separator_warning_is_suppressible(
+    tmp_path: Path, make_app: Callable[..., SphinxTestApp]
+) -> None:
+    _project(
+        tmp_path,
+        patterns={"a": GITWEB},
+        conf_extra='suppress_warnings = ["codelinks.remote_url_pattern"]\n',
+    )
+    app = make_app(srcdir=tmp_path / "docs", freshenv=True)
+    app.build()
+
+    assert_no_warnings(app)

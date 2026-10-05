@@ -883,6 +883,30 @@ def check_project_configuration(config: CodeLinksConfig) -> list[str]:
     return errors
 
 
+def remote_url_pattern_warnings(config: CodeLinksConfig) -> list[str]:
+    """Why a project's remote URL pattern will not render as one link, if it will not.
+
+    The ``remote-url`` value is the pattern filled in, and Sphinx-Needs splits every
+    string-linked value on ``,`` and ``;`` before turning the parts into links. A
+    pattern containing either -- gitweb's ``?p=repo.git;a=blob;f={path}`` is the
+    classic -- therefore renders as several links, none of them right.
+    """
+    if not config.set_remote_url or not isinstance(config.projects, dict):
+        return []
+    warnings = []
+    for name, project_config in config.projects.items():
+        if not isinstance(project_config, dict):
+            continue
+        pattern = project_config.get("remote_url_pattern")
+        if isinstance(pattern, str) and ("," in pattern or ";" in pattern):
+            warnings.append(
+                f"Project {name!r}: remote_url_pattern {pattern!r} contains ',' or "
+                "';'. Sphinx-Needs splits string-linked values on ',' and ';', so this "
+                "pattern's links will not render as one link."
+            )
+    return warnings
+
+
 def check_configuration(config: CodeLinksConfig) -> list[str]:
     errors = []
     errors.extend(check_schema(config))

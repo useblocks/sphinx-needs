@@ -21,6 +21,7 @@ from sphinx_codelinks.config import (
     file_lineno_href,
     generate_project_configs,
     load_codelinks_table,
+    remote_url_pattern_warnings,
 )
 from sphinx_codelinks.logger import configure_sphinx
 from sphinx_codelinks.sphinx_extension import debug
@@ -287,6 +288,8 @@ def check_sphinx_configuration(app: Sphinx, _config: _SphinxConfig) -> None:
     errors = check_configuration(config)
     if errors:
         raise Exception("\n".join(errors))
+    for warning in remote_url_pattern_warnings(config):
+        logger.warning(warning, type="codelinks", subtype="remote_url_pattern")
 
 
 def emit_warnings(

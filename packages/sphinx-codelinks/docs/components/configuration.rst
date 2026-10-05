@@ -166,6 +166,8 @@ Defines the URL pattern for Sphinx Directive ``src-trace`` to generate links to 
 - **GitLab:** ``https://gitlab.com/user/repo/-/blob/{commit}/{path}#L{line}``
 - **Bitbucket:** ``https://bitbucket.org/user/repo/src/{commit}/{path}#lines-{line}``
 
+A pattern containing ``,`` or ``;`` -- gitweb's ``?p=repo.git;a=blob;f={path};hb={commit}``, for one -- is not supported for rendering: Sphinx-Needs splits a string-linked value on those characters, so the link would render as several broken ones. The build warns about such a pattern (``codelinks.remote_url_pattern``, which ``suppress_warnings`` can silence); ``needs.json`` still holds the whole URL.
+
 Each need a ``src-trace`` directive creates holds, in :ref:`remote_url_field <set_remote_url>`, its own project's pattern filled in for its marker -- a full URL, which is also the value in ``needs.json``.
 
 .. note:: This option integrates with :external+needs:ref:`need_string_links<needs_string_links>` to automatically generate clickable links in the documentation: the field's link points at the URL, and is named by the part after the commit (``src/main.cpp#L3``), or by the whole URL when the pattern has no commit in its path.
