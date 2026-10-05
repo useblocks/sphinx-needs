@@ -39,6 +39,13 @@ coverage:
         flags: [ub-test-reports]
         target: auto
         threshold: 0.5%
+      # sphinx-ai-index, uploaded by the same cell with `flags: ai-index`, from its own
+      # `--cov-report=xml:ai-index.xml`. `target: auto` for the reason the imports above give:
+      # this package arrived with an import and its number has never been measured here
+      ai-index:
+        flags: [ai-index]
+        target: auto
+        threshold: 0.5%
     patch:
       default:
         target: 67%

@@ -30,6 +30,8 @@ extensions = [
     "sphinx_code_tabs",
     "sphinxcontrib.typer",
     "sphinxcontrib.video",
+    # writes `ai_docs_index.json`, the page index ubCode reads (packages/sphinx-ai-index)
+    "sphinx_ai_index",
 ]
 
 # The source directory IS this directory, so the build output and the shared ubCode project

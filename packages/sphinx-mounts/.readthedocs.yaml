@@ -35,10 +35,11 @@ build:
       # and touched this package, the build runs although the pull request did not touch it.
       # That is the safe direction; it never skips a build that was needed.
       #
-      # `packages/sphinx-mounts/` is the complete set of inputs: this file lives inside it,
-      # `docs/conf.py` reads only the package's own `pyproject.toml`, and `python.install`
-      # below installs the package directory with its own `docs` extra, so no root file takes
-      # part in this build. Branch and tag builds (`latest`, releases) are never cancelled.
+      # `packages/sphinx-mounts/` and `packages/sphinx-ai-index/` are the complete set of
+      # inputs: this file lives inside the first, `docs/conf.py` reads only the package's own
+      # `pyproject.toml`, and `python.install` below installs the extension that writes
+      # `ai_docs_index.json` from the checkout and then the package directory with its own
+      # `docs` extra, so no root file takes part in this build. Branch and tag builds (`latest`, releases) are never cancelled.
       - |
         if [ "$READTHEDOCS_VERSION_TYPE" != "external" ]; then
           exit 0
@@ -47,8 +48,8 @@ build:
           echo "origin/master is not available in this clone; building to be safe"
           exit 0
         fi
-        if git diff --quiet origin/master -- packages/sphinx-mounts/; then
-          echo "nothing under packages/sphinx-mounts/ changed; skipping this build (exit 183)"
+        if git diff --quiet origin/master -- packages/sphinx-mounts/ packages/sphinx-ai-index/; then
+          echo "nothing under packages/sphinx-mounts/ or packages/sphinx-ai-index/ changed; skipping this build (exit 183)"
           exit 183
         fi
 
@@ -60,6 +61,17 @@ sphinx:
 
 python:
   install:
+    # sphinx-ai-index FIRST, from this checkout -- it writes the `ai_docs_index.json` this
+    # site publishes. Read the Docs runs these entries in order with pip, and the `docs`
+    # extra below would otherwise resolve `sphinx-ai-index` from PyPI: the released
+    # version, not the one beside it, so the site would publish an index from code the
+    # workspace no longer has -- and once the member moves past the release (a dev version
+    # in the tree), pip finds no matching distribution at all and the build fails. With it
+    # already installed the extra's requirement is satisfied and pip fetches nothing
+    # (tight tracking keeps the checkout's version inside the extra's floor and cap). CI's
+    # docs jobs build from the workspace lock and need none of this.
+    - method: pip
+      path: packages/sphinx-ai-index
     - method: pip
       path: packages/sphinx-mounts
       extra_requirements:

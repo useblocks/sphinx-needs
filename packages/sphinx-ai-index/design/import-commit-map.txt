@@ -1,0 +1,19 @@
+# The git-filter-repo commit map from the import of useblocks/sphinx-ai-index into this
+# workspace: every commit hash the old repository had, and the hash it now has here.
+# Left column = the hash in useblocks/sphinx-ai-index, right column = the hash in this
+# repository. It is kept because links into the old repository name old hashes -- its one
+# release's GitHub Release, tag `v0.1.0` and PyPI provenance among them -- and this file is
+# how such a permalink is resolved to the commit here. The old repository stays readable
+# (it is to be archived after the first release from here), so those links keep working;
+# this maps them across.
+# All 7 commits the rewrite parsed are listed, and all 7 right-hand hashes exist in this
+# repository: the old repository had one branch, `main`, and it was merged whole. Its one
+# tag, `v0.1.0` at 74c783b9, is `sphinx-ai-index-v0.1.0` at 6e4b36da here.
+old                                      new
+410d269ea3c47d54c9603062fb4fb28b85c5b62b 8c30d02b41d326cd6ca6628dcd7366d72d1624e1
+6a341cd489f902135ed333f935f0ca42592bda30 11a5db29138fcf6205d828cf7f111d8e45c37e79
+74c783b9ffdca996090c00e30c43c3c0ca29ef88 6e4b36da5a48f04795a606b220ad20b394a8b120
+aabe2ec9e99eca619cac74940aec9d4e2b4b4ff8 e44405f910310be64f24d9e0eafe7881d61d277f
+b23e4eabf3a15f25993f91113c20a036edbbce24 43ee7a6a148f6ff96f7d97ab7770be1b0becfec2
+d05248d17bebcecb75a55acbeb3285421eda3553 3ea34a2aec1181efe810e6d27b1c3973f6ba3d44
+ee9893078e6963637f90ed8e58c7282f8ed5a2b8 e62d687b03b41374991eea80fe6f6e0aedb4bf01

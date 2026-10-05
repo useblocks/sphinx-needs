@@ -38,7 +38,12 @@ classifiers = [
 # `--extra` against the project, which is the workspace root, so an extra that lives only
 # here is not reachable by name without that pass-through.
 [project.optional-dependencies]
-docs = ["furo>=2024.5.6", "myst-parser>=4.0.0", "sphinx-design>=0.6.1"]
+docs = [
+  "furo>=2024.5.6",
+  "myst-parser>=4.0.0",
+  "sphinx-ai-index>=0.1.0,<1",
+  "sphinx-design>=0.6.1",
+]
 
 [project.urls]
 Homepage = "https://sphinx-mounts.useblocks.com"

@@ -5,8 +5,10 @@ name: Release
 #
 # The filename is load-bearing and must not change: every publishable member's PyPI project
 # (sphinx-needs, sphinx-mounts, sphinx-codelinks, sphinx-test-reports, ub-project,
-# ub-test-reports) names `release.yaml` in its trusted-publisher entry -- ub-test-reports' is
-# created, as a pending publisher, before its first tag.
+# ub-test-reports, sphinx-ai-index) names `release.yaml` in its trusted-publisher entry --
+# ub-test-reports' was created, as a pending publisher, before its first tag, and
+# sphinx-ai-index's is ADDED beside the publisher its old repository registered, before its
+# first release from here.
 #
 # The leading `*` in the tag filter is deliberately loose -- GitHub's tag filters are globs,
 # not regexes, and cannot express "one of these names" -- and the `plan` job is what

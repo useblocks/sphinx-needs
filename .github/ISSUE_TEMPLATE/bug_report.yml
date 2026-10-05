@@ -21,6 +21,7 @@ body:
         - sphinx-test-reports
         - ub-test-reports
         - ub-project
+        - sphinx-ai-index
         - the repository (workflows, CI, release, docker, tooling)
     validations:
       required: true

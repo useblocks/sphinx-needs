@@ -8,9 +8,10 @@
 'pkg: sphinx-needs':
   - '/### Package[^#]*\bsphinx-needs\b/i'
 # No two of `sphinx-needs`, `sphinx-mounts`, `sphinx-codelinks`, `sphinx-test-reports`,
-# `ub-test-reports` and `ub-project` contains another as a \b-delimited word, so no two patterns
-# can match one choice (`ub-test-reports` is not a word inside `sphinx-test-reports`: the
-# `-` before `test` is a boundary, but the pattern needs `ub-` there). Every
+# `ub-test-reports`, `ub-project` and `sphinx-ai-index` contains another as a \b-delimited
+# word, so no two patterns can match one choice (`ub-test-reports` is not a word inside
+# `sphinx-test-reports`: the `-` before `test` is a boundary, but the pattern needs `ub-`
+# there; and `sphinx-ai-index` shares only the `sphinx-` prefix with the others). Every
 # pattern has to be present before its option is offered by a form, though: the workflow
 # runs with `sync-labels: 1`, so a pattern that is missing when its option is picked means
 # the label is synced away rather than merely not added
@@ -24,5 +25,7 @@
   - '/### Package[^#]*\bub-test-reports\b/i'
 'pkg: ub-project':
   - '/### Package[^#]*\bub-project\b/i'
+'pkg: sphinx-ai-index':
+  - '/### Package[^#]*\bsphinx-ai-index\b/i'
 'pkg: workspace':
   - '/### Package[^#]*\bthe repository\b/i'

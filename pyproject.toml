@@ -32,6 +32,7 @@ dependencies = [
   "sphinx-test-reports",
   "ub-test-reports",
   "ub-project",
+  "sphinx-ai-index",
   "sphinx-needs-workspace-tools",
 ]
 
@@ -71,6 +72,7 @@ sphinx-codelinks = { workspace = true }
 sphinx-test-reports = { workspace = true }
 ub-test-reports = { workspace = true }
 ub-project = { workspace = true }
+sphinx-ai-index = { workspace = true }
 sphinx-needs-workspace-tools = { workspace = true }
 sphinx-needs-testkit = { workspace = true }
 
@@ -145,6 +147,11 @@ test = [
   # dependency there rather than a docs one. It costs nothing in the lock -- it is already
   # here through `sphinx-needs[theme-furo]` -- only in what the `test` group installs
   "furo>=2024.5.6",
+  # sphinx-ai-index: its property-based tests need it. It was in that package's own
+  # `testing` group, which this group replaces; being HERE is also what carries it into the
+  # release workflow's compat cell, which builds its environment from
+  # `uv export --only-group test`
+  "hypothesis>=6.0",
 ]
 # sphinx-codelinks' optional libclang engine, in a group of its own because only the job
 # that runs its suite wants it: the wheel is 23 MiB and 81 MB on disk, and 56 of its 351
@@ -287,6 +294,8 @@ src = [
   "packages/sphinx-needs-testkit/src",
   "packages/ub-project",
   "packages/ub-project/src",
+  "packages/sphinx-ai-index",
+  "packages/sphinx-ai-index/src",
 ]
 
 [tool.ruff.lint]
@@ -355,6 +364,7 @@ include = [
   "packages/sphinx-test-reports/src",
   "packages/ub-test-reports/src",
   "packages/ub-project/src",
+  "packages/sphinx-ai-index/src",
   "tools/src",
   ".github/scripts",
   "scripts",
@@ -701,6 +711,48 @@ executor = { type = "uv", frozen = true, no-group = "dev", group = [
 ] }
 env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-9" }
 
+# sphinx-ai-index. The short name drops the `sphinx-` prefix, like every extension's. No path
+# is named, like `test-mounts`: nothing under its `src/` is called `test_*.py`, so
+# `poe test-ai-index tests/test_extension.py` narrows the run rather than adding to it. No
+# renderer, no git and no libclang: the suite builds small Sphinx projects in `tmp_path` and
+# draws nothing. `hypothesis` writes its example database into the working directory, which
+# is `packages/sphinx-ai-index/.hypothesis/` under these tasks -- the root `.gitignore`
+# carries `.hypothesis/` for that and for CI's root-relative run
+[tool.poe.tasks.test-ai-index]
+help = "Run the sphinx-ai-index suite against the default (newest) sphinx; trailing args go to pytest"
+cmd = "pytest"
+cwd = "packages/sphinx-ai-index"
+
+[tool.poe.tasks.test-ai-index-sphinx7]
+help = "Run the sphinx-ai-index suite against sphinx 7.4 (set UV_PYTHON to pick the interpreter)"
+cmd = "pytest"
+cwd = "packages/sphinx-ai-index"
+executor = { type = "uv", frozen = true, no-group = "dev", group = [
+  "test",
+  "sphinx-7",
+] }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-7" }
+
+[tool.poe.tasks.test-ai-index-sphinx8]
+help = "Run the sphinx-ai-index suite against sphinx 8.2 (set UV_PYTHON to pick the interpreter)"
+cmd = "pytest"
+cwd = "packages/sphinx-ai-index"
+executor = { type = "uv", frozen = true, no-group = "dev", group = [
+  "test",
+  "sphinx-8",
+] }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-8" }
+
+[tool.poe.tasks.test-ai-index-sphinx9]
+help = "Run the sphinx-ai-index suite against sphinx 9.1 (python >= 3.12; set UV_PYTHON to pick the interpreter)"
+cmd = "pytest"
+cwd = "packages/sphinx-ai-index"
+executor = { type = "uv", frozen = true, no-group = "dev", group = [
+  "test",
+  "sphinx-9",
+] }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-9" }
+
 # ub-project. The short name is the whole distribution name: there is no `sphinx-` prefix to
 # drop. ONE task and no `-sphinxN` cells: the package depends on nothing but the standard
 # library, so a sphinx series is not an axis it has. The environment that matters is the one
@@ -735,7 +787,7 @@ help = "Type-check every package with ty against the oldest supported sphinx (th
 # but it is NOT a fence on `src.include` above: ty intersects the two, so a stale `include`
 # makes this check zero files and exit 0. The canary step in ci.yaml's Lint job is what
 # guards that.
-cmd = "ty check packages/sphinx-needs/src/sphinx_needs packages/sphinx-mounts/src/sphinx_mounts packages/sphinx-codelinks/src/sphinx_codelinks packages/sphinx-test-reports/src packages/ub-test-reports/src/ub_test_reports packages/ub-project/src/ub_project tools/src .github/scripts scripts --python .venvs/typing"
+cmd = "ty check packages/sphinx-needs/src/sphinx_needs packages/sphinx-mounts/src/sphinx_mounts packages/sphinx-codelinks/src/sphinx_codelinks packages/sphinx-test-reports/src packages/ub-test-reports/src/ub_test_reports packages/ub-project/src/ub_project packages/sphinx-ai-index/src/sphinx_ai_index tools/src .github/scripts scripts --python .venvs/typing"
 executor = { type = "uv", frozen = true, no-group = "dev", group = ["typing"] }
 env = { UV_PROJECT_ENVIRONMENT = ".venvs/typing" }
 
@@ -875,6 +927,16 @@ help = "Import every ub_test_reports module from its built wheel, with dependenc
 # `--extra pytest` for `pytest_plugin`, which imports pytest and pluggy; nothing else in the
 # wheel needs more than its `Requires-Dist` (lxml, ub-project)
 cmd = "python tools/src/sn_tools/import_check.py ub-test-reports --extra pytest"
+
+[tool.poe.tasks.build-ai-index]
+help = "Build the sphinx-ai-index sdist + wheel into dist/sphinx-ai-index"
+cmd = "uv build --package sphinx-ai-index --no-sources -o dist/sphinx-ai-index"
+
+[tool.poe.tasks.import-check-ai-index]
+help = "Import every sphinx-ai-index module from its built wheel, with dependencies as PUBLISHED"
+# no extras: the wheel's `Requires-Dist` (sphinx, docutils) is everything its one module
+# imports, and it depends on no sibling
+cmd = "python tools/src/sn_tools/import_check.py sphinx-ai-index"
 
 [tool.poe.tasks.build-ub-project]
 help = "Build the ub-project sdist + wheel into dist/ub-project"

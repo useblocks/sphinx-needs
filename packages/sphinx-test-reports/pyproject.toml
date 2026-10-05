@@ -67,6 +67,7 @@ pytest = ["ub-test-reports[pytest]>=1.0.0,<2"]
 docs = [
   "packaging",
   "pillow",
+  "sphinx-ai-index>=0.1.0,<1",
   "sphinx-design",
   "sphinx-immaterial",
   "sphinx-needs>=8.5.0,<9",

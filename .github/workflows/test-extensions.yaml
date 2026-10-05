@@ -197,3 +197,21 @@ jobs:
         # stays the run that proves it imports no Sphinx. Same `if:` as the step above
         if: ${{ !cancelled() && steps.prepare.outcome == 'success' }}
         run: uv run --no-sync pytest -v packages/ub-project/tests
+      - name: "sphinx-ai-index: pytest"
+        # The extension every `sphinx-*` docs site loads to publish `ai_docs_index.json`. Its
+        # suite builds small Sphinx projects in `tmp_path` and needs nothing this cell does
+        # not already have -- no renderer, no git, no libclang, no network -- and its
+        # property-based tests get `hypothesis` from the root `test` group. hypothesis
+        # writes its example database into the working directory, the repository root here,
+        # which the root `.gitignore` covers. Same `if:` as the steps above
+        if: ${{ !cancelled() && steps.prepare.outcome == 'success' }}
+        run: uv run --no-sync pytest -v packages/sphinx-ai-index/tests --cov=sphinx_ai_index --cov-report=xml:ai-index.xml --cov-report=term-missing
+      - name: "sphinx-ai-index: upload to Codecov"
+        if: inputs.upload-coverage && github.repository == 'useblocks/sphinx-needs' && github.actor != 'dependabot[bot]' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          name: sphinx-ai-index-pytests
+          flags: ai-index
+          files: ./ai-index.xml
+          fail_ci_if_error: ${{ github.event_name == 'pull_request' }}
