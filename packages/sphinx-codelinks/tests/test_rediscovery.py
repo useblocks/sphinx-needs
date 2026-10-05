@@ -237,13 +237,12 @@ def test_a_card_in_a_document_not_read_again_is_rewritten(
 def test_fingerprint_is_the_discovered_files_with_mtime_and_size(
     tmp_path: Path,
 ) -> None:
+    from sphinx_codelinks.source_discover.config import SourceDiscoverConfig
     from sphinx_codelinks.sphinx_extension.rediscovery import fingerprint
 
-    from sphinx_codelinks.source_discover.config import SourceDiscoverConfig
-
     (tmp_path / "lib").mkdir()
-    (tmp_path / "b.cpp").write_text("// b\n", encoding="utf-8")
-    (tmp_path / "lib" / "a.cpp").write_text("// aa\n", encoding="utf-8")
+    (tmp_path / "b.cpp").write_bytes(b"// b\n")
+    (tmp_path / "lib" / "a.cpp").write_bytes(b"// aa\n")
     (tmp_path / "notes.txt").write_text("not a source\n", encoding="utf-8")
     config = SourceDiscoverConfig(tmp_path, comment_type="cpp")
 
@@ -261,10 +260,10 @@ def test_fingerprint_is_the_discovered_files_with_mtime_and_size(
 def test_a_file_scope_fingerprints_that_one_file(tmp_path: Path) -> None:
     from sphinx_codelinks.sphinx_extension.rediscovery import file_fingerprint
 
-    (tmp_path / "a.cpp").write_text("// a\n", encoding="utf-8")
+    (tmp_path / "a.cpp").write_bytes(b"// a\n")
     found = file_fingerprint(tmp_path, "a.cpp")
     assert [(path, size) for path, _mtime, size in found] == [("a.cpp", 5)]
-    (tmp_path / "b.cpp").write_text("// b\n", encoding="utf-8")
+    (tmp_path / "b.cpp").write_bytes(b"// b\n")
     assert file_fingerprint(tmp_path, "a.cpp") == found
     assert file_fingerprint(tmp_path, "missing.cpp") == ()
 
