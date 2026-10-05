@@ -603,7 +603,10 @@ def test_undeclared_field_in_options_warns(
     )
     warnings = warnings_of(app)
     assert "'options' names 'no_such_field'" in warnings, warnings
-    assert "not a registered need field" in warnings, warnings
+    assert (
+        "which is neither an extra field nor a core field of the field schema, "
+        "so it is ignored." in warnings
+    ), warnings
     # warn only: the entry is still applied to the field that *is* registered
     assert 'href="https://tracker.example.com/AB-1"' in need_html(app)
 

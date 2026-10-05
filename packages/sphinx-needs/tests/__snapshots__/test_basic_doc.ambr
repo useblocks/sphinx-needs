@@ -623,6 +623,7 @@
       schema=dict({
         'type': 'string',
       }),
+      string_link=None,
     ),
     'closed_at': FieldSchema(
       allow_defaults=True,
@@ -639,6 +640,7 @@
       schema=dict({
         'type': 'string',
       }),
+      string_link=None,
     ),
     'collapse': FieldSchema(
       allow_defaults=True,
@@ -657,6 +659,7 @@
       schema=dict({
         'type': 'boolean',
       }),
+      string_link=None,
     ),
     'completion': FieldSchema(
       allow_defaults=True,
@@ -673,6 +676,7 @@
       schema=dict({
         'type': 'integer',
       }),
+      string_link=None,
     ),
     'constraints': FieldSchema(
       allow_defaults=True,
@@ -695,6 +699,7 @@
         }),
         'type': 'array',
       }),
+      string_link=None,
     ),
     'created_at': FieldSchema(
       allow_defaults=True,
@@ -711,6 +716,7 @@
       schema=dict({
         'type': 'string',
       }),
+      string_link=None,
     ),
     'duration': FieldSchema(
       allow_defaults=True,
@@ -727,6 +733,7 @@
       schema=dict({
         'type': 'integer',
       }),
+      string_link=None,
     ),
     'hide': FieldSchema(
       allow_defaults=True,
@@ -745,6 +752,7 @@
       schema=dict({
         'type': 'boolean',
       }),
+      string_link=None,
     ),
     'id_prefix': FieldSchema(
       allow_defaults=True,
@@ -761,6 +769,7 @@
       schema=dict({
         'type': 'string',
       }),
+      string_link=None,
     ),
     'layout': FieldSchema(
       allow_defaults=True,
@@ -777,6 +786,7 @@
       schema=dict({
         'type': 'string',
       }),
+      string_link=None,
     ),
     'links': LinkSchema(
       allow_dead_links=False,
@@ -826,6 +836,7 @@
       schema=dict({
         'type': 'string',
       }),
+      string_link=None,
     ),
     'max_content_lines': FieldSchema(
       allow_defaults=True,
@@ -842,6 +853,7 @@
       schema=dict({
         'type': 'string',
       }),
+      string_link=None,
     ),
     'parent_needs': LinkSchema(
       allow_dead_links=False,
@@ -891,6 +903,7 @@
       schema=dict({
         'type': 'string',
       }),
+      string_link=None,
     ),
     'pre_template': FieldSchema(
       allow_defaults=True,
@@ -907,6 +920,7 @@
       schema=dict({
         'type': 'string',
       }),
+      string_link=None,
     ),
     'query': FieldSchema(
       allow_defaults=True,
@@ -923,6 +937,7 @@
       schema=dict({
         'type': 'string',
       }),
+      string_link=None,
     ),
     'service': FieldSchema(
       allow_defaults=True,
@@ -939,6 +954,7 @@
       schema=dict({
         'type': 'string',
       }),
+      string_link=None,
     ),
     'specific': FieldSchema(
       allow_defaults=True,
@@ -955,6 +971,7 @@
       schema=dict({
         'type': 'string',
       }),
+      string_link=None,
     ),
     'status': FieldSchema(
       allow_defaults=True,
@@ -971,6 +988,7 @@
       schema=dict({
         'type': 'string',
       }),
+      string_link=None,
     ),
     'style': FieldSchema(
       allow_defaults=True,
@@ -987,6 +1005,7 @@
       schema=dict({
         'type': 'string',
       }),
+      string_link=None,
     ),
     'tags': FieldSchema(
       allow_defaults=True,
@@ -1009,6 +1028,7 @@
         }),
         'type': 'array',
       }),
+      string_link=None,
     ),
     'template': FieldSchema(
       allow_defaults=True,
@@ -1025,6 +1045,7 @@
       schema=dict({
         'type': 'string',
       }),
+      string_link=None,
     ),
     'title': FieldSchema(
       allow_defaults=False,
@@ -1041,6 +1062,7 @@
       schema=dict({
         'type': 'string',
       }),
+      string_link=None,
     ),
     'updated_at': FieldSchema(
       allow_defaults=True,
@@ -1057,6 +1079,7 @@
       schema=dict({
         'type': 'string',
       }),
+      string_link=None,
     ),
     'url': FieldSchema(
       allow_defaults=True,
@@ -1073,6 +1096,7 @@
       schema=dict({
         'type': 'string',
       }),
+      string_link=None,
     ),
     'user': FieldSchema(
       allow_defaults=True,
@@ -1089,6 +1113,7 @@
       schema=dict({
         'type': 'string',
       }),
+      string_link=None,
     ),
   })
 # ---

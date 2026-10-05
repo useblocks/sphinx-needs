@@ -24,9 +24,9 @@ from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import NeedItem, NeedPartItem
 from sphinx_needs.string_links import (
     CompiledStringLink,
-    compiled_string_links,
+    compiled_field_string_link,
+    field_string_link,
     split_string_link_value,
-    string_link_field_names,
 )
 from sphinx_needs.views import NeedsAndPartsListView, NeedsView
 
@@ -112,34 +112,35 @@ def row_col_maker(
     row_col = nodes.entry(classes=["needs_" + need_key])
     para_col = nodes.paragraph()
 
-    needs_string_links_option = string_link_field_names(needs_config)
-    # compiled once per cell, not once per value in the cell
-    link_string_list = compiled_string_links(needs_config)
+    needs_schema = SphinxNeedsData(env).get_schema()
+    # the field's string link, if it has one, compiled once per cell, not once per
+    # value in the cell
+    string_link = field_string_link(needs_schema, need_key)
+    compiled_link = (
+        None if string_link is None else compiled_field_string_link(string_link)
+    )
 
     if need_key in need_info and need_info[need_key] is not None:
         value = need_info[need_key]
         if isinstance(value, list | set):
             data = value
-        elif isinstance(value, str) and need_key in needs_string_links_option:
+        elif isinstance(value, str) and string_link is not None:
             data = split_string_link_value(value)
         else:
             data = [value]
+
+        link_list = []
+        for link_field in needs_schema.iter_link_fields():
+            link_list.append(link_field.name)
+            link_list.append(link_field.name + "_back")
 
         for index, datum in enumerate(data):
             link_id = datum
             link_part = None
 
-            needs_schema = SphinxNeedsData(env).get_schema()
-            link_list = []
-            for link_field in needs_schema.iter_link_fields():
-                link_list.append(link_field.name)
-                link_list.append(link_field.name + "_back")
-
-            matching_link_confs = [
-                link_conf
-                for link_conf in link_string_list.values()
-                if need_key in link_conf.options and len(datum) != 0
-            ]
+            matching_link_confs = (
+                [compiled_link] if compiled_link is not None and len(datum) != 0 else []
+            )
 
             if need_key in link_list and "." in datum:
                 link_id = datum.split(".")[0]
