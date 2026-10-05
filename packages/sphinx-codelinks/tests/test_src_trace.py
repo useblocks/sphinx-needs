@@ -868,3 +868,18 @@ def test_config_from_toml_set_in_the_toml_moves_the_anchor(
     html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
     assert "IMPL_DEEPDIR" in html
     assert "IMPL_CONFDIR" not in html
+
+
+def test_remote_url_unset_without_git_root():
+    """Without a git root, the directive must not register remote-url (#2045)."""
+    from pathlib import Path as _P
+
+    src = _P("src/sphinx_codelinks/sphinx_extension/directives/src_trace.py").read_text()
+    # The no-git-root arm must not assign remote_url_field.
+    no_git_arm = src.split("if not src_analyse.git_root:")[1].split("else:")[0]
+    assert "remote_url_field = " not in no_git_arm
+    assert "logger.warning" in no_git_arm
+    assert "codelinks.git_root" in no_git_arm
+    # needs_string_links for remote-url is only set in the git-root arm.
+    git_arm = src.split("else:")[1].split("# render needs")[0]
+    assert "needs_string_links[remote_url_field]" in git_arm

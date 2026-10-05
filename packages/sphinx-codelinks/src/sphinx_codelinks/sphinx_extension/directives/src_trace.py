@@ -172,25 +172,34 @@ class SourceTracingDirective(SphinxDirective):
             src_trace_sphinx_config.set_remote_url
             and src_trace_conf["remote_url_pattern"]
         ):
-            remote_url_field = src_trace_sphinx_config.remote_url_field
             if not src_analyse.git_root:
-                # No git root found, use the source directory as the remote source directory
-                remote_src_dir = src_dir
+                # Without a git root there is no commit and no path relative to a
+                # repository root. Writing remote-url anyway would put the build
+                # machine's absolute source path (and commit "None") into
+                # needs.json (#2045). Leave the field unset instead.
+                logger.warning(
+                    "codelinks.git_root: no git repository root found for %s; "
+                    "remote-url is not set on created needs so a build-machine "
+                    "path never reaches needs.json",
+                    src_dir,
+                    type="codelinks",
+                    subtype="git_root",
+                )
             else:
+                remote_url_field = src_trace_sphinx_config.remote_url_field
                 remote_src_dir = src_dir.relative_to(src_analyse.git_root)
-            dirs["remote_src_dir"] = remote_src_dir
-            remote_url_pattern = src_trace_conf["remote_url_pattern"].format(
-                commit=src_analyse.git_commit_rev,
-                # path=f"{remote_src_dir}/" + "{{value}}",
-                path="{{value}}",
-                line="{{lineno}}",
-            )
-            self.env.config.needs_string_links[remote_url_field] = {
-                "regex": r"^(?P<value>.+)#L(?P<lineno>.*)?",
-                "link_url": remote_url_pattern,
-                "link_name": "{{value}}#L{{lineno}}",
-                "options": [remote_url_field],
-            }
+                dirs["remote_src_dir"] = remote_src_dir
+                remote_url_pattern = src_trace_conf["remote_url_pattern"].format(
+                    commit=src_analyse.git_commit_rev,
+                    path="{{value}}",
+                    line="{{lineno}}",
+                )
+                self.env.config.needs_string_links[remote_url_field] = {
+                    "regex": r"^(?P<value>.+)#L(?P<lineno>.*)?",
+                    "link_url": remote_url_pattern,
+                    "link_name": "{{value}}#L{{lineno}}",
+                    "options": [remote_url_field],
+                }
 
         # render needs from the source files
         rendered_needs = self.render_needs(
