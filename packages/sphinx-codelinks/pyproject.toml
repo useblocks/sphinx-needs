@@ -65,6 +65,7 @@ libclang = ["libclang>=16"]
 docs = [
   "furo>=2024.5.6",
   "myst-parser>=4.0.0",
+  "sphinx-ai-index>=0.1.0,<1",
   "sphinx-design>=0.6.1",
   "sphinx-code-tabs>=0.5.5",
   "sphinxcontrib-typer>=0.9.1", # tracks typer's rich_utils internals: 0.9.1+ needs typer>=0.26.8 and declares it; older releases break on it

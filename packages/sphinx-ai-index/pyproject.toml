@@ -6,23 +6,11 @@ authors = [{ name = "team useblocks", email = "info@useblocks.com" }]
 license = { file = "LICENSE" }
 readme = "README.md"
 requires-python = ">= 3.9"
-dependencies = ["sphinx>=5.0"]
+dependencies = ["sphinx>=7.4,<10", "docutils>=0.21"]
 
 [build-system]
 requires = ["flit_core >=3.4,<4"]
 build-backend = "flit_core.buildapi"
-
-[dependency-groups]
-testing = [
-  "pytest>=8.0",
-  "pytest-cov>=5.0.0",
-  "syrupy>=4.9.1",
-  "hypothesis>=6.0",
-]
-docs = ["furo>=2024.5.6", "myst-parser>=4.0.0"]
-mypy = ["mypy>=1.10", "types-docutils"]
-ruff = ["ruff>=0.8.0"]
-build = ["simple-build>=0.0.2", "shiv>=1.0.8"]
 
 [tool.rye]
 managed = true
