@@ -16,6 +16,7 @@ else to the project's source directory (``root`` says which), and always POSIX.
 from __future__ import annotations
 
 import os
+import re
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, fields, replace
 from pathlib import Path
@@ -101,10 +102,15 @@ def _check_invariants(values: Mapping[str, Any]) -> None:
             raise ValueError(f"need id reference: {key!r} must be a non-empty string")
     path = values.get("path")
     if isinstance(path, str) and (
-        path.startswith("/") or "\\" in path or (len(path) > 1 and path[1] == ":")
+        path.startswith("/")
+        or re.match(r"[A-Za-z]:[\\/]", path)
+        or ".." in path.split("/")
     ):
+        # what the producer can never emit; ``\`` and ``:`` elsewhere are legal POSIX
+        # name characters (``a:b.cpp``), so they are accepted
         raise ValueError(
-            f"need id reference: 'path' must be relative and POSIX, got {path!r}"
+            "need id reference: 'path' must be relative, POSIX and inside its root, "
+            f"got {path!r}"
         )
     for key in ("lineno", "start_column", "end_column"):
         if key in values and not is_int(values[key]):

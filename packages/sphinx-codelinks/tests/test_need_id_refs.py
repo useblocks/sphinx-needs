@@ -9,11 +9,13 @@ remote URLs carry a real commit. ``src/refs.cpp`` references ``REQ_001`` (lines 
 by nothing.
 """
 
+import codecs
 import json
 import os
 import re
 import shutil
 import subprocess
+import sys
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -24,7 +26,11 @@ from sphinx.testing.util import SphinxTestApp
 from sphinx.util.console import strip_colors
 
 from sphinx_codelinks.sphinx_extension.need_id_refs import need_id_refs_store
-from sphinx_needs_testkit import assert_no_warnings, build_warnings
+from sphinx_needs_testkit import (
+    assert_no_warnings,
+    build_warnings,
+    sphinx_build_command,
+)
 
 FIXTURE = Path(__file__).parent / "doc_test" / "need_id_refs"
 GITHUB = "https://github.com/example/demo/blob/{commit}/{path}#L{line}"
@@ -621,3 +627,47 @@ def test_a_user_declaration_of_the_field_names_the_cure(
         "WARNING: codelinks registers 'code_url' for @need-ids references; remove the "
         f"needs_fields declaration of it, or set ref_url_field{suffix}"
     ) in build_warnings(app)
+
+
+def test_copies_and_pages_under_an_ascii_locale(tmp_path: Path) -> None:
+    """The byte copy and the source page do not depend on the locale's codec.
+
+    The in-process tests run under the suite's (UTF-8) locale, where a decode through the
+    locale codec cannot fail; this one builds in a subprocess under the C locale with
+    UTF-8 mode and locale coercion off, where it would (``UnicodeDecodeError: 'ascii'``).
+    Skipped only where the platform gives that environment a non-ASCII codec."""
+    env = {
+        **os.environ,
+        "LC_ALL": "C",
+        "LANG": "C",
+        "PYTHONUTF8": "0",
+        "PYTHONCOERCECLOCALE": "0",
+    }
+    env.pop("PYTHONIOENCODING", None)
+    probe = subprocess.run(
+        [sys.executable, "-c", "import locale; print(locale.getencoding())"],
+        env=env,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    if codecs.lookup(probe.stdout.strip()).name != "ascii":
+        pytest.skip(f"the C locale's codec here is {probe.stdout.strip()!r}")
+    refs = (FIXTURE / "src" / "refs.cpp").read_text(encoding="utf-8")
+    _project(
+        tmp_path,
+        toml_replace=("set_remote_url = true", "set_remote_url = false"),
+        files={"src/refs.cpp": refs + "// café: naïve\n"},
+    )
+    out = tmp_path / "out"
+    result = subprocess.run(
+        sphinx_build_command("-b", "html", "-E", "-q", tmp_path / "docs", out),
+        env=env,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr.decode("utf-8", "replace")
+    source = (tmp_path / "src" / "refs.cpp").read_bytes()
+    assert (out / "src" / "refs.cpp").read_bytes() == source
+    assert "café: naïve" in (out / "src" / "refs.html").read_text(encoding="utf-8")
