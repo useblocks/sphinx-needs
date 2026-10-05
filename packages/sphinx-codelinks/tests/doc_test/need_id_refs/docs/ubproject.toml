@@ -1,0 +1,15 @@
+[codelinks]
+set_local_url = true
+set_remote_url = true
+
+[codelinks.projects.src]
+remote_url_pattern = "https://github.com/example/demo/blob/{commit}/{path}#L{line}"
+
+[codelinks.projects.src.source_discover]
+src_dir = "../src"
+comment_type = "cpp"
+
+# the default one-line need marker is "@", which would read "@need-ids: ..." as a need
+[codelinks.projects.src.analyse.oneline_comment_style]
+start_sequence = "[["
+end_sequence = "]]"

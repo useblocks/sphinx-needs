@@ -1,0 +1,17 @@
+{
+  "schemas": [
+    {
+      "id": "strict-spec",
+      "severity": "violation",
+      "select": {
+        "properties": {"type": {"const": "spec"}},
+        "required": ["type"]
+      },
+      "validate": {
+        "local": {
+          "unevaluatedProperties": false
+        }
+      }
+    }
+  ]
+}
