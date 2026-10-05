@@ -24,6 +24,7 @@ import pytest
 import sphinx
 from sphinx.testing.util import SphinxTestApp
 from sphinx.util.console import strip_colors
+from sphinx.util.parallel import parallel_available
 
 from sphinx_codelinks.sphinx_extension.need_id_refs import need_id_refs_store
 from sphinx_needs_testkit import (
@@ -178,6 +179,9 @@ def test_unknown_id_warning_is_suppressible(tmp_path: Path, make_app: _MakeApp) 
     assert _refs(app)["REQ_002"] is not None
 
 
+@pytest.mark.skipif(
+    not parallel_available, reason="Sphinx reads sources in parallel on POSIX only"
+)
 def test_parallel_build_attaches_as_a_serial_one(
     tmp_path: Path, make_app: _MakeApp
 ) -> None:

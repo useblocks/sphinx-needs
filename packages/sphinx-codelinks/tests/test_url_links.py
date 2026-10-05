@@ -16,6 +16,7 @@ from types import SimpleNamespace
 import pytest
 import sphinx
 from sphinx.testing.util import SphinxTestApp
+from sphinx.util.parallel import parallel_available
 
 from sphinx_codelinks.sphinx_extension.directives.src_trace import (
     generate_remote_url,
@@ -273,6 +274,9 @@ def test_user_string_links_are_kept_and_not_mutated(
     assert set(app.config._raw_config["USER_LINKS"]) == {"mine"}
 
 
+@pytest.mark.skipif(
+    not parallel_available, reason="Sphinx reads sources in parallel on POSIX only"
+)
 def test_parallel_build_renders_the_url_links(
     tmp_path: Path, make_app: Callable[..., SphinxTestApp]
 ) -> None:
