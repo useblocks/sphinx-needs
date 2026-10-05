@@ -326,6 +326,7 @@ class SourceTracingDirective(SphinxDirective):
             src_analyse.need_id_refs,
             project=project,
             root=src_analyse.git_root or src_dir,
+            root_kind="git" if src_analyse.git_root else "src_dir",
             remote_url=remote_url,
             local_url=local_url,
         )

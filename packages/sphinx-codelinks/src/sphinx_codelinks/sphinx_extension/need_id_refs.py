@@ -86,6 +86,8 @@ class AttachResult:
     """The number of references attached, per project."""
     unknown: list[NeedIdRef] = field(default_factory=list)
     """The references naming an id no need has."""
+    ignored_projects: set[str] = field(default_factory=set)
+    """The projects of records this build does not attach references for."""
 
 
 def attach_need_id_refs(
@@ -99,7 +101,7 @@ def attach_need_id_refs(
     This is the seam a pre-analysed input file will feed: it takes the records and the
     needs, whatever produced the records, and nothing about the analysis or the
     directive. ``fields`` maps a project to its ``ref_url_field``; a record of a project
-    not in it is ignored.
+    not in it is ignored, and the project reported in ``ignored_projects``.
 
     Records are deduplicated on ``(path, lineno, need_id)`` within a field, whatever
     the project -- overlapping ``src-trace`` directives, or two projects whose source
@@ -110,16 +112,19 @@ def attach_need_id_refs(
     unreferenced need is left alone.
     """
     unique: dict[tuple[str, str, int, str], NeedIdRef] = {}
+    ignored_projects: set[str] = set()
     for ref in sorted(refs, key=lambda ref: ref.project):
-        if ref.project in fields:
-            key = (fields[ref.project], ref.path, ref.lineno, ref.need_id)
-            unique.setdefault(key, ref)
+        if ref.project not in fields:
+            ignored_projects.add(ref.project)
+            continue
+        key = (fields[ref.project], ref.path, ref.lineno, ref.need_id)
+        unique.setdefault(key, ref)
     ordered = sorted(
         unique.values(),
         key=lambda ref: (ref.path, ref.lineno, ref.start_column, ref.project),
     )
 
-    result = AttachResult()
+    result = AttachResult(ignored_projects=ignored_projects)
     values: dict[tuple[str, str], tuple[Any, list[str]]] = {}
     for ref in ordered:
         need = resolve_need_id(ref.need_id, needs)
@@ -141,11 +146,11 @@ def attach_need_id_refs(
 def attach_on_post_processing(app: Sphinx, needs: MutableMapping[str, Any]) -> None:
     """Attach the stored records (``needs-before-post-processing``), warn about the
     unknown ids, and report per project."""
-    fields = need_id_refs_fields(CodeLinksConfig.from_sphinx(app.config))
-    if not fields:
-        return
     store = need_id_refs_store(app.env)
     refs = [ref for docname in sorted(store) for ref in store[docname]]
+    if not refs:
+        return
+    fields = need_id_refs_fields(CodeLinksConfig.from_sphinx(app.config))
     result = attach_need_id_refs(refs, needs, fields=fields)
 
     for ref in result.unknown:
@@ -154,6 +159,13 @@ def attach_on_post_processing(app: Sphinx, needs: MutableMapping[str, Any]) -> N
             type="codelinks",
             subtype="need_id_ref",
             location=f"{ref.path}:{ref.lineno}",
+        )
+    for project in sorted(result.ignored_projects):
+        logger.warning(
+            f"@need-ids records for project {project!r}, which this build does not "
+            "configure, were ignored",
+            type="codelinks",
+            subtype="need_id_ref",
         )
     unknown = Counter(ref.project for ref in result.unknown)
     for project in sorted(set(result.attached) | set(unknown)):

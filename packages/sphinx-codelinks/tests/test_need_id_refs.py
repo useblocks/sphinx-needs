@@ -446,3 +446,37 @@ def test_copies_are_byte_identical(tmp_path: Path, make_app: _MakeApp) -> None:
         source = (tmp_path / "src" / name).read_bytes()
         assert Path(app.outdir, "src", name).read_bytes() == source, name
         assert Path(app.outdir, "src", name).with_suffix(".html").exists(), name
+
+
+_INJECT = """
+def setup(app):
+    from sphinx_codelinks.analyse.references import NeedIdRef
+    from sphinx_codelinks.sphinx_extension.need_id_refs import need_id_refs_store
+
+    def inject(app, env, docnames):
+        need_id_refs_store(env)["<pre-analysed>"] = [
+            NeedIdRef(need_id=need_id, project="elsewhere", marker="@need-ids:",
+                      path="x.cpp", lineno=1, start_column=0, end_column=7,
+                      remote_url="https://example.com/x.cpp#L1")
+            for need_id in ("REQ_001", "REQ_002")
+        ]
+
+    app.connect("env-before-read-docs", inject)
+"""
+
+
+def test_records_of_an_unconfigured_project_warn_once(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """Records reaching the store for a project this build does not configure (what a
+    pre-analysed file could carry) are ignored, with one warning per project."""
+    commit = _project(tmp_path, append={"docs/conf.py": _INJECT})
+    app = _build(tmp_path, make_app)
+
+    suffix = " [codelinks.need_id_ref]" if _SHOWS_WARNING_TYPES else ""
+    ignored = (
+        "WARNING: @need-ids records for project 'elsewhere', which this build does not "
+        f"configure, were ignored{suffix}"
+    )
+    assert sorted(build_warnings(app)) == sorted([DANGLING, ignored])
+    assert _refs(app)["REQ_001"] == [_url(commit, 1), _url(commit, 3)]

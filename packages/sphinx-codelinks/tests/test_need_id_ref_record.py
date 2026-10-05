@@ -15,6 +15,7 @@ FULL = NeedIdRef(
     project="src",
     marker="@need-ids:",
     path="src/refs.cpp",
+    root="src_dir",
     lineno=4,
     start_column=14,
     end_column=31,
@@ -55,6 +56,7 @@ def test_record_round_trips_through_json_byte_for_byte(record: NeedIdRef) -> Non
         "project",
         "marker",
         "path",
+        "root",
         "lineno",
         "start_column",
         "end_column",
@@ -65,9 +67,27 @@ def test_record_round_trips_through_json_byte_for_byte(record: NeedIdRef) -> Non
     }
 
 
-def test_record_refuses_unknown_keys() -> None:
+def test_record_ignores_unknown_keys() -> None:
+    """A newer producer's key (slice 2 plans ``relation``) does not break a reader."""
     data = FULL.to_dict() | {"relation": "implements"}
-    with pytest.raises(ValueError, match="relation"):
+    assert NeedIdRef.from_dict(data) == FULL
+
+
+@pytest.mark.parametrize(
+    ("key", "value"),
+    [
+        pytest.param("path", "/etc/passwd", id="absolute-path"),
+        pytest.param("lineno", "3", id="lineno-as-string"),
+        pytest.param("path", "src\\a.cpp", id="windows-path"),
+        pytest.param("path", "C:/src/a.cpp", id="drive"),
+        pytest.param("need_id", 5, id="int-id"),
+        pytest.param("need_id", "", id="empty-id"),
+        pytest.param("root", "home", id="unknown-root"),
+    ],
+)
+def test_record_checks_its_invariants(key: str, value: object) -> None:
+    data = FULL.to_dict() | {key: value}
+    with pytest.raises(ValueError, match=repr(key)):
         NeedIdRef.from_dict(data)
 
 
@@ -102,6 +122,7 @@ def test_records_from_an_analysis(tmp_path: Path) -> None:
     assert (first.start_column, first.end_column) == (13, 29)
     assert first.scope == "void implements_a() {}"
     assert first.scope_rows == (2, 2)
+    assert first.root == "git"
     assert first.remote_url == "remote:refs.cpp:1"
     assert first.local_url == "local:refs.cpp:1"
     assert NeedIdRef.from_dict(json.loads(json.dumps(first.to_dict()))) == first
@@ -131,3 +152,22 @@ def test_a_need_ids_comment_is_never_a_one_line_need(tmp_path: Path) -> None:
     refs = need_id_ref_records(analyse.need_id_refs, project="src", root=tmp_path)
     assert [ref.need_id for ref in refs] == ["REQ_001", "IMPL_X"]
     assert [need.need["id"] for need in analyse.oneline_needs] == ["IMPL_REAL"]
+
+
+def test_scope_is_the_first_line_only(tmp_path: Path) -> None:
+    """A 100-line function: ``scope`` is its signature, ``scope_rows`` spans it all."""
+    src = tmp_path / "src"
+    src.mkdir()
+    body = "".join(f"    x += {n};\n" for n in range(98))
+    source = src / "big.cpp"
+    source.write_text(
+        f"// @need-ids: REQ_1\nint big(int x) {{\n{body}}}\n", encoding="utf-8"
+    )
+    analyse = SourceAnalyse(
+        SourceAnalyseConfig(src_files=[source], src_dir=src, git_root=tmp_path)
+    )
+    analyse.run()
+
+    (record,) = need_id_ref_records(analyse.need_id_refs, project="p", root=tmp_path)
+    assert record.scope == "int big(int x) {"
+    assert record.scope_rows == (2, 101)
