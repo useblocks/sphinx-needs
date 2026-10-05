@@ -37,7 +37,7 @@ class LineFormatter(HtmlFormatter):
 
 
 def html_wrapper(filepath: Path, lineno_href: dict[int, str]) -> str:
-    code = filepath.read_text()
+    code = filepath.read_text(encoding="utf-8")  # the analysis reads UTF-8 only
 
     formatter = LineFormatter(
         lineno_href=lineno_href,

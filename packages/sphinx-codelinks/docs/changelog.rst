@@ -45,6 +45,47 @@ New and Improved
     and cherry-pick the range onto ``master`` in the monorepo. The import pull request's
     description carries the exact recipe.
 
+- ✨ ``@need-ids:`` references are attached during the build to the needs they name, under each
+  project's ``ref_url_field`` (default ``code_url``, ubCode's key), as a list of links; a
+  reference to an unknown need warns ``codelinks.need_id_ref``; ``codelinks write rst`` is
+  deprecated (`#2041 <https://github.com/useblocks/sphinx-needs/issues/2041>`__).
+
+  The ``src-trace`` directive analysed every ``@need-ids:`` marker in its files and threw
+  the result away: reaching the needs took ``codelinks analyse``, ``codelinks write rst``
+  and an ``include`` of the generated ``needextend`` file. The references are now kept with
+  the document hosting the directive and attached once every need is known, wherever it is
+  defined. Each referenced need gets one entry per reference, in source order -- once,
+  even when two directives or two projects scan the same file (files under different
+  roots are different files, each kept): the project's
+  ``remote_url_pattern`` filled in for the marker's line, or the local link when remote
+  URLs are off. With local URLs only, a file referenced by ``@need-ids:`` is copied into
+  the output and gets a source page, as a file with a one-line need is; under ``-j N`` the
+  local link's source page is not generated yet
+  (`#2044 <https://github.com/useblocks/sphinx-needs/issues/2044>`__). ``needs.json``
+  declares the field as a list; a need nothing references carries ``null``, which a
+  strict ``unevaluatedProperties: false`` schema never sees. The references replace a
+  value the need's own directive or a default gave the field; a user's ``needextend`` of
+  the field wins. The unknown-id warning points at the source line (``src/refs.cpp:5``),
+  and each project reports ``N references attached, M unknown``. The attach is on when
+  local or remote URLs are, as in ubCode; ``ref_url_field = ""`` switches it off for a
+  project. A changed source file updates ``needs.json`` on the next build; a referenced
+  need's card in another document is rewritten only when that document is.
+  A comment that starts with a configured ``@need-ids:`` marker is a reference and never a
+  one-line need, as in ubCode: on the default one-line style, whose start sequence ``@``
+  matched it too, ``// @need-ids: A, B`` used to become a need with the id ``B`` (or stop
+  the build with ``duplicate_id``).
+
+  ``ref_url_field`` in ``[codelinks.projects.*]`` is accepted, where a shared
+  ``ubproject.toml`` that set it for ubCode stopped the build with
+  ``Additional properties are not allowed ('ref_url_field' was unexpected)``.
+
+  ``codelinks write rst`` still works and prints a deprecation notice on stderr; it will
+  be removed in 2.0.0. Its ``-r`` default stays ``remote_url`` -- not the extension's
+  ``remote-url`` -- since changing what an existing invocation writes is not worth it for
+  a command that is going away. A project that keeps including the generated file gets
+  both the attached field and the ``needextend``'d one: remove the include, and any
+  ``needs_fields`` declaration of the field made for that route.
+
 - ⬆️ ``typer`` is no longer capped below 0.26.8. The cap protected the documentation build,
   whose ``sphinxcontrib-typer`` imported a ``typer.rich_utils`` name that 0.26.8 removed;
   the ``docs`` extra now requires ``sphinxcontrib-typer`` 0.9.1 or newer, which tracks
@@ -118,6 +159,15 @@ New and Improved
   splits a string-linked value on those characters, so its link renders as several broken
   ones. The build warns about such a pattern (``codelinks.remote_url_pattern``;
   ``suppress_warnings`` silences it, which a ``-W`` build needs).
+
+- 🐛 A project outside a git repository, or in one without a commit yet, gets no remote
+  URL (`#2045 <https://github.com/useblocks/sphinx-needs/issues/2045>`__).
+
+  Its ``remote_url_pattern`` was filled with ``None`` for the commit and the build
+  machine's absolute path for ``{path}`` (``…/blob/None//home/me/project/src/a.cpp#L1``),
+  and that reached ``needs.json`` as a URL. Now a created need's ``remote-url`` stays
+  unset, and an ``@need-ids:`` reference falls back to its local link (or to nothing,
+  without local URLs) -- as in ubCode. The ``codelinks.git_root`` warning is unchanged.
 
 - 🔧 ``libclang`` is now genuinely optional for the test suite.
 

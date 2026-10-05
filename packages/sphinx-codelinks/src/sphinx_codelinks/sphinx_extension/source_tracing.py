@@ -21,6 +21,7 @@ from sphinx_codelinks.config import (
     file_lineno_href,
     generate_project_configs,
     load_codelinks_table,
+    need_id_refs_fields,
     remote_url_pattern_warnings,
 )
 from sphinx_codelinks.logger import configure_sphinx
@@ -30,6 +31,12 @@ from sphinx_codelinks.sphinx_extension.directives.src_trace import (
     SourceTracingDirective,
 )
 from sphinx_codelinks.sphinx_extension.html_wrapper import html_wrapper
+from sphinx_codelinks.sphinx_extension.need_id_refs import (
+    attach_on_post_processing,
+    merge_info,
+    need_id_refs_store,
+    purge_doc,
+)
 from sphinx_codelinks.sphinx_extension.string_links import register_string_links
 from sphinx_needs.api import add_field, add_need_type
 from ub_project import ProjectConfigError
@@ -100,6 +107,11 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.connect("config-inited", check_sphinx_configuration)
 
     app.connect("env-before-read-docs", prepare_env)
+    app.connect("env-purge-doc", purge_doc)
+    app.connect("env-merge-info", merge_info)
+    # after every need is collected and before needextend is applied: a user's
+    # needextend of the references field wins
+    app.connect("needs-before-post-processing", attach_on_post_processing)
     app.connect("html-collect-pages", generate_code_page)
     app.connect("html-page-context", add_custom_css)
     app.connect("builder-inited", builder_inited)
@@ -259,6 +271,44 @@ def update_sn_extra_options(_app: Sphinx, config: _SphinxConfig) -> None:
         _register_sn_field(
             src_trace_sphinx_config.remote_url_field, "Remote source URL"
         )
+    # One list-valued field per distinct ``ref_url_field``, shared by the projects naming
+    # it. ``nullable`` with no default, so a need no reference names carries ``None``,
+    # which is stripped before schema validation: a strict ``unevaluatedProperties:
+    # false`` schema never sees the field on it (a ``[]`` default would not be stripped).
+    user_fields = _user_declared_fields(config)
+    for field_name in sorted(
+        set(need_id_refs_fields(src_trace_sphinx_config).values())
+    ):
+        if field_name in user_fields:
+            logger.warning(
+                f"codelinks registers {field_name!r} for @need-ids references; remove "
+                "the needs_fields declaration of it, or set ref_url_field",
+                type="codelinks",
+                subtype="config",
+            )
+        add_field(
+            field_name,
+            "Code references (@need-ids markers)",
+            schema={"type": "array", "items": {"type": "string"}},
+            nullable=True,
+            default=None,
+        )
+
+
+def _user_declared_fields(config: _SphinxConfig) -> set[str]:
+    """The field names a user declares in ``needs_fields`` / ``needs_extra_options``."""
+    names: set[str] = set()
+    needs_fields = getattr(config, "needs_fields", None)
+    if isinstance(needs_fields, dict):
+        names.update(str(name) for name in needs_fields)
+    extra_options = getattr(config, "needs_extra_options", None)
+    if isinstance(extra_options, list | tuple):
+        for option in extra_options:
+            if isinstance(option, str):
+                names.add(option)
+            elif isinstance(option, dict) and isinstance(option.get("name"), str):
+                names.add(option["name"])
+    return names
 
 
 def update_sn_types(app: Sphinx, _config: _SphinxConfig) -> None:
@@ -272,6 +322,7 @@ def prepare_env(
     Prepares the sphinx environment to store stc-trace internal data.
     """
     src_trace_sphinx_config = CodeLinksConfig.from_sphinx(app.config)
+    need_id_refs_store(env)
 
     # Set time measurement flag
     if src_trace_sphinx_config.debug_measurement:

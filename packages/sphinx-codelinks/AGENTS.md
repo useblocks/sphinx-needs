@@ -39,12 +39,13 @@ src/sphinx_codelinks/   # Main source code
 ├── cmd.py              # CLI commands using Typer
 ├── config.py           # Configuration dataclasses + TypedDicts, and the TOML loader, `load_codelinks_table`
 ├── logger.py           # Logging utilities
-├── needextend_write.py # Write RST files with Sphinx-Needs directives
+├── needextend_write.py # Write RST files with Sphinx-Needs directives (`write rst`, deprecated)
 ├── analyse/            # Code analysis module
 │   ├── analyse.py      # Main analysis orchestration
 │   ├── models.py       # dataclasses/TypedDicts/Enums for analysis results
 │   ├── oneline_parser.py # One-line comment parser
 │   ├── projects.py     # Project-specific analyzers (C++, Python, etc.)
+│   ├── references.py   # `NeedIdRef`: an @need-ids reference as plain, JSON-able data
 │   ├── utils.py        # Analysis utilities, including the git-root helpers
 │   └── preproc/        # the OPTIONAL libclang engine -- see below
 ├── source_discover/    # Source file discovery
@@ -54,6 +55,7 @@ src/sphinx_codelinks/   # Main source code
     ├── source_tracing.py # Main Sphinx extension setup
     ├── html_wrapper.py  # HTML output wrapper for traced source
     ├── string_links.py  # The URL fields' needs_string_links entries
+    ├── need_id_refs.py  # Keep @need-ids records in the env; attach them to needs
     ├── debug.py         # Debug utilities
     ├── ub_sct.css       # CSS for source tracing UI
     └── directives/      # Custom Sphinx directives
@@ -318,6 +320,9 @@ The extension connects to these Sphinx events (in execution order):
 | `config-inited`        | `check_sphinx_configuration()` | Validate configuration and raise errors                              |
 | `builder-inited`       | `builder_inited()`             | Copy CSS assets to output directory                                  |
 | `env-before-read-docs` | `prepare_env()`                | Initialize timing measurements and debug filters                     |
+| `env-purge-doc`        | `purge_doc()`                  | Drop a re-read document's `@need-ids` records                        |
+| `env-merge-info`       | `merge_info()`                 | Take over the records a `-j N` worker read                           |
+| `needs-before-post-processing` | `attach_on_post_processing()` | Attach `@need-ids` references to the needs they name     |
 | `html-collect-pages`   | `generate_code_page()`         | Generate HTML pages for traced source files                          |
 | `html-page-context`    | `add_custom_css()`             | Inject custom CSS for source tracing UI                              |
 | `build-finished`       | `emit_warnings()`              | Emit collected warnings from analysis                                |
@@ -334,6 +339,8 @@ The extension connects to these Sphinx events (in execution order):
 4. **CSS Injection**: Custom CSS (`ub_sct.css`) is copied to `_static/source_tracing/` and added only to pages that contain traced source code.
 
 5. **String links are configuration, never read-time state**: the URL fields' `needs_string_links` entries are added once at `config-inited` (`sphinx_extension/string_links.py`), before sphinx-needs compiles them at priority 551. A directive must not write into `env.config`: a `-j N` worker's write never reaches the main process, and the next build sees a changed configuration. So nothing per-project or per-read goes into an entry — `remote-url` holds the full URL (the project's `remote_url_pattern` filled in) and its entry is an identity link.
+
+6. **`@need-ids` references: a record, a store, an attach.** The record is `NeedIdRef` (`analyse/references.py`): plain data with a root-relative POSIX path and its `root`, round-tripping through JSON — the exchange seam, so a pre-analysed input file can later produce the same records, for the remote half (`local_url` is build-local; `from_dict` ignores unknown keys and checks the invariants). `src-trace` turns its analysis' references into records for projects past `need_id_refs_field()` (ubCode's gate) and keeps them on the env attribute `codelinks_need_id_refs`, keyed by the host document (purged and merged with it). `attach_need_id_refs()` (`sphinx_extension/need_id_refs.py`) takes records, needs and the project → field and project → root mappings from configuration, and nothing else, dedupes on `(root, path, lineno, need_id)` within a field — the root from the `roots` mapping, configuration like `fields`, never in the record — resolves ids through `resolve_need_id()` alone, and runs at sphinx-needs' `needs-before-post-processing` — after every need is read, before `needextend`, so a user's extend of the field wins. Never attach at `needs-before-sealing`, never through the extends store, never on `_source`.
 
 ### Key Components
 

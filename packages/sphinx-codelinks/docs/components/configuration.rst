@@ -172,6 +172,23 @@ Each need a ``src-trace`` directive creates holds, in :ref:`remote_url_field <se
 
 .. note:: This option integrates with :external+needs:ref:`need_string_links<needs_string_links>` to automatically generate clickable links in the documentation: the field's link points at the URL, and is named by the part after the commit (``src/main.cpp#L3``), or by the whole URL when the pattern has no commit in its path.
 
+.. _`ref_url_field`:
+
+ref_url_field
+~~~~~~~~~~~~~
+
+Names the need field the project's ``@need-ids:`` references are attached to during the build (see :ref:`need_id_refs_in_build`). The key and its default are ubCode's, so one ``ubproject.toml`` configures both tools; an empty string switches the attach off for the project.
+
+**Type:** ``str``
+**Default:** ``"code_url"``
+
+.. code-block:: toml
+
+   [codelinks.projects.my_project]
+   ref_url_field = "code_url"
+
+References are attached only when :ref:`set_remote_url` or :ref:`set_local_url` is on, references are extracted (``get_need_id_refs``, on by default) and at least one marker is configured. The field is registered as a list of strings; projects naming the same field share it. It must differ from ``local_url_field`` and ``remote_url_field``.
+
 .. _`discover_config`:
 
 source_discover

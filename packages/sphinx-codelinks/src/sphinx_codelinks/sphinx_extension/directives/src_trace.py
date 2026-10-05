@@ -1,6 +1,7 @@
+import shutil
 from collections.abc import Callable
 from dataclasses import replace
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Any, ClassVar, cast
 
 from docutils import nodes
@@ -10,15 +11,18 @@ from sphinx.util.docutils import SphinxDirective
 
 from sphinx_codelinks.analyse.analyse import SourceAnalyse
 from sphinx_codelinks.analyse.models import OneLineNeed
+from sphinx_codelinks.analyse.references import NeedIdRef, need_id_ref_records
 from sphinx_codelinks.config import (
     CodeLinksConfig,
     CodeLinksProjectConfigType,
     anchor_preproc_paths,
     file_lineno_href,
+    need_id_refs_field,
 )
 from sphinx_codelinks.source_discover.config import SourceDiscoverConfig
 from sphinx_codelinks.source_discover.source_discover import SourceDiscover
 from sphinx_codelinks.sphinx_extension.debug import measure_time
+from sphinx_codelinks.sphinx_extension.need_id_refs import need_id_refs_store
 from sphinx_needs.api import add_need
 from sphinx_needs.utils import add_doc
 from ub_project import anchor
@@ -50,6 +54,19 @@ def generate_str_link_name(oneline_need: OneLineNeed, target_filepath: Path) -> 
     return f"{target_filepath.as_posix()}#L{_line_span(oneline_need)}"
 
 
+def fill_remote_url(
+    remote_url_pattern: str, commit: str | None, remote_path: PurePath, line: int | str
+) -> str:
+    """A project's ``remote_url_pattern`` filled in for one file and line.
+
+    ``{path}`` is POSIX on every platform, as a URL path is. The one place both a
+    created need's ``remote-url`` and a reference's remote URL are formed.
+    """
+    return remote_url_pattern.format(
+        commit=commit, path=remote_path.as_posix(), line=line
+    )
+
+
 def generate_remote_url(
     oneline_need: OneLineNeed,
     target_filepath: Path,
@@ -66,8 +83,8 @@ def generate_remote_url(
     remote_path = dirs["remote_src_dir"] / target_filepath.relative_to(
         dirs["target_dir"]
     )
-    return remote_url_pattern.format(
-        commit=commit, path=remote_path.as_posix(), line=_line_span(oneline_need)
+    return fill_remote_url(
+        remote_url_pattern, commit, remote_path, _line_span(oneline_need)
     )
 
 
@@ -185,6 +202,20 @@ class SourceTracingDirective(SphinxDirective):
             else:
                 remote_src_dir = src_dir.relative_to(src_analyse.git_root)
             dirs["remote_src_dir"] = remote_src_dir
+            if src_analyse.git_root is None or src_analyse.git_commit_rev is None:
+                # no git root, or a repository without a commit: no remote URL (#2045)
+                # -- the pattern would be filled with commit None (and, without a git
+                # root, the build machine's absolute path). ubCode writes none either;
+                # the analysis has already warned (codelinks.git_root / git_ref).
+                remote_url_pattern = None
+
+        # keep the @need-ids references, to be attached once every need is known
+        if need_id_refs_field(src_trace_sphinx_config, src_trace_conf) is not None:
+            need_id_refs_store(self.env).setdefault(self.env.docname, []).extend(
+                self.collect_need_id_refs(
+                    src_analyse, project, dirs, local_url_field, remote_url_pattern
+                )
+            )
 
         # render needs from the source files
         rendered_needs = self.render_needs(
@@ -252,6 +283,55 @@ class SourceTracingDirective(SphinxDirective):
         src_dir = anchor(src_discover_config.src_dir, conf_dir).resolve()
         return src_dir
 
+    def collect_need_id_refs(
+        self,
+        src_analyse: SourceAnalyse,
+        project: str,
+        dirs: dict[str, Path],
+        local_url_field: str | None,
+        remote_url_pattern: str | None,
+    ) -> list[NeedIdRef]:
+        """The analysis' ``@need-ids:`` references, as records.
+
+        Their URLs follow the created needs' rules: the remote one fills the project's
+        ``remote_url_pattern`` exactly as a created need's does. The local one -- only
+        when it is the value, i.e. there is no remote URL -- names the source copied
+        into the build output, beside which its page is generated; with a remote URL
+        nothing is copied, so no orphan copy or page is left in the output.
+        """
+        src_dir = dirs["src_dir"]
+
+        def remote_url(filepath: Path, line: int) -> str | None:
+            if remote_url_pattern is None:
+                return None
+            return fill_remote_url(
+                remote_url_pattern,
+                src_analyse.git_commit_rev,
+                dirs["remote_src_dir"] / filepath.relative_to(src_dir),
+                line,
+            )
+
+        def local_url(filepath: Path, line: int) -> str | None:
+            if local_url_field is None or remote_url_pattern is not None:
+                return None
+            target_filepath = dirs["target_dir"] / filepath.relative_to(src_dir)
+            if str(target_filepath) not in file_lineno_href.mappings:
+                # copy the file and have its page generated, as for a created need
+                target_filepath.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(filepath, target_filepath)
+                file_lineno_href.mappings[str(target_filepath)] = {}
+            relative = target_filepath.relative_to(dirs["out_dir"]).as_posix()
+            return f"{relative}#L{line}"
+
+        return need_id_ref_records(
+            src_analyse.need_id_refs,
+            project=project,
+            root=src_analyse.git_root or src_dir,
+            root_kind="git" if src_analyse.git_root else "src_dir",
+            remote_url=remote_url,
+            local_url=local_url,
+        )
+
     def render_needs(
         self,
         src_analyse: SourceAnalyse,
@@ -275,9 +355,9 @@ class SourceTracingDirective(SphinxDirective):
             # The link to the documentation page for the source file
 
             if local_url_field:
-                # copy files to _build/html
+                # copy files to _build/html, as bytes: no codec, no newline translation
                 target_filepath.parent.mkdir(parents=True, exist_ok=True)
-                target_filepath.write_text(filepath.read_text())
+                shutil.copyfile(filepath, target_filepath)
             local_link_name = None
             remote_link_name = None
             if local_url_field:

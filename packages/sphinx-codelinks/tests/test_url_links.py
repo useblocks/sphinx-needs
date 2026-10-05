@@ -16,6 +16,7 @@ from types import SimpleNamespace
 import pytest
 import sphinx
 from sphinx.testing.util import SphinxTestApp
+from sphinx.util.parallel import parallel_available
 
 from sphinx_codelinks.sphinx_extension.directives.src_trace import (
     generate_remote_url,
@@ -231,10 +232,11 @@ def test_string_links_are_registered_before_sphinx_needs_compiles_them(
     app = make_app(srcdir=tmp_path / "docs", freshenv=True)
 
     probe = app._codelinks_probe  # ty: ignore[unresolved-attribute]
-    assert set(probe) == {"local-url", "remote-url"}
+    # the URL fields, and the field @need-ids references are attached to
+    assert set(probe) == {"local-url", "remote-url", "code_url"}
     assert probe["remote-url"] == url_string_link("remote-url")
     compiled = compiled_string_links(NeedsSphinxConfig(app.config))
-    assert {"local-url", "remote-url"} <= set(compiled)
+    assert {"local-url", "remote-url", "code_url"} <= set(compiled)
 
     app.build()
     assert_no_warnings(app)
@@ -242,6 +244,8 @@ def test_string_links_are_registered_before_sphinx_needs_compiles_them(
     url = GITHUB.format(commit=commit, path="srca/a.cpp", line=1)
     assert _card_links(html, "remote-url") == [url]
     assert _card_links(html, "local-url") == ["srca/a.html#L-1"]
+    # the local link's name: the value up to the extension, and the line
+    assert '<a class="reference external" href="srca/a.html#L-1">srca/a#L1</a>' in html
 
 
 def test_user_string_links_are_kept_and_not_mutated(
@@ -261,10 +265,18 @@ def test_user_string_links_are_kept_and_not_mutated(
     )
     app = make_app(srcdir=tmp_path / "docs", freshenv=True)
 
-    assert set(app.config.needs_string_links) == {"mine", "local-url", "remote-url"}
+    assert set(app.config.needs_string_links) == {
+        "mine",
+        "local-url",
+        "remote-url",
+        "code_url",
+    }
     assert set(app.config._raw_config["USER_LINKS"]) == {"mine"}
 
 
+@pytest.mark.skipif(
+    not parallel_available, reason="Sphinx reads sources in parallel on POSIX only"
+)
 def test_parallel_build_renders_the_url_links(
     tmp_path: Path, make_app: Callable[..., SphinxTestApp]
 ) -> None:
@@ -359,6 +371,24 @@ def test_pattern_with_a_separator_warns(
         "Sphinx-Needs splits string-linked values on ',' and ';', so this pattern's "
         f"links will not render as one link.{suffix}"
     ]
+
+
+def test_pattern_separator_warning_needs_remote_urls(
+    tmp_path: Path, make_app: Callable[..., SphinxTestApp]
+) -> None:
+    """With remote URLs off the pattern is never filled in: no warning."""
+    _project(tmp_path, patterns={"a": GITWEB})
+    toml = tmp_path / "docs" / "ubproject.toml"
+    toml.write_text(
+        toml.read_text(encoding="utf-8").replace(
+            "set_remote_url = true", "set_remote_url = false"
+        ),
+        encoding="utf-8",
+    )
+    app = make_app(srcdir=tmp_path / "docs", freshenv=True)
+    app.build()
+
+    assert_no_warnings(app)
 
 
 def test_pattern_separator_warning_is_suppressible(

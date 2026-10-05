@@ -8,7 +8,7 @@ import pytest
 import toml
 from typer.testing import CliRunner
 
-from sphinx_codelinks.cmd import app
+from sphinx_codelinks.cmd import WRITE_RST_DEPRECATED, app
 from sphinx_codelinks.source_discover.config import CommentType
 
 from .conftest import DATA_DIR, TEST_DIR
@@ -315,6 +315,64 @@ def test_write_rst_invalid_json(tmp_path: Path) -> None:
 
     assert result.exit_code != 0
     assert "Expecting" in result.output
+
+
+def test_analyse_never_reads_a_need_ids_comment_as_a_need(tmp_path: Path) -> None:
+    """``codelinks analyse`` on the default one-line style: the ``@need-ids:`` comment
+    is one reference record, and ``marked_content.json`` gains no need from it."""
+    (tmp_path / "refs.cpp").write_text(
+        "// @need-ids: REQ_001, IMPL_X\nvoid a() {}\n", encoding="utf-8"
+    )
+    config = tmp_path / "ubproject.toml"
+    config.write_text(
+        '[codelinks.projects.p.source_discover]\nsrc_dir = "./"\ncomment_type = "cpp"\n',
+        encoding="utf-8",
+    )
+    outdir = tmp_path / "out"
+    outdir.mkdir()
+
+    result = runner.invoke(app, ["analyse", str(config), "--outdir", str(outdir)])
+
+    assert result.exit_code == 0, result.output
+    marked = json.loads((outdir / "marked_content.json").read_text(encoding="utf-8"))
+    types = [obj["type"] for objs in marked.values() for obj in objs]
+    assert types == ["need-id-refs"]
+
+
+def test_write_rst_still_works_and_says_it_is_deprecated(tmp_path: Path) -> None:
+    """``write rst`` is deprecated, not removed: it writes the file as before, and
+    prints the notice on stderr (stdout carries only what it always did)."""
+    marked = {
+        "project_1": [
+            {
+                "filepath": "src/dummy_1.cpp",
+                "remote_url": "https://example.com/src/dummy_1.cpp#L3",
+                "source_map": {
+                    "start": {"row": 2, "column": 13},
+                    "end": {"row": 2, "column": 21},
+                },
+                "tagged_scope": None,
+                "need_ids": ["NEED_001"],
+                "marker": "@need-ids:",
+                "type": "need-id-refs",
+            }
+        ]
+    }
+    jsonpath = tmp_path / "marked_content.json"
+    jsonpath.write_text(json.dumps(marked), encoding="utf-8")
+    outpath = tmp_path / "needextend.rst"
+
+    result = runner.invoke(
+        app, ["write", "rst", str(jsonpath), "--outpath", str(outpath)]
+    )
+
+    assert result.exit_code == 0, result.output
+    assert WRITE_RST_DEPRECATED in _normalize_output(result.stderr)
+    assert "deprecated" not in result.stdout
+    assert outpath.read_text(encoding="utf-8") == (
+        ".. needextend:: NEED_001\n"
+        "   :remote_url: https://example.com/src/dummy_1.cpp#L3\n\n"
+    )
 
 
 @pytest.mark.parametrize(

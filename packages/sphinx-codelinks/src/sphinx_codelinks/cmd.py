@@ -33,6 +33,11 @@ write_app = typer.Typer(
 )
 app.add_typer(write_app, name="write", rich_help_panel="Sub-menus")
 
+WRITE_RST_DEPRECATED = (
+    "`write rst` is deprecated: the build attaches `@need-ids:` references itself "
+    "(field `code_url`); it will be removed in sphinx-codelinks 2.0.0"
+)
+
 OptVerbose: TypeAlias = Annotated[  # has to be TypeAlias
     bool,
     typer.Option(
@@ -302,8 +307,13 @@ def write_rst(  # for CLI, so it takes as many as it requires
     verbose: OptVerbose = False,
     quiet: OptQuiet = False,
 ) -> None:
-    """Generate needextend.rst from the extracted obj in JSON."""
+    """Generate needextend.rst from the extracted obj in JSON (deprecated).
+
+    The Sphinx build attaches ``@need-ids:`` references to the needs they name itself,
+    in each project's ``ref_url_field`` (default ``code_url``).
+    """
     configure_cli(verbose, quiet)
+    typer.echo(WRITE_RST_DEPRECATED, err=True)
     try:
         with jsonpath.open("r") as f:
             marked_content = json.load(f)
