@@ -157,15 +157,22 @@ def _needs(app: SphinxTestApp) -> dict[str, dict[str, object]]:
             "https://github.com/cafe1234/r/blob/None/x.cpp#L1",
             id="no-git-rev-falls-back-to-the-url",
         ),
+        pytest.param("foo", None, id="not-a-url"),
+        pytest.param("srca/a.cpp#L7", None, id="old-fragment-shape"),
+        pytest.param("javascript:alert(1)", None, id="scheme-without-slashes"),
     ],
 )
 def test_url_string_link_names_the_location_after_the_commit(
-    url: str, name: str
+    url: str, name: str | None
 ) -> None:
     """The identity link targets the URL itself and is named by its ``path#Lline``
-    tail -- the part after a full commit hash -- or by the URL when there is none."""
+    tail -- the part after a full commit hash -- or by the URL when there is none. A
+    value with no ``scheme://`` is not a URL: no match, so Sphinx-Needs renders text."""
     entry = url_string_link("remote-url")
     match = re.search(entry["regex"], url)
+    if name is None:
+        assert match is None
+        return
     assert match is not None
     groups = match.groupdict()
     assert groups["codelinks_url"] == url

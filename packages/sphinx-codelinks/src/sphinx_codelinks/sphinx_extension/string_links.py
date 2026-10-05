@@ -24,14 +24,14 @@ from sphinx.config import Config as _SphinxConfig
 from sphinx_codelinks.config import CodeLinksConfig
 
 URL_LINK_REGEX = (
-    r"^(?P<codelinks_url>"
-    r"[^#?]*?/(?:[0-9a-f]{64}|[0-9a-f]{40})/(?P<codelinks_location>.+)"
-    r"|.+)$"
+    r"^(?P<codelinks_url>[A-Za-z][A-Za-z0-9+.-]*://"
+    r"(?:[^#?]*?/(?:[0-9a-f]{64}|[0-9a-f]{40})/(?P<codelinks_location>.+)|.+))$"
 )
 """Captures a whole URL, and the part after a full commit hash segment when it has one.
 
 The name falls back to the whole URL when the URL has no commit segment -- a remote URL
-pattern without ``{commit}``, or a project outside a git repository.
+pattern without ``{commit}``, or a project outside a git repository. A value without a
+``scheme://`` prefix is not a URL and does not match, so it renders as text.
 """
 
 
