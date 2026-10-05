@@ -231,10 +231,11 @@ def test_string_links_are_registered_before_sphinx_needs_compiles_them(
     app = make_app(srcdir=tmp_path / "docs", freshenv=True)
 
     probe = app._codelinks_probe  # ty: ignore[unresolved-attribute]
-    assert set(probe) == {"local-url", "remote-url"}
+    # the URL fields, and the field @need-ids references are attached to
+    assert set(probe) == {"local-url", "remote-url", "code_url"}
     assert probe["remote-url"] == url_string_link("remote-url")
     compiled = compiled_string_links(NeedsSphinxConfig(app.config))
-    assert {"local-url", "remote-url"} <= set(compiled)
+    assert {"local-url", "remote-url", "code_url"} <= set(compiled)
 
     app.build()
     assert_no_warnings(app)
@@ -261,7 +262,12 @@ def test_user_string_links_are_kept_and_not_mutated(
     )
     app = make_app(srcdir=tmp_path / "docs", freshenv=True)
 
-    assert set(app.config.needs_string_links) == {"mine", "local-url", "remote-url"}
+    assert set(app.config.needs_string_links) == {
+        "mine",
+        "local-url",
+        "remote-url",
+        "code_url",
+    }
     assert set(app.config._raw_config["USER_LINKS"]) == {"mine"}
 
 

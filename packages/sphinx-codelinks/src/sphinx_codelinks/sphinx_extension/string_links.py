@@ -19,7 +19,7 @@ from typing import Any
 from sphinx.application import Sphinx
 from sphinx.config import Config as _SphinxConfig
 
-from sphinx_codelinks.config import CodeLinksConfig
+from sphinx_codelinks.config import CodeLinksConfig, need_id_refs_fields
 
 URL_LINK_REGEX = (
     r"^(?P<codelinks_url>[A-Za-z][A-Za-z0-9+.-]*://"
@@ -39,6 +39,40 @@ def url_string_link(field: str) -> dict[str, Any]:
         "regex": URL_LINK_REGEX,
         "link_url": "{{codelinks_url}}",
         "link_name": "{{codelinks_location or codelinks_url}}",
+        "options": [field],
+    }
+
+
+REF_LINK_REGEX = (
+    r"^(?P<codelinks_value>"
+    r"(?P<codelinks_url>[A-Za-z][A-Za-z0-9+.-]*://"
+    r"(?:[^#?]*?/(?:[0-9a-f]{64}|[0-9a-f]{40})/(?P<codelinks_location>.+)|.+))"
+    r"|(?P<codelinks_page>.+?)\.[^./]+#L(?P<codelinks_line>\d+)"
+    r"|.+)$"
+)
+"""A reference field's entry: a remote URL (``scheme://``, as :data:`URL_LINK_REGEX`),
+else a local value in the ``local-url`` field's shape, ``<file>.<ext>#L<line>`` relative
+to the document, which links to the source page generated beside the copied file (in a
+serial build, #2044); anything else renders as text."""
+
+
+def ref_url_string_link(field: str) -> dict[str, Any]:
+    """The string link for a field of ``@need-ids:`` references.
+
+    A remote URL renders as :func:`url_string_link` does; a local value as the
+    ``local-url`` field does (to the generated source page, named by the value itself).
+    """
+    return {
+        "regex": REF_LINK_REGEX,
+        "link_url": (
+            "{% if codelinks_url %}{{codelinks_url}}"
+            "{% elif codelinks_page %}{{codelinks_page}}.html#L-{{codelinks_line}}"
+            "{% endif %}"
+        ),
+        "link_name": (
+            "{% if codelinks_url %}{{codelinks_location or codelinks_url}}"
+            "{% elif codelinks_page %}{{codelinks_value}}{% endif %}"
+        ),
         "options": [field],
     }
 
@@ -84,6 +118,8 @@ def register_string_links(_app: Sphinx, config: _SphinxConfig) -> None:
         entries[codelinks_config.remote_url_field] = url_string_link(
             codelinks_config.remote_url_field
         )
+    for field_name in set(need_id_refs_fields(codelinks_config).values()):
+        entries[field_name] = ref_url_string_link(field_name)
     existing = config.needs_string_links
     if not entries or not isinstance(existing, dict):
         return

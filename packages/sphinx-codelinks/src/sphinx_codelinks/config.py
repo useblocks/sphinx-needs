@@ -566,6 +566,10 @@ class SourceAnalyseConfig:
 # ubCode checker, ...) read as well, so all tools see the same projects.
 DEFAULT_CONFIG_TOML: str = "ubproject.toml"
 
+DEFAULT_REF_URL_FIELD: str = "code_url"
+"""The need field ``@need-ids:`` references are attached to, unless a project's
+``ref_url_field`` names another (ubCode's key and default; ``""`` disables the attach)."""
+
 #: The table of the TOML file that both readers, the Sphinx extension and the CLI,
 #: take their configuration from.
 CODELINKS_TABLE: str = "codelinks"
@@ -607,6 +611,7 @@ class CodeLinksProjectConfigType(TypedDict, total=False):
     Contains both user-provided configuration:
     - source_discover
     - remote_url_pattern
+    - ref_url_field
     - analyse
     and runtime-generated configuration objects
     - source_discover_config
@@ -615,6 +620,7 @@ class CodeLinksProjectConfigType(TypedDict, total=False):
 
     source_discover: SourceDiscoverSectionConfigType
     remote_url_pattern: str
+    ref_url_field: str
     analyse: AnalyseSectionConfigType
     source_discover_config: SourceDiscoverConfig
     analyse_config: SourceAnalyseConfig
@@ -801,6 +807,7 @@ class CodeLinksConfig:
                         "source_discover": {},
                         "analyse": {},
                         "remote_url_pattern": {},
+                        "ref_url_field": {},
                         "source_discover_config": {},
                         "analyse_config": {},
                     },
@@ -874,6 +881,15 @@ def check_project_configuration(config: CodeLinksConfig) -> list[str]:
         ):
             project_errors.append("remote_url_pattern must be a string")
 
+        ref_url_field = project_config.get("ref_url_field", DEFAULT_REF_URL_FIELD)
+        if not isinstance(ref_url_field, str):
+            project_errors.append("ref_url_field must be a string")
+        elif ref_url_field and ref_url_field in _url_fields(config):
+            project_errors.append(
+                f"ref_url_field {ref_url_field!r} must differ from local_url_field "
+                "and remote_url_field"
+            )
+
         if analyse_errors or src_discover_errors or project_errors:
             errors.append(f"Project '{project_name}' has the following errors:")
             errors.extend(analyse_errors)
@@ -905,6 +921,56 @@ def remote_url_pattern_warnings(config: CodeLinksConfig) -> list[str]:
                 "pattern's links will not render as one link."
             )
     return warnings
+
+
+def _url_fields(config: CodeLinksConfig) -> set[str]:
+    """The names of the URL fields the extension registers (when switched on)."""
+    names: set[str] = set()
+    if config.set_local_url:
+        names.add(config.local_url_field)
+    if config.set_remote_url:
+        names.add(config.remote_url_field)
+    return names
+
+
+def need_id_refs_field(
+    config: CodeLinksConfig, project_config: CodeLinksProjectConfigType
+) -> str | None:
+    """The field a project's ``@need-ids:`` references are attached to, or ``None``.
+
+    ubCode's gate: URLs are on (local or remote), references are extracted, the project
+    has at least one marker, and its ``ref_url_field`` is not ``""``. A field that is not
+    a string, or that is one of the URL fields, is a configuration error reported by
+    :func:`check_project_configuration`, and attaches nothing.
+    """
+    if not (config.set_remote_url or config.set_local_url):
+        return None
+    field_name = project_config.get("ref_url_field", DEFAULT_REF_URL_FIELD)
+    if not isinstance(field_name, str) or not field_name:
+        return None
+    if field_name in _url_fields(config):
+        return None
+    analyse_config = project_config.get("analyse_config")
+    if analyse_config is None or not analyse_config.get_need_id_refs:
+        return None
+    if not analyse_config.need_id_refs_config.markers:
+        return None
+    return field_name
+
+
+def need_id_refs_fields(config: CodeLinksConfig) -> dict[str, str]:
+    """Each project whose references are attached, mapped to its field."""
+    projects = config.projects
+    if not isinstance(projects, dict):
+        return {}
+    fields_by_project: dict[str, str] = {}
+    for name, project_config in projects.items():
+        if not isinstance(project_config, dict):
+            continue
+        field_name = need_id_refs_field(config, project_config)
+        if field_name is not None:
+            fields_by_project[name] = field_name
+    return fields_by_project
 
 
 def check_configuration(config: CodeLinksConfig) -> list[str]:

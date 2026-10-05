@@ -21,6 +21,7 @@ from sphinx_codelinks.config import (
     file_lineno_href,
     generate_project_configs,
     load_codelinks_table,
+    need_id_refs_fields,
     remote_url_pattern_warnings,
 )
 from sphinx_codelinks.logger import configure_sphinx
@@ -258,6 +259,20 @@ def update_sn_extra_options(_app: Sphinx, config: _SphinxConfig) -> None:
     if src_trace_sphinx_config.set_remote_url:
         _register_sn_field(
             src_trace_sphinx_config.remote_url_field, "Remote source URL"
+        )
+    # One list-valued field per distinct ``ref_url_field``, shared by the projects naming
+    # it. ``nullable`` with no default, so a need no reference names carries ``None``,
+    # which is stripped before schema validation: a strict ``unevaluatedProperties:
+    # false`` schema never sees the field on it (a ``[]`` default would not be stripped).
+    for field_name in sorted(
+        set(need_id_refs_fields(src_trace_sphinx_config).values())
+    ):
+        add_field(
+            field_name,
+            "Code references (@need-ids markers)",
+            schema={"type": "array", "items": {"type": "string"}},
+            nullable=True,
+            default=None,
         )
 
 
