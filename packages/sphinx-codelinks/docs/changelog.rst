@@ -56,7 +56,8 @@ New and Improved
   the document hosting the directive and attached once every need is known, wherever it is
   defined. Each referenced need gets one entry per reference, in source order: the
   project's ``remote_url_pattern`` filled in for the marker's line, or the local link when
-  remote URLs are off. ``needs.json`` declares the field as a list; a need nothing
+  remote URLs are off. With local URLs only, a file referenced by ``@need-ids:`` is copied
+  into the output and gets a source page, as a file with a one-line need is. ``needs.json`` declares the field as a list; a need nothing
   references carries ``null``, which a strict ``unevaluatedProperties: false`` schema
   never sees. A user's ``needextend`` of the field wins. The unknown-id warning points at
   the source line (``src/refs.cpp:5``), and each project reports

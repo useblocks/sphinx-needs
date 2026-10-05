@@ -23,6 +23,7 @@ import sphinx
 from sphinx.testing.util import SphinxTestApp
 from sphinx.util.console import strip_colors
 
+from sphinx_codelinks.sphinx_extension.need_id_refs import need_id_refs_store
 from sphinx_needs_testkit import assert_no_warnings, build_warnings
 
 FIXTURE = Path(__file__).parent / "doc_test" / "need_id_refs"
@@ -144,6 +145,8 @@ def test_references_attach_to_needs_in_any_document(
         ]
     ]
     assert _card_links(app, "later.html") == [[(_url(commit, 3), "src/refs.cpp#L3")]]
+    # the value is remote, so the reference-only file is neither copied nor paged
+    assert not Path(app.outdir, "src").exists()
 
 
 def test_unknown_id_warns_at_the_source_line(
@@ -315,10 +318,12 @@ def test_two_projects_naming_one_field_share_its_list(
     assert "codelinks [two]: 1 reference attached, 0 unknown" in app._status.getvalue()
 
 
+@pytest.mark.parametrize("remote", [True, False], ids=["remote-on", "local-only"])
 def test_empty_ref_url_field_attaches_nothing(
-    tmp_path: Path, make_app: _MakeApp
+    tmp_path: Path, make_app: _MakeApp, remote: bool
 ) -> None:
-    """``ref_url_field = ""`` (ubCode's off switch): no field, no attach, no warning."""
+    """``ref_url_field = ""`` (ubCode's off switch): no field, no attach, no warning --
+    and the directive collects nothing and copies nothing for the project."""
     _project(
         tmp_path,
         toml_replace=(
@@ -326,8 +331,18 @@ def test_empty_ref_url_field_attaches_nothing(
             '[codelinks.projects.src]\nref_url_field = ""\n',
         ),
     )
+    if not remote:
+        toml = tmp_path / "docs" / "ubproject.toml"
+        toml.write_text(
+            toml.read_text(encoding="utf-8").replace(
+                "set_remote_url = true", "set_remote_url = false"
+            ),
+            encoding="utf-8",
+        )
     app = _build(tmp_path, make_app)
 
+    assert need_id_refs_store(app.env) == {}
+    assert not Path(app.outdir, "src").exists()
     assert_no_warnings(app)
     assert "code_url" not in _json(app)["needs_schema"]["properties"]
     assert set(_refs(app).values()) == {"<absent>"}
@@ -385,3 +400,49 @@ def test_no_remote_url_without_a_git_root(
     git_root_warnings = [w for w in build_warnings(app) if "git root is not found" in w]
     assert len(git_root_warnings) == 1, build_warnings(app)
     assert not any("/blob/None" in json.dumps(need) for need in needs.values())
+
+
+def test_two_projects_over_one_file_attach_each_reference_once(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """Two projects whose source directories overlap analyse the same file: one entry
+    per reference, the first project by name keeping its URL, and the unknown id
+    warned once."""
+    gitlab = "https://gitlab.example.com/demo/-/blob/{commit}/{path}#L{line}"
+    commit = _project(
+        tmp_path,
+        toml_extra=(
+            "\n[codelinks.projects.two]\n"
+            f'remote_url_pattern = "{gitlab}"\n'
+            "[codelinks.projects.two.source_discover]\n"
+            'src_dir = "../src"\n'
+            'comment_type = "cpp"\n'
+        ),
+        append={"docs/later.rst": "\n.. src-trace::\n   :project: two\n"},
+    )
+    app = _build(tmp_path, make_app)
+
+    refs = _refs(app)
+    assert refs["REQ_001"] == [_url(commit, 1), _url(commit, 3)]
+    assert refs["REQ_002"] == [_url(commit, 3)]
+    assert build_warnings(app) == [DANGLING]
+
+
+def test_copies_are_byte_identical(tmp_path: Path, make_app: _MakeApp) -> None:
+    """With local URLs only, a referenced file and a file with a one-line need are
+    copied as bytes -- no codec, no newline translation -- and paged."""
+    refs = (FIXTURE / "src" / "refs.cpp").read_text(encoding="utf-8")
+    _project(
+        tmp_path,
+        toml_replace=("set_remote_url = true", "set_remote_url = false"),
+        files={
+            "src/refs.cpp": (refs + "// café: naïve ✓\n").replace("\n", "\r\n"),
+            "src/impl.cpp": "// @Implemented, IMPL_UTF8\r\n// déjà vu\r\n",
+        },
+    )
+    app = _build(tmp_path, make_app)
+
+    for name in ("refs.cpp", "impl.cpp"):
+        source = (tmp_path / "src" / name).read_bytes()
+        assert Path(app.outdir, "src", name).read_bytes() == source, name
+        assert Path(app.outdir, "src", name).with_suffix(".html").exists(), name

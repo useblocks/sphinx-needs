@@ -1,3 +1,4 @@
+import shutil
 from collections.abc import Callable
 from dataclasses import replace
 from pathlib import Path, PurePath
@@ -292,8 +293,10 @@ class SourceTracingDirective(SphinxDirective):
         """The analysis' ``@need-ids:`` references, as records.
 
         Their URLs follow the created needs' rules: the remote one fills the project's
-        ``remote_url_pattern`` exactly as a created need's does, and the local one names
-        the source copied into the build output, beside which its page is generated.
+        ``remote_url_pattern`` exactly as a created need's does. The local one -- only
+        when it is the value, i.e. there is no remote URL -- names the source copied
+        into the build output, beside which its page is generated; with a remote URL
+        nothing is copied, so no orphan copy or page is left in the output.
         """
         src_dir = dirs["src_dir"]
 
@@ -308,13 +311,13 @@ class SourceTracingDirective(SphinxDirective):
             )
 
         def local_url(filepath: Path, line: int) -> str | None:
-            if local_url_field is None:
+            if local_url_field is None or remote_url_pattern is not None:
                 return None
             target_filepath = dirs["target_dir"] / filepath.relative_to(src_dir)
             if str(target_filepath) not in file_lineno_href.mappings:
                 # copy the file and have its page generated, as for a created need
                 target_filepath.parent.mkdir(parents=True, exist_ok=True)
-                target_filepath.write_text(filepath.read_text())
+                shutil.copyfile(filepath, target_filepath)
                 file_lineno_href.mappings[str(target_filepath)] = {}
             relative = target_filepath.relative_to(dirs["out_dir"]).as_posix()
             return f"{relative}#L{line}"
@@ -350,9 +353,9 @@ class SourceTracingDirective(SphinxDirective):
             # The link to the documentation page for the source file
 
             if local_url_field:
-                # copy files to _build/html
+                # copy files to _build/html, as bytes: no codec, no newline translation
                 target_filepath.parent.mkdir(parents=True, exist_ok=True)
-                target_filepath.write_text(filepath.read_text())
+                shutil.copyfile(filepath, target_filepath)
             local_link_name = None
             remote_link_name = None
             if local_url_field:

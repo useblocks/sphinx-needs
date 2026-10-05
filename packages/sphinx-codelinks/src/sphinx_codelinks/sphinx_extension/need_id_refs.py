@@ -101,16 +101,19 @@ def attach_need_id_refs(
     directive. ``fields`` maps a project to its ``ref_url_field``; a record of a project
     not in it is ignored.
 
-    Records are deduplicated on ``(project, path, lineno, need_id)`` -- overlapping
-    ``src-trace`` directives analyse the same file twice -- and ordered by
-    ``(path, lineno, start_column)``. A need gets one entry per reference: its remote URL,
-    else its local one; projects naming the same field share one list. The need is not
-    marked as modified, and an unreferenced need is left alone.
+    Records are deduplicated on ``(path, lineno, need_id)`` within a field, whatever
+    the project -- overlapping ``src-trace`` directives, or two projects whose source
+    directories overlap, analyse the same file twice; the first project by name keeps
+    the reference (and its URL) -- and ordered by ``(path, lineno, start_column)``. A
+    need gets one entry per reference: its remote URL, else its local one; projects
+    naming the same field share one list. The need is not marked as modified, and an
+    unreferenced need is left alone.
     """
     unique: dict[tuple[str, str, int, str], NeedIdRef] = {}
-    for ref in refs:
+    for ref in sorted(refs, key=lambda ref: ref.project):
         if ref.project in fields:
-            unique.setdefault((ref.project, ref.path, ref.lineno, ref.need_id), ref)
+            key = (fields[ref.project], ref.path, ref.lineno, ref.need_id)
+            unique.setdefault(key, ref)
     ordered = sorted(
         unique.values(),
         key=lambda ref: (ref.path, ref.lineno, ref.start_column, ref.project),
