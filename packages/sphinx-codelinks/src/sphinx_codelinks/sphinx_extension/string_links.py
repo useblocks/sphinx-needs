@@ -14,8 +14,6 @@ commit segment (``path#Lline``) is the name.
 
 from __future__ import annotations
 
-import os
-from pathlib import Path
 from typing import Any
 
 from sphinx.application import Sphinx
@@ -45,24 +43,22 @@ def url_string_link(field: str) -> dict[str, Any]:
     }
 
 
-def local_url_string_link(field: str, outdir: Path) -> dict[str, Any]:
+def local_url_string_link(field: str) -> dict[str, Any]:
     """The string link for the local URL field.
 
     Its value is the copied source file's path relative to the document
-    (``../src/file.cpp#L3``), and the link points at the source page generated beside it.
+    (``../src/file.cpp#L3``), and the link points at the source page generated beside
+    that copy -- in a serial build; a parallel one does not generate it yet (#2044).
     """
-    to_remove_str = f"{outdir!s}{os.sep}"
-    if os.name == "nt":
-        to_remove_str = to_remove_str.replace("\\", "\\\\")
     return {
         "regex": r"^(?P<value>.+?)\.[^\.]+#L(?P<lineno>\d+)",
         "link_url": "{{value}}.html#L-{{lineno}}",
-        "link_name": f"{{{{value | replace('{to_remove_str}', '')}}}}#L{{{{lineno}}}}",
+        "link_name": "{{value}}#L{{lineno}}",
         "options": [field],
     }
 
 
-def register_string_links(app: Sphinx, config: _SphinxConfig) -> None:
+def register_string_links(_app: Sphinx, config: _SphinxConfig) -> None:
     """Add the string links for the URL fields to ``needs_string_links``.
 
     The value is rebound rather than mutated, as it may be the user's own conf.py object.
@@ -72,7 +68,7 @@ def register_string_links(app: Sphinx, config: _SphinxConfig) -> None:
     entries: dict[str, dict[str, Any]] = {}
     if codelinks_config.set_local_url:
         entries[codelinks_config.local_url_field] = local_url_string_link(
-            codelinks_config.local_url_field, Path(app.outdir)
+            codelinks_config.local_url_field
         )
     projects = codelinks_config.projects
     # a malformed ``projects`` is reported by ``check_sphinx_configuration``, later
