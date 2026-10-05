@@ -2,10 +2,14 @@
 """:func:`attach_need_id_refs` over plain records and plain needs: no build involved,
 which is the point -- it is the seam a pre-analysed input file will feed."""
 
+import re
 from typing import Any
+
+import pytest
 
 from sphinx_codelinks.analyse.references import NeedIdRef
 from sphinx_codelinks.sphinx_extension.need_id_refs import attach_need_id_refs
+from sphinx_codelinks.sphinx_extension.string_links import REF_LINK_REGEX
 
 SHA = "a" * 40
 
@@ -108,3 +112,27 @@ def test_local_url_is_relative_to_the_needs_document() -> None:
         needs = _needs("REQ_1", docname=docname)
         attach_need_id_refs(refs, needs, fields={"src": "code_url"})
         assert needs["REQ_1"]["code_url"] == [expected]
+
+
+@pytest.mark.parametrize(
+    ("value", "url", "page"),
+    [
+        pytest.param(
+            f"https://example.com/blob/{SHA}/src/refs.cpp#L3",
+            f"https://example.com/blob/{SHA}/src/refs.cpp#L3",
+            None,
+            id="remote-url",
+        ),
+        pytest.param("../src/refs.cpp#L3", None, "../src/refs", id="local-value"),
+        pytest.param("foo", None, None, id="text"),
+        pytest.param("javascript:alert(1)", None, None, id="scheme-without-slashes"),
+    ],
+)
+def test_reference_field_link_kinds(
+    value: str, url: str | None, page: str | None
+) -> None:
+    """The field's string link: a ``scheme://`` URL links to itself, a local value to
+    its source page, anything else matches neither and renders as text."""
+    groups = re.search(REF_LINK_REGEX, value).groupdict()  # ty: ignore[possibly-missing-attribute]
+    assert groups["codelinks_url"] == url
+    assert groups["codelinks_page"] == page
