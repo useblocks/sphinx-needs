@@ -53,6 +53,7 @@ src/sphinx_codelinks/   # Main source code
 └── sphinx_extension/   # Sphinx extension components
     ├── source_tracing.py # Main Sphinx extension setup
     ├── html_wrapper.py  # HTML output wrapper for traced source
+    ├── string_links.py  # The URL fields' needs_string_links entries
     ├── debug.py         # Debug utilities
     ├── ub_sct.css       # CSS for source tracing UI
     └── directives/      # Custom Sphinx directives
@@ -270,6 +271,7 @@ flowchart TB
         setup["setup() in __init__.py"]
         load_toml["load_config_from_toml()"]
         sn_options["update_sn_extra_options()"]
+        str_links["register_string_links()"]
         sn_types["update_sn_types()"]
         check_config["check_sphinx_configuration()"]
     end
@@ -293,7 +295,7 @@ flowchart TB
         timing["debug.process_timing()"]
     end
 
-    setup --> load_toml --> sn_options --> sn_types --> check_config
+    setup --> load_toml --> sn_options --> str_links --> sn_types --> check_config
     check_config --> builder_init --> env_prepare
     env_prepare --> gen_pages --> html_wrap
     html_wrap --> add_css --> warnings --> timing
@@ -311,6 +313,7 @@ The extension connects to these Sphinx events (in execution order):
 | ---------------------- | ------------------------------ | -------------------------------------------------------------------- |
 | `config-inited`        | `load_config_from_toml()`      | Load configuration from TOML file if specified                       |
 | `config-inited`        | `update_sn_extra_options()`    | Register sphinx-needs extra options (project, file, directory, URLs) |
+| `config-inited`        | `register_string_links()`      | Add the URL fields' `needs_string_links` entries (before 551)        |
 | `config-inited`        | `update_sn_types()`            | Add `srctrace` need type to sphinx-needs                             |
 | `config-inited`        | `check_sphinx_configuration()` | Validate configuration and raise errors                              |
 | `builder-inited`       | `builder_inited()`             | Copy CSS assets to output directory                                  |
@@ -329,6 +332,8 @@ The extension connects to these Sphinx events (in execution order):
 3. **Source Page Generation**: The `generate_code_page()` function yields tuples of `(pagename, context, template)` for each traced source file, allowing Sphinx to generate standalone HTML pages with syntax-highlighted source code and line-number anchors.
 
 4. **CSS Injection**: Custom CSS (`ub_sct.css`) is copied to `_static/source_tracing/` and added only to pages that contain traced source code.
+
+5. **String links are configuration, never read-time state**: the URL fields' `needs_string_links` entries are added once at `config-inited` (`sphinx_extension/string_links.py`), before sphinx-needs compiles them at priority 551. A directive must not write into `env.config`: a `-j N` worker's write never reaches the main process, and the next build sees a changed configuration. So nothing per-project or per-read goes into an entry — `remote-url` holds the full URL (the project's `remote_url_pattern` filled in) and its entry is an identity link.
 
 ### Key Components
 

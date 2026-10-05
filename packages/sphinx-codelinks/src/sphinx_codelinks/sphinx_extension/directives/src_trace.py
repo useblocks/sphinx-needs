@@ -1,4 +1,3 @@
-import os
 from collections.abc import Callable
 from dataclasses import replace
 from pathlib import Path
@@ -36,26 +35,40 @@ def get_rel_path(doc_path: Path, code_path: Path, base_dir: Path) -> tuple[Path,
     return src_rel_path, doc_rel_path.with_suffix(".html")
 
 
-def generate_str_link_name(
+def _line_span(oneline_need: OneLineNeed) -> str:
+    """The marker's line, or ``first-Llast`` for a marker spanning several lines."""
+    start = oneline_need.source_map["start"]["row"] + 1
+    end = oneline_need.source_map["end"]["row"] + 1
+    return str(start) if start == end else f"{start}-L{end}"
+
+
+def generate_str_link_name(oneline_need: OneLineNeed, target_filepath: Path) -> str:
+    """The local URL field's value: the copied file's path and the marker's line.
+
+    POSIX on every platform: the value becomes the link's href.
+    """
+    return f"{target_filepath.as_posix()}#L{_line_span(oneline_need)}"
+
+
+def generate_remote_url(
     oneline_need: OneLineNeed,
     target_filepath: Path,
     dirs: dict[str, Path],
-    local: bool = False,
+    remote_url_pattern: str,
+    commit: str | None,
 ) -> str:
-    if oneline_need.source_map["start"]["row"] == oneline_need.source_map["end"]["row"]:
-        lineno = f"L{oneline_need.source_map['start']['row'] + 1}"
-    else:
-        lineno = f"L{oneline_need.source_map['start']['row'] + 1}-L{oneline_need.source_map['end']['row'] + 1}"
-    # url = str(target_filepath.relative_to(target_dir)) + f"#{lineno}"
-    if local:
-        url = str(target_filepath) + f"#{lineno}"
-    else:
-        remote_path = dirs["remote_src_dir"] / target_filepath.relative_to(
-            dirs["target_dir"]
-        )
-        url = f"{remote_path!s}#{lineno}"
+    """The remote URL field's value: the project's ``remote_url_pattern``, filled in.
 
-    return url
+    ``{path}`` is the file's path below the git root (or the source directory's path,
+    outside a git repository), POSIX on every platform as a URL path is; ``{line}`` the
+    marker's line.
+    """
+    remote_path = dirs["remote_src_dir"] / target_filepath.relative_to(
+        dirs["target_dir"]
+    )
+    return remote_url_pattern.format(
+        commit=commit, path=remote_path.as_posix(), line=_line_span(oneline_need)
+    )
 
 
 def validate_option(options: dict[str, str]) -> None:
@@ -152,45 +165,26 @@ class SourceTracingDirective(SphinxDirective):
             "target_dir": target_dir,
         }
 
-        # inject needs_string_links config before add_need()
-        # https://sphinx-needs.readthedocs.io/en/latest/configuration.html#needs-string-links
-        # local URL
+        # The fields' string links are registered once, at config-inited
+        # (``sphinx_extension/string_links.py``): written here, at read time, they
+        # were lost in every ``-j N`` worker.
         local_url_field = None
         remote_url_field = None
+        remote_url_pattern = None
         if src_trace_sphinx_config.set_local_url:
             local_url_field = src_trace_sphinx_config.local_url_field
-            to_remove_str = f"{out_dir!s}{os.sep}"
-            if os.name == "nt":
-                to_remove_str = to_remove_str.replace("\\", "\\\\")
-            self.env.config.needs_string_links[local_url_field] = {
-                "regex": r"^(?P<value>.+?)\.[^\.]+#L(?P<lineno>\d+)",
-                "link_url": ("{{value}}.html#L-{{lineno}}"),
-                "link_name": f"{{{{value | replace('{to_remove_str}', '')}}}}#L{{{{lineno}}}}",
-                "options": [local_url_field],
-            }
         if (
             src_trace_sphinx_config.set_remote_url
             and src_trace_conf["remote_url_pattern"]
         ):
             remote_url_field = src_trace_sphinx_config.remote_url_field
+            remote_url_pattern = src_trace_conf["remote_url_pattern"]
             if not src_analyse.git_root:
                 # No git root found, use the source directory as the remote source directory
                 remote_src_dir = src_dir
             else:
                 remote_src_dir = src_dir.relative_to(src_analyse.git_root)
             dirs["remote_src_dir"] = remote_src_dir
-            remote_url_pattern = src_trace_conf["remote_url_pattern"].format(
-                commit=src_analyse.git_commit_rev,
-                # path=f"{remote_src_dir}/" + "{{value}}",
-                path="{{value}}",
-                line="{{lineno}}",
-            )
-            self.env.config.needs_string_links[remote_url_field] = {
-                "regex": r"^(?P<value>.+)#L(?P<lineno>.*)?",
-                "link_url": remote_url_pattern,
-                "link_name": "{{value}}#L{{lineno}}",
-                "options": [remote_url_field],
-            }
 
         # render needs from the source files
         rendered_needs = self.render_needs(
@@ -198,6 +192,7 @@ class SourceTracingDirective(SphinxDirective):
             local_url_field,
             remote_url_field,
             dirs,
+            remote_url_pattern,
         )
 
         # for post-processing of need links
@@ -263,6 +258,7 @@ class SourceTracingDirective(SphinxDirective):
         local_url_field: str | None,
         remote_url_field: str | None,
         dirs: dict[str, Path],
+        remote_url_pattern: str | None = None,
     ) -> list[nodes.Node]:
         """Render the needs from the virtual docs"""
         rendered_needs: list[nodes.Node] = []
@@ -290,15 +286,14 @@ class SourceTracingDirective(SphinxDirective):
                 local_rel_path, docs_href = get_rel_path(
                     Path(self.env.docname), target_filepath, dirs["out_dir"]
                 )
-                local_link_name = generate_str_link_name(
+                local_link_name = generate_str_link_name(oneline_need, local_rel_path)
+            if remote_url_field and remote_url_pattern is not None:
+                remote_link_name = generate_remote_url(
                     oneline_need,
-                    local_rel_path,
+                    target_filepath,
                     dirs,
-                    local=True,
-                )
-            if remote_url_field:
-                remote_link_name = generate_str_link_name(
-                    oneline_need, target_filepath, dirs, local=False
+                    remote_url_pattern,
+                    src_analyse.git_commit_rev,
                 )
 
             if oneline_need.need:

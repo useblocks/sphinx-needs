@@ -21,6 +21,7 @@ from sphinx_codelinks.config import (
     file_lineno_href,
     generate_project_configs,
     load_codelinks_table,
+    remote_url_pattern_warnings,
 )
 from sphinx_codelinks.logger import configure_sphinx
 from sphinx_codelinks.sphinx_extension import debug
@@ -29,6 +30,7 @@ from sphinx_codelinks.sphinx_extension.directives.src_trace import (
     SourceTracingDirective,
 )
 from sphinx_codelinks.sphinx_extension.html_wrapper import html_wrapper
+from sphinx_codelinks.sphinx_extension.string_links import register_string_links
 from sphinx_needs.api import add_field, add_need_type
 from ub_project import ProjectConfigError
 
@@ -91,6 +93,9 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.connect(
         "config-inited", update_sn_extra_options, priority=11
     )  # run early otherwise, extra options are not set for nested_parse
+    # after the fields are registered, and before Sphinx-Needs compiles the string
+    # links (its ``compile_string_links`` listener runs at priority 551)
+    app.connect("config-inited", register_string_links, priority=12)
     app.connect("config-inited", update_sn_types)
     app.connect("config-inited", check_sphinx_configuration)
 
@@ -283,6 +288,8 @@ def check_sphinx_configuration(app: Sphinx, _config: _SphinxConfig) -> None:
     errors = check_configuration(config)
     if errors:
         raise Exception("\n".join(errors))
+    for warning in remote_url_pattern_warnings(config):
+        logger.warning(warning, type="codelinks", subtype="remote_url_pattern")
 
 
 def emit_warnings(

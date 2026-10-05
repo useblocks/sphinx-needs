@@ -87,6 +87,38 @@ New and Improved
   documentation build with ``-nW`` failed outright. Both shapes are now handled, with a
   regression test that builds a real worktree.
 
+- 🐛 The ``local-url`` and ``remote-url`` links render under ``sphinx-build -j N``, and each
+  project's ``remote-url`` links with that project's ``remote_url_pattern``
+  (`#2039 <https://github.com/useblocks/sphinx-needs/issues/2039>`__). Under ``-j N`` the
+  ``local-url`` link points at a source page that a parallel build does not yet generate
+  (`#2044 <https://github.com/useblocks/sphinx-needs/issues/2044>`__); the ``remote-url``
+  link is complete.
+
+  The ``src-trace`` directive wrote the two fields' ``needs_string_links`` entries into the
+  configuration while it was read. A parallel worker never hands such a write back, so
+  under ``-j N`` both fields rendered as plain text; every rebuild reported
+  ``The configuration has changed (… 'needs_string_links' …)``; and with two projects
+  whose ``remote_url_pattern`` differed, the project read last decided every need's link.
+  The entries are now registered once, at ``config-inited``.
+
+  ``remote-url`` now holds the URL it is named for. In ``needs.json`` its value is the
+  project's ``remote_url_pattern`` filled in for the marker
+  (``https://github.com/org/repo/blob/<commit>/src/a.cpp#L3``), where it used to be the
+  fragment ``src/a.cpp#L3``. The card links to the same URL; its name is now the part of
+  the URL after the commit (``src/a.cpp#L3`` for GitHub and GitLab patterns,
+  ``src/a.cpp#lines-3`` for Bitbucket), or the whole URL when the pattern has no commit in
+  its path. A value that is not a URL renders as text -- including a ``path#Lline`` value
+  from a ``needs.json`` built by an earlier release, which used to be linked through the
+  pattern. ``local-url`` is unchanged. A ``needextend`` that sets ``remote-url`` to full URLs, as
+  ``codelinks write rst -r remote-url`` generates, now links to each URL as given instead
+  of to the URL appended to itself.
+
+  A ``remote_url_pattern`` containing ``,`` or ``;`` (gitweb's
+  ``?p=repo.git;a=blob;f={path}``, for one) is not supported for rendering: Sphinx-Needs
+  splits a string-linked value on those characters, so its link renders as several broken
+  ones. The build warns about such a pattern (``codelinks.remote_url_pattern``;
+  ``suppress_warnings`` silences it, which a ``-W`` build needs).
+
 - 🔧 ``libclang`` is now genuinely optional for the test suite.
 
   It has always been an optional extra at runtime, and three test modules guarded it with
