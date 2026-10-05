@@ -55,7 +55,8 @@ New and Improved
   and an ``include`` of the generated ``needextend`` file. The references are now kept with
   the document hosting the directive and attached once every need is known, wherever it is
   defined. Each referenced need gets one entry per reference, in source order -- once,
-  even when two directives or two projects scan the same file: the project's
+  even when two directives or two projects scan the same file (files under different
+  roots are different files, each kept): the project's
   ``remote_url_pattern`` filled in for the marker's line, or the local link when remote
   URLs are off. With local URLs only, a file referenced by ``@need-ids:`` is copied into
   the output and gets a source page, as a file with a one-line need is; under ``-j N`` the
@@ -159,8 +160,8 @@ New and Improved
   ones. The build warns about such a pattern (``codelinks.remote_url_pattern``;
   ``suppress_warnings`` silences it, which a ``-W`` build needs).
 
-- 🐛 A project outside a git repository gets no remote URL
-  (`#2045 <https://github.com/useblocks/sphinx-needs/issues/2045>`__).
+- 🐛 A project outside a git repository, or in one without a commit yet, gets no remote
+  URL (`#2045 <https://github.com/useblocks/sphinx-needs/issues/2045>`__).
 
   Its ``remote_url_pattern`` was filled with ``None`` for the commit and the build
   machine's absolute path for ``{path}`` (``…/blob/None//home/me/project/src/a.cpp#L1``),
