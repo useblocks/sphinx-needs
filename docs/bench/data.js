@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791206156177,
+  "lastUpdate": 1791206738307,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -22320,6 +22320,42 @@ window.BENCHMARK_DATA = {
             "value": 55.630950127000006,
             "unit": "s",
             "extra": "Commit: 8621e07e6e61b580e21210392f35a398a4689f44\nBranch: master\nTime: 2026-10-05T15:14:30+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e13ce72f7667d74b1831bd7628f7d19ce2651374",
+          "message": "🧪 sphinx-ai-index: every text read and write in the tests names its encoding (#2037)\n\nCloses #2032\n\nsphinx-ai-index's tests called `Path.read_text()` / `Path.write_text()`\nwithout `encoding=`: 23 calls in `tests/test_extension.py` and the\n`conf.py` write in `tests/test_e2e_pbt.py`. Those calls use the locale's\npreferred encoding, which is cp1252 on a default Windows install. The\nextension, though, writes `ai_docs_index.json` as UTF-8 with\n`ensure_ascii=False`. Every payload the suite writes today is ASCII, so\nnothing failed yet. The first non-ASCII fixture would have failed.\n\n- Every one of those calls now passes `encoding=\"utf-8\"`.\n- **New `tests/test_encoding.py`** walks the AST of every `tests/*.py`\nmodule of the member. It names, as `file:line`, any `read_text` /\n`write_text` / text-mode `open` call that has no `encoding` keyword. Its\ndocstring lists what a syntactic walk cannot see. It was red against the\nold files, naming all 24 sites, and goes red again when a single\n`encoding=` is removed.\n- **New round-trip test**\n`test_title_and_summary_outside_cp1252_round_trip`: a page whose title\nand `page-summary` carry `Übersicht ✅ 日本語` is built, and both come back\nunchanged from the index. Written in the old idiom, the same test passes\nunder a UTF-8 locale but fails under `LC_ALL=C PYTHONUTF8=0\nPYTHONCOERCECLOCALE=0` (US-ASCII). It hits `UnicodeEncodeError` on the\nwrite and, with only the read left bare, `UnicodeDecodeError` on the\nindex. The committed version passes under that locale.\n- The whole suite passes under that forced locale (30 passed). This run\nstands in for a cp1252 Windows machine.\n- `packages/sphinx-ai-index/AGENTS.md`: one clause in the Tests\nparagraph.\n\nTests only; nothing user-visible changes, so there is no changelog\nentry.",
+          "timestamp": "2026-10-05T15:24:12+02:00",
+          "tree_id": "61563afe11e7013316d6b2fa002698aed4c120ed",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/e13ce72f7667d74b1831bd7628f7d19ce2651374"
+        },
+        "date": 1791206729403,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.11999730900001282,
+            "unit": "s",
+            "extra": "Commit: e13ce72f7667d74b1831bd7628f7d19ce2651374\nBranch: master\nTime: 2026-10-05T15:24:12+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 57.06688320699999,
+            "unit": "s",
+            "extra": "Commit: e13ce72f7667d74b1831bd7628f7d19ce2651374\nBranch: master\nTime: 2026-10-05T15:24:12+02:00"
           }
         ]
       }
