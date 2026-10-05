@@ -40,10 +40,10 @@ Sphinx, and check (5) holds it equal to `[project] version`; `poe bump` stamps b
 
 `uv run poe test-ai-index` (paths relative to this package). The suite builds small Sphinx
 projects in `tmp_path` with `sphinx.application.Sphinx` directly and needs no renderer, no
-git, no libclang and no network. Its property-based tests need `hypothesis`, which comes
-from the root `test` group, which is also how the release workflow's compat cell gets it, and it
-writes its example database into the working directory (`.hypothesis/`, ignored at the
-root).
+git, no libclang and no network. Its property-based tests need `hypothesis`: the root `test`
+group carries it, and that group is also what the release workflow's compat cell installs.
+hypothesis writes its example database into the working directory (`.hypothesis/`, ignored
+at the root).
 
 ## History
 

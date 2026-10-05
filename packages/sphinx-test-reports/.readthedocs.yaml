@@ -44,11 +44,11 @@ build:
       # pull request did not touch it. That is the safe direction; it never skips a build
       # that was needed.
       #
-      # The three packages are ALMOST the complete set of inputs -- ub-test-reports is one
+      # Those packages are ALMOST the complete set of inputs -- ub-test-reports is one
       # because this site documents it and installs it from the checkout below, and
       # sphinx-ai-index because it writes this site's `ai_docs_index.json` and is installed
-      # from the checkout too -- and the one
-      # exception is deliberate: `docs/conf.py` also reads `vendor/plantuml/pin.toml` and
+      # from the checkout too -- and the one exception is deliberate: `docs/conf.py` also
+      # reads `vendor/plantuml/pin.toml` and
       # the jar beside it. A bump there changes only which renderer version draws the
       # diagrams, never whether the build succeeds, so it is not worth widening the filter
       # and rebuilding this project for every workspace-level commit.

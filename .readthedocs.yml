@@ -34,8 +34,8 @@ build:
   jobs:
     post_checkout:
       # Every pull request against this repository builds every Read the Docs project it has. A
-      # pull request that touches neither `packages/sphinx-needs/` nor this file has nothing
-      # for this one to build, so cancel it. Exit code 183 is Read the Docs' documented
+      # pull request that touches none of the paths the filter below names has nothing for
+      # this one to build, so cancel it. Exit code 183 is Read the Docs' documented
       # "skip" code (https://docs.readthedocs.com/platform/stable/guides/build/skip-build.html):
       # the build is recorded as `cancelled`, and the commit status sent to GitHub is
       # `success` with the description "Read the Docs build skipped" -- which matters here,
@@ -58,8 +58,8 @@ build:
       # this package, so a pull request that changes only the extension writing this site's
       # `ai_docs_index.json` has to rebuild it. `vendor/`: `docs/conf.py` no longer reads
       # only files under `docs/` -- it reads `vendor/plantuml/pin.toml` to find the renderer,
-      # and renders with the jar committed beside it. Without `vendor/` here, a pull request that bumps the
-      # pin would skip THIS build -- the only one that renders these docs under
+      # and renders with the jar committed beside it. Without `vendor/` here, a pull request
+      # that bumps the pin would skip THIS build -- the only one that renders these docs under
       # `fail_on_warning` -- and report `success` to GitHub for a renderer nobody tried.
       # `tools/` is deliberately NOT here: nothing under it runs in this build any more.
       # Branch and tag builds (`latest`, `stable`, releases) are never cancelled.
