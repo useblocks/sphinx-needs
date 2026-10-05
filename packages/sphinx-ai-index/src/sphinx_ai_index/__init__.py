@@ -36,6 +36,8 @@ from docutils.parsers.rst import Directive
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
+__version__ = "0.1.0"
+
 # ---------------------------------------------------------------------------
 # State Management
 # ---------------------------------------------------------------------------
@@ -44,8 +46,8 @@ from sphinx.environment import BuildEnvironment
 def _get_index_data(env: BuildEnvironment) -> dict[str, Any]:
     """Retrieve or initialize the index string structure from the build environment."""
     if not hasattr(env, "ai_docs_index_data"):
-        env.ai_docs_index_data = {}  # type: ignore[attr-defined]
-    return env.ai_docs_index_data  # type: ignore[attr-defined]
+        env.ai_docs_index_data = {}  # ty: ignore[invalid-assignment]
+    return env.ai_docs_index_data  # ty: ignore[unresolved-attribute]
 
 
 # ---------------------------------------------------------------------------
@@ -257,7 +259,7 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.connect("doctree-read", on_doctree_read)
     app.connect("build-finished", on_build_finished)
     return {
-        "version": "0.1.0",
+        "version": __version__,
         "parallel_read_safe": True,
         "parallel_write_safe": True,
     }

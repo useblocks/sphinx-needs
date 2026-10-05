@@ -6,6 +6,8 @@ from pathlib import Path
 
 from sphinx.application import Sphinx
 
+import sphinx_ai_index
+
 FIXTURE_ROOT = Path(__file__).parent / "roots" / "test-basic"
 
 
@@ -190,8 +192,13 @@ def test_html_copy_source_false(tmp_path: Path) -> None:
 def test_linkcheck_builder_produces_no_index(tmp_path: Path) -> None:
     srcdir = tmp_path / "src"
     srcdir.mkdir()
+    # `linkcheck_ignore` keeps the builder off the network: the link is still collected and
+    # reported (as ignored), and the build still finishes and fires `build-finished` -- which
+    # is what this test is about -- but no request is made, so the suite runs offline
     (srcdir / "conf.py").write_text(
-        "project = 'linkcheck-test'\nextensions = ['sphinx_ai_index']\n"
+        "project = 'linkcheck-test'\n"
+        "extensions = ['sphinx_ai_index']\n"
+        "linkcheck_ignore = [r'.*']\n"
     )
     (srcdir / "index.rst").write_text(
         "Linkcheck Page\n==============\n\nLink to https://www.google.com.\n"
@@ -211,3 +218,18 @@ def test_linkcheck_builder_produces_no_index(tmp_path: Path) -> None:
     app.build()
 
     assert not (outdir / "ai_docs_index.json").exists()
+
+
+def test_setup_reports_the_package_version(tmp_path: Path) -> None:
+    """The version Sphinx records for the extension is ``__version__``, not a second copy."""
+    outdir = tmp_path / "_build" / "html"
+    app = Sphinx(
+        srcdir=str(FIXTURE_ROOT),
+        confdir=str(FIXTURE_ROOT),
+        outdir=str(outdir),
+        doctreedir=str(tmp_path / "_build" / ".doctrees"),
+        buildername="html",
+        status=io.StringIO(),
+        warning=io.StringIO(),
+    )
+    assert app.extensions["sphinx_ai_index"].version == sphinx_ai_index.__version__

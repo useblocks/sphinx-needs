@@ -1,9 +1,9 @@
 """Property-based tests for extension helper functions."""
 
+import pytest
 from docutils import nodes, utils
 from hypothesis import given
 from hypothesis import strategies as st
-import pytest
 
 from sphinx_ai_index import (
     PageSummaryNode,

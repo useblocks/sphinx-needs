@@ -70,11 +70,9 @@ Pages without the directive are still indexed; their `summary` field will be an 
 
 ## Development
 
-```bash
-git clone https://github.com/useblocks/sphinx-ai-index.git
-cd sphinx-ai-index
-rye sync
-rye run tox
-```
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for more details.
+sphinx-ai-index is developed in the
+[sphinx-needs repository](https://github.com/useblocks/sphinx-needs), as
+`packages/sphinx-ai-index`, alongside the extensions whose documentation builds use it.
+The commands -- `uv run poe test-ai-index` for the test suite, the lint and type-check
+tasks, the release recipe -- are in that repository's root
+[`AGENTS.md`](https://github.com/useblocks/sphinx-needs/blob/master/AGENTS.md).

@@ -2,8 +2,8 @@
 
 import io
 import json
-from pathlib import Path
 import tempfile
+from pathlib import Path
 from typing import Any
 
 from hypothesis import given, settings
