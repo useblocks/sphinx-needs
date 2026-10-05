@@ -10,12 +10,17 @@ import json
 import re
 import subprocess
 from collections.abc import Callable
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
+from types import SimpleNamespace
 
 import pytest
 import sphinx
 from sphinx.testing.util import SphinxTestApp
 
+from sphinx_codelinks.sphinx_extension.directives.src_trace import (
+    generate_remote_url,
+    generate_str_link_name,
+)
 from sphinx_codelinks.sphinx_extension.string_links import url_string_link
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.string_links import compiled_string_links
@@ -132,6 +137,39 @@ def _card_links(html: str, field: str) -> list[str | None]:
 def _needs(app: SphinxTestApp) -> dict[str, dict[str, object]]:
     data = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf-8"))
     return data["versions"][data["current_version"]]["needs"]
+
+
+#: a one-line need at line 7, as ``_line_span`` reads it
+_NEED_AT_7 = SimpleNamespace(
+    source_map={"start": {"row": 6, "column": 0}, "end": {"row": 6, "column": 0}}
+)
+
+
+def test_remote_url_path_is_posix_for_windows_paths() -> None:
+    """A URL path is POSIX: built from Windows paths (``str()`` would give
+    ``srca\\a.cpp``), the filled-in pattern still holds ``srca/a.cpp``."""
+    out = PureWindowsPath("C:/docs/_build/html")
+    url = generate_remote_url(
+        _NEED_AT_7,  # ty: ignore[invalid-argument-type]
+        out / "srca" / "a.cpp",  # ty: ignore[invalid-argument-type]
+        {
+            "remote_src_dir": PureWindowsPath("srca"),
+            "target_dir": out / "srca",
+        },  # ty: ignore[invalid-argument-type]
+        GITHUB,
+        "a" * 40,
+    )
+    assert url == GITHUB.format(commit="a" * 40, path="srca/a.cpp", line=7)
+    assert "\\" not in url
+
+
+def test_local_url_value_is_posix_for_windows_paths() -> None:
+    """The local value becomes the link's href (``<value>.html#L-<line>``): POSIX too."""
+    value = generate_str_link_name(
+        _NEED_AT_7,  # ty: ignore[invalid-argument-type]
+        PureWindowsPath("..", "srca", "a.cpp"),  # ty: ignore[invalid-argument-type]
+    )
+    assert value == "../srca/a.cpp#L7"
 
 
 @pytest.mark.parametrize(

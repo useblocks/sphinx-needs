@@ -43,8 +43,11 @@ def _line_span(oneline_need: OneLineNeed) -> str:
 
 
 def generate_str_link_name(oneline_need: OneLineNeed, target_filepath: Path) -> str:
-    """The local URL field's value: the copied file's path and the marker's line."""
-    return f"{target_filepath!s}#L{_line_span(oneline_need)}"
+    """The local URL field's value: the copied file's path and the marker's line.
+
+    POSIX on every platform: the value becomes the link's href.
+    """
+    return f"{target_filepath.as_posix()}#L{_line_span(oneline_need)}"
 
 
 def generate_remote_url(
@@ -57,13 +60,14 @@ def generate_remote_url(
     """The remote URL field's value: the project's ``remote_url_pattern``, filled in.
 
     ``{path}`` is the file's path below the git root (or the source directory's path,
-    outside a git repository), ``{line}`` the marker's line.
+    outside a git repository), POSIX on every platform as a URL path is; ``{line}`` the
+    marker's line.
     """
     remote_path = dirs["remote_src_dir"] / target_filepath.relative_to(
         dirs["target_dir"]
     )
     return remote_url_pattern.format(
-        commit=commit, path=str(remote_path), line=_line_span(oneline_need)
+        commit=commit, path=remote_path.as_posix(), line=_line_span(oneline_need)
     )
 
 
