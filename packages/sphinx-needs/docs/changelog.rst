@@ -52,6 +52,9 @@ Improvements
 Bug fixes
 .........
 
+- 🐛 Appending to an unset nullable array field with ``needextend`` now initializes it
+  instead of failing the documentation build (:issue:`2038`)
+
 - 🐛 An :ref:`if <if>` condition whose result has no truth value is reported, instead of
   ending the build **(changed output)** (:issue:`2025`, :pr:`2029`)
 

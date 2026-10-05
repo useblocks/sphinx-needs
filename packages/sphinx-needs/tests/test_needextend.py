@@ -80,6 +80,23 @@ def test_doc_needextend_warnings(test_app: Sphinx):
 
 @pytest.mark.parametrize(
     "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needextend_nullable_array"}],
+    indirect=True,
+)
+def test_doc_needextend_appends_to_unset_nullable_array(test_app: Sphinx):
+    app = test_app
+    app.build()
+
+    assert not app._warning.getvalue()
+    needs_data = json.loads(Path(app.outdir, "needs.json").read_text())
+    assert needs_data["versions"][""]["needs"]["story_001"]["targets"] == [
+        "first",
+        "second",
+    ]
+
+
+@pytest.mark.parametrize(
+    "test_app",
     [{"buildername": "html", "srcdir": "doc_test/doc_needextend_dynamic"}],
     indirect=True,
 )

@@ -318,7 +318,7 @@ def extend_needs_data(
                         else:
                             if isinstance(field_value.value, list):
                                 need[option_name] = [
-                                    *need[option_name],
+                                    *(need[option_name] or []),
                                     *field_value.value,
                                 ]
                             elif isinstance(field_value.value, str):
