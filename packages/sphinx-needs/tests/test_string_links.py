@@ -1010,3 +1010,202 @@ def test_compile_divergence_is_reported_once(
         if "passed validation but failed to compile" in line
     ]
     assert len(lines) == 1, lines
+
+
+# --------------------------------------------------------------------------
+# each field carries the rule of the first entry naming it: the renderers
+# read the field's rule, so these pin what that move must keep
+# --------------------------------------------------------------------------
+
+TABLE_INDEX = """\
+String links
+============
+
+.. req:: A need
+   :id: SLINK_1
+   :ticket: AB-1
+
+   Body.
+
+.. needtable::
+   :columns: id;ticket
+   :style: table
+"""
+
+
+def _table_cell(html: str, field: str) -> str:
+    """Extract the markup of one needtable cell from a rendered page."""
+    match = re.search(
+        rf'<td class="[^"]*\bneeds_{field}\b[^"]*">.*?</td>', html, flags=re.DOTALL
+    )
+    assert match is not None, f"no needtable cell for {field!r} in\n{html}"
+    return match.group(0)
+
+
+@pytest.mark.parametrize(
+    ("first_regex", "expected"),
+    [
+        pytest.param(GOOD_LINK["regex"], "FIRST AB-1", id="first-matches"),
+        pytest.param("^WILL-NEVER-MATCH$", None, id="first-blocks-second"),
+    ],
+)
+def test_first_declared_entry_wins_on_both_surfaces(
+    first_regex: str,
+    expected: str | None,
+    make_app: Any,
+    sphinx_test_tempdir: Any,
+) -> None:
+    """The first declared entry naming a field is the field's rule, in the need's meta
+    area AND in a needtable cell: a later entry naming the same field never draws,
+    not even where the first one does not match (no fallthrough).
+
+    ``test_first_matching_conf_wins`` and ``test_first_conf_blocks_a_matching_second_one``
+    pin this for the meta area only; the needtable is the other renderer.
+    """
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {
+            "first": {
+                **GOOD_LINK,
+                "regex": first_regex,
+                "link_name": "FIRST {{value}}",
+            },
+            "second": {**GOOD_LINK, "link_name": "SECOND {{value}}"},
+        },
+        index=TABLE_INDEX,
+    )
+    assert warnings_of(app) == "", warnings_of(app)
+    html = need_html(app)
+    for surface in (_meta_span(html, "ticket"), _table_cell(html, "ticket")):
+        assert "SECOND" not in surface, surface
+        if expected is None:
+            assert "<a " not in surface, surface
+            assert "AB-1" in surface, surface
+        else:
+            assert expected in surface, surface
+
+
+PAGE = """\
+Page {n}
+=======
+
+.. req:: Need {n}
+   :id: SLINK_P{n}
+   :ticket: AB-{n}
+   :lateopt: LATE-{n}
+
+   Body.
+"""
+
+PAGES = 7
+
+PARALLEL_INDEX = (
+    "String links\n============\n\n.. toctree::\n\n"
+    + "".join(f"   page{n}\n" for n in range(1, PAGES + 1))
+    + "\n.. needtable::\n   :columns: id;ticket;lateopt\n   :style: table\n"
+)
+
+LATE_LINK = {
+    "regex": r"^(?P<value>LATE-\d+)$",
+    "link_url": "https://late.example.com/{{value}}",
+    "link_name": "L:{{value}}",
+    "options": ["lateopt"],
+}
+
+
+def build_pages(
+    make_app: Any,
+    tempdir: Any,
+    string_links: Any,
+    *,
+    parallel: int,
+    extra: str = "",
+) -> Any:
+    """Build an index with a needtable plus ``PAGES`` pages of one need each.
+
+    Seven documents give a ``-j 2`` build real work to share between its workers.
+    """
+    from sphinx_needs_testkit import create_src_files_in_tmpdir
+
+    srcdir = create_src_files_in_tmpdir(
+        [
+            (
+                Path("conf.py"),
+                conf_py(
+                    string_links,
+                    "needs_fields['lateopt'] = {'nullable': True}\n" + extra,
+                ),
+            ),
+            (Path("index.rst"), PARALLEL_INDEX),
+            *((Path(f"page{n}.rst"), PAGE.format(n=n)) for n in range(1, PAGES + 1)),
+        ],
+        tempdir,
+    )
+    app = make_app(srcdir=srcdir, buildername="html", parallel=parallel)
+    app.build()
+    assert app.parallel == parallel
+    if parallel > 1:
+        # a parallel read reports its chunks ("index .. page3"), a serial one each
+        # document, so this proves the build really was shared between workers
+        status = re.sub(r"\x1b\[[0-9;]*m", "", app._status.getvalue())
+        assert re.search(r"reading sources\.\.\. \[ *\d+%\] \S+ \.\. ", status), status
+    return app
+
+
+def _page(app: Any, name: str) -> str:
+    return (Path(app.outdir) / f"{name}.html").read_text()
+
+
+def test_links_render_in_a_parallel_build(
+    make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """Under ``-j 2`` every need's card and the needtable still link.
+
+    The rules reach the write workers through the build environment, which a parallel
+    build pickles; a rule that could not be pickled, or that the workers never saw,
+    would render plain text here and nowhere in a serial build.
+    """
+    app = build_pages(make_app, sphinx_test_tempdir, {"t": GOOD_LINK}, parallel=2)
+    assert warnings_of(app) == "", warnings_of(app)
+    table = _page(app, "index")
+    for n in range(1, PAGES + 1):
+        href = f'href="https://tracker.example.com/AB-{n}">T:AB-{n}</a>'
+        assert href in _meta_span(_page(app, f"page{n}"), "ticket")
+        assert table.count(href) == 1, table
+
+
+LATE_WRITER = """
+def _add_late_entry(app, config):
+    config.needs_string_links = {{**config.needs_string_links, "late": {late!r}}}
+
+
+def setup(app):
+    app.connect("config-inited", _add_late_entry, priority=700)
+"""
+
+
+@pytest.mark.parametrize("parallel", [0, 2], ids=["serial", "parallel"])
+def test_an_entry_added_after_validation_still_renders(
+    parallel: int, make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """An entry another extension writes at ``config-inited`` after validation
+    (priority 551) is never validated, but still renders, serially and under ``-j 2``.
+
+    Validation is the only thing that runs at 551; the rules are taken from the table
+    when the schema is built, which is later, so such an entry is still seen.
+    """
+    app = build_pages(
+        make_app,
+        sphinx_test_tempdir,
+        {"t": GOOD_LINK},
+        parallel=parallel,
+        extra=LATE_WRITER.format(late=LATE_LINK),
+    )
+    assert warnings_of(app) == "", warnings_of(app)
+    assert "late" in app.config.needs_string_links
+    table = _page(app, "index")
+    for n in range(1, PAGES + 1):
+        href = f'href="https://late.example.com/LATE-{n}">L:LATE-{n}</a>'
+        assert href in _meta_span(_page(app, f"page{n}"), "lateopt")
+        assert table.count(href) == 1, table
