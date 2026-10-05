@@ -1,5 +1,5 @@
 # @Test suite for need id references attached during the build, TEST_NEED_ID_REFS_1, test, [IMPL_LNK_1]
-"""``@need-ids:`` references, attached during the build to the needs they name.
+"""The references of ``@need-ids:`` markers, attached to the needs they name.
 
 Every case builds a copy of ``doc_test/need_id_refs`` made into a git repository, so the
 remote URLs carry a real commit. ``src/refs.cpp`` references ``REQ_001`` (lines 1 and 3),

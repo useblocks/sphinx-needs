@@ -1,4 +1,4 @@
-"""``@need-ids:`` references as plain, JSON-serialisable records.
+"""The references of ``@need-ids:`` markers as plain, JSON-serialisable records.
 
 A :class:`NeedIdRef` is one reference from a located piece of source code to one need id.
 It is the exchange seam between finding references and attaching them: the ``src-trace``

@@ -1,4 +1,4 @@
-"""``@need-ids:`` references, attached during the build to the needs they name.
+"""The references of ``@need-ids:`` markers, attached to the needs they name.
 
 The ``src-trace`` directive already analyses its files, ``@need-ids:`` markers included.
 It turns each into :class:`~sphinx_codelinks.analyse.references.NeedIdRef` records and
