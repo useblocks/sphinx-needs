@@ -105,7 +105,8 @@ def test_e2e_property_always_valid_json(
         (srcdir / "conf.py").write_text(
             "project = 'e2e-test'\n"
             "extensions = ['sphinx_ai_index']\n"
-            "html_theme = 'alabaster'\n"
+            "html_theme = 'alabaster'\n",
+            encoding="utf-8",
         )
 
         # Write RST files

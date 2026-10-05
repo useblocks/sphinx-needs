@@ -35,20 +35,20 @@ def test_index_file_is_generated(tmp_path: Path) -> None:
 
 def test_index_version(tmp_path: Path) -> None:
     outdir = _build(FIXTURE_ROOT, tmp_path)
-    data = json.loads((outdir / "ai_docs_index.json").read_text())
+    data = json.loads((outdir / "ai_docs_index.json").read_text(encoding="utf-8"))
     assert data["version"] == "1.0"
 
 
 def test_index_page_title(tmp_path: Path) -> None:
     outdir = _build(FIXTURE_ROOT, tmp_path)
-    data = json.loads((outdir / "ai_docs_index.json").read_text())
+    data = json.loads((outdir / "ai_docs_index.json").read_text(encoding="utf-8"))
     assert len(data["pages"]) >= 1
     assert data["pages"][0]["title"] == "Test Project"
 
 
 def test_index_page_sections(tmp_path: Path) -> None:
     outdir = _build(FIXTURE_ROOT, tmp_path)
-    data = json.loads((outdir / "ai_docs_index.json").read_text())
+    data = json.loads((outdir / "ai_docs_index.json").read_text(encoding="utf-8"))
     sections = data["pages"][0]["sections"]
     assert "Section One" in sections
     assert "Section Two" in sections
@@ -56,13 +56,13 @@ def test_index_page_sections(tmp_path: Path) -> None:
 
 def test_index_page_summary(tmp_path: Path) -> None:
     outdir = _build(FIXTURE_ROOT, tmp_path)
-    data = json.loads((outdir / "ai_docs_index.json").read_text())
+    data = json.loads((outdir / "ai_docs_index.json").read_text(encoding="utf-8"))
     assert data["pages"][0]["summary"] == "This is the test project summary."
 
 
 def test_index_page_paths(tmp_path: Path) -> None:
     outdir = _build(FIXTURE_ROOT, tmp_path)
-    data = json.loads((outdir / "ai_docs_index.json").read_text())
+    data = json.loads((outdir / "ai_docs_index.json").read_text(encoding="utf-8"))
     page = data["pages"][0]
     assert page["html_path"] == "index.html"
     assert page["rst_source_path"].endswith("index.rst.txt")
@@ -74,14 +74,42 @@ def test_empty_summary_when_directive_absent(tmp_path: Path) -> None:
     (srcdir / "conf.py").write_text(
         "project = 'no-summary'\n"
         "extensions = ['sphinx_ai_index']\n"
-        "html_theme = 'alabaster'\n"
+        "html_theme = 'alabaster'\n",
+        encoding="utf-8",
     )
     (srcdir / "index.rst").write_text(
-        "No Summary Page\n===============\n\nJust content.\n"
+        "No Summary Page\n===============\n\nJust content.\n", encoding="utf-8"
     )
     outdir = _build(srcdir, tmp_path)
-    data = json.loads((outdir / "ai_docs_index.json").read_text())
+    data = json.loads((outdir / "ai_docs_index.json").read_text(encoding="utf-8"))
     assert data["pages"][0]["summary"] == ""
+
+
+def test_title_and_summary_outside_cp1252_round_trip(tmp_path: Path) -> None:
+    """A title and summary the Windows locale default (cp1252) cannot encode survive the build.
+
+    The source is written, and the index read, as UTF-8 -- the encoding the extension writes it
+    in -- so the test holds whatever the machine's preferred encoding is (#2032).
+    """
+    title = "Übersicht ✅ 日本語"
+    summary = "Zusammenfassung ✅ 日本語の概要"
+    srcdir = tmp_path / "src"
+    srcdir.mkdir()
+    (srcdir / "conf.py").write_text(
+        "project = 'non-cp1252'\n"
+        "extensions = ['sphinx_ai_index']\n"
+        "html_theme = 'alabaster'\n",
+        encoding="utf-8",
+    )
+    (srcdir / "index.rst").write_text(
+        f"{title}\n{'=' * 40}\n\n.. page-summary::\n\n   {summary}\n\nContent.\n",
+        encoding="utf-8",
+    )
+    outdir = _build(srcdir, tmp_path)
+    data = json.loads((outdir / "ai_docs_index.json").read_text(encoding="utf-8"))
+    page = data["pages"][0]
+    assert page["title"] == title
+    assert page["summary"] == summary
 
 
 def test_non_html_builder_produces_no_index(tmp_path: Path) -> None:
@@ -108,13 +136,14 @@ def test_custom_sourcelink_suffix(tmp_path: Path) -> None:
         "project = 'custom-suffix'\n"
         "extensions = ['sphinx_ai_index']\n"
         "html_theme = 'alabaster'\n"
-        "html_sourcelink_suffix = '.rst_src'\n"
+        "html_sourcelink_suffix = '.rst_src'\n",
+        encoding="utf-8",
     )
     (srcdir / "index.rst").write_text(
-        "Custom Suffix Page\n==================\n\nContent.\n"
+        "Custom Suffix Page\n==================\n\nContent.\n", encoding="utf-8"
     )
     outdir = _build(srcdir, tmp_path)
-    data = json.loads((outdir / "ai_docs_index.json").read_text())
+    data = json.loads((outdir / "ai_docs_index.json").read_text(encoding="utf-8"))
     page = data["pages"][0]
     assert page["rst_source_path"].endswith("index.rst.rst_src")
 
@@ -126,13 +155,14 @@ def test_empty_sourcelink_suffix(tmp_path: Path) -> None:
         "project = 'empty-suffix'\n"
         "extensions = ['sphinx_ai_index']\n"
         "html_theme = 'alabaster'\n"
-        "html_sourcelink_suffix = ''\n"
+        "html_sourcelink_suffix = ''\n",
+        encoding="utf-8",
     )
     (srcdir / "index.rst").write_text(
-        "Empty Suffix Page\n=================\n\nContent.\n"
+        "Empty Suffix Page\n=================\n\nContent.\n", encoding="utf-8"
     )
     outdir = _build(srcdir, tmp_path)
-    data = json.loads((outdir / "ai_docs_index.json").read_text())
+    data = json.loads((outdir / "ai_docs_index.json").read_text(encoding="utf-8"))
     page = data["pages"][0]
     assert page["rst_source_path"] == "_sources/index.rst"
 
@@ -141,12 +171,14 @@ def test_dirhtml_builder(tmp_path: Path) -> None:
     srcdir = tmp_path / "src"
     srcdir.mkdir()
     (srcdir / "conf.py").write_text(
-        "project = 'dirhtml-test'\nextensions = ['sphinx_ai_index']\n"
+        "project = 'dirhtml-test'\nextensions = ['sphinx_ai_index']\n", encoding="utf-8"
     )
     (srcdir / "index.rst").write_text(
-        "Dirhtml Page\n============\n\n.. toctree::\n\n   subpage\n"
+        "Dirhtml Page\n============\n\n.. toctree::\n\n   subpage\n", encoding="utf-8"
     )
-    (srcdir / "subpage.rst").write_text("Subpage\n=======\n\nContent.\n")
+    (srcdir / "subpage.rst").write_text(
+        "Subpage\n=======\n\nContent.\n", encoding="utf-8"
+    )
     outdir = tmp_path / "_build" / "dirhtml"
     doctreedir = tmp_path / "_build" / ".doctrees"
     outdir.mkdir(parents=True)
@@ -161,7 +193,7 @@ def test_dirhtml_builder(tmp_path: Path) -> None:
     )
     app.build()
 
-    data = json.loads((outdir / "ai_docs_index.json").read_text())
+    data = json.loads((outdir / "ai_docs_index.json").read_text(encoding="utf-8"))
     # Sort pages to easily assert index then subpage
     pages = sorted(data["pages"], key=lambda p: p["html_path"])
 
@@ -178,12 +210,15 @@ def test_html_copy_source_false(tmp_path: Path) -> None:
     (srcdir / "conf.py").write_text(
         "project = 'no-copy-source-test'\n"
         "extensions = ['sphinx_ai_index']\n"
-        "html_copy_source = False\n"
+        "html_copy_source = False\n",
+        encoding="utf-8",
     )
-    (srcdir / "index.rst").write_text("No Copy Source\n==============\n\nContent.\n")
+    (srcdir / "index.rst").write_text(
+        "No Copy Source\n==============\n\nContent.\n", encoding="utf-8"
+    )
     outdir = _build(srcdir, tmp_path)
 
-    data = json.loads((outdir / "ai_docs_index.json").read_text())
+    data = json.loads((outdir / "ai_docs_index.json").read_text(encoding="utf-8"))
     page = data["pages"][0]
     assert page["html_path"] == "index.html"
     assert page["rst_source_path"] == ""
@@ -198,10 +233,12 @@ def test_linkcheck_builder_produces_no_index(tmp_path: Path) -> None:
     (srcdir / "conf.py").write_text(
         "project = 'linkcheck-test'\n"
         "extensions = ['sphinx_ai_index']\n"
-        "linkcheck_ignore = [r'.*']\n"
+        "linkcheck_ignore = [r'.*']\n",
+        encoding="utf-8",
     )
     (srcdir / "index.rst").write_text(
-        "Linkcheck Page\n==============\n\nLink to https://www.google.com.\n"
+        "Linkcheck Page\n==============\n\nLink to https://www.google.com.\n",
+        encoding="utf-8",
     )
     outdir = tmp_path / "_build" / "linkcheck"
     doctreedir = tmp_path / "_build" / ".doctrees"
