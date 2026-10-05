@@ -1,4 +1,5 @@
 from collections import deque
+from collections.abc import Callable
 from dataclasses import MISSING, dataclass, field, fields, replace
 from enum import Enum
 from pathlib import Path
@@ -588,6 +589,69 @@ def load_codelinks_table(path: Path) -> dict[str, object] | None:
     return select_table(load_toml(path), CODELINKS_TABLE, source=path)
 
 
+#: The keys a ``[codelinks.projects.<name>]`` table may set. ``source_discover_config``
+#: and ``analyse_config`` are built from the first two at load time, never read.
+PROJECT_KEYS: frozenset[str] = frozenset(
+    {"source_discover", "analyse", "remote_url_pattern"}
+)
+
+
+def drop_unread_keys(
+    table: dict[str, object], source: Path, warn: Callable[[str], None]
+) -> dict[str, object]:
+    """Return *table* without the keys sphinx-codelinks does not read, warning per table.
+
+    ``ubproject.toml`` is shared by several tools, and by several versions of each, so
+    a key this version does not model is a warning, never a refusal. ``config_from_toml``
+    is skipped as well: it names the file being read, so a file cannot set it.
+    Both readers -- the Sphinx extension and ``codelinks analyse`` -- call this.
+
+    :param table: The raw ``[codelinks]`` table, as ``load_codelinks_table`` returns it.
+    :param source: The file the table came from, named in the warnings.
+    :param warn: Called once per table that carries an unread key, and once for ``config_from_toml``.
+    :return: A copy holding only the keys that are read; project tables are copied too.
+    """
+    known = CodeLinksConfig.field_names() - {"config_from_toml"}
+    if "config_from_toml" in table:
+        warn(
+            f"{source}: [codelinks] config_from_toml is ignored in a TOML file -- it "
+            "names the file to read, so set src_trace_config_from_toml in conf.py or "
+            "with -D instead."
+        )
+    unknown = sorted(set(table) - known - {"config_from_toml"})
+    if unknown:
+        warn(
+            f"{source}: [codelinks] key(s) {unknown} are not known to sphinx-codelinks "
+            f"and are ignored; supported keys are {sorted(known)}."
+        )
+    filtered = {key: value for key, value in table.items() if key in known}
+
+    projects = filtered.get("projects")
+    if isinstance(projects, dict):
+        filtered["projects"] = {
+            name: (
+                _drop_unread_project_keys(name, project, source, warn)
+                if isinstance(project, dict)
+                else project
+            )
+            for name, project in projects.items()
+        }
+    return filtered
+
+
+def _drop_unread_project_keys(
+    name: str, project: dict[str, object], source: Path, warn: Callable[[str], None]
+) -> dict[str, object]:
+    unknown = sorted(set(project) - PROJECT_KEYS)
+    if unknown:
+        warn(
+            f"{source}: [codelinks.projects.{name}] key(s) {unknown} are not known to "
+            f"sphinx-codelinks and are ignored; supported keys are "
+            f"{sorted(PROJECT_KEYS)}."
+        )
+    return {key: value for key, value in project.items() if key in PROJECT_KEYS}
+
+
 SRC_TRACE_CACHE: str = "src_trace_cache"
 
 
@@ -835,7 +899,7 @@ def check_schema(config: CodeLinksConfig) -> list[str]:
             validate(instance=value, schema=schema)
         except ValidationError as e:
             errors.append(
-                f"Schema validation error in filed '{_field_name}': {e.message}"
+                f"Schema validation error in field '{_field_name}': {e.message}"
             )
     return errors
 

@@ -37,6 +37,8 @@ When using a TOML configuration file:
 - Configuration options are placed under a ``[codelinks]`` section
 - The ``src_trace_`` prefix is omitted in the TOML file
 - TOML configuration overrides settings in :file:`conf.py`
+- ``config_from_toml`` itself can only be set in :file:`conf.py` or with ``-D``: inside the TOML it is ignored, with a ``codelinks.config`` warning
+- A key under ``[codelinks]`` or ``[codelinks.projects.<name>]`` that Sphinx-CodeLinks does not know is skipped with a ``codelinks.config`` warning (``codelinks analyse`` prints the same warning), so a file shared with another tool or a newer version never fails the build
 - A value given on the command line with ``-D`` (``sphinx-build -D src_trace_set_local_url=0``) overrides both.
   ``src_trace_projects`` can only come from :file:`conf.py` or the TOML -- the dotted ``-D`` form is not supported --
   and Sphinx refuses ``-D src_trace_outdir`` as well, so a TOML ``outdir`` stands
