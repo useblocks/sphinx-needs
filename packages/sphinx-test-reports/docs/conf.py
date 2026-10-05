@@ -62,6 +62,8 @@ extensions = [
     "sphinxcontrib.plantuml",
     "sphinx_design",
     "sphinx_immaterial",
+    # writes `ai_docs_index.json`, the page index ubCode reads (packages/sphinx-ai-index)
+    "sphinx_ai_index",
 ]
 
 

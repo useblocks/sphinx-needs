@@ -21,6 +21,14 @@ the values that make it drop a page) is pinned in
 output, or to when it writes, is a change to that file first — and, for anything but a new
 field, to ubCode alongside. The format's own `"version"` is not the package version.
 
+## Where it runs
+
+Every `sphinx-*` docs site in this repository loads it, so each publishes an index. In CI
+the docs environments install it from the workspace like any member; on Read the Docs each
+site's config pip-installs `packages/sphinx-ai-index` from the checkout before the package
+it documents, so the sites always build with the copy beside them, and a pull request that
+touches only this package still rebuilds them.
+
 ## Manifest
 
 `[project]` and `[build-system]` only, like every member: no `[dependency-groups]`,
