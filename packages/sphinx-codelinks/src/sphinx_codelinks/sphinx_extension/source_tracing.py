@@ -33,9 +33,13 @@ from sphinx_codelinks.sphinx_extension.directives.src_trace import (
 from sphinx_codelinks.sphinx_extension.html_wrapper import html_wrapper
 from sphinx_codelinks.sphinx_extension.need_id_refs import (
     attach_on_post_processing,
-    merge_info,
     need_id_refs_store,
+)
+from sphinx_codelinks.sphinx_extension.rediscovery import (
+    find_outdated_scopes,
+    merge_info,
     purge_doc,
+    scope_store,
 )
 from sphinx_codelinks.sphinx_extension.string_links import register_string_links
 from sphinx_needs.api import add_field, add_need_type
@@ -107,6 +111,8 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.connect("config-inited", check_sphinx_configuration)
 
     app.connect("env-before-read-docs", prepare_env)
+    # a file added to a src-trace scope re-reads the hosting document (#2040)
+    app.connect("env-get-outdated", find_outdated_scopes)
     app.connect("env-purge-doc", purge_doc)
     app.connect("env-merge-info", merge_info)
     # after every need is collected and before needextend is applied: a user's
@@ -323,6 +329,7 @@ def prepare_env(
     """
     src_trace_sphinx_config = CodeLinksConfig.from_sphinx(app.config)
     need_id_refs_store(env)
+    scope_store(env)
 
     # Set time measurement flag
     if src_trace_sphinx_config.debug_measurement:

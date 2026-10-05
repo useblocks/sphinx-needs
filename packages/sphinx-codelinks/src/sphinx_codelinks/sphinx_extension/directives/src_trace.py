@@ -1,7 +1,6 @@
 import shutil
 from collections.abc import Callable
-from dataclasses import replace
-from pathlib import Path, PurePath
+from pathlib import Path
 from typing import Any, ClassVar, cast
 
 from docutils import nodes
@@ -11,21 +10,31 @@ from sphinx.util.docutils import SphinxDirective
 
 from sphinx_codelinks.analyse.analyse import SourceAnalyse
 from sphinx_codelinks.analyse.models import OneLineNeed
-from sphinx_codelinks.analyse.references import NeedIdRef, need_id_ref_records
 from sphinx_codelinks.config import (
     CodeLinksConfig,
     CodeLinksProjectConfigType,
-    anchor_preproc_paths,
     file_lineno_href,
+    locate_src_dir,
     need_id_refs_field,
 )
-from sphinx_codelinks.source_discover.config import SourceDiscoverConfig
-from sphinx_codelinks.source_discover.source_discover import SourceDiscover
 from sphinx_codelinks.sphinx_extension.debug import measure_time
 from sphinx_codelinks.sphinx_extension.need_id_refs import need_id_refs_store
+from sphinx_codelinks.sphinx_extension.project_analysis import (
+    collect_need_id_refs,
+    fill_remote_url,
+    prepare_analyse_config,
+    url_context,
+)
+from sphinx_codelinks.sphinx_extension.rediscovery import (
+    ScopeKind,
+    ScopeRecord,
+    discover_scope,
+    file_fingerprint,
+    files_fingerprint,
+    scope_store,
+)
 from sphinx_needs.api import add_need
 from sphinx_needs.utils import add_doc
-from ub_project import anchor
 
 logger = logging.getLogger(__name__)
 
@@ -52,19 +61,6 @@ def generate_str_link_name(oneline_need: OneLineNeed, target_filepath: Path) -> 
     POSIX on every platform: the value becomes the link's href.
     """
     return f"{target_filepath.as_posix()}#L{_line_span(oneline_need)}"
-
-
-def fill_remote_url(
-    remote_url_pattern: str, commit: str | None, remote_path: PurePath, line: int | str
-) -> str:
-    """A project's ``remote_url_pattern`` filled in for one file and line.
-
-    ``{path}`` is POSIX on every platform, as a URL path is. The one place both a
-    created need's ``remote-url`` and a reference's remote URL are formed.
-    """
-    return remote_url_pattern.format(
-        commit=commit, path=remote_path.as_posix(), line=line
-    )
 
 
 def generate_remote_url(
@@ -124,106 +120,66 @@ class SourceTracingDirective(SphinxDirective):
             project
         ]
         src_discover_config = src_trace_conf["source_discover_config"]
-        src_dir = self.locate_src_dir(src_trace_sphinx_config, src_discover_config)
-
+        src_dir = locate_src_dir(
+            self.env.app.confdir, src_trace_sphinx_config, src_discover_config
+        )
         out_dir = Path(self.env.app.outdir)
-        # the directory where the source files are copied to
-        target_dir = out_dir / src_dir.name
 
-        source_files = self.get_src_files(self.options, src_dir, src_discover_config)
+        kind, target = self.scope()
+        source_files = discover_scope(src_dir, src_discover_config, kind, target)
 
         # add source files into the dependency
         # https://www.sphinx-doc.org/en/master/extdev/envapi.html#sphinx.environment.BuildEnvironment.note_dependency
         for source_file in source_files:
             self.env.note_dependency(str(source_file.resolve()))
+        # and record the scope, so that a file ADDED to it re-reads this document
+        # (a new file is a dependency of nothing; ``rediscovery.find_outdated_scopes``)
+        if kind == "file":
+            found = file_fingerprint(src_dir, target)
+        else:
+            found = files_fingerprint(source_files, (src_dir / target).resolve())
+        scope_store(self.env).setdefault(self.env.docname, []).append(
+            ScopeRecord(project=project, kind=kind, target=target, fingerprint=found)
+        )
 
-        # ``analyse_config`` is stored in the ``src_trace_projects`` config value,
-        # which is registered with ``rebuild="env"`` and therefore persisted into
-        # ``environment.pickle``. Mutating it in place would make Sphinx compare the
-        # build-populated object against the freshly generated (empty) config on the
-        # next build and report ``[config changed ('src_trace_projects')]`` every
-        # time, forcing a full re-read. Build a per-directive copy instead so the
-        # stored config value stays equal to what ``generate_project_configs`` yields.
-        base_analyse_config = src_trace_conf["analyse_config"]
-        # Resolve the config file's directory once (used for git_root + preproc).
-        conf_dir = Path(self.env.app.confdir)
-        if src_trace_sphinx_config.config_from_toml:
-            src_trace_toml_path = Path(src_trace_sphinx_config.config_from_toml)
-            conf_dir = anchor(src_trace_toml_path.parent, conf_dir)
-        # git_root shall be relative to the config file's location (if provided)
-        git_root = base_analyse_config.git_root
-        if git_root:
-            git_root = anchor(git_root, conf_dir).resolve()
-        # preprocessor compile_commands / include dirs are relative to the config
-        # file's location too (like src_dir / git_root).
-        preprocessor = base_analyse_config.preprocessor
-        if preprocessor is not None:
-            preprocessor = anchor_preproc_paths(preprocessor, conf_dir)
+        analyse_config = prepare_analyse_config(
+            self.env.app.confdir,
+            src_trace_sphinx_config,
+            src_trace_conf["analyse_config"],
+            src_dir=src_dir,
+            src_files=source_files,
+        )
+        preprocessor = analyse_config.preprocessor
+        if preprocessor is not None and preprocessor.compile_commands is not None:
             # Editing an explicitly-configured compile_commands.json changes the
             # flags (hence which #if branches are active, hence the extracted
             # markers), so register it as a build dependency to trigger a rebuild.
             # (Auto-discovered databases are located per-file inside the analysis
             # and are not tracked here.)
-            if preprocessor.compile_commands is not None:
-                self.env.note_dependency(str(preprocessor.compile_commands))
-        analyse_config = replace(
-            base_analyse_config,
-            src_dir=src_dir,
-            src_files=source_files,
-            git_root=git_root,
-            preprocessor=preprocessor,
-        )
+            self.env.note_dependency(str(preprocessor.compile_commands))
         src_analyse = SourceAnalyse(analyse_config, name=project)
         src_analyse.run()
-
-        dirs = {
-            "src_dir": src_dir,
-            "out_dir": out_dir,
-            "target_dir": target_dir,
-        }
 
         # The fields' string links are registered once, at config-inited
         # (``sphinx_extension/string_links.py``): written here, at read time, they
         # were lost in every ``-j N`` worker.
-        local_url_field = None
-        remote_url_field = None
-        remote_url_pattern = None
-        if src_trace_sphinx_config.set_local_url:
-            local_url_field = src_trace_sphinx_config.local_url_field
-        if (
-            src_trace_sphinx_config.set_remote_url
-            and src_trace_conf["remote_url_pattern"]
-        ):
-            remote_url_field = src_trace_sphinx_config.remote_url_field
-            remote_url_pattern = src_trace_conf["remote_url_pattern"]
-            if not src_analyse.git_root:
-                # No git root found, use the source directory as the remote source directory
-                remote_src_dir = src_dir
-            else:
-                remote_src_dir = src_dir.relative_to(src_analyse.git_root)
-            dirs["remote_src_dir"] = remote_src_dir
-            if src_analyse.git_root is None or src_analyse.git_commit_rev is None:
-                # no git root, or a repository without a commit: no remote URL (#2045)
-                # -- the pattern would be filled with commit None (and, without a git
-                # root, the build machine's absolute path). ubCode writes none either;
-                # the analysis has already warned (codelinks.git_root / git_ref).
-                remote_url_pattern = None
+        context = url_context(
+            src_trace_sphinx_config, src_trace_conf, src_analyse, src_dir, out_dir
+        )
 
         # keep the @need-ids references, to be attached once every need is known
         if need_id_refs_field(src_trace_sphinx_config, src_trace_conf) is not None:
             need_id_refs_store(self.env).setdefault(self.env.docname, []).extend(
-                self.collect_need_id_refs(
-                    src_analyse, project, dirs, local_url_field, remote_url_pattern
-                )
+                collect_need_id_refs(src_analyse, project, context)
             )
 
         # render needs from the source files
         rendered_needs = self.render_needs(
             src_analyse,
-            local_url_field,
-            remote_url_field,
-            dirs,
-            remote_url_pattern,
+            context.local_url_field,
+            context.remote_url_field,
+            context.dirs,
+            context.remote_url_pattern,
         )
 
         # for post-processing of need links
@@ -232,105 +188,12 @@ class SourceTracingDirective(SphinxDirective):
 
         return rendered_needs
 
-    def get_src_files(
-        self,
-        additional_options: dict[str, str],
-        src_dir: Path,
-        src_discover_config: SourceDiscoverConfig,
-    ) -> list[Path]:
-        """Leverage SourceDiscover to find sources files from the given directory."""
-        source_files = []
+    def scope(self) -> tuple[ScopeKind, str]:
+        """The directive's scope: ``:file:``, else ``:directory:``, else the project's
+        whole source directory (``"./"``)."""
         if "file" in self.options:
-            file: str = self.options["file"]
-            filepath = src_dir / file
-            source_files.append(filepath.resolve())
-            additional_options["file"] = file
-        else:
-            directory = self.options.get("directory")
-            if directory is None:
-                # when neither "file" and "directory" are given, the project root dir is by default
-                directory = "./"
-            else:
-                additional_options["directory"] = directory
-            dir_path = src_dir / directory
-            # create a new config for the specified directory
-            src_discover = SourceDiscoverConfig(
-                dir_path,
-                gitignore=src_discover_config.gitignore,
-                include=src_discover_config.include,
-                exclude=src_discover_config.exclude,
-                follow_links=src_discover_config.follow_links,
-                comment_type=src_discover_config.comment_type,
-            )
-            source_discover = SourceDiscover(src_discover)
-            source_files.extend(source_discover.source_paths)
-
-        return source_files
-
-    def locate_src_dir(
-        self,
-        src_trace_sphinx_config: CodeLinksConfig,
-        src_discover_config: SourceDiscoverConfig,
-    ) -> Path:
-        """Locate the source directory based on the configuration."""
-        #  src dir in src_trace_conf is relative to conf_dir by default
-        conf_dir = Path(self.env.app.confdir)
-        # if config toml file is used, src dir is relative to the config toml
-        if src_trace_sphinx_config.config_from_toml:
-            src_trace_toml_path = Path(src_trace_sphinx_config.config_from_toml)
-            conf_dir = anchor(src_trace_toml_path.parent, conf_dir)
-
-        src_dir = anchor(src_discover_config.src_dir, conf_dir).resolve()
-        return src_dir
-
-    def collect_need_id_refs(
-        self,
-        src_analyse: SourceAnalyse,
-        project: str,
-        dirs: dict[str, Path],
-        local_url_field: str | None,
-        remote_url_pattern: str | None,
-    ) -> list[NeedIdRef]:
-        """The analysis' ``@need-ids:`` references, as records.
-
-        Their URLs follow the created needs' rules: the remote one fills the project's
-        ``remote_url_pattern`` exactly as a created need's does. The local one -- only
-        when it is the value, i.e. there is no remote URL -- names the source copied
-        into the build output, beside which its page is generated; with a remote URL
-        nothing is copied, so no orphan copy or page is left in the output.
-        """
-        src_dir = dirs["src_dir"]
-
-        def remote_url(filepath: Path, line: int) -> str | None:
-            if remote_url_pattern is None:
-                return None
-            return fill_remote_url(
-                remote_url_pattern,
-                src_analyse.git_commit_rev,
-                dirs["remote_src_dir"] / filepath.relative_to(src_dir),
-                line,
-            )
-
-        def local_url(filepath: Path, line: int) -> str | None:
-            if local_url_field is None or remote_url_pattern is not None:
-                return None
-            target_filepath = dirs["target_dir"] / filepath.relative_to(src_dir)
-            if str(target_filepath) not in file_lineno_href.mappings:
-                # copy the file and have its page generated, as for a created need
-                target_filepath.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(filepath, target_filepath)
-                file_lineno_href.mappings[str(target_filepath)] = {}
-            relative = target_filepath.relative_to(dirs["out_dir"]).as_posix()
-            return f"{relative}#L{line}"
-
-        return need_id_ref_records(
-            src_analyse.need_id_refs,
-            project=project,
-            root=src_analyse.git_root or src_dir,
-            root_kind="git" if src_analyse.git_root else "src_dir",
-            remote_url=remote_url,
-            local_url=local_url,
-        )
+            return "file", self.options["file"]
+        return "directory", self.options.get("directory", "./")
 
     def render_needs(
         self,
