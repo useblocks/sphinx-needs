@@ -49,7 +49,7 @@ Improvements
   The undocumented warning ``if`` gives for a condition whose result is not a bool is
   now listed in its documentation.
 
-- ♻️ Each field carries its :ref:`needs_string_links` rule **(changed output)** (:pr:`XXXX`)
+- ♻️ Each field carries its :ref:`needs_string_links` rule **(changed output)** (:pr:`2059`)
 
   When the schema is built, every field takes the rule of the first ``needs_string_links``
   entry whose ``options`` name it, and the need's meta area and :ref:`needtable` cells read
