@@ -445,7 +445,11 @@ def test_copies_are_byte_identical(tmp_path: Path, make_app: _MakeApp) -> None:
     for name in ("refs.cpp", "impl.cpp"):
         source = (tmp_path / "src" / name).read_bytes()
         assert Path(app.outdir, "src", name).read_bytes() == source, name
-        assert Path(app.outdir, "src", name).with_suffix(".html").exists(), name
+        page = Path(app.outdir, "src", name).with_suffix(".html")
+        assert page.exists(), name
+    assert "café: naïve ✓" in Path(app.outdir, "src", "refs.html").read_text(
+        encoding="utf-8"
+    )
 
 
 _INJECT = """
