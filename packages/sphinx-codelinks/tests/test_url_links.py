@@ -1,4 +1,4 @@
-# @Test suite for the URL fields' string links, TEST_URL_LINKS_1, test, [IMPL_LNK_1]
+# @Test suite for the URL fields' string links, TEST_URL_LINKS_1, test, [IMPL_URL_LINKS_1]
 """The ``local-url`` / ``remote-url`` string links, registered at ``config-inited``.
 
 The directive used to write them into the configuration at read time, which a ``-j N``
@@ -245,9 +245,9 @@ def test_parallel_build_renders_the_url_links(
 def test_each_project_links_with_its_own_remote_url_pattern(
     tmp_path: Path, make_app: Callable[..., SphinxTestApp]
 ) -> None:
-    """Two projects with different patterns: each need's ``remote-url`` is its own
-    project's URL, in ``needs.json`` and on the card (it used to be the pattern of the
-    project read last, for every need)."""
+    """Two projects with different patterns: each need's card links with its own
+    project's pattern (it used to be the pattern of the project read last, for every
+    need), and ``needs.json`` holds that URL."""
     commit = _project(tmp_path, patterns={"a": GITHUB, "b": GITLAB})
     app = make_app(srcdir=tmp_path / "docs", freshenv=True)
     app.build()
@@ -255,14 +255,29 @@ def test_each_project_links_with_its_own_remote_url_pattern(
     assert_no_warnings(app)
     url_a = GITHUB.format(commit=commit, path="srca/a.cpp", line=1)
     url_b = GITLAB.format(commit=commit, path="srcb/b.cpp", line=2)
-    needs = _needs(app)
-    assert needs["IMPL_A"]["remote-url"] == url_a
-    assert needs["IMPL_B"]["remote-url"] == url_b
-    assert needs["IMPL_A"]["local-url"] == "srca/a.cpp#L1"
+    # the cards first: on master these name the last-read-wins defect
     index = Path(app.outdir, "index.html").read_text(encoding="utf-8")
     later = Path(app.outdir, "later.html").read_text(encoding="utf-8")
     assert _card_links(index, "remote-url") == [url_a]
     assert _card_links(later, "remote-url") == [url_b]
+    needs = _needs(app)
+    assert needs["IMPL_A"]["remote-url"] == url_a
+    assert needs["IMPL_B"]["remote-url"] == url_b
+    assert needs["IMPL_A"]["local-url"] == "srca/a.cpp#L1"
+
+
+def test_a_needs_string_links_that_is_not_a_dict_is_left_alone(
+    tmp_path: Path, make_app: Callable[..., SphinxTestApp]
+) -> None:
+    """codelinks adds nothing to a ``needs_string_links`` that is not a dict; the build
+    goes on with Sphinx-Needs' own warning about it."""
+    _project(tmp_path, patterns={"a": GITHUB}, conf_extra="needs_string_links = []\n")
+    app = make_app(srcdir=tmp_path / "docs", freshenv=True)
+    app.build()
+
+    warnings = build_warnings(app)
+    assert len(warnings) == 1, warnings
+    assert "needs_string_links must be a dict, got []." in warnings[0]
 
 
 def test_rebuild_does_not_change_the_string_links(

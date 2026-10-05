@@ -58,6 +58,7 @@ def local_url_string_link(field: str) -> dict[str, Any]:
     }
 
 
+# @Register the URL fields' string links at config-inited, IMPL_URL_LINKS_1, impl, [FE_DEF]
 def register_string_links(_app: Sphinx, config: _SphinxConfig) -> None:
     """Add the string links for the URL fields to ``needs_string_links``.
 
