@@ -63,6 +63,8 @@ Improvements
   warns while the configuration is read and renders as plain text where needtables and
   custom layouts linked it, and a link type, which already warned, is no longer linked by a
   custom layout's ``meta()``.
+  The first build after upgrading re-reads every document, once, because the version of the
+  data Sphinx-Needs stores in the environment has changed.
 
 Bug fixes
 .........

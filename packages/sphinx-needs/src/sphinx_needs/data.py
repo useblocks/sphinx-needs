@@ -41,7 +41,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 8
+ENV_DATA_VERSION: Final = 9
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -56,6 +56,11 @@ Version 8 changes the HTML a needtable renders to (the markup contract in
 ``design/needstable-contract.md``). The table is built at ``doctree-resolved``, so an
 unbumped rebuild over an existing ``_build`` writes no page whose source did not change
 and leaves DataTables-era markup on disk for the new client-side script to meet.
+
+Version 9 folds the :ref:`needs_string_links` rules onto the field schema. A project that
+named a field outside the field schema, or wrote an entry after the schema was built,
+renders those values as text, so an unbumped rebuild over an existing ``_build`` writes
+no page whose source did not change and leaves them linked on disk.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """
