@@ -301,9 +301,6 @@ def test_two_projects_naming_one_field_share_its_list(
             "[codelinks.projects.two.source_discover]\n"
             'src_dir = "../src2"\n'
             'comment_type = "cpp"\n'
-            "[codelinks.projects.two.analyse.oneline_comment_style]\n"
-            'start_sequence = "[["\n'
-            'end_sequence = "]]"\n'
         ),
         files={"src2/more.cpp": "// @need-ids: REQ_001\nvoid more() {}\n"},
         append={"docs/later.rst": "\n.. src-trace::\n   :project: two\n"},
@@ -374,7 +371,7 @@ def test_no_remote_url_without_a_git_root(
         toml_replace=None
         if local
         else ("set_local_url = true", "set_local_url = false"),
-        files={"src/impl.cpp": "// [[implemented without git, IMPL_NOGIT]]\n"},
+        files={"src/impl.cpp": "// @implemented without git, IMPL_NOGIT\n"},
     )
     app = _build(tmp_path, make_app)
 

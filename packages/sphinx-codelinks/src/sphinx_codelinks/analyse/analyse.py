@@ -303,6 +303,23 @@ class SourceAnalyse:
             )
         return anchors
 
+    def _is_need_id_refs_line(self, line: str) -> bool:
+        """Whether a comment line is an ``@need-ids:`` reference rather than a need.
+
+        A line whose text, after comment decoration and whitespace, starts with a
+        configured need-id-refs marker is a reference, and never a one-line need --
+        ubCode's precedence. Without it the default one-line start sequence ``@`` also
+        matched ``// @need-ids: A, B`` and made a need titled ``need-ids: A`` with the id
+        ``B``.
+        """
+        for marker in self.analyse_config.need_id_refs_config.markers:
+            marker_idx = line.find(marker)
+            if marker_idx != -1 and not any(
+                char.isalnum() for char in line[:marker_idx]
+            ):
+                return True
+        return False
+
     def extract_oneline_need(
         self,
         text: str,
@@ -316,6 +333,9 @@ class SourceAnalyse:
             lines[0] = f"{lines[0]}{UNIX_NEWLINE}"
 
         for line in lines:
+            if self._is_need_id_refs_line(line):
+                row_offset += 1
+                continue
             resolved = oneline_parser(line, oneline_comment_style)
             if not resolved:
                 row_offset += 1

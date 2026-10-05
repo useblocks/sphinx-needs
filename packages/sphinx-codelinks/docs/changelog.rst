@@ -62,6 +62,10 @@ New and Improved
   the source line (``src/refs.cpp:5``), and each project reports
   ``N references attached, M unknown``. The attach is on when local or remote URLs are,
   as in ubCode; ``ref_url_field = ""`` switches it off for a project.
+  A comment that starts with a configured ``@need-ids:`` marker is a reference and never a
+  one-line need, as in ubCode: on the default one-line style, whose start sequence ``@``
+  matched it too, ``// @need-ids: A, B`` used to become a need with the id ``B`` (or stop
+  the build with ``duplicate_id``).
 
   ``ref_url_field`` in ``[codelinks.projects.*]`` is accepted, where a shared
   ``ubproject.toml`` that set it for ubCode stopped the build with

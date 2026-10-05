@@ -317,6 +317,28 @@ def test_write_rst_invalid_json(tmp_path: Path) -> None:
     assert "Expecting" in result.output
 
 
+def test_analyse_never_reads_a_need_ids_comment_as_a_need(tmp_path: Path) -> None:
+    """``codelinks analyse`` on the default one-line style: the ``@need-ids:`` comment
+    is one reference record, and ``marked_content.json`` gains no need from it."""
+    (tmp_path / "refs.cpp").write_text(
+        "// @need-ids: REQ_001, IMPL_X\nvoid a() {}\n", encoding="utf-8"
+    )
+    config = tmp_path / "ubproject.toml"
+    config.write_text(
+        '[codelinks.projects.p.source_discover]\nsrc_dir = "./"\ncomment_type = "cpp"\n',
+        encoding="utf-8",
+    )
+    outdir = tmp_path / "out"
+    outdir.mkdir()
+
+    result = runner.invoke(app, ["analyse", str(config), "--outdir", str(outdir)])
+
+    assert result.exit_code == 0, result.output
+    marked = json.loads((outdir / "marked_content.json").read_text(encoding="utf-8"))
+    types = [obj["type"] for objs in marked.values() for obj in objs]
+    assert types == ["need-id-refs"]
+
+
 def test_write_rst_still_works_and_says_it_is_deprecated(tmp_path: Path) -> None:
     """``write rst`` is deprecated, not removed: it writes the file as before, and
     prints the notice on stderr (stdout carries only what it always did)."""

@@ -105,3 +105,29 @@ def test_records_from_an_analysis(tmp_path: Path) -> None:
     assert first.remote_url == "remote:refs.cpp:1"
     assert first.local_url == "local:refs.cpp:1"
     assert NeedIdRef.from_dict(json.loads(json.dumps(first.to_dict()))) == first
+
+
+def test_a_need_ids_comment_is_never_a_one_line_need(tmp_path: Path) -> None:
+    """On the default one-line style (start sequence ``@``) a comment starting with
+    the ``@need-ids:`` marker is a reference, never a need (ubCode's precedence); a
+    real one-line need beside it still parses."""
+    src = tmp_path / "src"
+    src.mkdir()
+    source = src / "refs.cpp"
+    source.write_text(
+        "// @need-ids: REQ_001, IMPL_X\n"
+        "void a() {}\n"
+        "// @A real one-line need, IMPL_REAL\n"
+        "void b() {}\n",
+        encoding="utf-8",
+    )
+    analyse = SourceAnalyse(
+        SourceAnalyseConfig(
+            src_files=[source], src_dir=src, git_root=tmp_path, get_oneline_needs=True
+        )
+    )
+    analyse.run()
+
+    refs = need_id_ref_records(analyse.need_id_refs, project="src", root=tmp_path)
+    assert [ref.need_id for ref in refs] == ["REQ_001", "IMPL_X"]
+    assert [need.need["id"] for need in analyse.oneline_needs] == ["IMPL_REAL"]
