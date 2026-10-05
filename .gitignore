@@ -22,6 +22,7 @@ coverage.xml
 mounts.xml
 codelinks.xml
 reports.xml
+ai-index.xml
 .ty_cache
 
 # packages/sphinx-ai-index's property-based tests: hypothesis writes its example database

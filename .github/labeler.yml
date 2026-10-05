@@ -28,6 +28,9 @@
 'pkg: ub-project':
   - changed-files:
       - any-glob-to-any-file: 'packages/ub-project/**'
+'pkg: sphinx-ai-index':
+  - changed-files:
+      - any-glob-to-any-file: 'packages/sphinx-ai-index/**'
 'pkg: workspace':
   - changed-files:
       - any-glob-to-any-file:

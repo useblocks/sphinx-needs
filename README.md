@@ -14,6 +14,7 @@ definitions and the CI workflows.
 | [`packages/sphinx-test-reports`](packages/sphinx-test-reports) | [`sphinx-test-reports`](https://pypi.org/project/sphinx-test-reports/) | test results as needs: the Sphinx extension in which JUnit/ctest/googletest XML and tox-envreport JSON become needs in a build — [documentation](https://sphinx-test-reports.readthedocs.io), [README](packages/sphinx-test-reports/README.rst) |
 | [`packages/ub-test-reports`](packages/ub-test-reports) | [`ub-test-reports`](https://pypi.org/project/ub-test-reports/) | the Sphinx-free half of test reports, which sphinx-test-reports depends on: the `test-reports` command that turns reports into a `needs.json` without running Sphinx, the pytest plugin, the parsers — documented on sphinx-test-reports' site, [README](packages/ub-test-reports/README.rst) |
 | [`packages/ub-project`](packages/ub-project) | [`ub-project`](https://pypi.org/project/ub-project/) | the shared reader for `ubproject.toml` and its variant data, which the other packages depend on — no documentation site, [README](packages/ub-project/README.rst) |
+| [`packages/sphinx-ai-index`](packages/sphinx-ai-index) | [`sphinx-ai-index`](https://pypi.org/project/sphinx-ai-index/) | the Sphinx extension that writes `ai_docs_index.json`, an AI-readable index of a site's pages, which every docs site here publishes and ubCode reads — no documentation site of its own, [README](packages/sphinx-ai-index/README.md) |
 
 ## Why one repository, and why still several packages
 
