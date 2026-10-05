@@ -69,18 +69,26 @@ Both engines implement exactly this.
    sphinx-needs `regex` may be an already-compiled `re.Pattern`, as validated; a compiled
    pattern pickles. A compiled template does not, and is never stored.)
 3. **First declared wins.** Walk the validated table in authored order; for each surviving
-   `options` name, set the field's rule only if the field has none. An entry none of whose
-   options survive claims nothing; a field no entry names has no rule.
+   `options` name, set the field's rule only if the field has none (sphinx-needs: or only the
+   rule of an entry that does not compile, item 5). An entry none of whose options survive
+   claims nothing; a field no entry names has no rule.
 4. **Claimable names are exactly the fields that have a definition object**: sphinx-needs'
    field schema (its core fields with `add_to_field_schema`, and the extra fields), ubCode's
    resolved field registry. The check runs where the definitions exist — sphinx-needs: in the
    fold, so a field registered after the table is validated is claimable and not warned about;
    ubCode: at resolution — and any other name in `options` is warned about once and ignored.
-5. **Validation is otherwise untouched.** The fold is a post-pass over the validated table;
-   besides the name check of item 4 (sphinx-needs moved it from `config-inited` into the fold,
-   where the field schema exists), no warning, code, path, message or emission time moves.
-   The fold also compiles each entry (through the memo validation filled): the field's rule
-   is the first entry naming it that compiles, and an entry that does not compile still
+5. **Validation is otherwise untouched.** The fold is a post-pass over the table. For the
+   entries in the validated table, besides the name check of item 4 (sphinx-needs moved it
+   from `config-inited` into the fold, where the field schema exists; a name an entry lists
+   twice now warns once), no warning, code, path, message or emission time moves. An entry
+   written after validation (sphinx-needs only) is checked, compiled and reported at the fold
+   (`env-before-read-docs`): its compile failure is reported once there instead of at the
+   first rendered need; a source of the wrong type (a `regex` that is neither a string nor a
+   string pattern, a template that is not a string) is refused with its own message — a bytes
+   pattern once, instead of a warning per rendered value — and that entry claims nothing, so a
+   field only it names is no longer split; and a bare-string `options` warns once per
+   character. The fold compiles each entry through the memo validation filled: the field's
+   rule is the first entry naming it that compiles, and an entry that does not compile still
    claims a field nobody else names — the field splits, but nothing links — as both
    renderers did before.
 6. **Split iff the field has a rule.** In stage 0 every rule is table-sourced, so every claimed
@@ -125,7 +133,7 @@ DIVERGES row: each engine keeps its own behaviour.
 | needtable TITLE column | goes through `row_col_maker`, linked if claimed | goes through the rules | SAME |
 | validation time | `config-inited` priority 551 | configuration resolution | SAME stage |
 | fold time | the end of `create_schema` (`env-before-read-docs`), over the table as validated at 551 plus any entry written after validation and before the fold | immediately after `resolve_string_links` | SAME stage relative to validation |
-| a table entry written after the fold | not rendered (stage 0 change: an `env-before-read-docs` handler after `create_schema`, or a directive at read time — the latter already did not render under `-j N`); an entry written at `config-inited` after 551 is folded unvalidated: it renders if it compiles, and is reported once and links nothing if it does not, or if its sources are not strings | not possible (configuration is resolved once) | n/a |
+| a table entry written after the fold | not rendered (stage 0 change: an `env-before-read-docs` handler after `create_schema`, or a directive at read time — the latter already did not render under `-j N`); an entry written at `config-inited` after 551 is folded unvalidated: it renders if it compiles; if it does not, it is reported once and links nothing, but still splits a field nobody else names; if a source has the wrong type, it is reported once and claims nothing, so a field only it names is no longer split | not possible (configuration is resolved once) | n/a |
 
 ## 3. Open for stage 1
 
