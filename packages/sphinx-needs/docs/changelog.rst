@@ -59,10 +59,12 @@ Improvements
   the documents are read, which already did not render under ``-j N`` — no longer renders;
   one written during ``config-inited`` still does.
   ``options`` can name only extra fields and the core fields that are part of the field
-  schema: any other core field (``docname``, ``section_name``, ``type_name``, ``id``, …) now
-  warns while the configuration is read and renders as plain text where needtables and
-  custom layouts linked it, and a link type, which already warned, is no longer linked by a
-  custom layout's ``meta()``.
+  schema, and the names are now checked when the schema is built, so a field registered
+  after the configuration is read, such as the GitHub service fields, is no longer warned
+  about: any other core field (``docname``, ``section_name``, ``type_name``, ``id``, …) now
+  warns and renders as plain text wherever it was linked — in need cards (every default
+  layout's heading shows ``type_name``), in needtables and in custom layouts — and a link
+  type, which already warned, is no longer linked by a custom layout's ``meta()``.
   The first build after upgrading re-reads every document, once, because the version of the
   data Sphinx-Needs stores in the environment has changed.
 

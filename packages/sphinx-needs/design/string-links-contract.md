@@ -35,7 +35,10 @@ it would be blind to a future per-type field schema, where the same field name c
 different definition per need type. A field that has no definition object cannot carry a rule:
 in sphinx-needs that is the 35 core fields outside the field schema (`id`, `docname`,
 `type_name`, `section_name`, `content`, …) and every link type; ubCode already refused all of
-them. None of the 35 has a string-link use case.
+them. No use of a string link on any of the 35 was found; `external_url`, a URL-valued core
+field, is the one residual, and is claimable in ubCode. Where one was linked it now renders as
+plain text — in need cards (every default layout's heading shows `type_name`), in needtables
+and in custom layouts.
 
 **The stages.**
 
@@ -70,10 +73,16 @@ Both engines implement exactly this.
    options survive claims nothing; a field no entry names has no rule.
 4. **Claimable names are exactly the fields that have a definition object**: sphinx-needs'
    field schema (its core fields with `add_to_field_schema`, and the extra fields), ubCode's
-   resolved field registry. Any other name in `options` is warned about at configuration time
-   and ignored.
-5. **Validation is untouched.** The fold is a post-pass over the already-validated table: not
-   one warning, code, path, message or emission time moves because of it.
+   resolved field registry. The check runs where the definitions exist — sphinx-needs: in the
+   fold, so a field registered after the table is validated is claimable and not warned about;
+   ubCode: at resolution — and any other name in `options` is warned about once and ignored.
+5. **Validation is otherwise untouched.** The fold is a post-pass over the validated table;
+   besides the name check of item 4 (sphinx-needs moved it from `config-inited` into the fold,
+   where the field schema exists), no warning, code, path, message or emission time moves.
+   The fold also compiles each entry (through the memo validation filled): the field's rule
+   is the first entry naming it that compiles, and an entry that does not compile still
+   claims a field nobody else names — the field splits, but nothing links — as both
+   renderers did before.
 6. **Split iff the field has a rule.** In stage 0 every rule is table-sourced, so every claimed
    field's string value is split on `,` and `;`, each item stripped, empty items dropped, and
    the items re-joined exactly as before. The provenance is what stage 1 keys its no-split rule
@@ -93,11 +102,11 @@ DIVERGES row: each engine keeps its own behaviour.
 |---|---|---|---|
 | rule shape | entry `{regex, link_url, link_name, options}` under a name; `regex` may be a compiled `re.Pattern`, keeping its flags (`string_links.py:203-221`) | `StringLinkR {regex, link_url, link_name, options}` under a name, strings only (`rust/ubc_config/src/needs/string_link.rs:61-73`) | SAME shape; a compiled pattern is a Python-only spelling (TOML cannot carry one) |
 | where the rule lives after stage 0 | `FieldSchema.string_link` | `NeedField.string_link` | SAME |
-| first declared wins, no fallthrough | `matching_link_confs[0]` over dict order (`utils.py:527-529`); measured: `ticket = "T-1, X-9; T-2"`, entries `first` (`^T-\d+$`) then `second` (`.+`) → `FIRST T-1; X-9; FIRST T-2` in the meta area and the needtable | `rules.iter().find(…)` over `IndexMap` order (`string_link.rs:575-581`); measured: a later rule naming the same field draws zero labels, card and needtable | SAME |
+| first declared wins, no fallthrough (an entry that does not compile is skipped for linking, and still splits a field nobody else names) | `matching_link_confs[0]` over dict order (`utils.py:527-529`); measured: `ticket = "T-1, X-9; T-2"`, entries `first` (`^T-\d+$`) then `second` (`.+`) → `FIRST T-1; X-9; FIRST T-2` in the meta area and the needtable | `rules.iter().find(…)` over `IndexMap` order (`string_link.rs:575-581`); measured: a later rule naming the same field draws zero labels, card and needtable | SAME |
 | claimable names | before stage 0: any name — the 11 schema core fields, the 35 core fields outside the schema and the extra fields silently (`string_links.py:295`); a link type or unknown name warned but its entry was kept, and a custom layout's `<<meta("links")>>` still linked it (measured `LNK REQ_002`). After stage 0: only the field schema — `title status tags collapse hide layout style template pre_template post_template constraints` plus the extra fields | the resolved field registry: core `title status tags collapse hide layout style doctype external_url` (`rust/ubc_config/src/needs/resolved.rs:936-948,1182,1222`) plus the declared extra fields; link types live in a separate map | SAME rule (only fields with a definition object). Residual difference in the populations: `template`, `pre_template`, `post_template`, `constraints` are claimable only in sphinx-needs (ubCode does not implement those features, `resolved.rs:944-948`); `doctype` and `external_url` only in ubCode |
-| a name that is not claimable | warns `needs.string_link`, keeps the entry, the name is inert | warns `config.string_link_unknown_field`, drops the name, keeps the rule's other names (`string_link.rs:223-240`); measured with `nosuch`, `owner_typo` | SAME outcome (the name never links); DIVERGES in code and in whether the name stays in the stored table |
-| an extra field registered after validation | links if the field exists when the schema is built (codelinks registers its fields at `config-inited` priority 11, before validation at 551) | does not link: the codelinks auto-registration runs after `resolve_string_links`, so the name is dropped as unknown (useblocks/ubcode#3840) | DIVERGES (ubCode bug, preserved by stage 0, fixed separately) |
-| split a claimed field's STRING value | `re.split(r",\|;")`, strip, drop empties (`string_links.py:153-163`) | `split([',', ';'])`, trim, drop empties (`string_link.rs:555-566`) | SAME — ubCode's comment at `string_link.rs:546-550` describing a "phantom third item" upstream is stale: sphinx-needs strips before dropping since its #1718 fix (`packages/sphinx-needs/docs/changelog.rst:772`) |
+| a name that is not claimable | warns `needs.string_link` once per entry when the schema is built (`env-before-read-docs`; before stage 0 at `config-inited` 551), keeps the entry, the name is inert | warns `config.string_link_unknown_field`, drops the name, keeps the rule's other names (`string_link.rs:223-240`); measured with `nosuch`, `owner_typo` | SAME outcome (the name never links); DIVERGES in code and in whether the name stays in the stored table |
+| an extra field registered after validation | links, without a warning: the GitHub service fields (`services/config/github.py:3-9`) are registered by `prepare_env` (`needs.py:941-955`, `env-before-read-docs`, before `create_schema`) in every project, and get a `FieldSchema` before the fold runs; likewise an `add_field` at `config-inited` after 551 | does not link: the codelinks auto-registration runs after `resolve_string_links`, so the name is dropped as unknown (useblocks/ubcode#3840) | DIVERGES (ubCode bug, preserved by stage 0, fixed separately) |
+| split a claimed field's STRING value | `re.split(r",\|;")`, strip, drop empties (`string_links.py:153-163`) | `split([',', ';'])`, trim, drop empties (`string_link.rs:555-566`) | SAME — ubCode's comment at `string_link.rs:546-550` describing a "phantom third item" upstream is stale: sphinx-needs strips before dropping (`packages/sphinx-needs/docs/changelog.rst:772 @ db7683a2`) |
 | re-join separator, string value, meta area and needtable | `"; "` between items only (`layout.py:540-542`, `utils.py:211-212`) | `"; "` (`rust/ubc_ast/src/render_html/special.rs:3227-3262`, both surfaces) | SAME |
 | no match → still split and re-joined | yes; measured `X-9` plain between two links | yes ("alice, bob → alice; bob") | SAME |
 | LIST value, needtable | per element, `"; "`; measured `TAG alpha; TAG beta` | per element, `"; "` | SAME |
@@ -115,8 +124,8 @@ DIVERGES row: each engine keeps its own behaviour.
 | needtable ID and link-type columns | never string-linked (`make_ref` / `ref_lookup`) | never string-linked (link columns answered first) | SAME |
 | needtable TITLE column | goes through `row_col_maker`, linked if claimed | goes through the rules | SAME |
 | validation time | `config-inited` priority 551 | configuration resolution | SAME stage |
-| fold time | the end of `create_schema` (`env-before-read-docs`), over the table as validated at 551 | immediately after `resolve_string_links` | SAME stage relative to validation |
-| a table entry written after the fold | not rendered (stage 0 change: an `env-before-read-docs` handler after `create_schema`, or a directive at read time — the latter already did not render under `-j N`); an entry written at `config-inited` after 551 is folded unvalidated and renders | not possible (configuration is resolved once) | n/a |
+| fold time | the end of `create_schema` (`env-before-read-docs`), over the table as validated at 551 plus any entry written after validation and before the fold | immediately after `resolve_string_links` | SAME stage relative to validation |
+| a table entry written after the fold | not rendered (stage 0 change: an `env-before-read-docs` handler after `create_schema`, or a directive at read time — the latter already did not render under `-j N`); an entry written at `config-inited` after 551 is folded unvalidated: it renders if it compiles, and is reported once and links nothing if it does not, or if its sources are not strings | not possible (configuration is resolved once) | n/a |
 
 ## 3. Open for stage 1
 

@@ -1165,9 +1165,11 @@ def test_links_render_in_a_parallel_build(
 ) -> None:
     """Under ``-j 2`` every need's card and the needtable still link.
 
-    The rules reach the write workers through the build environment, which a parallel
-    build pickles; a rule that could not be pickled, or that the workers never saw,
-    would render plain text here and nowhere in a serial build.
+    The string links are rendered in the main process, which resolves every doctree
+    before handing it to a write worker; what pickles the schema, and so its rules, is
+    the parallel read workers returning the environment -- and, in every build, serial
+    too, the ``environment.pickle`` written to disk -- so a rule that could not be
+    pickled ends the build rather than rendering plain text.
     """
     app = build_pages(make_app, sphinx_test_tempdir, {"t": GOOD_LINK}, parallel=2)
     assert warnings_of(app) == "", warnings_of(app)
