@@ -8,7 +8,7 @@ import pytest
 import toml
 from typer.testing import CliRunner
 
-from sphinx_codelinks.cmd import app
+from sphinx_codelinks.cmd import WRITE_RST_DEPRECATED, app
 from sphinx_codelinks.source_discover.config import CommentType
 
 from .conftest import DATA_DIR, TEST_DIR
@@ -315,6 +315,42 @@ def test_write_rst_invalid_json(tmp_path: Path) -> None:
 
     assert result.exit_code != 0
     assert "Expecting" in result.output
+
+
+def test_write_rst_still_works_and_says_it_is_deprecated(tmp_path: Path) -> None:
+    """``write rst`` is deprecated, not removed: it writes the file as before, and
+    prints the notice on stderr (stdout carries only what it always did)."""
+    marked = {
+        "project_1": [
+            {
+                "filepath": "src/dummy_1.cpp",
+                "remote_url": "https://example.com/src/dummy_1.cpp#L3",
+                "source_map": {
+                    "start": {"row": 2, "column": 13},
+                    "end": {"row": 2, "column": 21},
+                },
+                "tagged_scope": None,
+                "need_ids": ["NEED_001"],
+                "marker": "@need-ids:",
+                "type": "need-id-refs",
+            }
+        ]
+    }
+    jsonpath = tmp_path / "marked_content.json"
+    jsonpath.write_text(json.dumps(marked), encoding="utf-8")
+    outpath = tmp_path / "needextend.rst"
+
+    result = runner.invoke(
+        app, ["write", "rst", str(jsonpath), "--outpath", str(outpath)]
+    )
+
+    assert result.exit_code == 0, result.output
+    assert WRITE_RST_DEPRECATED in _normalize_output(result.stderr)
+    assert "deprecated" not in result.stdout
+    assert outpath.read_text(encoding="utf-8") == (
+        ".. needextend:: NEED_001\n"
+        "   :remote_url: https://example.com/src/dummy_1.cpp#L3\n\n"
+    )
 
 
 @pytest.mark.parametrize(

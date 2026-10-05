@@ -45,6 +45,35 @@ New and Improved
     and cherry-pick the range onto ``master`` in the monorepo. The import pull request's
     description carries the exact recipe.
 
+- ✨ ``@need-ids:`` references are attached during the build to the needs they name, under each
+  project's ``ref_url_field`` (default ``code_url``, ubCode's key), as a list of links; a
+  reference to an unknown need warns ``codelinks.need_id_ref``; ``codelinks write rst`` is
+  deprecated (`#2041 <https://github.com/useblocks/sphinx-needs/issues/2041>`__).
+
+  The ``src-trace`` directive analysed every ``@need-ids:`` marker in its files and threw
+  the result away: reaching the needs took ``codelinks analyse``, ``codelinks write rst``
+  and an ``include`` of the generated ``needextend`` file. The references are now kept with
+  the document hosting the directive and attached once every need is known, wherever it is
+  defined. Each referenced need gets one entry per reference, in source order: the
+  project's ``remote_url_pattern`` filled in for the marker's line, or the local link when
+  remote URLs are off. ``needs.json`` declares the field as a list; a need nothing
+  references carries ``null``, which a strict ``unevaluatedProperties: false`` schema
+  never sees. A user's ``needextend`` of the field wins. The unknown-id warning points at
+  the source line (``src/refs.cpp:5``), and each project reports
+  ``N references attached, M unknown``. The attach is on when local or remote URLs are,
+  as in ubCode; ``ref_url_field = ""`` switches it off for a project.
+
+  ``ref_url_field`` in ``[codelinks.projects.*]`` is accepted, where a shared
+  ``ubproject.toml`` that set it for ubCode stopped the build with
+  ``Additional properties are not allowed ('ref_url_field' was unexpected)``.
+
+  ``codelinks write rst`` still works and prints a deprecation notice on stderr; it will
+  be removed in 2.0.0. Its ``-r`` default stays ``remote_url`` -- not the extension's
+  ``remote-url`` -- since changing what an existing invocation writes is not worth it for
+  a command that is going away. A project that keeps including the generated file gets
+  both the attached field and the ``needextend``'d one: remove the include, and any
+  ``needs_fields`` declaration of the field made for that route.
+
 - ⬆️ ``typer`` is no longer capped below 0.26.8. The cap protected the documentation build,
   whose ``sphinxcontrib-typer`` imported a ``typer.rich_utils`` name that 0.26.8 removed;
   the ``docs`` extra now requires ``sphinxcontrib-typer`` 0.9.1 or newer, which tracks

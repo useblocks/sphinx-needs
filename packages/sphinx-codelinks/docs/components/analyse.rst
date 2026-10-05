@@ -118,6 +118,34 @@ Below is an example of a C++ source file containing need ID references and the c
 - ``marker`` - The marker string used for identification
 - ``type`` - Type of extraction ("need-id-refs")
 
+.. _need_id_refs_in_build:
+
+Need ID references in the build
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``src-trace`` directive attaches the ``@need-ids:`` references in the files it analyses to the needs they name, during the build -- the need may be defined in any document, before or after the directive. Each referenced need gets a list in its project's :ref:`ref_url_field` (default ``code_url``), one entry per reference, in source order:
+
+.. code-block:: json
+
+   "REQ_001": {
+       "code_url": [
+           "https://github.com/org/repo/blob/<commit>/src/refs.cpp#L1",
+           "https://github.com/org/repo/blob/<commit>/src/refs.cpp#L3"
+       ]
+   }
+
+- **The entries** are the project's ``remote_url_pattern`` filled in for the marker's line when :ref:`set_remote_url` is on, else the local link (as ``local-url`` gives it: the source file copied into the build output, relative to the need's document). On the need's card each renders as a link named ``src/refs.cpp#L1``.
+- **A need nothing references** carries ``null``, which is removed before schema validation, so a schema with ``unevaluatedProperties: false`` never sees the field on it.
+- **An unknown id** warns at the source line: ``src/refs.cpp:5: WARNING: @need-ids reference to unknown need 'NOSUCH_ID' [codelinks.need_id_ref]``. ``suppress_warnings = ["codelinks.need_id_ref"]`` silences it. Each project also reports ``codelinks [<project>]: N references attached, M unknown``.
+- **A user's** :external+needs:ref:`needextend <needextend>` **of the field wins**: the references are attached after every need is read and before any ``needextend`` is applied. The need is not marked as modified.
+- **Overlapping directives** over the same file attach each reference once.
+
+**Migrating from** ``analyse`` **→** ``write rst`` **→** ``include``: remove the ``.. include::`` of the generated file (and the steps that generate it); the references now arrive by themselves, in ``code_url`` rather than in the ``remote-url`` (or ``remote_url``) field the generated ``needextend`` directives set, and as a list rather than one comma-joined string. A project that keeps including the generated file gets both. If you declared the field yourself for that route (``needs_fields``), remove the declaration: the extension registers it, and a declaration of your own warns ``Duplicate need field`` and, as a string field, fails schema validation on every referenced need.
+
+**Differences from ubCode**, which reads the same ``ref_url_field``: ubCode stores one string, the last reference written, where this is a list of every reference; and ubCode drops a reference to an unknown need silently, where this warns.
+
+**Known limitation:** a source file added to a traced directory is seen only once the document hosting the directive changes, or on a clean build -- for its references as for the needs it defines.
+
 Marked RST Blocks
 ~~~~~~~~~~~~~~~~~
 
