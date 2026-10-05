@@ -13,10 +13,11 @@ from inside the renderer with a bare ``KeyError``.
 
 Each field then carries the rule it is rendered with: when the schema is built,
 :func:`fold_string_links` gives every field named in an entry's ``options`` that
-entry's :class:`~sphinx_needs.needs_schema.StringLinkRule`, unless an earlier entry
-already named it, and the renderers read the field's rule rather than the table.
-Only fields with a :class:`~sphinx_needs.needs_schema.FieldSchema` can carry a rule:
-the core fields of the field schema, and the extra fields.
+entry's :class:`~sphinx_needs.needs_schema.StringLinkRule`, unless an earlier usable
+entry already named it, and the renderers read the field's rule rather than the
+table. Only fields with a :class:`~sphinx_needs.needs_schema.FieldSchema` can carry a
+rule -- the core fields of the field schema, and the extra fields -- so the names in
+``options`` are checked there, once every field is registered, rather than here.
 
 The compiled objects deliberately never touch the Sphinx configuration or the
 schema: both are deep-copied or pickled (for parallel builds), and compiled
@@ -34,13 +35,12 @@ from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Final, cast
 
 from sphinx_needs._jinja import CompiledTemplate, compile_template
-from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig, StringLinkConf
-from sphinx_needs.data import NeedsCoreFields
+from sphinx_needs.config import NeedsSphinxConfig, StringLinkConf
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.needs_schema import FieldsSchema, StringLinkRule
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Container
+    from collections.abc import Callable
 
     from sphinx.application import Sphinx
     from sphinx.config import Config
@@ -194,13 +194,11 @@ def split_string_link_value(value: str) -> list[str]:
 def _validate_conf(
     conf: Any,
     *,
-    known_fields: Container[str],
     warn: Callable[[str], None],
 ) -> StringLinkConf | None:
     """Validate a single ``needs_string_links`` entry.
 
     :param conf: The raw entry, as written by the user.
-    :param known_fields: The names of the fields an entry can apply to.
     :param warn: Called with a message for every problem found.
     :return: The validated entry, or ``None`` if it must be skipped.
     """
@@ -262,13 +260,6 @@ def _validate_conf(
     if not options:
         warn("'options' is empty, so this entry can never apply.")
 
-    for option in options:
-        if option not in known_fields:
-            warn(
-                f"'options' names {option!r}, which is neither an extra field nor a "
-                "core field of the field schema, so it is ignored."
-            )
-
     try:
         re.compile(conf["regex"])
     except Exception as exc:
@@ -320,7 +311,6 @@ def compile_string_links(_app: Sphinx, config: Config) -> None:
     if not confs:
         return
 
-    known_fields = _claimable_field_names()
     validated: dict[str, StringLinkConf] = {}
     for name, conf in confs.items():
 
@@ -332,9 +322,7 @@ def compile_string_links(_app: Sphinx, config: Config) -> None:
                 None,
             )
 
-        if (
-            checked := _validate_conf(conf, known_fields=known_fields, warn=warn)
-        ) is not None:
+        if (checked := _validate_conf(conf, warn=warn)) is not None:
             validated[name] = checked
 
     if validated != confs:
@@ -345,32 +333,23 @@ def compile_string_links(_app: Sphinx, config: Config) -> None:
     compiled_string_links(needs_config)
 
 
-def _claimable_field_names() -> set[str]:
-    """The names a ``needs_string_links`` entry can apply to, at ``config-inited``.
-
-    Exactly the fields that will have a :class:`~sphinx_needs.needs_schema.FieldSchema`
-    to carry the rule: the core fields of the field schema, and the extra fields
-    registered so far. A link field, or any other core field, cannot carry one.
-    """
-    return {
-        *(
-            name
-            for name, data in NeedsCoreFields.items()
-            if data.get("add_to_field_schema", False)
-        ),
-        *_NEEDS_CONFIG.fields,
-    }
-
-
 def fold_string_links(schema: FieldsSchema, needs_config: NeedsSphinxConfig) -> None:
     """Give each field the string link of the first entry whose ``options`` name it.
 
-    Runs at the end of ``create_schema``, over ``needs_string_links`` as validated by
-    :func:`compile_string_links`, in the order the entries were declared. A field that
-    already has a rule keeps it, so a later entry naming the same field never applies
-    to it. A name with no :class:`~sphinx_needs.needs_schema.FieldSchema` is skipped:
-    validation has already warned about it, unless it was an extra field at that point
-    and is no longer one, which is warned about here.
+    Runs at the end of ``create_schema``, over ``needs_string_links`` in the order the
+    entries were declared, so it also sees every entry written after
+    :func:`compile_string_links` validated the table, and every field registered after
+    it. Each entry is compiled here (through the memo the validation filled), and:
+
+    - an entry that compiles gives its rule to each field it names that has no rule,
+      or only the rule of an entry that does not compile;
+    - an entry that does not compile -- or whose sources are not strings, which only an
+      entry written after validation can have -- is reported once, and gives its rule
+      only to a field that has none: the field's value is still split into items, as
+      it is for any field an entry names, but nothing links;
+    - a name with no :class:`~sphinx_needs.needs_schema.FieldSchema` (a link field, a
+      core field outside the field schema, or no field at all) is warned about once
+      per entry, and ignored.
 
     :param schema: The fields schema being built.
     :param needs_config: The sphinx-needs configuration.
@@ -378,31 +357,52 @@ def fold_string_links(schema: FieldsSchema, needs_config: NeedsSphinxConfig) -> 
     confs = needs_config.string_links
     if not isinstance(confs, dict):
         return
+    # the fields whose rule is that of an entry which does not compile
+    unusable_rules: set[str] = set()
     for name, conf in confs.items():
         try:
-            rule = StringLinkRule(
-                name=name,
-                regex=conf["regex"],
-                link_url=conf["link_url"],
-                link_name=conf["link_name"],
+            regex, link_url, link_name = (
+                conf["regex"],
+                conf["link_url"],
+                conf["link_name"],
             )
             options = list(conf["options"])
+            # only an entry written after validation can fail these: anything else
+            # would be stored on the schema, which must pickle with the environment
+            if not isinstance(regex, str) and not (
+                isinstance(regex, re.Pattern) and isinstance(regex.pattern, str)
+            ):
+                raise TypeError(f"'regex' is not a string or pattern: {regex!r}")
+            for key, value in (("link_url", link_url), ("link_name", link_name)):
+                if not isinstance(value, str):
+                    raise TypeError(f"{key!r} is not a string: {value!r}")
         except Exception as exc:
-            # only an entry written after validation can get here
             _report_compile_failure(name, exc)
             continue
+        rule = StringLinkRule(
+            name=name, regex=regex, link_url=link_url, link_name=link_name
+        )
+        usable = _compile_or_report(name, regex, link_url, link_name) is not None
         for option in options:
-            field = schema.get_core_field(option) or schema.get_extra_field(option)
+            field = (
+                (schema.get_core_field(option) or schema.get_extra_field(option))
+                if isinstance(option, str)
+                else None
+            )
             if field is None:
-                if option in _NEEDS_CONFIG.fields:
-                    log_warning(
-                        LOGGER,
-                        f"needs_string_links[{name!r}]: 'options' names {option!r}, "
-                        "which has no field schema, so it is ignored.",
-                        "string_link",
-                        None,
-                        once=True,
-                    )
+                log_warning(
+                    LOGGER,
+                    f"needs_string_links[{name!r}]: 'options' names {option!r}, "
+                    "which is not a field that can carry a string link (an extra "
+                    "field, or a core field of the field schema), so it is ignored.",
+                    "string_link",
+                    None,
+                    once=True,
+                )
                 continue
-            if field.string_link is None:
+            if field.string_link is None or (usable and field.name in unusable_rules):
                 field._set_string_link(rule)
+                if usable:
+                    unusable_rules.discard(field.name)
+                else:
+                    unusable_rules.add(field.name)

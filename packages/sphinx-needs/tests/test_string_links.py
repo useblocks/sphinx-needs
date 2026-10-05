@@ -604,8 +604,8 @@ def test_undeclared_field_in_options_warns(
     warnings = warnings_of(app)
     assert "'options' names 'no_such_field'" in warnings, warnings
     assert (
-        "which is neither an extra field nor a core field of the field schema, "
-        "so it is ignored." in warnings
+        "which is not a field that can carry a string link (an extra field, or a "
+        "core field of the field schema), so it is ignored." in warnings
     ), warnings
     # warn only: the entry is still applied to the field that *is* registered
     assert 'href="https://tracker.example.com/AB-1"' in need_html(app)
@@ -1451,6 +1451,9 @@ Section A
    :id: SLINK_2
    :layout: custom
 
+.. req:: A need with the default layout
+   :id: SLINK_3
+
 .. needtable::
    :columns: id;section_name
    :style: table
@@ -1460,52 +1463,49 @@ Section A
 def test_a_field_without_a_field_schema_cannot_carry_a_rule(
     make_app: Any, sphinx_test_tempdir: Any
 ) -> None:
-    """``options`` naming a core field outside the field schema (``section_name``) or
-    a link field (``links``) warns while the configuration is read, and the value
-    renders as plain text: in a needtable, and through a custom layout's ``meta()``,
-    which used to link both."""
-    from sphinx_needs_testkit import create_src_files_in_tmpdir
-
+    """``options`` naming a core field outside the field schema (``section_name``,
+    ``type_name``) or a link field (``links``) is warned about when the schema is
+    built, and the value renders as plain text: in a needtable, through a custom
+    layout's ``meta()``, and in the heading of a need card, where every default layout
+    shows ``type_name`` -- the most visible place these values used to be linked."""
     every = {
         "regex": r"^(?P<value>.+)$",
         "link_url": "https://any.example.com/{{value}}",
         "link_name": "ANY {{value}}",
     }
-    srcdir = create_src_files_in_tmpdir(
-        [
-            (
-                Path("conf.py"),
-                conf_py(
-                    {
-                        "sec": {**every, "options": ["section_name"]},
-                        "lnk": {**every, "options": ["links"]},
-                    },
-                    UNCLAIMABLE_CONF,
-                ),
-            ),
-            (Path("index.rst"), UNCLAIMABLE_INDEX),
-        ],
+    app = build(
+        make_app,
         sphinx_test_tempdir,
+        {
+            "sec": {**every, "options": ["section_name", "type_name"]},
+            "lnk": {**every, "options": ["links"]},
+        },
+        index=UNCLAIMABLE_INDEX,
+        extra=UNCLAIMABLE_CONF,
     )
-    app = make_app(srcdir=srcdir, buildername="html")
-
-    # reported while the configuration is read, before anything is built
-    expected = [
-        f"needs_string_links[{entry!r}]: 'options' names {name!r}, which is neither an "
-        "extra field nor a core field of the field schema, so it is ignored. "
-        "[needs.string_link]"
-        for entry, name in (("sec", "section_name"), ("lnk", "links"))
-    ]
     assert [w for w in build_warnings(app) if "needs_string_links" in w] == [
-        f"WARNING: {message}" for message in expected
+        f"WARNING: needs_string_links[{entry!r}]: 'options' names {name!r}, which is "
+        "not a field that can carry a string link (an extra field, or a core field "
+        "of the field schema), so it is ignored. [needs.string_link]"
+        for entry, name in (
+            ("sec", "section_name"),
+            ("sec", "type_name"),
+            ("lnk", "links"),
+        )
     ], build_warnings(app)
 
-    app.build()
     html = need_html(app)
     assert "any.example.com" not in html, html
     assert "Section A" in _meta_span(html, "section_name")
     assert "Section A" in _table_cell(html, "section_name")
     assert "SLINK_2" in _meta_span(html, "links")
+    # the default layout's heading: `<<meta("type_name")>>`
+    heading = re.search(
+        r'<span class="needs_type_name"><span class="needs_data">[^<]*</span></span>',
+        html,
+    )
+    assert heading is not None, html
+    assert "Requirement" in heading.group(0), heading.group(0)
 
 
 # --------------------------------------------------------------------------
@@ -1513,17 +1513,17 @@ def test_a_field_without_a_field_schema_cannot_carry_a_rule(
 # --------------------------------------------------------------------------
 
 
-def test_fold_is_defensive(monkeypatch: Any) -> None:
-    """The fold never raises: a name that was an extra field at validation but has no
-    ``FieldSchema`` when the schema is built warns once, a name validation already
-    warned about is skipped silently, and an entry written after validation in an
-    unusable shape is reported as a compile failure, once."""
+def test_fold_claims_with_the_first_usable_entry(monkeypatch: Any) -> None:
+    """The fold, called directly: a name with no ``FieldSchema`` is warned about once
+    per entry; an entry that does not compile, or whose sources are not strings, is
+    reported once; an unusable entry holds a field only until a usable one names it,
+    and never takes a field from a usable one."""
     from sphinx_needs import string_links as module
     from sphinx_needs.needs_schema import FieldSchema, FieldsSchema
 
     schema = FieldsSchema()
-    schema.add_core_field(FieldSchema(name="status", schema={"type": "string"}))
-    monkeypatch.setattr(module, "_NEEDS_CONFIG", SimpleNamespace(fields={"ghost": 1}))
+    for name in ("status", "title", "tags"):
+        schema.add_core_field(FieldSchema(name=name, schema={"type": "string"}))
     messages: list[str] = []
     monkeypatch.setattr(
         module,
@@ -1532,29 +1532,47 @@ def test_fold_is_defensive(monkeypatch: Any) -> None:
             message
         ),
     )
+    broken = {**GOOD_LINK, "regex": "("}
     config = SimpleNamespace(
         needs_string_links={
-            "broken": {"options": ["status"]},
-            "e": {**GOOD_LINK, "options": ["ghost", "docname", "status"]},
+            "missing": {"options": ["status"]},
+            "callable": {**GOOD_LINK, "link_url": print, "options": ["status"]},
+            "broken": {**broken, "options": ["status", "title"]},
+            "good": {**GOOD_LINK, "options": ["status", "docname"]},
+            "later_broken": {**broken, "options": ["tags", "title"]},
+            "later_good": {**GOOD_LINK, "options": ["tags"]},
         }
     )
     module.fold_string_links(schema, module.NeedsSphinxConfig(config))
 
-    assert len(messages) == 2, messages
-    assert messages[0].startswith("needs_string_links['broken']: passed validation")
-    assert messages[1] == (
-        "needs_string_links['e']: 'options' names 'ghost', "
-        "which has no field schema, so it is ignored."
-    )
-    status = schema.get_core_field("status")
-    assert status is not None
-    assert status.string_link is not None
-    assert status.string_link.name == "e"
+    def rule(name: str) -> str | None:
+        field = schema.get_core_field(name)
+        assert field is not None
+        return None if field.string_link is None else field.string_link.name
+
+    # the first usable entry takes a field from an unusable one ...
+    assert rule("status") == "good"
+    # ... an unusable one never takes a field, but holds one nobody usable names
+    assert rule("title") == "broken"
+    assert rule("tags") == "later_good"
+    assert [m.split(":")[0] for m in messages] == [
+        "needs_string_links['missing']",
+        "needs_string_links['callable']",
+        "needs_string_links['broken']",
+        "needs_string_links['good']",
+        "needs_string_links['later_broken']",
+    ], messages
+    assert "passed validation but failed to compile" in messages[0]
+    assert "'link_url' is not a string" in messages[1]
+    assert "passed validation but failed to compile" in messages[2]
+    assert "'options' names 'docname', which is not a field" in messages[3]
 
 
-@pytest.mark.parametrize("value", [[], "", 0, None])
+@pytest.mark.parametrize("value", [[], "", 0, None, [GOOD_LINK]])
 def test_fold_of_a_table_that_is_not_a_dict_is_empty(value: Any) -> None:
-    """A table that is not a dict was already warned about, and claims nothing."""
+    """A table that is not a dict claims nothing. Validation rebinds such a table to
+    ``{}``, so only a writer after it can leave one, and Sphinx's own type check warns
+    about that."""
     from sphinx_needs import string_links as module
     from sphinx_needs.needs_schema import FieldSchema, FieldsSchema
 
@@ -1577,3 +1595,189 @@ def test_field_schema_refuses_a_string_link_of_the_wrong_type() -> None:
             schema={"type": "string"},
             string_link=GOOD_LINK,  # ty: ignore[invalid-argument-type]
         )
+
+
+# --------------------------------------------------------------------------
+# names are checked when the schema is built, and every entry is compiled
+# there: fields registered late, and late entries that do not compile
+# --------------------------------------------------------------------------
+
+LATE_FIELD_CONF = """
+def _register_late(app, config):
+    from sphinx_needs.api import add_field
+
+    add_field("addopt", "registered after validation", nullable=True)
+
+
+def setup(app):
+    app.connect("config-inited", _register_late, priority=700)
+"""
+
+LATE_FIELD_INDEX = """\
+String links
+============
+
+.. req:: A need
+   :id: SLINK_1
+   :user: alice
+   :addopt: A-1
+
+   Body.
+
+.. needtable::
+   :columns: id;user;addopt
+   :style: table
+"""
+
+
+def test_fields_registered_after_validation_link_without_a_warning(
+    make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """A field registered after ``config-inited`` priority 551 -- the GitHub service
+    fields every project gets, or an ``add_field`` at a later priority -- has a
+    ``FieldSchema`` when the schema is built, so an entry naming it links, and nothing
+    claims that it is ignored. A name that really has no ``FieldSchema`` is warned
+    about once per entry, however often the entry names it."""
+    every = {
+        "regex": r"^(?P<value>.+)$",
+        "link_url": "https://late.example.com/{{value}}",
+        "link_name": "L:{{value}}",
+    }
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {
+            "late": {**every, "options": ["user", "addopt"]},
+            "x": {**every, "options": ["nope", "nope"]},
+            "y": {**every, "options": ["nope"]},
+        },
+        index=LATE_FIELD_INDEX,
+        extra=LATE_FIELD_CONF,
+    )
+    warnings = build_warnings(app)
+    assert not [w for w in warnings if "'user'" in w or "'addopt'" in w], warnings
+    assert [w for w in warnings if "needs_string_links" in w] == [
+        f"WARNING: needs_string_links[{entry!r}]: 'options' names 'nope', which is "
+        "not a field that can carry a string link (an extra field, or a core field "
+        "of the field schema), so it is ignored. [needs.string_link]"
+        for entry in ("x", "y")
+    ], warnings
+    html = need_html(app)
+    for value in ("alice", "A-1"):
+        href = f'href="https://late.example.com/{value}">L:{value}</a>'
+        assert html.count(href) == 2, html  # the card and the needtable
+
+
+LATE_TABLE_CONF = """
+BROKEN = {{
+    "regex": "(",
+    "link_url": "https://broken.example.com/{{{{value}}}}",
+    "link_name": "B:{{{{value}}}}",
+}}
+
+
+def _rewrite(app, config):
+    {body}
+
+
+def setup(app):
+    app.connect("config-inited", _rewrite, priority=700)
+"""
+
+
+def _late_table(body: str) -> str:
+    """A ``conf.py`` tail rewriting the table at ``config-inited`` priority 700."""
+    return LATE_TABLE_CONF.format(body=body)
+
+
+def _compile_failures(app: Any, entry: str) -> list[str]:
+    return [
+        w
+        for w in build_warnings(app)
+        if f"needs_string_links[{entry!r}]: passed validation but failed to compile"
+        in w
+    ]
+
+
+def test_a_late_entry_that_does_not_compile_does_not_shadow_a_later_one(
+    make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """An entry written after validation whose regex does not compile is reported once
+    and skipped for linking: the next entry naming the field draws, as it always has.
+    """
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {"good": GOOD_LINK},
+        extra=_late_table(
+            'config.needs_string_links = {"bad": {**BROKEN, "options": ["ticket"]},'
+            " **config.needs_string_links}"
+        ),
+    )
+    assert len(_compile_failures(app, "bad")) == 1, build_warnings(app)
+    assert 'href="https://tracker.example.com/AB-1">T:AB-1</a>' in _meta_span(
+        need_html(app), "ticket"
+    )
+
+
+def test_a_late_entry_that_does_not_compile_still_splits_its_field(
+    make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """An entry that does not compile, and is the only one naming a field, still makes
+    the field's value split into items -- it has always been the entries naming a
+    field that split it -- but links nothing, and is reported once."""
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {},
+        index=MULTI_INDEX
+        + "\n.. needtable::\n   :columns: id;tickets\n   :style: table\n",
+        extra=_late_table(
+            'config.needs_string_links = {"bad": {**BROKEN, "options": ["tickets"]}}'
+        ),
+    )
+    assert len(_compile_failures(app, "bad")) == 1, build_warnings(app)
+    html = need_html(app)
+    for surface in (_meta_span(html, "tickets"), _table_cell(html, "tickets")):
+        assert "<a " not in surface, surface
+        assert surface.count("<em>; </em>") == 2, surface
+        assert "AB-1" in surface and "AB-3" in surface, surface
+
+
+def test_a_late_entry_that_does_not_compile_is_reported_even_if_it_claims_nothing(
+    make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """A broken late entry naming no field with values is still reported."""
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {"good": GOOD_LINK},
+        extra=_late_table(
+            "config.needs_string_links = {**config.needs_string_links,"
+            ' "orphan": {**BROKEN, "options": ["nope"]}}'
+        ),
+    )
+    assert len(_compile_failures(app, "orphan")) == 1, build_warnings(app)
+    assert 'href="https://tracker.example.com/AB-1"' in need_html(app)
+
+
+def test_a_late_entry_that_cannot_be_pickled_is_reported_not_fatal(
+    make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """A late entry whose template is not a string (here a function) would put an
+    unpicklable value into the schema, which the environment is pickled with; it is
+    reported once and skipped instead, and the build succeeds."""
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {},
+        extra=_late_table(
+            "config.needs_string_links = {"
+            '"evil": {"regex": r"^(?P<value>.+)$", "link_url": lambda: "x",'
+            ' "link_name": "E", "options": ["ticket"]}}'
+        ),
+    )
+    assert len(_compile_failures(app, "evil")) == 1, build_warnings(app)
+    meta = _meta_span(need_html(app), "ticket")
+    assert "AB-1" in meta, meta
+    assert "<a " not in meta, meta
