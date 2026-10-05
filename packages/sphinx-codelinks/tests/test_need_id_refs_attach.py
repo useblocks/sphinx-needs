@@ -3,11 +3,13 @@
 which is the point -- it is the seam a pre-analysed input file will feed."""
 
 import re
+from pathlib import PureWindowsPath
 from typing import Any
 
 import pytest
 
 from sphinx_codelinks.analyse.references import NeedIdRef
+from sphinx_codelinks.sphinx_extension.directives.src_trace import fill_remote_url
 from sphinx_codelinks.sphinx_extension.need_id_refs import attach_need_id_refs
 from sphinx_codelinks.sphinx_extension.string_links import REF_LINK_REGEX
 
@@ -136,3 +138,15 @@ def test_reference_field_link_kinds(
     groups = re.search(REF_LINK_REGEX, value).groupdict()  # ty: ignore[possibly-missing-attribute]
     assert groups["codelinks_url"] == url
     assert groups["codelinks_page"] == page
+
+
+def test_reference_remote_url_path_is_posix_for_windows_paths() -> None:
+    """The references' remote URL goes through ``fill_remote_url``, as a created
+    need's does: built from Windows paths, the URL path is still POSIX."""
+    url = fill_remote_url(
+        "https://github.com/o/r/blob/{commit}/{path}#L{line}",
+        SHA,
+        PureWindowsPath("src") / PureWindowsPath("deeper", "refs.cpp"),  # ty: ignore[invalid-argument-type]
+        3,
+    )
+    assert url == f"https://github.com/o/r/blob/{SHA}/src/deeper/refs.cpp#L3"

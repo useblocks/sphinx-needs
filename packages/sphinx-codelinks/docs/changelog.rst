@@ -148,6 +148,15 @@ New and Improved
   ones. The build warns about such a pattern (``codelinks.remote_url_pattern``;
   ``suppress_warnings`` silences it, which a ``-W`` build needs).
 
+- 🐛 A project outside a git repository gets no remote URL
+  (`#2045 <https://github.com/useblocks/sphinx-needs/issues/2045>`__).
+
+  Its ``remote_url_pattern`` was filled with ``None`` for the commit and the build
+  machine's absolute path for ``{path}`` (``…/blob/None//home/me/project/src/a.cpp#L1``),
+  and that reached ``needs.json`` as a URL. Now a created need's ``remote-url`` stays
+  unset, and an ``@need-ids:`` reference falls back to its local link (or to nothing,
+  without local URLs) -- as in ubCode. The ``codelinks.git_root`` warning is unchanged.
+
 - 🔧 ``libclang`` is now genuinely optional for the test suite.
 
   It has always been an optional extra at runtime, and three test modules guarded it with

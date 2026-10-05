@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from dataclasses import replace
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Any, ClassVar, cast
 
 from docutils import nodes
@@ -53,6 +53,19 @@ def generate_str_link_name(oneline_need: OneLineNeed, target_filepath: Path) -> 
     return f"{target_filepath.as_posix()}#L{_line_span(oneline_need)}"
 
 
+def fill_remote_url(
+    remote_url_pattern: str, commit: str | None, remote_path: PurePath, line: int | str
+) -> str:
+    """A project's ``remote_url_pattern`` filled in for one file and line.
+
+    ``{path}`` is POSIX on every platform, as a URL path is. The one place both a
+    created need's ``remote-url`` and a reference's remote URL are formed.
+    """
+    return remote_url_pattern.format(
+        commit=commit, path=remote_path.as_posix(), line=line
+    )
+
+
 def generate_remote_url(
     oneline_need: OneLineNeed,
     target_filepath: Path,
@@ -69,8 +82,8 @@ def generate_remote_url(
     remote_path = dirs["remote_src_dir"] / target_filepath.relative_to(
         dirs["target_dir"]
     )
-    return remote_url_pattern.format(
-        commit=commit, path=remote_path.as_posix(), line=_line_span(oneline_need)
+    return fill_remote_url(
+        remote_url_pattern, commit, remote_path, _line_span(oneline_need)
     )
 
 
@@ -188,6 +201,11 @@ class SourceTracingDirective(SphinxDirective):
             else:
                 remote_src_dir = src_dir.relative_to(src_analyse.git_root)
             dirs["remote_src_dir"] = remote_src_dir
+            if src_analyse.git_root is None:
+                # no git root, no remote URL (#2045): the pattern would be filled with
+                # commit None and the build machine's absolute path. ubCode writes none
+                # either; the analysis has already warned (codelinks.git_root).
+                remote_url_pattern = None
 
         # keep the @need-ids references, to be attached once every need is known
         if need_id_refs_field(src_trace_sphinx_config, src_trace_conf) is not None:
@@ -282,10 +300,11 @@ class SourceTracingDirective(SphinxDirective):
         def remote_url(filepath: Path, line: int) -> str | None:
             if remote_url_pattern is None:
                 return None
-            return remote_url_pattern.format(
-                commit=src_analyse.git_commit_rev,
-                path=str(dirs["remote_src_dir"] / filepath.relative_to(src_dir)),
-                line=line,
+            return fill_remote_url(
+                remote_url_pattern,
+                src_analyse.git_commit_rev,
+                dirs["remote_src_dir"] / filepath.relative_to(src_dir),
+                line,
             )
 
         def local_url(filepath: Path, line: int) -> str | None:

@@ -18,6 +18,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+import pytest
 import sphinx
 from sphinx.testing.util import SphinxTestApp
 from sphinx.util.console import strip_colors
@@ -48,8 +49,10 @@ def _project(
     toml_replace: tuple[str, str] | None = None,
     files: dict[str, str] | None = None,
     append: dict[str, str] | None = None,
+    git: bool = True,
 ) -> str:
-    """Copy the fixture into ``root``, change it, commit it; return the commit."""
+    """Copy the fixture into ``root``, change it, commit it; return the commit (or
+    ``""`` with ``git=False``: no repository at all)."""
     shutil.copytree(FIXTURE, root, dirs_exist_ok=True)
     toml = root / "docs" / "ubproject.toml"
     text = toml.read_text(encoding="utf-8")
@@ -64,6 +67,8 @@ def _project(
     for relative, content in (append or {}).items():
         path = root / relative
         path.write_text(path.read_text(encoding="utf-8") + content, encoding="utf-8")
+    if not git:
+        return ""
     _git(root, "init", "--quiet")
     _git(root, "remote", "add", "origin", "https://github.com/example/demo.git")
     _git(root, "add", "-A")
@@ -354,3 +359,32 @@ def test_local_urls_when_remote_urls_are_off(
     ]
     page = Path(app.outdir, "src", "refs.html").read_text(encoding="utf-8")
     assert 'id="L-7"' in page
+
+
+@pytest.mark.parametrize("local", [True, False], ids=["local-on", "local-off"])
+def test_no_remote_url_without_a_git_root(
+    tmp_path: Path, make_app: _MakeApp, local: bool
+) -> None:
+    """Outside a git repository nothing is written as a remote URL (#2045): the
+    created need has no ``remote-url``, and a reference falls back to the local link,
+    or attaches nothing when local URLs are off. The analysis warns once."""
+    _project(
+        tmp_path,
+        git=False,
+        toml_replace=None
+        if local
+        else ("set_local_url = true", "set_local_url = false"),
+        files={"src/impl.cpp": "// [[implemented without git, IMPL_NOGIT]]\n"},
+    )
+    app = _build(tmp_path, make_app)
+
+    needs = _json(app)["needs"]
+    assert needs["IMPL_NOGIT"]["remote-url"] is None
+    refs = _refs(app)
+    if local:
+        assert refs["REQ_001"] == ["src/refs.cpp#L1", "src/refs.cpp#L3"]
+    else:
+        assert refs["REQ_001"] is None
+    git_root_warnings = [w for w in build_warnings(app) if "git root is not found" in w]
+    assert len(git_root_warnings) == 1, build_warnings(app)
+    assert not any("/blob/None" in json.dumps(need) for need in needs.values())
