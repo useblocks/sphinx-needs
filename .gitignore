@@ -28,7 +28,8 @@ ai-index.xml
 # packages/sphinx-ai-index's property-based tests: hypothesis writes its example database
 # into the working directory -- the package under `poe test-ai-index`, the repository root
 # under CI's root-relative run. It was in that repository's own .gitignore, which retired
-# at the import
+# at the import (newer hypothesis releases write a self-ignoring `.gitignore` into it; the
+# `test` group allows older ones that do not)
 .hypothesis/
 
 # packages/sphinx-codelinks' tests write these at the CWD: `tests/test_cmd.py` writes

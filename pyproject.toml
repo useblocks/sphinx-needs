@@ -147,8 +147,8 @@ test = [
   # dependency there rather than a docs one. It costs nothing in the lock -- it is already
   # here through `sphinx-needs[theme-furo]` -- only in what the `test` group installs
   "furo>=2024.5.6",
-  # sphinx-ai-index: `tests/test_e2e_pbt.py` and `tests/test_helpers_pbt.py` are
-  # property-based. It was in that package's own `testing` group, which this group replaces;
+  # sphinx-ai-index: its property-based tests need it. It was in that package's own
+  # `testing` group, which this group replaces;
   # being HERE is also what carries it into the release workflow's compat cell, which builds
   # its environment from `uv export --only-group test`
   "hypothesis>=6.0",

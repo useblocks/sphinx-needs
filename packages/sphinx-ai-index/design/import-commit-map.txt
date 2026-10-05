@@ -3,8 +3,9 @@
 # Left column = the hash in useblocks/sphinx-ai-index, right column = the hash in this
 # repository. It is kept because links into the old repository name old hashes -- its one
 # release's GitHub Release, tag `v0.1.0` and PyPI provenance among them -- and this file is
-# how such a permalink is resolved to the commit here. The old repository stays archived
-# and readable, so those links keep working; this maps them across.
+# how such a permalink is resolved to the commit here. The old repository stays readable
+# (it is to be archived after the first release from here), so those links keep working;
+# this maps them across.
 # All 7 commits the rewrite parsed are listed, and all 7 right-hand hashes exist in this
 # repository: the old repository had one branch, `main`, and it was merged whole. Its one
 # tag, `v0.1.0` at 74c783b9, is `sphinx-ai-index-v0.1.0` at 6e4b36da here.

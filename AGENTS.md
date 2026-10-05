@@ -27,7 +27,7 @@ the shim.
 | sphinx-test-reports' behaviour (the Sphinx extension), tests, documentation | `packages/sphinx-test-reports/{src/sphinx_test_reports,tests,docs}/` — start at [`packages/sphinx-test-reports/AGENTS.md`](packages/sphinx-test-reports/AGENTS.md); its `docs/` are ub-test-reports' too |
 | ub-test-reports' behaviour (the converter, the pytest plugin, the parsers, the `[test_reports]` model — no Sphinx), tests | `packages/ub-test-reports/{src/ub_test_reports,tests}/` — start at [`packages/ub-test-reports/AGENTS.md`](packages/ub-test-reports/AGENTS.md) |
 | how every tool reads `ubproject.toml` — finding, anchoring, `[variants]`, the variant-data merge | `packages/ub-project/{src/ub_project,tests,design}/` — start at [`packages/ub-project/AGENTS.md`](packages/ub-project/AGENTS.md) |
-| sphinx-ai-index' behaviour (the `ai_docs_index.json` every docs site here publishes, and the `page-summary` directive), tests, the JSON contract | `packages/sphinx-ai-index/{src/sphinx_ai_index,tests,design}/` — start at [`packages/sphinx-ai-index/AGENTS.md`](packages/sphinx-ai-index/AGENTS.md) |
+| sphinx-ai-index's behaviour (the `ai_docs_index.json` every docs site here publishes, and the `page-summary` directive), tests, the JSON contract | `packages/sphinx-ai-index/{src/sphinx_ai_index,tests,design}/` — start at [`packages/sphinx-ai-index/AGENTS.md`](packages/sphinx-ai-index/AGENTS.md) |
 | the fixtures, helpers and renderer resolution three suites share | `packages/sphinx-needs-testkit/` — a member this repository never publishes, installed through the root's `test` group and loaded by each suite's `tests/conftest.py` as a pytest plugin |
 | the three conformance corpora | `packages/sphinx-needs/tests/conformance/` (needflow) and `packages/sphinx-mounts/tests/fixtures/variant_condition_conformance.toml` (variant conditions), whose repository of record is ubCode, and `packages/ub-project/tests/fixtures/ubproject_reading_conformance.toml` (reading `ubproject.toml`), whose record is THIS repository and which ubCode is to vendor — all shared byte-for-byte; do not reformat any of them (`.gitattributes` plus the yamlfmt and taplo excludes protect them) |
 | a package's metadata, dependencies and extras | `packages/<pkg>/pyproject.toml` |
@@ -39,7 +39,7 @@ the shim.
 | the PlantUML renderer | `vendor/plantuml/` — `pin.toml` (version + sha256, the one place either is written), the committed `plantuml-<version>.jar` it names, and a `README.md`. `uv run poe verify-plantuml` fences the two against each other |
 | CI | `.github/workflows/`, and `.github/scripts/` for the three checks that must run *inside* a CI environment |
 | the docker image | `docker/` — a repository-level deliverable, like the workflows |
-| Read the Docs | sphinx-needs: `.readthedocs.yml`, and it stays at the root under that exact name — the configuration path applies to every version, so moving it makes older tags unbuildable. sphinx-mounts: `packages/sphinx-mounts/.readthedocs.yaml`, sphinx-codelinks: `packages/sphinx-codelinks/.readthedocs.yaml`, and sphinx-test-reports: `packages/sphinx-test-reports/.readthedocs.yaml`, each of which its own RTD project points at; every path inside those is relative to the REPOSITORY root, not to the file. ub-test-reports has no RTD project: it is documented on sphinx-test-reports' site, whose yaml installs it from the checkout first. ub-project has no docs site. sphinx-ai-index has no RTD project either: all four sites LOAD it, and each of the four yamls pip-installs `packages/sphinx-ai-index` from the checkout before the package it documents, and lists it in its `post_checkout` skip filter |
+| Read the Docs | sphinx-needs: `.readthedocs.yml`, and it stays at the root under that exact name — the configuration path applies to every version, so moving it makes older tags unbuildable. sphinx-mounts: `packages/sphinx-mounts/.readthedocs.yaml`, sphinx-codelinks: `packages/sphinx-codelinks/.readthedocs.yaml`, and sphinx-test-reports: `packages/sphinx-test-reports/.readthedocs.yaml`, each of which its own RTD project points at; every path inside those is relative to the REPOSITORY root, not to the file. ub-test-reports has no RTD project: it is documented on sphinx-test-reports' site, whose yaml installs it from the checkout first. ub-project has no docs site. sphinx-ai-index has no RTD project either: every `sphinx-*` site LOADS it, and each site's yaml pip-installs `packages/sphinx-ai-index` from the checkout before the package it documents, and lists it in its `post_checkout` skip filter |
 
 **`tools/` is the workspace's tooling — a virtual member, never released, whose manifest
 declares the tooling's dependencies; `.github/scripts/` keeps only the checks that must
@@ -85,8 +85,8 @@ re-floors all of them (`propagate_floors.py`).
 index every `sphinx-*` docs site here publishes and ubCode's documentation search builds its
 catalog from. That JSON is a contract whose other half lives in ubCode, and it is pinned in
 `packages/sphinx-ai-index/design/json-contract.md` — a change to what the extension writes,
-or to when, starts there. All four extensions' `docs` extras depend on it, and
-`release_plan.py` counts extras as edges: each release of it re-floors all four
+or to when, starts there. Every extension's `docs` extra depends on it, and
+`release_plan.py` counts extras as edges: each release of it re-floors them all
 (`propagate_floors.py`), and while it sits on a version PyPI does not have, none of them can
 be released — so it is bumped in a release pull request that tags at once, never left on a
 dev version.
@@ -441,7 +441,7 @@ always at `packages/sphinx-mounts/`, `packages/sphinx-codelinks/`,
 `packages/sphinx-test-reports/` and `packages/sphinx-ai-index/` — a plain `git log <path>`
 (and GitHub's per-file *History* button) shows the whole thing.
 `packages/<dist>/design/import-commit-map.txt` maps every hash the old repository had to its
-hash here, for all four of them. sphinx-test-reports' map
+hash here, for each of them. sphinx-test-reports' map
 also records the one way its import is NOT byte-for-byte faithful: three PlantUML jar blobs
 were stripped from its history.
 

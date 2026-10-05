@@ -200,8 +200,8 @@ jobs:
       - name: "sphinx-ai-index: pytest"
         # The extension every `sphinx-*` docs site loads to publish `ai_docs_index.json`. Its
         # suite builds small Sphinx projects in `tmp_path` and needs nothing this cell does
-        # not already have -- no renderer, no git, no libclang, no network -- and its two
-        # property-based modules get `hypothesis` from the root `test` group. hypothesis
+        # not already have -- no renderer, no git, no libclang, no network -- and its
+        # property-based tests get `hypothesis` from the root `test` group. hypothesis
         # writes its example database into the working directory, the repository root here,
         # which the root `.gitignore` covers. Same `if:` as the steps above
         if: ${{ !cancelled() && steps.prepare.outcome == 'success' }}

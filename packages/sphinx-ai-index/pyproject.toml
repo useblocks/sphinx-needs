@@ -35,9 +35,9 @@ Changelog = "https://github.com/useblocks/sphinx-needs/blob/master/packages/sphi
 requires = ["flit_core >=3.4,<5"]
 build-backend = "flit_core.buildapi"
 
-# Deliberately NO `[tool.flit.sdist]`: the wheel and sdist carry no non-Python payload
-# beyond `py.typed`, so flit's module-only sdist is exactly what is already published on
-# PyPI. Everything else -- ruff, ty, pytest and the dependency groups (its `hypothesis` is
+# Deliberately NO `[tool.flit.sdist]`: flit's default sdist is the module, its `py.typed`
+# marker, README, LICENSE and this file, and nothing else -- the same entries as the 0.1.0
+# sdist already on PyPI. Everything else -- ruff, ty, pytest and the dependency groups (its `hypothesis` is
 # the root `test` group's) -- is the ROOT's, and `tools/src/sn_tools/check_workspace.py`
 # refuses those tables here: a member `[tool.ruff]` does not extend the root's
 # configuration, it replaces it.

@@ -12,7 +12,7 @@ field for field, as 0.1.0 writes it.
 - 🔧 Sphinx-AI-Index now lives in the Sphinx-Needs repository, as
   `packages/sphinx-ai-index <https://github.com/useblocks/sphinx-needs/tree/master/packages/sphinx-ai-index>`__.
 
-  The whole of ``useblocks/sphinx-ai-index``' history came with it, rewritten so that
+  The whole of ``useblocks/sphinx-ai-index``'s history came with it, rewritten so that
   every historical commit already places its files under that directory: ``git log`` and
   ``git blame`` read the full history there with no ``--follow``, and
   ``packages/sphinx-ai-index/design/import-commit-map.txt`` maps every hash the old
