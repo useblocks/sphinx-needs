@@ -574,6 +574,9 @@ def load_config_from_toml(app: Sphinx, config: Config) -> None:
         # Keep values passed via sphinx-build -D (confoverrides) untouched.
         if key in overridden_keys or config_key in overridden_keys:
             continue
+        if (reason := NeedsSphinxConfig.toml_ignored_reason(key)) is not None:
+            _report_ignored_toml_key(key, value, reason)
+            continue
         config[config_key] = NeedsSphinxConfig.convert_field_value(
             key, value, toml_file.parent
         )
@@ -584,12 +587,33 @@ def load_config_from_toml(app: Sphinx, config: Config) -> None:
             continue
         if schema_config_overridden or f"needs_schema_{key}" in overridden_keys:
             continue
+        if (
+            reason := NeedsSphinxConfig.toml_ignored_reason(key, "schema_")
+        ) is not None:
+            _report_ignored_toml_key(f"schema.{key}", value, reason)
+            continue
         config["needs_schema_"][key] = NeedsSphinxConfig.convert_field_value(
             key, value, toml_file.parent, "schema_"
         )
 
     _load_variants_from_toml(
         config, toml_doc, toml_file, tuple(toml_path), overridden_keys
+    )
+
+
+def _report_ignored_toml_key(key: str, value: Any, reason: str) -> None:
+    """Warn that the toml file sets *key*, which cannot be set from it and is ignored.
+
+    An empty value (an empty string, array or table) sets nothing, so ignoring it
+    loses nothing, and it is not reported.
+    """
+    if isinstance(value, (str, list, dict)) and not value:
+        return
+    log_warning(
+        LOGGER,
+        f"'needs_from_toml' file sets {key!r}, which is ignored: {reason}",
+        "config",
+        None,
     )
 
 
@@ -985,6 +1009,14 @@ def merge_default_configs(_app: Sphinx, config: Config) -> None:
 
     # Register functions configured by user
     for needs_func in needs_config._functions:
+        if not callable(needs_func):
+            log_warning(
+                LOGGER,
+                f"needs_functions entry {needs_func!r} is not callable and is ignored",
+                "config",
+                None,
+            )
+            continue
         _NEEDS_CONFIG.add_function(needs_func)
 
     # The default link name. Must exist in all configurations. Therefore we set it here for the user.
