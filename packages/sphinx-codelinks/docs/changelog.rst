@@ -95,8 +95,13 @@ New and Improved
   appeared only once the document changed. Each directive now records its scope, and every
   build walks each recorded scope again -- one directory walk per scope, no parsing -- and
   re-reads the documents whose files changed. A ``:file:`` scope is that one file, so a new
-  file beside it costs nothing, and the extension's own output directory is never traced.
-  The walk costs about 0.1 s per 2,000 discovered files, whatever their size -- the
+  file beside it costs nothing. The build directory is never traced -- the output and
+  doctree directories and, when they sit inside the documentation source directory as
+  ``_build/`` does, that directory, so sibling builders' output is skipped too; an output
+  tree elsewhere inside ``src_dir`` needs an ignore rule (``.gitignore`` with
+  ``gitignore = true``, or ``exclude``). A build also starts with no source page pending
+  from a previous non-HTML build in the same process. The walk costs roughly 0.1 s per
+  2,000 discovered files on an Apple M2 Pro laptop, whatever their size -- the
   directive's own discovery plus a ``stat`` per file -- while parsing them costs tens of
   times more (2,000 200-line C++ files: ~0.1 s of walk against ~9 s of analysis).
 
