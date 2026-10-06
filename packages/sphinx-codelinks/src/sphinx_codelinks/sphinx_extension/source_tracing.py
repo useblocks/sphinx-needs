@@ -31,11 +31,15 @@ from sphinx_codelinks.sphinx_extension.directives.src_trace import (
     SourceTracingDirective,
 )
 from sphinx_codelinks.sphinx_extension.html_wrapper import html_wrapper
-from sphinx_codelinks.sphinx_extension.need_id_refs import (
+from sphinx_codelinks.sphinx_extension.need_id_refs import need_id_refs_store
+from sphinx_codelinks.sphinx_extension.rediscovery import (
     attach_on_post_processing,
+    config_only_refs_store,
+    find_affected_documents,
+    find_outdated_scopes,
     merge_info,
-    need_id_refs_store,
     purge_doc,
+    scope_store,
 )
 from sphinx_codelinks.sphinx_extension.string_links import register_string_links
 from sphinx_needs.api import add_field, add_need_type
@@ -107,8 +111,14 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.connect("config-inited", check_sphinx_configuration)
 
     app.connect("env-before-read-docs", prepare_env)
+    # a file added to a src-trace scope re-reads the hosting document (#2040)
+    app.connect("env-get-outdated", find_outdated_scopes)
     app.connect("env-purge-doc", purge_doc)
     app.connect("env-merge-info", merge_info)
+    # after every read and merge: the projects no directive traces are scanned, and
+    # the documents whose needs' references changed are written
+    # (early, before an env-updated handler of another extension resolves the needs)
+    app.connect("env-updated", find_affected_documents, priority=100)
     # after every need is collected and before needextend is applied: a user's
     # needextend of the references field wins
     app.connect("needs-before-post-processing", attach_on_post_processing)
@@ -125,6 +135,10 @@ def setup(app: Sphinx) -> dict[str, Any]:
 
 
 def builder_inited(app: Sphinx) -> None:
+    # the source pages a build registers are generated (and the registry emptied) by
+    # an HTML builder's html-collect-pages; after any other builder they would reach
+    # the next build in the same process, whose output directory is another one
+    file_lineno_href.mappings.clear()
     custom_css = Path(__file__).parent / "ub_sct.css"
     copy_asset(custom_css, Path(app.outdir) / "_static" / "source_tracing")
 
@@ -323,6 +337,8 @@ def prepare_env(
     """
     src_trace_sphinx_config = CodeLinksConfig.from_sphinx(app.config)
     need_id_refs_store(env)
+    scope_store(env)
+    config_only_refs_store(env)
 
     # Set time measurement flag
     if src_trace_sphinx_config.debug_measurement:

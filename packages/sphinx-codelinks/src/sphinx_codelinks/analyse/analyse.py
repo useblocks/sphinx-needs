@@ -525,7 +525,13 @@ class SourceAnalyse:
         with output_path.open("w") as f:
             json.dump(to_dump, f)
 
-    def run(self) -> None:
+    def run(self, *, log_summary: bool = True) -> None:
+        """Parse the source files and extract their markers.
+
+        :param log_summary: Whether to print the per-project summary line; a caller
+            that prints its own (the configuration pass of the Sphinx extension) passes
+            ``False``.
+        """
         if (
             self.analyse_config.preprocessor is not None
             and self.analyse_config.comment_type == CommentType.cpp
@@ -535,7 +541,8 @@ class SourceAnalyse:
             self.create_src_objects()
         self.extract_marked_content()
         self.merge_marked_content()
-        self._log_summary()
+        if log_summary:
+            self._log_summary()
 
     def _log_summary(self) -> None:
         """Emit a per-project marker (default-visible) plus a -v breakdown."""

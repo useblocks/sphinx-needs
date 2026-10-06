@@ -56,6 +56,8 @@ src/sphinx_codelinks/   # Main source code
     ├── html_wrapper.py  # HTML output wrapper for traced source
     ├── string_links.py  # The URL fields' needs_string_links entries
     ├── need_id_refs.py  # Keep @need-ids records in the env; attach them to needs
+    ├── rediscovery.py   # Scope fingerprints, config-only scan, the env-get-outdated/env-updated handlers
+    ├── project_analysis.py # Analysis preparation, URLs and records, shared by directive and scan
     ├── debug.py         # Debug utilities
     ├── ub_sct.css       # CSS for source tracing UI
     └── directives/      # Custom Sphinx directives
@@ -63,7 +65,7 @@ src/sphinx_codelinks/   # Main source code
 tests/                  # Test suite -- `tests/__init__.py` is why this path is NOT in the
 ├── __init__.py         #   root `testpaths` (see the root AGENTS.md)
 ├── conftest.py         # Pytest fixtures and configuration
-├── test_*.py           # 17 test modules
+├── test_*.py           # the test modules
 ├── __snapshots__/      # Syrupy snapshot test fixtures
 ├── data/               # Test data and fixtures
 └── doc_test/           # minimal Sphinx projects for the integration tests
@@ -320,8 +322,10 @@ The extension connects to these Sphinx events (in execution order):
 | `config-inited`        | `check_sphinx_configuration()` | Validate configuration and raise errors                              |
 | `builder-inited`       | `builder_inited()`             | Copy CSS assets to output directory                                  |
 | `env-before-read-docs` | `prepare_env()`                | Initialize timing measurements and debug filters                     |
-| `env-purge-doc`        | `purge_doc()`                  | Drop a re-read document's `@need-ids` records                        |
-| `env-merge-info`       | `merge_info()`                 | Take over the records a `-j N` worker read                           |
+| `env-get-outdated`     | `find_outdated_scopes()`       | Re-read documents whose `src-trace` scope's files changed (#2040)    |
+| `env-purge-doc`        | `purge_doc()`                  | Drop a re-read document's `@need-ids` records and scopes             |
+| `env-merge-info`       | `merge_info()`                 | Take over the records and scopes a `-j N` worker read                |
+| `env-updated`          | `find_affected_documents()`    | Scan config-only projects; return documents whose needs' refs changed |
 | `needs-before-post-processing` | `attach_on_post_processing()` | Attach `@need-ids` references to the needs they name     |
 | `html-collect-pages`   | `generate_code_page()`         | Generate HTML pages for traced source files                          |
 | `html-page-context`    | `add_custom_css()`             | Inject custom CSS for source tracing UI                              |
@@ -341,6 +345,8 @@ The extension connects to these Sphinx events (in execution order):
 5. **String links are configuration, never read-time state**: the URL fields' `needs_string_links` entries are added once at `config-inited` (`sphinx_extension/string_links.py`), before sphinx-needs compiles them at priority 551. A directive must not write into `env.config`: a `-j N` worker's write never reaches the main process, and the next build sees a changed configuration. So nothing per-project or per-read goes into an entry — `remote-url` holds the full URL (the project's `remote_url_pattern` filled in) and its entry is an identity link.
 
 6. **`@need-ids` references: a record, a store, an attach.** The record is `NeedIdRef` (`analyse/references.py`): plain data with a root-relative POSIX path and its `root`, round-tripping through JSON — the exchange seam, so a pre-analysed input file can later produce the same records, for the remote half (`local_url` is build-local; `from_dict` ignores unknown keys and checks the invariants). `src-trace` turns its analysis' references into records for projects past `need_id_refs_field()` (ubCode's gate) and keeps them on the env attribute `codelinks_need_id_refs`, keyed by the host document (purged and merged with it). `attach_need_id_refs()` (`sphinx_extension/need_id_refs.py`) takes records, needs and the project → field and project → root mappings from configuration, and nothing else, dedupes on `(root, path, lineno, need_id)` within a field — the root from the `roots` mapping, configuration like `fields`, never in the record — resolves ids through `resolve_need_id()` alone, and runs at sphinx-needs' `needs-before-post-processing` — after every need is read, before `needextend`, so a user's extend of the field wins. Never attach at `needs-before-sealing`, never through the extends store, never on `_source`.
+
+   **Rediscovery and config-only mode: two more stores, two more handlers** (`sphinx_extension/rediscovery.py`). Each directive records its scope and a fingerprint of the discovered files (POSIX path, mtime, size — no parsing) in `codelinks_src_trace_scopes`, keyed by host document like the records; the `env-get-outdated` handler re-walks every scope and returns the documents whose fingerprint changed, because a file ADDED to a scope is a dependency of nothing. The scope store is also the ownership rule: a gated project no scope names is config-only, and the `env-updated` handler (main process, after every read and merge — the one point where ownership is exact) scans its whole `src_dir` through the directive's own discovery, preparation and record builder into `codelinks_config_only_refs`, keyed by project (never purged or merged; cleared when `env.config_status != CONFIG_OK`; re-analysed only when the fingerprint changes). Discovery never traces the build directory (`exclude=build_output_dirs(app)`, passed by all three callers: the output and doctree directories, and each one's parent when it lies strictly inside `app.srcdir`, so sibling builders' `_build/<builder>` are skipped too; an output tree elsewhere inside `src_dir` needs an ignore rule, and the whole containing directory is skipped, so an output directory placed directly beside real sources hides them). The scan never creates needs. `effective_refs()` is the one list of records: the `env-get-outdated` handler takes it first (the previous build's), the `env-updated` handler compares it after the scan and returns the documents holding a need whose references changed (else, after a re-analysis, the root document) — Sphinx writes them without reading them and pickles the environment, which it does only when that list or the read set is non-empty — and the one attach call uses it. Never move the scan to `env-before-read-docs`: a build that reads nothing does not pickle what was stored there.
 
 ### Key Components
 

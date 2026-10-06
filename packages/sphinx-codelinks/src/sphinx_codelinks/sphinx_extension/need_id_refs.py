@@ -5,6 +5,8 @@ It turns each into :class:`~sphinx_codelinks.analyse.references.NeedIdRef` recor
 keeps them in the environment under the document that hosts the directive
 (:func:`need_id_refs_store`): purged with that document, merged from ``-j N`` workers,
 pickled with the environment, so an unchanged rebuild re-reads nothing and still attaches.
+A project no directive traces has its records made by the configuration pass instead
+(``sphinx_extension/rediscovery.py``, which also connects the handlers).
 
 Once every need of every document is known, at Sphinx-Needs'
 ``needs-before-post-processing`` event, :func:`attach_need_id_refs` gives each referenced
@@ -29,6 +31,8 @@ from sphinx_codelinks.analyse.utils import find_git_root
 from sphinx_codelinks.config import (
     CodeLinksConfig,
     CodeLinksProjectConfigType,
+    config_base_dir,
+    locate_src_dir,
     need_id_refs_fields,
 )
 from ub_project import anchor
@@ -46,25 +50,6 @@ def need_id_refs_store(env: BuildEnvironment) -> dict[str, list[NeedIdRef]]:
         store = {}
         setattr(env, ENV_ATTRIBUTE, store)
     return store
-
-
-def purge_doc(_app: Sphinx, env: BuildEnvironment, docname: str) -> None:
-    """Drop a document's records before it is read again, or when it is removed."""
-    need_id_refs_store(env).pop(docname, None)
-
-
-def merge_info(
-    _app: Sphinx,
-    env: BuildEnvironment,
-    docnames: Iterable[str],
-    other: BuildEnvironment,
-) -> None:
-    """Take over the records of the documents a ``-j N`` worker read."""
-    mine = need_id_refs_store(env)
-    theirs = need_id_refs_store(other)
-    for docname in docnames:
-        if docname in theirs:
-            mine[docname] = theirs[docname]
 
 
 def project_root(
@@ -85,10 +70,8 @@ def project_root(
     if discover is None or analyse is None:
         return None
     try:
-        conf_dir = Path(confdir)
-        if codelinks_config.config_from_toml:
-            conf_dir = anchor(Path(codelinks_config.config_from_toml).parent, conf_dir)
-        src_dir = anchor(discover.src_dir, conf_dir).resolve()
+        conf_dir = config_base_dir(confdir, codelinks_config)
+        src_dir = locate_src_dir(confdir, codelinks_config, discover)
         if analyse.git_root is not None:
             root = anchor(analyse.git_root, conf_dir).resolve()
         else:
@@ -202,11 +185,11 @@ def attach_need_id_refs(
     return result
 
 
-def attach_on_post_processing(app: Sphinx, needs: MutableMapping[str, Any]) -> None:
-    """Attach the stored records (``needs-before-post-processing``), warn about the
-    unknown ids, and report per project."""
-    store = need_id_refs_store(app.env)
-    refs = [ref for docname in sorted(store) for ref in store[docname]]
+def attach_and_report(
+    app: Sphinx, needs: MutableMapping[str, Any], refs: Iterable[NeedIdRef]
+) -> None:
+    """Attach ``refs`` to ``needs``, warn about the unknown ids, and report per project."""
+    refs = list(refs)
     if not refs:
         return
     codelinks_config = CodeLinksConfig.from_sphinx(app.config)

@@ -68,8 +68,8 @@ New and Improved
   the field wins. The unknown-id warning points at the source line (``src/refs.cpp:5``),
   and each project reports ``N references attached, M unknown``. The attach is on when
   local or remote URLs are, as in ubCode; ``ref_url_field = ""`` switches it off for a
-  project. A changed source file updates ``needs.json`` on the next build; a referenced
-  need's card in another document is rewritten only when that document is.
+  project. A changed source file updates ``needs.json`` and the referenced needs' cards on
+  the next build.
   A comment that starts with a configured ``@need-ids:`` marker is a reference and never a
   one-line need, as in ubCode: on the default one-line style, whose start sequence ``@``
   matched it too, ``// @need-ids: A, B`` used to become a need with the id ``B`` (or stop
@@ -85,6 +85,40 @@ New and Improved
   a command that is going away. A project that keeps including the generated file gets
   both the attached field and the ``needextend``'d one: remove the include, and any
   ``needs_fields`` declaration of the field made for that route.
+
+- 🐛 A source file added to a ``src-trace`` directive's scope is seen by the next
+  incremental build, with no ``-E`` (`#2040 <https://github.com/useblocks/sphinx-needs/issues/2040>`__).
+
+  Sphinx re-read the document hosting the directive when a file it had analysed was edited
+  or removed, but a file added to its ``:directory:`` (or to the project, for a directive
+  with neither option) was a dependency of nothing: its one-line needs and references
+  appeared only once the document changed. Each directive now records its scope, and every
+  build walks each recorded scope again -- one directory walk per scope, no parsing -- and
+  re-reads the documents whose files changed. A ``:file:`` scope is that one file, so a new
+  file beside it costs nothing. The build directory is never traced -- the output and
+  doctree directories and, when they sit inside the documentation source directory as
+  ``_build/`` does, that directory, so sibling builders' output is skipped too; an output
+  tree elsewhere inside ``src_dir`` needs an ignore rule (``.gitignore`` with
+  ``gitignore = true``, or ``exclude``), and the whole containing directory is skipped, so
+  an output directory placed directly beside traced sources hides them. A build also starts with no source page pending
+  from a previous non-HTML build in the same process. The walk costs roughly 0.1 s per
+  2,000 discovered files on an Apple M2 Pro laptop, whatever their size -- the
+  directive's own discovery plus a ``stat`` per file -- while parsing them costs tens of
+  times more (2,000 200-line C++ files: ~0.1 s of walk against ~9 s of analysis).
+
+- ✨ A project that no ``src-trace`` directive traces has its ``@need-ids:`` references
+  attached anyway (ubCode's config-only mode), behind the same gate as a directive's. Its
+  whole source directory is analysed, in the main process and so under ``-j N`` too, and
+  no need is created from it -- its line counts the one-line needs it did not create.
+  Every build walks the directory and analyses it again only when its files or the
+  configuration changed (and keeps the result, writing the root document if it must); a
+  failing scan warns ``codelinks.need_id_ref`` and the build goes on.
+
+- 🐛 A need's card is rewritten when its code references change, whichever document it is
+  in: a source-only edit used to update ``needs.json`` but leave the card in a document
+  that was not read again showing the old references. Such a document is now written
+  again (not read again). A ``needtable`` in a third document that filters on the field is
+  still rewritten only when that document is.
 
 - ⬆️ ``typer`` is no longer capped below 0.26.8. The cap protected the documentation build,
   whose ``sphinxcontrib-typer`` imported a ``typer.rich_utils`` name that 0.26.8 removed;
