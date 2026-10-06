@@ -32,7 +32,11 @@ CONF = """\
     ]
     """
 
-RST = "Title\n=====\n\n.. probe::\n"
+RST = "Title\n=====\n\n.. probe::\n\n   First line.\n   Second line.\n"
+
+#: stands for the directive's own ``self.content``, a docutils ``StringList`` -- what a
+#: directive-based extension naturally passes as ``content``
+DIRECTIVE_CONTENT = object()
 
 
 @pytest.fixture
@@ -50,14 +54,19 @@ def probe(make_app, tmp_path):
         record: dict[str, Any] = {}
 
         class Probe(SphinxDirective):
+            has_content = True
+
             def run(self):
+                given = inputs
+                if given.get("content") is DIRECTIVE_CONTENT:
+                    given = {**given, "content": self.content}
                 try:
-                    record["generated"] = generate_need_id(app, **inputs)
+                    record["generated"] = generate_need_id(app, **given)
                 except InvalidNeedException as exc:
                     record["generated"] = exc
                 try:
                     return add_need(
-                        app, self.state, self.env.docname, self.lineno, **inputs
+                        app, self.state, self.env.docname, self.lineno, **given
                     )
                 except InvalidNeedException as exc:
                     record["added"] = exc
@@ -104,10 +113,22 @@ def probe(make_app, tmp_path):
             None,
             id="empty-title-and-content",
         ),
+        # an empty full_title is given, so it is hashed -- or, being empty, the content
+        pytest.param(
+            {"need_type": "spec", "title": "T", "content": "C", "full_title": ""},
+            None,
+            id="empty-full-title",
+        ),
+        pytest.param(
+            {"need_type": "spec", "title": "", "content": DIRECTIVE_CONTENT},
+            None,
+            id="string-list-content",
+        ),
     ],
 )
 def test_generate_need_id_is_the_id_add_need_assigns(probe, inputs, confoverrides):
-    """For each input the #2042 review checked, the helper returns the id of the need
+    """For each input the #2042 review checked, an empty ``full_title``, and the
+    directive's own content (a ``StringList``), the helper returns the id of the need
     ``add_need`` then creates."""
     app, record = probe(inputs, confoverrides)
     assert "added" not in record, record.get("added")
