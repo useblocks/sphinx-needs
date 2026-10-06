@@ -5,8 +5,9 @@ Two configurations put one there: a configured ``git_root`` that does not contai
 project's ``src_dir`` (or does not exist), which is ignored with one
 ``codelinks.git_root`` warning, the repository root being detected from ``src_dir``
 instead; and a discovered file that resolves to outside ``src_dir`` (a symbolic link out
-of the tree), which is not traced, with one ``codelinks.outside_src_dir`` warning at the
-link. Every build case copies ``doc_test/need_id_refs`` (see ``test_need_id_refs``).
+of the tree), which is not traced, with one ``codelinks.outside_src_dir`` warning
+naming the link. Every build case copies ``doc_test/need_id_refs`` (see
+``test_need_id_refs``).
 """
 
 import re
@@ -68,9 +69,10 @@ def _git_root_warning(root: Path, problem: str) -> str:
 
 
 def _outside_warning(link: Path, target: Path, src_dir: Path) -> str:
-    """The warning at ``link`` (the package logger appends the type on Sphinx 7)."""
+    """The warning about ``link``, which leads it (the package logger appends the
+    type on Sphinx 7)."""
     return (
-        f"{link.as_posix()}: WARNING: {link.as_posix()} resolves to "
+        f"WARNING: {link.as_posix()} resolves to "
         f"{target.as_posix()}, outside src_dir {src_dir.as_posix()}: not traced "
         "(widen src_dir to cover it, or exclude the link) [codelinks.outside_src_dir]"
     )
@@ -205,7 +207,7 @@ def test_a_file_link_out_of_src_dir_is_not_traced(
     tmp_path: Path, make_app: _MakeApp, urls: tuple[str, str] | None
 ) -> None:
     """``src/ext_link.cpp`` -> ``outside/ext.cpp``: the build succeeds, the file is
-    neither traced nor referenced, and one warning sits at the link."""
+    neither traced nor referenced, and one warning names the link."""
     _project(tmp_path, toml_replace=urls, files={"outside/ext.cpp": OUTSIDE_SOURCE})
     _link_out(tmp_path, "src/ext_link.cpp", "outside/ext.cpp")
     app = _build(tmp_path, make_app)
@@ -243,7 +245,7 @@ def test_a_followed_directory_link_out_of_src_dir_traces_none_of_its_files(
     tmp_path: Path, make_app: _MakeApp
 ) -> None:
     """``follow_links = true`` and ``src/dirlink`` -> ``outside/odir``: each file
-    below the link is warned once, at its path through the link, and none is traced."""
+    below the link is warned once, by its path through the link, and none is traced."""
     _project(
         tmp_path,
         toml_replace=(
@@ -304,7 +306,7 @@ def test_a_config_only_project_skips_a_link_out_and_attaches_the_rest(
     tmp_path: Path, make_app: _MakeApp
 ) -> None:
     """No directive traces ``src``: the configuration pass walks it through the same
-    discovery, warns at the link, and attaches every other reference."""
+    discovery, warns about the link, and attaches every other reference."""
     commit = _project(
         tmp_path,
         files={

@@ -221,21 +221,21 @@ def test_jsonc_discover_gate() -> None:
 
 def test_follow_links(tmp_path: Path) -> None:
     """Test that follow_links controls whether symbolic links are followed."""
-    # Create a real directory with a source file
-    real_dir = tmp_path / "real"
-    real_dir.mkdir()
-    (real_dir / "source.cpp").write_text("// test")
-
-    # Create a project directory with a symlink to the real directory
+    # Create a project directory with a real directory the walk excludes, holding a
+    # source file: inside the project, since a file outside it is never discovered
+    # (#2062, ``test_a_link_to_outside_the_root_is_not_listed``)
     project_dir = tmp_path / "project"
-    project_dir.mkdir()
+    real_dir = project_dir / "real"
+    real_dir.mkdir(parents=True)
+    (real_dir / "source.cpp").write_text("// test")
     (project_dir / "direct.cpp").write_text("// direct")
+    # and a symlink to the real directory
     link = project_dir / "linked"
     link.symlink_to(real_dir)
 
     # Without follow_links, symlinked files should not be discovered
     config_no_follow = SourceDiscoverConfig(
-        src_dir=project_dir, gitignore=False, follow_links=False
+        src_dir=project_dir, gitignore=False, exclude=["real/**"], follow_links=False
     )
     discover_no_follow = SourceDiscover(config_no_follow)
     discovered_names = {p.name for p in discover_no_follow.source_paths}
@@ -244,7 +244,7 @@ def test_follow_links(tmp_path: Path) -> None:
 
     # With follow_links, symlinked files should be discovered
     config_follow = SourceDiscoverConfig(
-        src_dir=project_dir, gitignore=False, follow_links=True
+        src_dir=project_dir, gitignore=False, exclude=["real/**"], follow_links=True
     )
     discover_follow = SourceDiscover(config_follow)
     discovered_names = {p.name for p in discover_follow.source_paths}
@@ -344,10 +344,9 @@ def test_a_file_link_inside_the_root_is_listed_once(tmp_path: Path) -> None:
 
     A symlinked file is listed even with ``follow_links = false`` (``is_file()``
     follows the link) -- ubCode skips it; a parity gap kept as it is. A link to a file
-    OUTSIDE the root is listed too, as its resolved target.
+    OUTSIDE the root is not listed (#2062).
     """
     assert _listing(_links_tree(tmp_path), follow_links=False) == [
-        "outside/ext.cpp",
         "root/a.cpp",
         "root/sub/b.cpp",
     ]
@@ -358,10 +357,8 @@ def test_a_followed_directory_link_inside_the_root_lists_each_file_once(
 ) -> None:
     """With ``follow_links = true`` ``sub/b.cpp`` is reached three ways (``sub/``,
     ``b_link.cpp`` and ``dirlink_in/``): still one entry. The followed link to outside
-    the root lists its file, resolved."""
+    the root lists nothing (#2062)."""
     assert _listing(_links_tree(tmp_path), follow_links=True) == [
-        "outside/ext.cpp",
-        "outside/odir/o.cpp",
         "root/a.cpp",
         "root/sub/b.cpp",
     ]
@@ -397,12 +394,11 @@ def test_a_link_free_listing_is_sorted_by_full_path(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize("follow_links", [False, True])
-def test_a_link_to_outside_the_root_is_listed_as_its_target(
+def test_a_link_to_outside_the_root_is_not_listed(
     tmp_path: Path, follow_links: bool
 ) -> None:
-    """A file link to outside the root is listed, resolved, either way; a directory
-    link to outside it only when followed."""
+    """Neither a file link to outside the root nor a followed directory link's files
+    are listed, either way (#2062): every record and copy is relative to the root."""
     listing = _listing(_links_tree(tmp_path), follow_links=follow_links)
-    assert "outside/ext.cpp" in listing
-    assert ("outside/odir/o.cpp" in listing) is follow_links
+    assert not any(path.startswith("outside/") for path in listing)
     assert not any("link" in path for path in listing)

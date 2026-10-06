@@ -31,11 +31,10 @@ from sphinx_codelinks.analyse.utils import find_git_root
 from sphinx_codelinks.config import (
     CodeLinksConfig,
     CodeLinksProjectConfigType,
-    config_base_dir,
     locate_src_dir,
     need_id_refs_fields,
 )
-from ub_project import anchor
+from sphinx_codelinks.sphinx_extension.project_analysis import configured_git_root
 
 logger = logging.getLogger(__name__)
 
@@ -59,23 +58,25 @@ def project_root(
 ) -> str | None:
     """The directory a project's records' ``path`` is relative to, as POSIX, or ``None``.
 
-    Resolved as the ``src-trace`` directive resolves it: the configured ``git_root``, else
-    the git root above the source directory, else the source directory -- each anchored
-    at the configuration file's directory. It identifies the FILE behind a record's
-    root-relative ``path`` (two repositories may both hold ``src/main.cpp``), so it is
-    configuration of the consuming build, never data in the record.
+    Resolved as the ``src-trace`` directive resolves it: the configured ``git_root``
+    (:func:`~sphinx_codelinks.sphinx_extension.project_analysis.configured_git_root`,
+    the one function deciding it, so a ``git_root`` the analysis ignores is ignored
+    here too), else the git root above the source directory, else the source
+    directory. It identifies the FILE behind a record's root-relative ``path`` (two
+    repositories may both hold ``src/main.cpp``), so it is configuration of the
+    consuming build, never data in the record.
     """
     discover = project_config.get("source_discover_config")
     analyse = project_config.get("analyse_config")
     if discover is None or analyse is None:
         return None
     try:
-        conf_dir = config_base_dir(confdir, codelinks_config)
         src_dir = locate_src_dir(confdir, codelinks_config, discover)
-        if analyse.git_root is not None:
-            root = anchor(analyse.git_root, conf_dir).resolve()
-        else:
-            root = find_git_root(src_dir) or src_dir
+        root = (
+            configured_git_root(confdir, codelinks_config, project_config)
+            or find_git_root(src_dir)
+            or src_dir
+        )
     except (OSError, TypeError, ValueError):
         return None
     return root.as_posix()

@@ -135,6 +135,27 @@ New and Improved
   directives still analyse the shared files once each
   (`#2042 <https://github.com/useblocks/sphinx-needs/issues/2042>`__).
 
+- 🐛 A ``git_root`` that does not contain ``src_dir``, and a source file that resolves to
+  outside ``src_dir``, are diagnosed instead of producing ``../`` reference paths or a
+  traceback (`#2062 <https://github.com/useblocks/sphinx-needs/issues/2062>`__).
+
+  A configured ``git_root`` that does not exist, or is neither ``src_dir`` nor a directory
+  above it, is ignored with one ``codelinks.git_root`` warning, and the repository root is
+  detected from ``src_dir`` as when none is set: the remote URLs, the ``@need-ids:``
+  records and the attach all follow the detected root. It used to give records whose
+  ``path`` began with ``../`` (with local URLs), or a ``ValueError`` traceback (with remote
+  URLs).
+
+  A file that discovery reaches through a symbolic link but whose target lies outside
+  ``src_dir`` -- a file link, or a file below a followed directory link -- is skipped with
+  one ``codelinks.outside_src_dir`` warning naming the link and its target, in a
+  ``src-trace`` directive, a ``:file:`` scope, the scan of a project no directive traces,
+  and ``codelinks discover`` alike. **This changes behaviour:** such a file used to be
+  listed by discovery and analysed, and a build aborted with
+  ``ValueError: … is not in the subpath of …`` as soon as it held a one-line need (URL
+  fields on or off) or, with a URL field on, an ``@need-ids:`` reference; it is now never
+  traced. Widen ``src_dir`` to cover the target, or exclude the link.
+
 - ⬆️ ``typer`` is no longer capped below 0.26.8. The cap protected the documentation build,
   whose ``sphinxcontrib-typer`` imported a ``typer.rich_utils`` name that 0.26.8 removed;
   the ``docs`` extra now requires ``sphinxcontrib-typer`` 0.9.1 or newer, which tracks

@@ -32,6 +32,7 @@ from sphinx_codelinks.sphinx_extension.directives.src_trace import (
 )
 from sphinx_codelinks.sphinx_extension.html_wrapper import html_wrapper
 from sphinx_codelinks.sphinx_extension.need_id_refs import need_id_refs_store
+from sphinx_codelinks.sphinx_extension.project_analysis import git_root_warnings
 from sphinx_codelinks.sphinx_extension.rediscovery import (
     attach_on_post_processing,
     config_only_refs_store,
@@ -360,6 +361,8 @@ def check_sphinx_configuration(app: Sphinx, _config: _SphinxConfig) -> None:
         raise Exception("\n".join(errors))
     for warning in remote_url_pattern_warnings(config):
         logger.warning(warning, type="codelinks", subtype="remote_url_pattern")
+    for warning in git_root_warnings(app.confdir, config):
+        logger.warning(warning, type="codelinks", subtype="git_root")
 
 
 def emit_warnings(

@@ -183,7 +183,7 @@ class SourceTracingDirective(SphinxDirective):
         analyse_config = prepare_analyse_config(
             self.env.app.confdir,
             src_trace_sphinx_config,
-            src_trace_conf["analyse_config"],
+            src_trace_conf,
             src_dir=src_dir,
             src_files=source_files,
         )

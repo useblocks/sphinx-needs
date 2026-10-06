@@ -237,6 +237,8 @@ def discover(  # CLI command requires multiple parameters
     ] = CommentType.cpp,
 ) -> None:
     """Discover the filepaths from the given root directory."""
+    # a file outside the directory is warned about: on stderr, whatever ran before
+    configure_cli()
 
     src_discover_dict: SourceDiscoverConfigType = {
         "src_dir": src_dir,
