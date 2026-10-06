@@ -10,8 +10,16 @@ naming the link. Every build case copies ``doc_test/need_id_refs`` (see
 ``test_need_id_refs``).
 """
 
+import json
+import ntpath
+import os
+import posixpath
 import re
-from pathlib import Path
+import subprocess
+import sys
+from pathlib import Path, PurePosixPath, PureWindowsPath
+from types import SimpleNamespace
+from typing import Any
 
 import pytest
 import sphinx
@@ -21,6 +29,7 @@ from typer.testing import CliRunner
 from sphinx_codelinks.analyse.references import NeedIdRef
 from sphinx_codelinks.cmd import app as cli
 from sphinx_codelinks.config import CodeLinksConfig
+from sphinx_codelinks.source_discover import source_discover
 from sphinx_codelinks.source_discover.config import SourceDiscoverConfig
 from sphinx_codelinks.sphinx_extension.need_id_refs import (
     need_id_refs_store,
@@ -165,6 +174,65 @@ def test_the_attach_root_is_the_records_root(
 
     roots = project_roots(app.confdir, CodeLinksConfig.from_sphinx(app.config))
     assert roots == {"src": tmp_path.resolve().as_posix()}
+
+
+@pytest.mark.parametrize("accepted", ["src_dir", "above_the_repository"])
+def test_an_accepted_git_root_is_the_records_and_the_attachs_root(
+    tmp_path: Path, make_app: _MakeApp, accepted: str
+) -> None:
+    """A ``git_root`` other than the detected repository -- ``src_dir`` itself, or a
+    directory above the repository that is no repository -- is used by the analysis
+    AND by the attach: the records are relative to it, and ``project_roots()`` names
+    it."""
+    project = tmp_path / "proj"
+    project.mkdir()
+    value, root, path = {
+        "src_dir": ("../src", project / "src", "refs.cpp"),
+        "above_the_repository": (tmp_path.as_posix(), tmp_path, "proj/src/refs.cpp"),
+    }[accepted]
+    _project(project, toml_replace=LOCAL_ONLY, toml_extra=_git_root(value))
+    app = _build(project, make_app)
+
+    assert not any("codelinks.git_root" in w for w in build_warnings(app))
+    records = _records(app)
+    assert records
+    assert {ref.path for ref in records} == {path}
+    assert {ref.root for ref in records} == {"git"}
+    roots = project_roots(app.confdir, CodeLinksConfig.from_sphinx(app.config))
+    assert roots == {"src": root.resolve().as_posix()}
+    assert (Path(roots["src"]) / path).resolve() == (
+        project / "src" / "refs.cpp"
+    ).resolve()
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32" or (hasattr(os, "geteuid") and os.geteuid() == 0),
+    reason="needs POSIX permissions that bind the running user",
+)
+def test_an_unreadable_git_root_is_ignored_with_a_warning(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """A ``git_root`` below a directory that cannot be read is treated as unset, as a
+    missing one is, instead of failing the build at ``config-inited``."""
+    project = tmp_path / "proj"
+    project.mkdir()
+    locked = tmp_path / "locked"
+    (locked / "inner").mkdir(parents=True)
+    _project(
+        project,
+        toml_replace=LOCAL_ONLY,
+        toml_extra=_git_root((locked / "inner").as_posix()),
+    )
+    locked.chmod(0)
+    try:
+        app = _build(project, make_app)
+    finally:
+        locked.chmod(0o755)
+
+    assert [w for w in build_warnings(app) if "codelinks.git_root" in w] == [
+        _git_root_warning(locked.resolve() / "inner", "cannot be read")
+    ]
+    assert {ref.path for ref in _records(app)} == {"src/refs.cpp"}
 
 
 def test_a_git_root_above_src_dir_changes_nothing(
@@ -370,3 +438,104 @@ def test_a_link_leaving_a_directory_scope_but_not_src_dir_is_traced(
     found = discover_scope(src.resolve(), base, "directory", "a", exclude=())
 
     assert found == [(src / "b" / "x.cpp").resolve()]
+
+
+@pytest.mark.parametrize(
+    ("flavour", "path", "directory", "expected"),
+    [
+        (posixpath, "/src2/x.cpp", "/src", False),
+        (posixpath, "/src/x.cpp", "/src", True),
+        (posixpath, "/src/sub/x.cpp", "/src", True),
+        (posixpath, "/src", "/src", False),
+        (posixpath, "/x.cpp", "/", True),
+        (posixpath, "/SRC/x.cpp", "/src", False),
+        (ntpath, "C:\\src2\\x.cpp", "C:\\src", False),
+        (ntpath, "c:\\SRC\\x.cpp", "C:\\src", True),
+        (ntpath, "C:\\x.cpp", "C:\\", True),
+        (ntpath, "\\\\server\\share\\src\\x.cpp", "\\\\server\\share\\src", True),
+        (ntpath, "C:/src/x.cpp", "C:\\src", True),
+        (ntpath, "D:\\src\\x.cpp", "C:\\src", False),
+    ],
+)
+def test_lies_within(
+    monkeypatch: pytest.MonkeyPatch,
+    flavour: Any,
+    path: str,
+    directory: str,
+    expected: bool,
+) -> None:
+    """Below the directory, never beside it (``src2`` is not below ``src``), with the
+    platform's case folding; a path equal to the directory is no file below it."""
+    monkeypatch.setattr(source_discover, "os", SimpleNamespace(path=flavour))
+    pure = PureWindowsPath if flavour is ntpath else PurePosixPath
+
+    assert source_discover.lies_within(pure(path), pure(directory)) is expected
+
+
+def _repository(root: Path, remote: str) -> str:
+    """Make ``root`` a repository with ``remote`` as ``origin``; return its commit."""
+    git = ["git", "-c", "user.name=t", "-c", "user.email=t@t"]
+    git += ["-c", "commit.gpgsign=false"]
+    root.mkdir(parents=True, exist_ok=True)
+    for args in (
+        ["init", "--quiet"],
+        ["remote", "add", "origin", remote],
+        ["commit", "--quiet", "--allow-empty", "-m", "init"],
+    ):
+        subprocess.run([*git, *args], cwd=root, check=True, capture_output=True)
+    return subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=root,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+
+
+@pytest.mark.parametrize(
+    ("git_root", "problem"),
+    [
+        pytest.param("../other", "does not contain src_dir {src}", id="sibling"),
+        pytest.param("../missing", "does not exist", id="missing"),
+    ],
+)
+def test_the_cli_analyse_ignores_a_git_root_that_does_not_contain_src_dir(
+    tmp_path: Path, git_root: str, problem: str
+) -> None:
+    """``codelinks analyse`` applies the build's rule: one warning on stderr, and the
+    remote URLs formed below the repository detected from ``src_dir``."""
+    project = tmp_path / "proj"
+    (project / "src").mkdir(parents=True)
+    (project / "src" / "a.cpp").write_text(
+        "// @need-ids: REQ_1\nvoid f() {}\n", encoding="utf-8"
+    )
+    (project / "cl.toml").write_text(
+        "[codelinks.projects.p.source_discover]\n"
+        'src_dir = "src"\ncomment_type = "cpp"\ngitignore = false\n'
+        "[codelinks.projects.p.analyse]\n"
+        f'git_root = "{git_root}"\n',
+        encoding="utf-8",
+    )
+    commit = _repository(project, "https://github.com/example/demo.git")
+    _repository(tmp_path / "other", "https://github.com/example/other.git")
+    out = tmp_path / "out"
+    out.mkdir()
+
+    result = CliRunner().invoke(
+        cli, ["analyse", str(project / "cl.toml"), "--outdir", str(out)]
+    )
+
+    assert result.exit_code == 0, result.output
+    root = tmp_path.resolve()
+    src = (root / "proj" / "src").as_posix()
+    named = (root / git_root.removeprefix("../")).as_posix()
+    expected = (
+        f"project 'p': git_root {named} {problem.format(src=src)}; it is ignored, "
+        "and the repository root is detected from src_dir instead"
+    )
+    stderr = re.sub(r"\x1b\[[0-9;?]*[A-Za-z]|\s+", "", result.stderr)
+    assert re.sub(r"\s+", "", expected) in stderr
+    markers = json.loads((out / "marked_content.json").read_text(encoding="utf-8"))
+    assert [marker["remote_url"] for marker in markers["p"]] == [
+        f"https://github.com/example/demo/blob/{commit}/src/a.cpp#L1"
+    ]
