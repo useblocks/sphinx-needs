@@ -41,7 +41,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 8
+ENV_DATA_VERSION: Final = 9
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -56,6 +56,11 @@ Version 8 changes the HTML a needtable renders to (the markup contract in
 ``design/needstable-contract.md``). The table is built at ``doctree-resolved``, so an
 unbumped rebuild over an existing ``_build`` writes no page whose source did not change
 and leaves DataTables-era markup on disk for the new client-side script to meet.
+
+Version 9 adds ``extend_priority`` to :class:`NeedsExtendType`. The extends are sorted
+by it when the needs are post-processed, from the pickled environment, so an unbumped
+rebuild over an existing ``_build`` meets extends recorded without the key and ends
+with a ``KeyError`` rather than re-reading the documents that hold them.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """
@@ -632,6 +637,10 @@ class NeedsExtendType(NeedsBaseDataType):
     """If ``filter`` conforms to ``needs_id_regex``,
     and is not an existing need ID,
     whether to except the build (otherwise log-info message is written).
+    """
+    extend_priority: int
+    """The order the extend is applied in, lower first, then by ``docname`` and
+    ``lineno``; 500 unless the directive sets ``:extend_priority:``.
     """
 
 
