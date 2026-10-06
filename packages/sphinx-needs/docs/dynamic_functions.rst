@@ -173,14 +173,20 @@ by which file was edited last.
 
 The reads reported are those of the built-in functions and of variant conditions:
 the field :ref:`copy <copy>` copies;
-the values :ref:`calc_sum <calc_sum>` adds and, with ``links_only``, the ``links`` of its own need;
-the ``links`` of its own need and the values :ref:`check_linked_values <check_linked_values>` compares, until it stops;
+the value of every need :ref:`calc_sum <calc_sum>` considers, whether or not its ``filter`` keeps the need,
+and, with ``links_only``, the ``links`` of its own need;
+the ``links`` of its own need and the value of each linked need :ref:`check_linked_values <check_linked_values>` reaches
+before it stops, whether or not its ``filter`` keeps the need;
 and the fields of its own need that a variant condition names, up to the first condition that holds.
 Not reported are the fields a ``filter`` argument reads (``current_need`` included),
-the reads of your own :ref:`functions <needs_functions>`,
+the reads your own :ref:`functions <needs_functions>` make themselves
+(a built-in they call during the pass is reported, under your function's name),
 and ``<{…}>``, which reads variant data rather than needs;
 :ref:`links_from_content <links_content>` reads the document, not fields.
 The :ref:`ndf` role runs after the pass, when every value is final, so nothing it reads is reported.
+A ``filter`` that reads a computed field can itself decide, by the order, which needs are read:
+a ``copy`` with a ``filter`` may therefore be reported in one build and not in another,
+and which needs a message names can vary after the first computed value a call reads.
 
 To avoid such a read, read the authored value the computed one is derived from instead
 (``[[copy("title", "CHAIN_B")]]`` rather than a copy of a field ``CHAIN_B`` computes from its title).

@@ -21,7 +21,7 @@ from sphinx_needs.filter_common import (
     filter_needs_and_parts,
     filter_single_need,
 )
-from sphinx_needs.functions.functions import _note_read
+from sphinx_needs.functions.functions import _note_read, _open_reads
 from sphinx_needs.logging import log_warning
 from sphinx_needs.need_item import NeedItem, NeedLink, NeedPartItem
 from sphinx_needs.nodes import Need
@@ -288,6 +288,9 @@ def check_linked_values(
 
     for link in links:
         need = needs[link]
+        # noted before the filter, which may read a computed field itself and so keep
+        # or drop this need by the order the needs are resolved in
+        _note_read(need, search_option)
         if filter_string:
             try:
                 if not filter_single_need(need, needs_config, filter_string):
@@ -300,7 +303,6 @@ def check_linked_values(
                     None,
                 )
 
-        _note_read(need, search_option)
         need_value = need[search_option]
         if not one_hit and need_value not in search_value:
             return None
@@ -393,6 +395,8 @@ def calc_sum(
         raise ValueError("No need given for calc_sum")
 
     needs_config = NeedsSphinxConfig(app.config)
+    # the record of the call the pass is running, fetched once: None outside the pass
+    reads = _open_reads()
     if links_only:
         _note_read(need, "links")
     # float addition is not associative, so the order decides a total's last digits:
@@ -408,6 +412,10 @@ def calc_sum(
     calculated_sum = 0.0
 
     for check_need in check_needs:
+        # noted before the filter, which may read a computed field itself and so keep
+        # or drop this need by the order the needs are resolved in
+        if reads is not None and check_need.carries_dynamic_value(option):
+            reads.note(option, check_need.id)
         if filter:
             try:
                 if not filter_single_need(check_need, needs_config, filter):
@@ -422,7 +430,6 @@ def calc_sum(
                     None,
                 )
 
-        _note_read(check_need, option)
         # TODO(mh) added TypeError for None values
         with contextlib.suppress(ValueError, TypeError):
             calculated_sum += float(check_need[option])

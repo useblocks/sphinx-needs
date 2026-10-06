@@ -298,6 +298,79 @@ def test_chain_inside_one_need(test_app):
     ]
 
 
+# -- T2b: ``copy`` with a ``filter`` reads the match it copies from ----------
+#
+# A filter matching several needs copies from the lowest id. The read reported is
+# that match's, not the first match in the order the needs were read: ``RD_ONE``'s
+# lowest-id match ``SRC_A1`` is authored (the computed ``SRC_B1`` comes first but is
+# not read), ``RD_TWO``'s is the computed ``SRC_A2`` (the authored ``SRC_B2`` comes
+# first but is not read).
+
+COPY_FILTER_CONF = """\
+extensions = ["sphinx_needs"]
+needs_fields = {"summary": {"nullable": True}, "grp": {"nullable": True}}
+"""
+
+COPY_FILTER_INDEX = """\
+Index
+=====
+
+.. req:: Reader one
+   :id: RD_ONE
+   :summary: [[copy("summary", filter="grp == 'one'")]]
+
+.. req:: Second match, computed, written first
+   :id: SRC_B1
+   :grp: one
+   :summary: [[copy("title")]]
+
+.. req:: First match, authored
+   :id: SRC_A1
+   :grp: one
+   :summary: authored
+
+.. req:: Reader two
+   :id: RD_TWO
+   :summary: [[copy("summary", filter="grp == 'two'")]]
+
+.. req:: Second match, authored, written first
+   :id: SRC_B2
+   :grp: two
+   :summary: authored
+
+.. req:: done
+   :id: SRC_A2
+   :grp: two
+   :summary: [[copy("title")]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), COPY_FILTER_CONF),
+                (Path("index.rst"), COPY_FILTER_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_copy_filter_reads_the_match_it_copies_from(test_app):
+    """``copy(filter=)`` is reported for the lowest-id match it copies, and only for it."""
+    app = test_app
+    app.build()
+    assert _built_needs(app)["RD_ONE"]["summary"] == "authored"
+    assert build_warnings(app) == [
+        _warning(
+            "index.rst:18",
+            "dynamic function 'copy' for option 'summary' read 'summary' on need 'SRC_A2'",
+        )
+    ]
+
+
 # -- T3: a whole-project ``calc_sum`` -----------------------------------------
 #
 # The summands are written in the reverse of need-id order, and the message names
@@ -532,6 +605,61 @@ def test_check_linked_values(test_app):
         _warning(
             "index.rst:12",
             "dynamic function 'check_linked_values' for option 'summary' read 'status' on need 'WORK_1'",
+        )
+    ]
+
+
+GATE_OWN_LINKS_CONF = """\
+extensions = ["sphinx_needs"]
+needs_fields = {"summary": {"nullable": True}}
+"""
+
+GATE_OWN_LINKS_INDEX = """\
+Index
+=====
+
+.. req:: done
+   :id: WORK_9
+
+.. req:: Other
+   :id: OTHER_9
+   :links: WORK_9
+
+.. req:: Gate on computed own links
+   :id: GATE_OWN
+   :links: [[copy("links", "OTHER_9")]]
+   :summary: [[check_linked_values("ready", "status", "done")]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), GATE_OWN_LINKS_CONF),
+                (Path("index.rst"), GATE_OWN_LINKS_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_check_linked_values_reads_its_own_links(test_app):
+    """``check_linked_values`` reads the need's own ``links``, which a ``[[…]]`` computes.
+
+    Link fields are resolved after the extra fields, so the check walks the unresolved
+    empty list (and passes vacuously); the ``links`` call itself copies an authored
+    value and is not reported.
+    """
+    app = test_app
+    app.build()
+    need = _built_needs(app)["GATE_OWN"]
+    assert (need["summary"], need["links"]) == ("ready", ["WORK_9"])
+    assert build_warnings(app) == [
+        _warning(
+            "index.rst:11",
+            "dynamic function 'check_linked_values' for option 'summary' read 'links' on need 'GATE_OWN'",
         )
     ]
 
@@ -969,6 +1097,106 @@ def test_the_warning_does_not_depend_on_the_build_history(test_app):
 
     assert (first_value, second_value) == ("", "Middle")
     assert first == second == CHAIN_WARNINGS
+
+
+# -- T10b: a filter that reads a computed field --------------------------------
+#
+# A filter is evaluated on values the pass may or may not have computed yet, so a
+# filter on a computed field decides, by the order, which needs it keeps. Its own reads
+# are not reported, so the summand or target behind it is noted BEFORE the filter: the
+# warning then cannot come and go with the build history although the kept set does.
+# ``TGT_F``'s ``summary`` is ``"done"`` once computed, and empty before.
+
+FILTERED_INDEX = """\
+Index
+=====
+
+.. toctree::
+
+   a
+   b
+"""
+
+FILTERED_READERS = """\
+A
+=
+
+.. req:: Filtered sum
+   :id: RD_FLT
+   :total: [[calc_sum("hours", "summary == 'done'")]]
+
+.. req:: Filtered gate
+   :id: RD_GFLT
+   :links: TGT_F
+   :summary: [[check_linked_values("ready", "hours", 3, "summary == 'done'")]]
+"""
+
+FILTERED_TARGET = """\
+B
+=
+
+.. req:: done
+   :id: TGT_F
+   :summary: [[copy("title")]]
+   :h0: 3
+   :hours: [[copy("h0")]]
+"""
+
+FILTERED_WARNINGS = [
+    _warning(
+        "a.rst:4",
+        "dynamic function 'calc_sum' for option 'total' read 'hours' on need 'TGT_F'",
+    ),
+    _warning(
+        "a.rst:8",
+        "dynamic function 'check_linked_values' for option 'summary' read 'hours' on need 'TGT_F'",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), CONF),
+                (Path("index.rst"), FILTERED_INDEX),
+                (Path("a.rst"), FILTERED_READERS),
+                (Path("b.rst"), FILTERED_TARGET),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_filter_on_a_computed_field_does_not_decide_the_warning(test_app):
+    """A filtered ``calc_sum`` or ``check_linked_values`` warns the same on every build.
+
+    The first build reads ``a.rst`` before ``b.rst``, so the filter sees ``TGT_F``'s
+    unresolved ``summary`` and drops it (the sum is ``0.0``); re-reading ``a.rst`` moves
+    its needs after ``TGT_F``, the filter keeps it, and the sum is ``3.0``. Noted only
+    after the filter, the read of ``TGT_F``'s computed ``hours`` would be reported in the
+    second build only.
+    """
+    app = test_app
+    app.build()
+    first = build_warnings(app)
+    first_total = _built_needs(app)["RD_FLT"]["total"]
+    first_status_length = len(app._status.getvalue())
+
+    # newer than the time the first build read it, whatever the file system's clock
+    # resolution, so the second build re-reads ``a.rst`` and nothing else
+    later = time.time_ns() + 60_000_000_000
+    os.utime(Path(app.srcdir, "a.rst"), ns=(later, later))
+    app.build()
+    assert (
+        "0 added, 1 changed, 0 removed" in app._status.getvalue()[first_status_length:]
+    )
+    second = build_warnings(app)[len(first) :]
+    second_total = _built_needs(app)["RD_FLT"]["total"]
+
+    assert (first_total, second_total) == (0.0, 3.0)
+    assert first == second == FILTERED_WARNINGS
 
 
 # -- T11: ubCode's fixture -------------------------------------------------------

@@ -284,6 +284,16 @@ _reads_of_this_call: ContextVar[_UnresolvedReads | None] = ContextVar(
 )
 
 
+def _open_reads() -> _UnresolvedReads | None:
+    """Return the record of the call the pass is running, or ``None`` outside the pass.
+
+    For a built-in that reads many needs, to fetch the record once per call rather
+    than once per read; each read it notes must still be of a field that
+    :meth:`NeedItem.carries_dynamic_value`, as :func:`_note_read` checks.
+    """
+    return _reads_of_this_call.get()
+
+
 def _note_read(need: NeedItem | NeedPartItem, name: str) -> None:
     """Note that a built-in dynamic function read the field or link ``name`` of ``need``.
 
@@ -295,7 +305,7 @@ def _note_read(need: NeedItem | NeedPartItem, name: str) -> None:
     :param need: The need read: the call's own need or another one.
     :param name: The field or link read.
     """
-    reads = _reads_of_this_call.get()
+    reads = _open_reads()
     # a need part is never read in the pass, whose functions are handed whole needs
     if (
         reads is not None
