@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from sphinx.errors import ExtensionError
 from sphinx.testing.util import SphinxTestApp
 from sphinx.util.console import strip_colors
 from sphinx.util.parallel import parallel_available
@@ -283,6 +284,7 @@ def test_a_missing_source_directory_warns_once_and_builds(
         assert len(warnings) == 1, warnings
         assert warnings[0].startswith("WARNING: codelinks [src]: ")
         assert "nosuch" in warnings[0]
+        assert "ConfigOnlyError: source directory" in warnings[0]
         assert warnings[0].endswith(suffix)
         assert set(_refs(app).values()) == {None}
 
@@ -329,3 +331,171 @@ def test_one_line_needs_are_not_created_and_are_counted(
         "codelinks [src]: 2 files, 5 references, 1 one-line need not created "
         "(no src-trace directive)"
     ) in _status(app)
+
+
+GITLAB = "https://gitlab.example.com/demo/-/blob/{commit}/{path}#L{line}"
+
+
+@pytest.mark.parametrize("change", ["set_remote_url", "remote_url_pattern"])
+def test_a_configuration_change_analyses_again(
+    tmp_path: Path, make_app: _MakeApp, analyses: list[str], change: str
+) -> None:
+    """The fingerprint covers the files only: a configuration change (every document is
+    read again) analyses the project again too, so its records follow the new values."""
+    commit = _project(tmp_path, files=NO_DIRECTIVE)
+    _build(tmp_path, make_app)
+    toml = tmp_path / "docs" / "ubproject.toml"
+    if change == "set_remote_url":
+        _edit(toml, "set_remote_url = true", "set_remote_url = false")
+    else:
+        _edit(
+            toml, "https://github.com/example/demo/blob/", GITLAB.split("{commit}")[0]
+        )
+    analyses.clear()
+    app = _build(tmp_path, make_app, freshenv=False)
+
+    assert analyses == ["src"]
+    if change == "set_remote_url":
+        assert _refs(app)["REQ_001"] == ["src/refs.cpp#L1", "src/refs.cpp#L3"]
+        assert _card_links(app, "later.html") == [
+            [("src/refs.html#L-3", "src/refs.cpp#L3")]
+        ]
+    else:
+        assert _refs(app)["REQ_001"] == [
+            GITLAB.format(commit=commit, path="src/refs.cpp", line=line)
+            for line in (1, 3)
+        ]
+
+
+def test_a_configuration_change_while_a_directive_owns_the_project(
+    tmp_path: Path, make_app: _MakeApp, analyses: list[str]
+) -> None:
+    """An entry ignored while a directive owned the project is not reused after a
+    configuration change once the directive goes: config-only, directive added, remote
+    URLs switched off, directive removed -- as ``-E`` would give."""
+    _project(tmp_path, files=NO_DIRECTIVE)
+    index = tmp_path / "docs" / "index.rst"
+    toml = tmp_path / "docs" / "ubproject.toml"
+    _build(tmp_path, make_app)
+    _edit(index, INDEX.replace(DIRECTIVE, ""), INDEX)
+    _build(tmp_path, make_app, freshenv=False)
+    _edit(toml, "set_remote_url = true", "set_remote_url = false")
+    _build(tmp_path, make_app, freshenv=False)
+    _edit(index, INDEX, INDEX.replace(DIRECTIVE, ""))
+    analyses.clear()
+    app = _build(tmp_path, make_app, freshenv=False)
+
+    assert analyses == ["src"]
+    assert _refs(app)["REQ_001"] == ["src/refs.cpp#L1", "src/refs.cpp#L3"]
+
+
+@pytest.mark.parametrize("path", ["directive", "config-only"])
+def test_the_build_output_is_never_traced(
+    tmp_path: Path, make_app: _MakeApp, analyses: list[str], path: str
+) -> None:
+    """A source directory containing the output directory (the whole repository, no
+    ignore rule for ``_build``) does not trace the extension's own copies: nothing is
+    analysed again, and each reference stays one entry."""
+    _project(
+        tmp_path,
+        files=NO_DIRECTIVE if path == "config-only" else None,
+        toml_replace=('src_dir = "../src"', 'src_dir = ".."'),
+    )
+    toml = tmp_path / "docs" / "ubproject.toml"
+    toml.write_text(
+        toml.read_text(encoding="utf-8").replace(
+            "set_remote_url = true", "set_remote_url = false"
+        ),
+        encoding="utf-8",
+    )
+    first = _build(tmp_path, make_app)
+    assert len(_refs(first)["REQ_003"]) == 1
+    analyses.clear()
+    for _ in range(3):
+        app = _build(tmp_path, make_app, freshenv=False)
+        assert "0 added, 0 changed, 0 removed" in _status(app)
+        assert len(_refs(app)["REQ_003"]) == 1
+
+    assert analyses == []
+    assert len(list(tmp_path.rglob("*.cpp"))) == 2
+
+
+@pytest.mark.parametrize(
+    ("old", "new"),
+    [
+        ("return a + 1;", "return a + 12345;"),
+        ("void deep()", "void DEEP()"),
+        ("@need-ids: NOSUCH_ID", "@need-ids: NOSUCH_TWO"),
+    ],
+    ids=["code-only", "same-size-rename", "unknown-id"],
+)
+def test_an_edit_that_moves_no_reference_is_analysed_once(
+    tmp_path: Path, make_app: _MakeApp, analyses: list[str], old: str, new: str
+) -> None:
+    """No known need's references change, so no need's document is written; the root
+    document is, so the environment -- and the new scan -- is kept."""
+    commit = _project(tmp_path, files=NO_DIRECTIVE)
+    _build(tmp_path, make_app)
+    _edit(tmp_path / "src" / "refs.cpp", old, new)
+    counts = []
+    for build in range(4):
+        analyses.clear()
+        app = _build(tmp_path, make_app, freshenv=False)
+        counts.append(len(analyses))
+        if build == 0:
+            status = _status(app)
+            assert "pickling environment" in status
+            assert re.search(r"writing output\.\.\. \[[^\]]*\] index\b", status)
+        assert _refs(app)["REQ_001"] == [_url(commit, 1), _url(commit, 3)]
+
+    assert counts == [1, 0, 0, 0]
+
+
+def test_a_programming_error_in_the_scan_fails_the_build(
+    tmp_path: Path, make_app: _MakeApp, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Only the errors discovery and the analysis raise become a warning; a bug in the
+    extension is not read as a scan failure."""
+    from sphinx_codelinks.sphinx_extension import rediscovery
+
+    def broken(*_args: Any, **_kwargs: Any) -> Any:
+        raise KeyError("not a scan failure")
+
+    monkeypatch.setattr(rediscovery, "scan_config_only_project", broken)
+    _project(tmp_path, files=NO_DIRECTIVE)
+    with pytest.raises(ExtensionError) as raised:
+        _build(tmp_path, make_app)
+    assert isinstance(raised.value.orig_exc, KeyError)
+
+
+_EARLY_EXTENSION = """
+def setup(app):
+    from sphinx_needs.data import SphinxNeedsData
+
+    def resolve(app, env):
+        SphinxNeedsData(env).get_needs_view()
+
+    app.connect("env-updated", resolve)
+    return {"parallel_read_safe": True}
+"""
+
+
+def test_the_scan_runs_before_other_env_updated_handlers(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """An extension loaded before this one whose ``env-updated`` handler resolves the
+    needs (post-processing, so the attach) still sees the config-only references."""
+    commit = _project(
+        tmp_path,
+        files={**NO_DIRECTIVE, "docs/early.py": _EARLY_EXTENSION},
+        append={
+            "docs/conf.py": (
+                "import os, sys\n"
+                "sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\n"
+                'extensions.insert(1, "early")\n'
+            )
+        },
+    )
+    app = _build(tmp_path, make_app)
+
+    assert _refs(app)["REQ_001"] == [_url(commit, 1), _url(commit, 3)]
