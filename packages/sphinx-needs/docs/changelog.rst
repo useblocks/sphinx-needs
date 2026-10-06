@@ -64,6 +64,25 @@ Improvements
   It gives notice ahead of a later release that resolves these values in dependency order
   (:issue:`2030`); `ubCode`_ reports the same reads.
 
+- ✨ ``needextend`` gains ``:extend_priority:`` (default 500, lower applied first), and a
+  filter whose matches depend on earlier ``needextend`` directives is reported as
+  ``needs.needextend_match_order`` **(changed output)** (:issue:`1658`, :issue:`2064`, :pr:`2083`)
+
+  The ``needextend`` directives are applied sorted by
+  :ref:`extend_priority <needextend_extend_priority>`, then by document name and line, so
+  a project that never sets the option keeps its order, and where two set the same
+  option the higher priority is applied last and wins. A filter is still evaluated
+  against the needs as the earlier ``needextend`` directives left them, but it is also
+  evaluated against the needs as written, before any is applied, and a ``needextend``
+  whose filter matches different needs the two ways is now reported once, at its
+  location, naming both; what it modifies is unchanged. The next release evaluates every
+  filter against the needs as written, so the reported ``needextend`` directives are the
+  ones whose matches will change (:ref:`needextend_match_order`). From the next release,
+  the priority never changes what a filter matches. A project that builds with ``-W`` and
+  has such a filter goes red until the filter is rewritten or the warning is silenced with
+  ``suppress_warnings = ["needs.needextend_match_order"]``; ``"needs.needextend"`` does
+  not cover the new type.
+
 Bug fixes
 .........
 
