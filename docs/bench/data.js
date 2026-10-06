@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791235785634,
+  "lastUpdate": 1791293125037,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -22428,6 +22428,42 @@ window.BENCHMARK_DATA = {
             "value": 55.26145575999999,
             "unit": "s",
             "extra": "Commit: 6434aef0d2953b5f9ee5df32e7d5bee866491f04\nBranch: master\nTime: 2026-10-05T23:28:17+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "016a91d070b592413446f7790ea9b27423e750b6",
+          "message": "🐛 sphinx-codelinks: incremental builds see new source files, and a project without a src-trace directive gets its @need-ids references (#2065)\n\nCloses #2040.\n\n\n#### What\n\n- **A file added to a `src-trace` directive's scope is seen by the next\nincremental build**, no `-E`. Each directive records its\nscope and a fingerprint of the discovered files (POSIX path, mtime,\nsize) under its document; an `env-get-outdated` handler walks\nevery recorded scope again and re-reads the documents whose fingerprint\nchanged. A `:file:` scope is that one file, so a new\nsibling costs nothing; files the discovery rules skip cost nothing. The\nbuild directory is never traced — the output and doctree\ndirectories and, when they sit inside the documentation source directory\nas `_build/` does, that directory, so sibling builders'\noutput is skipped too; an output tree elsewhere inside `src_dir` needs\nan ignore rule (`.gitignore` with `gitignore = true`, or\n`exclude`). The whole containing directory is skipped, so an output\ndirectory placed directly beside real sources hides them.\n- **ubCode's config-only mode**: a project past the `@need-ids` gate\nthat no directive traces has its whole `src_dir` analysed and its\nreferences attached — same field, URLs, warnings and summary as a\ndirective's. No need is created from it (its line counts the\none-line needs it did not create). It is analysed again only when its\nfiles or the configuration changed, and a build that analysed\nit keeps the result (it writes the root document when no card changed).\nA failing scan warns, once per project and build\n(`codelinks.need_id_ref`, naming\nthe exception), and the build goes on; any other exception fails the\nbuild. It runs at `env-updated` (main process, after every read\nand merge, before other extensions' default-priority handlers), so\nownership is exact and, under `-j N`, its source pages are generated.\n- **A need's card is rewritten when its code references change**,\nwhichever document it is in: the `env-updated` handler compares the\nreferences the attach will use with the previous build's and returns the\ndocuments holding a need whose references changed; Sphinx\nwrites them without reading them again. A `needtable` in a third\ndocument stays the pre-existing cross-document class.\n- A build starts with no source page pending from a previous non-HTML\nbuild in the same process (an in-process server or test run\n  used to abort in `add_custom_css` after a LaTeX build).\n\n#### Why\n\nA new file is a dependency of nothing, so Sphinx reported `0 added, 0\nchanged, 0 removed` and the directive never ran: the file's\none-line needs and references were invisible until the hosting document\nchanged. Config-only mode is the last parity gap with ubCode\nafter #2049. Sphinx pickles the environment only when a document was\nread or returned, so the scan runs where it can return the\ndocuments it affects, and every build that re-analysed a project returns\nat least one.\n\n#### ubCode parity\n\nSame gate; a project owning a directive is skipped by the config pass;\nerrors non-fatal; no needs created; an empty discovery parses\nnothing. Different, deliberately: ubCode caches per file (path + mtime)\nand re-parses only changed files; this fingerprints per project\n(and per directive scope) and re-analyses the whole project on any\nchange — simpler; the price is that one edited file re-parses the\nwhole project once (~9.3 s on 2,000 200-line files) where ubCode\nre-parses that file, and a per-file cache is the follow-up if that\nmatters. When a config-only project's files all disappear, this clears\nthe needs' references (the cards rewritten); ubCode, as read,\nreturns before its clear and keeps the previous URLs.\n\n#### Tests\n\n`tests/test_rediscovery.py`: added / nested / removed file, `:file:`\nsibling, exclude and gitignore, one walk for two directives over\none scope, `-j 2` scopes, the directive-path card rewrite (written, not\nread), fingerprint units incl. a `PureWindowsPath` fence.\n`tests/test_config_only_refs.py`: attach without a directive, ownership,\nunchanged rebuild analyses nothing, source edits analysed\nonce (a moved reference, and three edits that move none), edits and new\nfiles refresh, configuration changes analyse again (also\nacross a directive's ownership), the config-only card rewrite with\nnothing read, directive removed, new project, the gate off, missing\n`src_dir`, a programming error fails the build, the scan before another\nextension's `env-updated` handler, the build output never\ntraced (one builder, and html/dirhtml and html/latex alternation, both\npaths), nothing written when nothing was redone, `-j 2` with\nsource pages, one-line needs not created. `tests/test_need_id_refs.py`:\nno source page pending after a LaTeX build. Every fence was\ncommitted before its fix and proven red against the code it fixes, or,\nwhere the behaviour it pins was already right, red under a\nmutation of that behaviour. Green at Sphinx 7.4 and 9.1 and against the\nreleased\nsphinx-needs 8.5.0.\n\n#### Cost\n\nOne directory walk per scope per build, plus one per config-only project\n— no parsing: roughly 0.1 s per 2,000 discovered files on an\nApple M2 Pro laptop, whatever their size (the directive's own discovery\nplus a `stat` per file), while parsing them costs tens of\ntimes more (2,000 200-line C++ files: ~0.1 s of walk against ~9 s of\nanalysis). A config-only project is re-analysed only when its\nfiles or the configuration changed, once.",
+          "timestamp": "2026-10-06T15:24:14+02:00",
+          "tree_id": "b514d667ec4a4d8bf60bae2c35110507bb87f8c1",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/016a91d070b592413446f7790ea9b27423e750b6"
+        },
+        "date": 1791293116325,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07095020599999913,
+            "unit": "s",
+            "extra": "Commit: 016a91d070b592413446f7790ea9b27423e750b6\nBranch: master\nTime: 2026-10-06T15:24:14+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 37.390175745,
+            "unit": "s",
+            "extra": "Commit: 016a91d070b592413446f7790ea9b27423e750b6\nBranch: master\nTime: 2026-10-06T15:24:14+02:00"
           }
         ]
       }
