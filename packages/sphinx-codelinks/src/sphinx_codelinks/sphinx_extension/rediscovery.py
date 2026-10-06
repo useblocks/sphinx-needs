@@ -30,6 +30,7 @@ so that the new scan is kept: a source-only change is analysed once.
 
 from __future__ import annotations
 
+import os
 import weakref
 from collections import defaultdict
 from collections.abc import Iterable, MutableMapping, Sequence
@@ -113,11 +114,16 @@ def build_output_dirs(app: Sphinx) -> tuple[Path, ...]:
 
 def _outside(files: Iterable[Path], exclude: Sequence[Path]) -> list[Path]:
     """``files`` (resolved) that lie under none of ``exclude``."""
-    excluded = [directory.resolve() for directory in exclude]
+    # strings, not ``Path.is_relative_to``: that costs as much as the walk itself over
+    # thousands of files; ``normcase`` keeps case-insensitive platforms honest
+    prefixes = tuple(
+        os.path.join(os.path.normcase(str(directory.resolve())), "")
+        for directory in exclude
+    )
+    if not prefixes:
+        return list(files)
     return [
-        path
-        for path in files
-        if not any(path.is_relative_to(directory) for directory in excluded)
+        path for path in files if not os.path.normcase(str(path)).startswith(prefixes)
     ]
 
 
