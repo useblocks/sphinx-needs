@@ -182,9 +182,15 @@ class _SphinxBackend:
     ``suppress_warnings`` and rendered on the Sphinx warning stream.
     """
 
-    # Sphinx >= 8 renders the warning type itself; older versions need it
-    # appended to the message (mirrors sphinx-needs' logging helper).
+    #: whether Sphinx renders a warning's ``[type.subtype]`` itself: from 8.0 by
+    #: default, and on 7.3+ when the build sets ``show_warning_types``. Where it does
+    #: not, the suffix is appended here; where it does, appending it too would show
+    #: it twice (#2091). Mirrors sphinx-needs' logging helper.
     _show_warning_types = _sphinx_version_info >= (8,)
+
+    def __init__(self, *, show_warning_types: bool = False) -> None:
+        if show_warning_types:
+            self._show_warning_types = True
 
     def debug(self, name: str, msg: str, _location: str | None, /) -> None:
         sphinx_logging.getLogger(name).verbose(msg)
@@ -251,9 +257,14 @@ def configure_cli(verbose: bool = False, quiet: bool = False) -> None:
     _dispatch.backend = _CliBackend()
 
 
-def configure_sphinx() -> None:
-    """Select the Sphinx frontend (``sphinx.util.logging``)."""
-    _dispatch.backend = _SphinxBackend()
+def configure_sphinx(*, show_warning_types: bool = False) -> None:
+    """Select the Sphinx frontend (``sphinx.util.logging``).
+
+    :param show_warning_types: the build's ``show_warning_types``, so that the
+        ``[codelinks.<subtype>]`` suffix is appended only where Sphinx will not
+        render it itself.
+    """
+    _dispatch.backend = _SphinxBackend(show_warning_types=show_warning_types)
 
 
 def reset() -> None:
