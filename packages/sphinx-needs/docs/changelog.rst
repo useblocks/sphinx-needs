@@ -72,7 +72,7 @@ Bug fixes
 .........
 
 - 🐛 ``needextend``'s ``:+field:`` on a nullable field the need never set sets the field,
-  instead of crashing the build (:issue:`2038`)
+  instead of crashing the build (:issue:`2038`, :pr:`2102`)
 
   A field of :ref:`needs_fields` is nullable unless it says otherwise, so a need that does
   not set it holds no value. Appending a value to such an unset array field ended the
