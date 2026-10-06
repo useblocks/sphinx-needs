@@ -106,7 +106,8 @@ def test_two_documents_the_earlier_sorting_one_defines_it(
 
     assert _owner(app) == "page1"
     assert _duplicates(app) == [_duplicate("page1", "page2")]
-    assert build_warnings(app) == [DANGLING, _duplicate("page1", "page2")]
+    # read time, before the attach's warning
+    assert build_warnings(app) == [_duplicate("page1", "page2"), DANGLING]
     assert (_cards(app, "page1.html"), _cards(app, "page2.html")) == (1, 0)
 
 

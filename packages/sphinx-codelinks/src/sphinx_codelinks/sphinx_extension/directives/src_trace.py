@@ -10,6 +10,7 @@ from sphinx.util.docutils import SphinxDirective
 
 from sphinx_codelinks.analyse.analyse import SourceAnalyse
 from sphinx_codelinks.analyse.models import OneLineNeed
+from sphinx_codelinks.analyse.references import _relative_posix
 from sphinx_codelinks.config import (
     CodeLinksConfig,
     CodeLinksProjectConfigType,
@@ -32,9 +33,11 @@ from sphinx_codelinks.sphinx_extension.rediscovery import (
     discover_scope,
     file_fingerprint,
     files_fingerprint,
+    is_unread,
     scope_store,
 )
 from sphinx_needs.api import add_need
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.utils import add_doc
 
 logger = logging.getLogger(__name__)
@@ -146,9 +149,6 @@ class SourceTracingDirective(SphinxDirective):
             found = file_fingerprint(src_dir, target)
         else:
             found = files_fingerprint(source_files, (src_dir / target).resolve())
-        scope_store(self.env).setdefault(self.env.docname, []).append(
-            ScopeRecord(project=project, kind=kind, target=target, fingerprint=found)
-        )
 
         analyse_config = prepare_analyse_config(
             self.env.app.confdir,
@@ -166,7 +166,7 @@ class SourceTracingDirective(SphinxDirective):
             # and are not tracked here.)
             self.env.note_dependency(str(preprocessor.compile_commands))
         src_analyse = SourceAnalyse(analyse_config, name=project)
-        src_analyse.run()
+        src_analyse.run(log_summary=False)
 
         # The fields' string links are registered once, at config-inited
         # (``sphinx_extension/string_links.py``): written here, at read time, they
@@ -189,6 +189,28 @@ class SourceTracingDirective(SphinxDirective):
             context.dirs,
             context.remote_url_pattern,
         )
+        skipped = self._deferred
+        src_analyse.log_summary(
+            f", {len(skipped)} skipped (already defined)" if skipped else ""
+        )
+        # record the scope, and the needs another document owns: its change re-reads
+        # this one (``rediscovery.find_outdated_scopes``)
+        deferred = tuple(
+            dict.fromkeys(
+                (need_id, owner)
+                for need_id, owner in skipped
+                if owner != self.env.docname
+            )
+        )
+        scope_store(self.env).setdefault(self.env.docname, []).append(
+            ScopeRecord(
+                project=project,
+                kind=kind,
+                target=target,
+                fingerprint=found,
+                deferred=deferred,
+            )
+        )
 
         # for post-processing of need links
         # https://github.com/useblocks/sphinx-needs/issues/1210
@@ -203,6 +225,45 @@ class SourceTracingDirective(SphinxDirective):
             return "file", self.options["file"]
         return "directory", self.options.get("directory", "./")
 
+    def defined_elsewhere(
+        self, oneline_need: OneLineNeed, filepath: Path, root: Path
+    ) -> bool:
+        """Whether a need with this one-line need's id exists already; if so, warn
+        once at the marker's line and remember the owner, for :meth:`run`.
+
+        The first owner keeps an id -- another ``src-trace`` directive, a hand-written
+        need, an imported one: codelinks never takes an id over. A need of a document
+        this build has still to read is the previous build's and about to be purged, so
+        it does not count: it is removed, and this directive defines the need.
+        """
+        need_id = oneline_need.need.get("id") if oneline_need.need else None
+        if not isinstance(need_id, str) or not need_id:
+            return False
+        data = SphinxNeedsData(self.env)
+        existing = data.get_needs_mutable().get(need_id)
+        if existing is None:
+            return False
+        owner = existing.get("docname")
+        if isinstance(owner, str) and owner and is_unread(self.env, owner):
+            data.remove_need(need_id)
+            return False
+        where = (
+            f"in document {owner!r}"
+            if isinstance(owner, str) and owner
+            else "by an external need"
+        )
+        logger.warning(
+            f"one-line need {need_id!r} is already defined {where}: not created again "
+            f"by the src-trace directive in {self.env.docname!r} "
+            "(narrow one directive's scope)",
+            type="codelinks",
+            subtype="duplicate_need",
+            location=f"{_relative_posix(filepath, root)}:"
+            f"{oneline_need.source_map['start']['row'] + 1}",
+        )
+        self._deferred.append((need_id, owner if isinstance(owner, str) else ""))
+        return True
+
     def render_needs(
         self,
         src_analyse: SourceAnalyse,
@@ -211,14 +272,15 @@ class SourceTracingDirective(SphinxDirective):
         dirs: dict[str, Path],
         remote_url_pattern: str | None = None,
     ) -> list[nodes.Node]:
-        """Render the needs from the virtual docs"""
+        """Render the needs from the virtual docs; a need whose id is defined already
+        is skipped (:meth:`defined_elsewhere`)."""
         rendered_needs: list[nodes.Node] = []
+        self._deferred: list[tuple[str, str]] = []
+        root = src_analyse.git_root or src_analyse.analyse_config.src_dir
         for oneline_need in src_analyse.oneline_needs:
-            # # add source files into the dependency
-            # # https://www.sphinx-doc.org/en/master/extdev/envapi.html#sphinx.environment.BuildEnvironment.note_dependency
-            # self.env.note_dependency(str(oneline_need.filepath.resolve()))
-
             filepath = src_analyse.analyse_config.src_dir / oneline_need.filepath
+            if self.defined_elsewhere(oneline_need, filepath, root):
+                continue
             target_filepath = dirs["target_dir"] / filepath.relative_to(dirs["src_dir"])
 
             # mapping between lineno and need link in docs for local url
