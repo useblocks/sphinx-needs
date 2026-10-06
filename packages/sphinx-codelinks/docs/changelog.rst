@@ -128,8 +128,11 @@ New and Improved
 - 🐛 Two ``src-trace`` directives whose scopes overlap no longer abort the build
   (``duplicate_id``): the first directive in document order defines a one-line need found
   by both, the other skips it with a ``codelinks.duplicate_need`` warning naming both
-  documents, and takes it over when the first no longer traces it. Overlapping directives
-  still analyse the shared files once each
+  documents, and takes it over when the first no longer traces it (in a serial build; with
+  ``-j N`` the other document takes it over only when it is next read). The id is the
+  marker's or, for a one-line style without ``id``, the one Sphinx-Needs generates. A
+  directive moved to another document no longer aborts the next build either. Overlapping
+  directives still analyse the shared files once each
   (`#2042 <https://github.com/useblocks/sphinx-needs/issues/2042>`__).
 
 - ⬆️ ``typer`` is no longer capped below 0.26.8. The cap protected the documentation build,
