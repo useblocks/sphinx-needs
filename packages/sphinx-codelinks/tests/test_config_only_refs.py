@@ -450,7 +450,8 @@ def test_other_builders_output_is_never_traced(
 ) -> None:
     """The Makefile layout -- ``_build/<builder>`` beside a shared ``_build/doctrees``:
     the build directory inside the documentation source directory is skipped as a
-    whole, so one builder never traces another's copies. (The doctree directory's half
+    whole, so one builder never traces another's copies: nothing is analysed again,
+    each reference stays one entry, and no copy is ever made of a copy. (The doctree directory's half
     of the rule is unobservable here: no source file is ever written under it.) On
     the directive path the hosting document is edited after the first build, so the
     directive runs again with another builder's copies present."""
@@ -465,7 +466,9 @@ def test_other_builders_output_is_never_traced(
         needs_json = Path(app.outdir, "needs.json")
         if needs_json.exists():
             assert len(_refs(app)["REQ_003"]) == 1, builder
-        assert len(list(tmp_path.rglob("*.cpp"))) == 2, builder
+        # each builder copies the source into its own output, once: no copy of a copy
+        copies = [p for p in tmp_path.rglob("*.cpp") if "_build" in p.parts]
+        assert all(p.parts.count("_build") == 1 for p in copies), copies
 
     assert analyses == []
 

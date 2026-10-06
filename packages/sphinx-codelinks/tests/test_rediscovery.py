@@ -246,15 +246,15 @@ def test_fingerprint_is_the_discovered_files_with_mtime_and_size(
     (tmp_path / "notes.txt").write_text("not a source\n", encoding="utf-8")
     config = SourceDiscoverConfig(tmp_path, comment_type="cpp")
 
-    found = fingerprint(config)
+    found = fingerprint(config, exclude=())
     assert [(path, size) for path, _mtime, size in found] == [
         ("b.cpp", 5),
         ("lib/a.cpp", 6),
     ]
-    assert fingerprint(config) == found
+    assert fingerprint(config, exclude=()) == found
     _touch_later(tmp_path / "b.cpp")
-    assert fingerprint(config) != found
-    assert fingerprint(SourceDiscoverConfig(tmp_path / "missing")) == ()
+    assert fingerprint(config, exclude=()) != found
+    assert fingerprint(SourceDiscoverConfig(tmp_path / "missing"), exclude=()) == ()
 
 
 def test_a_file_scope_fingerprints_that_one_file(tmp_path: Path) -> None:

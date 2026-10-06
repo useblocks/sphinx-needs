@@ -95,9 +95,20 @@ def scope_discover_config(
     )
 
 
-def build_output_dirs(app: Sphinx) -> tuple[Path, Path]:
-    """The build's output and doctree directories, which discovery never traces."""
-    return Path(app.outdir), Path(app.doctreedir)
+def build_output_dirs(app: Sphinx) -> tuple[Path, ...]:
+    """The directories discovery never traces: the build's output and doctree
+    directories, and each one's parent when that parent lies strictly inside the
+    documentation source directory -- the build directory, ``_build/`` in the Makefile
+    layout (``_build/<builder>`` beside ``_build/doctrees``), so one builder never
+    traces another builder's copies. A parent outside the source directory (``-d
+    /tmp/x``), or the source directory itself, is not excluded."""
+    srcdir = Path(app.srcdir).resolve()
+    dirs = [Path(app.outdir).resolve(), Path(app.doctreedir).resolve()]
+    for directory in list(dirs):
+        parent = directory.parent
+        if parent != srcdir and parent.is_relative_to(srcdir) and parent not in dirs:
+            dirs.append(parent)
+    return tuple(dirs)
 
 
 def _outside(files: Iterable[Path], exclude: Sequence[Path]) -> list[Path]:
@@ -156,7 +167,7 @@ def files_fingerprint(files: Iterable[Path], root: Path) -> Fingerprint:
 
 
 def fingerprint(
-    discover_config: SourceDiscoverConfig, *, exclude: Sequence[Path] = ()
+    discover_config: SourceDiscoverConfig, *, exclude: Sequence[Path]
 ) -> Fingerprint:
     """What discovery finds under ``discover_config`` (less the files under
     ``exclude``), with modification times and sizes: a pure function of the
