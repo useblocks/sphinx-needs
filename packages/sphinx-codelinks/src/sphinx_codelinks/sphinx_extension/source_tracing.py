@@ -169,7 +169,7 @@ SOURCE_PAGE_KEY = "codelinks_source_page"
 
 def _copy_outdated(copied: Path, source: os.stat_result) -> bool:
     """Whether the copy is missing, or its size or modification time differs from its
-    source's: a copy carries its source's modification time (``shutil.copy2``), so a
+    source's: a copy carries its source's modification time (set after the copy), so a
     source replaced by an OLDER file is caught too."""
     try:
         current = copied.stat()
@@ -227,11 +227,14 @@ def generate_code_page(app: Sphinx) -> Iterator[tuple[str, dict[str, Any], str]]
     for page in effective_pages(app.env, config):
         copied = outdir / page.target
         try:
-            copy = _copy_outdated(copied, os.stat(page.source))
+            source = os.stat(page.source)
+            copy = _copy_outdated(copied, source)
             if copy:
                 copied.parent.mkdir(parents=True, exist_ok=True)
-                # as bytes (no codec, no newline translation), with the source's mtime
-                shutil.copy2(page.source, copied)
+                # as bytes (no codec, no newline translation); then the source's times,
+                # not its mode -- a read-only source would make the copy unwritable
+                shutil.copyfile(page.source, copied)
+                os.utime(copied, ns=(source.st_atime_ns, source.st_mtime_ns))
         except OSError as error:
             logger.warning(
                 f"source page {page.target!r} not written: cannot copy "
