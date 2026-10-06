@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791309258729,
+  "lastUpdate": 1791311569378,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -22608,6 +22608,42 @@ window.BENCHMARK_DATA = {
             "value": 60.83172538499999,
             "unit": "s",
             "extra": "Commit: 6504a9ef49303c15972350763ae7cb1949176d88\nBranch: master\nTime: 2026-10-06T19:52:43+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1025f6cc85ed6b1b89414f6322350390878441d7",
+          "message": "🐛 sphinx-codelinks: overlapping src-trace scopes no longer abort the build — the first directive defines a one-line need, the others skip it (#2086)\n\nRefs #2042 (the crash half; analysing each project once is what the\nissue keeps).\n\n#### What\n\n- Before creating a one-line need, `src-trace` looks its id up among the\nneeds read so far. If one exists, whoever defined it keeps it: another\ndirective's, a hand-written need's, an imported one's. The directive\nskips the marker with one warning at its line, naming both documents:\n`src/impl.cpp:1: WARNING: one-line need 'IMPL_1' is already defined in\ndocument 'page1': not created again by the src-trace directive in\n'page2' (narrow one directive's scope) [codelinks.duplicate_need]`. When\nthe collision is inside one document's own scopes, two markers\ngenerating one id, the cure reads \"give the markers distinct ids\". The\ndirective's summary line gains `, 1 skipped (already defined)`.\n- A one-line style without an `id` field gets the id sphinx-needs would\ngenerate, computed with sphinx-needs' own generator from the same type,\ntitle and content, and checked the same way. Until now two overlapping\ndirectives, or a directive moved from one document to another, aborted\nwith `Unique ID could not be generated … [duplicate_id]`.\n- A need of a document the build has yet to read is the previous build's\nand about to be purged, so it does not count: the directive replaces it.\nThe documents still to read are kept from `env-before-read-docs`, each\nleaving the set as Sphinx purges it, so a serial build agrees with a\nfresh one and the earlier-sorting directive owns the need. Under `-j N`\nevery document is purged before the workers fork, so a worker never\nreplaces anything.\n- Each directive's scope record lists the needs it skipped and their\nowners (`deferred`, with a default so an environment pickled before this\nchange still loads). `env-get-outdated` re-reads a skipping document\nwhen an owner is changed, removed, or re-read because its own scope\nchanged, so the need moves instead of vanishing on an incremental build.\nA directive moved to another document no longer aborts the next build\neither.\n- Docs: \"Overlapping scopes\" under one-line needs in the analyse page;\nchangelog; the member AGENTS.md.\n\n#### Why\n\nTwo directives finding the same one-line need, `index` tracing `src/`\nand another page tracing one file in it, two projects whose source\ndirectories nest, or a marker repeating a hand-written need's id, called\n`add_need` twice and the build aborted with `InvalidNeedException: A\nneed with ID 'IMPL_1' already exists. [duplicate_id]` (serial, and\n`SphinxParallelError` under `-j 2` when both landed in one chunk).\nOverlapping directives still analyse the shared files once each.\n\n#### ubCode parity\n\nubCode registers the need from every directive, picks the winner by page\npath then position in the page, warns `needs.duplicate` for the others,\nand promotes the next one when the winner goes. On a fresh build this\ngives the same owner, and a warning in both tools, so a `-W` build fails\nin both. Two differences, both documented: an incremental build keeps an\nexisting owner until it is read again; and under `-j N` two directives\nread by different workers cannot see each other's needs, so\nsphinx-needs' merge keeps the first merged and warns\n`needs.duplicate_id`, and if that winner later stops tracing the line\nthe other document takes the need over only when it is next read.\nWhichever definition is read first keeps an id; a hand-written or\nimported need read after the directive is refused by sphinx-needs itself\n(`needs.create_need`, `needs.import_need`).\n\nThe id generator is sphinx-needs' private `_make_hashed_id`, identical\nat the 8.5.0 floor and at master and verified against seven inputs;\nuseblocks/sphinx-needs#2084 asks for a public helper.\n\n#### Tests\n\n`tests/test_one_need_per_id.py`: two directives in one document; two\ndocuments (the earlier-sorting one owns); the owner removed, its scope\nnarrowed, or a `.gitignore` taking the file out of its scope, each\nmoving the need; both documents re-read in one build; a hand-written\nneed keeping its id; nested projects; generated ids in overlapping\nscopes and in a directive moved between documents; an unchanged owner\nre-reading nothing; the summary line; `-j 2` across two chunks (POSIX);\nan old pickled scope record loading. Every case but the `-j 2` one fails\nwithout the change. Green at Sphinx 7.4 and 9.1 and against the released\nsphinx-needs 8.5.0.",
+          "timestamp": "2026-10-06T20:31:26+02:00",
+          "tree_id": "219aef366d30e864f34bb983ad2c80ef30a6eaab",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/1025f6cc85ed6b1b89414f6322350390878441d7"
+        },
+        "date": 1791311561991,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.11284340099999923,
+            "unit": "s",
+            "extra": "Commit: 1025f6cc85ed6b1b89414f6322350390878441d7\nBranch: master\nTime: 2026-10-06T20:31:26+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 54.984598987,
+            "unit": "s",
+            "extra": "Commit: 1025f6cc85ed6b1b89414f6322350390878441d7\nBranch: master\nTime: 2026-10-06T20:31:26+02:00"
           }
         ]
       }
