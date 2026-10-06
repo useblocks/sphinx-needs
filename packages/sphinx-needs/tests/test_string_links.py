@@ -18,6 +18,7 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
+from sphinx.util.parallel import parallel_available
 
 from sphinx_needs_testkit import build_warnings
 
@@ -1103,6 +1104,15 @@ Page {n}
 
 PAGES = 7
 
+# ``build_pages`` proves a ``-j 2`` build really read in parallel, which Sphinx only
+# does with the forking start method: elsewhere (Windows) its read is serial
+# whatever ``-j`` says, so there is nothing to prove and the proof is skipped.
+needs_a_parallel_read = pytest.mark.skipif(
+    not parallel_available,
+    reason="Sphinx reads serially regardless of -j here (Windows: no forking"
+    " start method, so sphinx.util.parallel.parallel_available is False)",
+)
+
 PARALLEL_INDEX = (
     "String links\n============\n\n.. toctree::\n\n"
     + "".join(f"   page{n}\n" for n in range(1, PAGES + 1))
@@ -1160,6 +1170,7 @@ def _page(app: Any, name: str) -> str:
     return (Path(app.outdir) / f"{name}.html").read_text()
 
 
+@needs_a_parallel_read
 def test_links_render_in_a_parallel_build(
     make_app: Any, sphinx_test_tempdir: Any
 ) -> None:
@@ -1190,7 +1201,13 @@ def setup(app):
 """
 
 
-@pytest.mark.parametrize("parallel", [0, 2], ids=["serial", "parallel"])
+@pytest.mark.parametrize(
+    "parallel",
+    [
+        pytest.param(0, id="serial"),
+        pytest.param(2, marks=needs_a_parallel_read, id="parallel"),
+    ],
+)
 def test_an_entry_added_after_validation_still_renders(
     parallel: int, make_app: Any, sphinx_test_tempdir: Any
 ) -> None:
