@@ -10,8 +10,11 @@ from __future__ import annotations
 
 import ast
 import re
-from collections.abc import Mapping
+from collections.abc import Container, Iterator, Mapping, Sequence
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import Any, Protocol, TypeAlias
 
 from docutils import nodes
@@ -237,12 +240,145 @@ def find_and_replace_node_content(
     return node
 
 
+# -- reads of a value computed in the same pass ------------------------------------
+#
+# ``resolve_functions`` writes each result into its need as it goes, need by need in
+# the order the needs reached the environment, so a call or a variant condition that
+# reads a field another one computes sees the computed value or the unresolved one
+# depending on that order (document names, the documents the last build re-read,
+# ``-j``). Each such read is reported as ``needs.derive_unresolved``: the built-ins
+# note what they read (``_note_read``) into the record of the call being run, and the
+# pass reports the record once the call is over.
+
+#: how many needs one read names; the rest are counted
+_UNRESOLVED_NAMED = 3
+
+
+class _UnresolvedReads:
+    """The reads of computed values made by ONE call or variant condition.
+
+    Kept by the name read, in the order first read, each need named once per name.
+    """
+
+    __slots__ = ("_reads",)
+
+    def __init__(self) -> None:
+        self._reads: dict[str, dict[str, None]] = {}
+
+    def note(self, name: str, need_id: str) -> None:
+        """Record that ``name`` was read on the need ``need_id``."""
+        self._reads.setdefault(name, {})[need_id] = None
+
+    def reads(self) -> list[tuple[str, list[str]]]:
+        """Return each name read, with the ids of the needs it was read on."""
+        return [(name, list(ids)) for name, ids in self._reads.items()]
+
+
+# The record of the call the pass is running, and None everywhere else -- an ``ndf``
+# role, a ``:style_row:``, a user's own call -- where every value read is final.
+# Set and reset around each call in the one process that resolves: post-processing
+# runs at ``write-started``, which Sphinx emits in the main process before any write
+# worker is forked, and after the read workers have been merged.
+_reads_of_this_call: ContextVar[_UnresolvedReads | None] = ContextVar(
+    "_reads_of_this_call", default=None
+)
+
+
+def _note_read(need: NeedItem | NeedPartItem, name: str) -> None:
+    """Note that a built-in dynamic function read the field or link ``name`` of ``need``.
+
+    It is recorded only while ``resolve_functions`` runs a call, and only when the
+    field carries a dynamic value of its own, so is computed in the same pass:
+    whether the pass has computed it yet depends on the order the needs are
+    resolved in, and the warning must not.
+
+    :param need: The need read: the call's own need or another one.
+    :param name: The field or link read.
+    """
+    reads = _reads_of_this_call.get()
+    # a need part is never read in the pass, whose functions are handed whole needs
+    if (
+        reads is not None
+        and isinstance(need, NeedItem)
+        and need.carries_dynamic_value(name)
+    ):
+        reads.note(name, need.id)
+
+
+def _derive_unresolved_message(
+    what: str, option: str, reads: Sequence[tuple[str, Sequence[str]]]
+) -> str:
+    """Return the ``needs.derive_unresolved`` message for the reads of one call.
+
+    ubCode's words up to the reads, then a statement that holds whether or not the
+    value read had been computed yet. Each name is said once, with the one need it was
+    read on, or with how many and the first three; several names are joined
+    ``a, b and c``.
+
+    :param what: The reader: ``dynamic function 'copy'``, or ``variant condition``.
+    :param option: The field the reader computes.
+    :param reads: Each name read, with the ids of the needs it was read on, in order.
+    :raises ValueError: If there is no read.
+    """
+    if not reads:
+        raise ValueError("no read to report")
+    parts: list[str] = []
+    for name, ids in reads:
+        if len(ids) == 1:
+            parts.append(f"'{name}' on need '{ids[0]}'")
+            continue
+        named = ", ".join(ids[:_UNRESOLVED_NAMED])
+        if len(ids) > _UNRESOLVED_NAMED:
+            named += f" and {len(ids) - _UNRESOLVED_NAMED} more"
+        parts.append(f"'{name}' on {len(ids)} needs ({named})")
+    read = parts[0] if len(parts) == 1 else f"{', '.join(parts[:-1])} and {parts[-1]}"
+    carries = "carries" if len(reads) == 1 and len(reads[0][1]) == 1 else "carry"
+    return (
+        f"{what} for option '{option}' read {read}, which {carries} a dynamic function "
+        "or variant computed in the same pass: the value read depends on the order the "
+        "needs are resolved in"
+    )
+
+
+@contextmanager
+def _reads_reported(what: str, option: str, need: NeedItem) -> Iterator[None]:
+    """Record the reads of one call or variant condition, and report them after it.
+
+    They are reported whatever the outcome, so a call that fails because of a value it
+    read still says what it read. The warning is located at the reading need.
+
+    :param what: The reader, as the message names it.
+    :param option: The field the reader computes.
+    :param need: The need the reader belongs to.
+    """
+    reads = _UnresolvedReads()
+    token = _reads_of_this_call.set(reads)
+    try:
+        yield
+    finally:
+        _reads_of_this_call.reset(token)
+        if noted := reads.reads():
+            log_warning(
+                logger,
+                _derive_unresolved_message(what, option, noted),
+                "derive_unresolved",
+                location=(need["docname"], need["lineno"]) if need["docname"] else None,
+            )
+
+
 def resolve_functions(
     app: Sphinx,
     needs: NeedsMutable,
     needs_config: NeedsSphinxConfig,
 ) -> None:
-    """Resolve all dynamic/variant functions in all needs."""
+    """Resolve all dynamic/variant functions in all needs.
+
+    A read, by a built-in function or a variant condition, of a field that is itself
+    computed in this pass is reported as ``needs.derive_unresolved``, once per call.
+    """
+    # each call sets and resets its own record; this makes the pass independent of
+    # whatever the context holds when the build starts
+    _reads_of_this_call.set(None)
     needs_schema = SphinxNeedsData(app.env).get_schema()
     var_proxy = needs_config.variant_data_proxy
     for need in needs.values():
@@ -255,58 +391,68 @@ def resolve_functions(
                 resolved: list[Any] = []
                 for item in need._dynamic_fields[field].value:
                     if isinstance(item, DynamicFunctionParsed):
-                        func_return = _execute_dynamic_func(app, need, needs, item)
-                        if not (
-                            field_schema.type_check(func_return)
-                            or (
-                                field_schema.type == "array"
-                                and field_schema.type_check_item(func_return)
-                            )
+                        with _reads_reported(
+                            f"dynamic function '{item.name}'", field, need
                         ):
-                            raise ValueError(
-                                f"dynamic function value {type(func_return)} is not of type {field_schema.type!r}"
-                                + (
-                                    ""
-                                    if field_schema.type != "array"
-                                    else f" or item type {field_schema.item_type!r}"
-                                )
-                            )
-                        if isinstance(func_return, list | tuple):
-                            resolved.extend(func_return)
-                        else:
-                            resolved.append(func_return)
-                    elif isinstance(item, VariantFunctionParsed):
-                        var_context: dict[str, Any] = {
-                            **need,
-                            **needs_config.filter_data,
-                            "build_tags": set(app.builder.tags),
-                        }
-                        if var_proxy is not None:
-                            var_context["var"] = var_proxy
-                        if (
-                            var_return := _get_variant(
-                                item, needs_config.variants, var_context
-                            )
-                        ) is not None:
+                            func_return = _execute_dynamic_func(app, need, needs, item)
                             if not (
-                                field_schema.type_check(var_return)
+                                field_schema.type_check(func_return)
                                 or (
                                     field_schema.type == "array"
-                                    and field_schema.type_check_item(var_return)
+                                    and field_schema.type_check_item(func_return)
                                 )
                             ):
                                 raise ValueError(
-                                    f"variant value {type(var_return)} is not of type {field_schema.type!r}"
+                                    f"dynamic function value {type(func_return)} is not of type {field_schema.type!r}"
                                     + (
                                         ""
                                         if field_schema.type != "array"
                                         else f" or item type {field_schema.item_type!r}"
                                     )
                                 )
-                            if isinstance(var_return, list | tuple):
-                                resolved.extend(var_return)
+                            if isinstance(func_return, list | tuple):
+                                resolved.extend(func_return)
                             else:
-                                resolved.append(var_return)
+                                resolved.append(func_return)
+                    elif isinstance(item, VariantFunctionParsed):
+                        # what a condition reads other than the need's own fields;
+                        # these names win over a field of the same name
+                        not_fields: dict[str, Any] = {
+                            **needs_config.filter_data,
+                            "build_tags": set(app.builder.tags),
+                        }
+                        if var_proxy is not None:
+                            not_fields["var"] = var_proxy
+                        var_context: dict[str, Any] = {**need, **not_fields}
+                        with _reads_reported("variant condition", field, need):
+                            if (
+                                var_return := _get_variant(
+                                    item,
+                                    needs_config.variants,
+                                    var_context,
+                                    reader=need,
+                                    not_fields=not_fields,
+                                )
+                            ) is not None:
+                                if not (
+                                    field_schema.type_check(var_return)
+                                    or (
+                                        field_schema.type == "array"
+                                        and field_schema.type_check_item(var_return)
+                                    )
+                                ):
+                                    raise ValueError(
+                                        f"variant value {type(var_return)} is not of type {field_schema.type!r}"
+                                        + (
+                                            ""
+                                            if field_schema.type != "array"
+                                            else f" or item type {field_schema.item_type!r}"
+                                        )
+                                    )
+                                if isinstance(var_return, list | tuple):
+                                    resolved.extend(var_return)
+                                else:
+                                    resolved.append(var_return)
                     elif isinstance(item, VariantDataParsed):
                         vd_return = _get_variant_data(item, needs_config.variant_data)
                         if not (
@@ -354,13 +500,51 @@ def resolve_functions(
 
 
 def _get_variant(
-    variant: VariantFunctionParsed, variants: dict[str, str], context: dict[str, Any]
+    variant: VariantFunctionParsed,
+    variants: dict[str, str],
+    context: dict[str, Any],
+    *,
+    reader: NeedItem,
+    not_fields: Container[str],
 ) -> str | int | float | bool | None:
+    """Return the value of the first variant whose condition holds.
+
+    Each condition evaluated notes the fields of ``reader`` it names
+    (:func:`_note_read`); the conditions after the first that holds are not evaluated.
+
+    :param variant: The parsed ``<<…>>``.
+    :param variants: ``needs_variants``, mapping a name to the condition it stands for.
+    :param context: The names a condition is evaluated with.
+    :param reader: The need whose field the variant is.
+    :param not_fields: The names in ``context`` that are not ``reader``'s fields.
+    """
     for expr, _, value in variant.expressions:
         expr = variants.get(expr, expr)
+        for name in _condition_names(expr):
+            if name not in not_fields:
+                _note_read(reader, name)
         if bool(eval(expr, context.copy())):
             return value
     return variant.final_value
+
+
+@lru_cache(maxsize=256)
+def _condition_names(expression: str) -> tuple[str, ...]:
+    """Return the names a variant condition reads, in the order written, each once.
+
+    A condition that does not parse names nothing here; evaluating it reports the error.
+
+    :param expression: The condition.
+    """
+    try:
+        tree = ast.parse(expression.strip(), mode="eval")
+    except (SyntaxError, ValueError):
+        return ()
+    names = sorted(
+        (node for node in ast.walk(tree) if isinstance(node, ast.Name)),
+        key=lambda node: (node.lineno, node.col_offset),
+    )
+    return tuple(dict.fromkeys(node.id for node in names))
 
 
 def _get_variant_data(
