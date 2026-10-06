@@ -76,7 +76,9 @@ class TestReportDirective(TestCommonDirective):
             ),
             "links_string": links_string,
             "title": self.test_name,
-            "content": self.content,
+            # continuation lines are indented to stay inside the directive body the
+            # template opens (``   {content}``)
+            "content": "\n   ".join(self.content),
             "template_path": str(template_path),
         }
 

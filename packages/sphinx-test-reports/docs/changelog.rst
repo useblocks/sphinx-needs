@@ -198,6 +198,13 @@ New and Improved
   failure that used to escape as a traceback is now reported like the others: a file that
   is not UTF-8 is a configuration error naming the file.
 
+Fixes
+.....
+
+- A ``test-report`` with body content no longer produces a test-file need whose content is
+  the Python list repr (``['First line.', 'Second line.']``): the lines are inserted as
+  written (#2051).
+
 What the move costs, stated rather than left to the CI diff
 ............................................................
 

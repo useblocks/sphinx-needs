@@ -124,3 +124,20 @@ def test_the_rawsource_pattern_still_matches_docutils():
     assert all(Path(w.filename).resolve() == here for w in matching), [
         w.filename for w in matching
     ]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/test_report_content"}],
+    indirect=True,
+)
+def test_a_test_report_body_is_inserted_as_text_not_as_a_list_repr(test_app):
+    """The body of a ``test-report`` reached the template as a ``StringList``.
+
+    ``str.format`` renders that with ``repr``, so the generated test-file need's content was
+    ``['First content line.', 'Second content line.']`` (#2051).
+    """
+    test_app.build()
+    html = Path(test_app.outdir, "index.html").read_text(encoding="utf-8")
+
+    assert "<p>First content line.\nSecond content line.</p>" in html
