@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791319862893,
+  "lastUpdate": 1791322042550,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -22716,6 +22716,42 @@ window.BENCHMARK_DATA = {
             "value": 52.111503283000005,
             "unit": "s",
             "extra": "Commit: 41334c71880ae12b2cd2fe60e43c99972e4eeabd\nBranch: master\nTime: 2026-10-06T22:49:37+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "80e4d5032b05d827bc62bc76c39f7a19cb4cc1df",
+          "message": "🐛 sphinx-codelinks: a one-line need without an id field no longer crashes the directive when local URLs are on (#2093)\n\n### What\n\nA one-line need written in a style without an `id` field (the docs allow\nit — Sphinx-Needs then generates the id from the type's prefix\nand the title) no longer aborts the `src-trace` directive with\n`KeyError: 'id'` when `set_local_url` is on. Its source page's `[docs]`\nanchor links back to the generated id, and that link is a POSIX href on\nWindows too (it was `..\\index.html#…`, a broken link).\n\n### Why\n\nThe map that gives each source page its line anchors read the id from\nthe one-line need's own fields, where an id-less style has none.\nThe directive now computes the id `add_need` will give the need once\n(`would_be_id`: the marker's, else the one Sphinx-Needs generates —\nthe same function the #2042 duplicate check already used), checks it for\nan existing owner, and anchors the page on it.\n\n### ubCode\n\nNo matching fix needed: ubCode never creates a one-line need without an\nid. Read at `useblocks/ubcode` main `dad5eca3`,\n`rust/ubc_codelinks/src/markers/oneline.rs` `fields_to_code_need`\nreturns `None` when the parsed fields carry no `id`\n(`_ => return None`), so an id-less marker yields no `CodeNeed` and no\nwarning — whether or not local URLs are on — where\nsphinx-codelinks creates the need with the id Sphinx-Needs generates.\nThat parity gap predates this PR and is left as it is.\n\n### Tests\n\n`test_a_generated_id_with_local_urls_links_its_source_page`: an id-less\nstyle with local URLs only builds, `needs.json` holds the generated\nid with its `local-url`, the card links to the source page, and that\npage's `[docs]` link ends in `#<generated id>`. Red on master with\n`KeyError: 'id'` (and, on the Windows cell, on the backslash href before\nthe second commit).\n`test_source_page_back_link_is_posix_for_windows_paths`: the `[docs]`\nhref built from a `PureWindowsPath` is POSIX.\n\nCloses #2082",
+          "timestamp": "2026-10-06T23:25:58+02:00",
+          "tree_id": "70691c887cbc0f06fabbaec88fe7385ad7dad2d4",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/80e4d5032b05d827bc62bc76c39f7a19cb4cc1df"
+        },
+        "date": 1791322032829,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.09666991199999586,
+            "unit": "s",
+            "extra": "Commit: 80e4d5032b05d827bc62bc76c39f7a19cb4cc1df\nBranch: master\nTime: 2026-10-06T23:25:58+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 50.686168893,
+            "unit": "s",
+            "extra": "Commit: 80e4d5032b05d827bc62bc76c39f7a19cb4cc1df\nBranch: master\nTime: 2026-10-06T23:25:58+02:00"
           }
         ]
       }
