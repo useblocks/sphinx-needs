@@ -82,8 +82,10 @@ Bug fixes
   Both used to read the needs in the order they reached the build environment,
   so the last digits of a sum of non-integer values, and which need ``copy(filter=…)``
   copied from, depended on which documents the last build re-read and on ``-j``;
-  they no longer do, and a total is the one `ubCode`_ computes.
+  they no longer do, and for a sum of literal values over every need,
+  the total is the one `ubCode`_ computes.
   A ``calc_sum`` with ``links_only`` keeps adding in the order the links are written.
+  The error for a ``calc_sum`` outside a need now names ``calc_sum``.
 
 .. _`release:8.5.0`:
 

@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import time
 from pathlib import Path
 
@@ -546,6 +547,56 @@ def test_need_id_order_does_not_depend_on_the_build_history(test_app):
     second = _built_needs(app)["TOTAL"]
 
     assert (second["total"], second["pick"]) == (first["total"], first["pick"])
+
+
+NDF_ORDER_INDEX = """\
+Index
+=====
+
+.. toctree::
+
+   a
+   b
+   c
+
+.. req:: Total
+   :id: TOTAL
+
+   Total: :ndf:`calc_sum("hours")`
+
+   Pick: :ndf:`copy("id", filter="hours is not None and hours > 0")`
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), ORDER_CONF),
+                (Path("index.rst"), NDF_ORDER_INDEX),
+                *ORDER_PAGES,
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_need_id_order_in_the_ndf_role(test_app):
+    """The ``ndf`` role sums, and copies, in need-id order too.
+
+    The role (like a need's ``:style:`` and a needtable's ``:style_row:``) runs after
+    the needs are resolved and passes the functions a ``NeedsView``, a different
+    mapping from the plain ``dict`` the resolution pass passes, so the order is
+    pinned for it separately: the summands are written in the reverse of need-id
+    order, which would render ``0.6`` and copy from ``SUM_C``.
+    """
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    rendered = dict(re.findall(r"(Total|Pick): ([^<]*)<", html))
+    assert rendered == {"Total": "0.6000000000000001", "Pick": "SUM_A"}
 
 
 LINKS_ONLY_INDEX = """\
