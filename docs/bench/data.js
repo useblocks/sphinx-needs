@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791318605262,
+  "lastUpdate": 1791319862893,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -22680,6 +22680,42 @@ window.BENCHMARK_DATA = {
             "value": 40.333023302,
             "unit": "s",
             "extra": "Commit: 5c67ab843531995481768057b154489051c8c528\nBranch: master\nTime: 2026-10-06T22:27:40+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "41334c71880ae12b2cd2fe60e43c99972e4eeabd",
+          "message": "🐛 sphinx-codelinks: malformed one-line markers are reported in the build, at the source line (#2092)\n\n### What\n\n- The `src-trace` directive reports each malformed one-line marker its\nanalysis finds through Sphinx's logger, at the\nmarker's file and line, as `codelinks.oneline`, with the kind leading\nthe message:\n`src/x.cpp:3: WARNING: too_few_fields: 1 given fields, minimum is 2\n[codelinks.oneline]`.\nOne subtype for every kind, so `suppress_warnings =\n[\"codelinks.oneline\"]` silences them.\n- A marker that fits the style but whose need Sphinx-Needs refuses (on\nthe default style `@brief Does a, b` is the id\n`b`, which `needs_id_regex` rejects) used to stop the build with\n`InvalidNeedException`. It is now a warning of the\n  same type, the Sphinx-Needs reason leading:\n`src/x.cpp:1: WARNING: invalid_id: one-line need could not be created:\nGiven ID 'b' does not match configured regex '^[A-Z0-9_]{5,}'\n[codelinks.oneline]`.\n- The one-line parser no longer treats a line as a marker when the start\nsequence is one character (the default `@`),\nthe content holds no field separator, and the style requires more than\none field. Doxygen tags without a comma,\nsuch as `@param x` and `@return`, are left alone. Multi-character start\nsequences (`[[`) still warn. An empty marker\n  (nothing between the start and end sequences) is not a marker either.\n- The count and newline messages are ubCode's (`… given fields, minimum\nis …`, `… maximum is …`,\n`Field '…' contains a newline character`); the bracket messages keep\ntheir wording with the field name quoted.\n- A project traced by no directive (config-only) reports none.\n`codelinks analyse` prints the parser's kinds to the\nconsole in the same format as before; it creates no needs, so a refused\nneed is reported by a build only.\n- Removed: `emit_warnings` and its `build-finished` connect,\n`AnalyseProjects`' warnings file members\n(`warning_filepath`, `warnings_path`, `load_warnings`,\n`update_warnings`, `dump_warnings`), `AnalyseWarningType` and\n  `SRC_TRACE_CACHE`.\n- Six markers in this package's own sources, which the docs trace, were\nmalformed and had never become needs. The\nstray `;` after the links of the Rust support lines (`998a7972`) was\ncopied into each later language's (`9710ceef`,\n`29257ae5`, `ed66467d`), and `TEST_CLI_1`'s title held two unescaped\ncommas (`d1f87677`). Without the fix the docs\n  build reports six `codelinks.oneline` warnings and exits 1.\n\n### Why\n\nThe analysis collected the one-line warnings and a build never showed\none: `emit_warnings` read\n`<outdir>/src_trace_cache/warnings/codelinks_warnings.json`, whose only\nwriter nothing called, not at 1.4.0 and not\nsince. `test_src_trace.py`'s `assert not warnings` was vacuous.\nReporting them as they stood would have been noise:\non a Doxygen-documented C++ tree with the default style, every `@param`\n/ `@return` line was a `too_few_fields`\nwarning (32,000 on a 2,000-file measurement).\n\n### ubCode\n\nThe start-sequence rule is ubCode's (`markers/oneline.rs`, quoted in\n`oneline_parser`'s docstring), and so is no match\non empty content. The warning shape follows ubCode's planned\n`codelinks.oneline` diagnostic: kind as message prefix,\nwarning severity, located at the source line. As in ubCode, the\ndirective path reports and the config-only pass does not. The shared\nextraction corpus' `too_few_fields` case moves to a `[[` style (its\nexpectation unchanged), and a new case pins the `@`\nrule; both now agree with ubCode.\n\nubCode follow-ups the orchestrator files:\n\n- the one-character rule counts bytes there (`start_sequence.len() ==\n1`); here one character is one code point, so\n  `chars().count() == 1` (a `§` start sequence diverges today);\n- re-vendor the shared fixtures with `scripts/check_fixture_drift.py\n--only codelinks --codelinks-repo\n<sphinx-needs>/packages/sphinx-codelinks --write` (snapshots and YAMLs;\nthe snapshot sync alone orphans the new\ncase), then delist `warnings/too_few_fields` from `KNOWN_DIVERGENCES`\nand update the design doc's divergence row and\ncounts. The drift tool's default upstream still names the retired\nrepository;\n- the two bracket messages: adopt this package's wording over the `{:?}`\nshape.\n\n### Behaviour change\n\nA build with `-W` that traces a malformed one-line marker, or one whose\nneed Sphinx-Needs refuses, now fails until the\nmarker is fixed or `suppress_warnings = [\"codelinks.oneline\"]` is set.\nWithout `-W`, a refused need no longer stops\nthe build. A `@`-style line without a comma that used to warn in the CLI\n(`codelinks analyse`) no longer does. A file\ntraced by two overlapping directives reports its warnings once per\ndirective. The messages' wording changed (the kinds\ndid not).\n\n### Tests\n\n- Parser: the rule (`@param x the value`, `@return nothing`, `@only` →\nnot a marker), and what it leaves alone\n(`@see A, B, C, D, E` → `too_many_fields`, `@brief a, b, c, d` →\n`missing_square_brackets`, `@brief Does a, b` → the\nsame need, `[[ only-title ]]` → `too_few_fields`, `@x` with one required\nfield → a need); empty content on any start\nsequence and required count; an escaped separator counts; `§` is one\ncharacter.\n- Build (`test_oneline_warnings.py`): one located warning and exit 0\nwith the valid needs created; suppressible; the\ndefault style on a Doxygen block; a refused need (`invalid_id`) warns\nand the build goes on; a config-only project\n  reports none; `-j 2` forwards a worker's warning.\n- `test_build_html` asserts its fixtures emit no one-line warning,\nmatched by kind (Sphinx 7 shows no\n  `[type.subtype]`).\n\nCloses #2076",
+          "timestamp": "2026-10-06T22:49:37+02:00",
+          "tree_id": "faf0291d8f017b4883b1734a05438a80e0e0123f",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/41334c71880ae12b2cd2fe60e43c99972e4eeabd"
+        },
+        "date": 1791319854094,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.10294023299999822,
+            "unit": "s",
+            "extra": "Commit: 41334c71880ae12b2cd2fe60e43c99972e4eeabd\nBranch: master\nTime: 2026-10-06T22:49:37+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 52.111503283000005,
+            "unit": "s",
+            "extra": "Commit: 41334c71880ae12b2cd2fe60e43c99972e4eeabd\nBranch: master\nTime: 2026-10-06T22:49:37+02:00"
           }
         ]
       }
