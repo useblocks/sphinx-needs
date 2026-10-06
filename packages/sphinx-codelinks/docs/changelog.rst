@@ -169,6 +169,15 @@ New and Improved
   configuration problem
   (`#2069 <https://github.com/useblocks/sphinx-needs/issues/2069>`__).
 
+- 🐛 Malformed one-line markers are now reported in the build, at the source line, as
+  ``codelinks.oneline`` warnings; a build with ``-W`` that has one fails until the marker
+  is fixed or ``suppress_warnings = ["codelinks.oneline"]`` is set. On a one-character
+  start sequence such as the default ``@``, a line without the field separator is not a
+  marker (ubCode's rule), so documentation tags like ``@param`` and ``@brief`` do not
+  warn. The never-written warnings file under ``src_trace_cache`` and its reader are gone,
+  a file nothing had written since at least 1.4.0 (:ref:`oneline_invalid`,
+  `#2076 <https://github.com/useblocks/sphinx-needs/issues/2076>`__).
+
 - ⬆️ ``typer`` is no longer capped below 0.26.8. The cap protected the documentation build,
   whose ``sphinxcontrib-typer`` imported a ``typer.rich_utils`` name that 0.26.8 removed;
   the ``docs`` extra now requires ``sphinxcontrib-typer`` 0.9.1 or newer, which tracks

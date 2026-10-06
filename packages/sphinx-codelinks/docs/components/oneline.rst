@@ -240,3 +240,52 @@ To have a backslash ``\`` as a literal in the value, use ``\\`` as shown in the 
          :links: [SPEC,_1]
 
 .. caution:: Field values can never contain any newline characters ``\r`` or ``\n``.
+
+.. _`oneline_invalid`:
+
+Invalid markers
+---------------
+
+A line that starts like a marker but does not fit the style creates no need, and is
+reported as one of five kinds, the kind leading the message:
+
+- ``too_few_fields`` -- fewer fields than the style requires (the fields with no default):
+  ``1 given fields. They shall be more than 2``;
+- ``too_many_fields`` -- more fields than ``needs_fields`` defines:
+  ``5 given fields. They shall be less than 4``;
+- ``missing_square_brackets`` -- a ``list[str]`` field given without ``[`` and ``]``;
+- ``not_start_or_end_with_square_brackets`` -- a ``list[str]`` field whose brackets are not
+  its first and last characters, such as ``[REQ_1];``;
+- ``newline_in_field`` -- a field holding a newline.
+
+In a build, the ``src-trace`` directive reports each at the marker's file and line, relative
+to the git root (else the source directory), as a ``codelinks.oneline`` warning:
+
+.. code-block:: text
+
+   src/x.cpp:3: WARNING: too_few_fields: 1 given fields. They shall be more than 2 [codelinks.oneline]
+
+The build goes on, without that need; with ``-W`` it fails. One entry,
+``suppress_warnings = ["codelinks.oneline"]``, silences all five kinds. A project that no
+``src-trace`` directive traces creates no needs, and reports none. A file that two
+directives' scopes share is analysed by each, and each reports its markers. ``codelinks
+analyse`` prints the same warnings to the console.
+
+**A one-character start sequence without the field separator is not a marker.** When the
+start sequence is a single character -- the default ``@`` -- and the text after it holds no
+``field_split_char``, while the style requires more than one field, the line is left alone:
+no need and no warning. That is what keeps documentation tags quiet on the default style:
+
+.. code-block:: c
+
+   /**
+    * @brief Does a, IMPL_1
+    * @param x the value
+    * @return nothing
+    */
+
+``@param x the value`` and ``@return nothing`` are not markers; ``@brief Does a, IMPL_1``
+has the separator, so it is the need ``IMPL_1`` titled ``brief Does a``, as it always was.
+A tag line that does contain a comma is read as a marker, and warns if it does not fit.
+A multi-character start sequence such as ``[[`` is specific enough to be a marker on its
+own, so ``[[ only-title ]]`` on a style requiring two fields warns ``too_few_fields``.
