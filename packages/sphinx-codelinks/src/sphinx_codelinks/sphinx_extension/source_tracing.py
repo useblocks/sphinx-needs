@@ -135,6 +135,10 @@ def setup(app: Sphinx) -> dict[str, Any]:
 
 
 def builder_inited(app: Sphinx) -> None:
+    # the source pages a build registers are generated (and the registry emptied) by
+    # an HTML builder's html-collect-pages; after any other builder they would reach
+    # the next build in the same process, whose output directory is another one
+    file_lineno_href.mappings.clear()
     custom_css = Path(__file__).parent / "ub_sct.css"
     copy_asset(custom_css, Path(app.outdir) / "_static" / "source_tracing")
 

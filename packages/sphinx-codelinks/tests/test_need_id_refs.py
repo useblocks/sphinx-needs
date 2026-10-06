@@ -691,4 +691,6 @@ def test_a_non_html_build_leaves_no_source_page_pending(
     _build(tmp_path / "a", make_app, buildername="latex")
     app = _build(tmp_path / "b", make_app)
 
-    assert build_warnings(app) == [DANGLING]
+    # a second application in one process also re-registers Sphinx' own nodes
+    assert [w for w in build_warnings(app) if "@need-ids" in w] == [DANGLING]
+    assert Path(app.outdir, "index.html").exists()
