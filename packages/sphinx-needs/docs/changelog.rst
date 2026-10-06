@@ -131,6 +131,18 @@ Bug fixes
   The same crash came from :file:`conf.py` for a ``needs_functions`` entry that is not
   callable, which is now skipped with a ``needs.config`` warning instead.
 
+- 🐛 Under ``-j N``, a need id defined in two documents renders its card once,
+  on the document that kept the need **(changed output)** (:issue:`2087`)
+
+  Serially, the second definition is refused with a ``needs.create_need`` warning.
+  In a parallel build, two documents read by different processes each created the need;
+  the merge kept one and warned ``needs.duplicate_id`` about the other, but the other
+  document's page still rendered a card: the kept need's title and fields over the
+  dropped directive's content. A :ref:`needextract` of the id could copy the dropped
+  directive's content as well. A need's card is now rendered only on the document the
+  need is recorded on, in every builder, and ``needextract`` copies the kept need's
+  content.
+
 .. _`release:8.5.0`:
 
 8.5.0
