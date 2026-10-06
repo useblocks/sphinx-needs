@@ -19,6 +19,7 @@ from sphinx.testing.util import SphinxTestApp
 from sphinx.util.parallel import parallel_available
 
 from sphinx_codelinks.sphinx_extension.directives.src_trace import (
+    docs_anchor,
     generate_remote_url,
     generate_str_link_name,
 )
@@ -171,6 +172,13 @@ def test_local_url_value_is_posix_for_windows_paths() -> None:
         PureWindowsPath("..", "srca", "a.cpp"),  # ty: ignore[invalid-argument-type]
     )
     assert value == "../srca/a.cpp#L7"
+
+
+def test_source_page_back_link_is_posix_for_windows_paths() -> None:
+    """A source page's ``[docs]`` link is an href: POSIX on Windows too (``str()`` of
+    the relative path would give ``..\\index.html``)."""
+    href = docs_anchor(PureWindowsPath("..", "sub", "index.html"), "I_FB625")
+    assert href == "../sub/index.html#I_FB625"
 
 
 @pytest.mark.parametrize(
