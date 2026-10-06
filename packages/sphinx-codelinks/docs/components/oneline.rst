@@ -240,3 +240,62 @@ To have a backslash ``\`` as a literal in the value, use ``\\`` as shown in the 
          :links: [SPEC,_1]
 
 .. caution:: Field values can never contain any newline characters ``\r`` or ``\n``.
+
+.. _`oneline_invalid`:
+
+Invalid markers
+---------------
+
+A line that starts like a marker but does not fit the style creates no need, and is
+reported as one of these kinds, the kind leading the message:
+
+- ``too_few_fields`` -- fewer fields than the style requires (the fields with no default):
+  ``1 given fields, minimum is 2``;
+- ``too_many_fields`` -- more fields than ``needs_fields`` defines:
+  ``5 given fields, maximum is 4``;
+- ``missing_square_brackets`` -- a ``list[str]`` field given without ``[`` and ``]``;
+- ``not_start_or_end_with_square_brackets`` -- a ``list[str]`` field whose brackets are not
+  its first and last characters, such as ``[REQ_1];``;
+- ``newline_in_field`` -- a field holding a newline (not produced from a source file,
+  which is parsed one line at a time).
+
+A line with nothing between the start and end sequences is not a marker. A marker that
+fits the style but whose need Sphinx-Needs refuses -- an id that does not match
+``needs_id_regex``, say -- is reported too, with the Sphinx-Needs reason leading the
+message: ``invalid_id: one-line need could not be created: Given ID 'b' does not match
+configured regex '^[A-Z0-9_]{5,}'``.
+
+In a build, the ``src-trace`` directive reports each at the marker's file and line, relative
+to the git root (else the source directory), as a ``codelinks.oneline`` warning:
+
+.. code-block:: text
+
+   src/x.cpp:3: WARNING: too_few_fields: 1 given fields, minimum is 2 [codelinks.oneline]
+
+The build goes on, without that need; with ``-W`` it fails. One entry,
+``suppress_warnings = ["codelinks.oneline"]``, silences them all. A project that no
+``src-trace`` directive traces creates no needs, and reports none. A file that two
+directives' scopes share is analysed by each, and each reports its markers. ``codelinks
+analyse`` prints the parser's kinds to the console; it creates no needs, so a need
+Sphinx-Needs refuses is reported by a build only.
+
+**A one-character start sequence without the field separator is not a marker.** When the
+start sequence is a single character -- the default ``@`` -- and the text after it holds no
+``field_split_char``, while the style requires more than one field, the line is left alone:
+no need and no warning. That is what keeps documentation tags quiet on the default style:
+
+.. code-block:: c
+
+   /**
+    * @brief Does a, IMPL_1
+    * @param x the value
+    * @return nothing
+    */
+
+``@param x the value`` and ``@return nothing`` are not markers; ``@brief Does a, IMPL_1``
+has the separator, so it is the need ``IMPL_1`` titled ``brief Does a``, as it always was.
+A tag line that does contain a comma is read as a marker, and warns if it does not fit the
+style, or if it fits but Sphinx-Needs refuses the need -- an id that does not match
+``needs_id_regex``, say.
+A multi-character start sequence such as ``[[`` is specific enough to be a marker on its
+own, so ``[[ only-title ]]`` on a style requiring two fields warns ``too_few_fields``.

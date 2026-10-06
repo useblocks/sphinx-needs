@@ -109,7 +109,7 @@ Specifies the custom field name used for remote source code links.
 outdir
 ~~~~~~
 
-Specifies the output directory for generated artifacts such as extracted markers and warnings.
+Specifies the output directory for generated artifacts such as the extracted markers.
 
 **Type:** ``str``
 **Default:** ``"./output"``
@@ -560,6 +560,8 @@ Enables the use of simplified :ref:`one-line comment patterns <oneline>` to repr
 - ``end_sequence`` - Character(s) that end a one-line comment pattern (typically line ending)
 - ``field_split_char`` - Character used to separate fields within the comment
 - ``needs_fields`` - List of field definitions for extracting need information
+
+A marker that does not fit the style is not a need: the build warns at its source line, as ``codelinks.oneline`` (:ref:`oneline_invalid`).
 
 **Example usage:**
 

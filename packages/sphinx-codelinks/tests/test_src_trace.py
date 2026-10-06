@@ -1,5 +1,6 @@
 # @Test suite for Sphinx extension source tracing functionality, TEST_EXT_1, test, [IMPL_LNK_1, IMPL_ONE_1, IMPL_MRST_1]
 import os
+import re
 import shutil
 from collections.abc import Callable
 from dataclasses import fields
@@ -10,14 +11,18 @@ import sphinx
 from sphinx.environment import CONFIG_OK
 from sphinx.testing.util import SphinxTestApp
 
-from sphinx_codelinks.analyse.projects import AnalyseProjects
+from sphinx_codelinks.analyse.oneline_parser import WarningSubTypeEnum
 from sphinx_codelinks.config import (
-    SRC_TRACE_CACHE,
     CodeLinksConfig,
     check_configuration,
 )
 from sphinx_codelinks.sphinx_extension.source_tracing import set_config_to_sphinx
 from sphinx_needs_testkit import assert_no_warnings, build_warnings
+
+#: a one-line parser warning, by its kind: Sphinx 7 shows no ``[codelinks.oneline]``
+_ONELINE_KIND = re.compile(
+    rf"WARNING: ({'|'.join(kind.value for kind in WarningSubTypeEnum)}): "
+)
 
 
 @pytest.mark.parametrize(
@@ -237,8 +242,9 @@ def test_build_html(
     html = Path(app.outdir, "index.html").read_text()
     assert html
 
-    warnings = AnalyseProjects.load_warnings(Path(app.outdir) / SRC_TRACE_CACHE)
-    assert not warnings
+    # the fixtures warn about other things (no git root, unknown links), never about
+    # a one-line marker
+    assert [w for w in build_warnings(app) if _ONELINE_KIND.search(w)] == []
 
     assert app.env.get_doctree("index") == snapshot_doctree
 

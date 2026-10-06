@@ -2,7 +2,7 @@ import json
 from collections.abc import Generator
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, TypedDict, cast
+from typing import Any, cast
 
 from tree_sitter import Node as TreeSitterNode
 
@@ -34,14 +34,6 @@ logger = get_logger(__name__)
 def _count(n: int, noun: str) -> str:
     """Format ``n noun`` with a naive (append-s) plural for progress summaries."""
     return f"{n} {noun}" if n == 1 else f"{n} {noun}s"
-
-
-class AnalyseWarningType(TypedDict):
-    file_path: str
-    lineno: int
-    msg: str
-    type: str
-    sub_type: str
 
 
 @dataclass
