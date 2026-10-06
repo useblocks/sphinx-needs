@@ -31,6 +31,15 @@ def oneline_parser(  # handel warnings
 
     - Locate the start and end sequences
     - extract the string between them
+    - on a one-character start sequence, return ``None`` for a content without the
+      field separator where more than one field is required: not a marker, and not a
+      warning either. The rule is ubCode's, and so are its words: "when a
+      single-character start_sequence (like `@`) matches but the content has no field
+      delimiter at all, this is likely a stray match (e.g., Doxygen `@param`,
+      `@brief`, `@return`) rather than a real marker. Treating these as NoMatch avoids
+      noisy TooFewFields warnings on codebases with Doxygen annotations.
+      Multi-character sequences (like `[[`) are specific enough that a missing
+      delimiter should still produce a warning."
     - apply custom_split to split the strings into a list of fields by `field_split_char`
     - check the number of required fields and the max number of the given fields
     - split the strings located in the field with `type: list[str]` to a list of string
@@ -62,6 +71,14 @@ def oneline_parser(  # handel warnings
 
     # numbers of needs_fields which are required
     cnt_required_fields = oneline_config.get_cnt_required_fields()
+
+    # a documentation tag such as `@param x`, not a marker (see the docstring)
+    if (
+        len(oneline_config.start_sequence) == 1
+        and oneline_config.field_split_char not in string
+        and cnt_required_fields > 1
+    ):
+        return None
     # indices of the field which has type:list[str]
     positions_list_str = oneline_config.get_pos_list_str()
 
