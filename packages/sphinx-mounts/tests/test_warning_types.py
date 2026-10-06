@@ -21,24 +21,35 @@ if TYPE_CHECKING:
     from sphinx.testing.util import SphinxTestApp
 
 
-def _suffixes(make_app, make_host_project, tmp_path: Path, show: bool) -> list[str]:
-    """The ``[mounts.*]`` bracket groups of the one ``mounts.missing_path`` warning a
-    build with a missing listed file emits, with ``show_warning_types = show``."""
+def _suffixes(
+    make_app,
+    make_host_project,
+    tmp_path: Path,
+    show: bool,
+    *,
+    marker: str = "does not exist",
+    namespaced: bool = True,
+) -> list[str]:
+    """The ``[mounts.*]`` bracket groups of the one warning containing ``marker`` that
+    a build with a missing listed file emits, with ``show_warning_types = show``.
+
+    The default is its ``mounts.missing_path`` (emitted while mounting); with
+    ``namespaced=False`` the mount is declared in the deprecated top-level
+    ``[[mounts]]`` table, which also warns ``mounts.deprecated_location`` -- at
+    ``config-inited``, while the TOML is loaded.
+    """
     host = make_host_project()
     (host / "index.rst").write_text("Host\n====\n\nOnly page.\n", encoding="utf-8")
     write_ubproject_toml(
         host,
         [{"files": [str(tmp_path / "does_not_exist.rst")], "mount_at": "_g/api"}],
+        namespaced=namespaced,
     )
     app: SphinxTestApp = make_app(
         srcdir=host, freshenv=True, confoverrides={"show_warning_types": show}
     )
     app.build()
-    lines = [
-        line
-        for line in app._warning.getvalue().splitlines()
-        if "does not exist" in line
-    ]
+    lines = [line for line in app._warning.getvalue().splitlines() if marker in line]
     assert len(lines) == 1, app._warning.getvalue()
     return re.findall(r"\[mounts\.[a-z_]+\]", lines[0])
 
@@ -61,3 +72,20 @@ def test_suffix_per_version_when_sphinx_hides_warning_types(
     appends and Sphinx renders nothing, so the line carries no suffix at all."""
     expected = ["[mounts.missing_path]"] if version_info < (8,) else []
     assert _suffixes(make_app, make_host_project, tmp_path, False) == expected
+
+
+def test_suffix_once_for_a_warning_at_config_inited(
+    make_app, make_host_project, tmp_path
+):
+    """A warning emitted while the configuration is loaded -- the deprecated
+    ``[[mounts]]`` table, reported by the ``config-inited`` handler that reads the
+    TOML -- also carries its suffix once with ``show_warning_types = True``: the
+    helper learns the option before any handler that can warn runs."""
+    assert _suffixes(
+        make_app,
+        make_host_project,
+        tmp_path,
+        True,
+        marker="is deprecated",
+        namespaced=False,
+    ) == ["[mounts.deprecated_location]"]
