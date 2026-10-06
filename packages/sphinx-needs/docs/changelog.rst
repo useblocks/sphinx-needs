@@ -64,6 +64,14 @@ Improvements
   It gives notice ahead of a later release that resolves these values in dependency order
   (:issue:`2030`); `ubCode`_ reports the same reads.
 
+- 📚 The order in which ``needextend``, dynamic functions, links and constraints are processed
+  is documented (:issue:`2064`)
+
+  The new :ref:`needs_processing_order` section replaces the one restriction documented before
+  (a dynamic function cannot read back links), and says that a ``needextend`` filter never sees a computed value,
+  that the fields of a need are computed in a fixed order whatever the order of its options,
+  and that a variant condition sees only the fields computed before its own.
+
 Bug fixes
 .........
 

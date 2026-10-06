@@ -27,8 +27,13 @@ The argument of ``needextend`` will be taken as, by order of priority:
 - a single need ID, if it is a single word (no spaces),
 - a :ref:`filter_string` otherwise.
 
-``needextend`` can modify all string-based and list-based options.
+``needextend`` can modify the ``status``, ``tags``, ``style``, ``layout``, ``hide`` and ``collapse`` options,
+and every :ref:`extra field <needs_fields>` and :ref:`link option <needs_links>`, whatever its type;
+``+option`` works on string and list options only.
 Also, you can add links or delete tags.
+
+The ``needextend`` directives are applied in document-name and line order,
+and a filter sees the changes of the earlier ones; see :ref:`needs_processing_order`.
 
 .. syntax-example::
 

@@ -27,7 +27,8 @@ Need Lifecycle
 Within a sphinx build, a primary role of sphinx-needs is to manage the lifecycle of need items:
 
 1. **Collect**: During the read phase, need items are collected from the source files and configured external sources.
-2. **Resolve**: After the read phase, the need items are post-processed to resolve dynamic fields and links, etc, then frozen.
+2. **Resolve**: After the read phase, the need items are post-processed to resolve dynamic fields and links, etc,
+   then frozen (see :ref:`needs_processing_order`).
 3. **Analyse**: During the write phase, various directives/roles are available to reference, query, and output analysis of the needs.
 4. **Render**: During the write phase, the need items are rendered into the output format, such as HTML or PDF.
 5. **Validate**: During the final phase, the need items can be validated against configured checks.

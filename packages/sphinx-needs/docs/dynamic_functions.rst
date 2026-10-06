@@ -133,15 +133,31 @@ inside your **conf.py** file, to add a :py:class:`.DynamicFunction`:
             def setup(app):
                   add_dynamic_function(app, my_function)
 
-Restrictions
-~~~~~~~~~~~~
+.. _needs_processing_order:
 
-incoming_links
-++++++++++++++
-Incoming links are not available when dynamic functions gets calculated.
+Processing order
+~~~~~~~~~~~~~~~~
 
-That's because a dynamic function can change outgoing links, so that the incoming links of the target need will
-be recalculated. This is automatically done but not until all dynamic functions are resolved.
+Once every document has been read, and before any page is written, the needs are post-processed in this fixed order:
+
+1. The :ref:`needextend` directives are applied, sorted by document name and then by line.
+   Each filter sees the needs as written plus the changes of the extends applied before it;
+   it never sees the result of a ``[[…]]``, ``<<…>>`` or ``<{…}>``, which are computed in step 2.
+   A ``needextend`` may itself set a field it can modify to a ``[[…]]`` or ``<<…>>``, which step 2 evaluates.
+2. ``[[…]]``, ``<<…>>`` and ``<{…}>`` are evaluated need by need, and within a need in a fixed field order,
+   whatever the order of the options in the directive: the core fields, then the :ref:`needs_fields`
+   in the order they are declared, then the :ref:`link fields <needs_links>`,
+   and last any field that a ``needextend`` turned into a ``[[…]]`` or ``<<…>>``.
+   So a dynamic function or variant condition reading a field computed in this step may read it before it is computed
+   (see :ref:`which of these reads are reported <needs_derive_unresolved>` as ``needs.derive_unresolved``).
+   A :ref:`calc_sum <calc_sum>` over the whole project adds the needs in need-id order,
+   and a :ref:`copy <copy>` with a ``filter`` copies from the match with the lowest id.
+3. Back links are computed, link conditions are checked, and links to unknown needs are reported.
+   As a ``[[…]]`` can change outgoing links, back links are computed only after step 2,
+   so no ``[[…]]`` or ``<<…>>`` can read one: they are empty while step 2 runs.
+4. Constraints are checked (:ref:`needs_constraints`).
+   Then the needs are frozen, and :ref:`schema validation <schema_validation>`, every page,
+   and the :ref:`needs_warnings` checks at the end of the build see their final values.
 
 .. _needs_derive_unresolved:
 
@@ -150,7 +166,8 @@ Reads of a value computed in the same pass
 
 .. versionadded:: 9.0.0
 
-All ``[[…]]``, ``<<…>>`` and ``<{…}>`` are resolved in one pass, need by need in the order the needs were read,
+All ``[[…]]``, ``<<…>>`` and ``<{…}>`` are resolved in one pass
+(step 2 of the :ref:`processing order <needs_processing_order>`), need by need in the order the needs were read,
 and each result is written into its need as soon as it is computed.
 So a dynamic function or variant condition that reads a field which itself carries a ``[[…]]``, ``<<…>>`` or ``<{…}>``,
 of another need or of its own need, reads either the computed value or the value the field held before the pass
