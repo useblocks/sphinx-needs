@@ -59,7 +59,7 @@ New and Improved
   roots are different files, each kept): the project's
   ``remote_url_pattern`` filled in for the marker's line, or the local link when remote
   URLs are off. With local URLs only, a file referenced by ``@need-ids:`` is copied into
-  the output and gets a source page, as a file with a one-line need is. ``needs.json
+  the output and gets a source page, as a file with a one-line need is. ``needs.json``
   declares the field as a list; a need nothing references carries ``null``, which a
   strict ``unevaluatedProperties: false`` schema never sees. The references replace a
   value the need's own directive or a default gave the field; a user's ``needextend`` of
@@ -200,8 +200,12 @@ New and Improved
   is the builder's own relative URI, so a ``dirhtml`` page links back correctly too. An
   unchanged build rewrites no copy or page; a page is written again when its source
   changed, a document tracing it -- now or before -- was read again, added or removed, or
-  the output lacks it. A LaTeX build no longer drops source copies into its output, and
-  a source removed before the pages are written warns ``codelinks.source_page``.
+  the output lacks it; a copy carries its source's modification time, so a source replaced
+  by an older file is copied again too. A LaTeX build no longer drops source copies into
+  its output; a source removed before the pages are written, or a second source copied to
+  the same place (two projects whose source directories share a name), warns
+  ``codelinks.source_page``. The first build after upgrading reads every document once:
+  an environment from an earlier release holds no page records.
 
 - ⬆️ ``typer`` is no longer capped below 0.26.8. The cap protected the documentation build,
   whose ``sphinxcontrib-typer`` imported a ``typer.rich_utils`` name that 0.26.8 removed;

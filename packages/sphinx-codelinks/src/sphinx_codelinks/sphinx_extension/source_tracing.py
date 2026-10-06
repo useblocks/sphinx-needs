@@ -137,6 +137,10 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.connect("build-finished", debug.process_timing)
     return {
         "version": "builtin",
+        # the environment holds the source pages since #2070: an older one (no page
+        # records) is discarded by Sphinx, so the first build after an upgrade reads
+        # every document once and records them
+        "env_version": 1,
         "parallel_read_safe": True,
         "parallel_write_safe": True,
     }
@@ -164,31 +168,30 @@ SOURCE_PAGE_KEY = "codelinks_source_page"
 
 
 def _copy_outdated(copied: Path, source: os.stat_result) -> bool:
-    """Whether the copy is missing, of another size, or older than its source."""
+    """Whether the copy is missing, or its size or modification time differs from its
+    source's: a copy carries its source's modification time (``shutil.copy2``), so a
+    source replaced by an OLDER file is caught too."""
     try:
         current = copied.stat()
     except OSError:
         return True
-    return current.st_size != source.st_size or source.st_mtime_ns > current.st_mtime_ns
+    return (
+        current.st_size != source.st_size or current.st_mtime_ns != source.st_mtime_ns
+    )
 
 
 def _page_outdated(
     outfile: Path,
-    source: os.stat_result,
     page: SourcePage,
     documents: frozenset[str],
     targets: frozenset[str],
 ) -> bool:
-    """Whether a source page must be written: its output file is missing or older than
-    the source, or its ``[docs]`` links may have changed with no source edit -- a
+    """Whether a source page whose copy is up to date must be written: its output file
+    is missing, or its ``[docs]`` links may have changed with no source edit -- a
     document they name now was purged in this build (read again, or added: a need that
     moved to it), or a purged document had recorded the page (removed, or no longer
     tracing the file)."""
-    try:
-        written = outfile.stat()
-    except OSError:
-        return True
-    if source.st_mtime_ns > written.st_mtime_ns:
+    if not outfile.is_file():
         return True
     if any(docname in documents for _line, docname, _need_id in page.anchors):
         return True
@@ -207,11 +210,12 @@ def generate_code_page(app: Sphinx) -> Iterator[tuple[str, dict[str, Any], str]]
     The pages come from the environment (:func:`~.rediscovery.effective_pages`), so a
     cleaned output directory, a second builder sharing the doctrees, or a document read
     by a ``-j N`` worker gets them as a serial first build does. A copy is written when
-    it is missing, of another size or older than its source; a page when its output
-    file is missing or older than the source, or a document it was recorded by -- now or
-    before -- was purged in this build (read again, added or removed). Each ``[docs]``
-    link is the builder's own relative URI from the page to the need's document. A source that cannot be read any more (removed
-    since its document was read) warns and is skipped.
+    it is missing or its size or modification time differs from its source's; a page
+    when its copy was written, its output file is missing, or a document it was
+    recorded by -- now or before -- was purged in this build (read again, added or
+    removed). Each ``[docs]`` link is the builder's own relative URI from the page to
+    the need's document. A source that cannot be read any more (removed since its
+    document was read) warns and is skipped.
     """
     builder = app.builder
     if not isinstance(builder, StandaloneHTMLBuilder):  # the event is theirs alone
@@ -223,11 +227,11 @@ def generate_code_page(app: Sphinx) -> Iterator[tuple[str, dict[str, Any], str]]
     for page in effective_pages(app.env, config):
         copied = outdir / page.target
         try:
-            source = os.stat(page.source)
-            if _copy_outdated(copied, source):
+            copy = _copy_outdated(copied, os.stat(page.source))
+            if copy:
                 copied.parent.mkdir(parents=True, exist_ok=True)
-                # as bytes: no codec, no newline translation
-                shutil.copyfile(page.source, copied)
+                # as bytes (no codec, no newline translation), with the source's mtime
+                shutil.copy2(page.source, copied)
         except OSError as error:
             logger.warning(
                 f"source page {page.target!r} not written: cannot copy "
@@ -238,7 +242,7 @@ def generate_code_page(app: Sphinx) -> Iterator[tuple[str, dict[str, Any], str]]
             continue
         pagename = _pagename(page.target)
         outfile = Path(builder.get_outfilename(pagename))
-        if not _page_outdated(outfile, source, page, documents, targets):
+        if not copy and not _page_outdated(outfile, page, documents, targets):
             continue
         lineno_href = {
             line: f"{builder.get_relative_uri(pagename, docname)}#{need_id}"

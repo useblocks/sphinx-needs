@@ -424,15 +424,28 @@ def effective_pages(env: BuildEnvironment, config: CodeLinksConfig) -> list[Sour
     """The source pages an HTML build writes, one per target, sorted by it: every
     directive's, plus those of the config-only scans :func:`effective_refs` uses. A
     target recorded more than once (two directives tracing one file) is one page with
-    every record's anchors; its source is the first record's."""
+    every record's anchors; its source is the first record's, and a record naming another
+    source warns ``codelinks.source_page``."""
     store = source_pages_store(env)
     recorded = [page for docname in sorted(store) for page in store[docname]]
     for scan in _effective_scans(env, config):
         recorded.extend(scan.pages)
     merged: dict[str, tuple[str, set[tuple[int, str, str]]]] = {}
+    collisions: dict[str, set[str]] = {}
     for page in recorded:
-        _source, anchors = merged.setdefault(page.target, (page.source, set()))
+        source, anchors = merged.setdefault(page.target, (page.source, set()))
         anchors.update(page.anchors)
+        if page.source != source:
+            collisions.setdefault(page.target, set()).add(page.source)
+    for target, others in sorted(collisions.items()):
+        names = ", ".join(Path(other).as_posix() for other in sorted(others))
+        logger.warning(
+            f"source page {target!r}: {Path(merged[target][0]).as_posix()} and {names} "
+            "are copied to the same place (their source directories share a name); "
+            f"only {Path(merged[target][0]).as_posix()} is copied and paged",
+            type="codelinks",
+            subtype="source_page",
+        )
     return [
         SourcePage(source, target, tuple(sorted(anchors)))
         for target, (source, anchors) in sorted(merged.items())
