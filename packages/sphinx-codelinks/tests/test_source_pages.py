@@ -290,6 +290,81 @@ def test_two_documents_paging_one_file_merge_their_anchors(
     assert DOCS_LINK.findall(page) == ["../index.html#IMPL_1", "../later.html#IMPL_2"]
 
 
+#: project ``two``: ``src`` again, with its own one-line style (``[[...]]``), so that two
+#: documents create needs from one file
+TWO = (
+    "\n[codelinks.projects.two]\n"
+    "[codelinks.projects.two.source_discover]\n"
+    'src_dir = "../src"\n'
+    'comment_type = "cpp"\n'
+    "[codelinks.projects.two.analyse.oneline_comment_style]\n"
+    'start_sequence = "[["\n'
+    'end_sequence = "]]"\n'
+)
+BOTH = "// @in later, IMPL_1, impl\n// [[in another, IMPL_2, impl]]\nint x;\n"
+
+
+def _trace(project: str) -> str:
+    return f"\n.. src-trace::\n   :project: {project}\n   :file: both.cpp\n"
+
+
+def _shared_page(root: Path, *, page1: bool) -> None:
+    """``src/both.cpp`` paged from ``later`` (``IMPL_1``, project ``src``) and, with
+    ``page1``, from ``page1`` too (``IMPL_2``, project ``two``); ``index`` traces
+    nothing, so its re-reads (a glob toctree) touch no page."""
+    _local_project(
+        root,
+        "directive",
+        append={"docs/later.rst": _trace("src")}
+        | ({"docs/page1.rst": _trace("two")} if page1 else {}),
+        **NO_DIRECTIVE,
+        **{"src/both.cpp": BOTH},
+    )
+    toml = root / "docs" / "ubproject.toml"
+    toml.write_text(toml.read_text(encoding="utf-8") + TWO, encoding="utf-8")
+
+
+def _both_links(app: SphinxTestApp) -> list[str]:
+    page = Path(app.outdir, "src", "both.html").read_text(encoding="utf-8")
+    return DOCS_LINK.findall(page)
+
+
+def test_a_document_that_stops_tracing_a_shared_file_leaves_its_page(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """``later`` and ``page1`` both page ``src/both.cpp``; ``page1``'s directive removed
+    (the document edited, the file untouched): the page is written again without
+    ``page1``'s ``[docs]`` link, although the remaining link names a document not read."""
+    _shared_page(tmp_path, page1=True)
+    first = _build(tmp_path, make_app)
+    assert _both_links(first) == ["../later.html#IMPL_1", "../page1.html#IMPL_2"]
+
+    page1 = tmp_path / "docs" / "page1.rst"
+    _edit(page1, _trace("two"), "")
+    app = _build(tmp_path, make_app, freshenv=False)
+
+    assert "0 added, 1 changed, 0 removed" in _status(app)
+    assert _both_links(app) == ["../later.html#IMPL_1"]
+
+
+def test_a_new_document_tracing_a_paged_file_adds_its_back_link(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """``src/both.cpp`` is paged from ``later``; a NEW document traces it too (the file
+    untouched): the page is written again with the new document's ``[docs]`` link."""
+    _shared_page(tmp_path, page1=False)
+    first = _build(tmp_path, make_app)
+    assert _both_links(first) == ["../later.html#IMPL_1"]
+
+    (tmp_path / "docs" / "added.rst").write_text(
+        "Added\n=====\n" + _trace("two"), encoding="utf-8"
+    )
+    app = _build(tmp_path, make_app, freshenv=False)
+
+    assert "1 added" in _status(app)
+    assert _both_links(app) == ["../later.html#IMPL_1", "../added.html#IMPL_2"]
+
+
 _REMOVE_AT_COLLECT = """
 def setup(app):
     from pathlib import Path
