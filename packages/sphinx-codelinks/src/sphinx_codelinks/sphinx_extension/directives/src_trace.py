@@ -28,6 +28,7 @@ from sphinx_codelinks.sphinx_extension.project_analysis import (
 from sphinx_codelinks.sphinx_extension.rediscovery import (
     ScopeKind,
     ScopeRecord,
+    build_output_dirs,
     discover_scope,
     file_fingerprint,
     files_fingerprint,
@@ -126,7 +127,13 @@ class SourceTracingDirective(SphinxDirective):
         out_dir = Path(self.env.app.outdir)
 
         kind, target = self.scope()
-        source_files = discover_scope(src_dir, src_discover_config, kind, target)
+        source_files = discover_scope(
+            src_dir,
+            src_discover_config,
+            kind,
+            target,
+            exclude=build_output_dirs(self.env.app),
+        )
 
         # add source files into the dependency
         # https://www.sphinx-doc.org/en/master/extdev/envapi.html#sphinx.environment.BuildEnvironment.note_dependency

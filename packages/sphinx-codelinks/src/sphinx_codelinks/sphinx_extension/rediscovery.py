@@ -96,17 +96,41 @@ def scope_discover_config(
     )
 
 
+def build_output_dirs(app: Sphinx) -> tuple[Path, Path]:
+    """The build's output and doctree directories, which discovery never traces."""
+    return Path(app.outdir), Path(app.doctreedir)
+
+
+def _outside(files: Iterable[Path], exclude: Sequence[Path]) -> list[Path]:
+    """``files`` (resolved) that lie under none of ``exclude``."""
+    excluded = [directory.resolve() for directory in exclude]
+    return [
+        path
+        for path in files
+        if not any(path.is_relative_to(directory) for directory in excluded)
+    ]
+
+
 def discover_scope(
-    src_dir: Path, base: SourceDiscoverConfig, kind: ScopeKind, target: str
+    src_dir: Path,
+    base: SourceDiscoverConfig,
+    kind: ScopeKind,
+    target: str,
+    *,
+    exclude: Sequence[Path],
 ) -> list[Path]:
     """The source files of one scope: the ONE discovery function of the extension.
 
     A ``file`` scope is that file (as written, resolved below ``src_dir``); a
-    ``directory`` scope is what :class:`SourceDiscover` finds under it.
+    ``directory`` scope is what :class:`SourceDiscover` finds under it, less every file
+    under ``exclude`` -- the build's output and doctree directories
+    (:func:`build_output_dirs`): a source directory that contains them would otherwise
+    trace the extension's own copies of the sources.
     """
     if kind == "file":
         return [(src_dir / target).resolve()]
-    return SourceDiscover(scope_discover_config(src_dir, base, target)).source_paths
+    found = SourceDiscover(scope_discover_config(src_dir, base, target)).source_paths
+    return _outside(found, exclude)
 
 
 def scope_relative_path(path: PurePath, root: PurePath) -> str:
@@ -132,11 +156,15 @@ def files_fingerprint(files: Iterable[Path], root: Path) -> Fingerprint:
     return tuple(sorted(entries))
 
 
-def fingerprint(discover_config: SourceDiscoverConfig) -> Fingerprint:
-    """What discovery finds under ``discover_config``, with modification times and
-    sizes: a pure function of the configuration and the file system, no parsing."""
+def fingerprint(
+    discover_config: SourceDiscoverConfig, *, exclude: Sequence[Path] = ()
+) -> Fingerprint:
+    """What discovery finds under ``discover_config`` (less the files under
+    ``exclude``), with modification times and sizes: a pure function of the
+    configuration and the file system, no parsing."""
     root = discover_config.src_dir.resolve()
-    return files_fingerprint(SourceDiscover(discover_config).source_paths, root)
+    found = _outside(SourceDiscover(discover_config).source_paths, exclude)
+    return files_fingerprint(found, root)
 
 
 def file_fingerprint(src_dir: Path, file: str) -> Fingerprint:
@@ -148,12 +176,17 @@ def file_fingerprint(src_dir: Path, file: str) -> Fingerprint:
 
 
 def scope_fingerprint(
-    src_dir: Path, base: SourceDiscoverConfig, kind: ScopeKind, target: str
+    src_dir: Path,
+    base: SourceDiscoverConfig,
+    kind: ScopeKind,
+    target: str,
+    *,
+    exclude: Sequence[Path],
 ) -> Fingerprint:
     """The fingerprint of one scope, from :func:`discover_scope`."""
     if kind == "file":
         return file_fingerprint(src_dir, target)
-    files = discover_scope(src_dir, base, kind, target)
+    files = discover_scope(src_dir, base, kind, target, exclude=exclude)
     return files_fingerprint(files, (src_dir / target).resolve())
 
 
@@ -275,7 +308,9 @@ def scan_config_only_project(
     src_dir = locate_src_dir(app.confdir, codelinks_config, discover_config)
     if not src_dir.is_dir():
         raise ConfigOnlyError(f"source directory {src_dir.as_posix()} does not exist")
-    files = discover_scope(src_dir, discover_config, "directory", "./")
+    files = discover_scope(
+        src_dir, discover_config, "directory", "./", exclude=build_output_dirs(app)
+    )
     found = files_fingerprint(files, src_dir)
     if previous is not None and previous.fingerprint == found:
         return previous
@@ -373,7 +408,11 @@ def _scope_changed(
     if key not in memo:
         try:
             memo[key] = scope_fingerprint(
-                src_dir, discover_config, scope.kind, scope.target
+                src_dir,
+                discover_config,
+                scope.kind,
+                scope.target,
+                exclude=build_output_dirs(app),
             )
         except OSError:
             memo[key] = None
