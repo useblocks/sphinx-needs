@@ -41,6 +41,7 @@ from sphinx_needs.api import add_need
 from sphinx_needs.api.need import _make_hashed_id
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.nodes import Need
 from sphinx_needs.utils import add_doc
 
 logger = logging.getLogger(__name__)
@@ -376,17 +377,21 @@ class SourceTracingDirective(SphinxDirective):
                     **cast(dict[str, Any], kwargs),
                 )
                 rendered_needs.extend(oneline_needs)
-                if local_url_field:
+                # the id add_need gave the node: `id` is an optional field, and
+                # add_need generates one when the comment carries none
+                need_id = next(
+                    (
+                        node["ids"][0]
+                        for node in oneline_needs
+                        if isinstance(node, Need) and node["ids"]
+                    ),
+                    None,
+                )
+                if local_url_field and need_id is not None:
                     # save the mapping of need links and line numbers of source codes
                     # for the later use in `html-collect-pages`
-                    if str(target_filepath) not in file_lineno_href.mappings:
-                        file_lineno_href.mappings[str(target_filepath)] = {
-                            oneline_need.source_map["start"]["row"]
-                            + 1: f"{docs_href}#{oneline_need.need['id']}"
-                        }
-                    else:
-                        file_lineno_href.mappings[str(target_filepath)][
-                            oneline_need.source_map["start"]["row"] + 1
-                        ] = f"{docs_href}#{oneline_need.need['id']}"
+                    file_lineno_href.mappings.setdefault(str(target_filepath), {})[
+                        oneline_need.source_map["start"]["row"] + 1
+                    ] = f"{docs_href}#{need_id}"
 
         return rendered_needs

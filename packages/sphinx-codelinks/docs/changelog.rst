@@ -135,6 +135,11 @@ New and Improved
   directives still analyse the shared files once each
   (`#2042 <https://github.com/useblocks/sphinx-needs/issues/2042>`__).
 
+- 🐛 A one-line comment style without an ``id`` field builds with ``set_local_url`` on.
+  The source page's line anchor read the id from the marker's own fields and aborted with
+  ``KeyError: 'id'``; it now names the id Sphinx-Needs gave the need, written or generated
+  (`#2082 <https://github.com/useblocks/sphinx-needs/issues/2082>`__).
+
 - ⬆️ ``typer`` is no longer capped below 0.26.8. The cap protected the documentation build,
   whose ``sphinxcontrib-typer`` imported a ``typer.rich_utils`` name that 0.26.8 removed;
   the ``docs`` extra now requires ``sphinxcontrib-typer`` 0.9.1 or newer, which tracks

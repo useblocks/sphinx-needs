@@ -50,11 +50,13 @@ def _project(
     patterns: dict[str, str],
     pages: int = 0,
     conf_extra: str = "",
+    with_id: bool = True,
 ) -> str:
     """A git repository with one source directory per project and a docs directory.
 
     ``index`` traces the first project and ``later`` the second (if any); ``pages``
-    more documents make a ``-j 2`` read genuinely parallel. Returns the commit.
+    more documents make a ``-j 2`` read genuinely parallel. ``with_id=False`` drops
+    ``id`` from the one-line style, so each need's id is generated. Returns the commit.
     """
     docs = root / "docs"
     docs.mkdir()
@@ -62,9 +64,9 @@ def _project(
     for index, (name, pattern) in enumerate(patterns.items()):
         src = root / f"src{name}"
         src.mkdir()
+        marker = f"need in {name}" + (f", IMPL_{name.upper()}" if with_id else "")
         (src / f"{name}.cpp").write_text(
-            "int x = 0;\n" * index + f"// [[need in {name}, IMPL_{name.upper()}]]\n",
-            encoding="utf-8",
+            "int x = 0;\n" * index + f"// [[{marker}]]\n", encoding="utf-8"
         )
         toml += [
             f"[codelinks.projects.{name}]",
@@ -75,8 +77,9 @@ def _project(
             f"[codelinks.projects.{name}.analyse.oneline_comment_style]",
             'start_sequence = "[["',
             'end_sequence = "]]"',
-            'needs_fields = [{ name = "title" }, { name = "id" }, '
-            '{ name = "type", default = "impl" }]',
+            'needs_fields = [{ name = "title" }, '
+            + ('{ name = "id" }, ' if with_id else "")
+            + '{ name = "type", default = "impl" }]',
             "",
         ]
     (docs / "ubproject.toml").write_text("\n".join(toml), encoding="utf-8")
@@ -246,6 +249,23 @@ def test_string_links_are_registered_before_sphinx_needs_compiles_them(
     assert _card_links(html, "local-url") == ["srca/a.html#L-1"]
     # the local link's name: the value up to the extension, and the line
     assert '<a class="reference external" href="srca/a.html#L-1">srca/a#L1</a>' in html
+
+
+def test_a_need_without_an_id_links_its_generated_id(
+    tmp_path: Path, make_app: Callable[..., SphinxTestApp]
+) -> None:
+    """A one-line style with no ``id`` field builds with local URLs on (it used to
+    raise ``KeyError: 'id'``), and the source page's line links to the generated id."""
+    _project(tmp_path, patterns={"a": GITHUB}, with_id=False)
+    app = make_app(srcdir=tmp_path / "docs", freshenv=True)
+    app.build()
+
+    assert_no_warnings(app)
+    (need_id,) = _needs(app)
+    source = Path(app.outdir, "srca", "a.html").read_text(encoding="utf-8")
+    assert f"index.html#{need_id}" in source
+    index = Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    assert _card_links(index, "local-url") == ["srca/a.html#L-1"]
 
 
 def test_user_string_links_are_kept_and_not_mutated(
