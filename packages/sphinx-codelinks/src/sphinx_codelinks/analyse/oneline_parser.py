@@ -99,13 +99,13 @@ def oneline_parser(  # handel warnings
     if len(string_fields) < min_fields:
         return OnelineParserInvalidWarning(
             sub_type=WarningSubTypeEnum.too_few_fields,
-            msg=f"{len(string_fields)} given fields. They shall be more than {min_fields}",
+            msg=f"{len(string_fields)} given fields, minimum is {min_fields}",
         )
 
     if len(string_fields) > max_fields:
         return OnelineParserInvalidWarning(
             sub_type=WarningSubTypeEnum.too_many_fields,
-            msg=f"{len(string_fields)} given fields. They shall be less than {max_fields}",
+            msg=f"{len(string_fields)} given fields, maximum is {max_fields}",
         )
     resolved: dict[str, str | list[str] | int] = {}
     for idx in range(len(oneline_config.needs_fields)):
@@ -116,7 +116,7 @@ def oneline_parser(  # handel warnings
                 # the case where the field contains a new line character
                 return OnelineParserInvalidWarning(
                     sub_type=WarningSubTypeEnum.newline_in_field,
-                    msg=f"Field {field_name} has newline character. It is not allowed",
+                    msg=f"Field '{field_name}' contains a newline character",
                 )
             if oneline_config.needs_fields[idx]["type"] == "str":
                 resolved[field_name] = string_fields[idx]
@@ -128,14 +128,14 @@ def oneline_parser(  # handel warnings
                     # brackets are not  found
                     return OnelineParserInvalidWarning(
                         sub_type=WarningSubTypeEnum.missing_square_brackets,
-                        msg=f"Field {field_name} with 'type': '{oneline_config.needs_fields[idx]['type']}' must be given with '[]' brackets",
+                        msg=f"Field '{field_name}' with 'type': '{oneline_config.needs_fields[idx]['type']}' must be given with '[]' brackets",
                     )
 
                 if list_start_idx != 0 or list_end_idx != len(string_fields[idx]) - 1:
                     # brackets are found but not at the beginning and the end
                     return OnelineParserInvalidWarning(
                         sub_type=WarningSubTypeEnum.not_start_or_end_with_square_brackets,
-                        msg=f"Field {field_name} with 'type': '{oneline_config.needs_fields[idx]['type']}' must start with '[' and end with ']'",
+                        msg=f"Field '{field_name}' with 'type': '{oneline_config.needs_fields[idx]['type']}' must start with '[' and end with ']'",
                     )
 
                 string_items = string_fields[idx][list_start_idx + 1 : list_end_idx]

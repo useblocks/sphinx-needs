@@ -337,42 +337,42 @@ def test_oneline_parser_custom_config_positive(
             f"[[IMPL_4, title{ESCAPE}{ESCAPE}, 4, impl, [], closed]]",
             OnelineParserInvalidWarning(
                 sub_type=WarningSubTypeEnum.missing_square_brackets,
-                msg="Field links with 'type': 'list[str]' must be given with '[]' brackets",
+                msg="Field 'links' with 'type': 'list[str]' must be given with '[]' brackets",
             ),
         ),
         (
             "[[IMPL_2, Function Bar, impl, [SPEC_1, SPEC_2, open]]",
             OnelineParserInvalidWarning(
                 sub_type=WarningSubTypeEnum.missing_square_brackets,
-                msg="Field links with 'type': 'list[str]' must be given with '[]' brackets",
+                msg="Field 'links' with 'type': 'list[str]' must be given with '[]' brackets",
             ),
         ),
         (
             "[[IMPL_13, title 13, impl, 13[\[SPEC\,_1\]], open]]",
             OnelineParserInvalidWarning(
                 sub_type=WarningSubTypeEnum.not_start_or_end_with_square_brackets,
-                msg="Field links with 'type': 'list[str]' must start with '[' and end with ']'",
+                msg="Field 'links' with 'type': 'list[str]' must start with '[' and end with ']'",
             ),
         ),
         (
             "[[IMPL_14, title 13, impl, 13[\[SPEC\,_1\]], open, low, high]]",
             OnelineParserInvalidWarning(
                 sub_type=WarningSubTypeEnum.too_many_fields,
-                msg="7 given fields. They shall be less than 6",
+                msg="7 given fields, maximum is 6",
             ),
         ),
         (
             "[[IMPL_15]]",
             OnelineParserInvalidWarning(
                 sub_type=WarningSubTypeEnum.too_few_fields,
-                msg="1 given fields. They shall be more than 2",
+                msg="1 given fields, minimum is 2",
             ),
         ),
         (
             f"[[IMPL_16]]{UNIX_NEWLINE}, title 16]]",
             OnelineParserInvalidWarning(
                 sub_type=WarningSubTypeEnum.newline_in_field,
-                msg="Field id has newline character. It is not allowed",
+                msg="Field 'id' contains a newline character",
             ),
         ),
     ],
@@ -391,14 +391,14 @@ def test_oneline_parser_custom_config_negative(
             f"@title 17]]{UNIX_NEWLINE}, IMPL_17 {UNIX_NEWLINE}",
             OnelineParserInvalidWarning(
                 sub_type=WarningSubTypeEnum.newline_in_field,
-                msg="Field title has newline character. It is not allowed",
+                msg="Field 'title' contains a newline character",
             ),
         ),
         (
             f"@title 17]], IMPL_17, impl, [SPEC_3, SPEC_4{UNIX_NEWLINE} ] {UNIX_NEWLINE}",
             OnelineParserInvalidWarning(
                 sub_type=WarningSubTypeEnum.newline_in_field,
-                msg="Field links has newline character. It is not allowed",
+                msg="Field 'links' contains a newline character",
             ),
         ),
     ],
@@ -635,7 +635,7 @@ def test_multi_character_start_without_separator_still_warns() -> None:
         "// [[ only-title ]]", ONELINE_COMMENT_STYLE
     ) == OnelineParserInvalidWarning(
         sub_type=WarningSubTypeEnum.too_few_fields,
-        msg="1 given fields. They shall be more than 2",
+        msg="1 given fields, minimum is 2",
     )
 
 

@@ -60,9 +60,7 @@ def _oneline(location: str, message: str) -> str:
     return f"{location}: WARNING: {message}{suffix}"
 
 
-TOO_FEW = _oneline(
-    "src/x.cpp:3", "too_few_fields: 1 given fields. They shall be more than 2"
-)
+TOO_FEW = _oneline("src/x.cpp:3", "too_few_fields: 1 given fields, minimum is 2")
 
 
 def test_a_malformed_marker_warns_at_its_source_line(
@@ -102,9 +100,7 @@ def test_documentation_tags_on_the_default_style_do_not_warn(
     app = _build(tmp_path, make_app)
 
     assert build_warnings(app) == [
-        _oneline(
-            "src/x.cpp:5", "too_many_fields: 5 given fields. They shall be less than 4"
-        )
+        _oneline("src/x.cpp:5", "too_many_fields: 5 given fields, maximum is 4")
     ]
     assert _json(app)["needs"]["IMPL_BRIEF"]["title"] == "brief Does a"
 
