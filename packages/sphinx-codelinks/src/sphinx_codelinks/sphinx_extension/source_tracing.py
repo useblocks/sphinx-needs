@@ -1,6 +1,7 @@
 import contextlib
+import shutil
 from collections.abc import Iterator  # only in python 3.11 afterwards
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from timeit import default_timer as timer  # Used for timing measurements
 from typing import Any, cast
 
@@ -16,7 +17,6 @@ from sphinx_codelinks.config import (
     CodeLinksConfigType,
     CodeLinksProjectConfigType,
     check_configuration,
-    file_lineno_href,
     generate_project_configs,
     load_codelinks_table,
     need_id_refs_fields,
@@ -34,12 +34,14 @@ from sphinx_codelinks.sphinx_extension.project_analysis import git_root_warnings
 from sphinx_codelinks.sphinx_extension.rediscovery import (
     attach_on_post_processing,
     config_only_refs_store,
+    effective_pages,
     find_affected_documents,
     find_outdated_scopes,
     merge_info,
     note_documents_to_read,
     purge_doc,
     scope_store,
+    source_pages_store,
 )
 from sphinx_codelinks.sphinx_extension.string_links import register_string_links
 from sphinx_needs.api import add_field, add_need_type
@@ -134,10 +136,6 @@ def setup(app: Sphinx) -> dict[str, Any]:
 
 
 def builder_inited(app: Sphinx) -> None:
-    # the source pages a build registers are generated (and the registry emptied) by
-    # an HTML builder's html-collect-pages; after any other builder they would reach
-    # the next build in the same process, whose output directory is another one
-    file_lineno_href.mappings.clear()
     custom_css = Path(__file__).parent / "ub_sct.css"
     copy_asset(custom_css, Path(app.outdir) / "_static" / "source_tracing")
 
@@ -149,36 +147,57 @@ def add_custom_css(
     _context: dict[str, Any],
     _doctree: Any,
 ) -> None:
-    target_htmls = {
-        str(Path(file_path).relative_to(app.outdir).with_suffix(""))
-        for file_path in file_lineno_href.mappings
-    }
-
-    if pagename in target_htmls and templatename == "page.html":
+    if templatename != "page.html":
+        return
+    config = CodeLinksConfig.from_sphinx(app.config)
+    if pagename in {
+        _pagename(page.target) for page in effective_pages(app.env, config)
+    }:
         app.add_css_file("_static/source_tracing/ub_sct.css")
 
 
-def generate_code_page(
-    app: Sphinx,
-) -> Iterator[tuple[str, dict[str, str], str]] | None:
-    for file, lineno_href in file_lineno_href.mappings.items():
-        file_path = Path(file)
-        pagename = str((file_path.relative_to(app.outdir)).with_suffix(""))
+def _pagename(target: str) -> str:
+    """The page of a source copy: its path without the suffix (``src/refs``)."""
+    return PurePosixPath(target).with_suffix("").as_posix()
 
-        html_content = html_wrapper(
-            file_path,
-            lineno_href=lineno_href,
-        )
 
-        context = {
-            "title": f"Source Code Tracing: {file_path.name}",
-            "body": html_content,
+def generate_code_page(app: Sphinx) -> Iterator[tuple[str, dict[str, str], str]]:
+    """Copy every recorded source file into the output and yield its page
+    (``html-collect-pages``, so for HTML builders only, and on every such build).
+
+    The pages come from the environment (:func:`~.rediscovery.effective_pages`), so a
+    cleaned output directory, a second builder sharing the doctrees, or a document read
+    by a ``-j N`` worker gets them as a serial first build does. Each ``[docs]`` link is
+    the builder's own relative URI from the page to the need's document. A source that
+    cannot be copied any more (removed since its document was read) warns and is
+    skipped.
+    """
+    config = CodeLinksConfig.from_sphinx(app.config)
+    outdir = Path(app.outdir)
+    for page in effective_pages(app.env, config):
+        copied = outdir / page.target
+        try:
+            copied.parent.mkdir(parents=True, exist_ok=True)
+            # as bytes: no codec, no newline translation
+            shutil.copyfile(page.source, copied)
+        except OSError as error:
+            logger.warning(
+                f"source page {page.target!r} not written: cannot copy "
+                f"{Path(page.source).as_posix()}: {error.strerror or error}",
+                type="codelinks",
+                subtype="source_page",
+            )
+            continue
+        pagename = _pagename(page.target)
+        lineno_href = {
+            line: f"{app.builder.get_relative_uri(pagename, docname)}#{need_id}"
+            for line, docname, need_id in page.anchors
         }
-
+        context = {
+            "title": f"Source Code Tracing: {copied.name}",
+            "body": html_wrapper(copied, lineno_href=lineno_href),
+        }
         yield pagename, context, "page.html"
-
-    file_lineno_href.mappings.clear()  # Clear the mappings after generating the pages
-    return None
 
 
 def load_config_from_toml(app: Sphinx, config: _SphinxConfig) -> None:
@@ -337,6 +356,7 @@ def prepare_env(
     src_trace_sphinx_config = CodeLinksConfig.from_sphinx(app.config)
     need_id_refs_store(env)
     scope_store(env)
+    source_pages_store(env)
     config_only_refs_store(env)
     # a need of a document still to be read is stale: the directives may replace it
     note_documents_to_read(env, docnames)

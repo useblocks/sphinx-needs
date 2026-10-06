@@ -592,16 +592,6 @@ def load_codelinks_table(path: Path) -> dict[str, object] | None:
     return select_table(load_toml(path), CODELINKS_TABLE, source=path)
 
 
-class SourceTracingLineHref:
-    """Global class for the mapping between source file line numbers and Sphinx documentation links."""
-
-    def __init__(self) -> None:
-        self.mappings: dict[str, dict[int, str]] = {}
-
-
-file_lineno_href = SourceTracingLineHref()
-
-
 class CodeLinksProjectConfigType(TypedDict, total=False):
     """TypedDict defining the configuration structure for individual SrcTrace projects.
 

@@ -141,8 +141,7 @@ def test_two_builders_sharing_the_doctrees_each_get_the_copies_and_pages(
 def test_an_unchanged_build_writes_the_pages_again(
     tmp_path: Path, make_app: _MakeApp, path: str
 ) -> None:
-    """A build that reads nothing writes every known source page, as
-    ``sphinx.ext.viewcode`` writes every module page."""
+    """A build that reads nothing writes every known source page again."""
     _local_project(tmp_path, path)
     _build(tmp_path, make_app)
 

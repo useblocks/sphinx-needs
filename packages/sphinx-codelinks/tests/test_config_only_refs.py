@@ -296,7 +296,7 @@ def test_parallel_build_attaches_and_pages_the_sources(
     tmp_path: Path, make_app: _MakeApp
 ) -> None:
     """The configuration pass runs in the main process, so under ``-j 2`` the local
-    copies and their source pages are made (unlike a directive's, #2044)."""
+    copies and their source pages are made (a directive's too, since #2044)."""
     _project(
         tmp_path,
         files=NO_DIRECTIVE,
