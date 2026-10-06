@@ -51,7 +51,7 @@ Improvements
 
 - ✨ ``needextend`` gains ``:extend_priority:`` (default 500, lower applied first), and a
   filter whose matches depend on earlier ``needextend`` directives is reported as
-  ``needs.needextend_match_order`` **(changed output)** (:issue:`1658`, :issue:`2064`)
+  ``needs.needextend_match_order`` **(changed output)** (:issue:`1658`, :issue:`2064`, :pr:`2083`)
 
   The ``needextend`` directives are applied sorted by
   :ref:`extend_priority <needextend_extend_priority>`, then by document name and line, so
