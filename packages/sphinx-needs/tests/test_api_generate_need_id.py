@@ -113,8 +113,8 @@ def test_generate_need_id_is_the_id_add_need_assigns(probe, inputs, confoverride
     assert "added" not in record, record.get("added")
     generated = record["generated"]
     assert isinstance(generated, str)
-    assert generated.startswith("SP_")
     assert list(get_needs_view(app)) == [generated]
+    assert generated.startswith("SP_")
     assert_no_warnings(app)
 
 
