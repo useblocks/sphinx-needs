@@ -570,3 +570,80 @@ def test_oneline_parser_bounded_marker_allowed_after_prose() -> None:
     res = oneline_parser(oneline, ONELINE_COMMENT_STYLE)
     assert isinstance(res, dict)
     assert res["id"] == "IMPL_1"
+
+
+#: one required field (``title``): a line without the separator is a whole marker
+ONE_REQUIRED_FIELD = OneLineCommentStyle(
+    needs_fields=[{"name": "title"}, {"name": "type", "default": "impl"}]
+)
+
+
+@pytest.mark.parametrize(
+    "oneline",
+    [
+        f"// @param x the value{UNIX_NEWLINE}",
+        f"/// @return nothing{UNIX_NEWLINE}",
+        f" * @only{UNIX_NEWLINE}",
+    ],
+)
+def test_one_character_start_without_separator_is_not_a_marker(oneline: str) -> None:
+    """A one-character start sequence, no field separator in the content and more than
+    one required field: documentation tags such as ``@param`` are not markers, and not
+    warnings either."""
+    assert oneline_parser(oneline, ONELINE_COMMENT_STYLE_DEFAULT) is None
+
+
+@pytest.mark.parametrize(
+    "oneline, sub_type",
+    [
+        (
+            f"// @see A, B, C, D, E{UNIX_NEWLINE}",
+            WarningSubTypeEnum.too_many_fields,
+        ),
+        # the fourth field is ``links``, a ``list[str]``
+        (
+            f"// @brief a, b, c, d{UNIX_NEWLINE}",
+            WarningSubTypeEnum.missing_square_brackets,
+        ),
+    ],
+)
+def test_one_character_start_with_separator_still_warns(
+    oneline: str, sub_type: WarningSubTypeEnum
+) -> None:
+    res = oneline_parser(oneline, ONELINE_COMMENT_STYLE_DEFAULT)
+    assert isinstance(res, OnelineParserInvalidWarning)
+    assert res.sub_type == sub_type
+
+
+def test_one_character_start_with_two_fields_is_still_a_need() -> None:
+    """``@brief Does a, b`` has a separator, so it is the need it always was."""
+    assert oneline_parser(
+        f"// @brief Does a, b{UNIX_NEWLINE}", ONELINE_COMMENT_STYLE_DEFAULT
+    ) == {
+        "title": "brief Does a",
+        "id": "b",
+        "type": "impl",
+        "links": [],
+        "start_column": 4,
+        "end_column": 19,
+    }
+
+
+def test_multi_character_start_without_separator_still_warns() -> None:
+    """``[[`` is specific enough: a marker with too few fields is a warning."""
+    assert oneline_parser(
+        "// [[ only-title ]]", ONELINE_COMMENT_STYLE
+    ) == OnelineParserInvalidWarning(
+        sub_type=WarningSubTypeEnum.too_few_fields,
+        msg="1 given fields. They shall be more than 2",
+    )
+
+
+def test_one_character_start_with_one_required_field_is_a_need() -> None:
+    """With one required field, a line without the separator is a whole marker."""
+    assert oneline_parser(f"// @x{UNIX_NEWLINE}", ONE_REQUIRED_FIELD) == {
+        "title": "x",
+        "type": "impl",
+        "start_column": 4,
+        "end_column": 5,
+    }
