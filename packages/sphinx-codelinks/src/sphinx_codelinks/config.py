@@ -921,6 +921,37 @@ def locate_src_dir(
     return anchor(discover_config.src_dir, config_base_dir(confdir, config)).resolve()
 
 
+def git_root_problem(git_root: Path, src_dir: Path) -> str | None:
+    """Why a configured ``git_root`` cannot be a project's git root, or ``None``.
+
+    Every source path is relative to the git root, so it must be ``src_dir`` or a
+    directory above it (#2062). Both paths anchored and resolved by the caller: the
+    Sphinx extension (``project_analysis.configured_git_root``) and ``codelinks
+    analyse`` alike, each treating a value with a problem as unset.
+    """
+    try:
+        if not git_root.exists():
+            return f"git_root {git_root.as_posix()} does not exist"
+        if not git_root.is_dir():
+            return f"git_root {git_root.as_posix()} is not a directory"
+    except OSError:
+        return f"git_root {git_root.as_posix()} cannot be read"
+    if not src_dir.is_relative_to(git_root):
+        return (
+            f"git_root {git_root.as_posix()} does not contain src_dir "
+            f"{src_dir.as_posix()}"
+        )
+    return None
+
+
+def git_root_warning(project: str, problem: str) -> str:
+    """The one warning text for a project's ignored ``git_root`` (``codelinks.git_root``)."""
+    return (
+        f"project {project!r}: {problem}; it is ignored, and the repository root is "
+        "detected from src_dir instead"
+    )
+
+
 def remote_url_pattern_warnings(config: CodeLinksConfig) -> list[str]:
     """Why a project's remote URL pattern will not render as one link, if it will not.
 

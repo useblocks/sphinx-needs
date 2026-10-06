@@ -409,7 +409,9 @@ When disabled, symbolic links to directories are not traversed.
 
 Either way a file is listed once, under its resolved path, however many links lead to it --
 except that two spellings of one file on a case-insensitive file system (a link to
-``sub/B.cpp`` beside ``sub/b.cpp``) are still two entries.
+``sub/B.cpp`` beside ``sub/b.cpp``) are still two entries -- and a file whose target lies
+outside ``src_dir`` is skipped with a ``codelinks.outside_src_dir`` warning: every traced
+file is relative to ``src_dir``.
 A symbolic link to a *file* is discovered even with ``follow_links = false`` (ubCode skips
 it).
 
@@ -515,6 +517,10 @@ Specifies an explicit path to the Git repository root directory. This option is 
 
 When not set, **Sphinx-CodeLinks** will automatically traverse parent directories to locate the ``.git`` folder.
 
+It must be ``src_dir`` or a directory above it, since every source path is relative to it;
+otherwise it is ignored with a ``codelinks.git_root`` warning and the repository root is
+detected from ``src_dir``, as when it is not set.
+
 **Type:** ``str`` (path)
 **Default:** Not set (auto-detection)
 
@@ -523,7 +529,7 @@ When not set, **Sphinx-CodeLinks** will automatically traverse parent directorie
    [codelinks.projects.my_project.analyse]
    git_root = "/absolute/path/to/repo"
 
-.. note:: When ``git_root`` is explicitly set, **Sphinx-CodeLinks** will use this path directly without attempting auto-detection. Ensure the path points to a valid Git repository containing a ``.git`` directory.
+.. note:: When ``git_root`` is explicitly set (and contains ``src_dir``), **Sphinx-CodeLinks** will use this path directly without attempting auto-detection. Ensure the path points to a valid Git repository containing a ``.git`` directory.
 
 .. _`oneline_comment_style`:
 

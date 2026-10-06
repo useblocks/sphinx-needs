@@ -23,6 +23,9 @@ from sphinx_codelinks.config import (
     anchor_preproc_paths,
     config_base_dir,
     file_lineno_href,
+    git_root_problem,
+    git_root_warning,
+    locate_src_dir,
 )
 from ub_project import anchor
 
@@ -40,25 +43,82 @@ def fill_remote_url(
     )
 
 
+def _checked_git_root(
+    confdir: str | Path,
+    codelinks_config: CodeLinksConfig,
+    project_config: CodeLinksProjectConfigType,
+) -> tuple[Path | None, str | None]:
+    """A project's configured ``git_root``, anchored and resolved, and why it is
+    ignored: ``(root, None)``, ``(None, None)`` when none is configured, or
+    ``(None, <the problem>)``."""
+    discover = project_config.get("source_discover_config")
+    analyse = project_config.get("analyse_config")
+    if discover is None or analyse is None or analyse.git_root is None:
+        return None, None
+    base_dir = config_base_dir(confdir, codelinks_config)
+    root = anchor(analyse.git_root, base_dir).resolve()
+    src_dir = locate_src_dir(confdir, codelinks_config, discover)
+    problem = git_root_problem(root, src_dir)
+    return (None, problem) if problem is not None else (root, None)
+
+
+def configured_git_root(
+    confdir: str | Path,
+    codelinks_config: CodeLinksConfig,
+    project_config: CodeLinksProjectConfigType,
+) -> Path | None:
+    """The git root a project configures, or ``None`` -- the ONE place it is decided.
+
+    The ``git_root`` setting anchored at the configuration file's directory (see
+    :func:`~sphinx_codelinks.config.config_base_dir`) and resolved; ``None`` when none
+    is set, AND when :func:`~sphinx_codelinks.config.git_root_problem` finds one: it
+    names no readable directory, or one that is neither ``src_dir`` nor above it (#2062): every record's ``path`` is relative to the git root, so it
+    must contain the sources. A rejected value is treated as unset -- the analysis
+    detects the repository from ``src_dir`` -- and :func:`git_root_warnings` says so
+    once, at ``config-inited``. The analysis (:func:`prepare_analyse_config`) and the
+    attach's root (``need_id_refs.project_root``) both take it from here, so the
+    records and the attach agree on the root.
+    """
+    return _checked_git_root(confdir, codelinks_config, project_config)[0]
+
+
+def git_root_warnings(
+    confdir: str | Path, codelinks_config: CodeLinksConfig
+) -> list[str]:
+    """One message per project whose configured ``git_root`` is ignored (see
+    :func:`configured_git_root`)."""
+    projects = codelinks_config.projects
+    if not isinstance(projects, dict):
+        return []
+    warnings = []
+    for name, project_config in projects.items():
+        if not isinstance(project_config, dict):
+            continue
+        _root, problem = _checked_git_root(confdir, codelinks_config, project_config)
+        if problem is not None:
+            warnings.append(git_root_warning(name, problem))
+    return warnings
+
+
 def prepare_analyse_config(
     confdir: str | Path,
     codelinks_config: CodeLinksConfig,
-    base_analyse_config: SourceAnalyseConfig,
+    project_config: CodeLinksProjectConfigType,
     *,
     src_dir: Path,
     src_files: Sequence[Path],
 ) -> SourceAnalyseConfig:
     """The analysis configuration for ``src_files`` of a project in ``src_dir``.
 
-    ``git_root`` and the preprocessor paths are anchored at the configuration file's
-    directory, as ``src_dir`` is. A copy: the configured object is stored in the
-    ``src_trace_projects`` config value, which is pickled with the environment, and
-    mutating it would make every next build report ``[config changed]``.
+    ``git_root`` is :func:`configured_git_root`'s, and the preprocessor paths are
+    anchored at the configuration file's directory, as ``src_dir`` is. A copy: the
+    configured object is stored in the ``src_trace_projects`` config value, which is
+    pickled with the environment, and mutating it would make every next build report
+    ``[config changed]``.
     """
+    base_analyse_config = project_config["analyse_config"]
     base_dir = config_base_dir(confdir, codelinks_config)
-    git_root = base_analyse_config.git_root
-    if git_root:
-        git_root = anchor(git_root, base_dir).resolve()
+    git_root = configured_git_root(confdir, codelinks_config, project_config)
     preprocessor = base_analyse_config.preprocessor
     if preprocessor is not None:
         preprocessor = anchor_preproc_paths(preprocessor, base_dir)

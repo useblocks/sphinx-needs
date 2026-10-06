@@ -54,7 +54,11 @@ from sphinx_codelinks.config import (
     need_id_refs_fields,
 )
 from sphinx_codelinks.source_discover.config import SourceDiscoverConfig
-from sphinx_codelinks.source_discover.source_discover import SourceDiscover
+from sphinx_codelinks.source_discover.source_discover import (
+    SourceDiscover,
+    lies_within,
+    warn_outside_src_dir,
+)
 from sphinx_codelinks.sphinx_extension.need_id_refs import (
     attach_and_report,
     need_id_refs_store,
@@ -137,6 +141,7 @@ def discover_scope(
     target: str,
     *,
     exclude: Sequence[Path],
+    warn: bool = True,
 ) -> list[Path]:
     """The source files of one scope: the ONE discovery function of the extension.
 
@@ -145,16 +150,33 @@ def discover_scope(
     under ``exclude`` -- the build's output and doctree directories
     (:func:`build_output_dirs`): a source directory that contains them would otherwise
     trace the extension's own copies of the sources.
+
+    Either way a file that resolves to outside ``src_dir`` (resolved) is not a source
+    of the scope, and a warning names its path as written unless ``warn`` is false
+    (#2062): an existing ``:file:`` target there gives an empty scope. A ``:file:``
+    target that is no file gives one too, silently here: the directive says so, at
+    its own location (#2069).
     """
     if kind == "file":
-        return [(src_dir / target).resolve()]
-    found = SourceDiscover(scope_discover_config(src_dir, base, target)).source_paths
+        path = (src_dir / target).resolve()
+        if not path.is_file():
+            return []
+        if not lies_within(path, src_dir.resolve()):
+            if warn:
+                warn_outside_src_dir(src_dir / target, path, src_dir.resolve())
+            return []
+        return [path]
+    found = SourceDiscover(
+        scope_discover_config(src_dir, base, target), boundary=src_dir, warn=warn
+    ).source_paths
     return _outside(found, exclude)
 
 
 def scope_relative_path(path: PurePath, root: PurePath) -> str:
     """``path`` relative to ``root``, POSIX on every platform (the path itself, when it
-    lies outside ``root`` -- a followed link)."""
+    lies outside ``root``: a file a ``:directory:`` scope reaches through a link to
+    elsewhere below ``src_dir`` -- discovery lists no file outside ``src_dir`` itself,
+    #2062)."""
     try:
         return path.relative_to(root).as_posix()
     except ValueError:
@@ -187,11 +209,13 @@ def fingerprint(
 
 
 def file_fingerprint(src_dir: Path, file: str) -> Fingerprint:
-    """The fingerprint of a ``:file:`` scope: that one file, or ``()`` if it is missing."""
+    """The fingerprint of a ``:file:`` scope: that one file, or ``()`` if it is missing
+    or lies outside ``src_dir`` (an empty scope, as :func:`discover_scope` has it)."""
     path = (src_dir / file).resolve()
-    if not path.is_file():
+    root = src_dir.resolve()
+    if not path.is_file() or not lies_within(path, root):
         return ()
-    return files_fingerprint([path], src_dir.resolve())
+    return files_fingerprint([path], root)
 
 
 def scope_fingerprint(
@@ -202,10 +226,12 @@ def scope_fingerprint(
     *,
     exclude: Sequence[Path],
 ) -> Fingerprint:
-    """The fingerprint of one scope, from :func:`discover_scope`."""
+    """The fingerprint of one scope, from :func:`discover_scope` -- which warns
+    nothing here: the directive warns when it reads the scope, and this walk is
+    followed by that read whenever the scope changed."""
     if kind == "file":
         return file_fingerprint(src_dir, target)
-    files = discover_scope(src_dir, base, kind, target, exclude=exclude)
+    files = discover_scope(src_dir, base, kind, target, exclude=exclude, warn=False)
     return files_fingerprint(files, (src_dir / target).resolve())
 
 
@@ -331,8 +357,9 @@ class ConfigOnlyError(Exception):
 
 #: what discovery and the analysis raise for a project they cannot scan: a missing
 #: source directory (``ConfigOnlyError``); a file that cannot be stat-ed, read or
-#: copied (``OSError``); an unsupported comment style, an undecodable file, a source
-#: directory outside the configured git root (``ValueError``); libclang absent with a
+#: copied (``OSError``); an unsupported comment style, an undecodable file
+#: (``ValueError``; a ``git_root`` that does not contain ``src_dir`` is ignored since
+#: #2062, and a file outside ``src_dir`` is not discovered); libclang absent with a
 #: preprocessor configured (``ImportError``); a symlink loop in ``Path.resolve()`` on
 #: Python 3.11/3.12 (``RuntimeError``). Anything else is a bug in the extension and
 #: fails the build, as it does on the directive path.
@@ -375,7 +402,7 @@ def scan_config_only_project(
     analyse_config = prepare_analyse_config(
         app.confdir,
         codelinks_config,
-        project_config["analyse_config"],
+        project_config,
         src_dir=src_dir,
         src_files=files,
     )

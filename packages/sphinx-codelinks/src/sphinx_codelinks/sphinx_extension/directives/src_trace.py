@@ -167,6 +167,16 @@ class SourceTracingDirective(SphinxDirective):
             target,
             exclude=build_output_dirs(self.env.app),
         )
+        if kind == "file" and not (src_dir / target).resolve().is_file():
+            # a target that is no file (missing, or a directory) traces nothing and
+            # the build goes on (#2069); the
+            # scope is still recorded, so the file re-created reads this document
+            logger.warning(
+                f"src-trace: {target} is not a file below {src_dir.as_posix()}",
+                location=self.get_location(),
+                type="codelinks",
+                subtype="missing_file",
+            )
 
         # add source files into the dependency (discovery's paths are canonical
         # already: resolving them again would only walk the file system a second time)
@@ -183,7 +193,7 @@ class SourceTracingDirective(SphinxDirective):
         analyse_config = prepare_analyse_config(
             self.env.app.confdir,
             src_trace_sphinx_config,
-            src_trace_conf["analyse_config"],
+            src_trace_conf,
             src_dir=src_dir,
             src_files=source_files,
         )
