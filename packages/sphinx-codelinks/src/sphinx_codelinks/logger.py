@@ -182,10 +182,11 @@ class _SphinxBackend:
     ``suppress_warnings`` and rendered on the Sphinx warning stream.
     """
 
-    #: whether Sphinx renders a warning's ``[type.subtype]`` itself: from 8.0 by
-    #: default, and on 7.3+ when the build sets ``show_warning_types``. Where it does
-    #: not, the suffix is appended here; where it does, appending it too would show
-    #: it twice (#2091). Mirrors sphinx-needs' logging helper.
+    #: whether Sphinx renders a warning's ``[type.subtype]`` (``[type]`` without a
+    #: subtype) itself: from 8.0 by default, and on 7.3+ when the build sets
+    #: ``show_warning_types``. Where it does not, the suffix is appended here; where it
+    #: does, appending it too would show it twice (#2091). Mirrors sphinx-needs'
+    #: logging helper.
     _show_warning_types = _sphinx_version_info >= (8,)
 
     def __init__(self, *, show_warning_types: bool = False) -> None:

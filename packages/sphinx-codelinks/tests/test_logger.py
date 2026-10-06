@@ -165,9 +165,10 @@ def stub_sphinx_logger(monkeypatch):
 def test_sphinx_backend_appends_the_type_only_when_sphinx_does_not(
     stub_sphinx_logger, subtype, suffix
 ):
-    """Where Sphinx renders the ``[type.subtype]`` suffix itself (8+, or 7.3+ with
-    ``show_warning_types`` on) the message is passed unchanged; where it does not, the
-    backend appends it -- either way it is rendered once (#2091)."""
+    """Where Sphinx renders the ``[type.subtype]`` suffix itself -- ``[type]`` for a
+    warning without a subtype -- (8+, or 7.3+ with ``show_warning_types`` on) the
+    message is passed unchanged; where it does not, the backend appends it -- either
+    way it is rendered once (#2091)."""
     backend = logmod._SphinxBackend()
 
     backend._show_warning_types = True
