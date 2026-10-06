@@ -44,8 +44,13 @@ def _missing(root: Path) -> str:
 
 
 def _codelinks_warnings(app: SphinxTestApp) -> list[str]:
-    """The build's warnings but the unknown-id one every fixture build has."""
-    return [w for w in build_warnings(app) if "NOSUCH_ID" not in w]
+    """The build's warnings but the unknown-id one every fixture build has, and the
+    node re-registration a second application in one test reports."""
+    return [
+        w
+        for w in build_warnings(app)
+        if "NOSUCH_ID" not in w and "already registered" not in w
+    ]
 
 
 def test_a_removed_file_warns_at_the_directive_and_the_build_goes_on(

@@ -153,11 +153,15 @@ def discover_scope(
 
     Either way a file that resolves to outside ``src_dir`` (resolved) is not a source
     of the scope, and a warning names its path as written unless ``warn`` is false
-    (#2062): an existing ``:file:`` target there gives an empty scope.
+    (#2062): an existing ``:file:`` target there gives an empty scope. A ``:file:``
+    target that is no file gives one too, silently here: the directive says so, at
+    its own location (#2069).
     """
     if kind == "file":
         path = (src_dir / target).resolve()
-        if path.is_file() and not lies_within(path, src_dir.resolve()):
+        if not path.is_file():
+            return []
+        if not lies_within(path, src_dir.resolve()):
             if warn:
                 warn_outside_src_dir(src_dir / target, path, src_dir.resolve())
             return []
