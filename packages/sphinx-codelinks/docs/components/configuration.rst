@@ -384,8 +384,8 @@ When set to ``true`` (recommended), the following ignore sources are respected:
 
 - ``.gitignore`` files (including nested ``.gitignore`` files in subdirectories)
 - ``.ignore`` files (same syntax as ``.gitignore``, useful for non-git projects) -- including the one
-  Sphinx-CodeLinks writes into each directory of the HTML output it copies sources into, so that no
-  build traces the extension's own copies, wherever the output directory is
+  Sphinx-CodeLinks writes at the root of every builder's output and doctree directories, so that
+  nothing any builder writes is traced, wherever the output directory is
 - ``.git/info/exclude``
 - Global gitignore (e.g. ``~/.config/git/ignore``)
 - Parent directory ignore files

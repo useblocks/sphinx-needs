@@ -94,7 +94,7 @@ New and Improved
   build walks each recorded scope again -- one directory walk per scope, no parsing -- and
   re-reads the documents whose files changed. A ``:file:`` scope is that one file, so a new
   file beside it costs nothing. The build's output and doctree directories are never
-  traced, nor are the extension's own copies elsewhere (the ``.ignore`` bullet below). The
+  traced, nor is any builder's output elsewhere (the ``.ignore`` bullet below). The
   walk costs roughly 0.1 s per
   2,000 discovered files on an Apple M2 Pro laptop, whatever their size -- the
   directive's own discovery plus a ``stat`` per file -- while parsing them costs tens of
@@ -203,9 +203,10 @@ New and Improved
   ``codelinks.source_page``. The first build after upgrading reads every document once:
   an environment from an earlier release holds no page records.
 
-- 🔧 Each directory of the HTML output that sources are copied into gets an ``.ignore``
-  file (``*``), so with ``gitignore = true`` no discovery traces the extension's own
-  copies, whichever builder wrote them and wherever the output sits
+- 🔧 Every builder writes an ``.ignore`` file (``*``) at the root of its output and doctree
+  directories, so with ``gitignore = true`` nothing any builder writes is traced --
+  the extension's source copies, Sphinx's ``_downloads/`` copies of a traced source,
+  another builder's whole tree -- wherever the output sits
   (`#2071 <https://github.com/useblocks/sphinx-needs/issues/2071>`__): two output trees
   inside ``src_dir`` but outside the documentation source directory
   (``sphinx-build docs build/html`` beside ``build/dirhtml``) no longer copy each other's
