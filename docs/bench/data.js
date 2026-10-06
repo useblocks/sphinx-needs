@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791293125037,
+  "lastUpdate": 1791299462786,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -22464,6 +22464,42 @@ window.BENCHMARK_DATA = {
             "value": 37.390175745,
             "unit": "s",
             "extra": "Commit: 016a91d070b592413446f7790ea9b27423e750b6\nBranch: master\nTime: 2026-10-06T15:24:14+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3a9bcce72b669066a93cdb8cd76a81fc06203e45",
+          "message": "🐛 sphinx-needs: need-id order for `calc_sum` and `copy(filter=)` (#2078)\n\n## Summary\n\nA whole-project `calc_sum` added its values in the order the needs\nreached the build environment,\nand `copy(filter=…)` copied from the first match in that order.\nThat order is insertion order: external needs, then documents in name\norder on a scratch build,\nbut a re-read document's needs move to the end on an incremental build,\nand `-j` merges workers in completion order.\nFloat addition is not associative, so the same sources gave different\nvalues depending on the build's history.\nMeasured on one project (`a.rst` holds `SUM_C :hours: 0.3`, `b.rst`\n`SUM_B 0.2`, `c.rst` `SUM_A 0.1`,\n`index.rst` holds `TOTAL :total: [[calc_sum(\"hours\")]]` and `:pick:\n[[copy(\"id\", filter=\"hours is not None and hours > 0\")]]`):\n\n| build | `TOTAL.total` | `TOTAL.pick` |\n|---|---|---|\n| scratch | `0.6` | `SUM_C` |\n| incremental, after touching `a.rst` | `0.6000000000000001` | `SUM_B` |\n\nWith this change both builds give `0.6000000000000001` and `SUM_A`.\n\n- **`calc_sum` without `links_only`** adds in ascending need-id order:\n`sorted(needs)` on the mapping's keys\n(the key is the need id, for the `dict` the resolution pass passes and\nfor the `NeedsView` that `:ndf:` and\n`:style_row:` pass), then `needs[id]`. The addition stays sequential (no\n`math.fsum`).\n- **`copy(filter=…)`** copies from the match with the lowest id:\n`min(result, key=itemgetter(\"id\"))`, O(matches),\n  at every seam (the resolution pass, `:ndf:`, `:style_row:`).\n- **The order contract** is plain string order (code-point order, which\nis UTF-8 byte order):\n`NEED_10 < NEED_2 < NEED_9`. It is deliberately **not** the natural\norder `sort_links()` uses\n  (`REQ_9 < REQ_10`), because it is the byte order ubCode sorts ids by.\n- **`calc_sum(links_only=True)` is unchanged**: it adds in the order the\nlinks are written,\n  which is already deterministic and is what ubCode does.\n- **Parity**: ubCode fixed its side under useblocks/ubcode#3789; with\nthis change the two tools agree bit for bit\non a sum of literal values over every need (the ubCode\n`dynamic_functions_sum_order` fixture page is one of the\nnew test projects, verbatim). ubCode does not evaluate\n`calc_sum(filter=…)` yet, and a summand that is itself\n  computed still depends on the resolution loop's order (phase 1).\n- `calc_sum` called outside a need now says `No need given for calc_sum`\n(the message named `check_linked_values`).\n- **Cost**: about +70–80 % per whole-project `calc_sum` call at 10 000\nneeds in two measurements\n(0.6 s → 1.0 s and 0.66 s → 1.17 s for 100 carriers): the sort (≈ 2.5 ms\nat 10 000 needs) plus walking the needs\nin id order. The whole 10 000-need build is unchanged in practice (15.4\ns → 15.6 s).\n`links_only` sums and `copy(filter=…)` (which only takes the minimum of\nits matches) are unaffected.\n  A per-pass memo of the sorted ids is left to a follow-up (below).\n- Docstrings of `copy` and `calc_sum` state the order (they are\nautodoc'd into the docs),\nand the changelog gets an `Unreleased` → `Bug fixes` entry marked\n**(changed output)**:\na float total can change in its last digits, and a `copy(filter=…)` with\nseveral matches now copies from the lowest id.\n\nPart of #2064 (first item).\n\n## Tests\n\nNew tests in `packages/sphinx-needs/tests/test_dynamic_functions.py`\n(inline `test_app` projects; T1 to T5 use the\n`needs` builder and read `needs.json`, T6 and T7 are html builds). T1 to\nT6 were committed first and were red against\nthe unfixed code; T7 came from the review round and is red against it\ntoo:\n\n| test | what it pins | before the fix |\n|---|---|---|\n| T1 `test_calc_sum_adds_in_need_id_order` (one page per summand; the\nubCode fixture page verbatim) | `total == 0.6000000000000001` | `0.6` |\n| T2 `test_copy_filter_copies_from_the_lowest_id` | `pick == \"SUM_A\"`\n(the higher id is written first) | `SUM_C` |\n| T3 `test_need_id_order_compares_ids_as_strings` |\n`NEED_10`/`NEED_2`/`NEED_9` written in natural order: `total ==\n0.6000000000000001`, a copy over `NEED_9`/`NEED_10` gives `NEED_10` |\n`0.6` |\n| T4 `test_need_id_order_does_not_depend_on_the_build_history` | one\napp, two builds, `a.rst` re-read (asserts `0 added, 1 changed, 0\nremoved`): identical `total` and `pick` | `(0.6000000000000001, 'SUM_B')\n!= (0.6, 'SUM_C')` |\n| T5 `test_calc_sum_links_only_adds_in_the_written_link_order` | the\nsame links in two orders give `0.6` and `0.6000000000000001`, on purpose\n| green (pins unchanged behaviour) |\n| T7 `test_need_id_order_in_the_ndf_role` | html build, `:ndf:`\n`calc_sum(\"hours\")` and `copy(\"id\", filter=…)` inside a need (the\n`NeedsView` seam, also used by `:style:` / `:style_row:`): renders\n`0.6000000000000001` and `SUM_A` | renders `0.6` and `SUM_C` |\n| T6 `test_calc_sum_outside_a_need_names_itself` | the error names\n`calc_sum` | named `check_linked_values` |\n\nMutation proofs (each applied to the fixed code, the file's tests run,\nthen reverted):\n\n| mutation | red |\n|---|---|\n| `calc_sum` back to `needs.values()` | T1 (both), T3, T4 |\n| `sorted(needs, key=_natural_sort_key)` | T3 (T1 stays green: its ids\nsort the same both ways) |\n| `copy` back to `result[0]` | T2, T3, T4 |\n| `links_only` links sorted | T5 |\n| sort only when the mapping is a plain `dict` (the pass), not for the\n`NeedsView` | T7 only |\n\nNo existing assertion or snapshot changed: the full suite is 2084 passed\n/ 13 skipped (2076 + the 8 new), 304 snapshots passed.\n`uv run poe lint` and `uv run poe typecheck` pass. `uv run poe\ndocs-needs` was not run locally (its intersphinx\ninventories need network access); the two changed docstrings and the\nchangelog section parse without docutils warnings.\n\n## Follow-ups\n\n- A per-pass memo of the sorted ids, so a project with many\nwhole-project `calc_sum` carriers sorts once per pass\nrather than once per call — phase 1, together with the resolution loop's\nown order.\n- Whether `links_only` keeps the written order or moves to need-id order\nis a phase-1 ruling:\nthe design's §5.3 (`derived-need-values.md`, every set a derivation\nreads in need-id order) disagrees with\nregister row 280 (`links_only` in the written order, which both tools do\ntoday).",
+          "timestamp": "2026-10-06T17:09:23+02:00",
+          "tree_id": "e2da1e0674405d2dec8cf9e65defbe48dde78175",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/3a9bcce72b669066a93cdb8cd76a81fc06203e45"
+        },
+        "date": 1791299442009,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.11053496099999904,
+            "unit": "s",
+            "extra": "Commit: 3a9bcce72b669066a93cdb8cd76a81fc06203e45\nBranch: master\nTime: 2026-10-06T17:09:23+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 56.977433284,
+            "unit": "s",
+            "extra": "Commit: 3a9bcce72b669066a93cdb8cd76a81fc06203e45\nBranch: master\nTime: 2026-10-06T17:09:23+02:00"
           }
         ]
       }
