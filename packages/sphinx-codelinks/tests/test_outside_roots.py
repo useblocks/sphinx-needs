@@ -64,6 +64,10 @@ LOCAL_ONLY = ("set_remote_url = true", "set_remote_url = false")
 REMOTE_ONLY = ("set_local_url = true", "set_local_url = false")
 
 
+#: what every ``codelinks.git_root`` warning says (Sphinx 7.4 renders no type suffix)
+IGNORED = "it is ignored, and the repository root is detected from src_dir instead"
+
+
 def _git_root(value: str) -> str:
     return f'\n[codelinks.projects.src.analyse]\ngit_root = "{value}"\n'
 
@@ -193,7 +197,7 @@ def test_an_accepted_git_root_is_the_records_and_the_attachs_root(
     _project(project, toml_replace=LOCAL_ONLY, toml_extra=_git_root(value))
     app = _build(project, make_app)
 
-    assert not any("codelinks.git_root" in w for w in build_warnings(app))
+    assert not any(IGNORED in w for w in build_warnings(app))
     records = _records(app)
     assert records
     assert {ref.path for ref in records} == {path}
@@ -229,7 +233,7 @@ def test_an_unreadable_git_root_is_ignored_with_a_warning(
     finally:
         locked.chmod(0o755)
 
-    assert [w for w in build_warnings(app) if "codelinks.git_root" in w] == [
+    assert [w for w in build_warnings(app) if IGNORED in w] == [
         _git_root_warning(locked.resolve() / "inner", "cannot be read")
     ]
     assert {ref.path for ref in _records(app)} == {"src/refs.cpp"}
