@@ -8,11 +8,20 @@ its ``Need`` node. That node is rendered only on the document its need is record
 so the card appears once, as in a serial build.
 
 Docnames are read in sorted order, in ``len // 2``-sized chunks under ``-j 2``: with four
-padding pages, ``index, pad_0, pad_1`` and ``pad_2, pad_3, page_b``, so the two
-definitions are always read by different workers, both forked from the same
-environment. Which worker is merged first decides the winner, so every assertion takes
-the winner from the warning rather than assuming it. Sphinx 7 reads in parallel only
-above five documents (Sphinx 9 at any count): every ``-j 2`` project here has six.
+padding pages, ``index, pad_0, pad_1`` and ``pad_2, pad_3, page_b``. Sphinx 7 reads in
+parallel only above five documents (Sphinx 9 at any count): every ``-j 2`` project here
+has six.
+
+That the two definitions are read by different workers is not enough on its own. Sphinx
+forks the second worker only after it has handed out the first chunk, and it merges a
+worker that has already finished before it forks the next one; a first chunk of three
+tiny documents can finish in that gap on a loaded machine, and the second worker then
+starts from the merged environment and refuses ``page_b``'s directive as a serial build
+does. Which finished worker is merged first is likewise up to the machine. So the ``-j 2``
+projects carry a barrier in their ``conf.py`` (see :func:`barrier_conf`): the first chunk
+cannot finish before the second is being read, and the chunk that is to merge second
+cannot finish before the other one has merged. The assertions still take the winner from
+the warning.
 """
 
 from __future__ import annotations
@@ -68,8 +77,97 @@ Page B
 
 PADDING = [(Path(f"pad_{n}.rst"), f":orphan:\n\nPad {n}\n=====\n") for n in range(4)]
 
+BARRIER = """
+import time
+from pathlib import Path
+
+# (first, last) document of each chunk, and the chunk whose merge is to come first
+_CHUNKS = @CHUNKS@
+_MERGED_FIRST = @MERGED_FIRST@
+_TIMEOUT = 60.0
+
+
+def _flag(app, name):
+    # under the doctree directory, so the processes of one build share it and a
+    # rebuild finds the flags of the first build (its documents need not wait again)
+    path = Path(app.doctreedir, "barrier")
+    path.mkdir(parents=True, exist_ok=True)
+    return path / name
+
+
+def _wait(app, name):
+    flag = _flag(app, name)
+    deadline = time.monotonic() + _TIMEOUT
+    while not flag.exists():
+        if time.monotonic() > deadline:
+            raise RuntimeError(
+                f"test barrier: {flag.name!r} not reached in {_TIMEOUT:.0f} s"
+            )
+        time.sleep(0.005)
+
+
+def _barrier_read(app, docname, source):
+    if app.parallel < 2:
+        return
+    _flag(app, f"read-{docname}").touch()
+    if docname == _CHUNKS[0][0]:
+        # the first chunk cannot finish before the second worker has been forked
+        _wait(app, f"read-{_CHUNKS[1][0]}")
+    second = _CHUNKS[1 - _MERGED_FIRST]
+    if docname == second[1]:
+        # the chunk that is to merge second finishes only once the other has merged
+        _wait(app, f"merged-{_CHUNKS[_MERGED_FIRST][0]}")
+
+
+def _barrier_merged(app, env, docnames, other):
+    for docname in docnames:
+        _flag(app, f"merged-{docname}").touch()
+
+
+def _barrier_setup(app):
+    app.connect("source-read", _barrier_read)
+    app.connect("env-merge-info", _barrier_merged)
+"""
+
+
+def barrier_conf(
+    chunks: tuple[tuple[str, str], tuple[str, str]], merged_first: int = 0
+) -> str:
+    """``conf.py`` code that fixes how a ``-j 2`` read of the project overlaps and merges.
+
+    ``chunks`` names the first and last document of each chunk; the chunk at index
+    ``merged_first`` is merged first. A build that does not read in parallel is left
+    alone. The code defines ``_barrier_setup(app)``, which the project's ``setup``
+    calls; a wait that is not met within a minute fails the build rather than hanging
+    the suite.
+    """
+    return BARRIER.replace("@CHUNKS@", repr(chunks)).replace(
+        "@MERGED_FIRST@", repr(merged_first)
+    )
+
+
+# the chunks of every project with ``index``, ``page_b`` and four other documents
+CHUNKS = (("index", "pad_1"), ("pad_2", "page_b"))
+
+
+def conf(
+    chunks: tuple[tuple[str, str], tuple[str, str]] = CHUNKS,
+    merged_first: int = 0,
+    extra: str = "",
+    setup: str = "",
+) -> str:
+    """The project ``conf.py``: ``CONF``, ``extra``, and the ``-j 2`` barrier."""
+    return (
+        CONF
+        + extra
+        + barrier_conf(chunks, merged_first)
+        + "\n\ndef setup(app):\n    _barrier_setup(app)\n"
+        + setup
+    )
+
+
 FILES = [
-    (Path("conf.py"), CONF),
+    (Path("conf.py"), conf()),
     (Path("index.rst"), INDEX),
     (Path("page_b.rst"), PAGE_B),
     *PADDING,
@@ -147,12 +245,36 @@ def assert_one_card(app: Sphinx, winner: str, loser: str) -> None:
     assert pages["page_b"].count('id="REQ_B"') == 1
 
 
-@pytest.mark.parametrize("test_app", serial_and_parallel(FILES), indirect=True)
-def test_a_duplicate_id_renders_once(test_app: Sphinx):
-    """One warning, one need, one card: on the page whose need the build kept."""
+@pytest.mark.parametrize(
+    ("test_app", "kept"),
+    [
+        *[
+            pytest.param(*param.values, "index", id=param.id, marks=param.marks)
+            for param in serial_and_parallel(FILES)
+        ],
+        pytest.param(
+            {
+                "buildername": "html",
+                "files": [(Path("conf.py"), conf(merged_first=1)), *FILES[1:]],
+                "parallel": 2,
+            },
+            "page_b",
+            id="html-j2-page_b-merged-first",
+            marks=PARALLEL,
+        ),
+    ],
+    indirect=["test_app"],
+)
+def test_a_duplicate_id_renders_once(test_app: Sphinx, kept: str):
+    """One warning, one need, one card: on the page whose need the build kept.
+
+    Under ``-j 2`` the barrier merges ``index``'s chunk first, or ``page_b``'s: either
+    document can be the one that keeps the need.
+    """
     app = test_app
     app.build()
     winner, loser = winner_and_loser(build_warnings(app), app.parallel > 1)
+    assert winner == kept
     assert list(needs_by_id(app)) == ["REQ_B", "REQ_DUP"]
     assert_one_card(app, winner, loser)
 
@@ -189,11 +311,11 @@ def test_a_duplicate_id_renders_once_in_an_assembled_document(test_app: Sphinx):
     assert output.count("Content only on page_b.") == 1
 
 
-ROOT_LOSER_CONF = """\
-extensions = ["sphinx_needs"]
-root_doc = "zz_root"
-latex_documents = [("zz_root", "project.tex", "Project", "Author", "manual")]
-"""
+ROOT_LOSER_CONF = conf(
+    (("aa", "pad_1"), ("pad_2", "zz_root")),
+    extra='root_doc = "zz_root"\n'
+    'latex_documents = [("zz_root", "project.tex", "Project", "Author", "manual")]\n',
+)
 
 ROOT_LOSER_FILES = [
     (Path("conf.py"), ROOT_LOSER_CONF),
@@ -219,23 +341,24 @@ ROOT_LOSER_FILES = [
 def test_the_root_document_loses_in_an_assembled_document(test_app: Sphinx):
     """The root document's own copy is the one dropped, when its need was not kept.
 
-    The root sorts last here, so it is read after ``aa`` serially (and refused) and in
-    the second chunk under ``-j 2`` (``aa, pad_0, pad_1`` and ``pad_2, pad_3,
-    zz_root``), whose merge normally comes second. The assertions still take the
-    winner from the warning.
+    The root sorts last here, so it is read after ``aa`` serially, and refused; under
+    ``-j 2`` it is in the second chunk (``aa, pad_0, pad_1`` and ``pad_2, pad_3,
+    zz_root``), which the barrier merges second.
     """
     app = test_app
     app.build()
-    (warning,) = build_warnings(app)
-    match = re.fullmatch(
-        r"<srcdir>/(aa|zz_root)\.rst:\d+: WARNING: (?:A need with ID REQ_DUP already "
-        r"exists, title: 'Title from \1'\. \[needs\.duplicate_id\]|Need could not be "
-        r"created: A need with ID 'REQ_DUP' already exists\. \[needs\.create_need\])",
-        warning,
-    )
-    assert match, warning
-    loser = match.group(1)
-    winner = "aa" if loser == "zz_root" else "zz_root"
+    winner, loser = "aa", "zz_root"
+    if app.parallel > 1:
+        expected = (
+            "<srcdir>/zz_root.rst:8: WARNING: A need with ID REQ_DUP already exists, "
+            "title: 'Title from zz_root'. [needs.duplicate_id]"
+        )
+    else:
+        expected = (
+            "<srcdir>/zz_root.rst:8: WARNING: Need could not be created: "
+            "A need with ID 'REQ_DUP' already exists. [needs.create_need]"
+        )
+    assert build_warnings(app) == [expected]
     if app.builder.name == "singlehtml":
         output = Path(app.outdir, "zz_root.html").read_text(encoding="utf-8")
         assert output.count('id="REQ_DUP"') == 1
@@ -247,14 +370,8 @@ def test_the_root_document_loses_in_an_assembled_document(test_app: Sphinx):
     assert f"Content from {loser}." not in output
 
 
-# A directive creating its need through the API with no docname, as ``add_need``
-# allows; the sleep holds back the chunk with ``page_b`` (``pad_2, pad_3, page_b``)
-# so that ``index``'s chunk, holding the docname-less need, is merged first
-NO_DOCNAME_CONF = (
-    CONF
-    + """
-import time
-
+# A directive creating its need through the API with no docname, as ``add_need`` allows
+NO_DOCNAME_DIRECTIVE = """
 from docutils.parsers.rst import Directive
 
 from sphinx_needs.api import add_need
@@ -275,63 +392,84 @@ class NoDocname(Directive):
             id="REQ_DUP",
             content="\\n".join(self.content),
         )
-
-
-def hold_back(app, docname, source):
-    if docname == "pad_2" and app.parallel > 1:
-        time.sleep(1.5)
-
-
-def setup(app):
-    app.add_directive("no-docname", NoDocname)
-    app.connect("source-read", hold_back)
 """
-)
 
-NO_DOCNAME_FILES = [
-    (Path("conf.py"), NO_DOCNAME_CONF),
-    (
-        Path("index.rst"),
-        INDEX.replace(
-            ".. req:: Title from index\n   :id: REQ_DUP\n", ".. no-docname::\n"
+
+def no_docname_files(merged_first: int) -> list[tuple[Path, str]]:
+    """``index`` creates ``REQ_DUP`` with no docname, ``page_b`` with a ``req``."""
+    index = INDEX.replace(
+        ".. req:: Title from index\n   :id: REQ_DUP\n", ".. no-docname::\n"
+    )
+    return [
+        (
+            Path("conf.py"),
+            conf(
+                merged_first=merged_first,
+                extra=NO_DOCNAME_DIRECTIVE,
+                setup='    app.add_directive("no-docname", NoDocname)\n',
+            ),
         ),
-    ),
-    (Path("page_b.rst"), PAGE_B),
-    *PADDING,
-]
+        (Path("index.rst"), index),
+        (Path("page_b.rst"), PAGE_B),
+        *PADDING,
+    ]
 
 
 @pytest.mark.parametrize(
-    "test_app", serial_and_parallel(NO_DOCNAME_FILES), indirect=True
+    ("test_app", "kept"),
+    [
+        pytest.param(
+            {"buildername": "html", "files": no_docname_files(0)},
+            "index",
+            id="html-serial",
+        ),
+        *[
+            pytest.param(
+                {
+                    "buildername": "html",
+                    "files": no_docname_files(merged_first),
+                    "parallel": 2,
+                },
+                kept,
+                id=f"html-j2-{kept}-merged-first",
+                marks=PARALLEL,
+            )
+            for merged_first, kept in ((0, "index"), (1, "page_b"))
+        ],
+    ],
+    indirect=["test_app"],
 )
-def test_a_kept_need_without_a_docname_renders_once(test_app: Sphinx):
+def test_a_kept_need_without_a_docname_renders_once(test_app: Sphinx, kept: str):
     """A kept need created with no docname still drops the other document's copy.
 
     The node of the need that was kept carries no document, so it is rendered; the
     other copy's node names ``page_b``, which is not the kept need's (``None``).
+
+    When ``page_b``'s chunk is merged first, the docname-less need is the one dropped:
+    the merge does not warn about it (it warns only about the needs of the documents
+    the worker read) and its node, which names no document, is rendered -- two cards.
+    That gap is not closed here; the case pins it as it is.
     """
     app = test_app
     app.build()
     warnings = build_warnings(app)
-    if app.parallel > 1 and not warnings:
-        # page_b's chunk was merged first after all: its need was kept, and the merge
-        # does not warn about a docname-less need -- a gap this fix does not close
-        pytest.skip("page_b's chunk was merged first")
-    winner, loser = winner_and_loser(warnings, app.parallel > 1)
-    assert (winner, loser) == ("index", "page_b")
     needs = needs_by_id(app)
-    assert needs["REQ_DUP"]["docname"] is None
     pages = {docname: page(app, docname) for docname in ("index", "page_b")}
-    assert {d: html.count('id="REQ_DUP"') for d, html in pages.items()} == {
-        "index": 1,
-        "page_b": 0,
-    }
-    assert "Content from page_b." not in pages["index"] + pages["page_b"]
+    cards = {d: html.count('id="REQ_DUP"') for d, html in pages.items()}
     assert pages["page_b"].count('id="REQ_B"') == 1
+    if kept == "page_b":
+        assert warnings == []
+        assert needs["REQ_DUP"]["docname"] == "page_b"
+        assert cards == {"index": 1, "page_b": 1}
+        return
+    assert winner_and_loser(warnings, app.parallel > 1) == ("index", "page_b")
+    assert needs["REQ_DUP"]["docname"] is None
+    assert cards == {"index": 1, "page_b": 0}
+    assert "Content from page_b." not in pages["index"] + pages["page_b"]
 
 
 EXTRACT_FILES = [
-    (Path("conf.py"), CONF),
+    (Path("conf.py"), conf()),
     (Path("index.rst"), INDEX.replace("   page_b\n", "   page_a\n   page_b\n")),
     (
         Path("page_a.rst"),
@@ -409,7 +547,13 @@ def test_an_incremental_build_keeps_one_card(test_app: Sphinx, touched: str):
 
 
 INCLUDE_FILES = [
-    (Path("conf.py"), CONF + 'exclude_patterns = ["_fragment.rst"]\n'),
+    (
+        Path("conf.py"),
+        conf(
+            (("index", "pad_1"), ("pad_2", "pad_4")),
+            extra='exclude_patterns = ["_fragment.rst"]\n',
+        ),
+    ),
     (Path("index.rst"), "Index\n=====\n\n.. include:: _fragment.rst\n"),
     (
         Path("_fragment.rst"),
