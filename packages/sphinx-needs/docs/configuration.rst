@@ -2173,6 +2173,13 @@ Each key-value-pair in ``needs_services`` describes a service specific configura
 
 Own services can be registered by setting ``class`` as additional option.
 
+The class is a Python type, so it can be set only here in :file:`conf.py`, or registered by
+an extension through the API: in a :ref:`needs_from_toml` file a service's table holds its
+options only. Note that the file's ``services`` table replaces the whole
+``needs_services`` of :file:`conf.py`, as every key it sets does. A ``class`` that is not a
+service class, or a ``class_init`` that is not a dict, is reported as a ``needs.config``
+warning and that service is not registered.
+
 Config options are service specific and are described by :ref:`services`.
 
 See also :ref:`needservice`.

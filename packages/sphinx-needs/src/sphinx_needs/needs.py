@@ -161,6 +161,7 @@ from sphinx_needs.schema.config_utils import (
     validate_schemas_config,
 )
 from sphinx_needs.schema.process import process_schemas
+from sphinx_needs.services.base import BaseService
 from sphinx_needs.services.github import GithubService
 from sphinx_needs.string_links import compile_string_links
 from sphinx_needs.utils import node_match
@@ -935,6 +936,35 @@ def resolve_variant_data_config(app: Sphinx, config: Config) -> None:
     _derive_variant_data_proxy(needs_config)
 
 
+def _service_config_problem(service: dict[str, Any]) -> str | None:
+    """Why a configured service cannot be registered from its ``class`` and
+    ``class_init``, or ``None`` when it can.
+
+    The class can only come from Python: a ``needs_from_toml`` file can give it nothing
+    but data, such as a string.
+    """
+    klass = service["class"]
+    if not (isinstance(klass, type) and issubclass(klass, BaseService)):
+        got = (
+            f"the class {klass.__qualname__!r}"
+            if isinstance(klass, type)
+            else f"a value of type {type(klass).__name__!r}"
+        )
+        return (
+            f"its 'class' is not a service class (got {got}). A service class is a "
+            "Python type derived from BaseService, set in conf.py's needs_services or "
+            "registered through the API; a needs_from_toml file can hold a service's "
+            "options but not its class"
+        )
+    class_init = service["class_init"]
+    if not isinstance(class_init, dict):
+        return (
+            "its 'class_init' is not a dict of keyword arguments for the service class "
+            f"(got a value of type {type(class_init).__name__!r})"
+        )
+    return None
+
+
 def prepare_env(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> None:
     """
     Prepares the sphinx environment to store sphinx-needs internal data.
@@ -965,6 +995,14 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> Non
             # We found a not yet registered service
             # But only register, if service-config contains class and class_init.
             # Otherwise, the service may get registered later by an external sphinx-needs extension
+            if (problem := _service_config_problem(service)) is not None:
+                log_warning(
+                    LOGGER,
+                    f"needs_services entry {name!r} is not registered: {problem}",
+                    "config",
+                    None,
+                )
+                continue
             services.register(name, service["class"], **service["class_init"])
 
     # Set time measurement flag

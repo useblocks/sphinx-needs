@@ -206,6 +206,18 @@ Bug fixes
   line ended in ``[needs.link_outgoing] [needs.link_outgoing]``. It is now appended only
   where Sphinx does not append it.
 
+- 🐛 A service whose ``class`` is not a service class is skipped with a warning instead
+  of crashing the build **(changed output)** (:issue:`2067`)
+
+  A :ref:`needs_services` entry with both ``class`` and ``class_init`` is registered from
+  them, and a ``class`` that is not a ``BaseService`` subclass ended the build with
+  ``'str' object has no attribute 'options'`` -- which every ``class`` set in a
+  :ref:`needs_from_toml` file did, since that file can only give it a string.
+  A ``class_init`` that is not a dict ended it the same way.
+  Such a service is now one ``needs.config`` warning, naming the key and the type of its
+  value, and is not registered; the build goes on. A table that holds a service's
+  options only is read as before, without a warning.
+
 .. _`release:8.5.0`:
 
 8.5.0
