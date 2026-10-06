@@ -73,6 +73,18 @@ Bug fixes
   where a ``when`` in the same file names it absolutely, as Sphinx names the file of a
   node's location.
 
+- 🐛 :ref:`calc_sum <calc_sum>` and :ref:`copy(filter=) <copy>` read needs in need-id order
+  **(changed output)** (:issue:`2064`)
+
+  A whole-project ``calc_sum`` adds the needs' values in ascending need-id order,
+  and ``copy`` with a ``filter`` copies from the match with the lowest id,
+  comparing ids as strings (``REQ_10`` comes before ``REQ_9``).
+  Both used to read the needs in the order they reached the build environment,
+  so the last digits of a sum of non-integer values, and which need ``copy(filter=…)``
+  copied from, depended on which documents the last build re-read and on ``-j``;
+  they no longer do, and a total is the one `ubCode`_ computes.
+  A ``calc_sum`` with ``links_only`` keeps adding in the order the links are written.
+
 .. _`release:8.5.0`:
 
 8.5.0
