@@ -183,7 +183,8 @@ New and Improved
 
 - 🐛 A one-line need whose style has no ``id`` field no longer aborts the build with
   ``KeyError: 'id'`` when local URLs are on; its source page links back to the generated
-  id (`#2082 <https://github.com/useblocks/sphinx-needs/issues/2082>`__).
+  id, and the page's back-link is a POSIX path on Windows too
+  (`#2082 <https://github.com/useblocks/sphinx-needs/issues/2082>`__).
 
 - ⬆️ ``typer`` is no longer capped below 0.26.8. The cap protected the documentation build,
   whose ``sphinxcontrib-typer`` imported a ``typer.rich_utils`` name that 0.26.8 removed;

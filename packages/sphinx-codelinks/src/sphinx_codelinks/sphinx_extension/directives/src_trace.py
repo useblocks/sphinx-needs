@@ -1,6 +1,6 @@
 import shutil
 from collections.abc import Callable, Mapping
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Any, ClassVar, cast
 
 from docutils import nodes
@@ -60,6 +60,12 @@ def _line_span(oneline_need: OneLineNeed) -> str:
     start = oneline_need.source_map["start"]["row"] + 1
     end = oneline_need.source_map["end"]["row"] + 1
     return str(start) if start == end else f"{start}-L{end}"
+
+
+def docs_anchor(docs_href: PurePath, need_id: str) -> str:
+    """A source page's ``[docs]`` link to a need: the document's page relative to the
+    source page, and the need's id. POSIX on every platform: it is an href."""
+    return f"{docs_href.as_posix()}#{need_id}"
 
 
 def generate_str_link_name(oneline_need: OneLineNeed, target_filepath: Path) -> str:
@@ -433,12 +439,13 @@ class SourceTracingDirective(SphinxDirective):
                     # for the later use in `html-collect-pages`
                     if str(target_filepath) not in file_lineno_href.mappings:
                         file_lineno_href.mappings[str(target_filepath)] = {
-                            oneline_need.source_map["start"]["row"]
-                            + 1: f"{docs_href}#{need_id}"
+                            oneline_need.source_map["start"]["row"] + 1: docs_anchor(
+                                docs_href, need_id
+                            )
                         }
                     else:
                         file_lineno_href.mappings[str(target_filepath)][
                             oneline_need.source_map["start"]["row"] + 1
-                        ] = f"{docs_href}#{need_id}"
+                        ] = docs_anchor(docs_href, need_id)
 
         return rendered_needs
