@@ -114,6 +114,9 @@ For example:
       {directive="spec", title="Specification", prefix="S_", color="#FEDCD2", style="node"},
    ]
 
+The exception is :ref:`needs_functions`, because it holds Python callables, which a toml file cannot hold:
+a ``functions`` key in the toml is ignored, with a warning.
+
 To specify a different `root table path <https://toml.io/en/v1.0.0#table>`__ to read from in the toml file, use the ``needs_from_toml_table`` option.
 For example to read from a ``[tool.needs]`` table:
 
@@ -1861,10 +1864,10 @@ Inside your **conf.py** file use it like this:
 
 .. code-block:: python
 
-   needs_functions == [my_own_function]
-
    def my_own_function(app, need, needs):
        return "Awesome"
+
+   needs_functions = [my_own_function]
 
 See :ref:`dynamic_functions` for more information.
 

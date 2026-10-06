@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable, Mapping
-from dataclasses import MISSING, dataclass, field, fields
+from dataclasses import MISSING, Field, dataclass, field, fields
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, TypedDict, cast
 
@@ -486,22 +486,39 @@ class NeedsSphinxConfig:
         return {name[1:] if name.startswith("_") else name for name in names}
 
     @classmethod
-    def convert_field_value(
-        cls, name: str, value: Any, base_path: Path, prefix: str = ""
-    ) -> Any:
-        """Convert a config field value from toml, if a converter is defined."""
+    def _get_field(cls, name: str, prefix: str = "") -> Field[Any]:
+        """Get a config field by its name (without ``needs_`` prefix)."""
         try:
-            _field = next(
+            return next(
                 field
                 for field in fields(cls)
                 if field.name in (f"{prefix}{name}", f"_{prefix}{name}")
             )
         except StopIteration:
             raise ValueError(f"Unknown config field: {name!r}")
-        converter = _field.metadata.get("toml_convert")
+
+    @classmethod
+    def convert_field_value(
+        cls, name: str, value: Any, base_path: Path, prefix: str = ""
+    ) -> Any:
+        """Convert a config field value from toml, if a converter is defined."""
+        converter = cls._get_field(name, prefix).metadata.get("toml_convert")
         if converter:
             return converter(value, base_path)
         return value
+
+    @classmethod
+    def toml_ignored_reason(cls, name: str) -> str | None:
+        """Why a config field is ignored in the toml file, or ``None`` if it is read.
+
+        A field that cannot be set from toml says so with ``"toml": False`` in its
+        metadata, and gives the reason, for the warning, as ``"toml_reason"`` (a
+        generic one is used otherwise).
+        """
+        metadata = cls._get_field(name).metadata
+        if metadata.get("toml", True):
+            return None
+        return str(metadata.get("toml_reason", "it cannot be set from the toml file"))
 
     @classmethod
     def get_default(cls, name: str) -> Any:
@@ -707,7 +724,15 @@ class NeedsSphinxConfig:
     )
     """Template for node content in needflow diagrams (with plantuml engine)."""
     _functions: list[DynamicFunction] = field(
-        default_factory=list, metadata={"rebuild": "html", "types": (list,)}
+        default_factory=list,
+        metadata={
+            "rebuild": "html",
+            "types": (list,),
+            # a toml file holds data, and a dynamic function is a Python callable
+            "toml": False,
+            "toml_reason": "dynamic functions are Python callables, registered in "
+            "conf.py as needs_functions or through the add_dynamic_function API",
+        },
     )
     """List of dynamic functions."""
 
