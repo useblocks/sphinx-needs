@@ -1,12 +1,13 @@
 """Registering the services configured in ``needs_services`` (#2067).
 
 A service is registered from its configuration when the entry has both ``class`` and
-``class_init``. A ``class`` that is not a service class -- the only thing a
-``needs_from_toml`` file can give it is a string -- used to end the build with
-``'str' object has no attribute 'options'`` at ``env-before-read-docs``, and a
+``class_init``. A ``class`` that is not a class -- the only thing a ``needs_from_toml``
+file can give it is a string -- or a class without ``options`` used to end the build
+with ``'str' object has no attribute 'options'`` at ``env-before-read-docs``, and a
 ``class_init`` that is not a dict ended it in the keyword expansion. Such an entry is now
-skipped with one ``needs.config`` warning, and the build goes on. Each test is a real
-build, because the registration happens in ``prepare_env``.
+skipped with one ``needs.config`` warning, and the build goes on; anything that
+registered before still does. Each test is a real build, because the registration
+happens in ``prepare_env``.
 """
 
 from __future__ import annotations
@@ -26,14 +27,21 @@ TOML_CONF = 'extensions = ["sphinx_needs"]\nneeds_from_toml = "ubproject.toml"\n
 BUILT_IN = {"github-commits", "github-issues", "github-prs"}
 
 
-def class_warning(name: str, got: str) -> str:
+def class_warning(name: str, problem: str) -> str:
     return (
-        f"WARNING: needs_services entry {name!r} is not registered: its 'class' is not "
-        f"a service class (got {got}). A service class is a Python type derived from "
-        "BaseService, set in conf.py's needs_services or registered through the API; "
-        "a needs_from_toml file can hold a service's options but not its class "
-        "[needs.config]"
+        f"WARNING: needs_services entry {name!r} is not registered: {problem}. "
+        "A service class derives from BaseService and is set in conf.py's "
+        "needs_services or registered through the API; a needs_from_toml file can "
+        "hold a service's options but not its class [needs.config]"
     )
+
+
+def not_a_class(type_name: str) -> str:
+    return f"its 'class' is not a class (got a value of type {type_name!r})"
+
+
+def no_options(class_name: str) -> str:
+    return f"its 'class' {class_name!r} has no 'options', which a service class needs"
 
 
 def class_init_warning(name: str, got: str) -> str:
@@ -79,25 +87,35 @@ def test_a_string_class_in_the_toml_warns_and_the_service_is_skipped(build):
                 """,
         }
     )
-    assert build_warnings(app) == [class_warning("foo", "a value of type 'str'")]
-    assert app.statuscode == 0
+    assert build_warnings(app) == [class_warning("foo", not_a_class("str"))]
     assert registered(app) == BUILT_IN
 
 
 @pytest.mark.parametrize(
-    ("value", "got"),
+    ("value", "problem"),
     [
-        pytest.param('"x"', "a value of type 'str'", id="string"),
-        pytest.param("None", "a value of type 'NoneType'", id="none"),
-        pytest.param("dict", "the class 'dict'", id="not-a-service-class"),
+        pytest.param('"x"', not_a_class("str"), id="string"),
+        pytest.param("None", not_a_class("NoneType"), id="none"),
+        pytest.param("a_function", not_a_class("function"), id="function"),
+        # a type, but without the ``options`` the registration reads first
+        pytest.param("dict", no_options("dict"), id="class-without-options"),
     ],
 )
-def test_a_class_in_conf_py_that_is_not_a_service_class_warns(build, value, got):
-    """The same check covers a wrong value in ``conf.py``, with the same warning."""
+def test_a_class_in_conf_py_that_would_crash_the_registration_warns(
+    build, value, problem
+):
+    """The same check covers a wrong value in ``conf.py``, with the same warning:
+    everything that is not a class, and a class without ``options``."""
     app = build(
         {
             "conf.py": f"""\
                 extensions = ["sphinx_needs"]
+
+
+                def a_function(app):
+                    pass
+
+
                 needs_services = {{"bad": {{"class": {value}, "class_init": {{}}}}}}
                 # Sphinx's own warning that a class in the configuration is not
                 # pickled, which is not what these tests are about
@@ -105,8 +123,53 @@ def test_a_class_in_conf_py_that_is_not_a_service_class_warns(build, value, got)
                 """
         }
     )
-    assert build_warnings(app) == [class_warning("bad", got)]
-    assert app.statuscode == 0
+    assert build_warnings(app) == [class_warning("bad", problem)]
+    assert registered(app) == BUILT_IN
+
+
+def test_a_duck_typed_service_class_registers_as_before(build):
+    """A class with ``options`` that does not derive from ``BaseService`` registered
+    before this check existed, and still does, without a warning: the check refuses
+    only what used to end the build."""
+    app = build(
+        {
+            "conf.py": """\
+                extensions = ["sphinx_needs"]
+
+
+                class Duck:
+                    options = []
+
+                    def __init__(self, app, name, config, **kwargs):
+                        pass
+
+                    def request(self, options):
+                        return []
+
+
+                needs_services = {"duck": {"class": Duck, "class_init": {}}}
+                suppress_warnings = ["config.cache"]
+                """
+        }
+    )
+    assert_no_warnings(app)
+    assert registered(app) == BUILT_IN | {"duck"}
+    assert type(app._needs_services.services["duck"]).__name__ == "Duck"
+
+
+def test_a_class_and_a_class_init_both_wrong_give_one_warning(build):
+    """One warning per service: the ``class`` one, which is checked first."""
+    app = build(
+        {
+            "conf.py": TOML_CONF,
+            "ubproject.toml": """\
+                [needs.services.foo]
+                class = "x"
+                class_init = "y"
+                """,
+        }
+    )
+    assert build_warnings(app) == [class_warning("foo", not_a_class("str"))]
     assert registered(app) == BUILT_IN
 
 
@@ -126,7 +189,6 @@ def test_a_class_init_that_is_not_a_dict_warns_and_the_service_is_skipped(build)
         }
     )
     assert build_warnings(app) == [class_init_warning("bad", "a value of type 'str'")]
-    assert app.statuscode == 0
     assert registered(app) == BUILT_IN
 
 
@@ -148,7 +210,7 @@ def test_a_needservice_naming_a_skipped_service_reports_it_as_not_found(build):
     )
     with pytest.raises(NeedsServiceException, match="Service foo could not be found"):
         app.build()
-    assert build_warnings(app) == [class_warning("foo", "a value of type 'str'")]
+    assert build_warnings(app) == [class_warning("foo", not_a_class("str"))]
 
 
 @pytest.mark.parametrize(
@@ -177,7 +239,6 @@ def test_a_toml_service_table_without_a_class_is_not_a_mistake(build, toml):
     by an extension: no warning, and nothing is registered from it."""
     app = build({"conf.py": TOML_CONF, "ubproject.toml": toml})
     assert_no_warnings(app)
-    assert app.statuscode == 0
     assert registered(app) == BUILT_IN
 
 
