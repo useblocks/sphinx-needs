@@ -132,7 +132,12 @@ from sphinx_needs.environment import (
 from sphinx_needs.exceptions import NeedsConfigException
 from sphinx_needs.external_needs import load_external_needs
 from sphinx_needs.functions import NEEDS_COMMON_FUNCTIONS
-from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
+from sphinx_needs.logging import (
+    WarningSubTypes,
+    configure_warning_types,
+    get_logger,
+    log_warning,
+)
 from sphinx_needs.needs_schema import (
     FieldLiteralValue,
     FieldSchema,
@@ -364,6 +369,9 @@ def setup(app: Sphinx) -> dict[str, Any]:
     # EVENTS
     ########################################################################
     # Make connections to events
+    # first of all: the warning helpers learn whether Sphinx renders the type suffix
+    # itself, before any handler below (the earliest, at 10, warns) can warn
+    app.connect("config-inited", configure_warning_types, priority=0)
     app.connect("config-inited", load_config_from_toml, priority=10)  # runs early
     # runs directly after the toml config is loaded, which can set the variant data,
     # and before anything that may want to read the merged map,

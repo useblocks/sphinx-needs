@@ -1,15 +1,51 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from docutils.nodes import Node
 from sphinx import version_info
 from sphinx.util import logging
 from sphinx.util.logging import SphinxLoggerAdapter
 
+if TYPE_CHECKING:
+    from sphinx.application import Sphinx
+    from sphinx.config import Config
+
 
 def get_logger(name: str) -> SphinxLoggerAdapter:
     return logging.getLogger(name)
+
+
+class _WarningTypes:
+    """Whether Sphinx renders a warning's `` [type.subtype]`` suffix itself.
+
+    It does when ``show_warning_types`` is on: an option since Sphinx 7.3 (default
+    ``False``), on by default since 8.0. Where Sphinx does not, :func:`log_warning` and
+    :func:`log_error` append the suffix themselves -- before 8.0 only, as they always
+    have -- and where it does, they must not, or it shows twice (#2091). The helpers
+    have no ``app``, so :func:`configure_warning_types` records the build's value at
+    ``config-inited``, again for every build in the process; until then (a warning from
+    ``setup()``) the running Sphinx's default applies.
+    """
+
+    sphinx_renders: bool = version_info >= (8,)
+
+
+_warning_types = _WarningTypes()
+
+
+def configure_warning_types(_app: Sphinx, config: Config) -> None:
+    """Record whether Sphinx renders the warning type suffix for this build."""
+    _warning_types.sphinx_renders = version_info >= (8,) or bool(
+        config.show_warning_types
+    )
+
+
+def _with_type(message: str, type: str, subtype: str) -> str:
+    """``message``, with the `` [type.subtype]`` suffix if Sphinx will not add it."""
+    if _warning_types.sphinx_renders:
+        return message
+    return f"{message} [{type}.{subtype}]"
 
 
 # keep below 2 dicts sorted to spot missing items
@@ -132,11 +168,7 @@ def log_warning(
     once: bool = False,
     type: str = "needs",
 ) -> None:
-    # Since sphinx in v7.3, sphinx will show warning types if `show_warning_types=True` is set,
-    # and in v8.0 this was made the default.
-    if version_info < (8,):
-        message += f" [{type}.{subtype}]"
-
+    message = _with_type(message, type, subtype)
     logger.warning(
         message,
         type=type,
@@ -158,11 +190,7 @@ def log_error(
     once: bool = False,
     type: str = "needs",
 ) -> None:
-    # Since sphinx in v7.3, sphinx will show warning types if `show_warning_types=True` is set,
-    # and in v8.0 this was made the default.
-    if version_info < (8,):
-        message += f" [{type}.{subtype}]"
-
+    message = _with_type(message, type, subtype)
     logger.error(
         message,
         type=type,
