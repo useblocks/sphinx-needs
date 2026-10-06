@@ -241,6 +241,10 @@ def load_schemas_config_from_json(app: Sphinx, config: _SphinxConfig) -> None:
 
 
 def setup(app: Sphinx) -> dict[str, Any]:
+    # the warning helpers learn whether Sphinx renders the type suffix itself before
+    # anything can warn: the public API may already be called from a later setup()
+    # (conf.py's runs after every extension's), and the config is readable here
+    configure_warning_types(app, app.config)
     LOGGER.debug("Starting setup of Sphinx-Needs")
     LOGGER.debug("Load Sphinx-Data-Viewer for Sphinx-Needs")
     app.setup_extension("sphinx_data_viewer")
