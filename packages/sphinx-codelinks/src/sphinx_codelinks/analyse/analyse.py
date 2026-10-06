@@ -542,14 +542,18 @@ class SourceAnalyse:
         self.extract_marked_content()
         self.merge_marked_content()
         if log_summary:
-            self._log_summary()
+            self.log_summary()
 
-    def _log_summary(self) -> None:
-        """Emit a per-project marker (default-visible) plus a -v breakdown."""
+    def log_summary(self, extra: str = "") -> None:
+        """Emit a per-project marker (default-visible) plus a -v breakdown.
+
+        :param extra: Appended to the default-visible line (the ``src-trace``
+            directive's count of the one-line needs it did not create).
+        """
         label = f"codelinks [{self.name}]" if self.name else "codelinks"
         logger.info(
             f"{label}: {_count(len(self.src_files), 'file')}, "
-            f"{_count(len(self.all_marked_content), 'marker')}"
+            f"{_count(len(self.all_marked_content), 'marker')}{extra}"
         )
         logger.debug(
             f"{label}: {_count(len(self.src_comments), 'comment')}, "

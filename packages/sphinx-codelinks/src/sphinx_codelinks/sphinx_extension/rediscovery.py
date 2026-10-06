@@ -9,7 +9,10 @@ size. Sphinx's ``note_dependency`` already re-reads the document when a KNOWN fi
 edited or removed; a file ADDED to the scope is a dependency of nothing (#2040). So at
 ``env-get-outdated`` :func:`find_outdated_scopes` walks every recorded scope again (one
 directory walk per scope, no parsing) and returns the documents whose scope changed.
-The store is also how "a project owns a directive" is known.
+The store is also how "a project owns a directive" is known, and where a directive
+records the one-line needs it skipped because another document already defined them
+(``ScopeRecord.deferred``): that document changing or going re-reads the skipping one,
+so the need moves rather than vanishes.
 
 The CONFIG-ONLY store (:func:`config_only_refs_store`, env attribute
 ``codelinks_config_only_refs``) holds, per project that no directive traces, the
@@ -218,6 +221,10 @@ class ScopeRecord:
     target: str
     """The ``:file:`` or ``:directory:`` option as written, ``"./"`` when neither."""
     fingerprint: Fingerprint
+    deferred: tuple[tuple[str, str], ...] = ()
+    """``(need id, owning document)`` of each one-line need the directive did not create
+    because another document defines it (``""``: an external need). A default, so that
+    a record pickled before the field existed loads and defers nothing."""
 
 
 def scope_store(env: BuildEnvironment) -> dict[str, list[ScopeRecord]]:
@@ -234,11 +241,32 @@ def directive_owned(env: BuildEnvironment) -> set[str]:
     return {scope.project for scopes in scope_store(env).values() for scope in scopes}
 
 
+#: the documents a build has yet to read, from ``env-before-read-docs`` on: a document
+#: leaves when it is purged, which Sphinx does right before reading it (serial) or for
+#: every document before the workers fork (``-j N``). In memory only, so never pickled;
+#: a forked worker inherits it
+_UNREAD: weakref.WeakKeyDictionary[BuildEnvironment, set[str]] = (
+    weakref.WeakKeyDictionary()
+)
+
+
+def note_documents_to_read(env: BuildEnvironment, docnames: Iterable[str]) -> None:
+    """Keep the documents this build reads (``env-before-read-docs``)."""
+    _UNREAD[env] = set(docnames)
+
+
+def is_unread(env: BuildEnvironment, docname: str) -> bool:
+    """Whether ``docname`` is still to be read in this build: its needs in the store
+    are the previous build's, about to be purged."""
+    return docname in _UNREAD.get(env, ())
+
+
 def purge_doc(_app: Sphinx, env: BuildEnvironment, docname: str) -> None:
     """Drop a document's records and scopes before it is read again, or when it is
     removed (``env-purge-doc``)."""
     need_id_refs_store(env).pop(docname, None)
     scope_store(env).pop(docname, None)
+    _UNREAD.get(env, set()).discard(docname)
 
 
 def merge_info(
@@ -463,7 +491,8 @@ def find_outdated_scopes(
     changed: set[str],
     removed: set[str],
 ) -> list[str]:
-    """The documents whose ``src-trace`` scopes gained, lost or changed a file
+    """The documents whose ``src-trace`` scopes gained, lost or changed a file, and
+    those that skipped a one-line need whose owning document is read again or removed
     (``env-get-outdated``; Sphinx adds them to ``changed``).
 
     First, before Sphinx purges the removed documents, it keeps the references the
@@ -473,12 +502,25 @@ def find_outdated_scopes(
     _PREVIOUS_REFS[env] = effective_refs(env, codelinks_config)
     skip = added | changed | removed
     memo: dict[tuple[str, ScopeKind, str], Fingerprint | None] = {}
+    candidates = [
+        (docname, scopes)
+        for docname, scopes in sorted(scope_store(env).items())
+        if docname in env.found_docs and docname not in skip
+    ]
+    rescoped = {
+        docname
+        for docname, scopes in candidates
+        if any(_scope_changed(app, codelinks_config, scope, memo) for scope in scopes)
+    }
+    # an owner read again may no longer define the need (its scope narrowed, or the
+    # file left it), and a removed one defines nothing: the skipping document must
+    # look again. Decided on the previous build's facts -- nothing is purged yet
+    moving = changed | removed | rescoped
     return [
         docname
-        for docname, scopes in sorted(scope_store(env).items())
-        if docname in env.found_docs
-        and docname not in skip
-        and any(_scope_changed(app, codelinks_config, scope, memo) for scope in scopes)
+        for docname, scopes in candidates
+        if docname in rescoped
+        or any(owner in moving for scope in scopes for _id, owner in scope.deferred)
     ]
 
 

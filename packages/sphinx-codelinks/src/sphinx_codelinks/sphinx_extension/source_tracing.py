@@ -38,6 +38,7 @@ from sphinx_codelinks.sphinx_extension.rediscovery import (
     find_affected_documents,
     find_outdated_scopes,
     merge_info,
+    note_documents_to_read,
     purge_doc,
     scope_store,
 )
@@ -330,7 +331,7 @@ def update_sn_types(app: Sphinx, _config: _SphinxConfig) -> None:
 
 
 def prepare_env(
-    app: Sphinx, env: BuildEnvironment, _docnames: list[str]
+    app: Sphinx, env: BuildEnvironment, docnames: list[str]
 ) -> None:  # required by Sphinx
     """
     Prepares the sphinx environment to store stc-trace internal data.
@@ -339,6 +340,8 @@ def prepare_env(
     need_id_refs_store(env)
     scope_store(env)
     config_only_refs_store(env)
+    # a need of a document still to be read is stale: the directives may replace it
+    note_documents_to_read(env, docnames)
 
     # Set time measurement flag
     if src_trace_sphinx_config.debug_measurement:
