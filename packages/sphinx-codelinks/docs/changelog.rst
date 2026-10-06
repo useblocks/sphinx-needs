@@ -139,19 +139,22 @@ New and Improved
   outside ``src_dir``, are diagnosed instead of producing ``../`` reference paths or a
   traceback (`#2062 <https://github.com/useblocks/sphinx-needs/issues/2062>`__).
 
-  A configured ``git_root`` that does not exist, or is neither ``src_dir`` nor a directory
-  above it, is ignored with one ``codelinks.git_root`` warning, and the repository root is
-  detected from ``src_dir`` as when none is set: the remote URLs, the ``@need-ids:``
-  records and the attach all follow the detected root. It used to give records whose
-  ``path`` began with ``../`` (with local URLs), or a ``ValueError`` traceback (with remote
-  URLs).
+  A configured ``git_root`` that does not exist, cannot be read, or is neither ``src_dir``
+  nor a directory above it, is ignored with one ``codelinks.git_root`` warning, and the
+  repository root is detected from ``src_dir`` as when none is set: the remote URLs, the
+  ``@need-ids:`` records and the attach all follow the detected root. It used to give
+  records whose ``path`` began with ``../`` (with local URLs), or a ``ValueError``
+  traceback (with remote URLs). ``codelinks analyse`` applies the same rule, warning on
+  stderr, where such a ``git_root`` with a remote used to end it with a ``ValueError``.
 
   A file that discovery reaches through a symbolic link but whose target lies outside
   ``src_dir`` -- a file link, or a file below a followed directory link -- is skipped with
   one ``codelinks.outside_src_dir`` warning naming the link and its target, in a
   ``src-trace`` directive, a ``:file:`` scope, the scan of a project no directive traces,
-  and ``codelinks discover`` alike. **This changes behaviour:** such a file used to be
-  listed by discovery and analysed, and a build aborted with
+  ``codelinks discover`` and ``codelinks analyse`` alike (the latter's
+  ``marked_content.json`` no longer holds the file's markers). **This changes
+  behaviour:** such a file used to be listed by discovery and analysed, and a build
+  aborted with
   ``ValueError: … is not in the subpath of …`` as soon as it held a one-line need (URL
   fields on or off) or, with a URL field on, an ``@need-ids:`` reference; it is now never
   traced. Widen ``src_dir`` to cover the target, or exclude the link.
