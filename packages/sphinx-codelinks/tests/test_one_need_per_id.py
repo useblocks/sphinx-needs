@@ -88,7 +88,7 @@ def _rewrite(path: Path, old: str, new: str) -> None:
 
 
 #: a one-line style without ``id``: Sphinx-Needs generates it from the type's prefix and
-#: the title (local URLs off: their source-page map needs an id written in the marker)
+#: the title (local URLs off here; on, in the #2082 case)
 IDLESS = {
     "toml_extra": (
         "\n[codelinks.projects.src.analyse.oneline_comment_style]\n"

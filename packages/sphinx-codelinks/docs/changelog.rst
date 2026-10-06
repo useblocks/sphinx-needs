@@ -181,6 +181,10 @@ New and Improved
   since at least 1.4.0 (:ref:`oneline_invalid`,
   `#2076 <https://github.com/useblocks/sphinx-needs/issues/2076>`__).
 
+- 🐛 A one-line need whose style has no ``id`` field no longer aborts the build with
+  ``KeyError: 'id'`` when local URLs are on; its source page links back to the generated
+  id (`#2082 <https://github.com/useblocks/sphinx-needs/issues/2082>`__).
+
 - ⬆️ ``typer`` is no longer capped below 0.26.8. The cap protected the documentation build,
   whose ``sphinxcontrib-typer`` imported a ``typer.rich_utils`` name that 0.26.8 removed;
   the ``docs`` extra now requires ``sphinxcontrib-typer`` 0.9.1 or newer, which tracks
