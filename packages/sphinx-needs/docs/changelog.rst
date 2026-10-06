@@ -50,7 +50,7 @@ Improvements
   now listed in its documentation.
 
 - ✨ A ``[[…]]`` or ``<<…>>`` that reads a value another one computes in the same pass
-  is reported as ``needs.derive_unresolved`` **(changed output)** (:issue:`2064`)
+  is reported as ``needs.derive_unresolved`` **(changed output)** (:issue:`2064`, :pr:`2080`)
 
   Dynamic functions and variants are resolved in one pass, need by need, so a
   :ref:`copy <copy>`, :ref:`calc_sum <calc_sum>`, :ref:`check_linked_values <check_linked_values>`
