@@ -237,9 +237,11 @@ def test_an_incremental_build_keeps_one_card(test_app: Sphinx, touched: str):
     """Rebuilding either document leaves one card in total.
 
     Re-reading the winner's document purges its need and creates it again, while the
-    loser's doctree, if it is not re-read, still holds its node; re-reading the loser's
-    document runs its directive against the environment that kept the winner's need,
-    which refuses it as a serial build does.
+    loser's doctree, which is not re-read, still holds its node. Sphinx would not
+    rewrite the loser's page either, so its output is deleted to make the build
+    write it from that pickled doctree. Re-reading the loser's document runs its
+    directive against the environment that kept the winner's need, which refuses it as
+    a serial build does.
     """
     app = test_app
     app.build()
@@ -247,7 +249,11 @@ def test_an_incremental_build_keeps_one_card(test_app: Sphinx, touched: str):
     winner, loser = winner_and_loser(first, parallel=True)
     assert_one_card(app, winner, loser)
 
-    touch(app, winner if touched == "winner" else loser)
+    if touched == "winner":
+        touch(app, winner)
+        Path(app.outdir, f"{loser}.html").unlink()
+    else:
+        touch(app, loser)
     app.build()
     second = build_warnings(app)[len(first) :]
     if touched == "winner":
