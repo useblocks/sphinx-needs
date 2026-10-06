@@ -39,7 +39,7 @@ from pathlib import Path, PurePath
 from typing import Any, Literal
 
 from sphinx.application import Sphinx
-from sphinx.environment import BuildEnvironment
+from sphinx.environment import CONFIG_OK, BuildEnvironment
 from sphinx.util import logging
 
 from sphinx_codelinks.analyse.analyse import SourceAnalyse
@@ -314,11 +314,17 @@ def update_config_only_refs(
     app: Sphinx, env: BuildEnvironment, codelinks_config: CodeLinksConfig
 ) -> None:
     """Scan every gated project no directive traces; one warning per failing project,
-    and the build goes on (ubCode's rule)."""
+    and the build goes on (ubCode's rule). A configuration change drops every stored
+    entry first."""
     projects = codelinks_config.projects
     if not isinstance(projects, dict):
         return
     store = config_only_refs_store(env)
+    if env.config_status != CONFIG_OK:
+        # the fingerprint covers the files only, and every confval a record depends on
+        # re-reads every document when it changes: start again too (entries of projects
+        # a directive owns now included, or one would be reused stale when it goes)
+        store.clear()
     owned = directive_owned(env)
     for project in sorted(need_id_refs_fields(codelinks_config)):
         if project in owned:
