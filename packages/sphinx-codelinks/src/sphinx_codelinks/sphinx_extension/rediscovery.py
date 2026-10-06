@@ -122,7 +122,8 @@ def build_output_dirs(app: Sphinx, *, parents: bool) -> tuple[Path, ...]:
     directories, always.
 
     With ``parents`` -- every caller passes ``not gitignore``: a project that reads no
-    ignore files cannot see the ``.ignore`` each copy root holds -- also each one's
+    ignore files cannot see the ``.ignore`` at the root of every builder's output and
+    doctree directories -- also each one's
     parent when that parent lies strictly inside the documentation source directory:
     the build directory, ``_build/`` in the Makefile layout (``_build/<builder>`` beside
     ``_build/doctrees``), so one builder never traces another builder's copies. A parent

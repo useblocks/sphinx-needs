@@ -470,8 +470,9 @@ def test_other_builders_output_is_never_traced(
     gitignore: bool,
 ) -> None:
     """The Makefile layout -- ``_build/<builder>`` beside a shared ``_build/doctrees``:
-    one builder never traces another's copies -- with ``gitignore = true`` because each
-    copy root holds an ``.ignore``, with ``gitignore = false`` because the build
+    one builder never traces another's copies -- with ``gitignore = true`` because an
+    ``.ignore`` sits at the root of every builder's output and doctree directories,
+    with ``gitignore = false`` because the build
     directory inside the documentation source directory is skipped as a whole: nothing
     is analysed again, each reference stays one entry, and no copy is ever made of a
     copy. (The doctree directory's half of the rule is unobservable here: no source
@@ -510,7 +511,8 @@ def test_two_output_trees_outside_the_docs_never_trace_each_other(
 ) -> None:
     """``src_dir = "."`` at a repository root and the output in ``build/<builder>``,
     outside the documentation source directory, with no ignore rule for ``build/``
-    (#2071): the ``.ignore`` in each copy root keeps every builder's copies out of
+    (#2071): the ``.ignore`` at the root of every builder's output and doctree
+    directories keeps every builder's copies out of
     discovery -- nothing under ``build/`` is ever listed, no copy is made of a copy,
     each reference stays one entry, and no one-line need is defined twice."""
     _repository_wide(tmp_path, path)
