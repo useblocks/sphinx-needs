@@ -98,8 +98,9 @@ Improvements
   An extension that creates needs can now find out, before it calls ``add_need``,
   whether that id is already taken -- a second definition of the same generated id --
   without importing the private ``_make_hashed_id``. ``add_need`` derives the id with
-  the same code, so the two cannot drift; an unknown need type raises the same
-  ``invalid_type`` exception.
+  the same code, so the two cannot drift: it takes the same arguments, ``content`` as a
+  ``str`` or a ``StringList``, and an unknown need type raises the same ``invalid_type``
+  exception.
 
 Bug fixes
 .........

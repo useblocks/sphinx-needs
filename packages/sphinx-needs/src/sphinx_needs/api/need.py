@@ -677,7 +677,7 @@ def add_need(
         lineno=lineno,
         id=id,
         doctype=doctype or "",
-        content="\n".join(content) if isinstance(content, StringList) else content,
+        content=_content_text(content),
         lineno_content=lineno_content,
         status=status,
         tags=tags,
@@ -1015,7 +1015,7 @@ def generate_need_id(
     app: Sphinx,
     need_type: str,
     title: str,
-    content: str = "",
+    content: str | StringList = "",
     *,
     full_title: str | None = None,
 ) -> str:
@@ -1035,7 +1035,8 @@ def generate_need_id(
     :param app: Sphinx application object.
     :param need_type: Name of the need type, as given to :func:`add_need`.
     :param title: Title of the need.
-    :param content: Content of the need.
+    :param content: Content of the need, either as a ``str``
+        or a ``StringList``, as :func:`add_need` takes it.
     :param full_title: The untrimmed title, if ``title`` was trimmed.
     :return: The generated id.
     :raises InvalidNeedException: If ``need_type`` is not a configured need type
@@ -1046,9 +1047,15 @@ def generate_need_id(
         needs_config,
         _get_need_type(needs_config, need_type)["prefix"],
         title,
-        content,
+        _content_text(content),
         full_title,
     )
+
+
+def _content_text(content: str | StringList) -> str:
+    """A need's content as the text :func:`generate_need` is given, whether it came as
+    a ``str`` or as a ``StringList``."""
+    return "\n".join(content) if isinstance(content, StringList) else content
 
 
 def _get_need_type(needs_config: NeedsSphinxConfig, need_type: str) -> NeedType:
