@@ -87,6 +87,18 @@ Bug fixes
   A ``calc_sum`` with ``links_only`` keeps adding in the order the links are written.
   The error for a ``calc_sum`` outside a need now names ``calc_sum``.
 
+- 🐛 A ``functions`` key under ``[needs]`` in the TOML file is ignored with a warning
+  instead of crashing the build **(changed output)** (:issue:`2064`, :pr:`2079`)
+
+  :ref:`needs_functions` holds Python callables, which a :ref:`needs_from_toml` file
+  cannot hold, and the key ended the build with
+  ``'str' object has no attribute '__name__'``, whether it was an array, a string or a
+  table. It is now one ``needs.config`` warning and the key is ignored, whatever its
+  value: an empty ``functions = []`` is reported as well, and no longer clears the
+  ``needs_functions`` of :file:`conf.py`.
+  The same crash came from :file:`conf.py` for a ``needs_functions`` entry that is not
+  callable, which is now skipped with a ``needs.config`` warning instead.
+
 .. _`release:8.5.0`:
 
 8.5.0

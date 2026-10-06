@@ -574,6 +574,15 @@ def load_config_from_toml(app: Sphinx, config: Config) -> None:
         # Keep values passed via sphinx-build -D (confoverrides) untouched.
         if key in overridden_keys or config_key in overridden_keys:
             continue
+        if (reason := NeedsSphinxConfig.toml_ignored_reason(key)) is not None:
+            # never read, so every occurrence is reported, an empty one included
+            log_warning(
+                LOGGER,
+                f"'needs_from_toml' file sets {key!r}, which is ignored: {reason}",
+                "config",
+                None,
+            )
+            continue
         config[config_key] = NeedsSphinxConfig.convert_field_value(
             key, value, toml_file.parent
         )
@@ -985,6 +994,14 @@ def merge_default_configs(_app: Sphinx, config: Config) -> None:
 
     # Register functions configured by user
     for needs_func in needs_config._functions:
+        if not callable(needs_func):
+            log_warning(
+                LOGGER,
+                f"needs_functions entry {needs_func!r} is not callable and is ignored",
+                "config",
+                None,
+            )
+            continue
         _NEEDS_CONFIG.add_function(needs_func)
 
     # The default link name. Must exist in all configurations. Therefore we set it here for the user.
