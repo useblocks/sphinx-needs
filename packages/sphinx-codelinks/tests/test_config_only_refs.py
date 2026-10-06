@@ -389,22 +389,41 @@ def test_a_configuration_change_while_a_directive_owns_the_project(
     assert _refs(app)["REQ_001"] == ["src/refs.cpp#L1", "src/refs.cpp#L3"]
 
 
-def _repository_wide(tmp_path: Path, path: str) -> None:
+def _repository_wide(tmp_path: Path, path: str, *, gitignore: bool = True) -> None:
     """The fixture with ``src_dir = ".."`` -- the whole repository, docs and their
     ``_build`` included, no ignore rule for it -- and local URLs only, so that every
-    build copies the sources into its output."""
+    HTML build copies the sources into its output."""
     _project(
         tmp_path,
         files=NO_DIRECTIVE if path == "config-only" else None,
         toml_replace=('src_dir = "../src"', 'src_dir = ".."'),
     )
     toml = tmp_path / "docs" / "ubproject.toml"
-    toml.write_text(
-        toml.read_text(encoding="utf-8").replace(
-            "set_remote_url = true", "set_remote_url = false"
-        ),
-        encoding="utf-8",
+    text = toml.read_text(encoding="utf-8").replace(
+        "set_remote_url = true", "set_remote_url = false"
     )
+    if not gitignore:
+        text = text.replace(
+            'comment_type = "cpp"', 'comment_type = "cpp"\ngitignore = false'
+        )
+    toml.write_text(text, encoding="utf-8")
+
+
+def _discovered(app: SphinxTestApp, path: str) -> list[str]:
+    """What the last discovery of project ``src`` listed (relative to ``src_dir``)."""
+    if path == "config-only":
+        found = _config_only_store(app)["src"].fingerprint
+    else:
+        from sphinx_codelinks.sphinx_extension.rediscovery import scope_store
+
+        found = tuple(
+            e for scope in scope_store(app.env)["index"] for e in scope.fingerprint
+        )
+    return [relative for relative, _mtime, _size in found]
+
+
+def _duplicates(app: SphinxTestApp) -> list[str]:
+    return [w for w in build_warnings(app) if "duplicate" in w]
 
 
 @pytest.mark.parametrize("path", ["directive", "config-only"])
@@ -435,6 +454,7 @@ def test_the_build_output_is_never_traced(
     assert len(list(tmp_path.rglob("*.cpp"))) == 2
 
 
+@pytest.mark.parametrize("gitignore", [True, False], ids=["gitignore", "no-gitignore"])
 @pytest.mark.parametrize(
     "builders",
     [("html", "dirhtml", "html", "dirhtml"), ("html", "latex", "html")],
@@ -447,15 +467,18 @@ def test_other_builders_output_is_never_traced(
     analyses: list[str],
     path: str,
     builders: tuple[str, ...],
+    gitignore: bool,
 ) -> None:
     """The Makefile layout -- ``_build/<builder>`` beside a shared ``_build/doctrees``:
-    the build directory inside the documentation source directory is skipped as a
-    whole, so one builder never traces another's copies: nothing is analysed again,
-    each reference stays one entry, and no copy is ever made of a copy. (The doctree directory's half
-    of the rule is unobservable here: no source file is ever written under it.) On
-    the directive path the hosting document is edited after the first build, so the
-    directive runs again with another builder's copies present."""
-    _repository_wide(tmp_path, path)
+    one builder never traces another's copies -- with ``gitignore = true`` because each
+    copy root holds an ``.ignore``, with ``gitignore = false`` because the build
+    directory inside the documentation source directory is skipped as a whole: nothing
+    is analysed again, each reference stays one entry, and no copy is ever made of a
+    copy. (The doctree directory's half of the rule is unobservable here: no source
+    file is ever written under it.) On the directive path the hosting document is
+    edited after the first build, so the directive runs again with another builder's
+    copies present."""
+    _repository_wide(tmp_path, path, gitignore=gitignore)
     for number, builder in enumerate(builders):
         if number == 1 and path == "directive":
             # now, not later: a future mtime would re-read it on every build
@@ -471,6 +494,121 @@ def test_other_builders_output_is_never_traced(
         assert all(p.parts.count("_build") == 1 for p in copies), copies
 
     assert analyses == []
+
+
+@pytest.mark.parametrize(
+    "builders",
+    [("html", "dirhtml", "html", "dirhtml"), ("html", "latex", "html")],
+    ids=["html-dirhtml", "html-latex"],
+)
+@pytest.mark.parametrize("path", ["directive", "config-only"])
+def test_two_output_trees_outside_the_docs_never_trace_each_other(
+    tmp_path: Path,
+    make_app: _MakeApp,
+    path: str,
+    builders: tuple[str, ...],
+) -> None:
+    """``src_dir = "."`` at a repository root and the output in ``build/<builder>``,
+    outside the documentation source directory, with no ignore rule for ``build/``
+    (#2071): the ``.ignore`` in each copy root keeps every builder's copies out of
+    discovery -- nothing under ``build/`` is ever listed, no copy is made of a copy,
+    each reference stays one entry, and no one-line need is defined twice."""
+    _repository_wide(tmp_path, path)
+    name = tmp_path.name
+    for number, builder in enumerate(builders):
+        if number == 1 and path == "directive":
+            # now, not later: a future mtime would re-read it on every build
+            (tmp_path / "docs" / "index.rst").touch()
+        app = _build(
+            tmp_path,
+            make_app,
+            buildername=builder,
+            builddir=tmp_path / "build",
+            freshenv=number == 0,
+        )
+        assert _discovered(app, path) == ["src/refs.cpp"], builder
+        if Path(app.outdir, "needs.json").exists():
+            assert len(_refs(app)["REQ_003"]) == 1, builder
+        assert _duplicates(app) == [], builder
+        copies = sorted(
+            p.relative_to(tmp_path).as_posix()
+            for p in (tmp_path / "build").rglob("*.cpp")
+        )
+        paged = sorted({b for b in builders[: number + 1] if b != "latex"})
+        assert copies == [f"build/{b}/{name}/src/refs.cpp" for b in paged], builder
+
+
+def test_an_output_directory_beside_traced_sources_hides_nothing(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """The output and doctree directories placed directly inside a traced source
+    directory (``docs/code/html``, ``docs/code/doctrees``): with ``gitignore = true``
+    the sources beside them are traced -- only the two directories themselves are
+    skipped, and the ``.ignore`` keeps the copies out (#2065's caveat, gone)."""
+    _project(
+        tmp_path,
+        toml_replace=('src_dir = "../src"', 'src_dir = "code"'),
+        files={"docs/code/beside.cpp": "// @beside the output, IMPL_BESIDE, impl\n"},
+    )
+    toml = tmp_path / "docs" / "ubproject.toml"
+    _edit(toml, "set_remote_url = true", "set_remote_url = false")
+    builddir = tmp_path / "docs" / "code"
+    first = _build(tmp_path, make_app, builddir=builddir)
+    assert "IMPL_BESIDE" in _json(first)["needs"]
+
+    (tmp_path / "docs" / "index.rst").touch()
+    app = _build(tmp_path, make_app, builddir=builddir, freshenv=False)
+
+    assert "0 added, 1 changed, 0 removed" in _status(app)
+    assert _json(app)["needs"]["IMPL_BESIDE"]["docname"] == "index"
+    assert _duplicates(app) == []
+    copies = sorted(p.relative_to(builddir).as_posix() for p in builddir.rglob("*.cpp"))
+    assert copies == ["beside.cpp", "html/code/beside.cpp"]
+
+
+def test_each_copy_root_gets_one_ignore_file_that_is_never_traced(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """Every HTML build writes ``.ignore`` (``*``) into each copy root it writes into
+    -- here two, one per source directory -- and leaves an identical one alone; the
+    file is not a source: no fingerprint of the output lists it, whatever ``gitignore``
+    says."""
+    from sphinx_codelinks.source_discover.config import SourceDiscoverConfig
+    from sphinx_codelinks.sphinx_extension.rediscovery import fingerprint
+
+    _project(
+        tmp_path,
+        toml_replace=("set_remote_url = true", "set_remote_url = false"),
+        toml_extra=(
+            "\n[codelinks.projects.two]\n"
+            "[codelinks.projects.two.source_discover]\n"
+            'src_dir = "../more"\n'
+            'comment_type = "cpp"\n'
+        ),
+        files={"more/m.cpp": "// @more, IMPL_MORE, impl\n"},
+        append={"docs/later.rst": "\n.. src-trace::\n   :project: two\n"},
+    )
+    first = _build(tmp_path, make_app)
+    outdir = Path(first.outdir)
+    ignores = sorted(p.relative_to(outdir).as_posix() for p in outdir.rglob(".ignore"))
+    assert ignores == ["more/.ignore", "src/.ignore"]
+    assert all((outdir / i).read_text(encoding="utf-8") == "*\n" for i in ignores)
+    stamps = [(outdir / i).stat().st_mtime_ns for i in ignores]
+
+    _build(tmp_path, make_app, freshenv=False)
+
+    assert [(outdir / i).stat().st_mtime_ns for i in ignores] == stamps
+    listed = {
+        gitignore: [
+            entry[0]
+            for entry in fingerprint(
+                SourceDiscoverConfig(outdir, gitignore=gitignore, comment_type="cpp"),
+                exclude=(),
+            )
+        ]
+        for gitignore in (True, False)
+    }
+    assert listed == {True: [], False: ["more/m.cpp", "src/refs.cpp"]}
 
 
 @pytest.mark.parametrize("state", ["unchanged", "failing-scan"])
