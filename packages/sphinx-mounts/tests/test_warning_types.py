@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING
 
 from sphinx import version_info
 
+from sphinx_mounts import logging as mounts_logging
 from tests.conftest import write_ubproject_toml
 
 if TYPE_CHECKING:
@@ -75,12 +76,19 @@ def test_suffix_per_version_when_sphinx_hides_warning_types(
 
 
 def test_suffix_once_for_a_warning_at_config_inited(
-    make_app, make_host_project, tmp_path
+    make_app, make_host_project, tmp_path, monkeypatch
 ):
     """A warning emitted while the configuration is loaded -- the deprecated
     ``[[mounts]]`` table, reported by the ``config-inited`` handler that reads the
     TOML -- also carries its suffix once with ``show_warning_types = True``: the
-    helper learns the option before any handler that can warn runs."""
+    helper learns the option before any handler that can warn runs.
+
+    The helper's state is first put back to what a fresh process starts with;
+    otherwise it would be whatever the previous build in this worker left behind.
+    """
+    monkeypatch.setattr(
+        mounts_logging._warning_types, "sphinx_renders", version_info >= (8,)
+    )
     assert _suffixes(
         make_app,
         make_host_project,

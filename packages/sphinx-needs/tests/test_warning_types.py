@@ -99,44 +99,42 @@ CONF_TOML_WARNING = 'extensions = ["sphinx_needs"]\nneeds_from_toml = "missing.t
 
 
 @pytest.mark.parametrize(
-    ("test_app", "marker"),
+    ("conf", "marker"),
     [
         pytest.param(
-            {
-                "buildername": "html",
-                "files": [
-                    (Path("conf.py"), CONF_SETUP_WARNING),
-                    (Path("index.rst"), INDEX),
-                ],
-                "confoverrides": {"show_warning_types": True},
-            },
+            CONF_SETUP_WARNING,
             "Dynamic function suffix_probe_function already registered",
             id="at-setup",
         ),
         pytest.param(
-            {
-                "buildername": "html",
-                "files": [
-                    (Path("conf.py"), CONF_TOML_WARNING),
-                    (Path("index.rst"), INDEX),
-                ],
-                "confoverrides": {"show_warning_types": True},
-            },
+            CONF_TOML_WARNING,
             "'needs_from_toml' file does not exist",
             id="at-config-inited",
         ),
     ],
-    indirect=["test_app"],
 )
 def test_suffix_once_for_a_warning_before_the_documents_are_read(
-    test_app: SphinxTestApp, marker: str
+    make_app, tmp_path: Path, monkeypatch, conf: str, marker: str
 ):
     """A warning emitted while the extensions are set up (the public API called from a
     ``setup()``), or while the configuration is loaded (the first ``config-inited``
     handler), carries ``[needs.config]`` once with ``show_warning_types = True``: the
-    helpers learn the option before anything that can warn runs."""
-    test_app.build()
-    assert _suffixes(test_app, marker) == [["[needs.config]"]]
+    helpers learn the option before anything that can warn runs.
+
+    The application is made here rather than by ``test_app``, so that the helpers'
+    state can first be put back to what a fresh process starts with -- otherwise it
+    would be whatever the previous build in this worker left behind.
+    """
+    monkeypatch.setattr(
+        needs_logging._warning_types, "sphinx_renders", version_info >= (8,)
+    )
+    (tmp_path / "conf.py").write_text(conf, encoding="utf-8")
+    (tmp_path / "index.rst").write_text(INDEX, encoding="utf-8")
+    app = make_app(
+        srcdir=tmp_path, freshenv=True, confoverrides={"show_warning_types": True}
+    )
+    app.build()
+    assert _suffixes(app, marker) == [["[needs.config]"]]
 
 
 class _StubLogger:
