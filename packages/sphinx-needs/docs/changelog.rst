@@ -74,7 +74,7 @@ Bug fixes
   node's location.
 
 - 🐛 :ref:`calc_sum <calc_sum>` and :ref:`copy(filter=) <copy>` read needs in need-id order
-  **(changed output)** (:issue:`2064`)
+  **(changed output)** (:issue:`2064`, :pr:`2078`)
 
   A whole-project ``calc_sum`` adds the needs' values in ascending need-id order,
   and ``copy`` with a ``filter`` copies from the match with the lowest id,
