@@ -134,6 +134,15 @@ class SourceTracingDirective(SphinxDirective):
             target,
             exclude=build_output_dirs(self.env.app),
         )
+        if kind == "file" and not source_files:
+            missing_file = (src_dir / target).resolve()
+            logger.warning(
+                f"Source file {missing_file.as_posix()} does not exist; "
+                "skipping this src-trace directive.",
+                location=self.get_location(),
+                type="codelinks",
+                subtype="missing_file",
+            )
 
         # add source files into the dependency
         # https://www.sphinx-doc.org/en/master/extdev/envapi.html#sphinx.environment.BuildEnvironment.note_dependency

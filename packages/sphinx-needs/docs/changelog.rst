@@ -52,6 +52,9 @@ Improvements
 Bug fixes
 .........
 
+- 🐛 A missing file in a ``src-trace`` ``:file:`` scope warns and is skipped instead of
+  aborting an incremental build (:issue:`2069`)
+
 - 🐛 An :ref:`if <if>` condition whose result has no truth value is reported, instead of
   ending the build **(changed output)** (:issue:`2025`, :pr:`2029`)
 

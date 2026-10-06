@@ -144,7 +144,8 @@ def discover_scope(
     trace the extension's own copies of the sources.
     """
     if kind == "file":
-        return [(src_dir / target).resolve()]
+        path = (src_dir / target).resolve()
+        return [path] if path.is_file() else []
     found = SourceDiscover(scope_discover_config(src_dir, base, target)).source_paths
     return _outside(found, exclude)
 

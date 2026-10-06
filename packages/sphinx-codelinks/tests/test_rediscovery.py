@@ -26,6 +26,7 @@ from .test_need_id_refs import (
     _project,
     _refs,
     _url,
+    build_warnings,
 )
 
 INDEX = (FIXTURE / "docs" / "index.rst").read_text(encoding="utf-8")
@@ -131,6 +132,31 @@ def test_removed_file_rereads_and_drops_its_records(
     assert "0 added, 1 changed, 0 removed" in _status(app)
     assert "IMPL_NEW" not in _json(app)["needs"]
     assert _refs(app)["REQ_002"] == [_url(commit, 3)]
+
+
+def test_removed_file_scope_warns_and_keeps_building(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """A removed ``:file:`` target is diagnosed instead of aborting analysis."""
+    _project(
+        tmp_path,
+        files={
+            **_scoped(":file: refs.cpp"),
+            "src/refs.cpp": NEW_SOURCE,
+        },
+    )
+    first = _build(tmp_path, make_app)
+    assert "IMPL_NEW" in _json(first)["needs"]
+
+    (tmp_path / "src" / "refs.cpp").unlink()
+    app = _build(tmp_path, make_app, freshenv=False)
+
+    warnings = build_warnings(app)
+    assert any(
+        "src/refs.cpp" in warning and "index.rst" in warning for warning in warnings
+    )
+    assert "0 added, 1 changed, 0 removed" in _status(app)
+    assert "IMPL_NEW" not in _json(app)["needs"]
 
 
 @pytest.mark.parametrize("rule", ["exclude", "gitignore"])
