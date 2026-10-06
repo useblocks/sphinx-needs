@@ -284,6 +284,16 @@ class ConfigOnlyError(Exception):
     """Why a config-only project could not be scanned."""
 
 
+#: what discovery and the analysis raise for a project they cannot scan: a missing
+#: source directory (``ConfigOnlyError``); a file that cannot be stat-ed, read or
+#: copied (``OSError``); an unsupported comment style, an undecodable file, a source
+#: directory outside the configured git root (``ValueError``); libclang absent with a
+#: preprocessor configured (``ImportError``); a symlink loop in ``Path.resolve()`` on
+#: Python 3.11/3.12 (``RuntimeError``). Anything else is a bug in the extension and
+#: fails the build, as it does on the directive path.
+_SCAN_ERRORS = (ConfigOnlyError, OSError, ValueError, ImportError, RuntimeError)
+
+
 def _plural(count: int, noun: str) -> str:
     return f"{count} {noun}" if count == 1 else f"{count} {noun}s"
 
@@ -373,10 +383,11 @@ def update_config_only_refs(
             scan = scan_config_only_project(
                 app, codelinks_config, project, projects[project], previous
             )
-        except Exception as error:  # discovery or parse: never fatal, always said
+        except _SCAN_ERRORS as error:
             store.pop(project, None)
             logger.warning(
-                f"codelinks [{project}]: cannot scan for @need-ids references: {error}",
+                f"codelinks [{project}]: cannot scan for @need-ids references: "
+                f"{type(error).__name__}: {error}",
                 type="codelinks",
                 subtype="need_id_ref",
             )
