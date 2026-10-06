@@ -1170,7 +1170,11 @@ FILTERED_WARNINGS = [
     indirect=True,
 )
 def test_a_filter_on_a_computed_field_does_not_decide_the_warning(test_app):
-    """A filtered ``calc_sum`` or ``check_linked_values`` warns the same on every build.
+    """A filtered ``calc_sum`` warns the same on every build, as does this layout's
+    filtered ``check_linked_values``.
+
+    A ``check_linked_values`` whose check stops at an authored target the filter kept,
+    before it reaches a computed one, can still differ between builds; the docs say so.
 
     The first build reads ``a.rst`` before ``b.rst``, so the filter sees ``TGT_F``'s
     unresolved ``summary`` and drops it (the sum is ``0.0``); re-reading ``a.rst`` moves

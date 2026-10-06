@@ -185,7 +185,8 @@ and ``<{…}>``, which reads variant data rather than needs;
 :ref:`links_from_content <links_content>` reads the document, not fields.
 The :ref:`ndf` role runs after the pass, when every value is final, so nothing it reads is reported.
 A ``filter`` that reads a computed field can itself decide, by the order, which needs are read:
-a ``copy`` with a ``filter`` may therefore be reported in one build and not in another,
+a ``copy`` with a ``filter``, or a ``check_linked_values`` whose check stops at a target the filter kept,
+may therefore be reported in one build and not in another,
 and which needs a message names can vary after the first computed value a call reads.
 
 To avoid such a read, read the authored value the computed one is derived from instead
