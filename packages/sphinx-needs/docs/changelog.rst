@@ -88,7 +88,7 @@ Bug fixes
   The error for a ``calc_sum`` outside a need now names ``calc_sum``.
 
 - 🐛 A ``functions`` key under ``[needs]`` in the TOML file is ignored with a warning
-  instead of crashing the build **(changed output)** (:issue:`2064`)
+  instead of crashing the build **(changed output)** (:issue:`2064`, :pr:`2079`)
 
   :ref:`needs_functions` holds Python callables, which a :ref:`needs_from_toml` file
   cannot hold, and the key ended the build with
