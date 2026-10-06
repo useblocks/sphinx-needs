@@ -1,4 +1,6 @@
 import json
+import os
+import time
 from pathlib import Path
 
 import pytest
@@ -316,3 +318,324 @@ def test_need_func_role_removed(test_app):
     warning_records = build_warnings(app)
     assert len(warning_records) == 1, warning_records
     assert 'Unknown interpreted text role "need_func"' in warning_records[0]
+
+
+# -- need-id order: ``calc_sum`` and ``copy(filter=...)`` ---------------------
+#
+# Float addition is not associative, so the order a whole-project ``calc_sum``
+# reads the needs in decides the last digits of its total, and ``copy`` with a
+# ``filter`` copies from one match out of several. Both read the needs in ascending
+# need-id order, comparing ids as plain strings (code-point order, which is the
+# UTF-8 byte order ubCode sorts by), so neither answer depends on the order the needs
+# reached the environment: document names, which documents the last build re-read,
+# or which ``-j`` worker finished first. ``0.1 + 0.2 + 0.3`` is ``0.6000000000000001``
+# added in that order and ``0.6`` added as ``0.3 + 0.2 + 0.1``: the trailing digit is
+# the summation order made visible, and the same bits as ubCode's total.
+
+ORDER_CONF = """\
+extensions = ["sphinx_needs"]
+needs_fields = {
+    "hours": {"schema": {"type": "number"}, "nullable": True},
+    "total": {"schema": {"type": "number"}, "nullable": True},
+    "pick": {"nullable": True},
+}
+"""
+
+#: The summands, one page each and named against their ids, so a scratch build reads
+#: (and inserts) them in the REVERSE of need-id order: ``SUM_C``, ``SUM_B``, ``SUM_A``
+ORDER_PAGES = [
+    (
+        Path("a.rst"),
+        "A\n=\n\n.. req:: Third summand\n   :id: SUM_C\n   :hours: 0.3\n",
+    ),
+    (
+        Path("b.rst"),
+        "B\n=\n\n.. req:: Second summand\n   :id: SUM_B\n   :hours: 0.2\n",
+    ),
+    (
+        Path("c.rst"),
+        "C\n=\n\n.. req:: First summand\n   :id: SUM_A\n   :hours: 0.1\n",
+    ),
+]
+
+ORDER_INDEX = """\
+Index
+=====
+
+.. toctree::
+
+   a
+   b
+   c
+
+.. req:: Total
+   :id: TOTAL
+   :total: [[calc_sum("hours")]]
+   :pick: [[copy("id", filter="hours is not None and hours > 0")]]
+"""
+
+ORDER_FILES = [
+    (Path("conf.py"), ORDER_CONF),
+    (Path("index.rst"), ORDER_INDEX),
+    *ORDER_PAGES,
+]
+
+#: ubCode's ``dynamic_functions_sum_order`` build fixture, its page verbatim
+UBCODE_SUM_ORDER_INDEX = """\
+Summation order of a sum over every need
+========================================
+
+Added in need-id order (``SUM_A``, ``SUM_B``, ``SUM_C``), ``0.1 + 0.2 + 0.3`` is ``0.6000000000000001``
+while two of the other five orders give ``0.6``,
+so the trailing digit of ``TOTAL`` is the pinned summation order made visible, not a rounding accident to tidy away.
+The needs are written in the reverse of that order, which alone would give ``0.6``,
+so neither document order nor insertion order can produce the snapshot.
+
+.. req:: Total
+  :id: TOTAL
+  :total: [[calc_sum("hours")]]
+
+.. req:: Third summand
+  :id: SUM_C
+  :hours: 0.3
+
+.. req:: Second summand
+  :id: SUM_B
+  :hours: 0.2
+
+.. req:: First summand
+  :id: SUM_A
+  :hours: 0.1
+"""
+
+
+def _built_needs(app) -> dict[str, dict]:
+    """The needs of the ``needs.json`` the last build wrote, by id."""
+    data = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf-8"))
+    return data["versions"][data["current_version"]]["needs"]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {"buildername": "needs", "files": ORDER_FILES},
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), ORDER_CONF),
+                (Path("index.rst"), UBCODE_SUM_ORDER_INDEX),
+            ],
+        },
+    ],
+    indirect=True,
+    ids=["one-page-per-summand", "ubcode-fixture-page"],
+)
+def test_calc_sum_adds_in_need_id_order(test_app):
+    """A whole-project ``calc_sum`` adds in ascending need-id order.
+
+    The needs are written (and so inserted) in the reverse of need-id order, which
+    would give ``0.6``; only need-id order gives ``0.6000000000000001``, the total
+    ubCode's ``dynamic_functions_sum_order`` fixture pins, so both tools agree on
+    the total bit for bit, whatever order the documents are read in.
+    """
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    assert _built_needs(app)["TOTAL"]["total"] == 0.6000000000000001
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "needs", "files": ORDER_FILES}],
+    indirect=True,
+)
+def test_copy_filter_copies_from_the_lowest_id(test_app):
+    """``copy`` with a ``filter`` matching several needs copies from the lowest id.
+
+    ``SUM_C`` is written, and so inserted, first; the copy source must not depend
+    on that order (or on which documents the last build re-read, or on ``-j``),
+    so it is the match with the lowest id, ``SUM_A``.
+    """
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    assert _built_needs(app)["TOTAL"]["pick"] == "SUM_A"
+
+
+NATURAL_ORDER_INDEX = """\
+Need-id order is string order
+=============================
+
+.. req:: Two
+   :id: NEED_2
+   :hours: 0.2
+
+.. req:: Nine
+   :id: NEED_9
+   :hours: 0.3
+
+.. req:: Ten
+   :id: NEED_10
+   :hours: 0.1
+
+.. req:: Total
+   :id: TOTAL
+   :total: [[calc_sum("hours")]]
+   :pick: [[copy("id", filter='id in ["NEED_9", "NEED_10"]')]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), ORDER_CONF),
+                (Path("index.rst"), NATURAL_ORDER_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_need_id_order_compares_ids_as_strings(test_app):
+    """Need-id order compares ids as plain strings, not in natural order.
+
+    String (code-point) order is ``NEED_10 < NEED_2 < NEED_9``, the byte order ubCode
+    sorts ids by, and adds ``0.1 + 0.2 + 0.3 = 0.6000000000000001``. The natural order
+    sphinx-needs sorts links by (``NEED_2 < NEED_9 < NEED_10``), which is also the
+    order these needs are written in, would add ``0.2 + 0.3 + 0.1 = 0.6`` and copy
+    from ``NEED_9``, so this is the test that fails if the order becomes the natural one.
+    """
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    total = _built_needs(app)["TOTAL"]
+    assert total["total"] == 0.6000000000000001
+    assert total["pick"] == "NEED_10"
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "needs", "files": ORDER_FILES}],
+    indirect=True,
+)
+def test_need_id_order_does_not_depend_on_the_build_history(test_app):
+    """An incremental build gives the same ``calc_sum`` and ``copy(filter=)`` values.
+
+    Re-reading a document purges its needs and inserts them again at the end of the
+    environment's needs, so before need-id order the second build added in another
+    order (``0.6`` became ``0.6000000000000001``) and copied from another need
+    (``SUM_C`` became ``SUM_B``), from the same sources.
+    """
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    first = _built_needs(app)["TOTAL"]
+    first_status_length = len(app._status.getvalue())
+
+    # newer than the time the first build read it, whatever the file system's clock
+    # resolution, so the second build re-reads ``a.rst`` (``SUM_C``) and nothing else
+    later = time.time_ns() + 60_000_000_000
+    os.utime(Path(app.srcdir, "a.rst"), ns=(later, later))
+    app.build()
+    assert_no_warnings(app)
+    assert (
+        "0 added, 1 changed, 0 removed" in app._status.getvalue()[first_status_length:]
+    )
+    second = _built_needs(app)["TOTAL"]
+
+    assert (second["total"], second["pick"]) == (first["total"], first["pick"])
+
+
+LINKS_ONLY_INDEX = """\
+Links only
+==========
+
+.. req:: Third summand
+   :id: SUM_C
+   :hours: 0.3
+
+.. req:: Second summand
+   :id: SUM_B
+   :hours: 0.2
+
+.. req:: First summand
+   :id: SUM_A
+   :hours: 0.1
+
+.. req:: Links in reverse id order
+   :id: LINKSUM_REV
+   :links: SUM_C, SUM_B, SUM_A
+   :total: [[calc_sum("hours", links_only=True)]]
+
+.. req:: Links in id order
+   :id: LINKSUM_FWD
+   :links: SUM_A, SUM_B, SUM_C
+   :total: [[calc_sum("hours", links_only=True)]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), ORDER_CONF),
+                (Path("index.rst"), LINKS_ONLY_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_calc_sum_links_only_adds_in_the_written_link_order(test_app):
+    """``calc_sum`` with ``links_only`` adds in the order the links are written.
+
+    That order is already deterministic (it is the source's), and it is the order
+    ubCode adds a ``links_only`` sum in, so it is kept rather than moved to need-id
+    order: the same three links written in two orders give two different totals,
+    on purpose.
+    """
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    needs = _built_needs(app)
+    assert needs["LINKSUM_REV"]["total"] == 0.6
+    assert needs["LINKSUM_FWD"]["total"] == 0.6000000000000001
+
+
+NEEDLESS_SUM_INDEX = """\
+Sum outside a need
+==================
+
+Total: :ndf:`calc_sum("hours")`
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), ORDER_CONF),
+                (Path("index.rst"), NEEDLESS_SUM_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_calc_sum_outside_a_need_names_itself(test_app):
+    """``calc_sum`` called outside a need reports its own name.
+
+    The message used to name ``check_linked_values``, copied from that function.
+    """
+    app = test_app
+    app.build()
+    warnings = build_warnings(app)
+    assert len(warnings) == 1, warnings
+    assert (
+        "Error while executing function 'calc_sum': No need given for calc_sum"
+        in warnings[0]
+    )
