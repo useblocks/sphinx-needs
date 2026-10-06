@@ -75,13 +75,14 @@ Bug fixes
   instead of crashing the build (:issue:`2038`)
 
   A field of :ref:`needs_fields` is nullable unless it says otherwise, so a need that does
-  not set it holds no value, and appending to it ended the build with
-  ``Value after * must be an iterable, not NoneType``, or, for a dynamic function, with
-  ``Cannot append non-string/array value``. Appending to an unset field now sets it to
-  the appended value, as ``:+tags:`` does on a need without tags. The two events an
-  extension can connect to around the ``needextend`` directives,
-  ``needs-before-post-processing`` and ``needs-before-sealing``, are now documented in
-  the :ref:`api`.
+  not set it holds no value. Appending a value to such an unset array field ended the
+  build with ``Value after * must be an iterable, not NoneType``, and appending a dynamic
+  function to an unset array or string field ended it with
+  ``Cannot append non-string/array value``; appending a value to an unset string field
+  already set it. Appending to an unset field now sets it to the appended value in every
+  case, as ``:+tags:`` does on a need without tags. The two events an extension can
+  connect to around the ``needextend`` directives, ``needs-before-post-processing`` and
+  ``needs-before-sealing``, are now documented in the :ref:`api`.
 
 - 🐛 An :ref:`if <if>` condition whose result has no truth value is reported, instead of
   ending the build **(changed output)** (:issue:`2025`, :pr:`2029`)
