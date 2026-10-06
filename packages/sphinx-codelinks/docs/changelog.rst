@@ -184,9 +184,9 @@ New and Improved
   id, and the page's back-link is a POSIX path on Windows too
   (`#2082 <https://github.com/useblocks/sphinx-needs/issues/2082>`__).
 
-- 🐛 The source copies and pages are build state: written on every HTML build whether or
-  not the directive's document is read again, under ``-j N`` too, and by HTML builders
-  only (`#2070 <https://github.com/useblocks/sphinx-needs/issues/2070>`__, and the missing
+- 🐛 The source copies and pages are build state: kept up to date by every HTML build
+  whether or not the directive's document is read again, under ``-j N`` too, and by HTML
+  builders only (`#2070 <https://github.com/useblocks/sphinx-needs/issues/2070>`__, and the missing
   pages of `#2044 <https://github.com/useblocks/sphinx-needs/issues/2044>`__).
 
   With local URLs, each source file a need is created from or a reference names is copied
@@ -196,9 +196,10 @@ New and Improved
   back: a removed output directory, a second builder sharing the doctrees (``html`` then
   ``dirhtml``) or a parallel build left dead local links. What to copy and page is now kept
   in the environment, with the document (or the scanned project) it came from, and every
-  HTML build writes them all; each page's ``[docs]`` link is the builder's own relative URI,
-  so a ``dirhtml`` page links back correctly too. That costs every build the pages: roughly
-  25 ms per 200-line file. A LaTeX build no longer drops source copies into its output, and
+  HTML build writes those its output lacks or holds out of date; each page's ``[docs]`` link
+  is the builder's own relative URI, so a ``dirhtml`` page links back correctly too. An
+  unchanged build rewrites no copy or page; a page is written again when its source
+  changed, its document was read again, or the output lacks it. A LaTeX build no longer drops source copies into its output, and
   a source removed before the pages are written warns ``codelinks.source_page``.
 
 - ⬆️ ``typer`` is no longer capped below 0.26.8. The cap protected the documentation build,

@@ -185,7 +185,8 @@ def url_context(
 @dataclass(frozen=True)
 class SourcePage:
     """A source file a local URL names: copied into the HTML output, and paged beside
-    its copy (``<target stem>.html``), by every HTML build.
+    its copy (``<target stem>.html``), by every HTML build whose output lacks them or
+    holds them out of date.
 
     Recorded in the environment when a document is read (by host document) or a project
     without a directive is scanned (in its ``ConfigOnlyScan``); the copy and the page are

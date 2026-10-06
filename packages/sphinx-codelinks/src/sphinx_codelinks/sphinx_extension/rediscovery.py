@@ -26,9 +26,10 @@ The PAGES store (:func:`source_pages_store`, env attribute ``codelinks_source_pa
 holds, under the document hosting each ``src-trace`` directive, the
 :class:`~sphinx_codelinks.sphinx_extension.project_analysis.SourcePage` of each file its
 local URLs name; a config-only project's ride in its ``ConfigOnlyScan``. Every HTML
-build copies and pages them all at ``html-collect-pages`` (:func:`effective_pages`), so
-the output directory is build state: a cleaned one, a second builder's, or a document a
-``-j N`` worker read gets its pages, whether or not the document is read again.
+build writes, at ``html-collect-pages`` (:func:`effective_pages`), each copy and page its
+output lacks or holds out of date, so the output directory is build state: a cleaned
+one, a second builder's, or a document a ``-j N`` worker read gets its pages, whether or
+not the document is read again.
 
 Sphinx pickles the environment only when a document was read or ``env-updated``
 returned one. So the ``env-updated`` handler also compares the references the attach
@@ -301,9 +302,22 @@ _UNREAD: weakref.WeakKeyDictionary[BuildEnvironment, set[str]] = (
 )
 
 
+#: the documents a build reads, whole (``_UNREAD`` shrinks as they are read): a source
+#: page whose ``[docs]`` links name one of them is written again. In memory only
+_READ: weakref.WeakKeyDictionary[BuildEnvironment, frozenset[str]] = (
+    weakref.WeakKeyDictionary()
+)
+
+
 def note_documents_to_read(env: BuildEnvironment, docnames: Iterable[str]) -> None:
     """Keep the documents this build reads (``env-before-read-docs``)."""
     _UNREAD[env] = set(docnames)
+    _READ[env] = frozenset(_UNREAD[env])
+
+
+def documents_read(env: BuildEnvironment) -> frozenset[str]:
+    """The documents this build read (all of them, ``env-before-read-docs``'s list)."""
+    return _READ.get(env, frozenset())
 
 
 def is_unread(env: BuildEnvironment, docname: str) -> bool:

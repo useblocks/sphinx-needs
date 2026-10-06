@@ -1,4 +1,5 @@
 import contextlib
+import os
 import shutil
 from collections.abc import Iterator  # only in python 3.11 afterwards
 from pathlib import Path, PurePosixPath
@@ -6,6 +7,7 @@ from timeit import default_timer as timer  # Used for timing measurements
 from typing import Any, cast
 
 from sphinx.application import Sphinx
+from sphinx.builders.html import StandaloneHTMLBuilder
 from sphinx.config import Config as _SphinxConfig
 from sphinx.environment import BuildEnvironment
 from sphinx.util import logging
@@ -34,6 +36,7 @@ from sphinx_codelinks.sphinx_extension.project_analysis import git_root_warnings
 from sphinx_codelinks.sphinx_extension.rediscovery import (
     attach_on_post_processing,
     config_only_refs_store,
+    documents_read,
     effective_pages,
     find_affected_documents,
     find_outdated_scopes,
@@ -147,13 +150,40 @@ def add_custom_css(
     _context: dict[str, Any],
     _doctree: Any,
 ) -> None:
-    if templatename != "page.html":
-        return
-    config = CodeLinksConfig.from_sphinx(app.config)
-    if pagename in {
-        _pagename(page.target) for page in effective_pages(app.env, config)
-    }:
+    # the key the context of every page generate_code_page yields carries
+    if templatename == "page.html" and _context.get(SOURCE_PAGE_KEY):
         app.add_css_file("_static/source_tracing/ub_sct.css")
+
+
+#: the context key that marks a source page, for :func:`add_custom_css`
+SOURCE_PAGE_KEY = "codelinks_source_page"
+
+
+def _copy_outdated(copied: Path, source: os.stat_result) -> bool:
+    """Whether the copy is missing, of another size, or older than its source."""
+    try:
+        current = copied.stat()
+    except OSError:
+        return True
+    return current.st_size != source.st_size or source.st_mtime_ns > current.st_mtime_ns
+
+
+def _page_outdated(
+    outfile: Path,
+    source: os.stat_result,
+    anchors: tuple[tuple[int, str, str], ...],
+    read: frozenset[str],
+) -> bool:
+    """Whether a source page must be written: its output file is missing or older than
+    the source, or a document its ``[docs]`` links name was read in this build (a need
+    that moved to another document, a renamed document)."""
+    try:
+        written = outfile.stat()
+    except OSError:
+        return True
+    if source.st_mtime_ns > written.st_mtime_ns:
+        return True
+    return any(docname in read for _line, docname, _need_id in anchors)
 
 
 def _pagename(target: str) -> str:
@@ -161,25 +191,33 @@ def _pagename(target: str) -> str:
     return PurePosixPath(target).with_suffix("").as_posix()
 
 
-def generate_code_page(app: Sphinx) -> Iterator[tuple[str, dict[str, str], str]]:
-    """Copy every recorded source file into the output and yield its page
-    (``html-collect-pages``, so for HTML builders only, and on every such build).
+def generate_code_page(app: Sphinx) -> Iterator[tuple[str, dict[str, Any], str]]:
+    """Copy every recorded source file into the output and yield its page, where they
+    are not up to date (``html-collect-pages``, so for HTML builders only).
 
     The pages come from the environment (:func:`~.rediscovery.effective_pages`), so a
     cleaned output directory, a second builder sharing the doctrees, or a document read
-    by a ``-j N`` worker gets them as a serial first build does. Each ``[docs]`` link is
-    the builder's own relative URI from the page to the need's document. A source that
-    cannot be copied any more (removed since its document was read) warns and is
-    skipped.
+    by a ``-j N`` worker gets them as a serial first build does. A copy is written when
+    it is missing, of another size or older than its source; a page when its output
+    file is missing or older than the source, or a document its ``[docs]`` links name
+    was read in this build. Each ``[docs]`` link is the builder's own relative URI from
+    the page to the need's document. A source that cannot be read any more (removed
+    since its document was read) warns and is skipped.
     """
+    builder = app.builder
+    if not isinstance(builder, StandaloneHTMLBuilder):  # the event is theirs alone
+        return
     config = CodeLinksConfig.from_sphinx(app.config)
     outdir = Path(app.outdir)
+    read = documents_read(app.env)
     for page in effective_pages(app.env, config):
         copied = outdir / page.target
         try:
-            copied.parent.mkdir(parents=True, exist_ok=True)
-            # as bytes: no codec, no newline translation
-            shutil.copyfile(page.source, copied)
+            source = os.stat(page.source)
+            if _copy_outdated(copied, source):
+                copied.parent.mkdir(parents=True, exist_ok=True)
+                # as bytes: no codec, no newline translation
+                shutil.copyfile(page.source, copied)
         except OSError as error:
             logger.warning(
                 f"source page {page.target!r} not written: cannot copy "
@@ -189,13 +227,17 @@ def generate_code_page(app: Sphinx) -> Iterator[tuple[str, dict[str, str], str]]
             )
             continue
         pagename = _pagename(page.target)
+        outfile = Path(builder.get_outfilename(pagename))
+        if not _page_outdated(outfile, source, page.anchors, read):
+            continue
         lineno_href = {
-            line: f"{app.builder.get_relative_uri(pagename, docname)}#{need_id}"
+            line: f"{builder.get_relative_uri(pagename, docname)}#{need_id}"
             for line, docname, need_id in page.anchors
         }
         context = {
             "title": f"Source Code Tracing: {copied.name}",
             "body": html_wrapper(copied, lineno_href=lineno_href),
+            SOURCE_PAGE_KEY: True,
         }
         yield pagename, context, "page.html"
 
