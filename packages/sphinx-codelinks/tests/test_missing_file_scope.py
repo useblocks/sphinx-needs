@@ -38,8 +38,8 @@ def _missing(root: Path) -> str:
     suffix = " [codelinks.missing_file]" if _SHOWS_WARNING_TYPES else ""
     src = (root / "src").resolve().as_posix()
     return (
-        f"<srcdir>/index.rst:{LINE}: WARNING: src-trace: file traced.cpp does not "
-        f"exist below {src}{suffix}"
+        f"<srcdir>/index.rst:{LINE}: WARNING: src-trace: traced.cpp is not a file "
+        f"below {src}{suffix}"
     )
 
 

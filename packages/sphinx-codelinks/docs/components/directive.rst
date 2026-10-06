@@ -32,6 +32,9 @@ Regarding the **file** and **directory** options:
 - They are optional and mutually exclusive.
 - The given paths are relative to ``src_dir`` defined in the source tracing configuration.
 - If not given, the whole project will be examined.
+- A **file** that is not an existing file below ``src_dir`` (a missing path, or a
+  directory) traces nothing: the directive warns once (``codelinks.missing_file``) and the
+  build goes on, and the directive traces the file once it exists.
 
 Example
 -------
