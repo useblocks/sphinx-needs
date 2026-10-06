@@ -1,5 +1,6 @@
 def tr_link(app, need, needs, test_option, target_option, *args, **kwargs):
-    if test_option not in need:
+    # Fields default to None on needs that do not set them (e.g. non-test needs)
+    if not need.get(test_option):
         return ""
 
     # Allow for multiple values in option

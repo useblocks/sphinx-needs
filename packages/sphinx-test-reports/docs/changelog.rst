@@ -175,6 +175,10 @@ New and Improved
   ``TypeError`` instead of rendering: that branch iterated the data-option list outside the
   guard its sibling branch keeps it inside.
 
+- 🐛 ``tr_link`` no longer warns ``'NoneType' object has no attribute 'split'`` on a need
+  whose source option is unset. Fields default to ``None`` since 1.4.0, so the old
+  check for the key being present never fired; it now checks for a value and links nothing.
+
 - 👌 The error node for a missing test file no longer passes a second argument to
   ``docutils``' ``Text()``. That argument (``rawsource``) is ignored, deprecated, and due to
   be removed in Docutils 2.0; on every docutils this package supports it still works, so
