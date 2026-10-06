@@ -118,6 +118,26 @@ def would_be_id(app: Sphinx, need: Mapping[str, Any]) -> str | None:
     )
 
 
+def report_oneline_warnings(src_analyse: SourceAnalyse, root: Path) -> None:
+    """Report the analysis' malformed one-line markers, each at its source line.
+
+    One type for the five kinds, ``codelinks.oneline``, so one ``suppress_warnings``
+    entry silences them all; the kind leads the message.
+
+    :param src_analyse: An analysis that has run.
+    :param root: The root the locations are relative to, as for the other warnings at a
+        source line.
+    """
+    for warning in src_analyse.oneline_warnings:
+        logger.warning(
+            f"{warning.sub_type}: {warning.msg}",
+            type="codelinks",
+            subtype="oneline",
+            location=f"{_relative_posix(Path(warning.file_path), root)}:"
+            f"{warning.lineno}",
+        )
+
+
 def validate_option(options: dict[str, str]) -> None:
     if "project" not in options:
         raise ValueError("Project option must be set.")
@@ -207,6 +227,9 @@ class SourceTracingDirective(SphinxDirective):
             self.env.note_dependency(str(preprocessor.compile_commands))
         src_analyse = SourceAnalyse(analyse_config, name=project)
         src_analyse.run(log_summary=False)
+        report_oneline_warnings(
+            src_analyse, src_analyse.git_root or src_analyse.analyse_config.src_dir
+        )
 
         # The fields' string links are registered once, at config-inited
         # (``sphinx_extension/string_links.py``): written here, at read time, they
