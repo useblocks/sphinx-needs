@@ -616,7 +616,7 @@ def test_one_character_start_with_separator_still_warns(
 
 
 def test_one_character_start_with_two_fields_is_still_a_need() -> None:
-    """``@brief Does a, b`` has a separator, so it is the need it always was."""
+    """A line with the separator, ``@brief Does a, b``, is the need it always was."""
     assert oneline_parser(
         f"// @brief Does a, b{UNIX_NEWLINE}", ONELINE_COMMENT_STYLE_DEFAULT
     ) == {

@@ -95,9 +95,9 @@ def test_the_warning_is_suppressible(tmp_path: Path, make_app: _MakeApp) -> None
 def test_documentation_tags_on_the_default_style_do_not_warn(
     tmp_path: Path, make_app: _MakeApp
 ) -> None:
-    """``@param`` and ``@return`` are not markers; ``@brief Does a, IMPL_BRIEF`` is a
-    need, as it always was; ``@see A, B, C, D, E`` has five fields where four are
-    allowed, and warns at its line."""
+    """On the default style, ``@param`` and ``@return`` lines are not markers, the
+    ``brief`` line, which has the separator, is a need as it always was, and the
+    ``see`` line, five fields where four are allowed, warns at its line."""
     _project(tmp_path, files={**REFS, "src/x.cpp": DOXYGEN})
     app = _build(tmp_path, make_app)
 
