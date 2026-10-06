@@ -10,10 +10,8 @@ from sphinx.environment import BuildEnvironment
 from sphinx.util import logging
 from sphinx.util.fileutil import copy_asset
 
-from sphinx_codelinks.analyse.projects import AnalyseProjects
 from sphinx_codelinks.config import (
     DEFAULT_CONFIG_TOML,
-    SRC_TRACE_CACHE,
     CodeLinksConfig,
     CodeLinksConfigType,
     CodeLinksProjectConfigType,
@@ -127,7 +125,6 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.connect("html-collect-pages", generate_code_page)
     app.connect("html-page-context", add_custom_css)
     app.connect("builder-inited", builder_inited)
-    app.connect("build-finished", emit_warnings)
     app.connect("build-finished", debug.process_timing)
     return {
         "version": "builtin",
@@ -363,18 +360,3 @@ def check_sphinx_configuration(app: Sphinx, _config: _SphinxConfig) -> None:
         logger.warning(warning, type="codelinks", subtype="remote_url_pattern")
     for warning in git_root_warnings(app.confdir, config):
         logger.warning(warning, type="codelinks", subtype="git_root")
-
-
-def emit_warnings(
-    app: Sphinx,
-    _env: BuildEnvironment,
-) -> None:
-    warnings = AnalyseProjects.load_warnings(Path(app.outdir) / SRC_TRACE_CACHE)
-    if not warnings:
-        return
-    for warning in warnings:
-        logger.warning(
-            f"{warning.file_path}:{warning.lineno}: {warning.msg}",
-            type=warning.type,
-            subtype=warning.sub_type,
-        )

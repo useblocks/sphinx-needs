@@ -592,9 +592,6 @@ def load_codelinks_table(path: Path) -> dict[str, object] | None:
     return select_table(load_toml(path), CODELINKS_TABLE, source=path)
 
 
-SRC_TRACE_CACHE: str = "src_trace_cache"
-
-
 class SourceTracingLineHref:
     """Global class for the mapping between source file line numbers and Sphinx documentation links."""
 
