@@ -161,7 +161,7 @@ from sphinx_needs.schema.config_utils import (
 )
 from sphinx_needs.schema.process import process_schemas
 from sphinx_needs.services.github import GithubService
-from sphinx_needs.string_links import compile_string_links
+from sphinx_needs.string_links import compile_string_links, fold_string_links
 from sphinx_needs.utils import node_match
 from sphinx_needs.variant_data import VariantDataProxy
 from sphinx_needs.warnings import process_warnings
@@ -1385,6 +1385,10 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         _set_global_default(
             schema, "needs_global_options", name, default_config, allow_coercion=True
         )
+
+    # each field takes its string link from needs_string_links, as validated at
+    # config-inited: the renderers read it from the field, not from the table
+    fold_string_links(schema, needs_config)
 
     SphinxNeedsData(env)._set_schema(schema)
 

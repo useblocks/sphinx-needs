@@ -59,7 +59,8 @@ Schema
 
 .. automodule:: sphinx_needs.needs_schema
    :members: FieldsSchema, FieldSchema, FieldFunctionArray, LinksFunctionArray,
-             FieldLiteralValue, LinkSchema, LinkDisplayConfig, LinksLiteralValue, AllowedTypes
+             FieldLiteralValue, LinkSchema, LinkDisplayConfig, LinksLiteralValue, AllowedTypes,
+             StringLinkRule
 
 .. automodule:: sphinx_needs.schema.config
    :members: FieldStringSchemaType, FieldBooleanSchemaType,

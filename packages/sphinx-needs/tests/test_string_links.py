@@ -18,6 +18,7 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
+from sphinx.util.parallel import parallel_available
 
 from sphinx_needs_testkit import build_warnings
 
@@ -603,7 +604,10 @@ def test_undeclared_field_in_options_warns(
     )
     warnings = warnings_of(app)
     assert "'options' names 'no_such_field'" in warnings, warnings
-    assert "not a registered need field" in warnings, warnings
+    assert (
+        "which is not a field that can carry a string link (an extra field, or a "
+        "core field of the field schema), so it is ignored." in warnings
+    ), warnings
     # warn only: the entry is still applied to the field that *is* registered
     assert 'href="https://tracker.example.com/AB-1"' in need_html(app)
 
@@ -1010,3 +1014,848 @@ def test_compile_divergence_is_reported_once(
         if "passed validation but failed to compile" in line
     ]
     assert len(lines) == 1, lines
+
+
+# --------------------------------------------------------------------------
+# each field carries the rule of the first entry naming it: the renderers
+# read the field's rule, so these pin what that move must keep
+# --------------------------------------------------------------------------
+
+TABLE_INDEX = """\
+String links
+============
+
+.. req:: A need
+   :id: SLINK_1
+   :ticket: AB-1
+
+   Body.
+
+.. needtable::
+   :columns: id;ticket
+   :style: table
+"""
+
+
+def _table_cell(html: str, field: str) -> str:
+    """Extract the markup of one needtable cell from a rendered page."""
+    match = re.search(
+        rf'<td class="[^"]*\bneeds_{field}\b[^"]*">.*?</td>', html, flags=re.DOTALL
+    )
+    assert match is not None, f"no needtable cell for {field!r} in\n{html}"
+    return match.group(0)
+
+
+@pytest.mark.parametrize(
+    ("first_regex", "expected"),
+    [
+        pytest.param(GOOD_LINK["regex"], "FIRST AB-1", id="first-matches"),
+        pytest.param("^WILL-NEVER-MATCH$", None, id="first-blocks-second"),
+    ],
+)
+def test_first_declared_entry_wins_on_both_surfaces(
+    first_regex: str,
+    expected: str | None,
+    make_app: Any,
+    sphinx_test_tempdir: Any,
+) -> None:
+    """The first declared entry naming a field is the field's rule, in the need's meta
+    area AND in a needtable cell: a later entry naming the same field never draws,
+    not even where the first one does not match (no fallthrough).
+
+    ``test_first_matching_conf_wins`` and ``test_first_conf_blocks_a_matching_second_one``
+    pin this for the meta area only; the needtable is the other renderer.
+    """
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {
+            "first": {
+                **GOOD_LINK,
+                "regex": first_regex,
+                "link_name": "FIRST {{value}}",
+            },
+            "second": {**GOOD_LINK, "link_name": "SECOND {{value}}"},
+        },
+        index=TABLE_INDEX,
+    )
+    assert warnings_of(app) == "", warnings_of(app)
+    html = need_html(app)
+    for surface in (_meta_span(html, "ticket"), _table_cell(html, "ticket")):
+        assert "SECOND" not in surface, surface
+        if expected is None:
+            assert "<a " not in surface, surface
+            assert "AB-1" in surface, surface
+        else:
+            assert expected in surface, surface
+
+
+PAGE = """\
+Page {n}
+=======
+
+.. req:: Need {n}
+   :id: SLINK_P{n}
+   :ticket: AB-{n}
+   :lateopt: LATE-{n}
+
+   Body.
+"""
+
+PAGES = 7
+
+# ``build_pages`` proves a ``-j 2`` build really read in parallel, which Sphinx only
+# does with the forking start method: elsewhere (Windows) its read is serial
+# whatever ``-j`` says, so there is nothing to prove and the proof is skipped.
+needs_a_parallel_read = pytest.mark.skipif(
+    not parallel_available,
+    reason="Sphinx reads serially regardless of -j here (Windows: no forking"
+    " start method, so sphinx.util.parallel.parallel_available is False)",
+)
+
+PARALLEL_INDEX = (
+    "String links\n============\n\n.. toctree::\n\n"
+    + "".join(f"   page{n}\n" for n in range(1, PAGES + 1))
+    + "\n.. needtable::\n   :columns: id;ticket;lateopt\n   :style: table\n"
+)
+
+LATE_LINK = {
+    "regex": r"^(?P<value>LATE-\d+)$",
+    "link_url": "https://late.example.com/{{value}}",
+    "link_name": "L:{{value}}",
+    "options": ["lateopt"],
+}
+
+
+def build_pages(
+    make_app: Any,
+    tempdir: Any,
+    string_links: Any,
+    *,
+    parallel: int,
+    extra: str = "",
+) -> Any:
+    """Build an index with a needtable plus ``PAGES`` pages of one need each.
+
+    Seven documents give a ``-j 2`` build real work to share between its workers.
+    """
+    from sphinx_needs_testkit import create_src_files_in_tmpdir
+
+    srcdir = create_src_files_in_tmpdir(
+        [
+            (
+                Path("conf.py"),
+                conf_py(
+                    string_links,
+                    "needs_fields['lateopt'] = {'nullable': True}\n" + extra,
+                ),
+            ),
+            (Path("index.rst"), PARALLEL_INDEX),
+            *((Path(f"page{n}.rst"), PAGE.format(n=n)) for n in range(1, PAGES + 1)),
+        ],
+        tempdir,
+    )
+    app = make_app(srcdir=srcdir, buildername="html", parallel=parallel)
+    app.build()
+    assert app.parallel == parallel
+    if parallel > 1:
+        # a parallel read reports its chunks ("index .. page3"), a serial one each
+        # document, so this proves the build really was shared between workers
+        status = re.sub(r"\x1b\[[0-9;]*m", "", app._status.getvalue())
+        assert re.search(r"reading sources\.\.\. \[ *\d+%\] \S+ \.\. ", status), status
+    return app
+
+
+def _page(app: Any, name: str) -> str:
+    return (Path(app.outdir) / f"{name}.html").read_text()
+
+
+@needs_a_parallel_read
+def test_links_render_in_a_parallel_build(
+    make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """Under ``-j 2`` every need's card and the needtable still link.
+
+    The string links are rendered in the main process, which resolves every doctree
+    before handing it to a write worker; what pickles the schema, and so its rules, is
+    the parallel read workers returning the environment -- and, in every build, serial
+    too, the ``environment.pickle`` written to disk -- so a rule that could not be
+    pickled ends the build rather than rendering plain text.
+    """
+    app = build_pages(make_app, sphinx_test_tempdir, {"t": GOOD_LINK}, parallel=2)
+    assert warnings_of(app) == "", warnings_of(app)
+    table = _page(app, "index")
+    for n in range(1, PAGES + 1):
+        href = f'href="https://tracker.example.com/AB-{n}">T:AB-{n}</a>'
+        assert href in _meta_span(_page(app, f"page{n}"), "ticket")
+        assert table.count(href) == 1, table
+
+
+LATE_WRITER = """
+def _add_late_entry(app, config):
+    config.needs_string_links = {{**config.needs_string_links, "late": {late!r}}}
+
+
+def setup(app):
+    app.connect("config-inited", _add_late_entry, priority=700)
+"""
+
+
+@pytest.mark.parametrize(
+    "parallel",
+    [
+        pytest.param(0, id="serial"),
+        pytest.param(2, marks=needs_a_parallel_read, id="parallel"),
+    ],
+)
+def test_an_entry_added_after_validation_still_renders(
+    parallel: int, make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """An entry another extension writes at ``config-inited`` after validation
+    (priority 551) is never validated, but still renders, serially and under ``-j 2``.
+
+    Validation is the only thing that runs at 551; the rules are taken from the table
+    when the schema is built, which is later, so such an entry is still seen.
+    """
+    app = build_pages(
+        make_app,
+        sphinx_test_tempdir,
+        {"t": GOOD_LINK},
+        parallel=parallel,
+        extra=LATE_WRITER.format(late=LATE_LINK),
+    )
+    assert warnings_of(app) == "", warnings_of(app)
+    assert "late" in app.config.needs_string_links
+    table = _page(app, "index")
+    for n in range(1, PAGES + 1):
+        href = f'href="https://late.example.com/LATE-{n}">L:LATE-{n}</a>'
+        assert href in _meta_span(_page(app, f"page{n}"), "lateopt")
+        assert table.count(href) == 1, table
+
+
+# --------------------------------------------------------------------------
+# the rule on the field: what the schema carries, and the two behaviours the
+# move changes (disclosed in the changelog)
+# --------------------------------------------------------------------------
+
+STATUS_LINK = {
+    "regex": r"^(?P<value>\w+)$",
+    "link_url": "https://status.example.com/{{value}}",
+    "link_name": "S:{{value}}",
+    "options": ["status"],
+}
+
+SCHEMA_INDEX = """\
+String links
+============
+
+.. req:: A need
+   :id: SLINK_1
+   :status: open
+   :ticket: AB-1
+   :links: SLINK_2
+
+   Body.
+
+.. req:: Another need
+   :id: SLINK_2
+"""
+
+
+def test_the_field_schema_carries_the_rule(
+    make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """After a build, each claimed field's ``FieldSchema`` holds the rule of the first
+    entry naming it, as source strings; an unclaimed field has none, and a link field
+    cannot carry one at all."""
+    from sphinx_needs.data import SphinxNeedsData
+    from sphinx_needs.needs_schema import StringLinkRule
+
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {
+            "s": STATUS_LINK,
+            "t": GOOD_LINK,
+            # a later entry naming fields that already have a rule changes neither
+            "later": {**GOOD_LINK, "options": ["ticket", "status"]},
+        },
+        index=SCHEMA_INDEX,
+    )
+    assert warnings_of(app) == "", warnings_of(app)
+    schema = SphinxNeedsData(app.env).get_schema()
+
+    status = schema.get_core_field("status")
+    ticket = schema.get_extra_field("ticket")
+    assert status is not None
+    assert ticket is not None
+    assert status.string_link == StringLinkRule(
+        name="s",
+        regex=STATUS_LINK["regex"],
+        link_url=STATUS_LINK["link_url"],
+        link_name=STATUS_LINK["link_name"],
+    )
+    assert ticket.string_link is not None
+    assert ticket.string_link.name == "t"
+    other = schema.get_extra_field("other")
+    assert other is not None
+    assert other.string_link is None
+    title = schema.get_core_field("title")
+    assert title is not None
+    assert title.string_link is None
+    links = schema.get_link_field("links")
+    assert links is not None
+    assert not hasattr(links, "string_link")
+    # and the rendered page is what the rules say
+    html = need_html(app)
+    assert 'href="https://status.example.com/open">S:open</a>' in html
+    assert 'href="https://tracker.example.com/AB-1">T:AB-1</a>' in html
+
+
+def test_a_schema_carrying_rules_pickles(
+    make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """The schema is pickled with the build environment (to ``-j N`` workers, and to
+    disk), so its rules must survive ``pickle`` -- a compiled pattern included."""
+    import pickle
+
+    from sphinx_needs.data import SphinxNeedsData
+
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {
+            "s": STATUS_LINK,
+            "t": {
+                **GOOD_LINK,
+                "regex": re.compile(r"^(?P<value>[a-z]+-\d+)$", re.IGNORECASE),
+            },
+        },
+        index=SCHEMA_INDEX,
+    )
+    assert warnings_of(app) == "", warnings_of(app)
+    schema = SphinxNeedsData(app.env).get_schema()
+    loaded = pickle.loads(pickle.dumps(schema))
+
+    for name in ("status", "ticket"):
+        before = schema.get_core_field(name) or schema.get_extra_field(name)
+        after = loaded.get_core_field(name) or loaded.get_extra_field(name)
+        assert before is not None
+        assert after is not None
+        assert before.string_link is not None
+        assert after.string_link == before.string_link
+    ticket = loaded.get_extra_field("ticket")
+    assert ticket is not None
+    assert ticket.string_link is not None
+    assert isinstance(ticket.string_link.regex, re.Pattern)
+    assert ticket.string_link.regex.flags & re.IGNORECASE
+    # and the page rendered the compiled pattern's link, flags and all
+    assert 'href="https://tracker.example.com/AB-1"' in need_html(app)
+
+
+LATE_WRITERS = """
+from docutils.parsers.rst import Directive
+
+READ_LINK = {read!r}
+DIR_LINK = {dir!r}
+
+
+def _add_read_entry(app, env, docnames):
+    app.config.needs_string_links = {{**app.config.needs_string_links, "read": READ_LINK}}
+
+
+class _WriteConf(Directive):
+    def run(self):
+        config = self.state.document.settings.env.config
+        config.needs_string_links = {{**config.needs_string_links, "dir": DIR_LINK}}
+        return []
+
+
+def setup(app):
+    app.connect("env-before-read-docs", _add_read_entry, priority=900)
+    app.add_directive("writeconf", _WriteConf)
+"""
+
+LATE_INDEX = """\
+String links
+============
+
+.. writeconf::
+
+.. req:: A need
+   :id: SLINK_1
+   :ticket: AB-1
+   :readopt: R-1
+   :diropt: D-1
+
+   Body.
+
+.. needtable::
+   :columns: id;readopt;diropt
+   :style: table
+"""
+
+
+def test_an_entry_written_after_the_schema_is_built_does_not_render(
+    make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """The rules are taken from the table when the schema is built, at
+    ``env-before-read-docs``; an entry written after that -- by a handler of the same
+    event at a later priority, or by a directive while the documents are read -- is
+    not seen, in the meta area or in a needtable.
+
+    The directive-time write never rendered under ``-j N`` (each worker writes into its
+    own copy of the configuration); it now does not render serially either.
+    """
+    link = {
+        "regex": r"^(?P<value>.+)$",
+        "link_url": "https://{kind}.example.com/{{{{value}}}}",
+        "link_name": "{kind}:{{{{value}}}}",
+    }
+    read_link = {
+        **{k: v.format(kind="read") for k, v in link.items()},
+        "options": ["readopt"],
+    }
+    dir_link = {
+        **{k: v.format(kind="dir") for k, v in link.items()},
+        "options": ["diropt"],
+    }
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {"t": GOOD_LINK},
+        index=LATE_INDEX,
+        extra=(
+            "needs_fields['readopt'] = {'nullable': True}\n"
+            "needs_fields['diropt'] = {'nullable': True}\n"
+            + LATE_WRITERS.format(read=read_link, dir=dir_link)
+        ),
+    )
+    assert warnings_of(app) == "", warnings_of(app)
+    # both writers did write their entry
+    assert {"read", "dir"} <= set(app.config.needs_string_links)
+    html = need_html(app)
+    for field, value in (("readopt", "R-1"), ("diropt", "D-1")):
+        for surface in (_meta_span(html, field), _table_cell(html, field)):
+            assert value in surface, surface
+            assert "<a " not in surface, surface
+    # the entry that was there when the schema was built still links
+    assert 'href="https://tracker.example.com/AB-1">T:AB-1</a>' in html
+
+
+UNCLAIMABLE_CONF = """
+needs_layouts = {
+    "custom": {
+        "grid": "simple",
+        "layout": {
+            "head": ['<<meta("title")>>'],
+            "meta": ['<<meta("section_name")>>', '<<meta("links")>>'],
+        },
+    }
+}
+"""
+
+UNCLAIMABLE_INDEX = """\
+Section A
+=========
+
+.. req:: A need
+   :id: SLINK_1
+   :links: SLINK_2
+   :layout: custom
+
+   Body.
+
+.. req:: Another need
+   :id: SLINK_2
+   :layout: custom
+
+.. req:: A need with the default layout
+   :id: SLINK_3
+
+.. needtable::
+   :columns: id;section_name
+   :style: table
+"""
+
+
+def test_a_field_without_a_field_schema_cannot_carry_a_rule(
+    make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """``options`` naming a core field outside the field schema (``section_name``,
+    ``type_name``) or a link field (``links``) is warned about when the schema is
+    built, and the value renders as plain text: in a needtable, through a custom
+    layout's ``meta()``, and in the heading of a need card, where every default layout
+    shows ``type_name`` -- the most visible place these values used to be linked."""
+    every = {
+        "regex": r"^(?P<value>.+)$",
+        "link_url": "https://any.example.com/{{value}}",
+        "link_name": "ANY {{value}}",
+    }
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {
+            "sec": {**every, "options": ["section_name", "type_name"]},
+            "lnk": {**every, "options": ["links"]},
+        },
+        index=UNCLAIMABLE_INDEX,
+        extra=UNCLAIMABLE_CONF,
+    )
+    assert [w for w in build_warnings(app) if "needs_string_links" in w] == [
+        f"WARNING: needs_string_links[{entry!r}]: 'options' names {name!r}, which is "
+        "not a field that can carry a string link (an extra field, or a core field "
+        "of the field schema), so it is ignored. [needs.string_link]"
+        for entry, name in (
+            ("sec", "section_name"),
+            ("sec", "type_name"),
+            ("lnk", "links"),
+        )
+    ], build_warnings(app)
+
+    html = need_html(app)
+    assert "any.example.com" not in html, html
+    assert "Section A" in _meta_span(html, "section_name")
+    assert "Section A" in _table_cell(html, "section_name")
+    assert "SLINK_2" in _meta_span(html, "links")
+    # the default layout's heading: `<<meta("type_name")>>`
+    heading = re.search(
+        r'<span class="needs_type_name"><span class="needs_data">[^<]*</span></span>',
+        html,
+    )
+    assert heading is not None, html
+    assert "Requirement" in heading.group(0), heading.group(0)
+
+
+# --------------------------------------------------------------------------
+# the fold itself
+# --------------------------------------------------------------------------
+
+
+def test_fold_claims_with_the_first_usable_entry(monkeypatch: Any) -> None:
+    """The fold, called directly: a name with no ``FieldSchema`` is warned about once
+    per entry; an entry that does not compile, or whose sources are not strings, is
+    reported once; an unusable entry holds a field only until a usable one names it,
+    and never takes a field from a usable one."""
+    from sphinx_needs import string_links as module
+    from sphinx_needs.needs_schema import FieldSchema, FieldsSchema
+
+    schema = FieldsSchema()
+    for name in ("status", "title", "tags"):
+        schema.add_core_field(FieldSchema(name=name, schema={"type": "string"}))
+    messages: list[str] = []
+    monkeypatch.setattr(
+        module,
+        "log_warning",
+        lambda _logger, message, _subtype, _location, **_kwargs: messages.append(
+            message
+        ),
+    )
+    broken = {**GOOD_LINK, "regex": "("}
+    config = SimpleNamespace(
+        needs_string_links={
+            "missing": {"options": ["status"]},
+            "callable": {**GOOD_LINK, "link_url": print, "options": ["status"]},
+            "broken": {**broken, "options": ["status", "title"]},
+            "good": {**GOOD_LINK, "options": ["status", "docname"]},
+            "good2": {**GOOD_LINK, "options": ["status"]},
+            "later_broken": {**broken, "options": ["tags", "title"]},
+            "later_good": {**GOOD_LINK, "options": ["tags"]},
+        }
+    )
+    module.fold_string_links(schema, module.NeedsSphinxConfig(config))
+
+    def rule(name: str) -> str | None:
+        field = schema.get_core_field(name)
+        assert field is not None
+        return None if field.string_link is None else field.string_link.name
+
+    # the first usable entry takes a field from an unusable one, and keeps it from
+    # a later usable one ...
+    assert rule("status") == "good"
+    # ... an unusable one never takes a field, but holds one nobody usable names
+    assert rule("title") == "broken"
+    assert rule("tags") == "later_good"
+    assert [m.split(":")[0] for m in messages] == [
+        "needs_string_links['missing']",
+        "needs_string_links['callable']",
+        "needs_string_links['broken']",
+        "needs_string_links['good']",
+        "needs_string_links['later_broken']",
+    ], messages
+    assert "passed validation but failed to compile" in messages[0]
+    assert "'link_url' is not a string" in messages[1]
+    assert "passed validation but failed to compile" in messages[2]
+    assert "'options' names 'docname', which is not a field" in messages[3]
+
+
+@pytest.mark.parametrize("value", [[], "", 0, None, [GOOD_LINK]])
+def test_fold_of_a_table_that_is_not_a_dict_is_empty(value: Any) -> None:
+    """A table that is not a dict claims nothing. Validation rebinds such a table to
+    ``{}``, so only a writer after it can leave one, and Sphinx's own type check warns
+    about that."""
+    from sphinx_needs import string_links as module
+    from sphinx_needs.needs_schema import FieldSchema, FieldsSchema
+
+    schema = FieldsSchema()
+    schema.add_core_field(FieldSchema(name="status", schema={"type": "string"}))
+    config = SimpleNamespace(needs_string_links=value)
+    module.fold_string_links(schema, module.NeedsSphinxConfig(config))
+    status = schema.get_core_field("status")
+    assert status is not None
+    assert status.string_link is None
+
+
+def test_field_schema_refuses_a_string_link_of_the_wrong_type() -> None:
+    """``string_link`` is type-checked on construction, like every other attribute."""
+    from sphinx_needs.needs_schema import FieldSchema
+
+    with pytest.raises(ValueError, match="string_link must be a StringLinkRule"):
+        FieldSchema(
+            name="status",
+            schema={"type": "string"},
+            string_link=GOOD_LINK,  # ty: ignore[invalid-argument-type]
+        )
+
+
+# --------------------------------------------------------------------------
+# names are checked when the schema is built, and every entry is compiled
+# there: fields registered late, and late entries that do not compile
+# --------------------------------------------------------------------------
+
+LATE_FIELD_CONF = """
+def _register_late(app, config):
+    from sphinx_needs.api import add_field
+
+    add_field("addopt", "registered after validation", nullable=True)
+
+
+def setup(app):
+    app.connect("config-inited", _register_late, priority=700)
+"""
+
+LATE_FIELD_INDEX = """\
+String links
+============
+
+.. req:: A need
+   :id: SLINK_1
+   :user: alice
+   :addopt: A-1
+
+   Body.
+
+.. needtable::
+   :columns: id;user;addopt
+   :style: table
+"""
+
+
+def test_fields_registered_after_validation_link_without_a_warning(
+    make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """A field registered after ``config-inited`` priority 551 -- the GitHub service
+    fields every project gets, or an ``add_field`` at a later priority -- has a
+    ``FieldSchema`` when the schema is built, so an entry naming it links, and nothing
+    claims that it is ignored. A name that really has no ``FieldSchema`` is warned
+    about once per entry, however often the entry names it."""
+    every = {
+        "regex": r"^(?P<value>.+)$",
+        "link_url": "https://late.example.com/{{value}}",
+        "link_name": "L:{{value}}",
+    }
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {
+            "late": {**every, "options": ["user", "addopt"]},
+            "x": {**every, "options": ["nope", "nope"]},
+            "y": {**every, "options": ["nope"]},
+        },
+        index=LATE_FIELD_INDEX,
+        extra=LATE_FIELD_CONF,
+    )
+    warnings = build_warnings(app)
+    assert not [w for w in warnings if "'user'" in w or "'addopt'" in w], warnings
+    assert [w for w in warnings if "needs_string_links" in w] == [
+        f"WARNING: needs_string_links[{entry!r}]: 'options' names 'nope', which is "
+        "not a field that can carry a string link (an extra field, or a core field "
+        "of the field schema), so it is ignored. [needs.string_link]"
+        for entry in ("x", "y")
+    ], warnings
+    html = need_html(app)
+    for value in ("alice", "A-1"):
+        href = f'href="https://late.example.com/{value}">L:{value}</a>'
+        assert html.count(href) == 2, html  # the card and the needtable
+
+
+LATE_TABLE_CONF = """
+BROKEN = {{
+    "regex": "(",
+    "link_url": "https://broken.example.com/{{{{value}}}}",
+    "link_name": "B:{{{{value}}}}",
+}}
+
+
+def _rewrite(app, config):
+    {body}
+
+
+def setup(app):
+    app.connect("config-inited", _rewrite, priority=700)
+"""
+
+
+def _late_table(body: str) -> str:
+    """A ``conf.py`` tail rewriting the table at ``config-inited`` priority 700."""
+    return LATE_TABLE_CONF.format(body=body)
+
+
+def _compile_failures(app: Any, entry: str) -> list[str]:
+    return [
+        w
+        for w in build_warnings(app)
+        if f"needs_string_links[{entry!r}]: passed validation but failed to compile"
+        in w
+    ]
+
+
+def test_a_late_entry_that_does_not_compile_does_not_shadow_a_later_one(
+    make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """An entry written after validation whose regex does not compile is reported once
+    and skipped for linking: the next entry naming the field draws, as it always has.
+    """
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {"good": GOOD_LINK},
+        extra=_late_table(
+            'config.needs_string_links = {"bad": {**BROKEN, "options": ["ticket"]},'
+            " **config.needs_string_links}"
+        ),
+    )
+    assert len(_compile_failures(app, "bad")) == 1, build_warnings(app)
+    assert 'href="https://tracker.example.com/AB-1">T:AB-1</a>' in _meta_span(
+        need_html(app), "ticket"
+    )
+
+
+def test_a_late_entry_that_does_not_compile_still_splits_its_field(
+    make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """An entry that does not compile, and is the only one naming a field, still makes
+    the field's value split into items -- it has always been the entries naming a
+    field that split it -- but links nothing, and is reported once."""
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {},
+        index=MULTI_INDEX
+        + "\n.. needtable::\n   :columns: id;tickets\n   :style: table\n",
+        extra=_late_table(
+            'config.needs_string_links = {"bad": {**BROKEN, "options": ["tickets"]}}'
+        ),
+    )
+    assert len(_compile_failures(app, "bad")) == 1, build_warnings(app)
+    html = need_html(app)
+    for surface in (_meta_span(html, "tickets"), _table_cell(html, "tickets")):
+        assert "<a " not in surface, surface
+        assert surface.count("<em>; </em>") == 2, surface
+        assert "AB-1" in surface and "AB-3" in surface, surface
+
+
+def test_a_late_entry_that_does_not_compile_is_reported_even_if_it_claims_nothing(
+    make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """A broken late entry naming no field with values is still reported."""
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {"good": GOOD_LINK},
+        extra=_late_table(
+            "config.needs_string_links = {**config.needs_string_links,"
+            ' "orphan": {**BROKEN, "options": ["nope"]}}'
+        ),
+    )
+    assert len(_compile_failures(app, "orphan")) == 1, build_warnings(app)
+    assert 'href="https://tracker.example.com/AB-1"' in need_html(app)
+
+
+@pytest.mark.parametrize("key", ["regex", "link_url", "link_name"])
+def test_a_late_entry_that_cannot_be_pickled_is_reported_not_fatal(
+    key: str, make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """A late entry whose regex or template is not a string (here a function) would
+    put an unpicklable value into the schema, which the environment is pickled with;
+    it is reported once and skipped instead, and the build succeeds."""
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {},
+        extra=_late_table(
+            "config.needs_string_links = {"
+            '"evil": {"regex": r"^(?P<value>.+)$", "link_url": "u", "link_name": "E",'
+            f' "options": ["ticket"], {key!r}: lambda: "x"}}}}'
+        ),
+    )
+    assert len(_compile_failures(app, "evil")) == 1, build_warnings(app)
+    meta = _meta_span(need_html(app), "ticket")
+    assert "AB-1" in meta, meta
+    assert "<a " not in meta, meta
+
+
+def test_a_late_bytes_pattern_is_refused_once(
+    make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """A late entry with a *bytes* pattern can never match a field value: it is
+    refused once, with the reason validation gives, and claims nothing -- so a field
+    only it names is not even split (it would be, by an entry that merely failed to
+    compile)."""
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {},
+        index=MULTI_INDEX,
+        extra=_late_table(
+            "config.needs_string_links = {"
+            '"raw": {"regex": re.compile(rb"^(?P<value>.+)$"), "link_url": "u",'
+            ' "link_name": "R", "options": ["tickets"]}}'
+        ),
+    )
+    failures = _compile_failures(app, "raw")
+    assert len(failures) == 1, build_warnings(app)
+    assert (
+        "'regex' is a bytes pattern, which can never match a field value"
+        in (failures[0])
+    )
+    assert "Problems dealing with string to link" not in "\n".join(build_warnings(app))
+    meta = _meta_span(need_html(app), "tickets")
+    assert "AB-1, AB-2; AB-3" in meta, meta
+    assert "<a " not in meta, meta
+
+
+def test_a_late_option_that_is_not_a_name_is_warned_about(
+    make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """A late entry whose ``options`` holds something other than a name -- here a list,
+    which cannot even be looked up -- warns about it, and the entry still applies to
+    the names it does list."""
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {},
+        extra=_late_table(
+            "config.needs_string_links = {"
+            '"odd": {"regex": r"^(?P<value>[A-Z]+-\\d+)$",'
+            ' "link_url": "https://tracker.example.com/{{value}}",'
+            ' "link_name": "T:{{value}}", "options": [["ticket"], "ticket"]}}'
+        ),
+    )
+    warnings = build_warnings(app)
+    assert [w for w in warnings if "needs_string_links['odd']" in w] == [
+        "WARNING: needs_string_links['odd']: 'options' names ['ticket'], which is not "
+        "a field that can carry a string link (an extra field, or a core field of the "
+        "field schema), so it is ignored. [needs.string_link]"
+    ], warnings
+    assert 'href="https://tracker.example.com/AB-1">T:AB-1</a>' in need_html(app)

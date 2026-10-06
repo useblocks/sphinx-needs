@@ -49,6 +49,25 @@ Improvements
   The undocumented warning ``if`` gives for a condition whose result is not a bool is
   now listed in its documentation.
 
+- ♻️ Each field carries its :ref:`needs_string_links` rule **(changed output)** (:pr:`2059`)
+
+  When the schema is built, every field takes the rule of the first ``needs_string_links``
+  entry whose ``options`` name it, and the need's meta area and :ref:`needtable` cells read
+  the rule from the field instead of scanning the table.
+  An entry written to ``needs_string_links`` after the schema is built — by an
+  ``env-before-read-docs`` handler running after Sphinx-Needs' own, or by a directive while
+  the documents are read, which already did not render under ``-j N`` — no longer renders;
+  one written during ``config-inited`` still does.
+  ``options`` can name only extra fields and the core fields that are part of the field
+  schema, and the names are now checked when the schema is built, so a field registered
+  after the configuration is read, such as the GitHub service fields, is no longer warned
+  about: any other core field (``docname``, ``section_name``, ``type_name``, ``id``, …) now
+  warns and renders as plain text wherever it was linked — in need cards (every default
+  layout's heading shows ``type_name``), in needtables and in custom layouts — and a link
+  type, which already warned, is no longer linked by a custom layout's ``meta()``.
+  The first build after upgrading re-reads every document, once, because the version of the
+  data Sphinx-Needs stores in the environment has changed.
+
 Bug fixes
 .........
 

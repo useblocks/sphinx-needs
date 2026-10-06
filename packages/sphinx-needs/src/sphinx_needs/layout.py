@@ -32,9 +32,9 @@ from sphinx_needs.logging import log_warning
 from sphinx_needs.need_item import NeedItem
 from sphinx_needs.nodes import Need
 from sphinx_needs.string_links import (
-    compiled_string_links,
+    compiled_field_string_link,
+    field_string_link,
     split_string_link_value,
-    string_link_field_names,
 )
 from sphinx_needs.utils import match_string_link
 
@@ -297,13 +297,6 @@ class LayoutHandler:
             "permalink": self.permalink,
         }  # ty: ignore[invalid-assignment]
 
-        # The compiled string_links, so that regex and templates get not recompiled too often.
-        #
-        # Note the compiled objects are never written back onto needs_string_links.
-        # This would lead to deepcopy()-errors, as needs_string_links gets some "pickled" and complex objects are
-        # too complex for this.
-        self.string_links = compiled_string_links(self.needs_config)
-
     def get_need_table(self) -> nodes.table:
         if self.layout["grid"] not in self.grids:
             raise SphinxNeedLayoutException(
@@ -503,22 +496,21 @@ class LayoutHandler:
         elif data is None and show_empty:
             data = ""
 
-        matching_link_confs = [
-            link_conf
-            for link_conf in self.string_links.values()
-            if name in link_conf.options
-        ]
+        # the field's string link, if it has one; its compiled form is memoised
+        string_link = field_string_link(self.needs_schema, name)
+        matching_link_confs = (
+            []
+            if string_link is None
+            or (compiled := compiled_field_string_link(string_link)) is None
+            else [compiled]
+        )
 
         if isinstance(data, str):
             if len(data) == 0 and not show_empty:
                 return []
 
-            needs_string_links_option = string_link_field_names(self.needs_config)
-
             data_list: list[str] = (
-                split_string_link_value(data)
-                if name in needs_string_links_option
-                else [data]
+                split_string_link_value(data) if string_link is not None else [data]
             )
 
             data_node = nodes.inline(classes=["needs_data"])

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import enum
+import re
 from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass, replace
 from functools import lru_cache, partial
@@ -61,6 +62,11 @@ class FieldSchema:
     
     Used if the field has not been specifically set, and no predicate matches.
     """
+    string_link: StringLinkRule | None = None
+    """The string link that renders this field's values as links, if any.
+
+    Taken from the first :ref:`needs_string_links` entry whose ``options`` name the field.
+    """
 
     def __post_init__(self) -> None:
         if not isinstance(self.name, str) or not self.name:
@@ -105,6 +111,10 @@ class FieldSchema:
             )
         if self.default is not None and not self.allow_defaults:
             raise ValueError("Defaults are not allowed for this field.")
+        if self.string_link is not None and not isinstance(
+            self.string_link, StringLinkRule
+        ):
+            raise ValueError("string_link must be a StringLinkRule.")
 
     @property
     def type(self) -> Literal["string", "boolean", "integer", "number", "array"]:
@@ -115,6 +125,13 @@ class FieldSchema:
         if self.schema["type"] == "array":
             return self.schema["items"]["type"]
         return None
+
+    def _set_string_link(self, rule: StringLinkRule) -> None:
+        """Set the string link for this field.
+
+        :param rule: The rule taken from a ``needs_string_links`` entry.
+        """
+        object.__setattr__(self, "string_link", rule)
 
     def _set_default(self, value: Any, *, allow_coercion: bool) -> None:
         """Set the default value for this field.
@@ -470,6 +487,24 @@ This includes scalar types (str, bool, int, float) and their corresponding list 
 @dataclass(frozen=True, slots=True)
 class FieldLiteralValue:
     value: AllowedTypes
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class StringLinkRule:
+    """How a field's values are rendered as links: one :ref:`needs_string_links` entry.
+
+    Only the entry's source strings are kept, so that the rule can be pickled with the
+    rest of the schema; the compiled form is cached where the values are rendered.
+    """
+
+    name: str
+    """The name of the ``needs_string_links`` entry the rule was taken from."""
+    regex: str | re.Pattern[str]
+    """The regular expression searched in each value, as configured."""
+    link_url: str
+    """The template of the link target."""
+    link_name: str
+    """The template of the link text."""
 
 
 @dataclass(frozen=True, slots=True)

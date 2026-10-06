@@ -2358,6 +2358,8 @@ All four keys are required.
 :link_url: The final url as string. Supports Jinja.
 :link_name: The final link name as string. Supports Jinja.
 :options: List of option names, for which the regex shall be checked.
+   Only extra fields and the core fields that are part of the field schema can be named;
+   a link type or any other core field is warned about and ignored.
    A tuple, set or frozenset is also accepted; the names are only ever
    membership-tested, so their order does not matter. A bare string is **not** a
    valid spelling of a single name.

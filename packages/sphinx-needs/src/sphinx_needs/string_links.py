@@ -11,11 +11,19 @@ compile, a template that does not parse — is reported as a ``needs.string_link
 warning naming the offending entry, and skipped, instead of aborting the build
 from inside the renderer with a bare ``KeyError``.
 
-The compiled objects deliberately never touch the Sphinx configuration: the
-configuration is deep-copied and pickled (for parallel builds), and compiled
-regular expressions and templates do not survive that. Only plain data is
-written back to ``needs_string_links``; the compiled form is memoised by the
-configuration's own strings in :func:`_compile_string_link`, in the same way
+Each field then carries the rule it is rendered with: when the schema is built,
+:func:`fold_string_links` gives every field named in an entry's ``options`` that
+entry's :class:`~sphinx_needs.needs_schema.StringLinkRule`, unless an earlier usable
+entry already named it, and the renderers read the field's rule rather than the
+table. Only fields with a :class:`~sphinx_needs.needs_schema.FieldSchema` can carry a
+rule -- the core fields of the field schema, and the extra fields -- so the names in
+``options`` are checked there, once every field is registered, rather than here.
+
+The compiled objects deliberately never touch the Sphinx configuration or the
+schema: both are deep-copied or pickled (for parallel builds), and compiled
+templates do not survive that. Only plain data is written back to
+``needs_string_links`` and stored on the fields; the compiled form is memoised by
+the entry's own strings in :func:`_compile_string_link`, in the same way
 :func:`~sphinx_needs._jinja.compile_template` memoises template sources.
 """
 
@@ -27,12 +35,12 @@ from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Final, cast
 
 from sphinx_needs._jinja import CompiledTemplate, compile_template
-from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig, StringLinkConf
-from sphinx_needs.data import NeedsCoreFields
+from sphinx_needs.config import NeedsSphinxConfig, StringLinkConf
 from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.needs_schema import FieldsSchema, StringLinkRule
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Container
+    from collections.abc import Callable
 
     from sphinx.application import Sphinx
     from sphinx.config import Config
@@ -58,8 +66,6 @@ class CompiledStringLink:
     """The compiled ``link_url`` template."""
     name_template: CompiledTemplate
     """The compiled ``link_name`` template."""
-    options: tuple[str, ...]
-    """The need fields this entry applies to."""
 
 
 @lru_cache(maxsize=32)
@@ -68,7 +74,6 @@ def _compile_string_link(
     regex: str | re.Pattern[str],
     link_url: str,
     link_name: str,
-    options: tuple[str, ...],
 ) -> CompiledStringLink:
     """Compile a single, already validated configuration entry.
 
@@ -80,7 +85,6 @@ def _compile_string_link(
     :param regex: The regular expression source, or an already-compiled pattern.
     :param link_url: The url template source.
     :param link_name: The link name template source.
-    :param options: The need fields the entry applies to.
     :return: The compiled entry.
     :raises re.error: If the regular expression does not compile.
     :raises Exception: If one of the templates does not parse.
@@ -90,7 +94,40 @@ def _compile_string_link(
         regex=re.compile(regex),
         url_template=compile_template(link_url, autoescape=False),
         name_template=compile_template(link_name, autoescape=False),
-        options=options,
+    )
+
+
+def _compile_or_report(
+    name: str, regex: Any, link_url: Any, link_name: Any
+) -> CompiledStringLink | None:
+    """Compile an entry's strings through the memo, reporting a failure once.
+
+    Every entry reaching this point has passed :func:`compile_string_links`, which
+    compiles the same strings, so a failure here means the two disagreed. That should
+    be impossible, but it decides whether a user's links render, so it is reported
+    rather than swallowed: once per entry, not once per rendered value, as this runs
+    once per rendered need and once per needtable cell. Sphinx resets that filter per
+    application, so a later build in the same process still reports; a parallel build
+    may report once per worker process.
+
+    :return: The compiled entry, or ``None`` if it does not compile.
+    """
+    try:
+        return _compile_string_link(name, regex, link_url, link_name)
+    except Exception as exc:
+        _report_compile_failure(name, exc)
+        return None
+
+
+def _report_compile_failure(name: str, exc: Exception) -> None:
+    """Report, once, that an entry which should be usable is not."""
+    log_warning(
+        LOGGER,
+        f"needs_string_links[{name!r}]: passed validation but failed to "
+        f"compile ({exc}), skipping; its links will not render.",
+        "string_link",
+        None,
+        once=True,
     )
 
 
@@ -99,15 +136,7 @@ def compiled_string_links(
 ) -> dict[str, CompiledStringLink]:
     """Get the compiled form of every usable ``needs_string_links`` entry.
 
-    :func:`compile_string_links` has already validated and compiled each of these at
-    ``config-inited``, so a failure here means the two disagreed. That should be
-    impossible -- both paths compile the same strings -- but it decides whether a
-    user's links render, so it is reported rather than swallowed.
-
-    This function is called once per rendered need and once per needtable cell, so the
-    report is emitted with ``once=True``: one line per entry, not one per need. Sphinx
-    resets that filter per application, so a later build in the same process still
-    reports; a parallel build may report once per worker process.
+    A failure to compile is reported by :func:`_compile_or_report`.
 
     :param needs_config: The sphinx-needs configuration.
     :return: The compiled entries, keyed by their configuration name.
@@ -115,39 +144,38 @@ def compiled_string_links(
     compiled: dict[str, CompiledStringLink] = {}
     for name, conf in needs_config.string_links.items():
         try:
-            compiled[name] = _compile_string_link(
-                name,
+            regex, link_url, link_name = (
                 conf["regex"],
                 conf["link_url"],
                 conf["link_name"],
-                tuple(conf["options"]),
             )
         except Exception as exc:
-            log_warning(
-                LOGGER,
-                f"needs_string_links[{name!r}]: passed validation but failed to "
-                f"compile ({exc}), skipping; its links will not render.",
-                "string_link",
-                None,
-                once=True,
-            )
+            _report_compile_failure(name, exc)
             continue
+        if (entry := _compile_or_report(name, regex, link_url, link_name)) is not None:
+            compiled[name] = entry
     return compiled
 
 
-def string_link_field_names(needs_config: NeedsSphinxConfig) -> set[str]:
-    """Get the union of the need fields named by every ``needs_string_links`` entry.
+def field_string_link(schema: FieldsSchema, name: str) -> StringLinkRule | None:
+    """Get the string link a need field is rendered with.
 
-    A field in this set has its value split on ``,`` and ``;`` before the
-    entries are applied, whether or not any of them ends up matching.
-
-    :param needs_config: The sphinx-needs configuration.
-    :return: The names of the fields string links apply to.
+    :param schema: The fields schema of the build.
+    :param name: The name of the need field.
+    :return: The field's rule, or ``None`` if it has none -- including when the name
+        is not a field of the schema (a link field, or a core field outside it).
     """
-    names: set[str] = set()
-    for conf in needs_config.string_links.values():
-        names.update(conf["options"])
-    return names
+    field = schema.get_core_field(name) or schema.get_extra_field(name)
+    return None if field is None else field.string_link
+
+
+def compiled_field_string_link(rule: StringLinkRule) -> CompiledStringLink | None:
+    """Get the compiled form of a field's string link.
+
+    :param rule: The field's rule.
+    :return: The compiled rule, or ``None`` if it does not compile (reported once).
+    """
+    return _compile_or_report(rule.name, rule.regex, rule.link_url, rule.link_name)
 
 
 def split_string_link_value(value: str) -> list[str]:
@@ -166,13 +194,11 @@ def split_string_link_value(value: str) -> list[str]:
 def _validate_conf(
     conf: Any,
     *,
-    known_fields: Container[str],
     warn: Callable[[str], None],
 ) -> StringLinkConf | None:
     """Validate a single ``needs_string_links`` entry.
 
     :param conf: The raw entry, as written by the user.
-    :param known_fields: The registered need field names.
     :param warn: Called with a message for every problem found.
     :return: The validated entry, or ``None`` if it must be skipped.
     """
@@ -234,13 +260,6 @@ def _validate_conf(
     if not options:
         warn("'options' is empty, so this entry can never apply.")
 
-    for option in options:
-        if option not in known_fields:
-            warn(
-                f"'options' names {option!r}, which is not a registered need field, "
-                "so it can never match."
-            )
-
     try:
         re.compile(conf["regex"])
     except Exception as exc:
@@ -292,7 +311,6 @@ def compile_string_links(_app: Sphinx, config: Config) -> None:
     if not confs:
         return
 
-    known_fields = {*NeedsCoreFields, *_NEEDS_CONFIG.fields}
     validated: dict[str, StringLinkConf] = {}
     for name, conf in confs.items():
 
@@ -304,9 +322,7 @@ def compile_string_links(_app: Sphinx, config: Config) -> None:
                 None,
             )
 
-        if (
-            checked := _validate_conf(conf, known_fields=known_fields, warn=warn)
-        ) is not None:
+        if (checked := _validate_conf(conf, warn=warn)) is not None:
             validated[name] = checked
 
     if validated != confs:
@@ -315,3 +331,89 @@ def compile_string_links(_app: Sphinx, config: Config) -> None:
 
     # compile eagerly, so that the work is not repeated per rendered need
     compiled_string_links(needs_config)
+
+
+def fold_string_links(schema: FieldsSchema, needs_config: NeedsSphinxConfig) -> None:
+    """Give each field the string link of the first entry whose ``options`` name it.
+
+    Runs at the end of ``create_schema``, over ``needs_string_links`` in the order the
+    entries were declared, so it also sees every entry written after
+    :func:`compile_string_links` validated the table, and every field registered after
+    it. Each entry is compiled here (through the memo the validation filled), and:
+
+    - an entry that compiles gives its rule to each field it names that has no rule,
+      or only the rule of an entry that does not compile;
+    - an entry that does not compile is reported once, and gives its rule only to a
+      field that has none: the field's value is still split into items, as it is for
+      any field an entry names, but nothing links;
+    - an entry whose sources have the wrong type (a ``regex`` that is neither a string
+      nor a string pattern, or a template that is not a string), which only an entry
+      written after validation can have, is reported once and claims nothing -- its
+      rule could not be pickled, or a bytes pattern could never match -- so a field
+      only it names is not split;
+    - a name with no :class:`~sphinx_needs.needs_schema.FieldSchema` (a link field, a
+      core field outside the field schema, or no field at all) is warned about once
+      per entry, and ignored -- so a name an entry lists twice warns once.
+
+    Checking an entry written after validation here also means its problems are
+    reported once, when the schema is built: a compile failure no longer waits for the
+    first rendered need, and a bytes pattern is refused once rather than failing on
+    every rendered value.
+
+    :param schema: The fields schema being built.
+    :param needs_config: The sphinx-needs configuration.
+    """
+    confs = needs_config.string_links
+    if not isinstance(confs, dict):
+        return
+    # the fields whose rule is that of an entry which does not compile
+    unusable_rules: set[str] = set()
+    for name, conf in confs.items():
+        try:
+            regex, link_url, link_name = (
+                conf["regex"],
+                conf["link_url"],
+                conf["link_name"],
+            )
+            options = list(conf["options"])
+            # only an entry written after validation can fail these: anything else
+            # would be stored on the schema, which must pickle with the environment
+            if isinstance(regex, re.Pattern) and not isinstance(regex.pattern, str):
+                raise TypeError(
+                    "'regex' is a bytes pattern, which can never match a field value"
+                )
+            if not isinstance(regex, (str, re.Pattern)):
+                raise TypeError(f"'regex' is not a string or pattern: {regex!r}")
+            for key, value in (("link_url", link_url), ("link_name", link_name)):
+                if not isinstance(value, str):
+                    raise TypeError(f"{key!r} is not a string: {value!r}")
+        except Exception as exc:
+            _report_compile_failure(name, exc)
+            continue
+        rule = StringLinkRule(
+            name=name, regex=regex, link_url=link_url, link_name=link_name
+        )
+        usable = _compile_or_report(name, regex, link_url, link_name) is not None
+        for option in options:
+            field = (
+                (schema.get_core_field(option) or schema.get_extra_field(option))
+                if isinstance(option, str)
+                else None
+            )
+            if field is None:
+                log_warning(
+                    LOGGER,
+                    f"needs_string_links[{name!r}]: 'options' names {option!r}, "
+                    "which is not a field that can carry a string link (an extra "
+                    "field, or a core field of the field schema), so it is ignored.",
+                    "string_link",
+                    None,
+                    once=True,
+                )
+                continue
+            if field.string_link is None or (usable and field.name in unusable_rules):
+                field._set_string_link(rule)
+                if usable:
+                    unusable_rules.discard(field.name)
+                else:
+                    unusable_rules.add(field.name)
