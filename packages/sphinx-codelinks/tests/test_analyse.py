@@ -134,6 +134,21 @@ def test_analyse(src_dir, src_paths, tmp_path, snapshot_marks):
                 "comment_type": CommentType.jsonc,
             },
         ),
+        (
+            TEST_DIR / "data" / "vhdl",
+            [
+                TEST_DIR / "data" / "vhdl" / "demo.vhd",
+            ],
+            ONELINE_COMMENT_STYLE_DEFAULT,
+            {
+                "num_src_files": 1,
+                "num_uncached_files": 1,
+                "num_cached_files": 0,
+                "num_comments": 5,
+                "num_oneline_warnings": 0,
+                "comment_type": CommentType.vhdl,
+            },
+        ),
     ],
 )
 def test_analyse_oneline_needs(

@@ -332,8 +332,9 @@ class SourceAnalyse:
     ) -> Generator[tuple[dict[str, str | list[str] | int], int]]:
         lines = text.splitlines(keepends=True)
         row_offset = 0
-        if len(lines) == 1:
-            # single line comment has no newline char in the extracted comment
+        if len(lines) == 1 and not lines[0].endswith(UNIX_NEWLINE):
+            # single line comments usually carry no newline char; some grammars
+            # (e.g. VHDL) include the trailing newline in the comment node
             lines[0] = f"{lines[0]}{UNIX_NEWLINE}"
 
         for line in lines:

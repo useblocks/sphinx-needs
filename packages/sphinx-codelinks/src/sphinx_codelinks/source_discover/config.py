@@ -19,6 +19,7 @@ COMMENT_FILETYPE = {
     # PyPI, so it cannot be wired in here. Track fish separately if a PyPI
     # grammar becomes available.
     "bash": ["sh", "bash", "zsh", "ksh"],
+    "vhdl": ["vhd", "vhdl"],
 }
 
 
@@ -35,6 +36,8 @@ class CommentType(str, Enum):  # noqa: UP042  # StrEnum changes str(member), whi
     jsonc = "jsonc"
     # @Support Bash style comments, IMPL_BASH_1, impl, [FE_BASH];
     bash = "bash"
+    # @Support VHDL style comments, IMPL_VHDL_1, impl, [FE_VHDL];
+    vhdl = "vhdl"
 
 
 class SourceDiscoverSectionConfigType(TypedDict, total=False):
