@@ -11,6 +11,7 @@ skipped a need is read again when the owner's document changes or goes, so the n
 moves instead of vanishing.
 """
 
+import hashlib
 import re
 from pathlib import Path
 
@@ -44,10 +45,15 @@ def _trace(option: str = ":file: impl.cpp", project: str = "src") -> str:
     return f"\n.. src-trace::\n   :project: {project}\n   {option}\n"
 
 
-def _duplicate(owner: str, docname: str, location: str = "src/impl.cpp:1") -> str:
+def _duplicate(
+    owner: str,
+    docname: str,
+    location: str = "src/impl.cpp:1",
+    need_id: str = "IMPL_1",
+) -> str:
     suffix = " [codelinks.duplicate_need]" if _SHOWS_WARNING_TYPES else ""
     return (
-        f"{location}: WARNING: one-line need 'IMPL_1' is already defined in document "
+        f"{location}: WARNING: one-line need {need_id!r} is already defined in document "
         f"{owner!r}: not created again by the src-trace directive in {docname!r} "
         f"(narrow one directive's scope){suffix}"
     )
@@ -57,9 +63,9 @@ def _duplicates(app: SphinxTestApp) -> list[str]:
     return [w for w in build_warnings(app) if "is already defined" in w]
 
 
-def _owner(app: SphinxTestApp) -> str | None:
-    """The document ``IMPL_1`` is defined in, per ``needs.json`` (``None``: no need)."""
-    need = _json(app)["needs"].get("IMPL_1")
+def _owner(app: SphinxTestApp, need_id: str = "IMPL_1") -> str | None:
+    """The document ``need_id`` is defined in, per ``needs.json`` (``None``: no need)."""
+    need = _json(app)["needs"].get(need_id)
     return None if need is None else need["docname"]
 
 
@@ -73,6 +79,21 @@ def _rewrite(path: Path, old: str, new: str) -> None:
     assert old in text
     path.write_text(text.replace(old, new), encoding="utf-8")
     _touch_later(path)
+
+
+#: a one-line style without ``id``: Sphinx-Needs generates it from the type's prefix and
+#: the title (local URLs off: their source-page map needs an id written in the marker)
+IDLESS = {
+    "toml_extra": (
+        "\n[codelinks.projects.src.analyse.oneline_comment_style]\n"
+        'needs_fields = [{ name = "title" }, { name = "type", default = "impl" }]\n'
+    ),
+    "toml_replace": ("set_local_url = true", "set_local_url = false"),
+}
+IDLESS_FILES = {**FILES, "src/impl.cpp": "// @first impl\nvoid impl() {}\n"}
+#: what Sphinx-Needs generates for ``first impl``: the ``impl`` type's prefix (``I_``) and
+#: the first five characters of the title's SHA-1 (``needs_id_length``), upper case
+GENERATED = "I_" + hashlib.sha1(b"first impl").hexdigest().upper()[:5]
 
 
 def test_two_directives_in_one_document_define_the_need_once(
@@ -321,3 +342,56 @@ def test_a_scope_record_pickled_before_deferred_existed_still_loads() -> None:
     assert loaded == ScopeRecord(
         project="src", kind="file", target="a.cpp", fingerprint=()
     )
+
+
+@pytest.mark.parametrize("layout", ["one-document", "two-documents"])
+def test_a_generated_id_is_defined_once(
+    tmp_path: Path, make_app: _MakeApp, layout: str
+) -> None:
+    """A one-line style without ``id``: the id Sphinx-Needs would generate is checked
+    like a written one (it used to abort with ``Unique ID could not be generated``)."""
+    if layout == "one-document":
+        files = {**IDLESS_FILES, **_scoped(None)}
+        append = {"docs/index.rst": _trace()}
+        owner, other = "index", "index"
+    else:
+        files = IDLESS_FILES
+        append = {"docs/page1.rst": _trace(), "docs/page2.rst": _trace()}
+        owner, other = "page1", "page2"
+    _project(tmp_path, files=files, append=append, **IDLESS)  # type: ignore[arg-type]
+    app = _build(tmp_path, make_app)
+
+    needs = _json(app)["needs"]
+    assert [n for n, need in needs.items() if need["title"] == "first impl"] == [
+        GENERATED
+    ]
+    assert _owner(app, GENERATED) == owner
+    assert _duplicates(app) == [_duplicate(owner, other, need_id=GENERATED)]
+
+
+@pytest.mark.parametrize("generated", [False, True], ids=["written-id", "generated-id"])
+def test_a_directive_moved_to_another_document(
+    tmp_path: Path, make_app: _MakeApp, generated: bool
+) -> None:
+    """No overlap at any time: ``page2``'s trace moves to ``page1`` in one incremental
+    build. ``page1`` is read first, while ``page2``'s old need is still in the store; it
+    is about to be purged, so ``page1`` defines the need (this used to abort with
+    ``duplicate_id``)."""
+    need_id = GENERATED if generated else "IMPL_1"
+    _project(
+        tmp_path,
+        files=IDLESS_FILES if generated else FILES,
+        append={"docs/page2.rst": _trace()},
+        **(IDLESS if generated else {}),  # type: ignore[arg-type]
+    )
+    assert _owner(_build(tmp_path, make_app), need_id) == "page2"
+
+    _rewrite(tmp_path / "docs" / "page2.rst", ":file: impl.cpp", ":file: other.cpp")
+    page1 = tmp_path / "docs" / "page1.rst"
+    page1.write_text(page1.read_text(encoding="utf-8") + _trace(), encoding="utf-8")
+    _touch_later(page1)
+    app = _build(tmp_path, make_app, freshenv=False)
+
+    assert "0 added, 2 changed, 0 removed" in _status(app)
+    assert _owner(app, need_id) == "page1"
+    assert _duplicates(app) == []
