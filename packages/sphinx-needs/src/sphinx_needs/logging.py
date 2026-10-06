@@ -100,7 +100,7 @@ WarningSubTypeDescription: dict[WarningSubTypes, str] = {
     "mistyped_import_values": "Unexpected value types found in imported need data",
     "mpl": "Matplotlib required but not installed",
     "needextend": "Error processing needextend directive",
-    "needextend_match_order": "The needs a needextend filter matches depend on modifications applied by earlier needextend directives; ``:extend_priority:`` orders the modifications, it never changes what a filter matches",
+    "needextend_match_order": "The needs a needextend filter matches depend on modifications applied by earlier needextend directives (from the next release, filters are evaluated against the needs as written)",
     "needextract": "Error processing needextract directive",
     "needflow": "Error processing needflow directive",
     "needgantt": "Error processing needgantt directive",

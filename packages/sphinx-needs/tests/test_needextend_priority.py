@@ -22,6 +22,7 @@ from sphinx.util.parallel import parallel_available
 from syrupy.filters import props
 
 from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.directives import needextend as needextend_module
 from sphinx_needs_testkit import build_warnings
 
 CONF = """\
@@ -235,6 +236,10 @@ A
 .. needextend:: REQ_1
    :extend_priority: 600
    :+tags: p600
+
+.. needextend:: REQ_1
+   :extend_priority: 0
+   :+tags: p0
 """
 
 T3_B = """\
@@ -265,13 +270,15 @@ B
 def test_appends_follow_ascending_priority(test_app: Sphinx):
     """T3: ``+tags`` from several extends are appended in ascending priority order.
 
-    File order would give ``p600, p400, p500`` (``a``, ``b``, ``index``); the
-    priorities 400, 500 (the default, in ``index.rst``) and 600 give their own order.
+    File order would give ``p600, p0, p400, p500`` (``a``, ``b``, ``index``); the
+    priorities 0, 400, 500 (the default, in ``index.rst``) and 600 give their own
+    order. 0, the lowest value allowed, is a priority like any other and runs first,
+    not a missing one that falls back to the default.
     """
     app = test_app
     app.build()
 
-    assert needs_by_id(app)["REQ_1"]["tags"] == ["p400", "p500", "p600"]
+    assert needs_by_id(app)["REQ_1"]["tags"] == ["p0", "p400", "p500", "p600"]
     assert build_warnings(app) == []
 
 
@@ -760,3 +767,102 @@ def test_needs_as_written_ignore_an_earlier_priority(test_app: Sphinx):
     assert {need_id: need["tags"] for need_id, need in needs.items()} == {
         f"REQ_{n}": ["closed_now"] for n in range(1, 7)
     }
+
+
+# -- the as-written pass: once per filter and document, and none when suppressed ----
+
+MEMO_B = (
+    Q5_B
+    + """
+.. needextend:: status == "closed"
+   :+tags: saw_closed_again
+"""
+)
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), Q5_CONF),
+                (Path("index.rst"), Q5_INDEX),
+                (Path("a.rst"), Q5_A),
+                (Path("b.rst"), MEMO_B),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_identical_filters_are_evaluated_once_per_document(
+    test_app: Sphinx, monkeypatch: pytest.MonkeyPatch
+):
+    """One filter string from one document is evaluated once against the needs as written.
+
+    Every as-written evaluation reads the same needs, so the two identical filters of
+    ``b.rst`` share one evaluation and are both reported, each at its own line. The same
+    string in ``a.rst`` is evaluated on its own: a filter can depend on its document
+    (``c.this_doc()``), so the document is part of what is shared.
+    """
+    calls: list[tuple[str, str]] = []
+    evaluate = needextend_module._ids_matched_as_written
+
+    def counted(*args: Any) -> frozenset[str] | None:
+        calls.append((args[2]["filter"], args[2]["docname"]))
+        return evaluate(*args)
+
+    monkeypatch.setattr(needextend_module, "_ids_matched_as_written", counted)
+    app = test_app
+    app.build()
+
+    assert build_warnings(app) == [
+        Q5_WARNING,
+        Q5_WARNING.replace("b.rst:7:", "b.rst:10:"),
+    ]
+    assert calls == [('status == "closed"', "a"), ('status == "closed"', "b")]
+    need = needs_by_id(app)["TGT_1"]
+    assert need["tags"] == ["saw_closed_later", "saw_closed_again"]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (
+                    Path("conf.py"),
+                    Q5_CONF + 'suppress_warnings = ["needs.needextend_match_order"]\n',
+                ),
+                (Path("index.rst"), Q5_INDEX),
+                (Path("a.rst"), Q5_A),
+                (Path("b.rst"), Q5_B),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_suppressed_match_order_skips_the_as_written_pass(
+    test_app: Sphinx, monkeypatch: pytest.MonkeyPatch
+):
+    """With ``needs.needextend_match_order`` suppressed, no filter is evaluated as written.
+
+    What a filter matches against the needs as written feeds only that warning, so a
+    project that suppresses it does not pay for the extra evaluation; the extends are
+    applied as before.
+    """
+
+    def must_not_run(*_args: Any) -> frozenset[str] | None:
+        raise AssertionError(
+            "the as-written pass ran although its warning is suppressed"
+        )
+
+    monkeypatch.setattr(needextend_module, "_ids_matched_as_written", must_not_run)
+    app = test_app
+    app.build()
+
+    assert build_warnings(app) == []
+    need = needs_by_id(app)["TGT_1"]
+    assert need["status"] == "closed"
+    assert need["tags"] == ["saw_closed_later"]

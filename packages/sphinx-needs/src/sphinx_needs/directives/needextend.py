@@ -6,7 +6,7 @@ from typing import Final
 from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinx.util.docutils import SphinxDirective
-from sphinx.util.logging import suppress_logging
+from sphinx.util.logging import is_suppressed_warning, suppress_logging
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import ExtendType, NeedsExtendType, NeedsMutable, SphinxNeedsData
@@ -227,6 +227,8 @@ def extend_needs_data(
     all_needs: NeedsMutable,
     extends: dict[str, NeedsExtendType],
     needs_config: NeedsSphinxConfig,
+    *,
+    suppress_warnings: Sequence[str] = (),
 ) -> None:
     """Use data gathered from needextend directives to modify fields of existing needs.
 
@@ -234,6 +236,10 @@ def extend_needs_data(
     filter is evaluated against the needs as the extends applied before it left them.
     A filter that matches other needs against the needs as written, before any extend
     is applied, is reported as ``needs.needextend_match_order``.
+
+    :param suppress_warnings: Sphinx's ``suppress_warnings``. Where it suppresses
+        ``needs.needextend_match_order``, the filters are not evaluated against the
+        needs as written at all, as nothing else reads what they match there.
     """
 
     # Sort by priority, lower first, then by (docname, lineno) to ensure deterministic
@@ -244,13 +250,24 @@ def extend_needs_data(
     )
 
     # What each filter matches against the needs as written, taken before any extend
-    # is applied; an id-targeted extend's target is fixed, so it needs none
-    matched_as_written = [
-        None
-        if needextend["filter_is_id"]
-        else _ids_matched_as_written(all_needs, needs_config, needextend)
-        for needextend in sorted_extends
-    ]
+    # is applied; an id-targeted extend's target is fixed, so it needs none. The needs
+    # as written are the same for every filter, so one filter string from one document
+    # (``c.this_doc()`` reads it) gives one set, and is evaluated once.
+    report_match_order = not is_suppressed_warning(
+        "needs", "needextend_match_order", suppress_warnings
+    )
+    as_written_by_filter: dict[tuple[str, str], frozenset[str] | None] = {}
+    matched_as_written: list[frozenset[str] | None] = []
+    for needextend in sorted_extends:
+        if needextend["filter_is_id"] or not report_match_order:
+            matched_as_written.append(None)
+            continue
+        key = (needextend["filter"], needextend["docname"])
+        if key not in as_written_by_filter:
+            as_written_by_filter[key] = _ids_matched_as_written(
+                all_needs, needs_config, needextend
+            )
+        matched_as_written.append(as_written_by_filter[key])
 
     current_needextend: NeedsExtendType
     for current_needextend, as_written in zip(
@@ -429,10 +446,10 @@ def _ids_matched_as_written(
 ) -> frozenset[str] | None:
     """Return the ids of the needs a needextend's filter matches before any extend.
 
-    Called for every filter-targeted extend before the first extend is applied, so the
-    needs are as written and need no copy; ``id`` cannot be extended, so the ids name
-    the same needs afterwards. Nothing is logged: the filter is evaluated again when
-    the extend is applied, and reports its errors there, once.
+    Called before the first extend is applied, so the needs are as written and need no
+    copy; ``id`` cannot be extended, so the ids name the same needs afterwards. Nothing
+    is logged (the location only feeds that logging): the filter is evaluated again
+    when the extend is applied, and reports its errors there, once.
 
     :return: The ids, or ``None`` if the filter cannot be evaluated.
     """

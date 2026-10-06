@@ -62,10 +62,11 @@ Improvements
   whose filter matches different needs the two ways is now reported once, at its
   location, naming both; what it modifies is unchanged. The next release evaluates every
   filter against the needs as written, so the reported ``needextend`` directives are the
-  ones whose matches will change (:ref:`needextend_match_order`). The priority never
-  changes what a filter matches. A project that builds with ``-W`` and has such a filter
-  goes red until the filter is rewritten or the warning is silenced with
-  ``suppress_warnings = ["needs.needextend_match_order"]``.
+  ones whose matches will change (:ref:`needextend_match_order`). From the next release,
+  the priority never changes what a filter matches. A project that builds with ``-W`` and
+  has such a filter goes red until the filter is rewritten or the warning is silenced with
+  ``suppress_warnings = ["needs.needextend_match_order"]``; ``"needs.needextend"`` does
+  not cover the new type.
 
 Bug fixes
 .........

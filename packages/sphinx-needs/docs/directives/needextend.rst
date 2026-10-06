@@ -130,8 +130,10 @@ in document-name and line order.
 The status of ``extend_test_007`` ends as ``late``, and its tags as ``applied_first, applied_second``,
 whatever the order and the files the two ``needextend`` directives are written in.
 
-``:extend_priority:`` orders the modifications only: it never changes which needs a filter matches
-(see :ref:`needextend_match_order`).
+``:extend_priority:`` orders the modifications; it is not a way to choose what a filter matches.
+In this release a filter sees the changes of the ``needextend`` directives applied before it,
+so a priority can change its matches, and such a ``needextend`` is reported (see :ref:`below <needextend_match_order>`);
+from the next release it never does.
 Like ``:strict:``, it is an option of the directive itself,
 so a :ref:`field <needs_fields>` named ``extend_priority`` or ``strict`` cannot be replaced by a ``needextend``;
 ``+extend_priority`` and ``-extend_priority`` still modify such a field.
@@ -146,7 +148,7 @@ Filters and earlier needextend directives
 A filter is evaluated when its ``needextend`` is applied,
 against the needs as the ``needextend`` directives applied before it left them.
 So a filter on a field that an earlier ``needextend`` modifies can match needs it would not match as written, or miss needs it would,
-and renaming a file or changing a priority can change which needs a ``needextend`` modifies.
+and renaming a file can change which needs a ``needextend`` modifies.
 
 Each filter is therefore also evaluated against the needs as written, before any ``needextend`` is applied,
 and a ``needextend`` whose filter matches different needs the two ways is reported once, at its location,
@@ -154,7 +156,10 @@ as ``needs.needextend_match_order``, naming the needs it matches now and as writ
 What it modifies is unchanged in this release.
 From the next release, every filter is evaluated against the needs as written, before any ``needextend`` is applied,
 so the reported ``needextend`` directives are the ones whose matches will change.
-``:extend_priority:`` does not change what a filter matches, now or then: it orders the modifications only.
+``:extend_priority:`` orders the modifications; it is not a way to choose what a filter matches.
+In this release a filter sees the changes of the ``needextend`` directives applied before it,
+so a priority can change its matches, and such a ``needextend`` is reported;
+from the next release it never does.
 An ID argument names its need whatever the earlier ``needextend`` directives changed, and is never reported.
 
 To silence the warning, add its type to Sphinx's ``suppress_warnings``:
