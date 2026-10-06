@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791299462786,
+  "lastUpdate": 1791300968934,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -22500,6 +22500,42 @@ window.BENCHMARK_DATA = {
             "value": 56.977433284,
             "unit": "s",
             "extra": "Commit: 3a9bcce72b669066a93cdb8cd76a81fc06203e45\nBranch: master\nTime: 2026-10-06T17:09:23+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4e3db3bf550df1a3e644049b75a66473df549fed",
+          "message": "🐛 sphinx-needs: a TOML `functions` key warns instead of crashing (#2079)\n\n## Summary\n\nA `functions` key under `[needs]` in the `needs_from_toml` file ends the\nbuild\n(exit 2), whatever its shape: `functions = [\"x\"]`, `functions = \"x\"`\n(iterated character by character) or a table such as\n`[needs.functions.linked_effort]`\n(its keys are iterated):\n\n```\nFile \".../sphinx_needs/needs.py\", line 988, in merge_default_configs\n    _NEEDS_CONFIG.add_function(needs_func)\nFile \".../sphinx_needs/config.py\", line 179, in add_function\n    func_name = function.__name__ if name is None else name\nAttributeError: 'str' object has no attribute '__name__'. Did you mean: '__ne__'?\n...\nsphinx.errors.ExtensionError: Handler <function merge_default_configs at 0x…> for event 'config-inited' threw an exception (exception: 'str' object has no attribute '__name__')\n```\n\n`needs_functions` holds Python callables, which a TOML file cannot hold,\nbut the loader copied the key into the configuration like any other.\n\n**Mechanism.** A config field can now opt out of the TOML file through\nits metadata:\n`\"toml\": False`, with the reason for the warning as `\"toml_reason\"` (a\ngeneric reason if it has none),\nread through a new `NeedsSphinxConfig.toml_ignored_reason(name)`\n(which shares one field lookup with `convert_field_value`).\n`_functions` is the only field that carries the flag.\n`load_config_from_toml` checks it in the `[needs]` loop **after** the\noverride check,\nso a `confoverrides` value of `needs_functions` still wins and the TOML\nkey is not reported.\nA flagged key is never read from the file: every occurrence is reported\nand ignored, and the build continues.\nThat includes an empty value (`functions = []`, `\"\"` or an empty table).\nAn empty list used to replace the functions that `conf.py` registers,\nwithout a warning.\nIt now leaves them in place and is reported like any other value.\n\n**Message** (`needs.config`, so `-W` still fails on it and\n`suppress_warnings` can silence it):\n\n```\nWARNING: 'needs_from_toml' file sets 'functions', which is ignored: dynamic functions are Python callables, registered in conf.py as needs_functions or through the add_dynamic_function API [needs.config]\n```\n\nIt does not say that functions can never come from TOML.\n\n**The root cause in `conf.py`.** The same crash came from `conf.py`\nitself:\n`needs_functions = [\"x\"]` exits 2 with the same frames,\nbecause `merge_default_configs` trusted every entry to be a callable.\nA non-callable entry is now skipped with\n`WARNING: needs_functions entry 'x' is not callable and is ignored\n[needs.config]`.\nThe duplicate-function warning of `add_function` is unchanged.\n\n**Changed output.** Some builds that succeeded before now produce\ndifferent output:\n- a TOML `functions = []` beside functions in `conf.py` no longer\nremoves them, and now warns;\n- `functions = \"\"` and `{}` now give this warning instead of Sphinx's\ntype warning;\n- a non-callable entry that has a `__name__` (a module, say) in\n`conf.py`'s `needs_functions` now warns.\n\n**Docs.** `configuration.rst` names `needs_functions` as the exception\nto\n\"the toml can contain any of the options below\".\nIn the `needs_functions` example it fixes the `==` typo and defines the\nfunction before the line that uses it.\nThe changelog entry, marked **(changed output)**, is under `Unreleased`\n→ `Bug fixes`.\n\nPart of #2064 (second item).\n\n## Tests\n\nNew `tests/test_needs_from_toml_functions.py`, 10 tests:\n\n- **T1** `functions` as a list, a string, a table, an empty string and\nan empty table → exactly the warning above, `needs_functions == []`,\nstatus code 0.\n- **T2** `functions = []` → exactly the warning above.\n- **T2b** a callable in `conf.py`'s `needs_functions`, plus a TOML\n`functions = []` →\nthe function still runs from `[[answer()]]` (`forty-two` in\n`needs.json`), and exactly the warning above.\n- **T3** `conf.py` `needs_functions = [\"x\"]`, no TOML → exactly the\nnon-callable warning, status code 0.\n- **T4** `confoverrides={\"needs_functions\": []}` with a TOML `functions\n= [\"x\"]` → no warning (the override wins and the key is not reported).\n- **T5** a callable in `conf.py`'s `needs_functions` beside a TOML file\nwith other keys →\nthe function runs (`needs.json` has its value), the TOML keys are read,\nno warning.\n\nRed first, against the base source (8 failed, 2 passed):\n- T1's list, string and table cases and T3 fail with the\n`ExtensionError` above.\n- T1's empty-string and empty-table cases fail on Sphinx's own type\nwarning (``The config value `needs_functions' has type `str'; expected\n`list'.``, or `dict`).\n- T2 fails with no warning.\n- T2b fails because the empty list removed `answer`: `Unknown function\n'answer' [needs.dynamic_function]`.\n- T4 and T5 pass before the fix too. They guard behaviour that the fix\nmust keep.\n\nResults:\n- `uv run poe test-needs tests/test_needs_from_toml.py\ntests/test_variants_table.py tests/test_needs_from_toml_functions.py`:\n54 passed.\n- `uv run poe test-needs -n 4 -q -p no:cacheprovider` on this branch\n(master `3a9bcce` plus these commits): 2094 passed, 13 skipped, 304\nsnapshots passed; no existing test or snapshot changed.\n- `uv run poe lint` and `uv run poe typecheck`: exit 0.\n- `docs-needs` was not run, because the sandbox's proxy blocks the\nintersphinx hosts.\n\n## Follow-up\n\nThese are not in this PR:\n- #2067: `[needs.services.<name>]` with `class = \"x\"` and `class_init =\n{}` in the TOML crashes the same way (`AttributeError: 'str' object has\nno attribute 'options'`, in `prepare_env`).\n#2068 proposes a fix with a `services` check at the same lines of\n`load_config_from_toml` this PR touches,\nso whichever lands second needs a small conflict resolution; the\nper-field flag of this PR could carry that case too.\n- #2072: the `[needs.schema]` loop of `load_config_from_toml`.\n  - A key such as `debug_active` is skipped as unknown.\n  - A name such as `id_required` crashes with `Unknown config field`.\n  - Its assignment line can never be reached.\n- #2073: these `needs_functions` values still crash in `add_function`:\n- an entry without a `__name__`, such as a `functools.partial` or a\ncallable instance;\n  - a value that is not iterable, such as `None` or a bare function.",
+          "timestamp": "2026-10-06T17:34:41+02:00",
+          "tree_id": "16cf7e723403478e00a6067f5dbed1a589999398",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/4e3db3bf550df1a3e644049b75a66473df549fed"
+        },
+        "date": 1791300960765,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.10720414099999687,
+            "unit": "s",
+            "extra": "Commit: 4e3db3bf550df1a3e644049b75a66473df549fed\nBranch: master\nTime: 2026-10-06T17:34:41+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 57.250303149000004,
+            "unit": "s",
+            "extra": "Commit: 4e3db3bf550df1a3e644049b75a66473df549fed\nBranch: master\nTime: 2026-10-06T17:34:41+02:00"
           }
         ]
       }
