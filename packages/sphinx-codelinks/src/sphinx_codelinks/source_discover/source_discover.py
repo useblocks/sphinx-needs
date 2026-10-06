@@ -106,7 +106,11 @@ class SourceDiscover:
             # controls whether the walker descends into symlinked directories
             discovered_files.append(filepath.resolve())
 
+        # a file reached through a symbolic link inside the tree resolves to a path
+        # already found: list each file once, or every caller analyses it once per
+        # path to it
         sorted_filepaths = sorted(
-            discovered_files, key=lambda x: os.path.normcase(os.path.normpath(x))
+            dict.fromkeys(discovered_files),
+            key=lambda x: os.path.normcase(os.path.normpath(x)),
         )
         return sorted_filepaths

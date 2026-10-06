@@ -120,6 +120,11 @@ New and Improved
   again (not read again). A ``needtable`` in a third document that filters on the field is
   still rewritten only when that document is.
 
+- 🐛 A source file reached through a symbolic link inside the traced directory is analysed
+  once, not once per path to it (its one-line needs used to abort the build with
+  ``duplicate_id``): it is listed under its resolved path, though two spellings of one file
+  on a case-insensitive file system are still two entries.
+
 - ⬆️ ``typer`` is no longer capped below 0.26.8. The cap protected the documentation build,
   whose ``sphinxcontrib-typer`` imported a ``typer.rich_utils`` name that 0.26.8 removed;
   the ``docs`` extra now requires ``sphinxcontrib-typer`` 0.9.1 or newer, which tracks

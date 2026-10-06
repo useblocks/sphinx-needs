@@ -303,3 +303,106 @@ def test_discover_fixture(case: dict, tmp_path: Path) -> None:
     assert discovered_relative == expected, (
         f"Case '{case['name']}': expected {expected}, got {discovered_relative}"
     )
+
+
+def _links_tree(tmp_path: Path) -> Path:
+    """``root/{a.cpp, sub/b.cpp}`` with four links: a file and a directory link inside
+    the root (``b_link.cpp`` -> ``sub/b.cpp``, ``dirlink_in`` -> ``sub``), and a file
+    and a directory link to outside it (``ext_link.cpp`` -> ``outside/ext.cpp``,
+    ``dirlink_out`` -> ``outside/odir``). Returns the root."""
+    root = tmp_path / "root"
+    (root / "sub").mkdir(parents=True)
+    (tmp_path / "outside" / "odir").mkdir(parents=True)
+    (root / "a.cpp").write_text("// a\n", encoding="utf-8")
+    (root / "sub" / "b.cpp").write_text("// b\n", encoding="utf-8")
+    (tmp_path / "outside" / "ext.cpp").write_text("// ext\n", encoding="utf-8")
+    (tmp_path / "outside" / "odir" / "o.cpp").write_text("// o\n", encoding="utf-8")
+    (root / "b_link.cpp").symlink_to(root / "sub" / "b.cpp")
+    (root / "dirlink_in").symlink_to(root / "sub", target_is_directory=True)
+    (root / "ext_link.cpp").symlink_to(tmp_path / "outside" / "ext.cpp")
+    (root / "dirlink_out").symlink_to(
+        tmp_path / "outside" / "odir", target_is_directory=True
+    )
+    return root
+
+
+def _listing(root: Path, *, follow_links: bool) -> list[str]:
+    """What discovery lists under ``root``, POSIX and relative to ``root``'s parent
+    (``root.parent`` resolved: the listing is of canonical paths)."""
+    config = SourceDiscoverConfig(
+        src_dir=root, gitignore=False, follow_links=follow_links
+    )
+    base = root.parent.resolve()
+    return [
+        path.relative_to(base).as_posix()
+        for path in SourceDiscover(config).source_paths
+    ]
+
+
+def test_a_file_link_inside_the_root_is_listed_once(tmp_path: Path) -> None:
+    """``b_link.cpp`` is ``sub/b.cpp``: one entry, the target's, not one per path to it.
+
+    A symlinked file is listed even with ``follow_links = false`` (``is_file()``
+    follows the link) -- ubCode skips it; a parity gap kept as it is. A link to a file
+    OUTSIDE the root is listed too, as its resolved target.
+    """
+    assert _listing(_links_tree(tmp_path), follow_links=False) == [
+        "outside/ext.cpp",
+        "root/a.cpp",
+        "root/sub/b.cpp",
+    ]
+
+
+def test_a_followed_directory_link_inside_the_root_lists_each_file_once(
+    tmp_path: Path,
+) -> None:
+    """With ``follow_links = true`` ``sub/b.cpp`` is reached three ways (``sub/``,
+    ``b_link.cpp`` and ``dirlink_in/``): still one entry. The followed link to outside
+    the root lists its file, resolved."""
+    assert _listing(_links_tree(tmp_path), follow_links=True) == [
+        "outside/ext.cpp",
+        "outside/odir/o.cpp",
+        "root/a.cpp",
+        "root/sub/b.cpp",
+    ]
+
+
+def test_a_link_free_listing_is_sorted_by_full_path(tmp_path: Path) -> None:
+    """Without links nothing is deduplicated, and the order is the full path's: ``-``
+    and ``.`` sort before the separator, ``_`` after it (on POSIX and on Windows)."""
+    root = tmp_path / "root"
+    for relative in [
+        "b.cpp",
+        "sub_x.cpp",
+        "z/y/x.cpp",
+        "sub/c.cpp",
+        "a.cpp",
+        "sub.cpp",
+        "sub-x/d.cpp",
+    ]:
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("// x\n", encoding="utf-8")
+
+    assert _listing(root, follow_links=False) == [
+        "root/a.cpp",
+        "root/b.cpp",
+        "root/sub-x/d.cpp",
+        "root/sub.cpp",
+        "root/sub/c.cpp",
+        "root/sub_x.cpp",
+        "root/z/y/x.cpp",
+    ]
+    assert _listing(root, follow_links=True) == _listing(root, follow_links=False)
+
+
+@pytest.mark.parametrize("follow_links", [False, True])
+def test_a_link_to_outside_the_root_is_listed_as_its_target(
+    tmp_path: Path, follow_links: bool
+) -> None:
+    """A file link to outside the root is listed, resolved, either way; a directory
+    link to outside it only when followed."""
+    listing = _listing(_links_tree(tmp_path), follow_links=follow_links)
+    assert "outside/ext.cpp" in listing
+    assert ("outside/odir/o.cpp" in listing) is follow_links
+    assert not any("link" in path for path in listing)

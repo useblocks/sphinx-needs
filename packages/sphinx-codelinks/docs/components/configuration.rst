@@ -407,6 +407,12 @@ When disabled, symbolic links to directories are not traversed.
 - ``false`` - Symbolic links to directories are skipped (default, safer)
 - ``true`` - Symbolic links are followed, discovering files inside linked directories
 
+Either way a file is listed once, under its resolved path, however many links lead to it --
+except that two spellings of one file on a case-insensitive file system (a link to
+``sub/B.cpp`` beside ``sub/b.cpp``) are still two entries.
+A symbolic link to a *file* is discovered even with ``follow_links = false`` (ubCode skips
+it).
+
 For more information about the usage examples, see :ref:`source discover <discover>`.
 
 .. _`analyse_config`:

@@ -135,10 +135,11 @@ class SourceTracingDirective(SphinxDirective):
             exclude=build_output_dirs(self.env.app),
         )
 
-        # add source files into the dependency
+        # add source files into the dependency (discovery's paths are canonical
+        # already: resolving them again would only walk the file system a second time)
         # https://www.sphinx-doc.org/en/master/extdev/envapi.html#sphinx.environment.BuildEnvironment.note_dependency
         for source_file in source_files:
-            self.env.note_dependency(str(source_file.resolve()))
+            self.env.note_dependency(str(source_file))
         # and record the scope, so that a file ADDED to it re-reads this document
         # (a new file is a dependency of nothing; ``rediscovery.find_outdated_scopes``)
         if kind == "file":
