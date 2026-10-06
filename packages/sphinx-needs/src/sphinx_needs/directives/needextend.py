@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from typing import Final
 
 from docutils import nodes
+from docutils.parsers.rst import directives
 from sphinx.util.docutils import SphinxDirective
+from sphinx.util.logging import suppress_logging
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import ExtendType, NeedsExtendType, NeedsMutable, SphinxNeedsData
@@ -22,6 +24,16 @@ from sphinx_needs.needs_schema import (
 from sphinx_needs.utils import DummyOptionSpec, add_doc, coerce_to_boolean
 
 logger = get_logger(__name__)
+
+DEFAULT_EXTEND_PRIORITY: Final = 500
+"""The priority of a ``needextend`` without ``:extend_priority:``.
+
+Lower priorities are applied first, as for Sphinx's event handlers, whose default
+priority is 500 too.
+"""
+
+_MATCH_ORDER_NAMED: Final = 3
+"""How many ids a ``needs.needextend_match_order`` message names in each set."""
 
 
 class Needextend(nodes.General, nodes.Element):
@@ -70,6 +82,17 @@ class NeedextendDirective(SphinxDirective):
             )
         except ValueError as err:
             self._log_warning(f"Invalid value for 'strict' option: {err}")
+            return []
+
+        try:
+            # the order this extend is applied in among all of them: lower first
+            extend_priority = (
+                directives.nonnegative_int(options.pop("extend_priority") or "")
+                if "extend_priority" in options
+                else DEFAULT_EXTEND_PRIORITY
+            )
+        except ValueError as err:
+            self._log_warning(f"Invalid value for 'extend_priority' option: {err}")
             return []
 
         extend_filter = (self.arguments[0] if self.arguments else "").strip()
@@ -189,6 +212,7 @@ class NeedextendDirective(SphinxDirective):
             "modifications": modifications,
             "list_modifications": list_modifications,
             "strict": strict,
+            "extend_priority": extend_priority,
         }
 
         add_doc(self.env, self.env.docname)
@@ -204,14 +228,42 @@ def extend_needs_data(
     extends: dict[str, NeedsExtendType],
     needs_config: NeedsSphinxConfig,
 ) -> None:
-    """Use data gathered from needextend directives to modify fields of existing needs."""
+    """Use data gathered from needextend directives to modify fields of existing needs.
 
-    # Sort by (docname, lineno) to ensure deterministic ordering,
-    # regardless of parallel build worker completion order.
-    sorted_extends = sorted(extends.values(), key=lambda x: (x["docname"], x["lineno"]))
+    The extends are applied in ``(extend_priority, docname, lineno)`` order, and each
+    filter is evaluated against the needs as the extends applied before it left them.
+    A filter that matches other needs against the needs as written, before any extend
+    is applied, is reported as ``needs.needextend_match_order``.
+    """
+
+    # Sort by priority, lower first, then by (docname, lineno) to ensure deterministic
+    # ordering, regardless of parallel build worker completion order.
+    sorted_extends = sorted(
+        extends.values(),
+        key=lambda x: (x["extend_priority"], x["docname"], x["lineno"]),
+    )
+
+    # What each filter matches against the needs as written, taken before any extend
+    # is applied; an id-targeted extend's target is fixed, so it needs none. The needs
+    # as written are the same for every filter, so one filter string from one document
+    # (``c.this_doc()`` reads it) gives one set, and is evaluated once.
+    as_written_by_filter: dict[tuple[str, str], frozenset[str] | None] = {}
+    matched_as_written: list[frozenset[str] | None] = []
+    for needextend in sorted_extends:
+        if needextend["filter_is_id"]:
+            matched_as_written.append(None)
+            continue
+        key = (needextend["filter"], needextend["docname"])
+        if key not in as_written_by_filter:
+            as_written_by_filter[key] = _ids_matched_as_written(
+                all_needs, needs_config, needextend
+            )
+        matched_as_written.append(as_written_by_filter[key])
 
     current_needextend: NeedsExtendType
-    for current_needextend in sorted_extends:
+    for current_needextend, as_written in zip(
+        sorted_extends, matched_as_written, strict=True
+    ):
         need_filter = current_needextend["filter"]
         location = (current_needextend["docname"], current_needextend["lineno"])
         if current_needextend["filter_is_id"]:
@@ -241,6 +293,15 @@ def extend_needs_data(
                     location=location,
                 )
                 continue
+            if as_written is not None:
+                matched_now = frozenset(need["id"] for need in found_needs)
+                if matched_now != as_written:
+                    log_warning(
+                        logger,
+                        _match_order_message(matched_now, as_written),
+                        "needextend_match_order",
+                        location=location,
+                    )
 
         for found_need in found_needs:
             # Work in the stored needs, not on the search result
@@ -367,3 +428,63 @@ def extend_needs_data(
                         raise RuntimeError(
                             f"Unhandled case {other_field} for {option_name!r}"
                         )
+
+
+def _ids_matched_as_written(
+    all_needs: NeedsMutable,
+    needs_config: NeedsSphinxConfig,
+    needextend: NeedsExtendType,
+) -> frozenset[str] | None:
+    """Return the ids of the needs a needextend's filter matches before any extend.
+
+    Called before the first extend is applied, so the needs are as written and need no
+    copy; ``id`` cannot be extended, so the ids name the same needs afterwards. Nothing
+    is logged (the location only feeds that logging): the filter is evaluated again
+    when the extend is applied, and reports its errors there, once.
+
+    :return: The ids, or ``None`` if the filter cannot be evaluated.
+    """
+    with suppress_logging():
+        try:
+            found_needs = filter_needs_mutable(
+                all_needs,
+                needs_config,
+                needextend["filter"],
+                location=(needextend["docname"], needextend["lineno"]),
+                origin_docname=needextend["docname"],
+            )
+        except Exception:
+            return None
+    return frozenset(need["id"] for need in found_needs)
+
+
+def _match_order_message(now: Collection[str], as_written: Collection[str]) -> str:
+    """Return the ``needs.needextend_match_order`` message for one extend.
+
+    :param now: The ids the filter matches after the earlier extends.
+    :param as_written: The ids it matches against the needs as written.
+    """
+    return (
+        "the needs matched by this needextend depend on modifications applied by "
+        "earlier needextend directives: it matches "
+        f"{_counted_ids(now, ' need' if len(now) == 1 else ' needs')} now and "
+        f"{_counted_ids(as_written)} against the needs as written; from the next "
+        "release filters are evaluated against the needs as written, before any "
+        "needextend is applied"
+    )
+
+
+def _counted_ids(ids: Collection[str], noun: str = "") -> str:
+    """Return ``<count><noun> (A, B, C and K more)``, the ids in need-id order.
+
+    The first ``_MATCH_ORDER_NAMED`` ids are named and the rest counted; no ids is
+    the count alone.
+    """
+    counted = f"{len(ids)}{noun}"
+    if not ids:
+        return counted
+    ordered = sorted(ids)
+    named = ", ".join(ordered[:_MATCH_ORDER_NAMED])
+    if len(ordered) > _MATCH_ORDER_NAMED:
+        named += f" and {len(ordered) - _MATCH_ORDER_NAMED} more"
+    return f"{counted} ({named})"
