@@ -117,7 +117,8 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.connect("env-merge-info", merge_info)
     # after every read and merge: the projects no directive traces are scanned, and
     # the documents whose needs' references changed are written
-    app.connect("env-updated", find_affected_documents)
+    # (early, before an env-updated handler of another extension resolves the needs)
+    app.connect("env-updated", find_affected_documents, priority=100)
     # after every need is collected and before needextend is applied: a user's
     # needextend of the references field wins
     app.connect("needs-before-post-processing", attach_on_post_processing)

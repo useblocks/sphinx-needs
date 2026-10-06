@@ -23,10 +23,9 @@ Sphinx pickles the environment only when a document was read or ``env-updated``
 returned one. So the ``env-updated`` handler also compares the references the attach
 will use (:func:`effective_refs`) with those of the previous build, and returns the
 documents holding a need whose references changed: Sphinx then writes them (without
-reading them again), so their cards are current, and pickles the environment, so a
-source-only change is analysed once. When the changed references name no known need,
-nothing is returned, the build may not pickle, and the project is scanned again next
-build.
+reading them again), so their cards are current, and pickles the environment. A build
+that analysed a project again but affects no need's document returns the root document,
+so that the new scan is kept: a source-only change is analysed once.
 """
 
 from __future__ import annotations
@@ -347,13 +346,17 @@ def scan_config_only_project(
 
 def update_config_only_refs(
     app: Sphinx, env: BuildEnvironment, codelinks_config: CodeLinksConfig
-) -> None:
+) -> bool:
     """Scan every gated project no directive traces; one warning per failing project,
     and the build goes on (ubCode's rule). A configuration change drops every stored
-    entry first."""
+    entry first.
+
+    :return: Whether a project was analysed again (a new entry stored). A failing scan
+        drops its entry and does not count: it will fail again next build.
+    """
     projects = codelinks_config.projects
     if not isinstance(projects, dict):
-        return
+        return False
     store = config_only_refs_store(env)
     if env.config_status != CONFIG_OK:
         # the fingerprint covers the files only, and every confval a record depends on
@@ -361,12 +364,14 @@ def update_config_only_refs(
         # a directive owns now included, or one would be reused stale when it goes)
         store.clear()
     owned = directive_owned(env)
+    analysed = False
     for project in sorted(need_id_refs_fields(codelinks_config)):
         if project in owned:
             continue
+        previous = store.get(project)
         try:
-            store[project] = scan_config_only_project(
-                app, codelinks_config, project, projects[project], store.get(project)
+            scan = scan_config_only_project(
+                app, codelinks_config, project, projects[project], previous
             )
         except Exception as error:  # discovery or parse: never fatal, always said
             store.pop(project, None)
@@ -375,6 +380,10 @@ def update_config_only_refs(
                 type="codelinks",
                 subtype="need_id_ref",
             )
+            continue
+        analysed = analysed or scan is not previous
+        store[project] = scan
+    return analysed
 
 
 # -- the handlers --------------------------------------------------------------------
@@ -468,25 +477,36 @@ def changed_need_ids(
 def find_affected_documents(app: Sphinx, env: BuildEnvironment) -> list[str]:
     """Scan the config-only projects, then return the documents holding a need whose
     references changed in this build (``env-updated``; Sphinx writes them, and pickles
-    the environment). An id no need has contributes nothing."""
+    the environment). An id no need has contributes nothing.
+
+    When a project was analysed again but no need's document is affected (an edit that
+    moves no known need's reference), the root document is returned instead: one page
+    written, so that Sphinx pickles the environment and the next build finds the new
+    fingerprint rather than analysing the project again.
+    """
     codelinks_config = CodeLinksConfig.from_sphinx(app.config)
-    update_config_only_refs(app, env, codelinks_config)
+    analysed = update_config_only_refs(app, env, codelinks_config)
+    root_doc = app.config.root_doc
+    keep = [root_doc] if analysed and root_doc in env.found_docs else []
     previous = _PREVIOUS_REFS.pop(env, [])
     affected = changed_need_ids(previous, effective_refs(env, codelinks_config))
     if not affected:
-        return []
+        return keep
     try:
         # the read phase's accessor: it never triggers post-processing
         needs = SphinxNeedsData(env).get_needs_mutable()
-    except RuntimeError:  # already post-processed: nothing left to write for
-        return []
+    except RuntimeError:
+        # another env-updated handler resolved the needs before this one (it is
+        # connected early for that reason): their documents cannot be told apart now
+        logger.debug("codelinks: needs already post-processed at env-updated")
+        return keep
     docnames: set[str] = set()
     for need_id in affected:
         need = needs.get(need_id)
         docname = need.get("docname") if need is not None else None
         if isinstance(docname, str):
             docnames.add(docname)
-    return sorted(docnames & env.found_docs)
+    return sorted(docnames & env.found_docs) or keep
 
 
 def attach_on_post_processing(app: Sphinx, needs: MutableMapping[str, Any]) -> None:
