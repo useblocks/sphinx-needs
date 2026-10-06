@@ -138,17 +138,24 @@ def test_two_builders_sharing_the_doctrees_each_get_the_copies_and_pages(
 
 
 @pytest.mark.parametrize("path", ["directive", "config-only"])
-def test_an_unchanged_build_writes_the_pages_again(
+def test_an_unchanged_build_keeps_the_pages(
     tmp_path: Path, make_app: _MakeApp, path: str
 ) -> None:
-    """A build that reads nothing writes every known source page again."""
+    """A build that reads nothing still has every copy and page. Where Sphinx collects
+    the extensions' pages on such a build (9.x; 7.4 stops at "no targets are out of
+    date" and writes nothing at all), it writes every known source page again."""
     _local_project(tmp_path, path)
     _build(tmp_path, make_app)
 
     app, written = _recording(make_app, tmp_path, freshenv=False)
 
-    assert "0 added, 0 changed, 0 removed" in _status(app)
-    assert sorted(written) == [c.removesuffix(".cpp") for c in COPIES[path]]
+    status = _status(app)
+    assert "0 added, 0 changed, 0 removed" in status
+    assert _paged(app) == COPIES[path]
+    if "writing additional pages" in status:
+        assert sorted(written) == [c.removesuffix(".cpp") for c in COPIES[path]]
+    else:
+        assert written == []
 
 
 @pytest.mark.parametrize("path", ["directive", "config-only"])
