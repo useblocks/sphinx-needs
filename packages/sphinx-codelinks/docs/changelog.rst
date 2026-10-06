@@ -176,8 +176,9 @@ New and Improved
   marker (ubCode's rule), so documentation tags like ``@param`` and ``@brief`` do not
   warn; an empty marker is not a marker, as in ubCode; a marker Sphinx-Needs refuses (an
   id ``needs_id_regex`` rejects, say) warns too, instead of stopping the build; and the
-  messages are ubCode's (``1 given fields, minimum is 2``). The never-written warnings file under ``src_trace_cache`` and its reader are gone,
-  a file nothing had written since at least 1.4.0 (:ref:`oneline_invalid`,
+  messages are ubCode's (``1 given fields, minimum is 2``). The never-written warnings
+  file under ``src_trace_cache`` and its reader are gone, a file nothing had written
+  since at least 1.4.0 (:ref:`oneline_invalid`,
   `#2076 <https://github.com/useblocks/sphinx-needs/issues/2076>`__).
 
 - ⬆️ ``typer`` is no longer capped below 0.26.8. The cap protected the documentation build,

@@ -276,7 +276,8 @@ The build goes on, without that need; with ``-W`` it fails. One entry,
 ``suppress_warnings = ["codelinks.oneline"]``, silences them all. A project that no
 ``src-trace`` directive traces creates no needs, and reports none. A file that two
 directives' scopes share is analysed by each, and each reports its markers. ``codelinks
-analyse`` prints the same warnings to the console.
+analyse`` prints the parser's kinds to the console; it creates no needs, so a need
+Sphinx-Needs refuses is reported by a build only.
 
 **A one-character start sequence without the field separator is not a marker.** When the
 start sequence is a single character -- the default ``@`` -- and the text after it holds no
