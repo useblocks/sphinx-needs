@@ -33,6 +33,8 @@ from typing import TYPE_CHECKING, Literal
 from sphinx import version_info
 
 if TYPE_CHECKING:
+    from sphinx.application import Sphinx
+    from sphinx.config import Config
     from sphinx.util.logging import SphinxLoggerAdapter
 
 #: Warning subtypes known to sphinx-mounts. Keep sorted — adding a new
@@ -108,6 +110,31 @@ MOUNT_GATED_CODE = "mounts.mount_gated"
 WARNING_TYPE = "mounts"
 
 
+class _WarningTypes:
+    """Whether Sphinx renders a warning's `` [type.subtype]`` suffix itself.
+
+    It does when ``show_warning_types`` is on: an option since Sphinx 7.3 (default
+    ``False``), on by default since 8.0. Where Sphinx does not, :func:`log_warning`
+    appends the suffix itself -- before 8.0 only, as it always has -- and where it
+    does, it must not, or it shows twice (#2091). :func:`log_warning` has no ``app``,
+    so :func:`configure_warning_types` records the build's value at
+    ``config-inited``, again for every build in the process; until then the running
+    Sphinx's default applies.
+    """
+
+    sphinx_renders: bool = version_info >= (8,)
+
+
+_warning_types = _WarningTypes()
+
+
+def configure_warning_types(_app: Sphinx, config: Config) -> None:
+    """Record whether Sphinx renders the warning type suffix for this build."""
+    _warning_types.sphinx_renders = version_info >= (8,) or bool(
+        config.show_warning_types
+    )
+
+
 def log_warning(
     logger: SphinxLoggerAdapter,
     message: str,
@@ -121,7 +148,8 @@ def log_warning(
     ``"docname_conflict"`` that is ``mounts.docname_conflict``. Sphinx < 8
     does not display warning types by default, so the type is appended to
     the message there to keep the console output self-explanatory on all
-    supported versions.
+    supported versions -- unless the build sets ``show_warning_types``, in
+    which case Sphinx appends it itself.
 
     :param logger: The module logger to emit through.
     :param message: The warning text (already including the
@@ -130,6 +158,6 @@ def log_warning(
     :param location: Optional docname (or ``docname:lineno``) the warning
         belongs to.
     """
-    if version_info < (8,):
+    if not _warning_types.sphinx_renders:
         message = f"{message} [{WARNING_TYPE}.{topic}]"
     logger.warning(message, type=WARNING_TYPE, subtype=topic, location=location)
