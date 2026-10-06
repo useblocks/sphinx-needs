@@ -52,10 +52,15 @@ def _duplicate(
     need_id: str = "IMPL_1",
 ) -> str:
     suffix = " [codelinks.duplicate_need]" if _SHOWS_WARNING_TYPES else ""
+    cure = (
+        "give the markers distinct ids"
+        if owner == docname
+        else "narrow one directive's scope"
+    )
     return (
         f"{location}: WARNING: one-line need {need_id!r} is already defined in document "
         f"{owner!r}: not created again by the src-trace directive in {docname!r} "
-        f"(narrow one directive's scope){suffix}"
+        f"({cure}){suffix}"
     )
 
 

@@ -286,10 +286,16 @@ class SourceTracingDirective(SphinxDirective):
             if isinstance(owner, str) and owner
             else "by an external need"
         )
+        # two markers of this document's own scopes generating one id is a title
+        # collision, not an overlap: the cure differs
+        cure = (
+            "give the markers distinct ids"
+            if owner == self.env.docname
+            else "narrow one directive's scope"
+        )
         logger.warning(
             f"one-line need {need_id!r} is already defined {where}: not created again "
-            f"by the src-trace directive in {self.env.docname!r} "
-            "(narrow one directive's scope)",
+            f"by the src-trace directive in {self.env.docname!r} ({cure})",
             type="codelinks",
             subtype="duplicate_need",
             location=f"{_relative_posix(filepath, root)}:"
