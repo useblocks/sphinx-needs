@@ -1864,10 +1864,10 @@ Inside your **conf.py** file use it like this:
 
 .. code-block:: python
 
-   needs_functions = [my_own_function]
-
    def my_own_function(app, need, needs):
        return "Awesome"
+
+   needs_functions = [my_own_function]
 
 See :ref:`dynamic_functions` for more information.
 

@@ -508,16 +508,17 @@ class NeedsSphinxConfig:
         return value
 
     @classmethod
-    def toml_ignored_reason(cls, name: str, prefix: str = "") -> str | None:
+    def toml_ignored_reason(cls, name: str) -> str | None:
         """Why a config field is ignored in the toml file, or ``None`` if it is read.
 
         A field that cannot be set from toml says so with ``"toml": False`` in its
-        metadata, and gives the reason, for the warning, as ``"toml_reason"``.
+        metadata, and gives the reason, for the warning, as ``"toml_reason"`` (a
+        generic one is used otherwise).
         """
-        metadata = cls._get_field(name, prefix).metadata
+        metadata = cls._get_field(name).metadata
         if metadata.get("toml", True):
             return None
-        return str(metadata["toml_reason"])
+        return str(metadata.get("toml_reason", "it cannot be set from the toml file"))
 
     @classmethod
     def get_default(cls, name: str) -> Any:

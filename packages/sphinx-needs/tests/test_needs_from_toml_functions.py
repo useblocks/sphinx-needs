@@ -29,6 +29,31 @@ TOML_FUNCTIONS_WARNING = (
 )
 
 
+#: A ``conf.py`` registering one real function, and a page that calls it.
+ANSWER_CONF = """\
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    # Sphinx's own warning that a function in the configuration is not pickled, which
+    # is not what these tests are about
+    suppress_warnings = ["config.cache"]
+
+
+    def answer(app, need, needs):
+        return "forty-two"
+
+
+    needs_functions = [answer]
+    """
+ANSWER_RST = """\
+    Title
+    =====
+
+    .. req:: One
+       :id: R_ONE
+       :status: [[answer()]]
+    """
+
+
 @pytest.fixture
 def build(make_app, tmp_path):
     """Write a project, build it, and return the application."""
@@ -46,6 +71,12 @@ def build(make_app, tmp_path):
     return _build
 
 
+def _need(app, need_id: str) -> dict:
+    """Read one need from the build's ``needs.json``."""
+    needs = json.loads(Path(app.outdir, "needs.json").read_text("utf8"))
+    return needs["versions"][""]["needs"][need_id]
+
+
 @pytest.mark.parametrize(
     "toml",
     [
@@ -61,23 +92,43 @@ def build(make_app, tmp_path):
             """,
             id="table",
         ),
+        # empty, but still a key that is never read: Sphinx used to warn that its type
+        # was not a list
+        pytest.param('[needs]\nfunctions = ""\n', id="empty-string"),
+        pytest.param("[needs.functions]\n", id="empty-table"),
     ],
 )
 def test_a_functions_key_in_the_toml_warns_and_is_ignored(build, toml):
-    """Every shape of the key used to end the build with an ``AttributeError``; it is now
-    one ``needs.config`` warning, the key is dropped, and the build completes."""
+    """Every non-empty shape of the key used to end the build with an
+    ``AttributeError``; every shape is now one ``needs.config`` warning, the key is
+    dropped, and the build completes."""
     app = build({"conf.py": TOML_CONF, "ubproject.toml": toml})
     assert build_warnings(app) == [TOML_FUNCTIONS_WARNING]
     assert app.config.needs_functions == []
     assert app.statuscode == 0
 
 
-def test_an_empty_functions_key_in_the_toml_is_silent(build):
-    """An empty list registers nothing, so nothing is lost by ignoring it: it built
-    without a warning before, and still does."""
+def test_an_empty_functions_key_in_the_toml_is_reported_and_ignored(build):
+    """A key that is never read has no silent form: an empty list is reported like any
+    other value, whatever ``conf.py`` holds."""
     app = build({"conf.py": TOML_CONF, "ubproject.toml": "[needs]\nfunctions = []\n"})
-    assert_no_warnings(app)
+    assert build_warnings(app) == [TOML_FUNCTIONS_WARNING]
     assert app.config.needs_functions == []
+
+
+def test_an_empty_functions_key_in_the_toml_keeps_the_functions_of_conf_py(build):
+    """An empty list in the TOML used to replace, silently, the functions ``conf.py``
+    registers, so a ``[[answer()]]`` became an unknown function. The key is not read
+    any more: the function still runs, and the key is reported."""
+    app = build(
+        {
+            "conf.py": ANSWER_CONF,
+            "ubproject.toml": "[needs]\nbuild_json = true\nfunctions = []\n",
+            "index.rst": ANSWER_RST,
+        }
+    )
+    assert build_warnings(app) == [TOML_FUNCTIONS_WARNING]
+    assert _need(app, "R_ONE")["status"] == "forty-two"
 
 
 def test_a_needs_functions_entry_that_is_not_callable_warns_and_is_ignored(build):
@@ -93,8 +144,9 @@ def test_a_needs_functions_entry_that_is_not_callable_warns_and_is_ignored(build
 
 
 def test_an_override_of_needs_functions_wins_over_the_toml_silently(build):
-    """A ``-D`` override is never replaced by the TOML file, and the key it overrides is
-    not reported either: the TOML value is not used, whatever it holds."""
+    """An override (``confoverrides``) is never replaced by the TOML file, and the key
+    it overrides is not reported either: the TOML value is not used, whatever it
+    holds."""
     app = build(
         {"conf.py": TOML_CONF, "ubproject.toml": '[needs]\nfunctions = ["x"]\n'},
         confoverrides={"needs_functions": []},
@@ -109,33 +161,11 @@ def test_a_function_from_conf_py_is_still_registered_beside_a_toml_file(build):
     """
     app = build(
         {
-            "conf.py": """\
-                extensions = ["sphinx_needs"]
-                needs_from_toml = "ubproject.toml"
-                # Sphinx's own warning that a function in the configuration is not
-                # pickled, which is not what this test is about
-                suppress_warnings = ["config.cache"]
-
-
-                def answer(app, need, needs):
-                    return "forty-two"
-
-
-                needs_functions = [answer]
-                """,
+            "conf.py": ANSWER_CONF,
             "ubproject.toml": "[needs]\nbuild_json = true\nid_required = true\n",
-            "index.rst": """\
-                Title
-                =====
-
-                .. req:: One
-                   :id: R_ONE
-                   :status: [[answer()]]
-                """,
+            "index.rst": ANSWER_RST,
         }
     )
     assert_no_warnings(app)
     assert app.config.needs_id_required is True
-    needs = json.loads(Path(app.outdir, "needs.json").read_text("utf8"))
-    need = needs["versions"][""]["needs"]["R_ONE"]
-    assert need["status"] == "forty-two"
+    assert _need(app, "R_ONE")["status"] == "forty-two"
