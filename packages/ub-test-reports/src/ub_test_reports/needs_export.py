@@ -244,9 +244,17 @@ def build_need(
         properties = {}
 
     # Link fields are emitted even when empty, so a schema can require them.
+    for link_field in link_properties.values():
+        need[link_field] = []
+
     for property_name, link_field in link_properties.items():
-        raw = str(properties.get(property_name, ""))
-        need[link_field] = [item.strip() for item in raw.split(",") if item.strip()]
+        value = properties.get(property_name)
+        raw = "" if value is None else str(value)
+        items = [item.strip() for item in raw.split(",") if item.strip()]
+        if items:
+            current = need[link_field]
+            existing = current if isinstance(current, list) else []
+            need[link_field] = list(dict.fromkeys(existing + items))
 
     # Exported properties are emitted for every case too; absent, the field is
     # null, as the build leaves a registered field a directive did not set.

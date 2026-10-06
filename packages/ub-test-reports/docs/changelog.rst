@@ -9,6 +9,8 @@ Unreleased
 Fixed
 .....
 
+- 🐛 Multiple properties mapped onto the same link field in ``link_properties`` now merge their values
+  instead of overwriting each other, preserving mapping order and deduplicating IDs (:issue:`2058`).
 - 🐛 The JSON parser now reads report files as UTF-8 explicitly, so non-ASCII test names and
   messages do not depend on the process locale on Windows.
 

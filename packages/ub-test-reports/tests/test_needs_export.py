@@ -196,6 +196,55 @@ class TestPropertyGate:
         assert need["TestType"] is None
 
 
+class TestLinkProperties:
+    def test_multiple_properties_mapped_to_same_link_field_merge_and_deduplicate(self):
+        case = _case(
+            properties={
+                "PartiallyVerifies": "REQ_1, REQ_2",
+                "Requirement": "REQ_2, REQ_3",
+            }
+        )
+        need = build_need(
+            "r.xml",
+            "s",
+            case,
+            link_properties={"PartiallyVerifies": "links", "Requirement": "links"},
+        )
+        assert need["links"] == ["REQ_1", "REQ_2", "REQ_3"]
+
+    def test_subsequent_absent_property_does_not_overwrite_earlier_link_values(self):
+        case = _case(properties={"PartiallyVerifies": "REQ_1, REQ_2"})
+        need = build_need(
+            "r.xml",
+            "s",
+            case,
+            link_properties={"PartiallyVerifies": "links", "Requirement": "links"},
+        )
+        assert need["links"] == ["REQ_1", "REQ_2"]
+
+    def test_link_field_emitted_as_empty_list_when_no_properties_match(self):
+        case = _case(properties={})
+        need = build_need(
+            "r.xml",
+            "s",
+            case,
+            link_properties={"PartiallyVerifies": "links", "Requirement": "links"},
+        )
+        assert need["links"] == []
+
+    def test_empty_or_whitespace_values_are_ignored(self):
+        case = _case(
+            properties={"PartiallyVerifies": "REQ_1, ", "Requirement": "  ,  "}
+        )
+        need = build_need(
+            "r.xml",
+            "s",
+            case,
+            link_properties={"PartiallyVerifies": "links", "Requirement": "links"},
+        )
+        assert need["links"] == ["REQ_1"]
+
+
 class TestRemoteUrls:
     @pytest.mark.parametrize(
         ("remote", "base"),

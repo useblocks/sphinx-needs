@@ -225,6 +225,26 @@ class TestLinkProperties:
         need = _needs(data)["testcase__MathTest__DISABLED_Division_jnyzp"]
         assert need["partially_verifies"] == []
 
+    def test_multiple_properties_mapped_to_same_link_field_merge_values(self, tmp_path):
+        _, data = _convert(
+            tmp_path,
+            "--link-property",
+            "PartiallyVerifies=links",
+            "--link-property",
+            "Requirement=links",
+        )
+
+        needs = _needs(data)
+        # Addition carries PartiallyVerifies="REQ_1, REQ_2", no Requirement
+        assert needs["testcase__MathTest__Addition_hcuyy"]["links"] == [
+            "REQ_1",
+            "REQ_2",
+        ]
+        # Legacy carries Requirement="REQ_9", no PartiallyVerifies
+        assert needs["testcase__ParamTest_0__Legacy_owuvz"]["links"] == ["REQ_9"]
+        # DISABLED_Division carries neither
+        assert needs["testcase__MathTest__DISABLED_Division_jnyzp"]["links"] == []
+
     def test_malformed_link_property_is_rejected(self, tmp_path):
         from ub_test_reports.cli import main
 
