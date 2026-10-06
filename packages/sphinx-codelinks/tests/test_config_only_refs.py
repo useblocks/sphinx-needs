@@ -389,13 +389,10 @@ def test_a_configuration_change_while_a_directive_owns_the_project(
     assert _refs(app)["REQ_001"] == ["src/refs.cpp#L1", "src/refs.cpp#L3"]
 
 
-@pytest.mark.parametrize("path", ["directive", "config-only"])
-def test_the_build_output_is_never_traced(
-    tmp_path: Path, make_app: _MakeApp, analyses: list[str], path: str
-) -> None:
-    """A source directory containing the output directory (the whole repository, no
-    ignore rule for ``_build``) does not trace the extension's own copies: nothing is
-    analysed again, and each reference stays one entry."""
+def _repository_wide(tmp_path: Path, path: str) -> None:
+    """The fixture with ``src_dir = ".."`` -- the whole repository, docs and their
+    ``_build`` included, no ignore rule for it -- and local URLs only, so that every
+    build copies the sources into its output."""
     _project(
         tmp_path,
         files=NO_DIRECTIVE if path == "config-only" else None,
@@ -408,8 +405,26 @@ def test_the_build_output_is_never_traced(
         ),
         encoding="utf-8",
     )
+
+
+@pytest.mark.parametrize("path", ["directive", "config-only"])
+def test_the_build_output_is_never_traced(
+    tmp_path: Path, make_app: _MakeApp, analyses: list[str], path: str
+) -> None:
+    """A source directory containing the output directory does not trace the
+    extension's own copies: nothing is analysed again, and each reference stays one
+    entry. On the directive path the hosting document is edited once, so the directive
+    runs again with the copies present (on the fresh build its discovery runs before it
+    writes them)."""
+    _repository_wide(tmp_path, path)
     first = _build(tmp_path, make_app)
     assert len(_refs(first)["REQ_003"]) == 1
+    if path == "directive":
+        # now, not later: a future mtime would re-read it on every build
+        (tmp_path / "docs" / "index.rst").touch()
+        rerun = _build(tmp_path, make_app, freshenv=False)
+        assert "0 added, 1 changed, 0 removed" in _status(rerun)
+        assert len(_refs(rerun)["REQ_003"]) == 1
     analyses.clear()
     for _ in range(3):
         app = _build(tmp_path, make_app, freshenv=False)
@@ -418,6 +433,62 @@ def test_the_build_output_is_never_traced(
 
     assert analyses == []
     assert len(list(tmp_path.rglob("*.cpp"))) == 2
+
+
+@pytest.mark.parametrize(
+    "builders",
+    [("html", "dirhtml", "html", "dirhtml"), ("html", "latex", "html")],
+    ids=["html-dirhtml", "html-latex"],
+)
+@pytest.mark.parametrize("path", ["directive", "config-only"])
+def test_other_builders_output_is_never_traced(
+    tmp_path: Path,
+    make_app: _MakeApp,
+    analyses: list[str],
+    path: str,
+    builders: tuple[str, ...],
+) -> None:
+    """The Makefile layout -- ``_build/<builder>`` beside a shared ``_build/doctrees``:
+    the build directory inside the documentation source directory is skipped as a
+    whole, so one builder never traces another's copies. (The doctree directory's half
+    of the rule is unobservable here: no source file is ever written under it.) On
+    the directive path the hosting document is edited after the first build, so the
+    directive runs again with another builder's copies present."""
+    _repository_wide(tmp_path, path)
+    for number, builder in enumerate(builders):
+        if number == 1 and path == "directive":
+            # now, not later: a future mtime would re-read it on every build
+            (tmp_path / "docs" / "index.rst").touch()
+        if number == 2:
+            analyses.clear()
+        app = _build(tmp_path, make_app, buildername=builder, freshenv=number == 0)
+        needs_json = Path(app.outdir, "needs.json")
+        if needs_json.exists():
+            assert len(_refs(app)["REQ_003"]) == 1, builder
+        assert len(list(tmp_path.rglob("*.cpp"))) == 2, builder
+
+    assert analyses == []
+
+
+@pytest.mark.parametrize("state", ["unchanged", "failing-scan"])
+def test_a_build_with_nothing_to_redo_writes_nothing(
+    tmp_path: Path, make_app: _MakeApp, state: str
+) -> None:
+    """No document is written for a project that was not analysed again, nor for one
+    whose scan fails (it would fail again next build)."""
+    _project(
+        tmp_path,
+        files=NO_DIRECTIVE,
+        toml_replace=None
+        if state == "unchanged"
+        else ('src_dir = "../src"', 'src_dir = "../nosuch"'),
+    )
+    _build(tmp_path, make_app)
+    for _ in range(2):
+        app = _build(tmp_path, make_app, freshenv=False)
+        status = _status(app)
+        assert "0 added, 0 changed, 0 removed" in status
+        assert not re.search(r"writing output\.\.\. \[", status), status
 
 
 @pytest.mark.parametrize(
