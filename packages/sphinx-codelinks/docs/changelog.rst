@@ -99,7 +99,8 @@ New and Improved
   doctree directories and, when they sit inside the documentation source directory as
   ``_build/`` does, that directory, so sibling builders' output is skipped too; an output
   tree elsewhere inside ``src_dir`` needs an ignore rule (``.gitignore`` with
-  ``gitignore = true``, or ``exclude``). A build also starts with no source page pending
+  ``gitignore = true``, or ``exclude``), and the whole containing directory is skipped, so
+  an output directory placed directly beside traced sources hides them. A build also starts with no source page pending
   from a previous non-HTML build in the same process. The walk costs roughly 0.1 s per
   2,000 discovered files on an Apple M2 Pro laptop, whatever their size -- the
   directive's own discovery plus a ``stat`` per file -- while parsing them costs tens of

@@ -274,3 +274,12 @@ def test_fingerprint_paths_are_posix_on_windows() -> None:
 
     path = PureWindowsPath("C:/work/src/lib/a.cpp")
     assert scope_relative_path(path, PureWindowsPath("C:/work/src")) == "lib/a.cpp"
+
+
+def test_exclusion_stops_at_the_directory_boundary(tmp_path: Path) -> None:
+    """``_build2/`` is not under ``_build/``: the excluded prefix ends at a separator."""
+    from sphinx_codelinks.sphinx_extension.rediscovery import _outside
+
+    root = tmp_path.resolve()
+    files = [root / "_build" / "a.cpp", root / "_build2" / "a.cpp"]
+    assert _outside(files, [root / "_build"]) == [root / "_build2" / "a.cpp"]
