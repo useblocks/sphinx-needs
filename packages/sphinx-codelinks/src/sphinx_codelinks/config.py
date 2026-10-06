@@ -899,6 +899,28 @@ def check_project_configuration(config: CodeLinksConfig) -> list[str]:
     return errors
 
 
+def config_base_dir(confdir: str | Path, config: CodeLinksConfig) -> Path:
+    """The directory a project's relative paths are anchored at.
+
+    The configuration file's directory when ``src_trace_config_from_toml`` names one
+    (itself anchored at ``confdir``), else ``confdir``: ``src_dir``, ``git_root`` and
+    the preprocessor paths all resolve against it.
+    """
+    base = Path(confdir)
+    if config.config_from_toml:
+        base = anchor(Path(config.config_from_toml).parent, base)
+    return base
+
+
+def locate_src_dir(
+    confdir: str | Path,
+    config: CodeLinksConfig,
+    discover_config: SourceDiscoverConfig,
+) -> Path:
+    """A project's source directory, anchored (see :func:`config_base_dir`) and resolved."""
+    return anchor(discover_config.src_dir, config_base_dir(confdir, config)).resolve()
+
+
 def remote_url_pattern_warnings(config: CodeLinksConfig) -> list[str]:
     """Why a project's remote URL pattern will not render as one link, if it will not.
 
