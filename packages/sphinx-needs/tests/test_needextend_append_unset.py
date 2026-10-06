@@ -13,7 +13,7 @@ import pytest
 from sphinx.application import Sphinx
 
 from sphinx_needs_testkit import build_warnings
-from tests.test_needextend_priority import needs_by_id
+from tests.util import needs_by_id
 
 CONF = """\
 extensions = ["sphinx_needs"]

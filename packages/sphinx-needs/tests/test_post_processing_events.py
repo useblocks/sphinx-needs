@@ -13,7 +13,7 @@ import pytest
 from sphinx.application import Sphinx
 
 from sphinx_needs_testkit import build_warnings
-from tests.test_needextend_priority import needs_by_id, serial_and_parallel
+from tests.util import needs_by_id, serial_and_parallel
 
 CONF = """\
 import os
