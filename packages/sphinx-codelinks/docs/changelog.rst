@@ -95,13 +95,17 @@ New and Improved
   appeared only once the document changed. Each directive now records its scope, and every
   build walks each recorded scope again -- one directory walk per scope, no parsing -- and
   re-reads the documents whose files changed. A ``:file:`` scope is that one file, so a new
-  file beside it costs nothing.
+  file beside it costs nothing, and the extension's own output directory is never traced.
+  The walk costs about 0.1 s per 2,000 discovered files, whatever their size -- the
+  directive's own discovery plus a ``stat`` per file -- while parsing them costs tens of
+  times more (2,000 200-line C++ files: ~0.1 s of walk against ~9 s of analysis).
 
 - ✨ A project that no ``src-trace`` directive traces has its ``@need-ids:`` references
   attached anyway (ubCode's config-only mode), behind the same gate as a directive's. Its
   whole source directory is analysed, in the main process and so under ``-j N`` too, and
   no need is created from it -- its line counts the one-line needs it did not create.
-  Every build walks the directory and analyses it again only when its files changed; a
+  Every build walks the directory and analyses it again only when its files or the
+  configuration changed (and keeps the result, writing the root document if it must); a
   failing scan warns ``codelinks.need_id_ref`` and the build goes on.
 
 - 🐛 A need's card is rewritten when its code references change, whichever document it is
