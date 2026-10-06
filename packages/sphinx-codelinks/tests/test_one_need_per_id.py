@@ -31,6 +31,7 @@ from .test_need_id_refs import (
     _project,
 )
 from .test_rediscovery import _scoped, _status, _touch_later
+from .test_url_links import _card_links as _field_links
 
 IMPL = "// @first impl, IMPL_1, impl, [REQ_001]\nvoid impl() {}\n"
 #: the files every case starts from: index traces refs.cpp only
@@ -372,6 +373,32 @@ def test_a_generated_id_is_defined_once(
     ]
     assert _owner(app, GENERATED) == owner
     assert _duplicates(app) == [_duplicate(owner, other, need_id=GENERATED)]
+
+
+def test_a_generated_id_with_local_urls_links_its_source_page(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """A one-line style without ``id`` and local URLs on (no remote URL): the build
+    goes on (it used to abort with ``KeyError: 'id'``), the card's local link names the
+    source page, and that page's ``[docs]`` anchor links back to the generated id
+    (#2082)."""
+    _project(
+        tmp_path,
+        files={**IDLESS_FILES, **_scoped(None)},
+        toml_extra=IDLESS["toml_extra"],
+        toml_replace=("set_remote_url = true", "set_remote_url = false"),
+    )
+    app = _build(tmp_path, make_app)
+
+    assert build_warnings(app) == [DANGLING]
+    needs = _json(app)["needs"]
+    assert needs[GENERATED]["local-url"] == "src/impl.cpp#L1"
+    index = Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    assert _field_links(index, "local-url") == ["src/impl.html#L-1"]
+    page = Path(app.outdir, "src", "impl.html").read_text(encoding="utf-8")
+    assert re.findall(
+        r'<a class="viewcode-back" href="([^"]*)">\[docs\]</a>', page
+    ) == [f"../index.html#{GENERATED}"]
 
 
 @pytest.mark.parametrize("generated", [False, True], ids=["written-id", "generated-id"])
