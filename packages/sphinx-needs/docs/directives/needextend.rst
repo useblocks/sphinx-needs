@@ -92,6 +92,77 @@ Default: false
     We have a configuration (conf.py) option called :ref:`needs_needextend_strict`
     that deactivates or activates the ``:strict:`` option behaviour for all ``needextend`` directives in a project.
 
+.. _needextend_extend_priority:
+
+extend_priority
+~~~~~~~~~~~~~~~
+
+.. versionadded:: 9.0.0
+
+The ``needextend`` directives of a project are applied one after the other,
+sorted by ``:extend_priority:``, then by document name, then by line.
+A lower priority is applied first, as for Sphinx's event handlers:
+where two ``needextend`` directives set the same option, the one with the higher priority is applied last and its value is kept,
+and ``+option`` values are appended in ascending priority.
+
+Allowed values: an integer of 0 or more.
+An invalid value is reported as ``needs.needextend``, and that ``needextend`` is not applied.
+
+Default: 500, so a project that never sets the option keeps applying its ``needextend`` directives
+in document-name and line order.
+
+.. syntax-example::
+
+   .. req:: needextend Example 7
+      :id: extend_test_007
+      :status: open
+
+   .. needextend:: extend_test_007
+      :extend_priority: 600
+      :status: late
+      :+tags: applied_second
+
+   .. needextend:: extend_test_007
+      :extend_priority: 400
+      :status: early
+      :+tags: applied_first
+
+The status of ``extend_test_007`` ends as ``late``, and its tags as ``applied_first, applied_second``,
+whatever the order and the files the two ``needextend`` directives are written in.
+
+``:extend_priority:`` orders the modifications only: it never changes which needs a filter matches
+(see :ref:`needextend_match_order`).
+Like ``:strict:``, it is an option of the directive itself,
+so a :ref:`field <needs_fields>` named ``extend_priority`` or ``strict`` cannot be replaced by a ``needextend``;
+``+extend_priority`` and ``-extend_priority`` still modify such a field.
+
+.. _needextend_match_order:
+
+Filters and earlier needextend directives
+-----------------------------------------
+
+.. versionadded:: 9.0.0
+
+A filter is evaluated when its ``needextend`` is applied,
+against the needs as the ``needextend`` directives applied before it left them.
+So a filter on a field that an earlier ``needextend`` modifies can match needs it would not match as written, or miss needs it would,
+and renaming a file or changing a priority can change which needs a ``needextend`` modifies.
+
+Each filter is therefore also evaluated against the needs as written, before any ``needextend`` is applied,
+and a ``needextend`` whose filter matches different needs the two ways is reported once, at its location,
+as ``needs.needextend_match_order``, naming the needs it matches now and as written.
+What it modifies is unchanged in this release.
+From the next release, every filter is evaluated against the needs as written, before any ``needextend`` is applied,
+so the reported ``needextend`` directives are the ones whose matches will change.
+``:extend_priority:`` does not change what a filter matches, now or then: it orders the modifications only.
+An ID argument names its need whatever the earlier ``needextend`` directives changed, and is never reported.
+
+To silence the warning, add its type to Sphinx's ``suppress_warnings``:
+
+.. code-block:: python
+
+   suppress_warnings = ["needs.needextend_match_order"]
+
 Extending needs in current page
 -------------------------------
 
