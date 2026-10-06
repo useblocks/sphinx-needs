@@ -1,0 +1,4 @@
+[needs.services.foo]
+class = "x"
+class_init = {}
+url = "https://example.invalid"

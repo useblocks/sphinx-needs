@@ -574,6 +574,24 @@ def load_config_from_toml(app: Sphinx, config: Config) -> None:
         # Keep values passed via sphinx-build -D (confoverrides) untouched.
         if key in overridden_keys or config_key in overridden_keys:
             continue
+        if key == "services" and isinstance(value, dict):
+            # A Python service class cannot be represented in TOML. If we pass a
+            # string from ``[needs.services.<name>]`` through, ``prepare_env`` will
+            # later try to read ``.options`` from it and abort the Sphinx build.
+            # Keep the rest of the service's TOML configuration and report the
+            # unsupported class at the point where the source is still known.
+            value = deepcopy(value)
+            for service_name, service in value.items():
+                if isinstance(service, dict) and "class" in service:
+                    log_warning(
+                        LOGGER,
+                        f"'needs_services.{service_name}.class' cannot be set in "
+                        "'needs_from_toml'; register the service class in conf.py "
+                        "or through the Sphinx-Needs API.",
+                        "config",
+                        None,
+                    )
+                    del service["class"]
         config[config_key] = NeedsSphinxConfig.convert_field_value(
             key, value, toml_file.parent
         )
