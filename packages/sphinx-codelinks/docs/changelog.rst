@@ -159,6 +159,14 @@ New and Improved
   fields on or off) or, with a URL field on, an ``@need-ids:`` reference; it is now never
   traced. Widen ``src_dir`` to cover the target, or exclude the link.
 
+- 🐛 A ``src-trace`` directive whose ``:file:`` names no file warns once at the directive
+  (``codelinks.missing_file``) and the build goes on, where it used to end with
+  ``FileNotFoundError`` -- in a fresh build, or when the file was removed since the last;
+  re-created, the file is traced again by the next build. ubCode errors the directive
+  instead ("src-trace :file: … not found"); codelinks warns for every recoverable
+  configuration problem
+  (`#2069 <https://github.com/useblocks/sphinx-needs/issues/2069>`__).
+
 - ⬆️ ``typer`` is no longer capped below 0.26.8. The cap protected the documentation build,
   whose ``sphinxcontrib-typer`` imported a ``typer.rich_utils`` name that 0.26.8 removed;
   the ``docs`` extra now requires ``sphinxcontrib-typer`` 0.9.1 or newer, which tracks
