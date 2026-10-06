@@ -138,24 +138,65 @@ def test_two_builders_sharing_the_doctrees_each_get_the_copies_and_pages(
 
 
 @pytest.mark.parametrize("path", ["directive", "config-only"])
-def test_an_unchanged_build_keeps_the_pages(
+def test_an_unchanged_build_rewrites_no_copy_or_page(
     tmp_path: Path, make_app: _MakeApp, path: str
 ) -> None:
-    """A build that reads nothing still has every copy and page. Where Sphinx collects
-    the extensions' pages on such a build (9.x; 7.4 stops at "no targets are out of
-    date" and writes nothing at all), it writes every known source page again."""
+    """A build that reads nothing keeps every copy and page, and rewrites none of them:
+    the copies and pages are up to date (Sphinx 7.4 stops at "no targets are out of
+    date" before collecting any page; 9.x collects, and codelinks yields none)."""
     _local_project(tmp_path, path)
-    _build(tmp_path, make_app)
+    first = _build(tmp_path, make_app)
+    outdir = Path(first.outdir)
+    files = [outdir / c for c in COPIES[path]] + [
+        _page(outdir, c) for c in COPIES[path]
+    ]
+    stamps = [f.stat().st_mtime_ns for f in files]
 
     app, written = _recording(make_app, tmp_path, freshenv=False)
 
-    status = _status(app)
-    assert "0 added, 0 changed, 0 removed" in status
+    assert "0 added, 0 changed, 0 removed" in _status(app)
     assert _paged(app) == COPIES[path]
-    if "writing additional pages" in status:
-        assert sorted(written) == [c.removesuffix(".cpp") for c in COPIES[path]]
-    else:
-        assert written == []
+    assert written == []
+    assert [f.stat().st_mtime_ns for f in files] == stamps
+
+
+def test_a_page_whose_need_moved_to_another_document_is_written_again(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """``page1`` defines ``IMPL_1`` and ``page2`` defers to it; ``page1`` removed, ``page2``
+    is read again and defines it. The source is untouched, yet the page is written again:
+    its ``[docs]`` link names the new document."""
+    trace = "\n.. src-trace::\n   :project: src\n   :file: impl.cpp\n"
+    _local_project(
+        tmp_path,
+        "directive",
+        append={"docs/page1.rst": trace, "docs/page2.rst": trace},
+        **_scoped(":file: refs.cpp"),
+    )
+    first = _build(tmp_path, make_app)
+    page = Path(first.outdir, "src", "impl.html")
+    assert DOCS_LINK.findall(page.read_text(encoding="utf-8")) == [
+        "../page1.html#IMPL_1"
+    ]
+
+    (tmp_path / "docs" / "page1.rst").unlink()
+    app = _build(tmp_path, make_app, freshenv=False)
+
+    assert re.search(r"reading sources\.\.\. \[[^\]]*\] page2\b", _status(app))
+    assert DOCS_LINK.findall(page.read_text(encoding="utf-8")) == [
+        "../page2.html#IMPL_1"
+    ]
+
+
+def test_the_source_page_css_is_on_source_pages_only(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    _local_project(tmp_path, "directive")
+    app = _build(tmp_path, make_app)
+
+    css = "_static/source_tracing/ub_sct.css"
+    assert css in Path(app.outdir, "src", "impl.html").read_text(encoding="utf-8")
+    assert css not in Path(app.outdir, "index.html").read_text(encoding="utf-8")
 
 
 @pytest.mark.parametrize("path", ["directive", "config-only"])
