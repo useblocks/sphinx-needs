@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791323468331,
+  "lastUpdate": 1791324325653,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -22788,6 +22788,42 @@ window.BENCHMARK_DATA = {
             "value": 57.252001803,
             "unit": "s",
             "extra": "Commit: 87316e89bd7c69b67ff1d699f0b9955002420cd2\nBranch: master\nTime: 2026-10-06T23:48:49+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a5f2fb3ec1de1121c596e0b1f5d90d193a530b8e",
+          "message": "🔧 sphinx-codelinks: an .ignore at the root of every builder's output keeps it out of discovery (#2096)\n\n### What\n\nEvery builder writes an `.ignore` file holding `*` at the root of its\noutput directory and of its doctree directory, at\n`builder-inited`, on every build (restored when deleted). With\n`gitignore = true` (the default) discovery honours it — inside a git\nrepository or not — so nothing any builder writes is traced: the\nextension's source copies, Sphinx's `_downloads/` copies of a traced\nsource, another builder's whole tree, wherever the output sits. The\n`_build/` rule of #2065 (skip the directory containing the\noutput and doctree directories when it lies inside the documentation\nsource directory) now applies only to `gitignore = false`\nprojects, which read no ignore file.\n\n### Why\n\n#2065 kept discovery out of the build directory by path, which left two\ncases (#2071): two output trees inside `src_dir` but outside\nthe documentation source directory (`sphinx-build docs build/html`\nbeside `build/dirhtml`, `src_dir = \".\"`, no ignore rule) traced each\nother's copies, one level deeper per build; and the path rule hid real\nsources when an output directory sat directly inside a traced\nsource directory. The `.ignore` fixes the first wherever the output is,\nwhich lets the path rule narrow and fixes the second.\n\nWith `gitignore = false` nothing changes: the Makefile layout stays\nprotected by the path rule, and an output tree elsewhere inside\n`src_dir` needs an `exclude` rule, as the docs say. Every epub build now\ngets one more `epub.unknown_project_files` warning, for the root\n`.ignore` — even with local URLs off and no\ncopies — beside the ones it already gives for any source copies; an epub\npolicy follow-up (Sphinx's packer skips\n`epub_exclude_files`). Other tools that read `.ignore` files (ripgrep,\nVS Code's search) skip the build output too, as the docs say.\n\n### ubCode\n\nNothing to match: ubCode writes no copies into any output (its local URL\nis a `file://` link to the source, `orchestrator.rs`\n`path_to_file_url` at main `dad5eca3`), so there is no output of its own\nfor discovery to trip over.\n\n### Tests\n\nThe two-tree layout (directive and config-only; html/dirhtml and\nhtml/latex alternations): discovery never lists a file under\n`build/`, no copy of a copy, one entry per reference, no duplicate need.\nThe Makefile-layout pin now runs with `gitignore` on and off.\nAn output directory inside a traced source directory hides nothing\n(directive and config-only, with an unchanged rebuild). A\n`:download:`ed source copied into each HTML builder's `_downloads/` is\nnever traced by another builder (html → dirhtml → html: one\nneed, no duplicate, nothing re-read). The output and doctree roots hold\nan `.ignore` after an html and after a latex build, restored\nwhen deleted, never traced. Red on the base for every new case except\nthe A-17 ones, which pin the two call sites.\n\nCloses #2071",
+          "timestamp": "2026-10-07T00:03:13+02:00",
+          "tree_id": "cae63d05d4f6bdf9a08e2f7ee56a9471a0d16b32",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/a5f2fb3ec1de1121c596e0b1f5d90d193a530b8e"
+        },
+        "date": 1791324316926,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.11276930399999685,
+            "unit": "s",
+            "extra": "Commit: a5f2fb3ec1de1121c596e0b1f5d90d193a530b8e\nBranch: master\nTime: 2026-10-07T00:03:13+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 55.719081808,
+            "unit": "s",
+            "extra": "Commit: a5f2fb3ec1de1121c596e0b1f5d90d193a530b8e\nBranch: master\nTime: 2026-10-07T00:03:13+02:00"
           }
         ]
       }
