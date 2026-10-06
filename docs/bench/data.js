@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791311569378,
+  "lastUpdate": 1791318605262,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -22644,6 +22644,42 @@ window.BENCHMARK_DATA = {
             "value": 54.984598987,
             "unit": "s",
             "extra": "Commit: 1025f6cc85ed6b1b89414f6322350390878441d7\nBranch: master\nTime: 2026-10-06T20:31:26+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5c67ab843531995481768057b154489051c8c528",
+          "message": "🐛 sphinx-codelinks: diagnose a git_root that does not contain src_dir, a file outside src_dir, and a :file: scope naming no file (#2090)\n\n### What\n\n- **A `git_root` that does not contain `src_dir`.** A configured\n`[…analyse] git_root` that does not exist, is not a\ndirectory, cannot be read, or is neither `src_dir` nor a directory above\nit is ignored with one `codelinks.git_root`\nwarning (\"project 'X': git_root <root> does not contain src_dir\n<src_dir>; it is ignored, and the repository root is\ndetected from src_dir instead\"), and the repository root is detected\nfrom `src_dir`, as when none is set. One check,\n`config.git_root_problem`: the Sphinx extension applies it at\n`config-inited` through\n`project_analysis.configured_git_root`, which both the analysis and the\nattach's `project_root` call, so the\nrecords' root and the attach's root always agree; `codelinks analyse`\napplies it right after anchoring, warning on\n  stderr.\n- **A file outside `src_dir`.** A discovered file that resolves to\noutside `src_dir` -- a symbolic link out of the\ntree, or a file below a followed directory link -- is not traced:\n`SourceDiscover` drops it with one\n`codelinks.outside_src_dir` warning naming the link and its target, once\nper scope read (the `env-get-outdated`\nre-walk does not warn; a project no directive traces is walked, and\nwarns, on every build). `discover_scope` checks\nagainst the project's `src_dir`, not a `:directory:` scope's own\ndirectory, and applies the same rule to an existing\n`:file:` target. The config-only scan, `codelinks discover` and\n`codelinks analyse` get it through the same\n  discovery.\n- **A `:file:` scope naming no file.** A missing path or a directory:\nthe directive warns once at its own location\n(`codelinks.missing_file`: \"src-trace: <target> is not a file below\n<src_dir>\") and traces nothing; its scope is\nstill recorded, so the file, once it exists, is traced by the next\nbuild. An existing target outside `src_dir`\n  gets only the discovery's warning.\n- Docs: `git_root` and `follow_links` in `configuration.rst`, the `file`\noption in `directive.rst`, a clause in\n  `analyse.rst`; changelog bullets for both issues; one AGENTS sentence.\n\n### Why\n\n#2062: a `git_root` outside the sources gave records whose `path` began\nwith `../` (which `NeedIdRef.from_dict`\nrefuses) with local URLs, a `ValueError` traceback from `url_context`\nwith remote URLs, and a `ValueError` from\n`codelinks analyse` with a remote. A link out of `src_dir` aborted the\nbuild with `ValueError: … is not in the subpath\nof …` as soon as the file held a one-line need (URL fields on or off)\nor, with a URL field on, an `@need-ids:`\nreference; the config-only scan failed with the same error, and\n`codelinks discover` and `analyse` listed the target.\nBehaviour change: such a file is now never traced. #2069: a `:file:`\ntarget missing in a fresh build, or removed since\nthe last, aborted the build with `FileNotFoundError`\n(`IsADirectoryError` for a directory).\n\n### ubCode\n\nubCode has no rule for the first two: `resolve_git_info` uses an\nexplicit `git_root` as given, and `attach_urls`\nsilently writes no remote URL for a file outside it; a full discovery\nwalk keeps a link out of `src_dir` under its\nlink path only with `follow_links = true`, while `matches_file` silently\nrejects it. Two ubCode issues follow, filed\nseparately. For a missing `:file:` ubCode errors the directive\n(\"src-trace :file: … not found\"); codelinks warns and\ngoes on, its rule for every recoverable configuration problem.\n\n### Tests\n\n`tests/test_outside_roots.py` (32 cases): a rejected `git_root` with\nlocal and remote URLs, a missing and an\nunreadable one, an accepted one other than the repository (`src_dir`\nitself, a directory above the repository) as\nboth the records' and the attach's root, a `git_root` above `src_dir`\nchanging nothing, the check's rows, a file link\nout (local / remote / both), a followed directory link out, a `:file:`\nscope naming a link out, the config-only scan,\n`codelinks discover`, `codelinks analyse` with a sibling and with a\nmissing `git_root`, the warning once across an\nincremental re-walk, a link leaving a `:directory:` scope but not\n`src_dir` still traced, and a `lies_within` table.\n`tests/test_missing_file_scope.py` (2 cases): a `:file:` target removed\nand then re-created, and one missing in a fresh\nbuild. Four existing tests in `test_source_discover.py` pinned a link\nout of the root being listed as its target, and\nare updated with the behaviour.\n\nCloses #2062\nCloses #2069",
+          "timestamp": "2026-10-06T22:27:40+02:00",
+          "tree_id": "cf2986a151d67dc0f59903f45e9cc9ce34e654eb",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/5c67ab843531995481768057b154489051c8c528"
+        },
+        "date": 1791318525064,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.08372008599999958,
+            "unit": "s",
+            "extra": "Commit: 5c67ab843531995481768057b154489051c8c528\nBranch: master\nTime: 2026-10-06T22:27:40+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 40.333023302,
+            "unit": "s",
+            "extra": "Commit: 5c67ab843531995481768057b154489051c8c528\nBranch: master\nTime: 2026-10-06T22:27:40+02:00"
           }
         ]
       }
