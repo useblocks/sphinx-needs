@@ -56,6 +56,10 @@ from ub_project import ProjectConfigError
 
 logger = logging.getLogger(__name__)
 
+#: what the ``.ignore`` at the root of each output and doctree directory holds: everything
+#: below it, so that discovery with ``gitignore = true`` never traces a build's output
+IGNORE_ALL = b"*\n"
+
 #: The ``[codelinks]`` keys a ``-D`` never suppresses. Sphinx refuses a ``-D`` for
 #: these two -- ``projects`` is a dict, ``outdir`` has a ``Path`` default ("unsupported
 #: type") -- yet keeps the key in ``config.overrides``, so skipping the TOML value would
@@ -149,6 +153,9 @@ def setup(app: Sphinx) -> dict[str, Any]:
 def builder_inited(app: Sphinx) -> None:
     custom_css = Path(__file__).parent / "ub_sct.css"
     copy_asset(custom_css, Path(app.outdir) / "_static" / "source_tracing")
+    # every builder, every build: nothing a builder writes is ever traced
+    for directory in (app.outdir, app.doctreedir):
+        mark_ignored(Path(directory))
 
 
 def add_custom_css(
@@ -201,6 +208,23 @@ def _page_outdated(
 def _pagename(target: str) -> str:
     """The page of a source copy: its path without the suffix (``src/refs``)."""
     return PurePosixPath(target).with_suffix("").as_posix()
+
+
+def mark_ignored(directory: Path) -> None:
+    """Write ``.ignore`` (``*``) into ``directory``, unless an identical one is there.
+
+    Called at ``builder-inited`` for the output and the doctree directory of every
+    builder. The ``ignore`` walker discovery uses reads ``.ignore`` files whenever
+    ``gitignore`` is on, inside a git repository or not, so no discovery traces anything
+    a builder wrote -- the extension's source copies, Sphinx's ``_downloads/`` copies of
+    a traced source, another builder's tree -- wherever the output directory lies.
+    """
+    directory.mkdir(parents=True, exist_ok=True)
+    marker = directory / ".ignore"
+    with contextlib.suppress(OSError):
+        if marker.read_bytes() == IGNORE_ALL:
+            return
+    marker.write_bytes(IGNORE_ALL)
 
 
 def generate_code_page(app: Sphinx) -> Iterator[tuple[str, dict[str, Any], str]]:

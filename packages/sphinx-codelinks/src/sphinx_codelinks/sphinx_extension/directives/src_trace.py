@@ -183,7 +183,9 @@ class SourceTracingDirective(SphinxDirective):
             src_discover_config,
             kind,
             target,
-            exclude=build_output_dirs(self.env.app),
+            exclude=build_output_dirs(
+                self.env.app, parents=not src_discover_config.gitignore
+            ),
         )
         if kind == "file" and not (src_dir / target).resolve().is_file():
             # a target that is no file (missing, or a directory) traces nothing and

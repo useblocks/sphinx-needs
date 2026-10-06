@@ -117,15 +117,22 @@ def scope_discover_config(
     )
 
 
-def build_output_dirs(app: Sphinx) -> tuple[Path, ...]:
+def build_output_dirs(app: Sphinx, *, parents: bool) -> tuple[Path, ...]:
     """The directories discovery never traces: the build's output and doctree
-    directories, and each one's parent when that parent lies strictly inside the
-    documentation source directory -- the build directory, ``_build/`` in the Makefile
-    layout (``_build/<builder>`` beside ``_build/doctrees``), so one builder never
-    traces another builder's copies. A parent outside the source directory (``-d
-    /tmp/x``), or the source directory itself, is not excluded."""
+    directories, always.
+
+    With ``parents`` -- every caller passes ``not gitignore``: a project that reads no
+    ignore files cannot see the ``.ignore`` at the root of every builder's output and
+    doctree directories -- also each one's
+    parent when that parent lies strictly inside the documentation source directory:
+    the build directory, ``_build/`` in the Makefile layout (``_build/<builder>`` beside
+    ``_build/doctrees``), so one builder never traces another builder's copies. A parent
+    outside the source directory (``-d /tmp/x``), or the source directory itself, is not
+    excluded."""
     srcdir = Path(app.srcdir).resolve()
     dirs = [Path(app.outdir).resolve(), Path(app.doctreedir).resolve()]
+    if not parents:
+        return tuple(dirs)
     for directory in list(dirs):
         parent = directory.parent
         if parent != srcdir and parent.is_relative_to(srcdir) and parent not in dirs:
@@ -491,7 +498,11 @@ def scan_config_only_project(
     if not src_dir.is_dir():
         raise ConfigOnlyError(f"source directory {src_dir.as_posix()} does not exist")
     files = discover_scope(
-        src_dir, discover_config, "directory", "./", exclude=build_output_dirs(app)
+        src_dir,
+        discover_config,
+        "directory",
+        "./",
+        exclude=build_output_dirs(app, parents=not discover_config.gitignore),
     )
     found = files_fingerprint(files, src_dir)
     if previous is not None and previous.fingerprint == found:
@@ -605,7 +616,7 @@ def _scope_changed(
                 discover_config,
                 scope.kind,
                 scope.target,
-                exclude=build_output_dirs(app),
+                exclude=build_output_dirs(app, parents=not discover_config.gitignore),
             )
         except OSError:
             memo[key] = None
