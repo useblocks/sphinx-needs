@@ -1103,7 +1103,8 @@ def merge_data(
     # Update needs
     needs = this_data._env_needs
     other_needs = other_data._env_needs
-    # ids this environment already holds a need for, and so a need node for
+    # ids this environment already holds a need for; its own node (or none, for a
+    # hidden need) stands
     already_held: list[str] = []
     for other_id, other_need in other_needs.items():
         if other_id in needs:
@@ -1125,9 +1126,10 @@ def merge_data(
             needs[other_id] = other_need
 
     # The need nodes ``needextract`` copies: for an id this environment already holds,
-    # its own node stands. The worker's copy is either the same node, inherited when
-    # the worker was forked, or the node of a duplicate the loop above dropped, which
-    # must not replace the node of the need that was kept (#2087).
+    # its own node (or none, for a hidden need) stands. The worker's copy is either the
+    # same node, inherited when the worker was forked, or the node of a duplicate the
+    # loop above dropped, which must not replace the node of the need that was kept
+    # (#2087).
     other_nodes = other_data._needs_all_nodes
     for other_id in already_held:
         other_nodes.pop(other_id, None)
