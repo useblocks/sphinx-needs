@@ -13,6 +13,7 @@ only) and ``src/impl.cpp`` (a need) are copied and paged; on the ``config-only``
 directive traces it, so only the referenced ``src/refs.cpp`` is.
 """
 
+import os
 import pickle
 import re
 import shutil
@@ -137,25 +138,27 @@ def test_two_builders_sharing_the_doctrees_each_get_the_copies_and_pages(
     assert _paged(dirhtml, "dirhtml") == COPIES[path]
 
 
+@pytest.mark.parametrize("builder", ["html", "dirhtml"])
 @pytest.mark.parametrize("path", ["directive", "config-only"])
 def test_an_unchanged_build_rewrites_no_copy_or_page(
-    tmp_path: Path, make_app: _MakeApp, path: str
+    tmp_path: Path, make_app: _MakeApp, path: str, builder: str
 ) -> None:
     """A build that reads nothing keeps every copy and page, and rewrites none of them:
-    the copies and pages are up to date (Sphinx 7.4 stops at "no targets are out of
-    date" before collecting any page; 9.x collects, and codelinks yields none)."""
+    the copies and pages are up to date -- ``dirhtml``'s pages at its own output path
+    (Sphinx 7.4 stops at "no targets are out of date" before collecting any page; 9.x
+    collects, and codelinks yields none)."""
     _local_project(tmp_path, path)
-    first = _build(tmp_path, make_app)
+    first = _build(tmp_path, make_app, buildername=builder)
     outdir = Path(first.outdir)
     files = [outdir / c for c in COPIES[path]] + [
-        _page(outdir, c) for c in COPIES[path]
+        _page(outdir, c, builder) for c in COPIES[path]
     ]
     stamps = [f.stat().st_mtime_ns for f in files]
 
-    app, written = _recording(make_app, tmp_path, freshenv=False)
+    app, written = _recording(make_app, tmp_path, buildername=builder, freshenv=False)
 
     assert "0 added, 0 changed, 0 removed" in _status(app)
-    assert _paged(app) == COPIES[path]
+    assert _paged(app, builder) == COPIES[path]
     assert written == []
     assert [f.stat().st_mtime_ns for f in files] == stamps
 
@@ -363,6 +366,134 @@ def test_a_new_document_tracing_a_paged_file_adds_its_back_link(
 
     assert "1 added" in _status(app)
     assert _both_links(app) == ["../later.html#IMPL_1", "../added.html#IMPL_2"]
+
+
+@pytest.mark.parametrize("same_size", [True, False], ids=["same-size", "other-size"])
+@pytest.mark.parametrize("path", ["directive", "config-only"])
+def test_a_source_replaced_by_an_older_file_shows_in_the_copy_and_the_page(
+    tmp_path: Path, make_app: _MakeApp, path: str, same_size: bool
+) -> None:
+    """The source replaced by a file whose modification time is OLDER than the copy's
+    (``cp -p``, ``rsync -t``, ``tar x``, a restored cache): the analysis runs again, and
+    the copy and the page show the new content -- the copy carries its source's
+    modification time, so any difference counts, not only a newer one."""
+    _local_project(tmp_path, path)
+    first = _build(tmp_path, make_app)
+    outdir = Path(first.outdir)
+    source = tmp_path / "src" / "refs.cpp"
+    copy = outdir / "src" / "refs.cpp"
+    edit = "return a + 7;" if same_size else "return a + 12345;"
+    source.write_text(
+        source.read_text(encoding="utf-8").replace("return a + 1;", edit),
+        encoding="utf-8",
+    )
+    older = copy.stat().st_mtime - 100
+    os.utime(source, (older, older))
+
+    _build(tmp_path, make_app, freshenv=False)
+
+    assert copy.read_bytes() == source.read_bytes()
+    page = (outdir / "src" / "refs.html").read_text(encoding="utf-8")
+    assert ('<span class="mi">7</span>' if same_size else "12345") in page
+
+
+def test_a_stale_scan_of_a_project_a_directive_now_owns_pages_nothing(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """A config-only project gains a directive (over ``impl.cpp`` alone): its stored scan
+    stays, unused, and its page (``src/refs.cpp``) is no longer among the pages; the
+    directive removed again, the scan's page is back."""
+    from sphinx_codelinks.config import CodeLinksConfig
+    from sphinx_codelinks.sphinx_extension.rediscovery import (
+        config_only_refs_store,
+        effective_pages,
+    )
+
+    def targets(app: SphinxTestApp) -> list[str]:
+        config = CodeLinksConfig.from_sphinx(app.config)
+        return [page.target for page in effective_pages(app.env, config)]
+
+    _local_project(tmp_path, "config-only")
+    assert targets(_build(tmp_path, make_app)) == ["src/refs.cpp"]
+    index = tmp_path / "docs" / "index.rst"
+    text = index.read_text(encoding="utf-8")
+    _edit(
+        index, text, text + "\n.. src-trace::\n   :project: src\n   :file: impl.cpp\n"
+    )
+
+    owned = _build(tmp_path, make_app, freshenv=False)
+
+    assert [p.target for p in config_only_refs_store(owned.env)["src"].pages] == [
+        "src/refs.cpp"
+    ]
+    assert targets(owned) == ["src/impl.cpp"]
+    _edit(index, index.read_text(encoding="utf-8"), text)
+    assert targets(_build(tmp_path, make_app, freshenv=False)) == ["src/refs.cpp"]
+
+
+#: two projects whose source directories share their name: both copy to ``src/x.cpp``
+_SAME_BASENAME = """
+[codelinks]
+set_local_url = true
+set_remote_url = false
+
+[codelinks.projects.a.source_discover]
+src_dir = "../a/src"
+comment_type = "cpp"
+
+[codelinks.projects.b.source_discover]
+src_dir = "../b/src"
+comment_type = "cpp"
+"""
+
+
+def test_two_sources_for_one_page_warn(tmp_path: Path, make_app: _MakeApp) -> None:
+    """``a/src/x.cpp`` (from ``index``) and ``b/src/x.cpp`` (from ``later``) both copy to
+    ``src/x.cpp``: one ``codelinks.source_page`` warning names the target and both
+    sources; the first record's source (``index``'s) is the one paged."""
+    _project(
+        tmp_path,
+        files={
+            "docs/ubproject.toml": _SAME_BASENAME,
+            "docs/index.rst": "Index\n=====\n\n.. toctree::\n   :glob:\n\n   *\n   sub/*\n\n"
+            ".. src-trace::\n   :project: a\n",
+            "docs/later.rst": "Later\n=====\n\n.. src-trace::\n   :project: b\n",
+            "a/src/x.cpp": "// from A\n// @a need, IMPL_A, impl\n",
+            "b/src/x.cpp": "// from B\n// @b need, IMPL_B, impl\n",
+        },
+    )
+    app = _build(tmp_path, make_app)
+
+    warned = [w for w in build_warnings(app) if "source page" in w]
+    assert len(warned) == 1, build_warnings(app)
+    assert "'src/x.cpp'" in warned[0]
+    assert (tmp_path / "a" / "src" / "x.cpp").as_posix() in warned[0]
+    assert (tmp_path / "b" / "src" / "x.cpp").as_posix() in warned[0]
+    if _SHOWS_WARNING_TYPES:
+        assert warned[0].endswith("[codelinks.source_page]")
+    assert "from A" in Path(app.outdir, "src", "x.html").read_text(encoding="utf-8")
+
+
+def test_an_environment_from_before_the_pages_store_is_read_again(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """An environment pickled by a release without the page records (no
+    ``sphinx_codelinks`` entry in its extension versions, no store): Sphinx starts a
+    fresh one, so a cleaned output gets its copies and pages back on the first build
+    after the upgrade -- every document is read once."""
+    _local_project(tmp_path, "directive")
+    first = _build(tmp_path, make_app)
+    pickled = Path(first.doctreedir, "environment.pickle")
+    env = pickle.loads(pickled.read_bytes())
+    env.version = {k: v for k, v in env.version.items() if k != "sphinx_codelinks"}
+    del env.codelinks_source_pages
+    pickled.write_bytes(pickle.dumps(env, pickle.HIGHEST_PROTOCOL))
+    shutil.rmtree(first.outdir)
+
+    app = _build(tmp_path, make_app, freshenv=False)
+
+    assert "0 added, 0 changed" not in _status(app)
+    assert _paged(app) == COPIES["directive"]
 
 
 _REMOVE_AT_COLLECT = """
