@@ -135,3 +135,30 @@ def test_a_worker_s_warning_reaches_the_log(tmp_path: Path, make_app: _MakeApp) 
     status = strip_colors(app._status.getvalue())
     assert re.search(r"reading sources\.\.\. \[\s*\d+%\] \S+ \.\. \S+", status)
     assert build_warnings(app) == [TOO_FEW]
+
+
+def test_a_need_sphinx_needs_refuses_warns_at_its_source_line(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """A ``brief`` line that fits the default style but whose id, ``b``, fails
+    ``needs_id_regex``: one warning at its line, and the build goes on."""
+    _project(
+        tmp_path,
+        files={
+            **REFS,
+            "src/x.cpp": "// @brief Does a, b\nvoid f() {}\n// @Valid, IMPL_VALID\n",
+        },
+    )
+    app = _build(tmp_path, make_app)
+
+    assert app.statuscode == 0
+    assert build_warnings(app) == [
+        _oneline(
+            "src/x.cpp:1",
+            "invalid_id: one-line need could not be created: Given ID 'b' does not "
+            "match configured regex '^[A-Z0-9_]{5,}'",
+        )
+    ]
+    needs = _json(app)["needs"]
+    assert "b" not in needs
+    assert "IMPL_VALID" in needs

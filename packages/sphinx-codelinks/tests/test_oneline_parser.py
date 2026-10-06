@@ -647,3 +647,37 @@ def test_one_character_start_with_one_required_field_is_a_need() -> None:
         "start_column": 4,
         "end_column": 5,
     }
+
+
+@pytest.mark.parametrize(
+    "oneline, style",
+    [
+        ("// [[ ]]", ONELINE_COMMENT_STYLE),
+        (f"// @{UNIX_NEWLINE}", ONE_REQUIRED_FIELD),
+        (f"// @{UNIX_NEWLINE}", ONELINE_COMMENT_STYLE_DEFAULT),
+        (f"// @   {UNIX_NEWLINE}", ONELINE_COMMENT_STYLE_DEFAULT),
+    ],
+)
+def test_empty_content_is_not_a_marker(
+    oneline: str, style: OneLineCommentStyle
+) -> None:
+    """Nothing between the start and end sequences: not a marker, whatever the start
+    sequence and however many fields are required."""
+    assert oneline_parser(oneline, style) is None
+
+
+def test_an_escaped_separator_counts_as_present() -> None:
+    """``\\,`` is a separator in the content, so the line is a marker, and one field
+    is too few."""
+    res = oneline_parser(f"// @a\\,b{UNIX_NEWLINE}", ONELINE_COMMENT_STYLE_DEFAULT)
+    assert isinstance(res, OnelineParserInvalidWarning)
+    assert res.sub_type == WarningSubTypeEnum.too_few_fields
+
+
+def test_a_non_ascii_start_sequence_of_one_character_is_one_character() -> None:
+    """One character is one code point: ``§`` is a one-character start sequence."""
+    style = OneLineCommentStyle(start_sequence="§")
+    assert oneline_parser(f"// §only{UNIX_NEWLINE}", style) is None
+    res = oneline_parser(f"// §a title, IMPL_SECT{UNIX_NEWLINE}", style)
+    assert isinstance(res, dict)
+    assert res["id"] == "IMPL_SECT"
