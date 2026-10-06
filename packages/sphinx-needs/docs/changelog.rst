@@ -65,7 +65,7 @@ Improvements
   (:issue:`2030`); `ubCode`_ reports the same reads.
 
 - 📚 The order in which ``needextend``, dynamic functions, links and constraints are processed
-  is documented (:issue:`2064`)
+  is documented (:issue:`2064`, :pr:`2081`)
 
   The new :ref:`needs_processing_order` section replaces the one restriction documented before
   (a dynamic function cannot read back links), and says that a ``needextend`` filter never sees a computed value,
