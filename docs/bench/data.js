@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791322042550,
+  "lastUpdate": 1791323468331,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -22752,6 +22752,42 @@ window.BENCHMARK_DATA = {
             "value": 50.686168893,
             "unit": "s",
             "extra": "Commit: 80e4d5032b05d827bc62bc76c39f7a19cb4cc1df\nBranch: master\nTime: 2026-10-06T23:25:58+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "87316e89bd7c69b67ff1d699f0b9955002420cd2",
+          "message": "🐛 sphinx-codelinks: the source copies and pages are build state — present in every HTML output, under -j N too (#2094)\n\n### What\n\nWith local URLs on, each source file a created need comes from, or a\nlocal reference URL names, is copied into the HTML output and\npaged beside the copy — the target of every local link. Those copies and\npages are now kept up to date by every HTML build from\nrecords kept in the build environment: a removed output directory, a\nsecond builder sharing the doctrees (`html` then `dirhtml`), an\nunchanged\nbuild and a `-j N` build all have them. Each page's `[docs]` link is the\nbuilder's own relative URI to the need's document\n(`app.builder.get_relative_uri`,\nPOSIX on every platform, Windows included), so a `dirhtml` page links\nback correctly. Only HTML builders write them: a LaTeX build no longer\ndrops source copies into its output. A\nsource removed before the pages are written warns\n`codelinks.source_page` and the build goes on.\n\n### Why\n\nThe copies and pages were side effects of the analysis, filled into a\nmodule-global registry that a `-j N` worker never handed back and\nthat a build not reading the directive's document never refilled (#2070;\nthe missing pages of #2044). What to copy and page is now a\n`SourcePage` record — the source, the output-relative target, the\n`(line, document, need id)` anchors — stored per host document\n(purged and merged from workers like the reference records) and, for a\nproject without a directive, in its config-only scan. The\nregistry is gone.\n\n**When a page is written:** an unchanged build rewrites no copy or page.\nA copy carries its source's modification time\n(`shutil.copyfile`, then the source's times — not its mode) and is\nwritten again when it is missing or its size or modification time\ndiffers from the source's — so a source\nreplaced by an older file (`cp -p`, `rsync -t`, a restored cache) is\ncaught too; a page is written whenever its copy was, when its\noutput file is missing, or when a document that traces it — now or\nbefore — was read again, added or removed in this build (a need\nthat moved to another document, a document that stopped tracing the\nfile, a new or renamed document). Two sources copied to the same\nplace (two projects whose source directories share a name) warn\n`codelinks.source_page`; the first is the one paged. `setup()` now\ndeclares `env_version`: an environment from an earlier release holds no\npage records, so Sphinx discards it and the first build after\nupgrading reads every document once. `singlehtml` collects no extra\npages, so it gets none (its local links stay dead, as before).\n\n**Follow-ups, not here:** a header and its source share one page\n(`src/impl.h` and `src/impl.cpp` → `src/impl.html`, pre-existing);\nwith the up-to-date skip, which of the two the page shows depends on\nwhich was outdated last. Two projects whose source directories\nshare a name still share a copy root (now with a warning). Epub builders\ncollect pages, so they get the copies and pages (and Sphinx's\n`epub.unknown_project_files` warnings for them), as before.\n\n**Not in this PR (#2044's second shape):** the local URL VALUE is\nrelative to the directive's document (`../src/a.cpp#L3`), so it is\nwrong from a `needtable` at another depth. The value is rendered by a\n`needs_string_links` template that knows no page, so it needs a\nSphinx-Needs change (or a per-field `link`); likewise the `.html` that\nlink appends is wrong for `dirhtml`.\n\n### ubCode\n\nNothing to match: ubCode writes no source copies or pages — its local\nURL is a `file://` link to the source itself\n(`rust/ubc_codelinks/src/orchestrator.rs` `path_to_file_url`, read at\nmain `dad5eca3`).\n\n### Tests\n\n`tests/test_source_pages.py`: a cleaned output directory, `html` then\n`dirhtml` on shared doctrees, an unchanged build (nothing\nrewritten) and a source edit (directive and config-only paths each); a\nneed that moved to another document (page rewritten, new\n`[docs]` link); a document that stops tracing a shared file (its link\ndropped) and a new document tracing a paged file (its link\nadded), the file untouched; a source replaced by an older file\n(directive and config-only, same and other size); two sources for\none page; an environment from before the page records; a directive-owned\nproject's stale scan; the unchanged build under `html`\nand `dirhtml`; the source-page CSS on source pages only; the `[docs]`\nlink under `html` and `dirhtml`; two documents paging one file; a source\nremoved before collect; `-j 2` (POSIX); an older pickled\n`ConfigOnlyScan`. The in-process LaTeX-then-HTML pin now proves a LaTeX\nbuild\nleaves no copies. Red on master for every case except the eight that pin\nbehaviour master already had (the unchanged build, a need\nthat moved, the CSS, a source edit, the html back-link, merged anchors).\n\nCloses #2070\nRefs #2044",
+          "timestamp": "2026-10-06T23:48:49+02:00",
+          "tree_id": "02d2910c475db4ec692b68aaf3c067bef75920fa",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/87316e89bd7c69b67ff1d699f0b9955002420cd2"
+        },
+        "date": 1791323459311,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.12074124000000097,
+            "unit": "s",
+            "extra": "Commit: 87316e89bd7c69b67ff1d699f0b9955002420cd2\nBranch: master\nTime: 2026-10-06T23:48:49+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 57.252001803,
+            "unit": "s",
+            "extra": "Commit: 87316e89bd7c69b67ff1d699f0b9955002420cd2\nBranch: master\nTime: 2026-10-06T23:48:49+02:00"
           }
         ]
       }
