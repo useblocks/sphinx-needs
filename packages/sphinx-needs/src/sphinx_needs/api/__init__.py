@@ -7,7 +7,14 @@ from .configuration import (
     add_need_type,
     get_need_types,
 )
-from .need import add_external_need, add_need, del_need, generate_need, get_needs_view
+from .need import (
+    add_external_need,
+    add_need,
+    del_need,
+    generate_need,
+    generate_need_id,
+    get_needs_view,
+)
 
 __all__ = (
     "InvalidNeedException",
@@ -19,6 +26,7 @@ __all__ = (
     "add_need_type",
     "del_need",
     "generate_need",
+    "generate_need_id",
     "get_need_types",
     "get_needs_view",
 )

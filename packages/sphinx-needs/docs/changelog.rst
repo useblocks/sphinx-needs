@@ -91,6 +91,16 @@ Improvements
   that the fields of a need are computed in a fixed order whatever the order of its options,
   and that a variant condition sees only the fields computed before its own.
 
+- ✨ :func:`~sphinx_needs.api.need.generate_need_id` returns the id
+  :func:`~sphinx_needs.api.need.add_need` assigns to a need that is given none
+  (:issue:`2084`)
+
+  An extension that creates needs can now find out, before it calls ``add_need``,
+  whether that id is already taken -- a second definition of the same generated id --
+  without importing the private ``_make_hashed_id``. ``add_need`` derives the id with
+  the same code, so the two cannot drift; an unknown need type raises the same
+  ``invalid_type`` exception.
+
 Bug fixes
 .........
 
