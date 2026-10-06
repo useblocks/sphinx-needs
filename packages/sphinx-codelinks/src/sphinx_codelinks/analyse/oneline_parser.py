@@ -31,6 +31,7 @@ def oneline_parser(  # handel warnings
 
     - Locate the start and end sequences
     - extract the string between them
+    - return ``None`` for an empty content, whatever the start sequence
     - on a one-character start sequence, return ``None`` for a content without the
       field separator where more than one field is required: not a marker, and not a
       warning either. The rule is ubCode's, and so are its words: "when a
@@ -71,6 +72,10 @@ def oneline_parser(  # handel warnings
 
     # numbers of needs_fields which are required
     cnt_required_fields = oneline_config.get_cnt_required_fields()
+
+    if not string:
+        # nothing between the start and end sequences: not a marker either
+        return None
 
     # a documentation tag such as `@param x`, not a marker (see the docstring)
     if (
