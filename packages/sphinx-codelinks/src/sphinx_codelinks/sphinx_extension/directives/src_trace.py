@@ -37,7 +37,7 @@ from sphinx_codelinks.sphinx_extension.rediscovery import (
     is_unread,
     scope_store,
 )
-from sphinx_needs.api import add_need
+from sphinx_needs.api import InvalidNeedException, add_need
 from sphinx_needs.api.need import _make_hashed_id
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
@@ -399,15 +399,29 @@ class SourceTracingDirective(SphinxDirective):
                 if remote_url_field and remote_link_name is not None:
                     kwargs[remote_url_field] = remote_link_name
 
-                oneline_needs: list[nodes.Node] = add_need(
-                    app=self.env.app,  # The Sphinx application object
-                    state=self.state,  # The docutils state object
-                    docname=self.env.docname,  # The current document name
-                    lineno=self.lineno,  # The line number where the directive is used
-                    need_type=str(oneline_need.need["type"]),  # The type of the need
-                    title=str(oneline_need.need["title"]),  # The title of the need
-                    **cast(dict[str, Any], kwargs),
-                )
+                try:
+                    oneline_needs: list[nodes.Node] = add_need(
+                        app=self.env.app,  # The Sphinx application object
+                        state=self.state,  # The docutils state object
+                        docname=self.env.docname,  # The current document name
+                        lineno=self.lineno,  # The line number where the directive is used
+                        need_type=str(
+                            oneline_need.need["type"]
+                        ),  # The type of the need
+                        title=str(oneline_need.need["title"]),  # The title of the need
+                        **cast(dict[str, Any], kwargs),
+                    )
+                except InvalidNeedException as err:
+                    # a marker that fits the style, but a need Sphinx-Needs refuses
+                    # (an id ``needs_id_regex`` rejects, say): warn, as for the others
+                    logger.warning(
+                        f"{err.type}: one-line need could not be created: {err.message}",
+                        type="codelinks",
+                        subtype="oneline",
+                        location=f"{_relative_posix(filepath, root)}:"
+                        f"{oneline_need.source_map['start']['row'] + 1}",
+                    )
+                    continue
                 rendered_needs.extend(oneline_needs)
                 if local_url_field:
                     # save the mapping of need links and line numbers of source codes
