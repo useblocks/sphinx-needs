@@ -56,6 +56,10 @@ from ub_project import ProjectConfigError
 
 logger = logging.getLogger(__name__)
 
+#: what each copy root's ``.ignore`` holds: everything below it, so that discovery with
+#: ``gitignore = true`` never traces the extension's own output, wherever it lies
+IGNORE_ALL = b"*\n"
+
 #: The ``[codelinks]`` keys a ``-D`` never suppresses. Sphinx refuses a ``-D`` for
 #: these two -- ``projects`` is a dict, ``outdir`` has a ``Path`` default ("unsupported
 #: type") -- yet keeps the key in ``config.overrides``, so skipping the TOML value would
@@ -203,6 +207,20 @@ def _pagename(target: str) -> str:
     return PurePosixPath(target).with_suffix("").as_posix()
 
 
+def mark_ignored(copy_root: Path) -> None:
+    """Write ``.ignore`` (``*``) into ``copy_root``, unless an identical one is there.
+
+    The ``ignore`` walker discovery uses reads ``.ignore`` files whenever ``gitignore``
+    is on, inside a git repository or not, so no discovery traces these copies --
+    another builder's, or an output directory anywhere inside a ``src_dir``.
+    """
+    marker = copy_root / ".ignore"
+    with contextlib.suppress(OSError):
+        if marker.read_bytes() == IGNORE_ALL:
+            return
+    marker.write_bytes(IGNORE_ALL)
+
+
 def generate_code_page(app: Sphinx) -> Iterator[tuple[str, dict[str, Any], str]]:
     """Copy every recorded source file into the output and yield its page, where they
     are not up to date (``html-collect-pages``, so for HTML builders only).
@@ -216,6 +234,10 @@ def generate_code_page(app: Sphinx) -> Iterator[tuple[str, dict[str, Any], str]]
     removed). Each ``[docs]`` link is the builder's own relative URI from the page to
     the need's document. A source that cannot be read any more (removed since its
     document was read) warns and is skipped.
+
+    Each copy root (``<outdir>/<src_dir name>/``) with a page in this build gets an
+    ``.ignore`` holding ``*`` (:func:`mark_ignored`), whether its copies were written or
+    were up to date.
     """
     builder = app.builder
     if not isinstance(builder, StandaloneHTMLBuilder):  # the event is theirs alone
@@ -224,8 +246,10 @@ def generate_code_page(app: Sphinx) -> Iterator[tuple[str, dict[str, Any], str]]
     outdir = Path(app.outdir)
     documents = purged_documents(app.env)
     targets = purged_targets(app.env)
+    roots: set[str] = set()
     for page in effective_pages(app.env, config):
         copied = outdir / page.target
+        root = PurePosixPath(page.target).parts[0]
         try:
             source = os.stat(page.source)
             copy = _copy_outdated(copied, source)
@@ -235,6 +259,9 @@ def generate_code_page(app: Sphinx) -> Iterator[tuple[str, dict[str, Any], str]]
                 # not its mode -- a read-only source would make the copy unwritable
                 shutil.copyfile(page.source, copied)
                 os.utime(copied, ns=(source.st_atime_ns, source.st_mtime_ns))
+            if root not in roots:
+                mark_ignored(outdir / root)
+                roots.add(root)
         except OSError as error:
             logger.warning(
                 f"source page {page.target!r} not written: cannot copy "
