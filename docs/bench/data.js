@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791306010710,
+  "lastUpdate": 1791309258729,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -22572,6 +22572,42 @@ window.BENCHMARK_DATA = {
             "value": 59.531962830000005,
             "unit": "s",
             "extra": "Commit: a23e369e65515005ecdfaf819830f2776b029386\nBranch: master\nTime: 2026-10-06T18:58:39+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6504a9ef49303c15972350763ae7cb1949176d88",
+          "message": "🐛 sphinx-codelinks: a source file behind a symbolic link is analysed once (#2085)\n\nFound by the recon for #2042; a second route to the same `duplicate_id`\nabort, from a single directive.\n\n#### What\n\n- `SourceDiscover` deduplicates its resolved listing: a file reached\nthrough a symbolic link inside the traced directory (a file link, or a\ndirectory link with `follow_links = true`) is listed once, not once per\npath to it. `Path.resolve()` and the listing's order are unchanged. Two\nspellings of one file on a case-insensitive file system are still two\nentries, as before.\n- The `src-trace` directive passes discovery's already canonical paths\nto `note_dependency` instead of resolving each one a second time.\n- The `follow_links` documentation says a file is listed once under its\nresolved path, and that a link to a *file* is discovered even with\n`follow_links = false`; changelog bullet.\n\n#### Why\n\nOne directive over a tree with `b_link.cpp -> sub/b.cpp` analysed\n`sub/b.cpp` twice, so a one-line need in it aborted the build with\n`InvalidNeedException: A need with ID 'IMPL_LINKED' already exists.\n[duplicate_id]`. Every caller shares the listing: the directive, the\nincremental-build walk, the configuration-only scan and the CLI.\n\n#### ubCode parity\n\nubCode canonicalises the walk root only and never sees one file twice\nwith `follow_links` off, because it skips a symlinked file entirely;\nsphinx-codelinks discovers a symlinked file and lists its target. That\ndifference is documented, not changed.\n\n#### Tests\n\n`tests/test_source_discover.py`: a tree with a file link and a directory\nlink inside the root and one of each to outside it. A file link gives\none entry; `follow_links = true` gives each file once; a link to outside\nthe root is listed as its resolved target, as before; a link-free tree\nkeeps its order. The first two fail without the change. Green at Sphinx\n7.4 and 9.1 and against the released sphinx-needs 8.5.0.",
+          "timestamp": "2026-10-06T19:52:43+02:00",
+          "tree_id": "dadaf2fcd2879b1d124f81a287ee60b955c05611",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/6504a9ef49303c15972350763ae7cb1949176d88"
+        },
+        "date": 1791309250761,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1211626209999963,
+            "unit": "s",
+            "extra": "Commit: 6504a9ef49303c15972350763ae7cb1949176d88\nBranch: master\nTime: 2026-10-06T19:52:43+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.83172538499999,
+            "unit": "s",
+            "extra": "Commit: 6504a9ef49303c15972350763ae7cb1949176d88\nBranch: master\nTime: 2026-10-06T19:52:43+02:00"
           }
         ]
       }
