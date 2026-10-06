@@ -13,9 +13,11 @@ from sphinx_codelinks.config import (
     CodeLinksProjectConfigType,
     anchor_preproc_paths,
     generate_project_configs,
+    git_root_problem,
+    git_root_warning,
     load_codelinks_table,
 )
-from sphinx_codelinks.logger import configure_cli, logger
+from sphinx_codelinks.logger import configure_cli, get_logger, logger
 from sphinx_codelinks.needextend_write import MarkedObjType, convert_marked_content
 from sphinx_codelinks.source_discover.config import (
     CommentType,
@@ -24,6 +26,9 @@ from sphinx_codelinks.source_discover.config import (
 )
 from sphinx_codelinks.source_discover.source_discover import SourceDiscover
 from ub_project import ProjectConfigError, anchor
+
+#: the package logger: a warning goes to stderr once ``configure_cli`` ran
+analysis_logger = get_logger(__name__)
 
 app = typer.Typer(
     no_args_is_help=True, context_settings={"help_option_names": ["-h", "--help"]}
@@ -156,6 +161,14 @@ def analyse(  # for CLI, so it needs the branches
             analyse_config.git_root = anchor(
                 analyse_config.git_root, config.parent
             ).resolve()
+            # the build's rule: a git_root that does not contain src_dir is ignored,
+            # and the analysis detects the repository from src_dir (#2062)
+            problem = git_root_problem(analyse_config.git_root, analyse_config.src_dir)
+            if problem is not None:
+                analysis_logger.warning(
+                    git_root_warning(project, problem), subtype="git_root"
+                )
+                analyse_config.git_root = None
 
         # preprocessor compile_commands / include dirs are relative to the config
         # file's location too (like src_dir / git_root).

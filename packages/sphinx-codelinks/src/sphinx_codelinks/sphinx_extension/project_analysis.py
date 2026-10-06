@@ -23,6 +23,8 @@ from sphinx_codelinks.config import (
     anchor_preproc_paths,
     config_base_dir,
     file_lineno_href,
+    git_root_problem,
+    git_root_warning,
     locate_src_dir,
 )
 from ub_project import anchor
@@ -55,14 +57,9 @@ def _checked_git_root(
         return None, None
     base_dir = config_base_dir(confdir, codelinks_config)
     root = anchor(analyse.git_root, base_dir).resolve()
-    if not root.exists():
-        return None, f"git_root {root.as_posix()} does not exist"
     src_dir = locate_src_dir(confdir, codelinks_config, discover)
-    if not src_dir.is_relative_to(root):
-        return None, (
-            f"git_root {root.as_posix()} does not contain src_dir {src_dir.as_posix()}"
-        )
-    return root, None
+    problem = git_root_problem(root, src_dir)
+    return (None, problem) if problem is not None else (root, None)
 
 
 def configured_git_root(
@@ -74,8 +71,8 @@ def configured_git_root(
 
     The ``git_root`` setting anchored at the configuration file's directory (see
     :func:`~sphinx_codelinks.config.config_base_dir`) and resolved; ``None`` when none
-    is set, AND when it names no existing directory or one that is neither ``src_dir``
-    nor above it (#2062): every record's ``path`` is relative to the git root, so it
+    is set, AND when :func:`~sphinx_codelinks.config.git_root_problem` finds one: it
+    names no readable directory, or one that is neither ``src_dir`` nor above it (#2062): every record's ``path`` is relative to the git root, so it
     must contain the sources. A rejected value is treated as unset -- the analysis
     detects the repository from ``src_dir`` -- and :func:`git_root_warnings` says so
     once, at ``config-inited``. The analysis (:func:`prepare_analyse_config`) and the
@@ -99,10 +96,7 @@ def git_root_warnings(
             continue
         _root, problem = _checked_git_root(confdir, codelinks_config, project_config)
         if problem is not None:
-            warnings.append(
-                f"project {name!r}: {problem}; it is ignored, and the repository root "
-                "is detected from src_dir instead"
-            )
+            warnings.append(git_root_warning(name, problem))
     return warnings
 
 

@@ -28,7 +28,7 @@ from typer.testing import CliRunner
 
 from sphinx_codelinks.analyse.references import NeedIdRef
 from sphinx_codelinks.cmd import app as cli
-from sphinx_codelinks.config import CodeLinksConfig
+from sphinx_codelinks.config import CodeLinksConfig, git_root_problem
 from sphinx_codelinks.source_discover import source_discover
 from sphinx_codelinks.source_discover.config import SourceDiscoverConfig
 from sphinx_codelinks.sphinx_extension.need_id_refs import (
@@ -539,3 +539,27 @@ def test_the_cli_analyse_ignores_a_git_root_that_does_not_contain_src_dir(
     assert [marker["remote_url"] for marker in markers["p"]] == [
         f"https://github.com/example/demo/blob/{commit}/src/a.cpp#L1"
     ]
+
+
+def test_git_root_problem(tmp_path: Path) -> None:
+    """The one check both the build and ``codelinks analyse`` apply, row by row."""
+    src = tmp_path / "repo" / "src"
+    src.mkdir(parents=True)
+    (tmp_path / "file").write_text("", encoding="utf-8")
+    (tmp_path / "other").mkdir()
+    root = tmp_path.resolve()
+    src = src.resolve()
+
+    assert git_root_problem(root / "repo", src) is None
+    assert git_root_problem(src, src) is None
+    assert git_root_problem(root, src) is None
+    assert git_root_problem(root / "missing", src) == (
+        f"git_root {(root / 'missing').as_posix()} does not exist"
+    )
+    assert git_root_problem(root / "file", src) == (
+        f"git_root {(root / 'file').as_posix()} is not a directory"
+    )
+    assert git_root_problem(root / "other", src) == (
+        f"git_root {(root / 'other').as_posix()} does not contain src_dir "
+        f"{src.as_posix()}"
+    )

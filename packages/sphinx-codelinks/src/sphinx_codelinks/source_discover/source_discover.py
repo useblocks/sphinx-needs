@@ -18,7 +18,9 @@ def lies_within(path: Path, directory: Path) -> bool:
     """Whether ``path`` lies below ``directory``, both resolved.
 
     Strings, not ``Path.is_relative_to``, which costs as much as the walk itself over
-    thousands of files; ``normcase`` keeps case-insensitive platforms honest.
+    thousands of files. ``normcase`` folds case on Windows; on a case-insensitive POSIX
+    file system (APFS) a differently-spelled ancestor still counts as outside --
+    harmless, the file is traced under its own spelling.
     """
     prefix = os.path.join(os.path.normcase(str(directory)), "")
     return os.path.normcase(str(path)).startswith(prefix)
@@ -30,10 +32,12 @@ def warn_outside_src_dir(walked: Path, resolved: Path, src_dir: Path) -> None:
 
     The walked path leads the message rather than being its location: the CLI prints
     the message alone, and Sphinx reads a location without a ``:`` as a document
-    name (``<path>.rst``) -- while a Windows path has one.
+    name (``<path>.rst``) -- while a Windows path has one. It is normalised for the
+    message only (``src/../x.cpp`` reads ``x.cpp``).
     """
+    shown = Path(os.path.normpath(walked)).as_posix()
     logger.warning(
-        f"{walked.as_posix()} resolves to {resolved.as_posix()}, outside src_dir "
+        f"{shown} resolves to {resolved.as_posix()}, outside src_dir "
         f"{src_dir.as_posix()}: not traced (widen src_dir to cover it, or exclude "
         "the link)",
         subtype="outside_src_dir",
