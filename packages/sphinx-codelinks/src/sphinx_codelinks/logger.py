@@ -182,16 +182,18 @@ class _SphinxBackend:
     ``suppress_warnings`` and rendered on the Sphinx warning stream.
     """
 
-    #: whether Sphinx renders a warning's ``[type.subtype]`` (``[type]`` without a
-    #: subtype) itself: from 8.0 by default, and on 7.3+ when the build sets
-    #: ``show_warning_types``. Where it does not, the suffix is appended here; where it
-    #: does, appending it too would show it twice (#2091). Mirrors sphinx-needs'
-    #: logging helper.
-    _show_warning_types = _sphinx_version_info >= (8,)
+    #: whether the backend leaves a warning's ``[type.subtype]`` suffix (``[type]``
+    #: without a subtype) to Sphinx rather than append it itself. Sphinx renders it
+    #: while ``show_warning_types`` is on, its default from 8.0: from 8.0 the backend
+    #: always leaves it to Sphinx (a build that turns the option off shows no suffix,
+    #: as before); before 8.0 only when the build turns the option on -- appending it
+    #: where Sphinx does too showed it twice (#2091). Mirrors sphinx-needs' logging
+    #: helper.
+    _leave_to_sphinx = _sphinx_version_info >= (8,)
 
     def __init__(self, *, show_warning_types: bool = False) -> None:
         if show_warning_types:
-            self._show_warning_types = True
+            self._leave_to_sphinx = True
 
     def debug(self, name: str, msg: str, _location: str | None, /) -> None:
         sphinx_logging.getLogger(name).verbose(msg)
@@ -203,7 +205,7 @@ class _SphinxBackend:
         self, name: str, msg: str, subtype: str, location: str | None, /
     ) -> None:
         message = msg
-        if not self._show_warning_types:
+        if not self._leave_to_sphinx:
             message += f" [codelinks.{subtype}]" if subtype else " [codelinks]"
         sphinx_logging.getLogger(name).warning(
             message,

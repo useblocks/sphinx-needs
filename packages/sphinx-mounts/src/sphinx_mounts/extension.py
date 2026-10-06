@@ -2489,8 +2489,8 @@ def setup(app: Sphinx) -> dict[str, Any]:
         rebuild="env",
         types=(str, type(None)),
     )
-    # first of all: log_warning learns whether Sphinx renders the type suffix
-    # itself, before any handler below (the earliest, at 400, warns) can warn
+    # first of all: log_warning learns whether to leave the type suffix to Sphinx,
+    # before any handler below (the earliest, at 400, warns) can warn
     app.connect("config-inited", configure_warning_types, priority=0)
     # Priority is "lower = earlier"; the TOML loader must run before the
     # validator so that the TOML-derived list is what gets validated.

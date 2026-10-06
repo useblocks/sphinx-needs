@@ -17,33 +17,38 @@ def get_logger(name: str) -> SphinxLoggerAdapter:
 
 
 class _WarningTypes:
-    """Whether Sphinx renders a warning's `` [type.subtype]`` suffix itself.
+    """Whether :func:`log_warning` and :func:`log_error` leave a warning's
+    `` [type.subtype]`` suffix to Sphinx rather than append it themselves.
 
-    It does when ``show_warning_types`` is on: an option since Sphinx 7.3 (default
-    ``False``), on by default since 8.0. Where Sphinx does not, :func:`log_warning` and
-    :func:`log_error` append the suffix themselves -- before 8.0 only, as they always
-    have -- and where it does, they must not, or it shows twice (#2091). The helpers
-    have no ``app``, so :func:`configure_warning_types` records the build's value at
-    ``config-inited``, again for every build in the process; until then (a warning from
-    ``setup()``) the running Sphinx's default applies.
+    Sphinx renders the suffix while ``show_warning_types`` is on: an option since
+    Sphinx 7.3 (default ``False``), on by default since 8.0. From 8.0 the helpers always
+    leave it to Sphinx -- a build that turns the option off there shows no suffix, as
+    before. Before 8.0 they leave it to Sphinx only when the build turns the option on,
+    and append it themselves otherwise; appending it where Sphinx does too showed it
+    twice (#2091). The helpers have no ``app``, so :func:`configure_warning_types`
+    records the build's value at the top of sphinx-needs' ``setup()`` -- where Sphinx
+    has read ``conf.py`` and the ``-D`` overrides, before any later ``setup()``
+    (conf.py's included) can call the public API -- and again at ``config-inited``,
+    for every build in the process.
     """
 
-    sphinx_renders: bool = version_info >= (8,)
+    leave_to_sphinx: bool = version_info >= (8,)
 
 
 _warning_types = _WarningTypes()
 
 
 def configure_warning_types(_app: Sphinx, config: Config) -> None:
-    """Record whether Sphinx renders the warning type suffix for this build."""
-    _warning_types.sphinx_renders = version_info >= (8,) or bool(
+    """Record whether the helpers leave the warning type suffix to Sphinx for this
+    build."""
+    _warning_types.leave_to_sphinx = version_info >= (8,) or bool(
         config.show_warning_types
     )
 
 
 def _with_type(message: str, type: str, subtype: str) -> str:
-    """``message``, with the `` [type.subtype]`` suffix if Sphinx will not add it."""
-    if _warning_types.sphinx_renders:
+    """``message``, with the `` [type.subtype]`` suffix unless it is left to Sphinx."""
+    if _warning_types.leave_to_sphinx:
         return message
     return f"{message} [{type}.{subtype}]"
 

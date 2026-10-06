@@ -111,26 +111,30 @@ WARNING_TYPE = "mounts"
 
 
 class _WarningTypes:
-    """Whether Sphinx renders a warning's `` [type.subtype]`` suffix itself.
+    """Whether :func:`log_warning` leaves a warning's `` [type.subtype]`` suffix to
+    Sphinx rather than append it itself.
 
-    It does when ``show_warning_types`` is on: an option since Sphinx 7.3 (default
-    ``False``), on by default since 8.0. Where Sphinx does not, :func:`log_warning`
-    appends the suffix itself -- before 8.0 only, as it always has -- and where it
-    does, it must not, or it shows twice (#2091). :func:`log_warning` has no ``app``,
-    so :func:`configure_warning_types` records the build's value at
-    ``config-inited``, again for every build in the process; until then the running
-    Sphinx's default applies.
+    Sphinx renders the suffix while ``show_warning_types`` is on: an option since
+    Sphinx 7.3 (default ``False``), on by default since 8.0. From 8.0 the helper always
+    leaves it to Sphinx -- a build that turns the option off there shows no suffix, as
+    before. Before 8.0 it leaves it to Sphinx only when the build turns the option on,
+    and appends it itself otherwise; appending it where Sphinx does too showed it twice
+    (#2091). :func:`log_warning` has no ``app``, so :func:`configure_warning_types`
+    records the build's value at ``config-inited``, before any sphinx-mounts handler,
+    again for every build in the process (nothing in sphinx-mounts can warn earlier:
+    its ``setup()`` only registers).
     """
 
-    sphinx_renders: bool = version_info >= (8,)
+    leave_to_sphinx: bool = version_info >= (8,)
 
 
 _warning_types = _WarningTypes()
 
 
 def configure_warning_types(_app: Sphinx, config: Config) -> None:
-    """Record whether Sphinx renders the warning type suffix for this build."""
-    _warning_types.sphinx_renders = version_info >= (8,) or bool(
+    """Record whether :func:`log_warning` leaves the warning type suffix to Sphinx for
+    this build."""
+    _warning_types.leave_to_sphinx = version_info >= (8,) or bool(
         config.show_warning_types
     )
 
@@ -158,6 +162,6 @@ def log_warning(
     :param location: Optional docname (or ``docname:lineno``) the warning
         belongs to.
     """
-    if not _warning_types.sphinx_renders:
+    if not _warning_types.leave_to_sphinx:
         message = f"{message} [{WARNING_TYPE}.{topic}]"
     logger.warning(message, type=WARNING_TYPE, subtype=topic, location=location)

@@ -87,7 +87,7 @@ def test_suffix_once_for_a_warning_at_config_inited(
     otherwise it would be whatever the previous build in this worker left behind.
     """
     monkeypatch.setattr(
-        mounts_logging._warning_types, "sphinx_renders", version_info >= (8,)
+        mounts_logging._warning_types, "leave_to_sphinx", version_info >= (8,)
     )
     assert _suffixes(
         make_app,

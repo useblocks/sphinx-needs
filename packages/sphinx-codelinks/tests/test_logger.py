@@ -165,15 +165,16 @@ def stub_sphinx_logger(monkeypatch):
 def test_sphinx_backend_appends_the_type_only_when_sphinx_does_not(
     stub_sphinx_logger, subtype, suffix
 ):
-    """Where Sphinx renders the ``[type.subtype]`` suffix itself -- ``[type]`` for a
-    warning without a subtype -- (8+, or 7.3+ with ``show_warning_types`` on) the
-    message is passed unchanged; where it does not, the backend appends it -- either
-    way it is rendered once (#2091)."""
+    """Where the suffix is left to Sphinx (always from 8, before 8 when
+    ``show_warning_types`` is on -- Sphinx then renders ``[type.subtype]``, or
+    ``[type]`` for a warning without a subtype) the message is passed unchanged; where
+    it is not, the backend appends it -- either way it is rendered at most once
+    (#2091)."""
     backend = logmod._SphinxBackend()
 
-    backend._show_warning_types = True
+    backend._leave_to_sphinx = True
     backend.warning("sphinx_codelinks.x", "a problem", subtype, "x.cpp")
-    backend._show_warning_types = False
+    backend._leave_to_sphinx = False
     backend.warning("sphinx_codelinks.x", "a problem", subtype, "x.cpp")
 
     assert [msg for msg, _ in stub_sphinx_logger.warnings] == [
@@ -196,6 +197,6 @@ def test_configure_sphinx_follows_show_warning_types(
     logmod.configure_sphinx(show_warning_types=show_warning_types)
     logmod.get_logger("sphinx_codelinks.x").warning("a problem", subtype="git_root")
 
-    sphinx_renders = show_warning_types or sphinx.version_info >= (8,)
-    expected = "a problem" if sphinx_renders else "a problem [codelinks.git_root]"
+    leave_to_sphinx = show_warning_types or sphinx.version_info >= (8,)
+    expected = "a problem" if leave_to_sphinx else "a problem [codelinks.git_root]"
     assert [msg for msg, _ in stub_sphinx_logger.warnings] == [expected]

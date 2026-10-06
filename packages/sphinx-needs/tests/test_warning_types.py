@@ -126,7 +126,7 @@ def test_suffix_once_for_a_warning_before_the_documents_are_read(
     would be whatever the previous build in this worker left behind.
     """
     monkeypatch.setattr(
-        needs_logging._warning_types, "sphinx_renders", version_info >= (8,)
+        needs_logging._warning_types, "leave_to_sphinx", version_info >= (8,)
     )
     (tmp_path / "conf.py").write_text(conf, encoding="utf-8")
     (tmp_path / "index.rst").write_text(INDEX, encoding="utf-8")
@@ -157,7 +157,9 @@ def test_helpers_append_the_suffix_only_when_sphinx_does_not(
 ):
     """``log_warning`` and ``log_error`` alike: the message is passed unchanged where
     the suffix is left to Sphinx, and carries it where it is not."""
-    monkeypatch.setattr(needs_logging._warning_types, "sphinx_renders", leave_to_sphinx)
+    monkeypatch.setattr(
+        needs_logging._warning_types, "leave_to_sphinx", leave_to_sphinx
+    )
     stub = _StubLogger()
     getattr(needs_logging, helper)(stub, "a problem", "config", None)
 

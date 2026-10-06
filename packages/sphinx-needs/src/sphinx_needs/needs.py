@@ -241,7 +241,7 @@ def load_schemas_config_from_json(app: Sphinx, config: _SphinxConfig) -> None:
 
 
 def setup(app: Sphinx) -> dict[str, Any]:
-    # the warning helpers learn whether Sphinx renders the type suffix itself before
+    # the warning helpers learn whether to leave the type suffix to Sphinx before
     # anything can warn: the public API may already be called from a later setup()
     # (conf.py's runs after every extension's), and the config is readable here
     configure_warning_types(app, app.config)
@@ -373,8 +373,9 @@ def setup(app: Sphinx) -> dict[str, Any]:
     # EVENTS
     ########################################################################
     # Make connections to events
-    # first of all: the warning helpers learn whether Sphinx renders the type suffix
-    # itself, before any handler below (the earliest, at 10, warns) can warn
+    # first of all, again for this build: the warning helpers learn whether to leave
+    # the type suffix to Sphinx, before any handler below (the earliest, at 10, warns)
+    # can warn
     app.connect("config-inited", configure_warning_types, priority=0)
     app.connect("config-inited", load_config_from_toml, priority=10)  # runs early
     # runs directly after the toml config is loaded, which can set the variant data,
