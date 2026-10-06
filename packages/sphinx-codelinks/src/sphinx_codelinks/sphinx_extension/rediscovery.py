@@ -1,6 +1,6 @@
 """What an incremental build learns about source files, without parsing them.
 
-Two stores and two handlers, all in the main process.
+Three stores and two handlers, all in the main process.
 
 The SCOPE store (:func:`scope_store`, env attribute ``codelinks_src_trace_scopes``)
 records, under the document hosting each ``src-trace`` directive, the directive's scope
@@ -21,6 +21,15 @@ The CONFIG-ONLY store (:func:`config_only_refs_store`, env attribute
 directive ownership is exact -- :func:`update_config_only_refs` fingerprints each such
 project and analyses it again only when the fingerprint changed. The scan never creates
 needs: there is no directive to own them.
+
+The PAGES store (:func:`source_pages_store`, env attribute ``codelinks_source_pages``)
+holds, under the document hosting each ``src-trace`` directive, the
+:class:`~sphinx_codelinks.sphinx_extension.project_analysis.SourcePage` of each file its
+local URLs name; a config-only project's ride in its ``ConfigOnlyScan``. Every HTML
+build writes, at ``html-collect-pages`` (:func:`effective_pages`), each copy and page its
+output lacks or holds out of date, so the output directory is build state: a cleaned
+one, a second builder's, or a document a ``-j N`` worker read gets its pages, whether or
+not the document is read again.
 
 Sphinx pickles the environment only when a document was read or ``env-updated``
 returned one. So the ``env-updated`` handler also compares the references the attach
@@ -64,6 +73,7 @@ from sphinx_codelinks.sphinx_extension.need_id_refs import (
     need_id_refs_store,
 )
 from sphinx_codelinks.sphinx_extension.project_analysis import (
+    SourcePage,
     collect_need_id_refs,
     prepare_analyse_config,
     url_context,
@@ -82,6 +92,10 @@ SCOPES_ATTRIBUTE = "codelinks_src_trace_scopes"
 
 CONFIG_ONLY_ATTRIBUTE = "codelinks_config_only_refs"
 """The environment attribute holding the config-only records, keyed by project."""
+
+SOURCE_PAGES_ATTRIBUTE = "codelinks_source_pages"
+"""The environment attribute holding the directives' source pages, keyed by host
+document."""
 
 
 # -- discovery and the fingerprint ---------------------------------------------------
@@ -262,6 +276,18 @@ def scope_store(env: BuildEnvironment) -> dict[str, list[ScopeRecord]]:
     return store
 
 
+def source_pages_store(env: BuildEnvironment) -> dict[str, list[SourcePage]]:
+    """The source pages the directives recorded in ``env``, by the name of the hosting
+    document."""
+    store: dict[str, list[SourcePage]] | None = getattr(
+        env, SOURCE_PAGES_ATTRIBUTE, None
+    )
+    if store is None:
+        store = {}
+        setattr(env, SOURCE_PAGES_ATTRIBUTE, store)
+    return store
+
+
 def directive_owned(env: BuildEnvironment) -> set[str]:
     """The projects at least one ``src-trace`` directive traces."""
     return {scope.project for scopes in scope_store(env).values() for scope in scopes}
@@ -281,6 +307,28 @@ def note_documents_to_read(env: BuildEnvironment, docnames: Iterable[str]) -> No
     _UNREAD[env] = set(docnames)
 
 
+#: the documents this build purged -- every one it reads (added or changed, before the
+#: read, or before the ``-j N`` fork) and every removed one -- and the targets of the
+#: source pages they had recorded: a page whose ``[docs]`` links may have changed with
+#: no source edit is written again. From ``env-get-outdated`` on; in memory only
+_PURGED: weakref.WeakKeyDictionary[BuildEnvironment, set[str]] = (
+    weakref.WeakKeyDictionary()
+)
+_PURGED_TARGETS: weakref.WeakKeyDictionary[BuildEnvironment, set[str]] = (
+    weakref.WeakKeyDictionary()
+)
+
+
+def purged_documents(env: BuildEnvironment) -> frozenset[str]:
+    """The documents this build purged (read again, added, or removed)."""
+    return frozenset(_PURGED.get(env, ()))
+
+
+def purged_targets(env: BuildEnvironment) -> frozenset[str]:
+    """The targets of the source pages the purged documents had recorded."""
+    return frozenset(_PURGED_TARGETS.get(env, ()))
+
+
 def is_unread(env: BuildEnvironment, docname: str) -> bool:
     """Whether ``docname`` is still to be read in this build: its needs in the store
     are the previous build's, about to be purged."""
@@ -288,10 +336,16 @@ def is_unread(env: BuildEnvironment, docname: str) -> bool:
 
 
 def purge_doc(_app: Sphinx, env: BuildEnvironment, docname: str) -> None:
-    """Drop a document's records and scopes before it is read again, or when it is
-    removed (``env-purge-doc``)."""
+    """Drop a document's records, scopes and source pages before it is read again, or
+    when it is removed (``env-purge-doc``); the document and its pages' targets are
+    kept for this build (:func:`purged_documents`, :func:`purged_targets`)."""
+    _PURGED.setdefault(env, set()).add(docname)
+    _PURGED_TARGETS.setdefault(env, set()).update(
+        page.target for page in source_pages_store(env).get(docname, ())
+    )
     need_id_refs_store(env).pop(docname, None)
     scope_store(env).pop(docname, None)
+    source_pages_store(env).pop(docname, None)
     _UNREAD.get(env, set()).discard(docname)
 
 
@@ -301,9 +355,9 @@ def merge_info(
     docnames: Iterable[str],
     other: BuildEnvironment,
 ) -> None:
-    """Take over the records and scopes of the documents a ``-j N`` worker read
-    (``env-merge-info``)."""
-    for store in (need_id_refs_store, scope_store):
+    """Take over the records, scopes and source pages of the documents a ``-j N``
+    worker read (``env-merge-info``)."""
+    for store in (need_id_refs_store, scope_store, source_pages_store):
         mine: dict[str, Any] = store(env)
         theirs: dict[str, Any] = store(other)
         for docname in docnames:
@@ -316,10 +370,15 @@ def merge_info(
 
 @dataclass(frozen=True)
 class ConfigOnlyScan:
-    """A config-only project's records, and the fingerprint they were made from."""
+    """A config-only project's records and source pages, and the fingerprint they were
+    made from."""
 
     fingerprint: Fingerprint
     records: list[NeedIdRef]
+    pages: tuple[SourcePage, ...] = ()
+    """The pages of the files the records' local URLs name. A plain default, so that the
+    class attribute exists and a scan pickled before the field existed loads and pages
+    nothing (a ``default_factory`` leaves no class attribute)."""
 
 
 def config_only_refs_store(env: BuildEnvironment) -> dict[str, ConfigOnlyScan]:
@@ -337,18 +396,60 @@ def config_only_refs_store(env: BuildEnvironment) -> dict[str, ConfigOnlyScan]:
     return store
 
 
+def _effective_scans(
+    env: BuildEnvironment, config: CodeLinksConfig
+) -> list[ConfigOnlyScan]:
+    """The config-only scans in use: those of each gated project no directive traces."""
+    gated = need_id_refs_fields(config)
+    owned = directive_owned(env)
+    config_only = config_only_refs_store(env)
+    return [
+        config_only[project]
+        for project in sorted(config_only)
+        if project in gated and project not in owned
+    ]
+
+
 def effective_refs(env: BuildEnvironment, config: CodeLinksConfig) -> list[NeedIdRef]:
     """The records the attach uses: every directive's, plus the config-only records of
     each gated project that no directive traces."""
     store = need_id_refs_store(env)
     refs = [ref for docname in sorted(store) for ref in store[docname]]
-    gated = need_id_refs_fields(config)
-    owned = directive_owned(env)
-    config_only = config_only_refs_store(env)
-    for project in sorted(config_only):
-        if project in gated and project not in owned:
-            refs.extend(config_only[project].records)
+    for scan in _effective_scans(env, config):
+        refs.extend(scan.records)
     return refs
+
+
+def effective_pages(env: BuildEnvironment, config: CodeLinksConfig) -> list[SourcePage]:
+    """The source pages an HTML build writes, one per target, sorted by it: every
+    directive's, plus those of the config-only scans :func:`effective_refs` uses. A
+    target recorded more than once (two directives tracing one file) is one page with
+    every record's anchors; its source is the first record's, and a record naming another
+    source warns ``codelinks.source_page``."""
+    store = source_pages_store(env)
+    recorded = [page for docname in sorted(store) for page in store[docname]]
+    for scan in _effective_scans(env, config):
+        recorded.extend(scan.pages)
+    merged: dict[str, tuple[str, set[tuple[int, str, str]]]] = {}
+    collisions: dict[str, set[str]] = {}
+    for page in recorded:
+        source, anchors = merged.setdefault(page.target, (page.source, set()))
+        anchors.update(page.anchors)
+        if page.source != source:
+            collisions.setdefault(page.target, set()).add(page.source)
+    for target, others in sorted(collisions.items()):
+        names = ", ".join(Path(other).as_posix() for other in sorted(others))
+        logger.warning(
+            f"source page {target!r}: {Path(merged[target][0]).as_posix()} and {names} "
+            "are copied to the same place (their source directories share a name); "
+            f"only {Path(merged[target][0]).as_posix()} is copied and paged",
+            type="codelinks",
+            subtype="source_page",
+        )
+    return [
+        SourcePage(source, target, tuple(sorted(anchors)))
+        for target, (source, anchors) in sorted(merged.items())
+    ]
 
 
 class ConfigOnlyError(Exception):
@@ -411,7 +512,7 @@ def scan_config_only_project(
     context = url_context(
         codelinks_config, project_config, src_analyse, src_dir, Path(app.outdir)
     )
-    records = collect_need_id_refs(src_analyse, project, context)
+    records, pages = collect_need_id_refs(src_analyse, project, context)
     not_created = sum(1 for need in src_analyse.oneline_needs if need.need)
     line = (
         f"codelinks [{project}]: {_plural(len(src_analyse.src_files), 'file')}, "
@@ -423,7 +524,7 @@ def scan_config_only_project(
             "(no src-trace directive)"
         )
     logger.info(line)
-    return ConfigOnlyScan(found, records)
+    return ConfigOnlyScan(found, records, tuple(pages))
 
 
 def update_config_only_refs(
@@ -527,6 +628,9 @@ def find_outdated_scopes(
     """
     codelinks_config = CodeLinksConfig.from_sphinx(app.config)
     _PREVIOUS_REFS[env] = effective_refs(env, codelinks_config)
+    # a new build: nothing purged yet (the removed documents are purged after this)
+    _PURGED[env] = set()
+    _PURGED_TARGETS[env] = set()
     skip = added | changed | removed
     memo: dict[tuple[str, ScopeKind, str], Fingerprint | None] = {}
     candidates = [

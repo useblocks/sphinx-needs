@@ -1,6 +1,5 @@
-import shutil
 from collections.abc import Callable, Mapping
-from pathlib import Path, PurePath
+from pathlib import Path, PurePosixPath
 from typing import Any, ClassVar, cast
 
 from docutils import nodes
@@ -15,13 +14,13 @@ from sphinx_codelinks.analyse.references import _relative_posix
 from sphinx_codelinks.config import (
     CodeLinksConfig,
     CodeLinksProjectConfigType,
-    file_lineno_href,
     locate_src_dir,
     need_id_refs_field,
 )
 from sphinx_codelinks.sphinx_extension.debug import measure_time
 from sphinx_codelinks.sphinx_extension.need_id_refs import need_id_refs_store
 from sphinx_codelinks.sphinx_extension.project_analysis import (
+    SourcePage,
     collect_need_id_refs,
     fill_remote_url,
     prepare_analyse_config,
@@ -36,6 +35,7 @@ from sphinx_codelinks.sphinx_extension.rediscovery import (
     files_fingerprint,
     is_unread,
     scope_store,
+    source_pages_store,
 )
 from sphinx_needs.api import InvalidNeedException, add_need
 from sphinx_needs.api.need import _make_hashed_id
@@ -46,13 +46,11 @@ from sphinx_needs.utils import add_doc
 logger = logging.getLogger(__name__)
 
 
-def get_rel_path(doc_path: Path, code_path: Path, base_dir: Path) -> tuple[Path, Path]:
-    """Get the relative path from the document to the source code file and vice versa."""
-    doc_depth = len(doc_path.parents) - 1
-    src_rel_path = Path(*[".."] * doc_depth) / code_path.relative_to(base_dir)
-    code_depth = len(code_path.relative_to(base_dir).parents) - 1
-    doc_rel_path = Path(*[".."] * code_depth) / doc_path
-    return src_rel_path, doc_rel_path.with_suffix(".html")
+def from_document(docname: str, target: str) -> Path:
+    """``target`` (relative to the output directory, POSIX) relative to the page of
+    ``docname`` -- the depth-dependent local URL value."""
+    depth = len(PurePosixPath(docname).parents) - 1
+    return Path(*[".."] * depth, target)
 
 
 def _line_span(oneline_need: OneLineNeed) -> str:
@@ -60,12 +58,6 @@ def _line_span(oneline_need: OneLineNeed) -> str:
     start = oneline_need.source_map["start"]["row"] + 1
     end = oneline_need.source_map["end"]["row"] + 1
     return str(start) if start == end else f"{start}-L{end}"
-
-
-def docs_anchor(docs_href: PurePath, need_id: str) -> str:
-    """A source page's ``[docs]`` link to a need: the document's page relative to the
-    source page, and the need's id. POSIX on every platform: it is an href."""
-    return f"{docs_href.as_posix()}#{need_id}"
 
 
 def generate_str_link_name(oneline_need: OneLineNeed, target_filepath: Path) -> str:
@@ -244,11 +236,14 @@ class SourceTracingDirective(SphinxDirective):
             src_trace_sphinx_config, src_trace_conf, src_analyse, src_dir, out_dir
         )
 
-        # keep the @need-ids references, to be attached once every need is known
+        # keep the @need-ids references, to be attached once every need is known, and
+        # the pages of the files their local URLs name
         if need_id_refs_field(src_trace_sphinx_config, src_trace_conf) is not None:
+            records, pages = collect_need_id_refs(src_analyse, project, context)
             need_id_refs_store(self.env).setdefault(self.env.docname, []).extend(
-                collect_need_id_refs(src_analyse, project, context)
+                records
             )
+            source_pages_store(self.env).setdefault(self.env.docname, []).extend(pages)
 
         # render needs from the source files
         rendered_needs = self.render_needs(
@@ -353,9 +348,15 @@ class SourceTracingDirective(SphinxDirective):
         remote_url_pattern: str | None = None,
     ) -> list[nodes.Node]:
         """Render the needs from the virtual docs; a need whose id is defined already
-        is skipped (:meth:`defined_elsewhere`)."""
+        is skipped (:meth:`defined_elsewhere`).
+
+        With local URLs, each file a need is created from is recorded as a
+        :class:`SourcePage` for this document -- copied and paged by every HTML build,
+        never here.
+        """
         rendered_needs: list[nodes.Node] = []
         self._deferred: list[tuple[str, str]] = []
+        anchors: dict[str, tuple[str, list[tuple[int, str, str]]]] = {}
         root = src_analyse.git_root or src_analyse.analyse_config.src_dir
         for oneline_need in src_analyse.oneline_needs:
             filepath = src_analyse.analyse_config.src_dir / oneline_need.filepath
@@ -364,24 +365,15 @@ class SourceTracingDirective(SphinxDirective):
             if self.defined_elsewhere(oneline_need, need_id, filepath, root):
                 continue
             target_filepath = dirs["target_dir"] / filepath.relative_to(dirs["src_dir"])
-
-            # mapping between lineno and need link in docs for local url
-
-            # The link to the documentation page for the source file
-
-            if local_url_field:
-                # copy files to _build/html, as bytes: no codec, no newline translation
-                target_filepath.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(filepath, target_filepath)
+            # the copy's path relative to the output directory, POSIX
+            target = target_filepath.relative_to(dirs["out_dir"]).as_posix()
             local_link_name = None
             remote_link_name = None
             if local_url_field:
-                # generate link name
-                # calculate the relative path from the current doc to the target file
-                local_rel_path, docs_href = get_rel_path(
-                    Path(self.env.docname), target_filepath, dirs["out_dir"]
+                # the copy's path, relative to this document's page
+                local_link_name = generate_str_link_name(
+                    oneline_need, from_document(self.env.docname, target)
                 )
-                local_link_name = generate_str_link_name(oneline_need, local_rel_path)
             if remote_url_field and remote_url_pattern is not None:
                 remote_link_name = generate_remote_url(
                     oneline_need,
@@ -432,20 +424,18 @@ class SourceTracingDirective(SphinxDirective):
                     )
                     continue
                 rendered_needs.extend(oneline_needs)
-                # add_need raised if no id could be given (an unknown type, a
-                # required id missing), so need_id is the need's id here
+                # a need add_need refused was skipped above (no anchor), so need_id
+                # is the need's id here
                 if local_url_field and need_id is not None:
-                    # save the mapping of need links and line numbers of source codes
-                    # for the later use in `html-collect-pages`
-                    if str(target_filepath) not in file_lineno_href.mappings:
-                        file_lineno_href.mappings[str(target_filepath)] = {
-                            oneline_need.source_map["start"]["row"] + 1: docs_anchor(
-                                docs_href, need_id
-                            )
-                        }
-                    else:
-                        file_lineno_href.mappings[str(target_filepath)][
-                            oneline_need.source_map["start"]["row"] + 1
-                        ] = docs_anchor(docs_href, need_id)
+                    # the page's [docs] link back to the need, resolved when written
+                    line = oneline_need.source_map["start"]["row"] + 1
+                    anchors.setdefault(target, (str(filepath), []))[1].append(
+                        (line, self.env.docname, need_id)
+                    )
 
+        if anchors:
+            source_pages_store(self.env).setdefault(self.env.docname, []).extend(
+                SourcePage(source, target, tuple(found))
+                for target, (source, found) in anchors.items()
+            )
         return rendered_needs

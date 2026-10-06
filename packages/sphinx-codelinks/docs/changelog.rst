@@ -59,9 +59,7 @@ New and Improved
   roots are different files, each kept): the project's
   ``remote_url_pattern`` filled in for the marker's line, or the local link when remote
   URLs are off. With local URLs only, a file referenced by ``@need-ids:`` is copied into
-  the output and gets a source page, as a file with a one-line need is; under ``-j N`` the
-  local link's source page is not generated yet
-  (`#2044 <https://github.com/useblocks/sphinx-needs/issues/2044>`__). ``needs.json``
+  the output and gets a source page, as a file with a one-line need is. ``needs.json``
   declares the field as a list; a need nothing references carries ``null``, which a
   strict ``unevaluatedProperties: false`` schema never sees. The references replace a
   value the need's own directive or a default gave the field; a user's ``needextend`` of
@@ -186,6 +184,29 @@ New and Improved
   id, and the page's back-link is a POSIX path on Windows too
   (`#2082 <https://github.com/useblocks/sphinx-needs/issues/2082>`__).
 
+- 🐛 The source copies and pages are build state: kept up to date by every HTML build
+  whether or not the directive's document is read again, under ``-j N`` too, and by HTML
+  builders only (`#2070 <https://github.com/useblocks/sphinx-needs/issues/2070>`__, and the missing
+  pages of `#2044 <https://github.com/useblocks/sphinx-needs/issues/2044>`__).
+
+  With local URLs, each source file a need is created from or a reference names is copied
+  into the output (``<outdir>/<src_dir name>/<path>``) and paged beside the copy -- the
+  target of every local link. Both were side effects of the analysis, made only by a build
+  that read the directive's document, from a registry that a ``-j N`` worker never handed
+  back: a removed output directory, a second builder sharing the doctrees (``html`` then
+  ``dirhtml``) or a parallel build left dead local links. What to copy and page is now kept
+  in the environment, with the document (or the scanned project) it came from, and every
+  HTML build writes those its output lacks or holds out of date; each page's ``[docs]`` link
+  is the builder's own relative URI, so a ``dirhtml`` page links back correctly too. An
+  unchanged build rewrites no copy or page; a page is written again when its source
+  changed, a document tracing it -- now or before -- was read again, added or removed, or
+  the output lacks it; a copy carries its source's modification time, so a source replaced
+  by an older file is copied again too. A LaTeX build no longer drops source copies into
+  its output; a source removed before the pages are written, or a second source copied to
+  the same place (two projects whose source directories share a name), warns
+  ``codelinks.source_page``. The first build after upgrading reads every document once:
+  an environment from an earlier release holds no page records.
+
 - ⬆️ ``typer`` is no longer capped below 0.26.8. The cap protected the documentation build,
   whose ``sphinxcontrib-typer`` imported a ``typer.rich_utils`` name that 0.26.8 removed;
   the ``docs`` extra now requires ``sphinxcontrib-typer`` 0.9.1 or newer, which tracks
@@ -230,10 +251,7 @@ New and Improved
 
 - 🐛 The ``local-url`` and ``remote-url`` links render under ``sphinx-build -j N``, and each
   project's ``remote-url`` links with that project's ``remote_url_pattern``
-  (`#2039 <https://github.com/useblocks/sphinx-needs/issues/2039>`__). Under ``-j N`` the
-  ``local-url`` link points at a source page that a parallel build does not yet generate
-  (`#2044 <https://github.com/useblocks/sphinx-needs/issues/2044>`__); the ``remote-url``
-  link is complete.
+  (`#2039 <https://github.com/useblocks/sphinx-needs/issues/2039>`__).
 
   The ``src-trace`` directive wrote the two fields' ``needs_string_links`` entries into the
   configuration while it was read. A parallel worker never hands such a write back, so

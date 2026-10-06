@@ -52,8 +52,8 @@ REF_LINK_REGEX = (
 )
 """A reference field's entry: a remote URL (``scheme://``, as :data:`URL_LINK_REGEX`),
 else a local value in the ``local-url`` field's shape, ``<file>.<ext>#L<line>`` relative
-to the document, which links to the source page generated beside the copied file (in a
-serial build, #2044); anything else renders as text."""
+to the document, which links to the source page written beside the copied file; anything
+else renders as text."""
 
 
 def ref_url_string_link(field: str) -> dict[str, Any]:
@@ -81,8 +81,8 @@ def local_url_string_link(field: str) -> dict[str, Any]:
     """The string link for the local URL field.
 
     Its value is the copied source file's path relative to the document
-    (``../src/file.cpp#L3``), and the link points at the source page generated beside
-    that copy -- in a serial build; a parallel one does not generate it yet (#2044).
+    (``../src/file.cpp#L3``), and the link points at the source page written beside
+    that copy.
     """
     return {
         "regex": r"^(?P<value>.+?)\.[^\.]+#L(?P<lineno>\d+)",

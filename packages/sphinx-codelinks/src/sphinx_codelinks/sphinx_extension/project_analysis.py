@@ -4,12 +4,14 @@ Shared by the two places a build analyses a project: the ``src-trace`` directive
 its scope, at read time) and the configuration pass of projects that no directive
 traces (over the whole source directory, in the main process; see
 ``sphinx_extension/rediscovery.py``). Nothing here needs the docutils state or the
-environment, so both callers get the same paths, the same URLs and the same records.
+environment, so both callers get the same paths, the same URLs and the same records --
+the ``@need-ids:`` references, and the :class:`SourcePage` of each file a local URL
+names. Nothing here writes a file: the copies and their pages are made by every HTML
+build, from the pages recorded in the environment (``source_tracing.generate_code_page``).
 """
 
 from __future__ import annotations
 
-import shutil
 from collections.abc import Sequence
 from dataclasses import dataclass, replace
 from pathlib import Path, PurePath
@@ -22,7 +24,6 @@ from sphinx_codelinks.config import (
     SourceAnalyseConfig,
     anchor_preproc_paths,
     config_base_dir,
-    file_lineno_href,
     git_root_problem,
     git_root_warning,
     locate_src_dir,
@@ -181,16 +182,45 @@ def url_context(
     return UrlContext(dirs, local_url_field, remote_url_field, remote_url_pattern)
 
 
+@dataclass(frozen=True)
+class SourcePage:
+    """A source file a local URL names: copied into the HTML output, and paged beside
+    its copy (``<target stem>.html``), by every HTML build whose output lacks them or
+    holds them out of date.
+
+    Recorded in the environment when a document is read (by host document) or a project
+    without a directive is scanned (in its ``ConfigOnlyScan``); the copy and the page are
+    made from the record at ``html-collect-pages``, never at read time.
+    """
+
+    source: str
+    """The analysed file's absolute path (the environment is build-local)."""
+    target: str
+    """The copy's path relative to the output directory, POSIX (``src/refs.cpp``)."""
+    anchors: tuple[tuple[int, str, str], ...]
+    """``(line, docname, need id)`` of each one-line need created from the file, for
+    its page's ``[docs]`` links; ``()`` for a file only references name."""
+
+
+def page_target(context: UrlContext, filepath: Path) -> str:
+    """Where ``filepath`` (absolute, under the project's ``src_dir``) is copied: its
+    path relative to the output directory, POSIX on every platform."""
+    dirs = context.dirs
+    copy = dirs["target_dir"] / filepath.relative_to(dirs["src_dir"])
+    return copy.relative_to(dirs["out_dir"]).as_posix()
+
+
 def collect_need_id_refs(
     src_analyse: SourceAnalyse, project: str, context: UrlContext
-) -> list[NeedIdRef]:
-    """The analysis' ``@need-ids:`` references, as records.
+) -> tuple[list[NeedIdRef], list[SourcePage]]:
+    """The analysis' ``@need-ids:`` references, as records, and the pages of the files
+    their local URLs name.
 
     Their URLs follow the created needs' rules: the remote one fills the project's
     ``remote_url_pattern`` exactly as a created need's does. The local one -- only
-    when it is the value, i.e. there is no remote URL -- names the source copied
-    into the build output, beside which its page is generated; with a remote URL
-    nothing is copied, so no orphan copy or page is left in the output.
+    when it is the value, i.e. there is no remote URL -- names the source's copy in
+    the build output, beside which its page is written; with a remote URL no page is
+    recorded, so no orphan copy or page is left in the output.
     """
     dirs = context.dirs
     src_dir = dirs["src_dir"]
@@ -206,19 +236,17 @@ def collect_need_id_refs(
             line,
         )
 
+    pages: dict[str, SourcePage] = {}
+
     def local_url(filepath: Path, line: int) -> str | None:
         if context.local_url_field is None or remote_url_pattern is not None:
             return None
-        target_filepath = dirs["target_dir"] / filepath.relative_to(src_dir)
-        if str(target_filepath) not in file_lineno_href.mappings:
-            # copy the file and have its page generated, as for a created need
-            target_filepath.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(filepath, target_filepath)
-            file_lineno_href.mappings[str(target_filepath)] = {}
-        relative = target_filepath.relative_to(dirs["out_dir"]).as_posix()
-        return f"{relative}#L{line}"
+        target = page_target(context, filepath)
+        # the file is copied and paged, as a file with a created need is
+        pages.setdefault(target, SourcePage(str(filepath), target, ()))
+        return f"{target}#L{line}"
 
-    return need_id_ref_records(
+    records = need_id_ref_records(
         src_analyse.need_id_refs,
         project=project,
         root=src_analyse.git_root or src_dir,
@@ -226,3 +254,4 @@ def collect_need_id_refs(
         remote_url=remote_url,
         local_url=local_url,
     )
+    return records, list(pages.values())
