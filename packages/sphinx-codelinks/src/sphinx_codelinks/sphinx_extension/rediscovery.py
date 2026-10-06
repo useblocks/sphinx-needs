@@ -170,9 +170,9 @@ def discover_scope(
 
 def scope_relative_path(path: PurePath, root: PurePath) -> str:
     """``path`` relative to ``root``, POSIX on every platform (the path itself, when it
-    lies outside ``root``). Discovery lists no file outside the project's ``src_dir``
-    (#2062), which every recorded ``root`` is or lies below, so a build never takes the
-    fallback; it is kept so that a fingerprint is never an exception."""
+    lies outside ``root``: a file a ``:directory:`` scope reaches through a link to
+    elsewhere below ``src_dir`` -- discovery lists no file outside ``src_dir`` itself,
+    #2062)."""
     try:
         return path.relative_to(root).as_posix()
     except ValueError:
