@@ -174,7 +174,9 @@ New and Improved
   is fixed or ``suppress_warnings = ["codelinks.oneline"]`` is set. On a one-character
   start sequence such as the default ``@``, a line without the field separator is not a
   marker (ubCode's rule), so documentation tags like ``@param`` and ``@brief`` do not
-  warn. The never-written warnings file under ``src_trace_cache`` and its reader are gone,
+  warn; an empty marker is not a marker, as in ubCode; a marker Sphinx-Needs refuses (an
+  id ``needs_id_regex`` rejects, say) warns too, instead of stopping the build; and the
+  messages are ubCode's (``1 given fields, minimum is 2``). The never-written warnings file under ``src_trace_cache`` and its reader are gone,
   a file nothing had written since at least 1.4.0 (:ref:`oneline_invalid`,
   `#2076 <https://github.com/useblocks/sphinx-needs/issues/2076>`__).
 
