@@ -397,6 +397,56 @@ def test_a_source_replaced_by_an_older_file_shows_in_the_copy_and_the_page(
     assert ('<span class="mi">7</span>' if same_size else "12345") in page
 
 
+def _read_only_is_enforced(directory: Path) -> bool:
+    """Whether a read-only file here refuses to be written (not on Windows, not as
+    root)."""
+    probe = directory / "read-only-probe"
+    probe.write_text("", encoding="utf-8")
+    probe.chmod(0o444)
+    try:
+        with probe.open("w", encoding="utf-8"):
+            return False
+    except PermissionError:
+        return True
+    finally:
+        probe.chmod(0o644)
+        probe.unlink()
+
+
+@pytest.mark.parametrize("edit", ["other-size", "one-byte-more"])
+def test_a_read_only_source_that_changes_is_copied_and_paged_again(
+    tmp_path: Path, make_app: _MakeApp, edit: str
+) -> None:
+    """A read-only checkout (Perforce, a Nix or Bazel tree): the copy carries the
+    source's modification time but not its mode, so a changed source is copied over it
+    -- no ``Permission denied``, no stale copy or page."""
+    if os.name == "nt" or not _read_only_is_enforced(tmp_path):
+        pytest.skip("read-only modes are not enforced here")
+    _local_project(tmp_path, "directive")
+    source = tmp_path / "src" / "refs.cpp"
+    source.chmod(0o444)
+    outdir = Path(tmp_path, "docs", "_build", "html")
+    try:
+        _build(tmp_path, make_app)
+        source.chmod(0o644)  # p4 edit
+        new = "return a + 12345;" if edit == "other-size" else "return a + 1; "
+        _edit(source, "return a + 1;", new)
+        source.chmod(0o444)  # submitted: read-only again
+
+        app = _build(tmp_path, make_app, freshenv=False)
+
+        assert [w for w in build_warnings(app) if "source page" in w] == []
+        assert (outdir / "src" / "refs.cpp").read_bytes() == source.read_bytes()
+        if edit == "other-size":
+            page = (outdir / "src" / "refs.html").read_text(encoding="utf-8")
+            assert "12345" in page
+    finally:
+        source.chmod(0o644)
+        for path in outdir.rglob("*"):
+            if path.is_file():
+                path.chmod(0o644)
+
+
 def test_a_stale_scan_of_a_project_a_directive_now_owns_pages_nothing(
     tmp_path: Path, make_app: _MakeApp
 ) -> None:
