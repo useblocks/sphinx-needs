@@ -15,6 +15,7 @@ import textwrap
 
 import pytest
 
+from sphinx_needs.services.manager import NeedsServiceException
 from sphinx_needs_testkit import assert_no_warnings, build_warnings
 
 RST = "Title\n=====\n\nText.\n"
@@ -47,14 +48,15 @@ def class_init_warning(name: str, got: str) -> str:
 def build(make_app, tmp_path):
     """Write a project, build it, and return the application."""
 
-    def _build(files: dict[str, str], **kwargs):
+    def _build(files: dict[str, str], *, run: bool = True, **kwargs):
         srcdir = tmp_path / "src"
         for name, content in {"index.rst": RST, **files}.items():
             path = srcdir / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(textwrap.dedent(content), encoding="utf-8")
         app = make_app(srcdir=srcdir, freshenv=True, **kwargs)
-        app.build()
+        if run:
+            app.build()
         return app
 
     return _build
@@ -97,6 +99,9 @@ def test_a_class_in_conf_py_that_is_not_a_service_class_warns(build, value, got)
             "conf.py": f"""\
                 extensions = ["sphinx_needs"]
                 needs_services = {{"bad": {{"class": {value}, "class_init": {{}}}}}}
+                # Sphinx's own warning that a class in the configuration is not
+                # pickled, which is not what these tests are about
+                suppress_warnings = ["config.cache"]
                 """
         }
     )
@@ -116,6 +121,7 @@ def test_a_class_init_that_is_not_a_dict_warns_and_the_service_is_skipped(build)
                 needs_services = {
                     "bad": {"class": NoDebugService, "class_init": "notadict"}
                 }
+                suppress_warnings = ["config.cache"]
                 """
         }
     )
@@ -126,7 +132,8 @@ def test_a_class_init_that_is_not_a_dict_warns_and_the_service_is_skipped(build)
 
 def test_a_needservice_naming_a_skipped_service_reports_it_as_not_found(build):
     """The skipped service is simply absent: a ``needservice`` naming it takes the
-    existing "could not be found" path, after the configuration warning."""
+    existing "could not be found" path, which this change leaves as it is -- after the
+    configuration warning, which names the cause."""
     app = build(
         {
             "conf.py": TOML_CONF,
@@ -136,13 +143,12 @@ def test_a_needservice_naming_a_skipped_service_reports_it_as_not_found(build):
                 class_init = {}
                 """,
             "index.rst": RST + "\n.. needservice:: foo\n",
-        }
+        },
+        run=False,
     )
-    warnings = build_warnings(app)
-    assert warnings[0] == class_warning("foo", "a value of type 'str'")
-    assert len(warnings) == 2
-    assert "Service foo could not be found" in warnings[1]
-    assert app.statuscode == 0
+    with pytest.raises(NeedsServiceException, match="Service foo could not be found"):
+        app.build()
+    assert build_warnings(app) == [class_warning("foo", "a value of type 'str'")]
 
 
 @pytest.mark.parametrize(
