@@ -374,12 +374,7 @@ def post_process_needs_data(app: Sphinx) -> None:
         needs_schema = needs_data.get_schema()
         needs = needs_data.get_needs_mutable()
         app.emit("needs-before-post-processing", needs)
-        extend_needs_data(
-            needs,
-            needs_data.get_or_create_extends(),
-            needs_config,
-            suppress_warnings=app.config.suppress_warnings,
-        )
+        extend_needs_data(needs, needs_data.get_or_create_extends(), needs_config)
         resolve_functions(app, needs, needs_config)
         resolve_links(needs, needs_config, needs_schema)
         process_constraints(needs, needs_config)
