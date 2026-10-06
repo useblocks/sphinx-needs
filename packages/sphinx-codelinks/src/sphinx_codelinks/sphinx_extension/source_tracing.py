@@ -32,17 +32,21 @@ from sphinx_codelinks.sphinx_extension.directives.src_trace import (
 )
 from sphinx_codelinks.sphinx_extension.html_wrapper import html_wrapper
 from sphinx_codelinks.sphinx_extension.need_id_refs import need_id_refs_store
-from sphinx_codelinks.sphinx_extension.project_analysis import git_root_warnings
+from sphinx_codelinks.sphinx_extension.project_analysis import (
+    SourcePage,
+    git_root_warnings,
+)
 from sphinx_codelinks.sphinx_extension.rediscovery import (
     attach_on_post_processing,
     config_only_refs_store,
-    documents_read,
     effective_pages,
     find_affected_documents,
     find_outdated_scopes,
     merge_info,
     note_documents_to_read,
     purge_doc,
+    purged_documents,
+    purged_targets,
     scope_store,
     source_pages_store,
 )
@@ -171,19 +175,24 @@ def _copy_outdated(copied: Path, source: os.stat_result) -> bool:
 def _page_outdated(
     outfile: Path,
     source: os.stat_result,
-    anchors: tuple[tuple[int, str, str], ...],
-    read: frozenset[str],
+    page: SourcePage,
+    documents: frozenset[str],
+    targets: frozenset[str],
 ) -> bool:
     """Whether a source page must be written: its output file is missing or older than
-    the source, or a document its ``[docs]`` links name was read in this build (a need
-    that moved to another document, a renamed document)."""
+    the source, or its ``[docs]`` links may have changed with no source edit -- a
+    document they name now was purged in this build (read again, or added: a need that
+    moved to it), or a purged document had recorded the page (removed, or no longer
+    tracing the file)."""
     try:
         written = outfile.stat()
     except OSError:
         return True
     if source.st_mtime_ns > written.st_mtime_ns:
         return True
-    return any(docname in read for _line, docname, _need_id in anchors)
+    if any(docname in documents for _line, docname, _need_id in page.anchors):
+        return True
+    return page.target in targets
 
 
 def _pagename(target: str) -> str:
@@ -199,9 +208,9 @@ def generate_code_page(app: Sphinx) -> Iterator[tuple[str, dict[str, Any], str]]
     cleaned output directory, a second builder sharing the doctrees, or a document read
     by a ``-j N`` worker gets them as a serial first build does. A copy is written when
     it is missing, of another size or older than its source; a page when its output
-    file is missing or older than the source, or a document its ``[docs]`` links name
-    was read in this build. Each ``[docs]`` link is the builder's own relative URI from
-    the page to the need's document. A source that cannot be read any more (removed
+    file is missing or older than the source, or a document it was recorded by -- now or
+    before -- was purged in this build (read again, added or removed). Each ``[docs]``
+    link is the builder's own relative URI from the page to the need's document. A source that cannot be read any more (removed
     since its document was read) warns and is skipped.
     """
     builder = app.builder
@@ -209,7 +218,8 @@ def generate_code_page(app: Sphinx) -> Iterator[tuple[str, dict[str, Any], str]]
         return
     config = CodeLinksConfig.from_sphinx(app.config)
     outdir = Path(app.outdir)
-    read = documents_read(app.env)
+    documents = purged_documents(app.env)
+    targets = purged_targets(app.env)
     for page in effective_pages(app.env, config):
         copied = outdir / page.target
         try:
@@ -228,7 +238,7 @@ def generate_code_page(app: Sphinx) -> Iterator[tuple[str, dict[str, Any], str]]
             continue
         pagename = _pagename(page.target)
         outfile = Path(builder.get_outfilename(pagename))
-        if not _page_outdated(outfile, source, page.anchors, read):
+        if not _page_outdated(outfile, source, page, documents, targets):
             continue
         lineno_href = {
             line: f"{builder.get_relative_uri(pagename, docname)}#{need_id}"

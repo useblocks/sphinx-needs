@@ -302,22 +302,31 @@ _UNREAD: weakref.WeakKeyDictionary[BuildEnvironment, set[str]] = (
 )
 
 
-#: the documents a build reads, whole (``_UNREAD`` shrinks as they are read): a source
-#: page whose ``[docs]`` links name one of them is written again. In memory only
-_READ: weakref.WeakKeyDictionary[BuildEnvironment, frozenset[str]] = (
+def note_documents_to_read(env: BuildEnvironment, docnames: Iterable[str]) -> None:
+    """Keep the documents this build reads (``env-before-read-docs``)."""
+    _UNREAD[env] = set(docnames)
+
+
+#: the documents this build purged -- every one it reads (added or changed, before the
+#: read, or before the ``-j N`` fork) and every removed one -- and the targets of the
+#: source pages they had recorded: a page whose ``[docs]`` links may have changed with
+#: no source edit is written again. From ``env-get-outdated`` on; in memory only
+_PURGED: weakref.WeakKeyDictionary[BuildEnvironment, set[str]] = (
+    weakref.WeakKeyDictionary()
+)
+_PURGED_TARGETS: weakref.WeakKeyDictionary[BuildEnvironment, set[str]] = (
     weakref.WeakKeyDictionary()
 )
 
 
-def note_documents_to_read(env: BuildEnvironment, docnames: Iterable[str]) -> None:
-    """Keep the documents this build reads (``env-before-read-docs``)."""
-    _UNREAD[env] = set(docnames)
-    _READ[env] = frozenset(_UNREAD[env])
+def purged_documents(env: BuildEnvironment) -> frozenset[str]:
+    """The documents this build purged (read again, added, or removed)."""
+    return frozenset(_PURGED.get(env, ()))
 
 
-def documents_read(env: BuildEnvironment) -> frozenset[str]:
-    """The documents this build read (all of them, ``env-before-read-docs``'s list)."""
-    return _READ.get(env, frozenset())
+def purged_targets(env: BuildEnvironment) -> frozenset[str]:
+    """The targets of the source pages the purged documents had recorded."""
+    return frozenset(_PURGED_TARGETS.get(env, ()))
 
 
 def is_unread(env: BuildEnvironment, docname: str) -> bool:
@@ -328,7 +337,12 @@ def is_unread(env: BuildEnvironment, docname: str) -> bool:
 
 def purge_doc(_app: Sphinx, env: BuildEnvironment, docname: str) -> None:
     """Drop a document's records, scopes and source pages before it is read again, or
-    when it is removed (``env-purge-doc``)."""
+    when it is removed (``env-purge-doc``); the document and its pages' targets are
+    kept for this build (:func:`purged_documents`, :func:`purged_targets`)."""
+    _PURGED.setdefault(env, set()).add(docname)
+    _PURGED_TARGETS.setdefault(env, set()).update(
+        page.target for page in source_pages_store(env).get(docname, ())
+    )
     need_id_refs_store(env).pop(docname, None)
     scope_store(env).pop(docname, None)
     source_pages_store(env).pop(docname, None)
@@ -601,6 +615,9 @@ def find_outdated_scopes(
     """
     codelinks_config = CodeLinksConfig.from_sphinx(app.config)
     _PREVIOUS_REFS[env] = effective_refs(env, codelinks_config)
+    # a new build: nothing purged yet (the removed documents are purged after this)
+    _PURGED[env] = set()
+    _PURGED_TARGETS[env] = set()
     skip = added | changed | removed
     memo: dict[tuple[str, ScopeKind, str], Fingerprint | None] = {}
     candidates = [

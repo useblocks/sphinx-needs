@@ -199,7 +199,8 @@ New and Improved
   HTML build writes those its output lacks or holds out of date; each page's ``[docs]`` link
   is the builder's own relative URI, so a ``dirhtml`` page links back correctly too. An
   unchanged build rewrites no copy or page; a page is written again when its source
-  changed, its document was read again, or the output lacks it. A LaTeX build no longer drops source copies into its output, and
+  changed, a document tracing it -- now or before -- was read again, added or removed, or
+  the output lacks it. A LaTeX build no longer drops source copies into its output, and
   a source removed before the pages are written warns ``codelinks.source_page``.
 
 - ⬆️ ``typer`` is no longer capped below 0.26.8. The cap protected the documentation build,
