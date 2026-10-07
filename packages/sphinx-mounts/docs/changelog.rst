@@ -88,6 +88,14 @@ Unreleased
     itself — still a refusal, and the message still names the one-line
     ``needs_from_toml`` fix.
 
+- **On Sphinx 7.4 with** ``show_warning_types = True`` **the** ``[mounts.*]`` **type of a
+  warning is shown once**, not twice (`#2091
+  <https://github.com/useblocks/sphinx-needs/issues/2091>`__). Before Sphinx 8,
+  sphinx-mounts appends the type to its warnings itself, as Sphinx 8 does by default; it
+  also did so when ``show_warning_types`` had Sphinx 7.4 append it, so the line ended in
+  ``[mounts.missing_path] [mounts.missing_path]``. It is now appended only where Sphinx
+  does not append it.
+
 .. _`release:0.2.0`:
 
 0.2.0
