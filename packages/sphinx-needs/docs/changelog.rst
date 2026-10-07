@@ -83,6 +83,14 @@ Improvements
   ``suppress_warnings = ["needs.needextend_match_order"]``; ``"needs.needextend"`` does
   not cover the new type.
 
+- 📚 The order in which ``needextend``, dynamic functions, links and constraints are processed
+  is documented (:issue:`2064`, :pr:`2081`)
+
+  The new :ref:`needs_processing_order` section replaces the one restriction documented before
+  (a dynamic function cannot read back links), and says that a ``needextend`` filter never sees a computed value,
+  that the fields of a need are computed in a fixed order whatever the order of its options,
+  and that a variant condition sees only the fields computed before its own.
+
 Bug fixes
 .........
 
