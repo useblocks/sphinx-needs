@@ -93,7 +93,7 @@ Improvements
 
 - ✨ :func:`~sphinx_needs.api.need.generate_need_id` returns the id
   :func:`~sphinx_needs.api.need.add_need` assigns to a need that is given none
-  (:issue:`2084`)
+  (:issue:`2084`, :pr:`2111`)
 
   An extension that creates needs can now find out, before it calls ``add_need``,
   whether that id is already taken -- a second definition of the same generated id --
