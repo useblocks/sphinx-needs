@@ -151,8 +151,9 @@ Once every document has been read, and before any page is written, the needs are
 
 1. The :ref:`needextend` directives are applied, sorted by :ref:`extend priority <needextend_extend_priority>` (lower first),
    then by document name and then by line.
-   Each filter sees the needs as written plus the changes of the extends applied before it;
-   it never sees the result of a ``[[…]]``, ``<<…>>`` or ``<{…}>``, which are computed in step 2.
+   Each filter sees the needs as written, before any extend is applied (:ref:`needextend_as_written`),
+   so it never sees the change of another extend,
+   nor the result of a ``[[…]]``, ``<<…>>`` or ``<{…}>``, which are computed in step 2.
    A ``needextend`` may itself set a field it can modify to a ``[[…]]`` or ``<<…>>``, which step 2 evaluates.
 2. ``[[…]]``, ``<<…>>`` and ``<{…}>`` are evaluated need by need, and within a need in a fixed field order,
    whatever the order of the options in the directive: the core fields, then the :ref:`needs_fields`

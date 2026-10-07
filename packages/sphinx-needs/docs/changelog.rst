@@ -64,24 +64,24 @@ Improvements
   It gives notice ahead of a later release that resolves these values in dependency order
   (:issue:`2030`); `ubCode`_ reports the same reads.
 
-- ✨ ``needextend`` gains ``:extend_priority:`` (default 500, lower applied first), and a
-  filter whose matches depend on earlier ``needextend`` directives is reported as
-  ``needs.needextend_match_order`` **(changed output)** (:issue:`1658`, :issue:`2064`, :pr:`2083`)
+- ✨ ``needextend`` gains ``:extend_priority:`` (default 500, lower applied first), and every
+  ``needextend`` filter is evaluated against the needs as written **(changed output)**
+  (:issue:`1658`, :pr:`2083`, :pr:`NNNN`)
 
   The ``needextend`` directives are applied sorted by
   :ref:`extend_priority <needextend_extend_priority>`, then by document name and line, so
   a project that never sets the option keeps its order, and where two set the same
-  option the higher priority is applied last and wins. A filter is still evaluated
-  against the needs as the earlier ``needextend`` directives left them, but it is also
-  evaluated against the needs as written, before any is applied, and a ``needextend``
-  whose filter matches different needs the two ways is now reported once, at its
-  location, naming both; what it modifies is unchanged. The next release evaluates every
-  filter against the needs as written, so the reported ``needextend`` directives are the
-  ones whose matches will change (:ref:`needextend_match_order`). From the next release,
-  the priority never changes what a filter matches. A project that builds with ``-W`` and
-  has such a filter goes red until the filter is rewritten or the warning is silenced with
-  ``suppress_warnings = ["needs.needextend_match_order"]``; ``"needs.needextend"`` does
-  not cover the new type.
+  option the higher priority is applied last and wins. Which needs a filter matches no
+  longer depends on that order: every filter is evaluated against the needs as written,
+  before any ``needextend`` is applied, where it used to see the changes of the
+  ``needextend`` directives applied before it (:ref:`needextend_as_written`). So a
+  filter on a field that another ``needextend`` modifies now matches the needs written
+  with the value it names, and neither a priority nor the name of a file changes which
+  needs a ``needextend`` modifies. A filter is evaluated once in each document it is
+  written in, so a ``needs.filter`` warning it gives there is reported once, at the
+  first ``needextend`` that carries it. The notice warning
+  ``needs.needextend_match_order`` of the unreleased :pr:`2083` is gone, and a
+  ``suppress_warnings`` entry naming it is a no-op.
 
 - 📚 The order in which ``needextend``, dynamic functions, links and constraints are processed
   is documented (:issue:`2064`, :pr:`2081`)
