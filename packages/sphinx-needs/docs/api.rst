@@ -47,7 +47,9 @@ each need it imports.
 The content is parsed into the page it is rendered on, so a label defined in it belongs to
 that page and other pages reference it there. The warnings myst-parser logs itself, such as
 an unknown directive or role in Markdown content, name the page with the content's line;
-with myst-parser 4 their file is the content's path with ``.rst`` appended.
+with myst-parser 4 their file is the content's path with ``.rst`` appended. In a
+reStructuredText page, MyST content's ``[text](#anchor)`` links are not resolved and a
+missing anchor is not reported; use the ``{ref}`` and ``{need}`` roles, which work in both.
 
 What such content should not contain
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -56,10 +58,11 @@ This version parses the content as the page would parse it, and refuses none of 
 following; a later version will, as ubCode's reader already does:
 
 - directives that read files (``include``, ``literalinclude``, ``csv-table`` with
-  ``:file:``);
+  ``:file:``, ``raw`` with ``:file:``), and images and other references to files by a
+  relative path: Sphinx's ``include``, ``literalinclude`` and images, and everything in
+  MyST content, resolve against the page, while ``csv-table :file:`` and ``raw :file:``
+  in reStructuredText content resolve against the content's file;
 - ``raw``, and raw HTML in Markdown;
-- images and other references to files by a relative path: they resolve against the
-  page, not against the content's file;
 - need or ``needimport`` directives: the needs they create are recorded against the page;
 - anything relying on the page's substitutions or ``rst_prolog``: it works, but the same
   text means something else on another page.
