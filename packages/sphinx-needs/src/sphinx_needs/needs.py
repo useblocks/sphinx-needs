@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import json
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from copy import deepcopy
 from itertools import chain
 from pathlib import Path
@@ -935,6 +935,48 @@ def resolve_variant_data_config(app: Sphinx, config: Config) -> None:
     _derive_variant_data_proxy(needs_config)
 
 
+def _service_config_problem(service: dict[str, Any]) -> str | None:
+    """Why a configured service cannot be registered from its ``class`` and
+    ``class_init``, or ``None`` when it can.
+
+    Exactly what :meth:`.ServiceManager.register` cannot take is refused: it reads the
+    ``class``'s ``options`` and then calls it with ``class_init`` as keyword arguments,
+    so a ``class`` that is not callable -- a ``needs_from_toml`` file can give it nothing
+    but data, such as a string -- or has no ``options``, and a ``class_init`` that is not
+    a mapping. Anything else is registered, as it always was, whether or not it derives
+    from ``BaseService``.
+    """
+    advice = (
+        "A service class derives from BaseService and is set in conf.py's "
+        "needs_services or registered through the API; a needs_from_toml file can "
+        "hold a service's options but not its class"
+    )
+    klass = service["class"]
+    if not callable(klass):
+        return (
+            "its 'class' is not callable "
+            f"(got a value of type {type(klass).__name__!r}). {advice}"
+        )
+    if not hasattr(klass, "options"):
+        name = getattr(klass, "__qualname__", None)
+        what = (
+            repr(name)
+            if isinstance(name, str)
+            else f"(a value of type {type(klass).__name__!r})"
+        )
+        return (
+            f"its 'class' {what} has no 'options', which a service class needs. "
+            f"{advice}"
+        )
+    class_init = service["class_init"]
+    if not isinstance(class_init, Mapping):
+        return (
+            "its 'class_init' is not a mapping of keyword arguments for the service "
+            f"class (got a value of type {type(class_init).__name__!r})"
+        )
+    return None
+
+
 def prepare_env(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> None:
     """
     Prepares the sphinx environment to store sphinx-needs internal data.
@@ -965,6 +1007,14 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> Non
             # We found a not yet registered service
             # But only register, if service-config contains class and class_init.
             # Otherwise, the service may get registered later by an external sphinx-needs extension
+            if (problem := _service_config_problem(service)) is not None:
+                log_warning(
+                    LOGGER,
+                    f"needs_services entry {name!r} is not registered: {problem}",
+                    "config",
+                    None,
+                )
+                continue
             services.register(name, service["class"], **service["class_init"])
 
     # Set time measurement flag

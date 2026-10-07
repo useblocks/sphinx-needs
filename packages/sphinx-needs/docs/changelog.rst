@@ -206,6 +206,30 @@ Bug fixes
   line ended in ``[needs.link_outgoing] [needs.link_outgoing]``. It is now appended only
   where Sphinx does not append it.
 
+- 🐛 A service whose ``class`` cannot be registered is skipped with a warning instead
+  of crashing the build **(changed output)** (:issue:`2067`, :pr:`2113`)
+
+  A :ref:`needs_services` entry with both ``class`` and ``class_init`` is registered from
+  them, and a ``class`` that is not callable or has no ``options`` ended the build with
+  ``'str' object has no attribute 'options'`` -- which every ``class`` set in a
+  :ref:`needs_from_toml` file did, since that file can only give it a string.
+  A ``class_init`` that is not a mapping ended it the same way.
+  Such a service is now one ``needs.config`` warning, naming the key and what is wrong
+  with its value, and is not registered; the build goes on. A service whose ``class`` is
+  callable with ``options`` and whose ``class_init`` is a mapping registers as before,
+  whether or not the class derives from ``BaseService``, and a table that holds a
+  service's options only is read as before, without a warning.
+
+- 🐛 A :ref:`needservice` naming a service that is not registered is a warning instead of
+  a traceback **(changed output)** (:issue:`2101`, :pr:`2113`)
+
+  It ended the build with a raw ``NeedsServiceException`` traceback, which, deriving from
+  ``BaseException``, escaped Sphinx's own error handler, so no log file was written either.
+  It is now one ``needs.load_service_need`` warning located at the directive, with the
+  same text, which names the service and the registered ones; the directive adds nothing
+  and the build goes on. This is also the path of a service skipped for its
+  configuration, above. ``NeedsServiceException`` now derives from ``Exception``.
+
 .. _`release:8.5.0`:
 
 8.5.0
