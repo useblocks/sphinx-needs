@@ -139,6 +139,9 @@ Breaking changes
   and any other such field is left empty.
   A ``needextend`` filter naming a computed field (``needs.derive_scope``),
   which never matched the computed value anyway, reads the value from before it is computed.
+  The warnings of the pass come in the order the values are computed
+  (the link fields first; each value after those it reads, otherwise by need id and field),
+  not in document order.
   To keep such a build green while you fix them,
   add ``"needs.derive_cycle"`` and ``"needs.derive_scope"`` to ``suppress_warnings``.
 

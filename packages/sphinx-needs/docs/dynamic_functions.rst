@@ -323,9 +323,6 @@ To silence either warning, add its type to Sphinx's ``suppress_warnings``:
 
    suppress_warnings = ["needs.derive_cycle", "needs.derive_scope"]
 
-``needs.derive_unresolved``, which an unreleased version reported for such reads, is no longer emitted,
-and an entry naming it in ``suppress_warnings`` has no effect.
-
 .. _needs_variant_support:
 
 Variant functions
