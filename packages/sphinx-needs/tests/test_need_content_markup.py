@@ -24,6 +24,7 @@ import pytest
 from sphinx.testing.util import SphinxTestApp
 
 from sphinx_needs.api import get_needs_view
+from sphinx_needs.exceptions import NeedsApiConfigWarning, NeedsConfigException
 from sphinx_needs_testkit import build_warnings
 from tests.util import needs_by_id, serial_and_parallel
 
@@ -1031,3 +1032,104 @@ def test_an_image_in_content_resolves_against_the_page(test_app: SphinxTestApp):
     ]
     assert '<img alt="an image" src="_images/pic.png" />' in html(app, "index.html")
     assert 'src="_images/pic.png"' in html(app, "images_md.html")
+
+
+@pytest.mark.parametrize(
+    ("conf", "exception", "message"),
+    [
+        (
+            'needs_extra_options = ["content_markup"]',
+            NeedsApiConfigWarning,
+            "Cannot add need field with name 'content_markup' ('Added by "
+            "needs_extra_options config'), as it is an argument of add_need.",
+        ),
+        (
+            'needs_fields = {"content_source": {"description": "Where from"}}',
+            NeedsApiConfigWarning,
+            "Cannot add need field with name 'content_source' ('Where from'), "
+            "as it is an argument of add_need.",
+        ),
+        (
+            'needs_extra_links = [{"option": "content_source", "incoming": "is source of", '
+            '"outgoing": "has source"}]',
+            NeedsConfigException,
+            'Link type name "content_source" is an argument of add_need. '
+            "Please use another name in your config (needs_links).",
+        ),
+    ],
+    ids=["extra_option", "field", "link"],
+)
+def test_a_field_or_link_named_after_an_add_need_argument_is_refused(
+    tmp_path: Path, make_app, conf: str, exception: type[Exception], message: str
+):
+    """``content_markup`` and ``content_source`` are arguments of ``add_need``.
+
+    A field or link of either name would be captured by the argument (a need setting
+    it refused, a ``needimport`` record carrying it a ``TypeError``), so the names are
+    refused where fields and links are registered.
+    """
+    (tmp_path / "conf.py").write_text(
+        f'extensions = ["sphinx_needs"]\n{conf}\n', encoding="utf-8"
+    )
+    (tmp_path / "index.rst").write_text("Title\n=====\n", encoding="utf-8")
+    with pytest.raises(exception) as excinfo:
+        make_app(srcdir=tmp_path, freshenv=True)
+    assert str(excinfo.value) == message
+
+
+IMPORTED_WITH_UNKNOWN_KEYS = {
+    "current_version": "1.0",
+    "versions": {
+        "1.0": {
+            "needs": {
+                "IMP_OK": {
+                    "id": "IMP_OK",
+                    "type": "req",
+                    "title": "Imported, with keys this project does not know",
+                    "content": "Imported *content*.",
+                    "content_source": "a field of the exporting project",
+                    "content_markup": ".md",
+                    "tags": [],
+                },
+            }
+        }
+    },
+}
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF),
+                (Path("needcontent_ext.py"), DRIVER),
+                (
+                    Path("index.rst"),
+                    "Import\n======\n\n.. needimport:: imported.json\n",
+                ),
+                (Path("imported.json"), json.dumps(IMPORTED_WITH_UNKNOWN_KEYS)),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_needimport_reports_the_unknown_keys_of_a_need_it_imports(
+    test_app: SphinxTestApp,
+):
+    """A record that imports fine still reports its unknown keys, in the one warning.
+
+    ``content_source`` and ``content_markup`` in a record are such keys -- they cannot
+    be a field of this project -- so they are dropped, and never reach ``add_need``'s
+    arguments of the same names.
+    """
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:4: WARNING: Unknown keys in import need source: "
+        "['content_markup', 'content_source'] [needs.unknown_import_keys]"
+    ]
+    need = needs_by_id(app)["IMP_OK"]
+    assert need["doctype"] == ".rst"
+    assert "content_source" not in need
