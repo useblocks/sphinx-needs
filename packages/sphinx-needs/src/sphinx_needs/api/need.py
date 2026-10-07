@@ -667,10 +667,11 @@ def add_need(
         ``lineno_content``, else ``lineno``, read as lines of the PARSER's input, as a
         directive's ``self.content_offset + 1`` and ``self.lineno`` give them (they
         differ from the file's lines after ``rst_prolog`` or an ``include``, and are
-        mapped back to them). A resolved file line falls outside that input when the
-        directive is parsed in a nested state machine after it, and the content is
-        then anchored at the need's own line; inside it, it is mapped like a parser
-        line, to a line before the need's.
+        mapped back to them). Pass them as parser lines: a resolved file line is
+        mapped as if it were a parser line and then names a wrong line, possibly in
+        another file (an included one, or the pseudo-file of ``rst_prolog``); only
+        when it falls outside the parser's input is that caught, and the content
+        anchored at the need's own line.
         Ignored for content rendered from a template or with ``jinja_content``, which
         no file holds: that is anchored at the need's own line.
 
