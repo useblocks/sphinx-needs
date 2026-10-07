@@ -1,10 +1,10 @@
 """Registering the services configured in ``needs_services`` (#2067).
 
 A service is registered from its configuration when the entry has both ``class`` and
-``class_init``. A ``class`` that is not a class -- the only thing a ``needs_from_toml``
-file can give it is a string -- or a class without ``options`` used to end the build
-with ``'str' object has no attribute 'options'`` at ``env-before-read-docs``, and a
-``class_init`` that is not a dict ended it in the keyword expansion. Such an entry is now
+``class_init``. A ``class`` that is not callable -- the only thing a
+``needs_from_toml`` file can give it is a string -- or has no ``options`` used to end the
+build with ``'str' object has no attribute 'options'`` at ``env-before-read-docs``, and
+a ``class_init`` that is not a mapping ended it in the keyword expansion. Such an entry is now
 skipped with one ``needs.config`` warning, and the build goes on; anything that
 registered before still does. Each test is a real build, because the registration
 happens in ``prepare_env``.
@@ -36,8 +36,8 @@ def class_warning(name: str, problem: str) -> str:
     )
 
 
-def not_a_class(type_name: str) -> str:
-    return f"its 'class' is not a class (got a value of type {type_name!r})"
+def not_callable(type_name: str) -> str:
+    return f"its 'class' is not callable (got a value of type {type_name!r})"
 
 
 def no_options(class_name: str) -> str:
@@ -47,7 +47,7 @@ def no_options(class_name: str) -> str:
 def class_init_warning(name: str, got: str) -> str:
     return (
         f"WARNING: needs_services entry {name!r} is not registered: its 'class_init' is "
-        "not a dict of keyword arguments for the service class "
+        "not a mapping of keyword arguments for the service class "
         f"(got {got}) [needs.config]"
     )
 
@@ -87,16 +87,17 @@ def test_a_string_class_in_the_toml_warns_and_the_service_is_skipped(build):
                 """,
         }
     )
-    assert build_warnings(app) == [class_warning("foo", not_a_class("str"))]
+    assert build_warnings(app) == [class_warning("foo", not_callable("str"))]
     assert registered(app) == BUILT_IN
 
 
 @pytest.mark.parametrize(
     ("value", "problem"),
     [
-        pytest.param('"x"', not_a_class("str"), id="string"),
-        pytest.param("None", not_a_class("NoneType"), id="none"),
-        pytest.param("a_function", not_a_class("function"), id="function"),
+        pytest.param('"x"', not_callable("str"), id="string"),
+        pytest.param("None", not_callable("NoneType"), id="none"),
+        # callable, but without the ``options`` the registration reads first
+        pytest.param("a_function", no_options("a_function"), id="function"),
         # a type, but without the ``options`` the registration reads first
         pytest.param("dict", no_options("dict"), id="class-without-options"),
     ],
@@ -105,7 +106,7 @@ def test_a_class_in_conf_py_that_would_crash_the_registration_warns(
     build, value, problem
 ):
     """The same check covers a wrong value in ``conf.py``, with the same warning:
-    everything that is not a class, and a class without ``options``."""
+    everything that is not callable, and a callable without ``options``."""
     app = build(
         {
             "conf.py": f"""\
@@ -157,6 +158,82 @@ def test_a_duck_typed_service_class_registers_as_before(build):
     assert type(app._needs_services.services["duck"]).__name__ == "Duck"
 
 
+def test_a_callable_factory_with_options_registers_as_before(build):
+    """The registration reads ``options`` and then calls the ``class``: a factory
+    function carrying ``options`` registered before this check existed, and still
+    does, without a warning."""
+    app = build(
+        {
+            "conf.py": """\
+                extensions = ["sphinx_needs"]
+
+
+                class Made:
+                    def __init__(self, app, name, config, **kwargs):
+                        pass
+
+                    def request(self, options):
+                        return []
+
+
+                def factory(app, name, config, **kwargs):
+                    return Made(app, name, config, **kwargs)
+
+
+                factory.options = []
+                needs_services = {"svc": {"class": factory, "class_init": {}}}
+                suppress_warnings = ["config.cache"]
+                """
+        }
+    )
+    assert_no_warnings(app)
+    assert registered(app) == BUILT_IN | {"svc"}
+    assert type(app._needs_services.services["svc"]).__name__ == "Made"
+
+
+@pytest.mark.parametrize(
+    "class_init",
+    [
+        pytest.param(
+            "types.MappingProxyType({'custom_init': True})", id="mappingproxy"
+        ),
+        pytest.param("collections.UserDict(custom_init=True)", id="userdict"),
+    ],
+)
+def test_a_class_init_mapping_that_is_not_a_dict_registers_as_before(build, class_init):
+    """``**`` takes any mapping, so a ``class_init`` that is a mapping but not a
+    ``dict`` registered before this check existed, and still does, without a warning,
+    and its items reach the class."""
+    app = build(
+        {
+            "conf.py": f"""\
+                import collections
+                import types
+
+                extensions = ["sphinx_needs"]
+
+
+                class Svc:
+                    options = []
+                    kwargs = []
+
+                    def __init__(self, app, name, config, **kwargs):
+                        Svc.kwargs.append(kwargs)
+
+                    def request(self, options):
+                        return []
+
+
+                needs_services = {{"svc": {{"class": Svc, "class_init": {class_init}}}}}
+                suppress_warnings = ["config.cache"]
+                """
+        }
+    )
+    assert_no_warnings(app)
+    assert registered(app) == BUILT_IN | {"svc"}
+    assert type(app._needs_services.services["svc"]).kwargs == [{"custom_init": True}]
+
+
 def test_a_class_and_a_class_init_both_wrong_give_one_warning(build):
     """One warning per service: the ``class`` one, which is checked first."""
     app = build(
@@ -169,11 +246,11 @@ def test_a_class_and_a_class_init_both_wrong_give_one_warning(build):
                 """,
         }
     )
-    assert build_warnings(app) == [class_warning("foo", not_a_class("str"))]
+    assert build_warnings(app) == [class_warning("foo", not_callable("str"))]
     assert registered(app) == BUILT_IN
 
 
-def test_a_class_init_that_is_not_a_dict_warns_and_the_service_is_skipped(build):
+def test_a_class_init_that_is_not_a_mapping_warns_and_the_service_is_skipped(build):
     """A real service class with a ``class_init`` that cannot be keyword arguments."""
     app = build(
         {
@@ -210,7 +287,7 @@ def test_a_needservice_naming_a_skipped_service_reports_it_as_not_found(build):
     )
     with pytest.raises(NeedsServiceException, match="Service foo could not be found"):
         app.build()
-    assert build_warnings(app) == [class_warning("foo", not_a_class("str"))]
+    assert build_warnings(app) == [class_warning("foo", not_callable("str"))]
 
 
 @pytest.mark.parametrize(
