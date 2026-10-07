@@ -796,6 +796,76 @@ def test_identical_filters_are_evaluated_once_per_document(
     assert need["tags"] == ["a_open", "b_open", "b_open_again"]
 
 
+THIS_DOC_INDEX = """\
+Index
+=====
+
+.. toctree::
+
+   a
+   b
+"""
+
+THIS_DOC_A = """\
+A
+=
+
+.. req:: A one
+   :id: AAA_1
+   :status: open
+
+.. needextend:: c.this_doc() and status == "open"
+   :+tags: a_this
+
+.. needextend:: c.this_doc() and status == "open"
+   :+tags: a_this_again
+"""
+
+THIS_DOC_B = """\
+B
+=
+
+.. req:: B one
+   :id: BBB_1
+   :status: open
+
+.. needextend:: c.this_doc() and status == "open"
+   :+tags: b_this
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    serial_and_parallel(
+        [
+            (Path("conf.py"), CONF),
+            (Path("index.rst"), THIS_DOC_INDEX),
+            (Path("a.rst"), THIS_DOC_A),
+            (Path("b.rst"), THIS_DOC_B),
+        ]
+    ),
+    indirect=True,
+)
+def test_a_filter_reading_its_document_is_shared_within_that_document_only(
+    test_app: Sphinx,
+):
+    """The same filter string in two documents is two evaluations, with two results.
+
+    ``c.this_doc()`` reads the document of the ``needextend``, so the one string
+    matches AAA_1 in ``a.rst`` and BBB_1 in ``b.rst``: each tag lands on its own
+    document's need only. The two extends of ``a.rst`` share one evaluation and both
+    apply it. Sharing an evaluation across documents would tag AAA_1 with ``b_this``
+    and leave BBB_1 untagged.
+    """
+    app = test_app
+    app.build()
+
+    assert build_warnings(app) == []
+    needs = needs_by_id(app)
+    assert needs["AAA_1"]["tags"] == ["a_this", "a_this_again"]
+    assert needs["BBB_1"]["tags"] == ["b_this"]
+
+
 # -- a filter that fails against the needs as written --------------------------
 
 T10_INDEX = """\
