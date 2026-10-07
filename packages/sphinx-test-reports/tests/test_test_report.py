@@ -113,3 +113,37 @@ def test_the_default_template_builds_cleanly_in_a_user_project(test_app):
         headings = [h.get_text(strip=True).rstrip("¶") for h in soup.find_all("h2")]
         assert "Template" not in headings, (page, headings)
         assert soup.find(id="template") is None, page
+
+
+CUSTOM = "doc_test/test_report_custom_rootdir"
+
+
+@pytest.mark.parametrize(
+    "test_app", [{"buildername": "needs", "srcdir": CUSTOM}], indirect=True
+)
+def test_a_custom_template_and_rootdir(test_app):
+    """A template whose test-file sits at ONE space, and a ``tr_rootdir`` set elsewhere.
+
+    The body's further lines take the indentation the template gives ``{content}``,
+    whatever it is -- so the generated content equals a hand-written test-file's with
+    the same body. And ``{file}`` is ``:file:`` as written (``xml_data.xml``), not a path
+    made relative to some other directory: the generated test-file resolves it against
+    ``tr_rootdir`` as the test-report did.
+    """
+    app = test_app
+    app.build()
+    assert app._warning.getvalue() == ""
+    needs = _needs_json(app)
+    assert needs["REP_ONE"]["content"] == needs["TF_ORACLE"]["content"]
+    assert needs["REP_ONE"]["content"] == "First line.\nSecond line."
+    family = {k: v for k, v in needs.items() if k.startswith("REP_ONE")}
+    assert sorted(v["type"] for v in family.values()) == [
+        "testcase",
+        "testcase",
+        "testcase",
+        "testfile",
+        "testsuite",
+    ]
+    for need_id, need in family.items():
+        assert need["file"] == "xml_data.xml", need_id
+    assert needs["TF_ORACLE"]["file"] == "xml_data.xml"
