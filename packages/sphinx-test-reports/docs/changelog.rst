@@ -159,18 +159,6 @@ New and Improved
     which it depends on. The import names do change, in this same release: see the two
     sections above.
 
-- 🔧 The shipped default ``tr_report_template`` ends with a ``literalinclude`` of itself,
-  by a path relative to the including document. **That is still broken for your project**
-  and this release does not fix it: ``literalinclude`` resolves against the document doing
-  the including, which for you is somewhere in your own docs tree, so no path written here
-  can be right for both. What changed is that this package's own documentation build
-  resolves it again after the move into the Sphinx-Needs workspace. The shipped template's
-  self-include is tracked separately; until it is resolved, a project that wants the
-  warning gone can copy the template -- which is what ``tr_report_template`` is for -- and
-  remove the ``literalinclude`` directive at its end, BOTH of its lines (the directive and
-  its ``:language: rst`` option), or the whole *Template* section. Removing only the first
-  line silences the warning but publishes a stray ``language: rst`` field list.
-
 - 🐛 A ``test-env`` directive written with ``:raw:`` and ``:env:`` but no ``:data:`` raised
   ``TypeError`` instead of rendering: that branch iterated the data-option list outside the
   guard its sibling branch keeps it inside.
@@ -210,6 +198,44 @@ Fixed
   build no longer fails.
   `#1949 <https://github.com/useblocks/sphinx-needs/issues/1949>`__,
   `#2117 <https://github.com/useblocks/sphinx-needs/pull/2117>`__
+
+- 🐛 A ``test-file`` expanded with ``:auto_suites:`` / ``:auto_cases:`` lost its parent
+  links when its ``:links:`` merely *contained* its id: with ``:id: TF_1`` and
+  ``:links: TF_10``, no suite linked ``TF_1`` and no case linked it either, because the
+  "already linked" check was a substring test (the same for a suite's id in its cases'
+  links). The check now compares whole link ids, so ordinary numbering schemes keep the
+  file → suite → case links; a ``:links:`` that shares no such prefix is unchanged.
+  `#2114 <https://github.com/useblocks/sphinx-needs/issues/2114>`__,
+  `#2118 <https://github.com/useblocks/sphinx-needs/pull/2118>`__
+
+- 🐛 ``test-report`` inserted its body into the generated ``test-file`` as a Python list:
+  the need's content read ``['First line.', 'Second line.']``. The body is now the
+  ``test-file``'s content line for line, each line at the indentation the template gives
+  ``{content}`` -- so a body of several lines stays inside the generated directive in a
+  custom template too.
+  `#2051 <https://github.com/useblocks/sphinx-needs/issues/2051>`__,
+  `#2125 <https://github.com/useblocks/sphinx-needs/pull/2125>`__
+
+- 🐛 ``test-report`` handed the generated ``test-file`` the RESOLVED, absolute report path,
+  so the report-path field (``file``, or the name ``tr_file_option`` gives it) of a
+  ``test-report``'s file, suites and cases differed from every other ``test-file``'s and
+  from one machine to the next. ``{file}`` is now the ``:file:`` option as written, which
+  the ``test-file`` resolves against ``tr_rootdir`` exactly as the ``test-report`` did. The
+  template's *Test file* line shows that value too.
+  `#2051 <https://github.com/useblocks/sphinx-needs/issues/2051>`__,
+  `#2125 <https://github.com/useblocks/sphinx-needs/pull/2125>`__
+
+- 🐛 The shipped default ``tr_report_template`` no longer ends with a *Template* section.
+  That section ``literalinclude``\ d the template itself by a path only this package's own
+  documentation could resolve, so in every other project each ``test-report`` warned
+  ``Include file ... not found or reading it failed`` (failing a ``-W`` build) and
+  published a *Template* heading and its one sentence with no template under them.
+  **This removes output**: the section never rendered whole outside this repository, and
+  the template's source is now shown on the ``test-report`` documentation page instead. A
+  project that copied the template to work around it keeps its copy; it can delete the
+  section there, or go back to the default.
+  `#1932 <https://github.com/useblocks/sphinx-needs/issues/1932>`__,
+  `#2125 <https://github.com/useblocks/sphinx-needs/pull/2125>`__
 
 What the move costs, stated rather than left to the CI diff
 ............................................................
