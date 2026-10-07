@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791371077695,
+  "lastUpdate": 1791375023796,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -23148,6 +23148,42 @@ window.BENCHMARK_DATA = {
             "value": 49.394242297000005,
             "unit": "s",
             "extra": "Commit: a6157f3db9b7ad8b0983738f808b9a988963ae14\nBranch: master\nTime: 2026-10-07T13:03:18+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3f26b92e8ab19c2f621716f8c7aa87c99ff7e569",
+          "message": "🐛 sphinx-needs: a needextend option whose dynamic function cannot be parsed warns instead of aborting the build (#2116)\n\n## What\n\nA `needextend` option whose dynamic function (`[[…]]`) or variant\nfunction (`<<…>>`) cannot be parsed is now one `needs.needextend`\nwarning at the directive, naming the option and the parse error, and\nthat option is skipped; the directive's other options still apply. For\nexample\n\n```rst\n.. needextend:: REQ_C\n   :status: [[copy(need.id)]]\n   :tags: a\n```\n\nwarns `Invalid value for 'status' option: Error parsing dynamic function\n'copy': Unsupported arg 0 value type [needs.needextend]`, leaves\n`status` as it was, and sets `tags`.\n\n## Why\n\nThe directive converts each option through the field's\n`convert_directive_option`, which raises `FunctionParsingException` for\na malformed dynamic function and `VariantParsingException` for a\nmalformed variant function, as its docstring says. Both arms of the\ndirective (field and link) caught `ValueError` only, so either exception\nescaped and ended the build with a traceback (exit 2). A `need.<attr>`\nargument is such a parse error at the directive, because it is admitted\nonly where a need is in hand. Both `except` clauses now catch the three,\nand report and skip the option exactly as they already did for a\n`ValueError`.\n\nThe issue's \"that extend is not applied\" is read as the directive\nalready reads it for a `ValueError`: the option is skipped rather than\nthe whole extend, so the directive's other options still apply, and the\nmatched need still counts the extend as a modification (`is_modified`),\nas it does today for an option whose value cannot be converted. Whether\nan extend with every option skipped should count at all, and whether\n`need.<attr>` should be admitted in a `needextend` value, are separate\nquestions and are unchanged here.\n\n## ubCode parity\n\nNothing to match in ubCode's code: ubCode substitutes `need.<attr>` in a\n`needextend` value and the call runs. Its divergence register and its\ndifferences page record sphinx-needs aborting the build for such a\nvalue; that half is stale once this merges, and useblocks/ubcode#3901\ntracks the one-row update.\n\n## Tests\n\nNew `tests/test_needextend_invalid_function.py` (the `files` form of\n`test_app`, warning lists matched in full):\n\n- a `need.<attr>` argument, a `need.<attr>` keyword, a value that is not\na call, the link arm (`:links:`), the append arm (`:+status:`), a\nmalformed variant on a field (`<<[x>>` with `parse_variants`) and on a\nlink (`needs_links` with `parse_variants`) each give exactly one\n`needs.needextend` warning, the build exits 0, the recorded extend\ncarries no modification and the need keeps its value; a value that\ncannot be converted (`:hide: bad`) sits in the same table as the\nprecedent;\n- a directive with an unparsable `:status:` and a valid `:tags:` records\nand applies `tags` only;\n- controls: `[[copy(\"id\")]]` (no need argument) still applies, and the\nsame `need.<attr>` value in a need's own option is still the existing\n`needs.create_need` warning.\n\nSeven cases fail against the unfixed code with the uncaught exception.\nMutating either `except` back to `ValueError`, dropping\n`VariantParsingException` from either arm, replacing the `continue` with\n`return []`, or changing the warning text turns the matching cases red.\nReview probed 35 further option values across string, array, number,\ninteger, boolean and link fields, with dynamic and variant functions,\nnested and unclosed brackets and non-attribute `need` arguments: none\nescapes the directive, where 25 of them crashed master.\n\nCloses #2109",
+          "timestamp": "2026-10-07T14:09:13+02:00",
+          "tree_id": "4b6ad532a553eee66e054b5594487c9fae830e20",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/3f26b92e8ab19c2f621716f8c7aa87c99ff7e569"
+        },
+        "date": 1791375016721,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.071618069000003,
+            "unit": "s",
+            "extra": "Commit: 3f26b92e8ab19c2f621716f8c7aa87c99ff7e569\nBranch: master\nTime: 2026-10-07T14:09:13+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 41.465725512999995,
+            "unit": "s",
+            "extra": "Commit: 3f26b92e8ab19c2f621716f8c7aa87c99ff7e569\nBranch: master\nTime: 2026-10-07T14:09:13+02:00"
           }
         ]
       }
