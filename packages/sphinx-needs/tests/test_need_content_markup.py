@@ -21,6 +21,7 @@ from typing import Any
 
 import myst_parser
 import pytest
+from docutils import nodes
 from sphinx.testing.util import SphinxTestApp
 
 from sphinx_needs.api import get_needs_view
@@ -1378,3 +1379,100 @@ def test_content_lines_are_its_newline_separated_lines(test_app: SphinxTestApp):
         content = need_content_html(app, "index.html", need_id)
         # ``Text::`` then the indented line: a literal block, highlighted
         assert '<pre><span></span><span class="n">literal</span>' in content, need_id
+
+
+FILES_CONF = (
+    CONF
+    # the test layer writes no subdirectories: the content's directory is made here
+    + "(Path(__file__).parent / 'src').mkdir(exist_ok=True)\n"
+    + "(Path(__file__).parent / 'src' / 'data.csv').write_text("
+    + "'BESIDE,THE CONTENT\\n', encoding='utf-8')\n"
+)
+FILES_INDEX = [
+    "Files",
+    "=====",
+    "",
+    ".. toctree::",
+    "",
+    "   files_md",
+    "",
+    *rst_need(
+        "SPEC_CSV",
+        [".. csv-table::", "   :file: data.csv", "", "Text after the table."],
+        {"markup": ".rst", "source": "src/a.c", "first-line": 100},
+    ),
+    "Page text after the need.",
+    "",
+]
+FILES_MD = [
+    "# Files (MyST)",
+    "",
+    "[pagelnk]: https://page.example",
+    "",
+    "The page uses [its own link][pagelnk].",
+    "",
+    *md_need(
+        "SPEC_LINKDEFS",
+        [
+            "A page definition: [t][pagelnk].",
+            "",
+            "Its own definition: [u][ownlnk].",
+            "",
+            "[ownlnk]: https://own.example",
+        ],
+        {"markup": ".md", "source": "src/l.c", "first-line": 10},
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), FILES_CONF),
+                (Path("needcontent_ext.py"), DRIVER),
+                (Path("index.rst"), "\n".join(FILES_INDEX)),
+                (Path("files_md.md"), "\n".join(FILES_MD)),
+                (Path("data.csv"), "BESIDE,THE PAGE\n"),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_what_reads_the_content_file_and_what_reads_the_page(test_app: SphinxTestApp):
+    """Where the content's file shows through the page binding, and where it does not.
+
+    docutils resolves ``csv-table :file:`` (and ``raw :file:``) against the source of
+    the line being parsed, which in reStructuredText content is the content's file,
+    while Sphinx's ``include``, ``literalinclude`` and images resolve against the page.
+    After the content, the document is back on the page: nodes the page creates next
+    do not name the content's file. And MyST content has its own markdown-it
+    environment: the page's reference-link definitions are not its.
+    """
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+
+    page = html(app, "index.html")  # the table's own cells end the need's content cell
+    assert "<p>THE CONTENT</p>" in page
+    assert "THE PAGE" not in page
+
+    doctree = app.env.get_doctree("index")
+    page_text = next(
+        node
+        for node in doctree.findall(nodes.paragraph)
+        if node.astext() == "Page text after the need."
+    )
+    assert Path(page_text.source) == Path(app.srcdir, "index.rst")
+    targets = [
+        node for node in doctree.findall(nodes.target) if "SPEC_CSV" in node["ids"]
+    ]
+    assert targets
+    assert all(Path(node.source) == Path(app.srcdir, "index.rst") for node in targets)
+
+    content = need_content_html(app, "files_md.html", "SPEC_LINKDEFS")
+    assert "[t][pagelnk]" in content
+    assert "page.example" not in content
+    assert '<a class="reference external" href="https://own.example">u</a>' in content
