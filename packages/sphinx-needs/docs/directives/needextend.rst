@@ -174,7 +174,8 @@ An ID argument names its need whatever the other ``needextend`` directives chang
 
 A filter is evaluated once in each document it is written in, however many ``needextend`` directives there carry it.
 A filter that cannot be evaluated is reported for each of them as ``needs.needextend``, and none of them modifies a need;
-a warning the filter gives for a need it cannot be evaluated on (``needs.filter``) is reported once, at the first.
+a warning the filter gives for a need it cannot be evaluated on (``needs.filter``) is reported once,
+at the first of them to be applied.
 
 Extending needs in current page
 -------------------------------
