@@ -408,8 +408,19 @@ def _derive_scope_message(
     )
 
 
+def _kept(value: Any) -> str:
+    """What a field that is not computed holds, from its placeholder value."""
+    return (
+        "the field keeps only its written items" if value else "the field is left empty"
+    )
+
+
 def _derive_cycle_message(
-    what: str, option: str, members: Sequence[tuple[str, str]], clause: str
+    what: str,
+    option: str,
+    members: Sequence[tuple[str, str]],
+    clause: str,
+    value: Any,
 ) -> str:
     """Return the ``needs.derive_cycle`` message for one member of a cycle.
 
@@ -417,13 +428,14 @@ def _derive_cycle_message(
     :param option: The member's field.
     :param members: Every member, ``(need id, field)``, in that order.
     :param clause: What else to say: the column or the variant the cycle runs through.
+    :param value: The value the member holds instead (its placeholder).
     """
     fields: dict[str, list[str]] = {}
     for need_id, name in members:
         fields.setdefault(name, []).append(need_id)
     return (
         f"{what} for option '{option}' is on a cycle: "
-        f"{_reads_phrase(list(fields.items()))}{clause}; the field is left empty"
+        f"{_reads_phrase(list(fields.items()))}{clause}; {_kept(value)}"
     )
 
 
@@ -640,14 +652,6 @@ def resolve_functions(
     _resolve_stratum(app, needs, pass_, 2, needs_schema, needs_config)
 
 
-def _set_empty(need: NeedItem, field: str, schema: FieldsSchema) -> None:
-    """Give a field that is not computed its typed empty value."""
-    from sphinx_needs.functions.order import typed_empty  # it imports this module
-
-    if (field_schema := schema.get_any_field(field)) is not None:
-        need[field] = typed_empty(field_schema)
-
-
 def _resolve_stratum(
     app: Sphinx,
     needs: NeedsMutable,
@@ -657,13 +661,14 @@ def _resolve_stratum(
     config: NeedsSphinxConfig,
 ) -> None:
     """Compute every value of one stratum, in order, and report what cannot be."""
-    from sphinx_needs.functions.order import build_stratum  # it imports this module
+    # it imports this module
+    from sphinx_needs.functions.order import build_stratum, placeholder
 
     stratum = pass_.stratum = build_stratum(pass_.project, number)
     for step in stratum.steps:
         if step.cycle:
             for need_id, field in step.nodes:
-                _set_empty(needs[need_id], field, schema)
+                needs[need_id][field] = placeholder(needs[need_id], field, schema)
                 pass_.finish((need_id, field))
             clause = (
                 ""
@@ -683,7 +688,11 @@ def _resolve_stratum(
                 log_warning(
                     logger,
                     _derive_cycle_message(
-                        node_reads.what, field, step.nodes, clause + own
+                        node_reads.what,
+                        field,
+                        step.nodes,
+                        clause + own,
+                        needs[need_id][field],
                     ),
                     "derive_cycle",
                     location=_location(needs[need_id]),
@@ -694,16 +703,16 @@ def _resolve_stratum(
         node_reads = stratum.reads[(need_id, field)]
         if node_reads.blocked is not None:
             what, selectors = node_reads.blocked
+            need[field] = value = placeholder(need, field, schema)
             log_warning(
                 logger,
                 f"{what} for option '{field}' names its target by "
                 f"{_joined([repr(s) for s in selectors])}, which "
                 f"{'is' if len(selectors) == 1 else 'are'} computed in the same step: "
-                "the call is not run and the field is left empty",
+                f"the call is not run and {_kept(value)}",
                 "derive_scope",
                 location=_location(need),
             )
-            _set_empty(need, field, schema)
         else:
             for what, scope in node_reads.scope:
                 names: dict[str, list[str]] = {}

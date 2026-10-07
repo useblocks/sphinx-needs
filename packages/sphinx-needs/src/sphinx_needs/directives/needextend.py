@@ -15,7 +15,7 @@ from sphinx_needs.exceptions import (
     VariantParsingException,
 )
 from sphinx_needs.filter_common import filter_needs_mutable
-from sphinx_needs.functions.order import filter_names, typed_empty
+from sphinx_needs.functions.order import filter_names, placeholder
 from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
 from sphinx_needs.need_item import NeedItem, NeedModification
 from sphinx_needs.needs_schema import (
@@ -412,7 +412,7 @@ def extend_needs_data(
                                     f"Cannot append non-string/array value {field_value.value!r} to field '{option_name}'"
                                 )
                             # the value written is part of the call's value now
-                            _hold_empty(need, option_name, schema)
+                            _hold_placeholder(need, option_name, schema)
                     case (ExtendType.REPLACE | ExtendType.DELETE, None):
                         if (df := need._dynamic_fields.get(option_name)) is not None:
                             need._dynamic_fields.pop(option_name, None)
@@ -423,7 +423,7 @@ def extend_needs_data(
                         need[option_name] = field_value.value
                     case (ExtendType.REPLACE | ExtendType.DELETE, FieldFunctionArray()):
                         need._dynamic_fields[option_name] = field_value
-                        _hold_empty(need, option_name, schema)
+                        _hold_placeholder(need, option_name, schema)
                     case other_field:
                         raise RuntimeError(
                             f"Unhandled case {other_field} for {option_name!r}"
@@ -432,15 +432,15 @@ def extend_needs_data(
     _report_filters_on_computed_fields(all_needs, targets, needs_config)
 
 
-def _hold_empty(need: NeedItem, option_name: str, schema: FieldsSchema) -> None:
-    """Give a field an extend sets to a call its empty value, until it is computed.
+def _hold_placeholder(need: NeedItem, option_name: str, schema: FieldsSchema) -> None:
+    """Give a field an extend sets to a call its placeholder value, until it is computed.
 
     The value it held before the extend is not the call's, and nothing must read it:
-    a cycle member, or a read the order cannot place, reads the empty value whether
-    the call was written in the need or set by an extend.
+    a cycle member, or a read the order cannot place, reads the placeholder whether
+    the call was written in the need or set by an extend. An array keeps the items
+    written before a call was appended to them; anything else is empty.
     """
-    if (field_schema := schema.get_any_field(option_name)) is not None:
-        need[option_name] = typed_empty(field_schema)
+    need[option_name] = placeholder(need, option_name, schema)
 
 
 def _report_filters_on_computed_fields(

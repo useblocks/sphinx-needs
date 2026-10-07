@@ -665,6 +665,120 @@ def test_a_cycle_member_holds_nothing_from_an_earlier_build(test_app):
     ]
 
 
+# -- what a field that is not computed holds ---------------------------------------
+
+PLACEHOLDER_INDEX = """\
+Placeholder
+===========
+
+.. req:: Literal one
+   :id: LIT_1
+
+.. req:: A mixed link list on a cycle
+   :id: C_LINKS
+   :links: LIT_1, [[copy("links")]]
+
+.. req:: A mixed array on a cycle
+   :id: X_ARR
+   :incoming: a, [[copy("incoming", "Y_ARR")]]
+
+.. req:: Closes the cycle
+   :id: Y_ARR
+   :incoming: [[copy("incoming", "X_ARR")]]
+
+.. req:: Written items, then a call appended, on a cycle
+   :id: X_ITEMS
+   :incoming: a, b
+
+.. needextend:: X_ITEMS
+   :+incoming: [[copy("incoming", "Y_ITEMS")]]
+
+.. req:: Closes the cycle
+   :id: Y_ITEMS
+   :incoming: [[copy("incoming", "X_ITEMS")]]
+
+.. req:: Written items, then replaced by a call, on a cycle
+   :id: X_REP
+   :incoming: a
+
+.. needextend:: X_REP
+   :incoming: [[copy("incoming", "Y_REP")]]
+
+.. req:: Closes the cycle
+   :id: Y_REP
+   :incoming: [[copy("incoming", "X_REP")]]
+
+.. req:: A mixed string on a cycle
+   :id: X_STR
+   :summary: lead [[copy("summary", "Y_STR")]]
+
+.. req:: Closes the cycle
+   :id: Y_STR
+   :summary: [[copy("summary", "X_STR")]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [(Path("conf.py"), CONF), (Path("index.rst"), PLACEHOLDER_INDEX)],
+        }
+    ],
+    indirect=True,
+)
+def test_a_list_field_on_a_cycle_keeps_its_written_items(test_app):
+    """A link or array field that is not computed keeps the items written in it.
+
+    Its calls and variants are dropped: ``C_LINKS`` keeps ``LIT_1`` (so ``LIT_1`` has
+    its back link), ``X_ARR`` keeps ``a``, and ``X_ITEMS`` keeps the items written
+    before a ``needextend`` appended the call. A list with no written item, and any
+    other field (``X_STR``'s string, written part and all), takes its typed empty
+    value, as does ``X_REP``, whose written items the extend replaced.
+    """
+    app = test_app
+    app.build()
+    needs = _needs(app)
+    assert needs["C_LINKS"]["links"] == ["LIT_1"]
+    assert needs["LIT_1"]["links_back"] == ["C_LINKS"]
+    assert {
+        need_id: needs[need_id]["incoming"]
+        for need_id in ("X_ARR", "Y_ARR", "X_ITEMS", "Y_ITEMS", "X_REP", "Y_REP")
+    } == {
+        "X_ARR": ["a"],
+        "Y_ARR": None,
+        "X_ITEMS": ["a", "b"],
+        "Y_ITEMS": None,
+        "X_REP": None,
+        "Y_REP": None,
+    }
+    assert (needs["X_STR"]["summary"], needs["Y_STR"]["summary"]) == (None, None)
+
+    def cycle(need_id: str, field: str, members: str, kept: bool) -> str:
+        return _warning(
+            "index",
+            PLACEHOLDER_INDEX,
+            need_id,
+            f"dynamic function 'copy' for option '{field}' is on a cycle: "
+            f"'{field}' on {members}; the field "
+            + ("keeps only its written items" if kept else "is left empty"),
+            "derive_cycle",
+        )
+
+    assert build_warnings(app) == [
+        cycle("C_LINKS", "links", "need 'C_LINKS'", True),
+        cycle("X_ARR", "incoming", "2 needs (X_ARR, Y_ARR)", True),
+        cycle("Y_ARR", "incoming", "2 needs (X_ARR, Y_ARR)", False),
+        cycle("X_ITEMS", "incoming", "2 needs (X_ITEMS, Y_ITEMS)", True),
+        cycle("Y_ITEMS", "incoming", "2 needs (X_ITEMS, Y_ITEMS)", False),
+        cycle("X_REP", "incoming", "2 needs (X_REP, Y_REP)", False),
+        cycle("Y_REP", "incoming", "2 needs (X_REP, Y_REP)", False),
+        cycle("X_STR", "summary", "2 needs (X_STR, Y_STR)", False),
+        cycle("Y_STR", "summary", "2 needs (X_STR, Y_STR)", False),
+    ]
+
+
 # -- back links and link fields --------------------------------------------------------
 
 BACKLINKS_A = """\

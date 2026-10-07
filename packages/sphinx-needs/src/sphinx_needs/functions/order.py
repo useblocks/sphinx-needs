@@ -44,7 +44,8 @@ from sphinx_needs.functions.functions import (
     _condition_names,
 )
 from sphinx_needs.need_item import NeedItem
-from sphinx_needs.needs_schema import FieldSchema, LinkSchema
+from sphinx_needs.needs_schema import FieldSchema, FieldsSchema, LinkSchema
+from sphinx_needs.variant_data import VariantDataParsed
 from sphinx_needs.variants import VariantFunctionParsed
 
 Node = tuple[str, str]
@@ -113,6 +114,35 @@ def typed_empty(field_schema: FieldSchema | LinkSchema) -> Any:
             return 0.0
         case _:
             return []
+
+
+def placeholder(need: NeedItem, field: str, schema: FieldsSchema) -> Any:
+    """The value of a field whose ``[[…]]``, ``<<…>>`` or ``<{…}>`` is not computed.
+
+    A cycle member holds it, as does a field whose call cannot be ordered, and a field
+    a ``needextend`` sets to a call, until the call is computed. A link or an array
+    field keeps the items written in it (once every ``needextend`` is applied) that are
+    not computed: ``LIT_1, [[copy("status")]]`` holds ``['LIT_1']``. Any other field,
+    and a list with no such item, takes its typed empty value (:func:`typed_empty`).
+
+    :param need: The need.
+    :param field: The field, which carries a ``[[…]]``, ``<<…>>`` or ``<{…}>``.
+    :param schema: The schema of the fields.
+    """
+    if (field_schema := schema.get_any_field(field)) is None:
+        return need.get(field)
+    if isinstance(field_schema, LinkSchema) or field_schema.type == "array":
+        dynamic = need._dynamic_fields.get(field)
+        written = [
+            item
+            for item in (dynamic.value if dynamic is not None else ())
+            if not isinstance(
+                item, DynamicFunctionParsed | VariantFunctionParsed | VariantDataParsed
+            )
+        ]
+        if written:
+            return written
+    return typed_empty(field_schema)
 
 
 @dataclass(frozen=True, slots=True)
