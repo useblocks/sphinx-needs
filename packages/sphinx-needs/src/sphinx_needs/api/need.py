@@ -841,6 +841,7 @@ def ingest_need_record(
     content_markup: str | None = None,
     content_source: tuple[str, int] | None = None,
     allow_type_coercion: bool = True,
+    unknown_keys: set[str] | None = None,
 ) -> tuple[list[nodes.Node], set[str]]:
     """Create one need from a needs.json-style record.
 
@@ -866,6 +867,9 @@ def ingest_need_record(
     :param content_source: Passed to :func:`add_need`: ``(path, first_line)`` of the
         content.
     :param allow_type_coercion: Passed to :func:`add_need`.
+    :param unknown_keys: If given, the record's keys that are unknown to the project
+        are added to it before the need is created, so a caller collecting them over
+        several records has them also for a record whose need cannot be created.
     :return: The need's nodes, and the set of the record's keys that were dropped as
         unknown to the project (the caller decides whether to warn about them).
     :raises InvalidNeedException: What :func:`add_need` raises; the caller decides
@@ -874,6 +878,8 @@ def ingest_need_record(
     .. versionadded:: 9.0.0
     """
     params, unknown = _need_record_params(record, SphinxNeedsData(app.env).get_schema())
+    if unknown_keys is not None:
+        unknown_keys.update(unknown)
     need_nodes = add_need(
         app,
         state,

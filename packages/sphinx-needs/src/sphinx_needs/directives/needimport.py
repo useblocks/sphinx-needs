@@ -14,7 +14,6 @@ from requests_file import FileAdapter
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.api import InvalidNeedException, ingest_need_record
-from sphinx_needs.api.need import _need_record_params
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.debug import measure_time
@@ -239,12 +238,14 @@ class NeedimportDirective(SphinxDirective):
             )
 
             try:
-                need_node, dropped_keys = ingest_need_record(
+                need_node, _ = ingest_need_record(
                     self.env.app,
                     self.state,
                     record,
                     need_source=need_source,
                     allow_type_coercion=allow_type_coercion,
+                    # a need that cannot be created still reports its unknown keys
+                    unknown_keys=unknown_keys,
                 )
             except InvalidNeedException as err:
                 log_warning(
@@ -253,10 +254,7 @@ class NeedimportDirective(SphinxDirective):
                     "import_need",
                     location=self.get_location(),
                 )
-                # a need that failed still reports its unknown keys, as it always has
-                unknown_keys.update(_need_record_params(record, needs_schema)[1])
             else:
-                unknown_keys.update(dropped_keys)
                 need_nodes.extend(need_node)
 
         if unknown_keys:

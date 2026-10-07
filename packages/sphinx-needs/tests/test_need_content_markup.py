@@ -116,7 +116,8 @@ class TestIngestRecords(SphinxDirective):
     """Needs from a JSON list of ``{"need": <record>, "source": {"path", "line"}}``.
 
     Each record's ``doctype`` is its content markup; failures and unknown keys are
-    reported as needimport reports them.
+    reported as needimport reports them: the keys of every record, collected through
+    ``unknown_keys``, and those returned for the needs created.
     """
 
     required_arguments = 1
@@ -134,6 +135,7 @@ class TestIngestRecords(SphinxDirective):
         )
         result = []
         unknown = set()
+        returned = set()
         for entry in entries:
             record = entry["need"]
             source = entry.get("source")
@@ -149,6 +151,7 @@ class TestIngestRecords(SphinxDirective):
                         if source
                         else None
                     ),
+                    unknown_keys=unknown,
                 )
             except InvalidNeedException as err:
                 logger.warning(
@@ -158,11 +161,12 @@ class TestIngestRecords(SphinxDirective):
                     location=self.get_location(),
                 )
             else:
-                unknown |= dropped
+                returned |= dropped
                 result.extend(need_nodes)
         if unknown:
             logger.warning(
-                f"Unknown keys in records: {sorted(unknown)!r}",
+                f"Unknown keys in records: {sorted(unknown)!r}; "
+                f"returned for the needs created: {sorted(returned)!r}",
                 type="needs",
                 subtype="test_ingest_records",
                 location=self.get_location(),
@@ -791,8 +795,9 @@ Records
 def test_ingest_need_record(test_app: SphinxTestApp):
     """(g): one need per needs.json-style record, its content in its ``doctype``.
 
-    The record's unknown keys are returned (the driver warns once, for the union of
-    the records that were created); a legacy ``description`` is the content; a record
+    The record's unknown keys are returned, and added to ``unknown_keys`` before the
+    need is created -- so a record that cannot be created reports them too (the driver
+    warns once, naming both sets); a legacy ``description`` is the content; a record
     that cannot be created raises, and the others are still created.
     """
     app = test_app
@@ -804,8 +809,12 @@ def test_ingest_need_record(test_app: SphinxTestApp):
             '"nosuchdirective".\n\n.. nosuchdirective:: [docutils]',
             "<srcdir>/index.rst:7: WARNING: Need 'SPEC_REC_BAD' could not be imported: "
             "Unknown need type 'nosuchtype'. [needs.test_ingest_records]",
+            # the failed record's key reaches the ``unknown_keys`` set; the returned
+            # sets are those of the needs created
             "<srcdir>/index.rst:7: WARNING: Unknown keys in records: "
-            "['another_unknown_key', 'unknown_key'] [needs.test_ingest_records]",
+            "['another_unknown_key', 'key_of_a_failed_record', 'unknown_key']; "
+            "returned for the needs created: ['another_unknown_key', 'unknown_key'] "
+            "[needs.test_ingest_records]",
         ]
     )
     needs = needs_by_id(app)
