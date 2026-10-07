@@ -73,6 +73,9 @@ _CLOSER_ONLY = re.compile(r"^\s*\*+/\s*$")
 """A block comment's last row holding nothing but its closer (``*/``, `` ***/``)."""
 
 _STARS = re.compile(r"^\s*\*+\s*")
+
+_STARS_ONLY = re.compile(r"^\s*\*+\s*$")
+"""A line of stars only: a separator, counted as a leader line and read as blank."""
 """Stars at the start of a line, with the whitespace around them."""
 
 _DOCSTRING_OPEN = re.compile(r"""^([rRuUbBfF]{0,2})(\"\"\"|'''|"|')""")
@@ -318,7 +321,7 @@ def _block_comment_lines(view: _Comment) -> tuple[list[LogicalLine], bool]:
     later = [i for i in range(1, count) if keep[i]]
     non_blank = [i for i in later if texts[i].strip()]
     leader_stripped = bool(non_blank) and all(
-        _LEADER.match(texts[i]) for i in non_blank
+        _LEADER.match(texts[i]) or _STARS_ONLY.match(texts[i]) for i in non_blank
     )
     if leader_stripped:
         for i in later:
@@ -326,6 +329,8 @@ def _block_comment_lines(view: _Comment) -> tuple[list[LogicalLine], bool]:
             if match:
                 cols[i] += match.end()
                 texts[i] = texts[i][match.end() :]
+            elif _STARS_ONLY.match(texts[i]):
+                texts[i] = ""
 
     if not texts[0].strip():
         keep[0] = False
@@ -398,27 +403,56 @@ def parse_run(
     consumed. A block, a refused header and a refused one-line form claim their lines.
 
     :param leaderless_block: The run is one block comment whose ``*`` leader was not
-        stripped: an open word behind a star is refused as a header, with the cause.
+        stripped: an open word behind a star is refused as a header, with the cause, and
+        consumed up to the first close line, which may then carry the stars too; an
+        unterminated open names the leader as the likely cause.
     """
     result = ParseResult()
     start, end = config.start_sequence, config.end_sequence
+    unterminated = f"no '{end}' line before the comment ends; the block is skipped"
+    if leaderless_block:
+        unterminated += (
+            "; the likely cause: the block comment's lines do not all carry the '*' "
+            "leader"
+        )
     index = 0
     while index < len(lines):
         line = lines[index]
         rest = open_rest(line.text, start)
         if rest is None:
-            if leaderless_block:
-                stars = _STARS.match(line.text)
-                if stars and open_rest(line.text[stars.end() :], start) is not None:
+            stars = _STARS.match(line.text) if leaderless_block else None
+            if stars and open_rest(line.text[stars.end() :], start) is not None:
+                close = next(
+                    (
+                        k
+                        for k in range(index + 1, len(lines))
+                        if _is_close(lines[k].text, end, starred=True)
+                    ),
+                    None,
+                )
+                if close is None:
                     result.issues.append(
                         ParseIssue(
-                            WarningSubTypeEnum.multiline_need_header,
+                            WarningSubTypeEnum.multiline_need_unterminated,
                             line.row,
-                            f"'{start}' sits behind a '*' leader in a block comment "
-                            "whose other lines carry none; give every line the leader "
-                            "or none",
+                            unterminated,
                         )
                     )
+                    break
+                result.issues.append(
+                    ParseIssue(
+                        WarningSubTypeEnum.multiline_need_header,
+                        line.row,
+                        f"'{start}' sits behind a '*' leader in a block comment "
+                        "whose other lines carry none; give every line the leader "
+                        "or none",
+                    )
+                )
+                result.claimed_rows.update(
+                    lines[k].row for k in range(index, close + 1)
+                )
+                index = close + 1
+                continue
             index += 1
             continue
         if _ends_with_word(rest, end):
@@ -434,7 +468,11 @@ def parse_run(
             index += 1
             continue
         close = next(
-            (k for k in range(index + 1, len(lines)) if lines[k].text.strip() == end),
+            (
+                k
+                for k in range(index + 1, len(lines))
+                if _is_close(lines[k].text, end, starred=False)
+            ),
             None,
         )
         if close is None:
@@ -442,7 +480,7 @@ def parse_run(
                 ParseIssue(
                     WarningSubTypeEnum.multiline_need_unterminated,
                     line.row,
-                    f"no '{end}' line before the comment ends; the block is skipped",
+                    unterminated,
                 )
             )
             break
@@ -463,6 +501,17 @@ def parse_run(
             )
         index = close + 1
     return result
+
+
+def _is_close(text: str, end: str, *, starred: bool) -> bool:
+    """Whether ``text`` is a close line; ``starred`` also accepts stars before the word."""
+    stripped = text.strip()
+    if stripped == end:
+        return True
+    if starred:
+        stars = _STARS.match(stripped)
+        return stars is not None and stripped[stars.end() :] == end
+    return False
 
 
 def _ends_with_word(text: str, word: str) -> bool:

@@ -232,7 +232,7 @@ After the comment's prefixes are stripped (see below), a block is:
   -- at the open line's, as MyST writes a directive's options, or indented under it as in RST.
   Their values are kept as written, as directive strings: ``:links: SPEC_AUTH, SPEC_LOCK`` is the
   string ``"SPEC_AUTH, SPEC_LOCK"``, converted with the project's field definitions when the need
-  is rendered, as a directive's options are. A space must follow the key (``:id:R1`` is body
+  is rendered, as a directive's options are. Whitespace must follow the key (``:id:R1`` is body
   text). A line indented deeper than its option line continues the value, joined with one space,
   so **separate the options from the body with a blank line**: an indented first body line written
   directly after an option is read as that option's continuation.
@@ -272,8 +272,11 @@ line of a block keeps its source line:
        banner) and a last row holding only the closer (``***/``) are dropped; then the
        delimiters; then a ``*`` leader (``*`` and one space, or a lone ``*``), only when every
        non-blank line between the opener's row and the closer's carries one -- so a plain block's
-       ``*emphasis*`` is kept. Give every line the leader or none: when one line lacks it, an open
-       word behind a ``*`` is reported (``multiline_need_header``) and no need is produced
+       ``*emphasis*`` is kept. A separator line of stars only (``*****``) counts as carrying the
+       leader and is read as a blank line. Give every line the leader or none: when one line lacks
+       it, an open word behind a ``*`` is reported (``multiline_need_header``) and no need is
+       produced. So is an RST bullet starting ``* @need`` in a plain block's prose outside any
+       need: write such a bullet with ``-``, or give the block leaders
    * - Python string statement
      - the quotes, and the lines' common indentation, as ``inspect.cleandoc`` removes it
 
@@ -309,7 +312,7 @@ as ``Analyse warning in <file>:<line> - <kind>: <message>``.
    * - Kind
      - When, and what happens
    * - ``multiline_need_oneline_form``
-     - The close word ends the open line (after a space): skipped, and the line is not read as a
+     - The close word ends the open line (after whitespace): skipped, and the line is not read as a
        one-line need either (a one-line need is written with the :ref:`one-line marker <oneline>`).
        ``foo@endneed`` is no close word.
    * - ``multiline_need_unterminated``
@@ -317,8 +320,11 @@ as ``Analyse warning in <file>:<line> - <kind>: <message>``.
        blocks.
    * - ``multiline_need_header``
      - The open word starts a line that is not ``<open>[<markup>] <type>: <title>``: skipped, but
-       its lines up to the close line are still the block's (not read as one-line needs). Also an
-       open word behind a ``*`` in a block comment whose lines do not all carry the leader.
+       its lines up to the close line are still the block's (not read as one-line needs). The same
+       for an open word behind a ``*`` in a block comment whose lines do not all carry the leader:
+       its lines up to the first close line, ``@endneed`` or ``* @endneed``, are the block's too;
+       without one it is ``multiline_need_unterminated``, whose message then names the missing
+       leader as the likely cause.
    * - ``multiline_need_markup``
      - The markup tag is not in ``markups``: the need is produced with the project's default markup.
    * - ``multiline_need_duplicate_option``

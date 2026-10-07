@@ -37,9 +37,12 @@
 #   its opener (with any number of stars) and a last row holding only its closer (any
 #   number of stars then "*/"), then its delimiters, then a "*" leader ("*" plus one
 #   space, or a lone "*") from every line, only when every non-blank line between the
-#   opener's row and the closer's has one. When the leader is not stripped, a line whose
-#   open word sits behind stars is multiline_need_header at that line (nothing is
-#   produced or hidden for it).
+#   opener's row and the closer's has one; a line of stars only counts as having one
+#   and becomes a blank line. When the leader is not stripped, a line whose open word
+#   sits behind stars is multiline_need_header at that line, consumed with the lines
+#   after it up to the first close line, which may then carry stars too ("* @endneed");
+#   with no such close it is multiline_need_unterminated. In such a block every
+#   multiline_need_unterminated message names the missing leader as the likely cause.
 # - At an open line, in this order: the close WORD ending the same line (after
 #   whitespace, or as the whole rest of the line) is the one-line form
 #   (multiline_need_oneline_form, skipped); no close line in the rest of the run is
@@ -51,8 +54,9 @@
 #   the record's, stands); the open word starting a body line is
 #   multiline_need_nested_open (it stays body text). A body line whose text, past its
 #   indentation, starts with "\<close>" loses that backslash and keeps its indentation.
-# - Precedence: the lines of a block, and of a refused header up to its close, are
-#   hidden from the one-line and need-reference extractors. A refused one-line form
+# - Precedence: the lines of a block, and of a refused header (an open word behind
+#   stars included) up to its close, are hidden from the one-line and need-reference
+#   extractors. A refused one-line form
 #   hides its own line; an unterminated open hides nothing.
 #
 # The snapshot's ``multiline_needs`` entries carry ``need`` (type, title, the options in
@@ -66,8 +70,9 @@
 cpp_doxygen_leader:
   # A doxygen /** */ block where every line carries a " * " leader: the leader is
   # stripped once per line (so " * * item one" keeps its list marker), blank " *" lines
-  # inside the body stay blank lines, and "*emphasis*" in the body is untouched. The
-  # option values are kept as written, comma and all.
+  # and a separator line of stars only inside the body become blank lines, and
+  # "*emphasis*" in the body is untouched. The option values are kept as written, comma
+  # and all.
   lang: cpp
   config: default
   source: |
@@ -78,7 +83,7 @@ cpp_doxygen_leader:
      * :status: open
      *
      * After **five** failed attempts the account is locked.
-     *
+     ***************
      * Some *emphasis* here, and a list:
      *
      * * item one
@@ -581,7 +586,9 @@ banner_block_comment:
 
 mixed_leaders_refused:
   # One line without a "*" leader means no leader is stripped, so the open word stays
-  # behind its star: multiline_need_header at that line, and no need.
+  # behind its star: multiline_need_header at that line, and no need. The refusal
+  # consumes its lines up to the starred close, so the "@param a, b" line makes no
+  # one-line need and the "@need-ids:" line no reference.
   lang: cpp
   config: default
   source: |
@@ -589,6 +596,8 @@ mixed_leaders_refused:
      * @need impl: Mixed leaders
      * :id: IMPL_MIXED_LEADERS
        a line without a leader
+     * @param a, b the inputs
+     * @need-ids: REQ_HIDDEN
      * @endneed
      */
     void mixed_leaders() {}
