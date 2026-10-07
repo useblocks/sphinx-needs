@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 4
+      },
+      "end": {
+        "row": 1,
+        "column": 57
+      }
+    },
+    "tagged_scope": "struct Point {\n    // @X coordinate, IMPL_CPP_STRUCT, impl, [REQ_CPP_STRUCT]\n    int x;\n}",
+    "need": {
+      "title": "X coordinate",
+      "id": "IMPL_CPP_STRUCT",
+      "type": "impl",
+      "links": [
+        "REQ_CPP_STRUCT"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "struct_specifier"
+  }
+]

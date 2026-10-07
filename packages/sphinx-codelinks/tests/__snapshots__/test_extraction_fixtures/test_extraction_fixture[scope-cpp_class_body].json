@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 4
+      },
+      "end": {
+        "row": 1,
+        "column": 58
+      }
+    },
+    "tagged_scope": "class Widget {\n    // @Owns the buffer, IMPL_CPP_CLASS, impl, [REQ_CPP_CLASS]\n    int buf_;\n}",
+    "need": {
+      "title": "Owns the buffer",
+      "id": "IMPL_CPP_CLASS",
+      "type": "impl",
+      "links": [
+        "REQ_CPP_CLASS"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "class_specifier"
+  }
+]

@@ -38,6 +38,27 @@ cpp_no_scope:
     // @No Scope, IMPL_CPP_NONE, impl, [REQ_CPP_NONE]
     int global_var = 1;
 
+cpp_class_body:
+  # Marker inside a class body above a data member: no scope follows it, so
+  # the enclosing class binds.
+  lang: cpp
+  config: default
+  source: |
+    class Widget {
+        // @Owns the buffer, IMPL_CPP_CLASS, impl, [REQ_CPP_CLASS]
+        int buf_;
+    };
+
+cpp_struct_body:
+  # Same for a struct: the enclosing struct binds.
+  lang: cpp
+  config: default
+  source: |
+    struct Point {
+        // @X coordinate, IMPL_CPP_STRUCT, impl, [REQ_CPP_STRUCT]
+        int x;
+    };
+
 python_above_function:
   # Marker directly above a function definition -> binds to that function.
   lang: python

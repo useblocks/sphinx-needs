@@ -428,6 +428,13 @@ New and Improved
   warnings about its configuration file carry the type ``codelinks.config``, so
   ``suppress_warnings = ["codelinks.config"]`` silences them.
 
+- 🐛 A one-line need or ``@need-ids`` reference inside a C++ class or struct body, with no
+  function after it, is associated with that class or struct.
+
+  The C/C++ scope table named ``class_definition``, a node kind tree-sitter-cpp never
+  emits, so such a marker had no ``tagged_scope``; it now names ``class_specifier`` and
+  ``struct_specifier``, the kinds the grammar does emit.
+
 .. _`release:1.4.0`:
 
 1.4.0
