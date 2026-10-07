@@ -18,6 +18,7 @@ from sphinx_needs.functions.order import (
     BUILTINS,
     Column,
     FilterNames,
+    OutOfScope,
     Project,
     Step,
     build_stratum,
@@ -86,7 +87,14 @@ def _need(need_id: str, *, links: Any = (), **fields: Any) -> NeedItem:
         if computed:
             dynamic[name] = FieldFunctionArray((_value(value),))
     if isinstance(links, str):
-        dynamic["links"] = LinksFunctionArray((_value(links),))
+        links = (links,)
+    if any(text[:2] in ("[[", "<<") for text in links):
+        dynamic["links"] = LinksFunctionArray(
+            tuple(
+                _value(text) if text[:2] in ("[[", "<<") else NeedLink(id=text)
+                for text in links
+            )
+        )
         links = ()
     return NeedItem(
         core=core,
@@ -182,15 +190,17 @@ EVERY_STATUS = 'status == "open"'
         ("out", "[[copy('links_back')]]", {}),
         # a link field read from stratum 2 is final
         ("out", "[[copy('links', 'DYN2')]]", {}),
-        # need.<field> selecting the need or the field: read when final, else blocked
+        # need.<field> selecting the need or the field: read when final; computed in
+        # the same stratum, the call is not run and the node reads nothing
         ("out", "[[copy('summary', need.parent)]]", {"deps": [("DYN", "summary")]}),
         ("out", "[[copy(need.which)]]", {"deps": [("RD", "summary")]}),
         (
             "out",
             "[[copy('summary', need.cparent)]]",
             {
-                "deps": [("RD", "cparent")],
-                "blocked": ("dynamic function 'copy'", ["need.cparent"]),
+                "scope": [
+                    OutOfScope("dynamic function 'copy'", selectors=("need.cparent",))
+                ]
             },
         ),
         ("out", "[[copy('summary', need.unknown)]]", {}),
@@ -276,22 +286,46 @@ EVERY_STATUS = 'status == "open"'
         ),
         # a user function is computed last
         ("out", "[[mine('summary')]]", {"user_functions": ["mine"]}),
-        # stratum 1: link fields, ordered among themselves; a later value is out of scope
+        # stratum 1: link fields, ordered among themselves; a later value is out of
+        # scope, and the node reads nothing
         ("links", "[[copy('links', 'DYN2')]]", {"deps": [("DYN2", "links")]}),
         (
             "links",
             "[[copy('summary', 'DYN')]]",
-            {"scope": [("dynamic function 'copy'", [("summary", "DYN")])]},
+            {"scope": [OutOfScope("dynamic function 'copy'", (("summary", "DYN"),))]},
         ),
         (
             "links",
             "[[copy('links_back')]]",
-            {"scope": [("dynamic function 'copy'", [("links_back", "RD")])]},
+            {"scope": [OutOfScope("dynamic function 'copy'", (("links_back", "RD"),))]},
+        ),
+        (
+            "links",
+            "[[copy('summary', need.parent)]]",
+            {"scope": [OutOfScope("dynamic function 'copy'", (("summary", "DYN"),))]},
+        ),
+        # a selector computed after the stratum is a read out of scope
+        (
+            "links",
+            "[[copy('links', need.cparent)]]",
+            {"scope": [OutOfScope("dynamic function 'copy'", (("cparent", "RD"),))]},
+        ),
+        # one call out of scope: the node reads nothing, its other calls included
+        (
+            "links",
+            ("TGT", "[[copy('links', 'DYN2')]]", "[[copy('summary', 'DYN')]]"),
+            {"scope": [OutOfScope("dynamic function 'copy'", (("summary", "DYN"),))]},
         ),
         (
             "links",
             f"[[links_from_content(filter='{EVERY_STATUS}')]]",
-            {"scope": [("dynamic function 'links_from_content'", [("status", "DYN")])]},
+            {
+                "scope": [
+                    OutOfScope(
+                        "dynamic function 'links_from_content'", (("status", "DYN"),)
+                    )
+                ]
+            },
         ),
         ("links", "[[links_from_content(filter='grp == \"g\"')]]", {}),
     ],
@@ -305,7 +339,6 @@ def test_what_a_call_reads(field, text, expected):
         "deps": list(reads.deps),
         "columns": list(reads.columns),
         "scope": list(reads.scope),
-        "blocked": reads.blocked,
         "user_functions": list(reads.user_functions),
         "opaque": reads.opaque,
         "reads_itself_by_variant": reads.reads_itself_by_variant,
@@ -314,7 +347,6 @@ def test_what_a_call_reads(field, text, expected):
         "deps": [],
         "columns": [],
         "scope": [],
-        "blocked": None,
         "user_functions": [],
         "opaque": False,
         "reads_itself_by_variant": False,

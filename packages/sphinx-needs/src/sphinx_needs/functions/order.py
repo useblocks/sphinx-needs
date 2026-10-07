@@ -11,7 +11,11 @@ is computed after every node it reads, as the call text says what it reads: a
 need, a variant the fields of its own need that any of its conditions names.
 
 A strongly connected group of nodes is a cycle: its members are not computed, and
-take their field's empty value. Your own functions read what they like, so they are
+hold their placeholder (:func:`placeholder`: a list keeps its written items, any other
+field is empty). Nor is a node that reads what its stratum cannot wait for (a link
+field's call reading another field or a back link, a ``need.<field>`` selector computed
+in the same stratum): it reads nothing, so it is on no cycle, and holds its
+placeholder too. Your own functions read what they like, so they are
 computed after every built-in node of their stratum, in ``(need id, field)`` order;
 so is a built-in call whose filter cannot be read (it names ``needs``, or reads
 ``current_need`` by a key that is not written out).
@@ -242,6 +246,22 @@ def _appended(items: Sequence[_T], item: _T) -> list[_T]:
     return [*items, item]
 
 
+@dataclass(frozen=True, slots=True)
+class OutOfScope:
+    """Why one call or variant of a node cannot be computed in the node's stratum.
+
+    :ivar what: The call or the variant, as messages name it.
+    :ivar reads: The ``(name, need id)`` reads of values final only after the
+        stratum: in stratum 1, another field, a back link.
+    :ivar selectors: The ``need.<field>`` arguments that select what the call reads,
+        while their field is computed in the same stratum.
+    """
+
+    what: str
+    reads: tuple[tuple[str, str], ...] = ()
+    selectors: tuple[str, ...] = ()
+
+
 @dataclass(slots=True)
 class NodeReads:
     """What one node reads, as the stratum it is computed in sees it.
@@ -250,10 +270,9 @@ class NodeReads:
     :ivar deps: The nodes of the same stratum it is computed after.
     :ivar columns: The columns it reads, each with the filter that made every need a
         candidate, or ``None`` for a sum over every need.
-    :ivar scope: Per call, the ``(name, need id)`` reads of a value that is computed
-        only after the node's stratum (``needs.derive_scope``).
-    :ivar blocked: The call whose ``need.<field>`` argument selects what it reads
-        while the field is computed in the same stratum, and those fields.
+    :ivar scope: The calls and variants that cannot be computed in the stratum: the
+        node is then a *sink*, not computed, holding its placeholder; it reads
+        nothing (no ``deps``, no ``columns``), so it is on no cycle.
     :ivar user_functions: The user functions the node calls: it is computed last.
     :ivar opaque: A built-in call of the node has a filter that cannot be read: it is
         computed last.
@@ -263,8 +282,7 @@ class NodeReads:
     first: DynamicFunctionParsed | VariantFunctionParsed | None
     deps: Sequence[Node] = ()
     columns: Sequence[tuple[Column, str | None]] = ()
-    scope: Sequence[tuple[str, list[tuple[str, str]]]] = ()
-    blocked: tuple[str, list[str]] | None = None
+    scope: Sequence[OutOfScope] = ()
     user_functions: Sequence[str] = ()
     opaque: bool = False
     reads_itself_by_variant: bool = False
@@ -275,20 +293,14 @@ class NodeReads:
         return _what(self.first)
 
     @property
+    def sink(self) -> bool:
+        """Whether the node is not computed, as a call of it cannot be ordered."""
+        return bool(self.scope)
+
+    @property
     def last(self) -> bool:
         """Whether the node is computed after every built-in node of its stratum."""
-        return bool(self.user_functions) or self.opaque
-
-    def expected(self) -> frozenset[tuple[str, str]]:
-        """The ``(need id, name)`` reads already reported as out of scope."""
-        if not self.scope:
-            return _NOTHING
-        return frozenset(
-            (need_id, name) for _, reads in self.scope for name, need_id in reads
-        )
-
-
-_NOTHING: Final[frozenset[tuple[str, str]]] = frozenset()
+        return not self.scope and (bool(self.user_functions) or self.opaque)
 
 
 def _what(item: DynamicFunctionParsed | VariantFunctionParsed | None) -> str:
@@ -380,6 +392,10 @@ class Project:
         computed = self.nodes.get((need_id, self.field_of(name)))
         return computed is None or computed < stratum
 
+    def computed_in(self, need_id: str, name: str) -> int | None:
+        """The stratum ``name`` of one need is computed in, ``None`` if it is not."""
+        return self.nodes.get((need_id, self.field_of(name)))
+
     def sum_candidates(self, filter_string: str) -> Sequence[str]:
         """``calc_sum``'s candidates for a filter on final values, memoised per filter."""
         if filter_string not in self._sum_memo:
@@ -423,7 +439,13 @@ class Project:
                             reads.reads_itself_by_variant = True
                         _classify(self, reads, scope, stratum, need_id, read)
                 if scope:
-                    reads.scope = _appended(reads.scope, ("variant condition", scope))
+                    reads.scope = _appended(
+                        reads.scope, OutOfScope("variant condition", tuple(scope))
+                    )
+        if reads.scope:
+            # a sink is not computed: it reads nothing, and waits for nothing
+            reads.deps = ()
+            reads.columns = ()
         return reads
 
 
@@ -528,31 +550,39 @@ class _CallReads:
         for value in values:
             if isinstance(value, NeedAttribute):
                 self._read(self.need.id, value.name)
-        # one that selects what the call reads must be final before the call
+        # one that selects what the call reads must be final before the call: one
+        # computed in the same stratum blocks the call, one computed after it (or a
+        # back link, in stratum 1) is a read out of scope
         blocking: list[str] = []
         for key, value in list(args.items()):
             if not isinstance(value, NeedAttribute):
                 continue
             attr = value.name
-            if not self.project.final_on(self.need.id, attr, self.stratum):
+            if self.project.computed_in(self.need.id, attr) == self.stratum:
                 blocking.append(f"need.{attr}")
+                continue
+            if not self.project.final_on(self.need.id, attr, self.stratum):
                 self._read(self.need.id, attr)
                 continue
             if attr not in self.need:
                 return  # the call fails: need has no attribute
             args[key] = self.need[attr]
         if blocking:
-            if self.reads.blocked is None:
-                self.reads.blocked = (self.what, blocking)
+            self.reads.scope = _appended(
+                self.reads.scope, OutOfScope(self.what, selectors=tuple(blocking))
+            )
             return
-        if any(
-            args.get(key) is not None and not isinstance(args[key], str)
-            for key in _SELECTORS.get(name, frozenset()) - {"links_only"}
-        ):
-            return  # an id, a field or a filter that is no string: the call fails
-        getattr(self, f"_{name}", lambda _: None)(args)
+        if not self.scope:
+            if any(
+                args.get(key) is not None and not isinstance(args[key], str)
+                for key in _SELECTORS.get(name, frozenset()) - {"links_only"}
+            ):
+                return  # an id, a field or a filter that is no string: the call fails
+            getattr(self, f"_{name}", lambda _: None)(args)
         if self.scope:
-            self.reads.scope = _appended(self.reads.scope, (self.what, self.scope))
+            self.reads.scope = _appended(
+                self.reads.scope, OutOfScope(self.what, tuple(self.scope))
+            )
 
     def _copy(self, args: dict[str, Any]) -> None:
         option = args.get("option")

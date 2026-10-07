@@ -41,7 +41,7 @@ from sphinx_needs.variants import VariantFunctionParsed
 from sphinx_needs.views import NeedsView
 
 if TYPE_CHECKING:
-    from sphinx_needs.functions.order import Node, Project, Stratum
+    from sphinx_needs.functions.order import Node, OutOfScope, Project, Stratum
 
 logger = get_logger(__name__)
 unicode = str
@@ -290,18 +290,12 @@ class UnresolvedReads:
     Kept by the name read, in the order first read, each need named once per name.
 
     :param pending: The ``(need id, name)`` values of the pass not computed yet.
-    :param expected: The ``(need id, name)`` reads reported before the call already.
     """
 
-    __slots__ = ("_expected", "_pending", "_reads")
+    __slots__ = ("_pending", "_reads")
 
-    def __init__(
-        self,
-        pending: Container[tuple[str, str]],
-        expected: Container[tuple[str, str]] = frozenset(),
-    ) -> None:
+    def __init__(self, pending: Container[tuple[str, str]]) -> None:
         self._pending = pending
-        self._expected = expected
         self._reads: dict[str, dict[str, None]] = {}
 
     def note(self, name: str, need_id: str) -> None:
@@ -323,11 +317,7 @@ class UnresolvedReads:
         # the pass hands its functions whole needs, so only a need is noted; a need
         # part is admitted by the types (a ``filter``'s result is typed so), not noted
         # a built-in reads every candidate of a sum through here: kept to one lookup
-        if (
-            isinstance(need, NeedItem)
-            and (read := (need.id, name)) in self._pending
-            and read not in self._expected
-        ):
+        if isinstance(need, NeedItem) and (need.id, name) in self._pending:
             self.note(name, need.id)
 
     def reads(self) -> list[tuple[str, list[str]]]:
@@ -439,10 +429,36 @@ def _derive_cycle_message(
     )
 
 
-#: why a link field's call reads a later value before it is computed
-_LINK_FIELD_CAUSE = (
-    "a link field is computed before the other fields, and before the back links"
-)
+def _out_of_scope_message(option: str, out_of_scope: OutOfScope, value: Any) -> str:
+    """Return the ``needs.derive_scope`` message for a call or variant not computed.
+
+    :param option: The field it computes.
+    :param out_of_scope: The call or variant, and why it cannot be computed in its
+        stratum.
+    :param value: The value the field holds instead (its placeholder).
+    """
+    what = out_of_scope.what
+    not_run = (
+        "the condition is not evaluated"
+        if what == "variant condition"
+        else "the call is not run"
+    )
+    if selectors := out_of_scope.selectors:
+        return (
+            f"{what} for option '{option}' names its target by "
+            f"{_joined([repr(s) for s in selectors])}, which "
+            f"{'is' if len(selectors) == 1 else 'are'} computed in the same step: "
+            f"{not_run} and {_kept(value)}"
+        )
+    names: dict[str, list[str]] = {}
+    for name, read_id in out_of_scope.reads:
+        names.setdefault(name, []).append(read_id)
+    reads = list(names.items())
+    return (
+        f"{what} for option '{option}' reads {_reads_phrase(reads)}, which "
+        f"{'is' if _one(reads) else 'are'} final only after the link fields are "
+        f"computed: {not_run} and {_kept(value)}"
+    )
 
 
 class _Pass:
@@ -524,15 +540,13 @@ class _ReadsContext:
     """What the record of one node's calls needs from the pass.
 
     :ivar pass_: The pass.
-    :ivar expected: The node's reads reported before it was computed already.
     """
 
     pass_: _Pass
-    expected: frozenset[tuple[str, str]]
 
     def record(self) -> UnresolvedReads:
         """A new record, for one call or ``<<…>>`` variant."""
-        return UnresolvedReads(self.pass_.pending, self.expected)
+        return UnresolvedReads(self.pass_.pending)
 
     def report(
         self,
@@ -586,9 +600,11 @@ def resolve_functions(
 
     The link fields first (stratum 1), then the back links are built, then every other
     field (stratum 2), each after every value it reads; your own functions last in each
-    stratum. A cycle's members are left empty and reported as ``needs.derive_cycle``; a
-    read that cannot be ordered is reported as ``needs.derive_scope``. Warnings come in
-    the order the values are computed.
+    stratum. A cycle's members are not computed, hold their placeholder (a list its
+    written items, any other field its empty value) and are reported as
+    ``needs.derive_cycle``; a call that reads what its stratum cannot wait for is not
+    run either, holds its placeholder and is reported as ``needs.derive_scope``.
+    Warnings come in the order the values are computed.
     """
     # imported here, as these modules import this one
     from sphinx_needs.directives.need import build_backlinks
@@ -701,39 +717,18 @@ def _resolve_stratum(
         ((need_id, field),) = step.nodes
         need = needs[need_id]
         node_reads = stratum.reads[(need_id, field)]
-        if node_reads.blocked is not None:
-            what, selectors = node_reads.blocked
+        if node_reads.sink:
             need[field] = value = placeholder(need, field, schema)
-            log_warning(
-                logger,
-                f"{what} for option '{field}' names its target by "
-                f"{_joined([repr(s) for s in selectors])}, which "
-                f"{'is' if len(selectors) == 1 else 'are'} computed in the same step: "
-                f"the call is not run and {_kept(value)}",
-                "derive_scope",
-                location=_location(need),
-            )
-        else:
-            for what, scope in node_reads.scope:
-                names: dict[str, list[str]] = {}
-                for name, read_id in scope:
-                    names.setdefault(name, []).append(read_id)
+            for out_of_scope in node_reads.scope:
                 log_warning(
                     logger,
-                    _derive_scope_message(
-                        what, field, list(names.items()), _LINK_FIELD_CAUSE
-                    ),
+                    _out_of_scope_message(field, out_of_scope, value),
                     "derive_scope",
                     location=_location(need),
                 )
+        else:
             _resolve_field(
-                app,
-                needs,
-                need,
-                field,
-                schema,
-                config,
-                _ReadsContext(pass_, node_reads.expected()),
+                app, needs, need, field, schema, config, _ReadsContext(pass_)
             )
         pass_.finish((need_id, field))
 

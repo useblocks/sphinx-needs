@@ -891,8 +891,8 @@ Link scope
 def test_a_link_field_reading_a_later_value_is_out_of_scope(test_app):
     """A link field is computed before the other fields and before the back links.
 
-    ``R``'s call reads ``X``'s computed ``refs`` before it is computed (the empty list,
-    so ``R`` keeps its literal link); ``B``'s reads its back links, not built yet.
+    ``R``'s call reads ``X``'s computed ``refs``, ``B``'s its back links, not built yet:
+    neither call is run, and each field keeps only its written links.
     """
     app = test_app
     app.build()
@@ -904,18 +904,186 @@ def test_a_link_field_reading_a_later_value_is_out_of_scope(test_app):
             "index",
             LINK_SCOPE_INDEX,
             "B",
-            "dynamic function 'copy' for option 'links' read 'links_back' on need 'B' "
-            "before it was computed: a link field is computed before the other fields, "
-            "and before the back links",
+            "dynamic function 'copy' for option 'links' reads 'links_back' on need 'B', "
+            "which is final only after the link fields are computed: the call is not "
+            "run and the field is left empty",
             "derive_scope",
         ),
         _warning(
             "index",
             LINK_SCOPE_INDEX,
             "R",
-            "dynamic function 'copy' for option 'links' read 'refs' on need 'X' "
-            "before it was computed: a link field is computed before the other fields, "
-            "and before the back links",
+            "dynamic function 'copy' for option 'links' reads 'refs' on need 'X', "
+            "which is final only after the link fields are computed: the call is not "
+            "run and the field keeps only its written items",
+            "derive_scope",
+        ),
+    ]
+
+
+SINK_CONF = (
+    CONF
+    + """needs_fields["label"] = {"nullable": False, "default": ""}
+needs_links = {"links": {"parse_variants": True}}
+"""
+)
+
+SINK_INDEX = """Sinks
+=====
+
+.. req:: Source
+   :id: SRC
+   :status: open
+
+.. req:: Literal one
+   :id: LIT_1
+
+.. req:: Literal two
+   :id: LIT_2
+
+.. req:: A link list reading its own computed status
+   :id: LIT_CALL
+   :status: [[copy("status", "SRC")]]
+   :links: LIT_1, [[copy("status")]]
+
+.. req:: Computes a label naming a need
+   :id: OTHER
+   :label: [[copy("id", "LIT_2")]]
+
+.. req:: A link list reading another need's computed label
+   :id: OTHER_RD
+   :links: [[copy("label", "OTHER")]]
+
+.. req:: Computes a summary
+   :id: NOTE_SRC
+   :summary: [[copy("id")]]
+
+.. req:: A link list reading another need's computed summary
+   :id: NOTE_RD
+   :links: LIT_1, [[copy("summary", "NOTE_SRC")]]
+
+.. req:: A link list reading its own back links
+   :id: BACK_RD
+   :links: [[copy("links_back")]]
+
+.. req:: Links to BACK_RD
+   :id: TO_BACK
+   :links: BACK_RD
+
+.. req:: A variant in a link list reading a computed status
+   :id: V_LINK
+   :status: [[copy("status", "SRC")]]
+   :links: <<[status == "open"]:LIT_1, LIT_2>>
+
+.. req:: Computes an array
+   :id: Z_ARR
+   :incoming: a, [[copy("id")]]
+
+.. req:: A link list reading another need's computed array
+   :id: L_RD
+   :links: [[copy("incoming", "Z_ARR")]]
+
+.. req:: A link list selecting its source by a computed field
+   :id: SEL_LATE
+   :parent: [[copy("id", "LIT_2")]]
+   :links: [[copy("links", need.parent)]]
+
+.. req:: Selects by a field computed in the same step, which reads it back
+   :id: BLK
+   :parent: [[copy("summary")]]
+   :summary: [[copy("summary", need.parent)]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [(Path("conf.py"), SINK_CONF), (Path("index.rst"), SINK_INDEX)],
+        }
+    ],
+    indirect=True,
+)
+def test_a_call_that_cannot_be_ordered_is_not_run(test_app):
+    """A call (or variant) reading a value its stratum cannot wait for is not run.
+
+    A link field's call or variant reading another field or a back link, and a call
+    whose ``need.<field>`` selector is computed in the same step: each field keeps its
+    written links (``LIT_1`` has its back links from them) or is empty, with one
+    ``needs.derive_scope`` and nothing else, never a dead link to ``''`` (``OTHER_RD``),
+    a type error (``NOTE_RD``, ``L_RD``) or a no-match arm (``V_LINK``). Such a field
+    reads nothing, so it is on no cycle: ``BLK``'s ``parent`` reads its empty
+    ``summary`` without a ``needs.derive_cycle``.
+    """
+    app = test_app
+    app.build()
+    needs = _needs(app)
+    assert {
+        need_id: needs[need_id]["links"]
+        for need_id in (
+            "LIT_CALL",
+            "OTHER_RD",
+            "NOTE_RD",
+            "BACK_RD",
+            "V_LINK",
+            "L_RD",
+            "SEL_LATE",
+        )
+    } == {
+        "LIT_CALL": ["LIT_1"],
+        "OTHER_RD": [],
+        "NOTE_RD": ["LIT_1"],
+        "BACK_RD": [],
+        "V_LINK": [],
+        "L_RD": [],
+        "SEL_LATE": [],
+    }
+    assert (needs["LIT_1"]["links_back"], needs["LIT_2"]["links_back"]) == (
+        ["LIT_CALL", "NOTE_RD"],
+        [],
+    )
+    assert (needs["OTHER_RD"]["has_dead_links"], needs["OTHER"]["label"]) == (
+        False,
+        "LIT_2",
+    )
+    assert (needs["LIT_CALL"]["status"], needs["V_LINK"]["status"]) == ("open", "open")
+    assert needs["Z_ARR"]["incoming"] == ["a", "Z_ARR"]
+    assert needs["SEL_LATE"]["parent"] == "LIT_2"
+    assert (needs["BLK"]["parent"], needs["BLK"]["summary"]) == (None, None)
+
+    def scope(need_id: str, what: str, read: str, kept: bool) -> str:
+        not_run = (
+            "the condition is not evaluated"
+            if what == "variant condition"
+            else "the call is not run"
+        )
+        return _warning(
+            "index",
+            SINK_INDEX,
+            need_id,
+            f"{what} for option 'links' reads {read}, which is final only after the "
+            f"link fields are computed: {not_run} and the field "
+            + ("keeps only its written items" if kept else "is left empty"),
+            "derive_scope",
+        )
+
+    copy = "dynamic function 'copy'"
+    assert build_warnings(app) == [
+        scope("BACK_RD", copy, "'links_back' on need 'BACK_RD'", False),
+        scope("LIT_CALL", copy, "'status' on need 'LIT_CALL'", True),
+        scope("L_RD", copy, "'incoming' on need 'Z_ARR'", False),
+        scope("NOTE_RD", copy, "'summary' on need 'NOTE_SRC'", True),
+        scope("OTHER_RD", copy, "'label' on need 'OTHER'", False),
+        scope("SEL_LATE", copy, "'parent' on need 'SEL_LATE'", False),
+        scope("V_LINK", "variant condition", "'status' on need 'V_LINK'", False),
+        _warning(
+            "index",
+            SINK_INDEX,
+            "BLK",
+            "dynamic function 'copy' for option 'summary' names its target by "
+            "'need.parent', which is computed in the same step: the call is not run "
+            "and the field is left empty",
             "derive_scope",
         ),
     ]
