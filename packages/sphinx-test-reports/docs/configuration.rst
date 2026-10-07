@@ -82,6 +82,7 @@ tr_report_template
 
 ``tr_report_template`` allows to specify a custom template for testcase visualisation. Provide a relative path
 (from conf.py) or provide an absolute path to your template.
+The template this package ships, the default, is shown under :ref:`test-report`.
 
 **A simple example with a scrambled order:**
 

@@ -41,11 +41,3 @@
    :auto_cases:
 
    {content}
-
-
-Template
---------
-The following rst-code is used to generate the report.
-
-.. literalinclude:: ../../src/sphinx_test_reports/directives/test_report_template.txt
-   :language: rst
