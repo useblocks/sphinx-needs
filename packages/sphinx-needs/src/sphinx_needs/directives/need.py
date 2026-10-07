@@ -376,7 +376,11 @@ def post_process_needs_data(app: Sphinx) -> None:
         app.emit("needs-before-post-processing", needs)
         extend_needs_data(needs, needs_data.get_or_create_extends(), needs_config)
         resolve_functions(app, needs, needs_config)
-        resolve_links(needs, needs_config, needs_schema)
+        build_backlinks(needs, needs_schema)
+        check_links(needs, needs_config, needs_schema)
+        # last, so the dynamic functions read the links in the order written
+        for need in needs.values():
+            need.sort_links()
         process_constraints(needs, needs_config)
         app.emit("needs-before-sealing", needs)
         # run a last check to ensure all needs are of the correct type
@@ -472,68 +476,110 @@ def resolve_links(
     If a link specifies a condition (via ``NeedLink.condition``), the condition
     is evaluated as standard filter syntax against the targeted need.
     Warnings are emitted for links with failing or invalid conditions.
+    Then every link list is sorted.
+
+    The post-processing calls the three steps apart, with the dynamic functions
+    between them: :func:`build_backlinks` once the link fields are computed,
+    :func:`check_links` once every other field is.
+    """
+    build_backlinks(needs, schema)
+    check_links(needs, config, schema)
+    for need in needs.values():
+        need.sort_links()
+
+
+def _dead_links(need: NeedItem, needs: NeedsMutable) -> list[tuple[str, NeedLink]]:
+    """The links of ``need`` to an unknown need, or to an unknown part of a known one."""
+    dead_links: list[tuple[str, NeedLink]] = []
+    for link_type, references in need.iter_links_items(as_str=False):
+        for need_link in references:
+            linked_need = needs.get(need_link.id)
+            if linked_need is None or (
+                need_link.part is not None
+                and linked_need.get_part(need_link.part) is None
+            ):
+                dead_links.append((link_type, need_link))
+    return dead_links
+
+
+def build_backlinks(needs: NeedsMutable, schema: FieldsSchema) -> None:
+    """Build every back link from the links, and flag the needs with dead links.
+
+    Each back list (of a need and of a part) is in need-id order, comparing ids as
+    strings, so a dynamic function that reads it does not see the order the needs were
+    read in. ``has_dead_links`` and ``has_forbidden_dead_links`` depend only on which
+    targets exist, so they are final here too.
     """
     for need in needs.values():
         need.reset_backlinks()
 
     for key, need in needs.items():
-        dead_links: list[tuple[str, NeedLink]] = []
-
         for link_type, references in need.iter_links_items(as_str=False):
             for need_link in references:
                 if linked_need := needs.get(need_link.id):
-                    # Assess link condition if present
-                    if need_link.condition is not None:
-                        try:
-                            if not filter_single_need(
-                                linked_need,
-                                config,
-                                need_link.condition,
-                            ):
-                                _emit_link_warning(
-                                    need,
-                                    f"Need '{need.id}' link '{need_link.to_filter_string()}' "
-                                    f"in field '{link_type}': "
-                                    f"condition {need_link.condition!r} "
-                                    f"not satisfied by target need '{need_link.id}'",
-                                    "link_condition_failed",
-                                )
-                        except Exception as e:
-                            _emit_link_warning(
-                                need,
-                                f"Need '{need.id}' link '{need_link.to_filter_string()}' "
-                                f"in field '{link_type}': "
-                                f"invalid condition syntax {need_link.condition!r}: {e}",
-                                "link_condition_invalid",
-                            )
-
                     linked_need.add_backlink(link_type, NeedLink(id=key))
-                    if need_link.part is not None:
-                        if linked_part := linked_need.get_part(need_link.part):
-                            if link_type not in linked_part.backlinks:
-                                linked_part.backlinks[link_type] = []
-                            linked_part.backlinks[link_type].append(NeedLink(id=key))
-                        else:
-                            dead_links.append((link_type, need_link))
-                else:
-                    dead_links.append((link_type, need_link))
+                    if need_link.part is not None and (
+                        linked_part := linked_need.get_part(need_link.part)
+                    ):
+                        if link_type not in linked_part.backlinks:
+                            linked_part.backlinks[link_type] = []
+                        linked_part.backlinks[link_type].append(NeedLink(id=key))
 
+    allow_dead_links = {
+        link.name: link.allow_dead_links for link in schema.iter_link_fields()
+    }
+    for need in needs.values():
+        need.sort_backlinks()
+        dead_links = _dead_links(need, needs)
         need["has_dead_links"] = bool(dead_links)
-        allow_dead_links = {
-            link.name: link.allow_dead_links for link in schema.iter_link_fields()
-        }
         need["has_forbidden_dead_links"] = bool(
             any(not allow_dead_links.get(lt, False) for lt, _ in dead_links)
         )
+
+
+def check_links(
+    needs: NeedsMutable, config: NeedsSphinxConfig, schema: FieldsSchema
+) -> None:
+    """Assess the link conditions, and report the links to unknown needs.
+
+    Called once every value is computed, so a condition reads the target's computed
+    fields and its complete back links. The needs are checked in the order they were
+    read in, each need's conditions before its dead links.
+    """
+    for need in needs.values():
+        for link_type, references in need.iter_links_items(as_str=False):
+            for need_link in references:
+                if need_link.condition is None:
+                    continue
+                if (linked_need := needs.get(need_link.id)) is None:
+                    continue
+                try:
+                    if not filter_single_need(
+                        linked_need,
+                        config,
+                        need_link.condition,
+                    ):
+                        _emit_link_warning(
+                            need,
+                            f"Need '{need.id}' link '{need_link.to_filter_string()}' "
+                            f"in field '{link_type}': "
+                            f"condition {need_link.condition!r} "
+                            f"not satisfied by target need '{need_link.id}'",
+                            "link_condition_failed",
+                        )
+                except Exception as e:
+                    _emit_link_warning(
+                        need,
+                        f"Need '{need.id}' link '{need_link.to_filter_string()}' "
+                        f"in field '{link_type}': "
+                        f"invalid condition syntax {need_link.condition!r}: {e}",
+                        "link_condition_invalid",
+                    )
+
         if need["has_forbidden_dead_links"] and config.report_dead_links:
-            for link_type, need_link in dead_links:
+            for link_type, need_link in _dead_links(need, needs):
                 message = f"Need '{need.id}' has unknown outgoing link '{need_link.to_filter_string()}' in field '{link_type}'"
                 _emit_link_warning(need, message, "link_outgoing")
-
-    # Sort link lists alphabetically so that outputs (needs.json, HTML) are
-    # deterministic and reproducible, regardless of needs/external_needs load order.
-    for need in needs.values():
-        need.sort_links()
 
 
 def _emit_link_warning(need: NeedItem, message: str, subtype: WarningSubTypes) -> None:

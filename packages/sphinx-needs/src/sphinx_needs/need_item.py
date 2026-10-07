@@ -13,6 +13,7 @@ import re
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from itertools import chain
+from operator import attrgetter
 from typing import TYPE_CHECKING, Any, Literal, Protocol, overload, runtime_checkable
 
 from sphinx_needs.data import (
@@ -929,6 +930,19 @@ class NeedItem:
         for part in self._parts.values():
             for k in part.backlinks:
                 part.backlinks[k] = []
+
+    def sort_backlinks(self) -> None:
+        """Sort the back links, and the parts' back links, in need-id order.
+
+        Ids are compared as strings (``REQ_10`` before ``REQ_9``), as the dynamic
+        functions read the needs of a set. This is the order a dynamic function reads
+        a back link list in; :meth:`sort_links` sorts it again for the output.
+        """
+        for value in self._backlinks.values():
+            value.sort(key=attrgetter("id"))
+        for part in self._parts.values():
+            for value in part.backlinks.values():
+                value.sort(key=attrgetter("id"))
 
     def sort_links(self) -> None:
         """Sort all link and backlink lists in place, removing duplicates.
