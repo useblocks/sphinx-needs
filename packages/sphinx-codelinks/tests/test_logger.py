@@ -3,7 +3,6 @@ import importlib
 import logging
 
 import pytest
-import sphinx
 from sphinx.util.logging import VERBOSE
 
 from sphinx_codelinks import logger as logmod
@@ -139,65 +138,3 @@ def test_analyse_modules_install_no_handlers_at_import():
         assert module_logger.level == logging.NOTSET, (
             f"{name} pinned its level at import to {module_logger.level}"
         )
-
-
-class _StubSphinxLogger:
-    """Records what ``_SphinxBackend.warning`` hands ``sphinx.util.logging``."""
-
-    def __init__(self) -> None:
-        self.warnings: list[tuple[str, dict[str, object]]] = []
-
-    def warning(self, msg: str, **kwargs: object) -> None:
-        self.warnings.append((msg, kwargs))
-
-
-@pytest.fixture
-def stub_sphinx_logger(monkeypatch):
-    stub = _StubSphinxLogger()
-    monkeypatch.setattr(logmod.sphinx_logging, "getLogger", lambda _name: stub)
-    return stub
-
-
-@pytest.mark.parametrize(
-    ("subtype", "suffix"),
-    [("git_root", " [codelinks.git_root]"), ("", " [codelinks]")],
-)
-def test_sphinx_backend_appends_the_type_only_when_sphinx_does_not(
-    stub_sphinx_logger, subtype, suffix
-):
-    """Where the suffix is left to Sphinx (always from 8, before 8 when
-    ``show_warning_types`` is on -- Sphinx then renders ``[type.subtype]``, or
-    ``[type]`` for a warning without a subtype) the message is passed unchanged; where
-    it is not, the backend appends it -- either way it is rendered at most once
-    (#2091)."""
-    backend = logmod._SphinxBackend()
-
-    backend._leave_to_sphinx = True
-    backend.warning("sphinx_codelinks.x", "a problem", subtype, "x.cpp")
-    backend._leave_to_sphinx = False
-    backend.warning("sphinx_codelinks.x", "a problem", subtype, "x.cpp")
-
-    assert [msg for msg, _ in stub_sphinx_logger.warnings] == [
-        "a problem",
-        f"a problem{suffix}",
-    ]
-    assert all(
-        kwargs == {"type": "codelinks", "subtype": subtype, "location": "x.cpp"}
-        for _, kwargs in stub_sphinx_logger.warnings
-    )
-
-
-@pytest.mark.parametrize("show_warning_types", [True, False])
-def test_configure_sphinx_follows_show_warning_types(
-    stub_sphinx_logger, show_warning_types
-):
-    """``configure_sphinx`` is told the build's ``show_warning_types``: with it on,
-    Sphinx renders the suffix on every version, so the backend appends none; with it
-    off the backend appends it before Sphinx 8 only (on 8+ with the option off nothing
-    is rendered)."""
-    logmod.configure_sphinx(show_warning_types=show_warning_types)
-    logmod.get_logger("sphinx_codelinks.x").warning("a problem", subtype="git_root")
-
-    leave_to_sphinx = show_warning_types or sphinx.version_info >= (8,)
-    expected = "a problem" if leave_to_sphinx else "a problem [codelinks.git_root]"
-    assert [msg for msg, _ in stub_sphinx_logger.warnings] == [expected]

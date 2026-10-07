@@ -96,9 +96,7 @@ def _check_sphinx_needs_dependency(app: Sphinx) -> bool:
 
 def setup(app: Sphinx) -> dict[str, Any]:
     # Route the shared analyse layer's logging through Sphinx (verbosity,
-    # colour, suppress_warnings, warning stream) instead of stderr. The config is
-    # already read here (conf.py and -D alike), so the user's show_warning_types is
-    # known before the first warning
+    # colour, suppress_warnings, warning stream) instead of stderr.
     configure_sphinx(show_warning_types=bool(app.config.show_warning_types))
     # Check if sphinx-needs is available and properly configured
     if not _check_sphinx_needs_dependency(app):

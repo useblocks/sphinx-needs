@@ -28,13 +28,11 @@ and such errors must not be suppressible.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from sphinx import version_info
 
 if TYPE_CHECKING:
-    from sphinx.application import Sphinx
-    from sphinx.config import Config
     from sphinx.util.logging import SphinxLoggerAdapter
 
 #: Warning subtypes known to sphinx-mounts. Keep sorted — adding a new
@@ -110,33 +108,18 @@ MOUNT_GATED_CODE = "mounts.mount_gated"
 WARNING_TYPE = "mounts"
 
 
-class _WarningTypes:
-    """Whether :func:`log_warning` leaves a warning's `` [type.subtype]`` suffix to
-    Sphinx rather than append it itself.
-
-    Sphinx renders the suffix while ``show_warning_types`` is on: an option since
-    Sphinx 7.3 (default ``False``), on by default since 8.0. From 8.0 the helper always
-    leaves it to Sphinx -- a build that turns the option off there shows no suffix, as
-    before. Before 8.0 it leaves it to Sphinx only when the build turns the option on,
-    and appends it itself otherwise; appending it where Sphinx does too showed it twice
-    (#2091). :func:`log_warning` has no ``app``, so :func:`configure_warning_types`
-    records the build's value at ``config-inited``, before any sphinx-mounts handler,
-    again for every build in the process (nothing in sphinx-mounts can warn earlier:
-    its ``setup()`` only registers).
-    """
-
-    leave_to_sphinx: bool = version_info >= (8,)
+# --- Sphinx 7 only; remove with the Sphinx 8 floor -----------------------------------
+# Sphinx renders a warning's ``[type.subtype]`` itself when ``show_warning_types`` is on
+# (its default from 8.0). Before 8.0 ``log_warning`` appends it where Sphinx will not.
+_sphinx_renders_types = version_info >= (8,)
 
 
-_warning_types = _WarningTypes()
+def configure_warning_types(_app: object, config: Any) -> None:
+    global _sphinx_renders_types
+    _sphinx_renders_types = version_info >= (8,) or bool(config.show_warning_types)
 
 
-def configure_warning_types(_app: Sphinx, config: Config) -> None:
-    """Record whether :func:`log_warning` leaves the warning type suffix to Sphinx for
-    this build."""
-    _warning_types.leave_to_sphinx = version_info >= (8,) or bool(
-        config.show_warning_types
-    )
+# ------------------------------------------------------------------------------------
 
 
 def log_warning(
@@ -152,8 +135,7 @@ def log_warning(
     ``"docname_conflict"`` that is ``mounts.docname_conflict``. Sphinx < 8
     does not display warning types by default, so the type is appended to
     the message there to keep the console output self-explanatory on all
-    supported versions -- unless the build sets ``show_warning_types``, in
-    which case Sphinx appends it itself.
+    supported versions.
 
     :param logger: The module logger to emit through.
     :param message: The warning text (already including the
@@ -162,6 +144,6 @@ def log_warning(
     :param location: Optional docname (or ``docname:lineno``) the warning
         belongs to.
     """
-    if not _warning_types.leave_to_sphinx:
+    if not _sphinx_renders_types:
         message = f"{message} [{WARNING_TYPE}.{topic}]"
     logger.warning(message, type=WARNING_TYPE, subtype=topic, location=location)

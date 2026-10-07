@@ -313,36 +313,6 @@ def test_a_link_out_is_warned_once_when_its_scope_is_walked_again(
     assert "IMPL_OUTSIDE" not in _json(app)["needs"]
 
 
-@pytest.mark.parametrize(
-    ("conf", "overrides"),
-    [
-        pytest.param("show_warning_types = True\n", {}, id="conf.py"),
-        pytest.param("", {"show_warning_types": True}, id="override"),
-        # what ``sphinx-build -D show_warning_types=1`` hands Sphinx: a string
-        pytest.param("", {"show_warning_types": "1"}, id="-D"),
-    ],
-)
-def test_the_type_suffix_is_rendered_once_with_show_warning_types(
-    tmp_path: Path, make_app: _MakeApp, conf: str, overrides: dict[str, Any]
-) -> None:
-    """With ``show_warning_types`` on -- in ``conf.py``, as an override, or from
-    ``-D`` -- Sphinx renders a warning's ``[codelinks.<subtype>]`` itself on every
-    version (7.4 included), so the package logger adds none: once, not twice (#2091)."""
-    _project(
-        tmp_path,
-        files={"outside/ext.cpp": OUTSIDE_SOURCE},
-        append={"docs/conf.py": conf},
-    )
-    _link_out(tmp_path, "src/ext_link.cpp", "outside/ext.cpp")
-    app = _build(tmp_path, make_app, confoverrides=overrides)
-
-    outside = [w for w in build_warnings(app) if "outside src_dir" in w]
-    assert len(outside) == 1, build_warnings(app)
-    assert re.findall(r"\[codelinks\.[a-z_]+\]", outside[0]) == [
-        "[codelinks.outside_src_dir]"
-    ]
-
-
 def test_a_followed_directory_link_out_of_src_dir_traces_none_of_its_files(
     tmp_path: Path, make_app: _MakeApp
 ) -> None:

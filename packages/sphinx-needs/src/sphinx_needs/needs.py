@@ -17,6 +17,7 @@ from sphinx.config import Config as _SphinxConfig
 from sphinx.environment import BuildEnvironment
 
 import sphinx_needs.debug as debug  # Need to set global var in it for timeing measurements
+import sphinx_needs.logging as needs_logging
 from sphinx_needs import __version__
 from sphinx_needs.api import get_needs_view
 from sphinx_needs.builder import (
@@ -132,12 +133,7 @@ from sphinx_needs.environment import (
 from sphinx_needs.exceptions import NeedsConfigException
 from sphinx_needs.external_needs import load_external_needs
 from sphinx_needs.functions import NEEDS_COMMON_FUNCTIONS
-from sphinx_needs.logging import (
-    WarningSubTypes,
-    configure_warning_types,
-    get_logger,
-    log_warning,
-)
+from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
 from sphinx_needs.needs_schema import (
     FieldLiteralValue,
     FieldSchema,
@@ -241,10 +237,9 @@ def load_schemas_config_from_json(app: Sphinx, config: _SphinxConfig) -> None:
 
 
 def setup(app: Sphinx) -> dict[str, Any]:
-    # the warning helpers learn whether to leave the type suffix to Sphinx before
-    # anything can warn: the public API may already be called from a later setup()
-    # (conf.py's runs after every extension's), and the config is readable here
-    configure_warning_types(app, app.config)
+    # Sphinx 7 only: show_warning_types now, and after any later setup() changed it
+    needs_logging.configure_warning_types(app, app.config)
+    app.connect("config-inited", needs_logging.configure_warning_types, priority=0)
     LOGGER.debug("Starting setup of Sphinx-Needs")
     LOGGER.debug("Load Sphinx-Data-Viewer for Sphinx-Needs")
     app.setup_extension("sphinx_data_viewer")
@@ -373,10 +368,6 @@ def setup(app: Sphinx) -> dict[str, Any]:
     # EVENTS
     ########################################################################
     # Make connections to events
-    # re-read at config-inited (priority 0, before the first handler that warns --
-    # load_config_from_toml, at 10): a setup() that runs after sphinx-needs' (conf.py's
-    # included) may still change show_warning_types after the read in setup() above
-    app.connect("config-inited", configure_warning_types, priority=0)
     app.connect("config-inited", load_config_from_toml, priority=10)  # runs early
     # runs directly after the toml config is loaded, which can set the variant data,
     # and before anything that may want to read the merged map,

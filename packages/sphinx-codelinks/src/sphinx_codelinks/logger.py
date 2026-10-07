@@ -182,18 +182,9 @@ class _SphinxBackend:
     ``suppress_warnings`` and rendered on the Sphinx warning stream.
     """
 
-    #: whether the backend leaves a warning's ``[type.subtype]`` suffix (``[type]``
-    #: without a subtype) to Sphinx rather than append it itself. Sphinx renders it
-    #: while ``show_warning_types`` is on, its default from 8.0: from 8.0 the backend
-    #: always leaves it to Sphinx (a build that turns the option off shows no suffix,
-    #: as before); before 8.0 only when the build turns the option on -- appending it
-    #: where Sphinx does too showed it twice (#2091). Mirrors sphinx-needs' logging
-    #: helper.
-    _leave_to_sphinx = _sphinx_version_info >= (8,)
-
-    def __init__(self, *, show_warning_types: bool = False) -> None:
-        if show_warning_types:
-            self._leave_to_sphinx = True
+    # Sphinx 7 only; remove with the Sphinx 8 floor: Sphinx renders the warning type
+    # itself when show_warning_types is on (its default from 8.0); else it is appended here
+    _sphinx_renders_types = _sphinx_version_info >= (8,)
 
     def debug(self, name: str, msg: str, _location: str | None, /) -> None:
         sphinx_logging.getLogger(name).verbose(msg)
@@ -205,7 +196,7 @@ class _SphinxBackend:
         self, name: str, msg: str, subtype: str, location: str | None, /
     ) -> None:
         message = msg
-        if not self._leave_to_sphinx:
+        if not self._sphinx_renders_types:
             message += f" [codelinks.{subtype}]" if subtype else " [codelinks]"
         sphinx_logging.getLogger(name).warning(
             message,
@@ -261,13 +252,9 @@ def configure_cli(verbose: bool = False, quiet: bool = False) -> None:
 
 
 def configure_sphinx(*, show_warning_types: bool = False) -> None:
-    """Select the Sphinx frontend (``sphinx.util.logging``).
-
-    :param show_warning_types: the build's ``show_warning_types``, so that the
-        ``[codelinks.<subtype>]`` suffix is appended only where Sphinx will not
-        render it itself.
-    """
-    _dispatch.backend = _SphinxBackend(show_warning_types=show_warning_types)
+    """Select the Sphinx frontend (``sphinx.util.logging``)."""
+    _dispatch.backend = backend = _SphinxBackend()
+    backend._sphinx_renders_types |= show_warning_types  # Sphinx 7 only
 
 
 def reset() -> None:

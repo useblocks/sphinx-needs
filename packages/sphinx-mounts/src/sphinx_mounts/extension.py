@@ -21,6 +21,7 @@ from sphinx.util import logging
 from sphinx.util.matching import get_matching_files, patmatch
 
 from sphinx_mounts import __version__, dialect
+from sphinx_mounts import logging as mounts_logging
 from sphinx_mounts import warnings as mount_warnings
 from sphinx_mounts.config import (
     MOUNT_CONDITION_KEY,
@@ -38,12 +39,7 @@ from sphinx_mounts.config import (
     normalise_condition,
     parse_mounts,
 )
-from sphinx_mounts.logging import (
-    MOUNT_GATED_CODE,
-    WarningTopics,
-    configure_warning_types,
-    log_warning,
-)
+from sphinx_mounts.logging import MOUNT_GATED_CODE, WarningTopics, log_warning
 from sphinx_mounts.mounter import (
     DocRoot,
     _build_walker,
@@ -2489,9 +2485,8 @@ def setup(app: Sphinx) -> dict[str, Any]:
         rebuild="env",
         types=(str, type(None)),
     )
-    # first of all: log_warning learns whether to leave the type suffix to Sphinx,
-    # before any handler below (the earliest, at 400, warns) can warn
-    app.connect("config-inited", configure_warning_types, priority=0)
+    # Sphinx 7 only: read show_warning_types before the first handler that can warn
+    app.connect("config-inited", mounts_logging.configure_warning_types, priority=0)
     # Priority is "lower = earlier"; the TOML loader must run before the
     # validator so that the TOML-derived list is what gets validated.
     app.connect("config-inited", _on_load_toml, priority=400)
