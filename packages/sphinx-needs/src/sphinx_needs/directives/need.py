@@ -507,16 +507,22 @@ def _dead_links(need: NeedItem, needs: NeedsMutable) -> list[tuple[str, NeedLink
     return dead_links
 
 
-def build_backlinks(needs: NeedsMutable, schema: FieldsSchema) -> None:
+def build_backlinks(
+    needs: NeedsMutable, schema: FieldsSchema, *, reset: bool = True
+) -> None:
     """Build every back link from the links, and flag the needs with dead links.
 
     Each back list (of a need and of a part) is in need-id order, comparing ids as
     strings, so a dynamic function that reads it does not see the order the needs were
     read in. ``has_dead_links`` and ``has_forbidden_dead_links`` depend only on which
     targets exist, so they are final here too.
+
+    :param reset: Empty every back list first; ``resolve_functions`` empties them at
+        the start of its pass already, before the link fields are computed.
     """
-    for need in needs.values():
-        need.reset_backlinks()
+    if reset:
+        for need in needs.values():
+            need.reset_backlinks()
 
     for key, need in needs.items():
         for link_type, references in need.iter_links_items(as_str=False):

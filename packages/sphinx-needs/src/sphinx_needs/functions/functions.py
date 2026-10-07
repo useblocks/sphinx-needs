@@ -700,8 +700,12 @@ def resolve_functions(
         content_refs=content_refs,
     )
     pass_ = _Pass(project)
+    # the one reset of the pass: a link field's function reads no back link of an
+    # earlier build, and the barrier builds them into the empty lists
+    for need in needs.values():
+        need.reset_backlinks()
     _resolve_stratum(app, needs, pass_, 1, needs_schema, needs_config)
-    build_backlinks(needs, needs_schema)
+    build_backlinks(needs, needs_schema, reset=False)
     _resolve_stratum(app, needs, pass_, 2, needs_schema, needs_config)
 
 

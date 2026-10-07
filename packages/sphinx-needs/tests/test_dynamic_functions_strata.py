@@ -22,6 +22,7 @@ from pathlib import Path
 import pytest
 from sphinx.util.parallel import parallel_available
 
+from sphinx_needs.need_item import NeedItem
 from sphinx_needs_testkit import build_warnings
 
 CONF = """\
@@ -1307,6 +1308,88 @@ def test_a_rebuild_drops_a_removed_back_link(test_app):
     needs = _needs(app)
     assert (needs["P"]["links_back"], needs["P"]["incoming"]) == (["C2"], ["C2"])
     assert build_warnings(app) == []
+
+
+STALE_CONF = (
+    CONF
+    + """\
+# Sphinx's own warning that a function in the configuration is not pickled
+suppress_warnings = ["config.cache"]
+
+
+def back_of(app, need, needs, need_id=None):
+    # your own link function reading a need's back links: it runs in the link step
+    return list((needs[need_id] if need_id else need)["links_back"])
+
+
+needs_functions = [back_of]
+"""
+)
+
+STALE_READERS = """\
+a
+=
+
+.. req:: T
+   :id: P
+   :links: [[back_of()]]
+
+.. req:: T
+   :id: U_RD
+   :links: [[back_of("P")]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), STALE_CONF),
+                (Path("index.rst"), _toctree("a", "b")),
+                (Path("a.rst"), STALE_READERS),
+                (Path("b.rst"), REBUILD_LINKED),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_link_function_reads_no_back_link_of_an_earlier_build(test_app, monkeypatch):
+    """The back links are emptied at the start of the pass, once, before the link fields.
+
+    Your own function in a link field runs before the back links are built, so it
+    reads none: not those of the first build either, when a rebuild in the same
+    process keeps ``P`` and ``U_RD`` (``a.rst`` is not re-read) and ``C1`` stops
+    linking to ``P``. Every need is reset exactly once per build.
+    """
+    resets: list[str] = []
+    reset = NeedItem.reset_backlinks
+
+    def counted(self: NeedItem) -> None:
+        resets.append(self.id)
+        reset(self)
+
+    monkeypatch.setattr(NeedItem, "reset_backlinks", counted)
+    app = test_app
+    app.build()
+    needs = _needs(app)
+    assert (needs["P"]["links"], needs["U_RD"]["links"]) == ([], [])
+    assert sorted(resets) == ["C1", "C2", "P", "U_RD"]
+
+    resets.clear()
+    Path(app.srcdir, "b.rst").write_text(
+        REBUILD_LINKED.replace("   :id: C1\n   :links: P\n", "   :id: C1\n"),
+        encoding="utf-8",
+    )
+    # newer than the time the first build read it, whatever the file system's clock
+    later = time.time_ns() + 60_000_000_000
+    os.utime(Path(app.srcdir, "b.rst"), ns=(later, later))
+    app.build()
+    needs = _needs(app)
+    assert (needs["P"]["links"], needs["U_RD"]["links"]) == ([], [])
+    assert needs["P"]["links_back"] == ["C2"]
+    assert sorted(resets) == ["C1", "C2", "P", "U_RD"]
 
 
 LINK_SCOPE_INDEX = """\
