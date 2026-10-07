@@ -243,6 +243,25 @@ EVERY_STATUS = 'status == "open"'
             "[[copy('summary', filter='current_need[\"grp\"] == grp')]]",
             {"deps": [("DYN", "summary")]},
         ),
+        # with a need named, current_need is that need
+        (
+            "out",
+            "[[copy('summary', 'DYN', filter='current_need[\"status\"] == status')]]",
+            {
+                "deps": [("DYN", "status"), ("DYN", "summary")],
+                "columns": [
+                    (Column("summary"), 'current_need["status"] == status'),
+                    (Column("status"), 'current_need["status"] == status'),
+                ],
+            },
+        ),
+        # (DYN2's grp "h" matches DYN2 alone, which computes no summary; the caller's
+        # "g" would match DYN, which does)
+        (
+            "out",
+            "[[copy('summary', 'DYN2', filter='current_need[\"grp\"] == grp')]]",
+            {},
+        ),
         # ... else a column of every need's value of each computed name, and its own
         (
             "out",

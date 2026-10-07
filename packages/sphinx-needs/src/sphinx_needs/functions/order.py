@@ -363,8 +363,9 @@ class Project:
         ``needs_filter_data``, ``build_tags`` or ``var``, not from the need.
     :param builtins: The registered function of each built-in name; a name whose
         registered function is not the built-in is a user function.
-    :param copy_match: The id of the lowest-id need ``copy``'s filter matches on behalf
-        of a need, ``None`` for no match, or ``FAILED``; evaluated before the stratum.
+    :param copy_match: The id of the lowest-id need ``copy``'s filter matches with a
+        need as ``current_need`` (the need ``copy`` names, else the caller), ``None``
+        for no match, or ``FAILED``; evaluated before the stratum.
     :param sum_candidates: The ids of the needs ``calc_sum``'s filter keeps, in need-id
         order; evaluated before the stratum.
     :param content_refs: The ids a need's content references (``links_from_content``).
@@ -633,13 +634,13 @@ class _CallReads:
         names = self._filter(filter_string)
         if names is None:
             return
-        for key in sorted(names.current):  # current_need is the caller
-            self._read(self.need.id, key)
+        # current_need is the need copy reads from: the one named, else the caller
+        for key in sorted(names.current):
+            self._read(source, key)
         if all(self.project.final(n, self.stratum) for n in names.names) and all(
-            self.project.final_on(self.need.id, key, self.stratum)
-            for key in names.current
+            self.project.final_on(source, key, self.stratum) for key in names.current
         ):
-            match = self.project._copy_match(filter_string, self.need)
+            match = self.project._copy_match(filter_string, self.project.needs[source])
             if match is FAILED:
                 return
             self._read(match if isinstance(match, str) else source, option)

@@ -625,13 +625,13 @@ def resolve_functions(
 
     needs_schema = SphinxNeedsData(app.env).get_schema()
 
-    def copy_match(filter_string: str, caller: NeedItem) -> str | object | None:
+    def copy_match(filter_string: str, current: NeedItem) -> str | object | None:
         # the lowest-id match of ``copy``'s filter, as the call computes it, quietly:
         # the call reports a filter's problems itself
         with suppress_logging():
             try:
                 found = filter_needs_and_parts(
-                    needs.values(), needs_config, filter_string, caller
+                    needs.values(), needs_config, filter_string, current
                 )
             except Exception:
                 return FAILED

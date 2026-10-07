@@ -779,6 +779,78 @@ def test_a_list_field_on_a_cycle_keeps_its_written_items(test_app):
     ]
 
 
+# -- what a filter reads ------------------------------------------------------------
+#
+# A filter reads the needs themselves, not through the record of the reads, so the
+# check at run time cannot see a filter read too early: only these builds can. In
+# each, the reader's node sorts before the node its filter reads, so the reader is
+# right only if the order puts it after that node.
+
+FILTER_CONF = """\
+extensions = ["sphinx_needs"]
+needs_id_regex = "^.+$"
+needs_fields = {
+    "summary": {"nullable": True},
+    "aout": {"nullable": True},
+    "zgrp": {"nullable": True},
+    "team": {"nullable": True},
+}
+"""
+
+CURRENT_NEED_OF_NAMED_INDEX = """\
+current_need of the need named
+==============================
+
+.. req:: Reader, sorts first
+   :id: A_RD
+   :aout: [[copy("summary", "B_OTHER", filter='current_need["zgrp"] == title')]]
+
+.. req:: Reader, sorts last
+   :id: Z_RD
+   :aout: [[copy("summary", "B_OTHER", filter='current_need["zgrp"] == title')]]
+
+.. req:: The need the filter's current_need is
+   :id: B_OTHER
+   :zgrp: [[copy("title", "Z_GSRC")]]
+
+.. req:: one
+   :id: Z_GSRC
+
+.. req:: one
+   :id: M_ONE
+   :summary: matched one
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), FILTER_CONF),
+                (Path("index.rst"), CURRENT_NEED_OF_NAMED_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_copy_filter_current_need_is_the_need_named(test_app):
+    """``copy(x, "ID", filter=…)`` evaluates the filter with ``ID`` as ``current_need``.
+
+    So ``current_need["zgrp"]`` is ``B_OTHER``'s computed ``zgrp``, and both readers
+    wait for it: the same call gives the same value whatever the reader's id.
+    """
+    app = test_app
+    app.build()
+    needs = _needs(app)
+    assert (needs["A_RD"]["aout"], needs["Z_RD"]["aout"]) == (
+        "matched one",
+        "matched one",
+    )
+    assert build_warnings(app) == []
+
+
 # -- back links and link fields --------------------------------------------------------
 
 BACKLINKS_A = """\
