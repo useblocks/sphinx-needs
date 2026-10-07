@@ -1,0 +1,22 @@
+{
+  "needs": [],
+  "need_refs": [],
+  "multiline_needs": [
+    {
+      "need": {
+        "type": "req",
+        "title": "Login must be rate limited",
+        "id": "REQ_LOGIN_1",
+        "links": "SPEC_AUTH, SPEC_LOCK",
+        "status": "open",
+        "content": "After **five** failed attempts the account is locked.\n\nSome *emphasis* here, and a list:\n\n* item one",
+        "doctype": ".rst"
+      },
+      "markup": "rst",
+      "start_line": 2,
+      "end_line": 12,
+      "content_start_line": 7
+    }
+  ],
+  "warnings": []
+}

@@ -18,6 +18,7 @@ import yaml
 
 from sphinx_codelinks.analyse.analyse import SourceAnalyse
 from sphinx_codelinks.config import (
+    MultilineNeedsConfig,
     NeedIdRefsConfig,
     OneLineCommentStyle,
     PreprocessorConfig,
@@ -66,10 +67,16 @@ def _build_oneline_style(config) -> OneLineCommentStyle:
     return OneLineCommentStyle(**kwargs)
 
 
+def _build_multiline_config(config) -> MultilineNeedsConfig:
+    if not isinstance(config, dict) or "multiline_needs" not in config:
+        return MultilineNeedsConfig()
+    return MultilineNeedsConfig(**config["multiline_needs"])
+
+
 # Snapshot contract (the README has the detail). The marked content is
 # ``SourceAnalyse.dump_marked_content``'s payload: the ``to_dict()`` of each
 # ``all_marked_content`` entry, in production's order (``_build_marked_content``).
-# The warnings are a second snapshot, of ``oneline_warnings``' records
+# The warnings are a second snapshot, of ``analyse.warnings``' records
 # (``_build_warnings``). Deviations from production output: paths relative to
 # ``tmp_path``, one additive ``tagged_scope_type`` key per entry, and the
 # warnings sorted. Nothing else is added, renamed, wrapped or exploded.
@@ -109,7 +116,7 @@ def _build_marked_content(analyse: SourceAnalyse, tmp_path: Path) -> list[dict]:
     already sorted by ``(filepath, source_map.start.row)`` — and calls each
     entry's own ``to_dict()``, so both the shape and the ordering come from
     production itself rather than being re-derived from ``oneline_needs`` /
-    ``need_id_refs`` / ``marked_rst`` separately.
+    ``need_id_refs`` / ``multiline_needs`` separately.
     """
     items = []
     for entry in analyse.all_marked_content:
@@ -126,7 +133,7 @@ def _build_marked_content(analyse: SourceAnalyse, tmp_path: Path) -> list[dict]:
 def _build_warnings(analyse: SourceAnalyse, tmp_path: Path) -> list[dict]:
     """Reproduce the warnings production reports for this case.
 
-    ``analyse.oneline_warnings`` is the list the ``src-trace`` directive
+    ``analyse.warnings`` is the list the ``src-trace`` directive
     reports from and ``codelinks analyse`` prints: each ``AnalyseWarning`` is
     snapshotted as its ``__dict__``, with ``file_path`` made relative to
     ``tmp_path``.
@@ -137,7 +144,7 @@ def _build_warnings(analyse: SourceAnalyse, tmp_path: Path) -> list[dict]:
     once more than one extractor is on, so no snapshot could pin it.
     """
     records = []
-    for warning in analyse.oneline_warnings:
+    for warning in analyse.warnings:
         record = dict(warning.__dict__)
         record["file_path"] = _relative_filepath(Path(record["file_path"]), tmp_path)
         records.append(record)
@@ -204,7 +211,7 @@ def _extract(case: dict, root: Path, source: str) -> tuple[list[dict], list[dict
     # Which extractors to run. Defaults to all; a fixture narrows this (e.g. a
     # need-refs case sets ``extract: [need_refs]``) so unrelated markers — like
     # ``@need-ids:`` matching the ``@`` one-line start — don't add noise.
-    extract = case.get("extract", ["oneline", "need_refs", "rst"])
+    extract = case.get("extract", ["oneline", "need_refs", "multiline"])
 
     # Engine selection. The default tree-sitter path sees every comment; the
     # libclang path evaluates the preprocessor (``defines``) and excludes markers
@@ -224,8 +231,9 @@ def _extract(case: dict, root: Path, source: str) -> tuple[list[dict], list[dict
         comment_type=comment_type,
         get_oneline_needs="oneline" in extract,
         get_need_id_refs="need_refs" in extract,
-        get_rst="rst" in extract,
+        get_multiline_needs="multiline" in extract,
         oneline_comment_style=style,
+        multiline_needs_config=_build_multiline_config(config),
         need_id_refs_config=refs_config,
         preprocessor=preprocessor,
     )

@@ -1,0 +1,50 @@
+{
+  "needs": [
+    {
+      "id": "DOC_1",
+      "title": "Doc comment marker",
+      "type": "impl",
+      "links": {
+        "links": []
+      },
+      "metadata": {},
+      "line": 2
+    },
+    {
+      "id": "OUT_1",
+      "title": "Outside marker",
+      "type": "impl",
+      "links": {
+        "links": []
+      },
+      "metadata": {},
+      "line": 13
+    }
+  ],
+  "need_refs": [
+    {
+      "need_id": "REQ_AFTER",
+      "line": 9
+    },
+    {
+      "need_id": "REQ_OUT",
+      "line": 14
+    }
+  ],
+  "multiline_needs": [
+    {
+      "need": {
+        "type": "req",
+        "title": "Title, with a comma",
+        "id": "REQ_PREC",
+        "content": "@param a, b the inputs\n@need-ids: REQ_IN_BODY",
+        "doctype": ".rst"
+      },
+      "markup": "rst",
+      "start_line": 3,
+      "end_line": 8,
+      "content_start_line": 6
+    }
+  ],
+  "warnings": []
+}

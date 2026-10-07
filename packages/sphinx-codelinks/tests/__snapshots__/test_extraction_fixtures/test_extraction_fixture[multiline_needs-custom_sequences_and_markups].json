@@ -1,0 +1,20 @@
+{
+  "needs": [],
+  "need_refs": [],
+  "multiline_needs": [
+    {
+      "need": {
+        "type": "req",
+        "title": "Custom markers",
+        "id": "REQ_CUSTOM",
+        "content": "The block uses the project's own words.",
+        "doctype": ".md"
+      },
+      "markup": "myst",
+      "start_line": 1,
+      "end_line": 5,
+      "content_start_line": 4
+    }
+  ],
+  "warnings": []
+}

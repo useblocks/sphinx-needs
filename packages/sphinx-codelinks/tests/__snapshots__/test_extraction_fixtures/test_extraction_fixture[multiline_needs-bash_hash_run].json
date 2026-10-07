@@ -1,0 +1,20 @@
+{
+  "needs": [],
+  "need_refs": [],
+  "multiline_needs": [
+    {
+      "need": {
+        "type": "impl",
+        "title": "Deploy script",
+        "id": "IMPL_BASH",
+        "content": "Runs the deployment.",
+        "doctype": ".rst"
+      },
+      "markup": "rst",
+      "start_line": 2,
+      "end_line": 6,
+      "content_start_line": 5
+    }
+  ],
+  "warnings": []
+}

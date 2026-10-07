@@ -1,0 +1,20 @@
+{
+  "needs": [],
+  "need_refs": [],
+  "multiline_needs": [
+    {
+      "need": {
+        "type": "impl",
+        "title": "Plain block",
+        "id": "IMPL_PLAIN",
+        "content": "Some *emphasis* here.\n- a **bold** item",
+        "doctype": ".rst"
+      },
+      "markup": "rst",
+      "start_line": 2,
+      "end_line": 7,
+      "content_start_line": 5
+    }
+  ],
+  "warnings": []
+}

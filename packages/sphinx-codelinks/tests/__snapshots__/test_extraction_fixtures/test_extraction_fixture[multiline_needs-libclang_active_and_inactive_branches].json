@@ -1,0 +1,33 @@
+{
+  "needs": [],
+  "need_refs": [],
+  "multiline_needs": [
+    {
+      "need": {
+        "type": "impl",
+        "title": "Always built",
+        "id": "IMPL_ALWAYS_BUILT",
+        "content": "",
+        "doctype": ".rst"
+      },
+      "markup": "rst",
+      "start_line": 1,
+      "end_line": 3,
+      "content_start_line": null
+    },
+    {
+      "need": {
+        "type": "impl",
+        "title": "Feature A",
+        "id": "IMPL_FEATURE_A",
+        "content": "Built when FEATURE_A is defined.",
+        "doctype": ".rst"
+      },
+      "markup": "rst",
+      "start_line": 7,
+      "end_line": 11,
+      "content_start_line": 10
+    }
+  ],
+  "warnings": []
+}

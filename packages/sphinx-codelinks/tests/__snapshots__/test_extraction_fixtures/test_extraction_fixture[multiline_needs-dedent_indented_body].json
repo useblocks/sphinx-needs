@@ -1,0 +1,20 @@
+{
+  "needs": [],
+  "need_refs": [],
+  "multiline_needs": [
+    {
+      "need": {
+        "type": "impl",
+        "title": "Indented body",
+        "id": "IMPL_DEDENT",
+        "content": "The whole body is indented by four spaces.\n\n    This line keeps four more.",
+        "doctype": ".rst"
+      },
+      "markup": "rst",
+      "start_line": 1,
+      "end_line": 7,
+      "content_start_line": 4
+    }
+  ],
+  "warnings": []
+}

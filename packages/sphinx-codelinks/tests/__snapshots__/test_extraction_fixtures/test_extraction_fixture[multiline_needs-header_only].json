@@ -1,0 +1,20 @@
+{
+  "needs": [],
+  "need_refs": [],
+  "multiline_needs": [
+    {
+      "need": {
+        "type": "req",
+        "title": "Header only",
+        "id": "REQ_HEADER_ONLY",
+        "content": "",
+        "doctype": ".rst"
+      },
+      "markup": "rst",
+      "start_line": 1,
+      "end_line": 3,
+      "content_start_line": null
+    }
+  ],
+  "warnings": []
+}

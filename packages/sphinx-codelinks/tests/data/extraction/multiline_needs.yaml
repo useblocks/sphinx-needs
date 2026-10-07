@@ -1,0 +1,548 @@
+# Multi-line needs (``@need`` ... ``@endneed``) in source comments.
+#
+# A SHARED CONTRACT: ubCode copies this file byte for byte and takes the snapshots
+# sphinx-codelinks commits for it as its expected output. Every case says what it pins;
+# its expected output follows from the rules below and nothing else.
+#
+# After comment-prefix stripping a block is:
+#
+#   <open>[<markup>] <type>: <title>    the open line; <open> defaults to "@need"
+#   :<key>: <value>                     option lines, immediately after; a line indented
+#       <continuation>                  deeper than its option line continues the value
+#                                       (joined with one space)
+#   <body>                              the first line that is neither starts the body:
+#                                       dedented by its common indentation, leading and
+#                                       trailing blank lines trimmed, never re-flowed
+#   <close>                             alone on its line; defaults to "@endneed"
+#
+# - The open word counts only when followed by "[", whitespace or the line end
+#   (so "@need-ids:" never opens a block). <type> is [\w-]+; <title> may be empty.
+# - Blocks form over RUNS: one block comment or docstring, or consecutive line comments
+#   on consecutive rows with the same delimiter and only whitespace before each.
+# - Prefixes are stripped by the comment's kind: a line comment loses its delimiter and
+#   ONE space; a block comment loses its delimiters and a "*" leader ("*" plus one
+#   space, or a lone "*") only when every non-blank line after the opener's row has one;
+#   a docstring loses its quotes and is dedented as inspect.cleandoc does.
+# - At an open line, in this order: a close word at the end of the same line is the
+#   one-line form (multiline_need_oneline_form, skipped); no close line in the rest of the
+#   run is multiline_need_unterminated (skipped, the rest of the run not scanned); an
+#   open line not matching the grammar is multiline_need_header (skipped, but its lines
+#   up to the close are consumed). An unknown markup tag is multiline_need_markup (the
+#   project default is used); a repeated option key is multiline_need_duplicate_option
+#   (the first value stands); the open word starting a body line is
+#   multiline_need_nested_open (it stays body text). A body line starting "\<close>"
+#   loses the backslash.
+# - Precedence: the lines of a block, and of a refused header up to its close, are
+#   hidden from the one-line and need-reference extractors. A refused one-line form and
+#   an unterminated open hide nothing.
+#
+# The snapshot's ``multiline_needs`` entries carry ``need`` (type, title, the options in
+# the order written, content, doctype), ``markup`` (the resolved tag), ``start_line`` (the
+# open line), ``end_line`` (the close line) and ``content_start_line`` (the first body line
+# after trimming, or null), all 1-indexed. No case sets ``extract``, so the one-line and
+# need-reference extractors run too, with the default one-line style.
+
+# --- languages -------------------------------------------------------------------------
+
+cpp_doxygen_leader:
+  # A doxygen /** */ block where every line carries a " * " leader: the leader is
+  # stripped once per line (so " * * item one" keeps its list marker), blank " *" lines
+  # inside the body stay blank lines, and "*emphasis*" in the body is untouched. The
+  # option values are kept as written, comma and all.
+  lang: cpp
+  config: default
+  source: |
+    /**
+     * @need req: Login must be rate limited
+     * :id: REQ_LOGIN_1
+     * :links: SPEC_AUTH, SPEC_LOCK
+     * :status: open
+     *
+     * After **five** failed attempts the account is locked.
+     *
+     * Some *emphasis* here, and a list:
+     *
+     * * item one
+     * @endneed
+     */
+    int login(const char *user) { return 0; }
+
+cpp_plain_block_without_leader:
+  # A plain /* */ block whose lines carry no "*" leader: nothing but the delimiters is
+  # stripped, so a body line holding "*emphasis*" or "**bold**" keeps every star. The
+  # body's common indentation (three spaces) is removed.
+  lang: cpp
+  config: default
+  source: |
+    /*
+       @need impl: Plain block
+       :id: IMPL_PLAIN
+
+       Some *emphasis* here.
+       - a **bold** item
+       @endneed
+    */
+    void plain() {}
+
+cpp_line_comment_run:
+  # A run of // comments forms one block; a bare "//" line inside the body is a blank
+  # body line and is kept.
+  lang: cpp
+  config: default
+  source: |
+    // @need impl: Line comment run
+    // :id: IMPL_LINE_RUN
+    //
+    // First paragraph.
+    //
+    // Second paragraph after a blank comment line.
+    // @endneed
+    void run() {}
+
+cpp_triple_slash_run:
+  # A run of /// doxygen line comments forms one block; "///" is the delimiter.
+  lang: cpp
+  config: default
+  source: |
+    /// @need impl: Triple slash run
+    /// :id: IMPL_TRIPLE
+    ///
+    /// Doxygen line comments.
+    /// @endneed
+    void triple() {}
+
+csharp_triple_slash_run:
+  # A run of C# /// comments forms one block.
+  lang: csharp
+  config: default
+  source: |
+    class Calc
+    {
+        /// @need impl: CSharp method
+        /// :id: IMPL_CS
+        ///
+        /// Returns the sum.
+        /// @endneed
+        public int Add(int a, int b) { return a + b; }
+    }
+
+rust_triple_slash_run:
+  # A run of Rust /// outer doc comments forms one block.
+  lang: rust
+  config: default
+  source: |
+    /// @need impl: Rust function
+    /// :id: IMPL_RUST
+    ///
+    /// Parses the input.
+    /// @endneed
+    fn parse() {}
+
+rust_inner_doc_run:
+  # A run of Rust //! inner doc comments forms one block.
+  lang: rust
+  config: default
+  source: |
+    //! @need req: Crate level need
+    //! :id: REQ_CRATE
+    //!
+    //! The crate parses inputs.
+    //! @endneed
+
+    fn main() {}
+
+go_line_comment_run:
+  # A run of Go // comments forms one block.
+  lang: go
+  config: default
+  source: |
+    package main
+
+    // @need impl: Go handler
+    // :id: IMPL_GO
+    //
+    // Handles the request.
+    // @endneed
+    func handle() {}
+
+jsonc_line_comment_run:
+  # A run of // comments inside a JSONC object forms one block; the comments' own
+  # indentation is not part of the body.
+  lang: jsonc
+  config: default
+  source: |
+    {
+      // @need req: JSON setting
+      // :id: REQ_JSONC
+      //
+      // The value is a port number.
+      // @endneed
+      "port": 8080
+    }
+
+python_hash_run:
+  # A run of Python # comments forms one block; the open line declares Markdown, so the
+  # need's doctype is ".md".
+  lang: python
+  config: default
+  source: |
+    # @need[md] impl: Exponential back-off
+    # :id: IMPL_BACKOFF
+    # :links: REQ_LOGIN_1
+    #
+    # Doubles the delay after each failure, see {need}`REQ_LOGIN_1`.
+    # @endneed
+    def backoff():
+        pass
+
+python_docstrings:
+  # A module docstring and a function docstring each hold one block: the quotes are
+  # stripped and the interior dedented as inspect.cleandoc does, so the function
+  # docstring's four-space indentation is not part of the body.
+  lang: python
+  config: default
+  source: |
+    """@need impl: Module level need
+    :id: IMPL_MODULE
+
+    The module docstring holds a need.
+    @endneed
+    """
+
+    def handler():
+        """Handle one request.
+
+        @need[md] impl: Function level need
+        :id: IMPL_FUNCTION
+
+        Written in *Markdown*.
+        @endneed
+        """
+
+yaml_hash_run:
+  # A run of YAML # comments forms one block.
+  lang: yaml
+  config: default
+  source: |
+    # @need req: Config key
+    # :id: REQ_YAML
+    #
+    # The *timeout* key is in seconds.
+    # @endneed
+    timeout: 30
+
+bash_hash_run:
+  # A run of Bash # comments forms one block. The shebang is a # comment on the row
+  # above, so it belongs to the same run; it is not an open line and changes nothing.
+  lang: bash
+  config: default
+  source: |
+    #!/bin/bash
+    # @need impl: Deploy script
+    # :id: IMPL_BASH
+    #
+    # Runs the deployment.
+    # @endneed
+    deploy() {
+      echo deploy
+    }
+
+# --- grammar ---------------------------------------------------------------------------
+
+markup_tag_md:
+  # "@need[md]" declares the body's markup: markup "md", doctype ".md".
+  lang: cpp
+  config: default
+  source: |
+    // @need[md] impl: Markdown body
+    // :id: IMPL_MD
+    //
+    // Uses *Markdown* and a [link](https://example.com).
+    // @endneed
+    void md() {}
+
+markup_tag_unknown:
+  # An unknown tag warns multiline_need_markup at the open line, and the block is still
+  # produced with the project default markup ("rst", doctype ".rst").
+  lang: cpp
+  config: default
+  source: |
+    // @need[xyz] impl: Unknown markup
+    // :id: IMPL_XYZ
+    //
+    // Rendered as the default markup.
+    // @endneed
+    void xyz() {}
+
+no_title:
+  # Nothing after "<type>:" gives an empty title (a generated title, or one taken from
+  # the content, is the consumer's business).
+  lang: cpp
+  config: default
+  source: |
+    // @need req:
+    // :id: REQ_NO_TITLE
+    //
+    // The title is empty.
+    // @endneed
+    void untitled() {}
+
+header_only:
+  # A block with options and no body: content is "" and content_start_line is null.
+  lang: cpp
+  config: default
+  source: |
+    // @need req: Header only
+    // :id: REQ_HEADER_ONLY
+    // @endneed
+    void header_only() {}
+
+option_continuation:
+  # A line indented deeper than the option line before it continues that option's
+  # value, joined with one space: links is "REQ_A, REQ_B". The next option line at the
+  # first option's indentation is a new option.
+  lang: cpp
+  config: default
+  source: |
+    // @need req: Continued option
+    // :id: REQ_CONT
+    // :links: REQ_A,
+    //    REQ_B
+    // :status: open
+    //
+    // Body.
+    // @endneed
+    void continued() {}
+
+duplicate_option:
+  # A key given twice warns multiline_need_duplicate_option at the second line, and the
+  # first value stands.
+  lang: cpp
+  config: default
+  source: |
+    // @need req: Duplicate option
+    // :id: REQ_FIRST
+    // :id: REQ_SECOND
+    //
+    // Body.
+    // @endneed
+    void duplicate() {}
+
+dedent_indented_body:
+  # The body is dedented by its common indentation (four spaces here); deeper lines keep
+  # their extra indentation, and the content_start_line is the first body line.
+  lang: python
+  config: default
+  source: |
+    # @need impl: Indented body
+    # :id: IMPL_DEDENT
+    #
+    #     The whole body is indented by four spaces.
+    #
+    #         This line keeps four more.
+    # @endneed
+    def dedented():
+        pass
+
+escaped_close:
+  # A body line starting with a backslash and the close word is body text, emitted
+  # without the backslash; the block ends at the real close line below it.
+  lang: cpp
+  config: default
+  source: |
+    // @need impl: Escaped close
+    // :id: IMPL_ESC
+    //
+    // The close word is written as
+    // \@endneed
+    // inside the body.
+    // @endneed
+    void escaped() {}
+
+nested_open:
+  # The open word starting a body line warns multiline_need_nested_open at that line and
+  # stays body text: the block ends at the first close line.
+  lang: cpp
+  config: default
+  source: |
+    // @need impl: Outer block
+    // :id: IMPL_OUTER
+    //
+    // @need impl: Inner open
+    // stays body text.
+    // @endneed
+    void nested() {}
+
+oneline_form_refused:
+  # The open and the close on one line warn multiline_need_oneline_form and produce no
+  # need: the one-line marker is the one-line form. The line is not hidden from the
+  # one-line parser, which finds no marker in it (no field separator).
+  lang: cpp
+  config: default
+  source: |
+    // @need req: Same line @endneed
+    void same_line() {}
+
+header_without_type_refused:
+  # An open line without "<type>:" warns multiline_need_header at the open line; the
+  # lines up to the close are still consumed, so the "@param a, b" body line (a one-line
+  # marker shape on the default style) yields nothing.
+  lang: cpp
+  config: default
+  source: |
+    /**
+     * @need this header has no type
+     * :id: IMPL_NO_TYPE
+     *
+     * @param a, b the inputs
+     * @endneed
+     */
+    void no_type(int a, int b) {}
+
+unterminated_run:
+  # The comment run ends before a close line: multiline_need_unterminated at the open
+  # line, and no need.
+  lang: cpp
+  config: default
+  source: |
+    // @need impl: Never closed
+    // :id: IMPL_OPEN
+    //
+    // The comment ends here.
+    void unterminated() {}
+
+run_broken_by_code:
+  # A code line ends a run: the first run's block is unterminated, and the second run,
+  # after the code line, holds a complete block.
+  lang: cpp
+  config: default
+  source: |
+    // @need req: First
+    // :id: REQ_BROKEN_FIRST
+    int x = 0;
+    // @need req: Second
+    // :id: REQ_BROKEN_SECOND
+    //
+    // Body.
+    // @endneed
+    void broken() {}
+
+run_mixed_delimiters:
+  # A change of delimiter ends a run: the /// run holding the open line has no close,
+  # and the // line holding the close is a run of its own.
+  lang: cpp
+  config: default
+  source: |
+    /// @need impl: Mixed delimiters
+    /// :id: IMPL_MIXED
+    ///
+    /// The close below uses another delimiter.
+    // @endneed
+    void mixed() {}
+
+trailing_comment_not_in_run:
+  # A line comment after code on its row neither starts nor continues a run: its open
+  # line is unterminated, and the comments below it form a run without an open line.
+  lang: cpp
+  config: default
+  source: |
+    int x = 0; // @need req: Trailing
+    // :id: REQ_TRAILING
+    //
+    // Body.
+    // @endneed
+    void trailing() {}
+
+two_blocks_in_one_block_comment:
+  # One /* */ comment holding two blocks yields two needs.
+  lang: cpp
+  config: default
+  source: |
+    /*
+     * @need impl: First of two
+     * :id: IMPL_ONE
+     * @endneed
+     *
+     * @need impl: Second of two
+     * :id: IMPL_TWO
+     * @endneed
+     */
+    void two() {}
+
+custom_sequences_and_markups:
+  # The project's own open and close words, markups table and default markup: a block
+  # without a tag gets the default "myst" (doctype ".md"), and "@need" is not an open
+  # word for this project.
+  lang: cpp
+  config:
+    multiline_needs:
+      start_sequence: "@spec"
+      end_sequence: "@endspec"
+      default_markup: myst
+      markups: {rst: ".rst", myst: ".md"}
+  source: |
+    // @spec req: Custom markers
+    // :id: REQ_CUSTOM
+    //
+    // The block uses the project's own words.
+    // @endspec
+    // @need req: Not an open line here
+    void custom() {}
+
+# --- precedence ------------------------------------------------------------------------
+
+precedence_oneline_and_need_refs:
+  # The lines of a block are hidden from the one-line and need-reference extractors: the
+  # open line (which has a comma), the "@param a, b" body line and the "@need-ids:" body
+  # line yield nothing. A one-line marker and a reference OUTSIDE the block are still
+  # found, in the same comment (DOC_1, REQ_AFTER) and in another one (OUT_1, REQ_OUT).
+  lang: cpp
+  config: default
+  source: |
+    /**
+     * @Doc comment marker, DOC_1, impl
+     * @need req: Title, with a comma
+     * :id: REQ_PREC
+     *
+     * @param a, b the inputs
+     * @need-ids: REQ_IN_BODY
+     * @endneed
+     * @need-ids: REQ_AFTER
+     */
+    void precedence(int a, int b) {}
+
+    // @Outside marker, OUT_1, impl
+    // @need-ids: REQ_OUT
+    void outside() {}
+
+# --- engine ----------------------------------------------------------------------------
+
+libclang_active_and_inactive_branches:
+  # Under the preprocessor-aware engine a block in an inactive #if branch is not
+  # extracted, and runs of // comments still form blocks: FEATURE_A is defined, so the
+  # #else branch's block is dropped.
+  lang: cpp
+  engine: libclang
+  config: default
+  defines: ["FEATURE_A=1"]
+  source: |
+    // @need impl: Always built
+    // :id: IMPL_ALWAYS_BUILT
+    // @endneed
+    void always() {}
+
+    #ifdef FEATURE_A
+    // @need impl: Feature A
+    // :id: IMPL_FEATURE_A
+    //
+    // Built when FEATURE_A is defined.
+    // @endneed
+    void feature_a() {}
+    #else
+    /**
+     * @need impl: Without feature A
+     * :id: IMPL_NO_FEATURE_A
+     * @endneed
+     */
+    void no_feature_a() {}
+    #endif

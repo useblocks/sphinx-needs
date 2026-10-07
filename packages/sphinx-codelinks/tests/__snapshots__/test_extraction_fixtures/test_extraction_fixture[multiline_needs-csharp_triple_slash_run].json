@@ -1,0 +1,20 @@
+{
+  "needs": [],
+  "need_refs": [],
+  "multiline_needs": [
+    {
+      "need": {
+        "type": "impl",
+        "title": "CSharp method",
+        "id": "IMPL_CS",
+        "content": "Returns the sum.",
+        "doctype": ".rst"
+      },
+      "markup": "rst",
+      "start_line": 3,
+      "end_line": 7,
+      "content_start_line": 6
+    }
+  ],
+  "warnings": []
+}

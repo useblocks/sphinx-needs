@@ -1,0 +1,25 @@
+{
+  "needs": [],
+  "need_refs": [],
+  "multiline_needs": [
+    {
+      "need": {
+        "type": "impl",
+        "title": "Outer block",
+        "id": "IMPL_OUTER",
+        "content": "@need impl: Inner open\nstays body text.",
+        "doctype": ".rst"
+      },
+      "markup": "rst",
+      "start_line": 1,
+      "end_line": 6,
+      "content_start_line": 4
+    }
+  ],
+  "warnings": [
+    {
+      "kind": "multiline_need_nested_open",
+      "line": 4
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "needs": [],
+  "need_refs": [],
+  "multiline_needs": [
+    {
+      "need": {
+        "type": "impl",
+        "title": "Markdown body",
+        "id": "IMPL_MD",
+        "content": "Uses *Markdown* and a [link](https://example.com).",
+        "doctype": ".md"
+      },
+      "markup": "md",
+      "start_line": 1,
+      "end_line": 5,
+      "content_start_line": 4
+    }
+  ],
+  "warnings": []
+}

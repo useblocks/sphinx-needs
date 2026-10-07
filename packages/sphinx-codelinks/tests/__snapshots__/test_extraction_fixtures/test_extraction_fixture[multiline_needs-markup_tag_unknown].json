@@ -1,0 +1,25 @@
+{
+  "needs": [],
+  "need_refs": [],
+  "multiline_needs": [
+    {
+      "need": {
+        "type": "impl",
+        "title": "Unknown markup",
+        "id": "IMPL_XYZ",
+        "content": "Rendered as the default markup.",
+        "doctype": ".rst"
+      },
+      "markup": "rst",
+      "start_line": 1,
+      "end_line": 5,
+      "content_start_line": 4
+    }
+  ],
+  "warnings": [
+    {
+      "kind": "multiline_need_markup",
+      "line": 1
+    }
+  ]
+}

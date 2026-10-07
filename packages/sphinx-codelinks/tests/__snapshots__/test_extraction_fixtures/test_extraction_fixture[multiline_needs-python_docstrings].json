@@ -1,0 +1,33 @@
+{
+  "needs": [],
+  "need_refs": [],
+  "multiline_needs": [
+    {
+      "need": {
+        "type": "impl",
+        "title": "Module level need",
+        "id": "IMPL_MODULE",
+        "content": "The module docstring holds a need.",
+        "doctype": ".rst"
+      },
+      "markup": "rst",
+      "start_line": 1,
+      "end_line": 5,
+      "content_start_line": 4
+    },
+    {
+      "need": {
+        "type": "impl",
+        "title": "Function level need",
+        "id": "IMPL_FUNCTION",
+        "content": "Written in *Markdown*.",
+        "doctype": ".md"
+      },
+      "markup": "md",
+      "start_line": 11,
+      "end_line": 15,
+      "content_start_line": 14
+    }
+  ],
+  "warnings": []
+}

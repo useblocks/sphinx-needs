@@ -1,0 +1,20 @@
+{
+  "needs": [],
+  "need_refs": [],
+  "multiline_needs": [
+    {
+      "need": {
+        "type": "impl",
+        "title": "Triple slash run",
+        "id": "IMPL_TRIPLE",
+        "content": "Doxygen line comments.",
+        "doctype": ".rst"
+      },
+      "markup": "rst",
+      "start_line": 1,
+      "end_line": 5,
+      "content_start_line": 4
+    }
+  ],
+  "warnings": []
+}

@@ -1,0 +1,20 @@
+{
+  "needs": [],
+  "need_refs": [],
+  "multiline_needs": [
+    {
+      "need": {
+        "type": "impl",
+        "title": "Line comment run",
+        "id": "IMPL_LINE_RUN",
+        "content": "First paragraph.\n\nSecond paragraph after a blank comment line.",
+        "doctype": ".rst"
+      },
+      "markup": "rst",
+      "start_line": 1,
+      "end_line": 7,
+      "content_start_line": 4
+    }
+  ],
+  "warnings": []
+}

@@ -1,0 +1,33 @@
+{
+  "needs": [],
+  "need_refs": [],
+  "multiline_needs": [
+    {
+      "need": {
+        "type": "impl",
+        "title": "First of two",
+        "id": "IMPL_ONE",
+        "content": "",
+        "doctype": ".rst"
+      },
+      "markup": "rst",
+      "start_line": 2,
+      "end_line": 4,
+      "content_start_line": null
+    },
+    {
+      "need": {
+        "type": "impl",
+        "title": "Second of two",
+        "id": "IMPL_TWO",
+        "content": "",
+        "doctype": ".rst"
+      },
+      "markup": "rst",
+      "start_line": 6,
+      "end_line": 8,
+      "content_start_line": null
+    }
+  ],
+  "warnings": []
+}

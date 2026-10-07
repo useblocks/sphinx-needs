@@ -1,0 +1,21 @@
+{
+  "needs": [],
+  "need_refs": [],
+  "multiline_needs": [
+    {
+      "need": {
+        "type": "impl",
+        "title": "Exponential back-off",
+        "id": "IMPL_BACKOFF",
+        "links": "REQ_LOGIN_1",
+        "content": "Doubles the delay after each failure, see {need}`REQ_LOGIN_1`.",
+        "doctype": ".md"
+      },
+      "markup": "md",
+      "start_line": 1,
+      "end_line": 6,
+      "content_start_line": 5
+    }
+  ],
+  "warnings": []
+}

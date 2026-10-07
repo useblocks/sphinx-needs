@@ -1,0 +1,20 @@
+{
+  "needs": [],
+  "need_refs": [],
+  "multiline_needs": [
+    {
+      "need": {
+        "type": "impl",
+        "title": "Escaped close",
+        "id": "IMPL_ESC",
+        "content": "The close word is written as\n@endneed\ninside the body.",
+        "doctype": ".rst"
+      },
+      "markup": "rst",
+      "start_line": 1,
+      "end_line": 7,
+      "content_start_line": 4
+    }
+  ],
+  "warnings": []
+}

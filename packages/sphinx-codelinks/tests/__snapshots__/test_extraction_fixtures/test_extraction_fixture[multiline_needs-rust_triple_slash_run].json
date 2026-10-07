@@ -1,0 +1,20 @@
+{
+  "needs": [],
+  "need_refs": [],
+  "multiline_needs": [
+    {
+      "need": {
+        "type": "impl",
+        "title": "Rust function",
+        "id": "IMPL_RUST",
+        "content": "Parses the input.",
+        "doctype": ".rst"
+      },
+      "markup": "rst",
+      "start_line": 1,
+      "end_line": 5,
+      "content_start_line": 4
+    }
+  ],
+  "warnings": []
+}

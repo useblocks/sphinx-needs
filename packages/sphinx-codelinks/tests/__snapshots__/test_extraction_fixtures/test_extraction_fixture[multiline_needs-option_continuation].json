@@ -1,0 +1,22 @@
+{
+  "needs": [],
+  "need_refs": [],
+  "multiline_needs": [
+    {
+      "need": {
+        "type": "req",
+        "title": "Continued option",
+        "id": "REQ_CONT",
+        "links": "REQ_A, REQ_B",
+        "status": "open",
+        "content": "Body.",
+        "doctype": ".rst"
+      },
+      "markup": "rst",
+      "start_line": 1,
+      "end_line": 8,
+      "content_start_line": 7
+    }
+  ],
+  "warnings": []
+}

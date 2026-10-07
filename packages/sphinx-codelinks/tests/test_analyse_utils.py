@@ -1,4 +1,4 @@
-# @Test suite for tree-sitter parsing utilities and language support, TEST_LANG_1, test, [IMPL_LANG_1, IMPL_EXTR_1, IMPL_RST_1]
+# @Test suite for tree-sitter parsing utilities and language support, TEST_LANG_1, test, [IMPL_LANG_1, IMPL_EXTR_1]
 import shutil
 import subprocess
 from pathlib import Path
@@ -16,7 +16,6 @@ from tree_sitter import Language, Parser, Query
 from tree_sitter import Node as TreeSitterNode
 
 from sphinx_codelinks.analyse import utils
-from sphinx_codelinks.config import UNIX_NEWLINE
 from sphinx_codelinks.source_discover.config import CommentType
 
 
@@ -1294,70 +1293,6 @@ def test_get_current_rev_detached_head(tmp_path: Path) -> None:
     (git_root / ".git" / "HEAD").write_text(f"{sha}\n")
 
     assert utils.get_current_rev(git_root) == sha
-
-
-@pytest.mark.parametrize(
-    ("text", "leading_sequences", "result"),
-    [
-        (
-            """
-*    some text in a comment
-*    some text in a comment
-*
-""",
-            ["*"],
-            """
-    some text in a comment
-    some text in a comment
-
-""",
-        ),
-    ],
-)
-def test_remove_leading_sequences(text, leading_sequences, result):
-    clean_text = utils.remove_leading_sequences(text, leading_sequences)
-    assert clean_text == result
-
-
-@pytest.mark.parametrize(
-    ("text", "rst_markers", "rst_text", "positions"),
-    [
-        (
-            """
-@rst
-.. impl:: multiline rst text
-   :id: IMPL_71
-@endrst
-""",
-            ["@rst", "@endrst"],
-            f""".. impl:: multiline rst text{UNIX_NEWLINE}   :id: IMPL_71{UNIX_NEWLINE}""",
-            {"row_offset": 1, "start_idx": 6, "end_idx": 51},
-        ),
-        (
-            """
-@rst.. impl:: oneline rst text@endrst
-""",
-            ["@rst", "@endrst"],
-            """.. impl:: oneline rst text""",
-            {"row_offset": 1, "start_idx": 5, "end_idx": 31},
-        ),
-        (
-            # a one-line block after a comment prefix: the text before the start
-            # marker holds no newline, so the block is on the comment's first row
-            """// @rst .. impl:: oneline rst text @endrst""",
-            ["@rst", "@endrst"],
-            """ .. impl:: oneline rst text """,
-            {"row_offset": 0, "start_idx": 7, "end_idx": 35},
-        ),
-    ],
-)
-def test_extract_rst(text, rst_markers, rst_text, positions):
-    extracted_rst = utils.extract_rst(text, rst_markers[0], rst_markers[1])
-    assert extracted_rst is not None
-    assert extracted_rst["rst_text"] == rst_text
-    assert extracted_rst["row_offset"] == positions["row_offset"]
-    assert extracted_rst["start_idx"] == positions["start_idx"]
-    assert extracted_rst["end_idx"] == positions["end_idx"]
 
 
 # ========== YAML-specific tests ==========

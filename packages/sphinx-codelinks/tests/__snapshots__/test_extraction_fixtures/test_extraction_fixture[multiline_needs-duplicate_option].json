@@ -1,0 +1,25 @@
+{
+  "needs": [],
+  "need_refs": [],
+  "multiline_needs": [
+    {
+      "need": {
+        "type": "req",
+        "title": "Duplicate option",
+        "id": "REQ_FIRST",
+        "content": "Body.",
+        "doctype": ".rst"
+      },
+      "markup": "rst",
+      "start_line": 1,
+      "end_line": 6,
+      "content_start_line": 5
+    }
+  ],
+  "warnings": [
+    {
+      "kind": "multiline_need_duplicate_option",
+      "line": 3
+    }
+  ]
+}

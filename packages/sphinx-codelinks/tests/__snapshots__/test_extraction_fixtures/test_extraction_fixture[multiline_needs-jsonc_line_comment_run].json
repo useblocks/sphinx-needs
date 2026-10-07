@@ -1,0 +1,20 @@
+{
+  "needs": [],
+  "need_refs": [],
+  "multiline_needs": [
+    {
+      "need": {
+        "type": "req",
+        "title": "JSON setting",
+        "id": "REQ_JSONC",
+        "content": "The value is a port number.",
+        "doctype": ".rst"
+      },
+      "markup": "rst",
+      "start_line": 2,
+      "end_line": 6,
+      "content_start_line": 5
+    }
+  ],
+  "warnings": []
+}
