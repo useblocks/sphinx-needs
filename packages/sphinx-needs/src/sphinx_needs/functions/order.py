@@ -842,16 +842,17 @@ def _column_on_cycle(
         for target in edges[member] or ()
         if target in inside and isinstance(column := vertices[target], Column)
     ]
-    return min(
-        read,
-        key=lambda r: (
-            r[1] is None,
-            r[0].candidates is None,
-            r[1] or "",
-            r[0].candidates or "",
-            r[0].field,
-        ),
-        default=None,
+    return min(read, key=_column_rank) if read else None
+
+
+def _column_rank(read: tuple[Column, str | None]) -> tuple[bool, bool, str, str, str]:
+    column, reason = read
+    return (
+        reason is None,
+        column.candidates is None,
+        reason or "",
+        column.candidates or "",
+        column.field,
     )
 
 
