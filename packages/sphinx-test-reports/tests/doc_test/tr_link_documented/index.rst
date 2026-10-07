@@ -18,3 +18,10 @@ A test-file carries no ``classname``: the field is registered on every need, wit
    :classname: sphinxcontrib.test_reports.test_reports
    :case: FLAKE8
    :links: [[tr_link('classname', 'title')]]
+
+The other direction: the targets are compared on ``classname``, which only the test-case
+carries -- every other need, the test-file included, is a target whose value is ``None``.
+
+.. spec:: sphinxcontrib.test_reports.test_reports
+   :id: TESTSPEC_002
+   :links: [[tr_link('title', 'classname')]]

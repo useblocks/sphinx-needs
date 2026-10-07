@@ -26,8 +26,11 @@ def test_the_documented_usage_builds_without_a_warning(test_app):
     assert app._warning.getvalue() == ""
 
     needs = dict(SphinxNeedsData(app.env).get_needs_view())
-    # the test-case links the need whose title is its classname
-    assert needs["TESTLINK_1"]["links"] == ["TESTSPEC_001"]
+    # the test-case links the needs whose title is its classname
+    assert needs["TESTLINK_1"]["links"] == ["TESTSPEC_001", "TESTSPEC_002"]
     # the test-file has no classname, so it links nothing -- and raises nothing
     assert needs["TESTFILE_1"]["links"] == []
     assert needs["TESTFILE_1"]["classname"] is None
+    # compared on the TARGET's classname: only the test-case has one, so it is the one
+    # link, and the needs whose classname is None (the test-file, both specs) are skipped
+    assert needs["TESTSPEC_002"]["links"] == ["TESTLINK_1"]
