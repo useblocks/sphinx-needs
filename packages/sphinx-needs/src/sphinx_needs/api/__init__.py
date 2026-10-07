@@ -14,6 +14,7 @@ from .need import (
     generate_need,
     generate_need_id,
     get_needs_view,
+    ingest_need_record,
 )
 
 __all__ = (
@@ -29,4 +30,5 @@ __all__ = (
     "generate_need_id",
     "get_need_types",
     "get_needs_view",
+    "ingest_need_record",
 )

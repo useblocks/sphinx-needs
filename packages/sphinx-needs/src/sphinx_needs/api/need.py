@@ -4,7 +4,7 @@ import hashlib
 import os
 import re
 import warnings
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from copy import copy, deepcopy
 from dataclasses import replace
@@ -21,6 +21,7 @@ from sphinx.environment import BuildEnvironment
 from sphinx_needs._jinja import render_template_string
 from sphinx_needs.config import NeedsSphinxConfig, NeedType
 from sphinx_needs.data import (
+    NeedsCoreFields,
     NeedsInfoType,
     NeedsPartType,
     SphinxNeedsData,
@@ -773,6 +774,108 @@ def add_need(
         content_parser=content_parser,
         content_source=content_source,
     )
+
+
+def _import_key_sets(needs_schema: FieldsSchema) -> tuple[set[str], set[str]]:
+    """The keys a need record may carry in this project, and those never imported.
+
+    :return: ``(known, omitted)``: every need field the project knows (core fields,
+        links and their ``_back`` names, extra fields, and the legacy ``full_title``),
+        and the subset that is computed rather than imported.
+    """
+    link_names = list(needs_schema.iter_link_field_names())
+    known = {
+        "full_title",  # legacy
+        *NeedsCoreFields,
+        *link_names,
+        *(f"{x}_back" for x in link_names),
+        *needs_schema.iter_extra_field_names(),
+    }
+    omitted = {
+        "full_title",  # legacy
+        *(k for k, v in NeedsCoreFields.items() if v.get("exclude_import")),
+        *(f"{x}_back" for x in link_names),
+    }
+    return known, omitted
+
+
+def _need_record_params(
+    record: Mapping[str, Any], needs_schema: FieldsSchema
+) -> tuple[dict[str, Any], set[str]]:
+    """The ``add_need`` keyword arguments for a needs.json-style record.
+
+    :return: The arguments, and the record's keys the project does not know (dropped).
+    """
+    params = dict(record)
+    if "description" in params and not params.get("content"):
+        # legacy versions of sphinx-needs changed "description" to "content" when outputting to json
+        params["content"] = params.pop("description")
+    # Remove unknown keys, as they may be defined in the source system, but not in this
+    # project, and the keys that are computed rather than imported
+    known, omitted = _import_key_sets(needs_schema)
+    unknown: set[str] = set()
+    for key in list(params):
+        if key not in known:
+            unknown.add(key)
+            del params[key]
+        elif key in omitted:
+            del params[key]
+    params["need_type"] = params.pop("type", "")
+    return params, unknown
+
+
+def ingest_need_record(
+    app: Sphinx,
+    state: RSTState,
+    record: Mapping[str, Any],
+    *,
+    need_source: NeedItemSourceProtocol,
+    content_markup: str | None = None,
+    content_source: tuple[str, int] | None = None,
+    allow_type_coercion: bool = True,
+) -> tuple[list[nodes.Node], set[str]]:
+    """Create one need from a needs.json-style record.
+
+    This is the path for needs that come from outside the page they are rendered on;
+    :ref:`needimport <needimport>` creates each of its needs through it.
+
+    ``record`` holds the keys a need object has in ``needs.json``: ``type``, ``title``,
+    ``id``, fields and links as authored, ``content``, ``doctype``, and so on.
+    It is not modified. A legacy ``description`` is taken as the ``content`` when that is
+    empty; keys the project does not know are dropped and returned; keys that are
+    computed rather than imported (such as ``docname``, ``lineno``, ``full_title`` or
+    the ``<link>_back`` names) are dropped silently. The rest is passed to
+    :func:`add_need`, with ``type`` as its ``need_type``.
+
+    :param app: The Sphinx application.
+    :param state: The parser state of the document the need is rendered in.
+    :param record: The need record.
+    :param need_source: Where the need is recorded as coming from, e.g. a
+        ``NeedItemSourceImport``.
+    :param content_markup: Passed to :func:`add_need`: the source suffix of the markup
+        the record's ``content`` is written in. If the record has no ``doctype``, the
+        need records this.
+    :param content_source: Passed to :func:`add_need`: ``(path, first_line)`` of the
+        content.
+    :param allow_type_coercion: Passed to :func:`add_need`.
+    :return: The need's nodes, and the set of the record's keys that were dropped as
+        unknown to the project (the caller decides whether to warn about them).
+    :raises InvalidNeedException: What :func:`add_need` raises; the caller decides
+        how to report it.
+
+    .. versionadded:: 9.0.0
+    """
+    params, unknown = _need_record_params(record, SphinxNeedsData(app.env).get_schema())
+    need_nodes = add_need(
+        app,
+        state,
+        need_source=need_source,
+        content_markup=content_markup,
+        content_source=content_source,
+        allow_type_coercion=allow_type_coercion,
+        **params,
+    )
+    return need_nodes, unknown
 
 
 def _template_parse_offset(data: NeedItem) -> int:
