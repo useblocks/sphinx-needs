@@ -2,6 +2,7 @@
 Collection of common sphinx-needs functions for dynamic values
 
 .. note:: The function parameters ``app``, ``need``, ``needs`` are set automatically and can not be overridden by user.
+   So is the keyword-only ``reads`` of the functions marked ``records_reads``.
 """
 
 from __future__ import annotations
@@ -21,7 +22,7 @@ from sphinx_needs.filter_common import (
     filter_needs_and_parts,
     filter_single_need,
 )
-from sphinx_needs.functions.functions import _note_read, _open_reads
+from sphinx_needs.functions.functions import UnresolvedReads, records_reads
 from sphinx_needs.logging import log_warning
 from sphinx_needs.need_item import NeedItem, NeedLink, NeedPartItem
 from sphinx_needs.nodes import Need
@@ -76,6 +77,7 @@ def echo(
     return text
 
 
+@records_reads
 def copy(
     app: Sphinx,
     need: NeedItem | NeedPartItem | None,
@@ -85,6 +87,8 @@ def copy(
     lower: bool = False,
     upper: bool = False,
     filter: str | None = None,
+    *,
+    reads: UnresolvedReads | None = None,
 ) -> Any:
     """
     Copies the value of one need option to another
@@ -168,7 +172,8 @@ def copy(
     if option not in need:
         raise ValueError(f"Option {option} not found in need {need['id']}")
 
-    _note_read(need, option)
+    if reads is not None:
+        reads.note_read(need, option)
     value = need[option]
 
     if lower:
@@ -179,6 +184,7 @@ def copy(
     return value
 
 
+@records_reads
 def check_linked_values(
     app: Sphinx,
     need: NeedItem | NeedPartItem | None,
@@ -188,6 +194,8 @@ def check_linked_values(
     search_value: Any,
     filter_string: str | None = None,
     one_hit: bool = False,
+    *,
+    reads: UnresolvedReads | None = None,
 ) -> Any:
     """
     Returns a specific value, if for all linked needs a given option has a given value.
@@ -281,7 +289,8 @@ def check_linked_values(
         raise ValueError("No need given for check_linked_values")
 
     needs_config = NeedsSphinxConfig(app.config)
-    _note_read(need, "links")
+    if reads is not None:
+        reads.note_read(need, "links")
     links = need["links"]
     if not isinstance(search_value, list):
         search_value = [search_value]
@@ -290,7 +299,8 @@ def check_linked_values(
         need = needs[link]
         # noted before the filter, which may read a computed field itself and so keep
         # or drop this need by the order the needs are resolved in
-        _note_read(need, search_option)
+        if reads is not None:
+            reads.note_read(need, search_option)
         if filter_string:
             try:
                 if not filter_single_need(need, needs_config, filter_string):
@@ -312,6 +322,7 @@ def check_linked_values(
     return result
 
 
+@records_reads
 def calc_sum(
     app: Sphinx,
     need: NeedItem | NeedPartItem | None,
@@ -319,6 +330,8 @@ def calc_sum(
     option: str,
     filter: str | None = None,
     links_only: bool = False,
+    *,
+    reads: UnresolvedReads | None = None,
 ) -> float:
     """
     Sums the values of a given option in filtered needs up to single number.
@@ -395,10 +408,8 @@ def calc_sum(
         raise ValueError("No need given for calc_sum")
 
     needs_config = NeedsSphinxConfig(app.config)
-    # the record of the call the pass is running, fetched once: None outside the pass
-    reads = _open_reads()
-    if links_only:
-        _note_read(need, "links")
+    if links_only and reads is not None:
+        reads.note_read(need, "links")
     # float addition is not associative, so the order decides a total's last digits:
     # ascending need id (plain string order, not the natural order links are sorted
     # in), so a total does not depend on the order the needs reached the environment;
@@ -414,8 +425,8 @@ def calc_sum(
     for check_need in check_needs:
         # noted before the filter, which may read a computed field itself and so keep
         # or drop this need by the order the needs are resolved in
-        if reads is not None and check_need.carries_dynamic_value(option):
-            reads.note(option, check_need.id)
+        if reads is not None:
+            reads.note_read(check_need, option)
         if filter:
             try:
                 if not filter_single_need(check_need, needs_config, filter):
