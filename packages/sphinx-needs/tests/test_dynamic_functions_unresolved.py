@@ -1276,6 +1276,44 @@ def test_ubcode_fixture(test_app):
     ]
 
 
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "needs", "srcdir": "doc_test/doc_df_own_field_copy"}],
+    indirect=True,
+)
+def test_ubcode_own_field_copy_fixture(test_app):
+    """ubCode's ``dynamic_functions_own_field_copy`` fixture: the values of its scratch build.
+
+    The pages and ``ubproject.toml`` are the fixture's, verbatim. ``BACKLINK`` copies
+    its own back links into an array field, and no need links to it: the empty list,
+    ``[]``, as a back link list with no link is. (ubCode's phase 1 stores ``null`` for
+    it until its own fix; every other value here is the one it stores.)
+    """
+    app = test_app
+    app.build()
+    needs = _built_needs(app)
+    assert {
+        need_id: {field: needs[need_id][field] for field in fields}
+        for need_id, fields in {
+            "OWN_BESIDE": ["summary"],
+            "OWN_EXTENDED": ["summary"],
+            "MIRROR_POS": ["summary"],
+            "BACKLINK": ["incoming"],
+            "OWN_MOVED": ["line"],
+        }.items()
+    } == {
+        "OWN_BESIDE": {"summary": "open"},
+        "OWN_EXTENDED": {"summary": "open"},
+        "MIRROR_POS": {"summary": "open"},
+        "BACKLINK": {"incoming": []},
+        "OWN_MOVED": {"line": 4},
+    }
+    assert build_warnings(app) == [
+        'WARNING: Config option "needs_extra_options" is deprecated. '
+        'Please use "needs_fields" instead. [needs.deprecated]',
+    ]
+
+
 # -- T12: who is handed the record ---------------------------------------------------
 #
 # The pass hands each call's record to the built-ins marked ``records_reads``, as their

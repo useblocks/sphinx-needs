@@ -1,0 +1,11 @@
+"$schema" = "https://ubcode.useblocks.com/ubproject.schema.json"
+
+# `line` is an integer and `incoming` a list of strings: a call's result must
+# have its field's type to be stored at all, so `copy('lineno')` lands only in an
+# integer field and a backlink list only in an array field.
+[needs]
+extra_options = [
+  "summary",
+  { name = "line", schema = { type = "integer" } },
+  { name = "incoming", schema = { type = "array", items = { type = "string" } } },
+]
