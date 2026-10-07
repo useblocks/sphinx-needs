@@ -230,6 +230,18 @@ Bug fixes
   and the build goes on. This is also the path of a service skipped for its
   configuration, above. ``NeedsServiceException`` now derives from ``Exception``.
 
+- 🐛 A :ref:`needextend` option whose dynamic or variant function cannot be parsed is a
+  warning instead of crashing the build **(changed output)** (:issue:`2109`)
+
+  A value such as ``:status: [[copy(need.id)]]`` ended the build with an uncaught
+  ``FunctionParsingException``, because a ``need.<attr>`` argument is not admitted where
+  the directive parses its options; any other dynamic function that cannot be parsed, and a
+  variant function that cannot be parsed (``VariantParsingException``), ended it the same
+  way. Each is now one ``needs.needextend`` warning at the directive, naming the option and
+  the parse error, and that option is skipped while the directive's other options still
+  apply, as for a value that cannot be converted. Whether a ``need.<attr>`` argument should
+  be admitted in a ``needextend`` value is a separate question, unchanged here.
+
 .. _`release:8.5.0`:
 
 8.5.0
