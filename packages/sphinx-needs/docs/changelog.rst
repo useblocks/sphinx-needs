@@ -49,20 +49,42 @@ Improvements
   The undocumented warning ``if`` gives for a condition whose result is not a bool is
   now listed in its documentation.
 
-- ✨ A ``[[…]]`` or ``<<…>>`` that reads a value another one computes in the same pass
-  is reported as ``needs.derive_unresolved`` **(changed output)** (:issue:`2064`, :pr:`2080`)
+- ✨ Dynamic functions and variants are computed in dependency order,
+  and a value that cannot be computed is reported **(changed output)**
+  (:issue:`2064`, :pr:`2080`, :pr:`2081`, :pr:`NNNN`)
 
-  Dynamic functions and variants are resolved in one pass, need by need, so a
-  :ref:`copy <copy>`, :ref:`calc_sum <calc_sum>`, :ref:`check_linked_values <check_linked_values>`
-  or variant condition that reads a field which itself carries a ``[[…]]``, ``<<…>>`` or ``<{…}>``
-  sees the computed value or the unresolved one depending on the order the needs were read in,
-  which changes with document names, with incremental builds and with ``-j``.
-  Each such read is now a warning, once per reading call and at the reading need,
-  whether or not the value happened to be computed already (see :ref:`needs_derive_unresolved`).
-  It is a new warning, so a ``-W`` build with such a read fails until the read is changed
-  or ``suppress_warnings = ["needs.derive_unresolved"]`` is set.
-  It gives notice ahead of a later release that resolves these values in dependency order
-  (:issue:`2030`); `ubCode`_ reports the same reads.
+  A ``[[…]]``, ``<<…>>`` or ``<{…}>`` is now computed after every value it reads,
+  so a chain of :ref:`copy <copy>` calls, a :ref:`calc_sum <calc_sum>` over computed summands,
+  a :ref:`check_linked_values <check_linked_values>` over computed values
+  and a variant condition naming a computed field give the chained value in every build,
+  whatever the document names, the documents an incremental build re-read, ``-j``,
+  the order of the options in a directive, or the order the fields are declared in.
+  The link fields are computed first, then the back links are built, then every other field,
+  so ``[[copy("links_back")]]`` reads the need's back links, in need-id order,
+  and a ``calc_sum`` with ``links_only`` reads the links a ``[[…]]`` computes.
+  Your own :ref:`functions <needs_functions>` run after the built-in ones of the same step.
+  Link conditions are checked once every value is computed, against the complete back links.
+  The new :ref:`needs_processing_order` section documents the whole order,
+  from the ``needextend`` directives to the constraints.
+
+  A value that reads itself, directly or through other computed values, is left empty
+  and reported as ``needs.derive_cycle`` (:ref:`needs_derive_cycle`);
+  this includes ``:hours: [[calc_sum("hours")]]``, whose sum includes its own need,
+  and a variant whose condition reads the field it sets.
+  A read that cannot be ordered is reported as ``needs.derive_scope`` (:ref:`needs_derive_scope`):
+  a link field's ``[[…]]`` reading another computed field or a back link,
+  a ``need.<field>`` argument that selects what its call reads while the field is computed in the same step,
+  a ``needextend`` filter naming a computed field,
+  and a built-in function reading a field your own function computes.
+  `ubCode`_ computes and reports the same.
+  The notice warning ``needs.derive_unresolved`` of the unreleased :pr:`2080`, which reported such reads,
+  is gone, and a ``suppress_warnings`` entry naming it is a no-op.
+
+  A ``need.<field>`` argument is accepted in field and link values, a ``needextend``'s included
+  (:ref:`argument <dynamic_functions_need_arguments>`); a need that used one was not created.
+  A ``None`` result, such as a ``copy`` of an unset field or a failed ``check_linked_values``,
+  adds nothing to a field: alone in a nullable string or array field it leaves the field unset,
+  where it was stored as the text ``"None"``, or as ``[None]``, which schema validation then refused.
 
 - ✨ ``needextend`` gains ``:extend_priority:`` (default 500, lower applied first)
   (:issue:`1658`, :issue:`2064`, :pr:`2083`)
@@ -72,14 +94,6 @@ Improvements
   so a project that never sets the option keeps its order,
   and where two set the same option the higher priority is applied last and wins.
   The priority is set on each ``needextend``; there is no project-wide setting for it.
-
-- 📚 The order in which ``needextend``, dynamic functions, links and constraints are processed
-  is documented (:issue:`2064`, :pr:`2081`)
-
-  The new :ref:`needs_processing_order` section replaces the one restriction documented before
-  (a dynamic function cannot read back links), and says that a ``needextend`` filter never sees a computed value,
-  that the fields of a need are computed in a fixed order whatever the order of its options,
-  and that a variant condition sees only the fields computed before its own.
 
 - ✨ :func:`~sphinx_needs.api.need.generate_need_id` returns the id
   :func:`~sphinx_needs.api.need.add_need` assigns to a need that is given none
@@ -94,6 +108,27 @@ Improvements
 
 Breaking changes
 ................
+
+- ‼️ Computed values are computed in dependency order **(changed output)**
+  (:issue:`2064`, :pr:`NNNN`)
+
+  Where a ``[[…]]``, ``<<…>>`` or ``<{…}>`` read a value another one computes,
+  its result depended on the order the needs were read in,
+  and was often the unresolved ``None`` (stored as the text ``"None"`` in a string field),
+  an empty value, or a summand silently dropped.
+  **It is now the chained value, in every build, so a project that relied on the old value gets another one:**
+  a chain gives its last value; a sum includes its computed summands;
+  a variant condition sees the computed fields of its need, whatever their declaration order;
+  ``[[copy("links_back")]]`` reads the back links instead of ``[]``;
+  your own functions run after the built-in ones, so they see computed values;
+  and a need that used a ``need.<field>`` argument is created.
+  **A cycle and a read that cannot be ordered are new warnings, so a** ``-W`` **build with one fails:**
+  a cycle (``needs.derive_cycle``), including a ``calc_sum`` over every need written into the summed field itself
+  and a variant whose condition reads the field it sets, is left empty;
+  a read that cannot be ordered (``needs.derive_scope``), notably a ``needextend`` filter naming a computed field,
+  which never matched the computed value anyway, reads the value from before it is computed.
+  To keep such a build green while you fix them,
+  add ``"needs.derive_cycle"`` and ``"needs.derive_scope"`` to ``suppress_warnings``.
 
 - ‼️ ``needextend`` filters are evaluated against the needs as written **(changed output)**
   (:issue:`1658`, :issue:`2064`, :pr:`2083`, :pr:`2127`)

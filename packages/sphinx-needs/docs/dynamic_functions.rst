@@ -52,6 +52,23 @@ Inside a need's **content**, the :ref:`ndf` role is the way to call a dynamic fu
    The ``[[...]]`` syntax is no longer interpreted in a need's content, where it is now
    plain text as in any other Sphinx document; use the :ref:`ndf` role instead.
 
+.. _dynamic_functions_need_arguments:
+
+An argument can be a field of the need the call is in, written ``need.<field>``:
+``:summary: [[copy("summary", need.parent)]]`` copies ``summary`` from the need whose id the need's ``parent`` holds.
+Where such an argument selects what the call reads
+(the need of :ref:`copy <copy>` or :ref:`links_from_content <links_content>`,
+the field of ``copy``, :ref:`calc_sum <calc_sum>` or :ref:`check_linked_values <check_linked_values>`,
+a ``filter``, or ``links_only``),
+its field must be final before the call is computed (see :ref:`needs_processing_order`):
+written in the need or by a ``needextend``, or a link field read from any field that is not one.
+Otherwise the call is not run, its field is left empty, and ``needs.derive_scope`` says so (:ref:`needs_derive_scope`).
+
+.. versionchanged:: 9.0.0
+
+   ``need.<field>`` arguments are accepted in field and link values, a ``needextend``'s included;
+   a need that used one was not created.
+
 Built-in functions
 -------------------
 
@@ -61,8 +78,8 @@ The following functions are available by default.
 
    The parameters ``app``, ``need`` and ``needs`` of the following functions are set automatically.
    So is ``reads``, the keyword-only parameter of :ref:`copy <copy>`, :ref:`check_linked_values <check_linked_values>`
-   and :ref:`calc_sum <calc_sum>` through which they report the values they read that are computed in the same pass
-   (see :ref:`needs_derive_unresolved`). It is reserved: do not give it in a call (doing so fails the call).
+   and :ref:`calc_sum <calc_sum>` through which they report the reads that cannot be ordered
+   (see :ref:`needs_derive_scope`). It is reserved: do not give it in a call (doing so fails the call).
 
 test
 ~~~~
@@ -147,82 +164,135 @@ giving its ``name``.
 Processing order
 ~~~~~~~~~~~~~~~~
 
+.. versionchanged:: 9.0.0
+
+   The ``[[…]]``, ``<<…>>`` and ``<{…}>`` are computed in dependency order,
+   instead of need by need in the order the needs were read.
+
 Once every document has been read, and before any page is written, the needs are post-processed in this fixed order:
 
 1. The :ref:`needextend` directives are applied, sorted by :ref:`extend priority <needextend_extend_priority>` (lower first),
    then by document name and then by line.
    Each filter sees the needs as written, before any extend is applied (:ref:`needextend_as_written`),
-   so it never sees the change of another extend,
-   nor the result of a ``[[…]]``, ``<<…>>`` or ``<{…}>``, which are computed in step 2.
-   A ``needextend`` may itself set a field it can modify to a ``[[…]]`` or ``<<…>>``, which step 2 evaluates.
-2. ``[[…]]``, ``<<…>>`` and ``<{…}>`` are evaluated need by need, and within a need in a fixed field order,
-   whatever the order of the options in the directive: the core fields, then the :ref:`needs_fields`
-   in the order they are declared, then the :ref:`link fields <needs_links>`,
-   and last any field that a ``needextend`` turned into a ``[[…]]`` or ``<<…>>``.
-   So a dynamic function or variant condition reading a field computed in this step may read it before it is computed
-   (see :ref:`which of these reads are reported <needs_derive_unresolved>` as ``needs.derive_unresolved``).
-   A :ref:`calc_sum <calc_sum>` over the whole project adds the needs in need-id order,
-   and a :ref:`copy <copy>` with a ``filter`` copies from the match with the lowest id.
-3. Back links are computed, link conditions are checked, and links to unknown needs are reported.
-   As a ``[[…]]`` can change outgoing links, back links are computed only after step 2,
-   so no ``[[…]]`` or ``<<…>>`` can read one: they are empty while step 2 runs.
-4. Constraints are checked (:ref:`needs_constraints`).
+   so it never sees the change of another extend, nor the value of a ``[[…]]``, ``<<…>>`` or ``<{…}>``;
+   a filter that names a field such a value is computed for is reported (:ref:`needs_derive_scope`).
+   A ``needextend`` may itself set a field it can modify to a ``[[…]]`` or ``<<…>>``,
+   which is then computed like one written in the need; until it is, the field holds its empty value.
+2. The ``[[…]]``, ``<<…>>`` and ``<{…}>`` of the :ref:`link fields <needs_links>` are computed,
+   each after the link fields it reads, and those that call your own :ref:`functions <needs_functions>` last.
+3. The back links are built from the links of steps 1 and 2, each back link list in need-id order.
+4. Every other ``[[…]]``, ``<<…>>`` and ``<{…}>`` is computed, each after every value it reads
+   (a field of its own need or of another need, a field of a linked need, a back link),
+   and those that call your own functions last.
+5. Link conditions are checked, against the computed values and the complete back links,
+   and links to unknown needs are reported.
+   Then the link lists are sorted for the output, and constraints are checked (:ref:`needs_constraints`).
    Then the needs are frozen, and :ref:`schema validation <schema_validation>`, every page,
    and the :ref:`needs_warnings` checks at the end of the build see their final values.
 
-.. _needs_derive_unresolved:
+So the value of a field does not depend on the order of the documents, on the documents an incremental build re-read,
+on ``-j``, on the order of the options in a directive, or on the order the fields are declared in.
+A chain gives the chained value:
 
-Reads of a value computed in the same pass
-++++++++++++++++++++++++++++++++++++++++++
+.. code-block:: rst
 
-.. versionadded:: 9.0.0
+   .. req:: A
+      :id: REQ_A
+      :status: [[copy("status", "REQ_B")]]
 
-All ``[[…]]``, ``<<…>>`` and ``<{…}>`` are resolved in one pass
-(step 2 of the :ref:`processing order <needs_processing_order>`), need by need in the order the needs were read,
-and each result is written into its need as soon as it is computed.
-So a dynamic function or variant condition that reads a field which itself carries a ``[[…]]``, ``<<…>>`` or ``<{…}>``,
-of another need or of its own need, reads either the computed value or the value the field held before the pass
-(its empty value, or its value from before a ``needextend`` set the call),
-depending on that order: on document names, on the documents an incremental build re-reads, and on ``-j``.
+   .. req:: B
+      :id: REQ_B
+      :status: [[copy("status", "REQ_C")]]
 
-Such a read is reported as ``needs.derive_unresolved``, once per reading call, at the reading need:
+   .. req:: C
+      :id: REQ_C
+      :status: done
+
+``REQ_A`` and ``REQ_B`` are ``done`` in every build.
+
+What each built-in function reads, and so is computed after:
+
+=====================================  ==============================================================================
+call                                   reads
+=====================================  ==============================================================================
+``copy("x")``                          ``x`` of its own need (a back link too, such as ``links_back``)
+``copy("x", "ID")``                    ``x`` of the need ``ID``
+``copy("x", filter=…)``                ``x`` of the match with the lowest id
+``calc_sum("x")``                      ``x`` of every need, its own included
+``calc_sum("x", filter=…)``            ``x`` of every need the filter keeps
+``calc_sum("x", links_only=True)``     its own ``links``, and ``x`` (and the filter's fields) of each linked need
+``check_linked_values(…, "x", …)``     its own ``links``, and ``x`` (and the filter's fields) of every linked need
+``links_from_content()``               the need's content
+``<<[cond]:a, b>>``                    the fields of its own need that any of its conditions names, evaluated or not
+=====================================  ==============================================================================
+
+A ``filter`` that names only values nothing computes is evaluated before step 4, so its matches are known;
+one that names a computed field makes every need a candidate, and the call is computed after
+that field and ``x`` on every need.
+The needs of a set are read in need-id order, comparing ids as strings (``REQ_10`` comes before ``REQ_9``):
+the candidates of a ``calc_sum`` or a ``filter``, and a back link list.
+A link list is read in the order it is written, followed by the links a ``needextend`` added;
+a link written twice is read twice, so a ``calc_sum`` with ``links_only`` adds its value twice.
+The link lists are sorted, and a link written twice kept once, only in step 5.
+
+Your own functions run after every built-in function of their step, in need-id order, then by field.
+They read the values the built-in functions computed; a built-in function that reads a field your own function computes
+reads it before it is computed, which is reported (:ref:`needs_derive_scope`).
+A function of your own in a link field, such as sphinx-test-reports' ``tr_link``, runs at the end of step 2,
+so its links are in the back links of step 3.
+A later release is to let a function declare what it reads, which will order it like a built-in one.
+A ``filter`` that names ``needs``, or reads ``current_need`` by a key that is not written out,
+cannot be ordered either: its call runs with your own functions.
+
+.. _needs_derive_cycle:
+
+Cycles
+++++++
+
+A value that reads itself, directly or through other computed values, cannot be computed.
+Each field on such a cycle is left at its empty value (``None``, or for a field that is not nullable ``""``, ``0``, ``False`` or ``[]``)
+and reported as ``needs.derive_cycle``, once at each need on the cycle, naming the needs:
 
 .. code-block:: text
 
-   index.rst:8: WARNING: dynamic function 'copy' for option 'summary' read 'summary' on need 'CHAIN_B',
-   which carries a dynamic function or variant computed in the same pass:
-   the value read depends on the order the needs are resolved in [needs.derive_unresolved]
+   index.rst:4: WARNING: dynamic function 'copy' for option 'summary' is on a cycle:
+   'summary' on 2 needs (CYC_A, CYC_B); the field is left empty [needs.derive_cycle]
 
-A field carries such a value when it contains a ``[[…]]``, ``<<…>>`` or ``<{…}>`` once every ``needextend`` is applied.
-The read is reported whether or not the value happened to be computed already:
-that depends on the build's history, not on the sources,
-so reporting only the reads that saw an unresolved value would make a ``-W`` build pass or fail
-by which file was edited last.
+A value computed from a field on a cycle is computed from its empty value, and is not reported.
+A sum over every need includes the need that holds it, so ``:hours: [[calc_sum("hours")]]`` reads its own value and is a cycle;
+sum into another field, or give a ``filter`` that excludes the need.
+A ``filter`` that names a computed field makes every need a candidate,
+so it can make a cycle that the filter itself would have excluded; the message then names the filter.
+Filter on a value that is not computed, or break the cycle.
+A variant whose condition reads the field it sets, such as ``:status: <<[status == "open"]:open, closed>>``,
+is a cycle too.
 
-The reads reported are those of the built-in functions and of variant conditions:
-the field :ref:`copy <copy>` copies;
-the value of every need :ref:`calc_sum <calc_sum>` considers, whether or not its ``filter`` keeps the need,
-and, with ``links_only``, the ``links`` of its own need;
-the ``links`` of its own need and the value of each linked need :ref:`check_linked_values <check_linked_values>` reaches
-before it stops, whether or not its ``filter`` keeps the need;
-and the fields of its own need that a variant condition names, up to the first condition that holds.
-Not reported are the fields a ``filter`` argument reads (``current_need`` included),
-the reads your own :ref:`functions <needs_functions>` make, through a built-in they call or otherwise,
-and ``<{…}>``, which reads variant data rather than needs;
-:ref:`links_from_content <links_content>` reads the document, not fields.
-The :ref:`ndf` role runs after the pass, when every value is final, so nothing it reads is reported.
-A ``filter`` that reads a computed field can itself decide, by the order, which needs are read:
-a ``copy`` with a ``filter``, or a ``check_linked_values`` whose check stops at a target the filter kept,
-may therefore be reported in one build and not in another,
-and which needs a message names can vary after the first computed value a call reads.
+.. _needs_derive_scope:
 
-To avoid such a read, read the authored value the computed one is derived from instead
-(``[[copy("title", "CHAIN_B")]]`` rather than a copy of a field ``CHAIN_B`` computes from its title).
-To silence the warning:
+Reads that cannot be ordered
+++++++++++++++++++++++++++++
+
+These reads are reported as ``needs.derive_scope``:
+
+- a ``[[…]]`` of a link field that reads another computed field, or a back link,
+  reads it before it is computed (step 2 comes before the back links and the other fields);
+- a ``need.<field>`` :ref:`argument <dynamic_functions_need_arguments>` that selects what the call reads,
+  while the field is computed in the same step: the call is not run, and its field is left empty;
+- a ``needextend`` filter that names a field a ``[[…]]``, ``<<…>>`` or ``<{…}>`` computes:
+  the filter sees the value from before it is computed, once for each ``needextend`` carrying it;
+- a built-in function that reads a field your own function computes, before it is computed.
+
+Move the read to a value that is final earlier,
+or write "set X when computed Y says so" as a ``[[…]]`` on X instead of as a ``needextend``.
+A ``predicates`` entry of :ref:`needs_fields` that names a computed field is not reported yet.
+To silence either warning, add its type to Sphinx's ``suppress_warnings``:
 
 .. code-block:: python
 
-   suppress_warnings = ["needs.derive_unresolved"]
+   suppress_warnings = ["needs.derive_cycle", "needs.derive_scope"]
+
+``needs.derive_unresolved``, which an unreleased version reported for such reads, is no longer emitted,
+and an entry naming it in ``suppress_warnings`` has no effect.
 
 .. _needs_variant_support:
 
