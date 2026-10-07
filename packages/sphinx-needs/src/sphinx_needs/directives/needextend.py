@@ -283,7 +283,7 @@ def extend_needs_data(
                 location=location,
             )
             continue
-        # need-id order, whatever order the needs were read in
+        # a fixed order; each need is modified on its own, so nothing depends on it
         targets.append((needextend, sorted(matched)))
 
     current_needextend: NeedsExtendType
