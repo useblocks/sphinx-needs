@@ -13,8 +13,8 @@ ideas and questions go to the [discussions](https://github.com/useblocks/sphinx-
 from an issue, by an account that has not read the code, run the tests or taken part in the
 discussion, typically within hours of the issue being filed, is closed without review,
 whatever its content. We cannot tell a good one from a bad one without the full review a
-change of our own would get, and its author knows nothing of ubCode, the sibling tools in
-this repository or where the change sits in our plans. Using an AI assistant for your own
+change of our own would get, and its author knows nothing of the tools this repository
+serves or of where the change sits in our plans. Using an AI assistant for your own
 work is fine: you have read the change, you have tested it, and you answer for it. The pull
 request template asks you to say so.
 
