@@ -10,7 +10,11 @@ from sphinx.util.logging import suppress_logging
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import ExtendType, NeedsExtendType, NeedsMutable, SphinxNeedsData
-from sphinx_needs.exceptions import NeedsInvalidFilter
+from sphinx_needs.exceptions import (
+    FunctionParsingException,
+    NeedsInvalidFilter,
+    VariantParsingException,
+)
 from sphinx_needs.filter_common import filter_needs_mutable
 from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
 from sphinx_needs.need_item import NeedModification
@@ -180,7 +184,11 @@ class NeedextendDirective(SphinxDirective):
                         converted_link_value = field_schema.convert_directive_option(
                             value or ""
                         )
-                    except ValueError as err:
+                    except (
+                        ValueError,
+                        FunctionParsingException,
+                        VariantParsingException,
+                    ) as err:
                         self._log_warning(
                             f"Invalid value for '{etype.value}{key}' option: {err}"
                         )
@@ -191,7 +199,11 @@ class NeedextendDirective(SphinxDirective):
                         converted_field_value = field_schema.convert_directive_option(
                             value or ""
                         )
-                    except ValueError as err:
+                    except (
+                        ValueError,
+                        FunctionParsingException,
+                        VariantParsingException,
+                    ) as err:
                         self._log_warning(
                             f"Invalid value for '{etype.value}{key}' option: {err}"
                         )
