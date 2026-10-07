@@ -41,8 +41,11 @@
 #   and becomes a blank line. When the leader is not stripped, a line whose open word
 #   sits behind stars is multiline_need_header at that line, consumed with the lines
 #   after it up to the first close line, which may then carry stars too ("* @endneed");
-#   with no such close it is multiline_need_unterminated. In such a block every
-#   multiline_need_unterminated message names the missing leader as the likely cause.
+#   with no such close it is multiline_need_unterminated; in such a block the same
+#   order applies, so a starred open line ending with the close word is the one-line
+#   form. When some of the block's lines do carry the leader, every
+#   multiline_need_unterminated message in it names the missing leader as the likely
+#   cause.
 # - At an open line, in this order: the close WORD ending the same line (after
 #   whitespace, or as the whole rest of the line) is the one-line form
 #   (multiline_need_oneline_form, skipped); no close line in the rest of the run is

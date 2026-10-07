@@ -444,7 +444,10 @@ class SourceAnalyse:
                 src_file.src_comments, src_file.lines
             ):
                 result = multiline_parser.parse_run(
-                    run.lines, config, leaderless_block=run.leaderless_block
+                    run.lines,
+                    config,
+                    leaderless_block=run.leaderless_block,
+                    mixed_leaders=run.mixed_leaders,
                 )
                 for issue in result.issues:
                     self.warnings.append(

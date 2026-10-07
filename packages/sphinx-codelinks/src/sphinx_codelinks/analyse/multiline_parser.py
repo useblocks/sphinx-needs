@@ -73,10 +73,10 @@ _CLOSER_ONLY = re.compile(r"^\s*\*+/\s*$")
 """A block comment's last row holding nothing but its closer (``*/``, `` ***/``)."""
 
 _STARS = re.compile(r"^\s*\*+\s*")
+"""Stars at the start of a line, with the whitespace around them."""
 
 _STARS_ONLY = re.compile(r"^\s*\*+\s*$")
 """A line of stars only: a separator, counted as a leader line and read as blank."""
-"""Stars at the start of a line, with the whitespace around them."""
 
 _DOCSTRING_OPEN = re.compile(r"""^([rRuUbBfF]{0,2})(\"\"\"|'''|"|')""")
 
@@ -111,6 +111,9 @@ class CommentRun:
     leaderless_block: bool = False
     """A block comment whose lines did not all carry a ``*`` leader, so none was
     stripped: an open word behind a star is reported, not silently lost."""
+    mixed_leaders: bool = False
+    """A leaderless block in which some lines DO carry the leader: the missing leader is
+    then the likely cause of an unterminated block (a plain block has none to miss)."""
 
 
 @dataclass
@@ -255,8 +258,8 @@ def _continues(previous: _Comment, view: _Comment) -> bool:
 
 def _make_run(views: list[_Comment]) -> CommentRun:
     if len(views) == 1 and views[0].kind == "block":
-        lines, leader_stripped = _block_comment_lines(views[0])
-        return CommentRun([views[0].comment], lines, not leader_stripped)
+        lines, leader_stripped, mixed = _block_comment_lines(views[0])
+        return CommentRun([views[0].comment], lines, not leader_stripped, mixed)
     run_lines: list[LogicalLine] = []
     for view in views:
         run_lines.extend(_logical_lines(view))
@@ -291,8 +294,9 @@ def _line_comment_line(view: _Comment) -> LogicalLine:
     return LogicalLine(view.row, col, rest)
 
 
-def _block_comment_lines(view: _Comment) -> tuple[list[LogicalLine], bool]:
-    """The block comment's logical lines, and whether a ``*`` leader was stripped."""
+def _block_comment_lines(view: _Comment) -> tuple[list[LogicalLine], bool, bool]:
+    """The block comment's logical lines, whether a ``*`` leader was stripped, and
+    whether, unstripped, some of its lines carry one (a mixed block)."""
     texts = view.text.split("\n")
     count = len(texts)
     cols = [view.col] + [0] * (count - 1)
@@ -320,9 +324,11 @@ def _block_comment_lines(view: _Comment) -> tuple[list[LogicalLine], bool]:
     # the leader test reads the rows after the opener's, delimiter-only rows dropped
     later = [i for i in range(1, count) if keep[i]]
     non_blank = [i for i in later if texts[i].strip()]
-    leader_stripped = bool(non_blank) and all(
-        _LEADER.match(texts[i]) or _STARS_ONLY.match(texts[i]) for i in non_blank
-    )
+    leader_lines = [
+        i for i in non_blank if _LEADER.match(texts[i]) or _STARS_ONLY.match(texts[i])
+    ]
+    leader_stripped = bool(non_blank) and len(leader_lines) == len(non_blank)
+    mixed = not leader_stripped and bool(leader_lines)
     if leader_stripped:
         for i in later:
             match = _LEADER.match(texts[i])
@@ -339,7 +345,7 @@ def _block_comment_lines(view: _Comment) -> tuple[list[LogicalLine], bool]:
     lines = [
         LogicalLine(view.row + i, cols[i], texts[i]) for i in range(count) if keep[i]
     ]
-    return lines, leader_stripped
+    return lines, leader_stripped, mixed
 
 
 def _docstring_lines(view: _Comment) -> list[LogicalLine]:
@@ -393,6 +399,7 @@ def parse_run(
     config: MultilineNeedsConfig,
     *,
     leaderless_block: bool = False,
+    mixed_leaders: bool = False,
 ) -> ParseResult:
     """Find the multi-line needs in one comment run.
 
@@ -404,13 +411,15 @@ def parse_run(
 
     :param leaderless_block: The run is one block comment whose ``*`` leader was not
         stripped: an open word behind a star is refused as a header, with the cause, and
-        consumed up to the first close line, which may then carry the stars too; an
-        unterminated open names the leader as the likely cause.
+        consumed up to the first close line, which may then carry the stars too. The
+        refusal order is the same as for any open line: the one-line form first.
+    :param mixed_leaders: Some lines of that block do carry the leader: an unterminated
+        open then names the missing leader as the likely cause.
     """
     result = ParseResult()
     start, end = config.start_sequence, config.end_sequence
     unterminated = f"no '{end}' line before the comment ends; the block is skipped"
-    if leaderless_block:
+    if leaderless_block and mixed_leaders:
         unterminated += (
             "; the likely cause: the block comment's lines do not all carry the '*' "
             "leader"
@@ -421,7 +430,13 @@ def parse_run(
         rest = open_rest(line.text, start)
         if rest is None:
             stars = _STARS.match(line.text) if leaderless_block else None
-            if stars and open_rest(line.text[stars.end() :], start) is not None:
+            starred_rest = open_rest(line.text[stars.end() :], start) if stars else None
+            if starred_rest is not None and _ends_with_word(starred_rest, end):
+                result.issues.append(_oneline_form(line.row, start, end))
+                result.claimed_rows.add(line.row)
+                index += 1
+                continue
+            if starred_rest is not None:
                 close = next(
                     (
                         k
@@ -456,14 +471,7 @@ def parse_run(
             index += 1
             continue
         if _ends_with_word(rest, end):
-            result.issues.append(
-                ParseIssue(
-                    WarningSubTypeEnum.multiline_need_oneline_form,
-                    line.row,
-                    f"'{start}' and '{end}' on one line: a one-line need is written "
-                    "with the one-line marker; the block is skipped",
-                )
-            )
+            result.issues.append(_oneline_form(line.row, start, end))
             result.claimed_rows.add(line.row)
             index += 1
             continue
@@ -501,6 +509,15 @@ def parse_run(
             )
         index = close + 1
     return result
+
+
+def _oneline_form(row: int, start: str, end: str) -> ParseIssue:
+    return ParseIssue(
+        WarningSubTypeEnum.multiline_need_oneline_form,
+        row,
+        f"'{start}' and '{end}' on one line: a one-line need is written with the "
+        "one-line marker; the block is skipped",
+    )
 
 
 def _is_close(text: str, end: str, *, starred: bool) -> bool:

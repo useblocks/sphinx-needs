@@ -225,7 +225,13 @@ def test_an_open_word_behind_a_leader_in_a_leaderless_block_is_refused() -> None
 def test_an_unterminated_open_in_a_leaderless_block_names_the_leader(text: str) -> None:
     (run,) = form_runs([_node(text, 0)])
 
-    result = parse_run(run.lines, CONFIG, leaderless_block=run.leaderless_block)
+    assert run.mixed_leaders
+    result = parse_run(
+        run.lines,
+        CONFIG,
+        leaderless_block=run.leaderless_block,
+        mixed_leaders=run.mixed_leaders,
+    )
 
     (issue,) = result.issues
     assert issue.kind == WarningSubTypeEnum.multiline_need_unterminated
@@ -652,11 +658,12 @@ def test_a_libclang_record_reads_its_columns_from_the_row(tmp_path: Path) -> Non
 
 def _parsed(text: str):
     (run,) = form_runs([_node(text, 0)])
-    # red-first shim: the flag does not exist before the fix (removed with it)
-    extra = (
-        {"mixed_leaders": run.mixed_leaders} if hasattr(run, "mixed_leaders") else {}
+    return parse_run(
+        run.lines,
+        CONFIG,
+        leaderless_block=run.leaderless_block,
+        mixed_leaders=run.mixed_leaders,
     )
-    return parse_run(run.lines, CONFIG, leaderless_block=run.leaderless_block, **extra)
 
 
 def test_the_leader_hint_is_only_for_a_block_with_some_leaders() -> None:
