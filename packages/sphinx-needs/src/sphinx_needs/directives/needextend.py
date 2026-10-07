@@ -25,7 +25,12 @@ from sphinx_needs.needs_schema import (
     LinksFunctionArray,
     LinksLiteralValue,
 )
-from sphinx_needs.utils import DummyOptionSpec, add_doc, coerce_to_boolean
+from sphinx_needs.utils import (
+    DummyOptionSpec,
+    add_doc,
+    coerce_to_boolean,
+    counted_ids,
+)
 
 logger = get_logger(__name__)
 
@@ -35,9 +40,6 @@ DEFAULT_EXTEND_PRIORITY: Final = 500
 Lower priorities are applied first, as for Sphinx's event handlers, whose default
 priority is 500 too.
 """
-
-_MATCH_ORDER_NAMED: Final = 3
-"""How many ids a ``needs.needextend_match_order`` message names in each set."""
 
 
 class Needextend(nodes.General, nodes.Element):
@@ -484,24 +486,8 @@ def _match_order_message(now: Collection[str], as_written: Collection[str]) -> s
     return (
         "the needs matched by this needextend depend on modifications applied by "
         "earlier needextend directives: it matches "
-        f"{_counted_ids(now, ' need' if len(now) == 1 else ' needs')} now and "
-        f"{_counted_ids(as_written)} against the needs as written; from the next "
+        f"{counted_ids(now, ' need' if len(now) == 1 else ' needs')} now and "
+        f"{counted_ids(as_written)} against the needs as written; from the next "
         "release filters are evaluated against the needs as written, before any "
         "needextend is applied"
     )
-
-
-def _counted_ids(ids: Collection[str], noun: str = "") -> str:
-    """Return ``<count><noun> (A, B, C and K more)``, the ids in need-id order.
-
-    The first ``_MATCH_ORDER_NAMED`` ids are named and the rest counted; no ids is
-    the count alone.
-    """
-    counted = f"{len(ids)}{noun}"
-    if not ids:
-        return counted
-    ordered = sorted(ids)
-    named = ", ".join(ordered[:_MATCH_ORDER_NAMED])
-    if len(ordered) > _MATCH_ORDER_NAMED:
-        named += f" and {len(ordered) - _MATCH_ORDER_NAMED} more"
-    return f"{counted} ({named})"
