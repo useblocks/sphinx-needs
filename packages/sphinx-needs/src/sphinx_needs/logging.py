@@ -1,11 +1,15 @@
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Literal
 
 from docutils.nodes import Node
 from sphinx import version_info
 from sphinx.util import logging
 from sphinx.util.logging import SphinxLoggerAdapter
+
+if TYPE_CHECKING:
+    from sphinx.application import Sphinx
+    from sphinx.config import Config
 
 
 def get_logger(name: str) -> SphinxLoggerAdapter:
@@ -18,7 +22,7 @@ def get_logger(name: str) -> SphinxLoggerAdapter:
 _sphinx_renders_types = version_info >= (8,)
 
 
-def configure_warning_types(_app: object, config: Any) -> None:
+def configure_warning_types(_app: Sphinx, config: Config) -> None:
     global _sphinx_renders_types
     _sphinx_renders_types = version_info >= (8,) or bool(config.show_warning_types)
 

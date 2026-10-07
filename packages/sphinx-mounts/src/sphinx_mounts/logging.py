@@ -28,11 +28,13 @@ and such errors must not be suppressible.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Literal
 
 from sphinx import version_info
 
 if TYPE_CHECKING:
+    from sphinx.application import Sphinx
+    from sphinx.config import Config
     from sphinx.util.logging import SphinxLoggerAdapter
 
 #: Warning subtypes known to sphinx-mounts. Keep sorted — adding a new
@@ -114,7 +116,7 @@ WARNING_TYPE = "mounts"
 _sphinx_renders_types = version_info >= (8,)
 
 
-def configure_warning_types(_app: object, config: Any) -> None:
+def configure_warning_types(_app: Sphinx, config: Config) -> None:
     global _sphinx_renders_types
     _sphinx_renders_types = version_info >= (8,) or bool(config.show_warning_types)
 
