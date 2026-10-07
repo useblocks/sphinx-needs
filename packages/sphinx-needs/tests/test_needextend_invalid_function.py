@@ -5,7 +5,9 @@ The directive converts each option value through its field's
 malformed ``[[...]]`` and ``VariantParsingException`` for a malformed ``<<...>>``.
 Either is one ``needs.needextend`` warning at the directive, naming the option and
 the parse error, and that option is skipped -- as for a value that cannot be
-converted -- while the directive's other options still apply.
+converted -- while the directive's other options still apply. The directive itself is
+still recorded and applied, so the need counts it as a modification, as it does for an
+extend whose every option was skipped for a value that cannot be converted.
 
 A ``need.<attr>`` argument is such a parse error at directive time: it is admitted
 only where a need is in hand. Whether it should be admitted in a ``needextend`` value
@@ -13,10 +15,13 @@ is a separate question; these tests pin only that it no longer ends the build.
 """
 
 from pathlib import Path
+from typing import Any
 
 import pytest
 from sphinx.application import Sphinx
 
+from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.needs_schema import FieldLiteralValue
 from sphinx_needs_testkit import build_warnings
 from tests.util import needs_by_id
 
@@ -69,6 +74,8 @@ UNPARSABLE_CASES = [
         "<<[x>>",
         "Error parsing variant function: Unclosed variant expression: [x",
     ),
+    # the precedent: a value that cannot be converted, reported and skipped the same way
+    ("value-error", CONF, "hide", "bad", "Cannot convert 'bad' to boolean"),
 ]
 
 
@@ -76,6 +83,15 @@ def _files(conf: str, *options: str) -> list[tuple[Path, str]]:
     return [
         (Path("conf.py"), conf),
         (Path("index.rst"), INDEX.format(options="\n".join(options))),
+    ]
+
+
+def recorded_modifications(app: Sphinx) -> list[tuple[list[Any], list[Any]]]:
+    """The field and link modifications each recorded ``needextend`` carries."""
+    extends = SphinxNeedsData(app.env).get_or_create_extends()
+    return [
+        (extend["modifications"], extend["list_modifications"])
+        for extend in extends.values()
     ]
 
 
@@ -104,11 +120,12 @@ def test_unparsable_function_is_reported_and_not_applied(
         f"{LOCATION}: WARNING: Invalid value for '{option}' option: {message} "
         "[needs.needextend]"
     ]
+    assert recorded_modifications(app) == [([], [])]
     need = needs_by_id(app)["REQ_C"]
     assert need["status"] == "open"
     assert need["links"] == []
-    assert need["is_modified"] is False
-    assert need["modifications"] == 0
+    assert need["is_modified"] is True
+    assert need["modifications"] == 1
 
 
 @pytest.mark.parametrize(
@@ -131,6 +148,10 @@ def test_other_options_of_the_directive_still_apply(test_app: Sphinx):
         f"{LOCATION}: WARNING: Invalid value for 'status' option: {NEED_ARG} "
         "[needs.needextend]"
     ]
+    assert [
+        [(key, value) for key, _etype, value in modifications]
+        for modifications, _links in recorded_modifications(app)
+    ] == [[("tags", FieldLiteralValue(["a"]))]]
     need = needs_by_id(app)["REQ_C"]
     assert need["status"] == "open"
     assert need["tags"] == ["a"]
