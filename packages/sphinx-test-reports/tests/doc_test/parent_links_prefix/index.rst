@@ -24,3 +24,20 @@ The control: an authored link that shares no prefix with the file id.
    :links: REQ_1
    :auto_suites:
    :auto_cases:
+
+Authored links that already hold the file id, with separators and spaces: the value is
+handed on as written, and the file id is not appended a second time.
+
+.. test-file:: Comma and spaces
+   :id: TF_SPC
+   :file: ../utils/gtest_data.xml
+   :links: REQ_1 , TF_SPC
+   :auto_suites:
+   :auto_cases:
+
+.. test-file:: Pipe
+   :id: TF_PIPE
+   :file: ../utils/gtest_data.xml
+   :links: REQ_1|TF_PIPE
+   :auto_suites:
+   :auto_cases:

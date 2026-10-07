@@ -31,7 +31,8 @@ def _record_links(monkeypatch) -> dict[str, str]:
 
 
 def _elements(links: str) -> list[str]:
-    return [x.strip() for x in re.split("[;,]", links) if x.strip()]
+    # the delimiters sphinx-needs' link parser splits on
+    return [x.strip() for x in re.split("[;|,]", links) if x.strip()]
 
 
 @pytest.mark.parametrize(
@@ -75,6 +76,25 @@ def test_a_link_containing_the_file_id_keeps_the_parent_links(test_app, monkeypa
             assert suite_id in suites, case_id
             assert links == sorted([authored, file_id, suite_id]), case_id
             assert handed[case_id] == f"{authored};{file_id};{suite_id}"
+
+    # authored values that already hold the file id, with a separator and spaces: the
+    # string is handed on AS WRITTEN (not re-joined, the id not appended again), and a
+    # case adds only its suite id
+    for file_id, authored in (
+        ("TF_SPC", "REQ_1 , TF_SPC"),
+        ("TF_PIPE", "REQ_1|TF_PIPE"),
+    ):
+        suites = family(file_id, "testsuite")
+        cases = family(file_id, "testcase")
+        assert len(suites) == 2, suites
+        assert len(cases) == 5, cases
+        for suite_id, links in suites.items():
+            assert links == sorted(["REQ_1", file_id]), suite_id
+            assert handed[suite_id] == authored
+        for case_id, links in cases.items():
+            suite_id = case_id.rsplit("_", 1)[0]
+            assert links == sorted(["REQ_1", file_id, suite_id]), case_id
+            assert handed[case_id] == f"{authored};{suite_id}"
 
     # no string handed to add_need names an id twice
     for id_, links in handed.items():
