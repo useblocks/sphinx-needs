@@ -4,8 +4,8 @@
   "marked_rst": [
     {
       "content": " .. impl:: X\\n   :id: Y\\n",
-      "start_line": 2,
-      "end_line": 2
+      "start_line": 1,
+      "end_line": 1
     }
   ],
   "warnings": []

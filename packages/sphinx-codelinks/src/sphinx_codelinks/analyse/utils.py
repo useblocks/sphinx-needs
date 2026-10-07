@@ -578,7 +578,9 @@ def extract_rst(
     if start_idx == -1 or end_idx == -1:
         return None
     rst_text = text[start_idx + len(start_marker) : end_idx]
-    row_offset = len(text[:start_idx].splitlines())
+    # count newlines, not lines: text before a one-line block on the comment's first
+    # row holds no newline, yet splitlines() would count it as one line
+    row_offset = text[:start_idx].count(UNIX_NEWLINE)
     if not rst_text.strip():
         # empty string is out of the interest
         return None
