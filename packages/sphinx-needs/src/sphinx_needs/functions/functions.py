@@ -41,7 +41,13 @@ from sphinx_needs.variants import VariantFunctionParsed
 from sphinx_needs.views import NeedsView
 
 if TYPE_CHECKING:
-    from sphinx_needs.functions.order import Node, OutOfScope, Project, Stratum
+    from sphinx_needs.functions.order import (
+        Column,
+        Node,
+        OutOfScope,
+        Project,
+        Stratum,
+    )
 
 logger = get_logger(__name__)
 unicode = str
@@ -417,6 +423,25 @@ def _kept(value: Any) -> str:
     )
 
 
+def _through_clause(through: tuple[Column, str | None] | None) -> str:
+    """What a cycle member reads its cycle through, as its message says it.
+
+    :param through: The column on the cycle the member reads, with the filter that
+        made every need a candidate; ``None`` for no column.
+    """
+    if through is None:
+        return ""
+    column, reason = through
+    if reason is not None:
+        return (
+            f", through the filter {reason!r}, which names a computed field, "
+            "so every need is a candidate"
+        )
+    if column.candidates is not None:
+        return f", through the filter {column.candidates!r}, which keeps a need on the cycle"
+    return ", through a sum over every need"
+
+
 def _derive_cycle_message(
     what: str,
     option: str,
@@ -698,15 +723,7 @@ def _resolve_stratum(
             for need_id, field in step.nodes:
                 needs[need_id][field] = placeholder(needs[need_id], field, schema)
                 pass_.finish((need_id, field))
-            clause = (
-                ""
-                if step.through is False
-                else ", through a sum over every need"
-                if step.through is None
-                else f", through the filter {step.through!r}, which names a computed "
-                "field, so every need is a candidate"
-            )
-            for need_id, field in step.nodes:
+            for (need_id, field), through in zip(step.nodes, step.through, strict=True):
                 node_reads = stratum.reads[(need_id, field)]
                 own = (
                     "; its condition reads the field it sets"
@@ -719,7 +736,7 @@ def _resolve_stratum(
                         node_reads.what,
                         field,
                         step.nodes,
-                        clause + own,
+                        _through_clause(through) + own,
                         needs[need_id][field],
                     ),
                     "derive_cycle",

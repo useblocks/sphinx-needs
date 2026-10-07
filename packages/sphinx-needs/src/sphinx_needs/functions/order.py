@@ -32,7 +32,7 @@ import inspect
 from collections.abc import Callable, Collection, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Any, Final, Literal, TypeVar
+from typing import Any, Final, TypeVar
 
 from sphinx_needs.functions.common import (
     calc_sum,
@@ -718,13 +718,14 @@ class Step:
 
     :ivar nodes: The node, or the members of the cycle in ``(need id, field)`` order.
     :ivar cycle: Whether the step is a cycle.
-    :ivar through: For a cycle through a column: the filter that made every need a
-        candidate, or ``None`` for a sum over every need; ``False`` otherwise.
+    :ivar through: For a cycle, per member: the column on the cycle the member reads,
+        with the filter that made every need a candidate (``None`` for none), or
+        ``None`` for a member that reads no column on the cycle.
     """
 
     nodes: tuple[Node, ...]
     cycle: bool = False
-    through: str | Literal[False] | None = False
+    through: tuple[tuple[Column, str | None] | None, ...] = ()
 
 
 @dataclass(slots=True)
@@ -810,19 +811,48 @@ def build_stratum(project: Project, stratum: int) -> Stratum:
             steps.append(Step((members[0],)))
             continue
         inside = set(component)
-        through_columns = {
-            reasons[(source, target)]
-            for source in component
-            for target in edges[source] or ()
-            if target in inside and isinstance(vertices[target], Column)
-        }
-        filters = sorted(r for r in through_columns if r is not None)
-        through: str | Literal[False] | None = (
-            filters[0] if filters else None if through_columns else False
+        steps.append(
+            Step(
+                tuple(members),
+                cycle=True,
+                through=tuple(
+                    _column_on_cycle(vertices, edges, reasons, inside, index[member])
+                    for member in members
+                ),
+            )
         )
-        steps.append(Step(tuple(members), cycle=True, through=through))
     steps.extend(Step((node,)) for node in sorted(last))
     return Stratum(stratum, reads, steps)
+
+
+def _column_on_cycle(
+    vertices: Sequence[_Vertex],
+    edges: Sequence[Sequence[int] | None],
+    reasons: Mapping[tuple[int, int], str | None],
+    inside: Collection[int],
+    member: int,
+) -> tuple[Column, str | None] | None:
+    """The column on its cycle a member reads, with why every need is its candidate.
+
+    Of several, a filter naming a computed field first, then a filter's candidates,
+    then a sum over every need.
+    """
+    read = [
+        (column, reasons[(member, target)])
+        for target in edges[member] or ()
+        if target in inside and isinstance(column := vertices[target], Column)
+    ]
+    return min(
+        read,
+        key=lambda r: (
+            r[1] is None,
+            r[0].candidates is None,
+            r[1] or "",
+            r[0].candidates or "",
+            r[0].field,
+        ),
+        default=None,
+    )
 
 
 def _keys(

@@ -502,6 +502,84 @@ def test_a_sum_whose_candidates_include_its_own_need_is_a_cycle(test_app):
     ]
 
 
+MEMBER_COLUMN_INDEX = """\
+Each member's column
+====================
+
+.. req:: A sum whose filter names a computed field
+   :id: FILT
+   :comment: [[copy("title")]]
+   :total: [[calc_sum("total", "comment == 'x'")]]
+
+.. req:: A sum over every need
+   :id: SELF_SUM
+   :total: [[calc_sum("total")]]
+
+.. req:: A sum whose filter on final values keeps its own need
+   :id: S_SUM
+   :hours: [[calc_sum("hours", "type == 'req'")]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), CONF),
+                (Path("index.rst"), MEMBER_COLUMN_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_each_cycle_member_says_what_made_it_one(test_app):
+    """Each member of a cycle through a sum names its own sum, not another member's.
+
+    ``FILT`` and ``SELF_SUM`` are one cycle over ``total``: ``FILT``'s through its
+    filter, which names a computed field, ``SELF_SUM``'s through a sum over every need.
+    ``S_SUM``'s filter is on final values, and keeps ``S_SUM``.
+    """
+    app = test_app
+    app.build()
+    needs = _needs(app)
+    assert (
+        needs["FILT"]["total"],
+        needs["SELF_SUM"]["total"],
+        needs["S_SUM"]["hours"],
+    ) == (None, None, None)
+    members = "'total' on 2 needs (FILT, SELF_SUM)"
+    assert build_warnings(app) == [
+        _warning(
+            "index",
+            MEMBER_COLUMN_INDEX,
+            "FILT",
+            f"dynamic function 'calc_sum' for option 'total' is on a cycle: {members}, "
+            "through the filter \"comment == 'x'\", which names a computed field, so "
+            "every need is a candidate; the field is left empty",
+            "derive_cycle",
+        ),
+        _warning(
+            "index",
+            MEMBER_COLUMN_INDEX,
+            "SELF_SUM",
+            f"dynamic function 'calc_sum' for option 'total' is on a cycle: {members}, "
+            "through a sum over every need; the field is left empty",
+            "derive_cycle",
+        ),
+        _warning(
+            "index",
+            MEMBER_COLUMN_INDEX,
+            "S_SUM",
+            "dynamic function 'calc_sum' for option 'hours' is on a cycle: 'hours' on "
+            "need 'S_SUM', through the filter \"type == 'req'\", which keeps a need on "
+            "the cycle; the field is left empty",
+            "derive_cycle",
+        ),
+    ]
+
+
 FILTERED_SUM_INDEX = """\
 Filtered sum
 ============

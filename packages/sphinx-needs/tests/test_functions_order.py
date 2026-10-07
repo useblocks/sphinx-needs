@@ -510,15 +510,50 @@ def test_cycles_and_their_columns():
     )
     steps = build_stratum(project, 2).steps
     assert [s for s in steps if s.cycle] == [
-        Step((("CY_A", "summary"), ("CY_B", "summary")), cycle=True),
-        Step((("SELF", "summary"),), cycle=True),
-        Step((("SP", "hours"),), cycle=True, through=None),
+        Step(
+            (("CY_A", "summary"), ("CY_B", "summary")), cycle=True, through=(None, None)
+        ),
+        Step((("SELF", "summary"),), cycle=True, through=(None,)),
+        Step((("SP", "hours"),), cycle=True, through=((Column("hours"), None),)),
         # after ``ST``, whose ``status`` its filter's column reads
-        Step((("P2", "total"),), cycle=True, through=EVERY_STATUS),
+        Step(
+            (("P2", "total"),),
+            cycle=True,
+            through=((Column("total"), EVERY_STATUS),),
+        ),
     ]
     # a reader of a cycle comes after it, and is no member
     order = [s.nodes[0] for s in steps]
     assert order.index(("AFTER", "comment")) > order.index(("CY_A", "summary"))
+
+
+def test_each_cycle_member_names_the_column_it_reads():
+    """The column a member reads its cycle through is its own, not its group's.
+
+    ``FILT``'s filter names a computed field, ``SELF_SUM`` sums every need, both over
+    ``total``; ``S_SUM``'s filter is on final values, but keeps ``S_SUM`` itself.
+    """
+    project = _project(
+        _need(
+            "FILT",
+            total="[[calc_sum('total', 'comment == \"x\"')]]",
+            comment="[[copy('title')]]",
+        ),
+        _need("SELF_SUM", total="[[calc_sum('total')]]"),
+        _need("S_SUM", hours="[[calc_sum('hours', 'type == \"req\"')]]"),
+    )
+    assert [s for s in build_stratum(project, 2).steps if s.cycle] == [
+        Step(
+            (("FILT", "total"), ("SELF_SUM", "total")),
+            cycle=True,
+            through=((Column("total"), 'comment == "x"'), (Column("total"), None)),
+        ),
+        Step(
+            (("S_SUM", "hours"),),
+            cycle=True,
+            through=((Column("hours", 'type == "req"'), None),),
+        ),
+    ]
 
 
 def test_a_filter_on_final_values_is_no_cycle():
