@@ -220,6 +220,16 @@ Bug fixes
   whether or not the class derives from ``BaseService``, and a table that holds a
   service's options only is read as before, without a warning.
 
+- 🐛 A :ref:`needservice` naming a service that is not registered is a warning instead of
+  a traceback **(changed output)** (:issue:`2101`)
+
+  It ended the build with a raw ``NeedsServiceException`` traceback, which, deriving from
+  ``BaseException``, escaped Sphinx's own error handler, so no log file was written either.
+  It is now one ``needs.load_service_need`` warning located at the directive, with the
+  same text, which names the service and the registered ones; the directive adds nothing
+  and the build goes on. This is also the path of a service skipped for its
+  configuration, above. ``NeedsServiceException`` now derives from ``Exception``.
+
 .. _`release:8.5.0`:
 
 8.5.0
