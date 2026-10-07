@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791369063949,
+  "lastUpdate": 1791371077695,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -23112,6 +23112,42 @@ window.BENCHMARK_DATA = {
             "value": 56.281657343000006,
             "unit": "s",
             "extra": "Commit: ca0d997afaee789f59895fcd68702a8c1ca52017\nBranch: master\nTime: 2026-10-07T12:29:35+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a6157f3db9b7ad8b0983738f808b9a988963ae14",
+          "message": "🐛 sphinx-needs: a service that cannot be registered, or a needservice naming one that is not, warns instead of crashing the build (#2113)\n\n## What\n\n`prepare_env` now checks a configured service before registering it from\n`class` and `class_init`, and refuses exactly what the registration\ncannot take. Registration reads the class's `options` and then calls it\nwith `class_init` as keyword arguments, so a `class` that is not\ncallable or has no `options`, or a `class_init` that is not a mapping,\nis refused: one `needs.config` warning naming the service, the key and\nwhat is wrong with its value, and the service is not registered; the\nbuild goes on. The warning says where a service class belongs: it\nderives from `BaseService` and is set in `conf.py`'s `needs_services` or\nregistered through the API; a `needs_from_toml` file can hold a\nservice's options but not its class. A service whose `class` is callable\nwith `options` and whose `class_init` is a mapping registers as before,\nwhether or not it derives from `BaseService`.\n\nA `needservice` naming a service that is not registered, an unknown name\nor a service skipped by the check above, is now one\n`needs.load_service_need` warning located at the directive, with the\nexisting \"Service foo could not be found. Available services are …\"\ntext, and the directive adds nothing. It used to end the build with a\nraw `NeedsServiceException` traceback which, deriving from\n`BaseException`, escaped Sphinx's own error handler (no log file);\n`NeedsServiceException` now derives from `Exception`.\n\nThe `needs_services` reference now shows `class_init` with `class`\n(registration has always required both) and says that the TOML file's\n`services` table replaces `conf.py`'s `needs_services` whole.\n\n## Why\n\nA `[needs.services.foo]` table with `class = \"x\"` and `class_init = {}`\nended the build at `env-before-read-docs` with `AttributeError: 'str'\nobject has no attribute 'options'` (a TOML file can only give `class` a\nstring), the same crash came from a wrong value in `conf.py`, and a\n`class_init` that is not a mapping died in the `**` expansion. One check\nat registration covers both sources, so the TOML reader stays as it is;\na table without `class`, a built-in service's options or a service an\nextension registers, is not a mistake and stays warning-free. A service\nthe check skips is absent, and a `needservice` naming it took the\nnot-found path, which crashed the build in its own way, so both are\nfixed here.\n\n## ubCode parity\n\nNothing to match: ubCode reads no `[needs.services]` table and runs no\nservices; it parses the `needservice` directive's syntax only (measured\nat `8bece77ccb`).\n\n## Tests\n\n`tests/test_services/test_service_registration.py`, real builds: a TOML\nstring class, and `conf.py` values that are a string, `None`, a function\nwithout `options` and a type without `options`, each give exactly one\nwarning and leave the service unregistered; a `class_init` that is not a\nmapping gives its own warning, and both keys wrong give one, the class\none. A duck-typed class with `options` but no `BaseService` base, a\nfactory function carrying `options`, and a `class_init` given as a\n`MappingProxyType` or a `UserDict` all register without a warning, as on\nmaster. A `needservice` naming an unknown service, and one naming a\nskipped service, each give the located `needs.load_service_need` warning\n(after the configuration warning, for the latter) and render nothing;\n`NeedsServiceException` is an `Exception`. TOML tables without a class\ngive no warning; a class registered by an extension takes its options\nfrom the TOML table, constructed once; and the TOML `services` table\nreplacing `conf.py`'s is pinned as measured. The pins were committed\nfirst and failed against the code they fix.\n\nCloses #2067\nCloses #2101",
+          "timestamp": "2026-10-07T13:03:18+02:00",
+          "tree_id": "feed3f53846c73afe633ab881b749ed915d64caa",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/a6157f3db9b7ad8b0983738f808b9a988963ae14"
+        },
+        "date": 1791371068636,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.09679204700000099,
+            "unit": "s",
+            "extra": "Commit: a6157f3db9b7ad8b0983738f808b9a988963ae14\nBranch: master\nTime: 2026-10-07T13:03:18+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 49.394242297000005,
+            "unit": "s",
+            "extra": "Commit: a6157f3db9b7ad8b0983738f808b9a988963ae14\nBranch: master\nTime: 2026-10-07T13:03:18+02:00"
           }
         ]
       }
