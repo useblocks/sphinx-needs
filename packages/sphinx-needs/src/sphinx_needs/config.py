@@ -34,6 +34,13 @@ if TYPE_CHECKING:
 
 LOGGER = get_logger(__name__)
 
+ADD_NEED_ARGUMENT_NAMES = frozenset({"content_markup", "content_source"})
+"""Arguments of ``add_need`` that a field or link may not be named after.
+
+``add_need`` takes a need's fields and links as keyword arguments, so one named after
+an argument would be captured by it.
+"""
+
 
 @dataclass(kw_only=True, slots=True)
 class NewFieldParams:
@@ -147,6 +154,16 @@ class _Config:
                 f"Cannot add need field with name {name!r}"
                 + (f" ({description!r})" if description else "")
                 + ", as it is already used as a core field name."
+            )
+        if name in ADD_NEED_ARGUMENT_NAMES:
+            from sphinx_needs.exceptions import (
+                NeedsApiConfigWarning,  # avoid circular import
+            )
+
+            raise NeedsApiConfigWarning(
+                f"Cannot add need field with name {name!r}"
+                + (f" ({description!r})" if description else "")
+                + ", as it is an argument of add_need."
             )
         if (existing := self._fields.get(name)) is not None:
             message = f"Duplicate need field {name!r}, registered via {existing.source}({existing.description!r}) and {source}({description!r})."

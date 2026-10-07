@@ -32,6 +32,7 @@ from sphinx_needs.builder import (
 from sphinx_needs.card_layouts import compile_card_layouts
 from sphinx_needs.config import (
     _NEEDS_CONFIG,
+    ADD_NEED_ARGUMENT_NAMES,
     LinkOptionsType,
     NeedLinksConfig,
     NeedsSphinxConfig,
@@ -1170,6 +1171,13 @@ def check_configuration(app: Sphinx, config: Config) -> None:
             raise NeedsConfigException(
                 f'Link type name "{internal}" already used internally. '
                 " Please use another name in your config (needs_links)."
+            )
+
+    for link in link_types:
+        if link in ADD_NEED_ARGUMENT_NAMES:
+            raise NeedsConfigException(
+                f'Link type name "{link}" is an argument of add_need. '
+                "Please use another name in your config (needs_links)."
             )
 
     # Check if option and link are using the same name
