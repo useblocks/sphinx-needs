@@ -6,10 +6,10 @@ from typing import Any, cast
 
 from tree_sitter import Node as TreeSitterNode
 
-from sphinx_codelinks.analyse import utils
+from sphinx_codelinks.analyse import multiline_parser, utils
 from sphinx_codelinks.analyse.models import (
     MarkedContentType,
-    MarkedRst,
+    MultilineNeed,
     NeedIdRefs,
     OneLineNeed,
     SourceComment,
@@ -20,6 +20,7 @@ from sphinx_codelinks.analyse.oneline_parser import (
     OnelineParserInvalidWarning,
     oneline_parser,
 )
+from sphinx_codelinks.analyse.references import _relative_posix
 from sphinx_codelinks.config import (
     UNIX_NEWLINE,
     OneLineCommentStyle,
@@ -58,8 +59,8 @@ class SourceAnalyse:
         self.src_comments: list[SourceComment] = []
         self.need_id_refs: list[NeedIdRefs] = []
         self.oneline_needs: list[OneLineNeed] = []
-        self.marked_rst: list[MarkedRst] = []
-        self.all_marked_content: list[NeedIdRefs | OneLineNeed | MarkedRst] = []
+        self.multiline_needs: list[MultilineNeed] = []
+        self.all_marked_content: list[NeedIdRefs | OneLineNeed | MultilineNeed] = []
         # Use explicitly configured git_root if provided, otherwise auto-detect
         if self.analyse_config.git_root is not None:
             self.git_root: Path | None = self.analyse_config.git_root.resolve()
@@ -72,10 +73,16 @@ class SourceAnalyse:
             utils.get_current_rev(self.git_root) if self.git_root else None
         )
         self.project_path: Path = self.git_root or self.analyse_config.src_dir
-        self.oneline_warnings: list[AnalyseWarning] = []
+        self.warnings: list[AnalyseWarning] = []
+        """The analysis' warnings, one-line and multi-line alike, in extraction order."""
         # Per-run memo of parsed compile_commands.json, keyed by DB path, so the
         # database is read once per run instead of once per source file.
         self._flags_map_cache: dict[Path, dict[Path, list[str]] | None] = {}
+
+    @property
+    def oneline_warnings(self) -> list[AnalyseWarning]:
+        """The old name of :attr:`warnings`, kept for one release; read-only."""
+        return self.warnings
 
     def get_src_strings(self) -> Generator[tuple[Path, bytes], Any, None]:
         """Load source files and extract their content."""
@@ -103,6 +110,8 @@ class SourceAnalyse:
 
             src_file = SourceFile(src_path.absolute())
             src_file.add_comments(src_comments)
+            if self.analyse_config.get_multiline_needs:
+                src_file.lines = src_string.decode("utf-8").split(UNIX_NEWLINE)
             self.src_files.append(src_file)
             self.src_comments.extend(src_comments)
 
@@ -224,6 +233,12 @@ class SourceAnalyse:
             src_comments = [SourceComment(cast("TreeSitterNode", c)) for c in comments]
             src_file = SourceFile(src_path.absolute())
             src_file.add_comments(src_comments)
+            if self.analyse_config.get_multiline_needs:
+                # a libclang comment has no column: multi-line needs read what
+                # precedes it on its row from the row itself
+                text = src_path.read_text(encoding="utf-8", errors="replace")
+                text = text.replace("\r\n", "\n").replace("\r", "\n")
+                src_file.lines = text.split(UNIX_NEWLINE)
             self.src_files.append(src_file)
             self.src_comments.extend(src_comments)
 
@@ -348,7 +363,7 @@ class SourceAnalyse:
                     MarkedContentType.need,
                     resolved.sub_type.value,
                 )
-                self.oneline_warnings.append(warning)
+                self.warnings.append(warning)
                 row_offset += 1
                 continue
             yield resolved, row_offset
@@ -406,30 +421,71 @@ class SourceAnalyse:
             )
         return oneline_needs
 
-    # @Extract marked reStructuredText blocks from comments, IMPL_MRST_1, impl, [FE_RST_EXTRACTION]
-    def extract_marked_rst(
-        self,
-        text: str,
-        filepath: Path,
-        tagged_scope: TreeSitterNode | None,
-        src_comment: SourceComment,
-    ) -> MarkedRst | None:
-        """Extract marked rst from a comment.
+    # @Extract multi-line needs from comment runs, IMPL_MLN_1, impl, [FE_MULTILINE_NEEDS]
+    def extract_multiline_needs(self) -> dict[int, set[int]]:
+        """Extract the multi-line needs of every file, and the rows their blocks claim.
 
-        Presumably, only one marked rst text in a comment.
+        Runs before the other extractors: the rows a block claims (and those of a
+        refused header, consumed to its close) are hidden from them.
+
+        :return: For each comment holding claimed rows (keyed by ``id()`` of its
+            :class:`SourceComment`), those 0-based rows.
         """
-        extracted_rst = utils.extract_rst(
-            text,
-            self.analyse_config.marked_rst_config.start_sequence,
-            self.analyse_config.marked_rst_config.end_sequence,
+        claimed: dict[int, set[int]] = {}
+        config = self.analyse_config.multiline_needs_config
+        for src_file in self.src_files:
+            for run in multiline_parser.form_runs(
+                src_file.src_comments, src_file.lines
+            ):
+                result = multiline_parser.parse_run(run.lines, config)
+                for issue in result.issues:
+                    self.warnings.append(
+                        AnalyseWarning(
+                            str(src_file.filepath),
+                            issue.row + 1,
+                            issue.msg,
+                            MarkedContentType.multiline_need,
+                            issue.kind.value,
+                        )
+                    )
+                for block in result.blocks:
+                    self.multiline_needs.append(
+                        self._multiline_need(block, run, src_file.filepath)
+                    )
+                if not result.claimed_rows:
+                    continue
+                for src_comment in run.comments:
+                    first = src_comment.node.start_point.row
+                    count = (src_comment.node.text or b"").count(b"\n") + 1
+                    rows = result.claimed_rows.intersection(range(first, first + count))
+                    if rows:
+                        claimed.setdefault(id(src_comment), set()).update(rows)
+        return claimed
+
+    def _multiline_need(
+        self,
+        block: multiline_parser.ParsedBlock,
+        run: multiline_parser.CommentRun,
+        filepath: Path,
+    ) -> MultilineNeed:
+        """The record of one parsed block (see :class:`MultilineNeed`)."""
+        src_comment = next(
+            (
+                comment
+                for comment in run.comments
+                if comment.node.start_point.row
+                <= block.open_row
+                <= comment.node.start_point.row
+                + (comment.node.text or b"").count(b"\n")
+            ),
+            run.comments[0],
         )
-        if not extracted_rst:
-            return None
-        if UNIX_NEWLINE in extracted_rst["rst_text"]:
-            rst_text = utils.remove_leading_sequences(extracted_rst["rst_text"], ["*"])
-        else:
-            rst_text = extracted_rst["rst_text"]
-        lineno = src_comment.node.start_point.row + extracted_rst["row_offset"] + 1
+        tagged_scope: TreeSitterNode | None = None
+        if not getattr(src_comment.node, "is_libclang", False):
+            tagged_scope = utils.find_associated_scope(
+                src_comment.node, self.analyse_config.comment_type
+            )
+        lineno = block.open_row + 1
         remote_url = self.git_remote_url
         if self.git_remote_url and self.git_commit_rev:
             remote_url = utils.form_https_url(
@@ -440,25 +496,49 @@ class SourceAnalyse:
                 lineno,
             )
         source_map: SourceMap = {
-            "start": {
-                "row": lineno - 1,
-                "column": extracted_rst["start_idx"],
-            },
-            "end": {
-                "row": lineno - 1,
-                "column": extracted_rst["end_idx"],
-            },
+            "start": {"row": block.open_row, "column": block.open_col},
+            "end": {"row": block.close_row, "column": block.end_col},
         }
-        return MarkedRst(
+        content_start = (
+            {"line": block.content_start[0] + 1, "col": block.content_start[1]}
+            if block.content_start is not None
+            else None
+        )
+        scope = (
+            {
+                "kind": tagged_scope.type,
+                "start": tagged_scope.start_point.row + 1,
+                "end": tagged_scope.end_point.row + 1,
+            }
+            if tagged_scope is not None
+            else None
+        )
+        source: dict[str, Any] = {
+            "project": self.name,
+            "path": _relative_posix(filepath, self.project_path),
+            "root": "git" if self.git_root is not None else "src_dir",
+            "commit": self.git_commit_rev,
+            "start": {"line": lineno, "col": block.open_col},
+            "end": {"line": block.close_row + 1, "col": block.end_col},
+            "content_start": content_start,
+            "option_lines": dict(block.option_rows),
+            "scope": scope,
+        }
+        return MultilineNeed(
             filepath,
             remote_url,
             source_map,
             src_comment,
             tagged_scope,
-            rst_text,
+            block.need,
+            block.markup,
+            source,
         )
 
     def extract_marked_content(self) -> None:
+        claimed: dict[int, set[int]] = {}
+        if self.analyse_config.get_multiline_needs:
+            claimed = self.extract_multiline_needs()
         for src_comment in self.src_comments:
             text = (
                 src_comment.node.text.decode("utf-8") if src_comment.node.text else None
@@ -470,6 +550,12 @@ class SourceAnalyse:
             )
             if not filepath:
                 continue
+            claimed_rows = claimed.get(id(src_comment))
+            if claimed_rows:
+                # a block's lines are its own: no one-line need and no reference in them
+                text = multiline_parser.blank_rows(
+                    text, src_comment.node.start_point.row, claimed_rows
+                )
             if getattr(src_comment.node, "is_libclang", False):
                 tagged_scope: TreeSitterNode | None = None
             else:
@@ -491,18 +577,12 @@ class SourceAnalyse:
                     self.analyse_config.oneline_comment_style,
                 )
                 self.oneline_needs.extend(oneline_needs)
-            if self.analyse_config.get_rst:
-                marked_rst = self.extract_marked_rst(
-                    text, filepath, tagged_scope, src_comment
-                )
-                if marked_rst:
-                    self.marked_rst.append(marked_rst)
 
     def merge_marked_content(self) -> None:
         self.all_marked_content.extend(self.need_id_refs)
         self.oneline_needs.sort(key=lambda x: x.source_map["start"]["row"])
         self.all_marked_content.extend(self.oneline_needs)
-        self.all_marked_content.extend(self.marked_rst)
+        self.all_marked_content.extend(self.multiline_needs)
         self.all_marked_content.sort(
             key=lambda x: (x.filepath, x.source_map["start"]["row"])
         )
@@ -551,5 +631,5 @@ class SourceAnalyse:
             f"{label}: {_count(len(self.src_comments), 'comment')}, "
             f"{_count(len(self.oneline_needs), 'oneline need')}, "
             f"{_count(len(self.need_id_refs), 'id-ref')}, "
-            f"{_count(len(self.marked_rst), 'marked-rst block')}"
+            f"{_count(len(self.multiline_needs), 'multi-line need')}"
         )

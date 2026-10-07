@@ -1,17 +1,7 @@
 from dataclasses import dataclass
-from enum import Enum
 
+from sphinx_codelinks.analyse.models import WarningSubTypeEnum
 from sphinx_codelinks.config import ESCAPE, UNIX_NEWLINE, OneLineCommentStyle
-
-
-class WarningSubTypeEnum(str, Enum):  # noqa: UP042  # StrEnum changes str(member), which reaches CLI warnings and error messages
-    """Enum for warning sub types."""
-
-    too_many_fields = "too_many_fields"
-    too_few_fields = "too_few_fields"
-    missing_square_brackets = "missing_square_brackets"
-    not_start_or_end_with_square_brackets = "not_start_or_end_with_square_brackets"
-    newline_in_field = "newline_in_field"
 
 
 @dataclass

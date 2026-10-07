@@ -4,7 +4,7 @@ from collections import deque
 from dataclasses import dataclass, field, fields
 from os import linesep
 from string import Template
-from typing import Any, TypedDict, cast
+from typing import Any, NotRequired, TypedDict, cast
 
 from jsonschema import ValidationError, validate
 
@@ -97,10 +97,15 @@ class MarkedContentSchema:
     )
     """Definition of a need item"""
 
-    rst: str | None = field(
+    markup: str | None = field(
         default=None, metadata={"schema": {"type": ["string", "null"]}}
     )
-    """Extracted rst text."""
+    """The markup tag of a multi-line need."""
+
+    source: dict[str, Any] | None = field(
+        default=None, metadata={"schema": {"type": ["object", "null"]}}
+    )
+    """Where a multi-line need is (root-relative path, lines, columns)."""
 
     @classmethod
     def get_schema(cls, name: str) -> dict[str, Any] | None:
@@ -146,8 +151,10 @@ class MarkedContentSchema:
             errors.append(
                 "Need id refs are required for marked content of type 'need_id_refs'"
             )
-        elif self.type == MarkedContentType.rst.value and not self.rst:
-            errors.append("RST text is required for marked content of type 'rst'")
+        elif self.type == MarkedContentType.multiline_need.value and not self.need:
+            errors.append(
+                "Need definition is required for marked content of type 'multiline-need'"
+            )
         return errors
 
     def check_loaded_objs(self) -> list[str]:
@@ -162,7 +169,8 @@ class MarkedObjType(TypedDict):
     type: MarkedContentType
     need_ids: list[str] | None
     need: dict[str, str | list[str]] | None
-    rst: str | None
+    markup: NotRequired[str | None]
+    source: NotRequired[dict[str, Any] | None]
 
 
 def convert_marked_content(
@@ -170,7 +178,11 @@ def convert_marked_content(
     remote_url_field: str = "remote-url",
     title: str | None = None,
 ) -> tuple[list[str], list[str]]:
-    """Convert marked objects extracted by analyse CLI to needextend in RST"""
+    """Convert marked objects extracted by analyse CLI to needextend in RST.
+
+    Only the ``@need-ids:`` references are converted: one-line and multi-line needs
+    are ignored, as they always were.
+    """
     errors = []
     needextend_texts: list[str] = []
     intersted_objs = [

@@ -24,7 +24,7 @@ Source markers can be special comments or language-specific constructs like docs
 - :ref:`One-line need definitions <oneline>`: Create new Sphinx-Needs directly from a single customized comment line
   in your source code.
 - **Need ID references**: Link code to existing need items without creating new ones, perfect for tracing implementations to requirements.
-- **Marked RST text**: Extract blocks of reStructuredText embedded within comments, allowing you to include rich documentation with associated metadata right next to your code.
+- :ref:`Multi-line needs <multiline_needs>`: Write a whole need in a comment -- its options and a body in reStructuredText or Markdown -- right next to your code (extracted by ``codelinks analyse``; the directive renders them in a following release).
 
 When used in a Sphinx context, a new :ref:`directive` creates items at the location where it is placed (for a subset
 of the analyzed files/folders).
