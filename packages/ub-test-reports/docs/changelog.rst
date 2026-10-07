@@ -22,7 +22,7 @@ Fixed
   shows the same set either way). The field is still written, empty, for a case carrying
   none of the mapped properties.
   `#2058 <https://github.com/useblocks/sphinx-needs/issues/2058>`__,
-  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+  `#2119 <https://github.com/useblocks/sphinx-needs/pull/2119>`__
 
 .. _`release:1.0.0`:
 
