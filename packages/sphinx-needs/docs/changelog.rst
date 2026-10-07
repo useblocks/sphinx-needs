@@ -215,9 +215,10 @@ Bug fixes
   :ref:`needs_from_toml` file did, since that file can only give it a string.
   A ``class_init`` that is not a mapping ended it the same way.
   Such a service is now one ``needs.config`` warning, naming the key and what is wrong
-  with its value, and is not registered; the build goes on. Every service that was
-  registered before still is, and a table that holds a service's options only is read
-  as before, without a warning.
+  with its value, and is not registered; the build goes on. A service whose ``class`` is
+  callable with ``options`` and whose ``class_init`` is a mapping registers as before,
+  whether or not the class derives from ``BaseService``, and a table that holds a
+  service's options only is read as before, without a warning.
 
 .. _`release:8.5.0`:
 
