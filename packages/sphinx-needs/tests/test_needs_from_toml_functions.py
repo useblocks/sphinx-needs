@@ -194,16 +194,19 @@ NOT_A_LIST_CONF = """\
         pytest.param("answer", "function", id="bare-function"),
         # not a crash: one "not callable" warning per character
         pytest.param('"answer"', "str", id="string"),
+        # not a crash either: registered, beside Sphinx's own type warning
+        pytest.param("{answer}", "set", id="set"),
     ],
 )
 def test_a_needs_functions_value_that_is_not_a_list_warns_once_and_is_ignored(
     build, value, type_name
 ):
     """``None`` and a bare function ended the build with ``TypeError: ... is not
-    iterable``, when ``merge_default_configs`` iterated the value, and a string was
-    iterated character by character. Each is now one ``needs.config`` warning naming the
-    type, which Sphinx's own type check does not repeat; nothing is registered from the
-    value, and the built-in functions still are."""
+    iterable``, when ``merge_default_configs`` iterated the value, a string was iterated
+    character by character, and a set was registered beside Sphinx's own type warning.
+    Each is now one ``needs.config`` warning naming the type, which Sphinx's own type
+    check does not repeat; nothing is registered from the value, and the built-in
+    functions still are."""
     app = build({"conf.py": NOT_A_LIST_CONF.format(value=value)})
     assert build_warnings(app) == [
         f"WARNING: needs_functions is of type {type_name!r}, not a list of callables, "
@@ -271,6 +274,36 @@ def test_a_needs_functions_entry_without_a_name_warns_and_is_ignored(
         f"WARNING: needs_functions entry {entry_repr} has no __name__ and is ignored: "
         "an entry must be a callable with a __name__; use "
         "add_dynamic_function(app, func, name=...) for one without [needs.config]"
+    ]
+    assert app.statuscode == 0
+    assert _registered(app) == sorted([*BUILT_IN_FUNCTIONS, "answer"])
+    assert _need(app, "R_ONE")["status"] == "forty-two"
+
+
+#: A ``conf.py`` whose ``needs_functions`` is a tuple, and a page that calls its function.
+TUPLE_CONF = """\
+    extensions = ["sphinx_needs"]
+    needs_build_json = True
+    # Sphinx's own warning that a function in the configuration is not pickled, which
+    # is not what this test is about
+    suppress_warnings = ["config.cache"]
+
+
+    def answer(app, need, needs):
+        return "forty-two"
+
+
+    needs_functions = (answer,)
+    """
+
+
+def test_a_needs_functions_tuple_is_still_registered(build):
+    """Guards the other side of the not-a-list check: a tuple was registered before,
+    and still is, and its function is called. The one warning is Sphinx's own, for a
+    value of a type the configuration does not declare; sphinx-needs adds none."""
+    app = build({"conf.py": TUPLE_CONF, "index.rst": ANSWER_RST})
+    assert build_warnings(app) == [
+        "WARNING: The config value `needs_functions' has type `tuple'; expected `list'."
     ]
     assert app.statuscode == 0
     assert _registered(app) == sorted([*BUILT_IN_FUNCTIONS, "answer"])

@@ -155,7 +155,8 @@ Bug fixes
   callable, which is now skipped with a ``needs.config`` warning instead.
 
 - 🐛 A :ref:`needs_functions` value that is not a list, and an entry without a
-  ``__name__``, are reported with a warning instead of crashing the build (:issue:`2073`)
+  ``__name__``, are reported with a warning instead of crashing the build
+  **(changed output)** (:issue:`2073`)
 
   ``needs_functions = None``, or a bare function where a list of functions belongs, ended
   the build with ``TypeError: ... is not iterable``, and an entry without a ``__name__``,
@@ -163,8 +164,11 @@ Bug fixes
   ``AttributeError``, because a dynamic function is registered, and called, by its name.
   A value that is not a list or tuple is now one ``needs.config`` warning naming its type,
   and nothing is registered from it; a string, which was read one character at a time
-  with a warning for each, is reported the same way. An entry without a ``__name__`` is
-  skipped with a ``needs.config`` warning, and the rest of the list is still registered.
+  with a warning for each, is reported the same way. A set of functions, or another
+  collection that is neither a list nor a tuple, used to register its functions beside
+  Sphinx's own type warning, and is now ignored with the same ``needs.config`` warning.
+  An entry without a ``__name__`` is skipped with a ``needs.config`` warning, and the
+  rest of the list is still registered.
   Such a callable is registered with
   :py:func:`~sphinx_needs.api.configuration.add_dynamic_function` and its ``name``
   argument, which now raises ``NeedsApiConfigException`` asking for that name when it is
