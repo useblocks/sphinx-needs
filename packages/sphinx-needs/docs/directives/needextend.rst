@@ -171,6 +171,9 @@ For a need ``REQ_1`` written with ``:status: open``:
 ``REQ_1`` ends closed and tagged ``written_open``:
 the filter matches it as written, although the ``needextend`` applied before it closed it.
 An ID argument names its need whatever the other ``needextend`` directives change.
+To react to what another ``needextend`` set, write the value as a derivation:
+a ``[[…]]`` or ``<<…>>`` sees the needs after every ``needextend`` is applied (:ref:`needs_processing_order`),
+where a second ``needextend`` whose filter names the changed field matches the needs as written.
 A filter sees no value a ``[[…]]``, ``<<…>>`` or ``<{…}>`` computes, as those are computed after every ``needextend``
 (:ref:`needs_processing_order`),
 so a ``needextend`` whose filter names a field that one computes, on any need, is reported as ``needs.derive_scope``.
