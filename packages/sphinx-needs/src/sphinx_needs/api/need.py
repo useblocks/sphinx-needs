@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, TypedDict, TypeVar, cast
 
 from docutils import nodes
+from docutils.parsers import Parser
 from docutils.parsers.rst.states import RSTState
 from docutils.statemachine import StringList
 from sphinx.application import Sphinx
@@ -32,6 +33,7 @@ from sphinx_needs.filter_common import (
 )
 from sphinx_needs.functions.functions import DynamicFunctionParsed
 from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.need_content import parse_need_content, resolve_content_parser
 from sphinx_needs.need_item import (
     NeedItem,
     NeedItemSourceDirective,
@@ -572,6 +574,8 @@ def add_need(
     content: str | StringList = "",
     lineno_content: int | None = None,
     doctype: str | None = None,
+    content_markup: str | None = None,
+    content_source: tuple[str, int] | None = None,
     status: str | None = None,
     tags: str | list[str] | None = None,
     constraints: str | list[str] | None = None,
@@ -609,7 +613,10 @@ def add_need(
     Instead, the need is referencing an external url.
     Used mostly for :ref:`needs_external_needs` to integrate and reference needs from external documentation.
 
-    :raises InvalidNeedException: If the need could not be added due to a validation issue.
+    :raises InvalidNeedException: If the need could not be added due to a validation issue;
+        also if ``content_markup`` names no reStructuredText or MyST parser of the
+        project, or ``content_source`` is given without ``content_markup``. Both are
+        raised before the need is recorded.
 
     If the need is within the current project, i.e. not an external need,
     the following parameters are used to help provide source mapped warnings and errors:
@@ -635,6 +642,30 @@ def add_need(
     :param id: ID as string. If not given, an id will get generated.
     :param content: Content of the need, either as a ``str``
         or a ``StringList`` (a string with mapping to the source text).
+    :param doctype: The source suffix the need is recorded as written in
+        (e.g. ``".rst"``). If not given, it is ``content_markup`` when that is given,
+        else the suffix of the document the need is created in.
+    :param content_markup: The source suffix of the markup ``content`` is written in,
+        such as ``".rst"`` or ``".md"`` -- any suffix the project's ``source_suffix`` maps
+        to a reStructuredText or MyST parser. The content is then parsed by that parser,
+        whatever the parser of the document the need is created in.
+        ``None`` (the default) parses the content with the document's own parser, as
+        before. See :ref:`api_content_markup`.
+
+        .. versionadded:: 9.0.0
+
+    :param content_source: ``(path, first_line)``: the file the content lines were
+        written in, and the 1-based line of the first content line in it. Every
+        diagnostic raised while parsing the content, and every node created from it,
+        then names ``path`` and the line each content line sits on
+        (``first_line + i``). Sphinx prints node-based locations as absolute paths, so
+        pass an absolute ``path``. Only meaningful with ``content_markup``; ``None``
+        anchors the content in the document the need is created in, as before.
+        Ignored for content rendered from a template or with ``jinja_content``, which
+        no file holds: that is anchored at the need's own line.
+
+        .. versionadded:: 9.0.0
+
     :param status: Status as string.
     :param tags: A list of tags, or a comma separated string.
     :param constraints: Constraints as single, comma separated, string.
@@ -658,6 +689,17 @@ def add_need(
             "deprecated key found in kwargs", DeprecationWarning, stacklevel=1
         )
         kwargs = {k: v for k, v in kwargs.items() if k not in _deprecated_kwargs}
+
+    content_parser: type[Parser] | None = None
+    if content_markup is not None:
+        content_parser = resolve_content_parser(app, content_markup)
+        if doctype is None:
+            doctype = content_markup
+    elif content_source is not None:
+        raise InvalidNeedException(
+            "content_source",
+            "content_source is only meaningful together with content_markup.",
+        )
 
     if (
         doctype is None
@@ -723,7 +765,14 @@ def add_need(
         # then we can no longer use the original potentially source mapped StringList
         content = needs_info["content"]
 
-    return _create_need_node(needs_info, app.env, state, content)
+    return _create_need_node(
+        needs_info,
+        app.env,
+        state,
+        content,
+        content_parser=content_parser,
+        content_source=content_source,
+    )
 
 
 def _template_parse_offset(data: NeedItem) -> int:
@@ -762,11 +811,65 @@ def _reset_rst_titles(state: RSTState) -> Iterator[None]:
     state.memo.section_level = surrounding_section_level
 
 
+def _host_content_anchor(
+    state: RSTState, input_offset: int, host_source: str
+) -> tuple[str, int]:
+    """Where the host's own ``nested_parse`` at ``input_offset`` reports its first line.
+
+    :return: ``(source, 1-based line)``.
+    """
+    source: str | None
+    line: int | None
+    if isinstance(state, RSTState):
+        # docutils: the offset is a line in the parser's own space, which ``rst_prolog``
+        # and ``.. include::`` shift; the state machine maps it back to a file line
+        source, line = state.state_machine.get_source_and_line(input_offset + 1)
+    else:
+        # myst-parser's ``MockState.nested_parse`` offsets from the directive's own line,
+        # which is what its state machine reports when asked for no line in particular
+        source, line = state.state_machine.get_source_and_line()
+        line = None if line is None else line + input_offset + 1
+    return (str(source) if source else host_source), (
+        line if line is not None else input_offset + 1
+    )
+
+
+def _parse_declared_content(
+    data: NeedItem,
+    state: RSTState,
+    content: str | StringList,
+    content_offset: int,
+    node: nodes.Element,
+    *,
+    parser: type[Parser],
+    content_source: tuple[str, int] | None,
+    host_source: str,
+) -> None:
+    """Parse a need's content in the markup given to ``add_need(content_markup=...)``."""
+    lines = list(content) if isinstance(content, StringList) else content.splitlines()
+    if data["jinja_content"] or data["template"]:
+        # rendered text exists in no file: anchor it at the need's own line, as the
+        # pre/post template content is
+        source, first_line = _host_content_anchor(
+            state, _template_parse_offset(data), host_source
+        )
+    elif content_source is not None:
+        source, first_line = content_source
+    else:
+        source, first_line = _host_content_anchor(state, content_offset, host_source)
+    parse_need_content(
+        state, lines, parser=parser, source=source, first_line=first_line, node=node
+    )
+
+
 def _create_need_node(
     data: NeedItem,
     env: BuildEnvironment,
     state: RSTState,
     content: str | StringList,
+    *,
+    content_parser: type[Parser] | None = None,
+    content_source: tuple[str, int] | None = None,
 ) -> list[nodes.Node]:
     """Create a Need node (and surrounding nodes) to be added to the document.
 
@@ -779,6 +882,9 @@ def _create_need_node(
     :param content: The main content to be rendered inside the need.
         Note, this content my be different to ``data["content"]``,
         in that it may be a ``StringList`` type with source-mapping directly parsed from a directive.
+    :param content_parser: If given, the content is parsed by this parser
+        (``add_need(content_markup=...)``) rather than by ``state``.
+    :param content_source: ``(path, first_line)`` of the content, used with ``content_parser``.
     """
     source = env.doc2path(data["docname"]) if data["docname"] else None
 
@@ -828,7 +934,18 @@ def _create_need_node(
         content_offset = data["lineno_content"] - 1
     elif data["lineno"]:
         content_offset = data["lineno"] - 1
-    if isinstance(content, StringList):
+    if content_parser is not None:
+        _parse_declared_content(
+            data,
+            state,
+            content,
+            content_offset,
+            node_need,
+            parser=content_parser,
+            content_source=content_source,
+            host_source=str(source) if source else "",
+        )
+    elif isinstance(content, StringList):
         state.nested_parse(content, content_offset, node_need, match_titles=False)
     else:
         state.nested_parse(
