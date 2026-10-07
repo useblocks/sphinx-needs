@@ -3,6 +3,7 @@ import pytest
 
 from sphinx_codelinks.config import (
     MultilineNeedsConfig,
+    NeedIdRefsConfig,
     OneLineCommentStyle,
     SourceAnalyseConfig,
     convert_analyse_config,
@@ -276,12 +277,27 @@ def test_multiline_needs_config_errors_reach_the_analyse_config() -> None:
     ), "not checked while the feature is off"
 
 
+def test_multiline_markers_are_checked_only_when_the_feature_is_on() -> None:
+    """A reference marker ``@need`` (valid before multi-line needs existed) is a clash
+    only for a project that switches multi-line needs on."""
+    refs = NeedIdRefsConfig(markers=["@need"])
+
+    assert (
+        SourceAnalyseConfig(need_id_refs_config=refs).check_markers_mutually_exclusive()
+        == []
+    )
+    assert SourceAnalyseConfig(
+        get_multiline_needs=True, need_id_refs_config=refs
+    ).check_markers_mutually_exclusive() == ["Marker @need is defined multiple times"]
+
+
 def test_multiline_markers_join_the_mutual_exclusion_check() -> None:
     """Equality only: the default one-line start ``@`` is a prefix of ``@need`` and that
     is not a clash; a multi-line marker equal to another marker is."""
     assert SourceAnalyseConfig().check_markers_mutually_exclusive() == []
     clash = SourceAnalyseConfig(
-        multiline_needs_config=MultilineNeedsConfig(start_sequence="@need-ids:")
+        get_multiline_needs=True,
+        multiline_needs_config=MultilineNeedsConfig(start_sequence="@need-ids:"),
     )
     assert clash.check_markers_mutually_exclusive() == [
         "Marker @need-ids: is defined multiple times"

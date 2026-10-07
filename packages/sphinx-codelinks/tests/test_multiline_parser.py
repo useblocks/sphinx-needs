@@ -8,10 +8,12 @@ The comment nodes here are synthetic: the module reads only ``.text``, ``.type``
 
 from __future__ import annotations
 
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
+from sphinx_codelinks.analyse.analyse import SourceAnalyse
 from sphinx_codelinks.analyse.models import SourceComment, WarningSubTypeEnum
 from sphinx_codelinks.analyse.multiline_parser import (
     LogicalLine,
@@ -20,7 +22,8 @@ from sphinx_codelinks.analyse.multiline_parser import (
     open_rest,
     parse_run,
 )
-from sphinx_codelinks.config import MultilineNeedsConfig
+from sphinx_codelinks.config import MultilineNeedsConfig, SourceAnalyseConfig
+from sphinx_codelinks.source_discover.config import CommentType
 
 
 def _node(text: str, row: int, column: int = 0, kind: str = "comment") -> SourceComment:
@@ -147,6 +150,28 @@ def test_the_doxygen_leader_is_stripped_when_every_line_has_one() -> None:
     assert run.lines[0].col == len(" * ")
 
 
+@pytest.mark.parametrize(
+    "text",
+    [
+        pytest.param(
+            "/**\n * @need req: T\n * @endneed\n ***/", id="stars_before_the_closer"
+        ),
+        pytest.param(
+            "/*********\n * @need req: T\n * @endneed\n *********/", id="full_banner"
+        ),
+    ],
+)
+def test_delimiter_only_banner_rows_are_dropped_before_the_leader_test(
+    text: str,
+) -> None:
+    """A row holding only the opener's or the closer's stars is a delimiter, not a line
+    without a leader."""
+    (run,) = form_runs([_node(text, 0)])
+
+    assert _texts(run) == ["@need req: T", "@endneed"]
+    assert [line.row for line in run.lines] == [1, 2]
+
+
 def test_no_leader_is_stripped_when_one_line_lacks_it() -> None:
     """The every-line rule: a star that is not a leader on every line is content."""
     text = "/*\n * @need req: T\n   Some *emphasis* here.\n */"
@@ -271,13 +296,15 @@ def test_an_unterminated_block_is_refused_and_ends_the_scan() -> None:
     assert result.claimed_rows == set()
 
 
-def test_the_one_line_form_is_refused_and_claims_nothing() -> None:
-    result = parse_run(_lines("@need req: T @endneed"), CONFIG)
+def test_the_one_line_form_is_refused_and_claims_its_own_row() -> None:
+    """Its row is hidden from the one-line parser, which would otherwise mint a need
+    from a title holding a comma, or warn a second time."""
+    result = parse_run(_lines("@need req: T, with comma @endneed", "next"), CONFIG)
 
     assert [(issue.kind, issue.row) for issue in result.issues] == [
         (WarningSubTypeEnum.multiline_need_oneline_form, 0)
     ]
-    assert result.claimed_rows == set()
+    assert result.claimed_rows == {0}
 
 
 def test_an_unknown_markup_falls_back_to_the_default() -> None:
@@ -352,6 +379,16 @@ def test_an_escaped_close_is_body_text_without_its_backslash() -> None:
     assert block.need["content"] == "@endneed\n\\@need stays"
 
 
+def test_an_indented_escape_loses_its_backslash_and_keeps_its_indentation() -> None:
+    """The escape mirrors the close test, which ignores indentation: so the close word
+    can be shown inside an indented block of the body."""
+    lines = _lines("@need req: T", "", "Example::", "", "    \\@endneed", "@endneed")
+
+    (block,) = parse_run(lines, CONFIG).blocks
+
+    assert block.need["content"] == "Example::\n\n    @endneed"
+
+
 def test_a_nested_open_is_body_text_and_noted() -> None:
     lines = _lines("@need req: T", "", "@need req: inner", "@endneed")
 
@@ -409,3 +446,56 @@ def test_blank_rows_keeps_the_line_count() -> None:
 
     assert blanked == "/**\n\n\n * @Other, ID\n */"
     assert blanked.count("\n") == text.count("\n")
+
+
+# --- through the analysis ---------------------------------------------------------------
+
+
+def _analysis(
+    tmp_path: Path, name: str, source: str | bytes, comment_type: CommentType
+) -> SourceAnalyse:
+    """An analysis of one file with every extractor on, not yet run."""
+    src_path = tmp_path / name
+    if isinstance(source, bytes):
+        src_path.write_bytes(source)
+    else:
+        src_path.write_text(source, encoding="utf-8")
+    analyse = SourceAnalyse(
+        SourceAnalyseConfig(
+            src_files=[src_path],
+            src_dir=tmp_path,
+            comment_type=comment_type,
+            get_oneline_needs=True,
+            get_multiline_needs=True,
+        ),
+        name="p",
+    )
+    analyse.git_remote_url = None
+    analyse.git_commit_rev = None
+    return analyse
+
+
+RUST_RUN = (
+    "/// Parses things.\n"
+    "/// @need impl: Rust block\n"
+    "/// :id: IMPL_RUST\n"
+    "/// @endneed\n"
+    "fn parse() {}\n"
+)
+
+
+def test_a_rust_doc_comment_spans_only_its_own_row(tmp_path: Path) -> None:
+    """A ``///`` node's text ends with its newline; it still covers one row, so the row
+    above the open line neither holds claimed rows nor stands for the block."""
+    analyse = _analysis(tmp_path, "lib.rs", RUST_RUN, CommentType.rust)
+    analyse.create_src_objects()
+
+    claimed = analyse.extract_multiline_needs()
+
+    rows = {
+        comment.node.start_point.row: claimed.get(id(comment), set())
+        for comment in analyse.src_comments
+    }
+    assert rows == {0: set(), 1: {1}, 2: {2}, 3: {3}}
+    (need,) = analyse.multiline_needs
+    assert need.source_comment.node.start_point.row == 1
