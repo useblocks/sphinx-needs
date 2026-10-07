@@ -41,7 +41,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 9
+ENV_DATA_VERSION: Final = 10
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -61,6 +61,13 @@ Version 9 adds ``extend_priority`` to :class:`NeedsExtendType`. The extends are 
 by it when the needs are post-processed, from the pickled environment, so an unbumped
 rebuild over an existing ``_build`` meets extends recorded without the key and ends
 with a ``KeyError`` rather than re-reading the documents that hold them.
+
+Version 10 changes no stored shape: it changes what the stored values mean. The dynamic
+functions and variants are computed in dependency order, so the same sources give other
+values (a chain's value, an empty cycle), and an unbumped rebuild over an existing
+``_build`` writes them to ``needs.json`` but re-writes only the pages whose sources
+changed, leaving the old values on every other page. The bump makes an upgraded build
+re-read and re-write every page.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """
