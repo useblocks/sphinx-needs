@@ -55,5 +55,5 @@ class ServiceManager:
             )
 
 
-class NeedsServiceException(BaseException):
+class NeedsServiceException(Exception):
     pass

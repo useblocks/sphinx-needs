@@ -71,6 +71,15 @@ Improvements
 Bug fixes
 .........
 
+- 🐛 A :ref:`needservice` naming a service that is not registered is reported as a
+  ``needs.directive`` warning, instead of ending the build with a traceback
+  (:issue:`2101`)
+
+  The warning names the service and the registered ones, and the directive adds nothing
+  to the document, so the build goes on (and fails under ``-W`` like for any other
+  warning). ``NeedsServiceException`` now derives from ``Exception`` rather than
+  ``BaseException``.
+
 - 🐛 An :ref:`if <if>` condition whose result has no truth value is reported, instead of
   ending the build **(changed output)** (:issue:`2025`, :pr:`2029`)
 

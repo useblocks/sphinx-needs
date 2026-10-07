@@ -16,6 +16,7 @@ from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import NeedItemSourceService
 from sphinx_needs.needs_schema import FieldsSchema
+from sphinx_needs.services.manager import NeedsServiceException
 from sphinx_needs.utils import DummyOptionSpec, add_doc, coerce_to_boolean
 
 
@@ -70,8 +71,16 @@ class NeedserviceDirective(SphinxDirective):
         needs_services = SphinxNeedsData(self.env).get_or_create_services()
 
         service_name = self.arguments[0]
-        service = needs_services.get(service_name)
-        assert service is not None
+        try:
+            service = needs_services.get(service_name)
+        except NeedsServiceException as err:
+            log_warning(
+                self.log,
+                str(err),
+                "directive",
+                location=self.get_location(),
+            )
+            return []
         section = []
 
         if "debug" not in self.options:
