@@ -334,8 +334,8 @@ def four_cell_files() -> tuple[list[tuple[Path, str]], dict[str, int]]:
 FOUR_CELL_FILES, FOUR_CELL_LINENOS = four_cell_files()
 
 
-def myst_logged(host: str, name: str, line: int) -> str:
-    """Where a warning myst-parser logs itself points, for content from ``src/<name>``.
+def myst_logged(host: str, source: str, line: int) -> str:
+    """Where a warning myst-parser logs itself points, for content from ``source``.
 
     Not the content's file: this version does not rewrite myst-parser's own locations.
     myst-parser 5 logs the page being read, with the content's line; myst-parser 4 logs
@@ -344,13 +344,14 @@ def myst_logged(host: str, name: str, line: int) -> str:
     """
     if MYST_MAJOR >= 5:
         return f"<srcdir>/{host}:{line}"
-    return f"<srcdir>/{src(name)}.rst:{line}"
+    return f"<srcdir>/{source}.rst:{line}"
 
 
-def four_cell_warnings() -> list[str]:
-    """Every warning the four-cell project emits."""
+def four_cell_warnings(cells: tuple[str, ...] = tuple(CELLS)) -> list[str]:
+    """Every warning the four-cell project emits for ``cells``."""
     expected = []
-    for cell, (host, markup, name, first) in CELLS.items():
+    for cell in cells:
+        host, markup, name, first = CELLS[cell]
         if markup == ".rst":
             directive = first + at(RST_BODY, ".. nosuchdirective")
             role = first + at(RST_BODY, ":nosuchrole:")
@@ -369,9 +370,9 @@ def four_cell_warnings() -> list[str]:
                 "```{note}", at(MYST_BODY, "{nosuchrole}")
             )
             expected += [
-                f"{myst_logged(host, name, directive)}: WARNING: Unknown directive "
+                f"{myst_logged(host, src(name), directive)}: WARNING: Unknown directive "
                 "type: 'nosuchdirective' [myst.directive_unknown]",
-                f"{myst_logged(host, name, role)}: WARNING: Unknown interpreted text "
+                f"{myst_logged(host, src(name), role)}: WARNING: Unknown interpreted text "
                 'role "nosuchrole". [myst.role_unknown]',
                 f"<srcdir>/{src(name)}:{empty_note}: ERROR: Content block expected "
                 'for the "note" directive; none found. [docutils]',
@@ -661,9 +662,9 @@ def test_without_content_source_and_the_refusals(test_app: SphinxTestApp):
     assert sorted(build_warnings(app)) == sorted(
         [
             # MyST content in the RST page
-            f"<srcdir>/index.rst:{mr + at(MYST_BODY, '```{nosuchdirective}')}: WARNING: "
+            f"{myst_logged('index.rst', 'index.rst', mr + at(MYST_BODY, '```{nosuchdirective}'))}: WARNING: "
             "Unknown directive type: 'nosuchdirective' [myst.directive_unknown]",
-            f"<srcdir>/index.rst:{mr + at(MYST_BODY, '{nosuchrole}')}: WARNING: "
+            f"{myst_logged('index.rst', 'index.rst', mr + at(MYST_BODY, '{nosuchrole}'))}: WARNING: "
             'Unknown interpreted text role "nosuchrole". [myst.role_unknown]',
             f"<srcdir>/index.rst:{mr + MYST_BODY.index('```{note}', 5)}: ERROR: "
             'Content block expected for the "note" directive; none found. [docutils]',
@@ -893,15 +894,8 @@ def test_an_incremental_build_reports_the_same_locations(test_app: SphinxTestApp
 
     # what reading the MyST page reports for its two cells, and what writing reports
     # for all four (every page with needs is written again)
-    read_md = (
-        "<srcdir>/host_md.md:",
-        f"<srcdir>/{src('c.c')}:",
-        f"<srcdir>/{src('d.c')}:",
-    )
-    expected = [
-        w
-        for w in four_cell_warnings()
-        if w.startswith(read_md) or w.endswith("[ref.ref]")
+    expected = four_cell_warnings(("rm", "mm")) + [
+        w for w in four_cell_warnings(("rr", "mr")) if w.endswith("[ref.ref]")
     ]
     assert sorted(second) == sorted(expected)
     assert needs_by_id(app) == needs
