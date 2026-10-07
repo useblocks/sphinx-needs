@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791375023796,
+  "lastUpdate": 1791377455177,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -23184,6 +23184,42 @@ window.BENCHMARK_DATA = {
             "value": 41.465725512999995,
             "unit": "s",
             "extra": "Commit: 3f26b92e8ab19c2f621716f8c7aa87c99ff7e569\nBranch: master\nTime: 2026-10-07T14:09:13+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bb1f466ab37706fc9dbfe701e55f8073a38dac3e",
+          "message": "🐛 sphinx-test-reports: tr_link no longer crashes on a need without the compared field (#2117)\n\n**What**\n\n`tr_link` guards on the field's VALUE instead of its presence, on the\nneed it runs for and on each candidate target. A need whose compared\nfield is unset gets no links (the empty list).\n\n**Why**\n\nThe documented usage, `:links: [[tr_link('classname', 'title')]]`,\nwarned `'NoneType' object has no attribute 'split'` for every\nnon-test-case need carrying it, and failed a `-W` build: since 1.4.0's\ntyped field registration every need carries the test fields, and on a\nneed that is not a test-case the compared field (`classname` in the\ndocumented call) is `None`, so the old `if test_option not in need`\nguard never fired. The empty-result value is `[]`, not `\"\"`:\nsphinx-needs reads `\"\"` from a links function as a link to the id `\"\"`\nand reports it as a dead outgoing link. That also changes one more case:\na field name that is not registered at all (a typo,\n`tr_link('no_such_field', 'title')`) used to give a dead link `''` with\nan `unknown outgoing link ''` warning, and now gives no links and no\nwarning.\n\n**ubCode parity**\n\nNothing to match: ubCode does not resolve `tr_link` (not one of its six\nbuilt-in dynamic functions); it reports the call once at its site and\nrenders `??`.\n\n**Tests**\n\n`tests/test_tr_link.py` builds the documented usage (a test-case, a\ntest-file, a spec comparing the other way, and a spec titled `None`,\nwhich a \"coerce it to a string\" fix would link) and asserts no warning\nat all plus the resolved `links` of each need. Red on master with the\n`NoneType` warning.\n\nCloses #1949",
+          "timestamp": "2026-10-07T14:49:39+02:00",
+          "tree_id": "70a7dfa8dcac235121aff54e74a2a7ba767a91c3",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/bb1f466ab37706fc9dbfe701e55f8073a38dac3e"
+        },
+        "date": 1791377447442,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07065766000000195,
+            "unit": "s",
+            "extra": "Commit: bb1f466ab37706fc9dbfe701e55f8073a38dac3e\nBranch: master\nTime: 2026-10-07T14:49:39+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 45.667692941,
+            "unit": "s",
+            "extra": "Commit: bb1f466ab37706fc9dbfe701e55f8073a38dac3e\nBranch: master\nTime: 2026-10-07T14:49:39+02:00"
           }
         ]
       }
