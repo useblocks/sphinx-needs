@@ -3,6 +3,10 @@
 Write
 =====
 
+.. deprecated:: 1.5.0
+
+   ``write rst`` is deprecated and will be removed in Sphinx-CodeLinks 2.0.0. The Sphinx build attaches ``@need-ids:`` references to the needs they name itself, in each project's :ref:`ref_url_field` (default ``code_url``): see :ref:`need_id_refs_in_build`, which also says how to migrate. The command still works, and prints a notice on stderr.
+
 The ``write`` command is used to generate file formats such as reStructuredText from the markers extracted by the ``analyse`` command.
 This allows you to create documentation that includes links to source code based on the need ids specified in your code comments.
 

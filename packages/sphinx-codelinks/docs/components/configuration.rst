@@ -55,6 +55,8 @@ set_local_url
 
 Enables the generation of local file system links to source code locations. When enabled, Sphinx Directive **src-trace** will add a custom field, which contains the local path to the source file, to generated needs.
 
+The source files the local links name are copied into the HTML output directory (``<outdir>/<src_dir name>/<path>``), each with a syntax-highlighted page beside it (``<file>.html``) that the links point at, whose ``[docs]`` links lead back to the needs. What to copy and page is kept in the build environment, and every HTML build (``singlehtml`` writes none: Sphinx collects no extra pages for it, so its local links are dead, as before) writes from it each copy and page its output lacks or holds out of date -- whether or not the documents tracing the files are read again, and under ``-j N`` too -- so a cleaned output directory, or a second HTML builder sharing the doctrees (``html`` and ``dirhtml``), gets them back. An unchanged build rewrites no copy or page; a copy carries its source's modification time and is written again when the source's size or modification time differs from it, and a page is written again when its source changed, a document tracing it -- now or before -- was read again, added or removed, or the output lacks it (Sphinx 7.4 writes nothing at all on a build with nothing out of date). Only HTML builders write them (``singlehtml`` excepted, as above): a LaTeX build leaves no copies in its output. A copy whose source can no longer be read when the pages are written (removed since its document was read) is skipped with a ``codelinks.source_page`` warning, as is a second source copied to the same place (two projects whose source directories share a name: the first one recorded is paged).
+
 **Type:** ``bool``
 **Default:** ``False``
 
@@ -109,7 +111,7 @@ Specifies the custom field name used for remote source code links.
 outdir
 ~~~~~~
 
-Specifies the output directory for generated artifacts such as extracted markers and warnings.
+Specifies the output directory for generated artifacts such as the extracted markers.
 
 **Type:** ``str``
 **Default:** ``"./output"``
@@ -166,7 +168,28 @@ Defines the URL pattern for Sphinx Directive ``src-trace`` to generate links to 
 - **GitLab:** ``https://gitlab.com/user/repo/-/blob/{commit}/{path}#L{line}``
 - **Bitbucket:** ``https://bitbucket.org/user/repo/src/{commit}/{path}#lines-{line}``
 
-.. note:: This option integrates with :external+needs:ref:`need_string_links<needs_string_links>` to automatically generate clickable links in the documentation.
+A pattern containing ``,`` or ``;`` -- gitweb's ``?p=repo.git;a=blob;f={path};hb={commit}``, for one -- is not supported for rendering: Sphinx-Needs splits a string-linked value on those characters, so the link would render as several broken ones. The build warns about such a pattern (``codelinks.remote_url_pattern``, which ``suppress_warnings`` can silence); ``needs.json`` still holds the whole URL.
+
+Each need a ``src-trace`` directive creates holds, in :ref:`remote_url_field <set_remote_url>`, its own project's pattern filled in for its marker -- a full URL, which is also the value in ``needs.json``.
+
+.. note:: This option integrates with :external+needs:ref:`need_string_links<needs_string_links>` to automatically generate clickable links in the documentation: the field's link points at the URL, and is named by the part after the commit (``src/main.cpp#L3``), or by the whole URL when the pattern has no commit in its path.
+
+.. _`ref_url_field`:
+
+ref_url_field
+~~~~~~~~~~~~~
+
+Names the need field the project's ``@need-ids:`` references are attached to during the build (see :ref:`need_id_refs_in_build`). The key and its default are ubCode's, so one ``ubproject.toml`` configures both tools; an empty string switches the attach off for the project.
+
+**Type:** ``str``
+**Default:** ``"code_url"``
+
+.. code-block:: toml
+
+   [codelinks.projects.my_project]
+   ref_url_field = "code_url"
+
+References are attached only when :ref:`set_remote_url` or :ref:`set_local_url` is on, references are extracted (``get_need_id_refs``, on by default) and at least one marker is configured. The field is registered as a list of strings; projects naming the same field share it. It must differ from ``local_url_field`` and ``remote_url_field``.
 
 .. _`discover_config`:
 
@@ -360,7 +383,10 @@ excluded from processing.
 When set to ``true`` (recommended), the following ignore sources are respected:
 
 - ``.gitignore`` files (including nested ``.gitignore`` files in subdirectories)
-- ``.ignore`` files (same syntax as ``.gitignore``, useful for non-git projects)
+- ``.ignore`` files (same syntax as ``.gitignore``, useful for non-git projects) -- including the one
+  Sphinx-CodeLinks writes at the root of every builder's output and doctree directories, so that
+  nothing any builder writes is traced, wherever the output directory is (other tools that read
+  ``.ignore`` files, such as ripgrep and VS Code's search, skip the build output too)
 - ``.git/info/exclude``
 - Global gitignore (e.g. ``~/.config/git/ignore``)
 - Parent directory ignore files
@@ -385,6 +411,14 @@ When disabled, symbolic links to directories are not traversed.
 
 - ``false`` - Symbolic links to directories are skipped (default, safer)
 - ``true`` - Symbolic links are followed, discovering files inside linked directories
+
+Either way a file is listed once, under its resolved path, however many links lead to it --
+except that two spellings of one file on a case-insensitive file system (a link to
+``sub/B.cpp`` beside ``sub/b.cpp``) are still two entries -- and a file whose target lies
+outside ``src_dir`` is skipped with a ``codelinks.outside_src_dir`` warning: every traced
+file is relative to ``src_dir``.
+A symbolic link to a *file* is discovered even with ``follow_links = false`` (ubCode skips
+it).
 
 For more information about the usage examples, see :ref:`source discover <discover>`.
 
@@ -488,6 +522,10 @@ Specifies an explicit path to the Git repository root directory. This option is 
 
 When not set, **Sphinx-CodeLinks** will automatically traverse parent directories to locate the ``.git`` folder.
 
+It must be ``src_dir`` or a directory above it, since every source path is relative to it;
+otherwise it is ignored with a ``codelinks.git_root`` warning and the repository root is
+detected from ``src_dir``, as when it is not set.
+
 **Type:** ``str`` (path)
 **Default:** Not set (auto-detection)
 
@@ -496,7 +534,7 @@ When not set, **Sphinx-CodeLinks** will automatically traverse parent directorie
    [codelinks.projects.my_project.analyse]
    git_root = "/absolute/path/to/repo"
 
-.. note:: When ``git_root`` is explicitly set, **Sphinx-CodeLinks** will use this path directly without attempting auto-detection. Ensure the path points to a valid Git repository containing a ``.git`` directory.
+.. note:: When ``git_root`` is explicitly set (and contains ``src_dir``), **Sphinx-CodeLinks** will use this path directly without attempting auto-detection. Ensure the path points to a valid Git repository containing a ``.git`` directory.
 
 .. _`oneline_comment_style`:
 
@@ -527,6 +565,8 @@ Enables the use of simplified :ref:`one-line comment patterns <oneline>` to repr
 - ``end_sequence`` - Character(s) that end a one-line comment pattern (typically line ending)
 - ``field_split_char`` - Character used to separate fields within the comment
 - ``needs_fields`` - List of field definitions for extracting need information
+
+A marker that does not fit the style is not a need: the build warns at its source line, as ``codelinks.oneline`` (:ref:`oneline_invalid`).
 
 **Example usage:**
 

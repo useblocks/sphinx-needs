@@ -59,6 +59,11 @@ from sphinx_needs.directives.need import (
     purge_needs,
 )
 from sphinx_needs.directives.needbar import Needbar, NeedbarDirective, process_needbar
+from sphinx_needs.directives.needchoose import (
+    ChooseDirective,
+    OtherwiseDirective,
+    WhenDirective,
+)
 from sphinx_needs.directives.needextend import Needextend, NeedextendDirective
 from sphinx_needs.directives.needextract import (
     Needextract,
@@ -309,6 +314,9 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.add_directive("needreport", NeedReportDirective)
     app.add_directive("needuml", NeedumlDirective)
     app.add_directive("if", IfDirective)
+    app.add_directive("choose", ChooseDirective)
+    app.add_directive("when", WhenDirective)
+    app.add_directive("otherwise", OtherwiseDirective)
     app.add_directive("needarch", NeedarchDirective)
     app.add_directive("list2need", List2NeedDirective)
 
@@ -565,6 +573,15 @@ def load_config_from_toml(app: Sphinx, config: Config) -> None:
         config_key = "needs_" + key
         # Keep values passed via sphinx-build -D (confoverrides) untouched.
         if key in overridden_keys or config_key in overridden_keys:
+            continue
+        if (reason := NeedsSphinxConfig.toml_ignored_reason(key)) is not None:
+            # never read, so every occurrence is reported, an empty one included
+            log_warning(
+                LOGGER,
+                f"'needs_from_toml' file sets {key!r}, which is ignored: {reason}",
+                "config",
+                None,
+            )
             continue
         config[config_key] = NeedsSphinxConfig.convert_field_value(
             key, value, toml_file.parent
@@ -977,6 +994,14 @@ def merge_default_configs(_app: Sphinx, config: Config) -> None:
 
     # Register functions configured by user
     for needs_func in needs_config._functions:
+        if not callable(needs_func):
+            log_warning(
+                LOGGER,
+                f"needs_functions entry {needs_func!r} is not callable and is ignored",
+                "config",
+                None,
+            )
+            continue
         _NEEDS_CONFIG.add_function(needs_func)
 
     # The default link name. Must exist in all configurations. Therefore we set it here for the user.

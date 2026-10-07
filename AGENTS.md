@@ -27,6 +27,7 @@ the shim.
 | sphinx-test-reports' behaviour (the Sphinx extension), tests, documentation | `packages/sphinx-test-reports/{src/sphinx_test_reports,tests,docs}/` — start at [`packages/sphinx-test-reports/AGENTS.md`](packages/sphinx-test-reports/AGENTS.md); its `docs/` are ub-test-reports' too |
 | ub-test-reports' behaviour (the converter, the pytest plugin, the parsers, the `[test_reports]` model — no Sphinx), tests | `packages/ub-test-reports/{src/ub_test_reports,tests}/` — start at [`packages/ub-test-reports/AGENTS.md`](packages/ub-test-reports/AGENTS.md) |
 | how every tool reads `ubproject.toml` — finding, anchoring, `[variants]`, the variant-data merge | `packages/ub-project/{src/ub_project,tests,design}/` — start at [`packages/ub-project/AGENTS.md`](packages/ub-project/AGENTS.md) |
+| sphinx-ai-index's behaviour (the `ai_docs_index.json` every docs site here publishes, and the `page-summary` directive), tests, the JSON contract | `packages/sphinx-ai-index/{src/sphinx_ai_index,tests,design}/` — start at [`packages/sphinx-ai-index/AGENTS.md`](packages/sphinx-ai-index/AGENTS.md) |
 | the fixtures, helpers and renderer resolution three suites share | `packages/sphinx-needs-testkit/` — a member this repository never publishes, installed through the root's `test` group and loaded by each suite's `tests/conftest.py` as a pytest plugin |
 | the three conformance corpora | `packages/sphinx-needs/tests/conformance/` (needflow) and `packages/sphinx-mounts/tests/fixtures/variant_condition_conformance.toml` (variant conditions), whose repository of record is ubCode, and `packages/ub-project/tests/fixtures/ubproject_reading_conformance.toml` (reading `ubproject.toml`), whose record is THIS repository and which ubCode is to vendor — all shared byte-for-byte; do not reformat any of them (`.gitattributes` plus the yamlfmt and taplo excludes protect them) |
 | a package's metadata, dependencies and extras | `packages/<pkg>/pyproject.toml` |
@@ -38,7 +39,7 @@ the shim.
 | the PlantUML renderer | `vendor/plantuml/` — `pin.toml` (version + sha256, the one place either is written), the committed `plantuml-<version>.jar` it names, and a `README.md`. `uv run poe verify-plantuml` fences the two against each other |
 | CI | `.github/workflows/`, and `.github/scripts/` for the three checks that must run *inside* a CI environment |
 | the docker image | `docker/` — a repository-level deliverable, like the workflows |
-| Read the Docs | sphinx-needs: `.readthedocs.yml`, and it stays at the root under that exact name — the configuration path applies to every version, so moving it makes older tags unbuildable. sphinx-mounts: `packages/sphinx-mounts/.readthedocs.yaml`, sphinx-codelinks: `packages/sphinx-codelinks/.readthedocs.yaml`, and sphinx-test-reports: `packages/sphinx-test-reports/.readthedocs.yaml`, each of which its own RTD project points at; every path inside those is relative to the REPOSITORY root, not to the file. ub-test-reports has no RTD project: it is documented on sphinx-test-reports' site, whose yaml installs it from the checkout first. ub-project has no docs site |
+| Read the Docs | sphinx-needs: `.readthedocs.yml`, and it stays at the root under that exact name — the configuration path applies to every version, so moving it makes older tags unbuildable. sphinx-mounts: `packages/sphinx-mounts/.readthedocs.yaml`, sphinx-codelinks: `packages/sphinx-codelinks/.readthedocs.yaml`, and sphinx-test-reports: `packages/sphinx-test-reports/.readthedocs.yaml`, each of which its own RTD project points at; every path inside those is relative to the REPOSITORY root, not to the file. ub-test-reports has no RTD project: it is documented on sphinx-test-reports' site, whose yaml installs it from the checkout first. ub-project has no docs site. sphinx-ai-index has no RTD project either: every `sphinx-*` site LOADS it, and each site's yaml pip-installs `packages/sphinx-ai-index` from the checkout before the package it documents, and lists it in its `post_checkout` skip filter |
 
 **`tools/` is the workspace's tooling — a virtual member, never released, whose manifest
 declares the tooling's dependencies; `.github/scripts/` keeps only the checks that must
@@ -80,6 +81,16 @@ it decides no policy — discovery, warnings and `-D` stay with each consumer. s
 sphinx-mounts, sphinx-codelinks and ub-test-reports depend on it, so each release of it
 re-floors all of them (`propagate_floors.py`).
 
+**`packages/sphinx-ai-index` writes a file ubCode reads**: `ai_docs_index.json`, the page
+index every `sphinx-*` docs site here publishes and ubCode's documentation search builds its
+catalog from. That JSON is a contract whose other half lives in ubCode, and it is pinned in
+`packages/sphinx-ai-index/design/json-contract.md` — a change to what the extension writes,
+or to when, starts there. Every extension's `docs` extra depends on it, and
+`release_plan.py` counts extras as edges: each release of it re-floors them all
+(`propagate_floors.py`), and while it sits on a version PyPI does not have, none of them can
+be released — so it is bumped in a release pull request that tags at once, never left on a
+dev version.
+
 **Naming: `sphinx-*` is a Sphinx extension; `ub-*` is a useblocks package that is not one**
 — a tool (such as `ub-test-reports`, import `ub_test_reports`) or a library (such as
 `ub-project`, import `ub_project`). The name does not say which of the two a `ub-*` package is; its README and
@@ -99,6 +110,7 @@ uv run poe test-mounts                # the sphinx-mounts suite (bazel tests des
 uv run poe test-codelinks             # the sphinx-codelinks suite (adds the libclang group)
 uv run poe test-reports               # the sphinx-test-reports suite
 uv run poe test-ub-test-reports       # the ub-test-reports suite (no Sphinx needed)
+uv run poe test-ai-index              # the sphinx-ai-index suite (no renderer, no network)
 uv run poe lint                       # every prek hook over the whole tree
 uv run poe typecheck                  # ty over both packages, against the oldest supported sphinx
 uv run poe typecheck-js-needs         # tsc over the vendored needstable.js (needs node)
@@ -115,6 +127,7 @@ uv run poe bump <dist> --bump minor   # stamp a release: version, literals, floo
 uv run poe import-check-needs         # import the wheel against PyPI-resolved dependencies
 uv run poe import-check-ub-test-reports  # the same for ub-test-reports (with its pytest extra)
 uv run poe import-check-codelinks     # the same for sphinx-codelinks (with its libclang extra)
+uv run poe import-check-ai-index      # the same for sphinx-ai-index
 uv run --frozen --no-sync pytest tools/tests -q   # the tooling's own tests
 UV_PYTHON=3.12 uv run --no-sync poe test-needs-sphinx8   # one CI matrix cell
 ```
@@ -422,11 +435,13 @@ the sphinx-mounts import landed as.
 
 **The imported packages' files are the opposite case and need no `--follow`.**
 sphinx-mounts', sphinx-codelinks' and sphinx-test-reports' histories were imported in
-2026-09 through `git filter-repo`, which rewrote the paths in every historical commit, so
-from this repository's point of view those files were always at `packages/sphinx-mounts/`,
-`packages/sphinx-codelinks/` and `packages/sphinx-test-reports/` — a plain `git log <path>` (and GitHub's per-file *History*
-button) shows the whole thing. `packages/<dist>/design/import-commit-map.txt` maps every
-hash the old repository had to its hash here, for all three of them. sphinx-test-reports' map
+2026-09, and sphinx-ai-index's in 2026-10, through `git filter-repo`, which rewrote the
+paths in every historical commit, so from this repository's point of view those files were
+always at `packages/sphinx-mounts/`, `packages/sphinx-codelinks/`,
+`packages/sphinx-test-reports/` and `packages/sphinx-ai-index/` — a plain `git log <path>`
+(and GitHub's per-file *History* button) shows the whole thing.
+`packages/<dist>/design/import-commit-map.txt` maps every hash the old repository had to its
+hash here, for each of them. sphinx-test-reports' map
 also records the one way its import is NOT byte-for-byte faithful: three PlantUML jar blobs
 were stripped from its history.
 
@@ -461,7 +476,7 @@ removed* (`error-on-warning` makes an unused suppression an error), never by loo
 
 Every issue and pull request carries one or more `pkg:` labels naming what it concerns:
 `pkg: <package>` (today `pkg: sphinx-needs`, `pkg: sphinx-mounts`,
-`pkg: sphinx-codelinks`, `pkg: sphinx-test-reports`, `pkg: sphinx-needs-testkit`, `pkg: ub-test-reports` and `pkg: ub-project`) or `pkg: workspace` for the repository
+`pkg: sphinx-codelinks`, `pkg: sphinx-test-reports`, `pkg: sphinx-needs-testkit`, `pkg: ub-test-reports`, `pkg: ub-project` and `pkg: sphinx-ai-index`) or `pkg: workspace` for the repository
 itself — workflows, CI, release, docker, tooling, the workspace root. Pull requests get
 theirs automatically from the paths they touch (`.github/labeler.yml`); the issue forms
 set it from their "Package" dropdown (`.github/issue-labeler.yml`). **An issue created

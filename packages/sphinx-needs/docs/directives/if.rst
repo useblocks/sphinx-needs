@@ -12,6 +12,7 @@ The directive argument is a Python expression evaluated against the ``var``
 namespace (populated from :ref:`needs_variant_data`).
 If the expression evaluates to ``True``, the directive body is parsed and
 included in the document. Otherwise the entire body is skipped.
+To include one of several branches instead, use :ref:`choose <choose>`.
 
 .. code-block:: rst
 
@@ -77,6 +78,8 @@ The body may contain section headers and any valid reStructuredText:
 
       Content under a conditional heading.
 
+.. _if_expression_context:
+
 Expression context
 ------------------
 
@@ -104,6 +107,8 @@ Behavior
   Use :ref:`filter` for need-aware filtering.
 - **Incremental builds**: If a document is re-read (e.g., because the source
   changed), all ``if`` directives in it are re-evaluated.
+- **Parsed on its own**: the body does not see where the ``if`` stands, so a sphinx-design
+  ``tab-item`` in a true ``if`` warns that its parent should be a ``tab-set``, even inside one.
 
 Warnings
 --------
@@ -112,3 +117,4 @@ The directive emits warnings (suppressible via ``suppress_warnings = ["needs.if"
 
 - ``needs_variant_data`` is not configured but the directive is used.
 - The expression raises an exception (syntax error, unknown key, etc.).
+- The expression does not return a bool (the result is still used, as its truth value).

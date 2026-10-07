@@ -2,7 +2,7 @@ import json
 from collections.abc import Generator
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, TypedDict, cast
+from typing import Any, cast
 
 from tree_sitter import Node as TreeSitterNode
 
@@ -34,14 +34,6 @@ logger = get_logger(__name__)
 def _count(n: int, noun: str) -> str:
     """Format ``n noun`` with a naive (append-s) plural for progress summaries."""
     return f"{n} {noun}" if n == 1 else f"{n} {noun}s"
-
-
-class AnalyseWarningType(TypedDict):
-    file_path: str
-    lineno: int
-    msg: str
-    type: str
-    sub_type: str
 
 
 @dataclass
@@ -303,6 +295,27 @@ class SourceAnalyse:
             )
         return anchors
 
+    def _is_need_id_refs_line(self, line: str) -> bool:
+        """Whether a comment line is an ``@need-ids:`` reference rather than a need.
+
+        A line whose text, after comment decoration and whitespace, starts with a
+        configured need-id-refs marker is a reference, and never a one-line need --
+        ubCode's precedence. Without it the default one-line start sequence ``@`` also
+        matched ``// @need-ids: A, B`` and made a need titled ``need-ids: A`` with the id
+        ``B``. A line with anything alphanumeric before the marker is not a reference
+        line here (``// see @need-ids: X`` -- the one-line parser ignores it anyway, and
+        the references on it are still extracted), and a line holding a one-line need
+        before the marker (``[[…]] @need-ids: X``) keeps its need: only a line that
+        STARTS with the marker is withheld from the one-line parser.
+        """
+        for marker in self.analyse_config.need_id_refs_config.markers:
+            marker_idx = line.find(marker)
+            if marker_idx != -1 and not any(
+                char.isalnum() for char in line[:marker_idx]
+            ):
+                return True
+        return False
+
     def extract_oneline_need(
         self,
         text: str,
@@ -316,6 +329,9 @@ class SourceAnalyse:
             lines[0] = f"{lines[0]}{UNIX_NEWLINE}"
 
         for line in lines:
+            if self._is_need_id_refs_line(line):
+                row_offset += 1
+                continue
             resolved = oneline_parser(line, oneline_comment_style)
             if not resolved:
                 row_offset += 1
@@ -501,7 +517,13 @@ class SourceAnalyse:
         with output_path.open("w") as f:
             json.dump(to_dump, f)
 
-    def run(self) -> None:
+    def run(self, *, log_summary: bool = True) -> None:
+        """Parse the source files and extract their markers.
+
+        :param log_summary: Whether to print the per-project summary line; a caller
+            that prints its own (the configuration pass of the Sphinx extension) passes
+            ``False``.
+        """
         if (
             self.analyse_config.preprocessor is not None
             and self.analyse_config.comment_type == CommentType.cpp
@@ -511,14 +533,19 @@ class SourceAnalyse:
             self.create_src_objects()
         self.extract_marked_content()
         self.merge_marked_content()
-        self._log_summary()
+        if log_summary:
+            self.log_summary()
 
-    def _log_summary(self) -> None:
-        """Emit a per-project marker (default-visible) plus a -v breakdown."""
+    def log_summary(self, extra: str = "") -> None:
+        """Emit a per-project marker (default-visible) plus a -v breakdown.
+
+        :param extra: Appended to the default-visible line (the ``src-trace``
+            directive's count of the one-line needs it did not create).
+        """
         label = f"codelinks [{self.name}]" if self.name else "codelinks"
         logger.info(
             f"{label}: {_count(len(self.src_files), 'file')}, "
-            f"{_count(len(self.all_marked_content), 'marker')}"
+            f"{_count(len(self.all_marked_content), 'marker')}{extra}"
         )
         logger.debug(
             f"{label}: {_count(len(self.src_comments), 'comment')}, "

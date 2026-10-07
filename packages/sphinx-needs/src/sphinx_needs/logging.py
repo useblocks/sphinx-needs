@@ -16,6 +16,7 @@ def get_logger(name: str) -> SphinxLoggerAdapter:
 WarningSubTypes = Literal[
     "beta",
     "card_layout",
+    "choose",
     "config",
     "constraint",
     "create_need",
@@ -46,6 +47,7 @@ WarningSubTypes = Literal[
     "mistyped_import_values",
     "mpl",
     "needextend",
+    "needextend_match_order",
     "needextract",
     "needflow",
     "needgantt",
@@ -68,6 +70,7 @@ WarningSubTypes = Literal[
 WarningSubTypeDescription: dict[WarningSubTypes, str] = {
     "beta": "Beta feature, subject to change",
     "card_layout": "Invalid ``needs_card_layouts`` specification",
+    "choose": "Error in processing choose/when/otherwise directive",
     "config": "Invalid configuration",
     "constraint": "Constraint violation",
     "create_need": "Creation of a need from directive failed",
@@ -97,6 +100,7 @@ WarningSubTypeDescription: dict[WarningSubTypes, str] = {
     "mistyped_import_values": "Unexpected value types found in imported need data",
     "mpl": "Matplotlib required but not installed",
     "needextend": "Error processing needextend directive",
+    "needextend_match_order": "The needs a needextend filter matches depend on modifications applied by earlier needextend directives (from the next release, filters are evaluated against the needs as written)",
     "needextract": "Error processing needextract directive",
     "needflow": "Error processing needflow directive",
     "needgantt": "Error processing needgantt directive",

@@ -44,7 +44,7 @@ on:
         default: false
     secrets:
       CODECOV_TOKEN:
-        description: Read only by the upload steps, and only on this repository's own pull requests.
+        description: Read only by the upload steps, on this repository's own pull requests and on pushes to master.
         required: false
 
 jobs:
@@ -105,15 +105,20 @@ jobs:
         # `-m "not bazel"` deselects the two tests the `bazel` job owns
         run: uv run --no-sync pytest -v packages/sphinx-mounts/tests -m "not bazel" --durations=25 --cov=sphinx_mounts --cov-report=xml:mounts.xml --cov-report=term-missing
       - name: "sphinx-mounts: upload to Codecov"
-        # dependabot PRs get no secrets; without a token the upload fails and takes the required `check` gate with it
-        if: inputs.upload-coverage && github.event.pull_request.head.repo.full_name == github.repository && github.repository == 'useblocks/sphinx-needs' && github.actor != 'dependabot[bot]'
+        # dependabot PRs get no secrets; without a token the upload fails and takes the required `check` gate with it.
+        # A push to master uploads too. The fork guard below (#1229, 2024-08) had no push case, so no master commit
+        # uploaded a report after it; Codecov compares a pull request against the newest ancestor that HAS one, so every
+        # pull request was compared against a stale base, and once the sphinx-test-reports split (#2009) moved
+        # statements out of the `reports` flag, that flag read as a coverage drop on changes that never touched it.
+        # `fail_ci_if_error` stays limited to pull requests: a Codecov outage must not turn master red
+        if: inputs.upload-coverage && github.repository == 'useblocks/sphinx-needs' && github.actor != 'dependabot[bot]' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           name: sphinx-mounts-pytests
           flags: mounts
           files: ./mounts.xml # `file` was renamed to `files` in codecov-action v5
-          fail_ci_if_error: true
+          fail_ci_if_error: ${{ github.event_name == 'pull_request' }}
       - name: "sphinx-codelinks: pytest"
         # `!cancelled()` and not the default `success()`: this suite is 20 seconds and the
         # one above is minutes, so letting a sphinx-mounts failure hide it would mean a
@@ -135,14 +140,14 @@ jobs:
         if: ${{ !cancelled() && steps.prepare.outcome == 'success' }}
         run: uv run --no-sync pytest -v packages/sphinx-codelinks/tests --durations=25 --cov=sphinx_codelinks --cov-report=xml:codelinks.xml --cov-report=term-missing
       - name: "sphinx-codelinks: upload to Codecov"
-        if: inputs.upload-coverage && github.event.pull_request.head.repo.full_name == github.repository && github.repository == 'useblocks/sphinx-needs' && github.actor != 'dependabot[bot]'
+        if: inputs.upload-coverage && github.repository == 'useblocks/sphinx-needs' && github.actor != 'dependabot[bot]' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           name: sphinx-codelinks-pytests
           flags: codelinks
           files: ./codelinks.xml
-          fail_ci_if_error: true
+          fail_ci_if_error: ${{ github.event_name == 'pull_request' }}
       - name: "sphinx-test-reports: pytest"
         # `!cancelled()` plus the prologue check, for the reason the step above gives: a
         # failure in either suite before it must not hide this one, but a failed
@@ -157,14 +162,14 @@ jobs:
         if: ${{ !cancelled() && steps.prepare.outcome == 'success' }}
         run: uv run --no-sync pytest -v packages/sphinx-test-reports/tests --durations=25 --cov=sphinx_test_reports --cov-report=xml:reports.xml --cov-report=term-missing
       - name: "sphinx-test-reports: upload to Codecov"
-        if: inputs.upload-coverage && github.event.pull_request.head.repo.full_name == github.repository && github.repository == 'useblocks/sphinx-needs' && github.actor != 'dependabot[bot]'
+        if: inputs.upload-coverage && github.repository == 'useblocks/sphinx-needs' && github.actor != 'dependabot[bot]' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           name: sphinx-test-reports-pytests
           flags: reports
           files: ./reports.xml
-          fail_ci_if_error: true
+          fail_ci_if_error: ${{ github.event_name == 'pull_request' }}
       - name: "ub-test-reports: pytest"
         # sphinx-test-reports' Sphinx-free core: the converter, the pytest plugin, the parsers
         # and the `[test_reports]` model. Here for every cell's platform and interpreter --
@@ -175,14 +180,14 @@ jobs:
         if: ${{ !cancelled() && steps.prepare.outcome == 'success' }}
         run: uv run --no-sync pytest -v packages/ub-test-reports/tests --cov=ub_test_reports --cov-report=xml:ub-test-reports.xml --cov-report=term-missing
       - name: "ub-test-reports: upload to Codecov"
-        if: inputs.upload-coverage && github.event.pull_request.head.repo.full_name == github.repository && github.repository == 'useblocks/sphinx-needs' && github.actor != 'dependabot[bot]'
+        if: inputs.upload-coverage && github.repository == 'useblocks/sphinx-needs' && github.actor != 'dependabot[bot]' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           name: ub-test-reports-pytests
           flags: ub-test-reports
           files: ./ub-test-reports.xml
-          fail_ci_if_error: true
+          fail_ci_if_error: ${{ github.event_name == 'pull_request' }}
       - name: "ub-project: pytest"
         # The shared `ubproject.toml` reader, which every extension above is to depend on.
         # Its suite takes under a second and needs nothing this cell does not already have;
@@ -192,3 +197,21 @@ jobs:
         # stays the run that proves it imports no Sphinx. Same `if:` as the step above
         if: ${{ !cancelled() && steps.prepare.outcome == 'success' }}
         run: uv run --no-sync pytest -v packages/ub-project/tests
+      - name: "sphinx-ai-index: pytest"
+        # The extension every `sphinx-*` docs site loads to publish `ai_docs_index.json`. Its
+        # suite builds small Sphinx projects in `tmp_path` and needs nothing this cell does
+        # not already have -- no renderer, no git, no libclang, no network -- and its
+        # property-based tests get `hypothesis` from the root `test` group. hypothesis
+        # writes its example database into the working directory, the repository root here,
+        # which the root `.gitignore` covers. Same `if:` as the steps above
+        if: ${{ !cancelled() && steps.prepare.outcome == 'success' }}
+        run: uv run --no-sync pytest -v packages/sphinx-ai-index/tests --cov=sphinx_ai_index --cov-report=xml:ai-index.xml --cov-report=term-missing
+      - name: "sphinx-ai-index: upload to Codecov"
+        if: inputs.upload-coverage && github.repository == 'useblocks/sphinx-needs' && github.actor != 'dependabot[bot]' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          name: sphinx-ai-index-pytests
+          flags: ai-index
+          files: ./ai-index.xml
+          fail_ci_if_error: ${{ github.event_name == 'pull_request' }}

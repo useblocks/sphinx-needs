@@ -17,6 +17,8 @@ extensions = [
     "sphinx_design",
     "myst_parser",
     "sphinx.ext.intersphinx",
+    # writes `ai_docs_index.json`, the page index ubCode reads (packages/sphinx-ai-index)
+    "sphinx_ai_index",
 ]
 
 exclude_patterns: list[str] = []

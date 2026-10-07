@@ -39,7 +39,7 @@ class JsonParser:
             raise JsonFileMissing(f"The given file does not exist: {self.json_path}")
 
         self.json_data = []
-        with open(self.json_path) as jfile:
+        with open(self.json_path, encoding="utf-8") as jfile:
             self.json_data = json.load(jfile)
 
         self.json_mapping = kwargs.get("json_mapping", {})

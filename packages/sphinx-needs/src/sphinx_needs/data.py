@@ -41,7 +41,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 8
+ENV_DATA_VERSION: Final = 9
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -56,6 +56,11 @@ Version 8 changes the HTML a needtable renders to (the markup contract in
 ``design/needstable-contract.md``). The table is built at ``doctree-resolved``, so an
 unbumped rebuild over an existing ``_build`` writes no page whose source did not change
 and leaves DataTables-era markup on disk for the new client-side script to meet.
+
+Version 9 adds ``extend_priority`` to :class:`NeedsExtendType`. The extends are sorted
+by it when the needs are post-processed, from the pickled environment, so an unbumped
+rebuild over an existing ``_build`` meets extends recorded without the key and ends
+with a ``KeyError`` rather than re-reading the documents that hold them.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """
@@ -633,6 +638,10 @@ class NeedsExtendType(NeedsBaseDataType):
     and is not an existing need ID,
     whether to except the build (otherwise log-info message is written).
     """
+    extend_priority: int
+    """The order the extend is applied in, lower first, then by ``docname`` and
+    ``lineno``; 500 unless the directive sets ``:extend_priority:``.
+    """
 
 
 class NeedsFilteredBaseType(NeedsBaseDataType):
@@ -1094,8 +1103,12 @@ def merge_data(
     # Update needs
     needs = this_data._env_needs
     other_needs = other_data._env_needs
+    # ids this environment already holds a need for; its own node (or none, for a
+    # hidden need) stands
+    already_held: list[str] = []
     for other_id, other_need in other_needs.items():
         if other_id in needs:
+            already_held.append(other_id)
             # we only want to warn if the need comes from one of the docs parsed in this worker
             _docname = other_need["docname"]
             if _docname in docnames:
@@ -1111,6 +1124,15 @@ def merge_data(
                 )
         else:
             needs[other_id] = other_need
+
+    # The need nodes ``needextract`` copies: for an id this environment already holds,
+    # its own node (or none, for a hidden need) stands. The worker's copy is either the
+    # same node, inherited when the worker was forked, or the node of a duplicate the
+    # loop above dropped, which must not replace the node of the need that was kept
+    # (#2087).
+    other_nodes = other_data._needs_all_nodes
+    for other_id in already_held:
+        other_nodes.pop(other_id, None)
 
     # update other data
 

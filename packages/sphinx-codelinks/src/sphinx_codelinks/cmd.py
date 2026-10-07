@@ -13,9 +13,11 @@ from sphinx_codelinks.config import (
     CodeLinksProjectConfigType,
     anchor_preproc_paths,
     generate_project_configs,
+    git_root_problem,
+    git_root_warning,
     load_codelinks_table,
 )
-from sphinx_codelinks.logger import configure_cli, logger
+from sphinx_codelinks.logger import configure_cli, get_logger, logger
 from sphinx_codelinks.needextend_write import MarkedObjType, convert_marked_content
 from sphinx_codelinks.source_discover.config import (
     CommentType,
@@ -25,6 +27,9 @@ from sphinx_codelinks.source_discover.config import (
 from sphinx_codelinks.source_discover.source_discover import SourceDiscover
 from ub_project import ProjectConfigError, anchor
 
+#: the package logger: a warning goes to stderr once ``configure_cli`` ran
+analysis_logger = get_logger(__name__)
+
 app = typer.Typer(
     no_args_is_help=True, context_settings={"help_option_names": ["-h", "--help"]}
 )
@@ -32,6 +37,11 @@ write_app = typer.Typer(
     help="Export marked content to other formats", no_args_is_help=True
 )
 app.add_typer(write_app, name="write", rich_help_panel="Sub-menus")
+
+WRITE_RST_DEPRECATED = (
+    "`write rst` is deprecated: the build attaches `@need-ids:` references itself "
+    "(field `code_url`); it will be removed in sphinx-codelinks 2.0.0"
+)
 
 OptVerbose: TypeAlias = Annotated[  # has to be TypeAlias
     bool,
@@ -151,6 +161,14 @@ def analyse(  # for CLI, so it needs the branches
             analyse_config.git_root = anchor(
                 analyse_config.git_root, config.parent
             ).resolve()
+            # the build's rule: a git_root that does not contain src_dir is ignored,
+            # and the analysis detects the repository from src_dir (#2062)
+            problem = git_root_problem(analyse_config.git_root, analyse_config.src_dir)
+            if problem is not None:
+                analysis_logger.warning(
+                    git_root_warning(project, problem), subtype="git_root"
+                )
+                analyse_config.git_root = None
 
         # preprocessor compile_commands / include dirs are relative to the config
         # file's location too (like src_dir / git_root).
@@ -232,6 +250,8 @@ def discover(  # CLI command requires multiple parameters
     ] = CommentType.cpp,
 ) -> None:
     """Discover the filepaths from the given root directory."""
+    # a file outside the directory is warned about: on stderr, whatever ran before
+    configure_cli()
 
     src_discover_dict: SourceDiscoverConfigType = {
         "src_dir": src_dir,
@@ -302,8 +322,13 @@ def write_rst(  # for CLI, so it takes as many as it requires
     verbose: OptVerbose = False,
     quiet: OptQuiet = False,
 ) -> None:
-    """Generate needextend.rst from the extracted obj in JSON."""
+    """Generate needextend.rst from the extracted obj in JSON (deprecated).
+
+    The Sphinx build attaches ``@need-ids:`` references to the needs they name itself,
+    in each project's ``ref_url_field`` (default ``code_url``).
+    """
     configure_cli(verbose, quiet)
+    typer.echo(WRITE_RST_DEPRECATED, err=True)
     try:
         with jsonpath.open("r") as f:
             marked_content = json.load(f)

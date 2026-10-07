@@ -432,6 +432,23 @@ def format_need_nodes(
         need_id = node_need.attributes["ids"][0]
         need_data = needs[need_id]
 
+        node_docname = node_need.get("docname")
+        if node_docname and node_docname != need_data["docname"]:
+            # Under ``-j N``, documents read by different workers each created a need
+            # with this id; the merge kept the other document's need, and warned
+            # ``needs.duplicate_id`` about this one, so this node is not the need's.
+            # The tag alone decides: a need's own node carries that need's docname,
+            # so it always matches -- also when the kept need has none (``add_need``
+            # with ``docname=None``), which every other document's node then differs
+            # from. A node without the tag, from a doctree pickled before this
+            # change, is rendered as before.
+            LOGGER.debug(
+                f"Not rendering need {need_id!r} in {node_docname!r}: "
+                f"the need is recorded on {need_data['docname']!r}"
+            )
+            remove_node_from_tree(node_need)
+            continue
+
         if need_data["hide"]:
             remove_node_from_tree(node_need)
             continue

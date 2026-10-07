@@ -6,6 +6,8 @@ from pathlib import Path
 
 import pytest
 
+from sphinx_needs_testkit import build_warnings
+
 
 @pytest.mark.parametrize(
     "test_app",
@@ -238,6 +240,157 @@ def test_if_non_bool_warns(test_app):
     # Content is still included (coercion works)
     assert "INCLUDED_VIA_TRUTHY_STRING" in html
     assert "INCLUDED_VIA_TRUTHY_INT" in html
-    # But warnings are emitted
-    warnings = app._warning.getvalue()
-    assert "did not return a bool" in warnings
+    # But warnings are emitted, one per directive, whole lines pinned
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:4: WARNING: 'if' directive expression did not return a bool, "
+        "got str: 'abc' (coercing to bool): 'var.arch' [needs.if]",
+        "<srcdir>/index.rst:8: WARNING: 'if' directive expression did not return a bool, "
+        "got int: 5 (coercing to bool): 'var.count' [needs.if]",
+    ]
+
+
+# Variant values whose own code raises: ``matrix``, whose truth value cannot be taken,
+# as a NumPy array's cannot, and ``loud``, whose repr raises (its truth value is fine).
+# Each is an ``int``, so that the variant-data validation (scalars, arrays, tables)
+# passes it; ``__reduce__`` pickles it as the plain ``int``, because Sphinx pickles the
+# configuration with the environment and a class defined in ``conf.py`` cannot be found
+# by name again.
+_CONF_RAISING = (
+    "extensions = ['sphinx_needs']\n"
+    "class Ambiguous(int):\n"
+    "    def __bool__(self):\n"
+    "        raise ValueError('The truth value of an array with more than one element'\n"
+    "                         ' is ambiguous')\n"
+    "    def __reduce__(self):\n"
+    "        return (int, (int(self),))\n"
+    "class Loud(int):\n"
+    "    def __repr__(self):\n"
+    "        raise RuntimeError('repr exploded')\n"
+    "    def __reduce__(self):\n"
+    "        return (int, (int(self),))\n"
+    "needs_variant_data = {'matrix': Ambiguous(3), 'loud': Loud(3)}\n"
+    "needs_types = []\n"
+)
+
+_AMBIGUOUS_INDEX = (
+    "Test\n====\n\n"
+    ".. if:: var.matrix\n\n"
+    "   SKIPPED_AMBIGUOUS\n\n"
+    "TAKEN_AFTER_AMBIGUOUS\n"
+)
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), _CONF_RAISING),
+                (Path("index.rst"), _AMBIGUOUS_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_if_truth_value_that_raises_warns(test_app):
+    """A result whose truth value cannot be taken is an expression that failed.
+
+    Taking the truth value runs the value's own ``__bool__``, which may raise
+    (a NumPy array's does): that must warn once, as any other failing expression,
+    and skip the body, rather than end the build with a traceback.
+    It is not also reported as a result that is not a ``bool``,
+    since no truth value was found to coerce it to.
+    """
+    app = test_app
+    app.build()
+    line = _AMBIGUOUS_INDEX.splitlines().index(".. if:: var.matrix") + 1
+    assert build_warnings(app) == [
+        f"<srcdir>/index.rst:{line}: WARNING: "
+        "'if' directive expression failed: 'var.matrix' — "
+        "The truth value of an array with more than one element is ambiguous"
+        " [needs.if]"
+    ]
+    html = Path(app.outdir, "index.html").read_text()
+    assert "SKIPPED_AMBIGUOUS" not in html
+    assert "TAKEN_AFTER_AMBIGUOUS" in html
+
+
+_LOUD_INDEX = "Test\n====\n\n.. if:: var.loud\n\n   TAKEN_LOUD\n"
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), _CONF_RAISING),
+                (Path("index.rst"), _LOUD_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_if_repr_that_raises_does_not_decide(test_app):
+    """A result whose repr raises is reported in place, and its truth value is used.
+
+    The repr is only the text of the warning for a result that is not a ``bool``,
+    so reporting must never change the outcome: the condition holds (``3`` is true),
+    the body is included, and the one warning names the type and the error instead.
+    """
+    app = test_app
+    app.build()
+    line = _LOUD_INDEX.splitlines().index(".. if:: var.loud") + 1
+    assert build_warnings(app) == [
+        f"<srcdir>/index.rst:{line}: WARNING: "
+        "'if' directive expression did not return a bool, "
+        "got Loud: <Loud whose repr raised RuntimeError> "
+        "(coercing to bool): 'var.loud' [needs.if]"
+    ]
+    assert "TAKEN_LOUD" in Path(app.outdir, "index.html").read_text()
+
+
+_INC_TXT = "Included\n\n.. if:: var.missing\n\n   SKIPPED_INC\n"
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (
+                    Path("conf.py"),
+                    "extensions = ['sphinx_needs']\n"
+                    "needs_variant_data = {'arch': 'abc'}\n"
+                    "needs_types = []\n",
+                ),
+                (Path("index.rst"), "Test\n====\n\n.. include:: inc.txt\n"),
+                (Path("inc.txt"), _INC_TXT),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_if_warning_in_an_included_file(test_app, monkeypatch):
+    """A warning from an ``if`` in an included file names that file absolutely.
+
+    Built from the source directory, as the ``choose`` include rows are:
+    docutils then records an included file relative to the working directory
+    (``inc.txt`` rather than an absolute path), which the warning must make
+    absolute again, as Sphinx does for the location of a node.
+    """
+    app = test_app
+    monkeypatch.chdir(app.srcdir)
+    app.build()
+    warnings = build_warnings(app)
+    assert len(warnings) == 1, warnings
+    line = _INC_TXT.splitlines().index(".. if:: var.missing") + 1
+    assert warnings[0].startswith(f"<srcdir>/inc.txt:{line}: WARNING: "), warnings[0]
+    assert (
+        "'if' directive expression failed: 'var.missing' — "
+        "Unknown variant key: var.missing" in warnings[0]
+    ), warnings[0]
+    assert warnings[0].endswith(" [needs.if]"), warnings[0]
+    assert "SKIPPED_INC" not in Path(app.outdir, "index.html").read_text()

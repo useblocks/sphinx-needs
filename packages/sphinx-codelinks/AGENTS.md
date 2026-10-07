@@ -39,12 +39,13 @@ src/sphinx_codelinks/   # Main source code
 ├── cmd.py              # CLI commands using Typer
 ├── config.py           # Configuration dataclasses + TypedDicts, and the TOML loader, `load_codelinks_table`
 ├── logger.py           # Logging utilities
-├── needextend_write.py # Write RST files with Sphinx-Needs directives
+├── needextend_write.py # Write RST files with Sphinx-Needs directives (`write rst`, deprecated)
 ├── analyse/            # Code analysis module
 │   ├── analyse.py      # Main analysis orchestration
 │   ├── models.py       # dataclasses/TypedDicts/Enums for analysis results
 │   ├── oneline_parser.py # One-line comment parser
 │   ├── projects.py     # Project-specific analyzers (C++, Python, etc.)
+│   ├── references.py   # `NeedIdRef`: an @need-ids reference as plain, JSON-able data
 │   ├── utils.py        # Analysis utilities, including the git-root helpers
 │   └── preproc/        # the OPTIONAL libclang engine -- see below
 ├── source_discover/    # Source file discovery
@@ -53,6 +54,10 @@ src/sphinx_codelinks/   # Main source code
 └── sphinx_extension/   # Sphinx extension components
     ├── source_tracing.py # Main Sphinx extension setup
     ├── html_wrapper.py  # HTML output wrapper for traced source
+    ├── string_links.py  # The URL fields' needs_string_links entries
+    ├── need_id_refs.py  # Keep @need-ids records in the env; attach them to needs
+    ├── rediscovery.py   # Scope fingerprints, config-only scan, the env-get-outdated/env-updated handlers
+    ├── project_analysis.py # Analysis preparation, URLs and records, shared by directive and scan
     ├── debug.py         # Debug utilities
     ├── ub_sct.css       # CSS for source tracing UI
     └── directives/      # Custom Sphinx directives
@@ -60,7 +65,7 @@ src/sphinx_codelinks/   # Main source code
 tests/                  # Test suite -- `tests/__init__.py` is why this path is NOT in the
 ├── __init__.py         #   root `testpaths` (see the root AGENTS.md)
 ├── conftest.py         # Pytest fixtures and configuration
-├── test_*.py           # 17 test modules
+├── test_*.py           # the test modules
 ├── __snapshots__/      # Syrupy snapshot test fixtures
 ├── data/               # Test data and fixtures
 └── doc_test/           # minimal Sphinx projects for the integration tests
@@ -270,6 +275,7 @@ flowchart TB
         setup["setup() in __init__.py"]
         load_toml["load_config_from_toml()"]
         sn_options["update_sn_extra_options()"]
+        str_links["register_string_links()"]
         sn_types["update_sn_types()"]
         check_config["check_sphinx_configuration()"]
     end
@@ -289,14 +295,13 @@ flowchart TB
     end
 
     subgraph finish["Build Finished"]
-        warnings["emit_warnings()"]
         timing["debug.process_timing()"]
     end
 
-    setup --> load_toml --> sn_options --> sn_types --> check_config
+    setup --> load_toml --> sn_options --> str_links --> sn_types --> check_config
     check_config --> builder_init --> env_prepare
     env_prepare --> gen_pages --> html_wrap
-    html_wrap --> add_css --> warnings --> timing
+    html_wrap --> add_css --> timing
 
     style load_toml fill:#e1f5fe
     style gen_pages fill:#e1f5fe
@@ -311,13 +316,18 @@ The extension connects to these Sphinx events (in execution order):
 | ---------------------- | ------------------------------ | -------------------------------------------------------------------- |
 | `config-inited`        | `load_config_from_toml()`      | Load configuration from TOML file if specified                       |
 | `config-inited`        | `update_sn_extra_options()`    | Register sphinx-needs extra options (project, file, directory, URLs) |
+| `config-inited`        | `register_string_links()`      | Add the URL fields' `needs_string_links` entries (before 551)        |
 | `config-inited`        | `update_sn_types()`            | Add `srctrace` need type to sphinx-needs                             |
 | `config-inited`        | `check_sphinx_configuration()` | Validate configuration and raise errors                              |
 | `builder-inited`       | `builder_inited()`             | Copy CSS assets to output directory                                  |
-| `env-before-read-docs` | `prepare_env()`                | Initialize timing measurements and debug filters                     |
-| `html-collect-pages`   | `generate_code_page()`         | Generate HTML pages for traced source files                          |
+| `env-before-read-docs` | `prepare_env()`                | Initialize timing and debug filters; keep the documents to be read   |
+| `env-get-outdated`     | `find_outdated_scopes()`       | Re-read documents whose scope's files, or skipped needs' owners, changed |
+| `env-purge-doc`        | `purge_doc()`                  | Drop a re-read document's `@need-ids` records, scopes and source pages |
+| `env-merge-info`       | `merge_info()`                 | Take over the records, scopes and source pages a `-j N` worker read  |
+| `env-updated`          | `find_affected_documents()`    | Scan config-only projects; return documents whose needs' refs changed |
+| `needs-before-post-processing` | `attach_on_post_processing()` | Attach `@need-ids` references to the needs they name     |
+| `html-collect-pages`   | `generate_code_page()`         | Copy and page each recorded source file the output lacks or holds stale |
 | `html-page-context`    | `add_custom_css()`             | Inject custom CSS for source tracing UI                              |
-| `build-finished`       | `emit_warnings()`              | Emit collected warnings from analysis                                |
 | `build-finished`       | `debug.process_timing()`       | Output timing measurements if enabled                                |
 
 #### Key Integration Points
@@ -326,9 +336,21 @@ The extension connects to these Sphinx events (in execution order):
 
 2. **TOML Configuration**: Configuration can be loaded from a TOML file specified in `conf.py` via `src_trace_config_from_toml`. The TOML is parsed and values are set on the Sphinx config object, except a key given with `-D` — `src_trace_projects` and `src_trace_outdir` excepted (`NOT_OVERRIDABLE_FROM_D`): Sphinx refuses a `-D` for both yet keeps it in `config.overrides`.
 
-3. **Source Page Generation**: The `generate_code_page()` function yields tuples of `(pagename, context, template)` for each traced source file, allowing Sphinx to generate standalone HTML pages with syntax-highlighted source code and line-number anchors.
+3. **Source Page Generation**: The `generate_code_page()` function copies each recorded source file into the output and yields `(pagename, context, template)` for its page, allowing Sphinx to generate standalone HTML pages with syntax-highlighted source code and line-number anchors.
 
 4. **CSS Injection**: Custom CSS (`ub_sct.css`) is copied to `_static/source_tracing/` and added only to pages that contain traced source code.
+
+5. **String links are configuration, never read-time state**: the URL fields' `needs_string_links` entries are added once at `config-inited` (`sphinx_extension/string_links.py`), before sphinx-needs compiles them at priority 551. A directive must not write into `env.config`: a `-j N` worker's write never reaches the main process, and the next build sees a changed configuration. So nothing per-project or per-read goes into an entry — `remote-url` holds the full URL (the project's `remote_url_pattern` filled in) and its entry is an identity link.
+
+6. **`@need-ids` references: a record, a store, an attach.** The record is `NeedIdRef` (`analyse/references.py`): plain data with a root-relative POSIX path and its `root`, round-tripping through JSON — the exchange seam, so a pre-analysed input file can later produce the same records, for the remote half (`local_url` is build-local; `from_dict` ignores unknown keys and checks the invariants). `src-trace` turns its analysis' references into records for projects past `need_id_refs_field()` (ubCode's gate) and keeps them on the env attribute `codelinks_need_id_refs`, keyed by the host document (purged and merged with it). `attach_need_id_refs()` (`sphinx_extension/need_id_refs.py`) takes records, needs and the project → field and project → root mappings from configuration, and nothing else, dedupes on `(root, path, lineno, need_id)` within a field — the root from the `roots` mapping, configuration like `fields`, never in the record — resolves ids through `resolve_need_id()` alone, and runs at sphinx-needs' `needs-before-post-processing` — after every need is read, before `needextend`, so a user's extend of the field wins. Never attach at `needs-before-sealing`, never through the extends store, never on `_source`.
+
+   **Rediscovery and config-only mode: two more stores, two more handlers** (`sphinx_extension/rediscovery.py`). Each directive records its scope and a fingerprint of the discovered files (POSIX path, mtime, size — no parsing) in `codelinks_src_trace_scopes`, keyed by host document like the records; the `env-get-outdated` handler re-walks every scope and returns the documents whose fingerprint changed, because a file ADDED to a scope is a dependency of nothing. The scope store is also the ownership rule: a gated project no scope names is config-only, and the `env-updated` handler (main process, after every read and merge — the one point where ownership is exact) scans its whole `src_dir` through the directive's own discovery, preparation and record builder into `codelinks_config_only_refs`, keyed by project (never purged or merged; cleared when `env.config_status != CONFIG_OK`; re-analysed only when the fingerprint changes). Discovery never traces build output: `builder_inited` (every builder, every build) writes `.ignore` (`*`) at the root of the output and doctree directories, which the `ignore` walker honours whenever `gitignore` is on, git repository or not — so the source copies, Sphinx's `_downloads/` copies and sibling builders' trees all stay out; and `exclude=build_output_dirs(app, parents=not gitignore)`, passed by all three callers, skips the output and doctree directories always and, for `gitignore = false` projects only, each one's parent when it lies strictly inside `app.srcdir` (sibling builders' `_build/<builder>`). Nor a file that resolves outside the project's `src_dir`, the root every record and copy is relative to (#2062): `discover_scope` passes `src_dir` to `SourceDiscover` as its `boundary` (a `:directory:` scope's own directory is narrower), which drops such a file with a `codelinks.outside_src_dir` warning once per scope read — never from the `env-get-outdated` re-walk (`warn=False`), or a re-read scope warns twice; a config-only project, walked every build, warns every build — and `project_analysis.configured_git_root`, the one function both the analysis and the attach's `project_root` call, ignores a `git_root` that `config.git_root_problem` rejects (it does not contain `src_dir`; `codelinks analyse` applies the same check). The scan never creates needs. `effective_refs()` is the one list of records: the `env-get-outdated` handler takes it first (the previous build's), the `env-updated` handler compares it after the scan and returns the documents holding a need whose references changed (else, after a re-analysis, the root document) — Sphinx writes them without reading them and pickles the environment, which it does only when that list or the read set is non-empty — and the one attach call uses it. Never move the scan to `env-before-read-docs`: a build that reads nothing does not pickle what was stored there.
+
+   **One-line parser warnings are reported by the directive, at the source line** (`report_oneline_warnings` in `directives/src_trace.py`, right after the analysis): one subtype, `codelinks.oneline`, for every kind, the kind leading the message (a need Sphinx-Needs refuses in `render_needs` too, its `InvalidNeedException` type leading), located like the `need_id_ref` and `duplicate_need` warnings. The config-only scan reports none (it creates no needs; ubCode's config-only pass ignores them too), and the CLI prints them to the console. On a one-character start sequence a line without the field separator, where more than one field is required, is not a marker (`oneline_parser`, ubCode's rule). These docs trace this package's own sources, docstrings included, on an `@` style under `-nW`: a docstring or comment line that starts with `@` and holds a comma is a marker, and a malformed one fails the docs build.
+
+   **The source copies and pages are build state** (`SourcePage`, `sphinx_extension/project_analysis.py`: the analysed file's absolute path, the copy's outdir-relative POSIX target, and `(line, docname, need id)` anchors). The directive records one per file a created need or a local reference URL names, in `codelinks_source_pages` keyed by host document (purged and merged like the records); a config-only project's ride in its `ConfigOnlyScan.pages` (default `()`, so an older pickle loads). `setup()` declares `"env_version": 1` so that Sphinx discards an environment from before the page records (one full read after an upgrade); bump it when a stored record changes shape. Nothing is copied at read time: `generate_code_page` copies and pages the union (`effective_pages()`, the selection `effective_refs()` makes, one page per target with every record's anchors) on every HTML build where it is not up to date — a copy (`shutil.copyfile`, then `os.utime` to the source's times — not `copy2`, whose read-only mode would make the copy unwritable) when missing or its size or mtime differs from the source's; a page when its copy was written, its `get_outfilename` file is missing, or a document that records it now (an anchor) or did before (its target) was purged this build (`rediscovery.purged_documents` / `purged_targets`, kept by `purge_doc` before it pops the store: `env-purge-doc` fires for every document read, added, changed or removed) — resolving each `[docs]` link with `app.builder.get_relative_uri` — so a cleaned output, a second builder on shared doctrees and `-j N` all get their pages, and a non-HTML builder writes no copies. Never reintroduce a module-level registry: a worker's entries never come back, and a build that does not read the document never refills it.
+
+   **One one-line need per id** (`SourceTracingDirective.defined_elsewhere`): before `add_need` the directive looks the id up in `get_needs_mutable()` -- the marker's id, or the one sphinx-needs would generate (`would_be_id`: its private `_make_hashed_id`, as `generate_need` calls it) -- and an existing need owns it: another directive's, a hand-written or an imported one; the directive skips the marker with one `codelinks.duplicate_need` warning. Whichever definition is read first keeps the id: codelinks never takes an existing id over, and a hand-written need read later is refused by sphinx-needs itself. Never let codelinks win over an existing need, with one exception: a need of a document this build has yet to read is the previous build's and is replaced (`rediscovery.is_unread`: the documents `env-before-read-docs` names, each leaving when it is purged -- a module-level `WeakKeyDictionary`, never pickled, inherited by `-j N` workers, where it is empty because the main process purges every document before forking), which makes a serial build agree with a fresh one on the earlier-sorting owner. Each skip is kept in the scope record's `deferred` (`(need id, owner)`; default `()`, so an older pickle loads), and `find_outdated_scopes` returns the skipping document when an owner is changed, removed or re-read for its scope, so the need moves. Across `-j N` workers sphinx-needs' merge keeps the first and warns `needs.duplicate_id`.
 
 ### Key Components
 
@@ -363,8 +385,9 @@ the shape a TOML file may carry, and a `@dataclass` holding the loaded, validate
 #### Code Analysis (`analyse/`)
 
 - **`analyse.py`**: Main orchestrator that coordinates analysis across all source files
-- **`projects.py`**: `AnalyseProjects`, which runs one `SourceAnalyse` per configured
-  project. There is no per-language class — the language is a `CommentType` value
+- **`projects.py`**: `AnalyseProjects`, the CLI's: it runs one `SourceAnalyse` per
+  configured project and dumps the markers; the Sphinx extension does not use it. There is
+  no per-language class — the language is a `CommentType` value
 - **`oneline_parser.py`**: Tree-sitter based parser for extracting comment markers
 - **`models.py`**: `@dataclass` / `TypedDict` / `Enum` results — `SourceComment`,
   `SourceFile`, `Position`, `SourceMap`, and the `Metadata` hierarchy (`OneLineNeed`,

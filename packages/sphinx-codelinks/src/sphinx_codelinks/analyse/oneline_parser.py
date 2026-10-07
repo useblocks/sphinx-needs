@@ -31,6 +31,16 @@ def oneline_parser(  # handel warnings
 
     - Locate the start and end sequences
     - extract the string between them
+    - return ``None`` for an empty content, whatever the start sequence
+    - on a one-character start sequence, return ``None`` for a content without the
+      field separator where more than one field is required: not a marker, and not a
+      warning either. The rule is ubCode's, and so are its words: "when a
+      single-character start_sequence (like `@`) matches but the content has no field
+      delimiter at all, this is likely a stray match
+      (e.g., Doxygen `@param`, `@brief`, `@return`) rather than a real marker.
+      Treating these as NoMatch avoids noisy TooFewFields warnings on codebases with
+      Doxygen annotations. Multi-character sequences (like `[[`) are specific enough
+      that a missing delimiter should still produce a warning."
     - apply custom_split to split the strings into a list of fields by `field_split_char`
     - check the number of required fields and the max number of the given fields
     - split the strings located in the field with `type: list[str]` to a list of string
@@ -62,6 +72,18 @@ def oneline_parser(  # handel warnings
 
     # numbers of needs_fields which are required
     cnt_required_fields = oneline_config.get_cnt_required_fields()
+
+    if not string:
+        # nothing between the start and end sequences: not a marker either
+        return None
+
+    # a documentation tag such as `@param x`, not a marker (see the docstring)
+    if (
+        len(oneline_config.start_sequence) == 1
+        and oneline_config.field_split_char not in string
+        and cnt_required_fields > 1
+    ):
+        return None
     # indices of the field which has type:list[str]
     positions_list_str = oneline_config.get_pos_list_str()
 
@@ -77,13 +99,13 @@ def oneline_parser(  # handel warnings
     if len(string_fields) < min_fields:
         return OnelineParserInvalidWarning(
             sub_type=WarningSubTypeEnum.too_few_fields,
-            msg=f"{len(string_fields)} given fields. They shall be more than {min_fields}",
+            msg=f"{len(string_fields)} given fields, minimum is {min_fields}",
         )
 
     if len(string_fields) > max_fields:
         return OnelineParserInvalidWarning(
             sub_type=WarningSubTypeEnum.too_many_fields,
-            msg=f"{len(string_fields)} given fields. They shall be less than {max_fields}",
+            msg=f"{len(string_fields)} given fields, maximum is {max_fields}",
         )
     resolved: dict[str, str | list[str] | int] = {}
     for idx in range(len(oneline_config.needs_fields)):
@@ -94,7 +116,7 @@ def oneline_parser(  # handel warnings
                 # the case where the field contains a new line character
                 return OnelineParserInvalidWarning(
                     sub_type=WarningSubTypeEnum.newline_in_field,
-                    msg=f"Field {field_name} has newline character. It is not allowed",
+                    msg=f"Field '{field_name}' contains a newline character",
                 )
             if oneline_config.needs_fields[idx]["type"] == "str":
                 resolved[field_name] = string_fields[idx]
@@ -106,14 +128,14 @@ def oneline_parser(  # handel warnings
                     # brackets are not  found
                     return OnelineParserInvalidWarning(
                         sub_type=WarningSubTypeEnum.missing_square_brackets,
-                        msg=f"Field {field_name} with 'type': '{oneline_config.needs_fields[idx]['type']}' must be given with '[]' brackets",
+                        msg=f"Field '{field_name}' with 'type': '{oneline_config.needs_fields[idx]['type']}' must be given with '[]' brackets",
                     )
 
                 if list_start_idx != 0 or list_end_idx != len(string_fields[idx]) - 1:
                     # brackets are found but not at the beginning and the end
                     return OnelineParserInvalidWarning(
                         sub_type=WarningSubTypeEnum.not_start_or_end_with_square_brackets,
-                        msg=f"Field {field_name} with 'type': '{oneline_config.needs_fields[idx]['type']}' must start with '[' and end with ']'",
+                        msg=f"Field '{field_name}' with 'type': '{oneline_config.needs_fields[idx]['type']}' must start with '[' and end with ']'",
                     )
 
                 string_items = string_fields[idx][list_start_idx + 1 : list_end_idx]

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import contextlib
 from collections.abc import Iterator
+from operator import itemgetter
 from typing import Any
 
 from docutils import nodes
@@ -119,16 +120,16 @@ def copy(
         .. test:: test of current_need value
            :id: copy_4
 
-           The following copy command copies the title of the first need found under the same  highest
-           section (headline):
+           The following copy command copies the title of the need with the lowest id
+           under the same highest section (headline):
 
            :ndf:`copy('title', filter='current_need["sections"][-1]==sections[-1]')`
 
     .. test:: test of current_need value
        :id: copy_4
 
-       The following copy command copies the title of the first need found under the same  highest
-       section (headline):
+       The following copy command copies the title of the need with the lowest id
+       under the same highest section (headline):
 
        :ndf:`copy('title', filter='current_need["sections"][-1]==sections[-1]')`
 
@@ -136,7 +137,9 @@ def copy(
     :param need_id: id of the need, which contains the source option. If None, current need is taken
     :param upper: Is set to True, copied value will be uppercase
     :param lower: Is set to True, copied value will be lowercase
-    :param filter: :ref:`filter_string`, which first result is used as copy source.
+    :param filter: :ref:`filter_string`; of the needs it matches,
+        the match with the lowest id is the copy source, comparing ids as strings
+        (so ``REQ_10`` comes before ``REQ_9``).
     :return: string of copied need option
     """
     if need_id:
@@ -154,7 +157,9 @@ def copy(
             location=location,
         )
         if result:
-            need = result[0]
+            # the lowest id, so the source does not depend on the order the needs
+            # reached the environment (document names, the last build's re-reads, -j)
+            need = min(result, key=itemgetter("id"))
 
     if need is None:
         raise ValueError("Need not found")
@@ -315,6 +320,12 @@ def calc_sum(
     Useful e.g. for calculating the amount of needed hours for implementation of all linked
     specification needs.
 
+    The values are added in ascending need-id order, comparing ids as strings
+    (so ``REQ_10`` comes before ``REQ_9``);
+    with ``links_only``, in the order the links are written.
+    The order can change the last digits of a total of non-integer values,
+    so it is fixed rather than left to the order the needs were read in.
+
 
     **Input data**
 
@@ -375,11 +386,17 @@ def calc_sum(
     :return: A float number
     """
     if need is None:
-        raise ValueError("No need given for check_linked_values")
+        raise ValueError("No need given for calc_sum")
 
     needs_config = NeedsSphinxConfig(app.config)
+    # float addition is not associative, so the order decides a total's last digits:
+    # ascending need id (plain string order, not the natural order links are sorted
+    # in), so a total does not depend on the order the needs reached the environment;
+    # ``links_only`` keeps the order the links are written in
     check_needs = (
-        [needs[link] for link in need["links"]] if links_only else needs.values()
+        [needs[link] for link in need["links"]]
+        if links_only
+        else (needs[need_id] for need_id in sorted(needs))
     )
 
     calculated_sum = 0.0

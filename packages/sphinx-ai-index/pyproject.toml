@@ -1,0 +1,43 @@
+[project]
+name = "sphinx-ai-index"
+version = "0.1.0"
+description = "Sphinx extension that generates an AI-readable documentation index"
+authors = [{ name = "team useblocks", email = "info@useblocks.com" }]
+license = { file = "LICENSE" }
+readme = "README.md"
+requires-python = ">=3.11,<4"
+dependencies = ["sphinx>=7.4,<10", "docutils>=0.21"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Framework :: Sphinx",
+  "Framework :: Sphinx :: Extension",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Documentation",
+  "Topic :: Documentation :: Sphinx",
+  "Typing :: Typed",
+]
+
+[project.urls]
+Repository = "https://github.com/useblocks/sphinx-needs"
+Issues = "https://github.com/useblocks/sphinx-needs/issues"
+Changelog = "https://github.com/useblocks/sphinx-needs/blob/master/packages/sphinx-ai-index/docs/changelog.rst"
+
+[build-system]
+requires = ["flit_core >=3.4,<5"]
+build-backend = "flit_core.buildapi"
+
+# Deliberately NO `[tool.flit.sdist]`: flit's default sdist is the module, its `py.typed`
+# marker, README, LICENSE and this file, and nothing else -- the same entries as the 0.1.0
+# sdist already on PyPI. Everything else -- ruff, ty, pytest and the dependency groups (its
+# `hypothesis` is the root `test` group's) -- is the ROOT's, and
+# `tools/src/sn_tools/check_workspace.py` refuses those tables here: a member `[tool.ruff]`
+# does not extend the root's configuration, it replaces it.

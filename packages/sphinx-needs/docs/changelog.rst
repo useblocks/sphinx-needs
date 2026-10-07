@@ -4,6 +4,145 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+Improvements
+............
+
+- ✨ New :ref:`choose <choose>`, ``when`` and ``otherwise`` directives include one of
+  several branches of content, chosen by variant data (:pr:`2020`)
+
+  A ``choose`` runs its ``when`` tests in order, and the first ``when`` whose condition
+  is true is included; an ``otherwise``, the optional default, comes last; when no test
+  holds and there is no ``otherwise``, nothing is rendered. The other branches are never
+  parsed, so the needs inside them are never created:
+
+  .. code-block:: rst
+
+     .. choose::
+
+        .. when:: var.arch == "arm"
+
+           ARM content.
+
+        .. when:: var.arch == "x86"
+
+           x86 content.
+
+        .. otherwise::
+
+           Content for every other architecture.
+
+  Conditions are exactly those of the :ref:`if <if>` directive, evaluated by the same
+  code, and the conditions after the branch that is taken are not evaluated. A
+  ``choose`` may contain only ``when`` and ``otherwise`` directives and comments, and
+  nothing outside a branch is ever parsed. Every mistake warns once under the new
+  ``needs.choose`` type and skips the whole ``choose``: content outside a branch
+  (refused before the body is parsed, so nothing in it runs), a branch inside another
+  directive or supplied through an include, a branch written with one colon, no branch
+  at all, a ``when`` without a condition, an ``otherwise`` with one, a misplaced or
+  second ``otherwise``, an argument on ``choose``, variant data that is not configured,
+  and a condition that cannot be evaluated — so a mistake that makes a condition
+  unevaluable, such as a misspelt key or a syntax error, never renders a later branch
+  or the ``otherwise`` in its place. Works in reStructuredText and in MyST Markdown.
+  The undocumented warning ``if`` gives for a condition whose result is not a bool is
+  now listed in its documentation.
+
+- ✨ ``needextend`` gains ``:extend_priority:`` (default 500, lower applied first), and a
+  filter whose matches depend on earlier ``needextend`` directives is reported as
+  ``needs.needextend_match_order`` **(changed output)** (:issue:`1658`, :issue:`2064`, :pr:`2083`)
+
+  The ``needextend`` directives are applied sorted by
+  :ref:`extend_priority <needextend_extend_priority>`, then by document name and line, so
+  a project that never sets the option keeps its order, and where two set the same
+  option the higher priority is applied last and wins. A filter is still evaluated
+  against the needs as the earlier ``needextend`` directives left them, but it is also
+  evaluated against the needs as written, before any is applied, and a ``needextend``
+  whose filter matches different needs the two ways is now reported once, at its
+  location, naming both; what it modifies is unchanged. The next release evaluates every
+  filter against the needs as written, so the reported ``needextend`` directives are the
+  ones whose matches will change (:ref:`needextend_match_order`). From the next release,
+  the priority never changes what a filter matches. A project that builds with ``-W`` and
+  has such a filter goes red until the filter is rewritten or the warning is silenced with
+  ``suppress_warnings = ["needs.needextend_match_order"]``; ``"needs.needextend"`` does
+  not cover the new type.
+
+Bug fixes
+.........
+
+- 🐛 ``needextend``'s ``:+field:`` on a nullable field the need never set sets the field,
+  instead of crashing the build (:issue:`2038`, :pr:`2102`)
+
+  A field of :ref:`needs_fields` is nullable unless it says otherwise, so a need that does
+  not set it holds no value. Appending a value to such an unset array field ended the
+  build with ``Value after * must be an iterable, not NoneType``, and appending a dynamic
+  function to an unset array or string field ended it with
+  ``Cannot append non-string/array value``; appending a value to an unset string field
+  already set it. Appending to an unset field now sets it to the appended value in every
+  case, as ``:+tags:`` does on a need without tags. The two events an extension can
+  connect to around the ``needextend`` directives, ``needs-before-post-processing`` and
+  ``needs-before-sealing``, are now documented in the :ref:`api`.
+
+- 🐛 An :ref:`if <if>` condition whose result has no truth value is reported, instead of
+  ending the build **(changed output)** (:issue:`2025`, :pr:`2029`)
+
+  Taking the truth value of a result runs the result's own ``__bool__``, which may raise,
+  as it may for a value of :ref:`needs_variant_data` of a user-defined type.
+  That ended the build with a traceback, after the warning for a result that is not a bool.
+  It is now the one ``directive expression failed`` warning of the ``if`` or ``when``,
+  and the condition cannot be evaluated: the body is skipped, and a ``when`` skips its
+  whole ``choose``, as for any other condition that fails.
+  A result whose truth value can be taken but whose repr raises, which ended the build too,
+  is now reported with a placeholder in the warning for a result that is not a bool,
+  and its truth value is used.
+
+- 🐛 An :ref:`if <if>` warning in an included file names that file by its absolute path
+  **(changed output)** (:issue:`2027`, :pr:`2029`)
+
+  It named the file as docutils records it, relative to the working directory
+  (``docs/inc.txt`` for a build run from the project's parent directory),
+  where a ``when`` in the same file names it absolutely, as Sphinx names the file of a
+  node's location.
+
+- 🐛 :ref:`calc_sum <calc_sum>` and :ref:`copy(filter=) <copy>` read needs in need-id order
+  **(changed output)** (:issue:`2064`, :pr:`2078`)
+
+  A whole-project ``calc_sum`` adds the needs' values in ascending need-id order,
+  and ``copy`` with a ``filter`` copies from the match with the lowest id,
+  comparing ids as strings (``REQ_10`` comes before ``REQ_9``).
+  Both used to read the needs in the order they reached the build environment,
+  so the last digits of a sum of non-integer values, and which need ``copy(filter=…)``
+  copied from, depended on which documents the last build re-read and on ``-j``;
+  they no longer do, and for a sum of literal values over every need,
+  the total is the one `ubCode`_ computes.
+  A ``calc_sum`` with ``links_only`` keeps adding in the order the links are written.
+  The error for a ``calc_sum`` outside a need now names ``calc_sum``.
+
+- 🐛 A ``functions`` key under ``[needs]`` in the TOML file is ignored with a warning
+  instead of crashing the build **(changed output)** (:issue:`2064`, :pr:`2079`)
+
+  :ref:`needs_functions` holds Python callables, which a :ref:`needs_from_toml` file
+  cannot hold, and the key ended the build with
+  ``'str' object has no attribute '__name__'``, whether it was an array, a string or a
+  table. It is now one ``needs.config`` warning and the key is ignored, whatever its
+  value: an empty ``functions = []`` is reported as well, and no longer clears the
+  ``needs_functions`` of :file:`conf.py`.
+  The same crash came from :file:`conf.py` for a ``needs_functions`` entry that is not
+  callable, which is now skipped with a ``needs.config`` warning instead.
+
+- 🐛 Under ``-j N``, a need id defined in two documents renders its card once,
+  on the document that kept the need **(changed output)** (:issue:`2087`, :pr:`2106`)
+
+  Serially, the second definition is refused with a ``needs.create_need`` warning.
+  In a parallel build, two documents read by different processes each created the need;
+  the merge kept one and warned ``needs.duplicate_id`` about the other, but the other
+  document's page still rendered a card: the kept need's title and fields over the
+  dropped directive's content. A :ref:`needextract` of the id could copy the dropped
+  directive's content as well. A need's card is now rendered only on the document the
+  need is recorded on, in every builder, and ``needextract`` copies the kept need's
+  content.
+
 .. _`release:8.5.0`:
 
 8.5.0

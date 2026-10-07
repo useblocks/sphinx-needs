@@ -4,11 +4,44 @@ from pathlib import Path
 from ignore import WalkBuilder
 from ignore.overrides import OverrideBuilder
 
+from sphinx_codelinks.logger import get_logger
 from sphinx_codelinks.source_discover.config import (
     COMMENT_FILETYPE,
     CommentType,
     SourceDiscoverConfig,
 )
+
+logger = get_logger(__name__)
+
+
+def lies_within(path: Path, directory: Path) -> bool:
+    """Whether ``path`` lies below ``directory``, both resolved.
+
+    Strings, not ``Path.is_relative_to``, which costs as much as the walk itself over
+    thousands of files. ``normcase`` folds case on Windows; on a case-insensitive POSIX
+    file system (APFS) a differently-spelled ancestor still counts as outside --
+    harmless, the file is traced under its own spelling.
+    """
+    prefix = os.path.join(os.path.normcase(str(directory)), "")
+    return os.path.normcase(str(path)).startswith(prefix)
+
+
+def warn_outside_src_dir(walked: Path, resolved: Path, src_dir: Path) -> None:
+    """Say that ``walked`` -- the path discovery reached, the link -- is not traced:
+    it resolves to outside ``src_dir``. POSIX on every platform.
+
+    The walked path leads the message rather than being its location: the CLI prints
+    the message alone, and Sphinx reads a location without a ``:`` as a document
+    name (``<path>.rst``) -- while a Windows path has one. It is normalised for the
+    message only (``src/../x.cpp`` reads ``x.cpp``).
+    """
+    shown = Path(os.path.normpath(walked)).as_posix()
+    logger.warning(
+        f"{shown} resolves to {resolved.as_posix()}, outside src_dir "
+        f"{src_dir.as_posix()}: not traced (widen src_dir to cover it, or exclude "
+        "the link)",
+        subtype="outside_src_dir",
+    )
 
 
 def _json_starts_with_comment(filepath: Path, sample_size: int = 256) -> bool:
@@ -30,8 +63,30 @@ def _json_starts_with_comment(filepath: Path, sample_size: int = 256) -> bool:
 
 # @Source code file discovery with gitignore support, IMPL_DISC_1, impl, [FE_DISCOVERY, FE_CLI_DISCOVER]
 class SourceDiscover:
-    def __init__(self, src_discover_config: SourceDiscoverConfig):
+    """The source files below ``src_discover_config.src_dir``, as ``source_paths``.
+
+    A file that resolves to outside ``boundary`` -- a symbolic link out of the tree, or
+    a file below a followed directory link -- is not listed, and a warning names
+    its walked path (``codelinks.outside_src_dir``) unless ``warn`` is false: every
+    record and copy is relative to the source directory, which cannot hold it.
+
+    :param src_discover_config: What to walk, and how.
+    :param boundary: The directory every listed file lies below; the walked directory
+        when ``None``. A ``src-trace`` scope passes its project's ``src_dir``, which
+        its ``:directory:`` lies below.
+    :param warn: Whether to warn about a file outside ``boundary``.
+    """
+
+    def __init__(
+        self,
+        src_discover_config: SourceDiscoverConfig,
+        *,
+        boundary: Path | None = None,
+        warn: bool = True,
+    ):
         self.src_discover_config = src_discover_config
+        self.boundary = boundary
+        self.warn = warn
         # normalize the file types to lower case with leading dot
         self.file_types = {
             f".{ext}" for ext in COMMENT_FILETYPE[src_discover_config.comment_type]
@@ -86,6 +141,7 @@ class SourceDiscover:
         if override_builder is not None:
             builder.overrides(override_builder.build())
 
+        boundary = (self.boundary or src_dir).resolve()
         discovered_files = []
         for entry in builder.build():
             filepath = entry.path()
@@ -104,9 +160,19 @@ class SourceDiscover:
                 continue
             # resolve() produces canonical absolute paths; follow_links only
             # controls whether the walker descends into symlinked directories
-            discovered_files.append(filepath.resolve())
+            resolved = filepath.resolve()
+            if not lies_within(resolved, boundary):
+                # a link out of the tree: no root-relative path, no copy (#2062)
+                if self.warn:
+                    warn_outside_src_dir(filepath, resolved, boundary)
+                continue
+            discovered_files.append(resolved)
 
+        # a file reached through a symbolic link inside the tree resolves to a path
+        # already found: list each file once, or every caller analyses it once per
+        # path to it
         sorted_filepaths = sorted(
-            discovered_files, key=lambda x: os.path.normcase(os.path.normpath(x))
+            dict.fromkeys(discovered_files),
+            key=lambda x: os.path.normcase(os.path.normpath(x)),
         )
         return sorted_filepaths
