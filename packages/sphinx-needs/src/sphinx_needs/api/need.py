@@ -18,7 +18,7 @@ from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
 from sphinx_needs._jinja import render_template_string
-from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.config import NeedsSphinxConfig, NeedType
 from sphinx_needs.data import (
     NeedsInfoType,
     NeedsPartType,
@@ -192,9 +192,7 @@ def generate_need(
         )
 
     # get the need type data
-    configured_need_types = {ntype["directive"]: ntype for ntype in needs_config.types}
-    if not (need_type_data := configured_need_types.get(need_type)):
-        raise InvalidNeedException("invalid_type", f"Unknown need type {need_type!r}.")
+    need_type_data = _get_need_type(needs_config, need_type)
 
     # generate and validate the id
     if id is None and needs_config.id_required:
@@ -202,11 +200,8 @@ def generate_need(
             "missing_id", "No ID defined, but 'needs_id_required' is set to True."
         )
     need_id = (
-        _make_hashed_id(
-            need_type_data["prefix"],
-            title if full_title is None else full_title,
-            content,
-            needs_config,
+        _generate_need_id(
+            needs_config, need_type_data["prefix"], title, content, full_title
         )
         if id is None
         else id
@@ -682,7 +677,7 @@ def add_need(
         lineno=lineno,
         id=id,
         doctype=doctype or "",
-        content="\n".join(content) if isinstance(content, StringList) else content,
+        content=_content_text(content),
         lineno_content=lineno_content,
         status=status,
         tags=tags,
@@ -1016,10 +1011,89 @@ def _prepare_template(
     return new_content
 
 
+def generate_need_id(
+    app: Sphinx,
+    need_type: str,
+    title: str,
+    content: str | StringList = "",
+    *,
+    full_title: str | None = None,
+) -> str:
+    """Return the id :func:`add_need` assigns to a need that is given no ``id``.
+
+    The arguments are those of the same name given to :func:`add_need`, which derives
+    the id with this same code: the type's ``prefix``, followed by a hash of
+    ``full_title`` (if given, else ``title``), or of ``content`` when that is empty,
+    shaped by :ref:`needs_id_from_title` and :ref:`needs_id_length`.
+    An extension that creates needs can use it to find out, before it calls
+    :func:`add_need`, whether a need with that id already exists.
+
+    The id is not checked: :func:`add_need` may still refuse the need, for example
+    because :ref:`needs_id_required` is set, the id does not match
+    :ref:`needs_id_regex`, or a need with that id already exists.
+
+    :param app: Sphinx application object.
+    :param need_type: Name of the need type, as given to :func:`add_need`.
+    :param title: Title of the need.
+    :param content: Content of the need, either as a ``str``
+        or a ``StringList``, as :func:`add_need` takes it.
+    :param full_title: The untrimmed title, if ``title`` was trimmed.
+    :return: The generated id.
+    :raises InvalidNeedException: If ``need_type`` is not a configured need type
+        (type ``invalid_type``, as :func:`add_need` raises it).
+    """
+    needs_config = NeedsSphinxConfig(app.config)
+    return _generate_need_id(
+        needs_config,
+        _get_need_type(needs_config, need_type)["prefix"],
+        title,
+        _content_text(content),
+        full_title,
+    )
+
+
+def _content_text(content: str | StringList) -> str:
+    """A need's content as the text :func:`generate_need` is given, whether it came as
+    a ``str`` or as a ``StringList``."""
+    return "\n".join(content) if isinstance(content, StringList) else content
+
+
+def _get_need_type(needs_config: NeedsSphinxConfig, need_type: str) -> NeedType:
+    """The configuration of a need type, by its directive name.
+
+    :raises InvalidNeedException: If the type is not configured.
+    """
+    configured_need_types = {ntype["directive"]: ntype for ntype in needs_config.types}
+    if not (need_type_data := configured_need_types.get(need_type)):
+        raise InvalidNeedException("invalid_type", f"Unknown need type {need_type!r}.")
+    return need_type_data
+
+
+def _generate_need_id(
+    needs_config: NeedsSphinxConfig,
+    type_prefix: str,
+    title: str,
+    content: str,
+    full_title: str | None,
+) -> str:
+    """The id of a need given no ``id``: the one derivation behind both
+    :func:`generate_need` and :func:`generate_need_id`."""
+    return _make_hashed_id(
+        type_prefix,
+        title if full_title is None else full_title,
+        content,
+        needs_config,
+    )
+
+
 def _make_hashed_id(
     type_prefix: str, full_title: str, content: str, config: NeedsSphinxConfig
 ) -> str:
-    """Create an ID based on the type and title of the need."""
+    """Create an ID based on the type and title of the need.
+
+    Private, and kept because sibling extensions still import it; new code calls
+    :func:`generate_need_id`.
+    """
     hashable_content = full_title or content
     hashed = hashlib.sha1(hashable_content.encode("UTF-8")).hexdigest().upper()
     if config.id_from_title:
