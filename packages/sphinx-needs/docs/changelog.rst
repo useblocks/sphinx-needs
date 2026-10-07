@@ -165,8 +165,9 @@ Bug fixes
   A value that is not a list or tuple is now one ``needs.config`` warning naming its type,
   and nothing is registered from it; a string, which was read one character at a time
   with a warning for each, is reported the same way. A set of functions, or another
-  collection that is neither a list nor a tuple, used to register its functions beside
-  Sphinx's own type warning, and is now ignored with the same ``needs.config`` warning.
+  iterable of functions that is neither a list nor a tuple (a frozenset, a generator),
+  used to register them beside Sphinx's own type warning, and is now ignored with the
+  same ``needs.config`` warning.
   An entry without a ``__name__`` is skipped with a ``needs.config`` warning, and the
   rest of the list is still registered.
   Such a callable is registered with
