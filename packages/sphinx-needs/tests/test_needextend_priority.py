@@ -1,15 +1,12 @@
-"""``needextend``'s ``:extend_priority:``, and filters whose matches depend on order (#1658).
+"""``needextend``'s ``:extend_priority:``, and filters that see the needs as written (#1658).
 
 ``needextend`` directives are applied in ``(extend_priority, docname, lineno)`` order,
 lower priority first (Sphinx's event-priority convention, default 500), so a project
 that never sets the option keeps the ``(docname, lineno)`` order it always had.
 
-Which needs a filter matches is unchanged in this release: each filter is still
-evaluated against the needs as the extends applied before it left them. Every filter is
-also evaluated against the needs as written, before any extend is applied, and where the
-two differ the extend is reported as ``needs.needextend_match_order``: the next release
-evaluates filters against the needs as written, so those are the extends whose reach
-will change.
+Which needs a filter matches does not depend on that order: every filter is evaluated
+against the needs as written, before any extend is applied, so no extend changes what
+another one's filter matches, and the priority orders the modifications only.
 """
 
 import json
@@ -124,8 +121,8 @@ def test_without_the_option_needs_json_is_unchanged(test_app: Sphinx, snapshot):
 
     Every extend sits at the default priority, so the order is ``(docname, lineno)``
     exactly as before the option existed. The snapshot was recorded before the option
-    was implemented; the filter extend matches the same needs as written and live, so
-    nothing is reported either.
+    was implemented; the filter extend matches the same needs as written as after the
+    extends before it, so evaluating it against the needs as written changes nothing.
     """
     app = test_app
     app.build()
@@ -423,11 +420,12 @@ def test_priority_option_shadows_a_field_of_that_name(test_app: Sphinx):
     assert stored_priorities(app) == {("index", 8): 7}
 
 
-# -- T6: a filter that matches only because of an earlier extend (T9: -j 2) -----
+# -- T6: a filter matches the needs as written, not what an earlier extend left (T9: -j 2)
 #
-# The recon project ``q5_extend_chain``, as it is: the id-targeted extend in ``b.rst``
-# closes TGT_1, so the filter after it in ``b.rst`` matches TGT_1, while the identical
-# filter in ``a.rst``, applied first, matches nothing.
+# The recon project ``q5_extend_chain``, plus one filter: the id-targeted extend in
+# ``b.rst`` closes TGT_1 before the two ``b.rst`` filters are applied, and neither sees
+# it: ``status == "closed"`` matches nothing as written, ``status == "open"`` matches
+# TGT_1, which is written open.
 
 Q5_CONF = """\
 extensions = ["sphinx_needs"]
@@ -468,12 +466,12 @@ B
    :+tags: saw_closed_later
 """
 
-Q5_WARNING = (
-    "<srcdir>/b.rst:7: WARNING: the needs matched by this needextend depend on "
-    "modifications applied by earlier needextend directives: it matches 1 need (TGT_1) "
-    "now and 0 against the needs as written; from the next release filters are "
-    "evaluated against the needs as written, before any needextend is applied "
-    "[needs.needextend_match_order]"
+T6_B = (
+    Q5_B
+    + """
+.. needextend:: status == "open"
+   :+tags: open_as_written
+"""
 )
 
 
@@ -484,31 +482,30 @@ Q5_WARNING = (
             (Path("conf.py"), Q5_CONF),
             (Path("index.rst"), Q5_INDEX),
             (Path("a.rst"), Q5_A),
-            (Path("b.rst"), Q5_B),
+            (Path("b.rst"), T6_B),
         ]
     ),
     indirect=True,
 )
-def test_filter_depending_on_an_earlier_extend_is_reported(test_app: Sphinx):
-    """T6 (and T9 under ``-j 2``): one warning, at the filter that depends on order.
+def test_filter_matches_the_needs_as_written(test_app: Sphinx):
+    """T6 (and T9 under ``-j 2``): an earlier extend never changes what a filter matches.
 
-    The ``b.rst`` filter matches TGT_1 now, and nothing against the needs as written:
-    it is reported once, at its own line. The id-targeted extend is never reported,
-    nor the ``a.rst`` filter, which matches nothing either way. What is applied is
-    unchanged in this release: the ``b.rst`` filter still tags TGT_1.
+    The ``b.rst`` filter on ``closed`` comes after the extend that closes TGT_1, and
+    does not match it, as TGT_1 is written open; the one on ``open`` does. Nothing is
+    reported. Merging parallel readers in completion order must not change that.
     """
     app = test_app
     app.build()
 
-    assert build_warnings(app) == [Q5_WARNING]
+    assert build_warnings(app) == []
     need = needs_by_id(app)["TGT_1"]
     assert need["status"] == "closed"
-    assert need["tags"] == ["saw_closed_later"]
+    assert need["tags"] == ["open_as_written"]
     assert need["is_modified"] is True
     assert need["modifications"] == 2
 
 
-# -- T7: no warning where the two agree; suppressible on its own -----------------
+# -- T7: what a filter on an unmodified field matches is unchanged -----------------
 
 T7_INDEX = """\
 Index
@@ -566,13 +563,12 @@ B
     ],
     indirect=True,
 )
-def test_no_warning_where_the_matches_agree(test_app: Sphinx):
-    """T7: a filter on a field no extend changes, and id-targeted extends, never warn.
+def test_filter_on_an_unmodified_field_matches_as_before(test_app: Sphinx):
+    """T7: a filter on a field no extend changes, and id-targeted extends, apply as before.
 
     The earlier extends change REQ_1's status, but the filter reads its title, which
-    no extend can change, so it matches REQ_1 either way. The id-targeted extends
-    each modify REQ_1 after earlier ones did; their target is fixed, so they are never
-    compared.
+    no extend can change, so it matches REQ_1 as written and after them alike. The
+    id-targeted extends each modify REQ_1 after the earlier ones, in order.
     """
     app = test_app
     app.build()
@@ -585,7 +581,7 @@ def test_no_warning_where_the_matches_agree(test_app: Sphinx):
     assert needs["REQ_2"]["modifications"] == 0
 
 
-T7_SUPPRESSED_INDEX = (
+T7_RETIRED_INDEX = (
     Q5_INDEX
     + """
 .. needextend:: NOPE_1
@@ -600,42 +596,42 @@ T7_UNKNOWN_ID = (
 
 
 @pytest.mark.parametrize(
-    ("test_app", "expected"),
+    "test_app",
     [
         pytest.param(
             {
                 "buildername": "html",
                 "files": [
                     (Path("conf.py"), Q5_CONF + suppress),
-                    (Path("index.rst"), T7_SUPPRESSED_INDEX),
+                    (Path("index.rst"), T7_RETIRED_INDEX),
                     (Path("a.rst"), Q5_A),
                     (Path("b.rst"), Q5_B),
                 ],
             },
-            expected,
             id=name,
         )
-        for name, suppress, expected in [
-            ("reported", "", [Q5_WARNING, T7_UNKNOWN_ID]),
-            (
-                "suppressed",
-                'suppress_warnings = ["needs.needextend_match_order"]\n',
-                [T7_UNKNOWN_ID],
-            ),
+        for name, suppress in [
+            ("absent", ""),
+            ("listed", 'suppress_warnings = ["needs.needextend_match_order"]\n'),
         ]
     ],
-    indirect=["test_app"],
+    indirect=True,
 )
-def test_match_order_warning_is_suppressed_alone(test_app: Sphinx, expected: list[str]):
-    """T7: ``suppress_warnings`` silences ``needs.needextend_match_order`` and no more.
+def test_retired_match_order_type_is_a_no_op_in_suppress_warnings(test_app: Sphinx):
+    """T7: ``needs.needextend_match_order`` is gone, and listing it changes nothing.
 
-    The other ``needextend`` warning of the same build, an unknown id, is still
-    reported; without the suppression both are.
+    The project of T6, whose ``b.rst`` filter the previous behaviour reported, builds
+    with the one ``needextend`` warning it really has, an unknown id, whether or not
+    ``suppress_warnings`` still names the retired type: Sphinx ignores a type that is
+    never emitted.
     """
     app = test_app
     app.build()
 
-    assert build_warnings(app) == expected
+    assert build_warnings(app) == [T7_UNKNOWN_ID]
+    need = needs_by_id(app)["TGT_1"]
+    assert need["status"] == "closed"
+    assert need["tags"] == []
 
 
 # -- T8: the needs as written, even after a lower-priority extend ---------------
@@ -679,10 +675,10 @@ A
 =
 
 .. needextend:: status == "closed"
-   :+tags: closed_now
+   :+tags: closed_as_written
 
 .. needextend:: status == "open"
-   :+tags: open_now
+   :+tags: open_as_written
 """
 
 T8_Z = """\
@@ -710,50 +706,49 @@ Z
     ],
     indirect=True,
 )
-def test_needs_as_written_ignore_an_earlier_priority(test_app: Sphinx):
-    """T8: what a filter matches as written ignores every extend, whatever its priority.
+def test_filters_ignore_an_earlier_priority(test_app: Sphinx):
+    """T8: what a filter matches ignores every extend, whatever its priority.
 
     The priority-100 extend in ``z.rst`` is applied first, although ``z`` sorts last,
-    and closes REQ_1 to REQ_5. It is itself the first extend applied, so it matches
-    the same needs either way. Both ``a.rst`` filters then name ``status``, which it
-    changed: each is reported with the needs it matches now and as written, in need-id
-    order (the needs are written in the reverse order), three named and the rest
-    counted. The tags show the filters still match the live needs.
+    and closes REQ_1 to REQ_5. Both ``a.rst`` filters then name ``status``, which it
+    changed, and still match the needs as written: the one written closed, and the
+    five written open.
     """
     app = test_app
     app.build()
 
-    head = (
-        "WARNING: the needs matched by this needextend depend on modifications applied "
-        "by earlier needextend directives: it matches "
-    )
-    tail = (
-        " against the needs as written; from the next release filters are evaluated "
-        "against the needs as written, before any needextend is applied "
-        "[needs.needextend_match_order]"
-    )
-    assert build_warnings(app) == [
-        f"<srcdir>/a.rst:4: {head}6 needs (REQ_1, REQ_2, REQ_3 and 3 more) now "
-        f"and 1 (REQ_6){tail}",
-        f"<srcdir>/a.rst:7: {head}0 needs now "
-        f"and 5 (REQ_1, REQ_2, REQ_3 and 2 more){tail}",
-    ]
+    assert build_warnings(app) == []
     needs = needs_by_id(app)
     assert {need["status"] for need in needs.values()} == {"closed"}
     assert {need_id: need["tags"] for need_id, need in needs.items()} == {
-        f"REQ_{n}": ["closed_now"] for n in range(1, 7)
+        "REQ_6": ["closed_as_written"],
+        **{f"REQ_{n}": ["open_as_written"] for n in range(1, 6)},
     }
 
 
-# -- the as-written pass: once per filter and document, and none when suppressed ----
+# -- the as-written evaluation: once per filter and document --------------------
 
-MEMO_B = (
-    Q5_B
-    + """
-.. needextend:: status == "closed"
-   :+tags: saw_closed_again
+MEMO_A = """\
+A
+=
+
+.. needextend:: status == "open"
+   :+tags: a_open
 """
-)
+
+MEMO_B = """\
+B
+=
+
+.. needextend:: TGT_1
+   :status: closed
+
+.. needextend:: status == "open"
+   :+tags: b_open
+
+.. needextend:: status == "open"
+   :+tags: b_open_again
+"""
 
 
 @pytest.mark.parametrize(
@@ -764,7 +759,7 @@ MEMO_B = (
             "files": [
                 (Path("conf.py"), Q5_CONF),
                 (Path("index.rst"), Q5_INDEX),
-                (Path("a.rst"), Q5_A),
+                (Path("a.rst"), MEMO_A),
                 (Path("b.rst"), MEMO_B),
             ],
         }
@@ -774,17 +769,17 @@ MEMO_B = (
 def test_identical_filters_are_evaluated_once_per_document(
     test_app: Sphinx, monkeypatch: pytest.MonkeyPatch
 ):
-    """One filter string from one document is evaluated once against the needs as written.
+    """One filter string from one document is evaluated once, against the needs as written.
 
-    Every as-written evaluation reads the same needs, so the two identical filters of
-    ``b.rst`` share one evaluation and are both reported, each at its own line. The same
-    string in ``a.rst`` is evaluated on its own: a filter can depend on its document
-    (``c.this_doc()``), so the document is part of what is shared.
+    Every evaluation reads the same needs, so the two identical filters of ``b.rst``
+    share one, and both apply what it matched, although TGT_1 was closed before them.
+    The same string in ``a.rst`` is evaluated on its own: a filter can depend on its
+    document (``c.this_doc()``), so the document is part of what is shared.
     """
     calls: list[tuple[str, str]] = []
     evaluate = needextend_module._ids_matched_as_written
 
-    def counted(*args: Any) -> frozenset[str] | None:
+    def counted(*args: Any) -> Any:
         calls.append((args[2]["filter"], args[2]["docname"]))
         return evaluate(*args)
 
@@ -792,10 +787,100 @@ def test_identical_filters_are_evaluated_once_per_document(
     app = test_app
     app.build()
 
-    assert build_warnings(app) == [
-        Q5_WARNING,
-        Q5_WARNING.replace("b.rst:7:", "b.rst:10:"),
-    ]
-    assert calls == [('status == "closed"', "a"), ('status == "closed"', "b")]
+    assert build_warnings(app) == []
+    assert calls == [('status == "open"', "a"), ('status == "open"', "b")]
     need = needs_by_id(app)["TGT_1"]
-    assert need["tags"] == ["saw_closed_later", "saw_closed_again"]
+    assert need["status"] == "closed"
+    assert need["tags"] == ["a_open", "b_open", "b_open_again"]
+
+
+# -- a filter that fails against the needs as written --------------------------
+
+T10_INDEX = """\
+Index
+=====
+
+.. req:: Target
+   :id: TGT_1
+   :status: open
+
+.. needextend:: TGT_1
+   :status: closed
+
+.. needextend:: {filter}
+   :+tags: matched
+
+.. needextend:: {filter}
+   :+tags: matched_again
+
+.. needextend:: <TGT_1>
+   :+tags: by_id
+"""
+
+
+def _invalid_filter_at(line: int) -> tuple[str, str]:
+    """The start and end of the ``Invalid filter`` warning of the extend at ``line``.
+
+    The middle is Python's own ``SyntaxError`` text, which varies between versions.
+    """
+    return (
+        f"<srcdir>/index.rst:{line}: WARNING: Invalid filter 'status ==': ",
+        " [needs.needextend]",
+    )
+
+
+@pytest.mark.parametrize(
+    ("test_app", "expected"),
+    [
+        pytest.param(
+            {
+                "buildername": "html",
+                "files": [
+                    (Path("conf.py"), CONF),
+                    (Path("index.rst"), T10_INDEX.format(filter=filter_string)),
+                ],
+            },
+            expected,
+            id=name,
+        )
+        for name, filter_string, expected in [
+            ("raises", "status ==", [_invalid_filter_at(11), _invalid_filter_at(14)]),
+            (
+                "reports",
+                'unknown_field == "x"',
+                [
+                    (
+                        "<srcdir>/index.rst:11: WARNING: Filter 'unknown_field == \"x\"' "
+                        "not valid. Error: name 'unknown_field' is not defined.",
+                        " [needs.filter]",
+                    )
+                ],
+            ),
+        ]
+    ],
+    indirect=["test_app"],
+)
+def test_filter_that_fails_as_written_applies_to_nothing(
+    test_app: Sphinx, expected: list[tuple[str, str]]
+):
+    """A filter that cannot be evaluated against the needs as written modifies nothing.
+
+    One that raises, here a syntax error, is the ``Invalid filter`` warning of
+    ``needs.needextend``, once for each extend that carries it, at its own line,
+    although the two share one evaluation. One whose evaluation reports its own
+    error, here an unknown name, does so under ``needs.filter`` from that one
+    evaluation, at the first of them. Either way the extend applies to nothing, and
+    the extends around it are applied.
+    """
+    app = test_app
+    app.build()
+
+    warnings = build_warnings(app)
+    assert len(warnings) == len(expected)
+    for warning, (start, end) in zip(warnings, expected, strict=True):
+        assert warning.startswith(start), warning
+        assert warning.endswith(end), warning
+    need = needs_by_id(app)["TGT_1"]
+    assert need["status"] == "closed"
+    assert need["tags"] == ["by_id"]
+    assert need["modifications"] == 2
