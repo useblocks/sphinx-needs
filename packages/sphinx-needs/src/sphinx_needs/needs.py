@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import json
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from copy import deepcopy
 from itertools import chain
 from pathlib import Path
@@ -939,10 +939,12 @@ def _service_config_problem(service: dict[str, Any]) -> str | None:
     """Why a configured service cannot be registered from its ``class`` and
     ``class_init``, or ``None`` when it can.
 
-    Only what :meth:`.ServiceManager.register` cannot take is refused: a ``class`` that
-    is not a class -- a ``needs_from_toml`` file can give it nothing but data, such as a
-    string -- or has no ``options``, which ``register`` reads first. A class that does
-    not derive from ``BaseService`` but has ``options`` is registered, as it always was.
+    Exactly what :meth:`.ServiceManager.register` cannot take is refused: it reads the
+    ``class``'s ``options`` and then calls it with ``class_init`` as keyword arguments,
+    so a ``class`` that is not callable -- a ``needs_from_toml`` file can give it nothing
+    but data, such as a string -- or has no ``options``, and a ``class_init`` that is not
+    a mapping. Anything else is registered, as it always was, whether or not it derives
+    from ``BaseService``.
     """
     advice = (
         "A service class derives from BaseService and is set in conf.py's "
@@ -950,21 +952,27 @@ def _service_config_problem(service: dict[str, Any]) -> str | None:
         "hold a service's options but not its class"
     )
     klass = service["class"]
-    if not isinstance(klass, type):
+    if not callable(klass):
         return (
-            "its 'class' is not a class "
+            "its 'class' is not callable "
             f"(got a value of type {type(klass).__name__!r}). {advice}"
         )
     if not hasattr(klass, "options"):
+        name = getattr(klass, "__qualname__", None)
+        what = (
+            repr(name)
+            if isinstance(name, str)
+            else f"(a value of type {type(klass).__name__!r})"
+        )
         return (
-            f"its 'class' {klass.__qualname__!r} has no 'options', which a service "
-            f"class needs. {advice}"
+            f"its 'class' {what} has no 'options', which a service class needs. "
+            f"{advice}"
         )
     class_init = service["class_init"]
-    if not isinstance(class_init, dict):
+    if not isinstance(class_init, Mapping):
         return (
-            "its 'class_init' is not a dict of keyword arguments for the service class "
-            f"(got a value of type {type(class_init).__name__!r})"
+            "its 'class_init' is not a mapping of keyword arguments for the service "
+            f"class (got a value of type {type(class_init).__name__!r})"
         )
     return None
 

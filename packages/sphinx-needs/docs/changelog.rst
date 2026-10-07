@@ -206,14 +206,14 @@ Bug fixes
   line ended in ``[needs.link_outgoing] [needs.link_outgoing]``. It is now appended only
   where Sphinx does not append it.
 
-- 🐛 A service whose ``class`` is not a class is skipped with a warning instead of
-  crashing the build **(changed output)** (:issue:`2067`)
+- 🐛 A service whose ``class`` cannot be registered is skipped with a warning instead
+  of crashing the build **(changed output)** (:issue:`2067`)
 
   A :ref:`needs_services` entry with both ``class`` and ``class_init`` is registered from
-  them, and a ``class`` that is not a class, or a class without the ``options`` a service
-  needs, ended the build with ``'str' object has no attribute 'options'`` -- which every
-  ``class`` set in a :ref:`needs_from_toml` file did, since that file can only give it a
-  string. A ``class_init`` that is not a dict ended it the same way.
+  them, and a ``class`` that is not callable or has no ``options`` ended the build with
+  ``'str' object has no attribute 'options'`` -- which every ``class`` set in a
+  :ref:`needs_from_toml` file did, since that file can only give it a string.
+  A ``class_init`` that is not a mapping ended it the same way.
   Such a service is now one ``needs.config`` warning, naming the key and what is wrong
   with its value, and is not registered; the build goes on. Every service that was
   registered before still is, and a table that holds a service's options only is read
