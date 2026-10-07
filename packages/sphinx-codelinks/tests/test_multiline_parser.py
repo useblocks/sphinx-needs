@@ -648,3 +648,32 @@ def test_a_libclang_record_reads_its_columns_from_the_row(tmp_path: Path) -> Non
     record = _record(analyse)
     assert record["source"]["start"] == {"line": 2, "col": 7}
     assert record["source"]["scope"] is None
+
+
+def _parsed(text: str):
+    (run,) = form_runs([_node(text, 0)])
+    # red-first shim: the flag does not exist before the fix (removed with it)
+    extra = (
+        {"mixed_leaders": run.mixed_leaders} if hasattr(run, "mixed_leaders") else {}
+    )
+    return parse_run(run.lines, CONFIG, leaderless_block=run.leaderless_block, **extra)
+
+
+def test_the_leader_hint_is_only_for_a_block_with_some_leaders() -> None:
+    """A plain block, with no star anywhere, has no missing leader to blame."""
+    (plain,) = _parsed("/*\n @need req: A\n body\n*/").issues
+    (mixed,) = _parsed("/*\n @need req: A\n * body\n*/").issues
+
+    assert plain.kind == mixed.kind == WarningSubTypeEnum.multiline_need_unterminated
+    assert "'*' leader" not in plain.msg
+    assert "'*' leader" in mixed.msg
+
+
+def test_a_starred_one_line_form_in_a_leaderless_block_is_the_one_line_form() -> None:
+    """The refusal order holds in both modes: the one-line form first."""
+    result = _parsed("/*\n * @need req: A @endneed\n   no leader\n */")
+
+    assert [(issue.kind, issue.row) for issue in result.issues] == [
+        (WarningSubTypeEnum.multiline_need_oneline_form, 1)
+    ]
+    assert result.claimed_rows == {1}
