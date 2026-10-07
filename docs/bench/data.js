@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791367071158,
+  "lastUpdate": 1791367794780,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -23004,6 +23004,42 @@ window.BENCHMARK_DATA = {
             "value": 55.676104876000004,
             "unit": "s",
             "extra": "Commit: f3a3131430bff5141985bfa3bd65da52aa15c72c\nBranch: master\nTime: 2026-10-07T11:56:22+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0b49a99619bf5d051a856c9fc14cde8df686912c",
+          "message": "📚 sphinx-needs: document the processing order of needs (#2081)\n\nStacked on #2080 (its branch is this pull request's base, so the diff is\nthe one docs commit; GitHub retargets it to `master` when #2080 merges).\n\n## Summary\n\nThe documentation stated one barrier between the stages that run once\nevery document is read:\na dynamic function cannot read back links (\"Restrictions /\nincoming_links\" in `docs/dynamic_functions.rst`).\nEverything else about the order was undocumented, and three of its\neffects surprise users:\n\n- a `needextend` filter never sees the result of a `[[…]]` or `<<…>>`:\n`needextend:: late == \"D\"` matches nothing\n  although the need's `late: [[copy(\"title\")]]` resolves to `\"D\"`;\n- the order of a need's options is irrelevant: with `early` declared\nbefore `late` in `needs_fields`, a need that\nwrites `:late: [[copy(\"title\")]]` before `:early: [[copy(\"late\")]]`\nstill computes `early` first, which reads\n  `late` unresolved (`\"None\"`);\n- a variant condition sees only the fields of its own need computed\nbefore its own field:\n`:band: <<[early == \"E\"]:hit, miss>>` gives `miss` and the identical\n`:after:` gives `hit`,\n  because `band` is declared before `early` and `after` after it.\n\nThis replaces that paragraph with a **Processing order** section (label\n`needs_processing_order`) that lists the\nfour steps, each checked against the code and against a probe project\nbuilt on this branch:\n\n1. `needextend`, applied in (document name, line) order; each filter\nsees the needs as written plus the earlier\nextends' changes, never a `[[…]]`/`<<…>>`/`<{…}>` result; an extend may\nset a field it can modify to a call,\n   evaluated in step 2;\n2. `[[…]]`, `<<…>>` and `<{…}>`, need by need, and within a need in the\nfixed field order whatever the option\norder, a field a `needextend` turned into a call last; a whole-project\n`calc_sum` and `copy(filter=…)` take the\nneeds in need-id order; reads of a value computed in this step point to\nthe `needs.derive_unresolved` subsection,\n   which becomes a child of the new section;\n3. back links, link conditions, unknown links, so no call can read a\nback link (the old restriction, kept);\n4. constraints; then the needs are frozen, and schema validation, every\npage and `needs_warnings` at the end of the\n   build see the final values.\n\nAlso:\n\n- `docs/directives/needextend.rst` says that extends are applied in\ndocument-name and line order and that a filter\nsees the earlier extends' changes, linking to the section; its claim\nthat `needextend` \"can modify all\nstring-based and list-based options\" is corrected: it modifies `status`,\n`tags`, `style`, `layout`, `hide`,\n`collapse`, and every extra field and link option whatever its type (a\nnumber or boolean field included), and\n  `+option` takes only string and list options;\n- the tutorial's \"Resolve\" step links to the section;\n- changelog: `Unreleased` → Improvements.\n\nPart of #2064 (third item); builds on the need-id order PR and the\n`needs.derive_unresolved` PR, whose semantics it\ndocuments.\n\nDocs only, no tests. `uv run poe lint`, `uv run poe typecheck` and the\ntwo dynamic-function test files pass; the\nchanged pages parse with docutils (Sphinx-only roles and directives\nstubbed) without warnings or errors, and every\n`:ref:` they use resolves to a label. `uv run poe docs-needs` was not\nrun locally (its intersphinx inventories need\nnetwork access); the docs CI job is the authority.\n\n## Follow-up\n\n- #2075: `constraints` set by a `needextend` or by a `[[…]]` is silently\ndropped: `NeedItem.__setitem__` checks that the\nconstraint results are not computed yet and then never stores the value.\nThe `needextend` page therefore does not\n  list `constraints` among the options it modifies.",
+          "timestamp": "2026-10-07T12:08:28+02:00",
+          "tree_id": "57dbab02d89255ccf9d47bd0bd6a27393c2946ee",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/0b49a99619bf5d051a856c9fc14cde8df686912c"
+        },
+        "date": 1791367786874,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.11352115900001536,
+            "unit": "s",
+            "extra": "Commit: 0b49a99619bf5d051a856c9fc14cde8df686912c\nBranch: master\nTime: 2026-10-07T12:08:28+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 56.35908843499999,
+            "unit": "s",
+            "extra": "Commit: 0b49a99619bf5d051a856c9fc14cde8df686912c\nBranch: master\nTime: 2026-10-07T12:08:28+02:00"
           }
         ]
       }
