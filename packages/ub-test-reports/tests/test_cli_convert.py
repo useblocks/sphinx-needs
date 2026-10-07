@@ -243,6 +243,101 @@ class TestLinkProperties:
         assert code != 0
 
 
+#: One case carrying BOTH properties, which share the value ``REQ_2``.
+BOTH_PROPERTIES_XML = """<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="1" failures="0" errors="0" time="0.001" name="AllTests">
+  <testsuite name="Both" tests="1" failures="0" errors="0" time="0.001">
+    <testcase name="Merged" file="src/both_test.cc" line="3" status="run" result="completed" time="0.001" classname="Both">
+      <properties>
+        <property name="PartiallyVerifies" value="REQ_1, REQ_2"/>
+        <property name="Requirement" value="REQ_2, REQ_3"/>
+      </properties>
+    </testcase>
+  </testsuite>
+</testsuites>
+"""
+
+
+class TestLinkPropertiesOntoOneField:
+    """Several properties mapped onto ONE link field merge (#2058).
+
+    Each mapped property used to ASSIGN the field, so the last one in the mapping won
+    -- and a case without that last property was left with the empty list it was
+    assigned, losing the links the first property gave it.
+    """
+
+    def test_the_issue_command_keeps_the_first_property_links(self, tmp_path):
+        _, data = _convert(
+            tmp_path,
+            "--link-property",
+            "PartiallyVerifies=links",
+            "--link-property",
+            "Requirement=links",
+        )
+        needs = _needs(data)
+        assert needs["testcase__MathTest__Addition_hcuyy"]["links"] == [
+            "REQ_1",
+            "REQ_2",
+        ]
+        assert needs["testcase__ParamTest_0__Legacy_owuvz"]["links"] == ["REQ_9"]
+        # a case carrying neither property still gets the field, empty
+        assert needs["testcase__MathTest__DISABLED_Division_jnyzp"]["links"] == []
+
+    @pytest.mark.parametrize(
+        ("mapping", "expected"),
+        [
+            (["PartiallyVerifies", "Requirement"], ["REQ_1", "REQ_2", "REQ_3"]),
+            # the mapping-order control: swapping the flags swaps the merged order
+            (["Requirement", "PartiallyVerifies"], ["REQ_2", "REQ_3", "REQ_1"]),
+        ],
+        ids=["mapping-order", "swapped"],
+    )
+    def test_a_case_with_both_properties_gets_the_merged_list(
+        self, tmp_path, mapping, expected
+    ):
+        """In mapping order, each value once, at its first appearance."""
+        xml = tmp_path / "both.xml"
+        xml.write_text(BOTH_PROPERTIES_XML, encoding="utf-8")
+        flags = [
+            arg for name in mapping for arg in ("--link-property", f"{name}=links")
+        ]
+        _, data = _convert(tmp_path, *flags, xml=xml)
+        need = _only_need(data)
+        assert need["links"] == expected
+
+    def test_a_value_repeated_in_one_property_is_written_once(self, tmp_path):
+        """The edge of the same rule: a field's list names each id once."""
+        xml = tmp_path / "both.xml"
+        xml.write_text(
+            BOTH_PROPERTIES_XML.replace("REQ_2, REQ_3", "REQ_3, REQ_3"),
+            encoding="utf-8",
+        )
+        _, data = _convert(tmp_path, "--link-property", "Requirement=links", xml=xml)
+        need = _only_need(data)
+        assert need["links"] == ["REQ_3"]
+
+    def test_properties_onto_different_fields_stay_apart(self, tmp_path):
+        xml = tmp_path / "both.xml"
+        xml.write_text(BOTH_PROPERTIES_XML, encoding="utf-8")
+        _, data = _convert(
+            tmp_path,
+            "--link-property",
+            "PartiallyVerifies=links",
+            "--link-property",
+            "Requirement=verifies",
+            xml=xml,
+        )
+        need = _only_need(data)
+        assert need["links"] == ["REQ_1", "REQ_2"]
+        assert need["verifies"] == ["REQ_2", "REQ_3"]
+
+
+def _only_need(data):
+    """The one need of a single-case report (its id's hash suffix is not this test's subject)."""
+    (need,) = _needs(data).values()
+    return need
+
+
 class TestRemoteUrls:
     def test_external_url_and_remote_url_are_synthesized(self, tmp_path):
         _, data = _convert(
