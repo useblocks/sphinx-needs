@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791377455177,
+  "lastUpdate": 1791378886209,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -23220,6 +23220,42 @@ window.BENCHMARK_DATA = {
             "value": 45.667692941,
             "unit": "s",
             "extra": "Commit: bb1f466ab37706fc9dbfe701e55f8073a38dac3e\nBranch: master\nTime: 2026-10-07T14:49:39+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f5a58c9772bc5f8aca68d2591852a317ef7f648c",
+          "message": "🐛 sphinx-test-reports: auto-expanded suites and cases keep their parent links when :links: contains the file id (#2118)\n\n**What**\n\nThe \"already linked\" check behind the file → suite → case parent links\ncompares whole link ids instead of testing for a substring. One helper,\n`_links_with` in `directives/test_common.py`, used at the three sites\n(`test_file.py`'s suite loop, `test_suite.py`'s nested-suite and case\nloops); it splits the authored value on `;`, `|` and `,` — the\nseparators sphinx-needs' own link parser accepts — and appends the id to\nthe value as written, never re-joining it.\n\n**Why**\n\n`elif self.test_id not in options[\"links\"]` was a substring test on the\nauthored string, so a `test-file` `TF_PRF` with `:links: TF_PRFX` never\nappended `TF_PRF`: none of its suites or cases linked the file it was\nexpanded from (the same check guarded a suite's id in its cases' links).\nAny id that is a substring of another linked id does it — a prefix\n(`TF_1` / `TF_10`) being the common case. Where the old test and the\nelement test agree, the string handed to `add_need` is byte for byte\nwhat it was.\n\n**ubCode parity**\n\nubCode's port of the auto expansion (useblocks/ubcode#3900) always adds\nthe parent links and records this as a divergence; with this fix the two\nagree.\n\n**Tests**\n\n`tests/test_parent_links.py` builds `TF_PRF` (`:links: TF_PRFX`), a\ncontrol `TF_CTL` (`:links: REQ_1`), and two test-files whose `:links:`\nalready hold their own id — `REQ_1 , TF_SPC` (comma and spaces) and\n`REQ_1|TF_PIPE` (pipe) — over `gtest_data.xml`, and asserts every\nsuite's and case's links plus the exact `links` string each hands to\n`add_need` (sphinx-needs de-duplicates on read, so a doubled id only\nshows there). Red on master; the control row is green on master and\nunchanged.\n\nCloses #2114",
+          "timestamp": "2026-10-07T15:13:17+02:00",
+          "tree_id": "9be86bbe1b37efa4236d13bb5706a1925495c58c",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/f5a58c9772bc5f8aca68d2591852a317ef7f648c"
+        },
+        "date": 1791378878344,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.11710427199999884,
+            "unit": "s",
+            "extra": "Commit: f5a58c9772bc5f8aca68d2591852a317ef7f648c\nBranch: master\nTime: 2026-10-07T15:13:17+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 57.05803864400001,
+            "unit": "s",
+            "extra": "Commit: f5a58c9772bc5f8aca68d2591852a317ef7f648c\nBranch: master\nTime: 2026-10-07T15:13:17+02:00"
           }
         ]
       }
