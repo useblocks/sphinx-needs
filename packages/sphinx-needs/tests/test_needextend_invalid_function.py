@@ -32,6 +32,8 @@ needs_build_json = True
 
 VARIANT_CONF = CONF + 'needs_fields = {"status": {"parse_variants": True}}\n'
 
+LINK_VARIANT_CONF = CONF + 'needs_links = {"blocks": {"parse_variants": True}}\n'
+
 INDEX = """\
 Index
 =====
@@ -71,6 +73,13 @@ UNPARSABLE_CASES = [
         "variant",
         VARIANT_CONF,
         "status",
+        "<<[x>>",
+        "Error parsing variant function: Unclosed variant expression: [x",
+    ),
+    (
+        "link-variant",
+        LINK_VARIANT_CONF,
+        "blocks",
         "<<[x>>",
         "Error parsing variant function: Unclosed variant expression: [x",
     ),
