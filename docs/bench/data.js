@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791379916133,
+  "lastUpdate": 1791382342216,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -23292,6 +23292,42 @@ window.BENCHMARK_DATA = {
             "value": 57.437533413,
             "unit": "s",
             "extra": "Commit: b5ee38e9b7e207376684b0bcf2d3d8d84dc88671\nBranch: master\nTime: 2026-10-07T15:30:13+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5868bdd173b77f96b943e0d465865ec8ab0b3f95",
+          "message": "🐛 sphinx-test-reports: test-report inserts its body as lines, records :file: as written, and no longer self-includes its template (#2125)\n\n**What**\n\nThree fixes to `test-report` and the template it ships:\n\n- `{content}` is the directive's body line for line, each line at the\nindentation the template gives the placeholder (read from the template's\nfirst line holding `{content}`), instead of the `repr` of docutils'\n`StringList`;\n- `{file}` is the `:file:` option as written instead of the resolved\nabsolute path;\n- the default template's trailing *Template* section is removed; the\n`test-report` docs page shows the template source with a\n`literalinclude` from its own location.\n\n**Why**\n\n- A body `First content line.` / `Second content line.` became the\ngenerated test-file's content `\"['First content line.', 'Second content\nline.']\"`; a plain newline join would not do either, because the second\nline would land at column 0 and end the generated `test-file` directive.\n- The generated `test-file` recorded the absolute resolved path, so a\n`test-report`'s file, suite and case needs differed in their report-path\nfield from every hand-written `test-file` (and between machines).\nWritten as given, the `test-file` resolves it against `tr_rootdir`\nexactly as the `test-report` did — pinned from a root document and a\nsubdirectory document, with the default rootdir and with `tr_rootdir`\nset elsewhere.\n- The *Template* section `literalinclude`d the template by a path\nrelative to the including document, which only this package's own docs\ncould resolve: every user's `test-report` warned `Include file … not\nfound` (failing `-W`) and published a *Template* heading and its one\nsentence with no template under them. This removes output that never\nrendered outside this repository; the obsolete `Unreleased` bullet that\nsaid it was still broken is replaced by the fix's bullet.\n\n**ubCode parity**\n\nNothing to match yet: ubCode's `test-report` is slice S5 of\nuseblocks/ubcode#3845, which takes all three as the target behaviour\n(content as lines, `{file}` as written, no Template section).\n\n**Tests**\n\n`tests/test_test_report.py` builds a user project with the default\ntemplate (a report in the root document and one in a subdirectory) and a\nsecond project with a one-space custom template and `tr_rootdir` set\nelsewhere, and asserts: the generated test-file's `content` in\n`needs.json` and inside the html card, equal to a hand-written\n`test-file`'s; the report-path field equal to `:file:` as written on the\nfile, suite and case needs, with the report found from both documents;\nand a warning-free build with no *Template* heading. Red on master. `poe\ndocs-reports` stays warning-free (0 before, 0 after).\n\nCloses #2051\nCloses #1932",
+          "timestamp": "2026-10-07T16:10:54+02:00",
+          "tree_id": "916aba9e47fe000f3e7cd884bf8329a29056f621",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/5868bdd173b77f96b943e0d465865ec8ab0b3f95"
+        },
+        "date": 1791382333779,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.12095510200001058,
+            "unit": "s",
+            "extra": "Commit: 5868bdd173b77f96b943e0d465865ec8ab0b3f95\nBranch: master\nTime: 2026-10-07T16:10:54+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 58.240766683000004,
+            "unit": "s",
+            "extra": "Commit: 5868bdd173b77f96b943e0d465865ec8ab0b3f95\nBranch: master\nTime: 2026-10-07T16:10:54+02:00"
           }
         ]
       }
