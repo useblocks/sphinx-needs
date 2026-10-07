@@ -290,7 +290,9 @@ def test_a_links_only_sum_reads_its_own_computed_links(test_app):
 
 # -- variants ----------------------------------------------------------------------
 
-VARIANT_CONF = CONF + 'needs_variant_options = ["status"]\n'
+VARIANT_CONF = CONF.replace(
+    "needs_fields = {\n", 'needs_fields = {\n    "status": {"parse_variants": True},\n'
+)
 
 VARIANT_INDEX = """\
 Variant
@@ -482,18 +484,19 @@ def test_a_sum_whose_candidates_include_its_own_need_is_a_cycle(test_app):
         _warning(
             "index",
             SELF_SUM_INDEX,
+            "SP",
+            "dynamic function 'calc_sum' for option 'hours' is on a cycle: "
+            "'hours' on need 'SP', through a sum over every need; the field is left empty",
+            "derive_cycle",
+        ),
+        # after ``ST``, whose ``status`` its filter reads
+        _warning(
+            "index",
+            SELF_SUM_INDEX,
             "P2",
             "dynamic function 'calc_sum' for option 'total' is on a cycle: "
             "'total' on need 'P2', through the filter \"status == 'open'\", which names "
             "a computed field, so every need is a candidate; the field is left empty",
-            "derive_cycle",
-        ),
-        _warning(
-            "index",
-            SELF_SUM_INDEX,
-            "SP",
-            "dynamic function 'calc_sum' for option 'hours' is on a cycle: "
-            "'hours' on need 'SP', through a sum over every need; the field is left empty",
             "derive_cycle",
         ),
     ]

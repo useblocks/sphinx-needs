@@ -375,8 +375,8 @@ def post_process_needs_data(app: Sphinx) -> None:
         needs = needs_data.get_needs_mutable()
         app.emit("needs-before-post-processing", needs)
         extend_needs_data(needs, needs_data.get_or_create_extends(), needs_config)
+        # the link fields, then the back links (build_backlinks), then the other fields
         resolve_functions(app, needs, needs_config)
-        build_backlinks(needs, needs_schema)
         check_links(needs, needs_config, needs_schema)
         # last, so the dynamic functions read the links in the order written
         for need in needs.values():
