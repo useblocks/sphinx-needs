@@ -16,6 +16,9 @@ import textwrap
 
 import pytest
 
+from sphinx_needs.api import get_needs_view
+from sphinx_needs.directives.needservice import Needservice
+from sphinx_needs.nodes import Need
 from sphinx_needs.services.manager import NeedsServiceException
 from sphinx_needs_testkit import assert_no_warnings, build_warnings
 
@@ -269,9 +272,25 @@ def test_a_class_init_that_is_not_a_mapping_warns_and_the_service_is_skipped(bui
     assert registered(app) == BUILT_IN
 
 
-def test_a_needservice_naming_a_skipped_service_reports_it_as_not_found(build):
-    """The skipped service is simply absent: a ``needservice`` naming it takes the
-    existing "could not be found" path, which this change leaves as it is -- after the
+#: the warning of a ``needservice`` naming a service that is not registered, at line 6
+#: of ``RST`` plus the directive (#2101)
+NOT_FOUND_WARNING = (
+    "<srcdir>/index.rst:6: WARNING: Service foo could not be found. Available services "
+    "are github-issues, github-prs, github-commits [needs.load_service_need]"
+)
+
+
+def assert_nothing_rendered(app) -> None:
+    """The directive added no node, and no need was created."""
+    doctree = app.env.get_doctree("index")
+    assert not list(doctree.findall(Needservice))
+    assert not list(doctree.findall(Need))
+    assert len(get_needs_view(app)) == 0
+
+
+def test_a_needservice_naming_a_skipped_service_warns_that_it_is_not_found(build):
+    """The skipped service is simply absent: a ``needservice`` naming it is the
+    located "could not be found" warning of any unknown service (#2101), after the
     configuration warning, which names the cause."""
     app = build(
         {
@@ -282,12 +301,33 @@ def test_a_needservice_naming_a_skipped_service_reports_it_as_not_found(build):
                 class_init = {}
                 """,
             "index.rst": RST + "\n.. needservice:: foo\n",
-        },
-        run=False,
+        }
     )
-    with pytest.raises(NeedsServiceException, match="Service foo could not be found"):
-        app.build()
-    assert build_warnings(app) == [class_warning("foo", not_callable("str"))]
+    assert build_warnings(app) == [
+        class_warning("foo", not_callable("str")),
+        NOT_FOUND_WARNING,
+    ]
+    assert_nothing_rendered(app)
+
+
+def test_a_needservice_naming_an_unknown_service_warns_and_the_build_goes_on(build):
+    """#2101: it used to end the build with a raw ``NeedsServiceException`` traceback,
+    which as a ``BaseException`` escaped Sphinx's own handler. It is now one warning,
+    located at the directive, and the directive adds nothing."""
+    app = build(
+        {
+            "conf.py": 'extensions = ["sphinx_needs"]\n',
+            "index.rst": RST + "\n.. needservice:: foo\n",
+        }
+    )
+    assert build_warnings(app) == [NOT_FOUND_WARNING]
+    assert_nothing_rendered(app)
+
+
+def test_needs_service_exception_is_an_exception():
+    """Nothing needs it to bypass ``except Exception``, and as a ``BaseException`` it
+    bypassed Sphinx's handler too (#2101)."""
+    assert issubclass(NeedsServiceException, Exception)
 
 
 @pytest.mark.parametrize(
