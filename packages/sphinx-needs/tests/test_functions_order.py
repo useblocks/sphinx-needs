@@ -205,6 +205,22 @@ EVERY_STATUS = 'status == "open"'
             },
         ),
         ("out", "[[copy('summary', need.unknown)]]", {}),
+        # a need.<field> passed as a value is read like the field, and chains
+        (
+            "out",
+            "[[check_linked_values('ok', 'status', need.cparent)]]",
+            {"deps": [("RD", "cparent"), ("DYN", "status"), ("DYN", "status")]},
+        ),
+        (
+            "out",
+            "[[check_linked_values(need.cparent, 'status', 'open')]]",
+            {"deps": [("RD", "cparent"), ("DYN", "status"), ("DYN", "status")]},
+        ),
+        (
+            "out",
+            "[[copy('summary', 'DYN', upper=need.cparent)]]",
+            {"deps": [("RD", "cparent"), ("DYN", "summary")]},
+        ),
         # an unset selector fails the call; an unset value is None
         ("out", "[[copy('summary', need.unset)]]", {}),
         (

@@ -1392,6 +1392,69 @@ def test_need_attributes_in_field_and_link_values(test_app):
     ]
 
 
+VALUE_SLOT_INDEX = """\
+Value slots
+===========
+
+.. req:: Target title
+   :id: T_SRC
+
+.. req:: search_value
+   :id: V_SV
+   :summary: [[copy("title", "T_SRC")]]
+   :comment: [[check_linked_values("ok", "title", need.summary)]]
+   :links: T_SRC
+
+.. req:: result
+   :id: V_RES
+   :summary: [[copy("title", "T_SRC")]]
+   :comment: [[check_linked_values(need.summary, "title", "Target title")]]
+   :links: T_SRC
+
+.. req:: upper
+   :id: V_UP
+   :summary: [[copy("title")]]
+   :comment: [[copy("title", "T_SRC", upper=need.summary)]]
+
+.. req:: echo
+   :id: V_ECHO
+   :summary: [[copy("title", "T_SRC")]]
+   :comment: [[echo(need.summary)]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [(Path("conf.py"), CONF), (Path("index.rst"), VALUE_SLOT_INDEX)],
+        }
+    ],
+    indirect=True,
+)
+def test_a_need_attribute_value_chains(test_app):
+    """A ``need.<field>`` passed as a value is read like the field: after it is computed.
+
+    Only an argument that selects what a call reads must be final before the call;
+    ``check_linked_values``' ``search_value`` and ``result`` and ``copy``'s ``upper``
+    are values, so each ``comment`` waits for its ``summary`` (which sorts after it).
+    """
+    app = test_app
+    app.build()
+    needs = _needs(app)
+    assert {
+        need_id: needs[need_id]["comment"]
+        for need_id in ("V_SV", "V_RES", "V_UP", "V_ECHO")
+    } == {
+        "V_SV": "ok",
+        "V_RES": "Target title",
+        "V_UP": "TARGET TITLE",
+        "V_ECHO": "Target title",
+    }
+    assert build_warnings(app) == []
+
+
 UNSET_SELECTOR_CONF = (
     CONF
     + """\

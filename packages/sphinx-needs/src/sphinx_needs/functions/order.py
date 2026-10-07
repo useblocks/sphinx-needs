@@ -589,7 +589,7 @@ class _CallReads:
         # back link, in stratum 1) is a read out of scope
         blocking: list[str] = []
         for key, value in list(args.items()):
-            if not isinstance(value, NeedAttribute):
+            if key not in _SELECTORS[name] or not isinstance(value, NeedAttribute):
                 continue
             attr = value.name
             if self.project.computed_in(self.need.id, attr) == self.stratum:
@@ -600,7 +600,7 @@ class _CallReads:
                 continue
             if attr not in self.need:
                 return  # the call fails: need has no attribute
-            if key in _SELECTORS[name] and self.need[attr] is None:
+            if self.need[attr] is None:
                 return  # the call fails: what it reads is not selected
             args[key] = self.need[attr]
         if blocking:
