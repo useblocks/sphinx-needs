@@ -9,9 +9,9 @@ converted -- while the directive's other options still apply. The directive itse
 still recorded and applied, so the need counts it as a modification, as it does for an
 extend whose every option was skipped for a value that cannot be converted.
 
-A ``need.<attr>`` argument is such a parse error at directive time: it is admitted
-only where a need is in hand. Whether it should be admitted in a ``needextend`` value
-is a separate question; these tests pin only that it no longer ends the build.
+A ``need.<attr>`` argument was such a parse error until 9.0.0, which admits it in
+field and link values, a ``needextend``'s included: the value is applied, and the call
+resolves against the need it is set on.
 """
 
 from pathlib import Path
@@ -48,27 +48,13 @@ Index
 
 LOCATION = "<srcdir>/index.rst:8"
 
-NEED_ARG = "Error parsing dynamic function 'copy': Unsupported arg 0 value type"
+NOT_A_CALL = "Error parsing dynamic function: Not a function call"
 
 UNPARSABLE_CASES = [
     # (id, conf, option, value, message)
-    ("need-arg", CONF, "status", "[[copy(need.id)]]", NEED_ARG),
-    (
-        "need-kwarg",
-        CONF,
-        "status",
-        "[[copy(field=need.id)]]",
-        "Error parsing dynamic function 'copy': Unsupported kwarg 'field' value type",
-    ),
-    (
-        "not-a-call",
-        CONF,
-        "status",
-        "[[not a call]]",
-        "Error parsing dynamic function: Not a function call",
-    ),
-    ("link", CONF, "links", "[[copy(need.id)]]", NEED_ARG),
-    ("append", CONF, "+status", "[[copy(need.id)]]", NEED_ARG),
+    ("not-a-call", CONF, "status", "[[not a call]]", NOT_A_CALL),
+    ("link", CONF, "links", "[[not a call]]", NOT_A_CALL),
+    ("append", CONF, "+status", "[[not a call]]", NOT_A_CALL),
     (
         "variant",
         VARIANT_CONF,
@@ -142,7 +128,7 @@ def test_unparsable_function_is_reported_and_not_applied(
     [
         {
             "buildername": "html",
-            "files": _files(CONF, "   :status: [[copy(need.id)]]", "   :tags: a"),
+            "files": _files(CONF, "   :status: [[not a call]]", "   :tags: a"),
         }
     ],
     indirect=True,
@@ -154,7 +140,7 @@ def test_other_options_of_the_directive_still_apply(test_app: Sphinx):
     assert app.statuscode == 0
 
     assert build_warnings(app) == [
-        f"{LOCATION}: WARNING: Invalid value for 'status' option: {NEED_ARG} "
+        f"{LOCATION}: WARNING: Invalid value for 'status' option: {NOT_A_CALL} "
         "[needs.needextend]"
     ]
     assert [
@@ -186,13 +172,88 @@ def test_function_without_need_argument_still_applies(test_app: Sphinx):
     assert need["modifications"] == 1
 
 
+NEED_ATTR_CONF = CONF + 'needs_fields = {"source": {"nullable": True}}\n'
+
+NEED_ATTR_INDEX = """\
+Index
+=====
+
+.. req:: A plain need
+   :id: REQ_C
+   :status: open
+   :source: REQ_D
+
+.. req:: Linked
+   :id: REQ_D
+   :links: REQ_C
+
+.. needextend:: REQ_C
+{options}
+"""
+
+
+@pytest.mark.parametrize(
+    ("test_app", "field", "value"),
+    [
+        pytest.param(
+            {
+                "buildername": "html",
+                "files": [
+                    (Path("conf.py"), NEED_ATTR_CONF),
+                    (Path("index.rst"), NEED_ATTR_INDEX.format(options=option)),
+                ],
+            },
+            field,
+            value,
+            id=case_id,
+        )
+        for case_id, option, field, value in [
+            (
+                "need-arg",
+                '   :status: [[copy("title", need.source)]]',
+                "status",
+                "Linked",
+            ),
+            (
+                "need-kwarg",
+                '   :status: [[copy("title", need_id=need.source)]]',
+                "status",
+                "Linked",
+            ),
+            ("link", '   :links: [[copy("links", need.source)]]', "links", ["REQ_C"]),
+            (
+                "append",
+                '   :+status: [[copy("title", need.source)]]',
+                "status",
+                "open Linked",
+            ),
+        ]
+    ],
+    indirect=["test_app"],
+)
+def test_need_attribute_is_applied_and_resolves(test_app: Sphinx, field: str, value):
+    """A ``need.<field>`` argument parses, so the option is applied, and the call resolves.
+
+    ``need.source`` names the need the call reads, on the need the extend modifies.
+    """
+    app = test_app
+    app.build()
+    assert app.statuscode == 0
+
+    assert build_warnings(app) == []
+    need = needs_by_id(app)["REQ_C"]
+    assert need[field] == value
+    assert need["is_modified"] is True
+    assert need["modifications"] == 1
+
+
 OWN_OPTION_INDEX = """\
 Index
 =====
 
 .. req:: A plain need
    :id: REQ_C
-   :status: [[copy(need.id)]]
+   :status: [[copy("title", need.id)]]
 """
 
 
@@ -210,16 +271,14 @@ Index
     indirect=True,
 )
 def test_same_value_in_the_needs_own_option(test_app: Sphinx):
-    """Control: in a need's own option the parse error is a ``needs.create_need`` warning.
+    """Control: in a need's own option a ``need.<field>`` argument is admitted too.
 
-    The need is not created; this path was never a crash, and is unchanged.
+    The need is created and the call resolves (until 9.0.0 the need was not created,
+    with a ``needs.create_need`` warning).
     """
     app = test_app
     app.build()
     assert app.statuscode == 0
 
-    assert build_warnings(app) == [
-        "<srcdir>/index.rst:4: WARNING: Need could not be created: "
-        f"'status' value is invalid: {NEED_ARG} [needs.create_need]"
-    ]
-    assert "REQ_C" not in needs_by_id(app)
+    assert build_warnings(app) == []
+    assert needs_by_id(app)["REQ_C"]["status"] == "A plain need"

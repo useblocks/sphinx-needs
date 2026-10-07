@@ -143,8 +143,9 @@ def test_doc_dynamic_functions(test_app, snapshot):
     warning_records = build_warnings(app)
     assert warning_records == [
         "<srcdir>/index.rst:26: WARNING: Need could not be created: 'tags' value is invalid: only one string, dynamic function or variant function allowed per array item. [needs.create_need]",
-        "<srcdir>/index.rst:47: WARNING: Need could not be created: Field 'test_func' is invalid: Error parsing dynamic function 'test': Unsupported arg 0 value type [needs.create_need]",
-        "<srcdir>/index.rst:53: WARNING: Need could not be created: Field 'test_func' is invalid: Error parsing dynamic function 'test': Unsupported arg 0 value type [needs.create_need]",
+        # since 9.0.0 a ``need.<field>`` argument is accepted in a field value: TEST_7 is
+        # created and resolves, TEST_8 is created and its call fails on the unknown field
+        "<srcdir>/index.rst:53: WARNING: Error while resolving dynamic values for field 'test_func', of need 'TEST_8': Error while applying need to function 'test': Error parsing dynamic function 'test': need has no attribute 'unknown' [needs.dynamic_function]",
         "<srcdir>/index.rst:45: WARNING: Error while executing function 'copy': Need not found [needs.dynamic_function]",
     ]
 
@@ -172,6 +173,12 @@ def test_doc_dynamic_functions(test_app, snapshot):
 
     json_data = Path(app.outdir, "needs.json").read_text(encoding="utf-8")
     needs = json.loads(json_data)
+    built = needs["versions"][needs["current_version"]]["needs"]
+    assert built["TEST_7"]["test_func"] == (
+        "Test output of dynamic function; need: TEST_7; args: ('TEST_7',); "
+        "kwargs: {'status': 'draft'}"
+    )
+    assert built["TEST_8"]["test_func"] is None
     assert needs == snapshot(exclude=props("created", "project", "creator"))
 
 

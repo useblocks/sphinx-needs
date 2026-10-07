@@ -1,8 +1,7 @@
 .. ubCode's build fixture ``dynamic_functions_unresolved``
-   (``rust/ubc_parser_ctrl/tests/build_fixtures/``), its pages verbatim but for ``NEED_ATTR``,
-   which is dropped with its bullet below: a ``need.<field>`` argument is not accepted in a
-   field value by sphinx-needs, so the need would not be created. ``ubproject.toml`` says
-   what else differs. ubCode grades ``needs.derive_unresolved`` Info; here it is a warning.
+   (``rust/ubc_parser_ctrl/tests/build_fixtures/``), its pages verbatim;
+   ``ubproject.toml`` says what differs. The text below is ubCode's phase-0 description;
+   ``test_ubcode_fixture`` asserts what the dependency-ordered pass gives.
 
 A derivation that reads a value not resolved yet
 ================================================
@@ -40,6 +39,9 @@ Each reader, and what it is red for:
 - ``MIRROR_VAR`` reads ``VAR_B``'s ``band``, which a variant computes: a variant is a computed value too.
 - ``MIRROR_LIT`` reads ``LIT_1``'s ``hours``, authored until patch ``01`` makes it a call:
   red if the finding rests on anything but the target's calls as they are now.
+- ``NEED_ATTR``: ``copy('summary', need.parent)`` whose ``parent`` is a call: the finding explains the
+  ``needs.dynamic_function`` warning beside it (``copy() found no need with id ''``).
+  Red if a ``need.<attr>`` argument does not note its read, or if a failing call drops its finding.
 
 Patches: ``01`` a literal becomes a call (``LIT_1.hours``), ``02`` an own field becomes a call
 (``OWN_COPY.comment``, read by ``OWN_COPY``'s own ``status``), ``03`` an extend sets a summand to a call
@@ -104,6 +106,12 @@ this build oracle does not hydrate pages, so ``ubc build html`` of such a projec
 .. req:: Reads an authored value, until a patch makes it a call
    :id: MIRROR_LIT
    :total: [[copy('hours', 'LIT_1')]]
+
+.. req:: Reads through a need attribute that is a call
+   :id: NEED_ATTR
+   :comment: HRS_3
+   :parent: [[copy('comment')]]
+   :summary: [[copy('summary', need.parent)]]
 
 .. req:: Sums over its own links, which carry a call
    :id: OWN_LINKS
