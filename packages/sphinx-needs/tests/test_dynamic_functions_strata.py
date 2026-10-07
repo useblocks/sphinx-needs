@@ -795,6 +795,7 @@ needs_fields = {
     "zgrp": {"nullable": True},
     "team": {"nullable": True},
 }
+needs_links = {"links": {}, "refs": {}}
 """
 
 CURRENT_NEED_OF_NAMED_INDEX = """\
@@ -849,6 +850,214 @@ def test_copy_filter_current_need_is_the_need_named(test_app):
         "matched one",
     )
     assert build_warnings(app) == []
+
+
+CURRENT_NEED_KEY_INDEX = """\
+current_need of the caller
+==========================
+
+.. req:: Reader
+   :id: A_RD
+   :team: rd
+   :zgrp: [[copy("title", "G_SRC")]]
+   :aout: [[copy("summary", filter='team == "t1" and current_need["zgrp"] == title')]]
+
+.. req:: one
+   :id: G_SRC
+
+.. req:: one
+   :id: M_ONE
+   :team: t1
+   :summary: matched one
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), FILTER_CONF),
+                (Path("index.rst"), CURRENT_NEED_KEY_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_copy_filter_reads_the_current_need_key(test_app):
+    """``current_need["zgrp"]`` in ``copy``'s filter reads the caller's computed ``zgrp``.
+
+    ``aout`` sorts before ``zgrp``, so it is right only when it waits for it.
+    """
+    app = test_app
+    app.build()
+    assert _needs(app)["A_RD"]["aout"] == "matched one"
+    assert build_warnings(app) == []
+
+
+COMPUTED_NAME_INDEX = """\
+A filter naming a computed field
+================================
+
+.. req:: copy
+   :id: A_CP
+   :aout: [[copy("summary", filter='zgrp == "one"')]]
+
+.. req:: check_linked_values, a filter
+   :id: A_FLT
+   :aout: [[check_linked_values("ok", "summary", "done", 'zgrp != "y"')]]
+   :links: B_Y
+
+.. req:: check_linked_values, every target
+   :id: A_TWO
+   :aout: [[check_linked_values("ok", "summary", "done")]]
+   :links: B_DONE, C_DONE
+
+.. req:: links_from_content, a filter on a computed link
+   :id: A_LFC
+   :links: [[links_from_content(filter='"LIT" in refs')]]
+
+   See :need:`M_REF` and :need:`LIT`.
+
+.. req:: links_from_content, a filter on another computed field
+   :id: A_LFL
+   :refs: LIT, [[links_from_content(filter='zgrp == "one"')]]
+
+   See :need:`M_ONE`.
+
+.. req:: Computes a link
+   :id: M_REF
+   :refs: [[copy("refs", "W_REF")]]
+
+.. req:: Writes a link
+   :id: W_REF
+   :refs: LIT
+
+.. req:: one
+   :id: G_SRC
+
+.. req:: Match one
+   :id: M_ONE
+   :zgrp: [[copy("title", "G_SRC")]]
+   :summary: matched one
+
+.. req:: y
+   :id: B_Y
+   :zgrp: [[copy("title")]]
+   :summary: not done
+
+.. req:: Done, written
+   :id: B_DONE
+   :summary: done
+
+.. req:: done
+   :id: C_DONE
+   :summary: [[copy("title")]]
+
+.. req:: A literal link
+   :id: LIT
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), FILTER_CONF),
+                (Path("index.rst"), COMPUTED_NAME_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_filter_on_a_computed_field_waits_for_it(test_app):
+    """Each built-in's filter (and ``check_linked_values``' targets) is read when final.
+
+    ``copy``'s filter names ``zgrp``, which ``M_ONE`` computes; ``check_linked_values``
+    excludes ``B_Y`` by its computed ``zgrp`` and checks ``C_DONE``'s computed
+    ``summary`` though it is not the first target; ``links_from_content`` keeps the
+    referenced need its filter matches on its computed link ``refs``. Every reader sorts
+    before what it reads. A link field's filter naming another field is a read out of
+    scope.
+    """
+    app = test_app
+    app.build()
+    needs = _needs(app)
+    assert {
+        need_id: needs[need_id]["aout"] for need_id in ("A_CP", "A_FLT", "A_TWO")
+    } == {"A_CP": "matched one", "A_FLT": "ok", "A_TWO": "ok"}
+    assert needs["A_LFC"]["links"] == ["M_REF"]
+    assert needs["A_LFL"]["refs"] == ["LIT"]
+    assert build_warnings(app) == [
+        _warning(
+            "index",
+            COMPUTED_NAME_INDEX,
+            "A_LFL",
+            "dynamic function 'links_from_content' for option 'refs' reads 'zgrp' on "
+            "need 'M_ONE', which is final only after the link fields are computed: "
+            "the call is not run and the field keeps only its written items",
+            "derive_scope",
+        )
+    ]
+
+
+SHADOWED_BUILTIN_CONF = (
+    FILTER_CONF
+    + """\
+# Sphinx's own warning that a function in the configuration is not pickled
+suppress_warnings = ["config.cache"]
+
+
+def copy(app, need, needs, option, *args, **kwargs):
+    # your own function, registered under a built-in's name: it reads another need
+    return needs["Z_SRC"]["summary"]
+
+
+needs_functions = [copy]
+"""
+)
+
+SHADOWED_BUILTIN_INDEX = """\
+A function named like a built-in
+================================
+
+.. req:: Reader
+   :id: A_RD
+   :aout: [[copy("anything")]]
+
+.. req:: Source
+   :id: Z_SRC
+   :summary: [[echo("done")]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), SHADOWED_BUILTIN_CONF),
+                (Path("index.rst"), SHADOWED_BUILTIN_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_your_function_named_like_a_builtin_runs_last(test_app):
+    """A function registered under ``copy``'s name is yours: it runs last in its stratum.
+
+    The order knows the reads of the built-in functions themselves, not of a name.
+    """
+    app = test_app
+    app.build()
+    assert _needs(app)["A_RD"]["aout"] == "done"
+    assert build_warnings(app) == [
+        "WARNING: Dynamic function copy already registered. [needs.config]"
+    ]
 
 
 # -- back links and link fields --------------------------------------------------------
