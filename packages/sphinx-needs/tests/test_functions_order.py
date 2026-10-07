@@ -302,11 +302,11 @@ def test_what_a_call_reads(field, text, expected):
     stratum = 1 if field == "links" else 2
     reads = project.node_reads(("RD", field), stratum)
     got = {
-        "deps": reads.deps,
-        "columns": reads.columns,
-        "scope": reads.scope,
+        "deps": list(reads.deps),
+        "columns": list(reads.columns),
+        "scope": list(reads.scope),
         "blocked": reads.blocked,
-        "user_functions": reads.user_functions,
+        "user_functions": list(reads.user_functions),
         "opaque": reads.opaque,
         "reads_itself_by_variant": reads.reads_itself_by_variant,
     }
@@ -475,7 +475,7 @@ def test_strongly_connected_and_schedule():
     edges = [[1], [0], [], [2, 3]]
     components = strongly_connected(edges)
     assert sorted(sorted(c) for c in components) == [[0, 1], [2], [3]]
-    keys = [(1, f"N{min(c)}", "") for c in components]
+    keys = [(f"N{min(c)}", "") for c in components]
     assert [sorted(c) for c in schedule(edges, components, keys)] == [[0, 1], [2], [3]]
 
 

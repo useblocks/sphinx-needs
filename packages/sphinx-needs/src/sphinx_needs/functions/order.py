@@ -26,9 +26,9 @@ import ast
 import heapq
 import inspect
 from collections.abc import Callable, Collection, Iterable, Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from functools import lru_cache
-from typing import Any, Final, Literal
+from typing import Any, Final, Literal, TypeVar
 
 from sphinx_needs.functions.common import (
     calc_sum,
@@ -197,11 +197,26 @@ def filter_names(
     return FilterNames(frozenset(names), frozenset(current), opaque)
 
 
+_T = TypeVar("_T")
+
+
+def _appended(items: Sequence[_T], item: _T) -> list[_T]:
+    """``items`` with ``item`` appended: the list itself, or a new one for ``()``.
+
+    The fields of :class:`NodeReads` start as ``()``, so a node that reads nothing
+    allocates nothing: the pass keeps one per node while it runs.
+    """
+    if isinstance(items, list):
+        items.append(item)
+        return items
+    return [*items, item]
+
+
 @dataclass(slots=True)
 class NodeReads:
     """What one node reads, as the stratum it is computed in sees it.
 
-    :ivar what: The node's first call or variant, as messages name it.
+    :ivar first: The node's first call or variant (``None`` for variant data only).
     :ivar deps: The nodes of the same stratum it is computed after.
     :ivar columns: The columns it reads, each with the filter that made every need a
         candidate, or ``None`` for a sum over every need.
@@ -215,14 +230,19 @@ class NodeReads:
     :ivar reads_itself_by_variant: A variant condition of the node names its field.
     """
 
-    what: str
-    deps: list[Node] = field(default_factory=list)
-    columns: list[tuple[Column, str | None]] = field(default_factory=list)
-    scope: list[tuple[str, list[tuple[str, str]]]] = field(default_factory=list)
+    first: DynamicFunctionParsed | VariantFunctionParsed | None
+    deps: Sequence[Node] = ()
+    columns: Sequence[tuple[Column, str | None]] = ()
+    scope: Sequence[tuple[str, list[tuple[str, str]]]] = ()
     blocked: tuple[str, list[str]] | None = None
-    user_functions: list[str] = field(default_factory=list)
+    user_functions: Sequence[str] = ()
     opaque: bool = False
     reads_itself_by_variant: bool = False
+
+    @property
+    def what(self) -> str:
+        """The node's first call or variant, as messages name it."""
+        return _what(self.first)
 
     @property
     def last(self) -> bool:
@@ -231,9 +251,21 @@ class NodeReads:
 
     def expected(self) -> frozenset[tuple[str, str]]:
         """The ``(need id, name)`` reads already reported as out of scope."""
+        if not self.scope:
+            return _NOTHING
         return frozenset(
             (need_id, name) for _, reads in self.scope for name, need_id in reads
         )
+
+
+_NOTHING: Final[frozenset[tuple[str, str]]] = frozenset()
+
+
+def _what(item: DynamicFunctionParsed | VariantFunctionParsed | None) -> str:
+    """A call or a variant, as messages name it."""
+    if isinstance(item, DynamicFunctionParsed):
+        return f"dynamic function '{item.name}'"
+    return "variant condition" if item is not None else "variant data"
 
 
 FAILED: Final = object()
@@ -334,21 +366,20 @@ class Project:
         need_id, name = node
         need = self.needs[need_id]
         items = need._dynamic_fields[name].value
-        what = next(
-            (
-                f"dynamic function '{item.name}'"
-                if isinstance(item, DynamicFunctionParsed)
-                else "variant condition"
-                for item in items
-                if isinstance(item, DynamicFunctionParsed | VariantFunctionParsed)
-            ),
-            "variant data",
+        reads = NodeReads(
+            next(
+                (
+                    item
+                    for item in items
+                    if isinstance(item, DynamicFunctionParsed | VariantFunctionParsed)
+                ),
+                None,
+            )
         )
-        reads = NodeReads(what)
         for item in items:
             if isinstance(item, DynamicFunctionParsed):
                 if item.name not in self.builtins:
-                    reads.user_functions.append(item.name)
+                    reads.user_functions = _appended(reads.user_functions, item.name)
                     continue
                 _CallReads(self, reads, need, stratum, item).read()
             elif isinstance(item, VariantFunctionParsed):
@@ -362,7 +393,7 @@ class Project:
                             reads.reads_itself_by_variant = True
                         _classify(self, reads, scope, stratum, need_id, read)
                 if scope:
-                    reads.scope.append(("variant condition", scope))
+                    reads.scope = _appended(reads.scope, ("variant condition", scope))
         return reads
 
 
@@ -387,7 +418,7 @@ def _classify(
     if computed is None or computed < stratum:
         return
     if computed == stratum:
-        reads.deps.append((need_id, project.field_of(name)))
+        reads.deps = _appended(reads.deps, (need_id, project.field_of(name)))
     elif (name, need_id) not in scope:
         scope.append((name, need_id))
 
@@ -408,8 +439,11 @@ class _CallReads:
         self.need = need
         self.stratum = stratum
         self.call = call
-        self.what = f"dynamic function '{call.name}'"
         self.scope: list[tuple[str, str]] = []
+
+    @property
+    def what(self) -> str:
+        return _what(self.call)
 
     def _read(self, need_id: str, name: Any) -> None:
         if isinstance(name, str) and need_id in self.project.needs:
@@ -433,8 +467,9 @@ class _CallReads:
             for need_id in ids:
                 self._read(need_id, name)
             return
-        self.reads.columns.append(
-            (Column(self.project.field_of(name), candidates), reason)
+        self.reads.columns = _appended(
+            self.reads.columns,
+            (Column(self.project.field_of(name), candidates), reason),
         )
 
     def _filter(self, filter_string: str) -> FilterNames | None:
@@ -487,7 +522,7 @@ class _CallReads:
             return  # an id, a field or a filter that is no string: the call fails
         getattr(self, f"_{name}", lambda _: None)(args)
         if self.scope:
-            self.reads.scope.append((self.what, self.scope))
+            self.reads.scope = _appended(self.reads.scope, (self.what, self.scope))
 
     def _copy(self, args: dict[str, Any]) -> None:
         option = args.get("option")
@@ -613,7 +648,15 @@ def build_stratum(project: Project, stratum: int) -> Stratum:
 
     vertices: list[_Vertex] = list(built_in)
     index: dict[_Vertex, int] = {v: i for i, v in enumerate(vertices)}
-    edges: list[list[int]] = [[] for _ in vertices]
+    # a node that reads no other has no list of its own
+    edges: list[list[int] | None] = [None] * len(vertices)
+
+    def add_edge(source: int, target: int) -> None:
+        if (targets := edges[source]) is None:
+            edges[source] = [target]
+        else:
+            targets.append(target)
+
     #: per column vertex, why each reader reads it
     reasons: dict[tuple[int, int], str | None] = {}
 
@@ -641,11 +684,11 @@ def build_stratum(project: Project, stratum: int) -> Stratum:
         node_reads = reads[node]
         for dep in node_reads.deps:
             if dep in index:  # a node computed last is not waited for
-                edges[source].append(index[dep])
+                add_edge(source, index[dep])
         for column, reason in node_reads.columns:
             target = column_vertex(column)
             if target is not None:
-                edges[source].append(target)
+                add_edge(source, target)
                 reasons.setdefault((source, target), reason)
 
     components = strongly_connected(edges)
@@ -656,7 +699,7 @@ def build_stratum(project: Project, stratum: int) -> Stratum:
         )
         if not members:
             continue
-        cyclic = len(component) > 1 or component[0] in edges[component[0]]
+        cyclic = len(component) > 1 or component[0] in (edges[component[0]] or ())
         if not cyclic:
             steps.append(Step((members[0],)))
             continue
@@ -664,7 +707,7 @@ def build_stratum(project: Project, stratum: int) -> Stratum:
         through_columns = {
             reasons[(source, target)]
             for source in component
-            for target in edges[source]
+            for target in edges[source] or ()
             if target in inside and isinstance(vertices[target], Column)
         }
         filters = sorted(r for r in through_columns if r is not None)
@@ -678,25 +721,30 @@ def build_stratum(project: Project, stratum: int) -> Stratum:
 
 def _keys(
     vertices: Sequence[_Vertex], components: Sequence[Sequence[int]]
-) -> list[tuple[int, str, str]]:
+) -> list[Node]:
     """Each component's key: its smallest node; a column alone sorts first."""
-    keys = []
+    keys: list[Node] = []
     for component in components:
+        if len(component) == 1 and not isinstance(
+            node := vertices[component[0]], Column
+        ):
+            keys.append(node)
+            continue
         nodes = [
             v for v in (vertices[i] for i in component) if not isinstance(v, Column)
         ]
-        keys.append((1, *min(nodes)) if nodes else (0, "", ""))
+        keys.append(min(nodes) if nodes else ("", ""))
     return keys
 
 
-def strongly_connected(edges: Sequence[Sequence[int]]) -> list[list[int]]:
+def strongly_connected(edges: Sequence[Sequence[int] | None]) -> list[list[int]]:
     """The strongly connected components of a graph, by Tarjan's algorithm, iteratively.
 
     A recursion would end on a long chain (a valid project: each need copying the
     next), at Python's recursion limit. A component comes after every component it
     reaches, i.e. after everything its nodes read.
 
-    :param edges: For each vertex, the vertices it reads.
+    :param edges: For each vertex, the vertices it reads (``None`` for none).
     """
     count = len(edges)
     order = [-1] * count
@@ -716,7 +764,7 @@ def strongly_connected(edges: Sequence[Sequence[int]]) -> list[list[int]]:
                 counter += 1
                 stack.append(vertex)
                 on_stack[vertex] = True
-            targets = edges[vertex]
+            targets = edges[vertex] or ()
             while position < len(targets):
                 target = targets[position]
                 position += 1
@@ -744,9 +792,9 @@ def strongly_connected(edges: Sequence[Sequence[int]]) -> list[list[int]]:
 
 
 def schedule(
-    edges: Sequence[Sequence[int]],
+    edges: Sequence[Sequence[int] | None],
     components: Sequence[Sequence[int]],
-    keys: Sequence[tuple[int, str, str]],
+    keys: Sequence[Node],
 ) -> Iterable[Sequence[int]]:
     """Yield the components so that each comes after every one it reads.
 
@@ -758,21 +806,29 @@ def schedule(
     for number, component in enumerate(components):
         for vertex in component:
             component_of[vertex] = number
-    readers: list[set[int]] = [set() for _ in components]
+    readers: list[set[int] | None] = [None] * len(components)
     for source, targets in enumerate(edges):
-        for target in targets:
+        for target in targets or ():
             if component_of[source] != component_of[target]:
-                readers[component_of[target]].add(component_of[source])
+                if (found := readers[component_of[target]]) is None:
+                    readers[component_of[target]] = {component_of[source]}
+                else:
+                    found.add(component_of[source])
     waiting = [0] * len(components)
-    for number in range(len(components)):
-        for reader in readers[number]:
+    for found in readers:
+        for reader in found or ():
             waiting[reader] += 1
-    ready = [(keys[n], n) for n in range(len(components)) if waiting[n] == 0]
+    # each component by its rank in key order, so the heap holds plain integers
+    by_key = sorted(range(len(components)), key=keys.__getitem__)
+    rank = [0] * len(components)
+    for position, number in enumerate(by_key):
+        rank[number] = position
+    ready = [rank[n] for n in range(len(components)) if waiting[n] == 0]
     heapq.heapify(ready)
     while ready:
-        _, number = heapq.heappop(ready)
+        number = by_key[heapq.heappop(ready)]
         yield components[number]
-        for reader in readers[number]:
+        for reader in readers[number] or ():
             waiting[reader] -= 1
             if waiting[reader] == 0:
-                heapq.heappush(ready, (keys[reader], reader))
+                heapq.heappush(ready, rank[reader])

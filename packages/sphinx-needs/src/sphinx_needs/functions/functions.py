@@ -289,8 +289,7 @@ class UnresolvedReads:
 
     Kept by the name read, in the order first read, each need named once per name.
 
-    :param pending: Whether a name, read on a need, is a value of the pass not
-        computed yet.
+    :param pending: The ``(need id, name)`` values of the pass not computed yet.
     :param expected: The ``(need id, name)`` reads reported before the call already.
     """
 
@@ -298,7 +297,7 @@ class UnresolvedReads:
 
     def __init__(
         self,
-        pending: Callable[[str, str], bool],
+        pending: Container[tuple[str, str]],
         expected: Container[tuple[str, str]] = frozenset(),
     ) -> None:
         self._pending = pending
@@ -323,10 +322,11 @@ class UnresolvedReads:
         """
         # the pass hands its functions whole needs, so only a need is noted; a need
         # part is admitted by the types (a ``filter``'s result is typed so), not noted
+        # a built-in reads every candidate of a sum through here: kept to one lookup
         if (
             isinstance(need, NeedItem)
-            and self._pending(need.id, name)
-            and (need.id, name) not in self._expected
+            and (read := (need.id, name)) in self._pending
+            and read not in self._expected
         ):
             self.note(name, need.id)
 
@@ -442,15 +442,20 @@ class _Pass:
     def __init__(self, project: Project) -> None:
         self.project = project
         self.stratum: Stratum | None = None
-        self._pending = set(project.nodes)
-
-    def pending(self, need_id: str, name: str) -> bool:
-        """Whether ``name`` of ``need_id`` is computed in the pass, and not yet."""
-        return (need_id, self.project.field_of(name)) in self._pending
+        #: the ``(need id, name)`` values not computed yet, a name being the field's,
+        #: or ``parent_need`` for a computed ``parent_needs``
+        self.pending: set[tuple[str, str]] = set(project.nodes)
+        self.pending.update(
+            (need_id, "parent_need")
+            for need_id, name in project.nodes
+            if project.field_of("parent_need") == name
+        )
 
     def finish(self, node: Node) -> None:
         """``node`` holds its final value."""
-        self._pending.discard(node)
+        self.pending.discard(node)
+        if self.project.field_of("parent_need") == node[1]:
+            self.pending.discard((node[0], "parent_need"))
 
     def causes(
         self, reads: Sequence[tuple[str, Sequence[str]]]
