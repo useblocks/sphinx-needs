@@ -272,6 +272,9 @@ class SourceAnalyse:
                     continue
                 after_marker = line[marker_idx + len(marker) :]
                 markered_text = after_marker.strip()
+                if markered_text.endswith("*/"):
+                    # The end of a one-line block comment, not an id.
+                    markered_text = markered_text[:-2].rstrip()
                 need_ids = markered_text.replace(",", " ").split()
                 start_column = (
                     marker_idx

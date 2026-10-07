@@ -43,3 +43,30 @@ every_extractor:
   source: |
     // @need-ids: REQ_1, REQ_2
     void f() {}
+
+block_comment:
+  # A reference in a one-line block comment: its closing */ is not an id.
+  lang: cpp
+  config: default
+  extract: [need_refs]
+  source: |
+    /* @need-ids: REQ_1, REQ_2 */
+    void f() {}
+
+space_separated_ids:
+  # Ids separated by whitespace rather than commas.
+  lang: cpp
+  config: default
+  extract: [need_refs]
+  source: |
+    // @need-ids: REQ_1 REQ_2
+    void f() {}
+
+marker_after_text:
+  # The marker need not start the comment; the text before it is not part of
+  # the reference, and the line is not a one-line need.
+  lang: cpp
+  config: default
+  source: |
+    // see @need-ids: REQ_1
+    void f() {}

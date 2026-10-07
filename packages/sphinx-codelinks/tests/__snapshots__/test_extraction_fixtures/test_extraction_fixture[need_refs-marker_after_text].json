@@ -1,0 +1,23 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 18
+      },
+      "end": {
+        "row": 0,
+        "column": 23
+      }
+    },
+    "tagged_scope": "void f() {}",
+    "need_ids": [
+      "REQ_1"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "function_definition"
+  }
+]

@@ -477,6 +477,9 @@ New and Improved
   reference's span also started at the whitespace after ``@need-ids:`` rather than at its
   first id, and ended that many characters early.
 
+  A reference in a one-line block comment, ``/* @need-ids: REQ_1 */``, no longer also
+  names the comment's closing ``*/`` as a need id.
+
 - 👌 In a Python file, a line whose one-line start sequence is directly followed by a
   docstring tag (``@param``, ``@return``, ``@raises`` and the other Epydoc, Doxygen and
   Sphinx field names) is reported as a ``docstring_tag`` warning and creates no need.
