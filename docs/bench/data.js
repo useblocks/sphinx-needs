@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791398866127,
+  "lastUpdate": 1791400119445,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -23364,6 +23364,42 @@ window.BENCHMARK_DATA = {
             "value": 58.597466441,
             "unit": "s",
             "extra": "Commit: 84bff322898ceea43d21452b6395d0ed1b6c452c\nBranch: master\nTime: 2026-10-07T20:46:14+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "patrick.dahlke@pichu.io",
+            "name": "Patrick Dahlke",
+            "username": "patdhlk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "abab51ff247febc8605d94d349dc992d1c2d2784",
+          "message": "🐛 sphinx-codelinks: report a marked-rst block on the row of its start marker (#2021)\n\nCloses #1982\n\n`extract_rst` took the row of `@rst` as\n`len(text[:start_idx].splitlines())`. `splitlines()` counts a trailing\npartial line as a line, so any text before the start marker on its own\nline pushed the block one row down. This PR counts newlines instead:\n`text[:start_idx].count(\"\\n\")`.\n\nThe bug was wider than the issue describes. It hit any `@rst` with text\nbefore it on the same line, not only one-line blocks:\n\n| case | text before `@rst` | before | after |\n|---|---|---|---|\n| one-line block, `// @rst … @endrst` | `// ` | 1 | 0 |\n| doxygen block, ` * @rst` on its own line | `/**\\n * ` (after\nstripping) | 2 | 1 |\n| `@rst` starting its own line | `/*\\n` | 1 | 1 (unchanged) |\n\n### Changes\n\n- `analyse/utils.py`: the one-line fix.\n- `test_extract_rst` listed the expected `row_offset` but never asserted\nit, and its existing one-line case expected `0` when `@rst` sits on row\n1. The test now asserts the row, that case is corrected, and a `// @rst\n… @endrst` case is added. The new case fails before the fix.\n- Three snapshots had the wrong row baked in, and each corrected row\nmatches its source:\n- `test_analyse[src_dir0-src_paths0].anchors.json`: `dummy_1.cpp` row 13\n→ 12, as the issue predicted.\n- `test_extraction_fixture[marked_rst-single_line_rst]`: `/* @rst …\n@endrst */` on line 1, reported line 2 → 1.\n- `test_extraction_fixture[marked_rst-multi_line_rst_doxygen]`: ` *\n@rst` on line 2, reported line 3 → 2.\n- `test_analyse_long_source.py`: removed the comment that described this\nbug as a separate problem.\n- Changelog entry under Unreleased. Users will see source maps in\n`marked_content.json`, and blob links built from them, move up one row\nfor such blocks.\n\n### Checks\n\n- `uv run poe test-codelinks`: 404 passed, 58 snapshots passed\n- `uv run poe lint`: clean\n- `uv run poe typecheck`: clean\n- `uv run poe docs-codelinks`: build succeeded",
+          "timestamp": "2026-10-07T21:07:10+02:00",
+          "tree_id": "6bf16d36389739d02ebc8fe1ea05855666c9cfe6",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/abab51ff247febc8605d94d349dc992d1c2d2784"
+        },
+        "date": 1791400109968,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1028844199999952,
+            "unit": "s",
+            "extra": "Commit: abab51ff247febc8605d94d349dc992d1c2d2784\nBranch: master\nTime: 2026-10-07T21:07:10+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 54.46650905599999,
+            "unit": "s",
+            "extra": "Commit: abab51ff247febc8605d94d349dc992d1c2d2784\nBranch: master\nTime: 2026-10-07T21:07:10+02:00"
           }
         ]
       }
