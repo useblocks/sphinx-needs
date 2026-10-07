@@ -120,6 +120,18 @@ Improvements
   ``str`` or a ``StringList``, and an unknown need type raises the same ``invalid_type``
   exception.
 
+- ✨ :func:`~sphinx_needs.api.need.add_need` gains ``content_markup`` and
+  ``content_source``, and the new :func:`~sphinx_needs.api.need.ingest_need_record`
+  creates a need from a needs.json-style record (:issue:`1885`)
+
+  A need's content can be parsed as reStructuredText or MyST Markdown whatever the
+  page's parser, with its warnings at the source file and line it came from
+  (:ref:`api_content_markup`); this is what the multi-line needs in source comments of
+  sphinx-codelinks (:issue:`1885`, to follow) build on. ``needimport`` now creates each
+  of its needs through ``ingest_need_record``. Nothing changes for existing callers. The
+  content is not yet restricted: file-reading directives, ``raw``, relative image paths
+  and nested need directives in it are not refused.
+
 Breaking changes
 ................
 

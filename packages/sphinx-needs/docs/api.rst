@@ -27,6 +27,43 @@ Need
 .. automodule:: sphinx_needs.api.need
    :members:
 
+.. _api_content_markup:
+
+Content written in another markup
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+An extension that creates needs whose text was written somewhere else -- a comment in a
+source file, an imported file -- in a markup that is not the page's passes
+``content_markup`` to :func:`~sphinx_needs.api.need.add_need`: the source suffix of that
+markup (``".rst"``, ``".md"``, or any suffix ``source_suffix`` maps to a reStructuredText
+or MyST parser). The content is then parsed by that parser, whatever the page's parser,
+and the need records the suffix as its ``doctype``. With
+``content_source=(path, first_line)``, the warnings raised while parsing the content, and
+those for references in it that do not resolve, name ``path`` and the line the content
+came from rather than the page. :func:`~sphinx_needs.api.need.ingest_need_record` creates
+a need from a needs.json-style record, and is the path :ref:`needimport` itself takes for
+each need it imports.
+
+The content is parsed into the page it is rendered on, so a label defined in it belongs to
+that page and other pages reference it there. The warnings myst-parser logs itself, such as
+an unknown directive or role in Markdown content, name the page with the content's line;
+with myst-parser 4 their file is the content's path with ``.rst`` appended.
+
+What such content should not contain
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This version parses the content as the page would parse it, and refuses none of the
+following; a later version will, as ubCode's reader already does:
+
+- directives that read files (``include``, ``literalinclude``, ``csv-table`` with
+  ``:file:``);
+- ``raw``, and raw HTML in Markdown;
+- images and other references to files by a relative path: they resolve against the
+  page, not against the content's file;
+- need or ``needimport`` directives: the needs they create are recorded against the page;
+- anything relying on the page's substitutions or ``rst_prolog``: it works, but the same
+  text means something else on another page.
+
 Events
 ------
 
