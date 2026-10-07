@@ -1367,4 +1367,5 @@ def test_content_lines_are_its_newline_separated_lines(test_app: SphinxTestApp):
     )
     for need_id in ("SPEC_CRLF", "SPEC_CR_ITEMS"):
         content = need_content_html(app, "index.html", need_id)
-        assert '<pre class="literal-block">literal</pre>' in content, need_id
+        # ``Text::`` then the indented line: a literal block, highlighted
+        assert '<pre><span></span><span class="n">literal</span>' in content, need_id
