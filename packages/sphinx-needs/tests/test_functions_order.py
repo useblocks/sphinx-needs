@@ -556,6 +556,41 @@ def test_each_cycle_member_names_the_column_it_reads():
     ]
 
 
+def test_why_a_read_came_before_its_value():
+    """The run-time check groups the reads it reports by what computes the value.
+
+    Your own function, or a call whose filter cannot be read, runs after the other
+    built-in functions; any other read before its value is a gap in the order, which
+    the message asks to be reported.
+    """
+    from sphinx_needs.functions.functions import _Pass
+
+    project = _project(
+        _need("U", summary="[[mine()]]"),
+        _need("O", summary="[[copy('title', filter='len(needs) > 0')]]"),
+        _need("X", summary="[[copy('title')]]"),
+    )
+    pass_ = _Pass(project)
+    pass_.stratum = build_stratum(project, 2)
+    assert pass_.causes([("summary", ["O", "U", "X"])]) == [
+        (
+            "it is computed by a call whose filter cannot be read, which runs after "
+            "the other built-in functions",
+            [("summary", ["O"])],
+        ),
+        (
+            "it is computed by your own function 'mine', which runs after the "
+            "built-in functions",
+            [("summary", ["U"])],
+        ),
+        (
+            "the order of the pass did not account for this read; please report this "
+            "at https://github.com/useblocks/sphinx-needs/issues",
+            [("summary", ["X"])],
+        ),
+    ]
+
+
 def test_a_filter_on_final_values_is_no_cycle():
     """The candidates are computed before the stratum: the reader is not among them."""
     project = _project(

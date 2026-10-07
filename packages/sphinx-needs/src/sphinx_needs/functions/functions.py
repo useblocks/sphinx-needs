@@ -567,7 +567,10 @@ class _Pass:
                     "which runs after the other built-in functions"
                 )
             else:
-                cause = "the order of the pass did not account for this read"
+                cause = (
+                    "the order of the pass did not account for this read; please "
+                    "report this at https://github.com/useblocks/sphinx-needs/issues"
+                )
             result.append((cause, group))
         return result
 
