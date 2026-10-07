@@ -132,7 +132,7 @@ Bug fixes
   callable, which is now skipped with a ``needs.config`` warning instead.
 
 - 🐛 Under ``-j N``, a need id defined in two documents renders its card once,
-  on the document that kept the need **(changed output)** (:issue:`2087`)
+  on the document that kept the need **(changed output)** (:issue:`2087`, :pr:`2106`)
 
   Serially, the second definition is refused with a ``needs.create_need`` warning.
   In a parallel build, two documents read by different processes each created the need;
