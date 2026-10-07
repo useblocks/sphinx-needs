@@ -203,9 +203,11 @@ Fixed
 
 - 🐛 ``tr_link`` no longer fails with ``'NoneType' object has no attribute 'split'`` on the
   usage the documentation shows, ``:links: [[tr_link('classname', 'title')]]``: every need
-  carries the test fields, with no value on a need that is not a test-case, and the function
-  now checks the value rather than the field's presence -- on the need it is called for and
-  on each candidate target. Such a need gets no links, and a ``-W`` build no longer fails.
+  carries the test fields, and on a need that is not a test-case the compared field --
+  ``classname`` in the documented call -- has no value, so the old presence check never
+  fired. The function now checks the value rather than the field's presence -- on the need
+  it is called for and on each candidate target. Such a need gets no links, and a ``-W``
+  build no longer fails.
   `#1949 <https://github.com/useblocks/sphinx-needs/issues/1949>`__,
   `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
 

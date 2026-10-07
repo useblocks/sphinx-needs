@@ -4,6 +4,11 @@ tr_link, as documented
 .. spec:: sphinxcontrib.test_reports.test_reports
    :id: TESTSPEC_001
 
+A need TITLED ``None``: a fix that coerced the missing value to a string would link it.
+
+.. spec:: None
+   :id: TESTSPEC_NONE
+
 A test-file carries no ``classname``: the field is registered on every need, with the value ``None``.
 
 .. test-file:: A test file with the same role
