@@ -214,7 +214,7 @@ Fixed
   ``{content}`` -- so a body of several lines stays inside the generated directive in a
   custom template too.
   `#2051 <https://github.com/useblocks/sphinx-needs/issues/2051>`__,
-  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+  `#2125 <https://github.com/useblocks/sphinx-needs/pull/2125>`__
 
 - 🐛 ``test-report`` handed the generated ``test-file`` the RESOLVED, absolute report path,
   so the report-path field (``file``, or the name ``tr_file_option`` gives it) of a
@@ -223,7 +223,7 @@ Fixed
   the ``test-file`` resolves against ``tr_rootdir`` exactly as the ``test-report`` did. The
   template's *Test file* line shows that value too.
   `#2051 <https://github.com/useblocks/sphinx-needs/issues/2051>`__,
-  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+  `#2125 <https://github.com/useblocks/sphinx-needs/pull/2125>`__
 
 - 🐛 The shipped default ``tr_report_template`` no longer ends with a *Template* section.
   That section ``literalinclude``\ d the template itself by a path only this package's own
@@ -235,7 +235,7 @@ Fixed
   project that copied the template to work around it keeps its copy; it can delete the
   section there, or go back to the default.
   `#1932 <https://github.com/useblocks/sphinx-needs/issues/1932>`__,
-  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+  `#2125 <https://github.com/useblocks/sphinx-needs/pull/2125>`__
 
 What the move costs, stated rather than left to the CI diff
 ............................................................
