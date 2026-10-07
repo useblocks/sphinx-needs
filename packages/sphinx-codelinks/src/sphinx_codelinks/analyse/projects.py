@@ -1,12 +1,6 @@
 import json
-from pathlib import Path
-from typing import cast
 
-from sphinx_codelinks.analyse.analyse import (
-    AnalyseWarning,
-    AnalyseWarningType,
-    SourceAnalyse,
-)
+from sphinx_codelinks.analyse.analyse import SourceAnalyse
 from sphinx_codelinks.config import CodeLinksConfig, CodeLinksProjectConfigType
 from sphinx_codelinks.logger import get_logger
 
@@ -14,14 +8,11 @@ logger = get_logger(__name__)
 
 
 class AnalyseProjects:
-    warning_filepath: Path = Path("warnings") / "codelinks_warnings.json"
-
     def __init__(self, codelink_config: CodeLinksConfig) -> None:
         self.projects_configs: dict[str, CodeLinksProjectConfigType] = (
             codelink_config.projects
         )
         self.projects_analyse: dict[str, SourceAnalyse] = {}
-        self.warnings_path = codelink_config.outdir / AnalyseProjects.warning_filepath
         self.outdir = codelink_config.outdir
 
     def run(self) -> None:
@@ -41,38 +32,3 @@ class AnalyseProjects:
         with output_path.open("w") as f:
             json.dump(to_dump, f)
         logger.debug(f"codelinks: marked content dumped to {output_path}")
-
-    @classmethod
-    def load_warnings(cls, warnings_dir: Path) -> list[AnalyseWarning] | None:
-        """Load warnings from the given path.
-
-        It mainly used for other apps or users to load warnings files directly.
-        """
-        warnings_path = warnings_dir / cls.warning_filepath
-        if not warnings_path.exists():
-            return None
-        with warnings_path.open("r") as f:
-            # load the json file and convert to AnalyseWarning]
-            warnings = json.load(f)
-        loaded_warnings: list[AnalyseWarning] = [
-            AnalyseWarning(**warning) for warning in warnings
-        ]
-
-        return loaded_warnings
-
-    def update_warnings(self) -> None:
-        current_warnings: list[AnalyseWarningType] = [
-            cast(AnalyseWarningType, _warning.__dict__)
-            for analyse in self.projects_analyse.values()
-            for _warning in analyse.oneline_warnings
-        ]
-        self.dump_warnings(current_warnings)
-
-    def dump_warnings(self, warnings: list[AnalyseWarningType]) -> None:
-        if not self.warnings_path.parent.exists():
-            self.warnings_path.parent.mkdir(parents=True)
-        with self.warnings_path.open("w") as f:
-            json.dump(
-                warnings,
-                f,
-            )

@@ -378,8 +378,10 @@ def extend_needs_data(
                             )
                         else:
                             if isinstance(field_value.value, list):
+                                # an unset nullable field is None: appending sets it
+                                current = need[option_name]
                                 need[option_name] = [
-                                    *need[option_name],
+                                    *(current if current is not None else []),
                                     *field_value.value,
                                 ]
                             elif isinstance(field_value.value, str):
@@ -409,6 +411,9 @@ def extend_needs_data(
                                         *field_value.value,
                                     )  # ty: ignore[invalid-argument-type]
                                 )
+                            elif need[option_name] is None:
+                                # an unset nullable field: appending sets it
+                                need._dynamic_fields[option_name] = field_value
                             else:
                                 raise RuntimeError(
                                     f"Cannot append non-string/array value {field_value.value!r} to field '{option_name}'"

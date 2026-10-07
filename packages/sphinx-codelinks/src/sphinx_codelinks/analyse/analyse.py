@@ -2,7 +2,7 @@ import json
 from collections.abc import Generator
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, TypedDict, cast
+from typing import Any, cast
 
 from tree_sitter import Node as TreeSitterNode
 
@@ -34,14 +34,6 @@ logger = get_logger(__name__)
 def _count(n: int, noun: str) -> str:
     """Format ``n noun`` with a naive (append-s) plural for progress summaries."""
     return f"{n} {noun}" if n == 1 else f"{n} {noun}s"
-
-
-class AnalyseWarningType(TypedDict):
-    file_path: str
-    lineno: int
-    msg: str
-    type: str
-    sub_type: str
 
 
 @dataclass
@@ -542,14 +534,18 @@ class SourceAnalyse:
         self.extract_marked_content()
         self.merge_marked_content()
         if log_summary:
-            self._log_summary()
+            self.log_summary()
 
-    def _log_summary(self) -> None:
-        """Emit a per-project marker (default-visible) plus a -v breakdown."""
+    def log_summary(self, extra: str = "") -> None:
+        """Emit a per-project marker (default-visible) plus a -v breakdown.
+
+        :param extra: Appended to the default-visible line (the ``src-trace``
+            directive's count of the one-line needs it did not create).
+        """
         label = f"codelinks [{self.name}]" if self.name else "codelinks"
         logger.info(
             f"{label}: {_count(len(self.src_files), 'file')}, "
-            f"{_count(len(self.all_marked_content), 'marker')}"
+            f"{_count(len(self.all_marked_content), 'marker')}{extra}"
         )
         logger.debug(
             f"{label}: {_count(len(self.src_comments), 'comment')}, "

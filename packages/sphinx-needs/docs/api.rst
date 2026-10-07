@@ -27,6 +27,36 @@ Need
 .. automodule:: sphinx_needs.api.need
    :members:
 
+Events
+------
+
+**Sphinx-Needs** registers two Sphinx events, which an extension connects to with
+``app.connect(event_name, callback)``. Both are emitted once per build, in the main
+process (also in a parallel build), when the needs are first requested after all
+documents are read. Each callback is called as ``callback(app, needs)``, where ``needs``
+is the mutable mapping of need ids to needs, :py:obj:`~sphinx_needs.data.NeedsMutable`.
+
+``needs-before-post-processing``
+   Emitted before the ``needextend`` directives are applied and before dynamic
+   functions, links and constraints are resolved. This is the hook for an extension that
+   writes into the needs: a ``needextend`` in a document is applied afterwards, and can
+   override what the extension wrote.
+
+``needs-before-sealing``
+   Emitted after those steps, and before the needs become read-only. A callback sees
+   the needs as the ``needextend`` directives left them, with dynamic functions, links
+   and constraints resolved.
+
+.. code-block:: python
+
+   def default_status(app, needs):
+       for need in needs.values():
+           if need["type"] == "req" and not need["status"]:
+               need["status"] = "draft"
+
+   def setup(app):
+       app.connect("needs-before-post-processing", default_status)
+
 
 Exceptions
 ----------

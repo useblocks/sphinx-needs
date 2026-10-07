@@ -17,6 +17,7 @@ from sphinx.config import Config as _SphinxConfig
 from sphinx.environment import BuildEnvironment
 
 import sphinx_needs.debug as debug  # Need to set global var in it for timeing measurements
+import sphinx_needs.logging as needs_logging
 from sphinx_needs import __version__
 from sphinx_needs.api import get_needs_view
 from sphinx_needs.builder import (
@@ -236,6 +237,9 @@ def load_schemas_config_from_json(app: Sphinx, config: _SphinxConfig) -> None:
 
 
 def setup(app: Sphinx) -> dict[str, Any]:
+    # Sphinx 7 only: show_warning_types now, and after any later setup() changed it
+    needs_logging.configure_warning_types(app, app.config)
+    app.connect("config-inited", needs_logging.configure_warning_types, priority=0)
     LOGGER.debug("Starting setup of Sphinx-Needs")
     LOGGER.debug("Load Sphinx-Data-Viewer for Sphinx-Needs")
     app.setup_extension("sphinx_data_viewer")

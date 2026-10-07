@@ -87,7 +87,6 @@ def test_analyse(src_dir, src_paths, tmp_path, snapshot_marks):
                 "num_cached_files": 0,
                 "num_comments": 14,
                 "num_oneline_warnings": 0,
-                "warnings_path_exists": True,
             },
         ),
         (
@@ -102,7 +101,6 @@ def test_analyse(src_dir, src_paths, tmp_path, snapshot_marks):
                 "num_cached_files": 0,
                 "num_comments": 5,
                 "num_oneline_warnings": 1,
-                "warnings_path_exists": True,
             },
         ),
         (

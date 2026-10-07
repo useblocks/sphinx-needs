@@ -11,11 +11,33 @@ too_many_fields:
     void f() {}
 
 too_few_fields:
-  # Only one field supplied; title + type are required (2) -> too_few_fields.
+  # Only one field supplied; id + title are required (2) -> too_few_fields. A
+  # multi-character start sequence: on a one-character one such as the default
+  # ``@``, a line without the field separator is not a marker (the case below).
+  lang: cpp
+  config:
+    start_sequence: "[["
+    end_sequence: "]]"
+    field_split_char: ","
+    needs_fields:
+      - {name: id}
+      - {name: title}
+      - {name: type, default: impl}
+      - {name: links, type: "list[str]", default: []}
+  source: |
+    // [[only]]
+    void f() {}
+
+one_character_start_without_separator:
+  # A one-character start sequence, no field separator in the content, and more
+  # than one required field: not a marker and not a warning, so documentation
+  # tags such as ``@param`` and ``@return`` are left alone.
   lang: cpp
   config: default
   source: |
     // @only
+    /// @param x the value
+    /// @return nothing
     void f() {}
 
 missing_square_brackets:

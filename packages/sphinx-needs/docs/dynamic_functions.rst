@@ -60,6 +60,9 @@ The following functions are available by default.
 .. note::
 
    The parameters ``app``, ``need`` and ``needs`` of the following functions are set automatically.
+   So is ``reads``, the keyword-only parameter of :ref:`copy <copy>`, :ref:`check_linked_values <check_linked_values>`
+   and :ref:`calc_sum <calc_sum>` through which they report the values they read that are computed in the same pass
+   (see :ref:`needs_derive_unresolved`). It is reserved: do not give it in a call (doing so fails the call).
 
 test
 ~~~~
@@ -197,8 +200,7 @@ the ``links`` of its own need and the value of each linked need :ref:`check_link
 before it stops, whether or not its ``filter`` keeps the need;
 and the fields of its own need that a variant condition names, up to the first condition that holds.
 Not reported are the fields a ``filter`` argument reads (``current_need`` included),
-the reads your own :ref:`functions <needs_functions>` make themselves
-(a built-in they call during the pass is reported, under your function's name),
+the reads your own :ref:`functions <needs_functions>` make, through a built-in they call or otherwise,
 and ``<{…}>``, which reads variant data rather than needs;
 :ref:`links_from_content <links_content>` reads the document, not fields.
 The :ref:`ndf` role runs after the pass, when every value is final, so nothing it reads is reported.

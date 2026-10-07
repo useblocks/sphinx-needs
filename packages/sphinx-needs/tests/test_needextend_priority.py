@@ -18,12 +18,12 @@ from typing import Any
 
 import pytest
 from sphinx.application import Sphinx
-from sphinx.util.parallel import parallel_available
 from syrupy.filters import props
 
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.directives import needextend as needextend_module
 from sphinx_needs_testkit import build_warnings
+from tests.util import needs_by_id, serial_and_parallel
 
 CONF = """\
 extensions = ["sphinx_needs"]
@@ -43,30 +43,6 @@ Index
    :id: REQ_1
    :status: open
 """
-
-# Sphinx 7 reads in parallel only above five documents (Sphinx 9 at any count), so the
-# ``-j 2`` variants add four orphan pages: seven documents read in parallel on every cell
-PADDING = [(Path(f"pad_{n}.rst"), f":orphan:\n\nPad {n}\n=====\n") for n in range(4)]
-
-
-def serial_and_parallel(files: list[tuple[Path, str]]) -> list[Any]:
-    """``test_app`` parameters building ``files`` serially, and with ``-j 2``."""
-    return [
-        pytest.param({"buildername": "html", "files": files}, id="serial"),
-        pytest.param(
-            {"buildername": "html", "files": [*files, *PADDING], "parallel": 2},
-            id="j2",
-            marks=pytest.mark.skipif(
-                not parallel_available, reason="Parallel execution not supported"
-            ),
-        ),
-    ]
-
-
-def needs_by_id(app: Sphinx) -> dict[str, dict[str, Any]]:
-    """The needs of the build's ``needs.json``, by id."""
-    data = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf8"))
-    return data["versions"][data["current_version"]]["needs"]
 
 
 def stored_priorities(app: Sphinx) -> dict[tuple[str, int], int]:

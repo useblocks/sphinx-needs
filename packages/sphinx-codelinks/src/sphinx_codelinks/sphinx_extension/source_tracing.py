@@ -1,24 +1,24 @@
 import contextlib
+import os
+import shutil
 from collections.abc import Iterator  # only in python 3.11 afterwards
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from timeit import default_timer as timer  # Used for timing measurements
 from typing import Any, cast
 
 from sphinx.application import Sphinx
+from sphinx.builders.html import StandaloneHTMLBuilder
 from sphinx.config import Config as _SphinxConfig
 from sphinx.environment import BuildEnvironment
 from sphinx.util import logging
 from sphinx.util.fileutil import copy_asset
 
-from sphinx_codelinks.analyse.projects import AnalyseProjects
 from sphinx_codelinks.config import (
     DEFAULT_CONFIG_TOML,
-    SRC_TRACE_CACHE,
     CodeLinksConfig,
     CodeLinksConfigType,
     CodeLinksProjectConfigType,
     check_configuration,
-    file_lineno_href,
     generate_project_configs,
     load_codelinks_table,
     need_id_refs_fields,
@@ -32,20 +32,33 @@ from sphinx_codelinks.sphinx_extension.directives.src_trace import (
 )
 from sphinx_codelinks.sphinx_extension.html_wrapper import html_wrapper
 from sphinx_codelinks.sphinx_extension.need_id_refs import need_id_refs_store
+from sphinx_codelinks.sphinx_extension.project_analysis import (
+    SourcePage,
+    git_root_warnings,
+)
 from sphinx_codelinks.sphinx_extension.rediscovery import (
     attach_on_post_processing,
     config_only_refs_store,
+    effective_pages,
     find_affected_documents,
     find_outdated_scopes,
     merge_info,
+    note_documents_to_read,
     purge_doc,
+    purged_documents,
+    purged_targets,
     scope_store,
+    source_pages_store,
 )
 from sphinx_codelinks.sphinx_extension.string_links import register_string_links
 from sphinx_needs.api import add_field, add_need_type
 from ub_project import ProjectConfigError
 
 logger = logging.getLogger(__name__)
+
+#: what the ``.ignore`` at the root of each output and doctree directory holds: everything
+#: below it, so that discovery with ``gitignore = true`` never traces a build's output
+IGNORE_ALL = b"*\n"
 
 #: The ``[codelinks]`` keys a ``-D`` never suppresses. Sphinx refuses a ``-D`` for
 #: these two -- ``projects`` is a dict, ``outdir`` has a ``Path`` default ("unsupported
@@ -84,7 +97,7 @@ def _check_sphinx_needs_dependency(app: Sphinx) -> bool:
 def setup(app: Sphinx) -> dict[str, Any]:
     # Route the shared analyse layer's logging through Sphinx (verbosity,
     # colour, suppress_warnings, warning stream) instead of stderr.
-    configure_sphinx()
+    configure_sphinx(show_warning_types=bool(app.config.show_warning_types))
     # Check if sphinx-needs is available and properly configured
     if not _check_sphinx_needs_dependency(app):
         logger.error(
@@ -125,22 +138,24 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.connect("html-collect-pages", generate_code_page)
     app.connect("html-page-context", add_custom_css)
     app.connect("builder-inited", builder_inited)
-    app.connect("build-finished", emit_warnings)
     app.connect("build-finished", debug.process_timing)
     return {
         "version": "builtin",
+        # the environment holds the source pages since #2070: an older one (no page
+        # records) is discarded by Sphinx, so the first build after an upgrade reads
+        # every document once and records them
+        "env_version": 1,
         "parallel_read_safe": True,
         "parallel_write_safe": True,
     }
 
 
 def builder_inited(app: Sphinx) -> None:
-    # the source pages a build registers are generated (and the registry emptied) by
-    # an HTML builder's html-collect-pages; after any other builder they would reach
-    # the next build in the same process, whose output directory is another one
-    file_lineno_href.mappings.clear()
     custom_css = Path(__file__).parent / "ub_sct.css"
     copy_asset(custom_css, Path(app.outdir) / "_static" / "source_tracing")
+    # every builder, every build: nothing a builder writes is ever traced
+    for directory in (app.outdir, app.doctreedir):
+        mark_ignored(Path(directory))
 
 
 def add_custom_css(
@@ -150,36 +165,122 @@ def add_custom_css(
     _context: dict[str, Any],
     _doctree: Any,
 ) -> None:
-    target_htmls = {
-        str(Path(file_path).relative_to(app.outdir).with_suffix(""))
-        for file_path in file_lineno_href.mappings
-    }
-
-    if pagename in target_htmls and templatename == "page.html":
+    # the key the context of every page generate_code_page yields carries
+    if templatename == "page.html" and _context.get(SOURCE_PAGE_KEY):
         app.add_css_file("_static/source_tracing/ub_sct.css")
 
 
-def generate_code_page(
-    app: Sphinx,
-) -> Iterator[tuple[str, dict[str, str], str]] | None:
-    for file, lineno_href in file_lineno_href.mappings.items():
-        file_path = Path(file)
-        pagename = str((file_path.relative_to(app.outdir)).with_suffix(""))
+#: the context key that marks a source page, for :func:`add_custom_css`
+SOURCE_PAGE_KEY = "codelinks_source_page"
 
-        html_content = html_wrapper(
-            file_path,
-            lineno_href=lineno_href,
-        )
 
-        context = {
-            "title": f"Source Code Tracing: {file_path.name}",
-            "body": html_content,
+def _copy_outdated(copied: Path, source: os.stat_result) -> bool:
+    """Whether the copy is missing, or its size or modification time differs from its
+    source's: a copy carries its source's modification time (set after the copy), so a
+    source replaced by an OLDER file is caught too."""
+    try:
+        current = copied.stat()
+    except OSError:
+        return True
+    return (
+        current.st_size != source.st_size or current.st_mtime_ns != source.st_mtime_ns
+    )
+
+
+def _page_outdated(
+    outfile: Path,
+    page: SourcePage,
+    documents: frozenset[str],
+    targets: frozenset[str],
+) -> bool:
+    """Whether a source page whose copy is up to date must be written: its output file
+    is missing, or its ``[docs]`` links may have changed with no source edit -- a
+    document they name now was purged in this build (read again, or added: a need that
+    moved to it), or a purged document had recorded the page (removed, or no longer
+    tracing the file)."""
+    if not outfile.is_file():
+        return True
+    if any(docname in documents for _line, docname, _need_id in page.anchors):
+        return True
+    return page.target in targets
+
+
+def _pagename(target: str) -> str:
+    """The page of a source copy: its path without the suffix (``src/refs``)."""
+    return PurePosixPath(target).with_suffix("").as_posix()
+
+
+def mark_ignored(directory: Path) -> None:
+    """Write ``.ignore`` (``*``) into ``directory``, unless an identical one is there.
+
+    Called at ``builder-inited`` for the output and the doctree directory of every
+    builder. The ``ignore`` walker discovery uses reads ``.ignore`` files whenever
+    ``gitignore`` is on, inside a git repository or not, so no discovery traces anything
+    a builder wrote -- the extension's source copies, Sphinx's ``_downloads/`` copies of
+    a traced source, another builder's tree -- wherever the output directory lies.
+    """
+    directory.mkdir(parents=True, exist_ok=True)
+    marker = directory / ".ignore"
+    with contextlib.suppress(OSError):
+        if marker.read_bytes() == IGNORE_ALL:
+            return
+    marker.write_bytes(IGNORE_ALL)
+
+
+def generate_code_page(app: Sphinx) -> Iterator[tuple[str, dict[str, Any], str]]:
+    """Copy every recorded source file into the output and yield its page, where they
+    are not up to date (``html-collect-pages``, so for HTML builders only).
+
+    The pages come from the environment (:func:`~.rediscovery.effective_pages`), so a
+    cleaned output directory, a second builder sharing the doctrees, or a document read
+    by a ``-j N`` worker gets them as a serial first build does. A copy is written when
+    it is missing or its size or modification time differs from its source's; a page
+    when its copy was written, its output file is missing, or a document it was
+    recorded by -- now or before -- was purged in this build (read again, added or
+    removed). Each ``[docs]`` link is the builder's own relative URI from the page to
+    the need's document. A source that cannot be read any more (removed since its
+    document was read) warns and is skipped.
+    """
+    builder = app.builder
+    if not isinstance(builder, StandaloneHTMLBuilder):  # the event is theirs alone
+        return
+    config = CodeLinksConfig.from_sphinx(app.config)
+    outdir = Path(app.outdir)
+    documents = purged_documents(app.env)
+    targets = purged_targets(app.env)
+    for page in effective_pages(app.env, config):
+        copied = outdir / page.target
+        try:
+            source = os.stat(page.source)
+            copy = _copy_outdated(copied, source)
+            if copy:
+                copied.parent.mkdir(parents=True, exist_ok=True)
+                # as bytes (no codec, no newline translation); then the source's times,
+                # not its mode -- a read-only source would make the copy unwritable
+                shutil.copyfile(page.source, copied)
+                os.utime(copied, ns=(source.st_atime_ns, source.st_mtime_ns))
+        except OSError as error:
+            logger.warning(
+                f"source page {page.target!r} not written: cannot copy "
+                f"{Path(page.source).as_posix()}: {error.strerror or error}",
+                type="codelinks",
+                subtype="source_page",
+            )
+            continue
+        pagename = _pagename(page.target)
+        outfile = Path(builder.get_outfilename(pagename))
+        if not copy and not _page_outdated(outfile, page, documents, targets):
+            continue
+        lineno_href = {
+            line: f"{builder.get_relative_uri(pagename, docname)}#{need_id}"
+            for line, docname, need_id in page.anchors
         }
-
+        context = {
+            "title": f"Source Code Tracing: {copied.name}",
+            "body": html_wrapper(copied, lineno_href=lineno_href),
+            SOURCE_PAGE_KEY: True,
+        }
         yield pagename, context, "page.html"
-
-    file_lineno_href.mappings.clear()  # Clear the mappings after generating the pages
-    return None
 
 
 def load_config_from_toml(app: Sphinx, config: _SphinxConfig) -> None:
@@ -330,7 +431,7 @@ def update_sn_types(app: Sphinx, _config: _SphinxConfig) -> None:
 
 
 def prepare_env(
-    app: Sphinx, env: BuildEnvironment, _docnames: list[str]
+    app: Sphinx, env: BuildEnvironment, docnames: list[str]
 ) -> None:  # required by Sphinx
     """
     Prepares the sphinx environment to store stc-trace internal data.
@@ -338,7 +439,10 @@ def prepare_env(
     src_trace_sphinx_config = CodeLinksConfig.from_sphinx(app.config)
     need_id_refs_store(env)
     scope_store(env)
+    source_pages_store(env)
     config_only_refs_store(env)
+    # a need of a document still to be read is stale: the directives may replace it
+    note_documents_to_read(env, docnames)
 
     # Set time measurement flag
     if src_trace_sphinx_config.debug_measurement:
@@ -357,18 +461,5 @@ def check_sphinx_configuration(app: Sphinx, _config: _SphinxConfig) -> None:
         raise Exception("\n".join(errors))
     for warning in remote_url_pattern_warnings(config):
         logger.warning(warning, type="codelinks", subtype="remote_url_pattern")
-
-
-def emit_warnings(
-    app: Sphinx,
-    _env: BuildEnvironment,
-) -> None:
-    warnings = AnalyseProjects.load_warnings(Path(app.outdir) / SRC_TRACE_CACHE)
-    if not warnings:
-        return
-    for warning in warnings:
-        logger.warning(
-            f"{warning.file_path}:{warning.lineno}: {warning.msg}",
-            type=warning.type,
-            subtype=warning.sub_type,
-        )
+    for warning in git_root_warnings(app.confdir, config):
+        logger.warning(warning, type="codelinks", subtype="git_root")

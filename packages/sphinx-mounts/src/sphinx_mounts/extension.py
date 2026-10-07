@@ -21,6 +21,7 @@ from sphinx.util import logging
 from sphinx.util.matching import get_matching_files, patmatch
 
 from sphinx_mounts import __version__, dialect
+from sphinx_mounts import logging as mounts_logging
 from sphinx_mounts import warnings as mount_warnings
 from sphinx_mounts.config import (
     MOUNT_CONDITION_KEY,
@@ -2484,6 +2485,8 @@ def setup(app: Sphinx) -> dict[str, Any]:
         rebuild="env",
         types=(str, type(None)),
     )
+    # Sphinx 7 only: read show_warning_types before the first handler that can warn
+    app.connect("config-inited", mounts_logging.configure_warning_types, priority=0)
     # Priority is "lower = earlier"; the TOML loader must run before the
     # validator so that the TOML-derived list is what gets validated.
     app.connect("config-inited", _on_load_toml, priority=400)

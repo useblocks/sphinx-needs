@@ -337,42 +337,42 @@ def test_oneline_parser_custom_config_positive(
             f"[[IMPL_4, title{ESCAPE}{ESCAPE}, 4, impl, [], closed]]",
             OnelineParserInvalidWarning(
                 sub_type=WarningSubTypeEnum.missing_square_brackets,
-                msg="Field links with 'type': 'list[str]' must be given with '[]' brackets",
+                msg="Field 'links' with 'type': 'list[str]' must be given with '[]' brackets",
             ),
         ),
         (
             "[[IMPL_2, Function Bar, impl, [SPEC_1, SPEC_2, open]]",
             OnelineParserInvalidWarning(
                 sub_type=WarningSubTypeEnum.missing_square_brackets,
-                msg="Field links with 'type': 'list[str]' must be given with '[]' brackets",
+                msg="Field 'links' with 'type': 'list[str]' must be given with '[]' brackets",
             ),
         ),
         (
             "[[IMPL_13, title 13, impl, 13[\[SPEC\,_1\]], open]]",
             OnelineParserInvalidWarning(
                 sub_type=WarningSubTypeEnum.not_start_or_end_with_square_brackets,
-                msg="Field links with 'type': 'list[str]' must start with '[' and end with ']'",
+                msg="Field 'links' with 'type': 'list[str]' must start with '[' and end with ']'",
             ),
         ),
         (
             "[[IMPL_14, title 13, impl, 13[\[SPEC\,_1\]], open, low, high]]",
             OnelineParserInvalidWarning(
                 sub_type=WarningSubTypeEnum.too_many_fields,
-                msg="7 given fields. They shall be less than 6",
+                msg="7 given fields, maximum is 6",
             ),
         ),
         (
             "[[IMPL_15]]",
             OnelineParserInvalidWarning(
                 sub_type=WarningSubTypeEnum.too_few_fields,
-                msg="1 given fields. They shall be more than 2",
+                msg="1 given fields, minimum is 2",
             ),
         ),
         (
             f"[[IMPL_16]]{UNIX_NEWLINE}, title 16]]",
             OnelineParserInvalidWarning(
                 sub_type=WarningSubTypeEnum.newline_in_field,
-                msg="Field id has newline character. It is not allowed",
+                msg="Field 'id' contains a newline character",
             ),
         ),
     ],
@@ -391,14 +391,14 @@ def test_oneline_parser_custom_config_negative(
             f"@title 17]]{UNIX_NEWLINE}, IMPL_17 {UNIX_NEWLINE}",
             OnelineParserInvalidWarning(
                 sub_type=WarningSubTypeEnum.newline_in_field,
-                msg="Field title has newline character. It is not allowed",
+                msg="Field 'title' contains a newline character",
             ),
         ),
         (
             f"@title 17]], IMPL_17, impl, [SPEC_3, SPEC_4{UNIX_NEWLINE} ] {UNIX_NEWLINE}",
             OnelineParserInvalidWarning(
                 sub_type=WarningSubTypeEnum.newline_in_field,
-                msg="Field links has newline character. It is not allowed",
+                msg="Field 'links' contains a newline character",
             ),
         ),
     ],
@@ -570,3 +570,114 @@ def test_oneline_parser_bounded_marker_allowed_after_prose() -> None:
     res = oneline_parser(oneline, ONELINE_COMMENT_STYLE)
     assert isinstance(res, dict)
     assert res["id"] == "IMPL_1"
+
+
+#: one required field (``title``): a line without the separator is a whole marker
+ONE_REQUIRED_FIELD = OneLineCommentStyle(
+    needs_fields=[{"name": "title"}, {"name": "type", "default": "impl"}]
+)
+
+
+@pytest.mark.parametrize(
+    "oneline",
+    [
+        f"// @param x the value{UNIX_NEWLINE}",
+        f"/// @return nothing{UNIX_NEWLINE}",
+        f" * @only{UNIX_NEWLINE}",
+    ],
+)
+def test_one_character_start_without_separator_is_not_a_marker(oneline: str) -> None:
+    """A one-character start sequence, no field separator in the content and more than
+    one required field: documentation tags such as ``@param`` are not markers, and not
+    warnings either."""
+    assert oneline_parser(oneline, ONELINE_COMMENT_STYLE_DEFAULT) is None
+
+
+@pytest.mark.parametrize(
+    "oneline, sub_type",
+    [
+        (
+            f"// @see A, B, C, D, E{UNIX_NEWLINE}",
+            WarningSubTypeEnum.too_many_fields,
+        ),
+        # the fourth field is ``links``, a ``list[str]``
+        (
+            f"// @brief a, b, c, d{UNIX_NEWLINE}",
+            WarningSubTypeEnum.missing_square_brackets,
+        ),
+    ],
+)
+def test_one_character_start_with_separator_still_warns(
+    oneline: str, sub_type: WarningSubTypeEnum
+) -> None:
+    res = oneline_parser(oneline, ONELINE_COMMENT_STYLE_DEFAULT)
+    assert isinstance(res, OnelineParserInvalidWarning)
+    assert res.sub_type == sub_type
+
+
+def test_one_character_start_with_two_fields_is_still_a_need() -> None:
+    """A line with the separator, ``@brief Does a, b``, is the need it always was."""
+    assert oneline_parser(
+        f"// @brief Does a, b{UNIX_NEWLINE}", ONELINE_COMMENT_STYLE_DEFAULT
+    ) == {
+        "title": "brief Does a",
+        "id": "b",
+        "type": "impl",
+        "links": [],
+        "start_column": 4,
+        "end_column": 19,
+    }
+
+
+def test_multi_character_start_without_separator_still_warns() -> None:
+    """``[[`` is specific enough: a marker with too few fields is a warning."""
+    assert oneline_parser(
+        "// [[ only-title ]]", ONELINE_COMMENT_STYLE
+    ) == OnelineParserInvalidWarning(
+        sub_type=WarningSubTypeEnum.too_few_fields,
+        msg="1 given fields, minimum is 2",
+    )
+
+
+def test_one_character_start_with_one_required_field_is_a_need() -> None:
+    """With one required field, a line without the separator is a whole marker."""
+    assert oneline_parser(f"// @x{UNIX_NEWLINE}", ONE_REQUIRED_FIELD) == {
+        "title": "x",
+        "type": "impl",
+        "start_column": 4,
+        "end_column": 5,
+    }
+
+
+@pytest.mark.parametrize(
+    "oneline, style",
+    [
+        ("// [[ ]]", ONELINE_COMMENT_STYLE),
+        (f"// @{UNIX_NEWLINE}", ONE_REQUIRED_FIELD),
+        (f"// @{UNIX_NEWLINE}", ONELINE_COMMENT_STYLE_DEFAULT),
+        (f"// @   {UNIX_NEWLINE}", ONELINE_COMMENT_STYLE_DEFAULT),
+    ],
+)
+def test_empty_content_is_not_a_marker(
+    oneline: str, style: OneLineCommentStyle
+) -> None:
+    """Nothing between the start and end sequences: not a marker, whatever the start
+    sequence and however many fields are required."""
+    assert oneline_parser(oneline, style) is None
+
+
+def test_an_escaped_separator_counts_as_present() -> None:
+    """``\\,`` is a separator in the content, so the line is a marker, and one field
+    is too few."""
+    res = oneline_parser(f"// @a\\,b{UNIX_NEWLINE}", ONELINE_COMMENT_STYLE_DEFAULT)
+    assert isinstance(res, OnelineParserInvalidWarning)
+    assert res.sub_type == WarningSubTypeEnum.too_few_fields
+
+
+def test_a_non_ascii_start_sequence_of_one_character_is_one_character() -> None:
+    """One character is one code point: ``§`` is a one-character start sequence."""
+    style = OneLineCommentStyle(start_sequence="§")
+    assert oneline_parser(f"// §only{UNIX_NEWLINE}", style) is None
+    res = oneline_parser(f"// §a title, IMPL_SECT{UNIX_NEWLINE}", style)
+    assert isinstance(res, dict)
+    assert res["id"] == "IMPL_SECT"

@@ -17,6 +17,7 @@ by (as an Info-graded ``needs.derive_unresolved``), and the last test runs ubCod
 own fixture for it.
 """
 
+import inspect
 import json
 import os
 import re
@@ -27,6 +28,9 @@ from typing import get_args
 import pytest
 from sphinx.util.parallel import parallel_available
 
+from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.functions.common import calc_sum, check_linked_values, copy
+from sphinx_needs.functions.functions import execute_func
 from sphinx_needs.logging import WarningSubTypeDescription, WarningSubTypes
 from sphinx_needs_testkit import assert_no_warnings, build_warnings
 
@@ -1305,3 +1309,316 @@ def test_ubcode_fixture(test_app):
         "field 'summary', of need 'MIRROR_VAR': dynamic function value <class "
         "'NoneType'> is not of type 'string' [needs.dynamic_function]",
     ]
+
+
+# -- T12: who is handed the record ---------------------------------------------------
+#
+# The pass hands each call's record to the built-ins marked ``records_reads``, as their
+# keyword-only ``reads``, and to nothing else: a user's function is called exactly as
+# before, and a built-in called anywhere but by the pass itself (an ``ndf`` role, a
+# ``:style_row:``, a direct call, a user's function) gets ``reads=None`` and notes nothing.
+
+USER_FUNCTIONS_CONF = (
+    CONF
+    + """\
+# Sphinx's own warning that a function in the configuration is not pickled, which
+# is not what these tests are about
+suppress_warnings = ["config.cache"]
+
+from sphinx_needs.functions.common import copy
+
+
+def shout(app, need, needs, text):
+    # the plain signature: a ``reads`` keyword would be a TypeError
+    return text.upper()
+
+
+def mirror(app, need, needs, need_id):
+    # another need's field, read through a built-in
+    return copy(app, need, needs, "summary", need_id)
+
+
+needs_functions = [shout, mirror]
+"""
+)
+
+PLAIN_USER_FUNCTION_INDEX = """\
+User function
+=============
+
+.. req:: Plain
+   :id: PLAIN
+   :summary: [[shout("quiet")]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), USER_FUNCTIONS_CONF),
+                (Path("index.rst"), PLAIN_USER_FUNCTION_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_user_function_is_called_without_the_record(test_app):
+    """A user's function, which is not marked, is called with no ``reads`` in the pass.
+
+    ``shout`` takes no ``**kwargs``, so a ``reads`` keyword would end the call in a
+    ``TypeError`` and a ``needs.dynamic_function`` warning.
+    """
+    app = test_app
+    app.build()
+    assert _built_needs(app)["PLAIN"]["summary"] == "QUIET"
+    assert_no_warnings(app)
+
+
+USER_FUNCTION_READS_INDEX = """\
+User function
+=============
+
+.. req:: Mirror
+   :id: MIRROR_USER
+   :summary: [[mirror("CHAIN_B")]]
+
+.. req:: Middle
+   :id: CHAIN_B
+   :summary: [[copy("title")]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), USER_FUNCTIONS_CONF),
+                (Path("index.rst"), USER_FUNCTION_READS_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_builtin_a_user_function_calls_is_not_reported(test_app):
+    """A built-in called by a user's function in the pass is handed no record.
+
+    ``mirror`` copies ``CHAIN_B``'s computed ``summary`` through ``copy``, and reads it
+    unresolved (``CHAIN_B`` comes later); the user's function has no record to pass on,
+    so the read is not reported, as the documentation says.
+    """
+    app = test_app
+    app.build()
+    needs = _built_needs(app)
+    assert (needs["MIRROR_USER"]["summary"], needs["CHAIN_B"]["summary"]) == (
+        "",
+        "Middle",
+    )
+    assert_no_warnings(app)
+
+
+WRAPPED_BUILTIN_CONF = (
+    CONF
+    + """\
+# Sphinx's own warning that a function in the configuration is not pickled, which
+# is not what these tests are about
+suppress_warnings = ["config.cache"]
+
+import functools
+
+from sphinx_needs.functions.common import copy
+
+
+@functools.wraps(copy)
+def narrowcopy(app, need, needs, option, need_id=None):
+    # a narrower signature than the built-in's, without **kwargs
+    return copy(app, need, needs, option, need_id, upper=True)
+
+
+@functools.wraps(copy)
+def forwardcopy(app, need, needs, *args, **kwargs):
+    # forwards whatever it is given to the built-in
+    return copy(app, need, needs, *args, **kwargs)
+
+
+# ``functools.wraps`` copied the built-in's name too
+narrowcopy.__name__ = "narrowcopy"
+forwardcopy.__name__ = "forwardcopy"
+
+needs_functions = [narrowcopy, forwardcopy]
+"""
+)
+
+WRAPPED_BUILTIN_INDEX = """\
+Wrapped built-in
+================
+
+.. req:: narrow
+   :id: U_NARROW
+   :summary: [[narrowcopy("title")]]
+
+.. req:: Forward
+   :id: U_FORWARD
+   :summary: [[forwardcopy("summary", "CHAIN_B")]]
+
+.. req:: Middle
+   :id: CHAIN_B
+   :summary: [[copy("title")]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), WRAPPED_BUILTIN_CONF),
+                (Path("index.rst"), WRAPPED_BUILTIN_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_user_wrapper_of_a_builtin_is_not_handed_the_record(test_app):
+    """A user's function made with ``functools.wraps(copy)`` is a user's function.
+
+    ``functools.wraps`` copies the built-in's attributes, its mark included, but the
+    mark names the function it was set on, so the wrapper is not marked: ``narrowcopy``,
+    which takes no ``**kwargs``, is called without ``reads`` and resolves, and
+    ``forwardcopy``, which would forward a record to ``copy``, has none to forward, so
+    its read of ``CHAIN_B``'s computed ``summary`` is not reported.
+    """
+    app = test_app
+    app.build()
+    needs = _built_needs(app)
+    assert (needs["U_NARROW"]["summary"], needs["U_FORWARD"]["summary"]) == (
+        "NARROW",
+        "",
+    )
+    assert_no_warnings(app)
+
+
+AFTER_THE_PASS_INDEX = """\
+After the pass
+==============
+
+.. req:: Hours
+   :id: HRS_1
+   :h0: 5
+   :hours: [[copy("h0")]]
+
+.. req:: done
+   :id: WORK_1
+   :status: [[copy("title")]]
+
+.. req:: Renders
+   :id: RENDERS
+   :links: WORK_1
+
+   Sum :ndf:`calc_sum("hours")`, copy :ndf:`copy("hours", "HRS_1")`,
+   gate :ndf:`check_linked_values("ready", "status", "done")`.
+
+.. needtable::
+   :filter: id == "WORK_1"
+   :style_row: [[copy("status")]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF),
+                (Path("index.rst"), AFTER_THE_PASS_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_builtin_called_after_the_pass_notes_nothing(test_app):
+    """The built-ins called with no ``reads`` resolve and report nothing.
+
+    The ``ndf`` roles and the ``:style_row:`` run after the pass, through
+    ``execute_func``, which passes no ``reads``: each read of a computed value there
+    renders the final value and is not reported. A direct ``execute_func`` call after
+    the build does the same.
+    """
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    assert "Sum 5.0, copy 5.0,\ngate ready." in html
+    assert re.search(r'<tr class="[^"]*\bdone\b[^"]*" data-need-id="WORK_1"', html)
+
+    needs = SphinxNeedsData(app.env).get_needs_view()
+    assert execute_func(app, needs["RENDERS"], needs, 'calc_sum("hours")', None) == 5.0
+    assert_no_warnings(app)
+
+
+RESERVED_INDEX = """\
+Reserved
+========
+
+.. req:: Reserved keyword
+   :id: RESERVED
+   :summary: [[copy("title", reads=1)]]
+
+   Rendered: :ndf:`copy("title", reads=1)`.
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [(Path("conf.py"), CONF), (Path("index.rst"), RESERVED_INDEX)],
+        }
+    ],
+    indirect=True,
+)
+def test_reads_written_in_a_call_is_an_error(test_app):
+    """``reads`` is reserved: written in a call, it fails that call, not the build.
+
+    In the pass, the resolver's own ``reads`` meets the written one; in an ``ndf`` role,
+    the written value is not a record. Either way the call ends in the usual
+    ``needs.dynamic_function`` warning (Python's own words, so matched loosely) and the
+    role renders ``??``.
+    """
+    app = test_app
+    app.build()
+    warnings = build_warnings(app)
+    assert len(warnings) == 2, warnings
+    assert re.fullmatch(
+        r"<srcdir>/index\.rst:4: WARNING: Error while resolving dynamic values for "
+        r"field 'summary', of need 'RESERVED': Error while executing function 'copy': "
+        r".*got multiple values for keyword argument 'reads' \[needs\.dynamic_function\]",
+        warnings[0],
+    ), warnings[0]
+    assert re.fullmatch(
+        r"<srcdir>/index\.rst:8: WARNING: Error while executing function 'copy': "
+        r".+ \[needs\.dynamic_function\]",
+        warnings[1],
+    ), warnings[1]
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    assert "Rendered: ??." in html
+
+
+def test_the_builtins_take_the_record_only_as_a_keyword_defaulting_to_none():
+    """The record reaches a built-in only as the argument the pass gives it.
+
+    ``reads`` is keyword-only and defaults to ``None``: a shared record as the default
+    would be module-level state again, noted into by every call made outside the pass
+    and never reported.
+    """
+    for function in (copy, calc_sum, check_linked_values):
+        parameter = inspect.signature(function).parameters["reads"]
+        assert parameter.kind is parameter.KEYWORD_ONLY, function.__name__
+        assert parameter.default is None, function.__name__

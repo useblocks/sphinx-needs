@@ -793,6 +793,14 @@ def _create_need_node(
 
     node_need = Need("", classes=style_classes, ids=[data["id"]], refid=data["id"])
     node_need.source, node_need.line = source, data["lineno"]
+    # the document whose need this node renders: under ``-j N`` two documents read by
+    # different workers can each create a need with the same id, and the merge keeps
+    # only one of them, so ``format_need_nodes`` renders a node only if its need is
+    # still recorded on the document the node was written in (#2087). ``node.source``
+    # cannot say which document that is in general, and the name ``doctree-resolved``
+    # passes is the root document's for ``singlehtml`` and ``latex``. The node is
+    # replaced before any writer sees it, so the attribute reaches no output.
+    node_need["docname"] = data["docname"]
 
     if data["hide"]:
         # still add node to doctree, so we can later compute its relative location in the document

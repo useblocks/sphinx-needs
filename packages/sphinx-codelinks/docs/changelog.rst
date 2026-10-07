@@ -59,9 +59,7 @@ New and Improved
   roots are different files, each kept): the project's
   ``remote_url_pattern`` filled in for the marker's line, or the local link when remote
   URLs are off. With local URLs only, a file referenced by ``@need-ids:`` is copied into
-  the output and gets a source page, as a file with a one-line need is; under ``-j N`` the
-  local link's source page is not generated yet
-  (`#2044 <https://github.com/useblocks/sphinx-needs/issues/2044>`__). ``needs.json``
+  the output and gets a source page, as a file with a one-line need is. ``needs.json``
   declares the field as a list; a need nothing references carries ``null``, which a
   strict ``unevaluatedProperties: false`` schema never sees. The references replace a
   value the need's own directive or a default gave the field; a user's ``needextend`` of
@@ -95,13 +93,9 @@ New and Improved
   appeared only once the document changed. Each directive now records its scope, and every
   build walks each recorded scope again -- one directory walk per scope, no parsing -- and
   re-reads the documents whose files changed. A ``:file:`` scope is that one file, so a new
-  file beside it costs nothing. The build directory is never traced -- the output and
-  doctree directories and, when they sit inside the documentation source directory as
-  ``_build/`` does, that directory, so sibling builders' output is skipped too; an output
-  tree elsewhere inside ``src_dir`` needs an ignore rule (``.gitignore`` with
-  ``gitignore = true``, or ``exclude``), and the whole containing directory is skipped, so
-  an output directory placed directly beside traced sources hides them. A build also starts with no source page pending
-  from a previous non-HTML build in the same process. The walk costs roughly 0.1 s per
+  file beside it costs nothing. The build's output and doctree directories are never
+  traced, nor is any builder's output elsewhere (the ``.ignore`` bullet below). The
+  walk costs roughly 0.1 s per
   2,000 discovered files on an Apple M2 Pro laptop, whatever their size -- the
   directive's own discovery plus a ``stat`` per file -- while parsing them costs tens of
   times more (2,000 200-line C++ files: ~0.1 s of walk against ~9 s of analysis).
@@ -119,6 +113,117 @@ New and Improved
   that was not read again showing the old references. Such a document is now written
   again (not read again). A ``needtable`` in a third document that filters on the field is
   still rewritten only when that document is.
+
+- 🐛 A source file reached through a symbolic link inside the traced directory is analysed
+  once, not once per path to it (its one-line needs used to abort the build with
+  ``duplicate_id``): it is listed under its resolved path, though two spellings of one file
+  on a case-insensitive file system are still two entries.
+
+- 🐛 Two ``src-trace`` directives whose scopes overlap no longer abort the build
+  (``duplicate_id``): the first directive in document order defines a one-line need found
+  by both, the other skips it with a ``codelinks.duplicate_need`` warning naming both
+  documents, and takes it over when the first no longer traces it (in a serial build; with
+  ``-j N`` the other document takes it over only when it is next read). The id is the
+  marker's or, for a one-line style without ``id``, the one Sphinx-Needs generates. A
+  directive moved to another document no longer aborts the next build either. Overlapping
+  directives still analyse the shared files once each
+  (`#2042 <https://github.com/useblocks/sphinx-needs/issues/2042>`__).
+
+- 🐛 A ``git_root`` that does not contain ``src_dir``, and a source file that resolves to
+  outside ``src_dir``, are diagnosed instead of producing ``../`` reference paths or a
+  traceback (`#2062 <https://github.com/useblocks/sphinx-needs/issues/2062>`__).
+
+  A configured ``git_root`` that does not exist, cannot be read, or is neither ``src_dir``
+  nor a directory above it, is ignored with one ``codelinks.git_root`` warning, and the
+  repository root is detected from ``src_dir`` as when none is set: the remote URLs, the
+  ``@need-ids:`` records and the attach all follow the detected root. It used to give
+  records whose ``path`` began with ``../`` (with local URLs), or a ``ValueError``
+  traceback (with remote URLs). ``codelinks analyse`` applies the same rule, warning on
+  stderr, where such a ``git_root`` with a remote used to end it with a ``ValueError``.
+
+  A file that discovery reaches through a symbolic link but whose target lies outside
+  ``src_dir`` -- a file link, or a file below a followed directory link -- is skipped with
+  one ``codelinks.outside_src_dir`` warning naming the link and its target, in a
+  ``src-trace`` directive, a ``:file:`` scope, the scan of a project no directive traces,
+  ``codelinks discover`` and ``codelinks analyse`` alike (the latter's
+  ``marked_content.json`` no longer holds the file's markers). **This changes
+  behaviour:** such a file used to be listed by discovery and analysed, and a build
+  aborted with
+  ``ValueError: … is not in the subpath of …`` as soon as it held a one-line need (URL
+  fields on or off) or, with a URL field on, an ``@need-ids:`` reference; it is now never
+  traced. Widen ``src_dir`` to cover the target, or exclude the link.
+
+- 🐛 A ``src-trace`` directive whose ``:file:`` names no file -- a missing path, or a
+  directory -- warns once at the directive (``codelinks.missing_file``: "src-trace:
+  <target> is not a file below <src_dir>") and the build goes on, where it used to abort
+  (``FileNotFoundError``, or ``IsADirectoryError`` for a directory) -- in a fresh build,
+  or when the file was removed since the last; re-created, the file is traced again by
+  the next build. ubCode errors the directive
+  instead ("src-trace :file: … not found"); codelinks warns for every recoverable
+  configuration problem
+  (`#2069 <https://github.com/useblocks/sphinx-needs/issues/2069>`__).
+
+- 🐛 Malformed one-line markers are now reported in the build, at the source line, as
+  ``codelinks.oneline`` warnings; a build with ``-W`` that has one fails until the marker
+  is fixed or ``suppress_warnings = ["codelinks.oneline"]`` is set. On a one-character
+  start sequence such as the default ``@``, a line without the field separator is not a
+  marker (ubCode's rule), so documentation tags like ``@param`` and ``@brief`` do not
+  warn; an empty marker is not a marker, as in ubCode; a marker Sphinx-Needs refuses (an
+  id ``needs_id_regex`` rejects, say) warns too, instead of stopping the build; and the
+  messages are ubCode's (``1 given fields, minimum is 2``). The never-written warnings
+  file under ``src_trace_cache`` and its reader are gone, a file nothing had written
+  since at least 1.4.0 (:ref:`oneline_invalid`,
+  `#2076 <https://github.com/useblocks/sphinx-needs/issues/2076>`__).
+
+- 🐛 A one-line need whose style has no ``id`` field no longer aborts the build with
+  ``KeyError: 'id'`` when local URLs are on; its source page links back to the generated
+  id, and the page's back-link is a POSIX path on Windows too
+  (`#2082 <https://github.com/useblocks/sphinx-needs/issues/2082>`__).
+
+- 🐛 The source copies and pages are build state: kept up to date by every HTML build
+  whether or not the directive's document is read again, under ``-j N`` too, and by HTML
+  builders only (`#2070 <https://github.com/useblocks/sphinx-needs/issues/2070>`__, and the missing
+  pages of `#2044 <https://github.com/useblocks/sphinx-needs/issues/2044>`__).
+
+  With local URLs, each source file a need is created from or a reference names is copied
+  into the output (``<outdir>/<src_dir name>/<path>``) and paged beside the copy -- the
+  target of every local link. Both were side effects of the analysis, made only by a build
+  that read the directive's document, from a registry that a ``-j N`` worker never handed
+  back: a removed output directory, a second builder sharing the doctrees (``html`` then
+  ``dirhtml``) or a parallel build left dead local links. What to copy and page is now kept
+  in the environment, with the document (or the scanned project) it came from, and every
+  HTML build writes those its output lacks or holds out of date; each page's ``[docs]`` link
+  is the builder's own relative URI, so a ``dirhtml`` page links back correctly too. An
+  unchanged build rewrites no copy or page; a page is written again when its source
+  changed, a document tracing it -- now or before -- was read again, added or removed, or
+  the output lacks it; a copy carries its source's modification time, so a source replaced
+  by an older file is copied again too. A LaTeX build no longer drops source copies into
+  its output; a source removed before the pages are written, or a second source copied to
+  the same place (two projects whose source directories share a name), warns
+  ``codelinks.source_page``. The first build after upgrading reads every document once:
+  an environment from an earlier release holds no page records.
+
+- 🐛 On Sphinx 7.4 with ``show_warning_types = True`` the ``[codelinks.*]`` type of a
+  warning is shown once, not twice
+  (`#2091 <https://github.com/useblocks/sphinx-needs/issues/2091>`__).
+
+  Before Sphinx 8, Sphinx-CodeLinks appends the type to the warnings of its analysis
+  itself, as Sphinx 8 does by default; it also did so when ``show_warning_types`` had
+  Sphinx 7.4 append it, so the line ended in
+  ``[codelinks.outside_src_dir] [codelinks.outside_src_dir]``. It is now appended only
+  where Sphinx does not append it.
+
+- 🔧 Every builder writes an ``.ignore`` file (``*``) at the root of its output and doctree
+  directories, so with ``gitignore = true`` nothing any builder writes is traced --
+  the extension's source copies, Sphinx's ``_downloads/`` copies of a traced source,
+  another builder's whole tree -- wherever the output sits
+  (`#2071 <https://github.com/useblocks/sphinx-needs/issues/2071>`__): two output trees
+  inside ``src_dir`` but outside the documentation source directory
+  (``sphinx-build docs build/html`` beside ``build/dirhtml``) no longer copy each other's
+  copies, one level deeper per build. The directory containing the output and doctree
+  directories is now skipped only for ``gitignore = false`` projects, which read no ignore
+  file -- so with the default, an output directory placed directly inside a traced source
+  directory no longer hides the sources beside it.
 
 - ⬆️ ``typer`` is no longer capped below 0.26.8. The cap protected the documentation build,
   whose ``sphinxcontrib-typer`` imported a ``typer.rich_utils`` name that 0.26.8 removed;
@@ -164,10 +269,7 @@ New and Improved
 
 - 🐛 The ``local-url`` and ``remote-url`` links render under ``sphinx-build -j N``, and each
   project's ``remote-url`` links with that project's ``remote_url_pattern``
-  (`#2039 <https://github.com/useblocks/sphinx-needs/issues/2039>`__). Under ``-j N`` the
-  ``local-url`` link points at a source page that a parallel build does not yet generate
-  (`#2044 <https://github.com/useblocks/sphinx-needs/issues/2044>`__); the ``remote-url``
-  link is complete.
+  (`#2039 <https://github.com/useblocks/sphinx-needs/issues/2039>`__).
 
   The ``src-trace`` directive wrote the two fields' ``needs_string_links`` entries into the
   configuration while it was read. A parallel worker never hands such a write back, so
