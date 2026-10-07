@@ -209,7 +209,7 @@ Fixed
   it is called for and on each candidate target. Such a need gets no links, and a ``-W``
   build no longer fails.
   `#1949 <https://github.com/useblocks/sphinx-needs/issues/1949>`__,
-  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+  `#2117 <https://github.com/useblocks/sphinx-needs/pull/2117>`__
 
 What the move costs, stated rather than left to the CI diff
 ............................................................
