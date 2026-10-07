@@ -997,11 +997,35 @@ def merge_default_configs(_app: Sphinx, config: Config) -> None:
         _NEEDS_CONFIG.add_function(need_common_func)
 
     # Register functions configured by user
-    for needs_func in needs_config._functions:
+    user_functions = needs_config._functions
+    if not isinstance(user_functions, (list, tuple)):
+        log_warning(
+            LOGGER,
+            f"needs_functions is of type {type(user_functions).__name__!r}, "
+            "not a list of callables, and is ignored",
+            "config",
+            None,
+        )
+        # the value is replaced by the default, so that Sphinx's own type check, which
+        # runs later in ``config-inited``, does not report the same value a second time
+        needs_config._functions = []
+        user_functions = []
+    for needs_func in user_functions:
         if not callable(needs_func):
             log_warning(
                 LOGGER,
                 f"needs_functions entry {needs_func!r} is not callable and is ignored",
+                "config",
+                None,
+            )
+            continue
+        if not isinstance(getattr(needs_func, "__name__", None), str):
+            # a function is registered, and called, by its name
+            log_warning(
+                LOGGER,
+                f"needs_functions entry {needs_func!r} has no __name__ and is ignored: "
+                "an entry must be a callable with a __name__; use "
+                "add_dynamic_function(app, func, name=...) for one without",
                 "config",
                 None,
             )

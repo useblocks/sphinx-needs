@@ -118,6 +118,12 @@ inside your **conf.py** file, to add a :py:class:`.DynamicFunction`:
 
    needs_functions = [my_own_function]
 
+A function is registered, and called in a need, by its ``__name__``.
+An entry that is not callable, or has no ``__name__`` (such as a ``functools.partial``),
+is ignored with a ``needs.config`` warning;
+register a callable without a ``__name__`` with :py:func:`~sphinx_needs.api.configuration.add_dynamic_function`,
+giving its ``name``.
+
 .. warning::
 
    Assigning a function to a Sphinx option will deactivate the incremental build feature of Sphinx.
