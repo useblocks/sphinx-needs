@@ -60,6 +60,9 @@ The following functions are available by default.
 .. note::
 
    The parameters ``app``, ``need`` and ``needs`` of the following functions are set automatically.
+   So is ``reads``, the keyword-only parameter of :ref:`copy <copy>`, :ref:`check_linked_values <check_linked_values>`
+   and :ref:`calc_sum <calc_sum>` through which they report the values they read that are computed in the same pass
+   (see :ref:`needs_derive_unresolved`). It is reserved: do not give it in a call (doing so fails the call).
 
 test
 ~~~~
@@ -142,6 +145,59 @@ Incoming links are not available when dynamic functions gets calculated.
 
 That's because a dynamic function can change outgoing links, so that the incoming links of the target need will
 be recalculated. This is automatically done but not until all dynamic functions are resolved.
+
+.. _needs_derive_unresolved:
+
+Reads of a value computed in the same pass
+++++++++++++++++++++++++++++++++++++++++++
+
+.. versionadded:: 9.0.0
+
+All ``[[…]]``, ``<<…>>`` and ``<{…}>`` are resolved in one pass, need by need in the order the needs were read,
+and each result is written into its need as soon as it is computed.
+So a dynamic function or variant condition that reads a field which itself carries a ``[[…]]``, ``<<…>>`` or ``<{…}>``,
+of another need or of its own need, reads either the computed value or the value the field held before the pass
+(its empty value, or its value from before a ``needextend`` set the call),
+depending on that order: on document names, on the documents an incremental build re-reads, and on ``-j``.
+
+Such a read is reported as ``needs.derive_unresolved``, once per reading call, at the reading need:
+
+.. code-block:: text
+
+   index.rst:8: WARNING: dynamic function 'copy' for option 'summary' read 'summary' on need 'CHAIN_B',
+   which carries a dynamic function or variant computed in the same pass:
+   the value read depends on the order the needs are resolved in [needs.derive_unresolved]
+
+A field carries such a value when it contains a ``[[…]]``, ``<<…>>`` or ``<{…}>`` once every ``needextend`` is applied.
+The read is reported whether or not the value happened to be computed already:
+that depends on the build's history, not on the sources,
+so reporting only the reads that saw an unresolved value would make a ``-W`` build pass or fail
+by which file was edited last.
+
+The reads reported are those of the built-in functions and of variant conditions:
+the field :ref:`copy <copy>` copies;
+the value of every need :ref:`calc_sum <calc_sum>` considers, whether or not its ``filter`` keeps the need,
+and, with ``links_only``, the ``links`` of its own need;
+the ``links`` of its own need and the value of each linked need :ref:`check_linked_values <check_linked_values>` reaches
+before it stops, whether or not its ``filter`` keeps the need;
+and the fields of its own need that a variant condition names, up to the first condition that holds.
+Not reported are the fields a ``filter`` argument reads (``current_need`` included),
+the reads your own :ref:`functions <needs_functions>` make, through a built-in they call or otherwise,
+and ``<{…}>``, which reads variant data rather than needs;
+:ref:`links_from_content <links_content>` reads the document, not fields.
+The :ref:`ndf` role runs after the pass, when every value is final, so nothing it reads is reported.
+A ``filter`` that reads a computed field can itself decide, by the order, which needs are read:
+a ``copy`` with a ``filter``, or a ``check_linked_values`` whose check stops at a target the filter kept,
+may therefore be reported in one build and not in another,
+and which needs a message names can vary after the first computed value a call reads.
+
+To avoid such a read, read the authored value the computed one is derived from instead
+(``[[copy("title", "CHAIN_B")]]`` rather than a copy of a field ``CHAIN_B`` computes from its title).
+To silence the warning:
+
+.. code-block:: python
+
+   suppress_warnings = ["needs.derive_unresolved"]
 
 .. _needs_variant_support:
 

@@ -49,6 +49,21 @@ Improvements
   The undocumented warning ``if`` gives for a condition whose result is not a bool is
   now listed in its documentation.
 
+- ✨ A ``[[…]]`` or ``<<…>>`` that reads a value another one computes in the same pass
+  is reported as ``needs.derive_unresolved`` **(changed output)** (:issue:`2064`, :pr:`2080`)
+
+  Dynamic functions and variants are resolved in one pass, need by need, so a
+  :ref:`copy <copy>`, :ref:`calc_sum <calc_sum>`, :ref:`check_linked_values <check_linked_values>`
+  or variant condition that reads a field which itself carries a ``[[…]]``, ``<<…>>`` or ``<{…}>``
+  sees the computed value or the unresolved one depending on the order the needs were read in,
+  which changes with document names, with incremental builds and with ``-j``.
+  Each such read is now a warning, once per reading call and at the reading need,
+  whether or not the value happened to be computed already (see :ref:`needs_derive_unresolved`).
+  It is a new warning, so a ``-W`` build with such a read fails until the read is changed
+  or ``suppress_warnings = ["needs.derive_unresolved"]`` is set.
+  It gives notice ahead of a later release that resolves these values in dependency order
+  (:issue:`2030`); `ubCode`_ reports the same reads.
+
 - ✨ ``needextend`` gains ``:extend_priority:`` (default 500, lower applied first), and a
   filter whose matches depend on earlier ``needextend`` directives is reported as
   ``needs.needextend_match_order`` **(changed output)** (:issue:`1658`, :issue:`2064`, :pr:`2083`)
