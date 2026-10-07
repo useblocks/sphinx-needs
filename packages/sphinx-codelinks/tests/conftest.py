@@ -108,10 +108,10 @@ def snapshot_extraction(snapshot):
     """Snapshot fixture for the normalized extraction output.
 
     Two JSON files per case, matching production's two independent
-    artefacts: the default (unnamed) snapshot holds the marked-content list
+    outputs: the default (unnamed) snapshot holds the marked-content list
     (``SourceAnalyse.dump_marked_content``'s payload); ``snapshot(name=...)``
     is used for a second, separately named snapshot holding the warnings
-    list (``AnalyseProjects.dump_warnings``'s payload). See
+    list (``SourceAnalyse.oneline_warnings``' records). See
     ``tests/test_extraction_fixtures.py`` for the normalization contract.
     """
     return snapshot.with_defaults(extension_class=ExtractionSnapshotExtension)

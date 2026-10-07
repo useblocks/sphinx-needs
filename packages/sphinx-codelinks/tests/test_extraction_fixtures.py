@@ -65,7 +65,7 @@ def _build_oneline_style(config) -> OneLineCommentStyle:
 # Normalization contract
 #
 # The snapshots mirror production's real output, not a projection invented
-# for the test. Production writes two independent artefacts, and so does
+# for the test. Production produces two independent outputs, and so does
 # this harness — as two separate snapshot assertions rather than one merged
 # object (see the module docstring on ``snapshot_extraction`` usage in the
 # test function below for why):
@@ -80,13 +80,14 @@ def _build_oneline_style(config) -> OneLineCommentStyle:
 #     ``null``), and the real ``type`` discriminator value (``"need"`` /
 #     ``"need-id-refs"`` / ``"rst"``). See ``_build_marked_content``.
 #
-#   - warnings are a separate artefact, matching
-#     ``AnalyseProjects.update_warnings()``/``dump_warnings()``: a flat list
-#     of ``AnalyseWarning.__dict__`` records (``file_path``, ``lineno``,
-#     ``msg``, ``type``, ``sub_type``). Production never folds these into the
-#     data stream: ``dump_marked_content`` and ``dump_warnings`` are two
-#     independent files, and CLI users are additionally handed the same
-#     warnings via ``logger.warning`` (``cmd.py``). See ``_build_warnings``.
+#   - warnings are a separate output: a flat list of ``AnalyseWarning.__dict__``
+#     records (``file_path``, ``lineno``, ``msg``, ``type``, ``sub_type``),
+#     exactly what ``analyse.oneline_warnings`` holds. Production never folds
+#     these into the data stream: ``dump_marked_content`` writes only the
+#     marked content, and the warnings reach users separately — the
+#     ``src-trace`` directive reports each as a ``codelinks.oneline`` build
+#     warning, and ``codelinks analyse`` prints them via ``logger.warning``
+#     (``cmd.py``). See ``_build_warnings``.
 #
 # Two deviations from the real thing, both deliberate:
 #
@@ -190,12 +191,12 @@ def _build_marked_content(analyse: SourceAnalyse, tmp_path: Path) -> list[dict]:
 
 
 def _build_warnings(analyse: SourceAnalyse, tmp_path: Path) -> list[dict]:
-    """Reproduce ``AnalyseProjects.dump_warnings()``'s payload for this case.
+    """Reproduce the warnings production reports for this case.
 
-    ``update_warnings()`` builds its list the same way: ``__dict__`` of every
-    ``AnalyseWarning`` collected during the run. The harness runs a single
-    ``SourceAnalyse`` rather than a multi-project ``AnalyseProjects``, so
-    ``analyse.oneline_warnings`` is the equivalent source list for one case.
+    ``analyse.oneline_warnings`` is the list the ``src-trace`` directive
+    reports from and ``codelinks analyse`` prints: each ``AnalyseWarning`` is
+    snapshotted as its ``__dict__``, with ``file_path`` made relative to
+    ``tmp_path``.
     """
     records = []
     for warning in analyse.oneline_warnings:
@@ -281,8 +282,8 @@ def test_extraction_fixture(case: dict, tmp_path: Path, snapshot_extraction) -> 
     analyse.git_commit_rev = None
     analyse.run()
 
-    # Two independent snapshots per case, mirroring the two independent files
-    # production writes (see the normalization-contract comment above):
+    # Two independent snapshots per case, mirroring the two independent outputs
+    # production produces (see the normalization-contract comment above):
     # marked content under the default (unnamed) snapshot, warnings under a
     # separately named one.
     assert snapshot_extraction == _build_marked_content(analyse, tmp_path)

@@ -53,8 +53,8 @@ Each case is run through the extractor and its output is compared to **two**
 committed snapshots under `tests/__snapshots__/test_extraction_fixtures/`: one
 for the marked content, one for the warnings. These are not a reduced
 projection invented for the test — each is the real payload a production run
-writes to its own file, taken verbatim (only a temp-path portability rewrite
-and one additive field applied; see below):
+produces, taken verbatim (only a temp-path portability rewrite and one
+additive field applied; see below):
 
 - **marked content** (the default, unnamed snapshot, `…json`) is exactly
   `SourceAnalyse.dump_marked_content`'s payload: a flat list, in
@@ -63,13 +63,13 @@ and one additive field applied; see below):
   `OneLineNeed`'s nested `need` dict, `NeedIdRefs`'s `need_ids` list +
   `marker`, or `MarkedRst`'s `rst` text.
 - **warnings** (a second snapshot, named `"warnings"`, saved as
-  `…[warnings].json`) is exactly `AnalyseProjects.dump_warnings`'s payload: a
-  flat list of `AnalyseWarning.__dict__` records. Production never folds
-  warnings into the data stream — `dump_marked_content` and `dump_warnings`
-  are two independent files (data vs. warnings, stdout vs. stderr), and CLI
-  users additionally get the same warnings via `logger.warning`
-  (`cmd.py`) — so the test keeps them as two independent snapshots instead of
-  one merged object.
+  `…[warnings].json`) is a flat list of `AnalyseWarning.__dict__` records,
+  exactly what `SourceAnalyse.oneline_warnings` holds. Production never folds
+  warnings into the data stream — `dump_marked_content` writes only the marked
+  content, and the warnings reach users separately: the `src-trace` directive
+  reports each as a `codelinks.oneline` build warning, and `codelinks analyse`
+  prints them via `logger.warning` (`cmd.py`) — so the test keeps them as two
+  independent snapshots instead of one merged object.
 
 A one-line need, with its need-ref and warning counterparts alongside for
 reference (a single case never emits all three at once — shown together here
@@ -103,7 +103,7 @@ and the matching `warnings` snapshot for a case that emits one:
 
 ```json
 [
-  {"file_path": "case.cpp", "lineno": 1, "msg": "5 given fields. They shall be less than 4", "type": "need", "sub_type": "too_many_fields"}
+  {"file_path": "case.cpp", "lineno": 1, "msg": "5 given fields, maximum is 4", "type": "need", "sub_type": "too_many_fields"}
 ]
 ```
 
@@ -175,7 +175,7 @@ value and break the comparison. The harness (`tests/test_extraction_fixtures.py`
 and the repository make three guarantees so one committed snapshot is valid
 on Linux, macOS and Windows alike:
 
-- **LF-pinned inputs.** `.gitattributes` (repository root) forces
+- **LF-pinned inputs.** `packages/sphinx-codelinks/.gitattributes` forces
   `tests/data/**` and `tests/__snapshots__/**` to check out with LF line
   endings regardless of the platform or the user's `core.autocrlf` (the
   Git-for-Windows default, `true`, rewrites LF to CRLF on checkout
