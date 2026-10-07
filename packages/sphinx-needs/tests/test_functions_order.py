@@ -194,6 +194,9 @@ EVERY_STATUS = 'status == "open"'
             },
         ),
         ("out", "[[copy('summary', need.unknown)]]", {}),
+        # a selected value that is no string (here a list, a boolean) fails the call
+        ("out", "[[copy('summary', need.links)]]", {}),
+        ("out", "[[copy('summary', filter=need.flag)]]", {}),
         # copy(filter=): the lowest-id match, when every name the filter reads is final
         (
             "out",
