@@ -193,7 +193,8 @@ def test_configure_sphinx_follows_show_warning_types(
 ):
     """``configure_sphinx`` is told the build's ``show_warning_types``: with it on,
     Sphinx renders the suffix on every version, so the backend appends none; with it
-    off the backend appends it before Sphinx 8 only (8+ renders it by default)."""
+    off the backend appends it before Sphinx 8 only (on 8+ with the option off nothing
+    is rendered)."""
     logmod.configure_sphinx(show_warning_types=show_warning_types)
     logmod.get_logger("sphinx_codelinks.x").warning("a problem", subtype="git_root")
 

@@ -28,8 +28,9 @@ class _WarningTypes:
     twice (#2091). The helpers have no ``app``, so :func:`configure_warning_types`
     records the build's value at the top of sphinx-needs' ``setup()`` -- where Sphinx
     has read ``conf.py`` and the ``-D`` overrides, before any later ``setup()``
-    (conf.py's included) can call the public API -- and again at ``config-inited``,
-    for every build in the process.
+    (conf.py's included) can call the public API -- and again at ``config-inited``
+    (priority 0, before the first handler that warns), because a ``setup()`` that runs
+    after sphinx-needs' may still change the option.
     """
 
     leave_to_sphinx: bool = version_info >= (8,)

@@ -373,9 +373,9 @@ def setup(app: Sphinx) -> dict[str, Any]:
     # EVENTS
     ########################################################################
     # Make connections to events
-    # first of all, again for this build: the warning helpers learn whether to leave
-    # the type suffix to Sphinx, before any handler below (the earliest, at 10, warns)
-    # can warn
+    # re-read at config-inited (priority 0, before the first handler that warns --
+    # load_config_from_toml, at 10): a setup() that runs after sphinx-needs' (conf.py's
+    # included) may still change show_warning_types after the read in setup() above
     app.connect("config-inited", configure_warning_types, priority=0)
     app.connect("config-inited", load_config_from_toml, priority=10)  # runs early
     # runs directly after the toml config is loaded, which can set the variant data,
