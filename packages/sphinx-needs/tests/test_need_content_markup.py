@@ -956,3 +956,63 @@ def test_rendered_content_is_parsed_in_its_markup_at_the_need(test_app: SphinxTe
     content = need_content_html(app, "index.html", "SPEC_JINJA")
     assert "Rendered 42 with a" in content
     assert '<a class="reference external" href="https://example.com">' in content
+
+
+IMAGE_INDEX = [
+    "Images",
+    "======",
+    "",
+    ".. toctree::",
+    "",
+    "   images_md",
+    "",
+    *rst_need(
+        "SPEC_IMG_MR",
+        ["![an image](pic.png)", "", "![an image](missing_mr.png)"],
+        {"markup": ".md", "source": "src/i.c", "first-line": 20},
+    ),
+]
+IMAGE_MD = [
+    "# Images (MyST)",
+    "",
+    *md_need(
+        "SPEC_IMG_RM",
+        [".. image:: pic.png", "", ".. image:: missing_rm.png"],
+        {"markup": ".rst", "source": "src/k.c", "first-line": 30},
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF),
+                (Path("needcontent_ext.py"), DRIVER),
+                (Path("index.rst"), "\n".join(IMAGE_INDEX)),
+                (Path("images_md.md"), "\n".join(IMAGE_MD)),
+                # next to the pages, not under ``src/``
+                (Path("pic.png"), "not read"),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_an_image_in_content_resolves_against_the_page(test_app: SphinxTestApp):
+    """A relative image path resolves against the page, not the content's file.
+
+    Not refused in this version (documented); the warning for a missing image still
+    names the content's file and line, through the nodes the content created.
+    """
+    app = test_app
+    app.build()
+    assert sorted(build_warnings(app)) == [
+        f"<srcdir>/{src('i.c')}:22: WARNING: image file not readable: missing_mr.png "
+        "[image.not_readable]",
+        f"<srcdir>/{src('k.c')}:32: WARNING: image file not readable: missing_rm.png "
+        "[image.not_readable]",
+    ]
+    assert '<img alt="an image" src="_images/pic.png" />' in html(app, "index.html")
+    assert 'src="_images/pic.png"' in html(app, "images_md.html")
