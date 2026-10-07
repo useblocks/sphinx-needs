@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791342784749,
+  "lastUpdate": 1791364955298,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -22896,6 +22896,42 @@ window.BENCHMARK_DATA = {
             "value": 44.68535772999999,
             "unit": "s",
             "extra": "Commit: 714123a30934ade8f3937710fa229da2b6fc3084\nBranch: master\nTime: 2026-10-07T05:11:49+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "01540a55c86e78c1e8cd27c6001b31e7195cf90a",
+          "message": "📚 Pull requests are written by people: the contributing policy on automatically generated PRs, a root CONTRIBUTING.md and a pull request template (#2110)\n\n## What\n\n- A paragraph on both contributing pages (sphinx-needs and\nsphinx-codelinks docs): pull requests are written by people. One\ngenerated automatically from an issue, by an account that has not read\nthe code, run the tests or taken part in the discussion, is closed\nwithout review, whatever its content; AI-assisted work by a contributor\nwho has read and tested the change stays welcome.\n- A root `CONTRIBUTING.md`, which GitHub links from the new-issue and\nnew-pull-request pages: where the full guide is, how to file an issue,\nthe policy above, and what every pull request needs.\n- `.github/PULL_REQUEST_TEMPLATE.md`: the What / Why / Tests sections a\nmaintainer reads, and a checklist whose first item is the contributor's\nstatement that the change is their own.\n\n## Why\n\nSince 2026-10-05, five accounts have opened ten pull requests here\nwithin hours of an issue being filed, each generated from the issue text\nalone, and the same accounts do the same across dozens of unrelated\nprojects. Such a pull request cannot be told from a good one without the\nfull review a change of our own gets, its author knows nothing of where\nthe change sits in our plans, and every one of them ran the full CI\nmatrix. The policy makes the stance explicit where a contributor sees\nit; the repository setting that now requires a maintainer's approval\nbefore CI runs for an outside pull request is the other half.\n\n## Tests\n\nDocs only. `poe lint`, `poe docs-needs` and `poe docs-codelinks` pass\nwith no warnings; both contributing pages render the paragraph.",
+          "timestamp": "2026-10-07T11:21:10+02:00",
+          "tree_id": "79d87e870a8ee2095baedf035acf704e017f0fb4",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/01540a55c86e78c1e8cd27c6001b31e7195cf90a"
+        },
+        "date": 1791364945560,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.10607971599999644,
+            "unit": "s",
+            "extra": "Commit: 01540a55c86e78c1e8cd27c6001b31e7195cf90a\nBranch: master\nTime: 2026-10-07T11:21:10+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 51.944570665,
+            "unit": "s",
+            "extra": "Commit: 01540a55c86e78c1e8cd27c6001b31e7195cf90a\nBranch: master\nTime: 2026-10-07T11:21:10+02:00"
           }
         ]
       }
