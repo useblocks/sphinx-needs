@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791378886209,
+  "lastUpdate": 1791379916133,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -23256,6 +23256,42 @@ window.BENCHMARK_DATA = {
             "value": 57.05803864400001,
             "unit": "s",
             "extra": "Commit: f5a58c9772bc5f8aca68d2591852a317ef7f648c\nBranch: master\nTime: 2026-10-07T15:13:17+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b5ee38e9b7e207376684b0bcf2d3d8d84dc88671",
+          "message": "🐛 ub-test-reports: link properties mapped onto one link field merge instead of overwriting (#2119)\n\n**What**\n\nIn the `test-reports build needs` converter, several `--link-property`\nflags (or `[test_reports.build.needs] link_properties` entries) mapping\ndifferent XML properties onto the same link field now merge: the field\nlists the values of every mapped property, in mapping order, each id\nonce at its first appearance. A mapped field is still written (empty)\nfor a case that carries none of its properties. One sentence in\n`docs/cli.rst` says so.\n\n**Why**\n\n`build_need` assigned `need[link_field]` once per mapped property, so\nthe last mapping won: with `--link-property PartiallyVerifies=links\n--link-property Requirement=links`, the `Addition` case of\n`gtest_data.xml` (which carries only `PartiallyVerifies`) came out with\n`links: []`. The Sphinx directive route (`tr_property_link_types`)\nalready merges, by appending to `:links:` — sphinx-needs then\nde-duplicates and sorts every link list it reads, so an imported\nconverter need shows the same set either way; only a raw reader of the\nconverter's `needs.json` sees the mapping order and the de-duplication\n(a value repeated within one property is now written once).\n\n**ubCode parity**\n\nubCode's converter mirrors this one byte for byte and reproduces the\noverwrite (`rust/ubc_test_reports/src/export.rs:176-183`);\nuseblocks/ubcode#3902 follows this fix, refreshing the crate's converter\ngoldens from the oracle. Its directive route already merges.\n\n**Tests**\n\n`tests/test_cli_convert.py::TestLinkPropertiesOntoOneField`: the issue's\ncommand on `gtest_data.xml`, a case carrying both properties in both\nmapping orders, a value repeated within one property, and two properties\nonto two different fields as the control; `tests/test_cli_config.py`\nadds the TOML twin through the config loader. Red on master except the\ncontrol.\n\nCloses #2058",
+          "timestamp": "2026-10-07T15:30:13+02:00",
+          "tree_id": "a8cd124bff5b19efdc0816e47c621964592e7d9a",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/b5ee38e9b7e207376684b0bcf2d3d8d84dc88671"
+        },
+        "date": 1791379907056,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.11379434799999899,
+            "unit": "s",
+            "extra": "Commit: b5ee38e9b7e207376684b0bcf2d3d8d84dc88671\nBranch: master\nTime: 2026-10-07T15:30:13+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 57.437533413,
+            "unit": "s",
+            "extra": "Commit: b5ee38e9b7e207376684b0bcf2d3d8d84dc88671\nBranch: master\nTime: 2026-10-07T15:30:13+02:00"
           }
         ]
       }
