@@ -27,13 +27,13 @@ class CommentType(str, Enum):  # noqa: UP042  # StrEnum changes str(member), whi
     cpp = "cpp"
     cs = "cs"
     yaml = "yaml"
-    # @Support Rust style comments, IMPL_RUST_1, impl, [FE_RUST];
+    # @Support Rust style comments, IMPL_RUST_1, impl, [FE_RUST]
     rust = "rust"
-    # @Support Go style comments, IMPL_GO_1, impl, [FE_GO];
+    # @Support Go style comments, IMPL_GO_1, impl, [FE_GO]
     go = "go"
-    # @Support JSONC style comments, IMPL_JSONC_1, impl, [FE_JSONC];
+    # @Support JSONC style comments, IMPL_JSONC_1, impl, [FE_JSONC]
     jsonc = "jsonc"
-    # @Support Bash style comments, IMPL_BASH_1, impl, [FE_BASH];
+    # @Support Bash style comments, IMPL_BASH_1, impl, [FE_BASH]
     bash = "bash"
 
 

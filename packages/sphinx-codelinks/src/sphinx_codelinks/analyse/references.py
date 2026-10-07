@@ -134,7 +134,9 @@ def _relative_posix(filepath: Path, root: Path) -> str:
             return candidate.relative_to(base).as_posix()
         except ValueError:
             continue
-    # a file reached through a symlink out of the root: still relative, never absolute
+    # a file outside the root: still relative, never absolute. A build never gets here
+    # since #2062 -- discovery lists no file outside ``src_dir``, and every root is
+    # ``src_dir`` or contains it -- but such a ``../`` path is what ``from_dict`` refuses
     return Path(os.path.relpath(filepath.resolve(), root.resolve())).as_posix()
 
 

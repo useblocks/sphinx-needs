@@ -28,7 +28,7 @@ SCOPE_NODE_TYPES = {
     # @C and C++ Scope Node Types, IMPL_C_2, impl, [FE_C_SUPPORT, FE_CPP]
     CommentType.cpp: {"function_definition", "class_definition"},
     CommentType.cs: {"method_declaration", "class_declaration", "property_declaration"},
-    # @Rust Scope Node Types, IMPL_RUST_2, impl, [FE_RUST];
+    # @Rust Scope Node Types, IMPL_RUST_2, impl, [FE_RUST]
     CommentType.rust: {
         "function_item",
         "struct_item",
