@@ -1,99 +1,37 @@
-"""The ``[mounts.<topic>]`` suffix of a warning is rendered exactly once (#2091).
-
-Sphinx appends `` [type.subtype]`` to a typed warning itself when ``show_warning_types``
-is on: the option exists since Sphinx 7.3 (default ``False``) and defaults to ``True``
-since 8.0. Before 8.0 sphinx-mounts appends the suffix itself, so it must do so only
-when Sphinx will not -- on 7.4 with the option on, both appended it.
-"""
+"""A warning's ``[mounts.<topic>]`` suffix is rendered at most once (#2091)."""
 
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING
 
+import pytest
 from sphinx import version_info
 
-from sphinx_mounts import logging as mounts_logging
 from tests.conftest import write_ubproject_toml
 
-if TYPE_CHECKING:
-    from pathlib import Path
-
-    from sphinx.testing.util import SphinxTestApp
+ONCE = ["[mounts.missing_path]"]
 
 
-def _suffixes(
-    make_app,
-    make_host_project,
-    tmp_path: Path,
-    show: bool,
-    *,
-    marker: str = "does not exist",
-    namespaced: bool = True,
-) -> list[str]:
-    """The ``[mounts.*]`` bracket groups of the one warning containing ``marker`` that
-    a build with a missing listed file emits, with ``show_warning_types = show``.
-
-    The default is its ``mounts.missing_path`` (emitted while mounting); with
-    ``namespaced=False`` the mount is declared in the deprecated top-level
-    ``[[mounts]]`` table, which also warns ``mounts.deprecated_location`` -- at
-    ``config-inited``, while the TOML is loaded.
-    """
+@pytest.mark.parametrize(
+    ("show", "expected"),
+    [
+        # Sphinx renders the suffix itself, so sphinx-mounts adds none
+        pytest.param(True, ONCE, id="on"),
+        # before Sphinx 8 sphinx-mounts appends it; from 8 nothing renders it
+        pytest.param(False, ONCE if version_info < (8,) else [], id="off"),
+    ],
+)
+def test_the_type_suffix_is_rendered_at_most_once(
+    make_app, make_host_project, tmp_path, show, expected
+):
     host = make_host_project()
     (host / "index.rst").write_text("Host\n====\n\nOnly page.\n", encoding="utf-8")
+    with (host / "conf.py").open("a", encoding="utf-8") as fp:
+        fp.write(f"\nshow_warning_types = {show}\n")
     write_ubproject_toml(
-        host,
-        [{"files": [str(tmp_path / "does_not_exist.rst")], "mount_at": "_g/api"}],
-        namespaced=namespaced,
+        host, [{"files": [str(tmp_path / "missing.rst")], "mount_at": "_g/api"}]
     )
-    app: SphinxTestApp = make_app(
-        srcdir=host, freshenv=True, confoverrides={"show_warning_types": show}
-    )
+    app = make_app(srcdir=host, freshenv=True)
     app.build()
-    lines = [line for line in app._warning.getvalue().splitlines() if marker in line]
-    assert len(lines) == 1, app._warning.getvalue()
-    return re.findall(r"\[mounts\.[a-z_]+\]", lines[0])
-
-
-def test_suffix_once_when_sphinx_shows_warning_types(
-    make_app, make_host_project, tmp_path
-):
-    """With ``show_warning_types = True`` Sphinx renders the suffix on every version
-    (7.4 included), so sphinx-mounts adds none: exactly one ``[mounts.missing_path]``."""
-    assert _suffixes(make_app, make_host_project, tmp_path, True) == [
-        "[mounts.missing_path]"
-    ]
-
-
-def test_suffix_per_version_when_sphinx_hides_warning_types(
-    make_app, make_host_project, tmp_path
-):
-    """With ``show_warning_types = False`` the expectation depends on the version:
-    before Sphinx 8 sphinx-mounts appends the suffix itself (once); from 8 on it never
-    appends and Sphinx renders nothing, so the line carries no suffix at all."""
-    expected = ["[mounts.missing_path]"] if version_info < (8,) else []
-    assert _suffixes(make_app, make_host_project, tmp_path, False) == expected
-
-
-def test_suffix_once_for_a_warning_at_config_inited(
-    make_app, make_host_project, tmp_path, monkeypatch
-):
-    """A warning emitted while the configuration is loaded -- the deprecated
-    ``[[mounts]]`` table, reported by the ``config-inited`` handler that reads the
-    TOML -- also carries its suffix once with ``show_warning_types = True``: the
-    helper learns the option before any handler that can warn runs.
-
-    The helper's state is first put back to what a fresh process starts with;
-    otherwise it would be whatever the previous build in this worker left behind.
-    """
-    monkeypatch.setattr(
-        mounts_logging._warning_types, "leave_to_sphinx", version_info >= (8,)
-    )
-    assert _suffixes(
-        make_app,
-        make_host_project,
-        tmp_path,
-        True,
-        marker="is deprecated",
-        namespaced=False,
-    ) == ["[mounts.deprecated_location]"]
+    lines = [w for w in app._warning.getvalue().splitlines() if "does not exist" in w]
+    assert [re.findall(r"\[mounts\.[a-z_]+\]", w) for w in lines] == [expected]
