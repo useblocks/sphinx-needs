@@ -659,7 +659,8 @@ def add_need(
         written in, and the 1-based line of the first content line in it. Every
         diagnostic raised while parsing the content, and every node created from it,
         then names ``path`` and the line each content line sits on
-        (``first_line + i``). Sphinx prints node-based locations as absolute paths, so
+        (``first_line + i``); the lines are the ``\n``-separated lines of the text,
+        a ``\r`` ending one ignored. Sphinx prints node-based locations as absolute paths, so
         pass an absolute ``path``. Only meaningful with ``content_markup``; ``None``
         anchors the content in the document the need is created in, as before: at
         ``lineno_content``, else ``lineno``, read as lines of the PARSER's input, as a
@@ -968,7 +969,15 @@ def _parse_declared_content(
     host_source: str,
 ) -> None:
     """Parse a need's content in the markup given to ``add_need(content_markup=...)``."""
-    lines = list(content) if isinstance(content, StringList) else content.splitlines()
+    # a file's lines are what ``\n`` separates: not ``str.splitlines``, which also
+    # breaks on a form feed and the like; and a ``\r`` ending a line (CRLF text, or
+    # lines split from it on ``\n``) is not part of it
+    lines = [
+        line.removesuffix("\r")
+        for line in (
+            content if isinstance(content, StringList) else content.split("\n")
+        )
+    ]
     if data["jinja_content"] or data["template"]:
         # rendered text exists in no file: anchor it at the need's own line, as the
         # pre/post template content is
