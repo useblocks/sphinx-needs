@@ -23,11 +23,12 @@ import myst_parser
 import pytest
 from docutils import nodes
 from sphinx.testing.util import SphinxTestApp
+from sphinx.util.parallel import parallel_available
 
 from sphinx_needs.api import get_needs_view
 from sphinx_needs.exceptions import NeedsApiConfigWarning, NeedsConfigException
 from sphinx_needs_testkit import build_warnings
-from tests.util import needs_by_id, serial_and_parallel
+from tests.util import needs_by_id
 
 MYST_MAJOR = int(myst_parser.__version__.split(".")[0])
 """myst-parser 5 logs its own warnings at ``(env.docname, line)``; 4 at
@@ -288,8 +289,8 @@ CELLS = {
     # cell: (host page, content markup, content file, first line)
     "rr": ("index.rst", ".rst", "a.c", 100),
     "mr": ("index.rst", ".md", "b.c", 200),
-    "rm": ("host_md.md", ".rst", "c.c", 300),
-    "mm": ("host_md.md", ".md", "d.c", 400),
+    "rm": ("a_host_md.md", ".rst", "c.c", 300),
+    "mm": ("a_host_md.md", ".md", "d.c", 400),
 }
 """The four cells: RST/MyST content in an RST page, RST/MyST content in a MyST page."""
 
@@ -306,7 +307,7 @@ def four_cell_files() -> tuple[list[tuple[Path, str]], dict[str, int]]:
         "",
         ".. toctree::",
         "",
-        "   host_md",
+        "   a_host_md",
         "",
         ".. _hostlabel:",
         "",
@@ -346,7 +347,7 @@ def four_cell_files() -> tuple[list[tuple[Path, str]], dict[str, int]]:
         (Path("conf.py"), CONF),
         (Path("needcontent_ext.py"), DRIVER),
         (Path("index.rst"), "\n".join(index)),
-        (Path("host_md.md"), "\n".join(host_md)),
+        (Path("a_host_md.md"), "\n".join(host_md)),
     ]
     return files, linenos
 
@@ -413,8 +414,31 @@ def need_content_html(app: SphinxTestApp, page: str, need_id: str) -> str:
     return text[start : text.index("</td>", start)]
 
 
+SPLIT_PADDING = [
+    (Path(f"b_pad_{n}.rst"), f":orphan:\n\nPad {n}\n=====\n") for n in range(4)
+]
+"""``-j 2`` reads the sorted documents in two chunks (``sphinx.util.parallel.make_chunks``):
+``a_host_md, b_pad_0, b_pad_1`` and ``b_pad_2, b_pad_3, index``, so the two pages with
+content are read by different workers, and each resolves the other's labels."""
+
+
 @pytest.mark.parametrize(
-    "test_app", serial_and_parallel(FOUR_CELL_FILES), indirect=True
+    "test_app",
+    [
+        pytest.param({"buildername": "html", "files": FOUR_CELL_FILES}, id="serial"),
+        pytest.param(
+            {
+                "buildername": "html",
+                "files": [*FOUR_CELL_FILES, *SPLIT_PADDING],
+                "parallel": 2,
+            },
+            id="j2",
+            marks=pytest.mark.skipif(
+                not parallel_available, reason="Parallel execution not supported"
+            ),
+        ),
+    ],
+    indirect=True,
 )
 def test_content_is_parsed_in_its_markup_with_diagnostics_at_its_source(
     test_app: SphinxTestApp,
@@ -454,7 +478,10 @@ def test_content_is_parsed_in_its_markup_with_diagnostics_at_its_source(
         # (a) parsed by the declared parser: the other one renders these literally
         assert "Some <em>emphasis</em>" in content, cell
         assert '<div class="admonition note">' in content, cell
-        # (d) a role to a page need and a reference to a page label
+        # (d) a role to a page need and a reference to a page label; ``{ref}`` and
+        # ``{need}`` work in MyST content in both pages. A ``[text](#anchor)`` link does
+        # NOT in a reStructuredText page (myst-parser's ``ResolveAnchorIds`` transform runs
+        # only on documents myst-parser reads): a documented gap of this version
         assert f'href="{index}#REQ_HOST"' in content, cell
         assert f'href="{index}#hostlabel"' in content, cell
         if markup == ".md":
@@ -466,7 +493,7 @@ def test_content_is_parsed_in_its_markup_with_diagnostics_at_its_source(
             assert "[ref link]" not in content
 
     # (e) a label defined in a body resolves from its page and from the other page
-    for page in ("index.html", "host_md.html"):
+    for page in ("index.html", "a_host_md.html"):
         text = html(app, page)
         for cell, (host, _, _, _) in CELLS.items():
             defined_on = Path(host).with_suffix(".html").name
@@ -911,7 +938,7 @@ def test_an_incremental_build_reports_the_same_locations(test_app: SphinxTestApp
     needs = needs_by_id(app)
 
     later = time.time() + 10
-    os.utime(Path(app.srcdir, "host_md.md"), (later, later))
+    os.utime(Path(app.srcdir, "a_host_md.md"), (later, later))
     app.build()
     second = build_warnings(app)[len(first) :]
 
