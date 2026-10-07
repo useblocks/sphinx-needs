@@ -95,7 +95,7 @@ Improvements
 Breaking changes
 ................
 
-- ‼️ needextend filters are evaluated against the needs as written **(changed output)**
+- ‼️ ``needextend`` filters are evaluated against the needs as written **(changed output)**
   (:issue:`1658`, :issue:`2064`, :pr:`2083`, :pr:`NNNN`)
 
   Every :ref:`needextend` filter is evaluated against the needs as written,
