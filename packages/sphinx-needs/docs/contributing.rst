@@ -23,6 +23,15 @@ Your PR should conform with the following rules:
 * Update of ``docs/changelog.rst``.
 * If this is your first PR, feel free to add your name in the ``AUTHORS`` file.
 
+**Pull requests are written by people.** A pull request that was generated automatically
+from an issue -- opened by an account that has not read the code, run the tests or taken
+part in the discussion, typically within hours of the issue being filed -- is closed without
+review, whatever its content. We cannot tell a good one from a bad one without the full review
+a change of our own would get, and its author knows nothing of ubCode, the sibling tools in
+this repository or where the change sits in our plans. Using an AI assistant for your own
+work is fine: you have read the change, you have tested it, and you answer for it. Say so in
+the pull request template.
+
 Installing Dependencies
 -----------------------
 
