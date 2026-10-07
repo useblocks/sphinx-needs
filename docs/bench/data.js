@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791340450128,
+  "lastUpdate": 1791342784749,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -22860,6 +22860,42 @@ window.BENCHMARK_DATA = {
             "value": 57.56241696500001,
             "unit": "s",
             "extra": "Commit: ccf3ff620c4ab53f62544513c355922cf8109a84\nBranch: master\nTime: 2026-10-07T04:32:44+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "714123a30934ade8f3937710fa229da2b6fc3084",
+          "message": "🐛 sphinx-needs: under -j N, a need id defined in two workers renders its card once, on the document that kept it (#2106)\n\n## What\n\n- A `Need` node now carries the docname of the need it renders\n(`node[\"docname\"]`, set in `_create_need_node`). `format_need_nodes`\ndrops a node whose need is recorded on a different document, before the\n`hide` branch, with no new warning (the merge already warned\n`needs.duplicate_id`). The node's tag alone decides, so a kept need\ncreated with `add_need(…, docname=None)` still drops the other\ndocument's copy. A node without the tag (a doctree pickled before this\nchange) renders as before.\n- `merge_data` no longer lets a worker's copy of a need node replace the\nnode of an id the environment already holds, so `needextract` copies the\ncontent of the need that was kept.\n- Changelog entry under Bug fixes.\n\n## Why\n\nSerially, a second directive with an existing id is refused\n(`needs.create_need`) and returns no node. Under `-j N`, two documents\nread by different workers each create the need; the merge keeps the\nfirst one merged and warns `needs.duplicate_id` about the other, but the\nlosing document's doctree still held its node, and `format_need_nodes`\nrendered every `Need` node from `needs[id]`: the losing page showed a\ncard with the kept need's title and fields over the dropped directive's\ncontent, and the page carried a second `id=\"<ID>\"`. Reproduced 3/3 with\nplain `req` directives (`index` and `page_b`, read in chunks `index,\npad_0, pad_1 | pad_2, pad_3, page_b`). Separately, the merge's node\nregistry was a plain `dict.update`, so a `needextract` of the id copied\nthe loser's content (5/5).\n\nThe decision reads the node's own tag, not the document name\n`doctree-resolved` passes (for `singlehtml` and `latex` that is the root\ndocument, for the one assembled tree) and not `node.source` (not a\nreliable statement of the node's document). The node is replaced before\nany writer sees it, so the attribute reaches no output; the doctree\nsnapshot of `test_basic_doc` gains it on its two `Need` nodes. No\nenvironment-version bump: the current `ENV_DATA_VERSION` is itself\nunreleased, so every upgrade from a release re-reads everything anyway.\n\nA related pre-existing problem found on the way is filed separately as\n#2100: deleting the document that kept the need drops the id from\n`needs.json` and crashes the next write of the loser's page.\n\n## ubCode parity\n\nNothing to match in this PR: ubCode's needextract already shows the kept\nneed's content (`rust/ubc_parser_ctrl/src/extract_cards.rs:1246-1249`).\nFor need directives ubCode differs in the other direction: it renders a\ncard at every directive site of a duplicate id (the demoted registration\nis hydrated by id with the winner's data,\n`rust/ubc_parser_ctrl/src/hydration.rs:2538`, and its anchor minted from\nthe node, `rust/ubc_ast/src/render_html/special.rs` ~1545), recorded\nthere as a \"registered residual\". Filed as useblocks/ubcode#3893.\n\n## Tests\n\nNew `tests/test_parallel_duplicate_id.py`, every case serial and `-j 2`\n(each `-j 2` project has six documents, so Sphinx 7 reads it in parallel\ntoo; the `-j 2` variants skip where `parallel_available` is False). Each\n`-j 2` project's `conf.py` holds a small file barrier on `source-read`\nand `env-merge-info`, so its two chunks are always read concurrently and\nmerged in a chosen order: without it, Sphinx can merge the first chunk\nbefore forking the second, which then refuses the duplicate as a serial\nbuild does (reproduced with a delay between Sphinx's `add_task` calls;\nthe barrier fails loudly after 60 s rather than hanging). The assertions\ntake the winner from the warning:\n\n- one need, one warning, one card, on the kept need's page (`html`),\nwith either document's chunk merged first;\n- `singlehtml` and `latex`: one card in the assembled document, and a\nneed defined only on `page_b` still renders, the case a rule on the\n`doctree-resolved` docname fails; and the root document as the loser\n(`root_doc = \"zz_root\"`, so it sorts last);\n- a kept need created through `add_need` with no docname: the other\ndocument's copy is still dropped (and, merged in the other order, the\nknown unwarned two-card case of a docname-less loser, pinned as it is);\n- `needextract` shows the kept need's content;\n- incremental `-j 2` rebuilds, touching the winner (the loser's page\nwritten from its pickled doctree) or the loser (refused as in serial):\none card after each;\n- a need in an `include`d fragment renders on the including page;\n- a doctree pickled without the tag still renders.\n\nThe parallel cases fail before the fix and pass after it.\n`test_parallel_execution.py`, `test_needs_builder.py` and\n`test_complex_doc.py` pass, and none of them changed.\n\nCloses #2087",
+          "timestamp": "2026-10-07T05:11:49+02:00",
+          "tree_id": "65ead2e434a40e5cce243fd10b6594bfb19b2b5f",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/714123a30934ade8f3937710fa229da2b6fc3084"
+        },
+        "date": 1791342775519,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.08071889299999668,
+            "unit": "s",
+            "extra": "Commit: 714123a30934ade8f3937710fa229da2b6fc3084\nBranch: master\nTime: 2026-10-07T05:11:49+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 44.68535772999999,
+            "unit": "s",
+            "extra": "Commit: 714123a30934ade8f3937710fa229da2b6fc3084\nBranch: master\nTime: 2026-10-07T05:11:49+02:00"
           }
         ]
       }
