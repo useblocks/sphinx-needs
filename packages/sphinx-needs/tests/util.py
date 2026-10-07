@@ -1,6 +1,13 @@
+import json
 import re
 from io import StringIO
+from pathlib import Path
+from typing import Any
 from xml.etree import ElementTree
+
+import pytest
+from sphinx.application import Sphinx
+from sphinx.util.parallel import parallel_available
 
 NS = {"html": "http://www.w3.org/1999/xhtml"}
 
@@ -116,3 +123,29 @@ def bar_sum_labels(svg: str, title: str) -> list[str]:
     bars_at = svg.index('<g id="patch_', axis_at)
     title_at = svg.index(f"<!-- {title} -->", bars_at)
     return re.findall(r"<!-- (.*?) -->", svg[bars_at:title_at])
+
+
+# Sphinx 7 reads in parallel only above five documents (Sphinx 9 at any count), so the
+# ``-j 2`` variant adds four orphan pages: a project of two or more documents is read in
+# parallel on every cell
+PADDING = [(Path(f"pad_{n}.rst"), f":orphan:\n\nPad {n}\n=====\n") for n in range(4)]
+
+
+def serial_and_parallel(files: list[tuple[Path, str]]) -> list[Any]:
+    """``test_app`` parameters building ``files`` serially, and with ``-j 2``."""
+    return [
+        pytest.param({"buildername": "html", "files": files}, id="serial"),
+        pytest.param(
+            {"buildername": "html", "files": [*files, *PADDING], "parallel": 2},
+            id="j2",
+            marks=pytest.mark.skipif(
+                not parallel_available, reason="Parallel execution not supported"
+            ),
+        ),
+    ]
+
+
+def needs_by_id(app: Sphinx) -> dict[str, dict[str, Any]]:
+    """The needs of the build's ``needs.json``, by id."""
+    data = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf8"))
+    return data["versions"][data["current_version"]]["needs"]
