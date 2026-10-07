@@ -231,7 +231,7 @@ Bug fixes
   configuration, above. ``NeedsServiceException`` now derives from ``Exception``.
 
 - 🐛 A :ref:`needextend` option whose dynamic or variant function cannot be parsed is a
-  warning instead of crashing the build **(changed output)** (:issue:`2109`)
+  warning instead of crashing the build **(changed output)** (:issue:`2109`, :pr:`2116`)
 
   A value such as ``:status: [[copy(need.id)]]`` ended the build with an uncaught
   ``FunctionParsingException``, because a ``need.<attr>`` argument is not admitted where
