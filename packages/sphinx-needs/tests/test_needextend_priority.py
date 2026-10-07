@@ -10,6 +10,7 @@ another one's filter matches, and the priority orders the modifications only.
 """
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -19,6 +20,7 @@ from syrupy.filters import props
 
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.directives import needextend as needextend_module
+from sphinx_needs.exceptions import NeedsInvalidFilter
 from sphinx_needs_testkit import build_warnings
 from tests.util import needs_by_id, serial_and_parallel
 
@@ -884,3 +886,45 @@ def test_filter_that_fails_as_written_applies_to_nothing(
     assert need["status"] == "closed"
     assert need["tags"] == ["by_id"]
     assert need["modifications"] == 2
+
+
+# -- an unknown id under strict still ends the build ------------------------------
+
+STRICT_INDEX = """\
+Index
+=====
+
+.. req:: One
+   :id: REQ_1
+   :status: open
+
+.. needextend:: REQ_1
+   :status: closed
+
+.. needextend:: NOPE_1
+   :strict: true
+   :status: closed
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [(Path("conf.py"), CONF), (Path("index.rst"), STRICT_INDEX)],
+        }
+    ],
+    indirect=True,
+)
+def test_strict_unknown_id_ends_the_build(test_app: Sphinx):
+    """A ``:strict:`` extend whose id names no need raises, as it always has.
+
+    The targets of every extend are now resolved before any is applied, the ids with
+    the filters, so this is where the error comes from; it is the same error.
+    """
+    with pytest.raises(
+        NeedsInvalidFilter,
+        match=re.escape("Provided id 'NOPE_1' for needextend does not exist."),
+    ):
+        test_app.build()
