@@ -73,7 +73,7 @@ Improvements
   this includes ``:hours: [[calc_sum("hours")]]``, whose sum includes its own need,
   and a variant whose condition reads the field it sets.
   A read that cannot be ordered is reported as ``needs.derive_scope`` (:ref:`needs_derive_scope`):
-  a link field's ``[[…]]`` or ``<<…>>`` reading a field that is not a link field,
+  a link field's ``[[…]]`` or ``<<…>>`` reading a computed field that is not a link field,
   a back link or a dead-link flag,
   and a ``need.<field>`` argument that selects what its call reads while the field is computed in the same step,
   neither of which is run (the field keeps what a cycle member keeps);

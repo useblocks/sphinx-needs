@@ -295,7 +295,7 @@ Reads that cannot be ordered
 
 These reads are reported as ``needs.derive_scope``:
 
-- a ``[[…]]`` or ``<<…>>`` of a link field that reads a field that is not a link field, a back link,
+- a ``[[…]]`` or ``<<…>>`` of a link field that reads a computed field that is not a link field, a back link,
   or ``has_dead_links`` or ``has_forbidden_dead_links``,
   all of which are final only after step 2 (they are computed, or set with the back links, after it):
   the call is not run (a variant's condition is not evaluated),
