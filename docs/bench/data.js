@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791368671917,
+  "lastUpdate": 1791369063949,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -23076,6 +23076,42 @@ window.BENCHMARK_DATA = {
             "value": 54.41010337800001,
             "unit": "s",
             "extra": "Commit: 9fb1563c8890296fe75250ddd0195ffec3bfb782\nBranch: master\nTime: 2026-10-07T12:23:07+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ca0d997afaee789f59895fcd68702a8c1ca52017",
+          "message": "🐛 sphinx-needs: needs_functions shapes that crashed the build now warn (#2112)\n\n## What\n\nPackage: `packages/sphinx-needs`.\n\nFollow-up to #2079, which made a non-callable `needs_functions` entry a\n`needs.config` warning.\nThree neighbouring shapes still ended the build during `config-inited`,\nbefore a single document was read:\n\n| `conf.py` | on master |\n|---|---|\n| `needs_functions = None` | `TypeError: 'NoneType' object is not\niterable` (from `merge_default_configs`) |\n| `needs_functions = my_function` | `TypeError: 'function' object is not\niterable` |\n| `needs_functions = [functools.partial(f, x=1)]`, or an instance with\n`__call__` | `AttributeError: 'functools.partial' object has no\nattribute '__name__'` (from `add_function`) |\n\nA string, `needs_functions = \"my_function\"`, did not crash but was read\none character at a time: one\n`needs_functions entry 'm' is not callable and is ignored` warning per\ncharacter.\n\nEach is now reported and the build continues:\n\n- A value that is not a list (or tuple) is ONE warning naming its type,\nand nothing is registered from it (the built-in functions still are):\n\n  ```\nWARNING: needs_functions is of type 'NoneType', not a list of callables,\nand is ignored [needs.config]\nWARNING: needs_functions is of type 'function', not a list of callables,\nand is ignored [needs.config]\nWARNING: needs_functions is of type 'str', not a list of callables, and\nis ignored [needs.config]\n  ```\n\nSphinx's own type check (`check_confval_types`, `config-inited` priority\n800) would report the same value again\n(``The config value `needs_functions' has type `NoneType'; expected\n`list'.``, measured), so after warning the value is\nreplaced with the confval's default `[]`; it is reported once, under\n`needs.config` like its neighbours.\n  The declared `types=(list,)` is unchanged.\nA set of functions, or another iterable of functions that is neither a\nlist nor a tuple (a frozenset, a generator), used to register its\nfunctions beside\nSphinx's own type warning, and is now ignored with the same\n`needs.config` warning.\nA tuple is still registered, as before (Sphinx's own type warning for it\nis unchanged).\n- An entry that is callable but has no `__name__` is skipped with one\nwarning, and the rest of the list is still registered:\n\n  ```\nWARNING: needs_functions entry functools.partial(<function echo_word at\n0x...>, word='forty-two') has no __name__ and is ignored: an entry must\nbe a callable with a __name__; use add_dynamic_function(app, func,\nname=...) for one without [needs.config]\n  ```\n\n- A non-callable entry keeps #2079's warning, unchanged.\n- The API path, `add_dynamic_function(app, func)` without `name=` for a\ncallable without a `__name__`, raised a bare\n`AttributeError`. It now raises `NeedsApiConfigException` (as\n`add_warning` does for a missing argument):\n`Dynamic function functools.partial(...) has no __name__; pass the name\nto call it by with name=...`.\nThe rule is one sentence in the `add_dynamic_function` docstring, and in\nthe Registration section of `dynamic_functions.rst`.\n\nThe changelog bullet is marked **(changed output)**: every changed shape\ncrashed or already warned, but a set-valued\n`needs_functions` (`{my_function}`), which Sphinx already reported as\nthe wrong type, had its functions registered and their\n`[[my_function()]]` calls resolved; it is now ignored, so those calls\nreport `Unknown function 'my_function'`.\n\n## Why\n\nIssue #2073, the follow-up of #2064's second item: `needs_functions`\nvalues and entries that end the build with a traceback\ninstead of a configuration warning, so a mistake in `conf.py` is\nreported like the others and the build continues.\n\nCloses #2073\n\n## Tests\n\nAll in `tests/test_needs_from_toml_functions.py`, the suite #2079 wrote\nfor `needs_functions`; each build test is a real in-process build\nasserting the whole `build_warnings(app)` list and that the build\ncompletes. The tests for the crashing shapes were committed first\nand were red against master; the tuple test guards what master already\ndid.\n\n| test | pins |\n|---|---|\n|\n`test_a_needs_functions_value_that_is_not_a_list_warns_once_and_is_ignored[none]`\n| `None`: one warning, no Sphinx duplicate, `needs_functions == []`,\nonly the built-ins registered |\n| `…[bare-function]` | a bare function: the same |\n| `…[string]` | a string: one warning instead of one per character |\n| `…[set]` | a set: one warning, nothing registered from it (it used to\nregister, beside Sphinx's type warning) |\n|\n`test_a_needs_functions_entry_without_a_name_warns_and_is_ignored[partial]`\n| a `functools.partial` is skipped with one warning; the next entry is\nregistered and resolves in a need |\n| `…[instance]` | an instance with `__call__`: the same |\n| `test_a_needs_functions_tuple_is_still_registered` | a tuple still\nregisters and resolves; the only warning is Sphinx's own ``has type\n`tuple'; expected `list'.`` |\n| `test_add_dynamic_function_asks_for_a_name_for_a_callable_without_one`\n| the API raises `NeedsApiConfigException` asking for `name=`, registers\nnothing; with `name=` it registers |\n\nMutation checks (each applied, the file run, reverted):\n\n| mutation | red |\n|---|---|\n| remove the not-a-list guard | `[none]`, `[bare-function]` (crash),\n`[string]` (per-character list), `[set]` (registered beside Sphinx's\nwarning) |\n| narrow the guard to `list` only | the tuple test (its function becomes\n`Unknown function 'answer'`) |\n| remove the no-`__name__` guard | `[partial]`, `[instance]` (crash) |\n| skip a nameless entry without warning | `[partial]`, `[instance]`\n(`assert [] == [...]`) |\n| `add_function` reads `function.__name__` again | the API test\n(`AttributeError`) |\n\n`uv run poe lint` and `uv run poe typecheck` pass. The full suite passes\napart from the graphviz-rendering tests, which need `dot` and fail\nidentically without this change on a machine that lacks it.\n\n## Checklist\n\n- [x] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\nBuilt, adversarially reviewed and validated in an orchestrated Claude\nCode session from the issue, the code and the\ntests of #2079; every line was read by its builder, its reviewer and the\norchestrator, and the tests were committed\n  first and shown red against master.\n- [x] I ran the package's tests (`uv run poe test-needs`) and they pass\n(the graphviz renders excepted on a machine\n  without `dot`, identically to master).\n- [x] Documentation is updated where behaviour or options change\n(`docs/dynamic_functions.rst`, the Registration section).\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.\n\n## ubCode\n\nNothing to match in ubCode, because ubCode registers no Python\ncallables: `needs_functions` is a `conf.py` value it never reads\n(`docs/source/configuration/needs.rst:1684`: \"Functions a project\nregisters through ``needs_functions`` are not resolved\"), and a\n`functions` key under `[needs]` in `ubproject.toml` is dropped silently,\nbecause `NeedsConfig` carries `#[serde(default)]` without\n`deny_unknown_fields` (`rust/ubc_config/src/needs/input.rs:23-25`);\nreporting unknown keys is the open useblocks/ubcode#2931.\nThe shapes fixed here are Python-object shapes (a partial, `None`, a\nbare function) that cannot be written in TOML.\n(Measured at ubCode `origin/main`, `8bece77`.)\n\n## Follow-ups\n\n- A tuple is accepted by sphinx-needs, but Sphinx's own check still\nwarns that it is not a `list`\n(``The config value `needs_functions' has type `tuple'; expected\n`list'.``, unchanged from master).\nDeclaring `types=(list, tuple)` would be a separate, deliberate change\nto the confval.",
+          "timestamp": "2026-10-07T12:29:35+02:00",
+          "tree_id": "1058ff167ca8ca609ea479afbd107959fc9415d0",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/ca0d997afaee789f59895fcd68702a8c1ca52017"
+        },
+        "date": 1791369056545,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.10947787399999243,
+            "unit": "s",
+            "extra": "Commit: ca0d997afaee789f59895fcd68702a8c1ca52017\nBranch: master\nTime: 2026-10-07T12:29:35+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 56.281657343000006,
+            "unit": "s",
+            "extra": "Commit: ca0d997afaee789f59895fcd68702a8c1ca52017\nBranch: master\nTime: 2026-10-07T12:29:35+02:00"
           }
         ]
       }
