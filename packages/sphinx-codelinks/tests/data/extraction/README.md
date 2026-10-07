@@ -44,6 +44,9 @@ custom_brackets_c:
 - `engine` (optional): `treesitter` (default) sees every comment; `libclang`
   evaluates the preprocessor and excludes markers in inactive `#if`/`#ifdef`
   branches. libclang cases are skipped when the `clang` bindings are unavailable.
+- `line_endings` (optional): `lf` (default), `crlf` or `cr`. The `source` is
+  written with that line ending, and the case is also run with LF endings and
+  must produce the same output.
 - `defines` (optional, libclang only): preprocessor defines, e.g.
   `["VARIANT_A=1", "PROTOCOL_VERSION=3"]`.
 
@@ -133,8 +136,8 @@ Common fields on every marked-content entry (mirroring `Metadata`):
   `null`. `Metadata.to_dict()` never emits this — it is not part of
   production's output — but it costs nothing to add alongside the real
   `tagged_scope` text: it lets a wrong-scope regression be told apart from a
-  same-text coincidence, and gives a second implementation a language-agnostic
-  value to compare against. It is always the last key on an entry, so it
+  same-text coincidence, and lets the same construct be compared across
+  languages. It is always the last key on an entry, so it
   never disturbs the real shape.
 
 Payload-specific fields: `need` (a plain dict — `id`/`title`/`type` as
@@ -189,9 +192,9 @@ on Linux, macOS and Windows alike:
   on disk, shifting tree-sitter/libclang column positions at line ends and
   injecting `\r` into any multi-line `tagged_scope` text. Writing exact bytes
   means the file on disk always matches the fixture verbatim, independent of
-  platform. `test_extraction_is_crlf_insensitive` pins the consequence: the
-  same source, written once as LF and once as genuine CRLF, produces
-  identical normalized output.
+  platform. The `line_endings.yaml` cases pin the consequence: the same
+  source, written with CRLF or with a lone CR, produces the output its LF
+  form does.
 - **Relative, slash-normalised paths.** `_relative_filepath` renders
   `filepath`/`file_path` with `Path.as_posix()`, so a nested case can never
   render with backslashes (`sub\case.h`) on Windows where every existing
@@ -202,9 +205,8 @@ on Linux, macOS and Windows alike:
   UNC) and contains no backslash, so a non-portable path can never reach a
   committed snapshot silently.
 
-These fixtures and snapshots are also mirrored byte-for-byte into a second
-implementation's test suite, so a platform-dependent value breaks that
-comparison too, not only Windows CI here.
+A platform-dependent value would make the same case snapshot differently per
+platform, so it is a test failure on Windows CI rather than a silent drift.
 
 ## Running / updating
 

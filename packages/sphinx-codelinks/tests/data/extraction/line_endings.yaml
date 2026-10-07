@@ -1,0 +1,44 @@
+# Line endings (``line_endings`` on a case).
+#
+# Each case's source is written with the line ending it names, and the harness
+# also runs it with LF endings and requires the same output: CRLF and a lone CR
+# are both read as a line break, so rows, columns, captured text (a multi-line
+# ``tagged_scope`` included) and warning lines never depend on the ending.
+
+multi_line_scope_crlf:
+  # Every line ends in CRLF, the shape a Windows checkout gives a file.
+  lang: cpp
+  config:
+    need_id_markers: ["REFS:"]
+  line_endings: crlf
+  source: |
+    // @Multi-line title, IMPL_CRLF, impl, [REQ_1]
+    void f(
+        int a,
+        int b
+    ) {
+        return;
+    }
+    // REFS: REQ_2, REQ_3
+    void g() {}
+    // @extra, IMPL_2, impl, [REQ_1], oops
+    void h() {}
+
+multi_line_scope_cr:
+  # Every line ends in a lone CR (classic Mac OS line endings).
+  lang: cpp
+  config:
+    need_id_markers: ["REFS:"]
+  line_endings: cr
+  source: |
+    // @Multi-line title, IMPL_CR, impl, [REQ_1]
+    void f(
+        int a,
+        int b
+    ) {
+        return;
+    }
+    // REFS: REQ_2, REQ_3
+    void g() {}
+    // @extra, IMPL_2, impl, [REQ_1], oops
+    void h() {}

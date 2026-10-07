@@ -7,10 +7,7 @@
 # into tree-sitter/libclang, and a CRLF byte at a line end shifts every
 # downstream column position and can inject a stray "\r" into captured
 # multi-line text (e.g. tagged_scope). A CRLF checkout would corrupt them
-# independently of anything the test harness does at run time. They are also
-# mirrored byte-for-byte into a second implementation's test suite, so a
-# platform-dependent checkout would break that comparison too, not only
-# Windows CI here.
+# independently of anything the test harness does at run time.
 #
 # Scoped to the test-data/snapshot trees that actually encode positions or
 # get byte-compared, not the whole repository, so this can't churn unrelated

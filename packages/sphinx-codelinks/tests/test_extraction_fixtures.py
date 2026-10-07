@@ -99,8 +99,8 @@ def _build_oneline_style(config) -> OneLineCommentStyle:
 #      is NOT part of production's output (``Metadata.to_dict()`` never emits
 #      it); it rides alongside the real ``tagged_scope`` text so a
 #      wrong-scope regression can be told apart from a same-text
-#      coincidence, and so a second implementation has a language-agnostic
-#      value to compare against. It is appended after the real fields, so it
+#      coincidence, and so the same construct can be compared across
+#      languages. It is appended after the real fields, so it
 #      never disturbs the real shape.
 #
 # Nothing else is added, renamed, wrapped, or exploded: no ``content_type``
@@ -118,8 +118,7 @@ def _write_exact(path: Path, text: str) -> None:
     Windows that turns an LF-only fixture into CRLF on disk, which shifts
     tree-sitter/libclang column positions at line ends, injects ``\\r`` into
     any multi-line ``tagged_scope`` text, and moves warning positions —
-    breaking both the snapshot and the byte-for-byte parity with the mirrored
-    fixtures. Writing through ``write_bytes`` bypasses text-mode translation
+    so the same case would snapshot differently per platform. Writing through ``write_bytes`` bypasses text-mode translation
     entirely, so the file on disk always matches the fixture verbatim,
     independent of platform.
     """
@@ -159,8 +158,8 @@ def _relative_filepath(filepath: Path, root: Path) -> str:
 
     The result is always forward-slash separated (``Path.as_posix()``), even
     on Windows, so a snapshot can never acquire a backslash path separator —
-    every existing snapshot uses ``/`` and a mixed separator would break
-    byte-for-byte parity with the mirrored fixtures. ``_assert_portable_path``
+    every existing snapshot uses ``/`` and a mixed separator would make the
+    same case snapshot differently per platform. ``_assert_portable_path``
     turns that guarantee into an enforced invariant rather than a remembered
     convention.
     """
@@ -197,12 +196,20 @@ def _build_warnings(analyse: SourceAnalyse, tmp_path: Path) -> list[dict]:
     reports from and ``codelinks analyse`` prints: each ``AnalyseWarning`` is
     snapshotted as its ``__dict__``, with ``file_path`` made relative to
     ``tmp_path``.
+
+    The one deviation from production: the records are sorted. Production
+    reports them in the order the tree-sitter query captures arrive, which
+    is not position-sorted and differs between two runs of the same input
+    once more than one extractor is on, so no snapshot could pin it.
     """
     records = []
     for warning in analyse.oneline_warnings:
         record = dict(warning.__dict__)
         record["file_path"] = _relative_filepath(Path(record["file_path"]), tmp_path)
         records.append(record)
+    records.sort(
+        key=lambda r: (r["file_path"], r["lineno"], r["type"], r["sub_type"], r["msg"])
+    )
     return records
 
 
@@ -240,8 +247,19 @@ def _build_preprocessor(case: dict, tmp_path: Path) -> PreprocessorConfig:
     )
 
 
-@pytest.mark.parametrize("case", _load_cases())
-def test_extraction_fixture(case: dict, tmp_path: Path, snapshot_extraction) -> None:
+# A case's ``source`` is written with LF line endings unless the case sets
+# ``line_endings`` to ``crlf`` or ``cr``; every ``\n`` is then replaced by that
+# ending before the file is written. Such a case is also run a second time
+# with LF endings, and the two outputs must be equal: line endings never change
+# what is extracted, or where.
+LINE_ENDINGS = {"lf": "\n", "crlf": "\r\n", "cr": "\r"}
+
+
+def _extract(case: dict, root: Path, source: str) -> tuple[list[dict], list[dict]]:
+    """Run one case's ``source`` through ``SourceAnalyse`` under ``root``.
+
+    Returns the normalized (marked content, warnings) pair.
+    """
     comment_type, ext = LANG_MAP[case["lang"]]
     config = case.get("config")
     style = _build_oneline_style(config)
@@ -261,14 +279,14 @@ def test_extraction_fixture(case: dict, tmp_path: Path, snapshot_extraction) -> 
     preprocessor = None
     if engine == "libclang":
         pytest.importorskip("clang.cindex")
-        preprocessor = _build_preprocessor(case, tmp_path)
+        preprocessor = _build_preprocessor(case, root)
 
-    src_path = tmp_path / f"case.{ext}"
-    _write_exact(src_path, case["source"])
+    src_path = root / f"case.{ext}"
+    _write_exact(src_path, source)
 
     cfg = SourceAnalyseConfig(
         src_files=[src_path],
-        src_dir=tmp_path,
+        src_dir=root,
         comment_type=comment_type,
         get_oneline_needs="oneline" in extract,
         get_need_id_refs="need_refs" in extract,
@@ -281,89 +299,23 @@ def test_extraction_fixture(case: dict, tmp_path: Path, snapshot_extraction) -> 
     analyse.git_remote_url = None
     analyse.git_commit_rev = None
     analyse.run()
+    return _build_marked_content(analyse, root), _build_warnings(analyse, root)
+
+
+@pytest.mark.parametrize("case", _load_cases())
+def test_extraction_fixture(case: dict, tmp_path: Path, snapshot_extraction) -> None:
+    line_endings = case.get("line_endings", "lf")
+    source = case["source"].replace("\n", LINE_ENDINGS[line_endings])
+    content, warnings = _extract(case, tmp_path, source)
+
+    if line_endings != "lf":
+        lf_root = tmp_path / "lf"
+        lf_root.mkdir()
+        assert (content, warnings) == _extract(case, lf_root, case["source"])
 
     # Two independent snapshots per case, mirroring the two independent outputs
     # production produces (see the normalization-contract comment above):
     # marked content under the default (unnamed) snapshot, warnings under a
     # separately named one.
-    assert snapshot_extraction == _build_marked_content(analyse, tmp_path)
-    assert snapshot_extraction(name="warnings") == _build_warnings(analyse, tmp_path)
-
-
-def _run_extraction(source: str, case_dir: Path) -> tuple[list[dict], list[dict]]:
-    """Write ``source`` and run it through the same path ``test_extraction_fixture``
-    uses, returning the normalized (marked content, warnings) pair.
-    """
-    case_dir.mkdir()
-    src_path = case_dir / "case.cpp"
-    _write_exact(src_path, source)
-    cfg = SourceAnalyseConfig(
-        src_files=[src_path],
-        src_dir=case_dir,
-        comment_type=CommentType.cpp,
-        get_oneline_needs=True,
-        get_need_id_refs=True,
-        get_rst=True,
-        oneline_comment_style=OneLineCommentStyle(),
-        # A non-``@`` marker, so ``// REFS: ...`` below isn't also parsed (and
-        # warned about) as a malformed one-line need — see need_refs.yaml's
-        # ``custom_marker`` case for the same reasoning.
-        need_id_refs_config=NeedIdRefsConfig(markers=["REFS:"]),
-        preprocessor=None,
-    )
-    analyse = SourceAnalyse(cfg)
-    analyse.git_remote_url = None
-    analyse.git_commit_rev = None
-    analyse.run()
-    return (
-        _build_marked_content(analyse, case_dir),
-        _build_warnings(analyse, case_dir),
-    )
-
-
-def test_extraction_is_crlf_insensitive(tmp_path: Path) -> None:
-    """Pin Defect 1's fix at the output level: line-ending style must never
-    change extraction results.
-
-    ``_write_exact`` stops ``write_text``'s platform-dependent CRLF
-    translation from ever mutating a fixture's bytes on disk (on Windows,
-    ``write_text`` turns an LF-only fixture into CRLF; this test's "crlf"
-    branch reproduces exactly that on-disk shape, on any platform, by writing
-    genuine ``\\r\\n`` bytes via the same ``_write_exact`` path the main test
-    uses). The case deliberately spans multiple lines so a regression has
-    somewhere to hide: a real Defect 1 (CRLF surviving into ``tagged_scope``)
-    would show up as an embedded ``\\r`` in this multi-line scope's captured
-    text, and would also shift the ``need-id-refs`` marker's ``source_map``
-    on the closing lines.
-
-    This also verifies, independent of the write fix, that production's own
-    CRLF handling (``get_src_strings`` on the tree-sitter path;
-    ``libclang_parser.extract_active_comments`` on the libclang path)
-    genuinely normalizes line endings before computing positions/text — the
-    property that makes the write-side fix safe rather than merely
-    plausible.
-    """
-    source_lf = (
-        "// @Multi-line title, IMPL_CRLF, impl, [REQ_1]\n"
-        "void f(\n"
-        "    int a,\n"
-        "    int b\n"
-        ") {\n"
-        "    return;\n"
-        "}\n"
-        "// REFS: REQ_2, REQ_3\n"
-        "void g() {}\n"
-        "// @extra, IMPL_2, impl, [REQ_1], oops\n"
-        "void h() {}\n"
-    )
-    source_crlf = source_lf.replace("\n", "\r\n")
-
-    lf_content, lf_warnings = _run_extraction(source_lf, tmp_path / "lf")
-    crlf_content, crlf_warnings = _run_extraction(source_crlf, tmp_path / "crlf")
-
-    assert crlf_content == lf_content
-    assert crlf_warnings == lf_warnings
-    for entry in crlf_content:
-        scope = entry.get("tagged_scope")
-        if scope:
-            assert "\r" not in scope
+    assert snapshot_extraction == content
+    assert snapshot_extraction(name="warnings") == warnings
