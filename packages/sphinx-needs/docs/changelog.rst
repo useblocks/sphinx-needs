@@ -207,7 +207,7 @@ Bug fixes
   where Sphinx does not append it.
 
 - 🐛 A service whose ``class`` cannot be registered is skipped with a warning instead
-  of crashing the build **(changed output)** (:issue:`2067`)
+  of crashing the build **(changed output)** (:issue:`2067`, :pr:`2113`)
 
   A :ref:`needs_services` entry with both ``class`` and ``class_init`` is registered from
   them, and a ``class`` that is not callable or has no ``options`` ended the build with
@@ -221,7 +221,7 @@ Bug fixes
   service's options only is read as before, without a warning.
 
 - 🐛 A :ref:`needservice` naming a service that is not registered is a warning instead of
-  a traceback **(changed output)** (:issue:`2101`)
+  a traceback **(changed output)** (:issue:`2101`, :pr:`2113`)
 
   It ended the build with a raw ``NeedsServiceException`` traceback, which, deriving from
   ``BaseException``, escaped Sphinx's own error handler, so no log file was written either.
