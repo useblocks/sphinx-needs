@@ -4,11 +4,11 @@
     "remote_url": null,
     "source_map": {
       "start": {
-        "row": 1,
+        "row": 0,
         "column": 7
       },
       "end": {
-        "row": 1,
+        "row": 0,
         "column": 32
       }
     },
