@@ -323,8 +323,9 @@ as ``Analyse warning in <file>:<line> - <kind>: <message>``.
        its lines up to the close line are still the block's (not read as one-line needs). The same
        for an open word behind a ``*`` in a block comment whose lines do not all carry the leader:
        its lines up to the first close line, ``@endneed`` or ``* @endneed``, are the block's too;
-       without one it is ``multiline_need_unterminated``, whose message then names the missing
-       leader as the likely cause.
+       without one it is ``multiline_need_unterminated``. In a block where some lines carry the
+       leader and others do not, every ``multiline_need_unterminated`` message names the missing
+       leader as the likely cause; a plain block's message has no such hint.
    * - ``multiline_need_markup``
      - The markup tag is not in ``markups``: the need is produced with the project's default markup.
    * - ``multiline_need_duplicate_option``
