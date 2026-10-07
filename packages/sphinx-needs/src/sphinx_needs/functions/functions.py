@@ -94,18 +94,8 @@ def _execute_dynamic_func(
     needs_config = NeedsSphinxConfig(app.config)
 
     if need is not None:
-        # it imports this module
-        from sphinx_needs.functions.order import BUILTINS, unset_selector
-
-        if (
-            df.name in needs_config.functions
-            and needs_config.functions[df.name]["function"] is BUILTINS.get(df.name)
-            and (attr := unset_selector(df, need)) is not None
-        ):
-            raise RuntimeError(
-                f"Error while applying need to function {df.name!r}: need.{attr} "
-                "selects what the call reads, and is not set"
-            )
+        if (unset := _unset_selector_error(needs_config, df, need)) is not None:
+            raise RuntimeError(unset)
         try:
             df = df.apply_need(need)
         except Exception as err:
@@ -143,6 +133,27 @@ def _execute_dynamic_func(
     return func_return
 
 
+def _unset_selector_error(
+    needs_config: NeedsSphinxConfig,
+    df: DynamicFunctionParsed,
+    need: NeedItem | NeedPartItem,
+) -> str | None:
+    """The error of a built-in call whose ``need.<field>`` selector is unset, if any."""
+    # it imports this module
+    from sphinx_needs.functions.order import BUILTINS, unset_selector
+
+    if (
+        df.name in needs_config.functions
+        and needs_config.functions[df.name]["function"] is BUILTINS.get(df.name)
+        and (attr := unset_selector(df, need)) is not None
+    ):
+        return (
+            f"Error while applying need to function {df.name!r}: need.{attr} "
+            "selects what the call reads, and is not set"
+        )
+    return None
+
+
 def execute_func(
     app: Sphinx,
     need: NeedItem | NeedPartItem | None,
@@ -170,7 +181,12 @@ def execute_func(
             )
             return "??"
 
+    needs_config = NeedsSphinxConfig(app.config)
+
     if need is not None:
+        if (unset := _unset_selector_error(needs_config, df, need)) is not None:
+            log_warning(logger, unset, "dynamic_function", location=location)
+            return "??"
         try:
             df = df.apply_need(need)
         except Exception as err:
@@ -181,8 +197,6 @@ def execute_func(
                 location=location,
             )
             return "??"
-
-    needs_config = NeedsSphinxConfig(app.config)
 
     if df.name not in needs_config.functions:
         log_warning(

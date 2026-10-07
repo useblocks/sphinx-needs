@@ -2218,6 +2218,55 @@ def test_an_unset_need_attribute_selector_fails_the_call(test_app):
     ]
 
 
+UNSET_ROLE_INDEX = """\
+Unset selector in a role
+========================
+
+.. req:: Selector unset, in a field and in the need's content
+   :id: D_UNSET
+   :summary: [[copy("title", need.src)]]
+
+   ndf says: :ndf:`copy("title", need.src)`
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), UNSET_SELECTOR_CONF),
+                (Path("index.rst"), UNSET_ROLE_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_an_unset_need_attribute_selector_fails_the_role_too(test_app):
+    """The ``ndf`` role in a need's content fails like the field does, with ``??``.
+
+    It does not render the need's own title, as a ``copy`` that names no need would.
+    """
+    app = test_app
+    app.build()
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    assert "ndf says: ??" in html
+    assert "ndf says: Selector unset" not in html
+    unset = (
+        "Error while applying need to function 'copy': need.src selects what the "
+        "call reads, and is not set"
+    )
+    warnings = build_warnings(app)
+    assert any(
+        f"WARNING: {unset} [needs.dynamic_function]" in warning for warning in warnings
+    ), warnings
+    assert any(
+        f"of need 'D_UNSET': {unset} [needs.dynamic_function]" in warning
+        for warning in warnings
+    ), warnings
+
+
 # -- a ``None`` result -------------------------------------------------------------
 
 NONE_RESULT_INDEX = """\
