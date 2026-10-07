@@ -453,8 +453,13 @@ def _report_filters_on_computed_fields(
     The filter matched the needs as written, before any ``[[…]]``, ``<<…>>`` or
     ``<{…}>`` is computed, so it saw such a field's value from before. Every need is a
     candidate of a filter, so any need computing the field counts, whether or not the
-    filter matched it.
+    filter matched it. The needs are looked at only when an extend has a filter, once.
     """
+    filtered = [
+        needextend for needextend, _ in targets if not needextend["filter_is_id"]
+    ]
+    if not filtered:
+        return
     computed: dict[str, list[str]] = {}
     for need in all_needs.values():
         for field_name in need._dynamic_fields:
@@ -462,9 +467,7 @@ def _report_filters_on_computed_fields(
     if not computed:
         return
     not_fields = frozenset(needs_config.filter_data)
-    for needextend, _ in targets:
-        if needextend["filter_is_id"]:
-            continue
+    for needextend in filtered:
         names = filter_names(needextend["filter"], not_fields)
         read = sorted(
             name

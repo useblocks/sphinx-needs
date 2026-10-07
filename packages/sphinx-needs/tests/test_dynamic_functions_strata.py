@@ -1214,6 +1214,72 @@ def test_back_links_are_built_before_the_other_fields(test_app):
     ]
 
 
+REBUILD_TARGET = """\
+a
+=
+
+.. req:: T
+   :id: P
+   :incoming: [[copy("links_back")]]
+"""
+
+REBUILD_LINKED = """\
+b
+=
+
+.. req:: T
+   :id: C1
+   :links: P
+
+.. req:: T
+   :id: C2
+   :links: P
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), CONF),
+                (Path("index.rst"), _toctree("a", "b")),
+                (Path("a.rst"), REBUILD_TARGET),
+                (Path("b.rst"), REBUILD_LINKED),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_rebuild_drops_a_removed_back_link(test_app):
+    """A rebuild in the same process builds the back links afresh.
+
+    ``a.rst`` is not re-read, so ``P`` is the need of the first build, back links
+    and all; once ``C1`` no longer links to it, neither its back links nor the copy of
+    them name ``C1``.
+    """
+    app = test_app
+    app.build()
+    needs = _needs(app)
+    assert (needs["P"]["links_back"], needs["P"]["incoming"]) == (
+        ["C1", "C2"],
+        ["C1", "C2"],
+    )
+
+    Path(app.srcdir, "b.rst").write_text(
+        REBUILD_LINKED.replace("   :id: C1\n   :links: P\n", "   :id: C1\n"),
+        encoding="utf-8",
+    )
+    # newer than the time the first build read it, whatever the file system's clock
+    later = time.time_ns() + 60_000_000_000
+    os.utime(Path(app.srcdir, "b.rst"), ns=(later, later))
+    app.build()
+    needs = _needs(app)
+    assert (needs["P"]["links_back"], needs["P"]["incoming"]) == (["C2"], ["C2"])
+    assert build_warnings(app) == []
+
+
 LINK_SCOPE_INDEX = """\
 Link scope
 ==========

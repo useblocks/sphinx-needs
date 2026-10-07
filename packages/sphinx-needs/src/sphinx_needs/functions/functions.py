@@ -700,9 +700,6 @@ def resolve_functions(
         content_refs=content_refs,
     )
     pass_ = _Pass(project)
-    # a link field's call reads no back link of an earlier build
-    for need in needs.values():
-        need.reset_backlinks()
     _resolve_stratum(app, needs, pass_, 1, needs_schema, needs_config)
     build_backlinks(needs, needs_schema)
     _resolve_stratum(app, needs, pass_, 2, needs_schema, needs_config)
