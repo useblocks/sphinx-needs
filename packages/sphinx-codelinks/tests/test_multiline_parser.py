@@ -22,7 +22,11 @@ from sphinx_codelinks.analyse.multiline_parser import (
     open_rest,
     parse_run,
 )
-from sphinx_codelinks.config import MultilineNeedsConfig, SourceAnalyseConfig
+from sphinx_codelinks.config import (
+    MultilineNeedsConfig,
+    PreprocessorConfig,
+    SourceAnalyseConfig,
+)
 from sphinx_codelinks.source_discover.config import CommentType
 
 
@@ -172,6 +176,16 @@ def test_delimiter_only_banner_rows_are_dropped_before_the_leader_test(
     assert [line.row for line in run.lines] == [1, 2]
 
 
+def test_a_qt_opener_is_stripped_like_a_doxygen_one() -> None:
+    (run,) = form_runs([_node("/*! @need req: T\n * @endneed\n */", 0)])
+    (alone,) = form_runs([_node("/*!\n * @need req: T\n * @endneed\n */", 5)])
+
+    assert _texts(run) == [" @need req: T", "@endneed"]
+    (block,) = parse_run(run.lines, CONFIG).blocks
+    assert (block.open_row, block.open_col) == (0, len("/*! "))
+    assert _texts(alone) == ["@need req: T", "@endneed"]
+
+
 def test_no_leader_is_stripped_when_one_line_lacks_it() -> None:
     """The every-line rule: a star that is not a leader on every line is content."""
     text = "/*\n * @need req: T\n   Some *emphasis* here.\n */"
@@ -179,6 +193,25 @@ def test_no_leader_is_stripped_when_one_line_lacks_it() -> None:
     (run,) = form_runs([_node(text, 0)])
 
     assert _texts(run) == [" * @need req: T", "   Some *emphasis* here."]
+    assert run.leaderless_block
+
+
+def test_an_open_word_behind_a_leader_in_a_leaderless_block_is_refused() -> None:
+    """Not silently lost: the header refusal names the cause, and nothing is produced
+    or hidden for it."""
+    (run,) = form_runs(
+        [_node("/*\n * @need req: T\n   no leader\n * @endneed\n */", 0)]
+    )
+
+    result = parse_run(run.lines, CONFIG, leaderless_block=run.leaderless_block)
+
+    assert result.blocks == []
+    assert [(issue.kind, issue.row) for issue in result.issues] == [
+        (WarningSubTypeEnum.multiline_need_header, 1)
+    ]
+    assert "behind a '*' leader" in result.issues[0].msg
+    assert result.claimed_rows == set()
+    assert parse_run(run.lines, CONFIG).issues == [], "only for a leaderless block"
 
 
 def test_an_emphasis_line_is_not_a_leader() -> None:
@@ -305,6 +338,14 @@ def test_the_one_line_form_is_refused_and_claims_its_own_row() -> None:
         (WarningSubTypeEnum.multiline_need_oneline_form, 0)
     ]
     assert result.claimed_rows == {0}
+
+
+def test_the_one_line_form_needs_the_close_word_not_a_suffix() -> None:
+    result = parse_run(_lines("@need req: Mentions foo@endneed"), CONFIG)
+
+    assert [issue.kind for issue in result.issues] == [
+        WarningSubTypeEnum.multiline_need_unterminated
+    ]
 
 
 def test_an_unknown_markup_falls_back_to_the_default() -> None:
@@ -499,3 +540,81 @@ def test_a_rust_doc_comment_spans_only_its_own_row(tmp_path: Path) -> None:
     assert rows == {0: set(), 1: {1}, 2: {2}, 3: {3}}
     (need,) = analyse.multiline_needs
     assert need.source_comment.node.start_point.row == 1
+
+
+def _record(analyse: SourceAnalyse) -> dict:
+    (need,) = analyse.multiline_needs
+    record = need.to_dict()
+    record.pop("filepath")
+    return record
+
+
+def test_a_record_outside_a_git_repository_is_relative_to_src_dir(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / "src").mkdir()
+    analyse = _analysis(
+        tmp_path, "src/a.cpp", "// @need req: T\n// @endneed\n", CommentType.cpp
+    )
+    assert analyse.git_root is None, "tmp_path must not be inside a repository"
+    analyse.run(log_summary=False)
+
+    record = _record(analyse)
+
+    assert record["source"]["root"] == "src_dir"
+    assert record["source"]["path"] == "src/a.cpp"
+    assert record["source"]["commit"] is None
+    assert record["remote_url"] is None
+
+
+def test_crlf_and_lf_sources_give_the_same_record(tmp_path: Path) -> None:
+    """The parser sees no CR: every entry point normalises line ends first."""
+    lines = [
+        "/**",
+        " * @need req: T",
+        " * :id: REQ_1",
+        " *",
+        " * Body.",
+        " * @endneed",
+        " */",
+    ]
+    lf = _analysis(tmp_path, "lf.cpp", "\n".join(lines) + "\n", CommentType.cpp)
+    crlf = _analysis(
+        tmp_path, "crlf.cpp", ("\r\n".join(lines) + "\r\n").encode(), CommentType.cpp
+    )
+    lf.run(log_summary=False)
+    crlf.run(log_summary=False)
+
+    lf_record, crlf_record = _record(lf), _record(crlf)
+    assert lf_record["need"]["content"] == "Body."
+    assert crlf_record["source"].pop("path") == "crlf.cpp"
+    assert lf_record["source"].pop("path") == "lf.cpp"
+    assert crlf_record == lf_record
+
+
+def test_columns_count_characters_not_bytes(tmp_path: Path) -> None:
+    """tree-sitter gives byte columns; ``é`` is two bytes and one character."""
+    analyse = _analysis(
+        tmp_path,
+        "u.cpp",
+        "int \u00e9 = 0; /* @need req: T\n@endneed */\n",
+        CommentType.cpp,
+    )
+    analyse.run(log_summary=False)
+
+    assert _record(analyse)["source"]["start"] == {"line": 1, "col": 14}
+
+
+def test_a_libclang_record_reads_its_columns_from_the_row(tmp_path: Path) -> None:
+    """A libclang comment has no column: the open line's column comes from its row."""
+    pytest.importorskip("clang.cindex")
+    source = (
+        "void f() {}\n   /** @need impl: Col\n    * @endneed\n    */\nvoid g() {}\n"
+    )
+    analyse = _analysis(tmp_path, "col.cpp", source, CommentType.cpp)
+    analyse.analyse_config.preprocessor = PreprocessorConfig()
+    analyse.run(log_summary=False)
+
+    record = _record(analyse)
+    assert record["source"]["start"] == {"line": 2, "col": 7}
+    assert record["source"]["scope"] is None

@@ -37,6 +37,12 @@ def _count(n: int, noun: str) -> str:
     return f"{n} {noun}" if n == 1 else f"{n} {noun}s"
 
 
+def _row_count(src_comment: SourceComment) -> int:
+    """The rows a comment covers: a Rust ``///`` node's text ends with its newline, which
+    starts no row of its own."""
+    return (src_comment.node.text or b"").rstrip(b"\n").count(b"\n") + 1
+
+
 @dataclass
 class AnalyseWarning:
     file_path: str
@@ -437,7 +443,9 @@ class SourceAnalyse:
             for run in multiline_parser.form_runs(
                 src_file.src_comments, src_file.lines
             ):
-                result = multiline_parser.parse_run(run.lines, config)
+                result = multiline_parser.parse_run(
+                    run.lines, config, leaderless_block=run.leaderless_block
+                )
                 for issue in result.issues:
                     self.warnings.append(
                         AnalyseWarning(
@@ -456,8 +464,9 @@ class SourceAnalyse:
                     continue
                 for src_comment in run.comments:
                     first = src_comment.node.start_point.row
-                    count = (src_comment.node.text or b"").count(b"\n") + 1
-                    rows = result.claimed_rows.intersection(range(first, first + count))
+                    rows = result.claimed_rows.intersection(
+                        range(first, first + _row_count(src_comment))
+                    )
                     if rows:
                         claimed.setdefault(id(src_comment), set()).update(rows)
         return claimed
@@ -475,8 +484,7 @@ class SourceAnalyse:
                 for comment in run.comments
                 if comment.node.start_point.row
                 <= block.open_row
-                <= comment.node.start_point.row
-                + (comment.node.text or b"").count(b"\n")
+                < comment.node.start_point.row + _row_count(comment)
             ),
             run.comments[0],
         )

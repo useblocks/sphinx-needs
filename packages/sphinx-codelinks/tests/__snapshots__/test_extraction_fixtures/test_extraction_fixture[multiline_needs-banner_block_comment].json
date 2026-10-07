@@ -1,0 +1,33 @@
+{
+  "needs": [],
+  "need_refs": [],
+  "multiline_needs": [
+    {
+      "need": {
+        "type": "impl",
+        "title": "Stars before the closer",
+        "id": "IMPL_BANNER_CLOSER",
+        "content": "",
+        "doctype": ".rst"
+      },
+      "markup": "rst",
+      "start_line": 2,
+      "end_line": 4,
+      "content_start_line": null
+    },
+    {
+      "need": {
+        "type": "impl",
+        "title": "Full banner",
+        "id": "IMPL_BANNER_FULL",
+        "content": "Body in a banner.",
+        "doctype": ".rst"
+      },
+      "markup": "rst",
+      "start_line": 9,
+      "end_line": 13,
+      "content_start_line": 12
+    }
+  ],
+  "warnings": []
+}

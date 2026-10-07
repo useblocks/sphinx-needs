@@ -23,8 +23,7 @@
     "markup": "rst",
     "source": {
       "project": "",
-      "path": "packages/sphinx-codelinks/tests/data/multiline_needs/dummy_1.cpp",
-      "root": "git",
+      "path": "multiline_needs/dummy_1.cpp",
       "commit": null,
       "start": {
         "line": 4,
@@ -73,8 +72,7 @@
     "markup": "md",
     "source": {
       "project": "",
-      "path": "packages/sphinx-codelinks/tests/data/multiline_needs/dummy_1.cpp",
-      "root": "git",
+      "path": "multiline_needs/dummy_1.cpp",
       "commit": null,
       "start": {
         "line": 14,

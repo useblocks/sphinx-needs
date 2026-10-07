@@ -80,10 +80,10 @@ def test_extract_active_comments_variant_b_active():
 
 def test_extract_active_comments_normalizes_crlf(tmp_path: Path):
     """A block comment from a CRLF-saved source must not carry embedded CR into
-    the extracted text (it would corrupt e.g. multi-line reST-block content),
+    the extracted text (it would corrupt e.g. a multi-line need's content),
     the tree-sitter path's CRLF->LF normalization."""
     src = tmp_path / "crlf.cpp"
-    src.write_bytes(b"/* line1\r\n@rst\r\nbody\r\n@endrst\r\n*/\r\nint x = 0;\r\n")
+    src.write_bytes(b"/* line1\r\nline2\r\nbody\r\nline4\r\n*/\r\nint x = 0;\r\n")
     comments = libclang_parser.extract_active_comments(src, ["-x", "c++", "-std=c++17"])
     assert comments, "expected the block comment to be extracted"
     for c in comments:

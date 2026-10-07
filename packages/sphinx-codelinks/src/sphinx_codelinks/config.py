@@ -550,11 +550,17 @@ class SourceAnalyseConfig:
         markers.add(self.oneline_comment_style.end_sequence)
         # equality only: the default one-line start ``@`` is a PREFIX of ``@need``, and
         # what keeps the two apart is that a block's lines are hidden from the one-line
-        # parser, not this check
-        for marker in (
-            self.multiline_needs_config.start_sequence,
-            self.multiline_needs_config.end_sequence,
-        ):
+        # parser, not this check. The two words are checked only when the feature is
+        # on: off, they are no markers of the project.
+        multiline_markers = (
+            (
+                self.multiline_needs_config.start_sequence,
+                self.multiline_needs_config.end_sequence,
+            )
+            if self.get_multiline_needs
+            else ()
+        )
+        for marker in multiline_markers:
             if marker in markers:
                 errors.add(f"Marker {marker} is defined multiple times")
             else:
@@ -1134,7 +1140,7 @@ def convert_analyse_config(
         check_removed_analyse_keys(config_dict)
         for k, v in config_dict.items():
             if k not in {
-                "online_comment_style",
+                "oneline_comment_style",
                 "need_id_refs",
                 "multiline_needs",
                 "preprocessor",

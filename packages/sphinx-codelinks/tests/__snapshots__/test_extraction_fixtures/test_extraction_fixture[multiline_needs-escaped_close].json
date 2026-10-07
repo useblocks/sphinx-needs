@@ -7,12 +7,12 @@
         "type": "impl",
         "title": "Escaped close",
         "id": "IMPL_ESC",
-        "content": "The close word is written as\n@endneed\ninside the body.",
+        "content": "The close word is written as\n@endneed\ninside the body, and indented::\n\n   @endneed",
         "doctype": ".rst"
       },
       "markup": "rst",
       "start_line": 1,
-      "end_line": 7,
+      "end_line": 9,
       "content_start_line": 4
     }
   ],

@@ -1,0 +1,34 @@
+{
+  "needs": [],
+  "need_refs": [],
+  "multiline_needs": [
+    {
+      "need": {
+        "type": "req",
+        "title": "Indented options",
+        "id": "REQ_INDENTED",
+        "status": "open",
+        "content": "The body is indented as in RST.",
+        "doctype": ".rst"
+      },
+      "markup": "rst",
+      "start_line": 1,
+      "end_line": 6,
+      "content_start_line": 5
+    },
+    {
+      "need": {
+        "type": "impl",
+        "title": "Opener row",
+        "id": "IMPL_OPENER_ROW",
+        "content": "Body after a blank line.",
+        "doctype": ".rst"
+      },
+      "markup": "rst",
+      "start_line": 9,
+      "end_line": 13,
+      "content_start_line": 12
+    }
+  ],
+  "warnings": []
+}

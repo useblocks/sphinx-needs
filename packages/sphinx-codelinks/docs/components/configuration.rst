@@ -634,7 +634,7 @@ Configuration for :ref:`multi-line need <multiline_needs>` extraction.
 - ``default_markup`` (``str``) - The markup of a block whose open line names none (``@need req: …`` rather than ``@need[md] req: …``); it must be a key of ``markups``
 - ``markups`` (``dict[str, str]``) - Markup tag → the ``doctype`` suffix the need's body is parsed with. A table given here replaces the default one, so list ``rst`` and ``md`` too when you add a tag (``myst = ".md"``, say). The suffixes are not checked here: whether a parser exists for one is decided when the need is rendered
 
-Both words take part in the check that no two markers of a project are the same (as the one-line style's and the ``@need-ids:`` markers do). The check is for equality: the default one-line start ``@`` is a prefix of ``@need``, and what keeps the two apart is that :ref:`a block's lines are never read as one-line needs <multiline_needs>`.
+When ``get_multiline_needs`` is on, both words take part in the check that no two markers of a project are the same (as the one-line style's and the ``@need-ids:`` markers do); with it off they are no markers of the project, and a ``@need`` reference marker, say, stays valid. The check is for equality: the default one-line start ``@`` is a prefix of ``@need``, and what keeps the two apart is that :ref:`a block's lines are never read as one-line needs <multiline_needs>`.
 
 .. _`preprocessor_config`:
 

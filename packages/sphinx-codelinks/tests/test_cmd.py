@@ -382,7 +382,7 @@ def test_write_rst_still_works_and_says_it_is_deprecated(tmp_path: Path) -> None
             [
                 {
                     "filepath": 123,
-                    "remote_url": "https://github.com/useblocks/sphinx-codelinks/blob/951e40e7845f06d5cfc4ca20ebb984308fdaf985/tests/data/marked_rst/dummy_1.cpp#L4",
+                    "remote_url": "https://github.com/useblocks/sphinx-codelinks/blob/951e40e7845f06d5cfc4ca20ebb984308fdaf985/tests/data/multiline_needs/dummy_1.cpp#L4",
                     "source_map": {
                         "start": {"row": 3, "column": 8},
                         "end": {"row": 3, "column": 61},

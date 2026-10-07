@@ -52,6 +52,12 @@ def test_analyse(src_dir, src_paths, tmp_path, snapshot_marks):
         obj["filepath"] = (
             Path(obj["filepath"]).relative_to(src_analyse_config.src_dir)
         ).as_posix()
+        if "source" in obj:
+            # a multi-line need's path is relative to the git root when the checkout is
+            # a repository, else to src_dir: pin it against src_dir, as filepath is
+            assert obj["source"].pop("root") in ("git", "src_dir")
+            assert obj["source"]["path"].endswith(obj["filepath"])
+            obj["source"]["path"] = obj["filepath"]
     assert marked_content == snapshot_marks
 
 

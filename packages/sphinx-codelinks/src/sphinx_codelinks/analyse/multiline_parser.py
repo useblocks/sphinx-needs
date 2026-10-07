@@ -6,8 +6,8 @@ comment's kind, and parses a run's lines with the block grammar. It knows nothin
 Sphinx or of a need's fields: the record is built by ``analyse.py``, and the need is
 validated and its content parsed by whoever consumes the record.
 
-**Runs.** One block comment (``/* … */``, ``/** … */``) or one Python docstring is a run
-on its own. Consecutive line comments form one run when they sit on consecutive rows,
+**Runs.** One block comment (``/* … */``, ``/** … */``, ``/*! … */``) or one Python string
+statement (a docstring or any bare string statement) is a run on its own. Consecutive line comments form one run when they sit on consecutive rows,
 use the same delimiter, and have only whitespace before them on their rows; a line
 comment after code on its row neither starts nor continues a run.
 
@@ -19,11 +19,13 @@ comment kind                              stripped from each line               
 ========================================  ==================================================  ===========================================
 line comment ``//``, ``///``, ``//!``     the delimiter, then ONE space if present            C/C++, C#, Rust, Go, JSONC
 line comment ``#``                        the delimiter, then ONE space if present            Python, YAML, Bash
-block comment ``/* … */``, ``/** … */``   the delimiters; then a ``*`` leader (``*`` and one  C/C++, C#, Rust, Go, JSONC
-                                          space, or a lone ``*``) only if EVERY non-blank
-                                          line after the opener's row carries one (the
-                                          doxygen rule); a first or last line holding only a
-                                          delimiter is dropped
+block comment ``/* … */``, ``/** … */``,  a first row holding only the opener (``/*`` with  C/C++, C#, Rust, Go, JSONC
+``/*! … */``                              any stars, or ``/*!``) and a last row holding only
+                                          the closer (stars then ``*/``) are dropped; the
+                                          delimiters are removed; then a ``*`` leader (``*``
+                                          and one space, or a lone ``*``) only if EVERY
+                                          remaining non-blank line after the opener's row
+                                          carries one (the doxygen rule)
 Python docstring                          the quotes and any string prefix; the interior      Python
                                           dedented as ``inspect.cleandoc`` does (no line is
                                           removed)
@@ -64,6 +66,15 @@ LINE_DELIMITERS: tuple[str, ...] = ("///", "//!", "//", "#")
 _LEADER = re.compile(r"^[ \t]*\*(?: |$)")
 """A doxygen leader: optional whitespace, ``*``, then one space or the line end."""
 
+_OPENER_ONLY = re.compile(r"^/\*+!?\s*$")
+"""A block comment's first row holding nothing but its opener (``/*``, ``/*****``, ``/*!``)."""
+
+_CLOSER_ONLY = re.compile(r"^\s*\*+/\s*$")
+"""A block comment's last row holding nothing but its closer (``*/``, `` ***/``)."""
+
+_STARS = re.compile(r"^\s*\*+\s*")
+"""Stars at the start of a line, with the whitespace around them."""
+
 _DOCSTRING_OPEN = re.compile(r"""^([rRuUbBfF]{0,2})(\"\"\"|'''|"|')""")
 
 _HEADER = re.compile(r"^(?:\[([^\]]*)\])?[ \t]+([\w-]+):(?:[ \t]+(.*))?$")
@@ -94,6 +105,9 @@ class CommentRun:
 
     comments: list[SourceComment]
     lines: list[LogicalLine]
+    leaderless_block: bool = False
+    """A block comment whose lines did not all carry a ``*`` leader, so none was
+    stripped: an open word behind a star is reported, not silently lost."""
 
 
 @dataclass
@@ -237,17 +251,20 @@ def _continues(previous: _Comment, view: _Comment) -> bool:
 
 
 def _make_run(views: list[_Comment]) -> CommentRun:
-    lines: list[LogicalLine] = []
+    if len(views) == 1 and views[0].kind == "block":
+        lines, leader_stripped = _block_comment_lines(views[0])
+        return CommentRun([views[0].comment], lines, not leader_stripped)
+    run_lines: list[LogicalLine] = []
     for view in views:
-        lines.extend(_logical_lines(view))
-    return CommentRun([view.comment for view in views], lines)
+        run_lines.extend(_logical_lines(view))
+    return CommentRun([view.comment for view in views], run_lines)
 
 
 def _logical_lines(view: _Comment) -> list[LogicalLine]:
     if view.kind == "line":
         return [_line_comment_line(view)]
     if view.kind == "block":
-        return _block_comment_lines(view)
+        return _block_comment_lines(view)[0]
     if view.kind == "docstring":
         return _docstring_lines(view)
     logger.debug(
@@ -271,33 +288,53 @@ def _line_comment_line(view: _Comment) -> LogicalLine:
     return LogicalLine(view.row, col, rest)
 
 
-def _block_comment_lines(view: _Comment) -> list[LogicalLine]:
+def _block_comment_lines(view: _Comment) -> tuple[list[LogicalLine], bool]:
+    """The block comment's logical lines, and whether a ``*`` leader was stripped."""
     texts = view.text.split("\n")
-    cols = [view.col] + [0] * (len(texts) - 1)
-    lead = len(texts[0]) - len(texts[0].lstrip())
-    body = texts[0].lstrip()
-    opener = "/**" if body.startswith("/**") and len(view.text.strip()) > 4 else "/*"
-    cols[0] += lead + len(opener)
-    texts[0] = body[len(opener) :]
-    last = texts[-1].rstrip()
-    if last.endswith("*/"):
-        texts[-1] = last[: -len("*/")]
+    count = len(texts)
+    cols = [view.col] + [0] * (count - 1)
+    keep = [True] * count
+    if count > 1 and _OPENER_ONLY.match(texts[0].strip()):
+        keep[0] = False
+    else:
+        lead = len(texts[0]) - len(texts[0].lstrip())
+        body = texts[0].lstrip()
+        if body.startswith("/*!"):
+            opener = "/*!"
+        elif body.startswith("/**") and len(view.text.strip()) > 4:
+            opener = "/**"
+        else:
+            opener = "/*"
+        cols[0] += lead + len(opener)
+        texts[0] = body[len(opener) :]
+    if count > 1 and _CLOSER_ONLY.match(texts[-1]):
+        keep[-1] = False
+    else:
+        last = texts[-1].rstrip()
+        if last.endswith("*/"):
+            texts[-1] = last[: -len("*/")]
 
-    later = range(1, len(texts))
+    # the leader test reads the rows after the opener's, delimiter-only rows dropped
+    later = [i for i in range(1, count) if keep[i]]
     non_blank = [i for i in later if texts[i].strip()]
-    if non_blank and all(_LEADER.match(texts[i]) for i in non_blank):
+    leader_stripped = bool(non_blank) and all(
+        _LEADER.match(texts[i]) for i in non_blank
+    )
+    if leader_stripped:
         for i in later:
             match = _LEADER.match(texts[i])
             if match:
                 cols[i] += match.end()
                 texts[i] = texts[i][match.end() :]
 
-    first, stop = 0, len(texts)
     if not texts[0].strip():
-        first = 1
-    if len(texts) > 1 and not texts[-1].strip():
-        stop -= 1
-    return [LogicalLine(view.row + i, cols[i], texts[i]) for i in range(first, stop)]
+        keep[0] = False
+    if count > 1 and not texts[-1].strip():
+        keep[-1] = False
+    lines = [
+        LogicalLine(view.row + i, cols[i], texts[i]) for i in range(count) if keep[i]
+    ]
+    return lines, leader_stripped
 
 
 def _docstring_lines(view: _Comment) -> list[LogicalLine]:
@@ -347,15 +384,21 @@ def open_rest(text: str, start_sequence: str) -> str | None:
 
 # @Parse multi-line need blocks in a comment run, IMPL_MLN_2, impl, [FE_MULTILINE_NEEDS]
 def parse_run(
-    lines: Sequence[LogicalLine], config: MultilineNeedsConfig
+    lines: Sequence[LogicalLine],
+    config: MultilineNeedsConfig,
+    *,
+    leaderless_block: bool = False,
 ) -> ParseResult:
     """Find the multi-line needs in one comment run.
 
-    At each line opening a block: a close word on the same line is the one-line form,
-    refused; no close line further down the run is an unterminated block, refused, and
-    the rest of the run is not scanned; an open line that does not match the grammar is
-    refused, and the lines up to its close are still consumed. Only a block and a
-    refused header claim their lines.
+    At each line opening a block: the close word ending the same line is the one-line
+    form, refused, and its line is claimed; no close line further down the run is an
+    unterminated block, refused, and the rest of the run is not scanned; an open line
+    that does not match the grammar is refused, and the lines up to its close are still
+    consumed. A block, a refused header and a refused one-line form claim their lines.
+
+    :param leaderless_block: The run is one block comment whose ``*`` leader was not
+        stripped: an open word behind a star is refused as a header, with the cause.
     """
     result = ParseResult()
     start, end = config.start_sequence, config.end_sequence
@@ -364,9 +407,21 @@ def parse_run(
         line = lines[index]
         rest = open_rest(line.text, start)
         if rest is None:
+            if leaderless_block:
+                stars = _STARS.match(line.text)
+                if stars and open_rest(line.text[stars.end() :], start) is not None:
+                    result.issues.append(
+                        ParseIssue(
+                            WarningSubTypeEnum.multiline_need_header,
+                            line.row,
+                            f"'{start}' sits behind a '*' leader in a block comment "
+                            "whose other lines carry none; give every line the leader "
+                            "or none",
+                        )
+                    )
             index += 1
             continue
-        if rest.rstrip().endswith(end):
+        if _ends_with_word(rest, end):
             result.issues.append(
                 ParseIssue(
                     WarningSubTypeEnum.multiline_need_oneline_form,
@@ -375,6 +430,7 @@ def parse_run(
                     "with the one-line marker; the block is skipped",
                 )
             )
+            result.claimed_rows.add(line.row)
             index += 1
             continue
         close = next(
@@ -407,6 +463,15 @@ def parse_run(
             )
         index = close + 1
     return result
+
+
+def _ends_with_word(text: str, word: str) -> bool:
+    """Whether ``text`` ends with ``word`` preceded by whitespace or nothing."""
+    stripped = text.rstrip()
+    if not stripped.endswith(word):
+        return False
+    before = stripped[: -len(word)]
+    return not before or before[-1].isspace()
 
 
 def _block(
@@ -480,8 +545,10 @@ def _block(
         margin = min(_indent(line.text) for line in body if line.text.strip())
         for line in body:
             text = line.text[margin:] if line.text.strip() else ""
-            if text.startswith("\\" + config.end_sequence):
-                text = text[1:]
+            stripped = text.lstrip()
+            if stripped.startswith("\\" + config.end_sequence):
+                # tested past the indentation, as the close is; the indentation stays
+                text = text[: len(text) - len(stripped)] + stripped[1:]
             elif open_rest(text, config.start_sequence) is not None:
                 issues.append(
                     ParseIssue(

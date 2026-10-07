@@ -174,6 +174,8 @@ need's type and title, its options, a body in a declared markup, and a close lin
 
    .. code-tab:: c
 
+      #include <stdbool.h>
+
       /**
        * @need req: Login must be rate limited
        * :id: REQ_LOGIN_1
@@ -184,7 +186,9 @@ need's type and title, its options, a body in a declared markup, and a close lin
        * see :need:`SPEC_AUTH`.
        * @endneed
        */
-      bool login(const char *user, const char *password);
+      bool login(const char *user, const char *password) {
+          return false;
+      }
 
    .. code-tab:: python
 
@@ -218,31 +222,37 @@ After the comment's prefixes are stripped (see below), a block is:
   brackets, then whitespace, the need type and a colon, then the title -- the rest of the line,
   which may be empty. The open word counts only when ``[``, whitespace or the line end follows it:
   ``@need-ids:`` and ``@needle`` open nothing. The type is a need type's name (letters, digits,
-  ``_`` and ``-``); it is checked when the need is rendered, not here.
+  ``_`` and ``-``); it is checked when the need is rendered, not here. Write the whitespace:
+  ``@need[md]req: T`` and ``@need req:T`` are refused.
 - **The markup tag** is looked up in the project's ``markups`` table, which gives the need's
   ``doctype`` (``rst`` → ``.rst`` and ``md`` → ``.md`` by default); without a tag the project's
-  ``default_markup`` applies (``rst``).
-- **Options** are ``:key: value`` lines right after the open line, as MyST writes a directive's
-  options -- at the open line's indentation, not indented under it as in RST. Their values are kept
-  as written, as directive strings: ``:links: SPEC_AUTH, SPEC_LOCK`` is the string
-  ``"SPEC_AUTH, SPEC_LOCK"``, converted with the project's field definitions when the need is
-  rendered, as a directive's options are. A line indented deeper than its option line continues
-  the value, joined with one space. A blank line ends the options.
+  ``default_markup`` applies (``rst``). The tag is matched exactly as written: ``[RST]``,
+  ``[ md ]`` and an empty ``[]`` are unknown tags.
+- **Options** are ``:key: value`` lines right after the open line. They may sit at any indentation
+  -- at the open line's, as MyST writes a directive's options, or indented under it as in RST.
+  Their values are kept as written, as directive strings: ``:links: SPEC_AUTH, SPEC_LOCK`` is the
+  string ``"SPEC_AUTH, SPEC_LOCK"``, converted with the project's field definitions when the need
+  is rendered, as a directive's options are. A space must follow the key (``:id:R1`` is body
+  text). A line indented deeper than its option line continues the value, joined with one space,
+  so **separate the options from the body with a blank line**: an indented first body line written
+  directly after an option is read as that option's continuation.
 - **The body** is every line after the options up to the close line: dedented by its common
-  indentation, never re-flowed, with leading and trailing blank lines trimmed. Unlike in an RST
-  directive, it is not indented. A comment line holding only its prefix (``//``, ``*``, ``#``) inside it is a
-  blank body line.
+  indentation (a TAB counts as one character), never re-flowed, with leading and trailing blank
+  lines trimmed; it may be indented or not. A comment line holding only its prefix (``//``, ``#``,
+  or a lone ``*`` in a block whose lines carry the ``*`` leader) inside it is a blank body line.
 - **The close line** holds the close word (``@endneed``) alone, surrounding whitespace allowed. To
   write the close word at the start of a body line, escape it: a body line starting
-  ``\@endneed`` is emitted as ``@endneed``. Nothing else is escaped.
+  ``\@endneed`` -- after its indentation, so inside an indented literal block too -- is emitted
+  as ``@endneed``, its indentation kept. Nothing else is escaped.
 
 One need per block: the open word starting a body line is body text, and is noted with a warning.
 
 Comment runs and prefixes
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A block lives in one **comment run**: one block comment (``/* … */``, ``/** … */``), one Python
-docstring, or consecutive line comments (``//``, ``///``, ``//!``, ``#``) on consecutive rows with
+A block lives in one **comment run**: one block comment (``/* … */``, ``/** … */``, ``/*! … */``),
+one Python string statement (a docstring, or any bare string statement), or consecutive line
+comments (``//``, ``///``, ``//!``, ``#``) on consecutive rows with
 the same delimiter and only whitespace before them on their rows. A code line, or a change of
 delimiter, ends a run; a comment after code on its row neither starts nor continues one.
 
@@ -257,11 +267,14 @@ line of a block keeps its source line:
      - Stripped from each line
    * - ``//``, ``///``, ``//!``, ``#``
      - the delimiter, then one space if there is one
-   * - ``/* … */``, ``/** … */``
-     - the delimiters, and a ``*`` leader (``*`` and one space, or a lone ``*``) only when every
-       non-blank line after the opener's row carries one -- so a plain block's ``*emphasis*`` is
-       kept. A first or last line holding only a delimiter is dropped
-   * - Python docstring
+   * - ``/* … */``, ``/** … */``, ``/*! … */``
+     - first, a first row holding only the opener (with any number of stars, as in a ``/*****``
+       banner) and a last row holding only the closer (``***/``) are dropped; then the
+       delimiters; then a ``*`` leader (``*`` and one space, or a lone ``*``), only when every
+       non-blank line between the opener's row and the closer's carries one -- so a plain block's
+       ``*emphasis*`` is kept. Give every line the leader or none: when one line lacks it, an open
+       word behind a ``*`` is reported (``multiline_need_header``) and no need is produced
+   * - Python string statement
      - the quotes, and the lines' common indentation, as ``inspect.cleandoc`` removes it
 
 Under the :ref:`libclang engine <preprocessor_engine>` a comment carries no column, so what precedes
@@ -274,8 +287,14 @@ Precedence over one-line needs and references
 The lines of a block belong to it alone: they are never read as one-line needs or ``@need-ids:``
 references, whatever they hold. The default one-line start sequence ``@`` is a prefix of ``@need``,
 and this rule is what keeps them apart: an open line such as ``@need req: Title, with a comma``, or a
-body line such as ``@param a, b``, would otherwise be a one-line need. A one-line marker or a
-reference on a line outside the block -- in the same comment or another -- is found as before.
+body line such as ``@param a, b``, would otherwise be a one-line need. A refused one-line form
+(``@need req: T @endneed``) hides its own line too; an open line without a close hides nothing. A
+one-line marker or a reference on a line outside the block -- in the same comment or another -- is
+found as before.
+
+With multi-line needs switched on, a one-line need whose title starts with the open word, such as
+``// @need to handle overflow, IMPL_3, impl``, is still a one-line need but also draws a
+``multiline_need_unterminated`` warning: reword the title, or choose another open word.
 
 Malformed blocks
 ^^^^^^^^^^^^^^^^
@@ -290,14 +309,16 @@ as ``Analyse warning in <file>:<line> - <kind>: <message>``.
    * - Kind
      - When, and what happens
    * - ``multiline_need_oneline_form``
-     - The open and the close word on one line: skipped (a one-line need is written with the
-       :ref:`one-line marker <oneline>`).
+     - The close word ends the open line (after a space): skipped, and the line is not read as a
+       one-line need either (a one-line need is written with the :ref:`one-line marker <oneline>`).
+       ``foo@endneed`` is no close word.
    * - ``multiline_need_unterminated``
      - No close line before the comment run ends: skipped, and the rest of the run is not read for
        blocks.
    * - ``multiline_need_header``
      - The open word starts a line that is not ``<open>[<markup>] <type>: <title>``: skipped, but
-       its lines up to the close line are still the block's (not read as one-line needs).
+       its lines up to the close line are still the block's (not read as one-line needs). Also an
+       open word behind a ``*`` in a block comment whose lines do not all carry the leader.
    * - ``multiline_need_markup``
      - The markup tag is not in ``markups``: the need is produced with the project's default markup.
    * - ``multiline_need_duplicate_option``

@@ -17,24 +17,43 @@
 #
 # - The open word counts only when followed by "[", whitespace or the line end
 #   (so "@need-ids:" never opens a block). <type> is [\w-]+; <title> may be empty.
-# - Blocks form over RUNS: one block comment or docstring, or consecutive line comments
-#   on consecutive rows with the same delimiter and only whitespace before each.
+#   Whitespace is required after "]" and after "<type>:" when a title follows:
+#   "@need[md]req: T" and "@need req:T" are header refusals. A markup tag is matched
+#   verbatim and case-sensitively ("[RST]" and "[ md ]" are unknown); "[]" is an unknown
+#   empty tag.
+# - An option line is ":<key>:" followed by whitespace and the value, or by nothing, at
+#   ANY indentation; ":id:R1" is no option and starts the body. A line indented deeper
+#   than its option line continues it, so an indented first body line written directly
+#   after an option is read as that option's continuation: a blank line ends the
+#   options.
+# - Indentation is counted in characters, a TAB counting as one, for continuations and
+#   for the body's common indentation.
+# - Blocks form over RUNS: one block comment, or one Python string statement (a
+#   docstring or any bare string statement), or consecutive line comments on
+#   consecutive rows with the same delimiter and only whitespace before each.
 # - Prefixes are stripped by the comment's kind: a line comment loses its delimiter and
-#   ONE space; a block comment loses its delimiters and a "*" leader ("*" plus one
-#   space, or a lone "*") only when every non-blank line after the opener's row has one;
-#   a docstring loses its quotes and is dedented as inspect.cleandoc does.
-# - At an open line, in this order: a close word at the end of the same line is the
-#   one-line form (multiline_need_oneline_form, skipped); no close line in the rest of the
-#   run is multiline_need_unterminated (skipped, the rest of the run not scanned); an
-#   open line not matching the grammar is multiline_need_header (skipped, but its lines
-#   up to the close are consumed). An unknown markup tag is multiline_need_markup (the
-#   project default is used); a repeated option key is multiline_need_duplicate_option
-#   (the first value stands); the open word starting a body line is
-#   multiline_need_nested_open (it stays body text). A body line starting "\<close>"
-#   loses the backslash.
+#   ONE space; a docstring loses its quotes and is dedented as inspect.cleandoc does. A
+#   block comment ("/*", "/**", "/*!" openers) first loses a first row holding only
+#   its opener (with any number of stars) and a last row holding only its closer (any
+#   number of stars then "*/"), then its delimiters, then a "*" leader ("*" plus one
+#   space, or a lone "*") from every line, only when every non-blank line between the
+#   opener's row and the closer's has one. When the leader is not stripped, a line whose
+#   open word sits behind stars is multiline_need_header at that line (nothing is
+#   produced or hidden for it).
+# - At an open line, in this order: the close WORD ending the same line (after
+#   whitespace, or as the whole rest of the line) is the one-line form
+#   (multiline_need_oneline_form, skipped); no close line in the rest of the run is
+#   multiline_need_unterminated (skipped, the rest of the run not scanned); an open line
+#   not matching the grammar is multiline_need_header (skipped, but its lines up to the
+#   close are consumed). An unknown markup tag is multiline_need_markup (the project
+#   default is used); a repeated option key, or one of the record's own keys (type,
+#   title, content, doctype), is multiline_need_duplicate_option (the first value, or
+#   the record's, stands); the open word starting a body line is
+#   multiline_need_nested_open (it stays body text). A body line whose text, past its
+#   indentation, starts with "\<close>" loses that backslash and keeps its indentation.
 # - Precedence: the lines of a block, and of a refused header up to its close, are
-#   hidden from the one-line and need-reference extractors. A refused one-line form and
-#   an unterminated open hide nothing.
+#   hidden from the one-line and need-reference extractors. A refused one-line form
+#   hides its own line; an unterminated open hides nothing.
 #
 # The snapshot's ``multiline_needs`` entries carry ``need`` (type, title, the options in
 # the order written, content, doctype), ``markup`` (the resolved tag), ``start_line`` (the
@@ -346,7 +365,9 @@ dedent_indented_body:
 
 escaped_close:
   # A body line starting with a backslash and the close word is body text, emitted
-  # without the backslash; the block ends at the real close line below it.
+  # without the backslash; the block ends at the real close line below it. The escape
+  # is tested past the line's indentation, so it works inside an indented literal
+  # block too, and the indentation is kept.
   lang: cpp
   config: default
   source: |
@@ -355,7 +376,9 @@ escaped_close:
     //
     // The close word is written as
     // \@endneed
-    // inside the body.
+    // inside the body, and indented::
+    //
+    //    \@endneed
     // @endneed
     void escaped() {}
 
@@ -375,13 +398,17 @@ nested_open:
 
 oneline_form_refused:
   # The open and the close on one line warn multiline_need_oneline_form and produce no
-  # need: the one-line marker is the one-line form. The line is not hidden from the
-  # one-line parser, which finds no marker in it (no field separator).
+  # need: the one-line marker is the one-line form. The line is hidden from the one-line
+  # parser, so its comma makes no one-line need. "foo@endneed" is no close word: that
+  # open line is unterminated instead.
   lang: cpp
   config: default
   source: |
-    // @need req: Same line @endneed
+    // @need req: Title, with comma @endneed
     void same_line() {}
+
+    // @need req: Mentions foo@endneed
+    void suffix() {}
 
 header_without_type_refused:
   # An open line without "<type>:" warns multiline_need_header at the open line; the
@@ -489,6 +516,83 @@ custom_sequences_and_markups:
     // @need req: Not an open line here
     void custom() {}
 
+option_lines_indented:
+  # Option lines may sit at any indentation, RST-style under the open line or below an
+  # open line on the opener's row: they are options all the same. A blank line ends the
+  # options, so the indented body after it is body text, dedented.
+  lang: cpp
+  config: default
+  source: |
+    // @need req: Indented options
+    //    :id: REQ_INDENTED
+    //    :status: open
+    //
+    //    The body is indented as in RST.
+    // @endneed
+    void indented() {}
+
+    /** @need impl: Opener row
+     *     :id: IMPL_OPENER_ROW
+     *
+     *     Body after a blank line.
+     * @endneed
+     */
+    void opener_row() {}
+
+reserved_option_keys:
+  # An option naming one of the record's own keys (type, title, content, doctype)
+  # warns multiline_need_duplicate_option at its line, and the record's value stands.
+  lang: cpp
+  config: default
+  source: |
+    // @need req: Header title
+    // :id: REQ_RESERVED
+    // :type: spec
+    // :title: Option title
+    // :content: Option content
+    // :doctype: .md
+    //
+    // The body.
+    // @endneed
+    void reserved() {}
+
+banner_block_comment:
+  # A row holding only the opener's or the closer's stars is a delimiter, dropped before
+  # the leader test: a " ***/" closer and a full "/*****" banner keep their " * "
+  # leaders stripped and their needs.
+  lang: cpp
+  config: default
+  source: |
+    /**
+     * @need impl: Stars before the closer
+     * :id: IMPL_BANNER_CLOSER
+     * @endneed
+     ***/
+    void closer() {}
+
+    /***************************
+     * @need impl: Full banner
+     * :id: IMPL_BANNER_FULL
+     *
+     * Body in a banner.
+     * @endneed
+     ***************************/
+    void banner() {}
+
+mixed_leaders_refused:
+  # One line without a "*" leader means no leader is stripped, so the open word stays
+  # behind its star: multiline_need_header at that line, and no need.
+  lang: cpp
+  config: default
+  source: |
+    /*
+     * @need impl: Mixed leaders
+     * :id: IMPL_MIXED_LEADERS
+       a line without a leader
+     * @endneed
+     */
+    void mixed_leaders() {}
+
 # --- precedence ------------------------------------------------------------------------
 
 precedence_oneline_and_need_refs:
@@ -546,3 +650,18 @@ libclang_active_and_inactive_branches:
      */
     void no_feature_a() {}
     #endif
+
+libclang_trailing_comment_not_in_run:
+  # The trailing_comment_not_in_run rule under the preprocessor-aware engine, whose
+  # comments carry no column: what precedes a comment is read from its row, so the
+  # trailing open line is unterminated and the run below it has no open line.
+  lang: cpp
+  engine: libclang
+  config: default
+  source: |
+    int x = 0; // @need req: Trailing
+    // :id: REQ_TRAILING_LIBCLANG
+    //
+    // Body.
+    // @endneed
+    void trailing() {}

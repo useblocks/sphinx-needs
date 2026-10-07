@@ -1,0 +1,37 @@
+{
+  "needs": [],
+  "need_refs": [],
+  "multiline_needs": [
+    {
+      "need": {
+        "type": "req",
+        "title": "Header title",
+        "id": "REQ_RESERVED",
+        "content": "The body.",
+        "doctype": ".rst"
+      },
+      "markup": "rst",
+      "start_line": 1,
+      "end_line": 9,
+      "content_start_line": 8
+    }
+  ],
+  "warnings": [
+    {
+      "kind": "multiline_need_duplicate_option",
+      "line": 3
+    },
+    {
+      "kind": "multiline_need_duplicate_option",
+      "line": 4
+    },
+    {
+      "kind": "multiline_need_duplicate_option",
+      "line": 5
+    },
+    {
+      "kind": "multiline_need_duplicate_option",
+      "line": 6
+    }
+  ]
+}
