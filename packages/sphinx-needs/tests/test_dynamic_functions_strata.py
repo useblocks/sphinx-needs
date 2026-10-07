@@ -1370,6 +1370,67 @@ def test_a_call_that_cannot_be_ordered_is_not_run(test_app):
     ]
 
 
+DEAD_FLAG_INDEX = """\
+Dead-link flag
+==============
+
+.. req:: Literal one
+   :id: LIT_1
+
+.. req:: Literal two
+   :id: LIT_2
+
+.. req:: A variant in a link field reading the dead-link flag
+   :id: V_DEAD
+   :links: NOPE, <<[has_dead_links]:LIT_1, LIT_2>>
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), SINK_CONF),
+                (Path("index.rst"), DEAD_FLAG_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_link_field_reading_the_dead_link_flags_is_out_of_scope(test_app):
+    """``has_dead_links`` and ``has_forbidden_dead_links`` are set with the back links.
+
+    A link field's variant reading one is not evaluated, as for a back link: the field
+    keeps its written ``NOPE`` (itself a dead link), and does not take the no-match arm
+    on the flag's value from before the links are computed.
+    """
+    app = test_app
+    app.build()
+    needs = _needs(app)
+    assert needs["V_DEAD"]["links"] == ["NOPE"]
+    assert needs["V_DEAD"]["has_dead_links"] is True
+    assert build_warnings(app) == [
+        _warning(
+            "index",
+            DEAD_FLAG_INDEX,
+            "V_DEAD",
+            "variant condition for option 'links' reads 'has_dead_links' on need "
+            "'V_DEAD', which is final only after the link fields are computed: the "
+            "condition is not evaluated and the field keeps only its written items",
+            "derive_scope",
+        ),
+        _warning(
+            "index",
+            DEAD_FLAG_INDEX,
+            "V_DEAD",
+            "Need 'V_DEAD' has unknown outgoing link 'NOPE' in field 'links'",
+            "link_outgoing",
+        ),
+    ]
+
+
 CONDITION_A = """\
 A
 =

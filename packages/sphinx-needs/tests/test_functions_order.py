@@ -347,6 +347,24 @@ EVERY_STATUS = 'status == "open"'
             "[[copy('summary', need.parent)]]",
             {"scope": [OutOfScope("dynamic function 'copy'", (("summary", "DYN"),))]},
         ),
+        # the dead-link flags are set with the back links
+        (
+            "links",
+            "<<[has_dead_links]:TGT, SRC>>",
+            {"scope": [OutOfScope("variant condition", (("has_dead_links", "RD"),))]},
+        ),
+        (
+            "links",
+            "[[copy('links', filter='has_forbidden_dead_links')]]",
+            {
+                "scope": [
+                    OutOfScope(
+                        "dynamic function 'copy'", (("has_forbidden_dead_links", "RD"),)
+                    )
+                ]
+            },
+        ),
+        ("out", "<<[has_dead_links]:a, b>>", {}),
         # a selector computed after the stratum is a read out of scope
         (
             "links",

@@ -349,6 +349,9 @@ def _what(item: DynamicFunctionParsed | VariantFunctionParsed | None) -> str:
     return "variant condition" if item is not None else "variant data"
 
 
+#: the fields set with the back links, between the strata, besides the back links
+_AT_BARRIER: Final = frozenset({"has_dead_links", "has_forbidden_dead_links"})
+
 FAILED: Final = object()
 """A precomputed filter that cannot be evaluated: the call reads nothing."""
 
@@ -414,20 +417,25 @@ class Project:
             return "parent_needs"
         return name
 
-    def is_backlink(self, name: str) -> bool:
-        """Whether ``name`` is a back link field (``<link>_back``)."""
-        return name.endswith("_back") and name[:-5] in self.link_fields
+    def at_barrier(self, name: str) -> bool:
+        """Whether ``name`` is set with the back links, between the strata.
+
+        A back link field (``<link>_back``), or a dead-link flag.
+        """
+        return name in _AT_BARRIER or (
+            name.endswith("_back") and name[:-5] in self.link_fields
+        )
 
     def final(self, name: str, stratum: int) -> bool:
         """Whether every need's ``name`` is final before ``stratum`` is computed."""
-        if self.is_backlink(name):
+        if self.at_barrier(name):
             return stratum == 2
         computed = self.computed_fields.get(self.field_of(name))
         return computed is None or computed < stratum
 
     def final_on(self, need_id: str, name: str, stratum: int) -> bool:
         """Whether ``name`` of one need is final before ``stratum`` is computed."""
-        if self.is_backlink(name):
+        if self.at_barrier(name):
             return stratum == 2
         computed = self.nodes.get((need_id, self.field_of(name)))
         return computed is None or computed < stratum
@@ -500,9 +508,10 @@ def _classify(
     """File the read of ``name`` on ``need_id`` by a node of ``stratum``.
 
     A node of the same stratum is a dependency; one of a later stratum, or a back
-    link read in stratum 1, is out of scope; anything else is final already.
+    link or a dead-link flag read in stratum 1, is out of scope; anything else is
+    final already.
     """
-    if project.is_backlink(name):
+    if project.at_barrier(name):
         if stratum == 1 and (name, need_id) not in scope:
             scope.append((name, need_id))
         return
@@ -544,7 +553,7 @@ class _CallReads:
     def _column(self, name: Any, candidates: str | None, reason: str | None) -> None:
         if not isinstance(name, str):
             return
-        if self.project.is_backlink(name):
+        if self.project.at_barrier(name):
             self._read(self.need.id, name)
             return
         computed = self.project.computed_fields.get(self.project.field_of(name))
