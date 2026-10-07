@@ -64,24 +64,14 @@ Improvements
   It gives notice ahead of a later release that resolves these values in dependency order
   (:issue:`2030`); `ubCode`_ reports the same reads.
 
-- ✨ ``needextend`` gains ``:extend_priority:`` (default 500, lower applied first), and a
-  filter whose matches depend on earlier ``needextend`` directives is reported as
-  ``needs.needextend_match_order`` **(changed output)** (:issue:`1658`, :issue:`2064`, :pr:`2083`)
+- ✨ ``needextend`` gains ``:extend_priority:`` (default 500, lower applied first)
+  (:issue:`1658`, :issue:`2064`, :pr:`2083`)
 
   The ``needextend`` directives are applied sorted by
-  :ref:`extend_priority <needextend_extend_priority>`, then by document name and line, so
-  a project that never sets the option keeps its order, and where two set the same
-  option the higher priority is applied last and wins. A filter is still evaluated
-  against the needs as the earlier ``needextend`` directives left them, but it is also
-  evaluated against the needs as written, before any is applied, and a ``needextend``
-  whose filter matches different needs the two ways is now reported once, at its
-  location, naming both; what it modifies is unchanged. The next release evaluates every
-  filter against the needs as written, so the reported ``needextend`` directives are the
-  ones whose matches will change (:ref:`needextend_match_order`). From the next release,
-  the priority never changes what a filter matches. A project that builds with ``-W`` and
-  has such a filter goes red until the filter is rewritten or the warning is silenced with
-  ``suppress_warnings = ["needs.needextend_match_order"]``; ``"needs.needextend"`` does
-  not cover the new type.
+  :ref:`extend_priority <needextend_extend_priority>`, then by document name and line,
+  so a project that never sets the option keeps its order,
+  and where two set the same option the higher priority is applied last and wins.
+  The priority is set on each ``needextend``; there is no project-wide setting for it.
 
 - 📚 The order in which ``needextend``, dynamic functions, links and constraints are processed
   is documented (:issue:`2064`, :pr:`2081`)
@@ -101,6 +91,30 @@ Improvements
   the same code, so the two cannot drift: it takes the same arguments, ``content`` as a
   ``str`` or a ``StringList``, and an unknown need type raises the same ``invalid_type``
   exception.
+
+Breaking changes
+................
+
+- ‼️ ``needextend`` filters are evaluated against the needs as written **(changed output)**
+  (:issue:`1658`, :issue:`2064`, :pr:`2083`, :pr:`2127`)
+
+  Every :ref:`needextend` filter is evaluated against the needs as written,
+  before any ``needextend`` is applied (:ref:`needextend_as_written`);
+  it used to see the changes of the ``needextend`` directives applied before it.
+  So no ``needextend`` changes which needs another one's filter matches,
+  whatever their priorities and the names of their files.
+
+  **A project whose filter relies on a change made by an earlier** ``needextend``
+  (a filter on ``status == "closed"`` after the ``needextend`` that closes the needs it means)
+  **now modifies the needs written with that value instead, and no warning says so.**
+  To keep what such a filter modified, name those needs by ID,
+  or write the condition on the values as written.
+
+  A filter is evaluated once in each document it is written in,
+  so a ``needs.filter`` warning it gives there is reported once,
+  at the first ``needextend`` applied that carries it.
+  The notice warning ``needs.needextend_match_order`` of the unreleased :pr:`2083` is gone,
+  and a ``suppress_warnings`` entry naming it is a no-op.
 
 Bug fixes
 .........

@@ -5,10 +5,10 @@ import importlib
 import operator
 import os
 import re
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Collection, Iterable
 from dataclasses import dataclass
 from functools import lru_cache, reduce, wraps
-from typing import TYPE_CHECKING, Any, Protocol, TypeVar
+from typing import TYPE_CHECKING, Any, Final, Protocol, TypeVar
 from urllib.parse import urlparse
 
 from docutils import nodes
@@ -80,6 +80,30 @@ def split_need_id(need_id_full: str) -> tuple[str, str | None]:
         need_id = need_id_full
         need_part_id = None
     return need_id, need_part_id
+
+
+COUNTED_IDS_NAMED: Final = 3
+"""How many ids :func:`counted_ids` names; it counts the rest."""
+
+
+def counted_ids(ids: Collection[str], noun: str = "", /) -> str:
+    """Return ``<count><noun> (A, B, C and K more)``, the ids in need-id order.
+
+    The first ``COUNTED_IDS_NAMED`` ids are named and the rest counted, so a message
+    about many needs stays short; no ids is the count alone. Ids are compared as
+    strings, so ``REQ_10`` comes before ``REQ_9``.
+
+    :param ids: The need ids.
+    :param noun: Written after the count, with its own leading space (``" needs"``).
+    """
+    counted = f"{len(ids)}{noun}"
+    if not ids:
+        return counted
+    ordered = sorted(ids)
+    named = ", ".join(ordered[:COUNTED_IDS_NAMED])
+    if len(ordered) > COUNTED_IDS_NAMED:
+        named += f" and {len(ordered) - COUNTED_IDS_NAMED} more"
+    return f"{counted} ({named})"
 
 
 def row_col_maker(
