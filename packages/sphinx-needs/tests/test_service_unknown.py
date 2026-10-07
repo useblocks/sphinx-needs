@@ -1,4 +1,5 @@
 import pytest
+
 from sphinx_needs_testkit import build_warnings
 
 
