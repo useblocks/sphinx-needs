@@ -136,6 +136,23 @@ class TestPrecedence:
         assert "verifies" in need
         assert "other_field" not in need
 
+    def test_table_entries_onto_one_link_field_merge(self, tmp_path):
+        """The TOML twin of the two ``--link-property`` flags onto one field (#2058)."""
+        code, payload = run_convert(
+            tmp_path,
+            [],
+            toml="[test_reports.build.needs]\n"
+            'link_properties = { PartiallyVerifies = "links", Requirement = "links" }\n',
+            xml=GTEST_XML,
+        )
+        assert code == 0
+        needs = payload["versions"][payload["current_version"]]["needs"]
+        assert needs["testcase__MathTest__Addition_hcuyy"]["links"] == [
+            "REQ_1",
+            "REQ_2",
+        ]
+        assert needs["testcase__ParamTest_0__Legacy_owuvz"]["links"] == ["REQ_9"]
+
     def test_field_names_from_the_section_shape_the_output(self, tmp_path):
         # The same file configures the build. Its field-name keys are read on
         # purpose -- the output has to have the shape of the build's needs --
