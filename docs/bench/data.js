@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791367794780,
+  "lastUpdate": 1791368671917,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -23040,6 +23040,42 @@ window.BENCHMARK_DATA = {
             "value": 56.35908843499999,
             "unit": "s",
             "extra": "Commit: 0b49a99619bf5d051a856c9fc14cde8df686912c\nBranch: master\nTime: 2026-10-07T12:08:28+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9fb1563c8890296fe75250ddd0195ffec3bfb782",
+          "message": "✨ sphinx-needs: generate_need_id(), the public form of the id add_need derives for a need without one (#2111)\n\n## What\n\n`sphinx_needs.api.generate_need_id(app, need_type, title, content=\"\", *,\nfull_title=None)` returns the id `add_need` assigns to a need given no\n`id`: the type's prefix, then the hash of `full_title` (else `title`,\nelse `content`), shaped by `needs_id_from_title` and `needs_id_length`.\nIt takes the arguments of the same name that `add_need` takes, `content`\nas a `str` or a docutils `StringList` such as a directive's own content,\nand an unknown type raises the same `InvalidNeedException`\n(`invalid_type`). It is exported from `sphinx_needs.api` and listed on\nthe API page.\n\nThere is one derivation: `add_need` and the new function share the\ncontent-to-text step, the type lookup and the id code, so the two cannot\ndrift. The private `_make_hashed_id` stays, because sphinx-codelinks and\nsphinx-test-reports import it today. sphinx-codelinks can switch\nmechanically once its floor includes this release; sphinx-test-reports'\nids would change (it hashes under the type name, not the prefix), so its\nswitch is a decision of its own.\n\n## Why\n\nAn extension that creates needs must know the generated id before it\ncalls `add_need`, to detect a second definition of the same generated\nid: sphinx-codelinks' `src-trace` does so for one-line needs found by\ntwo overlapping directives. It reaches for a private name today; this\ngives it a public one.\n\n## ubCode parity\n\nNothing to match: this is a Python API. ubCode's own generator\n(`rust/ubc_needs/src/file.rs` `generate_need_id`) was read for\ncomparison: it hashes the title only, with a TODO for the content\nfallback, so two empty-title needs of one type collide there, and it\ntreats an empty `:id:` as no id. Filed as useblocks/ubcode#3894.\n\n## Tests\n\n`tests/test_api_generate_need_id.py`: for the seven inputs the #2042\nreview checked (default config, `needs_id_from_title`, `needs_id_length\n= 12`, a title with a tab and non-ASCII, content with an empty title, a\n`full_title`, an empty title and content) plus an empty `full_title` and\na directive's own `StringList` content, a directive calls\n`generate_need_id` and then `add_need` with the same arguments, and the\nid equals that of the need the build created (read through\n`get_needs_view`); an unknown type raises the same exception from both.\nThe pins were committed first and failed against the code they fix; no\nexisting test or snapshot changed.\n\nCloses #2084",
+          "timestamp": "2026-10-07T12:23:07+02:00",
+          "tree_id": "47fbf97b5774aeea9858e8d057535922c34b67ef",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/9fb1563c8890296fe75250ddd0195ffec3bfb782"
+        },
+        "date": 1791368664853,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.19031916500000534,
+            "unit": "s",
+            "extra": "Commit: 9fb1563c8890296fe75250ddd0195ffec3bfb782\nBranch: master\nTime: 2026-10-07T12:23:07+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 54.41010337800001,
+            "unit": "s",
+            "extra": "Commit: 9fb1563c8890296fe75250ddd0195ffec3bfb782\nBranch: master\nTime: 2026-10-07T12:23:07+02:00"
           }
         ]
       }
