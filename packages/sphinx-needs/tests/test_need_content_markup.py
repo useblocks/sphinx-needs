@@ -64,6 +64,7 @@ class TestNeedContent(SphinxDirective):
         "id": directives.unchanged_required,
         "links": directives.unchanged,
         "jinja": directives.flag,
+        "resolved-lineno": directives.flag,
     }
 
     def run(self):
@@ -77,13 +78,17 @@ class TestNeedContent(SphinxDirective):
             kwargs["content_source"] = (str(path), self.options.get("first-line", 1))
         if "links" in self.options:
             kwargs["links"] = self.options["links"]
-        _, lineno = self.get_source_info()
+        # the parser's line, as a need directive's ``parser_lineno``, needimport and
+        # sphinx-codelinks pass it; ``:resolved-lineno:`` passes the file line instead
+        lineno = self.lineno
+        if "resolved-lineno" in self.options:
+            lineno = self.get_source_info()[1] or lineno
         try:
             return add_need(
                 self.env.app,
                 self.state,
                 self.env.docname,
-                lineno or self.lineno,
+                lineno,
                 need_type=self.options["type"],
                 title=self.options["title"],
                 id=self.options["id"],
@@ -109,14 +114,17 @@ class TestIngestRecords(SphinxDirective):
     """
 
     required_arguments = 1
+    option_spec = {"resolved-lineno": directives.flag}
 
     def run(self):
         path = Path(self.env.srcdir, self.arguments[0])
         self.env.note_dependency(str(path))
         entries = json.loads(path.read_text(encoding="utf-8"))
-        _, lineno = self.get_source_info()
+        lineno = self.lineno
+        if "resolved-lineno" in self.options:
+            lineno = self.get_source_info()[1] or lineno
         need_source = NeedItemSourceImport(
-            docname=self.env.docname, lineno=lineno or self.lineno, path=str(path)
+            docname=self.env.docname, lineno=lineno, path=str(path)
         )
         result = []
         unknown = set()
@@ -447,15 +455,13 @@ def test_content_is_parsed_in_its_markup_with_diagnostics_at_its_source(
             assert "[ref link]" not in content
 
     # (e) a label defined in a body resolves from its page and from the other page
-    for page, prefix in (("index.html", ""), ("host_md.html", "")):
+    for page in ("index.html", "host_md.html"):
         text = html(app, page)
         for cell, (host, _, _, _) in CELLS.items():
-            target = (
-                ""
-                if Path(host).with_suffix(".html").name == page
-                else (Path(host).with_suffix(".html").name)
-            )
-            assert f'href="{prefix}{target}#inside-{cell}"' in text, (page, cell)
+            defined_on = Path(host).with_suffix(".html").name
+            # a same-page reference, or one into the other page
+            target = "" if defined_on == page else defined_on
+            assert f'href="{target}#inside-{cell}"' in text, (page, cell)
 
 
 def line_of(page: list[str], text: str) -> int:
@@ -1133,3 +1139,139 @@ def test_needimport_reports_the_unknown_keys_of_a_need_it_imports(
     need = needs_by_id(app)["IMP_OK"]
     assert need["doctype"] == ".rst"
     assert "content_source" not in need
+
+
+PROLOG_CONF = (
+    CONF
+    + 'rst_prolog = ".. |a| replace:: A\\n.. |b| replace:: B\\n"\n'
+    + 'exclude_patterns = ["fragment.rst"]\n'
+)
+"""Two lines of ``rst_prolog``, and a fragment that is only ever included."""
+
+PROLOG_RST_BODY = ["Text.", "", ".. nosuchdirective::"]
+PROLOG_MD_BODY = ["Text {{ 6 * 7 }}.", "", "```{note}", "```"]
+PROLOG_RECORDS = [
+    {
+        "need": {
+            "type": "spec",
+            "title": "A MyST record",
+            "id": "SPEC_PROLOG_{suffix}",
+            "doctype": ".md",
+            "content": "Text.\n\n```{note}\n```",
+        }
+    }
+]
+PROLOG_INDEX = [
+    "Behind rst_prolog and an include",
+    "================================",
+    "",
+    ".. include:: fragment.rst",
+    "",
+    ".. req:: Host need",
+    "   :id: REQ_HOST",
+    "",
+    ".. req:: A need directive",
+    "   :id: REQ_PROLOG",
+    "",
+    *(f"   {line}".rstrip() for line in PROLOG_RST_BODY),
+    "",
+    *rst_need("SPEC_PROLOG_R", PROLOG_RST_BODY, {"markup": ".rst"}),
+    *rst_need("SPEC_PROLOG_M", PROLOG_MD_BODY, {"markup": ".md"}),
+    # a paragraph ends the run of directives: docutils parses each run after its
+    # first directive in a nested state machine starting at that directive
+    "A paragraph.",
+    "",
+    *rst_need("SPEC_PROLOG_J", PROLOG_MD_BODY, {"markup": ".md", "jinja": ""}),
+    *rst_need(
+        "SPEC_PROLOG_JR",
+        PROLOG_MD_BODY,
+        {"markup": ".md", "jinja": "", "resolved-lineno": ""},
+    ),
+    "A paragraph.",
+    "",
+    ".. test-ingest-records:: records_i.json",
+    "",
+    ".. test-ingest-records:: records_ir.json",
+    "   :resolved-lineno:",
+    "",
+    "Closing paragraphs, so that the end of the page is no need's line.",
+    "",
+    "Another one.",
+    "",
+    "And a third.",
+    "",
+]
+
+
+def prolog_records(suffix: str) -> str:
+    return json.dumps(PROLOG_RECORDS).replace("{suffix}", suffix)
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), PROLOG_CONF),
+                (Path("needcontent_ext.py"), DRIVER),
+                (Path("index.rst"), "\n".join(PROLOG_INDEX)),
+                (
+                    Path("fragment.rst"),
+                    "Fragment line one.\n\nFragment line two.\n\nFragment line three.\n",
+                ),
+                (Path("records_i.json"), prolog_records("I")),
+                (Path("records_ir.json"), prolog_records("IR")),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_content_anchored_in_the_page_behind_rst_prolog_and_an_include(
+    test_app: SphinxTestApp,
+):
+    """Content without ``content_source`` reports the page's lines, as a need directive's.
+
+    ``rst_prolog`` and ``.. include::`` shift the parser's line count away from the
+    file's; the anchor maps the parser's line back, so every message here names the
+    line it is on in ``index.rst``. ``lineno``/``lineno_content`` are the parser's lines,
+    as a directive's ``self.lineno``/``self.content_offset`` give them; a resolved file
+    line (``:resolved-lineno:``) falls outside the parser's input here and anchors at
+    the need's own line.
+    """
+    app = test_app
+    app.build()
+
+    def body(need_id: str) -> int:
+        """The page line of the first body line of the directive creating ``need_id``."""
+        return line_of(PROLOG_INDEX, f":id: {need_id}") + 2
+
+    def directive(text: str) -> int:
+        """The page line of the directive whose first line or option contains ``text``."""
+        at_text = line_of(PROLOG_INDEX, text)
+        return max(
+            i
+            for i, line in enumerate(PROLOG_INDEX[:at_text], 1)
+            if line.startswith(".. ")
+        )
+
+    unknown = 'ERROR: Unknown directive type "nosuchdirective".\n\n.. nosuchdirective:: [docutils]'
+    empty = (
+        'ERROR: Content block expected for the "note" directive; none found. [docutils]'
+    )
+    note = PROLOG_MD_BODY.index("```{note}")
+    assert sorted(build_warnings(app)) == sorted(
+        [
+            # a need directive, and the same body as RST content: the same line
+            f"<srcdir>/index.rst:{body('REQ_PROLOG') + 2}: {unknown}",
+            f"<srcdir>/index.rst:{body('SPEC_PROLOG_R') + 2}: {unknown}",
+            # MyST content
+            f"<srcdir>/index.rst:{body('SPEC_PROLOG_M') + note}: {empty}",
+            # rendered content, at the need's line, with the parser's or the file's line
+            f"<srcdir>/index.rst:{directive(':id: SPEC_PROLOG_J') + note}: {empty}",
+            f"<srcdir>/index.rst:{directive(':id: SPEC_PROLOG_JR') + note}: {empty}",
+            # a record without a source, at the need's line, either way
+            f"<srcdir>/index.rst:{directive('records_i.json') + 2}: {empty}",
+            f"<srcdir>/index.rst:{directive('records_ir.json') + 2}: {empty}",
+        ]
+    )
