@@ -277,6 +277,8 @@ Each field on the cycle is reported as ``needs.derive_cycle``, once per field, n
    'summary' on 2 needs (CYC_A, CYC_B); the field is left empty [needs.derive_cycle]
 
 A value computed from a field on a cycle is computed from the value it holds, and is not reported.
+A field whose call fails, or returns a result the field cannot hold, holds the same as a field on a cycle
+(``LIT_1, [[copy("hours")]]`` in a link field keeps ``LIT_1``), and the call is reported as ``needs.dynamic_function``.
 A sum over every need includes the need that holds it,
 so ``:hours: [[calc_sum("hours")]]`` reads its own value and is a cycle;
 sum into another field, or give a ``filter`` that excludes the need.

@@ -2267,6 +2267,77 @@ def test_an_unset_need_attribute_selector_fails_the_role_too(test_app):
     ), warnings
 
 
+FAILED_CALL_INDEX = """\
+Failed calls
+============
+
+.. req:: Literal one
+   :id: LIT_1
+
+.. req:: A link list whose call returns a number
+   :id: LL_NUM
+   :hours: 3
+   :links: LIT_1, [[copy("hours")]]
+
+.. req:: An array whose call returns a number
+   :id: LA_NUM
+   :hours: 3
+   :tags: a, [[copy("hours")]]
+
+.. req:: A link list whose call fails
+   :id: LL_MISS
+   :links: LIT_1, [[copy("title", "MISSING")]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [(Path("conf.py"), CONF), (Path("index.rst"), FAILED_CALL_INDEX)],
+        }
+    ],
+    indirect=True,
+)
+def test_a_failed_call_leaves_its_field_at_its_placeholder(test_app):
+    """A call that fails, or whose result the field cannot hold, computes nothing.
+
+    The field holds what a cycle member would: a link or array field its written
+    items (``LIT_1``, ``a``), not the empty list, and the call is one
+    ``needs.dynamic_function`` warning.
+    """
+    app = test_app
+    app.build()
+    needs = _needs(app)
+    assert {
+        "LL_NUM": needs["LL_NUM"]["links"],
+        "LA_NUM": needs["LA_NUM"]["tags"],
+        "LL_MISS": needs["LL_MISS"]["links"],
+    } == {"LL_NUM": ["LIT_1"], "LA_NUM": ["a"], "LL_MISS": ["LIT_1"]}
+    assert needs["LIT_1"]["links_back"] == ["LL_MISS", "LL_NUM"]
+
+    def failed(need_id: str, field: str, error: str) -> str:
+        return _warning(
+            "index",
+            FAILED_CALL_INDEX,
+            need_id,
+            f"Error while resolving dynamic values for field '{field}', of need "
+            f"'{need_id}': {error}",
+            "dynamic_function",
+        )
+
+    not_a_list = (
+        "dynamic function value <class 'float'> is not of type 'array' or item type "
+        "'string'"
+    )
+    assert build_warnings(app) == [
+        failed("LL_MISS", "links", "Error while executing function 'copy': 'MISSING'"),
+        failed("LL_NUM", "links", not_a_list),
+        failed("LA_NUM", "tags", not_a_list),
+    ]
+
+
 # -- a ``None`` result -------------------------------------------------------------
 
 NONE_RESULT_INDEX = """\

@@ -139,8 +139,9 @@ Breaking changes
   a cycle (``needs.derive_cycle``), including a ``calc_sum`` over every need written into the summed field itself
   and a variant whose condition reads the field it sets, is not computed;
   a link field's call reading a later value (``needs.derive_scope``) is not run;
-  such a field keeps the items written in it if it is a link or array field, and loses the computed ones,
-  and any other such field is left empty.
+  such a field, and a field whose call fails or returns a result the field cannot hold
+  (``needs.dynamic_function``, as before), keeps the items written in it if it is a link or array field,
+  and loses the computed ones, and any other such field is left empty.
   A ``needextend`` filter naming a computed field (``needs.derive_scope``),
   which never matched the computed value anyway, reads the value from before it is computed.
   The warnings of the pass come in the order the values are computed

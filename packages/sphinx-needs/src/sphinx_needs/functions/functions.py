@@ -792,8 +792,10 @@ def _resolve_field(
     """Compute the value of one field of one need, and write it into the need.
 
     The items of the field (calls, variants, variant data, literals) are resolved in
-    the order written and joined by the field's type; a failure is one
-    ``needs.dynamic_function`` warning, and the field keeps the value it held.
+    the order written and joined by the field's type. A failure (a call that fails, or
+    a result the field cannot hold) is one ``needs.dynamic_function`` warning, and the
+    field holds its placeholder, as a cycle member does: a link or array field its
+    written items, any other field its typed empty value.
     """
     needs_schema = schema
     needs_config = config
@@ -922,6 +924,10 @@ def _resolve_field(
             "dynamic_function",
             location=(need["docname"], need["lineno"]) if need["docname"] else None,
         )
+        # it imports this module
+        from sphinx_needs.functions.order import placeholder
+
+        need[field] = placeholder(need, field, needs_schema)
 
 
 def _get_variant(

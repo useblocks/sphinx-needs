@@ -4,6 +4,10 @@
     "external_css": "external_link",
     "id": "REQ_BADTYPE_ARRAY",
     "lineno": 24,
+    "myarray": [
+      "a",
+      "c"
+    ],
     "section_name": "Variant Data Field Errors Test",
     "sections": [
       "Variant Data Field Errors Test"
