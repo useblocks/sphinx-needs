@@ -909,15 +909,25 @@ JINJA_BODY = [
     "",
     "[lnk]: https://example.com",
 ]
+JINJA_OPTIONS = {"markup": ".md", "source": "src/j.c", "first-line": 10, "jinja": ""}
 JINJA_INDEX = [
     "Rendered content",
     "================",
     "",
-    *rst_need(
-        "SPEC_JINJA",
-        JINJA_BODY,
-        {"markup": ".md", "source": "src/j.c", "first-line": 10, "jinja": ""},
-    ),
+    ".. toctree::",
+    "",
+    "   jinja_md",
+    "",
+    *rst_need("SPEC_JINJA_R", JINJA_BODY, JINJA_OPTIONS),
+]
+JINJA_MD = [
+    "# Rendered content (MyST)",
+    "",
+    "Some lines, so that the need is not near the top of the page.",
+    "",
+    "More of them.",
+    "",
+    *md_need("SPEC_JINJA_M", JINJA_BODY, JINJA_OPTIONS),
 ]
 
 
@@ -930,6 +940,7 @@ JINJA_INDEX = [
                 (Path("conf.py"), CONF),
                 (Path("needcontent_ext.py"), DRIVER),
                 (Path("index.rst"), "\n".join(JINJA_INDEX)),
+                (Path("jinja_md.md"), "\n".join(JINJA_MD)),
             ],
         }
     ],
@@ -938,18 +949,28 @@ JINJA_INDEX = [
 def test_rendered_content_is_parsed_in_its_markup_at_the_need(test_app: SphinxTestApp):
     """Content rendered by Jinja is in no file: it is anchored at the need's own line.
 
-    ``content_source`` is ignored for it, as for a template's content.
+    ``content_source`` is ignored for it, as for a template's content. In both pages,
+    the rendered text's lines count from the line of the directive that made the need.
     """
     app = test_app
     app.build()
-    directive = line_of(JINJA_INDEX, ".. test-need-content::")
-    assert build_warnings(app) == [
-        f"<srcdir>/index.rst:{directive + JINJA_BODY.index('```{note}')}: ERROR: "
-        'Content block expected for the "note" directive; none found. [docutils]'
+    note = JINJA_BODY.index("```{note}")
+    rst = line_of(JINJA_INDEX, ".. test-need-content::")
+    md = line_of(JINJA_MD, "````{test-need-content}")
+    expected = (
+        'ERROR: Content block expected for the "note" directive; none found. [docutils]'
+    )
+    assert sorted(build_warnings(app)) == [
+        f"<srcdir>/index.rst:{rst + note}: {expected}",
+        f"<srcdir>/jinja_md.md:{md + note}: {expected}",
     ]
-    content = need_content_html(app, "index.html", "SPEC_JINJA")
-    assert "Rendered 42 with a" in content
-    assert '<a class="reference external" href="https://example.com">' in content
+    for page, need_id in (
+        ("index.html", "SPEC_JINJA_R"),
+        ("jinja_md.html", "SPEC_JINJA_M"),
+    ):
+        content = need_content_html(app, page, need_id)
+        assert "Rendered 42 with a" in content
+        assert '<a class="reference external" href="https://example.com">' in content
 
 
 IMAGE_INDEX = [

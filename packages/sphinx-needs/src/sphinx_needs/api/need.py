@@ -953,9 +953,15 @@ def _parse_declared_content(
     if data["jinja_content"] or data["template"]:
         # rendered text exists in no file: anchor it at the need's own line, as the
         # pre/post template content is
-        source, first_line = _host_content_anchor(
-            state, _template_parse_offset(data), host_source
-        )
+        if isinstance(state, RSTState):
+            source, first_line = _host_content_anchor(
+                state, _template_parse_offset(data), host_source
+            )
+        else:
+            # ``_template_parse_offset`` is a line of the page, while myst-parser's
+            # nested parse offsets from the directive's line: the need's own line is
+            # already the page line wanted
+            source, first_line = host_source, data["lineno"] or 1
     elif content_source is not None:
         source, first_line = content_source
     else:
