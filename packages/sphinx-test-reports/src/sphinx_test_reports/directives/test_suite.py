@@ -7,7 +7,10 @@ from docutils.parsers.rst import directives
 import sphinx_test_reports.directives.test_case
 from sphinx_needs.api import add_need
 from sphinx_needs.utils import add_doc
-from sphinx_test_reports.directives.test_common import TestCommonDirective
+from sphinx_test_reports.directives.test_common import (
+    TestCommonDirective,
+    _links_with,
+)
 from sphinx_test_reports.exceptions import TestReportInvalidOptionError
 
 
@@ -138,10 +141,7 @@ class TestSuiteDirective(TestCommonDirective):
                 options["suite"] = suite["name"]
                 options["id"] = suite_id
 
-                if "links" not in self.options:
-                    options["links"] = self.test_id
-                elif self.test_id not in options["links"]:
-                    options["links"] = options["links"] + ";" + self.test_id
+                options["links"] = _links_with(options.get("links", ""), self.test_id)
 
                 arguments = [suite["name"]]
                 suite_directive = TestSuiteDirective(
@@ -195,10 +195,7 @@ class TestSuiteDirective(TestCommonDirective):
                 options["classname"] = case["classname"]
                 options["id"] = case_id
 
-                if "links" not in self.options:
-                    options["links"] = self.test_id
-                elif self.test_id not in options["links"]:
-                    options["links"] = options["links"] + ";" + self.test_id
+                options["links"] = _links_with(options.get("links", ""), self.test_id)
 
                 arguments = [case["name"]]
                 case_directive = (

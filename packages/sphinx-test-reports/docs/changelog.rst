@@ -211,6 +211,15 @@ Fixed
   `#1949 <https://github.com/useblocks/sphinx-needs/issues/1949>`__,
   `#2117 <https://github.com/useblocks/sphinx-needs/pull/2117>`__
 
+- 🐛 A ``test-file`` expanded with ``:auto_suites:`` / ``:auto_cases:`` lost its parent
+  links when its ``:links:`` merely *contained* its id: with ``:id: TF_1`` and
+  ``:links: TF_10``, no suite linked ``TF_1`` and no case linked it either, because the
+  "already linked" check was a substring test (the same for a suite's id in its cases'
+  links). The check now compares whole link ids, so ordinary numbering schemes keep the
+  file → suite → case links; a ``:links:`` that shares no such prefix is unchanged.
+  `#2114 <https://github.com/useblocks/sphinx-needs/issues/2114>`__,
+  `#2118 <https://github.com/useblocks/sphinx-needs/pull/2118>`__
+
 What the move costs, stated rather than left to the CI diff
 ............................................................
 
