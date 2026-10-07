@@ -42,6 +42,7 @@ from pathlib import Path
 
 from docutils.parsers import Parser
 from docutils.parsers.rst import directives
+from docutils.statemachine import StringList
 from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
 
@@ -65,6 +66,7 @@ class TestNeedContent(SphinxDirective):
         "links": directives.unchanged,
         "jinja": directives.flag,
         "resolved-lineno": directives.flag,
+        "crlf": directives.flag,
     }
 
     def run(self):
@@ -92,7 +94,11 @@ class TestNeedContent(SphinxDirective):
                 need_type=self.options["type"],
                 title=self.options["title"],
                 id=self.options["id"],
-                content=self.content,
+                content=(
+                    StringList([f"{line}\\r" for line in self.content])
+                    if "crlf" in self.options
+                    else self.content
+                ),
                 lineno_content=self.content_offset + 1,
                 **kwargs,
             )
@@ -1275,3 +1281,90 @@ def test_content_anchored_in_the_page_behind_rst_prolog_and_an_include(
             f"<srcdir>/index.rst:{directive('records_ir.json') + 2}: {empty}",
         ]
     )
+
+
+LINES_RECORDS = [
+    {
+        "need": {
+            "type": "spec",
+            "title": "A form feed in a line",
+            "id": "SPEC_FF",
+            "doctype": ".rst",
+            "content": "Text.\x0c A page break, in the same line.\n\n.. nosuchdirective::",
+        },
+        "source": {"path": "src/ff.c", "line": 10},
+    },
+    {
+        "need": {
+            "type": "spec",
+            "title": "A form feed in a line, MyST",
+            "id": "SPEC_FF_MD",
+            "doctype": ".md",
+            "content": "Text.\x0c A page break, in the same line.\n\n```{note}\n```",
+        },
+        "source": {"path": "src/ffm.c", "line": 20},
+    },
+    {
+        "need": {
+            "type": "spec",
+            "title": "CRLF",
+            "id": "SPEC_CRLF",
+            "doctype": ".rst",
+            "content": "Text::\r\n\r\n   literal\r\n\r\n.. nosuchdirective::\r\n",
+        },
+        "source": {"path": "src/crlf.c", "line": 30},
+    },
+]
+LINES_INDEX = [
+    "Lines",
+    "=====",
+    "",
+    ".. test-ingest-records:: records.json",
+    "",
+    *rst_need(
+        "SPEC_CR_ITEMS",
+        ["Text::", "", "   literal", "", ".. nosuchdirective::"],
+        {"markup": ".rst", "source": "src/cr.c", "first-line": 40, "crlf": ""},
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF),
+                (Path("needcontent_ext.py"), DRIVER),
+                (Path("index.rst"), "\n".join(LINES_INDEX)),
+                (Path("records.json"), json.dumps(LINES_RECORDS)),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_content_lines_are_its_newline_separated_lines(test_app: SphinxTestApp):
+    """A line of content is what ``\\n`` separates, as a line of the file it came from.
+
+    A form feed (or another character ``str.splitlines`` breaks on) inside a line does
+    not shift the lines after it, and a ``\\r`` ending a line -- CRLF text, or lines
+    split from it on ``\\n`` -- parses as it does without one.
+    """
+    app = test_app
+    app.build()
+    unknown = 'ERROR: Unknown directive type "nosuchdirective".\n\n.. nosuchdirective:: [docutils]'
+    empty = (
+        'ERROR: Content block expected for the "note" directive; none found. [docutils]'
+    )
+    assert sorted(build_warnings(app)) == sorted(
+        [
+            f"<srcdir>/{src('ff.c')}:12: {unknown}",
+            f"<srcdir>/{src('ffm.c')}:22: {empty}",
+            f"<srcdir>/{src('crlf.c')}:34: {unknown}",
+            f"<srcdir>/{src('cr.c')}:44: {unknown}",
+        ]
+    )
+    for need_id in ("SPEC_CRLF", "SPEC_CR_ITEMS"):
+        content = need_content_html(app, "index.html", need_id)
+        assert '<pre class="literal-block">literal</pre>' in content, need_id
