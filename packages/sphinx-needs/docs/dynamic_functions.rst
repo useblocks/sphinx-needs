@@ -62,12 +62,18 @@ the field of ``copy``, :ref:`calc_sum <calc_sum>` or :ref:`check_linked_values <
 a ``filter``, or ``links_only``),
 its field must be final before the call is computed (see :ref:`needs_processing_order`):
 written in the need or by a ``needextend``, or a link field read from any field that is not one.
-Otherwise the call is not run, its field is left empty, and ``needs.derive_scope`` says so (:ref:`needs_derive_scope`).
+Otherwise the call is not run, its field holds what a field on a cycle holds
+(:ref:`needs_derive_cycle`), and ``needs.derive_scope`` says so (:ref:`needs_derive_scope`).
+If the field is unset, the call fails (``needs.dynamic_function``):
+``copy`` does not read the need it is in instead.
+Any other argument (such as ``check_linked_values``' ``result`` or ``search_value``, or ``copy``'s ``upper``)
+is a value: its field is read like any other, after it is computed, and is ``None`` when unset.
 
 .. versionchanged:: 9.0.0
 
    ``need.<field>`` arguments are accepted in field and link values, a ``needextend``'s included;
-   a need that used one was not created.
+   a need that used one in its own field was not created,
+   and a ``needextend`` value that used one was dropped with a ``needs.needextend`` warning.
 
 Built-in functions
 -------------------
@@ -177,7 +183,8 @@ Once every document has been read, and before any page is written, the needs are
    so it never sees the change of another extend, nor the value of a ``[[…]]``, ``<<…>>`` or ``<{…}>``;
    a filter that names a field such a value is computed for is reported (:ref:`needs_derive_scope`).
    A ``needextend`` may itself set a field it can modify to a ``[[…]]`` or ``<<…>>``,
-   which is then computed like one written in the need; until it is, the field holds its empty value.
+   which is then computed like one written in the need; until it is, the field holds what is written in it
+   besides calls: an array the items written before a call was appended to them, any other field its empty value.
 2. The ``[[…]]``, ``<<…>>`` and ``<{…}>`` of the :ref:`link fields <needs_links>` are computed,
    each after the link fields it reads, and those that call your own :ref:`functions <needs_functions>` last.
 3. The back links are built from the links of steps 1 and 2, each back link list in need-id order.
@@ -217,18 +224,23 @@ call                                   reads
 =====================================  ==============================================================================
 ``copy("x")``                          ``x`` of its own need (a back link too, such as ``links_back``)
 ``copy("x", "ID")``                    ``x`` of the need ``ID``
-``copy("x", filter=…)``                ``x`` of the match with the lowest id
+``copy("x", filter=…)``                ``x`` of the match with the lowest id; ``current_need`` is its own need
+``copy("x", "ID", filter=…)``          ``x`` of the lowest-id match, else of ``ID``; ``current_need`` is ``ID``
 ``calc_sum("x")``                      ``x`` of every need, its own included
 ``calc_sum("x", filter=…)``            ``x`` of every need the filter keeps
 ``calc_sum("x", links_only=True)``     its own ``links``, and ``x`` (and the filter's fields) of each linked need
 ``check_linked_values(…, "x", …)``     its own ``links``, and ``x`` (and the filter's fields) of every linked need
 ``links_from_content()``               the need's content
+``links_from_content(filter=…)``       the filter's fields of each need the content references
 ``<<[cond]:a, b>>``                    the fields of its own need that any of its conditions names, evaluated or not
 =====================================  ==============================================================================
 
-A ``filter`` that names only values nothing computes is evaluated before step 4, so its matches are known;
-one that names a computed field makes every need a candidate, and the call is computed after
+A ``filter`` that names only values final before its step is evaluated before the step, so its matches are known:
+values nothing computes, and, in step 4, the link fields and back links of steps 2 and 3.
+One that names a value computed in the same step makes every need a candidate, and the call is computed after
 that field and ``x`` on every need.
+A filter reads the needs themselves, so only these rules order what it reads:
+the check at run time (:ref:`needs_derive_scope`) does not see a filter's reads.
 The needs of a set are read in need-id order, comparing ids as strings (``REQ_10`` comes before ``REQ_9``):
 the candidates of a ``calc_sum`` or a ``filter``, and a back link list.
 A link list is read in the order it is written, followed by the links a ``needextend`` added;
@@ -236,7 +248,9 @@ a link written twice is read twice, so a ``calc_sum`` with ``links_only`` adds i
 The link lists are sorted, and a link written twice kept once, only in step 5.
 
 Your own functions run after every built-in function of their step, in need-id order, then by field.
-They read the values the built-in functions computed; a built-in function that reads a field your own function computes
+They read the values the built-in functions computed
+(but for a call whose filter cannot be read, which runs among them, see below);
+a built-in function that reads a field your own function computes
 reads it before it is computed, which is reported (:ref:`needs_derive_scope`).
 A function of your own in a link field, such as sphinx-test-reports' ``tr_link``, runs at the end of step 2,
 so its links are in the back links of step 3.
@@ -250,20 +264,27 @@ Cycles
 ++++++
 
 A value that reads itself, directly or through other computed values, cannot be computed.
-Each field on such a cycle is left at its empty value (``None``, or for a field that is not nullable ``""``, ``0``, ``False`` or ``[]``)
-and reported as ``needs.derive_cycle``, once at each need on the cycle, naming the needs:
+No field on such a cycle is computed.
+A link or array field keeps the items written in it and loses the computed ones
+(``:links: LIT_1, [[copy("links")]]`` keeps ``LIT_1``);
+any other field, and a list with nothing written, is left empty
+(``None``, or for a field that is not nullable ``""``, ``0``, ``False`` or ``[]``).
+Each field on the cycle is reported as ``needs.derive_cycle``, once per field, naming the needs:
 
 .. code-block:: text
 
    index.rst:4: WARNING: dynamic function 'copy' for option 'summary' is on a cycle:
    'summary' on 2 needs (CYC_A, CYC_B); the field is left empty [needs.derive_cycle]
 
-A value computed from a field on a cycle is computed from its empty value, and is not reported.
-A sum over every need includes the need that holds it, so ``:hours: [[calc_sum("hours")]]`` reads its own value and is a cycle;
+A value computed from a field on a cycle is computed from the value it holds, and is not reported.
+A sum over every need includes the need that holds it,
+so ``:hours: [[calc_sum("hours")]]`` reads its own value and is a cycle;
 sum into another field, or give a ``filter`` that excludes the need.
 A ``filter`` that names a computed field makes every need a candidate,
 so it can make a cycle that the filter itself would have excluded; the message then names the filter.
 Filter on a value that is not computed, or break the cycle.
+A filter on values that are not computed but keeps the need itself, such as ``type == 'req'`` in a ``req``,
+is a cycle too, and its message names the filter.
 A variant whose condition reads the field it sets, such as ``:status: <<[status == "open"]:open, closed>>``,
 is a cycle too.
 
@@ -274,13 +295,24 @@ Reads that cannot be ordered
 
 These reads are reported as ``needs.derive_scope``:
 
-- a ``[[…]]`` of a link field that reads another computed field, or a back link,
-  reads it before it is computed (step 2 comes before the back links and the other fields);
+- a ``[[…]]`` or ``<<…>>`` of a link field that reads a field that is not a link field, a back link,
+  or ``has_dead_links`` or ``has_forbidden_dead_links``,
+  all of which are final only after step 2 (they are computed, or set with the back links, after it):
+  the call is not run (a variant's condition is not evaluated),
+  and the field keeps only the links written in it;
 - a ``need.<field>`` :ref:`argument <dynamic_functions_need_arguments>` that selects what the call reads,
-  while the field is computed in the same step: the call is not run, and its field is left empty;
+  while the field is computed in the same step: the call is not run,
+  and its field keeps the items written in it (a link or array field) or is left empty;
 - a ``needextend`` filter that names a field a ``[[…]]``, ``<<…>>`` or ``<{…}>`` computes:
   the filter sees the value from before it is computed, once for each ``needextend`` carrying it;
 - a built-in function that reads a field your own function computes, before it is computed.
+
+A field whose call is not run reads nothing, so it is on no cycle; a value computed from it reads what it holds.
+The last case is found as the call runs: the built-in functions note each field they read,
+and a read of a value not computed yet is reported with its cause.
+Should the cause be neither your own function nor a call whose filter cannot be read,
+the order itself missed the read, and the message asks you to report it.
+A filter's reads are not noted (see :ref:`needs_processing_order`).
 
 Move the read to a value that is final earlier,
 or write "set X when computed Y says so" as a ``[[…]]`` on X instead of as a ``needextend``.

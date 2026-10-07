@@ -1051,11 +1051,11 @@ def test_listed_with_the_build_warnings():
     assert {"derive_cycle", "derive_scope"} <= set(get_args(WarningSubTypes))
     assert WarningSubTypeDescription["derive_cycle"] == (
         "A dynamic function or variant is on a cycle of computed values; "
-        "the field is left empty"
+        "the field is not computed"
     )
     assert WarningSubTypeDescription["derive_scope"] == (
-        "A dynamic function, variant or needextend filter read a computed value "
-        "before it could be computed"
+        "A dynamic function, variant or needextend filter reads a value "
+        "that cannot be computed before it"
     )
 
 

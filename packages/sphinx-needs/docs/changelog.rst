@@ -67,21 +67,30 @@ Improvements
   The new :ref:`needs_processing_order` section documents the whole order,
   from the ``needextend`` directives to the constraints.
 
-  A value that reads itself, directly or through other computed values, is left empty
-  and reported as ``needs.derive_cycle`` (:ref:`needs_derive_cycle`);
+  A value that reads itself, directly or through other computed values, is not computed
+  and is reported as ``needs.derive_cycle`` (:ref:`needs_derive_cycle`):
+  a link or array field keeps the items written in it, any other field is left empty;
   this includes ``:hours: [[calc_sum("hours")]]``, whose sum includes its own need,
   and a variant whose condition reads the field it sets.
   A read that cannot be ordered is reported as ``needs.derive_scope`` (:ref:`needs_derive_scope`):
-  a link field's ``[[…]]`` reading another computed field or a back link,
-  a ``need.<field>`` argument that selects what its call reads while the field is computed in the same step,
-  a ``needextend`` filter naming a computed field,
+  a link field's ``[[…]]`` or ``<<…>>`` reading a field that is not a link field,
+  a back link or a dead-link flag,
+  and a ``need.<field>`` argument that selects what its call reads while the field is computed in the same step,
+  neither of which is run (the field keeps what a cycle member keeps);
+  a ``needextend`` filter naming a computed field;
   and a built-in function reading a field your own function computes.
-  `ubCode`_ computes and reports the same.
+  `ubCode`_'s phase 1 computes the same values and reports the same findings;
+  the differences that remain are registered in ubCode's divergence register
+  (a boolean result in an integer field, an unparsable variant condition,
+  and, until ubCode's phase 1 is released, a copy of an empty back link list).
   The notice warning ``needs.derive_unresolved`` of the unreleased :pr:`2080`, which reported such reads,
   is gone, and a ``suppress_warnings`` entry naming it is a no-op.
 
   A ``need.<field>`` argument is accepted in field and link values, a ``needextend``'s included
-  (:ref:`argument <dynamic_functions_need_arguments>`); a need that used one was not created.
+  (:ref:`argument <dynamic_functions_need_arguments>`);
+  a need that used one in its own field was not created,
+  and a ``needextend`` value that used one was dropped with a ``needs.needextend`` warning.
+  One that selects what its call reads fails the call when its field is unset.
   A ``None`` result, such as a ``copy`` of an unset field or a failed ``check_linked_values``,
   adds nothing to a field: alone in a nullable string or array field it leaves the field unset,
   where it was stored as the text ``"None"``, or as ``[None]``, which schema validation then refused.
@@ -124,8 +133,11 @@ Breaking changes
   and a need that used a ``need.<field>`` argument is created.
   **A cycle and a read that cannot be ordered are new warnings, so a** ``-W`` **build with one fails:**
   a cycle (``needs.derive_cycle``), including a ``calc_sum`` over every need written into the summed field itself
-  and a variant whose condition reads the field it sets, is left empty;
-  a read that cannot be ordered (``needs.derive_scope``), notably a ``needextend`` filter naming a computed field,
+  and a variant whose condition reads the field it sets, is not computed;
+  a link field's call reading a later value (``needs.derive_scope``) is not run;
+  such a field keeps the items written in it if it is a link or array field, and loses the computed ones,
+  and any other such field is left empty.
+  A ``needextend`` filter naming a computed field (``needs.derive_scope``),
   which never matched the computed value anyway, reads the value from before it is computed.
   To keep such a build green while you fix them,
   add ``"needs.derive_cycle"`` and ``"needs.derive_scope"`` to ``suppress_warnings``.

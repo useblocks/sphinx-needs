@@ -152,6 +152,8 @@ Filters see the needs as written
 
    A filter used to be evaluated when its ``needextend`` was applied,
    against the needs as the ``needextend`` directives applied before it had left them.
+   A filter naming a field that a ``[[…]]``, ``<<…>>`` or ``<{…}>`` computes
+   is now reported as ``needs.derive_scope``.
 
 Every filter is evaluated against the needs as written, before any ``needextend`` is applied,
 and its ``needextend`` modifies the needs it matched there.
@@ -174,8 +176,8 @@ An ID argument names its need whatever the other ``needextend`` directives chang
 To react to what another ``needextend`` set, write the value as a derivation:
 a ``[[…]]`` or ``<<…>>`` sees the needs after every ``needextend`` is applied (:ref:`needs_processing_order`),
 where a second ``needextend`` whose filter names the changed field matches the needs as written.
-A filter sees no value a ``[[…]]``, ``<<…>>`` or ``<{…}>`` computes, as those are computed after every ``needextend``
-(:ref:`needs_processing_order`),
+A filter sees no value a ``[[…]]``, ``<<…>>`` or ``<{…}>`` computes,
+as those are computed after every ``needextend`` (:ref:`needs_processing_order`),
 so a ``needextend`` whose filter names a field that one computes, on any need, is reported as ``needs.derive_scope``.
 
 A filter is evaluated once in each document it is written in, however many ``needextend`` directives there carry it.

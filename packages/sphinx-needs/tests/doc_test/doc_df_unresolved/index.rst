@@ -1,7 +1,10 @@
 .. ubCode's build fixture ``dynamic_functions_unresolved``
-   (``rust/ubc_parser_ctrl/tests/build_fixtures/``), its pages verbatim;
-   ``ubproject.toml`` says what differs. The text below is ubCode's phase-0 description;
-   ``test_ubcode_fixture`` asserts what the dependency-ordered pass gives.
+   (``rust/ubc_parser_ctrl/tests/build_fixtures/``), its pages verbatim as on ubCode's
+   main branch at 47ceb2f; ``ubproject.toml`` says what differs. The text below describes
+   ubCode's phase 0, whose ``needs.derive_unresolved`` findings neither tool gives any
+   more; ubCode's phase-1 change rewrites it, and this copy is to be re-synced once that
+   change is merged. ``test_ubcode_fixture`` asserts what the dependency-ordered pass
+   gives: the chained values, the cycle, and the one ``need.<attr>`` selector.
 
 A derivation that reads a value not resolved yet
 ================================================
