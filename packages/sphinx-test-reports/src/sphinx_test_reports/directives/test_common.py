@@ -31,14 +31,15 @@ from ub_test_reports.junitparser import JUnitParser
 def _links_with(existing: str, link_id: str) -> str:
     """``existing``, a ``:links:`` value, with ``link_id`` appended unless already in it.
 
-    "In it" means one of its ELEMENTS -- the value split on ``;`` and ``,``, as
-    sphinx-needs splits it -- not a substring: ``TF_1`` is not in ``TF_10``. The value
-    is otherwise returned as written, so the string handed on only ever gains
+    "In it" means one of its ELEMENTS -- the value split on ``;``, ``|`` and ``,``, the
+    delimiters sphinx-needs' link parser splits on (``_split_list`` in
+    ``sphinx_needs/needs_schema.py``) -- not a substring: ``TF_1`` is not in ``TF_10``.
+    The value is otherwise returned as written, so the string handed on only ever gains
     ``;<link_id>`` at its end.
     """
     if not existing:
         return link_id
-    if link_id in (element.strip() for element in re.split("[;,]", existing)):
+    if link_id in (element.strip() for element in re.split("[;|,]", existing)):
         return existing
     return existing + ";" + link_id
 
