@@ -62,7 +62,7 @@ The following functions are available by default.
    The parameters ``app``, ``need`` and ``needs`` of the following functions are set automatically.
    So is ``reads``, the keyword-only parameter of :ref:`copy <copy>`, :ref:`check_linked_values <check_linked_values>`
    and :ref:`calc_sum <calc_sum>` through which they report the values they read that are computed in the same pass
-   (see :ref:`needs_derive_unresolved`): it is reserved, and giving it in a call is an error.
+   (see :ref:`needs_derive_unresolved`). It is reserved: do not give it in a call (doing so fails the call).
 
 test
 ~~~~

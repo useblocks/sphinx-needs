@@ -65,16 +65,18 @@ def _execute_dynamic_func(
     *,
     reads: UnresolvedReads | None = None,
 ) -> str | int | float | list[str] | list[int] | list[float] | list[NeedLink] | None:
-    """Executes a given function string.
+    """Execute a parsed dynamic function call.
 
-    :param env: Sphinx environment
-    :param need: Actual need, which contains the found function string
-    :param func_string: string of the found function. Without ``[[ ]]``
-    :param location: source location of the function call
+    :param app: Sphinx application
+    :param need: The need the call belongs to, if any
+    :param needs: All needs
+    :param df: The parsed call
     :param reads: The record of the call ``resolve_functions`` is running, handed to a
         function marked :func:`records_reads` as its ``reads`` keyword; any other
         function is called without it.
     :return: return value of executed function
+    :raises RuntimeError: If the call cannot be applied to the need, names no
+        registered function, or fails.
     """
     if need is not None:
         try:
@@ -93,7 +95,7 @@ def _execute_dynamic_func(
     func = measure_time_func(registered, category="dyn_func", source="user")
 
     try:
-        if getattr(registered, "records_reads", False):
+        if getattr(registered, "records_reads", None) is registered:
             func_return = func(
                 app,
                 need,
@@ -258,25 +260,27 @@ def find_and_replace_node_content(
 # reads a field another one computes sees the computed value or the unresolved one
 # depending on that order (document names, the documents the last build re-read,
 # ``-j``). Each such read is reported as ``needs.derive_unresolved``. The pass opens an
-# ``UnresolvedReads`` record for each call and each variant condition: a built-in
+# ``UnresolvedReads`` record for each call and each ``<<…>>`` variant: a built-in
 # marked ``records_reads`` receives it as its ``reads`` keyword and notes what it
-# reads, ``_get_variant`` notes the names a condition reads, and the pass reports the
-# record once the call is over. Nothing else is handed a record -- an ``ndf`` role, a
-# ``:style_row:``, a user's own function and any built-in it calls -- so a built-in
-# called there gets ``reads=None`` and notes nothing.
+# reads, ``_get_variant`` notes the names the variant's evaluated conditions read, and
+# the pass reports the record once the call is over. Nothing else is handed a record:
+# an ``ndf`` role or a ``:style_row:`` runs after the pass, and a user's own function,
+# which the pass calls without one, has none to give a built-in it calls; such a
+# built-in gets ``reads=None`` and notes nothing.
 
 #: how many needs one read names; the rest are counted
 _UNRESOLVED_NAMED = 3
 
 
 class UnresolvedReads:
-    """The reads of computed values made by ONE call or variant condition.
+    """The reads of computed values made by ONE call or ``<<…>>`` variant.
 
-    ``resolve_functions`` creates one for each call and each variant condition it
-    evaluates, hands it to the dynamic function as its ``reads`` keyword when the
-    function is marked :func:`records_reads`, and reports what it holds as
-    ``needs.derive_unresolved`` once the call is over. No other caller of a dynamic
-    function creates one: there every value read is final.
+    ``resolve_functions`` creates one for each call and each ``<<…>>`` variant (shared
+    by all the conditions it evaluates), hands it to the dynamic function as its
+    ``reads`` keyword when the function is marked :func:`records_reads`, and reports
+    what it holds as ``needs.derive_unresolved`` once the call is over. No other caller
+    creates one: after the pass every value read is final, and a user's function is
+    opaque (its reads, through a built-in or otherwise, are not reported).
 
     Kept by the name read, in the order first read, each need named once per name.
     """
@@ -327,13 +331,16 @@ def records_reads(func: _DynamicFunctionT) -> _DynamicFunctionT:
     parameter must be keyword-only and default to ``None``. A function that is not
     marked is called exactly as before, never with ``reads``.
 
-    The mark is read from the function as registered, before any wrapping.
+    The mark names the function it is set on, and is checked on the function as
+    registered: a wrapper that copies the function's ``__dict__`` (``functools.wraps``,
+    so also a user's function made with it) carries a mark naming another function,
+    and is not marked.
 
     :param func: The dynamic function to mark.
     :return: The same function, marked.
     """
     # through ``vars``: the type checker refuses an attribute assignment on a callable
-    vars(func)["records_reads"] = True
+    vars(func)["records_reads"] = func
     return func
 
 
@@ -376,7 +383,7 @@ def _derive_unresolved_message(
 def _reads_reported(
     what: str, option: str, need: NeedItem
 ) -> Iterator[UnresolvedReads]:
-    """Open the record of one call or variant condition, and report its reads after it.
+    """Open the record of one call or ``<<…>>`` variant, and report its reads after it.
 
     They are reported whatever the outcome, so a call that fails because of a value it
     read still says what it read. The warning is located at the reading need.
@@ -407,8 +414,9 @@ def resolve_functions(
 
     A read, by a built-in function or a variant condition, of a field that is itself
     computed in this pass is reported as ``needs.derive_unresolved``, once per call:
-    each call and each variant condition gets its own :class:`UnresolvedReads`, which
-    is handed to the built-ins marked :func:`records_reads` and to the condition.
+    each call and each ``<<…>>`` variant gets its own :class:`UnresolvedReads`, which
+    is handed to the built-ins marked :func:`records_reads` and to the variant's
+    conditions.
     """
     needs_schema = SphinxNeedsData(app.env).get_schema()
     var_proxy = needs_config.variant_data_proxy
@@ -545,15 +553,15 @@ def _get_variant(
     """Return the value of the first variant whose condition holds.
 
     Each condition evaluated notes the fields of ``reader`` it names into ``reads``
-    (:meth:`UnresolvedReads.note_read`); the conditions after the first that holds are
-    not evaluated.
+    (:meth:`UnresolvedReads.note_read`), one record for the whole variant; the
+    conditions after the first that holds are not evaluated.
 
     :param variant: The parsed ``<<…>>``.
     :param variants: ``needs_variants``, mapping a name to the condition it stands for.
     :param context: The names a condition is evaluated with.
     :param reader: The need whose field the variant is.
     :param not_fields: The names in ``context`` that are not ``reader``'s fields.
-    :param reads: The record of this condition's reads, or ``None`` to note nothing.
+    :param reads: The record of this variant's reads, or ``None`` to note nothing.
     """
     for expr, _, value in variant.expressions:
         expr = variants.get(expr, expr)

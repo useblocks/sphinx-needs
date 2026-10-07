@@ -2,7 +2,8 @@
 Collection of common sphinx-needs functions for dynamic values
 
 .. note:: The function parameters ``app``, ``need``, ``needs`` are set automatically and can not be overridden by user.
-   So is the keyword-only ``reads`` of the functions marked ``records_reads``.
+   The keyword-only ``reads`` of the functions marked ``records_reads`` is reserved too:
+   do not give it in a call (doing so fails the call).
 """
 
 from __future__ import annotations

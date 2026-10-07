@@ -17,6 +17,7 @@ by (as an Info-graded ``needs.derive_unresolved``), and the last test runs ubCod
 own fixture for it.
 """
 
+import inspect
 import json
 import os
 import re
@@ -28,6 +29,7 @@ import pytest
 from sphinx.util.parallel import parallel_available
 
 from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.functions.common import calc_sum, check_linked_values, copy
 from sphinx_needs.functions.functions import execute_func
 from sphinx_needs.logging import WarningSubTypeDescription, WarningSubTypes
 from sphinx_needs_testkit import assert_no_warnings, build_warnings
@@ -1419,6 +1421,88 @@ def test_a_builtin_a_user_function_calls_is_not_reported(test_app):
     assert_no_warnings(app)
 
 
+WRAPPED_BUILTIN_CONF = (
+    CONF
+    + """\
+# Sphinx's own warning that a function in the configuration is not pickled, which
+# is not what these tests are about
+suppress_warnings = ["config.cache"]
+
+import functools
+
+from sphinx_needs.functions.common import copy
+
+
+@functools.wraps(copy)
+def narrowcopy(app, need, needs, option, need_id=None):
+    # a narrower signature than the built-in's, without **kwargs
+    return copy(app, need, needs, option, need_id, upper=True)
+
+
+@functools.wraps(copy)
+def forwardcopy(app, need, needs, *args, **kwargs):
+    # forwards whatever it is given to the built-in
+    return copy(app, need, needs, *args, **kwargs)
+
+
+# ``functools.wraps`` copied the built-in's name too
+narrowcopy.__name__ = "narrowcopy"
+forwardcopy.__name__ = "forwardcopy"
+
+needs_functions = [narrowcopy, forwardcopy]
+"""
+)
+
+WRAPPED_BUILTIN_INDEX = """\
+Wrapped built-in
+================
+
+.. req:: narrow
+   :id: U_NARROW
+   :summary: [[narrowcopy("title")]]
+
+.. req:: Forward
+   :id: U_FORWARD
+   :summary: [[forwardcopy("summary", "CHAIN_B")]]
+
+.. req:: Middle
+   :id: CHAIN_B
+   :summary: [[copy("title")]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), WRAPPED_BUILTIN_CONF),
+                (Path("index.rst"), WRAPPED_BUILTIN_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_user_wrapper_of_a_builtin_is_not_handed_the_record(test_app):
+    """A user's function made with ``functools.wraps(copy)`` is a user's function.
+
+    ``functools.wraps`` copies the built-in's attributes, its mark included, but the
+    mark names the function it was set on, so the wrapper is not marked: ``narrowcopy``,
+    which takes no ``**kwargs``, is called without ``reads`` and resolves, and
+    ``forwardcopy``, which would forward a record to ``copy``, has none to forward, so
+    its read of ``CHAIN_B``'s computed ``summary`` is not reported.
+    """
+    app = test_app
+    app.build()
+    needs = _built_needs(app)
+    assert (needs["U_NARROW"]["summary"], needs["U_FORWARD"]["summary"]) == (
+        "NARROW",
+        "",
+    )
+    assert_no_warnings(app)
+
+
 AFTER_THE_PASS_INDEX = """\
 After the pass
 ==============
@@ -1525,3 +1609,16 @@ def test_reads_written_in_a_call_is_an_error(test_app):
     ), warnings[1]
     html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
     assert "Rendered: ??." in html
+
+
+def test_the_builtins_take_the_record_only_as_a_keyword_defaulting_to_none():
+    """The record reaches a built-in only as the argument the pass gives it.
+
+    ``reads`` is keyword-only and defaults to ``None``: a shared record as the default
+    would be module-level state again, noted into by every call made outside the pass
+    and never reported.
+    """
+    for function in (copy, calc_sum, check_linked_values):
+        parameter = inspect.signature(function).parameters["reads"]
+        assert parameter.kind is parameter.KEYWORD_ONLY, function.__name__
+        assert parameter.default is None, function.__name__
