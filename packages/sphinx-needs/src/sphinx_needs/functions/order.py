@@ -47,7 +47,7 @@ from sphinx_needs.functions.functions import (
     NeedAttribute,
     _condition_names,
 )
-from sphinx_needs.need_item import NeedItem
+from sphinx_needs.need_item import NeedItem, NeedPartItem
 from sphinx_needs.needs_schema import FieldSchema, FieldsSchema, LinkSchema
 from sphinx_needs.variant_data import VariantDataParsed
 from sphinx_needs.variants import VariantFunctionParsed
@@ -98,6 +98,45 @@ _PARAMETERS: Final[Mapping[str, tuple[str, ...]]] = {
     name: _parameters(func) for name, func in BUILTINS.items()
 }
 _VARARGS: Final = frozenset({"test", "echo"})
+
+
+def _arguments(call: DynamicFunctionParsed) -> dict[str, Any] | None:
+    """A built-in call's arguments by parameter, ``None`` when they do not fit it."""
+    parameters = _PARAMETERS[call.name]
+    if len(call.args) > len(parameters):
+        return None
+    args = dict(zip(parameters, call.args, strict=False))
+    for key, value in call.kwargs:
+        if key in args or key not in parameters:
+            return None
+        args[key] = value
+    return args
+
+
+def unset_selector(
+    call: DynamicFunctionParsed, need: NeedItem | NeedPartItem
+) -> str | None:
+    """The first ``need.<field>`` selector of a built-in call that ``need`` leaves unset.
+
+    A selector is an argument that selects what the call reads (an id, a field name, a
+    filter, ``links_only``). A call with an unset one fails: it would otherwise read
+    something else (``copy`` its own need). An unset value in any other argument is
+    ``None``.
+
+    :param call: A call of a built-in function.
+    :param need: The need the call belongs to.
+    """
+    if call.name not in _SELECTORS or (args := _arguments(call)) is None:
+        return None
+    for key, value in args.items():
+        if (
+            key in _SELECTORS[call.name]
+            and isinstance(value, NeedAttribute)
+            and value.name in need
+            and need[value.name] is None
+        ):
+            return value.name
+    return None
 
 
 def typed_empty(field_schema: FieldSchema | LinkSchema) -> Any:
@@ -537,14 +576,9 @@ class _CallReads:
         if name in _VARARGS:
             values = [*self.call.args, *(value for _, value in self.call.kwargs)]
         else:
-            parameters = _PARAMETERS[name]
-            if len(self.call.args) > len(parameters):
+            if (fitted := _arguments(self.call)) is None:
                 return  # the call fails: it reads nothing
-            args = dict(zip(parameters, self.call.args, strict=False))
-            for key, value in self.call.kwargs:
-                if key in args or key not in parameters:
-                    return  # the call fails: it reads nothing
-                args[key] = value
+            args = fitted
             values = [v for k, v in args.items() if k not in _SELECTORS[name]]
         # a ``need.<field>`` in a value position is read like the field itself
         for value in values:
@@ -566,6 +600,8 @@ class _CallReads:
                 continue
             if attr not in self.need:
                 return  # the call fails: need has no attribute
+            if key in _SELECTORS[name] and self.need[attr] is None:
+                return  # the call fails: what it reads is not selected
             args[key] = self.need[attr]
         if blocking:
             self.reads.scope = _appended(

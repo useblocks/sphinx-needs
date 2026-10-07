@@ -160,6 +160,7 @@ def _table_project(field: str, text: str) -> Project:
             flag=True,
             grp="g",
             cparent="[[copy('parent')]]",
+            unset=None,
             **{field: text},
         ),
         refs={"RD": ["DYN", "SRC"]},
@@ -204,6 +205,13 @@ EVERY_STATUS = 'status == "open"'
             },
         ),
         ("out", "[[copy('summary', need.unknown)]]", {}),
+        # an unset selector fails the call; an unset value is None
+        ("out", "[[copy('summary', need.unset)]]", {}),
+        (
+            "out",
+            "[[copy('summary', 'DYN', upper=need.unset)]]",
+            {"deps": [("DYN", "summary")]},
+        ),
         # a selected value that is no string (here a list, a boolean) fails the call
         ("out", "[[copy('summary', need.links)]]", {}),
         ("out", "[[copy('summary', filter=need.flag)]]", {}),

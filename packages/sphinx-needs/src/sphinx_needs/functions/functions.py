@@ -85,15 +85,27 @@ def _execute_dynamic_func(
     :raises RuntimeError: If the call cannot be applied to the need, names no
         registered function, or fails.
     """
+    needs_config = NeedsSphinxConfig(app.config)
+
     if need is not None:
+        # it imports this module
+        from sphinx_needs.functions.order import BUILTINS, unset_selector
+
+        if (
+            df.name in needs_config.functions
+            and needs_config.functions[df.name]["function"] is BUILTINS.get(df.name)
+            and (attr := unset_selector(df, need)) is not None
+        ):
+            raise RuntimeError(
+                f"Error while applying need to function {df.name!r}: need.{attr} "
+                "selects what the call reads, and is not set"
+            )
         try:
             df = df.apply_need(need)
         except Exception as err:
             raise RuntimeError(
                 f"Error while applying need to function {df.name!r}: {err}"
             ) from err
-
-    needs_config = NeedsSphinxConfig(app.config)
 
     if df.name not in needs_config.functions:
         raise RuntimeError(f"Unknown function {df.name!r}")

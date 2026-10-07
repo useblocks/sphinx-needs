@@ -1392,6 +1392,92 @@ def test_need_attributes_in_field_and_link_values(test_app):
     ]
 
 
+UNSET_SELECTOR_CONF = (
+    CONF
+    + """\
+needs_fields["src"] = {"nullable": True}
+needs_fields["defaulted"] = {
+    "nullable": True,
+    "default": "[[copy('title', need.src)]]",
+}
+"""
+)
+
+UNSET_SELECTOR_INDEX = """\
+Unset selector
+==============
+
+.. req:: Target title
+   :id: T_SRC
+
+.. req:: Selects its source
+   :id: D_ALL
+   :src: T_SRC
+   :summary: [[copy("title", need.src)]]
+
+.. req:: Selector unset
+   :id: D_UNSET
+   :summary: [[copy("title", need.src)]]
+
+.. req:: Value unset
+   :id: V_NONE
+   :summary: [[copy("title", "T_SRC", upper=need.src)]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), UNSET_SELECTOR_CONF),
+                (Path("index.rst"), UNSET_SELECTOR_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_an_unset_need_attribute_selector_fails_the_call(test_app):
+    """A ``need.<field>`` that selects what a call reads, unset, fails the call.
+
+    ``copy("title", need.src)`` with no ``src`` is a ``needs.dynamic_function`` naming
+    ``need.src``, the field keeping its value: not a copy of the need's own title, as
+    if no need had been named. That holds for the configured ``default`` of every need
+    without ``src`` too. In a value argument (``upper``), unset is ``None``.
+    """
+    app = test_app
+    app.build()
+    needs = _needs(app)
+    assert {
+        need_id: (needs[need_id]["summary"], needs[need_id]["defaulted"])
+        for need_id in ("T_SRC", "D_ALL", "D_UNSET", "V_NONE")
+    } == {
+        "T_SRC": (None, None),
+        "D_ALL": ("Target title", "Target title"),
+        "D_UNSET": (None, None),
+        "V_NONE": ("Target title", None),
+    }
+
+    def unset(need_id: str, field: str) -> str:
+        return _warning(
+            "index",
+            UNSET_SELECTOR_INDEX,
+            need_id,
+            f"Error while resolving dynamic values for field '{field}', of need "
+            f"'{need_id}': Error while applying need to function 'copy': need.src "
+            "selects what the call reads, and is not set",
+            "dynamic_function",
+        )
+
+    assert build_warnings(app) == [
+        unset("D_UNSET", "defaulted"),
+        unset("D_UNSET", "summary"),
+        unset("T_SRC", "defaulted"),
+        unset("V_NONE", "defaulted"),
+    ]
+
+
 # -- a ``None`` result -------------------------------------------------------------
 
 NONE_RESULT_INDEX = """\
