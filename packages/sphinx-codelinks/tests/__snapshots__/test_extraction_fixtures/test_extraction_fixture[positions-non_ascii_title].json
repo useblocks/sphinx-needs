@@ -5,20 +5,21 @@
     "source_map": {
       "start": {
         "row": 0,
-        "column": 9
+        "column": 4
       },
       "end": {
         "row": 0,
-        "column": 21
+        "column": 31
       }
     },
     "tagged_scope": "void f() {}",
-    "need_ids": [
-      "REQ_A",
-      "REQ_B"
-    ],
-    "marker": "REFS:",
-    "type": "need-id-refs",
+    "need": {
+      "title": "Titl\u00e9\u00e9",
+      "id": "IMPL_UTF8",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
     "tagged_scope_type": "function_definition"
   }
 ]

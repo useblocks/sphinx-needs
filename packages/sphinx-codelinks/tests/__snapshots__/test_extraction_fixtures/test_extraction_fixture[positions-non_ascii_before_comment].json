@@ -5,20 +5,23 @@
     "source_map": {
       "start": {
         "row": 0,
-        "column": 9
+        "column": 25
       },
       "end": {
         "row": 0,
-        "column": 21
+        "column": 63
       }
     },
     "tagged_scope": "void f() {}",
-    "need_ids": [
-      "REQ_A",
-      "REQ_B"
-    ],
-    "marker": "REFS:",
-    "type": "need-id-refs",
+    "need": {
+      "title": "After \u00e9",
+      "id": "IMPL_UTF8_CODE",
+      "type": "impl",
+      "links": [
+        "REQ_1"
+      ]
+    },
+    "type": "need",
     "tagged_scope_type": "function_definition"
   }
 ]

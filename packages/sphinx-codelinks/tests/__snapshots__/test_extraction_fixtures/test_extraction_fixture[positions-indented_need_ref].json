@@ -4,20 +4,20 @@
     "remote_url": null,
     "source_map": {
       "start": {
-        "row": 0,
-        "column": 9
+        "row": 1,
+        "column": 18
       },
       "end": {
-        "row": 0,
-        "column": 21
+        "row": 1,
+        "column": 30
       }
     },
-    "tagged_scope": "void f() {}",
+    "tagged_scope": "void f() {\n    // @need-ids: REQ_1, REQ_2\n    return;\n}",
     "need_ids": [
-      "REQ_A",
-      "REQ_B"
+      "REQ_1",
+      "REQ_2"
     ],
-    "marker": "REFS:",
+    "marker": "@need-ids:",
     "type": "need-id-refs",
     "tagged_scope_type": "function_definition"
   }

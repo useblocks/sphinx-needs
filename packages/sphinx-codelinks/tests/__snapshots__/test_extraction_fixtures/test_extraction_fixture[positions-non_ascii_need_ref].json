@@ -5,7 +5,7 @@
     "source_map": {
       "start": {
         "row": 0,
-        "column": 9
+        "column": 14
       },
       "end": {
         "row": 0,
@@ -14,10 +14,9 @@
     },
     "tagged_scope": "void f() {}",
     "need_ids": [
-      "REQ_A",
-      "REQ_B"
+      "R\u00c9Q-001"
     ],
-    "marker": "REFS:",
+    "marker": "@need-ids:",
     "type": "need-id-refs",
     "tagged_scope_type": "function_definition"
   }

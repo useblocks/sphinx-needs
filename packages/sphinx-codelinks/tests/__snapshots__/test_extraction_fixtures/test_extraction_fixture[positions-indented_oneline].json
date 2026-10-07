@@ -9,19 +9,19 @@
       },
       "end": {
         "row": 1,
-        "column": 62
+        "column": 44
       }
     },
-    "tagged_scope": "class Widget {\n    // @Owns the buffer, IMPL_CPP_CLASS, impl, [REQ_CPP_CLASS]\n    int buf_;\n}",
+    "tagged_scope": "void f() {\n    // @Indented, IMPL_INDENT, impl, [REQ_1]\n    return;\n}",
     "need": {
-      "title": "Owns the buffer",
-      "id": "IMPL_CPP_CLASS",
+      "title": "Indented",
+      "id": "IMPL_INDENT",
       "type": "impl",
       "links": [
-        "REQ_CPP_CLASS"
+        "REQ_1"
       ]
     },
     "type": "need",
-    "tagged_scope_type": "class_specifier"
+    "tagged_scope_type": "function_definition"
   }
 ]

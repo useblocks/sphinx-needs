@@ -258,6 +258,11 @@ reported as one of these kinds, the kind leading the message:
   its first and last characters, such as ``[REQ_1];``;
 - ``newline_in_field`` -- a field holding a newline (not produced from a source file,
   which is parsed one line at a time).
+- ``docstring_tag`` -- in a Python file, a line whose start sequence is directly followed
+  by a docstring tag such as ``param``, ``return`` or ``raises``:
+  ``'@param' is a docstring tag, not a one-line need; use a start sequence that docstrings
+  do not contain``. A start sequence the docstrings also use cannot tell a need from
+  documentation, so choose another one, ``[[`` for example.
 
 A line with nothing between the start and end sequences is not a marker. A marker that
 fits the style but whose need Sphinx-Needs refuses -- an id that does not match

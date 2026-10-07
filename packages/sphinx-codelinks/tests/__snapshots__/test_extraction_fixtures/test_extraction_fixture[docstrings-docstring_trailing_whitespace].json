@@ -5,20 +5,20 @@
     "source_map": {
       "start": {
         "row": 2,
-        "column": 7
+        "column": 5
       },
       "end": {
         "row": 2,
-        "column": 61
+        "column": 43
       }
     },
-    "tagged_scope": "def outer():\n    x = 1\n    # @Inside Function, IMPL_PY_INSIDE, impl, [REQ_PY_INSIDE]",
+    "tagged_scope": "def f():\n    \"\"\"\n    @Doc marker, IMPL_DOC, impl, [REQ_1]   \n    \"\"\"",
     "need": {
-      "title": "Inside Function",
-      "id": "IMPL_PY_INSIDE",
+      "title": "Doc marker",
+      "id": "IMPL_DOC",
       "type": "impl",
       "links": [
-        "REQ_PY_INSIDE"
+        "REQ_1"
       ]
     },
     "type": "need",

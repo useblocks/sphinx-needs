@@ -468,6 +468,21 @@ New and Improved
   emits, so such a marker had no ``tagged_scope``; it now names ``class_specifier`` and
   ``struct_specifier``, the kinds the grammar does emit.
 
+- 🐛 Marker positions are physical: a one-line need's or ``@need-ids`` reference's
+  ``source_map`` columns count the characters before it on its line.
+
+  They counted from the start of the comment, so an indented marker, a comment after code,
+  or a comment after a non-ASCII character reported a column that was not its column in the
+  file; source links and editors that jump to a marker landed in the wrong place. A
+  reference's span also started at the whitespace after ``@need-ids:`` rather than at its
+  first id, and ended that many characters early.
+
+- 👌 In a Python file, a line whose one-line start sequence is directly followed by a
+  docstring tag (``@param``, ``@return``, ``@raises`` and the other Epydoc, Doxygen and
+  Sphinx field names) is reported as a ``docstring_tag`` warning and creates no need.
+  ``@param a: the first, thing`` used to become a need with the id ``thing``; the warning
+  says to choose a start sequence the docstrings do not use.
+
 .. _`release:1.4.0`:
 
 1.4.0

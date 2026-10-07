@@ -5,11 +5,11 @@
     "source_map": {
       "start": {
         "row": 2,
-        "column": 4
+        "column": 8
       },
       "end": {
         "row": 2,
-        "column": 58
+        "column": 62
       }
     },
     "tagged_scope": "func outer() {\n    x := 1\n    // @Inside Function, IMPL_GO_INSIDE, impl, [REQ_GO_INSIDE]\n}",

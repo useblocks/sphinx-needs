@@ -15,9 +15,11 @@ from sphinx_codelinks.analyse.models import (
     SourceComment,
     SourceFile,
     SourceMap,
+    WarningSubTypeEnum,
 )
 from sphinx_codelinks.analyse.oneline_parser import (
     OnelineParserInvalidWarning,
+    docstring_tag,
     oneline_parser,
 )
 from sphinx_codelinks.analyse.references import _relative_posix
@@ -30,6 +32,12 @@ from sphinx_codelinks.logger import get_logger
 from sphinx_codelinks.source_discover.config import CommentType
 
 logger = get_logger(__name__)
+
+
+def _char_column(src: bytes, byte_offset: int) -> int:
+    """The column, in characters, of ``byte_offset`` in the UTF-8 ``src``."""
+    line_start = src.rfind(b"\n", 0, byte_offset) + 1
+    return len(src[line_start:byte_offset].decode("utf-8", errors="replace"))
 
 
 def _count(n: int, noun: str) -> str:
@@ -111,7 +119,8 @@ class SourceAnalyse:
             if not comments:
                 continue
             src_comments: list[SourceComment] = [
-                SourceComment(node) for node in comments
+                SourceComment(node, _char_column(src_string, node.start_byte))
+                for node in comments
             ]
 
             src_file = SourceFile(src_path.absolute())
@@ -236,7 +245,9 @@ class SourceAnalyse:
             # interface SourceComment reads (``.text`` / ``.start_point.row``);
             # the Node-only path (find_associated_scope) is guarded by
             # ``is_libclang`` so it never runs on these.
-            src_comments = [SourceComment(cast("TreeSitterNode", c)) for c in comments]
+            src_comments = [
+                SourceComment(cast("TreeSitterNode", c), c.column) for c in comments
+            ]
             src_file = SourceFile(src_path.absolute())
             src_file.add_comments(src_comments)
             if self.analyse_config.get_multiline_needs:
@@ -259,9 +270,15 @@ class SourceAnalyse:
                 marker_idx = line.find(marker)
                 if marker_idx == -1:
                     continue
-                markered_text = line[marker_idx + len(marker) :].strip()
+                after_marker = line[marker_idx + len(marker) :]
+                markered_text = after_marker.strip()
                 need_ids = markered_text.replace(",", " ").split()
-                start_column = marker_idx + len(marker)
+                start_column = (
+                    marker_idx
+                    + len(marker)
+                    + len(after_marker)
+                    - len(after_marker.lstrip())
+                )
                 end_column = start_column + len(markered_text)
                 yield marker, need_ids, row_offset, start_column, end_column
             row_offset += 1
@@ -284,6 +301,7 @@ class SourceAnalyse:
             end_column,
         ) in self.extract_marker(text):
             lineno = src_comment.node.start_point.row + row_offset + 1
+            line_column = src_comment.column if row_offset == 0 else 0
             remote_url = self.git_remote_url
             if self.git_remote_url and self.git_commit_rev:
                 remote_url = utils.form_https_url(
@@ -296,11 +314,11 @@ class SourceAnalyse:
             source_map: SourceMap = {
                 "start": {
                     "row": lineno - 1,
-                    "column": start_column,
+                    "column": line_column + start_column,
                 },
                 "end": {
                     "row": lineno - 1,
-                    "column": end_column,
+                    "column": line_column + end_column,
                 },
             }
             anchors.append(
@@ -353,6 +371,26 @@ class SourceAnalyse:
             if self._is_need_id_refs_line(line):
                 row_offset += 1
                 continue
+            tag = (
+                docstring_tag(line, oneline_comment_style.start_sequence)
+                if self.analyse_config.comment_type == CommentType.python
+                else None
+            )
+            if tag is not None:
+                if src_comment.source_file:
+                    self.warnings.append(
+                        AnalyseWarning(
+                            str(src_comment.source_file.filepath),
+                            src_comment.node.start_point.row + row_offset + 1,
+                            f"'{oneline_comment_style.start_sequence}{tag}' is a docstring "
+                            "tag, not a one-line need; use a start sequence that "
+                            "docstrings do not contain",
+                            MarkedContentType.need,
+                            WarningSubTypeEnum.docstring_tag.value,
+                        )
+                    )
+                row_offset += 1
+                continue
             resolved = oneline_parser(line, oneline_comment_style)
             if not resolved:
                 row_offset += 1
@@ -390,6 +428,9 @@ class SourceAnalyse:
             text, src_comment, oneline_comment_style
         ):
             lineno = src_comment.node.start_point.row + row_offset + 1
+            line_column = src_comment.column if row_offset == 0 else 0
+            start_column = line_column + cast("int", resolved["start_column"])
+            end_column = line_column + cast("int", resolved["end_column"])
             remote_url = self.git_remote_url
             if self.git_remote_url and self.git_commit_rev:
                 remote_url = utils.form_https_url(
@@ -402,15 +443,11 @@ class SourceAnalyse:
             source_map: SourceMap = {
                 "start": {
                     "row": lineno - 1,
-                    "column": resolved[
-                        "start_column"
-                    ],  # dynamic keys  # ty: ignore[invalid-argument-type]
+                    "column": start_column,
                 },
                 "end": {
                     "row": lineno - 1,
-                    "column": resolved[
-                        "end_column"
-                    ],  # dynamic keys  # ty: ignore[invalid-argument-type]
+                    "column": end_column,
                 },
             }
             del resolved["start_column"]

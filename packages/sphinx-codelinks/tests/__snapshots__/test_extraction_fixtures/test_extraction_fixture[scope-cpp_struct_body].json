@@ -5,11 +5,11 @@
     "source_map": {
       "start": {
         "row": 1,
-        "column": 4
+        "column": 8
       },
       "end": {
         "row": 1,
-        "column": 57
+        "column": 61
       }
     },
     "tagged_scope": "struct Point {\n    // @X coordinate, IMPL_CPP_STRUCT, impl, [REQ_CPP_STRUCT]\n    int x;\n}",

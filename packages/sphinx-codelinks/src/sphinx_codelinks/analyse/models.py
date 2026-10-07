@@ -23,6 +23,7 @@ class WarningSubTypeEnum(str, Enum):  # noqa: UP042  # StrEnum changes str(membe
     missing_square_brackets = "missing_square_brackets"
     not_start_or_end_with_square_brackets = "not_start_or_end_with_square_brackets"
     newline_in_field = "newline_in_field"
+    docstring_tag = "docstring_tag"
     multiline_need_header = "multiline_need_header"
     """The open word starts a line that does not match the open-line grammar."""
     multiline_need_unterminated = "multiline_need_unterminated"
@@ -38,8 +39,12 @@ class WarningSubTypeEnum(str, Enum):  # noqa: UP042  # StrEnum changes str(membe
 
 
 class SourceComment:
-    def __init__(self, node: TreeSitterNode) -> None:
+    def __init__(self, node: TreeSitterNode, column: int = 0) -> None:
         self.node: TreeSitterNode = node
+        # The column, in characters, at which the comment's text starts on its
+        # first line. A marker on that line is reported at this column plus its
+        # offset into the text; a later line of the text starts at column 0.
+        self.column: int = column
         self.source_file: SourceFile | None = None
 
 

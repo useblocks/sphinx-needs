@@ -1,0 +1,35 @@
+# Python docstrings.
+#
+# A module, class or function docstring is scanned like a comment. A line that
+# starts with a docstring tag (``@param``, ``@return``, ...) right after the
+# one-line start sequence is not a one-line need: it is reported as a
+# ``docstring_tag`` warning, because a start sequence the docstrings use cannot
+# tell a need from documentation.
+
+docstring_trailing_whitespace:
+  # Whitespace after the marker inside a docstring.
+  lang: python
+  config: default
+  source: "def f():\n    \"\"\"\n    @Doc marker, IMPL_DOC, impl, [REQ_1]   \n    \"\"\"\n"
+
+docstring_with_second_string:
+  # The docstring statement holds a second string after it.
+  lang: python
+  config: default
+  source: |
+    def f():
+        """
+        @Doc tuple, IMPL_TUPLE, impl, [REQ_1]
+        """, "second"
+
+docstring_tags:
+  # Epydoc-style fields: each is a docstring_tag warning, and neither is a need.
+  lang: python
+  config: default
+  source: |
+    def f(a):
+        """Do a thing.
+
+        @param a: the first, thing
+        @return: nothing
+        """

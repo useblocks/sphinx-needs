@@ -34,3 +34,12 @@ default_marker_python:
     # @need-ids: REQ_1
     def f():
         pass
+
+every_extractor:
+  # All three extractors on, as in a src-trace build: a line that starts with
+  # the need-ids marker is a reference only, never also a one-line need.
+  lang: cpp
+  config: default
+  source: |
+    // @need-ids: REQ_1, REQ_2
+    void f() {}

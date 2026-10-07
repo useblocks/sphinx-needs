@@ -1,0 +1,84 @@
+# Marker positions (``source_map``).
+#
+# Rows and columns are physical: a column counts the characters before the
+# position on its line, from the start of the line -- not from the start of
+# the comment, and not in bytes. The cases put something before a marker on
+# its line (indentation, code, a non-ASCII character), and pin where a span
+# ends when whitespace follows it.
+
+indented_oneline:
+  # The marker is indented by four spaces inside a function body.
+  lang: cpp
+  config: default
+  source: |
+    void f() {
+        // @Indented, IMPL_INDENT, impl, [REQ_1]
+        return;
+    }
+
+indented_need_ref:
+  # A need reference, indented; its span starts at the first id.
+  lang: cpp
+  config: default
+  extract: [need_refs]
+  source: |
+    void f() {
+        // @need-ids: REQ_1, REQ_2
+        return;
+    }
+
+comment_after_code:
+  # The comment follows code on the same line.
+  lang: cpp
+  config: default
+  source: |
+    int x = 1; // @After code, IMPL_AFTER, impl, [REQ_1]
+    void f() {}
+
+non_ascii_title:
+  # Non-ASCII characters count as one column each.
+  lang: cpp
+  config: default
+  source: |
+    // @Titléé, IMPL_UTF8, impl, []
+    void f() {}
+
+non_ascii_before_comment:
+  # A non-ASCII character before the comment on its line.
+  lang: cpp
+  config: default
+  source: |
+    const char *s = "é"; // @After é, IMPL_UTF8_CODE, impl, [REQ_1]
+    void f() {}
+
+non_ascii_need_ref:
+  # A non-ASCII need id.
+  lang: cpp
+  config: default
+  extract: [need_refs]
+  source: |
+    // @need-ids: RÉQ-001
+    void f() {}
+
+block_comment_trailing_whitespace:
+  # Whitespace after the marker inside a block comment; the span ends where
+  # the end sequence (the newline) is.
+  lang: cpp
+  config: default
+  source: "/*\n * @Block marker, IMPL_BLOCK, impl, [REQ_1]   \n */\nvoid f() {}\n"
+
+need_and_ref_on_one_row:
+  # A one-line need and a need reference on the same row. The line does not
+  # start with the need-ids marker, so it keeps its one-line need.
+  lang: cpp
+  config:
+    start_sequence: "[["
+    end_sequence: "]]"
+    needs_fields:
+      - {name: id}
+      - {name: title}
+      - {name: type, default: impl}
+      - {name: links, type: "list[str]", default: []}
+  source: |
+    // [[IMPL_PAIR, Pair need]] @need-ids: REQ_2
+    void f() {}
