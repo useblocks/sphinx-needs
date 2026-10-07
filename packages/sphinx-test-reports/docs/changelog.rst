@@ -218,7 +218,7 @@ Fixed
   links). The check now compares whole link ids, so ordinary numbering schemes keep the
   file → suite → case links; a ``:links:`` that shares no such prefix is unchanged.
   `#2114 <https://github.com/useblocks/sphinx-needs/issues/2114>`__,
-  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+  `#2118 <https://github.com/useblocks/sphinx-needs/pull/2118>`__
 
 What the move costs, stated rather than left to the CI diff
 ............................................................
