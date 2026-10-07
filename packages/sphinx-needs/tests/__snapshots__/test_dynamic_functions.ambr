@@ -774,6 +774,34 @@
             'type': 'spec',
             'type_name': 'Specification',
           }),
+          'TEST_7': dict({
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'TEST_7',
+            'lineno': 47,
+            'section_name': 'DYNAMIC FUNCTIONS',
+            'sections': list([
+              'DYNAMIC FUNCTIONS',
+            ]),
+            'status': 'draft',
+            'test_func': "Test output of dynamic function; need: TEST_7; args: ('TEST_7',); kwargs: {'status': 'draft'}",
+            'title': 'TEST_7',
+            'type': 'spec',
+            'type_name': 'Specification',
+          }),
+          'TEST_8': dict({
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'TEST_8',
+            'lineno': 53,
+            'section_name': 'DYNAMIC FUNCTIONS',
+            'sections': list([
+              'DYNAMIC FUNCTIONS',
+            ]),
+            'title': 'TEST_8',
+            'type': 'spec',
+            'type_name': 'Specification',
+          }),
           'TEST_9': dict({
             'docname': 'index',
             'external_css': 'external_link',
@@ -789,7 +817,7 @@
             'type_name': 'Specification',
           }),
         }),
-        'needs_amount': 6,
+        'needs_amount': 8,
         'needs_defaults_removed': True,
         'needs_schema': dict({
           '$schema': 'http://json-schema.org/draft-07/schema#',

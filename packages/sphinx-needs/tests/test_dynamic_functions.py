@@ -178,7 +178,7 @@ def test_doc_dynamic_functions(test_app, snapshot):
         "Test output of dynamic function; need: TEST_7; args: ('TEST_7',); "
         "kwargs: {'status': 'draft'}"
     )
-    assert built["TEST_8"]["test_func"] is None
+    assert built["TEST_8"].get("test_func") is None  # unset fields are not written
     assert needs == snapshot(exclude=props("created", "project", "creator"))
 
 
