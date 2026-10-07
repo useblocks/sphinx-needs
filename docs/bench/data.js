@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791364955298,
+  "lastUpdate": 1791366747848,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -22932,6 +22932,42 @@ window.BENCHMARK_DATA = {
             "value": 51.944570665,
             "unit": "s",
             "extra": "Commit: 01540a55c86e78c1e8cd27c6001b31e7195cf90a\nBranch: master\nTime: 2026-10-07T11:21:10+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "da3a47f1f6cfd1fe3135784c708411a398af7ce1",
+          "message": "🐛 the [needs.*], [mounts.*] and [codelinks.*] warning suffix appears once on Sphinx 7.4 with show_warning_types = True (#2108)\n\n## What\n\nOn Sphinx 7, sphinx-needs (`log_warning` / `log_error`), sphinx-mounts\n(`log_warning`) and sphinx-codelinks (the Sphinx backend of its logging\nfacade) read the project's `show_warning_types` and append the\n`[type.subtype]` suffix only when it is off, that is, only when Sphinx\nwill not render it itself. sphinx-needs and sphinx-mounts keep this in\none block marked \"Sphinx 7 only; remove with the Sphinx 8 floor\", read\nonce at setup (sphinx-needs) and again at `config-inited`;\nsphinx-codelinks passes the option into its Sphinx backend from\n`setup()`, with the same marker. Nothing is written into the\nconfiguration. Nothing changes on Sphinx 8 and newer, nor on Sphinx 7\nwith the option off.\n\n## Why\n\nSphinx 7.3 added `show_warning_types` (default off); Sphinx 8 turned it\non by default. The helpers appended the suffix whenever\n`sphinx.version_info < (8,)`, regardless of the option, so on 7.4 with\nit set Sphinx appended it a second time:\n\n```\nindex.rst:4: WARNING: Need 'REQ_1' has unknown outgoing link 'REQ_MISSING' in field 'links' [needs.link_outgoing] [needs.link_outgoing]\n```\n\nThe same for `[mounts.missing_path]`, `[codelinks.outside_src_dir]` and\nevery other warning of the three helpers.\n\n## ubCode parity\n\nNothing to match: ubCode renders its diagnostics through its own CLI and\nlanguage server, not Sphinx's logger.\n\n## Tests\n\n- One test module per package, two cases: `show_warning_types = True`\ngives the suffix once on every Sphinx (twice on 7.4 before the fix);\n`False` gives it once before Sphinx 8 and none from 8 on.\n- Cleanups: sphinx-codelinks `tests/test_analyse.py` drops the two\n`warnings_path_exists` keys nothing has read since #2092; sphinx-needs\ndeletes two orphan snapshot files, `test_import.ambr` and\n`test_api_configuration.ambr`, whose modules were renamed into\n`test_needimport.py` (#1292) and folded into `test_api_usage.py` (#1301)\nin 2024.\n\nCloses #2091",
+          "timestamp": "2026-10-07T11:50:59+02:00",
+          "tree_id": "f94467da8842a6246c27887c2536ddb139f0f464",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/da3a47f1f6cfd1fe3135784c708411a398af7ce1"
+        },
+        "date": 1791366739905,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.11730874900000288,
+            "unit": "s",
+            "extra": "Commit: da3a47f1f6cfd1fe3135784c708411a398af7ce1\nBranch: master\nTime: 2026-10-07T11:50:59+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 57.632314538,
+            "unit": "s",
+            "extra": "Commit: da3a47f1f6cfd1fe3135784c708411a398af7ce1\nBranch: master\nTime: 2026-10-07T11:50:59+02:00"
           }
         ]
       }
