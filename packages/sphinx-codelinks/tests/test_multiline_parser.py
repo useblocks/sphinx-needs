@@ -197,11 +197,10 @@ def test_no_leader_is_stripped_when_one_line_lacks_it() -> None:
 
 
 def test_an_open_word_behind_a_leader_in_a_leaderless_block_is_refused() -> None:
-    """Not silently lost: the header refusal names the cause, and nothing is produced
-    or hidden for it."""
-    (run,) = form_runs(
-        [_node("/*\n * @need req: T\n   no leader\n * @endneed\n */", 0)]
-    )
+    """Not silently lost: the header refusal names the cause, and consumes its lines up
+    to the first close line, which may carry the stars too."""
+    text = "/*\n * @need req: T\n   no leader\n * @param a, b\n * @endneed\n */"
+    (run,) = form_runs([_node(text, 0)])
 
     result = parse_run(run.lines, CONFIG, leaderless_block=run.leaderless_block)
 
@@ -210,8 +209,39 @@ def test_an_open_word_behind_a_leader_in_a_leaderless_block_is_refused() -> None
         (WarningSubTypeEnum.multiline_need_header, 1)
     ]
     assert "behind a '*' leader" in result.issues[0].msg
-    assert result.claimed_rows == set()
+    assert result.claimed_rows == {1, 2, 3, 4}
     assert parse_run(run.lines, CONFIG).issues == [], "only for a leaderless block"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        pytest.param("/*\n * @need req: T\n   no leader\n */", id="starred_open"),
+        pytest.param(
+            "/** @need req: T\n   no leader\n * @endneed\n */", id="opener_row"
+        ),
+    ],
+)
+def test_an_unterminated_open_in_a_leaderless_block_names_the_leader(text: str) -> None:
+    (run,) = form_runs([_node(text, 0)])
+
+    result = parse_run(run.lines, CONFIG, leaderless_block=run.leaderless_block)
+
+    (issue,) = result.issues
+    assert issue.kind == WarningSubTypeEnum.multiline_need_unterminated
+    assert "'*' leader" in issue.msg
+    assert result.claimed_rows == set()
+
+
+def test_a_stars_only_line_counts_as_a_leader_line() -> None:
+    """A separator of stars inside a leader block is a blank line, not a line without a
+    leader; behind a leader, stars are body text."""
+    text = "/**\n * @need req: T\n *\n * Body.\n *********\n * ****\n * @endneed\n */"
+
+    (run,) = form_runs([_node(text, 0)])
+
+    assert not run.leaderless_block
+    assert _texts(run) == ["@need req: T", "", "Body.", "", "****", "@endneed"]
 
 
 def test_an_emphasis_line_is_not_a_leader() -> None:
