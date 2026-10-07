@@ -243,10 +243,18 @@ def build_need(
     if not isinstance(properties, Mapping):
         properties = {}
 
-    # Link fields are emitted even when empty, so a schema can require them.
+    # Link fields are emitted even when empty, so a schema can require them. Several
+    # properties mapped onto one field MERGE: their values in mapping order, each id
+    # once, at its first appearance.
+    merged: dict[str, dict[str, None]] = {}
     for property_name, link_field in link_properties.items():
         raw = str(properties.get(property_name, ""))
-        need[link_field] = [item.strip() for item in raw.split(",") if item.strip()]
+        values = merged.setdefault(link_field, {})
+        values.update(
+            dict.fromkeys(item.strip() for item in raw.split(",") if item.strip())
+        )
+    for link_field, values in merged.items():
+        need[link_field] = list(values)
 
     # Exported properties are emitted for every case too; absent, the field is
     # null, as the build leaves a registered field a directive did not set.

@@ -203,6 +203,16 @@ New and Improved
   ``codelinks.source_page``. The first build after upgrading reads every document once:
   an environment from an earlier release holds no page records.
 
+- 🐛 On Sphinx 7.4 with ``show_warning_types = True`` the ``[codelinks.*]`` type of a
+  warning is shown once, not twice
+  (`#2091 <https://github.com/useblocks/sphinx-needs/issues/2091>`__).
+
+  Before Sphinx 8, Sphinx-CodeLinks appends the type to the warnings of its analysis
+  itself, as Sphinx 8 does by default; it also did so when ``show_warning_types`` had
+  Sphinx 7.4 append it, so the line ended in
+  ``[codelinks.outside_src_dir] [codelinks.outside_src_dir]``. It is now appended only
+  where Sphinx does not append it.
+
 - 🔧 Every builder writes an ``.ignore`` file (``*``) at the root of its output and doctree
   directories, so with ``gitignore = true`` nothing any builder writes is traced --
   the extension's source copies, Sphinx's ``_downloads/`` copies of a traced source,

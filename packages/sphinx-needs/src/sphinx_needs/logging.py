@@ -1,15 +1,33 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from docutils.nodes import Node
 from sphinx import version_info
 from sphinx.util import logging
 from sphinx.util.logging import SphinxLoggerAdapter
 
+if TYPE_CHECKING:
+    from sphinx.application import Sphinx
+    from sphinx.config import Config
+
 
 def get_logger(name: str) -> SphinxLoggerAdapter:
     return logging.getLogger(name)
+
+
+# --- Sphinx 7 only; remove with the Sphinx 8 floor -----------------------------------
+# Sphinx renders a warning's ``[type.subtype]`` itself when ``show_warning_types`` is on
+# (its default from 8.0). Before 8.0 the helpers below append it where Sphinx will not.
+_sphinx_renders_types = version_info >= (8,)
+
+
+def configure_warning_types(_app: Sphinx, config: Config) -> None:
+    global _sphinx_renders_types
+    _sphinx_renders_types = version_info >= (8,) or bool(config.show_warning_types)
+
+
+# ------------------------------------------------------------------------------------
 
 
 # keep below 2 dicts sorted to spot missing items
@@ -22,6 +40,7 @@ WarningSubTypes = Literal[
     "create_need",
     "delete_need",
     "deprecated",
+    "derive_unresolved",
     "diagram_scale",
     "directive",
     "duplicate_id",
@@ -47,7 +66,6 @@ WarningSubTypes = Literal[
     "mistyped_import_values",
     "mpl",
     "needextend",
-    "needextend_match_order",
     "needextract",
     "needflow",
     "needgantt",
@@ -76,6 +94,7 @@ WarningSubTypeDescription: dict[WarningSubTypes, str] = {
     "create_need": "Creation of a need from directive failed",
     "delete_need": "Deletion of a need failed",
     "deprecated": "Deprecated feature",
+    "derive_unresolved": "A dynamic function or variant condition read a value that another dynamic function or variant computes in the same pass",
     "diagram_scale": "Failed to process diagram scale option",
     "directive": "Error in processing a need directive",
     "duplicate_id": "Duplicate need ID found when merging needs from parallel processes",
@@ -100,7 +119,6 @@ WarningSubTypeDescription: dict[WarningSubTypes, str] = {
     "mistyped_import_values": "Unexpected value types found in imported need data",
     "mpl": "Matplotlib required but not installed",
     "needextend": "Error processing needextend directive",
-    "needextend_match_order": "The needs a needextend filter matches depend on modifications applied by earlier needextend directives (from the next release, filters are evaluated against the needs as written)",
     "needextract": "Error processing needextract directive",
     "needflow": "Error processing needflow directive",
     "needgantt": "Error processing needgantt directive",
@@ -132,9 +150,7 @@ def log_warning(
     once: bool = False,
     type: str = "needs",
 ) -> None:
-    # Since sphinx in v7.3, sphinx will show warning types if `show_warning_types=True` is set,
-    # and in v8.0 this was made the default.
-    if version_info < (8,):
+    if not _sphinx_renders_types:
         message += f" [{type}.{subtype}]"
 
     logger.warning(
@@ -158,9 +174,7 @@ def log_error(
     once: bool = False,
     type: str = "needs",
 ) -> None:
-    # Since sphinx in v7.3, sphinx will show warning types if `show_warning_types=True` is set,
-    # and in v8.0 this was made the default.
-    if version_info < (8,):
+    if not _sphinx_renders_types:
         message += f" [{type}.{subtype}]"
 
     logger.error(

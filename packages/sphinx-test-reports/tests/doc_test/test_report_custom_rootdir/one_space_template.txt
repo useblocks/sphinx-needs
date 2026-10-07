@@ -1,0 +1,10 @@
+**Imported data**
+
+.. {file_type}:: {title}
+ :id: {id}{links_string}
+ :tags: {tags}
+ :file: {file}
+ :auto_suites:
+ :auto_cases:
+
+ {content}

@@ -49,24 +49,72 @@ Improvements
   The undocumented warning ``if`` gives for a condition whose result is not a bool is
   now listed in its documentation.
 
-- ✨ ``needextend`` gains ``:extend_priority:`` (default 500, lower applied first), and a
-  filter whose matches depend on earlier ``needextend`` directives is reported as
-  ``needs.needextend_match_order`` **(changed output)** (:issue:`1658`, :issue:`2064`, :pr:`2083`)
+- ✨ A ``[[…]]`` or ``<<…>>`` that reads a value another one computes in the same pass
+  is reported as ``needs.derive_unresolved`` **(changed output)** (:issue:`2064`, :pr:`2080`)
+
+  Dynamic functions and variants are resolved in one pass, need by need, so a
+  :ref:`copy <copy>`, :ref:`calc_sum <calc_sum>`, :ref:`check_linked_values <check_linked_values>`
+  or variant condition that reads a field which itself carries a ``[[…]]``, ``<<…>>`` or ``<{…}>``
+  sees the computed value or the unresolved one depending on the order the needs were read in,
+  which changes with document names, with incremental builds and with ``-j``.
+  Each such read is now a warning, once per reading call and at the reading need,
+  whether or not the value happened to be computed already (see :ref:`needs_derive_unresolved`).
+  It is a new warning, so a ``-W`` build with such a read fails until the read is changed
+  or ``suppress_warnings = ["needs.derive_unresolved"]`` is set.
+  It gives notice ahead of a later release that resolves these values in dependency order
+  (:issue:`2030`); `ubCode`_ reports the same reads.
+
+- ✨ ``needextend`` gains ``:extend_priority:`` (default 500, lower applied first)
+  (:issue:`1658`, :issue:`2064`, :pr:`2083`)
 
   The ``needextend`` directives are applied sorted by
-  :ref:`extend_priority <needextend_extend_priority>`, then by document name and line, so
-  a project that never sets the option keeps its order, and where two set the same
-  option the higher priority is applied last and wins. A filter is still evaluated
-  against the needs as the earlier ``needextend`` directives left them, but it is also
-  evaluated against the needs as written, before any is applied, and a ``needextend``
-  whose filter matches different needs the two ways is now reported once, at its
-  location, naming both; what it modifies is unchanged. The next release evaluates every
-  filter against the needs as written, so the reported ``needextend`` directives are the
-  ones whose matches will change (:ref:`needextend_match_order`). From the next release,
-  the priority never changes what a filter matches. A project that builds with ``-W`` and
-  has such a filter goes red until the filter is rewritten or the warning is silenced with
-  ``suppress_warnings = ["needs.needextend_match_order"]``; ``"needs.needextend"`` does
-  not cover the new type.
+  :ref:`extend_priority <needextend_extend_priority>`, then by document name and line,
+  so a project that never sets the option keeps its order,
+  and where two set the same option the higher priority is applied last and wins.
+  The priority is set on each ``needextend``; there is no project-wide setting for it.
+
+- 📚 The order in which ``needextend``, dynamic functions, links and constraints are processed
+  is documented (:issue:`2064`, :pr:`2081`)
+
+  The new :ref:`needs_processing_order` section replaces the one restriction documented before
+  (a dynamic function cannot read back links), and says that a ``needextend`` filter never sees a computed value,
+  that the fields of a need are computed in a fixed order whatever the order of its options,
+  and that a variant condition sees only the fields computed before its own.
+
+- ✨ :func:`~sphinx_needs.api.need.generate_need_id` returns the id
+  :func:`~sphinx_needs.api.need.add_need` assigns to a need that is given none
+  (:issue:`2084`, :pr:`2111`)
+
+  An extension that creates needs can now find out, before it calls ``add_need``,
+  whether that id is already taken -- a second definition of the same generated id --
+  without importing the private ``_make_hashed_id``. ``add_need`` derives the id with
+  the same code, so the two cannot drift: it takes the same arguments, ``content`` as a
+  ``str`` or a ``StringList``, and an unknown need type raises the same ``invalid_type``
+  exception.
+
+Breaking changes
+................
+
+- ‼️ ``needextend`` filters are evaluated against the needs as written **(changed output)**
+  (:issue:`1658`, :issue:`2064`, :pr:`2083`, :pr:`2127`)
+
+  Every :ref:`needextend` filter is evaluated against the needs as written,
+  before any ``needextend`` is applied (:ref:`needextend_as_written`);
+  it used to see the changes of the ``needextend`` directives applied before it.
+  So no ``needextend`` changes which needs another one's filter matches,
+  whatever their priorities and the names of their files.
+
+  **A project whose filter relies on a change made by an earlier** ``needextend``
+  (a filter on ``status == "closed"`` after the ``needextend`` that closes the needs it means)
+  **now modifies the needs written with that value instead, and no warning says so.**
+  To keep what such a filter modified, name those needs by ID,
+  or write the condition on the values as written.
+
+  A filter is evaluated once in each document it is written in,
+  so a ``needs.filter`` warning it gives there is reported once,
+  at the first ``needextend`` applied that carries it.
+  The notice warning ``needs.needextend_match_order`` of the unreleased :pr:`2083` is gone,
+  and a ``suppress_warnings`` entry naming it is a no-op.
 
 Bug fixes
 .........
@@ -131,6 +179,27 @@ Bug fixes
   The same crash came from :file:`conf.py` for a ``needs_functions`` entry that is not
   callable, which is now skipped with a ``needs.config`` warning instead.
 
+- 🐛 A :ref:`needs_functions` value that is not a list, and an entry without a
+  ``__name__``, are reported with a warning instead of crashing the build
+  **(changed output)** (:issue:`2073`, :pr:`2112`)
+
+  ``needs_functions = None``, or a bare function where a list of functions belongs, ended
+  the build with ``TypeError: ... is not iterable``, and an entry without a ``__name__``,
+  such as a ``functools.partial`` or an instance with ``__call__``, ended it with an
+  ``AttributeError``, because a dynamic function is registered, and called, by its name.
+  A value that is not a list or tuple is now one ``needs.config`` warning naming its type,
+  and nothing is registered from it; a string, which was read one character at a time
+  with a warning for each, is reported the same way. A set of functions, or another
+  iterable of functions that is neither a list nor a tuple (a frozenset, a generator),
+  used to register them beside Sphinx's own type warning, and is now ignored with the
+  same ``needs.config`` warning.
+  An entry without a ``__name__`` is skipped with a ``needs.config`` warning, and the
+  rest of the list is still registered.
+  Such a callable is registered with
+  :py:func:`~sphinx_needs.api.configuration.add_dynamic_function` and its ``name``
+  argument, which now raises ``NeedsApiConfigException`` asking for that name when it is
+  not given, instead of an ``AttributeError``.
+
 - 🐛 Under ``-j N``, a need id defined in two documents renders its card once,
   on the document that kept the need **(changed output)** (:issue:`2087`, :pr:`2106`)
 
@@ -142,6 +211,50 @@ Bug fixes
   directive's content as well. A need's card is now rendered only on the document the
   need is recorded on, in every builder, and ``needextract`` copies the kept need's
   content.
+
+- 🐛 On Sphinx 7.4 with ``show_warning_types = True`` the ``[needs.*]`` type of a warning
+  is shown once, not twice (:issue:`2091`, :pr:`2108`)
+
+  Before Sphinx 8, Sphinx-Needs appends the type to its warnings itself, as Sphinx 8 does
+  by default; it also did so when ``show_warning_types`` had Sphinx 7.4 append it, so the
+  line ended in ``[needs.link_outgoing] [needs.link_outgoing]``. It is now appended only
+  where Sphinx does not append it.
+
+- 🐛 A service whose ``class`` cannot be registered is skipped with a warning instead
+  of crashing the build **(changed output)** (:issue:`2067`, :pr:`2113`)
+
+  A :ref:`needs_services` entry with both ``class`` and ``class_init`` is registered from
+  them, and a ``class`` that is not callable or has no ``options`` ended the build with
+  ``'str' object has no attribute 'options'`` -- which every ``class`` set in a
+  :ref:`needs_from_toml` file did, since that file can only give it a string.
+  A ``class_init`` that is not a mapping ended it the same way.
+  Such a service is now one ``needs.config`` warning, naming the key and what is wrong
+  with its value, and is not registered; the build goes on. A service whose ``class`` is
+  callable with ``options`` and whose ``class_init`` is a mapping registers as before,
+  whether or not the class derives from ``BaseService``, and a table that holds a
+  service's options only is read as before, without a warning.
+
+- 🐛 A :ref:`needservice` naming a service that is not registered is a warning instead of
+  a traceback **(changed output)** (:issue:`2101`, :pr:`2113`)
+
+  It ended the build with a raw ``NeedsServiceException`` traceback, which, deriving from
+  ``BaseException``, escaped Sphinx's own error handler, so no log file was written either.
+  It is now one ``needs.load_service_need`` warning located at the directive, with the
+  same text, which names the service and the registered ones; the directive adds nothing
+  and the build goes on. This is also the path of a service skipped for its
+  configuration, above. ``NeedsServiceException`` now derives from ``Exception``.
+
+- 🐛 A :ref:`needextend` option whose dynamic or variant function cannot be parsed is a
+  warning instead of crashing the build **(changed output)** (:issue:`2109`, :pr:`2116`)
+
+  A value such as ``:status: [[copy(need.id)]]`` ended the build with an uncaught
+  ``FunctionParsingException``, because a ``need.<attr>`` argument is not admitted where
+  the directive parses its options; any other dynamic function that cannot be parsed, and a
+  variant function that cannot be parsed (``VariantParsingException``), ended it the same
+  way. Each is now one ``needs.needextend`` warning at the directive, naming the option and
+  the parse error, and that option is skipped while the directive's other options still
+  apply, as for a value that cannot be converted. Whether a ``need.<attr>`` argument should
+  be admitted in a ``needextend`` value is a separate question, unchanged here.
 
 .. _`release:8.5.0`:
 

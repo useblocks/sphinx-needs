@@ -175,8 +175,23 @@ class _Config:
         return self._functions
 
     def add_function(self, function: DynamicFunction, name: str | None = None) -> None:
-        """Adds a dynamic function to the configuration."""
-        func_name = function.__name__ if name is None else name
+        """Adds a dynamic function to the configuration.
+
+        :raises NeedsApiConfigException: If ``name`` is not given and the function has
+            no ``__name__`` to register it by, such as a ``functools.partial``.
+        """
+        if name is None:
+            name = getattr(function, "__name__", None)
+            if not isinstance(name, str):
+                from sphinx_needs.exceptions import (
+                    NeedsApiConfigException,  # avoid circular import
+                )
+
+                raise NeedsApiConfigException(
+                    f"Dynamic function {function!r} has no __name__; "
+                    "pass the name to call it by with name=..."
+                )
+        func_name = name
         if func_name in self._functions:
             log_warning(
                 LOGGER,

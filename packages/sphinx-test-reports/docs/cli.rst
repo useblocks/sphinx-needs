@@ -143,7 +143,8 @@ instead, map it -- the value is split on commas:
        --link-property FullyVerifies=fully_verifies
 
 Mapped link fields are written even when a case has no such property, so a schema
-can require them. A test run that names its link properties
+can require them. Properties mapped onto the same link field are merged: the field lists
+the values of each, in mapping order, every id once. A test run that names its link properties
 ``PartiallyVerifies`` and ``FullyVerifies`` is configured as
 
 .. code-block:: toml

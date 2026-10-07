@@ -55,5 +55,5 @@ class ServiceManager:
             )
 
 
-class NeedsServiceException(BaseException):
-    pass
+class NeedsServiceException(Exception):
+    """Raised when a service is not registered."""

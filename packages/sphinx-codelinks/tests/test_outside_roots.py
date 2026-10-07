@@ -295,6 +295,30 @@ def test_a_file_link_out_of_src_dir_is_not_traced(
     assert {ref.path for ref in _records(app)} == {"src/refs.cpp"}
 
 
+@pytest.mark.parametrize(
+    ("show", "expected"),
+    [
+        # Sphinx renders the suffix itself, so the package logger adds none
+        pytest.param(True, ["[codelinks.outside_src_dir]"], id="on"),
+        # before Sphinx 8 the package logger appends it; from 8 nothing renders it
+        pytest.param(
+            False,
+            [] if _SHOWS_WARNING_TYPES else ["[codelinks.outside_src_dir]"],
+            id="off",
+        ),
+    ],
+)
+def test_the_type_suffix_is_rendered_at_most_once(
+    tmp_path: Path, make_app: _MakeApp, show: bool, expected: list[str]
+) -> None:
+    """#2091: on Sphinx 7.4 with the option on, it was rendered twice."""
+    conf = {"docs/conf.py": f"\nshow_warning_types = {show}\n"}
+    _project(tmp_path, files={"outside/ext.cpp": OUTSIDE_SOURCE}, append=conf)
+    _link_out(tmp_path, "src/ext_link.cpp", "outside/ext.cpp")
+    outside = [w for w in build_warnings(_build(tmp_path, make_app)) if "outside" in w]
+    assert [re.findall(r"\[codelinks\.[a-z_]+\]", w) for w in outside] == [expected]
+
+
 def test_a_link_out_is_warned_once_when_its_scope_is_walked_again(
     tmp_path: Path, make_app: _MakeApp
 ) -> None:

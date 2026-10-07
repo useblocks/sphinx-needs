@@ -1,5 +1,6 @@
 # fmt: off
 import pathlib
+import re
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -12,6 +13,24 @@ from sphinx_test_reports.exceptions import InvalidConfigurationError
 
 class TestReport(nodes.General, nodes.Element):
     pass
+
+
+#: The leading whitespace of the template line that holds ``{content}``.
+_CONTENT_INDENT = re.compile(r"^([ \t]*).*\{content\}", re.MULTILINE)
+
+
+def _indented_body(lines, template: str) -> str:
+    """The directive's body as the text for ``{content}``, at the template's indentation.
+
+    The template places ``{content}`` inside the generated test-file directive, so its
+    first line takes the indentation written before the placeholder and every further
+    line has to be given the same, or it would end that directive. Blank lines stay
+    empty.
+    """
+    match = _CONTENT_INDENT.search(template)
+    indent = match.group(1) if match else ""
+    first, *rest = list(lines) or [""]
+    return "\n".join([first, *(indent + line if line.strip() else "" for line in rest)])
 
 
 class TestReportDirective(TestCommonDirective):
@@ -64,7 +83,10 @@ class TestReportDirective(TestCommonDirective):
             links_string = ""
 
         template_data = {
-            "file": self.test_file,
+            # The path as WRITTEN, not the resolved `self.test_file`: the generated
+            # test-file resolves it against `tr_rootdir` exactly as this directive did,
+            # and records it as written, as a hand-written test-file does.
+            "file": self.test_file_given,
             "id": self.test_id,
             "file_type": self.app.config.tr_file[0],
             "suite_need": self.app.config.tr_suite[1],
@@ -76,7 +98,7 @@ class TestReportDirective(TestCommonDirective):
             ),
             "links_string": links_string,
             "title": self.test_name,
-            "content": self.content,
+            "content": _indented_body(self.content, template),
             "template_path": str(template_path),
         }
 

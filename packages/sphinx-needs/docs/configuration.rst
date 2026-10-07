@@ -2165,13 +2165,22 @@ Takes extra configuration options for :ref:`services`:
        },
        'my_service': {
            'class': MyServiceClass,
+           'class_init': {},
            'config_1': 'value_x',
        }
    }
 
 Each key-value-pair in ``needs_services`` describes a service specific configuration.
 
-Own services can be registered by setting ``class`` as additional option.
+Own services can be registered by setting ``class``, together with ``class_init``, as
+additional options.
+
+The class is a Python type, so it can be set only here in :file:`conf.py`, or registered by
+an extension through the API: in a :ref:`needs_from_toml` file a service's table holds its
+options only. Note that the file's ``services`` table replaces the whole
+``needs_services`` of :file:`conf.py`, as every key it sets does. A ``class`` that is not
+callable or has no ``options``, or a ``class_init`` that is not a mapping, is reported as
+a ``needs.config`` warning and that service is not registered.
 
 Config options are service specific and are described by :ref:`services`.
 

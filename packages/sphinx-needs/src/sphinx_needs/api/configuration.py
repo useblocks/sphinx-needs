@@ -191,6 +191,8 @@ def add_dynamic_function(
     Registers a new dynamic function for sphinx-needs.
 
     If ``name`` is not given, the name to call the function is automatically taken from the provided function.
+    A callable without a ``__name__``, such as a ``functools.partial``, must be given its ``name``,
+    or ``NeedsApiConfigException`` is raised.
     The used name must be unique.
 
     **Usage**::

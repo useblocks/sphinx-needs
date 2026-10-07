@@ -182,9 +182,9 @@ class _SphinxBackend:
     ``suppress_warnings`` and rendered on the Sphinx warning stream.
     """
 
-    # Sphinx >= 8 renders the warning type itself; older versions need it
-    # appended to the message (mirrors sphinx-needs' logging helper).
-    _show_warning_types = _sphinx_version_info >= (8,)
+    # Sphinx 7 only; remove with the Sphinx 8 floor: Sphinx renders the warning type
+    # itself when show_warning_types is on (its default from 8.0); else it is appended here
+    _sphinx_renders_types = _sphinx_version_info >= (8,)
 
     def debug(self, name: str, msg: str, _location: str | None, /) -> None:
         sphinx_logging.getLogger(name).verbose(msg)
@@ -196,7 +196,7 @@ class _SphinxBackend:
         self, name: str, msg: str, subtype: str, location: str | None, /
     ) -> None:
         message = msg
-        if not self._show_warning_types:
+        if not self._sphinx_renders_types:
             message += f" [codelinks.{subtype}]" if subtype else " [codelinks]"
         sphinx_logging.getLogger(name).warning(
             message,
@@ -251,9 +251,10 @@ def configure_cli(verbose: bool = False, quiet: bool = False) -> None:
     _dispatch.backend = _CliBackend()
 
 
-def configure_sphinx() -> None:
+def configure_sphinx(*, show_warning_types: bool = False) -> None:
     """Select the Sphinx frontend (``sphinx.util.logging``)."""
-    _dispatch.backend = _SphinxBackend()
+    _dispatch.backend = backend = _SphinxBackend()
+    backend._sphinx_renders_types |= show_warning_types  # Sphinx 7 only
 
 
 def reset() -> None:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import json
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from copy import deepcopy
 from itertools import chain
 from pathlib import Path
@@ -17,6 +17,7 @@ from sphinx.config import Config as _SphinxConfig
 from sphinx.environment import BuildEnvironment
 
 import sphinx_needs.debug as debug  # Need to set global var in it for timeing measurements
+import sphinx_needs.logging as needs_logging
 from sphinx_needs import __version__
 from sphinx_needs.api import get_needs_view
 from sphinx_needs.builder import (
@@ -236,6 +237,9 @@ def load_schemas_config_from_json(app: Sphinx, config: _SphinxConfig) -> None:
 
 
 def setup(app: Sphinx) -> dict[str, Any]:
+    # Sphinx 7 only: show_warning_types now, and after any later setup() changed it
+    needs_logging.configure_warning_types(app, app.config)
+    app.connect("config-inited", needs_logging.configure_warning_types, priority=0)
     LOGGER.debug("Starting setup of Sphinx-Needs")
     LOGGER.debug("Load Sphinx-Data-Viewer for Sphinx-Needs")
     app.setup_extension("sphinx_data_viewer")
@@ -931,6 +935,48 @@ def resolve_variant_data_config(app: Sphinx, config: Config) -> None:
     _derive_variant_data_proxy(needs_config)
 
 
+def _service_config_problem(service: dict[str, Any]) -> str | None:
+    """Why a configured service cannot be registered from its ``class`` and
+    ``class_init``, or ``None`` when it can.
+
+    Exactly what :meth:`.ServiceManager.register` cannot take is refused: it reads the
+    ``class``'s ``options`` and then calls it with ``class_init`` as keyword arguments,
+    so a ``class`` that is not callable -- a ``needs_from_toml`` file can give it nothing
+    but data, such as a string -- or has no ``options``, and a ``class_init`` that is not
+    a mapping. Anything else is registered, as it always was, whether or not it derives
+    from ``BaseService``.
+    """
+    advice = (
+        "A service class derives from BaseService and is set in conf.py's "
+        "needs_services or registered through the API; a needs_from_toml file can "
+        "hold a service's options but not its class"
+    )
+    klass = service["class"]
+    if not callable(klass):
+        return (
+            "its 'class' is not callable "
+            f"(got a value of type {type(klass).__name__!r}). {advice}"
+        )
+    if not hasattr(klass, "options"):
+        name = getattr(klass, "__qualname__", None)
+        what = (
+            repr(name)
+            if isinstance(name, str)
+            else f"(a value of type {type(klass).__name__!r})"
+        )
+        return (
+            f"its 'class' {what} has no 'options', which a service class needs. "
+            f"{advice}"
+        )
+    class_init = service["class_init"]
+    if not isinstance(class_init, Mapping):
+        return (
+            "its 'class_init' is not a mapping of keyword arguments for the service "
+            f"class (got a value of type {type(class_init).__name__!r})"
+        )
+    return None
+
+
 def prepare_env(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> None:
     """
     Prepares the sphinx environment to store sphinx-needs internal data.
@@ -961,6 +1007,14 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> Non
             # We found a not yet registered service
             # But only register, if service-config contains class and class_init.
             # Otherwise, the service may get registered later by an external sphinx-needs extension
+            if (problem := _service_config_problem(service)) is not None:
+                log_warning(
+                    LOGGER,
+                    f"needs_services entry {name!r} is not registered: {problem}",
+                    "config",
+                    None,
+                )
+                continue
             services.register(name, service["class"], **service["class_init"])
 
     # Set time measurement flag
@@ -993,11 +1047,35 @@ def merge_default_configs(_app: Sphinx, config: Config) -> None:
         _NEEDS_CONFIG.add_function(need_common_func)
 
     # Register functions configured by user
-    for needs_func in needs_config._functions:
+    user_functions = needs_config._functions
+    if not isinstance(user_functions, (list, tuple)):
+        log_warning(
+            LOGGER,
+            f"needs_functions is of type {type(user_functions).__name__!r}, "
+            "not a list of callables, and is ignored",
+            "config",
+            None,
+        )
+        # the value is replaced by the default, so that Sphinx's own type check, which
+        # runs later in ``config-inited``, does not report the same value a second time
+        needs_config._functions = []
+        user_functions = []
+    for needs_func in user_functions:
         if not callable(needs_func):
             log_warning(
                 LOGGER,
                 f"needs_functions entry {needs_func!r} is not callable and is ignored",
+                "config",
+                None,
+            )
+            continue
+        if not isinstance(getattr(needs_func, "__name__", None), str):
+            # a function is registered, and called, by its name
+            log_warning(
+                LOGGER,
+                f"needs_functions entry {needs_func!r} has no __name__ and is ignored: "
+                "an entry must be a callable with a __name__; use "
+                "add_dynamic_function(app, func, name=...) for one without",
                 "config",
                 None,
             )

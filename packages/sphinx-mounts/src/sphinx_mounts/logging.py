@@ -33,6 +33,8 @@ from typing import TYPE_CHECKING, Literal
 from sphinx import version_info
 
 if TYPE_CHECKING:
+    from sphinx.application import Sphinx
+    from sphinx.config import Config
     from sphinx.util.logging import SphinxLoggerAdapter
 
 #: Warning subtypes known to sphinx-mounts. Keep sorted — adding a new
@@ -108,6 +110,20 @@ MOUNT_GATED_CODE = "mounts.mount_gated"
 WARNING_TYPE = "mounts"
 
 
+# --- Sphinx 7 only; remove with the Sphinx 8 floor -----------------------------------
+# Sphinx renders a warning's ``[type.subtype]`` itself when ``show_warning_types`` is on
+# (its default from 8.0). Before 8.0 ``log_warning`` appends it where Sphinx will not.
+_sphinx_renders_types = version_info >= (8,)
+
+
+def configure_warning_types(_app: Sphinx, config: Config) -> None:
+    global _sphinx_renders_types
+    _sphinx_renders_types = version_info >= (8,) or bool(config.show_warning_types)
+
+
+# ------------------------------------------------------------------------------------
+
+
 def log_warning(
     logger: SphinxLoggerAdapter,
     message: str,
@@ -130,6 +146,6 @@ def log_warning(
     :param location: Optional docname (or ``docname:lineno``) the warning
         belongs to.
     """
-    if version_info < (8,):
+    if not _sphinx_renders_types:
         message = f"{message} [{WARNING_TYPE}.{topic}]"
     logger.warning(message, type=WARNING_TYPE, subtype=topic, location=location)

@@ -27,8 +27,15 @@ The argument of ``needextend`` will be taken as, by order of priority:
 - a single need ID, if it is a single word (no spaces),
 - a :ref:`filter_string` otherwise.
 
-``needextend`` can modify all string-based and list-based options.
+``needextend`` can modify the ``status``, ``tags``, ``style``, ``layout``, ``hide`` and ``collapse`` options,
+and every :ref:`extra field <needs_fields>` and :ref:`link option <needs_links>`, whatever its type;
+``+option`` works on string and list options only.
 Also, you can add links or delete tags.
+
+The ``needextend`` directives are applied in :ref:`extend-priority <needextend_extend_priority>` order (lower first),
+then in document-name and line order,
+and a filter sees the needs as written, not the changes of the other ones
+(see :ref:`below <needextend_as_written>` and :ref:`needs_processing_order`).
 
 .. syntax-example::
 
@@ -130,43 +137,45 @@ in document-name and line order.
 The status of ``extend_test_007`` ends as ``late``, and its tags as ``applied_first, applied_second``,
 whatever the order and the files the two ``needextend`` directives are written in.
 
-``:extend_priority:`` orders the modifications; it is not a way to choose what a filter matches.
-In this release a filter sees the changes of the ``needextend`` directives applied before it,
-so a priority can change its matches, and such a ``needextend`` is reported (see :ref:`below <needextend_match_order>`);
-from the next release it never does.
+``:extend_priority:`` orders the modifications; it never changes what a filter matches
+(see :ref:`below <needextend_as_written>`).
 Like ``:strict:``, it is an option of the directive itself,
 so a :ref:`field <needs_fields>` named ``extend_priority`` or ``strict`` cannot be replaced by a ``needextend``;
 ``+extend_priority`` and ``-extend_priority`` still modify such a field.
 
-.. _needextend_match_order:
+.. _needextend_as_written:
 
-Filters and earlier needextend directives
------------------------------------------
+Filters see the needs as written
+--------------------------------
 
-.. versionadded:: 9.0.0
+.. versionchanged:: 9.0.0
 
-A filter is evaluated when its ``needextend`` is applied,
-against the needs as the ``needextend`` directives applied before it left them.
-So a filter on a field that an earlier ``needextend`` modifies can match needs it would not match as written, or miss needs it would,
-and renaming a file can change which needs a ``needextend`` modifies.
+   A filter used to be evaluated when its ``needextend`` was applied,
+   against the needs as the ``needextend`` directives applied before it had left them.
 
-Each filter is therefore also evaluated against the needs as written, before any ``needextend`` is applied,
-and a ``needextend`` whose filter matches different needs the two ways is reported once, at its location,
-as ``needs.needextend_match_order``, naming the needs it matches now and as written.
-What it modifies is unchanged in this release.
-From the next release, every filter is evaluated against the needs as written, before any ``needextend`` is applied,
-so the reported ``needextend`` directives are the ones whose matches will change.
-``:extend_priority:`` orders the modifications; it is not a way to choose what a filter matches.
-In this release a filter sees the changes of the ``needextend`` directives applied before it,
-so a priority can change its matches, and such a ``needextend`` is reported;
-from the next release it never does.
-An ID argument names its need whatever the earlier ``needextend`` directives changed, and is never reported.
+Every filter is evaluated against the needs as written, before any ``needextend`` is applied,
+and its ``needextend`` modifies the needs it matched there.
+So no ``needextend`` changes which needs another one's filter matches,
+whatever order they are applied in, whatever their priorities and whatever the names of their files:
+a filter on a field that a ``needextend`` modifies matches the needs written with the value it names.
+For a need ``REQ_1`` written with ``:status: open``:
 
-To silence the warning, add its type to Sphinx's ``suppress_warnings``:
+.. code-block:: rst
 
-.. code-block:: python
+   .. needextend:: REQ_1
+      :status: closed
 
-   suppress_warnings = ["needs.needextend_match_order"]
+   .. needextend:: status == "open"
+      :+tags: written_open
+
+``REQ_1`` ends closed and tagged ``written_open``:
+the filter matches it as written, although the ``needextend`` applied before it closed it.
+An ID argument names its need whatever the other ``needextend`` directives change.
+
+A filter is evaluated once in each document it is written in, however many ``needextend`` directives there carry it.
+A filter that cannot be evaluated is reported for each of them as ``needs.needextend``, and none of them modifies a need;
+a warning the filter gives for a need it cannot be evaluated on (``needs.filter``) is reported once,
+at the first of them to be applied.
 
 Extending needs in current page
 -------------------------------

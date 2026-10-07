@@ -631,6 +631,17 @@ class NeedItem:
         """Return True if the need item has dynamic fields, False otherwise."""
         return bool(self._dynamic_fields)
 
+    def carries_dynamic_value(self, name: str) -> bool:
+        """Return whether the field or link ``name`` carries a dynamic value.
+
+        A dynamic value is a ``[[…]]``, ``<<…>>`` or ``<{…}>`` in the field's value,
+        as the need was written and then modified by any ``needextend``.
+        Resolving the value does not change the answer.
+
+        :param name: The name of the field or link.
+        """
+        return name in self._dynamic_fields
+
     @property
     def modifications(self) -> tuple[NeedModification, ...]:
         """Return the modifications of the need item."""

@@ -1,0 +1,22 @@
+"$schema" = "https://ubcode.useblocks.com/ubproject.schema.json"
+
+[needs]
+extra_options = [
+  "summary",
+  "comment",
+  "parent",
+  "f1",
+  { name = "h0", schema = { type = "number" } },
+  { name = "total", schema = { type = "number" } },
+]
+
+[needs.fields.band]
+schema = { type = "string" }
+parse_variants = true
+
+# ubCode's fixture declares `hours` in `extra_options` as
+# `{ name = "hours", schema = { type = "number", default = 0.0 } }`;
+# sphinx-needs refuses a `default` inside a `schema`, so it is the field's own here
+[needs.fields.hours]
+schema = { type = "number" }
+default = 0.0
