@@ -156,7 +156,7 @@ Bug fixes
 
 - 🐛 A :ref:`needs_functions` value that is not a list, and an entry without a
   ``__name__``, are reported with a warning instead of crashing the build
-  **(changed output)** (:issue:`2073`)
+  **(changed output)** (:issue:`2073`, :pr:`2112`)
 
   ``needs_functions = None``, or a bare function where a list of functions belongs, ended
   the build with ``TypeError: ... is not iterable``, and an entry without a ``__name__``,
