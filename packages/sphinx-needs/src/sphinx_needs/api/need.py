@@ -661,7 +661,14 @@ def add_need(
         then names ``path`` and the line each content line sits on
         (``first_line + i``). Sphinx prints node-based locations as absolute paths, so
         pass an absolute ``path``. Only meaningful with ``content_markup``; ``None``
-        anchors the content in the document the need is created in, as before.
+        anchors the content in the document the need is created in, as before: at
+        ``lineno_content``, else ``lineno``, read as lines of the PARSER's input, as a
+        directive's ``self.content_offset + 1`` and ``self.lineno`` give them (they
+        differ from the file's lines after ``rst_prolog`` or an ``include``, and are
+        mapped back to them). A resolved file line falls outside that input when the
+        directive is parsed in a nested state machine after it, and the content is
+        then anchored at the need's own line; inside it, it is mapped like a parser
+        line, to a line before the need's.
         Ignored for content rendered from a template or with ``jinja_content``, which
         no file holds: that is anchored at the need's own line.
 
@@ -915,18 +922,30 @@ def _reset_rst_titles(state: RSTState) -> Iterator[None]:
 
 
 def _host_content_anchor(
-    state: RSTState, input_offset: int, host_source: str
+    state: RSTState, input_offset: int, host_source: str, need_line: int | None
 ) -> tuple[str, int]:
     """Where the host's own ``nested_parse`` at ``input_offset`` reports its first line.
 
+    :param input_offset: A 0-based line in the parser's line space (a directive's
+        ``self.content_offset``, or its ``self.lineno - 1``).
+    :param need_line: The need's own line, the anchor when ``input_offset`` is not a
+        line of the input the state machine is parsing.
     :return: ``(source, 1-based line)``.
     """
-    source: str | None
-    line: int | None
+    source: str | None = None
+    line: int | None = None
     if isinstance(state, RSTState):
         # docutils: the offset is a line in the parser's own space, which ``rst_prolog``
-        # and ``.. include::`` shift; the state machine maps it back to a file line
-        source, line = state.state_machine.get_source_and_line(input_offset + 1)
+        # and ``.. include::`` shift; the state machine maps it back to a file line.
+        # The machine may be a nested one, covering only part of the page: a line
+        # outside its input would map to another line of it (a negative index counts
+        # from its end), so such a line is not mapped
+        machine = state.state_machine
+        input_lines = machine.input_lines or ()
+        if 0 <= input_offset - machine.input_offset < len(input_lines):
+            source, line = machine.get_source_and_line(input_offset + 1)
+        else:
+            return host_source, need_line or input_offset + 1
     else:
         # myst-parser's ``MockState.nested_parse`` offsets from the directive's own line,
         # which is what its state machine reports when asked for no line in particular
@@ -955,7 +974,7 @@ def _parse_declared_content(
         # pre/post template content is
         if isinstance(state, RSTState):
             source, first_line = _host_content_anchor(
-                state, _template_parse_offset(data), host_source
+                state, _template_parse_offset(data), host_source, data["lineno"]
             )
         else:
             # ``_template_parse_offset`` is a line of the page, while myst-parser's
@@ -965,7 +984,9 @@ def _parse_declared_content(
     elif content_source is not None:
         source, first_line = content_source
     else:
-        source, first_line = _host_content_anchor(state, content_offset, host_source)
+        source, first_line = _host_content_anchor(
+            state, content_offset, host_source, data["lineno"]
+        )
     parse_need_content(
         state, lines, parser=parser, source=source, first_line=first_line, node=node
     )
