@@ -61,7 +61,7 @@ package ships, and uses unless that option names another, is:
 .. literalinclude:: ../../src/sphinx_test_reports/directives/test_report_template.txt
    :language: rst
 
-``{content}`` is the directive's body, inserted at the indentation the template gives the
-placeholder, so that every line of it belongs to the generated ``test-file``.
+``{content}`` is the directive's body: its lines are indented like the template's first
+line that holds ``{content}``, so that every line of it belongs to the generated ``test-file``.
 ``{file}`` is the ``:file:`` option as written; the generated ``test-file`` resolves it
 against :ref:`tr_rootdir`, as the ``test-report`` itself does.

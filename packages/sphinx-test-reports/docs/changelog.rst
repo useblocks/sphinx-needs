@@ -229,11 +229,11 @@ Fixed
   That section ``literalinclude``\ d the template itself by a path only this package's own
   documentation could resolve, so in every other project each ``test-report`` warned
   ``Include file ... not found or reading it failed`` (failing a ``-W`` build) and
-  published a *Template* heading with nothing under it. **This removes output**: the
-  section never rendered outside this repository, and the template's source is now shown
-  on the ``test-report`` documentation page instead. A project that copied the template to
-  work around it keeps its copy; it can delete the section there, or go back to the
-  default.
+  published a *Template* heading and its one sentence with no template under them.
+  **This removes output**: the section never rendered whole outside this repository, and
+  the template's source is now shown on the ``test-report`` documentation page instead. A
+  project that copied the template to work around it keeps its copy; it can delete the
+  section there, or go back to the default.
   `#1932 <https://github.com/useblocks/sphinx-needs/issues/1932>`__,
   `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
 
