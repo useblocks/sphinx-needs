@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791324325653,
+  "lastUpdate": 1791340450128,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -22824,6 +22824,42 @@ window.BENCHMARK_DATA = {
             "value": 55.719081808,
             "unit": "s",
             "extra": "Commit: a5f2fb3ec1de1121c596e0b1f5d90d193a530b8e\nBranch: master\nTime: 2026-10-07T00:03:13+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ccf3ff620c4ab53f62544513c355922cf8109a84",
+          "message": "🐛 sphinx-needs: needextend :+field: on an unset nullable field sets the field instead of crashing the build (#2102)\n\n## What\n\n- `needextend`'s append form, `:+field:`, on a field the need never set\nnow sets the field to the appended value — for a literal and for a\ndynamic function, on an array field and on a string field. Before, a\nliteral appended to an unset **array** field ended the build with `Value\nafter * must be an iterable, not NoneType`, and a dynamic function\nappended to an unset array or string field with `Cannot append\nnon-string/array value …`; a literal appended to an unset string field\nalready set it, and still does.\n- The two events an extension can connect to around the `needextend`\ndirectives, `needs-before-post-processing` and `needs-before-sealing`,\nare documented in a new **Events** section of the Python API page: when\neach fires relative to `needextend`, dynamic functions, links and\nconstraints, and the callback signature `func(app, needs)`.\n- Changelog entry under Unreleased → Bug fixes.\n\n## Why\n\nA field from `needs_fields` is nullable unless it says otherwise, so a\nneed that does not set it holds `None`, and the append arms of\n`extend_needs_data` unpacked that value. `+` \"adds to the existing\nvalue\", and `:+tags:` on a need without tags already sets the tags, so\nan unset field now behaves the same way: `None` is the empty value of\nthe appended kind. The error for a current value of a genuinely wrong\ntype stays. Link fields need nothing: they are never `None`.\n\nThe event-order test pins what an extension that writes into needs\nrelies on (sphinx-codelinks' `@need-ids` attach is one): a value written\nat `needs-before-post-processing` reaches the needs and is applied\nbefore every `needextend`, so a document's `needextend` overrides it\nwhere both write the same field and the extension's value stands where\nnone does; a `needs-before-sealing` handler sees the `needextend`'s\nvalue with the dynamic functions resolved — in a serial build and with\n`-j 2`.\n\n## ubCode parity\n\nNothing to match: ubCode's `apply_extends`\n(`rust/ubc_needs/src/extend.rs`) already sets a nullable field whose\nvalue is null to the appended value, without a warning, in the literal\nand the function-array arms for both array and string fields (its tests\n`apply_extends_append_to_stripped_nullable_array` /\n`…_nullable_string`), and the empty-append edge (`:+field:` with no\nvalue → `[]` / `\"\"`) matches too.\n\n## Tests\n\n- `tests/test_needextend_append_unset.py`: a literal append to an unset\narray field; two appends accumulating (the issue's case); a\ndynamic-function append to an unset array field and to an unset string\nfield; a literal append to an unset string field (today's behaviour,\npinned). Each build is warning-free, and an untouched need shows the\nfields are `null` in `needs.json`.\n- `tests/test_post_processing_events.py`: a project-local extension\nwrites `status` on two needs at `needs-before-post-processing`; a\n`needextend` sets it again on one of them. `needs.json` carries the\n`needextend`'s value on that need and the extension's on the other, and\nthe `needs-before-sealing` handler saw the `needextend`'s value and a\n`[[copy(\"id\")]]` field already resolved — serial and `-j 2`.\n- Every pin was red against the unfixed code or under a mutation (each\nemit moved, the hook handed a copy of the needs, the sealing emit moved\nbefore function resolution). No snapshot changes.\n- The `needs_by_id`, `serial_and_parallel` and `PADDING` test helpers\nmoved from `test_needextend_priority.py` into `tests/util.py`, where\nthree modules now share them.\n\nCloses #2038",
+          "timestamp": "2026-10-07T04:32:44+02:00",
+          "tree_id": "8d9346136a73b111b1870f5ed8beaa86b0c1ce9c",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/ccf3ff620c4ab53f62544513c355922cf8109a84"
+        },
+        "date": 1791340441242,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.10729024099998696,
+            "unit": "s",
+            "extra": "Commit: ccf3ff620c4ab53f62544513c355922cf8109a84\nBranch: master\nTime: 2026-10-07T04:32:44+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 57.56241696500001,
+            "unit": "s",
+            "extra": "Commit: ccf3ff620c4ab53f62544513c355922cf8109a84\nBranch: master\nTime: 2026-10-07T04:32:44+02:00"
           }
         ]
       }
