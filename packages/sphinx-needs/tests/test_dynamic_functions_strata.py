@@ -1148,7 +1148,33 @@ a
    :id: P
    :incoming: [[copy("links_back")]]
    :summary: [[copy("links_back")]]
+
+.. req:: T
+   :id: Q
+
+   :np:`(1) a part`
+
+.. req:: T
+   :id: QR
+   :incoming: [[part_back("Q", "1")]]
 """
+
+BACKLINKS_CONF = (
+    CONF
+    + """\
+# Sphinx's own warning that a function in the configuration is not pickled
+suppress_warnings = ["config.cache"]
+
+
+def part_back(app, need, needs, need_id, part_id):
+    # a part's back links, in the order they are stored (no filter reaches a part)
+    part = needs[need_id].get_part(part_id)
+    return [link.id for link in part.backlinks.get("links", [])]
+
+
+needs_functions = [part_back]
+"""
+)
 
 BACKLINKS_B = """\
 b
@@ -1156,11 +1182,11 @@ b
 
 .. req:: T
    :id: C2
-   :links: P
+   :links: P, Q.1
 
 .. req:: T
    :id: C1
-   :links: P
+   :links: P, Q.1
 
 .. req:: T
    :id: DL
@@ -1175,7 +1201,7 @@ b
         {
             "buildername": "needs",
             "files": [
-                (Path("conf.py"), CONF),
+                (Path("conf.py"), BACKLINKS_CONF),
                 (Path("index.rst"), _toctree("a", "b")),
                 (Path("a.rst"), BACKLINKS_A),
                 (Path("b.rst"), BACKLINKS_B),
@@ -1187,13 +1213,16 @@ b
 def test_back_links_are_built_before_the_other_fields(test_app):
     """``copy("links_back")`` reads the back links, in need-id order.
 
-    ``C2`` links to ``P`` before ``C1`` does; the list ``P`` reads is ``C1, C2``. A list
-    into a string field still fails the type check. ``has_dead_links`` is final too.
+    ``C2`` links to ``P`` before ``C1`` does; the list ``P`` reads is ``C1, C2``, and so
+    is the list of ``Q``'s part ``1`` (read by a function of your own, as no built-in
+    reads a part). A list into a string field still fails the type check.
+    ``has_dead_links`` is final too.
     """
     app = test_app
     app.build()
     needs = _needs(app)
     assert needs["P"]["incoming"] == ["C1", "C2"]
+    assert needs["QR"]["incoming"] == ["C1", "C2"]
     assert needs["DL"]["dead"] is True
     assert build_warnings(app) == [
         _warning(
@@ -1941,6 +1970,85 @@ def test_a_need_attribute_value_chains(test_app):
     assert build_warnings(app) == []
 
 
+APPENDED_USER_CONF = (
+    CONF
+    + """\
+# Sphinx's own warning that a function in the configuration is not pickled
+suppress_warnings = ["config.cache"]
+
+
+def later(app, need, needs):
+    return "later"
+
+
+needs_functions = [later]
+"""
+)
+
+APPENDED_USER_INDEX = """\
+Appended call
+=============
+
+.. req:: Written, then your own function's call appended
+   :id: X
+   :summary: written
+   :incoming: a, b
+
+.. needextend:: X
+   :+summary: [[later()]]
+   :+incoming: [[later()]]
+
+.. req:: Reads X before your function computes it
+   :id: Y
+   :comment: [[copy("summary", "X")]]
+   :refs: [[copy("incoming", "X")]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), APPENDED_USER_CONF),
+                (Path("index.rst"), APPENDED_USER_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_field_an_extend_appends_a_call_to_holds_its_placeholder(test_app):
+    """Until its call is computed, a field a ``needextend`` appended a call to holds the
+    value a cycle member would: an array its written items, a string its empty value.
+
+    Your own function runs after the built-in ones, so ``Y``'s copies read ``X``'s
+    fields before they are computed (and say so): ``summary`` is not its written
+    ``written``, which is now part of the call's value, and ``incoming`` is ``a, b``.
+    """
+    app = test_app
+    app.build()
+    needs = _needs(app)
+    assert (needs["X"]["summary"], needs["X"]["incoming"]) == (
+        "written later",
+        ["a", "b", "later"],
+    )
+    assert (needs["Y"]["comment"], needs["Y"]["refs"]) == (None, ["a", "b"])
+
+    def read(field: str, name: str) -> str:
+        return _warning(
+            "index",
+            APPENDED_USER_INDEX,
+            "Y",
+            f"dynamic function 'copy' for option '{field}' read '{name}' on need 'X' "
+            "before it was computed: it is computed by your own function 'later', "
+            "which runs after the built-in functions",
+            "derive_scope",
+        )
+
+    assert build_warnings(app) == [read("comment", "summary"), read("refs", "incoming")]
+
+
 UNSET_SELECTOR_CONF = (
     CONF
     + """\
@@ -2042,6 +2150,10 @@ None result
    :parent: prefix [[copy("comment", "SRC0")]]
    :incoming: [[copy("comment", "SRC0")]]
    :refs: [[copy("comment", "SRC0")]]
+
+.. req:: T
+   :id: N2
+   :incoming: [[copy("refs", "SRC0")]]
 """
 
 
@@ -2061,13 +2173,15 @@ def test_a_none_result_adds_nothing_to_a_nullable_field(test_app):
     Alone in a nullable string or array field it leaves the field unset (``None``);
     beside a literal, the literal is the value. It used to be stored as the text
     ``"None"``, and as a ``[None]`` that schema validation then refused. In a field
-    that is not nullable it is still refused by the type check.
+    that is not nullable it is still refused by the type check. An empty list is a
+    value: ``N2``'s copy of ``SRC0``'s empty ``refs`` stores ``[]``, not ``None``.
     """
     app = test_app
     app.build()
     need = _needs(app)["N1"]
     assert (need["summary"], need["parent"]) == (None, "prefix ")
     assert (need["incoming"], need["refs"]) == (None, [])
+    assert _needs(app)["N2"]["incoming"] == []
     assert build_warnings(app) == [
         _warning(
             "index",
