@@ -374,7 +374,12 @@ def post_process_needs_data(app: Sphinx) -> None:
         needs_schema = needs_data.get_schema()
         needs = needs_data.get_needs_mutable()
         app.emit("needs-before-post-processing", needs)
-        extend_needs_data(needs, needs_data.get_or_create_extends(), needs_config)
+        extend_needs_data(
+            needs,
+            needs_data.get_or_create_extends(),
+            needs_config,
+            schema=needs_schema,
+        )
         # the link fields, then the back links (build_backlinks), then the other fields
         resolve_functions(app, needs, needs_config)
         check_links(needs, needs_config, needs_schema)

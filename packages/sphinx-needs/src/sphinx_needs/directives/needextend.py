@@ -15,16 +15,18 @@ from sphinx_needs.exceptions import (
     VariantParsingException,
 )
 from sphinx_needs.filter_common import filter_needs_mutable
+from sphinx_needs.functions.order import filter_names, typed_empty
 from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
-from sphinx_needs.need_item import NeedModification
+from sphinx_needs.need_item import NeedItem, NeedModification
 from sphinx_needs.needs_schema import (
     FieldFunctionArray,
     FieldLiteralValue,
+    FieldsSchema,
     LinkSchema,
     LinksFunctionArray,
     LinksLiteralValue,
 )
-from sphinx_needs.utils import DummyOptionSpec, add_doc, coerce_to_boolean
+from sphinx_needs.utils import DummyOptionSpec, add_doc, coerce_to_boolean, counted_ids
 
 logger = get_logger(__name__)
 
@@ -235,13 +237,20 @@ def extend_needs_data(
     all_needs: NeedsMutable,
     extends: dict[str, NeedsExtendType],
     needs_config: NeedsSphinxConfig,
+    *,
+    schema: FieldsSchema,
 ) -> None:
     """Use data gathered from needextend directives to modify fields of existing needs.
 
     The extends are applied in ``(extend_priority, docname, lineno)`` order. Which
     needs each one modifies is decided first, before any extend is applied: an id names
     its need, and a filter matches the needs as written, so no extend changes what
-    another one's filter matches.
+    another one's filter matches. A field an extend sets to a ``[[…]]`` or ``<<…>>``
+    holds its empty value until the call is computed, as one written in the need does.
+
+    A filter that names a field a ``[[…]]``, ``<<…>>`` or ``<{…}>`` computes, once
+    every extend is applied, saw the value from before it is computed: each such
+    extend is reported as ``needs.derive_scope``.
     """
 
     # Sort by priority, lower first, then by (docname, lineno) to ensure deterministic
@@ -402,6 +411,8 @@ def extend_needs_data(
                                 raise RuntimeError(
                                     f"Cannot append non-string/array value {field_value.value!r} to field '{option_name}'"
                                 )
+                            # the value written is part of the call's value now
+                            _hold_empty(need, option_name, schema)
                     case (ExtendType.REPLACE | ExtendType.DELETE, None):
                         if (df := need._dynamic_fields.get(option_name)) is not None:
                             need._dynamic_fields.pop(option_name, None)
@@ -412,11 +423,79 @@ def extend_needs_data(
                         need[option_name] = field_value.value
                     case (ExtendType.REPLACE | ExtendType.DELETE, FieldFunctionArray()):
                         need._dynamic_fields[option_name] = field_value
-                        # TODO reset need[option_name] to something sensible?
+                        _hold_empty(need, option_name, schema)
                     case other_field:
                         raise RuntimeError(
                             f"Unhandled case {other_field} for {option_name!r}"
                         )
+
+    _report_filters_on_computed_fields(all_needs, targets, needs_config)
+
+
+def _hold_empty(need: NeedItem, option_name: str, schema: FieldsSchema) -> None:
+    """Give a field an extend sets to a call its empty value, until it is computed.
+
+    The value it held before the extend is not the call's, and nothing must read it:
+    a cycle member, or a read the order cannot place, reads the empty value whether
+    the call was written in the need or set by an extend.
+    """
+    if (field_schema := schema.get_any_field(option_name)) is not None:
+        need[option_name] = typed_empty(field_schema)
+
+
+def _report_filters_on_computed_fields(
+    all_needs: NeedsMutable,
+    targets: Sequence[tuple[NeedsExtendType, Sequence[str]]],
+    needs_config: NeedsSphinxConfig,
+) -> None:
+    """Report each extend whose filter names a field some need computes.
+
+    The filter matched the needs as written, before any ``[[…]]``, ``<<…>>`` or
+    ``<{…}>`` is computed, so it saw such a field's value from before. Every need is a
+    candidate of a filter, so any need computing the field counts, whether or not the
+    filter matched it.
+    """
+    computed: dict[str, list[str]] = {}
+    for need in all_needs.values():
+        for field_name in need._dynamic_fields:
+            computed.setdefault(field_name, []).append(need.id)
+    if not computed:
+        return
+    not_fields = frozenset(needs_config.filter_data)
+    for needextend, _ in targets:
+        if needextend["filter_is_id"]:
+            continue
+        names = filter_names(needextend["filter"], not_fields)
+        read = sorted(
+            name
+            for name in names.names | names.current
+            if name in computed
+            or (name == "parent_need" and "parent_needs" in computed)
+        )
+        if not read:
+            continue
+        ids = {
+            need_id
+            for name in read
+            for need_id in computed.get(
+                "parent_needs" if name == "parent_need" else name, []
+            )
+        }
+        quoted = [f"'{name}'" for name in read]
+        named = (
+            quoted[0]
+            if len(quoted) == 1
+            else f"{', '.join(quoted[:-1])} and {quoted[-1]}"
+        )
+        log_warning(
+            logger,
+            f"needextend filter {needextend['filter']!r} names {named}, which a "
+            "dynamic function or variant computes on "
+            f"{counted_ids(ids, ' need' if len(ids) == 1 else ' needs')}: "
+            "the filter sees the value from before it is computed",
+            "derive_scope",
+            location=(needextend["docname"], needextend["lineno"]),
+        )
 
 
 def _ids_matched_as_written(
