@@ -993,16 +993,26 @@ def merge_default_configs(_app: Sphinx, config: Config) -> None:
         _NEEDS_CONFIG.add_function(need_common_func)
 
     # Register functions configured by user
-    for needs_func in needs_config._functions:
-        if not callable(needs_func):
-            log_warning(
-                LOGGER,
-                f"needs_functions entry {needs_func!r} is not callable and is ignored",
-                "config",
-                None,
-            )
-            continue
-        _NEEDS_CONFIG.add_function(needs_func)
+    if isinstance(needs_config._functions, (list, tuple)):
+        for needs_func in needs_config._functions:
+            if not callable(needs_func):
+                log_warning(
+                    LOGGER,
+                    f"needs_functions entry {needs_func!r} is not callable and is ignored",
+                    "config",
+                    None,
+                )
+                continue
+            if not getattr(needs_func, "__name__", None):
+                log_warning(
+                    LOGGER,
+                    f"needs_functions entry {needs_func!r} has no __name__ and is ignored "
+                    "(use a callable with a __name__, or add_dynamic_function(func, name=...) for one without)",
+                    "config",
+                    None,
+                )
+                continue
+            _NEEDS_CONFIG.add_function(needs_func)
 
     # The default link name. Must exist in all configurations. Therefore we set it here for the user.
     if "links" not in needs_config._links:

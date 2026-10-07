@@ -169,3 +169,70 @@ def test_a_function_from_conf_py_is_still_registered_beside_a_toml_file(build):
     assert_no_warnings(app)
     assert app.config.needs_id_required is True
     assert _need(app, "R_ONE")["status"] == "forty-two"
+
+
+def test_needs_functions_entry_without_name_warns_and_is_ignored(build):
+    """A callable without a __name__ (e.g. functools.partial) in needs_functions warns
+    and is ignored rather than raising AttributeError."""
+    conf = """\
+        extensions = ["sphinx_needs"]
+        suppress_warnings = ["config.cache"]
+        import functools
+
+        needs_functions = [functools.partial(min, 1)]
+    """
+    app = build({"conf.py": conf})
+    warnings = build_warnings(app)
+    assert len(warnings) == 1
+    assert "has no __name__ and is ignored" in warnings[0]
+    assert "[needs.config]" in warnings[0]
+    assert app.statuscode == 0
+
+
+def test_needs_functions_none_value_does_not_crash(build):
+    """Setting needs_functions = None does not crash with TypeError."""
+    app = build({"conf.py": 'extensions = ["sphinx_needs"]\nneeds_functions = None\n'})
+    assert app.statuscode == 0
+
+
+def test_needs_functions_bare_callable_value_does_not_crash(build):
+    """Setting needs_functions = func (a bare function instead of a list) does not crash."""
+    conf = """\
+        extensions = ["sphinx_needs"]
+        suppress_warnings = ["config.cache"]
+
+        def dummy():
+            pass
+
+        needs_functions = dummy
+    """
+    app = build({"conf.py": conf})
+    assert app.statuscode == 0
+
+
+def test_add_dynamic_function_allows_callables_without_name(build):
+    """add_dynamic_function allows registering a callable without __name__ when a name is given."""
+    conf = """\
+        extensions = ["sphinx_needs"]
+        needs_build_json = True
+        suppress_warnings = ["config.cache"]
+        import functools
+        from sphinx_needs.api import add_dynamic_function
+
+        def raw_answer(app, need, needs, extra):
+            return f"answer-{extra}"
+
+        def setup(app):
+            add_dynamic_function(app, functools.partial(raw_answer, extra="partial"), name="partial_func")
+    """
+    rst = """\
+        Title
+        =====
+
+        .. req:: One
+           :id: R_ONE
+           :status: [[partial_func()]]
+    """
+    app = build({"conf.py": conf, "index.rst": rst})
+    assert_no_warnings(app)
+    assert _need(app, "R_ONE")["status"] == "answer-partial"

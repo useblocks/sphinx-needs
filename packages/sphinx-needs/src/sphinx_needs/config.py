@@ -176,7 +176,15 @@ class _Config:
 
     def add_function(self, function: DynamicFunction, name: str | None = None) -> None:
         """Adds a dynamic function to the configuration."""
-        func_name = function.__name__ if name is None else name
+        func_name = getattr(function, "__name__", None) if name is None else name
+        if func_name is None:
+            log_warning(
+                LOGGER,
+                f"Dynamic function {function!r} has no __name__ and no name was provided.",
+                "config",
+                None,
+            )
+            return
         if func_name in self._functions:
             log_warning(
                 LOGGER,
