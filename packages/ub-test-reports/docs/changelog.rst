@@ -12,6 +12,18 @@ Fixed
 - 🐛 The JSON parser now reads report files as UTF-8 explicitly, so non-ASCII test names and
   messages do not depend on the process locale on Windows.
 
+- 🐛 Two ``--link-property`` flags (or two ``[test_reports.build.needs] link_properties``
+  entries) that map different XML properties onto the SAME link field now merge, as the
+  build's ``tr_property_link_types`` does: the field lists the values of every mapped
+  property, in mapping order, each id once at its first appearance. Before, the last
+  mapped property overwrote the field, so a case carrying only an earlier one lost its
+  links. As part of the same rule, a value repeated within one property is now written
+  once (sphinx-needs de-duplicates a link list on import, so an imported need is
+  unchanged by that). The field is still written, empty, for a case carrying none of the
+  mapped properties.
+  `#2058 <https://github.com/useblocks/sphinx-needs/issues/2058>`__,
+  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+
 .. _`release:1.0.0`:
 
 1.0.0
