@@ -659,9 +659,10 @@ def add_need(
         written in, and the 1-based line of the first content line in it. Every
         diagnostic raised while parsing the content, and every node created from it,
         then names ``path`` and the line each content line sits on
-        (``first_line + i``); the lines are the ``\n``-separated lines of the text,
-        a ``\r`` ending one ignored. Sphinx prints node-based locations as absolute paths, so
-        pass an absolute ``path``. Only meaningful with ``content_markup``; ``None``
+        (``first_line + i``), the lines being those a newline separates (a carriage
+        return ending one is ignored, a form feed inside one does not end it).
+        Sphinx prints node-based locations as absolute paths, so pass an absolute
+        ``path``. Only meaningful with ``content_markup``; ``None``
         anchors the content in the document the need is created in, as before: at
         ``lineno_content``, else ``lineno``, read as lines of the PARSER's input, as a
         directive's ``self.content_offset + 1`` and ``self.lineno`` give them (they
