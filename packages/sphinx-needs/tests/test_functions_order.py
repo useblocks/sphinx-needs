@@ -161,6 +161,7 @@ def _table_project(field: str, text: str) -> Project:
             grp="g",
             cparent="[[copy('parent')]]",
             unset=None,
+            empty="",
             **{field: text},
         ),
         refs={"RD": ["DYN", "SRC"]},
@@ -221,8 +222,10 @@ EVERY_STATUS = 'status == "open"'
             "[[copy('summary', 'DYN', upper=need.cparent)]]",
             {"deps": [("RD", "cparent"), ("DYN", "summary")]},
         ),
-        # an unset selector fails the call; an unset value is None
+        # an unset (or empty) selector fails the call; an unset value is None
         ("out", "[[copy('summary', need.unset)]]", {}),
+        ("out", "[[copy('summary', need.empty)]]", {}),
+        ("out", "[[calc_sum('hours', links_only=need.empty)]]", {}),
         (
             "out",
             "[[copy('summary', 'DYN', upper=need.unset)]]",

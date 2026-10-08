@@ -98,6 +98,8 @@ _PARAMETERS: Final[Mapping[str, tuple[str, ...]]] = {
     name: _parameters(func) for name, func in BUILTINS.items()
 }
 _VARARGS: Final = frozenset({"test", "echo"})
+#: a selector holding one of these is unset: the call fails
+_UNSET: Final = (None, "")
 
 
 def _arguments(call: DynamicFunctionParsed) -> dict[str, Any] | None:
@@ -119,9 +121,9 @@ def unset_selector(
     """The first ``need.<field>`` selector of a built-in call that ``need`` leaves unset.
 
     A selector is an argument that selects what the call reads (an id, a field name, a
-    filter, ``links_only``). A call with an unset one fails: it would otherwise read
-    something else (``copy`` its own need). An unset value in any other argument is
-    ``None``.
+    filter, ``links_only``). A call with an unset one (``None``, or ``""``, which an
+    untyped extra option holds when not set) fails: it would otherwise read something
+    else (``copy`` its own need). Any other argument passes the value on.
 
     :param call: A call of a built-in function.
     :param need: The need the call belongs to.
@@ -133,7 +135,7 @@ def unset_selector(
             key in _SELECTORS[call.name]
             and isinstance(value, NeedAttribute)
             and value.name in need
-            and need[value.name] is None
+            and need[value.name] in _UNSET
         ):
             return value.name
     return None
@@ -610,7 +612,7 @@ class _CallReads:
                 continue
             if attr not in self.need:
                 return  # the call fails: need has no attribute
-            if self.need[attr] is None:
+            if self.need[attr] in _UNSET:
                 return  # the call fails: what it reads is not selected
             args[key] = self.need[attr]
         if blocking:

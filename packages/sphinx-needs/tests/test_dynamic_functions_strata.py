@@ -2218,6 +2218,114 @@ def test_an_unset_need_attribute_selector_fails_the_call(test_app):
     ]
 
 
+EMPTY_SELECTOR_CONF = (
+    CONF
+    + """\
+# an untyped extra option: a need that does not set it holds ""
+needs_extra_options = ["src"]
+needs_build_json = True
+"""
+)
+
+EMPTY_SELECTOR_INDEX = """\
+Empty selector
+==============
+
+.. req:: Target
+   :id: TGT
+   :hours: 2
+
+.. req:: copy's need
+   :id: E_COPY
+   :summary: [[copy("title", need.src)]]
+
+.. req:: calc_sum's field
+   :id: E_SUM
+   :total: [[calc_sum(need.src)]]
+
+.. req:: check_linked_values' field
+   :id: E_CLV
+   :summary: [[check_linked_values("ok", need.src, "x")]]
+   :links: TGT
+
+.. req:: links_only
+   :id: E_ONLY
+   :total: [[calc_sum("hours", links_only=need.src)]]
+
+.. req:: A value, not a selector
+   :id: E_VALUE
+   :summary: [[copy("title", "TGT", upper=need.src)]]
+
+   ndf says: :ndf:`copy("title", need.src)`
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), EMPTY_SELECTOR_CONF),
+                (Path("index.rst"), EMPTY_SELECTOR_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_an_empty_need_attribute_selector_fails_the_call(test_app):
+    """A selector whose field holds ``""`` is unset, as one holding ``None`` is.
+
+    An untyped extra option a need does not set holds ``""``; ``copy("title", "")``
+    would copy the need's own title, ``calc_sum("")`` sum nothing, and a ``links_only``
+    of ``""`` sum every need. Each call fails instead, naming the field, in a field and
+    in an ``ndf`` role alike; in a value argument (``upper``) ``""`` is a value.
+    """
+    app = test_app
+    app.build()
+    data = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf-8"))
+    needs = data["versions"][data["current_version"]]["needs"]
+    assert {
+        "E_COPY": needs["E_COPY"]["summary"],
+        "E_SUM": needs["E_SUM"]["total"],
+        "E_CLV": needs["E_CLV"]["summary"],
+        "E_ONLY": needs["E_ONLY"]["total"],
+        "E_VALUE": needs["E_VALUE"]["summary"],
+    } == {
+        "E_COPY": None,
+        "E_SUM": None,
+        "E_CLV": None,
+        "E_ONLY": None,
+        "E_VALUE": "Target",
+    }
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    assert "ndf says: ??" in html
+
+    def empty(need_id: str, field: str, function: str) -> str:
+        return _warning(
+            "index",
+            EMPTY_SELECTOR_INDEX,
+            need_id,
+            f"Error while resolving dynamic values for field '{field}', of need "
+            f"'{need_id}': Error while applying need to function '{function}': "
+            "need.src selects what the call reads, and is not set",
+            "dynamic_function",
+        )
+
+    warnings = build_warnings(app)
+    assert [warning for warning in warnings if "Error while resolving" in warning] == [
+        empty("E_CLV", "summary", "check_linked_values"),
+        empty("E_COPY", "summary", "copy"),
+        empty("E_ONLY", "total", "calc_sum"),
+        empty("E_SUM", "total", "calc_sum"),
+    ]
+    assert any(
+        "WARNING: Error while applying need to function 'copy': need.src selects what "
+        "the call reads, and is not set [needs.dynamic_function]" in warning
+        for warning in warnings
+    ), warnings
+
+
 UNSET_ROLE_INDEX = """\
 Unset selector in a role
 ========================
