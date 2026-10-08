@@ -38,7 +38,7 @@ def warn(directive: Directive, subtype: str, message: str) -> None:
 
     Located on ``directive`` -- the file it is WRITTEN in and its line there, as
     ``"<source>:<line>"`` (what Sphinx's own ``SphinxDirective.get_location()`` gives; a
-    directive in an ``.. include::``\ d file is located in that file, as docutils' own
+    directive in an included file is located in that file, as docutils' own
     errors are) -- and typed, so ``suppress_warnings`` takes ``test_reports`` or
     ``test_reports.<subtype>``. Any directive will do, ``test-results`` and ``test-env``
     included: only its state machine and line are read.
