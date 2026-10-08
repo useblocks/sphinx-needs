@@ -284,8 +284,9 @@ def test_a_directive_in_an_included_file_is_located_there(build_page):
             b'{"not": "a list"}',
             ": the JSON report is not a list of test suites (got an object)",
         ),
+        (b'[1, "x"]', ": test suite 0 is not an object (got a number)"),
     ],
-    ids=["not-json", "not-a-list"],
+    ids=["not-json", "not-a-list", "not-suites"],
 )
 def test_a_json_report_that_cannot_be_read_is_unreadable(build_page, data, expected):
     """The JSON reader's failures are ``report_unreadable`` too. Master (and this branch
