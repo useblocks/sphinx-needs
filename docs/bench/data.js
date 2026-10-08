@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791473344878,
+  "lastUpdate": 1791477000379,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -23724,6 +23724,42 @@ window.BENCHMARK_DATA = {
             "value": 54.659936681,
             "unit": "s",
             "extra": "Commit: 87238b95f839e9ce47753bc7af299b42f0327077\nBranch: master\nTime: 2026-10-08T17:27:41+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fa3a137379e9b56d7adae9d7c974382bddb71b09",
+          "message": "🐛 sphinx-codelinks: physical marker columns, need-ref spans, and Epydoc field tags in docstrings are not needs (#2129)\n\n## What\n\n`packages/sphinx-codelinks`: the production defects that snapshotting\nthe real extraction output (#2128) exposed, fixed.\n\n- **Marker positions are physical.** A one-line need's or `@need-ids`\nreference's `source_map` columns count the characters before it on\nits line. They used to count from the start of the comment, so an\nindented marker, a comment after code, or a comment after a\nnon-ASCII character reported a column that was not its column in the\nfile. Each comment records the column, in characters, at which its\ntext starts, on both the tree-sitter and the libclang path; it is added\non the text's first row, and later rows start at column 0. A\ncomment's rows are split on line breaks only, so a form feed no longer\nstarts a row. `marked_content.json` changes accordingly.\n- **A need reference's span starts at its first id**, not at the\nwhitespace after `@need-ids:`, and ends after its last id\n(`NeedIdRef.start_column` / `end_column`). A marker with no id after it\nis no reference.\n- **A block comment's closing `*/` is not marker text**: `/* @need-ids:\nREQ_1 */` named `*/` as a second id, and `/* @T, IMPL_1, impl */`\nhad the type `impl */`. A one-line need on a comment's last line — the\nrow of a block comment's `*/` or of a docstring's closing\n  quotes — is no longer dropped.\n- **A Python docstring is read as its content**, without its prefix\nletters and quotes, so a marker on a one-row docstring,\n  `\"\"\"@T, IMPL_1, impl\"\"\"`, no longer has the type `impl\"\"\"`.\n- **A field-shaped tag line in a Python docstring is a `docstring_tag`\nwarning, not a need.** A line warns, and yields no need, only when\nall hold: it is inside a docstring (any bare string statement directly\nin a module, class or function body; never a `#` comment, never\nanother language); nothing alphanumeric precedes the one-line start\nsequence; a tag of `PYTHON_DOCSTRING_TAGS` follows it; and the tag\nhas the Epydoc field shape `:|[ \\t]+[^ \\t:]+:` — `:` directly (`@return:\ntext`), or spaces or tabs, one word without space, tab or `:`,\nand `:` (`@param a: text`, `@raise Exc: text`, `@param नाम: text`).\nEvery other line goes to the one-line parser as before:\n`# @todo fix the parser, IMPL_TODO, impl` is a need, so is the docstring\nline `@todo fix the parser, IMPL_DS, impl`, and so is\n`@return : text, IMPL_RET, impl`. Doxygen's comma form (`@param a the\nfirst, thing`) stays the phantom need it is in C++. The warning\nsays to choose a start sequence the docstrings do not use.\n\"Alphanumeric\" here is Python's own notion, which differs from ubCode's\non a\n  few characters (combining marks, for one): a documented non-goal.\n\nCloses #2154\n\n## Why\n\nAny tool that reads the columns of `marked_content.json` — an editor\njumping to a marker, say — was sent to the wrong place for every\nindented marker and every need reference. In a build the links are\nline-based, so there only the order in which unknown ids on one line\nare reported changes. A project with Epydoc-style Python docstrings got\nphantom needs from its `@param a: x, y` lines with the default\n`@` start sequence.\n\n## Review of this PR, addressed on the branch (taken over 2026-10-08\nwith Marco's go)\n\nRebased onto master (after #2128 and #2152): Marco's two commits\nreplayed, the one conflict (`oneline_parser.py`: the warning kinds now\nlive in `models.py`) resolved in place, and the one multi-line corpus\ncase that holds `@need-ids` references re-captured at the new\nspans. Then:\n- `docstring_tag` is narrowed to the rule above. As first built it fired\non every comment of a Python file and on any listed tag word, so\n`# @todo fix the parser, IMPL_TODO, impl` — a valid one-line need — and\nany docstring line opening with a listed tag word, such as\n`@todo fix the parser, IMPL_DS, impl`, became a warning instead of a\nneed. A field-shaped docstring line such as `@return: x` still\nwarns, by design. The field word is spelled so that this package and\nubCode read it the same way in every script: a parameter named in\nDevanagari is a field word on both sides. The pins came first and were\nred against each earlier version.\n- A docstring is scanned as its content, the last line of a comment\ncounts as terminated, a block comment's `*/` is not marker text, a\ncomment's rows are split on `\\n` only, and an empty `@need-ids:` is no\nreference — each the rule ubCode applies, each with a shared case.\n- The corpus README's two \"known production quirks\" are fixed by this PR\nand are gone; what remains is a rule of the corpus: no case\nputs two entries of one kind on one row (#2150). Its JSON example, and\nthe examples in `docs/components/analyse.rst` (measured with\n  `codelinks analyse`) and `write.rst`, show physical columns.\n- Nothing pinned the libclang column (setting it to 0 left the suite\ngreen); a test now checks that both engines report the same\nphysical columns, with LF, CRLF and CR line endings, including a one-row\nblock-comment need, a need on a `*/` row, a form feed and an\n  empty marker.\n\nFound on the way, pre-existing and not changed here: production orders\ntwo entries of one kind on one row by tree-sitter's capture\norder (#2150); the scope walk can bind a marker to a declaration further\ndown the file, past a decorated `def` or a `template <…>` too\n(#2151); a non-ASCII character before an inline YAML comment loses the\ncomment (#2155).\n\n## ubCode\n\nuseblocks/ubcode#3014 implements every rule here — physical columns,\nreference spans from the first id, docstring content, terminated\nlast lines, the `*/` rule, `\\n`-only rows, no empty references, and the\nsame `docstring_tag` (same tag list, the same field-shape\npattern, docstrings only) — and re-vendors the corpus from master after\nthis merges. Each tool keeps its own notion of \"alphanumeric\"\nbefore the start sequence and of the whitespace between `@need-ids:` ids\n(they differ on a few characters); the corpus says so and pins\nneither.\n\n## Tests\n\n- `positions.yaml` (11 cases, new): indentation; code, or a non-ASCII\ncharacter, before the comment; a non-ASCII title and id; trailing\nwhitespace in a block comment; a one-line need and a reference on one\nrow; a one-row block-comment need; a need on a block comment's\n  `*/` row; a form feed inside a line.\n- `docstrings.yaml` (13 cases, new; its header states the rule):\ntrailing whitespace; a docstring statement holding a second string;\nfield-shaped tags warn (`@param a: the first, thing`, `@return:\nnothing`, a Devanagari parameter name, an `r\"\"\"…\"\"\"` one-row\ndocstring); a tag word without the field shape, `@return : text`,\n`@Todo`, and a `#` comment's tag line (field-shaped or not) are needs;\none-row docstrings' need and reference lose the quotes; a need on the\nclosing-quote row.\n- `need_refs.yaml` gains `every_extractor`, `block_comment`,\n`space_separated_ids`, `marker_after_text`,\n`empty_marker_is_no_reference`,\n  `line_comment_ending_in_closer`.\n- Unit: `docstring_tag()`'s field shape (26 rows, the same table as\nubCode's); a field-shaped tag line in a `#` comment goes to the\none-line parser; libclang columns equal tree-sitter columns (LF, CRLF,\nCR). `test_need_id_ref_record` expects the span from the first id.\n- `uv run poe test-codelinks`: **857 passed, 0 skipped** (the sphinx-7\ncell too); `uv run poe docs-codelinks` builds with no warning.\n\n## Checklist\n\n- [x] Every line of this change has been read: Marco's commits, the\nreviews and validations of 2026-10-08, and the takeover's line-by-line\npass; it was not generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-<package>`) and they\npass.\n- [x] Documentation is updated where behaviour or options change.\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.\n\n---------\n\nCo-authored-by: Chris Sewell <chrisj_sewell@hotmail.com>",
+          "timestamp": "2026-10-08T18:28:41+02:00",
+          "tree_id": "7ffb9b7ffee718c9133e9c51d4ce6e2474c2145e",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/fa3a137379e9b56d7adae9d7c974382bddb71b09"
+        },
+        "date": 1791476991976,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.08049656299999697,
+            "unit": "s",
+            "extra": "Commit: fa3a137379e9b56d7adae9d7c974382bddb71b09\nBranch: master\nTime: 2026-10-08T18:28:41+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 45.829798274,
+            "unit": "s",
+            "extra": "Commit: fa3a137379e9b56d7adae9d7c974382bddb71b09\nBranch: master\nTime: 2026-10-08T18:28:41+02:00"
           }
         ]
       }
