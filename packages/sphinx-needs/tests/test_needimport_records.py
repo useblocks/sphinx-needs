@@ -138,24 +138,38 @@ def test_tags_option_extends_the_record_tags(
 
 
 @pytest.mark.parametrize(
-    "test_app",
+    ("test_app", "expected"),
     [
         pytest.param(
             project(
-                [record("STR_TAGS", tags="x; y"), record("EMPTY_TAGS", tags="")],
+                [
+                    record("STR_TAGS", tags="x; y"),
+                    record("EMPTY_TAGS", tags=""),
+                    record("LIST_TAGS", tags=["x"]),
+                    record("NO_TAGS"),
+                ],
                 [":allow_type_coercion: false", *options],
             ),
+            expected,
             id=name,
         )
-        for name, options in (("tags_option", [":tags: a, b"]), ("no_tags_option", []))
+        for name, options, expected in (
+            (
+                "tags_option",
+                [":tags: a, b"],
+                {"LIST_TAGS": ["x", "a", "b"], "NO_TAGS": ["a", "b"]},
+            ),
+            ("no_tags_option", [], {"LIST_TAGS": ["x"], "NO_TAGS": []}),
+        )
     ],
-    indirect=True,
+    indirect=["test_app"],
 )
 def test_tags_option_keeps_a_string_refused_without_coercion(
-    test_app: SphinxTestApp,
+    test_app: SphinxTestApp, expected: dict[str, list[str]]
 ) -> None:
     """With ``:allow_type_coercion: false`` a string ``tags``, an empty one included,
-    is refused, with or without ``:tags:``, with the same text."""
+    is refused, with or without ``:tags:``, with the same text; a list or a missing
+    ``tags`` still gets the option's tags."""
     test_app.build()
     assert test_app.statuscode == 0
     assert build_warnings(test_app) == [
@@ -167,7 +181,7 @@ def test_tags_option_keeps_a_string_refused_without_coercion(
             "EMPTY_TAGS", "'tags' value is invalid: Invalid value for field 'tags': ''"
         ),
     ]
-    assert needs_by_id(test_app) == {}
+    assert {k: v["tags"] for k, v in needs_by_id(test_app).items()} == expected
 
 
 # ------------------------------------------------------------------------------------
