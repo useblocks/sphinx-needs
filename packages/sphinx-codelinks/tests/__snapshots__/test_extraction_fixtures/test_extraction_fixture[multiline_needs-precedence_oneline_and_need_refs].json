@@ -79,11 +79,11 @@
     "source_map": {
       "start": {
         "row": 8,
-        "column": 13
+        "column": 14
       },
       "end": {
         "row": 8,
-        "column": 22
+        "column": 23
       }
     },
     "tagged_scope": "void precedence(int a, int b) {}",
@@ -123,11 +123,11 @@
     "source_map": {
       "start": {
         "row": 13,
-        "column": 13
+        "column": 14
       },
       "end": {
         "row": 13,
-        "column": 20
+        "column": 21
       }
     },
     "tagged_scope": "void outside() {}",
