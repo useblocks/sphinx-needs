@@ -51,7 +51,7 @@ Improvements
 
 - ✨ Dynamic functions and variants are computed in dependency order,
   and a value that cannot be computed is reported **(changed output)**
-  (:issue:`2064`, :pr:`2080`, :pr:`2081`, :pr:`2134`, :pr:`NNNN`)
+  (:issue:`2064`, :pr:`2080`, :pr:`2081`, :pr:`2134`, :pr:`2136`)
 
   A ``[[…]]``, ``<<…>>`` or ``<{…}>`` is now computed after every value it reads,
   so a chain of :ref:`copy <copy>` calls, a :ref:`calc_sum <calc_sum>` over computed summands,

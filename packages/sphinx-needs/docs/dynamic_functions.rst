@@ -67,7 +67,8 @@ Otherwise the call is not run, its field holds what a field on a cycle holds
 If the field is unset or empty, the call fails (``needs.dynamic_function``):
 ``copy`` does not read the need it is in instead.
 Any other argument (such as ``check_linked_values``' ``result`` or ``search_value``, or ``copy``'s ``upper``)
-is a value: its field is read like any other, after it is computed, and is ``None`` when unset.
+is a value: its field is read like any other, after it is computed, and is ``None`` when unset
+(``""`` for an untyped extra option).
 
 .. versionchanged:: 9.0.0
 
