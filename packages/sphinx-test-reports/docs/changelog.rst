@@ -200,6 +200,11 @@ Changed
   warns: an option line under ``test-results`` in a MyST page (MyST's own ``Unknown option
   keys`` warning). ub-test-reports' ``JUnitFileMissing`` / ``JsonFileMissing`` derive from
   ``Exception`` now, not ``BaseException``. :ref:`tr_warnings` lists the family.
+  ``test-env`` joins the family: a file it cannot find or read (``report_missing`` /
+  ``report_unreadable``), a file or environment of the wrong shape (``env_shape``), and an
+  ``:env:`` / ``:data:`` name the file lacks (``env_not_present`` /
+  ``env_key_not_present``), each located; ``InvalidJsonFile`` and ``JsonFileNotFound`` are
+  no longer raised by it (the classes stay, deriving from ``Exception`` now).
   `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
   `#2156 <https://github.com/useblocks/sphinx-needs/pull/2156>`__
 
