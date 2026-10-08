@@ -103,9 +103,15 @@ def find_suite(results: list[dict[str, Any]], name: str) -> dict[str, Any] | Non
 
 
 #: Who minted an id of an ``:auto_suites:`` / ``:auto_cases:`` expansion: ``("suite",
-#: name)`` or ``("case", classname, name)``. One registry per expansion, suites and cases
-#: together (ubCode's ``Planner.seen``).
+#: name)`` or ``("case", classname, name, suite id, suite name)`` -- the suite the case is
+#: directly in, by its (unique) id and its name. One registry per expansion, suites and
+#: cases together (ubCode's ``Planner.seen``).
 IdHolder = tuple[str, ...]
+
+
+def _holder_name(holder: IdHolder) -> str:
+    """The name of what minted an id: a suite's name, or a case's."""
+    return holder[1] if holder[0] == "suite" else holder[2]
 
 
 def suite_collision(suite_id: str, first: IdHolder, name: str) -> str:
@@ -120,25 +126,47 @@ def suite_collision(suite_id: str, first: IdHolder, name: str) -> str:
             f"suites named {name}; only the first is expanded"
         )
     return (
-        f"Suite ID {suite_id} already exists by {first[-1]} ({name}); "
+        f"Suite ID {suite_id} already exists by {_holder_name(first)} ({name}); "
         "raise tr_suite_id_length"
     )
 
 
-def case_collision(case_id: str, first: IdHolder, classname: str, name: str) -> str:
-    """The ``duplicate_id`` text for a case whose id ``first`` minted already.
+def case_collision(
+    case_id: str,
+    first: IdHolder,
+    case: IdHolder,
+    deterministic: bool,
+) -> str:
+    """The ``duplicate_id`` text for a case (``case``, an :data:`IdHolder`) whose id
+    ``first`` minted already -- ubCode's texts (``case_collision`` in its
+    ``ubc_test_reports/src/expansion.rs``), with this extension's option names.
 
-    The same ``classname`` and ``name`` twice -- in one suite, or under
-    ``tr_deterministic_case_ids`` in two suites, whose ids do not depend on the suite --
-    is the report's doing; two different cases share a legacy id only within one
-    ``tr_case_id_length`` slice. A deterministic id keeps only the LAST dot-separated
-    part of the classname, so ``a.C``/``t`` and ``b.C``/``t`` share one too, and are
-    given the slice's text, whose hint does not fit them.
+    The same ``classname`` and ``name`` in two suites (deterministic ids do not depend on
+    the suite); the same twice in one suite; two different cases that share a
+    deterministic id (it keeps only the last dot-separated part of the classname); two
+    different cases in one ``tr_case_id_length`` slice of a legacy id. "Only the first is
+    expanded" also when sphinx-needs refused the first (another directive held its id):
+    the registry records an id before the need is created -- rare, left as is.
     """
-    if first == ("case", classname, name):
+    _, classname, name, suite_id, suite_name = case
+    if first[0] == "case" and first[1:3] == (classname, name):
+        if first[3] != suite_id:
+            return (
+                f"Case ID exists: {case_id}: the report holds the case {classname}.{name} "
+                f"in two suites ({first[4]} and {suite_name}); with deterministic ids "
+                "they share one id \N{EM DASH} switch tr_deterministic_case_ids off to "
+                "keep them apart, or only the first is expanded"
+            )
         return (
             f"Case ID exists: {case_id}: the report holds the case {classname}.{name} "
             "twice; only the first is expanded"
+        )
+    if first[0] == "case" and deterministic:
+        return (
+            f"Case ID exists: {case_id}: the cases {first[1]}.{first[2]} and "
+            f"{classname}.{name} share a deterministic id (a deterministic id keeps only "
+            "the last part of the classname and joins it to the name with `__`); only "
+            "the first is expanded"
         )
     return (
         f"Case ID exists: {case_id}; raise tr_case_id_length, or switch "
@@ -274,9 +302,11 @@ class TestCommonDirective(Directive):
         options, so theirs count as authored: the expansion's own collisions are its
         ``duplicate_id`` warnings, and this is another directive holding the id.
         """
-        message = str(error)
+        # sphinx-needs' own `need` directive's shape, without its `[duplicate_id]`-style
+        # tag, which would read like a subtype of this family.
+        message = f"Need could not be created: {error.message}"
         if "id" not in self.options:
-            message += "; give the directive an :id: of its own"
+            message = message.rstrip(".") + "; give the directive an :id: of its own"
         return self.refuse("need", message)
 
     def collect_extra_options(self):

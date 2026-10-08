@@ -235,6 +235,15 @@ def setup(app: Sphinx) -> dict[str, object]:
     }
 
 
+#: The three need directives' OWN option names, read before any `tr_extra_options` is
+#: registered into their (class-level, mutated) `option_spec`.
+_BUILT_IN_OPTIONS = {
+    "test-file": frozenset(TestFileDirective.option_spec or {}),
+    "test-suite": frozenset(TestSuiteDirective.option_spec or {}),
+    "test-case": frozenset(TestCaseDirective.option_spec or {}),
+}
+
+
 def register_tr_extra_options(app: Sphinx) -> None:
     """Register extra options with directives."""
 
@@ -256,6 +265,14 @@ def register_tr_extra_options(app: Sphinx) -> None:
                 f"are written :{lowered}:. Keep one of them."
             )
         written[lowered] = option_name
+        # A name a directive already has would alias its own option (`Status` read as
+        # `:status:`), or reach `add_need` twice (`status`).
+        for directive_name, own in _BUILT_IN_OPTIONS.items():
+            if lowered in own:
+                raise InvalidConfigurationError(
+                    f"tr_extra_options holds '{option_name}', which {directive_name} "
+                    f"reads as its own :{lowered}: option; choose another name."
+                )
         if lowered != option_name:
             log.info(
                 f"tr_extra_options: write '{option_name}' on a directive as "

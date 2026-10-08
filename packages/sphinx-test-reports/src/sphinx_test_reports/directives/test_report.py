@@ -5,7 +5,7 @@ import re
 from docutils import nodes
 from docutils.parsers.rst import directives
 
-from sphinx_test_reports.directives.test_common import TestCommonDirective
+from sphinx_test_reports.directives.test_common import TestCommonDirective, error_node
 from sphinx_test_reports.exceptions import InvalidConfigurationError
 
 # fmt: on
@@ -61,7 +61,10 @@ class TestReportDirective(TestCommonDirective):
         # handed on to a generated test-file that would carry it.
         if self.refusal is not None:
             return self.refuse(*self.refusal)
-        self.load_test_file()
+        # A report that does not exist or cannot be read: `load_test_file` has warned,
+        # once; nothing is generated (a generated test-file would warn a second time).
+        if self.load_test_file() is None:
+            return [error_node(self.report_error)]
 
         # if user provides a custom template, use it
         tr_template = pathlib.Path(self.app.config.tr_report_template)

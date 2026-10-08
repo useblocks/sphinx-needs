@@ -142,7 +142,17 @@ class TestSuiteDirective(TestCommonDirective):
 
         # the suite's direct cases
         if "auto_cases" in self.options and len(suite["testcases"]) > 0:
+            deterministic = bool(
+                getattr(self.app.config, "tr_deterministic_case_ids", False)
+            )
             for case in suite["testcases"]:
+                holder: IdHolder = (
+                    "case",
+                    case["classname"],
+                    case["name"],
+                    self.test_id,
+                    suite["name"],
+                )
                 case_id = self.deterministic_case_id_for(case)
                 if case_id is None:
                     # Default: a hash fragment scoped to the parent suite.
@@ -163,12 +173,10 @@ class TestSuiteDirective(TestCommonDirective):
                     warn(
                         self,
                         "duplicate_id",
-                        case_collision(
-                            case_id, seen[case_id], case["classname"], case["name"]
-                        ),
+                        case_collision(case_id, seen[case_id], holder, deterministic),
                     )
                     continue
-                seen[case_id] = ("case", case["classname"], case["name"])
+                seen[case_id] = holder
 
                 # We need to copy self.options, otherwise it gets updated and sets same values
                 # for all testsuites.
