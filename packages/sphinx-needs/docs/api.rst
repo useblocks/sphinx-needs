@@ -40,7 +40,9 @@ or MyST parser). The content is then parsed by that parser, whatever the page's 
 and the need records the suffix as its ``doctype``. With
 ``content_source=(path, first_line)``, the warnings raised while parsing the content, and
 those for references in it that do not resolve, name ``path`` and the line the content
-came from rather than the page. :func:`~sphinx_needs.api.need.ingest_need_record` creates
+came from rather than the page -- through ``sphinx.util.docutils.switch_source_input``, the
+same mechanism ``sphinx.ext.autodoc`` uses to report a docstring's lines at the Python file.
+:func:`~sphinx_needs.api.need.ingest_need_record` creates
 a need from a needs.json-style record, and is the path :ref:`needimport` itself takes for
 each need it imports.
 

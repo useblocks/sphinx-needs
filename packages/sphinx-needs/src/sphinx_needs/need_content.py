@@ -8,21 +8,28 @@ Both routes bind the content to the HOST document (``state.document``), never to
 one, so a label written in the content registers with the page it is rendered on, and a
 duplicate of a page label gets docutils' own ``Duplicate explicit target name`` warning.
 Every docutils-level diagnostic raised while parsing the content, and every node created
-from it, names the file and line the content was written on:
+from it, names the file and line the content was written on.
 
-* **reStructuredText**: the lines are itemised as ``(source, first_line - 1 + i)`` (docutils
-  items are 0-based) and run through a nested state machine of our own, with the host's
-  memo (or, in a MyST page, one built against the host document).
+The content's lines are itemised as ``(source, first_line - 1 + i)`` (docutils items are
+0-based), and the parse runs inside ``sphinx.util.docutils.switch_source_input``, which
+points the reporter's line lookup at those items for the duration and restores it after:
+the same mechanism ``sphinx.ext.autodoc`` uses to report a docstring's lines at the
+Python file.
+
+* **reStructuredText in a reStructuredText page**: autodoc's pattern as it is, the page
+  state's own ``nested_parse``.
+* **reStructuredText in a MyST page**: a MyST page's ``nested_parse`` renders Markdown,
+  and no Sphinx or docutils API runs the RST parser into a node of an existing document
+  without an RST state, so this one piece is built by hand: a nested state machine and a
+  memo against the page's document, with the fields ``RSTStateMachine.run`` gives its own.
 * **MyST**: a fresh myst-parser renderer bound to the host document renders the text at
   myst's own line offset, with ``document["source"]`` naming the content's file for the
-  duration.
+  duration (it is what myst-parser writes on the nodes it creates). myst-parser reports
+  at the content's own line, so the items it looks up are indexed by that line.
 
-The one docutils-internal attribute this leans on is the document reporter's
-``get_source_and_line``, which docutils itself sets on the reporter instance
-(``docutils/parsers/rst/states.py:246`` in 0.22, ``RSTState.runtime_init``) and through
-which every system message finds its location. For the duration of the parse it is routed
-to the content's own line mapping, and restored afterwards. Measured with docutils 0.21.2
-and 0.22.4, myst-parser 4.0.1 and 5.1.0.
+The page's ``document.current_source``/``current_line``, which a nested RST state machine
+moves to the content's file as it reads, are put back afterwards. Measured with Sphinx
+7.4.7 and 9.1, docutils 0.21.2 and 0.22.4, myst-parser 4.0.1 and 5.1.0.
 
 Deliberately not done here (yet): no ``file_insertion_enabled``/``raw_enabled``
 restrictions, no fence against need or ``needimport`` directives in the content, no
@@ -32,8 +39,7 @@ warnings myst-parser logs itself (those name the host page, with the content's l
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterator, Sequence
-from contextlib import contextmanager
+from collections.abc import Sequence
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Literal, cast
 
@@ -43,7 +49,7 @@ from docutils.parsers.rst import Parser as RstParser
 from docutils.parsers.rst import languages, states
 from docutils.parsers.rst.states import RSTState
 from docutils.statemachine import StringList
-from docutils.utils import Reporter
+from sphinx.util.docutils import switch_source_input
 
 from sphinx_needs.exceptions import InvalidNeedException
 
@@ -138,29 +144,6 @@ def parse_need_content(
         raise ValueError(f"Unsupported content parser: {parser!r}")
 
 
-@contextmanager
-def _route_reporter(
-    reporter: Reporter, lookup: Callable[..., tuple[str | None, int | None]]
-) -> Iterator[None]:
-    """Temporarily route the reporter's ``get_source_and_line`` through ``lookup``.
-
-    It is an instance attribute (docutils sets it in ``RSTState.runtime_init``,
-    myst-parser in ``MockInliner``); the previous one is restored, or removed if there
-    was none.
-    """
-    attributes = vars(reporter)
-    had = "get_source_and_line" in attributes
-    previous = attributes.get("get_source_and_line")
-    attributes["get_source_and_line"] = lookup
-    try:
-        yield
-    finally:
-        if had:
-            attributes["get_source_and_line"] = previous
-        else:
-            del attributes["get_source_and_line"]
-
-
 def _parse_rst(
     state: RSTState,
     lines: Sequence[str],
@@ -173,34 +156,51 @@ def _parse_rst(
     block = StringList(
         list(lines), items=[(source, first_line - 1 + i) for i in range(len(lines))]
     )
-    if isinstance(state, RSTState):
-        memo = state.memo
-    else:
-        # a MyST page has no RST memo to borrow: build one against the host document,
-        # with the fields ``RSTStateMachine.run`` gives its own
-        inliner = states.Inliner()
-        inliner.init_customizations(document.settings)
-        memo = SimpleNamespace(
-            document=document,
-            reporter=document.reporter,
-            language=languages.get_language(
-                document.settings.language_code, document.reporter
-            ),
-            title_styles=[],
-            section_level=0,
-            section_bubble_up_kludge=False,
-            inliner=inliner,
-        )
-    machine = states.NestedStateMachine(states.state_classes, "Body")
-    # the machine notes every line it reads on the document (``note_source``); put back
-    # what the host had, so nothing after the content reads the content's file
+    # the nested machine notes every line it reads on the document (``note_source``);
+    # put back what the page had, so the nodes created after the content (the need's
+    # own among them) do not take the content's file
     current = (document.current_source, document.current_line)
     try:
-        with _route_reporter(document.reporter, machine.get_source_and_line):
+        if isinstance(state, RSTState):
+            # what ``sphinx.ext.autodoc`` does with a docstring's lines
+            with switch_source_input(state, block):
+                state.nested_parse(block, 0, node, match_titles=False)
+        else:
+            _parse_rst_in_myst_page(state, block, node)
+    finally:
+        document.current_source, document.current_line = current
+
+
+def _parse_rst_in_myst_page(
+    state: RSTState, block: StringList, node: nodes.Element
+) -> None:
+    """Run the reStructuredText parser on ``block``, into a node of a MyST page.
+
+    A MyST page's ``state.nested_parse`` renders Markdown, and no Sphinx or docutils
+    API runs the RST parser into a node of an existing document without an RST state:
+    so this builds the nested state machine, and a memo against the page's document
+    with the fields ``RSTStateMachine.run`` gives its own.
+    """
+    document = state.document
+    inliner = states.Inliner()
+    inliner.init_customizations(document.settings)
+    memo = SimpleNamespace(
+        document=document,
+        reporter=document.reporter,
+        language=languages.get_language(
+            document.settings.language_code, document.reporter
+        ),
+        title_styles=[],
+        section_level=0,
+        section_bubble_up_kludge=False,
+        inliner=inliner,
+    )
+    machine = states.NestedStateMachine(states.state_classes, "Body")
+    try:
+        with switch_source_input(state, block):
             machine.run(block, 0, memo=memo, node=node, match_titles=False)
     finally:
         machine.unlink()
-        document.current_source, document.current_line = current
 
 
 def _parse_myst(
@@ -228,12 +228,18 @@ def _parse_myst(
     renderer.setup_render(
         {**md.options, "document": document, "current_node": node}, {}
     )
+    # myst-parser reports at the line it renders a token at, here the content's own
+    # line in ``source``, so the lines the reporter looks up are indexed by it: the
+    # content's lines after ``first_line - 1`` placeholders
+    block = StringList(
+        [""] * (first_line - 1) + list(lines),
+        items=[(source, i) for i in range(first_line - 1 + len(lines))],
+    )
     previous_source = document["source"]
+    # what myst-parser writes on the nodes it creates
     document["source"] = source
     try:
-        # docutils-level messages look their location up through the reporter; in the
-        # content's own line space that lookup is the identity
-        with _route_reporter(document.reporter, lambda lineno=None: (source, lineno)):
+        with switch_source_input(state, block):
             # myst's offset is 0-based: a token on the text's first line gets
             # ``first_line``
             renderer.nested_render_text("\n".join(lines), first_line - 1)
