@@ -25,7 +25,7 @@ from docutils import nodes
 from sphinx.testing.util import SphinxTestApp
 from sphinx.util.parallel import parallel_available
 
-from sphinx_needs.api import get_needs_view
+from sphinx_needs.api import MarkupContent, get_needs_view
 from sphinx_needs_testkit import build_warnings
 from tests.util import needs_by_id
 
@@ -1477,3 +1477,44 @@ def test_what_reads_the_content_file_and_what_reads_the_page(test_app: SphinxTes
     assert "[t][pagelnk]" in content
     assert "page.example" not in content
     assert '<a class="reference external" href="https://own.example">u</a>' in content
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "exception", "message"),
+    [
+        (
+            {"markup": ".md", "source": ("", 1)},
+            ValueError,
+            "MarkupContent.source: the path must not be empty",
+        ),
+        (
+            {"markup": ".md", "source": ("a.c", 0)},
+            ValueError,
+            "MarkupContent.source: the first line is 1-based, got 0",
+        ),
+        (
+            {"markup": ".md", "source": ("a.c", "1")},
+            TypeError,
+            "MarkupContent.source must be a (path, first_line) tuple of a str and an "
+            "int, got ('a.c', '1')",
+        ),
+        (
+            {"markup": ""},
+            ValueError,
+            "MarkupContent.markup must be a non-empty source suffix, got ''",
+        ),
+    ],
+    ids=["empty_path", "line_0", "line_str", "empty_markup"],
+)
+def test_a_malformed_markup_content_is_refused_where_it_is_made(
+    kwargs: dict[str, Any], exception: type[Exception], message: str
+):
+    """A ``MarkupContent`` checks its own shape: before any need exists to refuse.
+
+    Whether the markup is a suffix the project registers is ``add_need``'s question
+    (``InvalidNeedException``, before the need is recorded); a malformed object is the
+    caller's mistake, and fails where it is built.
+    """
+    with pytest.raises(exception) as excinfo:
+        MarkupContent("Text.", **kwargs)
+    assert str(excinfo.value) == message
