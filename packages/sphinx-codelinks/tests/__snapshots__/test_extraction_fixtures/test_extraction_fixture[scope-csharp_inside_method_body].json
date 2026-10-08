@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.cs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 5,
+        "column": 4
+      },
+      "end": {
+        "row": 5,
+        "column": 56
+      }
+    },
+    "tagged_scope": "public void Method()\n    {\n        int x = 1;\n        // @Inside Method, IMPL_CS_INSIDE, impl, [REQ_CS_INSIDE]\n    }",
+    "need": {
+      "title": "Inside Method",
+      "id": "IMPL_CS_INSIDE",
+      "type": "impl",
+      "links": [
+        "REQ_CS_INSIDE"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "method_declaration"
+  }
+]

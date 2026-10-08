@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.cs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 4
+      },
+      "end": {
+        "row": 2,
+        "column": 53
+      }
+    },
+    "tagged_scope": "public void Method() {}",
+    "need": {
+      "title": "Above Method",
+      "id": "IMPL_CS_ABOVE",
+      "type": "impl",
+      "links": [
+        "REQ_CS_ABOVE"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "method_declaration"
+  }
+]

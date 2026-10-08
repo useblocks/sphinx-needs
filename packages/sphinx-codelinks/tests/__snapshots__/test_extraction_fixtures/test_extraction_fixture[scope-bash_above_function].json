@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.sh",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 3
+      },
+      "end": {
+        "row": 0,
+        "column": 58
+      }
+    },
+    "tagged_scope": "greet() { echo hi; }",
+    "need": {
+      "title": "Above Function",
+      "id": "IMPL_BASH_ABOVE",
+      "type": "impl",
+      "links": [
+        "REQ_BASH_ABOVE"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

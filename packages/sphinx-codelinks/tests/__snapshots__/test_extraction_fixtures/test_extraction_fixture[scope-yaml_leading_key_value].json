@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.yaml",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 3
+      },
+      "end": {
+        "row": 0,
+        "column": 61
+      }
+    },
+    "tagged_scope": "key: value",
+    "need": {
+      "title": "Leading Pair Marker",
+      "id": "IMPL_YAML_PAIR",
+      "type": "impl",
+      "links": [
+        "REQ_YAML_PAIR"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "block_mapping_pair"
+  }
+]

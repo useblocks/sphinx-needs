@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.go",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 55
+      }
+    },
+    "tagged_scope": "func dummyFunc1() {}",
+    "need": {
+      "title": "Above Function",
+      "id": "IMPL_GO_ABOVE",
+      "type": "impl",
+      "links": [
+        "REQ_GO_ABOVE"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  }
+]

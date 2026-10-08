@@ -1,19 +1,27 @@
-{
-  "needs": [
-    {
-      "id": "IMPL_CPP17",
-      "title": "C++17 inline variable",
-      "type": "impl",
-      "links": {
-        "links": [
-          "REQ"
-        ]
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
       },
-      "metadata": {},
-      "line": 1
-    }
-  ],
-  "need_refs": [],
-  "marked_rst": [],
-  "warnings": []
-}
+      "end": {
+        "row": 0,
+        "column": 50
+      }
+    },
+    "tagged_scope": null,
+    "need": {
+      "title": "C++17 inline variable",
+      "id": "IMPL_CPP17",
+      "type": "impl",
+      "links": [
+        "REQ"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  }
+]

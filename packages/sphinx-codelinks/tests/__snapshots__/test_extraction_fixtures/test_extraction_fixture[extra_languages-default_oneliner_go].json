@@ -1,19 +1,27 @@
-{
-  "needs": [
-    {
-      "id": "IMPL_GO",
-      "title": "Go Title",
-      "type": "impl",
-      "links": {
-        "links": [
-          "REQ_GO"
-        ]
+[
+  {
+    "filepath": "case.go",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
       },
-      "metadata": {},
-      "line": 1
-    }
-  ],
-  "need_refs": [],
-  "marked_rst": [],
-  "warnings": []
-}
+      "end": {
+        "row": 0,
+        "column": 37
+      }
+    },
+    "tagged_scope": "func f() {}",
+    "need": {
+      "title": "Go Title",
+      "id": "IMPL_GO",
+      "type": "impl",
+      "links": [
+        "REQ_GO"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  }
+]

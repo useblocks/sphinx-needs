@@ -1,0 +1,49 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 46
+      }
+    },
+    "tagged_scope": "void f(\n    int a,\n    int b\n) {\n    return;\n}",
+    "need": {
+      "title": "Multi-line title",
+      "id": "IMPL_CRLF",
+      "type": "impl",
+      "links": [
+        "REQ_1"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 7,
+        "column": 8
+      },
+      "end": {
+        "row": 7,
+        "column": 20
+      }
+    },
+    "tagged_scope": "void g() {}",
+    "need_ids": [
+      "REQ_2",
+      "REQ_3"
+    ],
+    "marker": "REFS:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "function_definition"
+  }
+]

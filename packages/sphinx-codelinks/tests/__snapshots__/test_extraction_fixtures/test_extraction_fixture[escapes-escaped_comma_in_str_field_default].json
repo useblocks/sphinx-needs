@@ -1,17 +1,25 @@
-{
-  "needs": [
-    {
-      "id": "IMPL_3",
-      "title": "title, 3",
-      "type": "impl",
-      "links": {
-        "links": []
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
       },
-      "metadata": {},
-      "line": 1
-    }
-  ],
-  "need_refs": [],
-  "marked_rst": [],
-  "warnings": []
-}
+      "end": {
+        "row": 0,
+        "column": 21
+      }
+    },
+    "tagged_scope": "void f() {}",
+    "need": {
+      "title": "title, 3",
+      "id": "IMPL_3",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

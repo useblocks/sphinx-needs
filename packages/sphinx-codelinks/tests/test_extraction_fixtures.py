@@ -1,8 +1,13 @@
 """Declarative marker-extraction tests.
 
 Each case in ``tests/data/extraction/*.yaml`` supplies an input (``lang`` +
-``config`` + ``source``); the extractor is run on it and the normalized output is
-compared to a committed JSON snapshot. See ``tests/data/extraction/README.md``.
+``config`` + ``source``); the extractor is run on it and its output is compared
+to two committed JSON snapshots. See ``tests/data/extraction/README.md``.
+
+The YAML files ubCode also has (today 11 of the 14) are copied byte for byte
+into ubCode, which takes their snapshots as the expected output of its parity
+test: a change to such a case or snapshot is a contract change, which the
+ubCode side re-syncs.
 """
 
 import json
@@ -61,60 +66,85 @@ def _build_oneline_style(config) -> OneLineCommentStyle:
     return OneLineCommentStyle(**kwargs)
 
 
-def _list_field_names(style: OneLineCommentStyle) -> set[str]:
-    return {f["name"] for f in style.needs_fields if f.get("type") == "list[str]"}
+# Snapshot contract (the README has the detail). The marked content is
+# ``SourceAnalyse.dump_marked_content``'s payload: the ``to_dict()`` of each
+# ``all_marked_content`` entry, in production's order (``_build_marked_content``).
+# The warnings are a second snapshot, of ``oneline_warnings``' records
+# (``_build_warnings``). Deviations from production output: paths relative to
+# ``tmp_path``, one additive ``tagged_scope_type`` key per entry, and the
+# warnings sorted. Nothing else is added, renamed, wrapped or exploded.
 
 
-def _normalize(analyse: SourceAnalyse, style: OneLineCommentStyle) -> dict:
-    core = {"id", "title", "type"}
-    list_fields = _list_field_names(style)
+def _write_exact(path: Path, text: str) -> None:
+    """Write ``text`` to ``path`` with exactly the bytes it contains.
 
-    needs = []
-    for n in analyse.oneline_needs:
-        need = n.need
-        links = {name: need[name] for name in list_fields if name in need}
-        metadata = {
-            k: v for k, v in need.items() if k not in core and k not in list_fields
-        }
-        needs.append(
-            {
-                "id": need.get("id", ""),
-                "title": need.get("title", ""),
-                "type": need.get("type", ""),
-                "links": links,
-                "metadata": metadata,
-                "line": n.source_map["start"]["row"] + 1,
-            }
-        )
-    needs.sort(key=lambda d: (d["line"], d["id"]))
+    ``Path.write_text`` opens the file in text mode (``newline=None``), which
+    makes Python translate every ``\\n`` to ``os.linesep`` on write. Writing
+    through ``write_bytes`` bypasses that, so the file on disk holds the
+    case's bytes as they are, on every platform.
+    """
+    path.write_bytes(text.encode("utf-8"))
 
-    need_refs = []
-    for ref in analyse.need_id_refs:
-        line = ref.source_map["start"]["row"] + 1
-        need_refs.extend({"need_id": need_id, "line": line} for need_id in ref.need_ids)
-    need_refs.sort(key=lambda d: (d["line"], d["need_id"]))
 
-    marked_rst = [
-        {
-            "content": m.rst,
-            "start_line": m.source_map["start"]["row"] + 1,
-            "end_line": m.source_map["end"]["row"] + 1,
-        }
-        for m in analyse.marked_rst
-    ]
-    marked_rst.sort(key=lambda d: d["start_line"])
+def _relative_filepath(filepath: Path, root: Path) -> str:
+    """Snapshot a filepath relative to the test root (``tmp_path``).
 
-    warnings = [
-        {"kind": w.sub_type, "line": w.lineno} for w in analyse.oneline_warnings
-    ]
-    warnings.sort(key=lambda d: (d["line"], d["kind"]))
+    Production emits an absolute path; ``tmp_path`` is unique per test run and
+    per machine, so a plain ``str()`` would make the snapshot non-deterministic.
+    Relative-to-root (rather than ``.name``) keeps the value meaningful even if
+    a future fixture nests its source file under a subdirectory of ``tmp_path``.
 
-    return {
-        "needs": needs,
-        "need_refs": need_refs,
-        "marked_rst": marked_rst,
-        "warnings": warnings,
-    }
+    The result is always forward-slash separated (``Path.as_posix()``), even
+    on Windows, so a snapshot can never acquire a backslash path separator —
+    every existing snapshot uses ``/`` and a mixed separator would make the
+    same case snapshot differently per platform.
+    """
+    return filepath.relative_to(root).as_posix()
+
+
+def _build_marked_content(analyse: SourceAnalyse, tmp_path: Path) -> list[dict]:
+    """Reproduce ``SourceAnalyse.dump_marked_content``'s payload verbatim.
+
+    Consumes ``analyse.all_marked_content`` — the exact list production dumps,
+    already sorted by ``(filepath, source_map.start.row)`` — and calls each
+    entry's own ``to_dict()``, so both the shape and the ordering come from
+    production itself rather than being re-derived from ``oneline_needs`` /
+    ``need_id_refs`` / ``marked_rst`` separately.
+    """
+    items = []
+    for entry in analyse.all_marked_content:
+        scope_type = entry.tagged_scope.type if entry.tagged_scope is not None else None
+        item = entry.to_dict()
+        item["filepath"] = _relative_filepath(entry.filepath, tmp_path)
+        # Additive, test-only field — see the snapshot contract above. Not
+        # part of production's Metadata.to_dict().
+        item["tagged_scope_type"] = scope_type
+        items.append(item)
+    return items
+
+
+def _build_warnings(analyse: SourceAnalyse, tmp_path: Path) -> list[dict]:
+    """Reproduce the warnings production reports for this case.
+
+    ``analyse.oneline_warnings`` is the list the ``src-trace`` directive
+    reports from and ``codelinks analyse`` prints: each ``AnalyseWarning`` is
+    snapshotted as its ``__dict__``, with ``file_path`` made relative to
+    ``tmp_path``.
+
+    The one deviation from production: the records are sorted. Production
+    reports them in the order the tree-sitter query captures arrive, which
+    is not position-sorted and differs between two runs of the same input
+    once more than one extractor is on, so no snapshot could pin it.
+    """
+    records = []
+    for warning in analyse.oneline_warnings:
+        record = dict(warning.__dict__)
+        record["file_path"] = _relative_filepath(Path(record["file_path"]), tmp_path)
+        records.append(record)
+    records.sort(
+        key=lambda r: (r["file_path"], r["lineno"], r["type"], r["sub_type"], r["msg"])
+    )
+    return records
 
 
 def _build_preprocessor(case: dict, tmp_path: Path) -> PreprocessorConfig:
@@ -136,11 +166,11 @@ def _build_preprocessor(case: dict, tmp_path: Path) -> PreprocessorConfig:
             {"directory": str(tmp_path), "file": e["file"], "arguments": e["arguments"]}
             for e in case["compile_commands"]
         ]
-        db.write_text(json.dumps(entries), encoding="utf-8")
+        _write_exact(db, json.dumps(entries))
         compile_commands = db
     elif "compile_commands_raw" in case:
         db = tmp_path / "compile_commands.json"
-        db.write_text(case["compile_commands_raw"], encoding="utf-8")
+        _write_exact(db, case["compile_commands_raw"])
         compile_commands = db
     elif "compile_commands_path" in case:
         compile_commands = tmp_path / case["compile_commands_path"]
@@ -151,8 +181,19 @@ def _build_preprocessor(case: dict, tmp_path: Path) -> PreprocessorConfig:
     )
 
 
-@pytest.mark.parametrize("case", _load_cases())
-def test_extraction_fixture(case: dict, tmp_path: Path, snapshot_extraction) -> None:
+# A case's ``source`` is written with LF line endings unless the case sets
+# ``line_endings`` to ``crlf`` or ``cr``; every ``\n`` is then replaced by that
+# ending before the file is written. Such a case is also run a second time
+# with LF endings, and the two outputs must be equal: line endings never change
+# what is extracted, or where.
+LINE_ENDINGS = {"lf": "\n", "crlf": "\r\n", "cr": "\r"}
+
+
+def _extract(case: dict, root: Path, source: str) -> tuple[list[dict], list[dict]]:
+    """Run one case's ``source`` through ``SourceAnalyse`` under ``root``.
+
+    Returns the normalized (marked content, warnings) pair.
+    """
     comment_type, ext = LANG_MAP[case["lang"]]
     config = case.get("config")
     style = _build_oneline_style(config)
@@ -172,14 +213,14 @@ def test_extraction_fixture(case: dict, tmp_path: Path, snapshot_extraction) -> 
     preprocessor = None
     if engine == "libclang":
         pytest.importorskip("clang.cindex")
-        preprocessor = _build_preprocessor(case, tmp_path)
+        preprocessor = _build_preprocessor(case, root)
 
-    src_path = tmp_path / f"case.{ext}"
-    src_path.write_text(case["source"], encoding="utf-8")
+    src_path = root / f"case.{ext}"
+    _write_exact(src_path, source)
 
     cfg = SourceAnalyseConfig(
         src_files=[src_path],
-        src_dir=tmp_path,
+        src_dir=root,
         comment_type=comment_type,
         get_oneline_needs="oneline" in extract,
         get_need_id_refs="need_refs" in extract,
@@ -192,5 +233,23 @@ def test_extraction_fixture(case: dict, tmp_path: Path, snapshot_extraction) -> 
     analyse.git_remote_url = None
     analyse.git_commit_rev = None
     analyse.run()
+    return _build_marked_content(analyse, root), _build_warnings(analyse, root)
 
-    assert snapshot_extraction == _normalize(analyse, style)
+
+@pytest.mark.parametrize("case", _load_cases())
+def test_extraction_fixture(case: dict, tmp_path: Path, snapshot_extraction) -> None:
+    line_endings = case.get("line_endings", "lf")
+    source = case["source"].replace("\n", LINE_ENDINGS[line_endings])
+    content, warnings = _extract(case, tmp_path, source)
+
+    if line_endings != "lf":
+        lf_root = tmp_path / "lf"
+        lf_root.mkdir()
+        assert (content, warnings) == _extract(case, lf_root, case["source"])
+
+    # Two independent snapshots per case, mirroring the two independent outputs
+    # production produces (see the snapshot contract above):
+    # marked content under the default (unnamed) snapshot, warnings under a
+    # separately named one.
+    assert snapshot_extraction == content
+    assert snapshot_extraction(name="warnings") == warnings

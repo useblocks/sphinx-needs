@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 49
+      }
+    },
+    "tagged_scope": null,
+    "need": {
+      "title": "No Scope",
+      "id": "IMPL_CPP_NONE",
+      "type": "impl",
+      "links": [
+        "REQ_CPP_NONE"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  }
+]

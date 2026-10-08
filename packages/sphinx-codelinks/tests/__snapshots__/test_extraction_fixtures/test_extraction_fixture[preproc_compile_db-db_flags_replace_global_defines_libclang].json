@@ -1,19 +1,27 @@
-{
-  "needs": [
-    {
-      "id": "IMPL_DB_FLAVOR",
-      "title": "DB flavor",
-      "type": "impl",
-      "links": {
-        "links": [
-          "REQ"
-        ]
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 4,
+        "column": 4
       },
-      "metadata": {},
-      "line": 5
-    }
-  ],
-  "need_refs": [],
-  "marked_rst": [],
-  "warnings": []
-}
+      "end": {
+        "row": 4,
+        "column": 42
+      }
+    },
+    "tagged_scope": null,
+    "need": {
+      "title": "DB flavor",
+      "id": "IMPL_DB_FLAVOR",
+      "type": "impl",
+      "links": [
+        "REQ"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  }
+]

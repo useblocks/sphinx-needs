@@ -6,6 +6,18 @@ tested declaratively: each case is a **fixture** (the input) plus a **snapshot**
 expected output reviewable, and lets us cover the whole language matrix without a
 bespoke test function per case.
 
+## Shared with ubCode
+
+The YAML files of this directory that ubCode also has (today 11 of the 14)
+are copied byte for byte into ubCode
+(`rust/ubc_codelinks/tests/fixtures/extraction/`; ubCode's
+`sync_codelinks_expected.py` lists the shared files), and ubCode takes their
+snapshots in `tests/__snapshots__/test_extraction_fixtures/` as the expected
+output of its parity test. A change to a case or a snapshot is therefore a
+contract change, which the ubCode side re-syncs. useblocks/ubcode#3014 points
+that tooling at this repository; useblocks/ubcode#3928 tracks projecting the
+production shape below back to ubCode's normalized one.
+
 ## Fixture format
 
 Each `*.yaml` file in this directory is a map of `case_name → case`:
@@ -44,27 +56,122 @@ custom_brackets_c:
 - `engine` (optional): `treesitter` (default) sees every comment; `libclang`
   evaluates the preprocessor and excludes markers in inactive `#if`/`#ifdef`
   branches. libclang cases are skipped when the `clang` bindings are unavailable.
+- `line_endings` (optional): `lf` (default), `crlf` or `cr`. The `source` is
+  written with that line ending, and the case is also run with LF endings and
+  must produce the same output.
 - `defines` (optional, libclang only): preprocessor defines, e.g.
   `["VARIANT_A=1", "PROTOCOL_VERSION=3"]`.
 
-## Snapshot (expected output) — normalized contract
+## Snapshots: the production shape
 
-Each case is run through the extractor and the result is normalized to this JSON
-shape, then compared to a committed snapshot under
-`tests/__snapshots__/extraction/`:
+Each case has two snapshots under `tests/__snapshots__/test_extraction_fixtures/`,
+one per output production produces:
+
+- **marked content** (`…].json`): `SourceAnalyse.dump_marked_content`'s
+  payload — the flat list `all_marked_content` holds, sorted by
+  `(filepath, source_map.start.row)`, one `Metadata.to_dict()`
+  (`analyse/models.py`) per entry.
+- **warnings** (`…][warnings].json`): the `AnalyseWarning.__dict__` records of
+  `SourceAnalyse.oneline_warnings`. Production reports them apart from the
+  marked content (the `src-trace` directive as `codelinks.oneline` build
+  warnings, `codelinks analyse` through `logger.warning`), so they are a
+  separate snapshot.
+
+Three deviations from production output, all deliberate:
+
+- `filepath` and `file_path` are relative to the test's `tmp_path` and
+  `/`-separated (`_relative_filepath`, `Path.as_posix()`); production writes an
+  absolute path, which differs per run and per machine.
+- `tagged_scope_type`, the last key of every marked-content entry, is
+  test-only: the associated node's tree-sitter kind (e.g.
+  `"function_definition"`) or `null`, so a wrong scope cannot pass on matching
+  text, and one construct can be compared across languages.
+- The warnings are sorted by `(file_path, lineno, type, sub_type, msg)`:
+  production reports them in tree-sitter capture order, which differs between
+  two runs of the same input.
+
+A need and a need-id-reference entry (shown together for brevity, not the
+output of one case):
 
 ```json
-{
-  "needs":      [{"id": "", "title": "", "type": "", "links": {"field": ["..."]}, "line": 1}],
-  "need_refs":  [{"need_id": "", "line": 1}],
-  "marked_rst": [{"content": "", "start_line": 1, "end_line": 1}],
-  "warnings":   [{"kind": "too_many_fields", "line": 1}]
-}
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {"start": {"row": 0, "column": 4}, "end": {"row": 0, "column": 35}},
+    "tagged_scope": "void f() {}",
+    "need": {"title": "My Title", "id": "IMPL_1", "type": "impl", "links": ["REQ_1"]},
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {"start": {"row": 0, "column": 13}, "end": {"row": 0, "column": 32}},
+    "tagged_scope": "void f() {}",
+    "need_ids": ["REQ_1", "REQ_2", "REQ_3"],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "function_definition"
+  }
+]
 ```
 
-Lines are 1-indexed. `needs`/`warnings` are sorted by line; `need_refs` by
-`(line, need_id)`. Volatile data (file paths, columns, URLs, tagged scope) is
-omitted so snapshots are stable.
+and a `warnings` snapshot, for a case that emits one:
+
+```json
+[
+  {"file_path": "case.cpp", "lineno": 1, "msg": "5 given fields, maximum is 4", "type": "need", "sub_type": "too_many_fields"}
+]
+```
+
+The fields of a marked-content entry, as `Metadata.to_dict()` writes them:
+
+- `remote_url` — always `null`: the harness sets `git_remote_url` and
+  `git_commit_rev` to `None` before `run()`.
+- `source_map` — `{"start": {"row", "column"}, "end": {"row", "column"}}`,
+  0-indexed.
+- `tagged_scope` — the full text of the declaration `find_associated_scope`
+  associates with the marker, or `null`.
+- `type` — `"need"`, `"need-id-refs"` or `"rst"`; a need's own `type` (e.g.
+  `"impl"`) is inside `need`.
+- the payload — `need` (the `OneLineNeed.need` dict as is), `need_ids` and
+  `marker` (one record for all the ids of a marker, not one per id), or `rst`.
+
+A warning record has `file_path`, `lineno`, `msg`, `type` (the
+`MarkedContentType` being parsed; always `"need"` today, since only the
+one-line parser warns) and `sub_type` (the kind, e.g. `"too_many_fields"`).
+No `SourceComment` or tree-sitter node object is snapshotted: production's
+`to_dict()` drops the comment and writes the scope as its text.
+
+Three known production quirks show up as-is in these snapshots (deliberately
+left unfixed — out of scope here):
+
+- a need-id-reference's `source_map` columns are shifted by the width of any
+  whitespace between the marker and its ids: `extract_marker`
+  (`analyse/analyse.py`) computes `start_column` from the pre-`strip()`
+  position but `end_column` from the post-`strip()` length.
+- a multi-line `rst` block's `source_map` collapses `start.row`/`end.row` to
+  the same row, with the `start`/`end` columns being raw offsets into the
+  flattened multi-line comment text rather than a real position past the
+  first line.
+- a one-line need's `source_map` columns are relative to the comment's text,
+  not to the line (`scope.yaml`'s `yaml_inline_same_row`: column 3, where the
+  title starts at physical column 15); #2129 makes them physical.
+
+## Portability
+
+One committed snapshot holds on Linux, macOS and Windows:
+
+- The root `.gitattributes` checks this directory and `tests/__snapshots__/`
+  out with LF on every platform, because ubCode copies their bytes.
+- The harness writes each case's `source` (and a libclang case's
+  `compile_commands.json`) as exact bytes (`_write_exact`): `Path.write_text`
+  would turn every `\n` into `\r\n` on Windows. The `line_endings.yaml` cases
+  pin that CRLF and a lone CR extract as LF does.
+- Paths are `/`-separated (see above).
+
+A value that still differed per platform would fail the Windows CI cell.
 
 ## Running / updating
 
@@ -77,4 +184,5 @@ python -m pytest tests/test_extraction_fixtures.py --snapshot-update
 ```
 
 Adding a case is just a new entry in a `*.yaml` file here, then
-`--snapshot-update` to capture its snapshot (review the diff before committing).
+`--snapshot-update` to capture its two snapshots (review the diff before
+committing).

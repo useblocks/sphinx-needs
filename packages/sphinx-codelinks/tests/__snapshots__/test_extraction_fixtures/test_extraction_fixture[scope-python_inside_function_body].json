@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 3
+      },
+      "end": {
+        "row": 2,
+        "column": 57
+      }
+    },
+    "tagged_scope": "def outer():\n    x = 1\n    # @Inside Function, IMPL_PY_INSIDE, impl, [REQ_PY_INSIDE]",
+    "need": {
+      "title": "Inside Function",
+      "id": "IMPL_PY_INSIDE",
+      "type": "impl",
+      "links": [
+        "REQ_PY_INSIDE"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

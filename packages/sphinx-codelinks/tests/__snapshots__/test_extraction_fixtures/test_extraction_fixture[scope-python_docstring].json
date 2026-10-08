@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 5
+      },
+      "end": {
+        "row": 2,
+        "column": 54
+      }
+    },
+    "tagged_scope": "def dummy_func1():\n    \"\"\"\n    @Docstring Marker, IMPL_PY_DOC, impl, [REQ_PY_DOC]\n    \"\"\"\n    pass",
+    "need": {
+      "title": "Docstring Marker",
+      "id": "IMPL_PY_DOC",
+      "type": "impl",
+      "links": [
+        "REQ_PY_DOC"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

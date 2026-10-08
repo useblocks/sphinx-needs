@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.yaml",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 3
+      },
+      "end": {
+        "row": 0,
+        "column": 61
+      }
+    },
+    "tagged_scope": "- item1",
+    "need": {
+      "title": "Leading List Marker",
+      "id": "IMPL_YAML_LIST",
+      "type": "impl",
+      "links": [
+        "REQ_YAML_LIST"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "block_sequence_item"
+  }
+]

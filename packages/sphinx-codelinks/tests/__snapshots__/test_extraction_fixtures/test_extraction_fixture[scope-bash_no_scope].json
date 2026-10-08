@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.sh",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 3
+      },
+      "end": {
+        "row": 0,
+        "column": 50
+      }
+    },
+    "tagged_scope": null,
+    "need": {
+      "title": "No Scope",
+      "id": "IMPL_BASH_NONE",
+      "type": "impl",
+      "links": [
+        "REQ_BASH_NONE"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  }
+]

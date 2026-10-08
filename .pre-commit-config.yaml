@@ -30,10 +30,11 @@ repos:
         # the conformance corpora are (or are to be) shared byte-for-byte with ubCode, so a
         # formatter local to this repository must not rewrite them. yamlfmt only matches YAML today,
         # so the `ubproject.toml` reading corpus (TOML) is listed to state the intent rather than
-        # because the hook would reach it
+        # because the hook would reach it; sphinx-codelinks' extraction corpus is shared the same way
         exclude: |-
           (?x)^(
             packages/sphinx-needs/tests/conformance/|
+            packages/sphinx-codelinks/tests/data/extraction/|
             packages/ub-project/tests/fixtures/ubproject_reading_conformance\.toml$
           )
 

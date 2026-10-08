@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 51
+      }
+    },
+    "tagged_scope": null,
+    "need": {
+      "title": "No Scope",
+      "id": "IMPL_RUST_NONE",
+      "type": "impl",
+      "links": [
+        "REQ_RUST_NONE"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  }
+]

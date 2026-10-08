@@ -1,12 +1,20 @@
-{
-  "needs": [],
-  "need_refs": [],
-  "marked_rst": [
-    {
-      "content": " .. impl:: X\\n   :id: Y\\n",
-      "start_line": 1,
-      "end_line": 1
-    }
-  ],
-  "warnings": []
-}
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 7
+      },
+      "end": {
+        "row": 0,
+        "column": 32
+      }
+    },
+    "tagged_scope": "void f() {}",
+    "rst": " .. impl:: X\\n   :id: Y\\n",
+    "type": "rst",
+    "tagged_scope_type": "function_definition"
+  }
+]

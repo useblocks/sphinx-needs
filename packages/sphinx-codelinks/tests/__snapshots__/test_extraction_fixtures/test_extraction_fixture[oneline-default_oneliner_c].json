@@ -1,19 +1,27 @@
-{
-  "needs": [
-    {
-      "id": "IMPL_C",
-      "title": "C Title",
-      "type": "impl",
-      "links": {
-        "links": [
-          "REQ_C"
-        ]
+[
+  {
+    "filepath": "case.c",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
       },
-      "metadata": {},
-      "line": 1
-    }
-  ],
-  "need_refs": [],
-  "marked_rst": [],
-  "warnings": []
-}
+      "end": {
+        "row": 0,
+        "column": 34
+      }
+    },
+    "tagged_scope": "void g(void) {}",
+    "need": {
+      "title": "C Title",
+      "id": "IMPL_C",
+      "type": "impl",
+      "links": [
+        "REQ_C"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

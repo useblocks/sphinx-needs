@@ -1,43 +1,77 @@
-{
-  "needs": [
-    {
-      "id": "IMPL_COMPLETE",
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 49
+      }
+    },
+    "tagged_scope": null,
+    "need": {
       "title": "Complete function",
+      "id": "IMPL_COMPLETE",
       "type": "impl",
-      "links": {
-        "links": [
-          "REQ"
-        ]
-      },
-      "metadata": {},
-      "line": 1
+      "links": [
+        "REQ"
+      ]
     },
-    {
-      "id": "IMPL_HALF",
+    "type": "need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 4
+      },
+      "end": {
+        "row": 3,
+        "column": 47
+      }
+    },
+    "tagged_scope": null,
+    "need": {
       "title": "Half typed function",
+      "id": "IMPL_HALF",
       "type": "impl",
-      "links": {
-        "links": [
-          "REQ"
-        ]
-      },
-      "metadata": {},
-      "line": 4
+      "links": [
+        "REQ"
+      ]
     },
-    {
-      "id": "IMPL_AFTER_HALF",
-      "title": "After half typed",
-      "type": "impl",
-      "links": {
-        "links": [
-          "REQ"
-        ]
+    "type": "need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 7,
+        "column": 4
       },
-      "metadata": {},
-      "line": 8
-    }
-  ],
-  "need_refs": [],
-  "marked_rst": [],
-  "warnings": []
-}
+      "end": {
+        "row": 7,
+        "column": 50
+      }
+    },
+    "tagged_scope": null,
+    "need": {
+      "title": "After half typed",
+      "id": "IMPL_AFTER_HALF",
+      "type": "impl",
+      "links": [
+        "REQ"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  }
+]

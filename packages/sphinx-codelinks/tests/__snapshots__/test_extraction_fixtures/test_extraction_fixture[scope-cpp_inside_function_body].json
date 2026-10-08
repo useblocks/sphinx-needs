@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 4
+      },
+      "end": {
+        "row": 2,
+        "column": 60
+      }
+    },
+    "tagged_scope": "void outer() {\n    int x = 1;\n    // @Inside Function, IMPL_CPP_INSIDE, impl, [REQ_CPP_INSIDE]\n}",
+    "need": {
+      "title": "Inside Function",
+      "id": "IMPL_CPP_INSIDE",
+      "type": "impl",
+      "links": [
+        "REQ_CPP_INSIDE"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

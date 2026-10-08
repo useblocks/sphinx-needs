@@ -1,15 +1,24 @@
-{
-  "needs": [],
-  "need_refs": [
-    {
-      "need_id": "REQ_A",
-      "line": 1
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 8
+      },
+      "end": {
+        "row": 0,
+        "column": 20
+      }
     },
-    {
-      "need_id": "REQ_B",
-      "line": 1
-    }
-  ],
-  "marked_rst": [],
-  "warnings": []
-}
+    "tagged_scope": "void f() {}",
+    "need_ids": [
+      "REQ_A",
+      "REQ_B"
+    ],
+    "marker": "REFS:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "function_definition"
+  }
+]

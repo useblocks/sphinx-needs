@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 57
+      }
+    },
+    "tagged_scope": "void dummy_func1() {}",
+    "need": {
+      "title": "Above Function",
+      "id": "IMPL_CPP_ABOVE",
+      "type": "impl",
+      "links": [
+        "REQ_CPP_ABOVE"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]
