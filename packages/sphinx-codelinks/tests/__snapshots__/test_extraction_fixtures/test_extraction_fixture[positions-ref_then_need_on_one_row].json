@@ -5,21 +5,19 @@
     "source_map": {
       "start": {
         "row": 0,
-        "column": 5
+        "column": 14
       },
       "end": {
         "row": 0,
-        "column": 25
+        "column": 19
       }
     },
     "tagged_scope": "void f() {}",
-    "need": {
-      "id": "IMPL_PAIR",
-      "title": "Pair need",
-      "type": "impl",
-      "links": []
-    },
-    "type": "need",
+    "need_ids": [
+      "REQ_1"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
     "tagged_scope_type": "function_definition"
   },
   {
@@ -28,19 +26,21 @@
     "source_map": {
       "start": {
         "row": 0,
-        "column": 39
+        "column": 28
       },
       "end": {
         "row": 0,
-        "column": 44
+        "column": 42
       }
     },
     "tagged_scope": "void f() {}",
-    "need_ids": [
-      "REQ_2"
-    ],
-    "marker": "@need-ids:",
-    "type": "need-id-refs",
+    "need": {
+      "id": "IMPL_X",
+      "title": "X need",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
     "tagged_scope_type": "function_definition"
   }
 ]

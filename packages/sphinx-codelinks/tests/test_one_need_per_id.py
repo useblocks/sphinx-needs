@@ -427,3 +427,31 @@ def test_a_directive_moved_to_another_document(
     assert "0 added, 2 changed, 0 removed" in _status(app)
     assert _owner(app, need_id) == "page1"
     assert _duplicates(app) == []
+
+
+def test_two_markers_on_one_row_with_one_id_the_leftmost_defines_it(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """Two one-line needs on one row with one id: the leftmost is created and the other
+    is skipped, on every row (#2150). It used to be whichever tree-sitter handed over
+    first, which differs between runs; fifteen rows make that visible in one build."""
+    rows = 15
+    impl = "".join(
+        f"/* @left {i}, IMPL_D{i}, impl */ /* @right {i}, IMPL_D{i}, impl */\n"
+        for i in range(rows)
+    )
+    _project(
+        tmp_path,
+        files={**FILES, "src/impl.cpp": impl},
+        append={"docs/index.rst": _trace()},
+    )
+    app = _build(tmp_path, make_app)
+
+    needs = _json(app)["needs"]
+    assert {f"IMPL_D{i}": needs[f"IMPL_D{i}"]["title"] for i in range(rows)} == {
+        f"IMPL_D{i}": f"left {i}" for i in range(rows)
+    }
+    assert _duplicates(app) == [
+        _duplicate("index", "index", f"src/impl.cpp:{i + 1}", f"IMPL_D{i}")
+        for i in range(rows)
+    ]

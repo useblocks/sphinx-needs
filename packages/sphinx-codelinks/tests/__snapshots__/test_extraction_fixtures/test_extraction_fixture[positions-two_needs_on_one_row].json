@@ -5,17 +5,17 @@
     "source_map": {
       "start": {
         "row": 0,
-        "column": 5
+        "column": 4
       },
       "end": {
         "row": 0,
-        "column": 25
+        "column": 20
       }
     },
     "tagged_scope": "void f() {}",
     "need": {
-      "id": "IMPL_PAIR",
-      "title": "Pair need",
+      "title": "A",
+      "id": "IMPL_A",
       "type": "impl",
       "links": []
     },
@@ -28,19 +28,21 @@
     "source_map": {
       "start": {
         "row": 0,
-        "column": 39
+        "column": 27
       },
       "end": {
         "row": 0,
-        "column": 44
+        "column": 43
       }
     },
     "tagged_scope": "void f() {}",
-    "need_ids": [
-      "REQ_2"
-    ],
-    "marker": "@need-ids:",
-    "type": "need-id-refs",
+    "need": {
+      "title": "B",
+      "id": "IMPL_B",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
     "tagged_scope_type": "function_definition"
   }
 ]
