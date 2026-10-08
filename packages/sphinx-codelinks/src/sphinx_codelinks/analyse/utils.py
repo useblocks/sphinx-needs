@@ -160,9 +160,12 @@ def extract_comments(
     """Get all comments from source files by tree-sitter.
 
     The whole buffer is parsed in one piece: read one byte at a time, a multi-byte
-    UTF-8 character inside a token (a YAML scalar, an identifier) is lexed as invalid,
-    which loses a YAML comment after it and the scope of a bash function or YAML key
-    that contains one.
+    UTF-8 character inside a token (a YAML scalar, an identifier, a Rust, Go or C#
+    character literal) is lexed as invalid, which loses every YAML comment after it
+    and the scope a marker binds to in bash, YAML or Go. Do not reintroduce a read
+    callback: a chunk boundary inside a character breaks the parse the same way (a
+    from-offset chunk of four bytes or more happens to work; a block-aligned one
+    does not).
     """
     tree = parser.parse(src_string)
     query_cursor = QueryCursor(query)
