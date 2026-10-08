@@ -509,13 +509,13 @@ New and Improved
 
   The analysis fed tree-sitter one byte per read, and a multi-byte UTF-8 character inside
   a token the grammar reads -- a YAML scalar, an identifier, a Rust, Go or C# character
-  literal -- was lexed as invalid. A non-ASCII character in a YAML value lost every comment after it in
-  the file -- the one-line needs, ``@need-ids:`` references and multi-line needs they held
-  (``key: "é"  # @Title, ID_1, impl`` found nothing). A bash function name or a YAML key
-  with a non-ASCII character lost the scope of the marker above it, and a Go rune literal
-  with a non-ASCII character lost the scope of a marker after it. Non-ASCII identifiers in
-  C, C++, Python, C#, Rust and Go parsed into an error tree as well, with unchanged output
-  in every case measured.
+  literal -- was lexed as invalid. A non-ASCII character in a YAML value lost every
+  comment after it in the file -- the one-line needs, ``@need-ids:`` references and
+  multi-line needs they held (``key: "é"  # @Title, ID_1, impl`` found nothing). A bash
+  function name or a YAML key with a non-ASCII character lost the scope of the marker
+  above it, and a Go rune literal with a non-ASCII character lost the scope of a marker
+  after it. Non-ASCII identifiers in C, C++, Python, C#, Rust and Go parsed into an error
+  tree as well, with unchanged output in every case measured.
 
 .. _`release:1.4.0`:
 
