@@ -10,3 +10,8 @@ Chapter 1.1.1
 ~~~~~~~~~~~~~
 
 .. test-results:: ../utils/testsuites.xml
+
+References
+----------
+
+The first suite: `TimerTest`_.

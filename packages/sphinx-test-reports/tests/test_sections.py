@@ -116,6 +116,12 @@ def test_test_results_suites_are_sections_one_level_below(test_app):
     for title in titles:
         assert title in toc_text
 
+    # A same-page `` `TimerTest`_ `` reference resolves: the section's name is the
+    # normalised title, as an authored heading's is. (It stands under a heading of its own:
+    # text after the directive in the same section would follow the last suite.)
+    assert 'The first suite: <a class="reference internal" href="#timertest">' in html
+    assert "ERROR" not in app._warning.getvalue()
+
 
 @pytest.mark.parametrize(
     ("docname", "titles"),
