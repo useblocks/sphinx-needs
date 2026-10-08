@@ -524,9 +524,11 @@ New and Improved
   It was sorted by file and row only: two entries on one row -- two ``@need-ids:``
   comments, two one-line needs -- came out in the order tree-sitter handed the comments
   over, which differs between runs, and a need and a reference on one row always listed
-  the reference first. Of two one-line needs with one id on one row, ``src-trace`` now
-  creates the leftmost and skips the other with a ``codelinks.duplicate_need`` warning;
-  which of the two it created differed between builds.
+  the reference first. Of two one-line needs with one id on one row of one file,
+  ``src-trace`` now creates the leftmost and skips the other with a
+  ``codelinks.duplicate_need`` warning; which of the two it created differed between
+  builds. The order across files is unchanged: on one row, the needs of two files are
+  created in the order the files are discovered.
 
 .. _`release:1.4.0`:
 

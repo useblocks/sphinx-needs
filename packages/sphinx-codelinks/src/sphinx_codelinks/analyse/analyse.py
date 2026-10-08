@@ -1,4 +1,5 @@
 import json
+import os
 from collections.abc import Generator
 from dataclasses import dataclass
 from pathlib import Path
@@ -738,12 +739,18 @@ class SourceAnalyse:
 
         Tree-sitter hands a file's comments over in an order that differs between
         runs, so the column is what keeps two entries of one row in a stable order.
-        ``oneline_needs`` is sorted too: ``src-trace`` creates the needs in its order,
-        and the leftmost of two markers with one id is the one created.
+        ``oneline_needs`` is sorted too, by row, then file, then column: ``src-trace``
+        creates and renders the needs in its order, so of two markers with one id in
+        one file the leftmost is the one created, and on one row the needs of two files
+        keep the file order they had before the column was a key.
         """
+        # The file component is the key discovery sorts the files by
+        # (``SourceDiscover``), not the ``Path``: a ``Path`` compares by parts, so
+        # ``a/b.cpp`` would sort before ``a-c.cpp``, which discovery lists first.
         self.oneline_needs.sort(
             key=lambda x: (
                 x.source_map["start"]["row"],
+                os.path.normcase(os.path.normpath(x.filepath)),
                 x.source_map["start"]["column"],
             )
         )
