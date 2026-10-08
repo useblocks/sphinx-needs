@@ -51,7 +51,7 @@ Improvements
 
 - ✨ Dynamic functions and variants are computed in dependency order,
   and a value that cannot be computed is reported **(changed output)**
-  (:issue:`2064`, :pr:`2080`, :pr:`2081`, :pr:`2134`, :pr:`2136`)
+  (:issue:`2064`, :pr:`2080`, :pr:`2081`, :pr:`2134`, :pr:`2136`, :pr:`NNNN`)
 
   A ``[[…]]``, ``<<…>>`` or ``<{…}>`` is now computed after every value it reads,
   so a chain of :ref:`copy <copy>` calls, a :ref:`calc_sum <calc_sum>` over computed summands,
@@ -74,7 +74,9 @@ Improvements
   and a variant whose condition reads the field it sets.
   A read that cannot be ordered is reported as ``needs.derive_scope`` (:ref:`needs_derive_scope`):
   a link field's ``[[…]]`` or ``<<…>>`` reading a computed field that is not a link field,
-  a back link or a dead-link flag,
+  a back link or a dead-link flag
+  (a ``check_linked_values`` or ``links_only`` sum whose need computes its ``links`` too
+  reads the field on every need, as the needs those links name are known only once the links are computed),
   and a ``need.<field>`` argument that selects what its call reads while the field is computed in the same step,
   neither of which is run (the field keeps what a cycle member keeps);
   a ``needextend`` filter naming a computed field;

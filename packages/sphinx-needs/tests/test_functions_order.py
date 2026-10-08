@@ -6,7 +6,7 @@ over call texts), the cycles, the columns, the order of the steps and the empty 
 of a field. The build-level behaviour is pinned by ``test_dynamic_functions_strata``.
 """
 
-from typing import Any
+from typing import Any, Final
 from unittest.mock import Mock
 
 import pytest
@@ -107,7 +107,11 @@ def _need(need_id: str, *, links: Any = (), **fields: Any) -> NeedItem:
     )
 
 
-def _project(*needs: NeedItem, refs: dict[str, list[str]] | None = None) -> Project:
+def _project(
+    *needs: NeedItem,
+    refs: dict[str, list[str]] | None = None,
+    link_fields: tuple[str, ...] = ("links",),
+) -> Project:
     by_id = {need.id: need for need in needs}
 
     def copy_match(filter_string: str, caller: NeedItem) -> str | None:
@@ -127,7 +131,7 @@ def _project(*needs: NeedItem, refs: dict[str, list[str]] | None = None) -> Proj
 
     return Project(
         by_id,
-        link_fields={"links"},
+        link_fields=link_fields,
         variants={"is_x": 'summary == "x"'},
         not_fields={"build_tags", "var", "shadowed"},
         builtins=BUILTINS,
@@ -634,6 +638,140 @@ def test_link_fields_are_stratum_one():
         (("A", "links"),),
     ]
     assert [s.nodes for s in build_stratum(project, 2).steps] == [(("A", "summary"),)]
+
+
+def _through_links_project(field: str, text: Any) -> Project:
+    """``RD`` computes its ``links`` (``TGT``, written, and a copy) and ``field`` from ``text``.
+
+    ``blocks`` and ``refs`` are link fields too, so ``RD.blocks`` is computed in
+    stratum 1 with the links it reads. ``refs`` is computed in stratum 1 by ``DYN`` and
+    by the written target ``TGT``; ``summary`` in stratum 2 by ``DYN``; ``hours`` by
+    no need.
+    """
+    return _project(
+        _need("DYN", summary="[[copy('title')]]", refs="[[copy('links', 'SRC')]]"),
+        _need("SRC", links=["TGT"]),
+        _need("TGT", hours=1, refs="[[copy('links', 'SRC')]]"),
+        _need(
+            "RD",
+            **(
+                {"links": text}
+                if field == "links"
+                else {"links": ("TGT", "[[copy('links', 'SRC')]]"), field: text}
+            ),
+        ),
+        link_fields=("links", "blocks", "refs"),
+    )
+
+
+CLV: Final = "dynamic function 'check_linked_values'"
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        # (a) computed by some need in the same stratum: the column, its written
+        # target TGT included, and no edge of its own to TGT
+        (
+            "[[check_linked_values('ok', 'refs', 'x')]]",
+            {"columns": [(Column("refs"), ("RD", "links"))]},
+        ),
+        (
+            "[[calc_sum('refs', links_only=True)]]",
+            {"columns": [(Column("refs"), ("RD", "links"))]},
+        ),
+        # ... and so are the fields its filter names
+        (
+            "[[check_linked_values('ok', 'hours', 1, 'len(refs) == 0')]]",
+            {"columns": [(Column("refs"), ("RD", "links"))]},
+        ),
+        # (c) computed by no need: final, the links alone
+        ("[[check_linked_values('ok', 'hours', 1)]]", {}),
+        ("[[calc_sum('hours', links_only=True)]]", {}),
+    ],
+)
+def test_a_read_through_computed_links_is_a_column_read(text, expected):
+    """A read through a need's own links computed in the same stratum reads a column.
+
+    Which needs the links name is known only once they are computed, so the field is
+    read on every need that computes it, as a whole-project ``calc_sum`` reads it;
+    the call is computed after its own ``links`` all the same.
+    """
+    reads = _through_links_project("blocks", text).node_reads(("RD", "blocks"), 1)
+    assert {"deps": list(reads.deps), "columns": list(reads.columns)} == {
+        "deps": [("RD", "links")],
+        "columns": [],
+        **expected,
+    }
+    assert list(reads.scope) == []
+
+
+@pytest.mark.parametrize(
+    ("text", "reads", "linked"),
+    [
+        # (b) computed in a later stratum, by a need the links do not name
+        ("[[check_linked_values('ok', 'summary', 'x')]]", (("summary", "DYN"),), ()),
+        ("[[calc_sum('summary', links_only=True)]]", (("summary", "DYN"),), ()),
+        # (b) a back link or a dead-link flag, of whichever need the links name
+        ("[[check_linked_values('ok', 'links_back', 'x')]]", (), ("links_back",)),
+        ("[[calc_sum('has_dead_links', links_only=True)]]", (), ("has_dead_links",)),
+        (
+            "[[check_linked_values('ok', 'refs', 'x', 'summary == \"x\"')]]",
+            (("summary", "DYN"),),
+            (),
+        ),
+    ],
+)
+def test_a_later_read_through_computed_links_is_out_of_scope(text, reads, linked):
+    """A read through computed links of a value final only after the stratum is a sink.
+
+    The value is computed (or set with the back links) after stratum 1, on any need
+    the links may name, so the call is not run: it reads nothing.
+    """
+    got = _through_links_project("blocks", text).node_reads(("RD", "blocks"), 1)
+    what = CLV if "check" in text else "dynamic function 'calc_sum'"
+    expected = (
+        OutOfScope(what, reads, linked=linked) if linked else OutOfScope(what, reads)
+    )
+    assert (list(got.deps), list(got.columns), list(got.scope)) == ([], [], [expected])
+
+
+def test_a_link_field_reading_through_itself_stays_a_cycle():
+    """The links that read through themselves are a self-cycle, not a column read.
+
+    ``summary`` is computed after stratum 1, but the call is on a cycle with itself
+    before it reads anything else.
+    """
+    text = ("TGT", "[[check_linked_values('TGT', 'summary', 'x')]]")
+    project = _through_links_project("links", text)
+    reads = project.node_reads(("RD", "links"), 1)
+    assert (list(reads.deps), list(reads.columns), list(reads.scope)) == (
+        [("RD", "links")],
+        [],
+        [],
+    )
+    assert [s for s in build_stratum(project, 1).steps if s.cycle] == [
+        Step((("RD", "links"),), cycle=True, through=(None,))
+    ]
+
+
+def test_a_cycle_through_computed_links_names_them():
+    """A need reading its own field through its computed links is on a cycle with it.
+
+    ``RD.refs`` reads the ``refs`` column, which ``RD.refs`` is in: the member names
+    the column, and why every need is in it, its own computed links.
+    """
+    project = _through_links_project(
+        "refs", "[[check_linked_values('ok', 'refs', 'x')]]"
+    )
+    cycles = [s for s in build_stratum(project, 1).steps if s.cycle]
+    assert cycles == [
+        Step(
+            (("RD", "refs"),),
+            cycle=True,
+            through=((Column("refs"), ("RD", "links")),),
+        )
+    ]
 
 
 def test_strongly_connected_and_schedule():
