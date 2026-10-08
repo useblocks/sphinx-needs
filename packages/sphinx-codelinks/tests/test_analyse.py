@@ -257,6 +257,30 @@ def test_oneline_parser_warnings_are_collected(tmp_path):
     assert src_analyse.oneline_warnings is src_analyse.warnings
 
 
+def test_a_hash_comment_is_never_a_docstring_tag(tmp_path: Path) -> None:
+    """The ``docstring_tag`` rule reads Python docstrings only: a field-shaped tag line
+    in a ``#`` comment goes to the one-line parser, as in any other language."""
+    src = tmp_path / "x.py"
+    src.write_text(
+        "# @param a: the first, thing\ndef f(a):\n    pass\n", encoding="utf-8"
+    )
+    src_analyse = SourceAnalyse(
+        SourceAnalyseConfig(
+            src_files=[src],
+            src_dir=tmp_path,
+            comment_type=CommentType.python,
+            get_need_id_refs=False,
+            get_oneline_needs=True,
+            get_multiline_needs=False,
+            oneline_comment_style=ONELINE_COMMENT_STYLE_DEFAULT,
+        )
+    )
+    src_analyse.run()
+
+    assert src_analyse.warnings == []
+    assert [need.need["id"] for need in src_analyse.oneline_needs] == ["thing"]
+
+
 def test_count_pluralizes_nouns() -> None:
     assert _count(0, "file") == "0 files"
     assert _count(1, "file") == "1 file"

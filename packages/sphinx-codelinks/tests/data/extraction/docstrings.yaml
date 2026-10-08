@@ -1,10 +1,12 @@
 # Python docstrings.
 #
-# A module, class or function docstring is scanned like a comment. A line that
-# starts with a docstring tag (``@param``, ``@return``, ...) right after the
-# one-line start sequence is not a one-line need: it is reported as a
-# ``docstring_tag`` warning, because a start sequence the docstrings use cannot
-# tell a need from documentation.
+# A module, class or function docstring is scanned like a comment. A line warns
+# ``docstring_tag`` (and yields no need) only when all of these hold: it is inside a
+# Python docstring (never a ``#`` comment, never another language); after the one-line
+# start sequence comes a tag of the shared list (``param``, ``return``, ``todo``, ...);
+# and the tag has the Epydoc field shape, ``:`` directly (``@return: text``) or
+# whitespace, one word and ``:`` (``@param a: text``, ``@raise Exc: text``). Every other
+# line goes to the one-line parser.
 
 docstring_trailing_whitespace:
   # Whitespace after the marker inside a docstring.
@@ -33,3 +35,30 @@ docstring_tags:
         @param a: the first, thing
         @return: nothing
         """
+
+docstring_tag_without_field_shape_is_a_need:
+  # A tag word without the field shape: the line is a one-line need.
+  lang: python
+  config: default
+  source: |
+    def f():
+        """@todo fix the parser, IMPL_DS, impl
+        """
+
+docstring_tag_is_case_sensitive:
+  # "Todo" is not a tag of the list: the line is a one-line need.
+  lang: python
+  config: default
+  source: |
+    def f():
+        """@Todo fix the parser, IMPL_TODO2, impl
+        """
+
+hash_comment_tag_word_is_a_need:
+  # A "#" comment is never a docstring: the line is a one-line need.
+  lang: python
+  config: default
+  source: |
+    # @todo fix the parser, IMPL_TODO, impl
+    def f():
+        pass
