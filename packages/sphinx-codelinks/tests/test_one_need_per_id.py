@@ -14,12 +14,14 @@ moves instead of vanishing.
 import hashlib
 import re
 from pathlib import Path
+from typing import Any
 
 import pytest
 from sphinx.testing.util import SphinxTestApp
 from sphinx.util.console import strip_colors
 from sphinx.util.parallel import parallel_available
 
+from sphinx_codelinks.analyse import utils
 from sphinx_needs_testkit import build_warnings
 
 from .test_need_id_refs import (
@@ -429,31 +431,69 @@ def test_a_directive_moved_to_another_document(
     assert _duplicates(app) == []
 
 
+@pytest.mark.parametrize("capture_order", ["reverse", "forward"])
 def test_two_markers_on_one_row_with_one_id_the_leftmost_defines_it(
-    tmp_path: Path, make_app: _MakeApp
+    tmp_path: Path,
+    make_app: _MakeApp,
+    monkeypatch: pytest.MonkeyPatch,
+    capture_order: str,
 ) -> None:
-    """Two one-line needs on one row with one id: the leftmost is created and the other
-    is skipped, on every row (#2150). It used to be whichever tree-sitter handed over
-    first, which differs between runs but seldom on any one row: forty rows make a
-    wrong order likelier in one build, and ``test_analyse_order`` pins the order of
-    ``oneline_needs`` -- the order this directive creates needs in -- over twenty runs."""
-    rows = 40
-    impl = "".join(
-        f"/* @left {i}, IMPL_D{i}, impl */ /* @right {i}, IMPL_D{i}, impl */\n"
-        for i in range(rows)
-    )
+    """Two one-line needs on one row of one file with one id: the leftmost is created and
+    the other is skipped (#2150).
+
+    The order tree-sitter returns a file's comments in differs between runs, but seldom
+    on any one row, so the build is rigged: ``extract_comments`` returns its comments
+    sorted by position, reversed, so that only the sort of the one-line needs can put
+    the left marker first. ``forward`` returns them in source order, the control.
+    ``test_analyse_order`` pins the order of ``oneline_needs`` over twenty runs too.
+    """
+    original = utils.extract_comments
+
+    def rigged(*args: Any, **kwargs: Any) -> list[Any] | None:
+        comments = original(*args, **kwargs)
+        if comments is None:
+            return None
+        return sorted(
+            comments,
+            key=lambda node: node.start_byte,
+            reverse=capture_order == "reverse",
+        )
+
+    monkeypatch.setattr(utils, "extract_comments", rigged)
     _project(
         tmp_path,
-        files={**FILES, "src/impl.cpp": impl},
+        files={
+            **FILES,
+            "src/impl.cpp": "/* @left, IMPL_D, impl */ /* @right, IMPL_D, impl */\n",
+        },
         append={"docs/index.rst": _trace()},
     )
     app = _build(tmp_path, make_app)
 
-    needs = _json(app)["needs"]
-    assert {f"IMPL_D{i}": needs[f"IMPL_D{i}"]["title"] for i in range(rows)} == {
-        f"IMPL_D{i}": f"left {i}" for i in range(rows)
-    }
+    assert _json(app)["needs"]["IMPL_D"]["title"] == "left"
     assert _duplicates(app) == [
-        _duplicate("index", "index", f"src/impl.cpp:{i + 1}", f"IMPL_D{i}")
-        for i in range(rows)
+        _duplicate("index", "index", "src/impl.cpp:1", "IMPL_D")
+    ]
+
+
+def test_two_files_with_one_id_on_one_row_the_first_file_defines_it(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """Two one-line needs with one id on the same row of two files: the first file's is
+    created, as before #2150, though the other sits further left -- the column orders
+    the markers of one file, never two files."""
+    _project(
+        tmp_path,
+        files={
+            **FILES,
+            **_scoped(None),
+            "src/impl.cpp": "int x; // @A, IMPL_D, impl\n",
+            "src/other.cpp": "// @B, IMPL_D, impl\n",
+        },
+    )
+    app = _build(tmp_path, make_app)
+
+    assert _json(app)["needs"]["IMPL_D"]["title"] == "A"
+    assert _duplicates(app) == [
+        _duplicate("index", "index", "src/other.cpp:1", "IMPL_D")
     ]

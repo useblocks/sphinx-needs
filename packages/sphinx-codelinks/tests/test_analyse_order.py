@@ -118,8 +118,8 @@ def test_a_reference_and_a_need_starting_at_one_position_list_the_reference_firs
     """Two entries can start at one position only with overlapping markers, which the
     configuration check does not refuse today: here a need-id marker that ends with the
     one-line start sequence. Such a tie is listed references first, then one-line needs
-    (then multi-line needs) -- the rule ubCode's parity harness mirrors. This case goes
-    when overlapping markers become a configuration error.
+    (then multi-line needs) -- the rule ubCode is to mirror (useblocks/ubcode#3935).
+    This case goes when overlapping markers become a configuration error.
 
     Two references tying (one marker a suffix of another) need no case: they are of one
     kind, and keep the marker order of the configuration through the stable sort.
@@ -139,4 +139,65 @@ def test_a_reference_and_a_need_starting_at_one_position_list_the_reference_firs
     ] == [
         ("need-id-refs", {"row": 0, "column": 10}),
         ("need", {"row": 0, "column": 10}),
+    ]
+
+
+def test_entries_are_ordered_by_where_they_start_not_where_they_end(
+    tmp_path: Path,
+) -> None:
+    """A one-line need whose title holds a need reference, under the default
+    configuration: both spans run to the end of the line, the need's from further left,
+    so the need is listed first. This pins START order against a sort on the end
+    position with a configuration that overlaps no markers, so it outlives the tie case
+    above. Whether a reference inside a need's title should be extracted at all is a
+    separate question (the overlapping-markers follow-up).
+    """
+    analyse = _analyse(
+        tmp_path,
+        "// @A title @need-ids: REQ_1, IMPL_A, impl\nvoid f() {}\n",
+        get_oneline_needs=True,
+        get_need_id_refs=True,
+    )
+
+    assert [
+        (entry.type.value, entry.source_map["start"])
+        for entry in analyse.all_marked_content
+    ] == [
+        ("need", {"row": 0, "column": 4}),
+        ("need-id-refs", {"row": 0, "column": 23}),
+    ]
+
+
+def test_one_line_needs_of_two_files_on_one_row_keep_the_file_order(
+    tmp_path: Path,
+) -> None:
+    """``oneline_needs`` -- the order ``src-trace`` creates and renders needs in -- is
+    by row, then file (in discovery order), then column: on one row the first file's
+    need comes first even where the other file's sits further left, and a later row of
+    the first file comes after both. ``all_marked_content`` is by file first."""
+    a = tmp_path / "a.cpp"
+    b = tmp_path / "b.cpp"
+    a.write_bytes(b"int x; // @A0, IMPL_A0, impl\n// @A1, IMPL_A1, impl\n")
+    b.write_bytes(b"// @B0, IMPL_B0, impl\n")
+    analyse = SourceAnalyse(
+        SourceAnalyseConfig(
+            src_files=[a, b],
+            src_dir=tmp_path,
+            comment_type=CommentType.cpp,
+            get_oneline_needs=True,
+        )
+    )
+    analyse.git_remote_url = None
+    analyse.git_commit_rev = None
+    analyse.run(log_summary=False)
+
+    assert [need.need["id"] for need in analyse.oneline_needs] == [
+        "IMPL_A0",
+        "IMPL_B0",
+        "IMPL_A1",
+    ]
+    assert [entry.need["id"] for entry in analyse.all_marked_content] == [
+        "IMPL_A0",
+        "IMPL_A1",
+        "IMPL_B0",
     ]
