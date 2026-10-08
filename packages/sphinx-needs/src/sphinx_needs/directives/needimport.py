@@ -196,15 +196,17 @@ class NeedimportDirective(SphinxDirective):
         # tags update
         if tags := _split_tags(self.options.get("tags", "")):
             for need in needs_list.values():
-                # a record may have no tags, or give them as a string (which
-                # ``add_need`` accepts); any other value is left for it to refuse
+                # a record may have no tags, or give them as a string: that is
+                # extended, and ``add_need`` converts it as it converts any string
+                # of tags. Without coercion it refuses a string, so the record's own
+                # is left for it to name; as is any other value it refuses
                 need_tags = need.get("tags")
-                if need_tags is None:
+                if need_tags is None or need_tags == "":
                     need["tags"] = tags
                 elif isinstance(need_tags, list):
                     need["tags"] = need_tags + tags
-                elif isinstance(need_tags, str):
-                    need["tags"] = _split_tags(need_tags) + tags
+                elif isinstance(need_tags, str) and allow_type_coercion:
+                    need["tags"] = f"{need_tags},{','.join(tags)}"
 
         import_prefix_link_edit(
             needs_list, id_prefix, needs_schema.iter_link_field_names()
