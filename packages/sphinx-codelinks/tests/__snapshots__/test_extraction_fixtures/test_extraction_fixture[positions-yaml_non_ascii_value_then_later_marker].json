@@ -1,0 +1,25 @@
+[
+  {
+    "filepath": "case.yaml",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 3
+      },
+      "end": {
+        "row": 2,
+        "column": 31
+      }
+    },
+    "tagged_scope": "c: 2",
+    "need": {
+      "title": "Later",
+      "id": "IMPL_YAML_LATER",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "block_mapping_pair"
+  }
+]

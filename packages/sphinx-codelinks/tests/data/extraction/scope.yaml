@@ -192,6 +192,16 @@ go_no_scope:
     // @No Scope, IMPL_GO_NONE, impl, [REQ_GO_NONE]
     var x = 1
 
+go_non_ascii_rune_literal_scope:
+  # A rune literal with a non-ASCII character before the marker: the function still binds.
+  lang: go
+  config: default
+  source: |
+    package m
+    var c = 'é'
+    // @T, ID_GO_UTF8, impl
+    func f() {}
+
 bash_above_function:
   # Marker directly above a function definition -> binds to that function.
   lang: bash

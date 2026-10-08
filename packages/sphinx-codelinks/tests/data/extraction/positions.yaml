@@ -87,6 +87,16 @@ non_ascii_before_marker_in_comment_yaml:
   source: |
     key: v  # é @need-ids: REQ_IN
 
+yaml_non_ascii_value_then_later_marker:
+  # A non-ASCII value does not lose a comment on a later row.
+  lang: yaml
+  config: default
+  source: |
+    a: é
+    b: 1
+    # @Later, IMPL_YAML_LATER, impl
+    c: 2
+
 block_comment_trailing_whitespace:
   # Whitespace after the marker inside a block comment; the span ends where
   # the end sequence (the newline) is.
