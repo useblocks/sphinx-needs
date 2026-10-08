@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791454379090,
+  "lastUpdate": 1791456073881,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -23508,6 +23508,42 @@ window.BENCHMARK_DATA = {
             "value": 34.32837113599999,
             "unit": "s",
             "extra": "Commit: ec0b626d833d88295f2321bb50e65d895579efda\nBranch: master\nTime: 2026-10-08T12:11:56+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1caba09c1683af4e04f22d27c0d45d7dc2f6af28",
+          "message": "🐛 sphinx-needs: a read through computed links is a column read (#2143)\n\n## What\n\nPackage: `packages/sphinx-needs`.\n\nThis fixes `check_linked_values` and `calc_sum(links_only=True)` in a\nlink field whose need's own `links` are computed in\nthe same step. Until the links are computed, nobody knows which needs\nthey name, including the ones written in them.\nSo the call now reads its field, and the fields its filter names, as a\n**column**, on every need. That is the same\ncolumn node a whole-project `calc_sum` reads:\n\n```rst\n.. req:: Reads a link type through links that are computed too\n   :id: LL_WLINK\n   :links: T_THREE, [[copy(\"links\", \"OTHER_L\")]]\n   :blocks: [[check_linked_values(\"T_THREE\", \"refs\", \"T_ONE\", one_hit=True)]]\n```\n\nWhat the call does now depends on where its field is computed:\n\n- **Computed in step 2, the link fields, by some need** (`refs` above):\nthe call runs after every need that computes\nit, so it reads the computed value (above, `blocks` is `['T_THREE']`\nonce a linked need's computed `refs` names\n  `T_ONE`). It also still waits for its own `links`.\n- **Computed after step 2, on any need, or a back link or dead-link\nflag:** the read is out of scope. The call reports\n`needs.derive_scope` and is not run, and the field keeps its written\nlinks. For example: `dynamic function\n'check_linked_values' for option 'blocks' reads 'links_back' on every\nneed its links name, which is final only after\nthe link fields are computed: the call is not run and the field is left\nempty`.\n- **Computed by no need:** the call reads the written value.\n\nTwo more cases:\n\n- A call in the `links` themselves still reads itself, which is a cycle.\n- A need that reads its own field through such a column is on a cycle\nwith it. The message then names the links:\n`…, through its links, which are computed in the same step, so every\nneed is a candidate`.\n\nCode changes:\n\n- `functions/order.py`:\n  - `_CallReads._linked()` replaces the two walks of the stored list.\n- `OutOfScope.linked` records a back link or flag read on every need the\nlinks name.\n  - A column's `Reason` can now be the reader's own `links` node.\n- `functions/functions.py`: the `derive_scope` and `derive_cycle`\nmessages for these reads.\n- Docs: a paragraph in `dynamic_functions.rst`'s processing order, a\nclause in the list of reads that cannot be\nordered, and a sentence on the cycle message. The changelog's\n*Unreleased* derived-values entry gets a clause and\n  cites this pull request.\n\n## Why\n\n#2064 (derived values) and #2134 (phase 1, merged) order a call after\nevery value it reads. #2136 was a follow-up.\n\nubCode's review of its own phase 1 found a gap in these reads. The order\nwalked `need.get(\"links\")`, which is `[]`\nfor a computed link list, so a written target got no edge. That had\nthree effects:\n\n- Its back links were read as the pass had reset them, so\n`check_linked_values(…, \"links_back\", …)` passed silently.\n- A link type it computes was read before it was computed. Only the\nrun-time check caught this, as `…the order of the\n  pass did not account for this read; please report this…`.\n- A filter on such a field silently gave the wrong value, because the\nrun-time check does not see a filter's reads.\n\nA target added by the computed list was read in order or not, depending\non its id. That means the value depended on the\nschedule, which the order exists to rule out.\n\nThe ruling holds for both tools: such a reader reads through a column.\nubCode's phase 1 takes the same rule, with the\nsame wording for the back-link case.\n\n## Tests\n\n-\n`tests/test_dynamic_functions_strata.py::test_a_read_through_computed_links_is_a_column_read`\nuses reviewer A's\nshapes (`LL_WBACK`, `LL_ABACK`, `LL_WLINK`, `LL_WLINK1`, `LL_ALINK`, and\n`Z_ALINK` three links down). It adds:\n  - a filter on a computed link type (`LL_WFLT`);\n- a field computed in step 4 on a need the links do not name\n(`LL_LATER`);\n  - a field no need computes (`LL_FINAL`, `['T_ONE']`, no finding);\n  - a cycle through the column (`LL_SELF`).\n\nIt runs serially and with `-j 2`, and asserts every value and every\nwarning. The run-time check is silent on every\n  shape. Red before the change:\n- `{'LL_WBACK': ['T_ONE']} != {'LL_WBACK': []}` and `{'LL_ABACK':\n['T_ONE']} != {'LL_ABACK': []}` (the call ran on\n    the reset back links);\n- `{'LL_WFLT': []} != {'LL_WFLT': ['T_ONE']}` (the filter read `refs`\nbefore it was computed, silently).\n\nBefore the change, its build also gave the \"please report this\" warning\nfor `LL_WLINK`, `LL_WLINK1` and `LL_ALINK`.\n- `tests/test_functions_order.py`:\n- The three outcomes as unit rows: a column `(Column('refs'), ('RD',\n'links'))` for the option, a `links_only` sum and\na filter; out of scope for a later field, a back link and a dead-link\nflag; final for a field no need computes.\n  - A link field reading through itself stays a self-cycle.\n  - A cycle through the column names the links.\n- Red before the change: 9 of the 12 new items (the other 3 are\nregression guards that already pass).\n\nThe full suite (`uv run poe test-needs -n 4 tests/`) passes, except the\n50 graphviz renders that need `dot` (the same 50\nfail on master on a machine without it).\n\n## Checklist\n\n- [x] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\nBuilt in an orchestrated session from ubCode's review finding and the\ncode. The tests were written first and shown\n  red, and every line was read.\n- [x] I ran the package's tests (`uv run poe test-needs`) and they pass\n(the graphviz renders excepted on a machine\n  without `dot`, identically to master).\n- [x] Documentation is updated where behaviour or options change\n(`docs/dynamic_functions.rst`).\n- [x] The package's `docs/changelog.rst` has the change in the existing\n*Unreleased* derived-values entry (its `:pr:`\n  cite now names this number).\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.\n\nRefs #2064.",
+          "timestamp": "2026-10-08T12:39:59+02:00",
+          "tree_id": "7b5d65cae94f1af1b3bcd8cf93fe45e116ed4b00",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/1caba09c1683af4e04f22d27c0d45d7dc2f6af28"
+        },
+        "date": 1791456064457,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.08205987299999151,
+            "unit": "s",
+            "extra": "Commit: 1caba09c1683af4e04f22d27c0d45d7dc2f6af28\nBranch: master\nTime: 2026-10-08T12:39:59+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 44.69626776,
+            "unit": "s",
+            "extra": "Commit: 1caba09c1683af4e04f22d27c0d45d7dc2f6af28\nBranch: master\nTime: 2026-10-08T12:39:59+02:00"
           }
         ]
       }
