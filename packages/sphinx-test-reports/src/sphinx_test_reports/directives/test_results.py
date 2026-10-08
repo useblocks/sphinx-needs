@@ -3,12 +3,26 @@ import os
 from docutils import nodes
 from docutils.parsers.rst import Directive
 
-from sphinx_test_reports.directives.test_common import new_section
-from ub_test_reports.junitparser import JUnitParser
+from sphinx_test_reports.directives.test_common import error_node, new_section, warn
+from ub_test_reports.junitparser import JUnitParser, ReportReadError
 
 
 class TestResults(nodes.General, nodes.Element):
     pass
+
+
+class _NoOptions(dict):
+    """An option spec that declares no option, and is still TRUE.
+
+    docutils parses a directive's option block only ``if option_spec:``
+    (``parse_directive_block``), so an EMPTY spec is the same as none -- and with
+    ``final_argument_whitespace`` an option line written under the directive is folded
+    into the path, which then names no file (#2138). Truthy and empty, every option is
+    docutils' own ``unknown option: "<name>"`` directive error, as for any directive.
+    """
+
+    def __bool__(self) -> bool:
+        return True
 
 
 class TestResultsDirective(Directive):
@@ -19,6 +33,8 @@ class TestResultsDirective(Directive):
     has_content = True
     required_arguments = 1
     optional_arguments = 0
+    # No options -- and declared as such, so that docutils refuses one (#2138).
+    option_spec = _NoOptions()
 
     final_argument_whitespace = True
 
@@ -34,8 +50,22 @@ class TestResultsDirective(Directive):
         root_path = env.app.config.tr_rootdir
         if not os.path.isabs(xml_path):
             xml_path = os.path.join(root_path, xml_path)
-        parser = JUnitParser(xml_path)
-        results = parser.parse()
+
+        # Every refusal is a located `test_reports.*` warning and an error box in place of
+        # the sections; the build goes on.
+        if not os.path.exists(xml_path):
+            return self._refuse("report_missing", f"Test file not found: {xml_path}")
+        if os.path.splitext(xml_path)[1] == ".json":
+            # Refused by name: lxml's message for a JSON file, "Start tag expected, '<'
+            # not found", blames the wrong thing.
+            return self._refuse(
+                "report_unreadable",
+                f"test-results reads JUnit XML reports; {xml_path} is a JSON file",
+            )
+        try:
+            results = JUnitParser(xml_path).parse()
+        except ReportReadError as error:
+            return self._refuse("report_unreadable", str(error))
 
         # Construction idea taken from http://agateau.com/2015/docutils-snippets/
 
@@ -45,6 +75,10 @@ class TestResultsDirective(Directive):
             main_section.append(self._suite_section(testsuite))
 
         return main_section
+
+    def _refuse(self, subtype: str, message: str) -> list[nodes.Node]:
+        warn(self, subtype, message)
+        return [error_node(message)]
 
     def _suite_section(self, testsuite) -> nodes.section:
         """A suite's section: its counters, its ``Time:``, the table of its DIRECT cases,

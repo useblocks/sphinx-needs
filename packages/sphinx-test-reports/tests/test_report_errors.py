@@ -188,11 +188,13 @@ def test_an_option_under_test_results_is_an_unknown_option(make_app, tmp_path):
 
     assert 'unknown option: "class"' in stream
     assert "Test file not found" not in stream
+    # In the page too (kept by `keep_warnings`); its quotes went through smartquotes.
     doctree = app.env.get_doctree("index")
-    assert any(
-        'unknown option: "class"' in message.astext()
+    assert [
+        message["level"]
         for message in doctree.findall(nodes.system_message)
-    )
+        if "unknown option: \N{LEFT DOUBLE QUOTATION MARK}class" in message.astext()
+    ] == [3]
 
 
 # --- the three need directives -----------------------------------------------------------

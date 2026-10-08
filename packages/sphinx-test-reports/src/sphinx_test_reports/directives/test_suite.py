@@ -10,6 +10,7 @@ from sphinx_needs.utils import add_doc
 from sphinx_test_reports.directives.test_common import (
     TestCommonDirective,
     _links_with,
+    error_node,
     find_suite,
 )
 from sphinx_test_reports.exceptions import TestReportInvalidOptionError
@@ -51,7 +52,9 @@ class TestSuiteDirective(TestCommonDirective):
         ``test-suite`` passes none, and the suite is the one its ``:suite:`` names.
         """
         self.prepare_basic_options()
-        self.load_test_file()
+        if self.load_test_file() is None:
+            # The report does not exist or cannot be read: `load_test_file` has warned.
+            return [error_node(self.report_error)]
 
         suite_name = self.options.get("suite")
 
