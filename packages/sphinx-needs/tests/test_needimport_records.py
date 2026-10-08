@@ -85,6 +85,9 @@ TAGS_RECORDS = [
     record("NULL_TAGS", tags=None),
     record("LIST_TAGS", tags=["x"]),
     record("STR_TAGS", tags="x; y"),
+    record("PIPE_TAGS", tags="x|y"),
+    record("FUNC_TAGS", tags="[[copy('title', lower=True)]]"),
+    record("EMPTY_TAGS", tags=""),
 ]
 
 
@@ -98,6 +101,9 @@ TAGS_RECORDS = [
                 "NULL_TAGS": ["a", "b"],
                 "LIST_TAGS": ["x", "a", "b"],
                 "STR_TAGS": ["x", "y", "a", "b"],
+                "PIPE_TAGS": ["x", "y", "a", "b"],
+                "FUNC_TAGS": ["func_tags", "a", "b"],
+                "EMPTY_TAGS": ["a", "b"],
             },
             id="tags_option",
         ),
@@ -108,6 +114,9 @@ TAGS_RECORDS = [
                 "NULL_TAGS": [],
                 "LIST_TAGS": ["x"],
                 "STR_TAGS": ["x", "y"],
+                "PIPE_TAGS": ["x", "y"],
+                "FUNC_TAGS": ["func_tags"],
+                "EMPTY_TAGS": [],
             },
             id="no_tags_option",
         ),
@@ -117,14 +126,45 @@ TAGS_RECORDS = [
 def test_tags_option_extends_the_record_tags(
     test_app: SphinxTestApp, expected: dict[str, list[str]]
 ) -> None:
-    """``:tags:`` is added to each record's own ``tags``, whatever shape they have:
-    absent or ``null`` are none, a list is extended, and a string is split as the
-    option itself is. Without the option, each record keeps its own (the control:
-    ``add_need`` splits a string of tags the same way)."""
+    """``:tags:`` is added to each record's own ``tags``: a missing, ``null`` or empty
+    ``tags`` gets the option's tags, a list is extended, and a string is extended and
+    then converted as ``add_need`` converts a string ``tags`` (on ``;``, ``,`` and ``|``,
+    a dynamic function kept whole and run). Without the option, each record keeps its
+    own (the control: what ``add_need`` makes of the same values)."""
     test_app.build()
     assert test_app.statuscode == 0
     assert build_warnings(test_app) == []
     assert {k: v["tags"] for k, v in needs_by_id(test_app).items()} == expected
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        pytest.param(
+            project(
+                [record("STR_TAGS", tags="x; y")],
+                [":allow_type_coercion: false", *options],
+            ),
+            id=name,
+        )
+        for name, options in (("tags_option", [":tags: a, b"]), ("no_tags_option", []))
+    ],
+    indirect=True,
+)
+def test_tags_option_keeps_a_string_refused_without_coercion(
+    test_app: SphinxTestApp,
+) -> None:
+    """With ``:allow_type_coercion: false`` a string ``tags`` is refused, with or
+    without ``:tags:``, with the same text."""
+    test_app.build()
+    assert test_app.statuscode == 0
+    assert build_warnings(test_app) == [
+        not_imported(
+            "STR_TAGS",
+            "'tags' value is invalid: Invalid value for field 'tags': 'x; y'",
+        )
+    ]
+    assert needs_by_id(test_app) == {}
 
 
 # ------------------------------------------------------------------------------------
@@ -168,19 +208,32 @@ def test_content_not_a_string_is_not_imported(test_app: SphinxTestApp) -> None:
 @pytest.mark.parametrize(
     "test_app",
     [
-        pytest.param(project([record("NO_CONTENT")], options), id=route)
+        pytest.param(
+            project(
+                [
+                    record("NO_CONTENT"),
+                    record("EMPTY_CONTENT", content=""),
+                    record("EMPTY_DESCRIPTION", description=""),
+                ],
+                options,
+            ),
+            id=route,
+        )
         for route, options in ROUTES.items()
     ],
     indirect=True,
 )
 def test_record_without_content_imports_empty(test_app: SphinxTestApp) -> None:
-    """A record with no ``content`` key at all is a need with empty content."""
+    """A record with no ``content`` key at all, or an empty ``content`` or legacy
+    ``description``, is a need with empty content."""
     test_app.build()
     assert test_app.statuscode == 0
     assert build_warnings(test_app) == []
-    needs = needs_by_id(test_app)
-    assert list(needs) == ["NO_CONTENT"]
-    assert needs["NO_CONTENT"]["content"] == ""
+    assert {k: v["content"] for k, v in needs_by_id(test_app).items()} == {
+        "NO_CONTENT": "",
+        "EMPTY_CONTENT": "",
+        "EMPTY_DESCRIPTION": "",
+    }
 
 
 # ------------------------------------------------------------------------------------
