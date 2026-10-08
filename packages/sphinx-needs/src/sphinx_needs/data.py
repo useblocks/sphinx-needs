@@ -41,7 +41,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 9
+ENV_DATA_VERSION: Final = 10
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -62,6 +62,13 @@ by it when the needs are post-processed, from the pickled environment, so an unb
 rebuild over an existing ``_build`` meets extends recorded without the key and ends
 with a ``KeyError`` rather than re-reading the documents that hold them.
 
+Version 10 changes no stored shape: it changes what the stored values mean. The dynamic
+functions and variants are computed in dependency order, so the same sources give other
+values (a chain's value, an empty cycle), and an unbumped rebuild over an existing
+``_build`` writes them to ``needs.json`` but re-writes only the pages whose sources
+changed, leaving the old values on every other page. The bump makes an upgraded build
+re-read and re-write every page.
+
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """
 
@@ -74,7 +81,8 @@ class NeedsPartType(TypedDict, total=False):
     content: str
     """Content of the part."""
 
-    # note back links for each type are also set dynamically in post_process_needs_data (-> resolve_links)
+    # note back links for each type are also set dynamically in post_process_needs_data
+    # (-> build_backlinks, between the two strata of resolve_functions)
 
 
 class CoreFieldParameters(TypedDict):
@@ -517,7 +525,8 @@ class NeedsInfoType(TypedDict):
     signature: str | None
     """Derived from a docutils desc_name node."""
 
-    # these default to False and are updated in resolve_links post-process
+    # these default to False and are set with the back links (build_backlinks), between
+    # the two strata of resolve_functions, before the other fields are computed
     has_dead_links: bool
     """True if any links reference need ids that are not found in the need list."""
     has_forbidden_dead_links: bool

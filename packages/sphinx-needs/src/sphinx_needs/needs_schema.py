@@ -277,7 +277,11 @@ class FieldSchema:
                     and value.rstrip().endswith("]]")
                 ):
                     return FieldFunctionArray(
-                        (DynamicFunctionParsed.from_string(value.strip()[2:-2]),)
+                        (
+                            DynamicFunctionParsed.from_string(
+                                value.strip()[2:-2], allow_need=True
+                            ),
+                        )
                     )
                 elif (
                     self.parse_variants
@@ -320,7 +324,9 @@ class FieldSchema:
                             result.append(item)
                         case ListItemType.DF | ListItemType.DF_U:
                             # TODO warn on unclosed dynamic function
-                            result.append(DynamicFunctionParsed.from_string(item))
+                            result.append(
+                                DynamicFunctionParsed.from_string(item, allow_need=True)
+                            )
                         case ListItemType.VF | ListItemType.VF_U:
                             # TODO warn on unclosed variant function
                             result.append(VariantFunctionParsed.from_string(item))
@@ -356,7 +362,9 @@ class FieldSchema:
                         case ListItemType.DF | ListItemType.DF_U:
                             # TODO warn on unclosed dynamic function
                             has_df_or_vf = True
-                            array.append(DynamicFunctionParsed.from_string(item))
+                            array.append(
+                                DynamicFunctionParsed.from_string(item, allow_need=True)
+                            )
                         case ListItemType.VF | ListItemType.VF_U:
                             # TODO warn on unclosed variant function
                             has_df_or_vf = True
@@ -427,7 +435,9 @@ class FieldSchema:
                     ):
                         has_function = True
                         new_value.append(
-                            DynamicFunctionParsed.from_string(item.strip()[2:-2])
+                            DynamicFunctionParsed.from_string(
+                                item.strip()[2:-2], allow_need=True
+                            )
                         )
                     elif (
                         self.parse_variants
@@ -848,7 +858,9 @@ class LinkSchema:
                     ):
                         has_function = True
                         new_value.append(
-                            DynamicFunctionParsed.from_string(item.strip()[2:-2])
+                            DynamicFunctionParsed.from_string(
+                                item.strip()[2:-2], allow_need=True
+                            )
                         )
                     elif (
                         self.parse_variants
@@ -1191,7 +1203,7 @@ def _split_link_list(
                 text = text[1:]
             if content.endswith("]"):
                 content = content[:-1]
-            yield DynamicFunctionParsed.from_string(content)
+            yield DynamicFunctionParsed.from_string(content, allow_need=True)
             if text.startswith("]]"):
                 text = text[2:]
         elif parse_variants and text.startswith("<<") and not _current.strip():

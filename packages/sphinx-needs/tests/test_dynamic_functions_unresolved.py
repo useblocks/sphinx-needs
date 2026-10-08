@@ -1,20 +1,17 @@
-"""``needs.derive_unresolved``: a read of a value computed in the same pass.
+"""Reads of a value computed in the same pass, in dependency order.
 
-All dynamic functions and variants are resolved in one pass, need by need, in the
-order the needs reached the build environment, writing each result into the need
-as it goes. A ``[[…]]`` or ``<<…>>`` that reads a field which itself carries a
-``[[…]]``, ``<<…>>`` or ``<{…}>`` (on another need, or on its own need) therefore
-reads either the computed value or the unresolved one, depending on that order,
-which changes with document names, with the documents the last build re-read and
-with ``-j``. Each such read is reported once per reading call, at the reading need.
-
-The rule is the read field's presence in the read need's dynamic fields (after
-``needextend``), never whether the pass has reached that need yet: the second
-would make the warning itself depend on the build history. So a read is reported
-even where today's value happens to be the computed one, and the tests below pin
-that with a layout in each direction. It is the rule ubCode reports the same reads
-by (as an Info-graded ``needs.derive_unresolved``), and the last test runs ubCode's
-own fixture for it.
+Phase 0 reported each read of a field that another ``[[…]]``, ``<<…>>`` or ``<{…}>``
+computes in the same pass as ``needs.derive_unresolved``, because the insertion-order
+pass gave such a read the computed value or the unresolved one by the order the needs
+reached the environment (document names, the documents the last build re-read,
+``-j``). The dependency-ordered pass computes every value after the values it reads,
+so the same projects now give the chained value and no warning; the tests below are
+phase 0's, kept on their projects with the values the ordered pass gives. A value that
+reads itself is a cycle (``needs.derive_cycle``), and a read the pass cannot order is
+``needs.derive_scope``; ``needs.derive_unresolved`` is retired. The record of a call's
+reads (``reads=``) is kept, as the check that the order covers every read a built-in
+makes: a read of a value not computed yet is reported as ``needs.derive_scope``.
+The last build test runs ubCode's own fixture for the same contract.
 """
 
 import inspect
@@ -34,16 +31,13 @@ from sphinx_needs.functions.functions import execute_func
 from sphinx_needs.logging import WarningSubTypeDescription, WarningSubTypes
 from sphinx_needs_testkit import assert_no_warnings, build_warnings
 
-#: the tail every message ends with: true whether or not the read value was computed yet
-TAIL = (
-    "a dynamic function or variant computed in the same pass: "
-    "the value read depends on the order the needs are resolved in"
-)
+#: a cause, as the message builder appends it
+CAUSE = "the cause"
 
 
-def _warning(location: str, head: str, *, carries: str = "carries") -> str:
-    """One ``needs.derive_unresolved`` warning, as ``build_warnings`` normalises it."""
-    return f"<srcdir>/{location}: WARNING: {head}, which {carries} {TAIL} [needs.derive_unresolved]"
+def _warning(location: str, message: str, subtype: str) -> str:
+    """One warning, as ``build_warnings`` normalises it."""
+    return f"<srcdir>/{location}: WARNING: {message} [needs.{subtype}]"
 
 
 def _built_needs(app) -> dict[str, dict]:
@@ -63,14 +57,13 @@ needs_fields = {
 }
 """
 
-SUPPRESSED = {"suppress_warnings": ["needs.derive_unresolved"]}
+SUPPRESSED = {"suppress_warnings": ["needs.derive_cycle", "needs.derive_scope"]}
 
 
 # -- the message --------------------------------------------------------------
 #
-# ubCode's head (``{what} for option '{option}' read {read}``), then a tail that is
-# true under the presence rule: ubCode's own tail says the read saw the value before
-# it was resolved, which here holds only when the pass had not reached the target yet.
+# A ``needs.derive_scope`` message for the reads of one call: ubCode's head
+# (``{what} for option '{option}' read {read}``), then when, then the cause.
 
 
 @pytest.mark.parametrize(
@@ -80,40 +73,40 @@ SUPPRESSED = {"suppress_warnings": ["needs.derive_unresolved"]}
             "dynamic function 'copy'",
             "summary",
             [("summary", ["CHAIN_B"])],
-            "dynamic function 'copy' for option 'summary' read 'summary' on need 'CHAIN_B', "
-            f"which carries {TAIL}",
+            "dynamic function 'copy' for option 'summary' read 'summary' on need 'CHAIN_B' "
+            f"before it was computed: {CAUSE}",
             id="one-id",
         ),
         pytest.param(
             "dynamic function 'calc_sum'",
             "total",
-            [("hours", ["HRS_1", "HRS_2"])],
-            "dynamic function 'calc_sum' for option 'total' read 'hours' on 2 needs (HRS_1, HRS_2), "
-            f"which carry {TAIL}",
+            [("hours", ["HRS_2", "HRS_1"])],
+            "dynamic function 'calc_sum' for option 'total' read 'hours' on 2 needs (HRS_1, HRS_2) "
+            f"before they were computed: {CAUSE}",
             id="two-ids",
         ),
         pytest.param(
             "dynamic function 'calc_sum'",
             "total",
             [("hours", ["HRS_1", "HRS_2", "LIT_3"])],
-            "dynamic function 'calc_sum' for option 'total' read 'hours' on 3 needs (HRS_1, HRS_2, LIT_3), "
-            f"which carry {TAIL}",
+            "dynamic function 'calc_sum' for option 'total' read 'hours' on 3 needs (HRS_1, HRS_2, LIT_3) "
+            f"before they were computed: {CAUSE}",
             id="three-ids",
         ),
         pytest.param(
             "dynamic function 'calc_sum'",
             "total",
             [("hours", ["A_1", "A_2", "A_3", "A_4"])],
-            "dynamic function 'calc_sum' for option 'total' read 'hours' on 4 needs (A_1, A_2, A_3 and 1 more), "
-            f"which carry {TAIL}",
+            "dynamic function 'calc_sum' for option 'total' read 'hours' on 4 needs (A_1, A_2, A_3 and 1 more) "
+            f"before they were computed: {CAUSE}",
             id="four-ids",
         ),
         pytest.param(
             "dynamic function 'calc_sum'",
             "total",
             [("hours", [f"A_{i}" for i in range(1, 11)])],
-            "dynamic function 'calc_sum' for option 'total' read 'hours' on 10 needs (A_1, A_2, A_3 and 7 more), "
-            f"which carry {TAIL}",
+            "dynamic function 'calc_sum' for option 'total' read 'hours' on 10 needs (A_1, A_10, A_2 and 7 more) "
+            f"before they were computed: {CAUSE}",
             id="ten-ids",
         ),
         pytest.param(
@@ -121,25 +114,25 @@ SUPPRESSED = {"suppress_warnings": ["needs.derive_unresolved"]}
             "summary",
             [("links", ["GATE"]), ("status", ["WORK_1"])],
             "dynamic function 'check_linked_values' for option 'summary' "
-            "read 'links' on need 'GATE' and 'status' on need 'WORK_1', "
-            f"which carry {TAIL}",
+            "read 'links' on need 'GATE' and 'status' on need 'WORK_1' "
+            f"before they were computed: {CAUSE}",
             id="two-names",
         ),
         pytest.param(
             "variant condition",
             "band",
-            [("f1", ["V"]), ("f2", ["V"]), ("f3", ["V", "W"])],
+            [("f1", ["V"]), ("f2", ["V"]), ("f3", ["W", "V"])],
             "variant condition for option 'band' "
-            "read 'f1' on need 'V', 'f2' on need 'V' and 'f3' on 2 needs (V, W), "
-            f"which carry {TAIL}",
+            "read 'f1' on need 'V', 'f2' on need 'V' and 'f3' on 2 needs (V, W) "
+            f"before they were computed: {CAUSE}",
             id="three-names-variant",
         ),
         pytest.param(
             "variant condition",
             "band",
             [("f1", ["VAR_COND"])],
-            "variant condition for option 'band' read 'f1' on need 'VAR_COND', "
-            f"which carries {TAIL}",
+            "variant condition for option 'band' read 'f1' on need 'VAR_COND' "
+            f"before it was computed: {CAUSE}",
             id="variant-one-id",
         ),
     ],
@@ -147,36 +140,33 @@ SUPPRESSED = {"suppress_warnings": ["needs.derive_unresolved"]}
 def test_message_shape(what, option, reads, expected):
     """The message names each name once, with its one need or a count and the first three.
 
-    Several names are joined as ubCode joins them (``a, b and c``). ``carries`` is
-    singular only for one name read on one need. Imported here rather than at the
-    top so that, before the formatter exists, only these tests fail on the import
-    and the build tests below fail on their own assertions.
+    Several names are joined as ubCode joins them (``a, b and c``); the needs of a name
+    are named in need-id order, comparing ids as strings (``A_10`` before ``A_2``).
+    ``it was`` is singular only for one name read on one need. Imported here rather
+    than at the top so that, before the formatter exists, only these tests fail on the
+    import and the build tests below fail on their own assertions.
     """
-    from sphinx_needs.functions.functions import (
-        _derive_unresolved_message,
-    )
+    from sphinx_needs.functions.functions import _derive_scope_message
 
-    assert _derive_unresolved_message(what, option, reads) == expected
+    assert _derive_scope_message(what, option, reads, CAUSE) == expected
 
 
 def test_message_needs_a_read():
     """A record with no read is never formatted: there is nothing to say."""
-    from sphinx_needs.functions.functions import (
-        _derive_unresolved_message,
-    )
+    from sphinx_needs.functions.functions import _derive_scope_message
 
     with pytest.raises(ValueError, match="no read"):
-        _derive_unresolved_message("variant condition", "band", [])
+        _derive_scope_message("variant condition", "band", [], CAUSE)
 
 
 # -- T1: a chain across needs, in both layouts --------------------------------
 #
 # ``CHAIN_A`` copies ``CHAIN_B``'s ``summary``, which ``CHAIN_B`` copies from its
 # title. ``CHAIN_A`` is on ``index.rst``; ``CHAIN_B`` is on ``z.rst`` (read after
-# ``index``, so ``CHAIN_A`` reads the unresolved ``""``) or on ``a.rst`` (read
-# before, so it reads the computed ``"Middle"``). Both layouts report the one read,
-# at the same location and in the same words: which value the read saw is an
-# accident of document names, and it flips on an incremental build (T10).
+# ``index``, which gave ``CHAIN_A`` the unresolved ``""`` in the insertion-order
+# pass) or on ``a.rst`` (read before, which gave it the computed ``"Middle"``).
+# Ordered, both layouts give ``"Middle"`` and no warning, as does ``-j 2`` and an
+# incremental build (T10).
 
 CHAIN_INDEX = """\
 Chain
@@ -211,60 +201,56 @@ CHAIN_REVERSE = [
     (Path("a.rst"), CHAIN_TARGET),
 ]
 
-CHAIN_WARNINGS = [
-    "<srcdir>/index.rst:8: WARNING: dynamic function 'copy' for option 'summary' "
-    "read 'summary' on need 'CHAIN_B', which carries a dynamic function or variant "
-    "computed in the same pass: the value read depends on the order the needs are "
-    "resolved in [needs.derive_unresolved]"
-]
+PADDING = [(Path(f"pad_{n}.rst"), f":orphan:\n\nPad {n}\n=====\n") for n in range(4)]
 
 
 @pytest.mark.parametrize(
-    ("test_app", "chained"),
+    "test_app",
     [
         pytest.param(
-            {"buildername": "needs", "files": CHAIN_FORWARD}, "", id="target-later"
+            {"buildername": "needs", "files": CHAIN_FORWARD}, id="target-later"
         ),
         pytest.param(
-            {"buildername": "needs", "files": CHAIN_REVERSE},
-            "Middle",
-            id="target-earlier",
+            {"buildername": "needs", "files": CHAIN_REVERSE}, id="target-earlier"
         ),
         pytest.param(
-            {"buildername": "needs", "files": CHAIN_FORWARD, "parallel": 2},
-            None,
+            {
+                "buildername": "needs",
+                "files": [*CHAIN_FORWARD, *PADDING],
+                "parallel": 2,
+            },
             id="target-later-parallel",
             marks=pytest.mark.skipif(
                 not parallel_available, reason="Parallel execution not supported"
             ),
         ),
     ],
-    indirect=["test_app"],
+    indirect=True,
 )
-def test_chain_across_needs(test_app, chained):
-    """A ``copy`` of another need's computed field is reported, whichever value it saw.
+def test_chain_across_needs(test_app):
+    """A ``copy`` of another need's computed field reads the computed value, always.
 
-    One warning, at the reader ``CHAIN_A``; none at ``CHAIN_B``, whose read of its
-    own ``title`` reads an authored value. The value check proves the two layouts
-    really differ: the target authored later leaves ``CHAIN_A`` the unresolved
-    ``""``, the target authored earlier gives it the computed ``"Middle"``, and the
-    warning is the same for both. Under ``-j`` the order the needs reach the
-    environment depends on which worker finishes first (so no value is asserted),
-    and the warning is still the same.
+    The layout-independence test: the target authored later used to leave
+    ``CHAIN_A`` the unresolved ``""``, the target authored earlier gave it
+    ``"Middle"``, and under ``-j`` the order depended on which worker finished first
+    (padding documents make the build really parallel). Now every layout gives
+    ``"Middle"`` and no warning.
     """
     app = test_app
     app.build()
     needs = _built_needs(app)
-    assert needs["CHAIN_B"]["summary"] == "Middle"
-    if chained is not None:
-        assert needs["CHAIN_A"]["summary"] == chained
-    assert build_warnings(app) == CHAIN_WARNINGS
+    assert (needs["CHAIN_A"]["summary"], needs["CHAIN_B"]["summary"]) == (
+        "Middle",
+        "Middle",
+    )
+    assert build_warnings(app) == []
 
 
 # -- T2: a chain inside one need ----------------------------------------------
 #
-# ``status`` is a core field, so it is resolved before the extra field ``comment``
-# it copies, and reads its unresolved ``None`` (joined into the string ``"None"``).
+# ``status`` is a core field, which the insertion-order pass resolved before the
+# extra field ``comment`` it copies, so it read the unresolved ``None`` (joined into
+# the string ``"None"``). Ordered, ``comment`` is computed first.
 
 SAME_NEED_INDEX = """\
 Same need
@@ -288,27 +274,22 @@ Same need
     indirect=True,
 )
 def test_chain_inside_one_need(test_app):
-    """A ``copy`` of the need's own computed field is reported, naming the need itself."""
+    """A ``copy`` of the need's own computed field reads the computed value."""
     app = test_app
     app.build()
     need = _built_needs(app)["SAME_NEED"]
-    assert need["comment"] == "The title"
-    assert need["status"] != "The title"
-    assert build_warnings(app) == [
-        _warning(
-            "index.rst:4",
-            "dynamic function 'copy' for option 'status' read 'comment' on need 'SAME_NEED'",
-        )
-    ]
+    assert (need["status"], need["comment"]) == ("The title", "The title")
+    assert build_warnings(app) == []
 
 
 # -- T2b: ``copy`` with a ``filter`` reads the match it copies from ----------
 #
-# A filter matching several needs copies from the lowest id. The read reported is
-# that match's, not the first match in the order the needs were read: ``RD_ONE``'s
-# lowest-id match ``SRC_A1`` is authored (the computed ``SRC_B1`` comes first but is
-# not read), ``RD_TWO``'s is the computed ``SRC_A2`` (the authored ``SRC_B2`` comes
-# first but is not read).
+# A filter matching several needs copies from the lowest id. The filter names only
+# ``grp``, which nothing computes, so the match is known before the values are
+# computed, and the reader waits for that match alone: ``RD_ONE``'s lowest-id match
+# ``SRC_A1`` is authored, ``RD_TWO``'s is the computed ``SRC_A2``. Waiting instead for
+# every need's ``summary`` (the filter's column) would put each reader on a cycle
+# with itself, as both readers write ``summary`` too.
 
 COPY_FILTER_CONF = """\
 extensions = ["sphinx_needs"]
@@ -363,22 +344,22 @@ Index
     indirect=True,
 )
 def test_copy_filter_reads_the_match_it_copies_from(test_app):
-    """``copy(filter=)`` is reported for the lowest-id match it copies, and only for it."""
+    """``copy(filter=)`` waits for the lowest-id match it copies, and is no cycle."""
     app = test_app
     app.build()
-    assert _built_needs(app)["RD_ONE"]["summary"] == "authored"
-    assert build_warnings(app) == [
-        _warning(
-            "index.rst:18",
-            "dynamic function 'copy' for option 'summary' read 'summary' on need 'SRC_A2'",
-        )
-    ]
+    needs = _built_needs(app)
+    assert (needs["RD_ONE"]["summary"], needs["RD_TWO"]["summary"]) == (
+        "authored",
+        "done",
+    )
+    assert build_warnings(app) == []
 
 
 # -- T3: a whole-project ``calc_sum`` -----------------------------------------
 #
-# The summands are written in the reverse of need-id order, and the message names
-# them in need-id order, the order the sum reads them in.
+# The summands are written after the sum, in the reverse of need-id order: the
+# insertion-order pass summed their unresolved ``None`` (dropped), the ordered pass
+# sums them computed.
 
 SUM_TWO_INDEX = """\
 Sum
@@ -413,14 +394,14 @@ SUM_FIVE_INDEX = (
 
 
 @pytest.mark.parametrize(
-    ("test_app", "read"),
+    ("test_app", "total"),
     [
         pytest.param(
             {
                 "buildername": "needs",
                 "files": [(Path("conf.py"), CONF), (Path("index.rst"), SUM_TWO_INDEX)],
             },
-            "'hours' on 2 needs (HRS_1, HRS_2)",
+            12.0,
             id="two-computed-summands",
         ),
         pytest.param(
@@ -428,27 +409,18 @@ SUM_FIVE_INDEX = (
                 "buildername": "needs",
                 "files": [(Path("conf.py"), CONF), (Path("index.rst"), SUM_FIVE_INDEX)],
             },
-            "'hours' on 5 needs (HRS_1, HRS_2, HRS_3 and 2 more)",
+            15.0,
             id="five-computed-summands",
         ),
     ],
     indirect=["test_app"],
 )
-def test_calc_sum_over_every_need(test_app, read):
-    """One warning per summing call, naming each computed summand once, in need-id order.
-
-    The authored ``LIT_3`` is not named; four or more computed summands name the
-    first three and count the rest.
-    """
+def test_calc_sum_over_every_need(test_app, total):
+    """A sum over every need runs after every summand it reads: 5 + 6 + 1, and 1 to 5."""
     app = test_app
     app.build()
-    assert build_warnings(app) == [
-        _warning(
-            "index.rst:4",
-            f"dynamic function 'calc_sum' for option 'total' read {read}",
-            carries="carry",
-        )
-    ]
+    assert _built_needs(app)["SUM_ALL"]["total"] == total
+    assert build_warnings(app) == []
 
 
 # -- T4: ``calc_sum(links_only=True)`` ----------------------------------------
@@ -509,20 +481,15 @@ Linked summands
 def test_calc_sum_links_only_reads_its_own_links(test_app):
     """A ``links_only`` sum reads the need's own ``links``, which a ``[[…]]`` computes.
 
-    Link fields are resolved after the extra fields, so the sum reads the
-    unresolved empty list and totals ``0.0``; the ``links`` call itself copies an
-    authored value and is not reported.
+    The insertion-order pass resolved link fields after the extra fields, so the sum
+    read the unresolved empty list and totalled ``0.0``. Link fields are computed
+    first now, so the sum reads ``HRS_3``.
     """
     app = test_app
     app.build()
     need = _built_needs(app)["OWN_LINKS"]
-    assert (need["total"], need["links"]) == (0.0, ["HRS_3"])
-    assert build_warnings(app) == [
-        _warning(
-            "index.rst:12",
-            "dynamic function 'calc_sum' for option 'total' read 'links' on need 'OWN_LINKS'",
-        )
-    ]
+    assert (need["total"], need["links"]) == (3.0, ["HRS_3"])
+    assert build_warnings(app) == []
 
 
 @pytest.mark.parametrize(
@@ -539,16 +506,11 @@ def test_calc_sum_links_only_reads_its_own_links(test_app):
     indirect=True,
 )
 def test_calc_sum_links_only_names_its_computed_targets(test_app):
-    """A ``links_only`` sum names its computed summands in the order of the links."""
+    """A ``links_only`` sum runs after its computed summands: 6 + 3 + 5."""
     app = test_app
     app.build()
-    assert build_warnings(app) == [
-        _warning(
-            "index.rst:4",
-            "dynamic function 'calc_sum' for option 'total' read 'hours' on 2 needs (HRS_2, HRS_1)",
-            carries="carry",
-        )
-    ]
+    assert _built_needs(app)["SUM_LINKS"]["total"] == 14.0
+    assert build_warnings(app) == []
 
 
 # -- T5: ``check_linked_values`` ----------------------------------------------
@@ -591,12 +553,11 @@ Linked values
     indirect=True,
 )
 def test_check_linked_values(test_app):
-    """``check_linked_values`` is reported for the computed values it actually reads.
+    """``check_linked_values`` runs after every linked value it may read.
 
-    ``GATE_ALL`` reads ``WORK_1``'s computed ``status`` (here already computed, as
-    ``WORK_1`` is written first, so the gate opens; reported all the same).
-    ``GATE_HIT`` stops at its first hit, the authored ``WORK_2``, and never reads
-    ``WORK_1``: nothing to report.
+    ``GATE_ALL`` reads ``WORK_1``'s computed ``status``; ``GATE_HIT`` stops at its
+    first hit, the authored ``WORK_2``, and waits for ``WORK_1`` all the same. Both
+    gates open, and nothing is reported.
     """
     app = test_app
     app.build()
@@ -605,12 +566,7 @@ def test_check_linked_values(test_app):
         "ready",
         "ready",
     )
-    assert build_warnings(app) == [
-        _warning(
-            "index.rst:12",
-            "dynamic function 'check_linked_values' for option 'summary' read 'status' on need 'WORK_1'",
-        )
-    ]
+    assert build_warnings(app) == []
 
 
 GATE_OWN_LINKS_CONF = """\
@@ -652,28 +608,25 @@ Index
 def test_check_linked_values_reads_its_own_links(test_app):
     """``check_linked_values`` reads the need's own ``links``, which a ``[[…]]`` computes.
 
-    Link fields are resolved after the extra fields, so the check walks the unresolved
-    empty list (and passes vacuously); the ``links`` call itself copies an authored
-    value and is not reported.
+    The insertion-order pass resolved link fields after the extra fields, so the check
+    walked the unresolved empty list and passed vacuously. Link fields are computed
+    first now: the check walks ``WORK_9``, whose ``status`` is unset, and fails. A
+    failed check returns ``None``, which leaves the nullable ``summary`` unset (it was
+    stored as the text ``"None"``).
     """
     app = test_app
     app.build()
     need = _built_needs(app)["GATE_OWN"]
-    assert (need["summary"], need["links"]) == ("ready", ["WORK_9"])
-    assert build_warnings(app) == [
-        _warning(
-            "index.rst:11",
-            "dynamic function 'check_linked_values' for option 'summary' read 'links' on need 'GATE_OWN'",
-        )
-    ]
+    assert (need["summary"], need["links"]) == (None, ["WORK_9"])
+    assert build_warnings(app) == []
 
 
 # -- T6: variant conditions ---------------------------------------------------
 #
-# Within a need, extra fields are resolved in the order they are declared, so
-# declaring ``f1`` before ``band`` makes the condition read the computed ``"T"``
-# (``matched``), declaring it after makes it read the unresolved ``None``
-# (``unmatched``). The condition names ``f1`` twice; it is named once.
+# The insertion-order pass resolved a need's extra fields in the order they are
+# declared, so declaring ``f1`` before ``band`` made the condition read the computed
+# ``"T"`` (``matched``), declaring it after made it read the unresolved ``None``
+# (``unmatched``). A variant is now computed after every field its conditions name.
 
 VARIANT_CONF = """\
 extensions = ["sphinx_needs"]
@@ -704,7 +657,7 @@ def _variant_conf(*, f1_first: bool) -> str:
 
 
 @pytest.mark.parametrize(
-    ("test_app", "band"),
+    "test_app",
     [
         pytest.param(
             {
@@ -714,7 +667,6 @@ def _variant_conf(*, f1_first: bool) -> str:
                     (Path("index.rst"), VARIANT_INDEX),
                 ],
             },
-            "matched",
             id="f1-declared-first",
         ),
         pytest.param(
@@ -725,27 +677,20 @@ def _variant_conf(*, f1_first: bool) -> str:
                     (Path("index.rst"), VARIANT_INDEX),
                 ],
             },
-            "unmatched",
             id="band-declared-first",
         ),
     ],
-    indirect=["test_app"],
+    indirect=True,
 )
-def test_variant_condition(test_app, band):
-    """A variant condition naming a computed field of its own need is reported.
+def test_variant_condition(test_app):
+    """A variant condition naming a computed field of its own need sees it computed.
 
-    The same warning for both declaration orders, although one condition saw the
-    computed value and the other the unresolved one.
+    Whatever the order the two fields are declared in.
     """
     app = test_app
     app.build()
-    assert _built_needs(app)["VAR_COND"]["band"] == band
-    assert build_warnings(app) == [
-        _warning(
-            "index.rst:4",
-            "variant condition for option 'band' read 'f1' on need 'VAR_COND'",
-        )
-    ]
+    assert _built_needs(app)["VAR_COND"]["band"] == "matched"
+    assert build_warnings(app) == []
 
 
 VARIANT_STOP_CONF = """\
@@ -794,13 +739,14 @@ Variant
     ],
     indirect=True,
 )
-def test_variant_condition_reads_only_the_expressions_it_evaluates(test_app):
-    """The names read are those of the expressions evaluated, up to the first true one.
+def test_variant_conditions_wait_for_every_field_they_name(test_app):
+    """A variant waits for the fields of every condition, evaluated or not.
 
-    ``VAR_STOP``'s first condition, on the authored ``f1``, holds, so its second,
-    on the computed ``f2``, is never evaluated: nothing to report. ``VAR_ON``'s
-    first condition does not hold, so the second is evaluated and reads ``f2``.
-    ``VAR_NAMED`` names a ``needs_variants`` entry, whose expression reads ``f2``.
+    ``VAR_STOP``'s first condition, on the authored ``f1``, holds, so its second, on
+    the computed ``f2``, is never evaluated; ``VAR_ON``'s first condition does not
+    hold, so the second reads ``f2``; ``VAR_NAMED`` names a ``needs_variants`` entry,
+    whose expression reads ``f2``. Each is computed after its ``f2``, and nothing is
+    reported: the conditions read the values they name, computed.
     """
     app = test_app
     app.build()
@@ -810,16 +756,7 @@ def test_variant_condition_reads_only_the_expressions_it_evaluates(test_app):
         "second",
         "named",
     ]
-    assert build_warnings(app) == [
-        _warning(
-            "index.rst:10",
-            "variant condition for option 'band' read 'f2' on need 'VAR_ON'",
-        ),
-        _warning(
-            "index.rst:16",
-            "variant condition for option 'band' read 'f2' on need 'VAR_NAMED'",
-        ),
-    ]
+    assert build_warnings(app) == []
 
 
 # -- T7: a call that a ``needextend`` sets --------------------------------------
@@ -860,30 +797,26 @@ Extended summand
     indirect=True,
 )
 def test_a_call_set_by_needextend_is_a_computed_value(test_app):
-    """A field a ``needextend`` sets to a ``[[…]]`` is computed in the pass, so it is named.
+    """A field a ``needextend`` sets to a ``[[…]]`` is computed in the pass, and waited for.
 
-    The sum reads ``LIT_3``'s value from before the extend (``1``), so the total is
-    ``3.0`` although ``LIT_3`` resolves to the same ``1.0``: what matters is the call
-    the need carries after the extends, not what the field held when it was written.
+    The sum reads ``LIT_3``'s computed ``1.0``, not the ``1`` it held before the extend
+    (the same number here, so the total is ``3.0`` either way), and nothing is reported.
     """
     app = test_app
     app.build()
     needs = _built_needs(app)
     assert (needs["SUM_ALL"]["total"], needs["LIT_3"]["hours"]) == (3.0, 1.0)
-    assert build_warnings(app) == [
-        _warning(
-            "index.rst:4",
-            "dynamic function 'calc_sum' for option 'total' read 'hours' on need 'LIT_3'",
-        )
-    ]
+    assert build_warnings(app) == []
 
 
 # -- T8: a call that fails because of what it read ----------------------------
 #
-# ``MIRROR`` is written before ``WORK_1``, so it copies ``WORK_1``'s unresolved
-# ``status``, ``None``, which the non-nullable string ``summary`` refuses. The
-# existing ``needs.dynamic_function`` warning says the call failed; the new one,
-# emitted first, says why. Each is suppressed on its own.
+# ``WORK_1`` and ``WORK_2`` copy each other's ``comment``: a cycle, so both are left
+# at the empty value of the nullable ``comment``, ``None``, and each is reported.
+# ``MIRROR`` copies ``WORK_1``'s ``comment`` once the cycle is settled, reads that
+# ``None``, which the non-nullable string ``summary`` refuses: the existing
+# ``needs.dynamic_function`` warning says the call failed, and the cycle's, emitted
+# before it, says why. Each is suppressed on its own.
 
 FAILING_READ_INDEX = """\
 Failing read
@@ -891,11 +824,15 @@ Failing read
 
 .. req:: Mirror
    :id: MIRROR
-   :summary: [[copy("status", "WORK_1")]]
+   :summary: [[copy("comment", "WORK_1")]]
 
-.. req:: done
+.. req:: Work one
    :id: WORK_1
-   :status: [[copy("title")]]
+   :comment: [[copy("comment", "WORK_2")]]
+
+.. req:: Work two
+   :id: WORK_2
+   :comment: [[copy("comment", "WORK_1")]]
 """
 
 FAILING_READ_FILES = [(Path("conf.py"), CONF), (Path("index.rst"), FAILING_READ_INDEX)]
@@ -907,16 +844,20 @@ TYPE_CHECK_WARNING = (
 )
 
 
+WORK_CYCLE = (
+    "dynamic function 'copy' for option 'comment' is on a cycle: "
+    "'comment' on 2 needs (WORK_1, WORK_2); the field is left empty"
+)
+
+
 @pytest.mark.parametrize(
     ("test_app", "expected"),
     [
         pytest.param(
             {"buildername": "needs", "files": FAILING_READ_FILES},
             [
-                _warning(
-                    "index.rst:4",
-                    "dynamic function 'copy' for option 'summary' read 'status' on need 'WORK_1'",
-                ),
+                _warning("index.rst:8", WORK_CYCLE, "derive_cycle"),
+                _warning("index.rst:12", WORK_CYCLE, "derive_cycle"),
                 TYPE_CHECK_WARNING,
             ],
             id="both",
@@ -928,15 +869,21 @@ TYPE_CHECK_WARNING = (
                 "confoverrides": SUPPRESSED,
             },
             [TYPE_CHECK_WARNING],
-            id="derive-unresolved-suppressed",
+            id="derive-cycle-suppressed",
         ),
     ],
     indirect=["test_app"],
 )
 def test_a_failing_call_still_says_what_it_read(test_app, expected):
-    """A call that fails is still reported for its read, and the two subtypes are separate."""
+    """A call that fails on a cycle's empty value is reported after the cycle.
+
+    The two subtypes are separate: suppressing the cycle keeps the failure.
+    """
     app = test_app
     app.build()
+    needs = _built_needs(app)
+    assert [needs[i]["comment"] for i in ("WORK_1", "WORK_2")] == [None, None]
+    assert needs["MIRROR"]["summary"] == ""
     assert build_warnings(app) == expected
 
 
@@ -1047,40 +994,84 @@ def test_a_condition_name_given_by_filter_data_is_not_a_field_read(test_app):
     ]
 
 
+SUPPRESSED_INDEX = """\
+Suppressed
+==========
+
+.. req:: Work one
+   :id: WORK_1
+   :comment: [[copy("comment", "WORK_2")]]
+
+.. req:: Work two
+   :id: WORK_2
+   :comment: [[copy("comment", "WORK_1")]]
+   :links: [[copy("links_back")]]
+"""
+
+
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "needs", "files": CHAIN_FORWARD, "confoverrides": SUPPRESSED}],
+    [
+        pytest.param(
+            {
+                "buildername": "needs",
+                "files": [
+                    (Path("conf.py"), CONF),
+                    (Path("index.rst"), SUPPRESSED_INDEX),
+                ],
+                "confoverrides": SUPPRESSED,
+            },
+            id="cycle-and-scope",
+        ),
+        pytest.param(
+            {
+                "buildername": "needs",
+                "files": CHAIN_FORWARD,
+                "confoverrides": {"suppress_warnings": ["needs.derive_unresolved"]},
+            },
+            id="retired-type-is-a-no-op",
+        ),
+    ],
     indirect=True,
 )
 def test_suppressed(test_app):
-    """``suppress_warnings = ["needs.derive_unresolved"]`` silences the warning."""
+    """``suppress_warnings`` silences ``needs.derive_cycle`` and ``needs.derive_scope``.
+
+    ``needs.derive_unresolved`` is retired: an entry naming it is a silent no-op (Sphinx
+    does not warn about an unknown entry), and the chain it reported resolves.
+    """
     app = test_app
     app.build()
     assert_no_warnings(app)
 
 
 def test_listed_with_the_build_warnings():
-    """The subtype is in the list the documentation renders for ``suppress_warnings``."""
-    assert "derive_unresolved" in get_args(WarningSubTypes)
-    assert WarningSubTypeDescription["derive_unresolved"] == (
-        "A dynamic function or variant condition read a value that another dynamic "
-        "function or variant computes in the same pass"
+    """The subtypes are in the list the documentation renders for ``suppress_warnings``."""
+    assert "derive_unresolved" not in get_args(WarningSubTypes)
+    assert {"derive_cycle", "derive_scope"} <= set(get_args(WarningSubTypes))
+    assert WarningSubTypeDescription["derive_cycle"] == (
+        "A dynamic function or variant is on a cycle of computed values; "
+        "the field is not computed"
+    )
+    assert WarningSubTypeDescription["derive_scope"] == (
+        "A dynamic function, variant or needextend filter reads a value "
+        "that cannot be computed before it"
     )
 
 
-# -- T10: the warning does not depend on the build history ---------------------
+# -- T10: neither the value nor the warning depends on the build history -------
 
 
 @pytest.mark.parametrize(
     "test_app", [{"buildername": "needs", "files": CHAIN_FORWARD}], indirect=True
 )
 def test_the_warning_does_not_depend_on_the_build_history(test_app):
-    """An incremental build re-reading the reader gives the same warning.
+    """An incremental build re-reading the reader gives the same value, and no warning.
 
     Re-reading ``index.rst`` purges ``CHAIN_A`` and inserts it again after
-    ``CHAIN_B``, so the second build resolves ``CHAIN_B`` first and ``CHAIN_A``
-    reads the computed value: the value flips with the build history, the warning
-    does not, so a ``-W`` build cannot turn red or green by which file was edited.
+    ``CHAIN_B``, which made the insertion-order pass resolve ``CHAIN_B`` first only in
+    the second build: the value flipped with the build history. Ordered, both builds
+    give ``"Middle"``.
     """
     app = test_app
     app.build()
@@ -1099,17 +1090,16 @@ def test_the_warning_does_not_depend_on_the_build_history(test_app):
     second = build_warnings(app)[len(first) :]
     second_value = _built_needs(app)["CHAIN_A"]["summary"]
 
-    assert (first_value, second_value) == ("", "Middle")
-    assert first == second == CHAIN_WARNINGS
+    assert (first_value, second_value) == ("Middle", "Middle")
+    assert first == second == []
 
 
 # -- T10b: a filter that reads a computed field --------------------------------
 #
-# A filter is evaluated on values the pass may or may not have computed yet, so a
-# filter on a computed field decides, by the order, which needs it keeps. Its own reads
-# are not reported, so the summand or target behind it is noted BEFORE the filter: the
-# warning then cannot come and go with the build history although the kept set does.
-# ``TGT_F``'s ``summary`` is ``"done"`` once computed, and empty before.
+# A filter on a computed field used to decide, by the order of the pass, which needs
+# it kept. The ordered pass computes every need's value of each field a filter names
+# before the filter runs, so the kept set, and the total, no longer depend on the
+# build history. ``TGT_F``'s ``summary`` is ``"done"`` once computed.
 
 FILTERED_INDEX = """\
 Index
@@ -1146,17 +1136,6 @@ B
    :hours: [[copy("h0")]]
 """
 
-FILTERED_WARNINGS = [
-    _warning(
-        "a.rst:4",
-        "dynamic function 'calc_sum' for option 'total' read 'hours' on need 'TGT_F'",
-    ),
-    _warning(
-        "a.rst:8",
-        "dynamic function 'check_linked_values' for option 'summary' read 'hours' on need 'TGT_F'",
-    ),
-]
-
 
 @pytest.mark.parametrize(
     "test_app",
@@ -1174,17 +1153,12 @@ FILTERED_WARNINGS = [
     indirect=True,
 )
 def test_a_filter_on_a_computed_field_does_not_decide_the_warning(test_app):
-    """A filtered ``calc_sum`` warns the same on every build, as does this layout's
-    filtered ``check_linked_values``.
+    """A filtered ``calc_sum`` gives the same total on every build, and no warning.
 
-    A ``check_linked_values`` whose check stops at an authored target the filter kept,
-    before it reaches a computed one, can still differ between builds; the docs say so.
-
-    The first build reads ``a.rst`` before ``b.rst``, so the filter sees ``TGT_F``'s
-    unresolved ``summary`` and drops it (the sum is ``0.0``); re-reading ``a.rst`` moves
-    its needs after ``TGT_F``, the filter keeps it, and the sum is ``3.0``. Noted only
-    after the filter, the read of ``TGT_F``'s computed ``hours`` would be reported in the
-    second build only.
+    The first build reads ``a.rst`` before ``b.rst``, which made the insertion-order
+    filter see ``TGT_F``'s unresolved ``summary`` and drop it (the sum was ``0.0``),
+    and re-reading ``a.rst`` keep it (``3.0``). Ordered, the filter sees the computed
+    ``summary`` in both builds.
     """
     app = test_app
     app.build()
@@ -1203,43 +1177,16 @@ def test_a_filter_on_a_computed_field_does_not_decide_the_warning(test_app):
     second = build_warnings(app)[len(first) :]
     second_total = _built_needs(app)["RD_FLT"]["total"]
 
-    assert (first_total, second_total) == (0.0, 3.0)
-    assert first == second == FILTERED_WARNINGS
+    assert (first_total, second_total) == (3.0, 3.0)
+    assert first == second == []
 
 
 # -- T11: ubCode's fixture -------------------------------------------------------
 
-DERIVE_UNRESOLVED = re.compile(
-    r"<srcdir>/(?P<docname>[^:]+)\.rst:(?P<lineno>\d+): WARNING: "
-    r"(?:dynamic function '\w+'|variant condition) for option '(?P<option>\w+)' "
-    r"read (?P<read>.+), which carr(?:y|ies) .* \[needs\.derive_unresolved\]"
-)
-READ = re.compile(
-    r"'(?P<name>\w+)' on (?:need '(?P<one>\w+)'|\d+ needs \((?P<some>[^)]*)\))"
-)
 
-
-def _findings(app) -> tuple[list[tuple[str, str, tuple]], list[str]]:
-    """The ``needs.derive_unresolved`` findings as (reader id, option, reads), and the rest.
-
-    A reader is identified by its location, a read by the name and the needs named.
-    """
-    by_location = {
-        (need["docname"], need["lineno"]): need_id
-        for need_id, need in _built_needs(app).items()
-    }
-    findings, others = [], []
-    for warning in build_warnings(app):
-        if (match := DERIVE_UNRESOLVED.fullmatch(warning)) is None:
-            others.append(warning)
-            continue
-        reads = tuple(
-            (read["name"], read["one"] or read["some"])
-            for read in READ.finditer(match["read"])
-        )
-        reader = by_location[(match["docname"], int(match["lineno"]))]
-        findings.append((reader, match["option"], reads))
-    return sorted(findings), others
+def _locations(app) -> dict[str, int]:
+    """Each need's line, by id, from the ``needs.json`` the last build wrote."""
+    return {need_id: need["lineno"] for need_id, need in _built_needs(app).items()}
 
 
 @pytest.mark.parametrize(
@@ -1248,66 +1195,122 @@ def _findings(app) -> tuple[list[tuple[str, str, tuple]], list[str]]:
     indirect=True,
 )
 def test_ubcode_fixture(test_app):
-    """ubCode's ``dynamic_functions_unresolved`` fixture: the same findings.
+    """ubCode's ``dynamic_functions_unresolved`` fixture: the phase-1 values and findings.
 
     The project is ubCode's build fixture
-    ``rust/ubc_parser_ctrl/tests/build_fixtures/dynamic_functions_unresolved``,
-    with two adaptations, both for what sphinx-needs refuses: ``hours``' default
-    moves from its ``schema`` (``schema = { type = "number", default = 0.0 }``) to
-    the field (``[needs.fields.hours] default = 0.0``), and ``NEED_ATTR`` is dropped,
-    since a ``need.<field>`` argument is not accepted in a field value here (the need
-    would not be created). ubCode's ``__expected__`` findings, minus ``NEED_ATTR``'s,
-    map one to one:
-
-    ======================  ==========  ===========================================
-    reader                  option      read
-    ======================  ==========  ===========================================
-    ``CHAIN_A``             summary     ``summary`` on ``CHAIN_B``
-    ``CHAIN_B``             summary     ``summary`` on ``CHAIN_C``
-    ``CYC_A``               summary     ``summary`` on ``CYC_B``
-    ``CYC_B``               summary     ``summary`` on ``CYC_A``
-    ``GATE_1``              summary     ``status`` on ``WORK_1``
-    ``MIRROR_VAR``          summary     ``band`` on ``VAR_B``
-    ``OWN_LINKS``           total       ``links`` on ``OWN_LINKS``
-    ``SAME_NEED``           status      ``comment`` on ``SAME_NEED``
-    ``SUM_ALL``             total       ``hours`` on ``HRS_1, HRS_2, LIT_3``
-    ``SUM_ALL2``            total       ``hours`` on ``HRS_1, HRS_2, LIT_3``
-    ``SUM_LINKS``           total       ``hours`` on ``HRS_1``
-    ``VAR_COND``            band        ``f1`` on ``VAR_COND``
-    ======================  ==========  ===========================================
-
-    ubCode reports these as Info; sphinx-needs as a warning. Here ``CHAIN_B``,
-    ``CYC_B`` and ``VAR_COND`` happen to read the computed value (their targets are
-    resolved first) and are reported all the same, as ubCode reports them. The
-    other warnings are the project's own: the legacy ``extra_options`` it uses, and
-    the two calls that fail because the value they read was unresolved ``None``.
+    ``rust/ubc_parser_ctrl/tests/build_fixtures/dynamic_functions_unresolved``, with
+    one adaptation, for what sphinx-needs refuses: ``hours``' default moves from its
+    ``schema`` (``schema = { type = "number", default = 0.0 }``) to the field
+    (``[needs.fields.hours] default = 0.0``). Phase 0 reported twelve reads here as
+    ``needs.derive_unresolved``; ordered, every value is the chained one, and what
+    remains is what ubCode's phase 1 reports too: the cycle ``CYC_A`` / ``CYC_B``
+    (both empty, one ``needs.derive_cycle`` each), and ``NEED_ATTR``, whose call
+    selects its need by ``need.parent``, computed in the same step
+    (``needs.derive_scope``, the field empty and the call not run). The two
+    ``needs.dynamic_function`` failures of phase 0 (``GATE_1`` and ``MIRROR_VAR`` read
+    an unresolved ``None``) are gone: they read computed values now.
     """
     app = test_app
     app.build()
-    findings, others = _findings(app)
-    assert findings == [
-        ("CHAIN_A", "summary", (("summary", "CHAIN_B"),)),
-        ("CHAIN_B", "summary", (("summary", "CHAIN_C"),)),
-        ("CYC_A", "summary", (("summary", "CYC_B"),)),
-        ("CYC_B", "summary", (("summary", "CYC_A"),)),
-        ("GATE_1", "summary", (("status", "WORK_1"),)),
-        ("MIRROR_VAR", "summary", (("band", "VAR_B"),)),
-        ("OWN_LINKS", "total", (("links", "OWN_LINKS"),)),
-        ("SAME_NEED", "status", (("comment", "SAME_NEED"),)),
-        ("SUM_ALL", "total", (("hours", "HRS_1, HRS_2, LIT_3"),)),
-        ("SUM_ALL2", "total", (("hours", "HRS_1, HRS_2, LIT_3"),)),
-        ("SUM_LINKS", "total", (("hours", "HRS_1"),)),
-        ("VAR_COND", "band", (("f1", "VAR_COND"),)),
-    ]
-    assert others == [
+    needs = _built_needs(app)
+    computed = {
+        need_id: {field: needs[need_id][field] for field in fields}
+        for need_id, fields in {
+            "CHAIN_A": ["summary"],
+            "CHAIN_B": ["summary"],
+            "CHAIN_C": ["summary"],
+            "SAME_NEED": ["status", "comment"],
+            "SUM_ALL": ["total"],
+            "SUM_ALL2": ["total"],
+            "SUM_LINKS": ["total"],
+            "GATE_1": ["summary"],
+            "CYC_A": ["summary"],
+            "CYC_B": ["summary"],
+            "VAR_COND": ["f1", "band"],
+            "MIRROR_VAR": ["summary"],
+            "MIRROR_LIT": ["total"],
+            "NEED_ATTR": ["parent", "summary"],
+            "OWN_LINKS": ["links", "total"],
+            "HRS_1": ["hours"],
+            "LIT_3": ["hours"],
+            "OWN_COPY": ["status"],
+        }.items()
+    }
+    assert computed == {
+        "CHAIN_A": {"summary": "done"},
+        "CHAIN_B": {"summary": "done"},
+        "CHAIN_C": {"summary": "done"},
+        "SAME_NEED": {"status": "The title", "comment": "The title"},
+        "SUM_ALL": {"total": 21.0},
+        "SUM_ALL2": {"total": 21.0},
+        "SUM_LINKS": {"total": 8.0},
+        "GATE_1": {"summary": "ready"},
+        "CYC_A": {"summary": ""},
+        "CYC_B": {"summary": ""},
+        "VAR_COND": {"f1": "T", "band": "matched"},
+        "MIRROR_VAR": {"summary": "yes"},
+        "MIRROR_LIT": {"total": 4.0},
+        "NEED_ATTR": {"parent": "HRS_3", "summary": ""},
+        "OWN_LINKS": {"links": ["HRS_3", "LIT_1"], "total": 7.0},
+        "HRS_1": {"hours": 5.0},
+        "LIT_3": {"hours": 1.0},
+        "OWN_COPY": {"status": "done"},
+    }
+    line = _locations(app)
+    cycle = (
+        "dynamic function 'copy' for option 'summary' is on a cycle: "
+        "'summary' on 2 needs (CYC_A, CYC_B); the field is left empty"
+    )
+    assert build_warnings(app) == [
         'WARNING: Config option "needs_extra_options" is deprecated. '
         'Please use "needs_fields" instead. [needs.deprecated]',
-        "<srcdir>/index.rst:82: WARNING: Error while resolving dynamic values for "
-        "field 'summary', of need 'GATE_1': dynamic function value <class 'NoneType'> "
-        "is not of type 'string' [needs.dynamic_function]",
-        "<srcdir>/index.rst:100: WARNING: Error while resolving dynamic values for "
-        "field 'summary', of need 'MIRROR_VAR': dynamic function value <class "
-        "'NoneType'> is not of type 'string' [needs.dynamic_function]",
+        _warning(f"index.rst:{line['CYC_A']}", cycle, "derive_cycle"),
+        _warning(f"index.rst:{line['CYC_B']}", cycle, "derive_cycle"),
+        _warning(
+            f"index.rst:{line['NEED_ATTR']}",
+            "dynamic function 'copy' for option 'summary' names its target by "
+            "'need.parent', which is computed in the same step: the call is not run "
+            "and the field is left empty",
+            "derive_scope",
+        ),
+    ]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "needs", "srcdir": "doc_test/doc_df_own_field_copy"}],
+    indirect=True,
+)
+def test_ubcode_own_field_copy_fixture(test_app):
+    """ubCode's ``dynamic_functions_own_field_copy`` fixture: the values of its scratch build.
+
+    The pages and ``ubproject.toml`` are the fixture's, verbatim. ``BACKLINK`` copies
+    its own back links into an array field, and no need links to it: the empty list,
+    ``[]``, as a back link list with no link is. (ubCode's phase 1 stores ``null`` for
+    it until its own fix; every other value here is the one it stores.)
+    """
+    app = test_app
+    app.build()
+    needs = _built_needs(app)
+    assert {
+        need_id: {field: needs[need_id][field] for field in fields}
+        for need_id, fields in {
+            "OWN_BESIDE": ["summary"],
+            "OWN_EXTENDED": ["summary"],
+            "MIRROR_POS": ["summary"],
+            "BACKLINK": ["incoming"],
+            "OWN_MOVED": ["line"],
+        }.items()
+    } == {
+        "OWN_BESIDE": {"summary": "open"},
+        "OWN_EXTENDED": {"summary": "open"},
+        "MIRROR_POS": {"summary": "open"},
+        "BACKLINK": {"incoming": []},
+        "OWN_MOVED": {"line": 4},
+    }
+    assert build_warnings(app) == [
+        'WARNING: Config option "needs_extra_options" is deprecated. '
+        'Please use "needs_fields" instead. [needs.deprecated]',
     ]
 
 
@@ -1317,6 +1320,8 @@ def test_ubcode_fixture(test_app):
 # keyword-only ``reads``, and to nothing else: a user's function is called exactly as
 # before, and a built-in called anywhere but by the pass itself (an ``ndf`` role, a
 # ``:style_row:``, a direct call, a user's function) gets ``reads=None`` and notes nothing.
+# A user's function runs after every built-in function of its stratum, so it reads
+# the values the built-ins computed.
 
 USER_FUNCTIONS_CONF = (
     CONF
@@ -1407,15 +1412,16 @@ User function
 def test_a_builtin_a_user_function_calls_is_not_reported(test_app):
     """A built-in called by a user's function in the pass is handed no record.
 
-    ``mirror`` copies ``CHAIN_B``'s computed ``summary`` through ``copy``, and reads it
-    unresolved (``CHAIN_B`` comes later); the user's function has no record to pass on,
-    so the read is not reported, as the documentation says.
+    ``mirror`` copies ``CHAIN_B``'s computed ``summary`` through ``copy``. It runs after
+    the built-in functions, so it reads the computed value, although ``CHAIN_B`` comes
+    later (the insertion-order pass gave it the unresolved ``""``); the user's function
+    has no record to pass on, and nothing is reported.
     """
     app = test_app
     app.build()
     needs = _built_needs(app)
     assert (needs["MIRROR_USER"]["summary"], needs["CHAIN_B"]["summary"]) == (
-        "",
+        "Middle",
         "Middle",
     )
     assert_no_warnings(app)
@@ -1490,15 +1496,16 @@ def test_a_user_wrapper_of_a_builtin_is_not_handed_the_record(test_app):
     ``functools.wraps`` copies the built-in's attributes, its mark included, but the
     mark names the function it was set on, so the wrapper is not marked: ``narrowcopy``,
     which takes no ``**kwargs``, is called without ``reads`` and resolves, and
-    ``forwardcopy``, which would forward a record to ``copy``, has none to forward, so
-    its read of ``CHAIN_B``'s computed ``summary`` is not reported.
+    ``forwardcopy``, which would forward a record to ``copy``, has none to forward. As a
+    user's function it runs after the built-ins, so its read of ``CHAIN_B``'s computed
+    ``summary`` sees ``"Middle"`` (the insertion-order pass gave it ``""``).
     """
     app = test_app
     app.build()
     needs = _built_needs(app)
     assert (needs["U_NARROW"]["summary"], needs["U_FORWARD"]["summary"]) == (
         "NARROW",
-        "",
+        "Middle",
     )
     assert_no_warnings(app)
 

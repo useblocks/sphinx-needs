@@ -298,10 +298,6 @@ def check_linked_values(
 
     for link in links:
         need = needs[link]
-        # noted before the filter, which may read a computed field itself and so keep
-        # or drop this need by the order the needs are resolved in
-        if reads is not None:
-            reads.note_read(need, search_option)
         if filter_string:
             try:
                 if not filter_single_need(need, needs_config, filter_string):
@@ -314,6 +310,8 @@ def check_linked_values(
                     None,
                 )
 
+        if reads is not None:
+            reads.note_read(need, search_option)
         need_value = need[search_option]
         if not one_hit and need_value not in search_value:
             return None
@@ -424,10 +422,6 @@ def calc_sum(
     calculated_sum = 0.0
 
     for check_need in check_needs:
-        # noted before the filter, which may read a computed field itself and so keep
-        # or drop this need by the order the needs are resolved in
-        if reads is not None:
-            reads.note_read(check_need, option)
         if filter:
             try:
                 if not filter_single_need(check_need, needs_config, filter):
@@ -442,6 +436,8 @@ def calc_sum(
                     None,
                 )
 
+        if reads is not None:
+            reads.note_read(check_need, option)
         # TODO(mh) added TypeError for None values
         with contextlib.suppress(ValueError, TypeError):
             calculated_sum += float(check_need[option])

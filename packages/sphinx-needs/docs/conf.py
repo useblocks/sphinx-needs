@@ -48,7 +48,15 @@ if DOCS_THEME == "sphinx_immaterial":
 syntax_example_numbering = True
 
 # needs.max_items: the max_items examples truncate on purpose
-suppress_warnings = ["needs.link_outgoing", "needs.github", "needs.max_items"]
+suppress_warnings = [
+    "needs.link_outgoing",
+    "needs.github",
+    "needs.max_items",
+    # the examples share one project: a needextend example filtering on ``tags`` or
+    # ``status`` names a field another page's dynamic-function or variant example
+    # computes, which is reported (as it should be in a real project)
+    "needs.derive_scope",
+]
 
 nitpicky = True
 nitpick_ignore = [
