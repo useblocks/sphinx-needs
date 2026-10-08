@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791456073881,
+  "lastUpdate": 1791461620203,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -23544,6 +23544,42 @@ window.BENCHMARK_DATA = {
             "value": 44.69626776,
             "unit": "s",
             "extra": "Commit: 1caba09c1683af4e04f22d27c0d45d7dc2f6af28\nBranch: master\nTime: 2026-10-08T12:39:59+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fa18714d226e8e0a50d07d7a88f0719a40da788a",
+          "message": "🐛 sphinx-test-reports: test-results and test-env generate real sections (#2148)\n\n## What\n\n`test-results` and `test-env` now return each suite / environment as a\nreal section,\nregistered the way the RST parser registers an authored heading\n(`names` + `note_implicit_target`, in one helper, `new_section`, in\n`directives/test_common.py`).\nEach one sits one level below the section the directive is written in,\nhas an id and a permalink, and is listed by `.. contents::` and the\nsidebar.\n\n## Why\n\nBoth directives built a `nodes.section` and then did `main_section +=\nsection` on a Python list,\nwhich splices the section's CHILDREN and drops the section.\nThe enclosing section got a second `<title>` per suite / environment,\nrendered at its own level\nwith its own permalink (`<h3>py35<a … href=\"#chapter-1-1-1\">`), no id,\noutside every TOC —\nthe structure #1959 draws — and a `test-results` / `test-env` written\ninside a list item\nfailed the HTML build (`AssertionError` in docutils' `_html_base.py`\n`visit_title`).\n\nBehaviour to know about, measured:\n- Text written after the directive in the same section now follows the\nlast generated section —\nin a PDF (LaTeX) it is part of it — so write the directive at the end of\nits section,\n  or give the text that follows a heading of its own.\n- **A `-W` build can fail** where a suite or environment is named like a\nheading on the same page:\nthe name is ambiguous then, and a `` `Name`_ `` reference to either is\ndocutils'\n`ERROR: Duplicate target name, cannot be used as a unique reference` (at\nmaster the suite was no target,\n  so the reference resolved to the heading).\n- With `sphinx.ext.autosectionlabel`, the generated sections are\nlabelled like authored ones, so such a name\nis a duplicate label — across the whole project without\n`autosectionlabel_prefix_document` — and a `:ref:`\nto it may land on the generated section (autosectionlabel keeps the last\none read).\nWays out: rename the heading — under `sphinx.ext.autosectionlabel` the\nonly way out on one page;\nwithout autosectionlabel an explicit label on the heading, referenced\ninstead of its title, also clears the error,\nand `autosectionlabel_prefix_document` clears a clash with a heading on\nanother page.\n- Two suites named alike on one page are two sections with distinct ids;\ndocutils reports that duplicate at\nINFO level, which leaves `-W` green only while nothing references the\nname.\n- A same-page `` `Suite`_ `` reference resolves to the generated\nsection; a MyST host page gives the same structure.\n- A directive inside a list item makes sections inside that item, which\n`.. contents::` and the sidebar do not list.\n\n## ubCode parity\n\nubCode (useblocks/ubcode#3924) already renders both directives as real\nnested sections with ids\n(`rust/ubc_ast/src/sphinx_needs/test_table_handler.rs:8-19` at\n`e9fe0b2b16`); the two tools' page structure now agrees.\nA same-page `` `Suite`_ `` reference resolves to a generated section in\nboth tools.\nA MyST `#fragment` link reaches a generated section in neither.\nOne difference remains, on the ubCode side: the oracle now registers an\nautosectionlabel label for a generated\nsection, and ubCode does not (`test_table_handler.rs:599-605`) — and a\nduplicate's anchor is spelled differently\n(ubCode `pytest62-1`, here `id1`).\n\n## Tests\n\n`tests/test_sections.py` (11 tests, three new `doc_test` projects): the\nsuites as children of a\nlevel-3 section with ids and `<h4>` headings, the sidebar toc, and a\nsame-page reference to a mixed-case\nsuite title with no error; each of `test-env`'s four forms (a site that\nsplices again fails only its own row);\nthe list-item build; duplicate names; `.. contents::` refids;\nbyte-identical section bodies against master's HTML;\nautosectionlabel. All red on master but the body control.\n\nCloses #1959",
+          "timestamp": "2026-10-08T14:12:35+02:00",
+          "tree_id": "a6c0bf3eae7f36cb298fae462632285cb17d94da",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/fa18714d226e8e0a50d07d7a88f0719a40da788a"
+        },
+        "date": 1791461612896,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.06335775100001229,
+            "unit": "s",
+            "extra": "Commit: fa18714d226e8e0a50d07d7a88f0719a40da788a\nBranch: master\nTime: 2026-10-08T14:12:35+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 36.147593056000005,
+            "unit": "s",
+            "extra": "Commit: fa18714d226e8e0a50d07d7a88f0719a40da788a\nBranch: master\nTime: 2026-10-08T14:12:35+02:00"
           }
         ]
       }
