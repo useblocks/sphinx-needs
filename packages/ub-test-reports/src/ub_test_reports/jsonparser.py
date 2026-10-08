@@ -52,7 +52,8 @@ class JsonParser:
 
         self.json_data = []
         try:
-            with open(self.json_path, encoding="utf-8") as jfile:
+            # UTF-8 with or without a byte-order mark, as `test-env` reads its file.
+            with open(self.json_path, encoding="utf-8-sig") as jfile:
                 self.json_data = json.load(jfile)
         except UnicodeDecodeError as error:
             raise ReportReadError(
@@ -126,7 +127,14 @@ class JsonParser:
                 f"(got {kind})"
             )
 
-        for testsuite_data in self.json_data:
+        for index, testsuite_data in enumerate(self.json_data):
+            if not isinstance(testsuite_data, dict):
+                kind = _JSON_KINDS.get(
+                    type(testsuite_data), type(testsuite_data).__name__
+                )
+                raise ReportReadError(
+                    f"{self.json_path}: test suite {index} is not an object (got {kind})"
+                )
             complete_testsuite = parse_testsuite(testsuite_data)
             result_data.append(complete_testsuite)
 
