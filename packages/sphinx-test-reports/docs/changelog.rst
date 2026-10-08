@@ -205,6 +205,14 @@ Changed
   ``:env:`` / ``:data:`` name the file lacks (``env_not_present`` /
   ``env_key_not_present``), each located; ``InvalidJsonFile`` and ``JsonFileNotFound`` are
   no longer raised by it (the classes stay, deriving from ``Exception`` now).
+
+  ``test-file``, ``test-suite``, ``test-case`` and ``test-report`` join the family for the
+  options they refuse (``option_missing``, ``option_invalid``, ``suite_not_found``,
+  ``case_not_found``), an ID their ``:auto_suites:`` / ``:auto_cases:`` expansion would
+  create twice (``duplicate_id``) and a need sphinx-needs refuses (``need``), each located;
+  ``TestReportFileNotSetError``, ``TestReportInvalidOptionError`` and
+  ``TestReportIncompleteConfigurationError`` are no longer raised by them (the classes
+  stay).
   `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
   `#2156 <https://github.com/useblocks/sphinx-needs/pull/2156>`__
 
@@ -302,12 +310,14 @@ Fixed
   build with a bare ``Exception``: the first need is kept, the later one is left out (a
   suite with its cases and nested suites), and a ``test_reports.duplicate_id`` warning
   names the cause -- ``raise tr_suite_id_length``, ``raise tr_case_id_length, or switch
-  tr_deterministic_case_ids on``, or that the report holds two suites of one name or one
-  case twice. Case IDs are now checked across the whole report, not one suite: with
-  ``tr_deterministic_case_ids``, the same case in two suites of one report is one need and
-  a warning, where sphinx-needs stopped the build with ``A need with ID '…' already
-  exists``. A report two of whose suites collide at the default ``tr_suite_id_length``
-  builds now, without the later of the two.
+  tr_deterministic_case_ids on``, that the report holds two suites of one name or one
+  case twice, or (with ``tr_deterministic_case_ids``) that it holds one case in two suites
+  or two cases whose deterministic IDs coincide (``a.C.t`` and ``b.C.t``: a deterministic
+  ID keeps only the last part of the classname). Case IDs are now checked across the
+  whole report, not one suite: with ``tr_deterministic_case_ids``, the same case in two
+  suites of one report is one need and a warning, where sphinx-needs stopped the build
+  with ``A need with ID '…' already exists``. A report two of whose suites collide at the
+  default ``tr_suite_id_length`` builds now, without the later of the two.
   `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
   `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
 
@@ -315,9 +325,13 @@ Fixed
   hand-written ``test-case`` for a case ``:auto_cases:`` created already under
   ``tr_deterministic_case_ids``, one report expanded by two ``test-file`` directives, a
   ``need`` written before the ``test-file`` with one of its IDs -- is a located
-  ``test_reports.need`` warning on the later directive and an error box, where the
-  ``InvalidNeedException`` stopped the build. When the ID was generated, the warning adds
-  ``give the directive an :id: of its own``.
+  ``test_reports.need`` warning on the later directive (``Need could not be created: A
+  need with ID '…' already exists.``, as sphinx-needs' own ``need`` directive says it) and
+  an error box, where the ``InvalidNeedException`` stopped the build. When the ID was
+  generated, the warning adds ``give the directive an :id: of its own``.
+  ``test-report`` on a report it cannot find or read warns once and generates nothing
+  (before: it warned, and the ``test-file`` it generated warned again, at a line the page
+  does not have).
   `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
   `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
 
@@ -325,8 +339,10 @@ Fixed
   docutils lowercases option names, so ``Owner`` is registered as ``:owner:`` and the
   directive's value lands in the ``Owner`` field (``:Owner:`` works too). Before, both
   spellings were ``unknown option: "owner"``. The build says, at its start, how to write
-  such a name; two names that differ only in case are a configuration error. The JUnit
-  ``<property name="Owner">`` route is unchanged.
+  such a name; two names that differ only in case are a configuration error, and so is a
+  name the directives have as an option of their own (``Status`` would alias ``:status:``;
+  ``status`` failed with ``TypeError: add_need() got multiple values for keyword argument
+  'status'``). The JUnit ``<property name="Owner">`` route is unchanged.
   `#2115 <https://github.com/useblocks/sphinx-needs/issues/2115>`__,
   `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
 

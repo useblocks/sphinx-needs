@@ -28,6 +28,9 @@ The following options can be set:
   Must be used together with ``auto_suites``!
   Alone it is a ``test_reports.option_invalid`` warning: the ``test-file``'s own need is created, nothing is expanded.
 
+A directive with two mistakes reports the first; fix it and the next one appears on the following build
+(docutils' own rule for a directive's options; ubCode reports all of them at once).
+
 A ``:file:`` that is missing or names a report that does not exist or cannot be read,
 and a ``:collapse:`` that is neither true nor false,
 is a ``test_reports.*`` warning located on the directive and an error box where the need would have been;
@@ -75,9 +78,12 @@ with a ``test_reports.duplicate_id`` warning that names the cause and what to ch
   raise ``tr_suite_id_length``;
 * two cases whose IDs share the first :ref:`tr_case_id_length` hex digits:
   raise ``tr_case_id_length``, or switch :ref:`tr_deterministic_case_ids` on;
-* the report holds two suites of one name under one parent, or one case (``classname`` and ``name``) twice --
-  in one suite, or with :ref:`tr_deterministic_case_ids` in two suites, since a deterministic ID does not depend on the suite:
-  no length helps, only the first is documented.
+* the report holds two suites of one name under one parent, or one case (``classname`` and ``name``) twice in one suite:
+  no length helps, only the first is documented;
+* with :ref:`tr_deterministic_case_ids`, the report holds one case in two suites (a deterministic ID does not depend on the suite):
+  switch ``tr_deterministic_case_ids`` off to keep them apart, or only the first is documented;
+* with :ref:`tr_deterministic_case_ids`, two cases whose classnames end alike (``a.C`` and ``b.C``, both with a case ``t``):
+  a deterministic ID keeps only the last part of the classname, so only the first is documented.
 
 An ID that another directive already holds (a ``need`` written before the ``test-file``,
 or the same report expanded by a second ``test-file`` with :ref:`tr_deterministic_case_ids`)
