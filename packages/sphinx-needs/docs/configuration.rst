@@ -2223,8 +2223,8 @@ If ``True``, :ref:`needimport` parses each imported need's content in the markup
 :ref:`parse_by_doctype <needimport_parse_by_doctype>` option overrides it for one import.
 Default: ``False``.
 
-A ``doctype`` this project cannot parse is reported once per directive as a
-``needs.import_doctype`` warning, and that content is parsed in the page's markup, as
+A ``doctype`` this project cannot parse is reported once per directive per ``doctype``
+as a ``needs.import_doctype`` warning, and that content is parsed in the page's markup, as
 before. To keep a ``-W`` build green while you register the suffix, add
 ``"needs.import_doctype"`` to ``suppress_warnings``.
 

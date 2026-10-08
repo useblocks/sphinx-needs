@@ -143,7 +143,8 @@ Improvements
   and reStructuredText as reStructuredText in a MyST page, where both were parsed in the
   importing page's markup (and still are by default). A ``doctype`` the project cannot
   parse falls back to the page's markup with one ``needs.import_doctype`` warning per
-  directive; a need rendered through a ``template`` is parsed in the page's markup.
+  directive per ``doctype``; a need rendered through a ``template`` is parsed in the
+  page's markup.
 
 Breaking changes
 ................

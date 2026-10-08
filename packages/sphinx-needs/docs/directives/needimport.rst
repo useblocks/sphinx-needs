@@ -154,31 +154,41 @@ parse_by_doctype
 
 Parses each imported need's content in the markup its ``doctype`` names, rather than in
 the markup of the page the ``needimport`` is written in. A ``needs.json`` written by
-Sphinx-Needs records, for every need, the suffix of the page it was written in, so
-Markdown exported from a MyST page renders as Markdown in a reStructuredText page, and
-reStructuredText exported from a reStructuredText page renders as such in a MyST page.
-The suffix must be one this project's ``source_suffix`` maps to a reStructuredText or a
-MyST parser (as for :ref:`content written in another markup <api_content_markup>`); a
-need with no ``doctype``, or an empty one, is parsed in the page's markup. Either way, the
-need keeps the ``doctype`` of its record, and the warnings raised while parsing its content
-name the directive's line plus the line of the content they are on.
+Sphinx-Needs records the suffix of the page a need was written in (or the markup its content
+declared), omitting ``.rst`` under :ref:`needs_json_remove_defaults`, where the file's
+schema restores it; so Markdown exported from a MyST page renders as Markdown in a
+reStructuredText page, and reStructuredText exported from a reStructuredText page renders
+as such in a MyST page. The suffix must be one this project's ``source_suffix`` maps to a
+reStructuredText or a MyST parser (as for
+:ref:`content written in another markup <api_content_markup>`); a need with no
+``doctype``, or an empty one, is parsed in the page's markup (and one with none records
+the page's suffix, as any need that declares none).
+
+A need whose content is parsed in its ``doctype`` keeps that ``doctype``, and the warnings
+raised while parsing it name the directive's line plus the line of the content they are
+on. Content that stays in the page's markup (no or an empty ``doctype``, one this project
+cannot parse, a templated need) is reported as before -- in a MyST page at about twice the
+directive's line (:issue:`2144`).
 
 ``:parse_by_doctype:`` alone (or ``true``) turns this on for one import, and
 ``:parse_by_doctype: false`` turns it off; without the option,
 :ref:`needs_import_parse_by_doctype` decides.
 
-A need rendered through a template -- its record's ``template``, or the ``:template:``
-option -- is parsed in the page's markup, template and content together: the template is a
-file of the importing project, written in its pages' markup. ``pre_template`` and
-``post_template`` are always parsed in the page's markup. Content with ``jinja_content``
-is rendered by Jinja first, and then parsed in its ``doctype``.
+A need rendered through a template -- its record's ``template``, the ``:template:``
+option, or a template the project gives through :ref:`needs_fields` (a ``default``, or any
+``predicates``) -- is parsed in the page's markup, template and content together: the
+template is a file of the importing project, written in its pages' markup. A predicate is
+decided only when the need is created, so a project with any ``template`` predicate parses
+every imported need in the page's markup, also one that no predicate matches.
+``pre_template`` and ``post_template`` are always parsed in the page's markup. Content with
+``jinja_content`` is rendered by Jinja first, and then parsed in its ``doctype``.
 
 If this project cannot parse a ``doctype`` -- ``.md`` without myst-parser, or a suffix
 that is not in ``source_suffix`` -- the content of those needs is parsed in the page's
 markup and they are imported as before, and one ``needs.import_doctype`` warning per
-directive names that ``doctype`` (none if none of those needs has content). Register the
-suffix, set ``:parse_by_doctype: false``, or add ``"needs.import_doctype"`` to
-``suppress_warnings``.
+directive names that ``doctype`` (none if none of those needs has content, or all of them
+are hidden). Register the suffix, set ``:parse_by_doctype: false``, or add
+``"needs.import_doctype"`` to ``suppress_warnings``.
 
 The imported content is not restricted: what :ref:`api_content_markup` says content from
 another markup should not contain holds here too.
