@@ -326,9 +326,8 @@ class SourceAnalyse:
         self,
         text: str,
     ) -> Generator[tuple[str, list[str], int, int, int], None, None]:
-        lines = text.splitlines()
         row_offset = 0
-        for line in lines:
+        for line in text.split(UNIX_NEWLINE):
             for marker in self.analyse_config.need_id_refs_config.markers:
                 marker_idx = line.find(marker)
                 if marker_idx == -1:
@@ -339,6 +338,8 @@ class SourceAnalyse:
                     # The end of a one-line block comment, not an id.
                     markered_text = markered_text[:-2].rstrip()
                 need_ids = markered_text.replace(",", " ").split()
+                if not need_ids:
+                    continue
                 start_column = (
                     marker_idx
                     + len(marker)
@@ -441,7 +442,7 @@ class SourceAnalyse:
         if first_row is None:
             first_row = src_comment.node.start_point.row
         # every line counts as terminated, the last one too
-        lines = [f"{line}{UNIX_NEWLINE}" for line in text.splitlines()]
+        lines = [f"{line}{UNIX_NEWLINE}" for line in text.split(UNIX_NEWLINE)]
         row_offset = 0
 
         # Only a Python docstring can hold docstring tags; a ``#`` comment never does.
