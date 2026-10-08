@@ -189,17 +189,17 @@ New and Improved
 Changed
 .......
 
-- 👌 Every failure a user can cause in ``test-file``, ``test-suite``, ``test-case``,
-  ``test-results`` and ``test-env`` is now a Sphinx warning of the ``test_reports.*``
-  family (located on the directive; ``suppress_warnings`` takes ``test_reports`` or
-  ``test_reports.<subtype>``) and an error box in the page, and the build goes on. Before,
-  most of them stopped the build with an uncaught exception. Projects building with ``-W``
-  see no difference except the type; projects without it get a page where they got a
-  traceback. The exceptions ``TestReportFileNotSetError``, ``TestReportInvalidOptionError``,
-  ``TestReportIncompleteConfigurationError``, ``InvalidJsonFile``, ``JsonFileNotFound`` and
-  ub-test-reports' ``JUnitFileMissing`` / ``JsonFileMissing`` are no longer raised by the
-  directives (the classes stay; the last two derive from ``Exception`` now, not
-  ``BaseException``). :ref:`tr_warnings` lists the family.
+- 👌 A report that ``test-results``, ``test-file``, ``test-suite`` or ``test-case`` cannot
+  find or cannot read is now a Sphinx warning of the new ``test_reports.*`` family
+  (``test_reports.report_missing`` / ``test_reports.report_unreadable``, located on the
+  directive -- in the file it is written in, an included one too; ``suppress_warnings``
+  takes ``test_reports`` or ``test_reports.<subtype>``) and an error box in the page, and
+  the build goes on. Before, these stopped the build with an uncaught exception: a build
+  with ``-W`` that stopped on an exception now fails on a warning instead, and one without
+  it gets a page where it got a traceback. One input that rendered silently before now
+  warns: an option line under ``test-results`` in a MyST page (MyST's own ``Unknown option
+  keys`` warning). ub-test-reports' ``JUnitFileMissing`` / ``JsonFileMissing`` derive from
+  ``Exception`` now, not ``BaseException``. :ref:`tr_warnings` lists the family.
   `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
   `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
 
@@ -215,16 +215,20 @@ Fixed
   `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
   `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
 
-- 🐛 An option written under ``test-results`` -- ``:class: foo`` -- is docutils'
-  ``unknown option: "class"`` directive error now. The directive declared no options, so
-  docutils folded the option line into the report path, and the build ended on a file
-  "not found" whose name had ``:class: foo`` on a second line.
+- 🐛 An option written under ``test-results`` -- ``:class: foo`` -- is refused now: in
+  reStructuredText docutils reports it as an ``unknown option: "class"`` directive error;
+  in a MyST page MyST warns (``Unknown option keys``) and renders the table. The directive
+  declared no options, so docutils folded the option line into the report path, and the
+  build ended on a file "not found" whose name had ``:class: foo`` on a second line.
   `#2138 <https://github.com/useblocks/sphinx-needs/issues/2138>`__,
   `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
 
 - 🐛 ``test-suite`` and ``test-case`` on a report that does not exist no longer fail with
   ``TypeError: 'NoneType' object is not iterable``, and none of the three need directives
-  stops the build on a report it cannot read: each warns once, located on the directive
+  stops the build on a report it cannot read -- a JUnit XML report, or a JSON one that is
+  not valid JSON, not UTF-8 or not a list of test suites (``json.decoder.JSONDecodeError``
+  and ``ValueError: invalid literal for int() with base 10: 'unknown'`` before): each warns
+  once, located on the directive
   (``test_reports.report_missing`` / ``test_reports.report_unreadable``), shows the error
   box ``test-file`` already showed, and creates no need. ``test-file``'s missing-report
   warning is typed now and reads ``Test file not found: <path>``, the box's text (it was

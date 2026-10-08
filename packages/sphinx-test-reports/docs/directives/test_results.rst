@@ -26,7 +26,8 @@ or it is a ``.json`` file, which ``test-results`` does not read --
 is a ``test_reports.report_missing`` / ``test_reports.report_unreadable`` warning located on the directive,
 and an error box with the same text takes the place of the sections; the build goes on (see :ref:`tr_warnings`).
 The directive takes no options:
-an option written under it is docutils' ``unknown option`` error, as for any directive.
+in reStructuredText an option written under it is docutils' ``unknown option`` error, as for any directive;
+in a MyST page MyST warns (``Unknown option keys``) and renders the table.
 
 .. note::
 

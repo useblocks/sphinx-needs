@@ -32,15 +32,27 @@ Fixed
   `#2050 <https://github.com/useblocks/sphinx-needs/issues/2050>`__,
   `#2149 <https://github.com/useblocks/sphinx-needs/pull/2149>`__
 
-- 🐛 The JUnit parser raises one typed error, ``ReportReadError`` (an ``Exception``), for a
+- 🐛 The JUnit parser raises one typed error, ``ReportReadError`` (an ``Exception``, in
+  ``ub_test_reports.errors`` and importable from ``ub_test_reports.junitparser``), for a
   report it cannot read: malformed XML (the message is the path, lxml's line and column,
   then lxml's sentence), bytes that are not valid in the report's encoding, and a numeric
   attribute that is not a number (``<testsuite> attribute tests="abc" is not an integer``,
   ``<testcase> attribute time="1,5" is not a number`` -- the report is refused as a whole).
   These escaped as lxml's ``XMLSyntaxError`` / ``OSError`` and a bare ``ValueError``. The
   ``test-reports`` converter still exits 1 on such a report; its ``error:`` line now reads
-  ``error: <path>: <path> (line 1, column 34): Opening and ending tag mismatch: …`` for
-  malformed XML (it was lxml's sentence with lxml's ``(<file>, line 1)`` suffix).
+  ``error: <path> (line 1, column 34): Opening and ending tag mismatch: testcase line 1 and
+  testsuite`` for malformed XML (it was lxml's sentence with lxml's ``(<file>, line 1)``
+  suffix), the path and the position each said once.
+  `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
+  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+
+- 🐛 The JSON parser raises the same ``ReportReadError`` for a report that is not valid
+  JSON (``<path> (line 1, column 11): Expecting value``), not UTF-8 (``<path> is not valid
+  UTF-8 (invalid continuation byte at byte 14)``), or whose top level is not a list of test
+  suites (``<path>: the JSON report is not a list of test suites (got an object)``). The
+  first two escaped as ``json.JSONDecodeError`` / ``UnicodeDecodeError``; the third was
+  walked as if it were suites, every field its default. The ``test-reports`` converter
+  reads JUnit XML only and is unchanged by this.
   `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
   `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
 
