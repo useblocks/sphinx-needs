@@ -262,7 +262,7 @@ Fixed
   docutils reports that duplicate at INFO level, which leaves ``-W`` green only while
   nothing references the name.
   `#1959 <https://github.com/useblocks/sphinx-needs/issues/1959>`__,
-  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+  `#2148 <https://github.com/useblocks/sphinx-needs/pull/2148>`__
 
 What the move costs, stated rather than left to the CI diff
 ............................................................
