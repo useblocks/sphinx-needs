@@ -58,8 +58,8 @@ class EnvReportDirective(Directive):
         #: A value naming none (``:env: ,``) shows none.
         self.req_env_list = _comma_list(self.options.get("env"))
         #: The variables ``:data:`` names, or ``None``: every variable. A value naming none
-        #: (``:data: ,``) is the same as no ``:data:``.
-        self.data_option_list = _comma_list(self.options.get("data")) or None
+        #: (``:data: ,``) shows none -- as master did and ubCode does, and as ``:env: ,``.
+        self.data_option_list = _comma_list(self.options.get("data"))
 
         self.header = ("Variable", "Data")
         self.colwidths = (1, 1)
@@ -112,11 +112,15 @@ class EnvReportDirective(Directive):
                         f"environment '{name}' is not present in JSON file",
                     )
 
-        # An environment that is not an object is skipped, in every branch.
-        shown: list[tuple[str, dict[str, Any]]] = []
+        # An environment that is not an object is skipped -- except under `:raw:` without
+        # `:data:`, where its JSON block is shown, without a warning: master showed it
+        # (it did not crash there) and ubCode keeps that rendering (its `render_env`).
+        shown: list[tuple[str, Any]] = []
         for name in selected:
             variables = results[name]
-            if isinstance(variables, dict):
+            if isinstance(variables, dict) or (
+                "raw" in self.options and self.data_option_list is None
+            ):
                 shown.append((name, variables))
             else:
                 warn(
@@ -163,7 +167,7 @@ class EnvReportDirective(Directive):
         warn(self, subtype, message)
         return [error_node(message)]
 
-    def _raw_section(self, enviro: str, variables: dict[str, Any]) -> nodes.section:
+    def _raw_section(self, enviro: str, variables: Any) -> nodes.section:
         section = new_section(self.state, enviro)
         results_string = json.dumps(variables, indent=4)
         code_block = nodes.literal_block(results_string, results_string)
