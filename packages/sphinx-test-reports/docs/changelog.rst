@@ -201,7 +201,7 @@ Changed
   keys`` warning). ub-test-reports' ``JUnitFileMissing`` / ``JsonFileMissing`` derive from
   ``Exception`` now, not ``BaseException``. :ref:`tr_warnings` lists the family.
   `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
-  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+  `#2156 <https://github.com/useblocks/sphinx-needs/pull/2156>`__
 
 Fixed
 .....
@@ -213,7 +213,7 @@ Fixed
   box in place of the sections. A ``.json`` argument is refused by name ("test-results
   reads JUnit XML reports; … is a JSON file") before lxml blames the wrong thing.
   `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
-  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+  `#2156 <https://github.com/useblocks/sphinx-needs/pull/2156>`__
 
 - 🐛 An option written under ``test-results`` -- ``:class: foo`` -- is refused now: in
   reStructuredText docutils reports it as an ``unknown option: "class"`` directive error;
@@ -221,7 +221,7 @@ Fixed
   declared no options, so docutils folded the option line into the report path, and the
   build ended on a file "not found" whose name had ``:class: foo`` on a second line.
   `#2138 <https://github.com/useblocks/sphinx-needs/issues/2138>`__,
-  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+  `#2156 <https://github.com/useblocks/sphinx-needs/pull/2156>`__
 
 - 🐛 ``test-suite`` and ``test-case`` on a report that does not exist no longer fail with
   ``TypeError: 'NoneType' object is not iterable``, and none of the three need directives
@@ -236,7 +236,7 @@ Fixed
   ``Given test_file path invalid: <path> in <document> (Line: <n>)``, untyped, with its
   location inside the message).
   `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
-  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+  `#2156 <https://github.com/useblocks/sphinx-needs/pull/2156>`__
 
 - 🐛 ``tr_link`` no longer fails with ``'NoneType' object has no attribute 'split'`` on the
   usage the documentation shows, ``:links: [[tr_link('classname', 'title')]]``: every need

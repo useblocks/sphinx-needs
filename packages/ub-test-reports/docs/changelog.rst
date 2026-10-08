@@ -44,7 +44,7 @@ Fixed
   testsuite`` for malformed XML (it was lxml's sentence with lxml's ``(<file>, line 1)``
   suffix), the path and the position each said once.
   `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
-  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+  `#2156 <https://github.com/useblocks/sphinx-needs/pull/2156>`__
 
 - 🐛 The JSON parser raises the same ``ReportReadError`` for a report that is not valid
   JSON (``<path> (line 1, column 11): Expecting value``), not UTF-8 (``<path> is not valid
@@ -57,21 +57,21 @@ Fixed
   BOM``), as ``test-env`` reads its file. The ``test-reports`` converter reads JUnit XML
   only and is unchanged by this.
   `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
-  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+  `#2156 <https://github.com/useblocks/sphinx-needs/pull/2156>`__
 
 - 🐛 An empty ``<testsuites/>`` is an empty report: the parser returns no suites, where it
   raised ``AttributeError: no such child: testsuite``, and ``test-reports build needs``
   writes an empty ``needs.json`` with its "no test cases found" warning and exits 0, where
   it exited 1.
   `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
-  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+  `#2156 <https://github.com/useblocks/sphinx-needs/pull/2156>`__
 
 - 🐛 ``JUnitFileMissing`` and ``JsonFileMissing`` derive from ``Exception``, not
   ``BaseException``, so a caller's ``except Exception`` catches a missing report. The
   converter checks the path itself first and prints ``error: no such file: <path>`` as
   before.
   `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
-  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+  `#2156 <https://github.com/useblocks/sphinx-needs/pull/2156>`__
 
 .. _`release:1.0.0`:
 
