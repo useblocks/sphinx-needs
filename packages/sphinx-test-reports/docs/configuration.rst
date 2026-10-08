@@ -221,6 +221,12 @@ These options also have to be registered in either needs_extra_options or needs_
    # Define as regular options
    needs_extra_options = ['more_info', 'priority']
 
+Write them on a directive in lower case: docutils lowercases an option's name before it looks it up,
+so a name configured as ``Owner`` is written ``:owner:`` (``:Owner:`` works too, being read the same way),
+and the need field keeps the configured spelling, ``Owner``.
+The build says so at its start, once per such name.
+Two names that differ only in case cannot both be written on a directive, and are a configuration error.
+
 You can then use these options in your directives:
 
 .. code-block:: rst

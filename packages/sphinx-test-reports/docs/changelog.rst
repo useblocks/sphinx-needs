@@ -285,6 +285,51 @@ Fixed
   `#2139 <https://github.com/useblocks/sphinx-needs/issues/2139>`__,
   `#2161 <https://github.com/useblocks/sphinx-needs/pull/2161>`__
 
+- 🐛 ``test-file``, ``test-suite`` and ``test-case`` no longer stop the build on an option
+  they refuse: a missing ``:file:`` (``TestReportFileNotSetError``), a ``:collapse:`` that
+  is neither true nor false (a bare ``Exception``), a missing ``:suite:`` or ``:case:`` /
+  ``:classname:``, and a ``:suite:`` or ``:case:`` that selects nothing
+  (``TestReportInvalidOptionError``). Each is a located ``test_reports.option_missing`` /
+  ``option_invalid`` / ``suite_not_found`` / ``case_not_found`` warning with the same
+  text, and an error box; no need is created. ``:auto_cases:`` without ``:auto_suites:``
+  is an ``option_invalid`` warning after the ``test-file``'s need is created (it raised
+  ``TestReportIncompleteConfigurationError`` there), and nothing is expanded. The three
+  exception classes stay defined for ``except`` clauses.
+  `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
+  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+
+- 🐛 A duplicate ID in an ``:auto_suites:`` / ``:auto_cases:`` expansion no longer stops the
+  build with a bare ``Exception``: the first need is kept, the later one is left out (a
+  suite with its cases and nested suites), and a ``test_reports.duplicate_id`` warning
+  names the cause -- ``raise tr_suite_id_length``, ``raise tr_case_id_length, or switch
+  tr_deterministic_case_ids on``, or that the report holds two suites of one name or one
+  case twice. Case IDs are now checked across the whole report, not one suite: with
+  ``tr_deterministic_case_ids``, the same case in two suites of one report is one need and
+  a warning, where sphinx-needs stopped the build with ``A need with ID '…' already
+  exists``. A ``tests/doc_test/utils/many_testsuites.xml``-shaped report builds at the
+  default ``tr_suite_id_length`` now, without one of its suites.
+  `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
+  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+
+- 🐛 A need that sphinx-needs refuses -- typically an ID another directive holds: a
+  hand-written ``test-case`` for a case ``:auto_cases:`` created already under
+  ``tr_deterministic_case_ids``, one report expanded by two ``test-file`` directives, a
+  ``need`` written before the ``test-file`` with one of its IDs -- is a located
+  ``test_reports.need`` warning on the later directive and an error box, where the
+  ``InvalidNeedException`` stopped the build. When the ID was generated, the warning adds
+  ``give the directive an :id: of its own``.
+  `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
+  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+
+- 👌 A ``tr_extra_options`` name with an upper-case letter can be written on a directive:
+  docutils lowercases option names, so ``Owner`` is registered as ``:owner:`` and the
+  directive's value lands in the ``Owner`` field (``:Owner:`` works too). Before, both
+  spellings were ``unknown option: "owner"``. The build says, at its start, how to write
+  such a name; two names that differ only in case are a configuration error. The JUnit
+  ``<property name="Owner">`` route is unchanged.
+  `#2115 <https://github.com/useblocks/sphinx-needs/issues/2115>`__,
+  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+
 - 🐛 ``tr_link`` no longer fails with ``'NoneType' object has no attribute 'split'`` on the
   usage the documentation shows, ``:links: [[tr_link('classname', 'title')]]``: every need
   carries the test fields, and on a need that is not a test-case the compared field --
