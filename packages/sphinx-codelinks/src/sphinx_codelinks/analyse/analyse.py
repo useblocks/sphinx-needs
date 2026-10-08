@@ -93,7 +93,8 @@ def _scanned_texts(
     """What the one-line and reference extractors scan of a comment.
 
     Each text comes with the 0-based row and the column, in characters, at which it
-    starts. A docstring is scanned as its content, without the quotes. The rows a
+    starts. A docstring is scanned as its content, without the quotes; a block
+    comment without its closing ``*/``, which is not marker text. The rows a
     multi-line need claims are blanked.
     """
     node = src_comment.node
@@ -101,6 +102,8 @@ def _scanned_texts(
         texts = _docstring_contents(node, src_comment.column)
     else:
         text = node.text.decode("utf-8") if node.text else ""
+        if text.startswith("/*") and text.endswith("*/"):
+            text = text[:-2]
         texts = [(text, node.start_point.row, src_comment.column)]
     if claimed_rows:
         # a block's lines are its own: no one-line need and no reference in them
@@ -437,11 +440,9 @@ class SourceAnalyse:
     ) -> Generator[tuple[dict[str, str | list[str] | int], int]]:
         if first_row is None:
             first_row = src_comment.node.start_point.row
-        lines = text.splitlines(keepends=True)
+        # every line counts as terminated, the last one too
+        lines = [f"{line}{UNIX_NEWLINE}" for line in text.splitlines()]
         row_offset = 0
-        if len(lines) == 1:
-            # single line comment has no newline char in the extracted comment
-            lines[0] = f"{lines[0]}{UNIX_NEWLINE}"
 
         # Only a Python docstring can hold docstring tags; a ``#`` comment never does.
         in_docstring = (
