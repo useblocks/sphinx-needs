@@ -85,7 +85,8 @@ Improvements
   and the dead-link flags ``has_dead_links`` and ``has_forbidden_dead_links``,
   which are not in ubCode's vocabulary (a condition naming one is reported there).
   Removed on ubCode's side by its own phase 1: a copy of an empty back link list (``[]`` here),
-  and an authored array field that is not computed (on a cycle, or whose call fails), which keeps its written items here.
+  and an authored array field that is not computed (on a cycle, or whose result the field cannot hold),
+  which keeps its written items here.
   Not evaluated by ubCode at all: the ``filter`` arguments of the built-in functions.
   The notice warning ``needs.derive_unresolved`` of the unreleased :pr:`2080`, which reported such reads,
   is gone, and a ``suppress_warnings`` entry naming it is a no-op.
