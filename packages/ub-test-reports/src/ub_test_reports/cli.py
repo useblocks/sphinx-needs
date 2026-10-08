@@ -529,7 +529,11 @@ def _build_needs(arguments: argparse.Namespace) -> int:
             # untyped to mypy; nothing to fix from this side.
             parsed = JUnitParser(str(path)).parse()
         except Exception as error:
-            print(f"error: {path}: {error}", file=sys.stderr)
+            # The reader's own messages lead with the path; say it once.
+            text = str(error)
+            if not text.startswith(str(path)):
+                text = f"{path}: {text}"
+            print(f"error: {text}", file=sys.stderr)
             return 1
         _warn_about_empty_report(path, parsed)
         _warn_about_absent_source_lines(path, parsed)

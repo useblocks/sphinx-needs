@@ -12,7 +12,19 @@ import os
 from functools import reduce
 from typing import Any
 
+from ub_test_reports.errors import ReportReadError
 from ub_test_reports.results import normalize_result
+
+#: JSON's names for the types ``json.load`` returns, for a message about the file.
+_JSON_KINDS = {
+    dict: "an object",
+    list: "an array",
+    str: "a string",
+    int: "a number",
+    float: "a number",
+    bool: "a boolean",
+    type(None): "null",
+}
 
 
 def dict_get(root, items, default=None):
@@ -39,8 +51,19 @@ class JsonParser:
             raise JsonFileMissing(f"The given file does not exist: {self.json_path}")
 
         self.json_data = []
-        with open(self.json_path, encoding="utf-8") as jfile:
-            self.json_data = json.load(jfile)
+        try:
+            with open(self.json_path, encoding="utf-8") as jfile:
+                self.json_data = json.load(jfile)
+        except UnicodeDecodeError as error:
+            raise ReportReadError(
+                f"{self.json_path} is not valid UTF-8 "
+                f"({error.reason} at byte {error.start})"
+            ) from error
+        except json.JSONDecodeError as error:
+            raise ReportReadError(
+                f"{self.json_path} (line {error.lineno}, column {error.colno}): "
+                f"{error.msg}"
+            ) from error
 
         self.json_mapping = kwargs.get("json_mapping", {})
 
@@ -93,6 +116,15 @@ class JsonParser:
         # main flow starts here
 
         result_data = []
+
+        # A list of suites, or nothing is: walking anything else reads every field as
+        # its mapping's default.
+        if not isinstance(self.json_data, list):
+            kind = _JSON_KINDS.get(type(self.json_data), type(self.json_data).__name__)
+            raise ReportReadError(
+                f"{self.json_path}: the JSON report is not a list of test suites "
+                f"(got {kind})"
+            )
 
         for testsuite_data in self.json_data:
             complete_testsuite = parse_testsuite(testsuite_data)

@@ -6,7 +6,10 @@ import os
 
 from lxml import etree, objectify  # ty: ignore[unresolved-import]
 
+from ub_test_reports.errors import ReportReadError
 from ub_test_reports.results import normalize_result
+
+__all__ = ["JUnitFileMissing", "JUnitParser", "ReportReadError"]
 
 #: Attributes the JUnit/googletest dialects define themselves. Every *other*
 #: attribute is a ``RecordProperty`` value in attribute form: googletest wrote
@@ -160,13 +163,23 @@ class JUnitParser:
             self.junit_xml_doc = etree.parse(self.junit_xml_path)
         except etree.XMLSyntaxError as error:
             line, column = error.position
+            # lxml's sentence ends with the position ours leads with: said once.
+            message = error.msg
+            suffix = f", line {line}, column {column}"
+            if message.endswith(suffix):
+                message = message[: -len(suffix)]
             raise ReportReadError(
-                f"{self.junit_xml_path} (line {line}, column {column}): {error.msg}"
+                f"{self.junit_xml_path} (line {line}, column {column}): {message}"
             ) from error
         except OSError as error:
             # lxml reports bytes that are not valid in the document's encoding (and a
-            # path it cannot read, such as a directory) as an OSError naming the file.
-            raise ReportReadError(f"{self.junit_xml_path}: {error}") from error
+            # path it cannot read, such as a directory) as an OSError naming the file,
+            # `Error reading file '<path>': …`; ours names it once.
+            message = str(error)
+            prefix = f"Error reading file '{self.junit_xml_path}': "
+            if message.startswith(prefix):
+                message = message[len(prefix) :]
+            raise ReportReadError(f"{self.junit_xml_path}: {message}") from error
 
         self.junit_xml_string = etree.tostring(self.junit_xml_doc)
         self.junit_xml_object = objectify.fromstring(self.junit_xml_string)
@@ -332,13 +345,3 @@ class JUnitParser:
 
 class JUnitFileMissing(Exception):
     """The report path does not exist."""
-
-
-class ReportReadError(Exception):
-    """The report exists and cannot be read.
-
-    It is not well-formed XML (the message names the path, lxml's line and column, then
-    lxml's own sentence), its bytes are not valid in its encoding, or a numeric attribute
-    of a ``<testsuite>`` / ``<testcase>`` is not a number (the message names the element,
-    the attribute and the value). The message always starts with the path.
-    """
