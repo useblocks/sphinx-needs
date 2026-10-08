@@ -259,8 +259,9 @@ Fixed
   with a ``test_reports.env_shape`` warning and an error box; an environment that is not
   an object is skipped with an ``env_shape`` warning naming it, the others shown. Under
   ``:raw:`` without ``:data:`` such an environment is shown as its JSON block, without a
-  warning, as before. One input that rendered silently before now warns: an environment
-  whose value is ``[]`` (an empty section before).
+  warning, as before. Two inputs that rendered silently before now warn: an environment
+  whose value is ``[]`` (an empty section before), and a file whose top level is ``[]``
+  (nothing, before).
   `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
   `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
 
