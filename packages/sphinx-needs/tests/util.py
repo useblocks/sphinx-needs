@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 from xml.etree import ElementTree
 
+import myst_parser
 import pytest
 from sphinx.application import Sphinx
 from sphinx.util.parallel import parallel_available
@@ -149,3 +150,86 @@ def needs_by_id(app: Sphinx) -> dict[str, dict[str, Any]]:
     """The needs of the build's ``needs.json``, by id."""
     data = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf8"))
     return data["versions"][data["current_version"]]["needs"]
+
+
+# The bodies and helpers of the content-markup tests (``add_need(content=MarkupContent(...))``
+# and needimport's parse by ``doctype``): bodies the other parser renders visibly
+# differently, so parsing one with the wrong parser shows in the HTML.
+
+MYST_MAJOR = int(myst_parser.__version__.split(".")[0])
+"""myst-parser 5 logs its own warnings at ``(env.docname, line)``; 4 at
+``(document["source"], line)``, which Sphinx then reads as a docname."""
+
+
+RST_BODY = [
+    "Some *emphasis*, :ref:`host <hostlabel>`, :need:`REQ_HOST`.",
+    "",
+    ".. note:: An RST note.",
+    "",
+    ".. _inside_{cell}:",
+    "",
+    "A labelled paragraph.",
+    "",
+    ".. nosuchdirective::",
+    "",
+    ":nosuchrole:`x` and :ref:`nosuchlabel_{cell}`.",
+]
+"""A reStructuredText body; ``{cell}`` names the cell."""
+
+MYST_BODY = [
+    "Some *emphasis*, {ref}`host <hostlabel>`, {need}`REQ_HOST`, a [ref link][lnk].",
+    "",
+    "```{note}",
+    "A MyST note.",
+    "```",
+    "",
+    "(inside_{cell})=",
+    "A labelled paragraph.",
+    "",
+    "```{nosuchdirective}",
+    "```",
+    "",
+    "{nosuchrole}`x` and {ref}`nosuchlabel_{cell}`.",
+    "",
+    "```{note}",
+    "```",
+    "",
+    "[lnk]: https://example.com",
+]
+"""A MyST body; the empty ``note`` is an error docutils itself reports."""
+
+BODIES = {".rst": RST_BODY, ".md": MYST_BODY}
+
+
+def at(body: list[str], start: str) -> int:
+    """The 0-based offset of the first body line starting with ``start``."""
+    return next(i for i, line in enumerate(body) if line.startswith(start))
+
+
+def myst_logged(host: str, source: str, line: int) -> str:
+    """Where a warning myst-parser logs itself points, for content from ``source``.
+
+    Not the content's file: this version does not rewrite myst-parser's own locations.
+    myst-parser 5 logs the page being read, with the content's line; myst-parser 4 logs
+    ``document["source"]`` -- the content's file for the duration -- which Sphinx reads
+    as a docname and gives the ``.rst`` suffix (the documented first-slice defect).
+    """
+    if MYST_MAJOR >= 5:
+        return f"<srcdir>/{host}:{line}"
+    return f"<srcdir>/{source}.rst:{line}"
+
+
+def html(app: Sphinx, page: str) -> str:
+    return Path(app.outdir, page).read_text(encoding="utf-8")
+
+
+def need_content_html(app: Sphinx, page: str, need_id: str) -> str:
+    """The HTML of the content cell of the need ``need_id``."""
+    text = html(app, page)
+    start = text.index('<td class="need content"', text.index(f'id="{need_id}"'))
+    return text[start : text.index("</td>", start)]
+
+
+def line_of(page: list[str], text: str) -> int:
+    """The 1-based line of the first page line containing ``text``."""
+    return next(i for i, line in enumerate(page, 1) if text in line)
