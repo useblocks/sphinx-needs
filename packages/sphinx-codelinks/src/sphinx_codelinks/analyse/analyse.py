@@ -742,7 +742,8 @@ class SourceAnalyse:
         ``oneline_needs`` is sorted too, by row, then file, then column: ``src-trace``
         creates and renders the needs in its order, so of two markers with one id in
         one file the leftmost is the one created, and on one row the needs of two files
-        keep the file order they had before the column was a key.
+        keep the file order they had before the column was a key -- for a caller that
+        passes the files in discovery order, as every production caller does.
         """
         # The file component is the key discovery sorts the files by
         # (``SourceDiscover``), not the ``Path``: a ``Path`` compares by parts, so
