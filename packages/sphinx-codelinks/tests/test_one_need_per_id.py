@@ -434,8 +434,10 @@ def test_two_markers_on_one_row_with_one_id_the_leftmost_defines_it(
 ) -> None:
     """Two one-line needs on one row with one id: the leftmost is created and the other
     is skipped, on every row (#2150). It used to be whichever tree-sitter handed over
-    first, which differs between runs; fifteen rows make that visible in one build."""
-    rows = 15
+    first, which differs between runs but seldom on any one row: forty rows make a
+    wrong order likelier in one build, and ``test_analyse_order`` pins the order of
+    ``oneline_needs`` -- the order this directive creates needs in -- over twenty runs."""
+    rows = 40
     impl = "".join(
         f"/* @left {i}, IMPL_D{i}, impl */ /* @right {i}, IMPL_D{i}, impl */\n"
         for i in range(rows)
