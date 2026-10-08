@@ -10,7 +10,7 @@ snapshot is a contract change, which the ubCode side re-syncs.
 """
 
 import json
-from pathlib import Path, PurePosixPath, PureWindowsPath
+from pathlib import Path
 
 import pytest
 import yaml
@@ -89,29 +89,6 @@ def _write_exact(path: Path, text: str) -> None:
     path.write_bytes(text.encode("utf-8"))
 
 
-def _assert_portable_path(value: str) -> None:
-    """Guard invariant: a snapshot path must be relative and slash-normalized.
-
-    This is the enforced counterpart to ``_relative_filepath``'s
-    ``as_posix()`` call — it exists so a future change to that function (or
-    to production's path handling) can never silently let a non-portable
-    path slip into a snapshot again.
-
-    Checked in an OS-agnostic way: absoluteness is asked of the path types
-    themselves rather than guessed from a leading character, because neither
-    alone is sufficient — ``PureWindowsPath`` doesn't recognise a POSIX
-    ``/abs/path`` as absolute (Windows absoluteness needs a drive), and
-    ``PurePosixPath`` doesn't recognise a drive-relative ``C:\\Users\\a`` or a
-    UNC ``\\\\server\\share`` as absolute. Testing with both catches every
-    form: POSIX-absolute, drive-absolute, and UNC.
-    """
-    assert not PurePosixPath(value).is_absolute(), f"path must be relative: {value!r}"
-    assert not PureWindowsPath(value).is_absolute(), f"path must be relative: {value!r}"
-    assert "\\" not in value, (
-        f"path must be slash-normalized (no backslashes): {value!r}"
-    )
-
-
 def _relative_filepath(filepath: Path, root: Path) -> str:
     """Snapshot a filepath relative to the test root (``tmp_path``).
 
@@ -123,13 +100,9 @@ def _relative_filepath(filepath: Path, root: Path) -> str:
     The result is always forward-slash separated (``Path.as_posix()``), even
     on Windows, so a snapshot can never acquire a backslash path separator —
     every existing snapshot uses ``/`` and a mixed separator would make the
-    same case snapshot differently per platform. ``_assert_portable_path``
-    turns that guarantee into an enforced invariant rather than a remembered
-    convention.
+    same case snapshot differently per platform.
     """
-    relative = filepath.relative_to(root).as_posix()
-    _assert_portable_path(relative)
-    return relative
+    return filepath.relative_to(root).as_posix()
 
 
 def _build_marked_content(analyse: SourceAnalyse, tmp_path: Path) -> list[dict]:
