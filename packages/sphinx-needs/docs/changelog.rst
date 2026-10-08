@@ -120,17 +120,16 @@ Improvements
   ``str`` or a ``StringList``, and an unknown need type raises the same ``invalid_type``
   exception.
 
-- ✨ :func:`~sphinx_needs.api.need.add_need` gains ``content_markup`` and
-  ``content_source``, and the new :func:`~sphinx_needs.api.need.ingest_need_record`
-  creates a need from a needs.json-style record (:issue:`1885`, :pr:`2135`)
+- ✨ :func:`~sphinx_needs.api.need.add_need` takes a
+  :class:`~sphinx_needs.api.MarkupContent` as ``content``, and the new
+  :func:`~sphinx_needs.api.need.ingest_need_record` creates a need from a needs.json-style
+  record (:issue:`1885`, :pr:`2135`)
 
   A need's content can be parsed as reStructuredText or MyST Markdown whatever the
   page's parser, with its warnings at the source file and line it came from
   (:ref:`api_content_markup`); this is what the multi-line needs in source comments of
   sphinx-codelinks (:issue:`1885`, to follow) build on. ``needimport`` now creates each
-  of its needs through ``ingest_need_record``. Nothing changes for existing callers,
-  except a project that named a field or link ``content_markup`` or ``content_source``,
-  which is now refused at configuration (see Breaking changes). The
+  of its needs through ``ingest_need_record``. Nothing changes for existing callers. The
   content is not yet restricted: file-reading directives, ``raw``, relative image paths
   and nested need directives in it are not refused.
 
@@ -164,14 +163,6 @@ Breaking changes
   not in document order.
   To keep such a build green while you fix them,
   add ``"needs.derive_cycle"`` and ``"needs.derive_scope"`` to ``suppress_warnings``.
-
-- ‼️ ``content_markup`` and ``content_source`` can no longer be used as field or link
-  names: they are arguments of :func:`~sphinx_needs.api.need.add_need` (:issue:`1885`, :pr:`2135`)
-
-  ``add_need`` takes a need's fields and links as keyword arguments, so a field or link
-  of either name would be captured by the new argument. Declaring one (in
-  ``needs_fields``, ``needs_extra_options``, ``needs_links`` or through ``add_field``)
-  now fails at configuration, naming the field or link.
 
 - ‼️ ``needextend`` filters are evaluated against the needs as written **(changed output)**
   (:issue:`1658`, :issue:`2064`, :pr:`2083`, :pr:`2127`)

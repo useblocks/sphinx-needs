@@ -1090,7 +1090,8 @@ def test_an_image_in_content_resolves_against_the_page(test_app: SphinxTestApp):
 
 FIELD_NAMED_CONTENT_MARKUP_CONF = (
     CONF
-    + 'needs_fields = {"content_markup": {"description": "A field of this project"}}\n'
+    + 'needs_fields = {"content_markup": {"description": "A field of this project", '
+    + '"schema": {"type": "string"}}}\n'
 )
 """A project field named ``content_markup``: nothing in ``add_need`` is named so."""
 

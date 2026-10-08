@@ -32,7 +32,6 @@ from sphinx_needs.builder import (
 from sphinx_needs.card_layouts import compile_card_layouts
 from sphinx_needs.config import (
     _NEEDS_CONFIG,
-    ADD_NEED_ARGUMENT_NAMES,
     LinkOptionsType,
     NeedLinksConfig,
     NeedsSphinxConfig,
@@ -131,7 +130,7 @@ from sphinx_needs.environment import (
     install_permalink_file,
     install_styles_static_files,
 )
-from sphinx_needs.exceptions import NeedsApiConfigWarning, NeedsConfigException
+from sphinx_needs.exceptions import NeedsConfigException
 from sphinx_needs.external_needs import load_external_needs
 from sphinx_needs.functions import NEEDS_COMMON_FUNCTIONS
 from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
@@ -1100,19 +1099,10 @@ def merge_default_configs(_app: Sphinx, config: Config) -> None:
         }
 
     # Ensure all links have outgoing and incoming defined, so that we can rely on it later on.
-    # Every link passes here, from needs_links (conf.py or TOML) and needs_extra_links.
     for name, link in chain(
         needs_config._links.items(),
         ((v["option"], v) for v in needs_config._extra_links),
     ):
-        if name in ADD_NEED_ARGUMENT_NAMES:
-            # as ``_Config.add_field`` refuses a field of the name
-            description = link.get("description")
-            raise NeedsApiConfigWarning(
-                f"Cannot add need link with name {name!r}"
-                + (f" ({description!r})" if description else "")
-                + ", as it is an argument of add_need."
-            )
         if "outgoing" not in link:
             link["outgoing"] = name
         if "incoming" not in link:
