@@ -126,6 +126,19 @@ def test_test_results_refuses_a_json_report_by_name(build_page):
     assert _error_boxes(app) == [message]
 
 
+def test_the_box_holds_the_warning_text_quotes_and_all(build_page):
+    """The box's text is the warning's, character for character: smartquotes does not
+    turn the straight quotes of a message (lxml's ``'<' not found`` here) into curly
+    ones in the page."""
+    app, stream = build_page(
+        ".. test-results:: notxml.xml\n", files={"notxml.xml": b"not xml"}
+    )
+
+    (box,) = _error_boxes(app)
+    assert "'<' not found" in box
+    assert f"index.rst:4: WARNING: {box}" in stream
+
+
 @pytest.mark.parametrize(
     ("argument", "files"),
     [("bad.xml", {"bad.xml": MALFORMED}), ("report.json", {"report.json": b"{}"})],
