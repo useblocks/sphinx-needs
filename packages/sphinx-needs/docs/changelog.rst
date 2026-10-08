@@ -51,7 +51,7 @@ Improvements
 
 - ✨ Dynamic functions and variants are computed in dependency order,
   and a value that cannot be computed is reported **(changed output)**
-  (:issue:`2064`, :pr:`2080`, :pr:`2081`, :pr:`2134`)
+  (:issue:`2064`, :pr:`2080`, :pr:`2081`, :pr:`2134`, :pr:`NNNN`)
 
   A ``[[…]]``, ``<<…>>`` or ``<{…}>`` is now computed after every value it reads,
   so a chain of :ref:`copy <copy>` calls, a :ref:`calc_sum <calc_sum>` over computed summands,
@@ -95,7 +95,7 @@ Improvements
   (:ref:`argument <dynamic_functions_need_arguments>`);
   a need that used one in its own field was not created,
   and a ``needextend`` value that used one was dropped with a ``needs.needextend`` warning.
-  One that selects what its call reads fails the call when its field is unset.
+  One that selects what its call reads fails the call when its field is unset or empty.
   A ``None`` result, such as a ``copy`` of an unset field or a failed ``check_linked_values``,
   adds nothing to a field: alone in a nullable string or array field it leaves the field unset,
   where it was stored as the text ``"None"``, or as ``[None]``, which schema validation then refused.
