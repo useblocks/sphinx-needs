@@ -37,6 +37,7 @@ class InvalidNeedException(Exception):
             "invalid_template",
             "global_option",
             "failed_init",
+            "content_markup",
         ],
         message: str,
     ) -> None:
@@ -66,6 +67,7 @@ class InvalidNeedException(Exception):
         "invalid_template",
         "global_option",
         "failed_init",
+        "content_markup",
     ]:
         return self._type
 

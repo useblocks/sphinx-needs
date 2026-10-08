@@ -13,9 +13,9 @@ from docutils.parsers.rst import directives
 from requests_file import FileAdapter
 from sphinx.util.docutils import SphinxDirective
 
-from sphinx_needs.api import InvalidNeedException, add_need
+from sphinx_needs.api import InvalidNeedException, ingest_need_record
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.filter_common import filter_import_item
 from sphinx_needs.logging import log_warning
@@ -201,21 +201,6 @@ class NeedimportDirective(SphinxDirective):
             needs_list, id_prefix, needs_schema.iter_link_field_names()
         )
 
-        # all known need fields in the project
-        known_keys = {
-            "full_title",  # legacy
-            *NeedsCoreFields,
-            *(x for x in needs_schema.iter_link_field_names()),
-            *(f"{x}_back" for x in needs_schema.iter_link_field_names()),
-            *(x for x in needs_schema.iter_extra_field_names()),
-        }
-        # all keys that should not be imported from external needs
-        omitted_keys = {
-            "full_title",  # legacy
-            *(k for k, v in NeedsCoreFields.items() if v.get("exclude_import")),
-            *(f"{x}_back" for x in needs_schema.iter_link_field_names()),
-        }
-
         # collect keys for warning logs, so that we only log one warning per key
         unknown_keys: set[str] = set()
 
@@ -231,30 +216,19 @@ class NeedimportDirective(SphinxDirective):
 
         need_nodes = []
         for need_params in needs_list.values():
-            if "description" in need_params and not need_params.get("content"):
-                # legacy versions of sphinx-needs changed "description" to "content" when outputting to json
-                need_params["content"] = need_params["description"]
-                del need_params["description"]
-
-            # Remove unknown options, as they may be defined in source system, but not in this sphinx project
-            for option in list(need_params):
-                if option not in known_keys:
-                    unknown_keys.add(option)
-                    del need_params[option]
-                elif option in omitted_keys:
-                    del need_params[option]
-
+            record = dict(need_params)
+            # ``ingest_need_record`` drops the keys the project does not know AFTER
+            # these are written; every override option (and ``hide``) is a field the
+            # project knows and imports, so they survive the drop, as they did when
+            # it happened before them here
             for override_option in override_options:
                 if override_option in self.options:
-                    need_params[override_option] = self.options[override_option]
+                    record[override_option] = self.options[override_option]
             if "hide" in self.options:
-                need_params["hide"] = True
-
-            # These keys need to be different for add_need() api call.
-            need_params["need_type"] = need_params.pop("type", "")
+                record["hide"] = True
 
             # Replace id, to get unique ids
-            need_id = need_params["id"] = id_prefix + need_params["id"]
+            need_id = record["id"] = id_prefix + record["id"]
 
             # set location
             need_source = NeedItemSourceImport(
@@ -264,12 +238,14 @@ class NeedimportDirective(SphinxDirective):
             )
 
             try:
-                need_node = add_need(
-                    app=self.env.app,
-                    state=self.state,
+                need_node, _ = ingest_need_record(
+                    self.env.app,
+                    self.state,
+                    record,
                     need_source=need_source,
                     allow_type_coercion=allow_type_coercion,
-                    **need_params,
+                    # a need that cannot be created still reports its unknown keys
+                    unknown_keys=unknown_keys,
                 )
             except InvalidNeedException as err:
                 log_warning(

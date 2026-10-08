@@ -4,7 +4,7 @@ import hashlib
 import os
 import re
 import warnings
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from copy import copy, deepcopy
 from dataclasses import replace
@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, TypedDict, TypeVar, cast
 
 from docutils import nodes
+from docutils.parsers import Parser
 from docutils.parsers.rst.states import RSTState
 from docutils.statemachine import StringList
 from sphinx.application import Sphinx
@@ -20,6 +21,7 @@ from sphinx.environment import BuildEnvironment
 from sphinx_needs._jinja import render_template_string
 from sphinx_needs.config import NeedsSphinxConfig, NeedType
 from sphinx_needs.data import (
+    NeedsCoreFields,
     NeedsInfoType,
     NeedsPartType,
     SphinxNeedsData,
@@ -32,6 +34,11 @@ from sphinx_needs.filter_common import (
 )
 from sphinx_needs.functions.functions import DynamicFunctionParsed
 from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.need_content import (
+    MarkupContent,
+    parse_need_content,
+    resolve_content_parser,
+)
 from sphinx_needs.need_item import (
     NeedItem,
     NeedItemSourceDirective,
@@ -569,7 +576,7 @@ def add_need(
     *,
     need_source: NeedItemSourceProtocol | None = None,
     id: str | None = None,
-    content: str | StringList = "",
+    content: str | StringList | MarkupContent = "",
     lineno_content: int | None = None,
     doctype: str | None = None,
     status: str | None = None,
@@ -609,7 +616,9 @@ def add_need(
     Instead, the need is referencing an external url.
     Used mostly for :ref:`needs_external_needs` to integrate and reference needs from external documentation.
 
-    :raises InvalidNeedException: If the need could not be added due to a validation issue.
+    :raises InvalidNeedException: If the need could not be added due to a validation issue;
+        also, before the need is recorded, if a ``MarkupContent``'s ``markup`` names no
+        reStructuredText or MyST parser of the project.
 
     If the need is within the current project, i.e. not an external need,
     the following parameters are used to help provide source mapped warnings and errors:
@@ -634,7 +643,17 @@ def add_need(
         It is used to auto-generate the ID, if required.
     :param id: ID as string. If not given, an id will get generated.
     :param content: Content of the need, either as a ``str``
-        or a ``StringList`` (a string with mapping to the source text).
+        or a ``StringList`` (a string with mapping to the source text), parsed by the
+        parser of the document the need is created in; or as a
+        :class:`~sphinx_needs.api.MarkupContent`, the content with the markup it is
+        written in (parsed by that markup's parser) and optionally the file and line it
+        came from. See :ref:`api_content_markup`.
+
+        .. versionchanged:: 9.0.0 ``content`` may be a ``MarkupContent``.
+
+    :param doctype: The source suffix the need is recorded as written in
+        (e.g. ``".rst"``). If not given, it is the ``markup`` of a ``MarkupContent``
+        content, else the suffix of the document the need is created in.
     :param status: Status as string.
     :param tags: A list of tags, or a comma separated string.
     :param constraints: Constraints as single, comma separated, string.
@@ -658,6 +677,15 @@ def add_need(
             "deprecated key found in kwargs", DeprecationWarning, stacklevel=1
         )
         kwargs = {k: v for k, v in kwargs.items() if k not in _deprecated_kwargs}
+
+    content_parser: type[Parser] | None = None
+    content_source: tuple[str, int] | None = None
+    if isinstance(content, MarkupContent):
+        content_parser = resolve_content_parser(app, content.markup)
+        content_source = content.source
+        if doctype is None:
+            doctype = content.markup
+        content = content.text
 
     if (
         doctype is None
@@ -723,7 +751,131 @@ def add_need(
         # then we can no longer use the original potentially source mapped StringList
         content = needs_info["content"]
 
-    return _create_need_node(needs_info, app.env, state, content)
+    return _create_need_node(
+        needs_info,
+        app.env,
+        state,
+        content,
+        content_parser=content_parser,
+        content_source=content_source,
+    )
+
+
+def _import_key_sets(needs_schema: FieldsSchema) -> tuple[set[str], set[str]]:
+    """The keys a need record may carry in this project, and those never imported.
+
+    :return: ``(known, omitted)``: every need field the project knows (core fields,
+        links and their ``_back`` names, extra fields, and the legacy ``full_title``),
+        and the subset that is computed rather than imported.
+    """
+    link_names = list(needs_schema.iter_link_field_names())
+    known = {
+        "full_title",  # legacy
+        *NeedsCoreFields,
+        *link_names,
+        *(f"{x}_back" for x in link_names),
+        *needs_schema.iter_extra_field_names(),
+    }
+    omitted = {
+        "full_title",  # legacy
+        *(k for k, v in NeedsCoreFields.items() if v.get("exclude_import")),
+        *(f"{x}_back" for x in link_names),
+    }
+    return known, omitted
+
+
+def _need_record_params(
+    record: Mapping[str, Any], needs_schema: FieldsSchema
+) -> tuple[dict[str, Any], set[str]]:
+    """The ``add_need`` keyword arguments for a needs.json-style record.
+
+    :return: The arguments, and the record's keys the project does not know (dropped).
+    """
+    params = dict(record)
+    if "description" in params and not params.get("content"):
+        # legacy versions of sphinx-needs changed "description" to "content" when outputting to json
+        params["content"] = params.pop("description")
+    # Remove unknown keys, as they may be defined in the source system, but not in this
+    # project, and the keys that are computed rather than imported
+    known, omitted = _import_key_sets(needs_schema)
+    unknown: set[str] = set()
+    for key in list(params):
+        if key not in known:
+            unknown.add(key)
+            del params[key]
+        elif key in omitted:
+            del params[key]
+    params["need_type"] = params.pop("type", "")
+    return params, unknown
+
+
+def ingest_need_record(
+    app: Sphinx,
+    state: RSTState,
+    record: Mapping[str, Any],
+    *,
+    need_source: NeedItemSourceProtocol,
+    content_markup: str | None = None,
+    content_source: tuple[str, int] | None = None,
+    allow_type_coercion: bool = True,
+    unknown_keys: set[str] | None = None,
+) -> tuple[list[nodes.Node], set[str]]:
+    """Create one need from a needs.json-style record.
+
+    This is the path for needs that come from outside the page they are rendered on;
+    :ref:`needimport <needimport>` creates each of its needs through it.
+
+    ``record`` holds the keys a need object has in ``needs.json``: ``type``, ``title``,
+    ``id``, fields and links as authored, ``content``, ``doctype``, and so on.
+    It is not modified. A legacy ``description`` is taken as the ``content`` when that is
+    empty; keys the project does not know are dropped and returned; keys that are
+    computed rather than imported (such as ``docname``, ``lineno``, ``full_title`` or
+    the ``<link>_back`` names) are dropped silently. The rest is passed to
+    :func:`add_need`, with ``type`` as its ``need_type``.
+
+    :param app: The Sphinx application.
+    :param state: The parser state of the document the need is rendered in.
+    :param record: The need record.
+    :param need_source: Where the need is recorded as coming from, e.g. a
+        ``NeedItemSourceImport``.
+    :param content_markup: The source suffix of the markup the record's ``content`` is
+        written in: given, the content is passed to :func:`add_need` as a
+        :class:`~sphinx_needs.api.MarkupContent` with this ``markup``, and the need
+        records it as its ``doctype`` if the record has none.
+    :param content_source: The ``source`` of that ``MarkupContent``: ``(path,
+        first_line)`` of the content. Only meaningful with ``content_markup``.
+    :param allow_type_coercion: Passed to :func:`add_need`.
+    :param unknown_keys: If given, the record's keys that are unknown to the project
+        are added to it before the need is created, so a caller collecting them over
+        several records has them also for a record whose need cannot be created.
+    :return: The need's nodes, and the set of the record's keys that were dropped as
+        unknown to the project (the caller decides whether to warn about them).
+    :raises InvalidNeedException: What :func:`add_need` raises, and (type
+        ``content_markup``) if ``content_source`` is given without ``content_markup``;
+        the caller decides how to report it.
+
+    .. versionadded:: 9.0.0
+    """
+    params, unknown = _need_record_params(record, SphinxNeedsData(app.env).get_schema())
+    if unknown_keys is not None:
+        unknown_keys.update(unknown)
+    if content_markup is not None:
+        params["content"] = MarkupContent(
+            params.get("content", ""), markup=content_markup, source=content_source
+        )
+    elif content_source is not None:
+        raise InvalidNeedException(
+            "content_markup",
+            "content_source is only meaningful together with content_markup.",
+        )
+    need_nodes = add_need(
+        app,
+        state,
+        need_source=need_source,
+        allow_type_coercion=allow_type_coercion,
+        **params,
+    )
+    return need_nodes, unknown
 
 
 def _template_parse_offset(data: NeedItem) -> int:
@@ -762,11 +914,93 @@ def _reset_rst_titles(state: RSTState) -> Iterator[None]:
     state.memo.section_level = surrounding_section_level
 
 
+def _host_content_anchor(
+    state: RSTState, input_offset: int, host_source: str, need_line: int | None
+) -> tuple[str, int]:
+    """Where the host's own ``nested_parse`` at ``input_offset`` reports its first line.
+
+    :param input_offset: A 0-based line in the parser's line space (a directive's
+        ``self.content_offset``, or its ``self.lineno - 1``).
+    :param need_line: The need's own line, the anchor when ``input_offset`` is not a
+        line of the input the state machine is parsing.
+    :return: ``(source, 1-based line)``.
+    """
+    source: str | None = None
+    line: int | None = None
+    if isinstance(state, RSTState):
+        # docutils: the offset is a line in the parser's own space, which ``rst_prolog``
+        # and ``.. include::`` shift; the state machine maps it back to a file line.
+        # The machine may be a nested one, covering only part of the page: a line
+        # outside its input would map to another line of it (a negative index counts
+        # from its end), so such a line is not mapped
+        machine = state.state_machine
+        input_lines = machine.input_lines or ()
+        if 0 <= input_offset - machine.input_offset < len(input_lines):
+            source, line = machine.get_source_and_line(input_offset + 1)
+        else:
+            return host_source, need_line or input_offset + 1
+    else:
+        # myst-parser's ``MockState.nested_parse`` offsets from the directive's own line,
+        # which is what its state machine reports when asked for no line in particular
+        source, line = state.state_machine.get_source_and_line()
+        line = None if line is None else line + input_offset + 1
+    return (str(source) if source else host_source), (
+        line if line is not None else input_offset + 1
+    )
+
+
+def _parse_declared_content(
+    data: NeedItem,
+    state: RSTState,
+    content: str | StringList,
+    content_offset: int,
+    node: nodes.Element,
+    *,
+    parser: type[Parser],
+    content_source: tuple[str, int] | None,
+    host_source: str,
+) -> None:
+    """Parse a need's content in the markup of the ``MarkupContent`` it was given as."""
+    # a file's lines are what ``\n`` separates: not ``str.splitlines``, which also
+    # breaks on a form feed and the like; and a ``\r`` ending a line (CRLF text, or
+    # lines split from it on ``\n``) is not part of it
+    lines = [
+        line.removesuffix("\r")
+        for line in (
+            content if isinstance(content, StringList) else content.split("\n")
+        )
+    ]
+    if data["jinja_content"] or data["template"]:
+        # rendered text exists in no file: anchor it at the need's own line, as the
+        # pre/post template content is
+        if isinstance(state, RSTState):
+            source, first_line = _host_content_anchor(
+                state, _template_parse_offset(data), host_source, data["lineno"]
+            )
+        else:
+            # ``_template_parse_offset`` is a line of the page, while myst-parser's
+            # nested parse offsets from the directive's line: the need's own line is
+            # already the page line wanted
+            source, first_line = host_source, data["lineno"] or 1
+    elif content_source is not None:
+        source, first_line = content_source
+    else:
+        source, first_line = _host_content_anchor(
+            state, content_offset, host_source, data["lineno"]
+        )
+    parse_need_content(
+        state, lines, parser=parser, source=source, first_line=first_line, node=node
+    )
+
+
 def _create_need_node(
     data: NeedItem,
     env: BuildEnvironment,
     state: RSTState,
     content: str | StringList,
+    *,
+    content_parser: type[Parser] | None = None,
+    content_source: tuple[str, int] | None = None,
 ) -> list[nodes.Node]:
     """Create a Need node (and surrounding nodes) to be added to the document.
 
@@ -779,6 +1013,9 @@ def _create_need_node(
     :param content: The main content to be rendered inside the need.
         Note, this content my be different to ``data["content"]``,
         in that it may be a ``StringList`` type with source-mapping directly parsed from a directive.
+    :param content_parser: If given, the content is parsed by this parser (the one
+        resolved for a ``MarkupContent``'s markup) rather than by ``state``.
+    :param content_source: ``(path, first_line)`` of the content, used with ``content_parser``.
     """
     source = env.doc2path(data["docname"]) if data["docname"] else None
 
@@ -828,7 +1065,18 @@ def _create_need_node(
         content_offset = data["lineno_content"] - 1
     elif data["lineno"]:
         content_offset = data["lineno"] - 1
-    if isinstance(content, StringList):
+    if content_parser is not None:
+        _parse_declared_content(
+            data,
+            state,
+            content,
+            content_offset,
+            node_need,
+            parser=content_parser,
+            content_source=content_source,
+            host_source=str(source) if source else "",
+        )
+    elif isinstance(content, StringList):
         state.nested_parse(content, content_offset, node_need, match_titles=False)
     else:
         state.nested_parse(
@@ -1015,7 +1263,7 @@ def generate_need_id(
     app: Sphinx,
     need_type: str,
     title: str,
-    content: str | StringList = "",
+    content: str | StringList | MarkupContent = "",
     *,
     full_title: str | None = None,
 ) -> str:
@@ -1052,9 +1300,11 @@ def generate_need_id(
     )
 
 
-def _content_text(content: str | StringList) -> str:
+def _content_text(content: str | StringList | MarkupContent) -> str:
     """A need's content as the text :func:`generate_need` is given, whether it came as
-    a ``str`` or as a ``StringList``."""
+    a ``str``, a ``StringList``, or the ``text`` of a ``MarkupContent``."""
+    if isinstance(content, MarkupContent):
+        content = content.text
     return "\n".join(content) if isinstance(content, StringList) else content
 
 
