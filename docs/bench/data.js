@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791461620203,
+  "lastUpdate": 1791462384898,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -23580,6 +23580,42 @@ window.BENCHMARK_DATA = {
             "value": 36.147593056000005,
             "unit": "s",
             "extra": "Commit: fa18714d226e8e0a50d07d7a88f0719a40da788a\nBranch: master\nTime: 2026-10-08T14:12:35+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6be4dc4ecb248d887811f52645ed34284c4f7e13",
+          "message": "🐛 sphinx-test-reports: nested test suites at every depth, in the parser, the need directives and test-results (#2149)\n\n## What\n\n- **ub-test-reports' JUnit parser** keeps a suite's own `<testcase>`\nchildren beside its nested\n`<testsuite>` elements (`if … elif …` → two independent steps). The\nconverter therefore now\nexports the direct cases of a suite that also holds nested suites — they\nwere silently dropped.\n- **`test-file :auto_suites:`** walks the report in pre-order at every\ndepth: a suite, then its\ndirect cases (`:auto_cases:`), then its nested suites the same way. A\nnested suite's id is\n`{enclosing suite id}_{SHA1(name)[:tr_suite_id_length]}`; it links every\nancestor up to the file;\na case links its suite and that chain. One options dict is copied per\nsuite.\n- The suite and case directives receive the parsed suite from the\nexpansion; the dead\n`nested=` / `count=` machinery (which read a `testsuites` key the parser\nnever writes) is deleted.\n- A hand-written `:suite:` finds the first top-level suite of the name,\nelse the first of that\n  name at any depth in pre-order (no path syntax — documented).\n- **`test-results`** shows a nested suite as a section inside its\nparent's, after the parent's own\n  counters, time and table of direct cases.\n\n## Why\n\nOn a report with a nested `<testsuite>`, `test-file :auto_suites:` and a\n`test-suite` naming such a suite\ncrashed (`KeyError: 'testsuites'`); a hand-written `test-case` on a\nnested suite was `Suite … not found`;\n`test-results` showed the parent with an empty table (#2050 and its\n2026-10-08 comment).\n\n## ubCode parity\n\nThese are ubCode's shipped rules (useblocks/ubcode#3909, #3924; at\n`e9fe0b2b16`:\n`ubc_test_reports/src/identity.rs:74` for the id, `directive.rs:244` for\nthe lookup,\n`expansion.rs:283-307` for the walk,\n`ubc_ast/src/sphinx_needs/test_table_handler.rs:456-476` for\nthe table). The new `test_nested_expansion_equals_ubcode` builds\nubCode's shared fixture page\n(`test_reports_auto/docs/nested.rst`, verbatim) and asserts the set of\n`(id, type, title, links)`\nequals ubCode's expected `needs.json` for it, need for need. A\nthree-level report (`nested_deep.xml`)\nwas measured equal to ubCode as well, in both id schemes, and its\nexpansion is pinned as a regression test.\nCollision handling still differs (ubCode: first wins with a diagnostic;\nhere: an exception) — that is #2052.\n\n## Tests\n\n`tests/test_nested_suites.py` (11) and two ub-test-reports tests, over\n`pytest_nested_example.xml`\nand new fixtures — `nested_mixed.xml` (a suite with two direct cases and\na nested suite, then a second\ntop-level suite named like the nested one), `nested_deep.xml` (three\nlevels, a direct case after a nested suite,\none name under two parents), `merged_pytest.xml` (one name twice at the\ntop level), `twins.xml` (one name twice\nunder one parent): the parser keeps both; the converter exports the\ndirect cases; the parity pin; the mixed\nexpansion (direct cases, parent-keyed ids, no link leak into a later\nsuite); the minting order; the lookup\n(nested-only name found, top level preferred, first of two at the top\nlevel, first in pre-order across depths);\n`test-results` nesting; the suite-id collision still raising; counters\nand the `:auto_cases:`-alone error unchanged.\nConverter output over every vendored fixture is byte-identical except\nthe new fixtures.\n\nCloses #2050",
+          "timestamp": "2026-10-08T14:25:00+02:00",
+          "tree_id": "56ee61852610728da1aaf14fa6fce1ab2866eca2",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/6be4dc4ecb248d887811f52645ed34284c4f7e13"
+        },
+        "date": 1791462377403,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.11902441799999508,
+            "unit": "s",
+            "extra": "Commit: 6be4dc4ecb248d887811f52645ed34284c4f7e13\nBranch: master\nTime: 2026-10-08T14:25:00+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 56.632229991,
+            "unit": "s",
+            "extra": "Commit: 6be4dc4ecb248d887811f52645ed34284c4f7e13\nBranch: master\nTime: 2026-10-08T14:25:00+02:00"
           }
         ]
       }
