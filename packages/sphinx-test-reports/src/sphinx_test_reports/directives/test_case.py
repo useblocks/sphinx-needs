@@ -4,6 +4,7 @@ from docutils import nodes
 from docutils.parsers.rst import directives
 
 from sphinx_needs.api import add_need
+from sphinx_needs.exceptions import InvalidNeedException
 from sphinx_needs.utils import add_doc
 from sphinx_test_reports.config import DEFAULT_OPTIONS
 from sphinx_test_reports.directives.test_common import (
@@ -11,7 +12,6 @@ from sphinx_test_reports.directives.test_common import (
     error_node,
     find_suite,
 )
-from sphinx_test_reports.exceptions import TestReportInvalidOptionError
 from ub_test_reports.identity import split_case_name
 
 
@@ -52,26 +52,30 @@ class TestCaseDirective(TestCommonDirective):
         suite is the one its ``:suite:`` names.
         """
         self.prepare_basic_options()
-        if self.load_test_file() is None:
-            # The report does not exist or cannot be read: `load_test_file` has warned.
-            return [error_node(self.report_error)]
 
-        suite_name = self.options.get("suite")
-
-        if suite_name is None:
-            raise TestReportInvalidOptionError("Suite not given!")
+        suite_name: str = self.options.get("suite", "")
+        if "suite" not in self.options:
+            self.refuse_option("option_missing", "Suite not given!")
 
         case_full_name = self.options.get("case")
         class_name = self.options.get("classname")
         if case_full_name is None and class_name is None:
-            raise TestReportInvalidOptionError("Case or classname not given!")
+            self.refuse_option("option_missing", "Case or classname not given!")
+
+        if self.refusal is not None:
+            return self.refuse(*self.refusal)
+
+        if self.load_test_file() is None:
+            # The report does not exist or cannot be read: `load_test_file` has warned.
+            return [error_node(self.report_error)]
 
         if suite is None:
             suite = find_suite(self.results, suite_name)
 
         if suite is None:
-            raise TestReportInvalidOptionError(
-                f"Suite {suite_name} not found in test file {self.test_file}"
+            return self.refuse(
+                "suite_not_found",
+                f"Suite {suite_name} not found in test file {self.test_file}",
             )
 
         case = None
@@ -89,9 +93,10 @@ class TestCaseDirective(TestCommonDirective):
                 break
 
         if case is None:
-            raise TestReportInvalidOptionError(
-                f"Case {case_full_name} with classname {class_name} not found in test file {self.test_file} "
-                f"and testsuite {suite_name}"
+            return self.refuse(
+                "case_not_found",
+                f"Case {case_full_name} with classname {class_name} not found in test file "
+                f"{self.test_file} and testsuite {suite_name}",
             )
 
         # A deterministic ID must come from the located case, which is only
@@ -189,29 +194,32 @@ class TestCaseDirective(TestCommonDirective):
             **self.extra_options,
         }
         # Merge all options including extra ones
-        main_section += add_need(
-            self.app,
-            self.state,
-            docname,
-            self.lineno,
-            need_type=self.need_type,
-            title=self.test_name,
-            id=self.test_id,
-            content=content,
-            links=self.test_links,
-            tags=self.test_tags,
-            status=self.test_status,
-            collapse=self.collapse,
-            suite=suite["name"],
-            case=case_full_name,
-            case_name=case_name,
-            case_parameter=case_parameter,
-            classname=class_name,
-            result=result,
-            time=time_str,
-            style=style,
-            **report_fields,
-        )
+        try:
+            main_section += add_need(
+                self.app,
+                self.state,
+                docname,
+                self.lineno,
+                need_type=self.need_type,
+                title=self.test_name,
+                id=self.test_id,
+                content=content,
+                links=self.test_links,
+                tags=self.test_tags,
+                status=self.test_status,
+                collapse=self.collapse,
+                suite=suite["name"],
+                case=case_full_name,
+                case_name=case_name,
+                case_parameter=case_parameter,
+                classname=class_name,
+                result=result,
+                time=time_str,
+                style=style,
+                **report_fields,
+            )
+        except InvalidNeedException as error:
+            return self.need_refused(error)
 
         add_doc(self.env, docname)
         return main_section

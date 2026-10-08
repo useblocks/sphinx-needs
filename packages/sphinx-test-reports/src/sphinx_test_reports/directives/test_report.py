@@ -57,6 +57,10 @@ class TestReportDirective(TestCommonDirective):
 
     def run(self):
         self.prepare_basic_options()
+        # A refused option (no `:file:`, an invalid `:collapse:`) is reported here, not
+        # handed on to a generated test-file that would carry it.
+        if self.refusal is not None:
+            return self.refuse(*self.refusal)
         self.load_test_file()
 
         # if user provides a custom template, use it
