@@ -25,6 +25,7 @@ from sphinx_codelinks.analyse.oneline_parser import (
 from sphinx_codelinks.analyse.references import _relative_posix
 from sphinx_codelinks.config import (
     UNIX_NEWLINE,
+    CommentCategory,
     OneLineCommentStyle,
     SourceAnalyseConfig,
 )
@@ -370,13 +371,17 @@ class SourceAnalyse:
             # single line comment has no newline char in the extracted comment
             lines[0] = f"{lines[0]}{UNIX_NEWLINE}"
 
+        # Only a Python docstring can hold docstring tags; a ``#`` comment never does.
+        in_docstring = (
+            getattr(src_comment.node, "type", None) == CommentCategory.docstring
+        )
         for line in lines:
             if self._is_need_id_refs_line(line):
                 row_offset += 1
                 continue
             tag = (
                 docstring_tag(line, oneline_comment_style.start_sequence)
-                if self.analyse_config.comment_type == CommentType.python
+                if in_docstring
                 else None
             )
             if tag is not None:

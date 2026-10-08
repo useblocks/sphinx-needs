@@ -24,6 +24,7 @@ class WarningSubTypeEnum(str, Enum):  # noqa: UP042  # StrEnum changes str(membe
     not_start_or_end_with_square_brackets = "not_start_or_end_with_square_brackets"
     newline_in_field = "newline_in_field"
     docstring_tag = "docstring_tag"
+    """A Python docstring line holding a field-shaped tag, ``@param a: text``."""
     multiline_need_header = "multiline_need_header"
     """The open word starts a line that does not match the open-line grammar."""
     multiline_need_unterminated = "multiline_need_unterminated"

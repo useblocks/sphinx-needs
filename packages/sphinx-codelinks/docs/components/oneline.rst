@@ -257,9 +257,11 @@ reported as one of these kinds, the kind leading the message:
 - ``not_start_or_end_with_square_brackets`` -- a ``list[str]`` field whose brackets are not
   its first and last characters, such as ``[REQ_1];``;
 - ``newline_in_field`` -- a field holding a newline (not produced from a source file,
-  which is parsed one line at a time).
-- ``docstring_tag`` -- in a Python file, a line whose start sequence is directly followed
-  by a docstring tag such as ``param``, ``return`` or ``raises``:
+  which is parsed one line at a time);
+- ``docstring_tag`` -- a line of a Python docstring (never a ``#`` comment) whose start
+  sequence is directly followed by a docstring tag such as ``param``, ``return`` or
+  ``raises`` in the Epydoc field shape, ``:`` directly or one word and ``:``
+  (``@return: text``, ``@param a: text``):
   ``'@param' is a docstring tag, not a one-line need; use a start sequence that docstrings
   do not contain``. A start sequence the docstrings also use cannot tell a need from
   documentation, so choose another one, ``[[`` for example.

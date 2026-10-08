@@ -1,8 +1,8 @@
+import re
 from dataclasses import dataclass
 
 from sphinx_codelinks.analyse.models import WarningSubTypeEnum
 from sphinx_codelinks.config import ESCAPE, UNIX_NEWLINE, OneLineCommentStyle
-
 
 # Tags of Python docstring conventions (Epydoc, Doxygen, Sphinx field names)
 # that a one-line start sequence such as ``@`` also matches: ``@param a: the
@@ -56,14 +56,22 @@ PYTHON_DOCSTRING_TAGS = frozenset(
 )
 
 
+#: What follows the tag of an Epydoc field: ``:`` directly (``@return: text``), or
+#: whitespace, one word and ``:`` (``@param a: text``, ``@raise Exc: text``).
+_FIELD_SHAPE = re.compile(r":|\s+\w+:")
+
+
 def docstring_tag(line: str, start_sequence: str) -> str | None:
-    """The docstring tag a comment line starts with, if any.
+    """The docstring tag a docstring line starts with, if any.
 
     The line starts with one when, after comment decoration and whitespace (no
     alphanumeric character), it holds ``start_sequence`` directly followed by a
-    tag of :data:`PYTHON_DOCSTRING_TAGS` and then whitespace, ``:`` or the end of
-    the line.
+    tag of :data:`PYTHON_DOCSTRING_TAGS` in the Epydoc field shape: ``:``
+    directly, or whitespace, one word and ``:``. ``@todo fix it, IMPL_1, impl``
+    has no field shape and is left to the one-line parser.
     """
+    if not start_sequence:
+        return None
     idx = line.find(start_sequence)
     if idx == -1 or any(char.isalnum() for char in line[:idx]):
         return None
@@ -72,9 +80,7 @@ def docstring_tag(line: str, start_sequence: str) -> str | None:
     while word_end < len(rest) and rest[word_end].isalpha():
         word_end += 1
     tag = rest[:word_end]
-    if tag not in PYTHON_DOCSTRING_TAGS:
-        return None
-    if word_end < len(rest) and not (rest[word_end].isspace() or rest[word_end] == ":"):
+    if tag not in PYTHON_DOCSTRING_TAGS or not _FIELD_SHAPE.match(rest, word_end):
         return None
     return tag
 
