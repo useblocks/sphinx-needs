@@ -547,3 +547,77 @@ def test_an_extra_option_named_like_a_built_in_one_is_refused(make_app, tmp_path
         match=f"'{name}', which test-file reads as its own :status: option",
     ):
         make_app("html", srcdir=src, freshenv=True)
+
+
+# --- fix round 2 -------------------------------------------------------------------------
+
+
+def test_a_test_report_s_expansion_warns_on_the_test_report(build_page):
+    """V1-F11b: a warning of the ``test-file`` a ``test-report`` generates -- here the
+    ``duplicate_id`` of its expansion -- is located on the ``test-report``. Before: on the
+    generated template's own line numbering, ``index.rst:36``, a line the page lacks."""
+    _, stream = build_page(
+        ".. test-report:: R\n   :id: TR_DUP\n   :file: d.xml\n",
+        files={"d.xml": _fixture("dup_suites.xml")},
+    )
+
+    assert stream.count("WARNING:") == 1
+    assert "index.rst:4: WARNING: Suite ID TR_DUP_02A already exists by S (S)" in stream
+
+
+def test_a_second_test_report_of_one_id_warns_on_its_own_line(build_page):
+    """V1-F11b: the second ``test-report`` (line 8) holding the first's ``:id:`` -- the
+    generated ``test-file``'s ``need`` warning is located on line 8."""
+    _, stream = build_page(
+        ".. test-report:: R\n   :id: TR_ONE\n   :file: g.xml\n\n"
+        ".. test-report:: R2\n   :id: TR_ONE\n   :file: g.xml\n",
+        files={"g.xml": GOOD},
+    )
+
+    assert stream.count("WARNING:") == 1
+    assert (
+        "index.rst:8: WARNING: Need could not be created: A need with ID 'TR_ONE' "
+        "already exists." in stream
+    )
+
+
+def test_one_case_in_two_suites_of_one_name_names_both(build_page):
+    """V1-F9c: the two suites are told apart by their ids, not their names -- ``S`` and a
+    nested ``S``, each holding ``C.t``, under deterministic ids."""
+    report = (
+        b'<testsuites><testsuite name="S" tests="2">'
+        b'<testcase classname="C" name="t"/>'
+        b'<testsuite name="S" tests="1"><testcase classname="C" name="t"/></testsuite>'
+        b"</testsuite></testsuites>"
+    )
+    _, stream = build_page(
+        ".. test-file:: F\n   :id: TF_SS\n   :file: s.xml\n   :auto_suites:\n"
+        "   :auto_cases:\n",
+        files={"s.xml": report},
+        conf=DETERMINISTIC,
+    )
+
+    assert stream.count("WARNING:") == 1
+    assert (
+        "Case ID exists: testcase__C__t_lmgdl: the report holds the case C.t in two "
+        "suites (S and S)"
+    ) in stream
+
+
+def test_an_extra_option_built_in_on_test_suite_only_is_refused(make_app, tmp_path):
+    """V1-F12c: ``Suite`` is not ``test-file``'s option but ``test-suite``'s (and
+    ``test-case``'s); every extra option is registered on all three, so it is refused."""
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "conf.py").write_text(
+        'extensions = ["sphinx_needs", "sphinx_test_reports"]\n'
+        'tr_extra_options = ["Suite"]\n',
+        encoding="utf-8",
+    )
+    (src / "index.rst").write_text("Probe\n=====\n", encoding="utf-8")
+
+    with pytest.raises(
+        InvalidConfigurationError,
+        match="'Suite', which test-suite reads as its own :suite: option",
+    ):
+        make_app("html", srcdir=src, freshenv=True)
