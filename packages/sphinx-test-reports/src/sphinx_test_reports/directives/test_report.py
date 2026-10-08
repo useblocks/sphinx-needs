@@ -110,8 +110,19 @@ class TestReportDirective(TestCommonDirective):
         }
 
         template_ready = template.format(**template_data)
-        self.state_machine.insert_input(
-            template_ready.split("\n"), self.state_machine.document.attributes["source"]
-        )
+        # What `state_machine.insert_input` does -- the generated lines, a blank line
+        # before and after them -- with every line attributed to THIS directive's own
+        # source and line, so a warning of the generated test-file (a duplicate id of its
+        # expansion, a need sphinx-needs refuses) is located on the test-report.
+        # `insert_input` numbered them by the template's own lines, a line the page does
+        # not have.
+        source, line = self.state_machine.get_source_and_line(self.lineno)
+        lines = ["", *template_ready.split("\n"), ""]
+        input_lines = self.state_machine.input_lines
+        # Both are set while a document is being parsed; the types allow `None`.
+        if input_lines is not None and line is not None:
+            start = self.state_machine.line_offset + 1
+            for index, text in enumerate(lines):
+                input_lines.insert(start + index, text, source=source, offset=line - 1)
 
         return []
