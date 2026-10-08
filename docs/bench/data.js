@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791462384898,
+  "lastUpdate": 1791465351048,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -23616,6 +23616,42 @@ window.BENCHMARK_DATA = {
             "value": 56.632229991,
             "unit": "s",
             "extra": "Commit: 6be4dc4ecb248d887811f52645ed34284c4f7e13\nBranch: master\nTime: 2026-10-08T14:25:00+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2f40ce27c502abc2f3639f4822be0d4077807041",
+          "message": "🧪 sphinx-codelinks: snapshot the real extraction output, with marker scope association (moved from sphinx-codelinks#100) (#2128)\n\n## What\n\n`packages/sphinx-codelinks`: moves useblocks/sphinx-codelinks#100 into\nthe monorepo with the\nrecipe from #1871 (11 commits, authorship kept), and addresses that PR's\nreview on top.\n\nThe declarative extraction fixtures (`tests/data/extraction/*.yaml`) now\nsnapshot **the real\nproduction output**: exactly what `SourceAnalyse.dump_marked_content()`\nwrites, as the flat sorted\nlist of `Metadata.to_dict()` items. Before, they held a test-only\nprojection. Warnings are a separate\n`[warnings].json` artefact per case. Three deviations from production\nare documented in the harness\nand the README:\n- `filepath` is relative to the case root.\n- One additive, test-only `tagged_scope_type` key is added.\n- The warnings are sorted (production reports them in tree-sitter\ncapture order, which differs between runs).\n\nNew `scope.yaml` (25 cases) covers marker scope association: above a\nfunction, inside a body,\nno scope, the Python docstring path, YAML's structure finder, and C++\nclass and struct bodies.\n\n## Why\n\nScope association (`find_associated_scope`) had no fixture coverage at\nall. Snapshotting the real\nshape also covers `filepath`, `source_map` columns and end positions,\n`type` and `marker`, which the\nprojection dropped.\n\nReview of useblocks/sphinx-codelinks#100, addressed here:\n\n1. **Warnings snapshots were order-unstable.** `_build_warnings` sorts\nthe records again\n(`file_path, lineno, type, sub_type, msg`). Production reports them in\ntree-sitter capture order,\nwhich differs between two runs of the same input once several extractors\nare on, so it cannot be\n   pinned.\n2. **`SCOPE_NODE_TYPES[cpp]` named `class_definition`,** a kind\ntree-sitter-cpp never emits, so a\nmarker in a class body had no scope. It now names `class_specifier` and\n`struct_specifier`, pinned by\n`scope.yaml`'s `cpp_class_body` / `cpp_struct_body` (🐛, changelog\nentry).\n3. **The field-count wording** was already fixed on master by #2092\n(\"minimum is\" / \"maximum is\").\n\nAlso from the review:\n- `test_extraction_is_crlf_insensitive` was imperative. It becomes a\ndeclarative `line_endings` key\non the case schema, plus `line_endings.yaml` (CRLF and a lone CR); such\na case also runs with LF\n  endings and must match.\n- The extraction corpus is shared with ubCode, which copies the YAML\nfiles it also has (today 11 of the 14) byte for byte and takes these\nsnapshots as the expected output of its parity test; the README and the\nharness header now say so, and useblocks/ubcode#3928 tracks how ubCode's\nsync script takes up this production shape. The LF pin moves to the root\n`.gitattributes` with that reason, and yamlfmt no longer formats the\ncorpus (closes #2133).\n\nProduction fixes the fixtures surfaced (physical columns, the need-ref\nspan, docstring tags, a block\ncomment's `*/` as an id) are in #2129, stacked on this one, so this\nstays reviewable as a move.\n\n## Review of this PR, addressed on the branch (taken over 2026-10-08\nwith Marco's go)\n\nFour commits on top of Marco's, no source, corpus or snapshot change:\n- The README and the harness header state that the corpus and snapshots\nare shared with ubCode (the first bullet above).\n- The LF pin for the corpus and snapshots lives in the root\n`.gitattributes`, one commented block like the three conformance\ncorpora, with the real reason: ubCode copies the bytes. The tests do not\ndepend on it (YAML normalises line breaks, the harness writes each\ncase's source as exact bytes, syrupy reads snapshots in text mode). The\npackage-level `.gitattributes` is gone, and yamlfmt's exclude covers the\ncorpus (closes #2133).\n- `_assert_portable_path` is removed: its input is\n`relative_to(...).as_posix()`, which cannot fail its checks.\n- The harness's contract comment and the README are cut to the facts;\nthe README lists the warnings sort among the deviations.\n\nFound in that review, pre-existing and not changed here: production\norders two marked-content entries on one row by tree-sitter's capture\norder, which differs between runs (#2150; no case here puts two entries\non one row), and the scope walk binds a marker above a `typedef struct`,\na union or a namespace to a struct further down the file now that\n`struct_specifier` is a scope kind (#2151).\n\n## Tests\n\nThe fixture harness and every `test_extraction_fixture` snapshot are\nconverted to the production\nshape. Additions:\n- `scope.yaml` (25 cases) and `line_endings.yaml` (2 cases).\n- Re-captures after #2092 (warning wording, the moved `too_few_fields`\ncase) and #2021 (marked-rst\n  rows); every one of those snapshot diffs is a master change.\n\n`uv run poe test-codelinks`: **689 passed, 0 skipped**, stable across\nreruns (also under xdist and\nfrom the repository root); the same at the takeover tip, with lint,\ntypecheck, check-workspace, the CLI suite under `GITHUB_ACTIONS=1` and\n`docs-codelinks` (0 warnings) green, and every corpus and snapshot byte\nunchanged.\n\n## Checklist\n\n- [x] Every line of this change has been read: Marco's review of\nuseblocks/sphinx-codelinks#100, the review of 2026-10-08, and the\ntakeover's line-by-line pass; it was not generated automatically from an\nissue.\n- [x] I ran the package's tests (`uv run poe test-<package>`) and they\npass.\n- [x] Documentation is updated where behaviour or options change.\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.\n\nCloses #2133\n\n---------\n\nCo-authored-by: Chris Sewell <chrisj_sewell@hotmail.com>",
+          "timestamp": "2026-10-08T15:14:29+02:00",
+          "tree_id": "7d2d2de3bae704c4a176ffa5413d78080955a3a5",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/2f40ce27c502abc2f3639f4822be0d4077807041"
+        },
+        "date": 1791465342020,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.08029859900000247,
+            "unit": "s",
+            "extra": "Commit: 2f40ce27c502abc2f3639f4822be0d4077807041\nBranch: master\nTime: 2026-10-08T15:14:29+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 46.453767705000004,
+            "unit": "s",
+            "extra": "Commit: 2f40ce27c502abc2f3639f4822be0d4077807041\nBranch: master\nTime: 2026-10-08T15:14:29+02:00"
           }
         ]
       }
