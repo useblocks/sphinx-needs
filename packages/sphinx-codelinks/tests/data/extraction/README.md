@@ -6,6 +6,17 @@ tested declaratively: each case is a **fixture** (the input) plus a **snapshot**
 expected output reviewable, and lets us cover the whole language matrix without a
 bespoke test function per case.
 
+## Shared with ubCode
+
+The YAML files of this directory are copied byte for byte into ubCode
+(`rust/ubc_codelinks/tests/fixtures/extraction/`; ubCode's
+`sync_codelinks_expected.py` lists the shared files), and ubCode takes their
+snapshots in `tests/__snapshots__/test_extraction_fixtures/` as the expected
+output of its parity test. A change to a case or a snapshot is therefore a
+contract change, which the ubCode side re-syncs. useblocks/ubcode#3014 points
+that tooling at this repository; useblocks/ubcode#3928 tracks projecting the
+production shape below back to ubCode's normalized one.
+
 ## Fixture format
 
 Each `*.yaml` file in this directory is a map of `case_name → case`:
@@ -50,33 +61,36 @@ custom_brackets_c:
 - `defines` (optional, libclang only): preprocessor defines, e.g.
   `["VARIANT_A=1", "PROTOCOL_VERSION=3"]`.
 
-## Snapshot (expected output) — the real production shape
+## Snapshots: the production shape
 
-Each case is run through the extractor and its output is compared to **two**
-committed snapshots under `tests/__snapshots__/test_extraction_fixtures/`: one
-for the marked content, one for the warnings. These are not a reduced
-projection invented for the test — each is the real payload a production run
-produces, taken verbatim (only a temp-path portability rewrite and one
-additive field applied; see below):
+Each case has two snapshots under `tests/__snapshots__/test_extraction_fixtures/`,
+one per output production produces:
 
-- **marked content** (the default, unnamed snapshot, `…json`) is exactly
-  `SourceAnalyse.dump_marked_content`'s payload: a flat list, in
-  `all_marked_content`'s order (sorted by `(filepath, source_map.start.row)`),
-  of each entry's own `Metadata.to_dict()` (`analyse/models.py`) —
-  `OneLineNeed`'s nested `need` dict, `NeedIdRefs`'s `need_ids` list +
-  `marker`, or `MarkedRst`'s `rst` text.
-- **warnings** (a second snapshot, named `"warnings"`, saved as
-  `…[warnings].json`) is a flat list of `AnalyseWarning.__dict__` records,
-  exactly what `SourceAnalyse.oneline_warnings` holds. Production never folds
-  warnings into the data stream — `dump_marked_content` writes only the marked
-  content, and the warnings reach users separately: the `src-trace` directive
-  reports each as a `codelinks.oneline` build warning, and `codelinks analyse`
-  prints them via `logger.warning` (`cmd.py`) — so the test keeps them as two
-  independent snapshots instead of one merged object.
+- **marked content** (`…].json`): `SourceAnalyse.dump_marked_content`'s
+  payload — the flat list `all_marked_content` holds, sorted by
+  `(filepath, source_map.start.row)`, one `Metadata.to_dict()`
+  (`analyse/models.py`) per entry.
+- **warnings** (`…][warnings].json`): the `AnalyseWarning.__dict__` records of
+  `SourceAnalyse.oneline_warnings`. Production reports them apart from the
+  marked content (the `src-trace` directive as `codelinks.oneline` build
+  warnings, `codelinks analyse` through `logger.warning`), so they are a
+  separate snapshot.
 
-A one-line need, with its need-ref and warning counterparts alongside for
-reference (a single case never emits all three at once — shown together here
-only to keep this example short):
+Three deviations from production output, all deliberate:
+
+- `filepath` and `file_path` are relative to the test's `tmp_path` and
+  `/`-separated (`_relative_filepath`, `Path.as_posix()`); production writes an
+  absolute path, which differs per run and per machine.
+- `tagged_scope_type`, the last key of every marked-content entry, is
+  test-only: the associated node's tree-sitter kind (e.g.
+  `"function_definition"`) or `null`, so a wrong scope cannot pass on matching
+  text, and one construct can be compared across languages.
+- The warnings are sorted by `(file_path, lineno, type, sub_type, msg)`:
+  production reports them in tree-sitter capture order, which differs between
+  two runs of the same input.
+
+A need and a need-id-reference entry (shown together for brevity, not the
+output of one case):
 
 ```json
 [
@@ -102,7 +116,7 @@ only to keep this example short):
 ]
 ```
 
-and the matching `warnings` snapshot for a case that emits one:
+and a `warnings` snapshot, for a case that emits one:
 
 ```json
 [
@@ -110,52 +124,24 @@ and the matching `warnings` snapshot for a case that emits one:
 ]
 ```
 
-`source_map` rows/columns are 0-indexed, exactly as production computes them.
+The fields of a marked-content entry, as `Metadata.to_dict()` writes them:
 
-Common fields on every marked-content entry (mirroring `Metadata`):
+- `remote_url` — always `null`: the harness sets `git_remote_url` and
+  `git_commit_rev` to `None` before `run()`.
+- `source_map` — `{"start": {"row", "column"}, "end": {"row", "column"}}`,
+  0-indexed.
+- `tagged_scope` — the full text of the declaration `find_associated_scope`
+  associates with the marker, or `null`.
+- `type` — `"need"`, `"need-id-refs"` or `"rst"`; a need's own `type` (e.g.
+  `"impl"`) is inside `need`.
+- the payload — `need` (the `OneLineNeed.need` dict as is), `need_ids` and
+  `marker` (one record for all the ids of a marker, not one per id), or `rst`.
 
-- `filepath` — the source file, **relative to the test's `tmp_path`** (e.g.
-  `case.cpp`). This is the *only* portability deviation from the real thing:
-  production emits an absolute path, but `tmp_path` differs per run and per
-  machine, so the harness snapshots it relative to `tmp_path` instead (see
-  `_relative_filepath` in `tests/test_extraction_fixtures.py`).
-- `remote_url` — always `null` here: the harness forces
-  `analyse.git_remote_url`/`git_commit_rev` to `None` before `run()`, so this
-  field is deterministic regardless of the host's git configuration.
-- `source_map` — the full `{"start": {"row", "column"}, "end": {"row",
-  "column"}}` structure production computes.
-- `tagged_scope` — the marker's *associated declaration* (computed by
-  `find_associated_scope`), as production serialises it: the node's full
-  decoded text (`str(node.text.decode("utf-8"))`), or `null` when there is no
-  associated scope.
-- `type` — the `MarkedContentType` discriminator's real value (`"need"` /
-  `"need-id-refs"` / `"rst"`); a need's own `type` field (e.g. `"impl"`) lives
-  one level down, inside `need`, so the two never collide.
-- `tagged_scope_type` — **the one additive, test-only field.** It is the
-  associated node's tree-sitter kind (e.g. `"function_definition"`), or
-  `null`. `Metadata.to_dict()` never emits this — it is not part of
-  production's output — but it costs nothing to add alongside the real
-  `tagged_scope` text: it lets a wrong-scope regression be told apart from a
-  same-text coincidence, and lets the same construct be compared across
-  languages. It is always the last key on an entry, so it
-  never disturbs the real shape.
-
-Payload-specific fields: `need` (a plain dict — `id`/`title`/`type` as
-strings, `links` as a list, exactly as `OneLineNeed.need` holds it — not
-decomposed or re-wrapped); `need_ids` (list) + `marker` (string) for a
-need-id-reference; `rst` (string) for a marked-rst block. A need-id-reference
-entry is **one** record covering every id it references, not exploded per id.
-
-Warning records (`AnalyseWarning.__dict__`): `file_path` (relativized the same
-way as `filepath` above), `lineno`, `msg`, `type` (the `MarkedContentType` the
-warning occurred while parsing — currently always `"need"`, since only the
-one-line-need parser raises these), `sub_type` (the snake_case warning kind,
-e.g. `"too_many_fields"`).
-
-Genuinely excluded (the only non-deterministic things): the absolute prefix of
-`filepath`/`file_path` (see above), and the raw `SourceComment`/tree-sitter
-node objects (production itself drops `source_comment` from `to_dict()`;
-`tagged_scope` is captured as full text instead of embedding the node object).
+A warning record has `file_path`, `lineno`, `msg`, `type` (the
+`MarkedContentType` being parsed; always `"need"` today, since only the
+one-line parser warns) and `sub_type` (the kind, e.g. `"too_many_fields"`).
+No `SourceComment` or tree-sitter node object is snapshotted: production's
+`to_dict()` drops the comment and writes the scope as its text.
 
 Two known production quirks show up as-is in these snapshots (deliberately
 left unfixed — out of scope here):
@@ -169,44 +155,19 @@ left unfixed — out of scope here):
   flattened multi-line comment text rather than a real position past the
   first line.
 
-## Portability guarantees
+## Portability
 
-These snapshots hold real positions (`source_map` rows/columns) and real
-captured text (`tagged_scope`, `rst`, ...), so anything that changes a byte
-on disk before extraction runs — not just the extractor itself — can shift a
-value and break the comparison. The harness (`tests/test_extraction_fixtures.py`)
-and the repository make three guarantees so one committed snapshot is valid
-on Linux, macOS and Windows alike:
+One committed snapshot holds on Linux, macOS and Windows:
 
-- **LF-pinned inputs.** `packages/sphinx-codelinks/.gitattributes` forces
-  `tests/data/**` and `tests/__snapshots__/**` to check out with LF line
-  endings regardless of the platform or the user's `core.autocrlf` (the
-  Git-for-Windows default, `true`, rewrites LF to CRLF on checkout
-  otherwise). Without this, the fixture YAMLs and the committed snapshots
-  themselves could arrive corrupted on Windows before the test even runs.
-- **Byte-exact source writing.** The harness writes each case's `source`
-  (and, for `libclang` cases, `compile_commands.json`) with
-  `Path.write_bytes(text.encode("utf-8"))`, never `Path.write_text(...)`.
-  `write_text` opens the file in text mode, which translates every `\n` to
-  `os.linesep` on write — on Windows that turns an LF-only fixture into CRLF
-  on disk, shifting tree-sitter/libclang column positions at line ends and
-  injecting `\r` into any multi-line `tagged_scope` text. Writing exact bytes
-  means the file on disk always matches the fixture verbatim, independent of
-  platform. The `line_endings.yaml` cases pin the consequence: the same
-  source, written with CRLF or with a lone CR, produces the output its LF
-  form does.
-- **Relative, slash-normalised paths.** `_relative_filepath` renders
-  `filepath`/`file_path` with `Path.as_posix()`, so a nested case can never
-  render with backslashes (`sub\case.h`) on Windows where every existing
-  snapshot uses `/`. `_assert_portable_path` enforces this as an invariant
-  rather than a remembered convention: it asserts the value is relative
-  (checked against both `PurePosixPath` and `PureWindowsPath`, since neither
-  alone recognises every absolute form — POSIX-absolute, drive-absolute, and
-  UNC) and contains no backslash, so a non-portable path can never reach a
-  committed snapshot silently.
+- The root `.gitattributes` checks this directory and `tests/__snapshots__/`
+  out with LF on every platform, because ubCode copies their bytes.
+- The harness writes each case's `source` (and a libclang case's
+  `compile_commands.json`) as exact bytes (`_write_exact`): `Path.write_text`
+  would turn every `\n` into `\r\n` on Windows. The `line_endings.yaml` cases
+  pin that CRLF and a lone CR extract as LF does.
+- Paths are `/`-separated (see above).
 
-A platform-dependent value would make the same case snapshot differently per
-platform, so it is a test failure on Windows CI rather than a silent drift.
+A value that still differed per platform would fail the Windows CI cell.
 
 ## Running / updating
 

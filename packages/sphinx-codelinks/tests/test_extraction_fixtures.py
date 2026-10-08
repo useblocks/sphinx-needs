@@ -1,8 +1,12 @@
 """Declarative marker-extraction tests.
 
 Each case in ``tests/data/extraction/*.yaml`` supplies an input (``lang`` +
-``config`` + ``source``); the extractor is run on it and the normalized output is
-compared to a committed JSON snapshot. See ``tests/data/extraction/README.md``.
+``config`` + ``source``); the extractor is run on it and its output is compared
+to two committed JSON snapshots. See ``tests/data/extraction/README.md``.
+
+The YAML corpus is shared byte for byte with ubCode, which takes these
+snapshots as the expected output of its parity test: a change to a case or a
+snapshot is a contract change, which the ubCode side re-syncs.
 """
 
 import json
@@ -61,53 +65,13 @@ def _build_oneline_style(config) -> OneLineCommentStyle:
     return OneLineCommentStyle(**kwargs)
 
 
-# ---------------------------------------------------------------------------
-# Normalization contract
-#
-# The snapshots mirror production's real output, not a projection invented
-# for the test. Production produces two independent outputs, and so does
-# this harness — as two separate snapshot assertions rather than one merged
-# object (see the module docstring on ``snapshot_extraction`` usage in the
-# test function below for why):
-#
-#   - marked content is exactly what ``SourceAnalyse.dump_marked_content``
-#     writes to ``marked_content.json``: a flat list, taken verbatim from
-#     ``analyse.all_marked_content`` (already sorted by ``(filepath,
-#     source_map.start.row)`` by ``merge_marked_content``), with each entry's
-#     real ``Metadata.to_dict()`` — the nested ``need`` / ``need_ids`` +
-#     ``marker`` / ``rst`` payload, ``links`` as a plain list inside ``need``,
-#     ``tagged_scope`` as the associated node's full decoded text (or
-#     ``null``), and the real ``type`` discriminator value (``"need"`` /
-#     ``"need-id-refs"`` / ``"rst"``). See ``_build_marked_content``.
-#
-#   - warnings are a separate output: a flat list of ``AnalyseWarning.__dict__``
-#     records (``file_path``, ``lineno``, ``msg``, ``type``, ``sub_type``),
-#     exactly what ``analyse.oneline_warnings`` holds. Production never folds
-#     these into the data stream: ``dump_marked_content`` writes only the
-#     marked content, and the warnings reach users separately — the
-#     ``src-trace`` directive reports each as a ``codelinks.oneline`` build
-#     warning, and ``codelinks analyse`` prints them via ``logger.warning``
-#     (``cmd.py``). See ``_build_warnings``.
-#
-# Two deviations from the real thing, both deliberate:
-#
-#   1. Portability: ``filepath``/``file_path`` are rewritten relative to
-#      ``tmp_path`` (see ``_relative_filepath``), since production emits an
-#      absolute path that differs per run and per machine.
-#   2. Additive: each marked-content entry gets one extra top-level key,
-#      ``tagged_scope_type`` — the associated node's tree-sitter kind. This
-#      is NOT part of production's output (``Metadata.to_dict()`` never emits
-#      it); it rides alongside the real ``tagged_scope`` text so a
-#      wrong-scope regression can be told apart from a same-text
-#      coincidence, and so the same construct can be compared across
-#      languages. It is appended after the real fields, so it
-#      never disturbs the real shape.
-#
-# Nothing else is added, renamed, wrapped, or exploded: no ``content_type``
-# rename of ``type``, no flattening of the ``need`` payload, no
-# ``{scope_type, scope_text}`` wrapper around ``tagged_scope``, no per-need-id
-# explosion of a ``need_ids`` entry, no ``line`` key.
-# ---------------------------------------------------------------------------
+# Snapshot contract (the README has the detail). The marked content is
+# ``SourceAnalyse.dump_marked_content``'s payload: the ``to_dict()`` of each
+# ``all_marked_content`` entry, in production's order (``_build_marked_content``).
+# The warnings are a second snapshot, of ``oneline_warnings``' records
+# (``_build_warnings``). Deviations from production output: paths relative to
+# ``tmp_path``, one additive ``tagged_scope_type`` key per entry, and the
+# warnings sorted. Nothing else is added, renamed, wrapped or exploded.
 
 
 def _write_exact(path: Path, text: str) -> None:
@@ -182,7 +146,7 @@ def _build_marked_content(analyse: SourceAnalyse, tmp_path: Path) -> list[dict]:
         scope_type = entry.tagged_scope.type if entry.tagged_scope is not None else None
         item = entry.to_dict()
         item["filepath"] = _relative_filepath(entry.filepath, tmp_path)
-        # Additive, test-only field — see the module docstring above. Not
+        # Additive, test-only field — see the snapshot contract above. Not
         # part of production's Metadata.to_dict().
         item["tagged_scope_type"] = scope_type
         items.append(item)
@@ -314,7 +278,7 @@ def test_extraction_fixture(case: dict, tmp_path: Path, snapshot_extraction) -> 
         assert (content, warnings) == _extract(case, lf_root, case["source"])
 
     # Two independent snapshots per case, mirroring the two independent outputs
-    # production produces (see the normalization-contract comment above):
+    # production produces (see the snapshot contract above):
     # marked content under the default (unnamed) snapshot, warnings under a
     # separately named one.
     assert snapshot_extraction == content
