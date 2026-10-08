@@ -1,14 +1,35 @@
-import copy
 import json
 import os
+from typing import Any
 
 from docutils import nodes
 from docutils.parsers.rst import Directive, directives
-from sphinx.util import logging
 
-from sphinx_test_reports.directives.test_common import new_section
+from sphinx_test_reports.directives.test_common import error_node, new_section, warn
 
-logger = logging.getLogger(__name__)
+#: JSON's names for the types ``json.load`` returns, for a message about the file.
+_JSON_KINDS = {
+    list: "an array",
+    str: "a string",
+    int: "a number",
+    float: "a number",
+    bool: "a boolean",
+    type(None): "null",
+}
+
+
+def _json_kind(value: Any) -> str:
+    """What ``value`` is, in JSON's words: ``an array``, ``a string``, ``null``, ..."""
+    return _JSON_KINDS.get(type(value), type(value).__name__)
+
+
+def _comma_list(value: str | None) -> list[str] | None:
+    """An ``:env:`` / ``:data:`` value as its elements: split on commas, each stripped,
+    an element empty after stripping dropped, a repeated element kept once (at its first
+    position). ``None`` when the option is not given."""
+    if value is None:
+        return None
+    return list(dict.fromkeys(e.strip() for e in value.split(",") if e.strip()))
 
 
 class EnvReport(nodes.General, nodes.Element):
@@ -33,26 +54,12 @@ class EnvReportDirective(Directive):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.data_option = self.options.get("data")
-        self.environments = self.options.get("env")
-
-        if self.environments is not None:
-            self.req_env_list_cpy = self.environments.split(",")
-            self.req_env_list = []
-            for element in self.req_env_list_cpy:
-                if len(element) != 0:
-                    self.req_env_list.append(element.lstrip().rstrip())
-        else:
-            self.req_env_list = None
-
-        if self.data_option is not None:
-            self.data_option_list_cpy = self.data_option.split(",")
-            self.data_option_list = []
-            for element in self.data_option_list_cpy:
-                if len(element) != 0:
-                    self.data_option_list.append(element.rstrip().lstrip())
-        else:
-            self.data_option_list = None
+        #: The environments ``:env:`` names, or ``None``: every environment, in file order.
+        #: A value naming none (``:env: ,``) shows none.
+        self.req_env_list = _comma_list(self.options.get("env"))
+        #: The variables ``:data:`` names, or ``None``: every variable. A value naming none
+        #: (``:data: ,``) is the same as no ``:data:``.
+        self.data_option_list = _comma_list(self.options.get("data")) or None
 
         self.header = ("Variable", "Data")
         self.colwidths = (1, 1)
@@ -65,101 +72,106 @@ class EnvReportDirective(Directive):
         if not os.path.isabs(json_path):
             json_path = os.path.join(root_path, json_path)
 
+        # Every refusal is a located `test_reports.*` warning; one that leaves nothing to
+        # show is an error box in place of the sections too, and the build goes on.
         if not os.path.exists(json_path):
-            raise JsonFileNotFound(f"The given file does not exist: {json_path}")
-
-        with open(json_path) as fp_json:
-            try:
+            return self._refuse("report_missing", f"Test file not found: {json_path}")
+        try:
+            # UTF-8, with or without a byte-order mark, whatever the locale.
+            with open(json_path, encoding="utf-8-sig") as fp_json:
                 results = json.load(fp_json)
-            except ValueError as exc:
-                raise InvalidJsonFile(
-                    "The given file {} is not a valid JSON".format(
-                        json_path.split("/")[-1]
-                    )
-                ) from exc
+        except UnicodeDecodeError as exc:
+            return self._refuse(
+                "report_unreadable",
+                f"{json_path} is not valid UTF-8 ({exc.reason} at byte {exc.start})",
+            )
+        except json.JSONDecodeError as exc:
+            return self._refuse(
+                "report_unreadable",
+                f"{json_path} (line {exc.lineno}, column {exc.colno}): {exc.msg}",
+            )
+        if not isinstance(results, dict):
+            return self._refuse(
+                "env_shape",
+                f"{json_path}: the file is not a JSON object of environments "
+                f"(got {_json_kind(results)})",
+            )
 
-        # check to see if environment is present in JSON or not
-        if self.req_env_list is not None:
-            not_present_env = [
-                req_env for req_env in self.req_env_list if req_env not in results
-            ]
-            for not_env in not_present_env:
-                self.req_env_list.remove(not_env)
-                logger.warning(f"environment '{not_env}' is not present in JSON file")
-            del not_present_env
+        # The environments to show: `:env:`'s, in its order, or every one in file order.
+        if self.req_env_list is None:
+            selected = list(results)
+        else:
+            selected = []
+            for name in self.req_env_list:
+                if name in results:
+                    selected.append(name)
+                else:
+                    warn(
+                        self,
+                        "env_not_present",
+                        f"environment '{name}' is not present in JSON file",
+                    )
+
+        # An environment that is not an object is skipped, in every branch.
+        shown: list[tuple[str, dict[str, Any]]] = []
+        for name in selected:
+            variables = results[name]
+            if isinstance(variables, dict):
+                shown.append((name, variables))
+            else:
+                warn(
+                    self,
+                    "env_shape",
+                    f"environment '{name}' is not a JSON object "
+                    f"(got {_json_kind(variables)}); skipped",
+                )
 
         # Construction idea taken from http://agateau.com/2015/docutils-snippets/
         main_section = []
+        for name, variables in shown:
+            # The variables `:data:` names, in file order; every one without `:data:`.
+            if self.data_option_list is not None:
+                variables = {
+                    key: value
+                    for key, value in variables.items()
+                    if key in self.data_option_list
+                }
+            if "raw" in self.options:
+                main_section.append(self._raw_section(name, variables))
+            else:
+                main_section.append(self._table_section(name, variables))
 
-        if self.req_env_list is None and "raw" not in self.options:
-            for enviro in results:
-                main_section.append(self._crete_table_b(enviro=enviro, results=results))
-
-        elif "raw" not in self.options and self.req_env_list is not None:
-            for req_env in self.req_env_list:
-                main_section.append(
-                    self._crete_table_b(enviro=req_env, results=results)
-                )
-
-        elif "raw" in self.options and self.req_env_list is None:
-            for enviro in results:
-                # data option handling
-                temp_dict = copy.deepcopy(results)
-                temp_dict2 = copy.deepcopy(results)
-                if self.data_option_list is not None:
-                    for opt in temp_dict[enviro]:
-                        if opt not in self.data_option_list:
-                            del temp_dict2[enviro][opt]
-                    # option check
-                    for opt in self.data_option_list:
-                        if opt not in temp_dict2[enviro]:
-                            logger.warning(
-                                f"option '{opt}' is not present in JSON file"
-                            )
-
-                del temp_dict
-
-                section = new_section(self.state, enviro)
-                results_string = json.dumps(temp_dict2[enviro], indent=4)
-                code_block = nodes.literal_block(results_string, results_string)
-                code_block["language"] = "json"
-                section += code_block  # nodes.literal_block(results, results)
-                main_section.append(section)
-                del temp_dict2
-
-        elif "raw" in self.options and self.req_env_list is not None:
-            for enviro in self.req_env_list:
-                # data option handling
-                temp_dict = copy.deepcopy(results)
-                temp_dict2 = copy.deepcopy(results)
-                if self.data_option_list is not None:
-                    for opt in temp_dict[enviro]:
-                        if opt not in self.data_option_list:
-                            del temp_dict2[enviro][opt]
-
-                    # option check. Inside the guard, like the `:raw:`-without-`:env:`
-                    # branch above: `:data:` is optional, and iterating it unguarded is a
-                    # TypeError for a `test-env` written with `:raw:` and `:env:` but no
-                    # `:data:`.
-                    for opt in self.data_option_list:
-                        if opt not in temp_dict2[enviro]:
-                            logger.warning(
-                                f"option '{opt}' is not present in '{enviro}' environment file"
-                            )
-
-                del temp_dict
-
-                section = new_section(self.state, enviro)
-                results_string = json.dumps(temp_dict2[enviro], indent=4)
-                code_block = nodes.literal_block(results_string, results_string)
-                code_block["language"] = "json"
-                section += code_block
-                main_section.append(section)
-                del temp_dict2
+        # One warning per `:data:` key per directive, naming the shown environments that
+        # lack it -- unless none holds it.
+        if self.data_option_list is not None:
+            for key in self.data_option_list:
+                lacking = [name for name, variables in shown if key not in variables]
+                if not lacking:
+                    continue
+                if len(lacking) == len(shown):
+                    message = f"option '{key}' is not present in JSON file"
+                else:
+                    message = (
+                        f"option '{key}' is not present in "
+                        f"'{', '.join(lacking)}' environment file"
+                    )
+                warn(self, "env_key_not_present", message)
 
         return main_section
 
-    def _crete_table_b(self, enviro, results) -> nodes.section:
+    def _refuse(self, subtype: str, message: str) -> list[nodes.Node]:
+        warn(self, subtype, message)
+        return [error_node(message)]
+
+    def _raw_section(self, enviro: str, variables: dict[str, Any]) -> nodes.section:
+        section = new_section(self.state, enviro)
+        results_string = json.dumps(variables, indent=4)
+        code_block = nodes.literal_block(results_string, results_string)
+        code_block["language"] = "json"
+        section += code_block
+        return section
+
+    def _table_section(self, enviro: str, variables: dict[str, Any]) -> nodes.section:
         section = new_section(self.state, enviro)
 
         table = nodes.table()
@@ -176,23 +188,8 @@ class EnvReportDirective(Directive):
 
         tbody = nodes.tbody()
         tgroup += tbody
-        all_data = results[enviro]
-
-        data_option = copy.deepcopy(self.data_option_list)
-        for data in all_data:
-            if data_option is not None:
-                if data in data_option:
-                    data_option.remove(data)
-                    tbody += self._create_rows((data, all_data[data]))
-            else:
-                tbody += self._create_rows((data, all_data[data]))
-
-        # data option check
-        if data_option is not None:
-            if len(data_option) != 0:
-                for opt in data_option:
-                    logger.warning(f"option '{opt}' is not present in JSON file")
-            del data_option
+        for key, value in variables.items():
+            tbody += self._create_rows((key, value))
 
         return section
 
@@ -207,17 +204,23 @@ class EnvReportDirective(Directive):
                 code_block["language"] = "json"
                 entry += code_block
             else:
-                entry += nodes.paragraph(text=cell)
+                # A string verbatim (an empty one is an empty cell: it IS the file's
+                # value); any other scalar spelled as JSON -- `true`, `false`, `null`, `0`
+                # -- not as Python (`True`), and never dropped for being falsy.
+                text = cell if isinstance(cell, str) else json.dumps(cell)
+                entry += nodes.paragraph(text=text)
         return row
 
 
-class InvalidJsonFile(BaseException):
-    pass
+class InvalidJsonFile(Exception):
+    """Not raised by the directive since 3.0 (an unreadable file is a warning); kept for
+    ``except`` clauses."""
 
 
-class JsonFileNotFound(BaseException):
-    pass
+class JsonFileNotFound(Exception):
+    """Not raised by the directive since 3.0 (a missing file is a warning); kept for
+    ``except`` clauses."""
 
 
-class InvalidEnvRequested(BaseException):
-    pass
+class InvalidEnvRequested(Exception):
+    """Never raised by the directive; kept for ``except`` clauses."""
