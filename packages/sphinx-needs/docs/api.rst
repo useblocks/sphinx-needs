@@ -34,17 +34,20 @@ Content written in another markup
 
 An extension that creates needs whose text was written somewhere else -- a comment in a
 source file, an imported file -- in a markup that is not the page's passes
-``content_markup`` to :func:`~sphinx_needs.api.need.add_need`: the source suffix of that
-markup (``".rst"``, ``".md"``, or any suffix ``source_suffix`` maps to a reStructuredText
-or MyST parser). The content is then parsed by that parser, whatever the page's parser,
-and the need records the suffix as its ``doctype``. With
-``content_source=(path, first_line)``, the warnings raised while parsing the content, and
-those for references in it that do not resolve, name ``path`` and the line the content
-came from rather than the page -- through ``sphinx.util.docutils.switch_source_input``, the
-same mechanism ``sphinx.ext.autodoc`` uses to report a docstring's lines at the Python file.
-:func:`~sphinx_needs.api.need.ingest_need_record` creates
-a need from a needs.json-style record, and is the path :ref:`needimport` itself takes for
-each need it imports.
+``MarkupContent(text, markup=..., source=...)`` as the ``content`` of
+:func:`~sphinx_needs.api.need.add_need`. ``markup`` is the source suffix of that markup
+(``".rst"``, ``".md"``, or any suffix ``source_suffix`` maps to a reStructuredText or MyST
+parser): the content is parsed by that parser, whatever the page's parser, and the need
+records the suffix as its ``doctype``. With ``source=(path, first_line)``, the warnings
+raised while parsing the content, and those for references in it that do not resolve,
+name ``path`` and the line the content came from rather than the page -- through
+``sphinx.util.docutils.switch_source_input``, the same mechanism ``sphinx.ext.autodoc`` uses
+to report a docstring's lines at the Python file. ``add_need`` takes no other argument for
+this, so no field or link name is reserved.
+:func:`~sphinx_needs.api.need.ingest_need_record` creates a need from a needs.json-style
+record, and is the path :ref:`needimport` itself takes for each need it imports.
+
+.. autoclass:: sphinx_needs.api.MarkupContent
 
 The content is parsed into the page it is rendered on, so a label defined in it belongs to
 that page and other pages reference it there. The warnings myst-parser logs itself, such as

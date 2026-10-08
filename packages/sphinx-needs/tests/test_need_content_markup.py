@@ -1,4 +1,4 @@
-"""``add_need(content_markup=, content_source=)`` and ``ingest_need_record``.
+"""``add_need(content=MarkupContent(...))`` and ``ingest_need_record``.
 
 A need's content can be written in a markup that is not its page's -- a source comment,
 an imported file -- and is then parsed by the parser the project registers for that
@@ -47,7 +47,12 @@ from docutils.statemachine import StringList
 from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
 
-from sphinx_needs.api import InvalidNeedException, add_need, ingest_need_record
+from sphinx_needs.api import (
+    InvalidNeedException,
+    MarkupContent,
+    add_need,
+    ingest_need_record,
+)
 from sphinx_needs.need_item import NeedItemSourceImport
 
 logger = logging.getLogger(__name__)
@@ -74,11 +79,19 @@ class TestNeedContent(SphinxDirective):
         kwargs = {}
         if "jinja" in self.options:
             kwargs["jinja_content"] = True
+        content = (
+            StringList([f"{line}\\r" for line in self.content])
+            if "crlf" in self.options
+            else self.content
+        )
         if "markup" in self.options:
-            kwargs["content_markup"] = self.options["markup"]
-        if "source" in self.options:
-            path = Path(self.env.srcdir, self.options["source"])
-            kwargs["content_source"] = (str(path), self.options.get("first-line", 1))
+            source = None
+            if "source" in self.options:
+                path = Path(self.env.srcdir, self.options["source"])
+                source = (str(path), self.options.get("first-line", 1))
+            content = MarkupContent(
+                content, markup=self.options["markup"], source=source
+            )
         if "links" in self.options:
             kwargs["links"] = self.options["links"]
         # the parser's line, as a need directive's ``parser_lineno``, needimport and
@@ -95,11 +108,7 @@ class TestNeedContent(SphinxDirective):
                 need_type=self.options["type"],
                 title=self.options["title"],
                 id=self.options["id"],
-                content=(
-                    StringList([f"{line}\\r" for line in self.content])
-                    if "crlf" in self.options
-                    else self.content
-                ),
+                content=content,
                 lineno_content=self.content_offset + 1,
                 **kwargs,
             )
@@ -628,7 +637,7 @@ CONTROL_MD = [
 def test_without_content_markup_the_page_parser_parses_the_content(
     test_app: SphinxTestApp,
 ):
-    """(h): ``content_markup=None`` is the existing path, the one a need directive takes."""
+    """(h): content that is no ``MarkupContent`` takes the existing path, a need directive's."""
     app = test_app
     app.build()
     assert build_warnings(app) == []
@@ -661,7 +670,6 @@ ANCHOR_INDEX = [
     "Host labelled paragraph.",
     "",
     *rst_need("SPEC_ANCHOR_MR", MYST_BODY, {"markup": ".md"}, "anchor_mr"),
-    *rst_need("SPEC_NO_MARKUP", ["Text."], {"source": "src/g.c", "first-line": 7}),
     *rst_need("SPEC_TXT", ["Text."], {"markup": ".txt"}),
     *rst_need("SPEC_NOPE", ["Text."], {"markup": ".nope"}),
     *rst_need("SPEC_PLAIN", ["Text."], {"markup": ".plain"}),
@@ -689,11 +697,12 @@ ANCHOR_MD = [
     indirect=True,
 )
 def test_without_content_source_and_the_refusals(test_app: SphinxTestApp):
-    """(f): no ``content_source``: the content's lines are the page's, as a directive's own.
+    """(f): no ``source``: the content's lines are the page's, as a directive's own.
 
-    And what ``add_need`` refuses, before it records anything: ``content_source``
-    without ``content_markup``, a suffix the project does not register, a suffix whose
-    file type has no parser, and a parser that is neither reStructuredText nor MyST.
+    And what ``add_need`` refuses, before it records anything: a ``markup`` the project
+    does not register, one whose file type has no parser, and one parsed by a parser
+    that is neither reStructuredText nor MyST. (A ``source`` without a ``markup`` cannot
+    be written: ``MarkupContent`` requires the markup.)
     """
     app = test_app
     app.build()
@@ -722,9 +731,6 @@ def test_without_content_source_and_the_refusals(test_app: SphinxTestApp):
             f"<srcdir>/anchor_md.md:{rm + at(RST_BODY, ':nosuchrole:')}: WARNING: "
             "undefined label: 'nosuchlabel_anchor_rm' [ref.ref]",
             # the refusals, reported by the driver at its own directive
-            f"<srcdir>/index.rst:{line_of(ANCHOR_INDEX, ':id: SPEC_NO_MARKUP') - 5}: "
-            f"{refused} content_source is only meaningful together with "
-            "content_markup. [needs.test_need_content]",
             f"<srcdir>/index.rst:{line_of(ANCHOR_INDEX, ':id: SPEC_TXT') - 4}: "
             f"{refused} Content markup '.txt' is not a registered source suffix "
             f"(registered: {registered}); {supported} [needs.test_need_content]",

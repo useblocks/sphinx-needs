@@ -34,7 +34,11 @@ from sphinx_needs.filter_common import (
 )
 from sphinx_needs.functions.functions import DynamicFunctionParsed
 from sphinx_needs.logging import get_logger, log_warning
-from sphinx_needs.need_content import parse_need_content, resolve_content_parser
+from sphinx_needs.need_content import (
+    MarkupContent,
+    parse_need_content,
+    resolve_content_parser,
+)
 from sphinx_needs.need_item import (
     NeedItem,
     NeedItemSourceDirective,
@@ -572,11 +576,9 @@ def add_need(
     *,
     need_source: NeedItemSourceProtocol | None = None,
     id: str | None = None,
-    content: str | StringList = "",
+    content: str | StringList | MarkupContent = "",
     lineno_content: int | None = None,
     doctype: str | None = None,
-    content_markup: str | None = None,
-    content_source: tuple[str, int] | None = None,
     status: str | None = None,
     tags: str | list[str] | None = None,
     constraints: str | list[str] | None = None,
@@ -615,9 +617,8 @@ def add_need(
     Used mostly for :ref:`needs_external_needs` to integrate and reference needs from external documentation.
 
     :raises InvalidNeedException: If the need could not be added due to a validation issue;
-        also if ``content_markup`` names no reStructuredText or MyST parser of the
-        project, or ``content_source`` is given without ``content_markup``. Both are
-        raised before the need is recorded.
+        also, before the need is recorded, if a ``MarkupContent``'s ``markup`` names no
+        reStructuredText or MyST parser of the project.
 
     If the need is within the current project, i.e. not an external need,
     the following parameters are used to help provide source mapped warnings and errors:
@@ -642,41 +643,17 @@ def add_need(
         It is used to auto-generate the ID, if required.
     :param id: ID as string. If not given, an id will get generated.
     :param content: Content of the need, either as a ``str``
-        or a ``StringList`` (a string with mapping to the source text).
+        or a ``StringList`` (a string with mapping to the source text), parsed by the
+        parser of the document the need is created in; or as a
+        :class:`~sphinx_needs.api.MarkupContent`, the content with the markup it is
+        written in (parsed by that markup's parser) and optionally the file and line it
+        came from. See :ref:`api_content_markup`.
+
+        .. versionchanged:: 9.0.0 ``content`` may be a ``MarkupContent``.
+
     :param doctype: The source suffix the need is recorded as written in
-        (e.g. ``".rst"``). If not given, it is ``content_markup`` when that is given,
-        else the suffix of the document the need is created in.
-    :param content_markup: The source suffix of the markup ``content`` is written in,
-        such as ``".rst"`` or ``".md"`` -- any suffix the project's ``source_suffix`` maps
-        to a reStructuredText or MyST parser. The content is then parsed by that parser,
-        whatever the parser of the document the need is created in.
-        ``None`` (the default) parses the content with the document's own parser, as
-        before. See :ref:`api_content_markup`.
-
-        .. versionadded:: 9.0.0
-
-    :param content_source: ``(path, first_line)``: the file the content lines were
-        written in, and the 1-based line of the first content line in it. Every
-        diagnostic raised while parsing the content, and every node created from it,
-        then names ``path`` and the line each content line sits on
-        (``first_line + i``), the lines being those a newline separates (a carriage
-        return ending one is ignored, a form feed inside one does not end it).
-        Sphinx prints node-based locations as absolute paths, so pass an absolute
-        ``path``. Only meaningful with ``content_markup``; ``None``
-        anchors the content in the document the need is created in, as before: at
-        ``lineno_content``, else ``lineno``, read as lines of the PARSER's input, as a
-        directive's ``self.content_offset + 1`` and ``self.lineno`` give them (they
-        differ from the file's lines after ``rst_prolog`` or an ``include``, and are
-        mapped back to them). Pass them as parser lines: a resolved file line is
-        mapped as if it were a parser line and then names a wrong line, possibly in
-        another file (an included one, or the pseudo-file of ``rst_prolog``); only
-        when it falls outside the parser's input is that caught, and the content
-        anchored at the need's own line.
-        Ignored for content rendered from a template or with ``jinja_content``, which
-        no file holds: that is anchored at the need's own line.
-
-        .. versionadded:: 9.0.0
-
+        (e.g. ``".rst"``). If not given, it is the ``markup`` of a ``MarkupContent``
+        content, else the suffix of the document the need is created in.
     :param status: Status as string.
     :param tags: A list of tags, or a comma separated string.
     :param constraints: Constraints as single, comma separated, string.
@@ -702,15 +679,13 @@ def add_need(
         kwargs = {k: v for k, v in kwargs.items() if k not in _deprecated_kwargs}
 
     content_parser: type[Parser] | None = None
-    if content_markup is not None:
-        content_parser = resolve_content_parser(app, content_markup)
+    content_source: tuple[str, int] | None = None
+    if isinstance(content, MarkupContent):
+        content_parser = resolve_content_parser(app, content.markup)
+        content_source = content.source
         if doctype is None:
-            doctype = content_markup
-    elif content_source is not None:
-        raise InvalidNeedException(
-            "content_source",
-            "content_source is only meaningful together with content_markup.",
-        )
+            doctype = content.markup
+        content = content.text
 
     if (
         doctype is None
@@ -863,31 +838,40 @@ def ingest_need_record(
     :param record: The need record.
     :param need_source: Where the need is recorded as coming from, e.g. a
         ``NeedItemSourceImport``.
-    :param content_markup: Passed to :func:`add_need`: the source suffix of the markup
-        the record's ``content`` is written in. If the record has no ``doctype``, the
-        need records this.
-    :param content_source: Passed to :func:`add_need`: ``(path, first_line)`` of the
-        content.
+    :param content_markup: The source suffix of the markup the record's ``content`` is
+        written in: given, the content is passed to :func:`add_need` as a
+        :class:`~sphinx_needs.api.MarkupContent` with this ``markup``, and the need
+        records it as its ``doctype`` if the record has none.
+    :param content_source: The ``source`` of that ``MarkupContent``: ``(path,
+        first_line)`` of the content. Only meaningful with ``content_markup``.
     :param allow_type_coercion: Passed to :func:`add_need`.
     :param unknown_keys: If given, the record's keys that are unknown to the project
         are added to it before the need is created, so a caller collecting them over
         several records has them also for a record whose need cannot be created.
     :return: The need's nodes, and the set of the record's keys that were dropped as
         unknown to the project (the caller decides whether to warn about them).
-    :raises InvalidNeedException: What :func:`add_need` raises; the caller decides
-        how to report it.
+    :raises InvalidNeedException: What :func:`add_need` raises, and (type
+        ``content_markup``) if ``content_source`` is given without ``content_markup``;
+        the caller decides how to report it.
 
     .. versionadded:: 9.0.0
     """
     params, unknown = _need_record_params(record, SphinxNeedsData(app.env).get_schema())
     if unknown_keys is not None:
         unknown_keys.update(unknown)
+    if content_markup is not None:
+        params["content"] = MarkupContent(
+            params.get("content", ""), markup=content_markup, source=content_source
+        )
+    elif content_source is not None:
+        raise InvalidNeedException(
+            "content_markup",
+            "content_source is only meaningful together with content_markup.",
+        )
     need_nodes = add_need(
         app,
         state,
         need_source=need_source,
-        content_markup=content_markup,
-        content_source=content_source,
         allow_type_coercion=allow_type_coercion,
         **params,
     )
@@ -976,7 +960,7 @@ def _parse_declared_content(
     content_source: tuple[str, int] | None,
     host_source: str,
 ) -> None:
-    """Parse a need's content in the markup given to ``add_need(content_markup=...)``."""
+    """Parse a need's content in the markup of the ``MarkupContent`` it was given as."""
     # a file's lines are what ``\n`` separates: not ``str.splitlines``, which also
     # breaks on a form feed and the like; and a ``\r`` ending a line (CRLF text, or
     # lines split from it on ``\n``) is not part of it
@@ -1029,8 +1013,8 @@ def _create_need_node(
     :param content: The main content to be rendered inside the need.
         Note, this content my be different to ``data["content"]``,
         in that it may be a ``StringList`` type with source-mapping directly parsed from a directive.
-    :param content_parser: If given, the content is parsed by this parser
-        (``add_need(content_markup=...)``) rather than by ``state``.
+    :param content_parser: If given, the content is parsed by this parser (the one
+        resolved for a ``MarkupContent``'s markup) rather than by ``state``.
     :param content_source: ``(path, first_line)`` of the content, used with ``content_parser``.
     """
     source = env.doc2path(data["docname"]) if data["docname"] else None
@@ -1279,7 +1263,7 @@ def generate_need_id(
     app: Sphinx,
     need_type: str,
     title: str,
-    content: str | StringList = "",
+    content: str | StringList | MarkupContent = "",
     *,
     full_title: str | None = None,
 ) -> str:
@@ -1316,9 +1300,11 @@ def generate_need_id(
     )
 
 
-def _content_text(content: str | StringList) -> str:
+def _content_text(content: str | StringList | MarkupContent) -> str:
     """A need's content as the text :func:`generate_need` is given, whether it came as
-    a ``str`` or as a ``StringList``."""
+    a ``str``, a ``StringList``, or the ``text`` of a ``MarkupContent``."""
+    if isinstance(content, MarkupContent):
+        content = content.text
     return "\n".join(content) if isinstance(content, StringList) else content
 
 

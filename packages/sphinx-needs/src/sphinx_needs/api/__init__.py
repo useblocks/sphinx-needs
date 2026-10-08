@@ -1,4 +1,5 @@
 from sphinx_needs.exceptions import InvalidNeedException
+from sphinx_needs.need_content import MarkupContent
 
 from .configuration import (
     add_dynamic_function,
@@ -19,6 +20,7 @@ from .need import (
 
 __all__ = (
     "InvalidNeedException",
+    "MarkupContent",
     "add_dynamic_function",
     "add_external_need",
     "add_extra_option",

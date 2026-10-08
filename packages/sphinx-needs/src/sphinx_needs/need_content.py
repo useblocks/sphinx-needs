@@ -1,6 +1,6 @@
 """Parse one need's content in a declared markup, into the host document.
 
-``add_need(content_markup=...)`` comes here instead of the host state's own
+``add_need(content=MarkupContent(...))`` comes here instead of the host state's own
 ``nested_parse``: the content is parsed by the parser the project registers for that
 source suffix -- reStructuredText or MyST Markdown -- whatever the page's own parser is.
 
@@ -40,6 +40,7 @@ warnings myst-parser logs itself (those name the host page, with the content's l
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import dataclass, field
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Literal, cast
 
@@ -57,6 +58,49 @@ if TYPE_CHECKING:
     from sphinx.application import Sphinx
 
 ContentRoute = Literal["rst", "myst"]
+
+
+@dataclass(frozen=True)
+class MarkupContent:
+    """A need's content, with the markup it is written in and where it came from.
+
+    Pass it to :func:`~sphinx_needs.api.need.add_need` as ``content``: the content is
+    then parsed by the parser the project registers for ``markup``, whatever the parser
+    of the document the need is created in, and the need records ``markup`` as its
+    ``doctype`` unless one is given. See :ref:`api_content_markup`.
+
+    :param text: The content, as a ``str`` or a ``StringList``. Its lines are those a
+        newline separates (a carriage return ending one is ignored, a form feed inside
+        one does not end it).
+    :param markup: The source suffix of the markup the text is written in, such as
+        ``".rst"`` or ``".md"`` -- any suffix the project's ``source_suffix`` maps to a
+        reStructuredText or MyST parser. ``add_need`` raises ``InvalidNeedException``
+        (type ``content_markup``) before recording the need if it maps to neither.
+    :param source: ``(path, first_line)``: the file the lines were written in, and the
+        1-based line of the first of them in it. Every diagnostic raised while parsing
+        the content, and every node created from it, then names ``path`` and the line
+        each content line sits on (``first_line + i``). Sphinx prints node-based
+        locations as absolute paths, so pass an absolute ``path``.
+
+        ``None`` anchors the content in the document the need is created in, as a need
+        directive's content is: at ``add_need``'s ``lineno_content``, else ``lineno``,
+        read as lines of the PARSER's input, as a directive's ``self.content_offset + 1``
+        and ``self.lineno`` give them (they differ from the file's lines after
+        ``rst_prolog`` or an ``include``, and are mapped back to them). Pass them as
+        parser lines: a resolved file line is mapped as if it were a parser line and then
+        names a wrong line, possibly in another file (an included one, or the pseudo-file
+        of ``rst_prolog``); only when it falls outside the parser's input is that caught,
+        and the content anchored at the need's own line.
+
+        Ignored for content rendered from a template or with ``jinja_content``, which no
+        file holds: that is anchored at the need's own line.
+
+    .. versionadded:: 9.0.0
+    """
+
+    text: str | StringList
+    markup: str = field(kw_only=True)
+    source: tuple[str, int] | None = field(default=None, kw_only=True)
 
 
 def _myst_parser_class() -> type[Parser] | None:
