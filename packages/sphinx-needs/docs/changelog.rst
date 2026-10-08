@@ -122,7 +122,7 @@ Improvements
 
 - ✨ :func:`~sphinx_needs.api.need.add_need` gains ``content_markup`` and
   ``content_source``, and the new :func:`~sphinx_needs.api.need.ingest_need_record`
-  creates a need from a needs.json-style record (:issue:`1885`)
+  creates a need from a needs.json-style record (:issue:`1885`, :pr:`2135`)
 
   A need's content can be parsed as reStructuredText or MyST Markdown whatever the
   page's parser, with its warnings at the source file and line it came from
@@ -166,7 +166,7 @@ Breaking changes
   add ``"needs.derive_cycle"`` and ``"needs.derive_scope"`` to ``suppress_warnings``.
 
 - ‼️ ``content_markup`` and ``content_source`` can no longer be used as field or link
-  names: they are arguments of :func:`~sphinx_needs.api.need.add_need` (:issue:`1885`)
+  names: they are arguments of :func:`~sphinx_needs.api.need.add_need` (:issue:`1885`, :pr:`2135`)
 
   ``add_need`` takes a need's fields and links as keyword arguments, so a field or link
   of either name would be captured by the new argument. Declaring one (in
