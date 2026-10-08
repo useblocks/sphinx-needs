@@ -212,7 +212,9 @@ Changed
   create twice (``duplicate_id``) and a need sphinx-needs refuses (``need``), each located;
   ``TestReportFileNotSetError``, ``TestReportInvalidOptionError`` and
   ``TestReportIncompleteConfigurationError`` are no longer raised by them (the classes
-  stay).
+  stay). One configuration that built before now stops the build with a configuration
+  error: a ``tr_extra_options`` that names a built-in option (``Status``, ``Suite``, ...),
+  or two names that differ only in case.
   `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
   `#2156 <https://github.com/useblocks/sphinx-needs/pull/2156>`__
 
