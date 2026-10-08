@@ -26,7 +26,7 @@ The following options can be set:
 * **links**: A comma-separated list of IDs to other documented test_files / needs-objects.
 * **collapse**: If set to "TRUE", meta data is collapsed. Can also be set to "FALSE".
 
-The suite ``suite`` names is the first top-level suite of that name in the file,
+The suite that ``suite`` names is the first top-level suite of that name in the file,
 else the first suite of that name nested at any depth, in report order (a suite before the suites nested in it).
 A name used under two different parents always finds the first one; there is no syntax to name a suite by its path.
 

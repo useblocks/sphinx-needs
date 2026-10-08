@@ -57,7 +57,7 @@ are documented too, at every depth, in report order:
 a suite, then its own cases (with ``auto_cases``), then the suites nested in it, the same way.
 A suite's ID is its parent's ID, an underscore and the first :ref:`tr_suite_id_length` hex digits of the SHA1 of its name,
 where the parent is the ``test-file`` for a top-level suite and the enclosing suite for a nested one.
-A case's ID starts with the ID of the suite it is directly in.
+A case's ID starts with the ID of the suite it is directly in (unless :ref:`tr_deterministic_case_ids` is set).
 
 These IDs should be stable between different sphinx builds, as long as their title of suites / cases does not change.
 

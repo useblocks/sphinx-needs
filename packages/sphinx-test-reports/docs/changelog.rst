@@ -265,7 +265,8 @@ Fixed
   `#2148 <https://github.com/useblocks/sphinx-needs/pull/2148>`__
 
 - 🐛 A JUnit report with a ``<testsuite>`` nested in another no longer fails the build with
-  ``KeyError: 'testsuites'`` in ``test-file``'s ``:auto_suites:``. The expansion documents
+  ``KeyError: 'testsuites'`` in ``test-file``'s ``:auto_suites:`` or in a ``test-suite``
+  whose ``:suite:`` names a suite that holds nested suites. The expansion documents
   suites at every depth, in report order: a suite, then its own cases (``:auto_cases:``),
   then the suites nested in it. A nested suite's ID is the ID of the suite it is in, an
   underscore and the first ``tr_suite_id_length`` hex digits of the SHA1 of its name (a
@@ -275,7 +276,7 @@ Fixed
   top-level suite of the name, else the first of that name at any depth. ``test-results``
   shows a nested suite as a section inside its parent's, and a suite that holds both cases
   and nested suites shows its own cases, where its table was empty. The IDs and links are
-  the ones ubCode mints for the same report.
+  the ones ubCode mints for the same report (an id collision aside, #2052).
   `#2050 <https://github.com/useblocks/sphinx-needs/issues/2050>`__,
   `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
 
