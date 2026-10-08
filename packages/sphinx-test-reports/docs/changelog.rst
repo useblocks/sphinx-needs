@@ -306,8 +306,8 @@ Fixed
   case twice. Case IDs are now checked across the whole report, not one suite: with
   ``tr_deterministic_case_ids``, the same case in two suites of one report is one need and
   a warning, where sphinx-needs stopped the build with ``A need with ID '…' already
-  exists``. A ``tests/doc_test/utils/many_testsuites.xml``-shaped report builds at the
-  default ``tr_suite_id_length`` now, without one of its suites.
+  exists``. A report two of whose suites collide at the default ``tr_suite_id_length``
+  builds now, without the later of the two.
   `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
   `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
 
