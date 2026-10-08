@@ -169,19 +169,19 @@ def test_a_file_that_is_not_an_object_renders_nothing(build_page, body, kind, op
     "options",
     [
         "",
-        "   :raw:\n",
         "   :raw:\n   :data: k\n",
         "   :env: a, b\n",
-        "   :raw:\n   :env: a, b\n",
+        "   :raw:\n   :env: a, b\n   :data: k\n",
     ],
-    ids=["table", "raw", "raw-data", "table-env", "raw-env"],
+    ids=["table", "raw-data", "table-env", "raw-env-data"],
 )
 def test_an_environment_that_is_not_an_object_is_skipped(
     build_page, value, kind, options
 ):
     """Master, ``"s"`` in the table: ``TypeError: string indices must be integers, not
     'str'``; ``null`` under ``:raw:`` + ``:data:``: ``TypeError: 'NoneType' object is not
-    iterable``. The other environment is rendered either way."""
+    iterable``. The other environment is rendered either way. (``:raw:`` without
+    ``:data:`` renders the value instead -- the next test.)"""
     app, stream = build_page(
         ".. test-env:: e.json\n" + options,
         files={"e.json": f'{{"a": {value}, "b": {{"k": "v"}}}}'.encode()},
@@ -193,6 +193,31 @@ def test_an_environment_that_is_not_an_object_is_skipped(
     assert stream.count("WARNING:") == 1
     assert _sections(app) == ["b"]
     assert _error_boxes(app) == []
+
+
+@pytest.mark.parametrize("value", ["[]", '"s"', "3", "null"])
+@pytest.mark.parametrize(
+    "options", ["   :raw:\n", "   :raw:\n   :env: a, b\n"], ids=["raw", "raw-env"]
+)
+def test_under_raw_without_data_a_non_object_environment_is_shown(
+    build_page, value, options
+):
+    """Fix round 1, F8b: ``:raw:`` without ``:data:`` shows a non-object environment's
+    value as its JSON block, without a warning -- master did so (it did not crash
+    there), and ubCode keeps that rendering (``render_env``). Every other branch skips
+    it with ``env_shape`` (the test above)."""
+    app, stream = build_page(
+        ".. test-env:: e.json\n" + options,
+        files={"e.json": f'{{"a": {value}, "b": {{"k": "v"}}}}'.encode()},
+    )
+
+    assert stream == ""
+    assert _sections(app) == ["a", "b"]
+    blocks = [
+        block.astext()
+        for block in app.env.get_doctree("index").findall(nodes.literal_block)
+    ]
+    assert blocks == [json.dumps(json.loads(value), indent=4), '{\n    "k": "v"\n}']
 
 
 def test_the_shape_warning_is_typed(build_page):
@@ -249,16 +274,47 @@ def test_a_repeated_env_is_one_section(build_page):
     assert _sections(app) == ["py35"]
 
 
-def test_a_data_value_with_no_key_shows_every_variable(build_page):
-    """``:data: ,`` names no variable: every variable is shown, as with no ``:data:``."""
+def test_a_data_value_with_no_key_shows_no_variable(build_page):
+    """``:data: ,`` names no variable, so none is shown -- as on master and in ubCode, and
+    as ``:env: ,`` shows no environment (fix round 1, F8a; this row asserted every
+    variable before)."""
     app, stream = build_page(
-        ".. test-env:: t.json\n   :data: ,\n\n.. test-env:: t.json\n",
-        files={"t.json": TOX},
+        ".. test-env:: t.json\n   :data: ,\n", files={"t.json": TOX}
     )
 
     assert stream == ""
-    rows = _rows(app)
-    assert rows[: len(rows) // 2] == rows[len(rows) // 2 :]
+    assert _sections(app) == TOX_ENVS
+    assert _rows(app) == [["Variable", "Data"]] * 3
+
+
+def test_an_env_value_with_no_name_shows_nothing(build_page):
+    """``:env: ,`` names no environment: nothing is shown, and nothing is warned."""
+    app, stream = build_page(
+        ".. test-env:: t.json\n   :env: ,\n", files={"t.json": TOX}
+    )
+
+    assert stream == ""
+    assert _sections(app) == []
+
+
+def test_a_repeated_env_keeps_its_first_position(build_page):
+    app, stream = build_page(
+        ".. test-env:: t.json\n   :env: py35, flake8, py35\n", files={"t.json": TOX}
+    )
+
+    assert stream == ""
+    assert _sections(app) == ["py35", "flake8"]
+
+
+def test_a_repeated_data_key_keeps_its_first_position(build_page):
+    """The missing-key warnings come in ``:data:`` order, a repeat at its first place."""
+    _, stream = build_page(
+        ".. test-env:: t.json\n   :raw:\n   :data: nope2, nope1, nope2\n",
+        files={"t.json": TOX},
+    )
+
+    assert stream.count("WARNING:") == 2
+    assert stream.index("'nope2'") < stream.index("'nope1'")
 
 
 # --- E4: the warnings (#2140 items 3-4) ---------------------------------------------------
@@ -358,6 +414,15 @@ def test_scalar_cells_are_spelled_as_json(build_page):
     ]
 
 
+def test_a_non_ascii_string_cell_is_shown_as_written(build_page):
+    app, stream = build_page(
+        ".. test-env:: s.json\n", files={"s.json": '{"e": {"k": "café"}}'.encode()}
+    )
+
+    assert stream == ""
+    assert _rows(app)[1:] == [["k", "café"]]
+
+
 # --- E6: the exception classes ------------------------------------------------------------
 
 
@@ -367,3 +432,15 @@ def test_scalar_cells_are_spelled_as_json(build_page):
 def test_the_env_exception_classes_are_ordinary_exceptions(cls):
     """Kept (public), no longer raised by the directive, and catchable as ``Exception``."""
     assert issubclass(cls, Exception)
+
+
+def test_a_test_env_in_an_included_file_is_located_there(build_page):
+    """Fix round 1, F2: located in the file the directive is written in."""
+    app, stream = build_page(
+        "x\n\ny\n\n.. include:: part.rst\n",
+        files={"part.rst": b"Part\n----\n\nText.\n\n.. test-env:: nope.json\n"},
+        confoverrides={"exclude_patterns": ["part.rst"]},
+    )
+
+    assert f"{_src(app, 'part.rst')}:6: WARNING: Test file not found: " in stream
+    assert "index.rst:" not in stream
