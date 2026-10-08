@@ -243,9 +243,22 @@ Fixed
   has an id and a permalink of its own, and ``.. contents::`` and the sidebar list it.
   Before, the heading was a stray title of the enclosing section, at that section's level
   and with that section's permalink, and either directive written inside a list item
-  failed the HTML build with ``AssertionError``. Under ``sphinx.ext.autosectionlabel`` the
-  generated sections are labelled like authored ones: one suite name on two pages is its
-  usual duplicate-label warning unless ``autosectionlabel_prefix_document`` is set.
+  failed the HTML build with ``AssertionError``. Text written after the directive in the
+  same section now follows the last generated section -- in a PDF (LaTeX) it is part of
+  it -- so write the directive at the end of its section, or give the text that follows a
+  heading of its own.
+
+  **This can fail a** ``-W`` **build** where a suite or environment is named like a
+  heading on the same page: the name is ambiguous then, and a ```Name`_`` reference to
+  either is docutils' ``ERROR: Duplicate target name, cannot be used as a unique
+  reference``. Under ``sphinx.ext.autosectionlabel`` the generated sections are labelled
+  like authored ones, so such a name is a duplicate label -- across the whole project
+  without ``autosectionlabel_prefix_document`` -- and a ``:ref:`` to it may land on the
+  generated section (autosectionlabel keeps the last one read). Rename the heading, set
+  ``autosectionlabel_prefix_document``, or give the heading an explicit label and
+  reference that. Two suites named alike on one page are two sections with distinct ids;
+  docutils reports that duplicate at INFO level, which leaves ``-W`` green only while
+  nothing references the name.
   `#1959 <https://github.com/useblocks/sphinx-needs/issues/1959>`__,
   `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
 
