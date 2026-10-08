@@ -6,6 +6,7 @@ A Common directive, from which all other test directives inherit the shared func
 import os
 import pathlib
 import re
+from collections.abc import Iterator
 from typing import Any
 
 from docutils import nodes
@@ -44,6 +45,30 @@ def _links_with(existing: str, link_id: str) -> str:
     if link_id in (element.strip() for element in re.split("[;|,]", existing)):
         return existing
     return existing + ";" + link_id
+
+
+def _suites_in_pre_order(suites: list[dict[str, Any]]) -> Iterator[dict[str, Any]]:
+    """Every suite of ``suites`` at every depth: a suite, then its nested suites."""
+    for suite in suites:
+        yield suite
+        yield from _suites_in_pre_order(suite.get("testsuite_nested", []))
+
+
+def find_suite(results: list[dict[str, Any]], name: str) -> dict[str, Any] | None:
+    """The suite a hand-written ``:suite:`` names, or ``None``.
+
+    The first TOP-LEVEL suite called ``name``, else the first suite of that name at any
+    depth, in pre-order (a suite before its nested suites, report order). A name under
+    two parents finds the first in report order; there is no path syntax. ubCode looks a
+    suite up by the same rule (``find_suite`` in its ``ubc_test_reports``).
+    """
+    for suite in results:
+        if suite["name"] == name:
+            return suite
+    for suite in _suites_in_pre_order(results):
+        if suite["name"] == name:
+            return suite
+    return None
 
 
 def new_section(state: RSTState, title_text: str) -> nodes.section:

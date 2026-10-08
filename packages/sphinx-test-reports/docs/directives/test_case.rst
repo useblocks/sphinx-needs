@@ -31,6 +31,10 @@ The following options can be set:
 * **links**: A comma-separated list of IDs to other documented test_files / needs-objects.
 * **collapse**: If set to "TRUE", meta data is collapsed. Can also be set to "FALSE".
 
+The suite ``suite`` names, in which the case is looked up, is the first top-level suite of that name in the file,
+else the first suite of that name nested at any depth, in report order (a suite before the suites nested in it).
+A name used under two different parents always finds the first one; there is no syntax to name a suite by its path.
+
 As different test-frameworks handle the values for test-name and test-classname differently, it is allowed
 to specify only ``case`` or ``classname``. It depends on the loaded test-data, if this results in a unique test-case
 or if it selects only the first found test case. The best case is to always try to specify both values, ``case`` and
