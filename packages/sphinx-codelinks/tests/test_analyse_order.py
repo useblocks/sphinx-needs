@@ -19,7 +19,8 @@ from sphinx_codelinks.config import (
     OneLineCommentStyle,
     SourceAnalyseConfig,
 )
-from sphinx_codelinks.source_discover.config import CommentType
+from sphinx_codelinks.source_discover.config import CommentType, SourceDiscoverConfig
+from sphinx_codelinks.source_discover.source_discover import SourceDiscover
 
 RUNS = 20
 ROWS = 15
@@ -200,4 +201,35 @@ def test_one_line_needs_of_two_files_on_one_row_keep_the_file_order(
         "IMPL_A0",
         "IMPL_A1",
         "IMPL_B0",
+    ]
+
+
+def test_the_file_order_on_one_row_is_the_discovery_order(tmp_path: Path) -> None:
+    """The file part of ``oneline_needs``' key is the one discovery sorts by, not the
+    ``Path``: a ``Path`` compares by parts and would put ``a/b.cpp`` before
+    ``a-c.cpp``, which discovery lists first."""
+    nested = tmp_path / "a" / "b.cpp"
+    nested.parent.mkdir()
+    nested.write_bytes(b"// @Nested, IMPL_NESTED, impl\n")
+    flat = tmp_path / "a-c.cpp"
+    flat.write_bytes(b"// @Flat, IMPL_FLAT, impl\n")
+    src_files = SourceDiscover(
+        SourceDiscoverConfig(src_dir=tmp_path, comment_type="cpp", gitignore=False)
+    ).source_paths
+    assert src_files == [flat.resolve(), nested.resolve()]
+    analyse = SourceAnalyse(
+        SourceAnalyseConfig(
+            src_files=src_files,
+            src_dir=tmp_path,
+            comment_type=CommentType.cpp,
+            get_oneline_needs=True,
+        )
+    )
+    analyse.git_remote_url = None
+    analyse.git_commit_rev = None
+    analyse.run(log_summary=False)
+
+    assert [need.need["id"] for need in analyse.oneline_needs] == [
+        "IMPL_FLAT",
+        "IMPL_NESTED",
     ]
