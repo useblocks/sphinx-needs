@@ -621,3 +621,21 @@ def test_an_extra_option_built_in_on_test_suite_only_is_refused(make_app, tmp_pa
         match="'Suite', which test-suite reads as its own :suite: option",
     ):
         make_app("html", srcdir=src, freshenv=True)
+
+
+@pytest.mark.parametrize(
+    "rst",
+    [
+        ".. test-report:: R\n   :id: TR_PAD\n   :file: g.xml\nA paragraph right after.\n",
+        ".. test-report:: R\n   :id: TR_PAD\n   :file: g.xml\n\n   A body line.\n"
+        "A paragraph right after.\n",
+    ],
+    ids=["after-options", "after-body"],
+)
+def test_a_line_right_after_a_test_report_builds_quietly(build_page, rst):
+    """V2-F11d: the generated block is inserted with a blank line before and after it, as
+    ``insert_input`` does; without them, page text written on the line right after the
+    ``test-report`` warns ``Explicit markup ends without a blank line``."""
+    _, stream = build_page(rst, files={"g.xml": GOOD})
+
+    assert stream == ""
