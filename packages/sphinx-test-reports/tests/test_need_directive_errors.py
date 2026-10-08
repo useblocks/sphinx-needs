@@ -296,7 +296,8 @@ CROSS = ".. test-file:: F\n   :id: TF_CS\n   :file: c.xml\n   :auto_suites:\n   
 def test_one_case_in_two_suites_under_deterministic_ids_keeps_the_first(build_page):
     """N6. One registry per EXPANSION: the per-suite list could not see the second suite's
     case. Master: ``InvalidNeedException: A need with ID 'testcase__C__t_lmgdl' already
-    exists. [duplicate_id]`` (rc 2)."""
+    exists. [duplicate_id]`` (rc 2). The text names the two suites and the way out (fix
+    round 1, F9b -- ubCode's words; this row asserted "twice" before)."""
     app, stream = build_page(
         CROSS, files={"c.xml": _fixture("cross_suite_cases.xml")}, conf=DETERMINISTIC
     )
@@ -305,7 +306,30 @@ def test_one_case_in_two_suites_under_deterministic_ids_keeps_the_first(build_pa
     assert stream.count("WARNING:") == 1
     assert (
         "index.rst:4: WARNING: Case ID exists: testcase__C__t_lmgdl: the report holds "
-        "the case C.t twice; only the first is expanded"
+        "the case C.t in two suites (A and B); with deterministic ids they share one id "
+        "\N{EM DASH} switch tr_deterministic_case_ids off to keep them apart, or only the "
+        "first is expanded"
+    ) in stream
+    assert _of_type(app, "testcase") == ["testcase__C__t_lmgdl"]
+
+
+def test_two_classnames_sharing_a_last_part_share_a_deterministic_id(build_page):
+    """N6 (fix round 1, F9b): ``a.C.t`` and ``b.C.t`` -- different cases -- share
+    ``testcase__C__t_lmgdl``; the slice's hint (raise the length, switch deterministic
+    ids on) cannot help, so the text says what happened (ubCode's words)."""
+    app, stream = build_page(
+        ".. test-file:: F\n   :id: TF_LS\n   :file: l.xml\n   :auto_suites:\n"
+        "   :auto_cases:\n",
+        files={"l.xml": _fixture("last_segment_cases.xml")},
+        conf=DETERMINISTIC,
+    )
+
+    assert app.statuscode == 0
+    assert stream.count("WARNING:") == 1
+    assert (
+        "index.rst:4: WARNING: Case ID exists: testcase__C__t_lmgdl: the cases a.C.t and "
+        "b.C.t share a deterministic id (a deterministic id keeps only the last part of "
+        "the classname and joins it to the name with `__`); only the first is expanded"
     ) in stream
     assert _of_type(app, "testcase") == ["testcase__C__t_lmgdl"]
 
@@ -355,7 +379,7 @@ def test_a_generated_id_another_need_holds_says_to_author_one(build_page):
     )
 
     message = (
-        f"A need with ID '{ADDITION}' already exists. [duplicate_id]; "
+        f"Need could not be created: A need with ID '{ADDITION}' already exists; "
         "give the directive an :id: of its own"
     )
     assert app.statuscode == 0
@@ -372,7 +396,7 @@ def test_an_authored_id_another_need_holds_is_reported_plainly(build_page):
         conf=DETERMINISTIC,
     )
 
-    message = f"A need with ID '{ADDITION}' already exists. [duplicate_id]"
+    message = f"Need could not be created: A need with ID '{ADDITION}' already exists."
     assert stream.count("WARNING:") == 1
     assert f"index.rst:10: WARNING: {message}" in stream
     assert "give the directive" not in stream
@@ -389,7 +413,7 @@ def test_a_need_holding_an_expansion_id_first_keeps_it(build_page):
         conf=ANY_ID,
     )
 
-    message = f"A need with ID '{suite_id}' already exists. [duplicate_id]"
+    message = f"Need could not be created: A need with ID '{suite_id}' already exists."
     assert app.statuscode == 0
     assert stream.count("WARNING:") == 1
     assert f"index.rst:7: WARNING: {message}" in stream
@@ -458,4 +482,68 @@ def test_two_extra_options_equal_but_for_case_are_refused(make_app, tmp_path):
     (src / "index.rst").write_text("Probe\n=====\n", encoding="utf-8")
 
     with pytest.raises(InvalidConfigurationError, match="'Owner' and 'owner'"):
+        make_app("html", srcdir=src, freshenv=True)
+
+
+# --- fix round 1 -------------------------------------------------------------------------
+
+
+def test_a_test_file_in_an_included_file_is_located_there(build_page):
+    """F2: located in the file the directive is written in."""
+    app, stream = build_page(
+        "x\n\ny\n\n.. include:: part.rst\n",
+        files={
+            "part.rst": b"Part\n----\n\nText.\n\n"
+            b".. test-file:: F\n   :id: TF_PART\n   :file: nope.xml\n"
+        },
+        confoverrides={"exclude_patterns": ["part.rst"]},
+    )
+
+    assert f"{_src(app, 'part.rst')}:6: WARNING: Test file not found: " in stream
+    assert "index.rst:" not in stream
+
+
+@pytest.mark.parametrize(
+    ("report", "files", "start"),
+    [
+        ("nope.xml", {}, "Test file not found: "),
+        ("bad.xml", {"bad.xml": b"<testsuite><testcase></testsuite>"}, ""),
+    ],
+    ids=["missing", "malformed"],
+)
+def test_a_test_report_on_a_report_it_cannot_read_warns_once(
+    build_page, report, files, start
+):
+    """F11. Master: the ``test-report`` warned (missing) or raised (malformed), then the
+    ``test-file`` it generated warned again at a line the page does not have (``index.rst:43``).
+    Now the ``test-report`` refuses on its own, once, and generates nothing."""
+    app, stream = build_page(
+        f".. test-report:: R\n   :id: TR_ONE\n   :file: {report}\n", files=files
+    )
+
+    assert app.statuscode == 0
+    assert stream.count("WARNING:") == 1
+    assert f"index.rst:4: WARNING: {start}{_src(app, report)}" in stream
+    assert len(_error_boxes(app)) == 1
+    assert "TR_ONE" not in _needs(app)
+
+
+@pytest.mark.parametrize("name", ["Status", "status"])
+def test_an_extra_option_named_like_a_built_in_one_is_refused(make_app, tmp_path, name):
+    """F12. ``Status`` would be read as ``:status:``, the directives' own option, and
+    silently alias it; ``status`` crashed in ``add_need`` (``TypeError: add_need() got
+    multiple values for keyword argument 'status'``)."""
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "conf.py").write_text(
+        'extensions = ["sphinx_needs", "sphinx_test_reports"]\n'
+        f'tr_extra_options = ["{name}"]\n',
+        encoding="utf-8",
+    )
+    (src / "index.rst").write_text("Probe\n=====\n", encoding="utf-8")
+
+    with pytest.raises(
+        InvalidConfigurationError,
+        match=f"'{name}', which test-file reads as its own :status: option",
+    ):
         make_app("html", srcdir=src, freshenv=True)
