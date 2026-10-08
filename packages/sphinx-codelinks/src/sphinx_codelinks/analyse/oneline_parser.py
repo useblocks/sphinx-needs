@@ -57,8 +57,9 @@ PYTHON_DOCSTRING_TAGS = frozenset(
 
 
 #: What follows the tag of an Epydoc field: ``:`` directly (``@return: text``), or
-#: whitespace, one word and ``:`` (``@param a: text``, ``@raise Exc: text``).
-_FIELD_SHAPE = re.compile(r":|\s+\w+:")
+#: spaces or tabs, one word of characters other than space, tab and ``:``, and ``:``
+#: (``@param a: text``, ``@raise Exc: text``). Locale-free: ubCode spells the same.
+_FIELD_SHAPE = re.compile(r":|[ \t]+[^ \t:]+:")
 
 
 def docstring_tag(line: str, start_sequence: str) -> str | None:
@@ -67,8 +68,9 @@ def docstring_tag(line: str, start_sequence: str) -> str | None:
     The line starts with one when, after comment decoration and whitespace (no
     alphanumeric character), it holds ``start_sequence`` directly followed by a
     tag of :data:`PYTHON_DOCSTRING_TAGS` in the Epydoc field shape: ``:``
-    directly, or whitespace, one word and ``:``. ``@todo fix it, IMPL_1, impl``
-    has no field shape and is left to the one-line parser.
+    directly, or spaces or tabs, one word without space, tab or ``:``, and ``:``.
+    ``@todo fix it, IMPL_1, impl`` has no field shape and is left to the one-line
+    parser.
     """
     if not start_sequence:
         return None
