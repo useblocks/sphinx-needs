@@ -594,13 +594,18 @@ class TestUnreadableReports:
 
     def test_malformed_xml_names_the_report_and_the_position(self, tmp_path, capsys):
         # Master printed lxml's sentence with lxml's own `(file, line 1)` suffix; the
-        # reader's typed error now leads with the path and the position.
+        # reader's typed error now leads with the path and the position, and the
+        # converter does not prefix the path a second time.
         bad = tmp_path / "bad.xml"
         bad.write_bytes(b"<testsuite><testcase></testsuite>")
         code, data = _convert(tmp_path, "--no-config", xml=bad)
         assert code == 1
         assert data is None
-        assert f"error: {bad}: {bad} (line 1, column " in capsys.readouterr().err
+        err = capsys.readouterr().err
+        assert (
+            f"error: {bad} (line 1, column 34): Opening and ending tag mismatch" in err
+        )
+        assert f"{bad}: {bad}" not in err
 
     @pytest.mark.parametrize("report", [b"<testsuites/>", b"<testsuites></testsuites>"])
     def test_an_empty_testsuites_is_an_empty_report(self, tmp_path, capsys, report):

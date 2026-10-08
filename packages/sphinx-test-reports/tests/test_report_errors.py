@@ -251,3 +251,54 @@ def test_basic_doc_builds_with_an_empty_warning_stream(
     """R11. ``test-results`` over a good report: nothing in the stream."""
     test_app.build()
     assert test_app._warning.getvalue() == ""
+
+
+# --- fix round 1 -----------------------------------------------------------------------
+
+#: A page that includes ``part.rst`` at its line 8; the directive is on ``part.rst``'s
+#: line 5 -- line 14 of the state machine's input, a line neither file has.
+INCLUDING_PAGE = "x\n\ny\n\n.. include:: part.rst\n"
+PART = "Part\n----\n\nText.\n\n{directive}"
+
+
+def test_a_directive_in_an_included_file_is_located_there(build_page):
+    """A warning names the file the directive is WRITTEN in and its line there -- as
+    docutils' own errors and ubCode do -- not the including page."""
+    app, stream = build_page(
+        INCLUDING_PAGE,
+        files={
+            "part.rst": PART.format(directive=".. test-results:: nope.xml\n").encode()
+        },
+        confoverrides={"exclude_patterns": ["part.rst"]},
+    )
+
+    assert f"{_src(app, 'part.rst')}:5: WARNING: Test file not found: " in stream
+    assert "index.rst:" not in stream
+
+
+@pytest.mark.parametrize(
+    ("data", "expected"),
+    [
+        (b'[{"name": ', " (line 1, column 11): Expecting value"),
+        (
+            b'{"not": "a list"}',
+            ": the JSON report is not a list of test suites (got an object)",
+        ),
+    ],
+    ids=["not-json", "not-a-list"],
+)
+def test_a_json_report_that_cannot_be_read_is_unreadable(build_page, data, expected):
+    """The JSON reader's failures are ``report_unreadable`` too. Master (and this branch
+    before fix round 1): ``json.decoder.JSONDecodeError: Expecting value: line 1 column
+    11 (char 10)`` / ``ValueError: invalid literal for int() with base 10: 'unknown'``,
+    rc 2."""
+    app, stream = build_page(
+        ".. test-file:: F\n   :id: TF_JSON\n   :file: r.json\n", files={"r.json": data}
+    )
+
+    message = f"{_src(app, 'r.json')}{expected}"
+    assert app.statuscode == 0
+    assert f"index.rst:4: WARNING: {message}" in stream
+    assert stream.count("WARNING:") == 1
+    assert _error_boxes(app) == [message]
+    assert "TF_JSON" not in _needs(app)

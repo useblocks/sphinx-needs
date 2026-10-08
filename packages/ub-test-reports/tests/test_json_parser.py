@@ -175,6 +175,46 @@ class TestErrors:
         with pytest.raises(JsonFileMissing, match=r"missing\.json"):
             JsonParser(missing, json_mapping=_mapping())
 
+    @pytest.mark.parametrize(
+        ("data", "expected"),
+        [
+            (b'[{"name": ', " (line 1, column 11): Expecting value"),
+            (
+                b'[{"name": "caf\xe9"}]',
+                " is not valid UTF-8 (invalid continuation byte at byte 14)",
+            ),
+        ],
+        ids=["not-json", "not-utf8"],
+    )
+    def test_an_unreadable_file_is_a_report_read_error(self, tmp_path, data, expected):
+        """#2052: these escaped as ``json.JSONDecodeError`` / ``UnicodeDecodeError`` and
+        ended a Sphinx build reading the report through ``test-file``."""
+        from ub_test_reports.errors import ReportReadError
+
+        path = tmp_path / "report.json"
+        path.write_bytes(data)
+        with pytest.raises(ReportReadError) as caught:
+            JsonParser(str(path), json_mapping=_mapping())
+        assert str(caught.value) == f"{path}{expected}"
+
+    @pytest.mark.parametrize(
+        ("data", "kind"), [(b'{"not": "a list"}', "an object"), (b"3", "a number")]
+    )
+    def test_a_report_that_is_not_a_list_is_a_report_read_error(
+        self, tmp_path, data, kind
+    ):
+        """A top level that is not a list of suites was walked anyway, and every field
+        fell back to its default (``int('unknown')`` downstream)."""
+        from ub_test_reports.errors import ReportReadError
+
+        path = tmp_path / "report.json"
+        path.write_bytes(data)
+        with pytest.raises(ReportReadError) as caught:
+            JsonParser(str(path), json_mapping=_mapping()).parse()
+        assert str(caught.value) == (
+            f"{path}: the JSON report is not a list of test suites (got {kind})"
+        )
+
     def test_a_missing_file_is_an_ordinary_exception(self, tmp_path):
         """``JsonFileMissing`` derives from ``Exception`` (it was a ``BaseException``,
         which a caller's ``except Exception`` does not catch) (#2052)."""

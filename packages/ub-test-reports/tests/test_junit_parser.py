@@ -355,9 +355,11 @@ def test_malformed_xml_is_a_report_read_error_naming_the_position(tmp_path):
         JUnitParser(path)
 
     message = str(caught.value)
-    # The stable start: the path, then lxml's position. lxml's own sentence follows
-    # verbatim; its wording is lxml's, so it is not pinned here.
-    assert message.startswith(f"{path} (line 1, column ")
+    # The stable start: the path, then lxml's position. lxml's own sentence follows; its
+    # wording is lxml's, so only its start is pinned -- and that the position it appends
+    # (`, line 1, column 34`) is not repeated after ours.
+    assert message.startswith(f"{path} (line 1, column 34): Opening and ending tag")
+    assert not message.endswith(", line 1, column 34")
     assert isinstance(caught.value, Exception)
 
 
@@ -377,7 +379,9 @@ def test_an_undecodable_report_is_a_report_read_error(tmp_path):
     path = _report(tmp_path, b'<testsuite name="caf\xe9"/>')
     with pytest.raises(ReportReadError) as caught:
         JUnitParser(path)
+    # The path once: lxml's own `Error reading file '<path>': ` prefix is dropped.
     assert str(caught.value).startswith(f"{path}: ")
+    assert str(caught.value).count(path) == 1
 
 
 @pytest.mark.parametrize(
@@ -431,3 +435,12 @@ def test_an_empty_testsuites_is_an_empty_report(tmp_path, report):
     from ub_test_reports.junitparser import JUnitParser
 
     assert JUnitParser(_report(tmp_path, report)).parse() == []
+
+
+def test_the_read_error_lives_in_its_own_module():
+    """``ReportReadError`` is shared by the JUnit and the JSON reader; the old import path
+    keeps working."""
+    from ub_test_reports import errors, jsonparser, junitparser
+
+    assert junitparser.ReportReadError is errors.ReportReadError
+    assert jsonparser.ReportReadError is errors.ReportReadError
