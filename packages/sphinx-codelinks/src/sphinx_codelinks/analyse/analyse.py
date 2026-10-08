@@ -34,6 +34,18 @@ from sphinx_codelinks.source_discover.config import CommentType
 
 logger = get_logger(__name__)
 
+# The last key of the marked content's sort. Two entries can start at one position
+# only with overlapping markers (a need-id marker that ends with the one-line start
+# sequence), which the configuration check does not refuse. Such a tie is listed
+# references, then one-line needs, then multi-line needs: an explicit rank, because
+# the type names sort the other way round. Two references from one comment tie on
+# every key and keep the marker order of the configuration (the sort is stable).
+_KIND_RANK: dict[MarkedContentType, int] = {
+    MarkedContentType.need_id_refs: 0,
+    MarkedContentType.need: 1,
+    MarkedContentType.multiline_need: 2,
+}
+
 
 def _char_column(src: bytes, byte_offset: int) -> int:
     """The column, in characters, of ``byte_offset`` in the UTF-8 ``src``."""
@@ -722,12 +734,29 @@ class SourceAnalyse:
                     )
 
     def merge_marked_content(self) -> None:
+        """List the marked content in source order: by file, row and column (#2150).
+
+        Tree-sitter hands a file's comments over in an order that differs between
+        runs, so the column is what keeps two entries of one row in a stable order.
+        ``oneline_needs`` is sorted too: ``src-trace`` creates the needs in its order,
+        and the leftmost of two markers with one id is the one created.
+        """
+        self.oneline_needs.sort(
+            key=lambda x: (
+                x.source_map["start"]["row"],
+                x.source_map["start"]["column"],
+            )
+        )
         self.all_marked_content.extend(self.need_id_refs)
-        self.oneline_needs.sort(key=lambda x: x.source_map["start"]["row"])
         self.all_marked_content.extend(self.oneline_needs)
         self.all_marked_content.extend(self.multiline_needs)
         self.all_marked_content.sort(
-            key=lambda x: (x.filepath, x.source_map["start"]["row"])
+            key=lambda x: (
+                x.filepath,
+                x.source_map["start"]["row"],
+                x.source_map["start"]["column"],
+                _KIND_RANK[x.type],
+            )
         )
 
     def dump_marked_content(self, outdir: Path) -> None:

@@ -517,6 +517,17 @@ New and Improved
   after it. Non-ASCII identifiers in C, C++, Python, C#, Rust and Go parsed into an error
   tree as well, with unchanged output in every case measured.
 
+- 🐛 The marked content of one row is listed in source order, by column (changed output),
+  so ``marked_content.json`` is the same on every run
+  (`#2150 <https://github.com/useblocks/sphinx-needs/issues/2150>`__).
+
+  It was sorted by file and row only: two entries on one row -- two ``@need-ids:``
+  comments, two one-line needs -- came out in the order tree-sitter handed the comments
+  over, which differs between runs, and a need and a reference on one row always listed
+  the reference first. Of two one-line needs with one id on one row, ``src-trace`` now
+  creates the leftmost and skips the other with a ``codelinks.duplicate_need`` warning;
+  which of the two it created differed between builds.
+
 .. _`release:1.4.0`:
 
 1.4.0
