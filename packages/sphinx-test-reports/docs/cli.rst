@@ -52,6 +52,9 @@ as the build spells it -- ``passed``, ``failed``, ``error``, ``skipped``,
 ``case_file`` and ``case_line``; a one-line ``result_text``; and the full
 failure evidence (every ``<failure>``/``<skipped>`` part plus captured output)
 in the need content.
+Nested ``<testsuite>`` elements are walked at every depth:
+a suite's own cases are exported beside those of the suites nested in it,
+and each case's ``suite`` is the name of the suite it is directly in.
 
 The three renameable fields carry the names the build's ``tr_file_option``,
 ``tr_source_file_option`` and ``tr_source_line_option`` select -- the converter

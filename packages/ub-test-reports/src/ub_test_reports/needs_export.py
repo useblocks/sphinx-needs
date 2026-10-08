@@ -142,11 +142,12 @@ def iter_cases(
 ) -> Iterator[tuple[str, Mapping[str, object]]]:
     """Yield ``(suite_name, case)`` pairs, descending into nested suites.
 
-    The parser files the cases of a suite that contains nested ``<testsuite>``
-    elements under ``testsuite_nested`` only, so anything that wants to see
-    every case of a report has to walk this way -- the export does, and so must
-    every diagnostic about the report's cases, or it goes quiet on exactly the
-    nested reports Ant and Maven produce.
+    The parser files a suite's own cases under ``testcases`` and its nested
+    ``<testsuite>`` elements under ``testsuite_nested``, so anything that wants to
+    see every case of a report has to walk this way -- a suite's direct cases,
+    then its nested suites, in pre-order. The export does, and so must every
+    diagnostic about the report's cases, or it goes quiet on exactly the nested
+    reports Ant and Maven produce.
     """
     for suite in suites:
         name = str(suite.get("name", ""))

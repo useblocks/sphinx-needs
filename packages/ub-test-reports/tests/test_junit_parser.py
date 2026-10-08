@@ -285,3 +285,32 @@ class TestSchemaValidation:
 
         assert parser.validate() is False
         assert len(parser.xmlschema.error_log) > 0
+
+
+xml_nested_mixed_path = os.path.join(
+    os.path.dirname(__file__), "fixtures", "nested_mixed.xml"
+)
+
+
+def test_a_suite_keeps_its_direct_cases_beside_its_nested_suites():
+    """#2050: a ``<testsuite>`` holding both ``<testcase>`` children and a nested
+    ``<testsuite>`` keeps both -- the cases under ``testcases``, the suite under
+    ``testsuite_nested``. The parser used to read one or the other (``if … elif …``),
+    so such a suite's own cases were dropped."""
+    from ub_test_reports.junitparser import JUnitParser
+
+    outer, second = JUnitParser(xml_nested_mixed_path).parse()
+
+    assert outer["name"] == "outer"
+    assert [c["name"] for c in outer["testcases"]] == ["test_first", "test_second"]
+    assert [c["result"] for c in outer["testcases"]] == ["passed", "failed"]
+    assert [s["name"] for s in outer["testsuite_nested"]] == ["inner"]
+    inner = outer["testsuite_nested"][0]
+    assert [c["name"] for c in inner["testcases"]] == ["test_nested"]
+    assert inner["testsuite_nested"] == []
+
+    # Nothing else moved: the suite's counters are still its own attributes.
+    assert (outer["tests"], outer["failures"], outer["errors"]) == (3, 1, 0)
+    assert second["name"] == "inner"
+    assert [c["name"] for c in second["testcases"]] == ["test_top_level"]
+    assert second["testsuite_nested"] == []

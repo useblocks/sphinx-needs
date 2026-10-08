@@ -24,6 +24,14 @@ Fixed
   `#2058 <https://github.com/useblocks/sphinx-needs/issues/2058>`__,
   `#2119 <https://github.com/useblocks/sphinx-needs/pull/2119>`__
 
+- 🐛 The JUnit parser keeps the ``<testcase>`` children of a ``<testsuite>`` that also holds
+  nested ``<testsuite>`` elements. It dropped them, so ``test-reports build needs`` never
+  exported those cases; **a report of that shape now gains needs**, one per such case, with
+  ``suite`` set to the name of the suite the case is directly in. Reports whose suites hold
+  either cases or nested suites, never both, convert exactly as before.
+  `#2050 <https://github.com/useblocks/sphinx-needs/issues/2050>`__,
+  `#2149 <https://github.com/useblocks/sphinx-needs/pull/2149>`__
+
 .. _`release:1.0.0`:
 
 1.0.0

@@ -692,3 +692,24 @@ class TestContentIsNotDuplicated:
         content = _needs(data)["testcase__ParamTest_0__Legacy_owuvz"]["content"]
         assert "Skipped via GTEST_SKIP" in content
         assert "not applicable on this platform" in content
+
+
+def test_direct_cases_of_a_suite_with_nested_suites_are_exported(tmp_path):
+    """#2050: the cases of a suite that ALSO holds nested suites are exported, with that
+    suite's name -- the parser used to drop them, so the converter never saw them. The
+    nested suite's case and the second top-level suite's case are exported as before."""
+    code, data = _convert(tmp_path, "--no-config", xml=UTILS / "nested_mixed.xml")
+    assert code == 0
+
+    by_case = {need["case"]: need for need in _needs(data).values()}
+    assert sorted(by_case) == [
+        "test_first",
+        "test_nested",
+        "test_second",
+        "test_top_level",
+    ]
+    assert by_case["test_first"]["suite"] == "outer"
+    assert by_case["test_second"]["suite"] == "outer"
+    assert by_case["test_second"]["result"] == "failed"
+    assert by_case["test_nested"]["suite"] == "inner"
+    assert by_case["test_top_level"]["suite"] == "inner"

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  A suite holding BOTH direct test cases and a nested suite (#2050), then a second top-level
+  suite. The second top-level suite is named like the nested one, so a `:suite:` lookup has a
+  name that exists at the top level AND nested, and the nested one comes first in pre-order.
+-->
+<testsuites>
+  <testsuite name="outer" tests="3" errors="0" failures="1" skipped="0" time="0.6">
+    <testcase classname="pkg.test_outer.TestOuter" name="test_first" time="0.1"/>
+    <testcase classname="pkg.test_outer.TestOuter" name="test_second" time="0.2">
+      <failure message="assert 1 == 2" type="AssertionError">assert 1 == 2</failure>
+    </testcase>
+    <testsuite name="inner" tests="1" errors="0" failures="0" skipped="0" time="0.3">
+      <testcase classname="pkg.test_inner.TestInner" name="test_nested" time="0.3"/>
+    </testsuite>
+  </testsuite>
+  <testsuite name="inner" tests="1" errors="0" failures="0" skipped="1" time="0.4">
+    <testcase classname="pkg.test_top.TestTop" name="test_top_level" time="0.4">
+      <skipped message="not today" type="pytest.skip">not today</skipped>
+    </testcase>
+  </testsuite>
+</testsuites>

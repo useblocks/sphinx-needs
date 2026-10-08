@@ -10,6 +10,7 @@ from sphinx_needs.utils import add_doc
 from sphinx_test_reports.directives.test_common import (
     TestCommonDirective,
     _links_with,
+    find_suite,
 )
 from sphinx_test_reports.exceptions import TestReportInvalidOptionError
 
@@ -42,28 +43,23 @@ class TestSuiteDirective(TestCommonDirective):
         super().__init__(*args, **kwargs)
         self.case_ids = []
 
-    def run(self, nested=False, count=-1):
+    def run(self, suite: dict[str, Any] | None = None):
+        """The suite's need and, from an ``:auto_cases:`` expansion, its direct cases'.
+
+        ``suite`` is the parsed suite when ``test-file``'s ``:auto_suites:`` runs this
+        directive (its nested suites are that expansion's to walk); a hand-written
+        ``test-suite`` passes none, and the suite is the one its ``:suite:`` names.
+        """
         self.prepare_basic_options()
         self.load_test_file()
-
-        if nested:
-            # access n-th nested suite here
-            self.results = self.results[0]["testsuite_nested"]
 
         suite_name = self.options.get("suite")
 
         if suite_name is None:
             raise TestReportInvalidOptionError("Suite not given!")
 
-        suite = None
-        for suite_obj in self.results:
-            if suite_obj["name"] == suite_name:
-                suite = suite_obj
-                break
-
-            elif nested:  # access correct nested testsuite here
-                suite = self.results[count]
-                break
+        if suite is None:
+            suite = find_suite(self.results, suite_name)
 
         if suite is None:
             raise TestReportInvalidOptionError(
@@ -124,49 +120,8 @@ class TestSuiteDirective(TestCommonDirective):
             **report_fields,
         )
 
-        # TODO double nested logic
-        # nested testsuite present, if testcases are present -> reached most inner testsuite
-        access_count = 0
-        if len(suite_obj["testcases"]) == 0:
-            for suite in suite_obj["testsuite_nested"]:
-                suite_id = self.test_id
-                suite_id += (
-                    "_"
-                    + hashlib.sha1(suite["name"].encode("UTF-8"))
-                    .hexdigest()
-                    .upper()[: self.app.config.tr_suite_id_length]
-                )
-
-                options = self.options
-                options["suite"] = suite["name"]
-                options["id"] = suite_id
-
-                options["links"] = _links_with(options.get("links", ""), self.test_id)
-
-                arguments = [suite["name"]]
-                suite_directive = TestSuiteDirective(
-                    self.app.config.tr_suite[0],
-                    arguments,
-                    options,
-                    "",
-                    self.lineno,  # no content
-                    self.content_offset,
-                    self.block_text,
-                    self.state,
-                    self.state_machine,
-                )
-
-                is_nested = len(suite_obj["testsuites"]) > 0
-
-                # create suite_directive for each nested suite, directive appends content in html files
-                # access_count keeps track of which nested testsuite to access in the directive
-                main_section += suite_directive.run(nested=True, count=access_count)
-                access_count += 1
-
-        # suite has testcases
-        if "auto_cases" in self.options and len(suite_obj["testcases"]) > 0:
-            case_count = 0
-
+        # the suite's direct cases
+        if "auto_cases" in self.options and len(suite["testcases"]) > 0:
             for case in suite["testcases"]:
                 case_id = self.deterministic_case_id_for(case)
                 if case_id is None:
@@ -212,14 +167,7 @@ class TestSuiteDirective(TestCommonDirective):
                     )
                 )
 
-                is_nested = len(suite_obj["testsuite_nested"]) > 0 or nested
-
-                # depending if nested or not, runs case directive to add content to testcases
-                # count is for correct suite access, if multiple present, case_count is for correct case access
-                main_section += case_directive.run(is_nested, count, case_count)
-
-                if is_nested:
-                    case_count += 1
+                main_section += case_directive.run(suite=suite)
 
         add_doc(self.env, docname)
 

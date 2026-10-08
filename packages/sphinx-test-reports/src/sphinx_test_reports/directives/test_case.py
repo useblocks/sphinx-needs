@@ -6,7 +6,7 @@ from docutils.parsers.rst import directives
 from sphinx_needs.api import add_need
 from sphinx_needs.utils import add_doc
 from sphinx_test_reports.config import DEFAULT_OPTIONS
-from sphinx_test_reports.directives.test_common import TestCommonDirective
+from sphinx_test_reports.directives.test_common import TestCommonDirective, find_suite
 from sphinx_test_reports.exceptions import TestReportInvalidOptionError
 from ub_test_reports.identity import split_case_name
 
@@ -40,13 +40,15 @@ class TestCaseDirective(TestCommonDirective):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def run(self, nested=False, suite_count=-1, case_count=-1):
+    def run(self, suite: dict[str, Any] | None = None):
+        """The case's need.
+
+        ``suite`` is the parsed suite when a ``:auto_cases:`` expansion runs this directive
+        for one of that suite's cases; a hand-written ``test-case`` passes none, and the
+        suite is the one its ``:suite:`` names.
+        """
         self.prepare_basic_options()
         self.load_test_file()
-
-        if nested and suite_count >= 0:
-            # access n-th nested suite here
-            self.results = self.results[0]["testsuites"][suite_count]
 
         suite_name = self.options.get("suite")
 
@@ -58,15 +60,8 @@ class TestCaseDirective(TestCommonDirective):
         if case_full_name is None and class_name is None:
             raise TestReportInvalidOptionError("Case or classname not given!")
 
-        suite = None
-        for suite_obj in self.results:
-            if nested:  # nested testsuites
-                suite = self.results
-                break
-
-            elif suite_obj["name"] == suite_name:
-                suite = suite_obj
-                break
+        if suite is None:
+            suite = find_suite(self.results, suite_name)
 
         if suite is None:
             raise TestReportInvalidOptionError(
@@ -84,15 +79,6 @@ class TestCaseDirective(TestCommonDirective):
                 case_obj["name"] == case_full_name
                 and case_obj["classname"] == class_name
             ):
-                case = case_obj
-                break
-
-            elif nested and case_count >= 0:
-                # access correct case in list
-                case = suite["testcases"][case_count]
-                break
-
-            elif nested:
                 case = case_obj
                 break
 

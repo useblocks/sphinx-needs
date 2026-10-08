@@ -261,9 +261,9 @@ def _warn_about_absent_source_lines(
     ``junit_family = xunit1`` (or ``legacy``); its default ``xunit2`` filters
     them out, which silently costs the source location of every case.
     """
-    # Walk the report the way the export does: the parser files the cases of
-    # a suite with nested <testsuite> elements under testsuite_nested only, so
-    # looking at the top-level testcases alone goes quiet on nested reports.
+    # Walk the report the way the export does: the cases of nested <testsuite>
+    # elements are filed under their suite in testsuite_nested, so looking at the
+    # top-level testcases alone goes quiet on nested reports.
     cases = [case for _suite_name, case in iter_cases(suites)]
     if cases and all(optional(case.get("line"), -1) == "" for case in cases):
         print(

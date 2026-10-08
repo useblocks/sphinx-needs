@@ -41,7 +41,71 @@ class TestFileDirective(TestCommonDirective):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.suite_ids = {}
+        #: Every suite id this expansion minted, at every depth, with its suite's name. Keyed
+        #: on the full id, which carries the parent's: two suites named alike under
+        #: different parents do not collide, two of one name under one parent do.
+        self.suite_ids: dict[str, str] = {}
+
+    def _expand_suites(
+        self,
+        suites: list[dict[str, Any]],
+        parent_id: str,
+        parent_options: dict[str, Any],
+    ) -> list[nodes.Node]:
+        """The needs of ``suites`` and, at every depth, of the suites nested in them.
+
+        In pre-order: a suite's need, then (with ``:auto_cases:``) its direct cases, then
+        its nested suites the same way. A suite's id is its parent's id -- the file's for
+        a top-level suite, the enclosing suite's for a nested one -- plus the first
+        ``tr_suite_id_length`` hex digits of the SHA1 of its name; it links its parent on
+        top of the parent's own links, so the chain up to the file accumulates.
+        """
+        nodes_: list[nodes.Node] = []
+        for suite in suites:
+            suite_id = (
+                parent_id
+                + "_"
+                + hashlib.sha1(suite["name"].encode("UTF-8"))
+                .hexdigest()
+                .upper()[: self.app.config.tr_suite_id_length]
+            )
+
+            if suite_id not in self.suite_ids:
+                self.suite_ids[suite_id] = suite["name"]
+            else:
+                raise Exception(
+                    f"Suite ID {suite_id} already exists by {self.suite_ids[suite_id]} ({suite['name']})"
+                )
+
+            # A copy per suite: the dict is handed on to the suite's cases and nested
+            # suites, and a shared one would carry this suite's id and links into its
+            # siblings and every later suite.
+            options = parent_options.copy()
+            options["suite"] = suite["name"]
+            options["id"] = suite_id
+
+            options["links"] = _links_with(options.get("links", ""), parent_id)
+
+            arguments = [suite["name"]]
+            suite_directive = (
+                sphinx_test_reports.directives.test_suite.TestSuiteDirective(
+                    self.app.config.tr_suite[0],
+                    arguments,
+                    options,
+                    "",
+                    self.lineno,  # no content
+                    self.content_offset,
+                    self.block_text,
+                    self.state,
+                    self.state_machine,
+                )
+            )
+
+            nodes_ += suite_directive.run(suite=suite)
+            nodes_ += self._expand_suites(
+                suite.get("testsuite_nested", []), suite_id, options
+            )
+        return nodes_
 
     def run(self):
         self.prepare_basic_options()
@@ -105,44 +169,9 @@ class TestFileDirective(TestCommonDirective):
             )
 
         if "auto_suites" in self.options:
-            for suite in self.results:
-                suite_id = self.test_id
-                suite_id += (
-                    "_"
-                    + hashlib.sha1(suite["name"].encode("UTF-8"))
-                    .hexdigest()
-                    .upper()[: self.app.config.tr_suite_id_length]
-                )
-
-                if suite_id not in self.suite_ids:
-                    self.suite_ids[suite_id] = suite["name"]
-                else:
-                    raise Exception(
-                        f"Suite ID {suite_id} already exists by {self.suite_ids[suite_id]} ({suite['name']})"
-                    )
-
-                options = self.options
-                options["suite"] = suite["name"]
-                options["id"] = suite_id
-
-                options["links"] = _links_with(options.get("links", ""), self.test_id)
-
-                arguments = [suite["name"]]
-                suite_directive = (
-                    sphinx_test_reports.directives.test_suite.TestSuiteDirective(
-                        self.app.config.tr_suite[0],
-                        arguments,
-                        options,
-                        "",
-                        self.lineno,  # no content
-                        self.content_offset,
-                        self.block_text,
-                        self.state,
-                        self.state_machine,
-                    )
-                )
-
-                main_section += suite_directive.run()
+            main_section += self._expand_suites(
+                self.results, self.test_id, self.options
+            )
 
         add_doc(self.env, docname)
 

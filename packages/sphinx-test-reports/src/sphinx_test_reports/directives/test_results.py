@@ -42,40 +42,47 @@ class TestResultsDirective(Directive):
         main_section = []
 
         for testsuite in results:
-            section = new_section(self.state, testsuite["name"])
-            section += nodes.paragraph(
-                text="Tests: {tests}, Failures: {failure}, Errors: {error}, "
-                "Skips: {skips}".format(
-                    tests=testsuite["tests"],
-                    failure=testsuite["failures"],
-                    error=testsuite["errors"],
-                    skips=testsuite["skips"],
-                )
-            )
-            section += nodes.paragraph(
-                text="Time: {time}".format(time=testsuite["time"])
-            )
-
-            table = nodes.table()
-            section += table
-
-            tgroup = nodes.tgroup(cols=len(self.header))
-            table += tgroup
-            for colwidth in self.colwidths:
-                tgroup += nodes.colspec(colwidth=colwidth)
-
-            thead = nodes.thead()
-            tgroup += thead
-            thead += self._create_table_row(self.header)
-
-            tbody = nodes.tbody()
-            tgroup += tbody
-            for testcase in testsuite["testcases"]:
-                tbody += self._create_testcase_row(testcase)
-
-            main_section.append(section)
+            main_section.append(self._suite_section(testsuite))
 
         return main_section
+
+    def _suite_section(self, testsuite) -> nodes.section:
+        """A suite's section: its counters, its ``Time:``, the table of its DIRECT cases,
+        then a section of the same shape inside it for each nested suite, at every depth.
+        """
+        section = new_section(self.state, testsuite["name"])
+        section += nodes.paragraph(
+            text="Tests: {tests}, Failures: {failure}, Errors: {error}, "
+            "Skips: {skips}".format(
+                tests=testsuite["tests"],
+                failure=testsuite["failures"],
+                error=testsuite["errors"],
+                skips=testsuite["skips"],
+            )
+        )
+        section += nodes.paragraph(text="Time: {time}".format(time=testsuite["time"]))
+
+        table = nodes.table()
+        section += table
+
+        tgroup = nodes.tgroup(cols=len(self.header))
+        table += tgroup
+        for colwidth in self.colwidths:
+            tgroup += nodes.colspec(colwidth=colwidth)
+
+        thead = nodes.thead()
+        tgroup += thead
+        thead += self._create_table_row(self.header)
+
+        tbody = nodes.tbody()
+        tgroup += tbody
+        for testcase in testsuite["testcases"]:
+            tbody += self._create_testcase_row(testcase)
+
+        for nested in testsuite.get("testsuite_nested", []):
+            section.append(self._suite_section(nested))
+
+        return section
 
     def _create_testcase_row(self, testcase):
         row_cells = (

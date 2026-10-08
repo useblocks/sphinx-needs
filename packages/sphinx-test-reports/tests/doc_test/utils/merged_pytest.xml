@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Two top-level suites of one name, as merged pytest reports have them: a `:suite:` lookup takes the first. -->
+<testsuites>
+  <testsuite name="pytest" tests="2" errors="0" failures="0" skipped="0" time="0.2">
+    <testcase classname="pkg.test_a" name="test_a1" time="0.1"/>
+    <testcase classname="pkg.test_a" name="test_a2" time="0.1"/>
+  </testsuite>
+  <testsuite name="pytest" tests="3" errors="0" failures="1" skipped="0" time="0.3">
+    <testcase classname="pkg.test_b" name="test_b1" time="0.1"/>
+    <testcase classname="pkg.test_b" name="test_b2" time="0.1"/>
+    <testcase classname="pkg.test_b" name="test_b3" time="0.1">
+      <failure message="no" type="AssertionError">no</failure>
+    </testcase>
+  </testsuite>
+</testsuites>
