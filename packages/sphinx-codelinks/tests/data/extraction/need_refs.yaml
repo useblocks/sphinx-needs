@@ -79,3 +79,12 @@ empty_marker_is_no_reference:
   source: |
     /* @need-ids: */
     void f() {}
+
+line_comment_ending_in_closer:
+  # A line comment that ends in */: the */ is not an id either.
+  lang: cpp
+  config: default
+  extract: [need_refs]
+  source: |
+    // @need-ids: REQ_1 */
+    void f() {}
