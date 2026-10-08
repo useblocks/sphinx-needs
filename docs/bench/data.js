@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791477000379,
+  "lastUpdate": 1791489735512,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -23760,6 +23760,42 @@ window.BENCHMARK_DATA = {
             "value": 45.829798274,
             "unit": "s",
             "extra": "Commit: fa3a137379e9b56d7adae9d7c974382bddb71b09\nBranch: master\nTime: 2026-10-08T18:28:41+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1044de72b988159f4a28a29cb89012c7398dce9b",
+          "message": "🐛 sphinx-test-reports, ub-test-reports: an unreadable report is a typed, located warning and an error box (#2156)\n\n**What**\n- One warning family, `test_reports.<subtype>`: a `warn()` helper\nlocates every warning on its directive and types\nit, so `suppress_warnings` takes `test_reports` or\n`test_reports.<subtype>`; `error_node()` is the in-page box with\n  the warning's exact text.\n- `test-results`, `test-file`, `test-suite`, `test-case`: a missing\nreport is `report_missing`, one the reader\nrefuses (JUnit XML or JSON) is `report_unreadable`; each warns once,\nlocated in the file the directive is written\nin (an included one too), shows the box and creates no need; the build\ngoes on. `test-results` refuses a `.json`\nargument by name, and an option written under it is refused (#2138): in\nreStructuredText docutils' `unknown option`\nerror, in a MyST page MyST's `Unknown option keys` warning (the table\nstill renders).\n- ub-test-reports: one typed `ReportReadError`\n(`ub_test_reports.errors`) for both readers — malformed XML with\npath, line and column; undecodable bytes; a non-numeric numeric\nattribute; invalid / non-UTF-8 JSON and a JSON top\nlevel that is not a list, or a suite in it that is not an object — each\ntext saying the path and the position\nonce; a JSON report with a UTF-8 BOM is read; `<testsuites/>` is an\nempty report;\n  `JUnitFileMissing` / `JsonFileMissing` derive from `Exception`.\n- Docs: a Warnings section listing the whole family\n(`configuration.rst`); `test-results`' refusals.\n\n**Why** — every failure a user could cause here ended the build with an\nuncaught exception (two of them\n`BaseException`s), or, for `test-file` alone, an untyped warning with\nits location inside the text. A `-W` build that\nstopped on an exception now fails on a warning instead; one input that\nrendered silently before now warns (a MyST\noption line under `test-results`).\n\n**ubCode parity** — the subtypes are the tails of ubCode's\n`needs.test_report_*` codes. Registered divergences:\nubCode keeps a report with a non-numeric attribute and notes it\n(`error.rs:10-11`), the oracle refuses the report;\nthe oracle's in-page error box has no ubCode twin. `<testsuites/>` =\nempty report is ubCode's rule\n(`junit.rs:398-402`).\n\n**Tests** — `tests/test_report_errors.py` (sphinx-test-reports), rows in\nub-test-reports' `test_junit_parser.py`,\n`test_json_parser.py`, `test_cli_convert.py`; `test_compiles_cleanly.py`\nin both packages (every module compiles under\n`-W error`); every vendored XML fixture converts byte-identically before\nand after. Test-only: the five bare\n`Sphinx(...)` builds of `test_cli_convert.py` / `test_project_config.py`\nnow run inside `docutils_namespace()`, which\nremoves a pre-existing ~1-in-5 `-n 4` failure of `test_sections.py`\n(their leaked registrations).\n\nCloses #2138\nPart of #2052",
+          "timestamp": "2026-10-08T22:01:06+02:00",
+          "tree_id": "d7b2ad51bf4d3c8e87a723bf1667866c3b29e9ec",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/1044de72b988159f4a28a29cb89012c7398dce9b"
+        },
+        "date": 1791489727748,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.08169017199998052,
+            "unit": "s",
+            "extra": "Commit: 1044de72b988159f4a28a29cb89012c7398dce9b\nBranch: master\nTime: 2026-10-08T22:01:06+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 43.097810452000004,
+            "unit": "s",
+            "extra": "Commit: 1044de72b988159f4a28a29cb89012c7398dce9b\nBranch: master\nTime: 2026-10-08T22:01:06+02:00"
           }
         ]
       }
