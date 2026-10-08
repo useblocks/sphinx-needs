@@ -21,6 +21,14 @@ packages/sphinx-mounts/tests/fixtures/variant_condition_conformance.toml text eo
 # what the cases test.
 packages/ub-project/tests/fixtures/ubproject_reading_conformance.toml text eol=lf
 
+# sphinx-codelinks' extraction corpus is shared byte-for-byte with ubCode, which copies its
+# YAML cases and takes the snapshots as the expected output of its parity test, so their
+# bytes must be the same on every platform. The tests do not depend on it: YAML normalises
+# line breaks, the harness writes each case's source as exact bytes, and the snapshots are
+# read in text mode.
+packages/sphinx-codelinks/tests/data/extraction/** text eol=lf
+packages/sphinx-codelinks/tests/__snapshots__/** text eol=lf
+
 # The committed PlantUML jar. `text=auto` at the top would otherwise ask git to classify a
 # 30 MB zip on every checkout; git's own detection gets it right, and this states it.
 vendor/plantuml/*.jar binary
