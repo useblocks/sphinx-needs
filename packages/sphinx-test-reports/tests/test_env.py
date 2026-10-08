@@ -156,9 +156,11 @@ def test_doc_env_report_warning_build_html(test_app):
         https://github.com/useblocks/sphinxcontrib-needs/issues/44
     """
 
-    if sphinx_version > 15:
-        assert "WARNING: environment 'defs' is not present in JSON file" in output
-        assert "WARNING: option 'abc' is not present in JSON file" in output
-    else:
-        assert "environment 'defs' is not present in JSON file" in output
-        assert "option 'abc' is not present in JSON file" in output
+    # Each warning once, located on the directive (#2140): `abc` used to be reported once
+    # per environment (twice here), and neither carried a `docname:line`.
+    for message in (
+        "environment 'defs' is not present in JSON file",
+        "option 'abc' is not present in JSON file",
+    ):
+        assert output.count(message) == 1
+        assert f"index.rst:4: WARNING: {message}" in output
