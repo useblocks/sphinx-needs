@@ -347,12 +347,12 @@ Bug fixes
   that has no ``tags`` key, as a hand-written file or another producer may omit it, and
   with a ``TypeError`` on one whose ``tags`` is ``null``, a string or another value that
   is not a list. The option's tags are now added to the record's own for a missing,
-  ``null``, list or string ``tags``: a missing, ``null`` or empty ``tags`` gets the
-  option's tags, a list is extended, and a string is extended with the option's tags,
-  and converted as ``add_need`` converts a string ``tags`` without the option (with
-  ``:allow_type_coercion: false``, the record's string is refused as it is without the
-  option); any other value is refused by ``add_need`` as a ``tags`` value that is
-  invalid. A record whose ``content`` -- or, when that is empty, the legacy
+  ``null``, list or string ``tags``: a missing or ``null`` ``tags`` gets the option's
+  tags, a list is extended, and a string, an empty one included, is extended with the
+  option's tags and converted as ``add_need`` converts a string ``tags`` without the
+  option (with ``:allow_type_coercion: false`` the record's string is refused as it is
+  without the option); any other value is refused by ``add_need`` as a ``tags`` value
+  that is invalid. A record whose ``content`` -- or, when that is empty, the legacy
   ``description`` -- is not a string, such as ``5`` or ``null``, ended the build with an
   ``AttributeError``, whether or not its content was parsed by its ``doctype``; one whose
   ``type`` is a list or an object ended it with a ``TypeError``. Each is now the
