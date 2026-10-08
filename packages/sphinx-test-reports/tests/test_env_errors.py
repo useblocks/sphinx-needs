@@ -466,5 +466,8 @@ def test_a_test_env_in_an_included_file_is_located_there(build_page):
         confoverrides={"exclude_patterns": ["part.rst"]},
     )
 
-    assert f"{_src(app, 'part.rst')}:6: WARNING: Test file not found: " in stream
+    # One form for both sides: the stream names the file as docutils resolved the
+    # include, which on Windows is a forward-slash path (`C:/…/src/part.rst`).
+    expected = f"{_src(app, 'part.rst')}:6: WARNING: Test file not found: "
+    assert expected.replace("\\", "/") in stream.replace("\\", "/")
     assert "index.rst:" not in stream
