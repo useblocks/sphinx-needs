@@ -1,0 +1,25 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 27
+      }
+    },
+    "tagged_scope": "void f() {}",
+    "need": {
+      "title": "Row one",
+      "id": "IMPL_R1",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

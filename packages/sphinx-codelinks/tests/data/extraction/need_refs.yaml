@@ -4,7 +4,7 @@
 # wires it into NeedIdRefsConfig); the default marker is ``@need-ids:``. These
 # cases set ``extract: [need_refs]`` so only reference extraction runs (the
 # default one-line start is also ``@``, so running the one-line parser here would
-# add unrelated noise).
+# add unrelated noise). A marker with no id after it is no reference.
 
 default_marker:
   # Default ``@need-ids:`` marker -> three need_refs (REQ_1, REQ_2, REQ_3).
@@ -69,4 +69,13 @@ marker_after_text:
   config: default
   source: |
     // see @need-ids: REQ_1
+    void f() {}
+
+empty_marker_is_no_reference:
+  # No id after the marker: no reference record.
+  lang: cpp
+  config: default
+  extract: [need_refs]
+  source: |
+    /* @need-ids: */
     void f() {}

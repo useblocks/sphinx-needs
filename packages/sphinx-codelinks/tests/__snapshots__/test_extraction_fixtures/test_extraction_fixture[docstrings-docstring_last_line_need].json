@@ -1,0 +1,25 @@
+[
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 5
+      },
+      "end": {
+        "row": 3,
+        "column": 31
+      }
+    },
+    "tagged_scope": "def f():\n    \"\"\"Summary.\n\n    @Last line, IMPL_LAST, impl\"\"\"",
+    "need": {
+      "title": "Last line",
+      "id": "IMPL_LAST",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

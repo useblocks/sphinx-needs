@@ -708,10 +708,25 @@ def test_a_non_ascii_start_sequence_of_one_character_is_one_character() -> None:
         ),
         pytest.param("@params a: text", None, id="not_a_tag"),
         pytest.param("see @param a: text", None, id="text_before_start"),
+        # the field word is any run of characters other than space, tab and ``:``,
+        # after spaces or tabs only: ``:|[ \t]+[^ \t:]+:``, locale-free
+        pytest.param("@param नाम: text", "param", id="non_ascii_word_devanagari"),
+        pytest.param("@param ä: text", "param", id="non_ascii_word_latin"),
+        pytest.param("@param *args: text", "param", id="star_args_word"),
+        pytest.param("@type a.b: int", "type", id="dotted_word"),
+        pytest.param("@param\ta: text", "param", id="tab_separator"),
+        pytest.param("@param\x1ca: text", None, id="unit_separator_is_not_a_space"),
+        pytest.param(
+            "@param\u3000a: text", None, id="ideographic_space_is_not_a_space"
+        ),
+        pytest.param("@return : text", None, id="empty_word_before_colon"),
+        pytest.param("@param : text", None, id="empty_word_after_param"),
+        pytest.param("@param1: text", None, id="digit_glued_to_tag"),
+        pytest.param("@return_x: text", None, id="underscore_glued_to_tag"),
     ],
 )
 def test_docstring_tag_field_shape(line: str, expected: str | None) -> None:
     """A docstring line is a ``docstring_tag`` only when a listed tag right after the
-    start sequence has the Epydoc field shape: ``:`` directly, or whitespace, one word
-    and ``:``. The same table as ubCode's."""
+    start sequence has the Epydoc field shape: ``:`` directly, or spaces or tabs, one
+    word without space, tab or ``:``, and ``:``. The same table as ubCode's."""
     assert docstring_tag(line, "@") == expected

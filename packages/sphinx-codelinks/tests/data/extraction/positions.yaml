@@ -5,6 +5,10 @@
 # the comment, and not in bytes. The cases put something before a marker on
 # its line (indentation, code, a non-ASCII character), and pin where a span
 # ends when whitespace follows it.
+#
+# A comment's lines are split on "\n" only (CR and CRLF are read as "\n"): a form
+# feed is not a row break. The last line of a comment counts as terminated, and a
+# block comment's closing ``*/`` is not marker text.
 
 indented_oneline:
   # The marker is indented by four spaces inside a function body.
@@ -82,3 +86,27 @@ need_and_ref_on_one_row:
   source: |
     // [[IMPL_PAIR, Pair need]] @need-ids: REQ_2
     void f() {}
+
+one_row_block_comment_need:
+  # The closing */ is not part of the need's last field.
+  lang: cpp
+  config: default
+  source: |
+    /* @Row one, IMPL_R1, impl */
+    void f() {}
+
+need_on_block_comment_closing_row:
+  # A need on the row of the closing */: the last line counts as terminated.
+  lang: cpp
+  config: default
+  source: |
+    int t; /* x
+       @Row two, IMPL_R2, impl */
+    void f() {}
+
+form_feed_is_not_a_row_break:
+  # A form feed inside a line: the reference stays on its row, and the text
+  # before the start sequence keeps the second comment from being a need.
+  lang: cpp
+  config: default
+  source: "int z; /* a\f @need-ids: FF1 */\n/* b\f@Form feed, IMPL_FF, impl\n */\nvoid f() {}\n"
