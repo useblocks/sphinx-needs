@@ -13,7 +13,13 @@ import pytest
 
 import ub_test_reports
 
-SOURCES = sorted(Path(ub_test_reports.__file__).parent.rglob("*.py"))
+#: The package's modules, and this suite's own (a test module is compiled outside the
+#: package walk, and can carry the same escape).
+SOURCES = sorted(
+    path
+    for root in [Path(ub_test_reports.__file__).parent, Path(__file__).parent]
+    for path in root.rglob("*.py")
+)
 
 
 def test_the_package_has_modules_to_compile():

@@ -24,7 +24,13 @@ def _package_dirs() -> list[Path]:
     return [Path(sphinx_test_reports.__file__).parent, Path(old_name.origin).parent]
 
 
-SOURCES = sorted(path for root in _package_dirs() for path in root.rglob("*.py"))
+#: The package's modules, and this suite's own (a test module is compiled outside the
+#: package walk, and can carry the same escape).
+SOURCES = sorted(
+    path
+    for root in [*_package_dirs(), Path(__file__).parent]
+    for path in root.rglob("*.py")
+)
 
 
 def test_the_package_has_modules_to_compile():
