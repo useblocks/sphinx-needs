@@ -52,8 +52,13 @@ def warn(directive: Directive, subtype: str, message: str) -> None:
 
 
 def error_node(message: str) -> nodes.error:
-    """The in-page box a directive returns in place of what it could not produce."""
+    """The in-page box a directive returns in place of what it could not produce.
+
+    It holds the warning's text as is: Sphinx's smartquotes leaves it alone, so the
+    straight quotes of a message (``'<' not found``) are not curled in the page.
+    """
     box = nodes.error()
+    box["support_smartquotes"] = False
     box += nodes.paragraph(text=message)
     return box
 
