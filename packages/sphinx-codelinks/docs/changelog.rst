@@ -87,7 +87,8 @@ New and Improved
 - ✨ Multi-line needs: a need written across the lines of a comment, from an
   ``@need[<markup>] <type>: <title>`` line with ``:key: value`` options to an ``@endneed``
   line, its body in reStructuredText or Markdown
-  (`#1885 <https://github.com/useblocks/sphinx-needs/issues/1885>`__,
+  (`#2152 <https://github.com/useblocks/sphinx-needs/pull/2152>`__,
+  `#1885 <https://github.com/useblocks/sphinx-needs/issues/1885>`__,
   `#1898 <https://github.com/useblocks/sphinx-needs/issues/1898>`__).
 
   ``get_multiline_needs = true`` switches them on for a project, and
