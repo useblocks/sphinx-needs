@@ -52,6 +52,65 @@ def _row_count(src_comment: SourceComment) -> int:
     return (src_comment.node.text or b"").rstrip(b"\n").count(b"\n") + 1
 
 
+def _docstring_contents(
+    node: TreeSitterNode, column: int
+) -> list[tuple[str, int, int]]:
+    """The content of each string of a docstring statement, between its quotes.
+
+    Each with its 0-based row and its column, in characters: the quotes' column plus
+    the prefix letters' and the delimiter's length. ``column`` is the statement's.
+    """
+    raw = node.text or b""
+    contents = []
+    for string in node.named_children:
+        if string.type != "string":
+            continue
+        kinds = {child.type: child for child in string.children}
+        start, end = kinds.get("string_start"), kinds.get("string_end")
+        if start is None or end is None:
+            continue
+        begin = start.end_byte - node.start_byte
+        before = raw[:begin]
+        row_start = before.rfind(b"\n") + 1
+        content_column = len(before[row_start:].decode("utf-8", errors="replace"))
+        if row_start == 0:
+            content_column += column
+        contents.append(
+            (
+                raw[begin : end.start_byte - node.start_byte].decode(
+                    "utf-8", errors="replace"
+                ),
+                start.end_point.row,
+                content_column,
+            )
+        )
+    return contents
+
+
+def _scanned_texts(
+    src_comment: SourceComment, claimed_rows: set[int] | None
+) -> list[tuple[str, int, int]]:
+    """What the one-line and reference extractors scan of a comment.
+
+    Each text comes with the 0-based row and the column, in characters, at which it
+    starts. A docstring is scanned as its content, without the quotes. The rows a
+    multi-line need claims are blanked.
+    """
+    node = src_comment.node
+    if getattr(node, "type", None) == CommentCategory.docstring:
+        texts = _docstring_contents(node, src_comment.column)
+    else:
+        text = node.text.decode("utf-8") if node.text else ""
+        texts = [(text, node.start_point.row, src_comment.column)]
+    if claimed_rows:
+        # a block's lines are its own: no one-line need and no reference in them
+        texts = [
+            (multiline_parser.blank_rows(text, row, claimed_rows), row, column)
+            for text, row, column in texts
+        ]
+    return texts
+
+
 @dataclass
 class AnalyseWarning:
     file_path: str
@@ -252,8 +311,8 @@ class SourceAnalyse:
             src_file = SourceFile(src_path.absolute())
             src_file.add_comments(src_comments)
             if self.analyse_config.get_multiline_needs:
-                # a libclang comment has no column: multi-line needs read what
-                # precedes it on its row from the row itself
+                # multi-line needs read what precedes a comment on its row from
+                # the row itself
                 text = src_path.read_text(encoding="utf-8", errors="replace")
                 text = text.replace("\r\n", "\n").replace("\r", "\n")
                 src_file.lines = text.split(UNIX_NEWLINE)
@@ -294,8 +353,18 @@ class SourceAnalyse:
         filepath: Path,
         tagged_scope: TreeSitterNode | None,
         src_comment: SourceComment,
+        first_row: int | None = None,
+        first_column: int | None = None,
     ) -> list[NeedIdRefs]:
-        """Extract need-ids-refs from a comment."""
+        """Extract need-ids-refs from a comment.
+
+        ``text`` starts at ``first_row`` and ``first_column`` (by default the
+        comment's own row and column).
+        """
+        if first_row is None:
+            first_row = src_comment.node.start_point.row
+        if first_column is None:
+            first_column = src_comment.column
         anchors: list[NeedIdRefs] = []
         for (
             marker,
@@ -304,8 +373,8 @@ class SourceAnalyse:
             start_column,
             end_column,
         ) in self.extract_marker(text):
-            lineno = src_comment.node.start_point.row + row_offset + 1
-            line_column = src_comment.column if row_offset == 0 else 0
+            lineno = first_row + row_offset + 1
+            line_column = first_column if row_offset == 0 else 0
             remote_url = self.git_remote_url
             if self.git_remote_url and self.git_commit_rev:
                 remote_url = utils.form_https_url(
@@ -364,7 +433,10 @@ class SourceAnalyse:
         text: str,
         src_comment: SourceComment,
         oneline_comment_style: OneLineCommentStyle,
+        first_row: int | None = None,
     ) -> Generator[tuple[dict[str, str | list[str] | int], int]]:
+        if first_row is None:
+            first_row = src_comment.node.start_point.row
         lines = text.splitlines(keepends=True)
         row_offset = 0
         if len(lines) == 1:
@@ -389,7 +461,7 @@ class SourceAnalyse:
                     self.warnings.append(
                         AnalyseWarning(
                             str(src_comment.source_file.filepath),
-                            src_comment.node.start_point.row + row_offset + 1,
+                            first_row + row_offset + 1,
                             f"'{oneline_comment_style.start_sequence}{tag}' is a docstring "
                             "tag, not a one-line need; use a start sequence that "
                             "docstrings do not contain",
@@ -407,7 +479,7 @@ class SourceAnalyse:
                 if not src_comment.source_file:
                     row_offset += 1
                     continue
-                lineno = src_comment.node.start_point.row + row_offset + 1
+                lineno = first_row + row_offset + 1
                 warning = AnalyseWarning(
                     str(src_comment.source_file.filepath),
                     lineno,
@@ -429,14 +501,25 @@ class SourceAnalyse:
         tagged_scope: TreeSitterNode | None,
         src_comment: SourceComment,
         oneline_comment_style: OneLineCommentStyle,
+        first_row: int | None = None,
+        first_column: int | None = None,
     ) -> list[OneLineNeed]:
+        """Extract the one-line needs of a comment.
+
+        ``text`` starts at ``first_row`` and ``first_column`` (by default the
+        comment's own row and column).
+        """
+        if first_row is None:
+            first_row = src_comment.node.start_point.row
+        if first_column is None:
+            first_column = src_comment.column
         row_offset = 0
         oneline_needs = []
         for resolved, row_offset in self.extract_oneline_need(
-            text, src_comment, oneline_comment_style
+            text, src_comment, oneline_comment_style, first_row
         ):
-            lineno = src_comment.node.start_point.row + row_offset + 1
-            line_column = src_comment.column if row_offset == 0 else 0
+            lineno = first_row + row_offset + 1
+            line_column = first_column if row_offset == 0 else 0
             start_column = line_column + cast("int", resolved["start_column"])
             end_column = line_column + cast("int", resolved["end_column"])
             remote_url = self.git_remote_url
@@ -596,43 +679,45 @@ class SourceAnalyse:
         if self.analyse_config.get_multiline_needs:
             claimed = self.extract_multiline_needs()
         for src_comment in self.src_comments:
-            text = (
-                src_comment.node.text.decode("utf-8") if src_comment.node.text else None
-            )
-            if not text:
+            if not src_comment.node.text:
                 continue
             filepath = (
                 src_comment.source_file.filepath if src_comment.source_file else None
             )
             if not filepath:
                 continue
-            claimed_rows = claimed.get(id(src_comment))
-            if claimed_rows:
-                # a block's lines are its own: no one-line need and no reference in them
-                text = multiline_parser.blank_rows(
-                    text, src_comment.node.start_point.row, claimed_rows
-                )
             if getattr(src_comment.node, "is_libclang", False):
                 tagged_scope: TreeSitterNode | None = None
             else:
                 tagged_scope = utils.find_associated_scope(
                     src_comment.node, self.analyse_config.comment_type
                 )
-            if self.analyse_config.get_need_id_refs:
-                anchors = self.extract_anchors(
-                    text, filepath, tagged_scope, src_comment
-                )
-                self.need_id_refs.extend(anchors)
-
-            if self.analyse_config.get_oneline_needs:
-                oneline_needs = self.extract_oneline_needs(
-                    text,
-                    filepath,
-                    tagged_scope,
-                    src_comment,
-                    self.analyse_config.oneline_comment_style,
-                )
-                self.oneline_needs.extend(oneline_needs)
+            for text, first_row, first_column in _scanned_texts(
+                src_comment, claimed.get(id(src_comment))
+            ):
+                if self.analyse_config.get_need_id_refs:
+                    self.need_id_refs.extend(
+                        self.extract_anchors(
+                            text,
+                            filepath,
+                            tagged_scope,
+                            src_comment,
+                            first_row,
+                            first_column,
+                        )
+                    )
+                if self.analyse_config.get_oneline_needs:
+                    self.oneline_needs.extend(
+                        self.extract_oneline_needs(
+                            text,
+                            filepath,
+                            tagged_scope,
+                            src_comment,
+                            self.analyse_config.oneline_comment_style,
+                            first_row,
+                            first_column,
+                        )
+                    )
 
     def merge_marked_content(self) -> None:
         self.all_marked_content.extend(self.need_id_refs)
