@@ -16,6 +16,23 @@ It has an id and a permalink, and ``.. contents::`` and the sidebar list it like
 Text written after the directive in the same section follows the last generated section -- in a PDF (LaTeX) it is part of it --
 so write the directive at the end of its section, or give the text that follows a heading of its own.
 
+The file is read as UTF-8, with or without a byte-order mark (what Windows editors and PowerShell's ``Out-File`` write),
+whatever the machine's locale.
+A file that does not exist, is not UTF-8 or is not valid JSON is a ``test_reports.report_missing`` / ``test_reports.report_unreadable`` warning
+located on the directive, and an error box with the same text takes the place of the sections;
+the build goes on (see :ref:`tr_warnings`).
+
+The file must be a JSON object of environments, each an object of variables.
+A file that is anything else (an array, a string, a number) shows nothing,
+with a ``test_reports.env_shape`` warning and the error box;
+an environment whose value is not an object is skipped with a ``test_reports.env_shape`` warning naming it,
+and the other environments are shown.
+
+A variable's value is shown as the file spells it:
+a string as it is (an empty string is an empty cell),
+``true``, ``false``, ``null`` and numbers in their JSON spelling,
+an array or an object as an indented JSON block.
+
 tox based workflow
 ------------------
 
@@ -41,6 +58,12 @@ related dictionary of the requested environment.
 
 Sub-keys like ``python.version`` are currently not supported.
 
+Blank elements are ignored, and a variable named twice is shown once.
+A ``:data:`` that names no variable at all (``:data: ,``) shows every variable, as no ``:data:`` does.
+A variable that a shown environment lacks is ONE ``test_reports.env_key_not_present`` warning per directive:
+``option 'x' is not present in JSON file`` when no shown environment holds it,
+else ``option 'x' is not present in 'flake8, pylint' environment file``, naming the environments that lack it.
+
 **Example**
 
 .. code-block:: rst
@@ -65,7 +88,10 @@ env
 
 Prints out only the data of the given environment. ``:env:`` must be a comma separated list of environment names.
 
-The give name should exist in the given ``json-file``.
+The give name should exist in the given ``json-file``;
+a name it does not hold is a ``test_reports.env_not_present`` warning (``environment 'py27' is not present in JSON file``),
+and the other environments are shown.
+Blank elements are ignored, and an environment named twice is shown once.
 
 **Example**
 
