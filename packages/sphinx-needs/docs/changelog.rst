@@ -135,6 +135,16 @@ Improvements
   content is not yet restricted: file-reading directives, ``raw``, relative image paths
   and nested need directives in it are not refused.
 
+- ✨ :ref:`needimport` can parse each imported need's content in the markup its
+  ``doctype`` names: :ref:`needs_import_parse_by_doctype`, and the directive's
+  ``:parse_by_doctype:`` option (:issue:`1898`, :pr:`XXXX`)
+
+  Markdown exported from a MyST page then renders as Markdown in a reStructuredText page,
+  and reStructuredText as reStructuredText in a MyST page, where both were parsed in the
+  importing page's markup (and still are by default). A ``doctype`` the project cannot
+  parse falls back to the page's markup with one ``needs.import_doctype`` warning per
+  directive; a need rendered through a ``template`` is parsed in the page's markup.
+
 Breaking changes
 ................
 

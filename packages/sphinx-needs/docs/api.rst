@@ -45,7 +45,9 @@ name ``path`` and the line the content came from rather than the page -- through
 to report a docstring's lines at the Python file. ``add_need`` takes no other argument for
 this, so no field or link name is reserved.
 :func:`~sphinx_needs.api.need.ingest_need_record` creates a need from a needs.json-style
-record, and is the path :ref:`needimport` itself takes for each need it imports.
+record, and is the path :ref:`needimport` itself takes for each need it imports; with
+:ref:`needs_import_parse_by_doctype` or its ``:parse_by_doctype:`` option set, needimport
+passes each record's ``doctype`` as the content's markup.
 
 .. autoclass:: sphinx_needs.api.MarkupContent
 

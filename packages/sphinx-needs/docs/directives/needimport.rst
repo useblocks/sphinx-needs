@@ -21,6 +21,7 @@ You can generate a valid file using the builder :ref:`needs_builder`, for exampl
       :pre_template: pre_template.rst
       :post_template: post_template.rst
       :allow_type_coercion: true
+      :parse_by_doctype: true
 
 The directive argument can be one of the following formats:
 
@@ -143,6 +144,44 @@ For example if the ``tags`` need field is provided as a string like ``"tag1,tag2
 otherwise will fail.
 
 This option defaults to ``True``.
+
+.. _needimport_parse_by_doctype:
+
+parse_by_doctype
+~~~~~~~~~~~~~~~~
+
+.. versionadded:: 9.0.0
+
+Parses each imported need's content in the markup its ``doctype`` names, rather than in
+the markup of the page the ``needimport`` is written in. A ``needs.json`` written by
+Sphinx-Needs records, for every need, the suffix of the page it was written in, so
+Markdown exported from a MyST page renders as Markdown in a reStructuredText page, and
+reStructuredText exported from a reStructuredText page renders as such in a MyST page.
+The suffix must be one this project's ``source_suffix`` maps to a reStructuredText or a
+MyST parser (as for :ref:`content written in another markup <api_content_markup>`); a
+need with no ``doctype``, or an empty one, is parsed in the page's markup. Either way, the
+need keeps the ``doctype`` of its record, and the warnings raised while parsing its content
+name the directive's line plus the line of the content they are on.
+
+``:parse_by_doctype:`` alone (or ``true``) turns this on for one import, and
+``:parse_by_doctype: false`` turns it off; without the option,
+:ref:`needs_import_parse_by_doctype` decides.
+
+A need rendered through a template -- its record's ``template``, or the ``:template:``
+option -- is parsed in the page's markup, template and content together: the template is a
+file of the importing project, written in its pages' markup. ``pre_template`` and
+``post_template`` are always parsed in the page's markup. Content with ``jinja_content``
+is rendered by Jinja first, and then parsed in its ``doctype``.
+
+If this project cannot parse a ``doctype`` -- ``.md`` without myst-parser, or a suffix
+that is not in ``source_suffix`` -- the content of those needs is parsed in the page's
+markup and they are imported as before, and one ``needs.import_doctype`` warning per
+directive names that ``doctype`` (none if none of those needs has content). Register the
+suffix, set ``:parse_by_doctype: false``, or add ``"needs.import_doctype"`` to
+``suppress_warnings``.
+
+The imported content is not restricted: what :ref:`api_content_markup` says content from
+another markup should not contain holds here too.
 
 Customization
 -------------
