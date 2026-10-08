@@ -21,6 +21,8 @@ from pathlib import Path
 
 import pytest
 from docutils import nodes
+from docutils.parsers.rst import directives, roles
+from sphinx.util.docutils import additional_nodes, unregister_node
 
 from sphinx_needs.data import SphinxNeedsData
 
@@ -54,6 +56,27 @@ NEED_DIRECTIVES = """\
 """
 NEED_LINES = (4, 8, 13)
 NEED_IDS = ("TF_ERR", "TS_ERR", "TC_ERR")
+
+
+@pytest.fixture(autouse=True)
+def _a_clean_docutils_registry():
+    """Start every build here from docutils' own registries, with nothing of Sphinx's.
+
+    These tests assert EMPTY warning streams. Other modules of this suite build with a
+    bare ``Sphinx(...)`` (``test_cli_convert.py``, ``test_project_config.py``), which
+    registers Sphinx's directives, roles and node classes with docutils and never takes
+    them back; the next app built in the same worker then warns ``directive
+    'version-deprecated' is already registered`` / ``node class 'toctree' is already
+    registered``, once per name. Emptying the two lookup tables and unregistering the
+    nodes is what ``sphinx.util.docutils.docutils_namespace`` undoes when an app is cleaned
+    up (docutils loads its own directives and roles back from its static registries on
+    first use). Autouse, so it runs before ``test_app`` builds its app too.
+    """
+    directives._directives.clear()
+    roles._roles.clear()
+    for node in list(additional_nodes):
+        unregister_node(node)
+        additional_nodes.discard(node)
 
 
 def _build(make_app, tmp_path, rst, files=None, confoverrides=None):
