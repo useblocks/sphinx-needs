@@ -1,0 +1,30 @@
+[
+  {
+    "file_path": "case.cpp",
+    "lineno": 3,
+    "msg": "option 'type' repeats the block's own 'type'; the first value is kept",
+    "type": "multiline-need",
+    "sub_type": "multiline_need_duplicate_option"
+  },
+  {
+    "file_path": "case.cpp",
+    "lineno": 4,
+    "msg": "option 'title' repeats the block's own 'title'; the first value is kept",
+    "type": "multiline-need",
+    "sub_type": "multiline_need_duplicate_option"
+  },
+  {
+    "file_path": "case.cpp",
+    "lineno": 5,
+    "msg": "option 'content' repeats the block's own 'content'; the first value is kept",
+    "type": "multiline-need",
+    "sub_type": "multiline_need_duplicate_option"
+  },
+  {
+    "file_path": "case.cpp",
+    "lineno": 6,
+    "msg": "option 'doctype' repeats the block's own 'doctype'; the first value is kept",
+    "type": "multiline-need",
+    "sub_type": "multiline_need_duplicate_option"
+  }
+]

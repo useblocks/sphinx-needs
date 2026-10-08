@@ -188,11 +188,11 @@ def analyse(  # for CLI, so it needs the branches
     analyse_projects = AnalyseProjects(codelinks_config)
     analyse_projects.run()
 
-    # Output warnings to console for CLI users
+    # Output warnings to console for CLI users: one shape for every kind
     for src_analyse in analyse_projects.projects_analyse.values():
-        for warning in src_analyse.oneline_warnings:
+        for warning in src_analyse.warnings:
             logger.warning(
-                f"Oneline parser warning in {warning.file_path}:{warning.lineno} "
+                f"Analyse warning in {warning.file_path}:{warning.lineno} "
                 f"- {warning.sub_type}: {warning.msg}",
             )
 

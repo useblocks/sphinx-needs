@@ -1,0 +1,53 @@
+[
+  {
+    "filepath": "case.sh",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 2
+      },
+      "end": {
+        "row": 5,
+        "column": 10
+      }
+    },
+    "tagged_scope": "deploy() {\n  echo deploy\n}",
+    "need": {
+      "type": "impl",
+      "title": "Deploy script",
+      "id": "IMPL_BASH",
+      "content": "Runs the deployment.",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.sh",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 2,
+        "col": 2
+      },
+      "end": {
+        "line": 6,
+        "col": 10
+      },
+      "content_start": {
+        "line": 5,
+        "col": 2
+      },
+      "option_lines": {
+        "id": 3
+      },
+      "scope": {
+        "kind": "function_definition",
+        "start": 7,
+        "end": 9
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "function_definition"
+  }
+]

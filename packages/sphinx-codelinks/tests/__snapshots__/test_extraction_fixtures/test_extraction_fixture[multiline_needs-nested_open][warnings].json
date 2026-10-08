@@ -1,0 +1,9 @@
+[
+  {
+    "file_path": "case.cpp",
+    "lineno": 4,
+    "msg": "'@need' inside a multi-line need's body is body text: one need per block",
+    "type": "multiline-need",
+    "sub_type": "multiline_need_nested_open"
+  }
+]

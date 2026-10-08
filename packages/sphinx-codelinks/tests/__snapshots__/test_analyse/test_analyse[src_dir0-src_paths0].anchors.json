@@ -1,37 +1,101 @@
 [
   {
-    "filepath": "marked_rst/dummy_1.cpp",
+    "filepath": "multiline_needs/dummy_1.cpp",
     "remote_url": null,
     "source_map": {
       "start": {
         "row": 3,
-        "column": 8
+        "column": 3
       },
       "end": {
-        "row": 3,
-        "column": 61
+        "row": 7,
+        "column": 11
       }
     },
     "tagged_scope": "void dummy_func1(){\n     //...\n }",
-    "rst": ".. impl:: implement dummy function 1\n   :id: IMPL_71\n",
-    "type": "rst"
+    "need": {
+      "type": "impl",
+      "title": "implement dummy function 1",
+      "id": "IMPL_71",
+      "content": "The function does *nothing* yet.",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "multiline_needs/dummy_1.cpp",
+      "commit": null,
+      "start": {
+        "line": 4,
+        "col": 3
+      },
+      "end": {
+        "line": 8,
+        "col": 11
+      },
+      "content_start": {
+        "line": 7,
+        "col": 3
+      },
+      "option_lines": {
+        "id": 5
+      },
+      "scope": {
+        "kind": "function_definition",
+        "start": 10,
+        "end": 12
+      }
+    },
+    "type": "multiline-need"
   },
   {
-    "filepath": "marked_rst/dummy_1.cpp",
+    "filepath": "multiline_needs/dummy_1.cpp",
     "remote_url": null,
     "source_map": {
       "start": {
-        "row": 12,
-        "column": 7
+        "row": 13,
+        "column": 4
       },
       "end": {
-        "row": 12,
-        "column": 40
+        "row": 17,
+        "column": 12
       }
     },
     "tagged_scope": "int main() {\n   std::cout << \"Starting demo_1...\" << std::endl;\n   dummy_func1();\n   std::cout << \"Demo_1 finished.\" << std::endl;\n   return 0;\n }",
-    "rst": "..impl:: implement main function ",
-    "type": "rst"
+    "need": {
+      "type": "impl",
+      "title": "implement main function",
+      "id": "IMPL_72",
+      "content": "Calls **dummy_func1**.",
+      "doctype": ".md"
+    },
+    "markup": "md",
+    "source": {
+      "project": "",
+      "path": "multiline_needs/dummy_1.cpp",
+      "commit": null,
+      "start": {
+        "line": 14,
+        "col": 4
+      },
+      "end": {
+        "line": 18,
+        "col": 12
+      },
+      "content_start": {
+        "line": 17,
+        "col": 4
+      },
+      "option_lines": {
+        "id": 15
+      },
+      "scope": {
+        "kind": "function_definition",
+        "start": 19,
+        "end": 24
+      }
+    },
+    "type": "multiline-need"
   },
   {
     "filepath": "need_id_refs/dummy_1.cpp",

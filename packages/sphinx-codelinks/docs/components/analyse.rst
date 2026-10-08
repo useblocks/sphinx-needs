@@ -9,7 +9,7 @@ The **Source Analyse** module is a powerful component of **Sphinx-CodeLinks** th
 
 - Extract **Sphinx-Needs** ID references from source code comments
 - Process custom one-line comment patterns for rapid documentation
-- Extract marked reStructuredText (RST) blocks embedded in comments
+- Extract multi-line needs: a need's fields and its body written across the lines of a comment
 - Generate structured JSON output for further processing
 - Support for multiple programming language comment styles
 
@@ -22,7 +22,7 @@ The module supports three primary extraction modes:
 
 1. **Sphinx-Needs ID References** - Links between code and requirements/specifications
 2. **One-line Needs** - Simplified syntax for creating documentation needs
-3. **Marked RST Blocks** - Full reStructuredText content embedded in comments
+3. **Multi-line Needs** - A need's fields and its body, in reStructuredText or Markdown, written across the lines of a comment
 
 Supported Content Types
 -----------------------
@@ -37,10 +37,10 @@ One-line Needs
 
 Use simplified comment patterns to define **Sphinx-Needs** items without complex RST syntax. See :ref:`OneLineCommentStyle <oneline>` for detailed information.
 
-Marked RST Blocks
-~~~~~~~~~~~~~~~~~
+Multi-line Needs
+~~~~~~~~~~~~~~~~
 
-Embed complete reStructuredText content within source code comments for rich documentation that can be extracted and processed.
+Write a whole need in a comment -- its type, title and options, and a body in reStructuredText or Markdown -- between an ``@need`` line and an ``@endneed`` line. See :ref:`multiline_needs`.
 
 Limitations
 -----------
@@ -155,77 +155,238 @@ A project that no ``src-trace`` directive traces still has its ``@need-ids:`` re
 - **When it is analysed.** Every build walks the project's source directory and compares the files, their modification times and sizes with the last analysis; it analyses the project again only when they differ or the configuration changed. The cost of an unchanged build is that walk, with no parsing (see *Incremental builds* above for what the walk costs). A build that analysed the project again rewrites the cards of the needs whose references changed -- or, when none did, writes the root document -- so that Sphinx keeps the result and the next build analyses nothing.
 - **Errors do not stop the build.** A missing source directory, or a discovery or analysis failure, warns once per project and build (``codelinks.need_id_ref``), and that project's references are not attached. A file whose target lies outside the source directory is skipped with a ``codelinks.outside_src_dir`` warning on every build, since the directory is walked every build -- a directive's scope warns only when its document is read.
 
-Marked RST Blocks
-~~~~~~~~~~~~~~~~~
+.. _multiline_needs:
 
-This example demonstrates how the analyse extracts RST blocks from comments.
+Multi-line Needs
+~~~~~~~~~~~~~~~~
+
+A multi-line need is one need written across the lines of a comment: an open line with the
+need's type and title, its options, a body in a declared markup, and a close line.
+
+.. note::
+
+   **Status.** sphinx-codelinks extracts and reports these needs (``codelinks analyse``, below); the
+   ``src-trace`` directive renders them in a following release, once Sphinx-Needs ships the step
+   that parses a need's content in its declared markup (sphinx-needs PR …). Until then a
+   ``src-trace`` directive creates no need from them.
 
 .. tabs::
 
-   .. code-tab:: cpp
+   .. code-tab:: c
 
-       #include <iostream>
+      #include <stdbool.h>
 
-       /*
-       @rst
-       .. impl:: implement dummy function 1
-       :id: IMPL_71
-       @endrst
+      /**
+       * @need req: Login must be rate limited
+       * :id: REQ_LOGIN_1
+       * :links: SPEC_AUTH, SPEC_LOCK
+       * :status: open
+       *
+       * After **five** failed attempts the account is locked;
+       * see :need:`SPEC_AUTH`.
+       * @endneed
        */
-       void dummy_func1(){
-           //...
-       }
+      bool login(const char *user, const char *password) {
+          return false;
+      }
 
-       // @rst..impl:: implement main function @endrst
-       int main() {
-           std::cout << "Starting demo_1..." << std::endl;
-           dummy_func1();
-           std::cout << "Demo_1 finished." << std::endl;
-           return 0;
-       }
+   .. code-tab:: python
 
-   .. code-tab:: json
+      # @need[md] impl: Exponential back-off
+      # :id: IMPL_BACKOFF
+      # :links: REQ_LOGIN_1
+      #
+      # Doubles the delay after each failure, see {need}`REQ_LOGIN_1`.
+      # @endneed
+      def backoff(attempt: int) -> float: ...
 
-       [
-           {
-               "filepath": "marked_rst/dummy_1.cpp",
-               "remote_url": "https://github.com/useblocks/sphinx-codelinks/blob/26b301138eef25c5130518d96eaa7a29a9c6c9fe/marked_rst/dummy_1.cpp#L4",
-               "source_map": {
-                   "start": { "row": 3, "column": 8 },
-                   "end": { "row": 3, "column": 61 }
-               },
-               "tagged_scope": "void dummy_func1(){\n     //...\n }",
-               "rst": ".. impl:: implement dummy function 1\n   :id: IMPL_71\n",
-               "type": "rst"
-           },
-           {
-               "filepath": "marked_rst/dummy_1.cpp",
-               "remote_url": "https://github.com/useblocks/sphinx-codelinks/blob/26b301138eef25c5130518d96eaa7a29a9c6c9fe/marked_rst/dummy_1.cpp#L14",
-               "source_map": {
-                   "start": { "row": 13, "column": 7 },
-                   "end": { "row": 13, "column": 40 }
-               },
-               "tagged_scope": "int main() {\n   std::cout << \"Starting demo_1...\" << std::endl;\n   dummy_func1();\n   std::cout << \"Demo_1 finished.\" << std::endl;\n   return 0;\n }",
-               "rst": "..impl:: implement main function ",
-               "type": "rst"
-           }
-       ]
+The first block's body is reStructuredText, the project default; the second declares Markdown
+(MyST) with ``@need[md]``. The body is written in its declared markup and is parsed, when the need
+is rendered, by Sphinx-Needs -- so roles and links into the documentation work as in a ``.. req::``
+directive's content. The rest of the block is this tool's own grammar, neither RST nor MyST.
 
-**Output Structure:**
+The grammar
+^^^^^^^^^^^
 
-- ``filepath`` - Path to the source file containing the RST block
-- ``remote_url`` - URL to the source code in the remote repository
-- ``source_map`` - Location information of the RST markers
-- ``tagged_scope`` - The code scope associated with the RST block
-- ``rst`` - The extracted reStructuredText content
-- ``type`` - Type of extraction ("rst")
+After the comment's prefixes are stripped (see below), a block is:
 
-**RST Block Formats:**
+.. code-block:: text
 
-The module supports both multi-line and single-line RST blocks:
+   @need[<markup>] <type>: <title>     the open line
+   :<key>: <value>                     option lines, immediately after
+       <continuation>                  a line indented deeper than its option line continues the value
+   <body>                              the first line that is neither an option nor a continuation starts the body
+   @endneed                            the close line
 
-- **Multi-line blocks**: Use ``@rst`` and ``@endrst`` on separate lines
-- **Single-line blocks**: Use ``@rst content @endrst`` on the same line
+- **The open line** starts with the open word (``@need``), optionally followed by a markup tag in
+  brackets, then whitespace, the need type and a colon, then the title -- the rest of the line,
+  which may be empty. The open word counts only when ``[``, whitespace or the line end follows it:
+  ``@need-ids:`` and ``@needle`` open nothing. The type is a need type's name (letters, digits,
+  ``_`` and ``-``); it is checked when the need is rendered, not here. Write the whitespace:
+  ``@need[md]req: T`` and ``@need req:T`` are refused.
+- **The markup tag** is looked up in the project's ``markups`` table, which gives the need's
+  ``doctype`` (``rst`` → ``.rst`` and ``md`` → ``.md`` by default); without a tag the project's
+  ``default_markup`` applies (``rst``). The tag is matched exactly as written: ``[RST]``,
+  ``[ md ]`` and an empty ``[]`` are unknown tags.
+- **Options** are ``:key: value`` lines right after the open line. They may sit at any indentation
+  -- at the open line's, as MyST writes a directive's options, or indented under it as in RST.
+  Their values are kept as written, as directive strings: ``:links: SPEC_AUTH, SPEC_LOCK`` is the
+  string ``"SPEC_AUTH, SPEC_LOCK"``, converted with the project's field definitions when the need
+  is rendered, as a directive's options are. Whitespace must follow the key (``:id:R1`` is body
+  text). A line indented deeper than its option line continues the value, joined with one space,
+  so **separate the options from the body with a blank line**: an indented first body line written
+  directly after an option is read as that option's continuation.
+- **The body** is every line after the options up to the close line: dedented by its common
+  indentation (a TAB counts as one character), never re-flowed, with leading and trailing blank
+  lines trimmed; it may be indented or not. A comment line holding only its prefix (``//``, ``#``,
+  or a lone ``*`` in a block whose lines carry the ``*`` leader) inside it is a blank body line.
+- **The close line** holds the close word (``@endneed``) alone, surrounding whitespace allowed. To
+  write the close word at the start of a body line, escape it: a body line starting
+  ``\@endneed`` -- after its indentation, so inside an indented literal block too -- is emitted
+  as ``@endneed``, its indentation kept. Nothing else is escaped.
+
+One need per block: the open word starting a body line is body text, and is noted with a warning.
+
+Comment runs and prefixes
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A block lives in one **comment run**: one block comment (``/* … */``, ``/** … */``, ``/*! … */``),
+one Python string statement (a docstring, or any bare string statement), or consecutive line
+comments (``//``, ``///``, ``//!``, ``#``) on consecutive rows with
+the same delimiter and only whitespace before them on their rows. A code line, or a change of
+delimiter, ends a run; a comment after code on its row neither starts nor continues one.
+
+The comment prefixes are stripped by the comment's kind, never by searching the text, so every
+line of a block keeps its source line:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - Comment
+     - Stripped from each line
+   * - ``//``, ``///``, ``//!``, ``#``
+     - the delimiter, then one space if there is one
+   * - ``/* … */``, ``/** … */``, ``/*! … */``
+     - first, a first row holding only the opener (with any number of stars, as in a ``/*****``
+       banner) and a last row holding only the closer (``***/``) are dropped; then the
+       delimiters; then a ``*`` leader (``*`` and one space, or a lone ``*``), only when every
+       non-blank line between the opener's row and the closer's carries one -- so a plain block's
+       ``*emphasis*`` is kept. A separator line of stars only (``*****``) counts as carrying the
+       leader and is read as a blank line. Give every line the leader or none: when one line lacks
+       it, an open word behind a ``*`` is reported (``multiline_need_header``) and no need is
+       produced. So is an RST bullet starting ``* @need`` in a plain block's prose outside any
+       need: write such a bullet with ``-``, or give the block leaders
+   * - Python string statement
+     - the quotes, and the lines' common indentation, as ``inspect.cleandoc`` removes it
+
+Under the :ref:`libclang engine <preprocessor_engine>` a comment carries no column, so what precedes
+it on its row is read from the row itself; a block in an inactive preprocessor branch is not
+extracted.
+
+Precedence over one-line needs and references
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The lines of a block belong to it alone: they are never read as one-line needs or ``@need-ids:``
+references, whatever they hold. The default one-line start sequence ``@`` is a prefix of ``@need``,
+and this rule is what keeps them apart: an open line such as ``@need req: Title, with a comma``, or a
+body line such as ``@param a, b``, would otherwise be a one-line need. A refused one-line form
+(``@need req: T @endneed``) hides its own line too; an open line without a close hides nothing. A
+one-line marker or a reference on a line outside the block -- in the same comment or another -- is
+found as before.
+
+With multi-line needs switched on, a one-line need whose title starts with the open word, such as
+``// @need to handle overflow, IMPL_3, impl``, is still a one-line need but also draws a
+``multiline_need_unterminated`` warning: reword the title, or choose another open word.
+
+Malformed blocks
+^^^^^^^^^^^^^^^^
+
+Each problem is an analyser warning at the source file and line; ``codelinks analyse`` prints them
+as ``Analyse warning in <file>:<line> - <kind>: <message>``.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 35 65
+
+   * - Kind
+     - When, and what happens
+   * - ``multiline_need_oneline_form``
+     - The close word ends the open line (after whitespace): skipped, and the line is not read as a
+       one-line need either (a one-line need is written with the :ref:`one-line marker <oneline>`).
+       ``foo@endneed`` is no close word.
+   * - ``multiline_need_unterminated``
+     - No close line before the comment run ends: skipped, and the rest of the run is not read for
+       blocks.
+   * - ``multiline_need_header``
+     - The open word starts a line that is not ``<open>[<markup>] <type>: <title>``: skipped, but
+       its lines up to the close line are still the block's (not read as one-line needs). The same
+       for an open word behind a ``*`` in a block comment whose lines do not all carry the leader:
+       its lines up to the first close line, ``@endneed`` or ``* @endneed``, are the block's too;
+       without one it is ``multiline_need_unterminated``. In a block where some lines carry the
+       leader and others do not, every ``multiline_need_unterminated`` message names the missing
+       leader as the likely cause; a plain block's message has no such hint.
+   * - ``multiline_need_markup``
+     - The markup tag is not in ``markups``: the need is produced with the project's default markup.
+   * - ``multiline_need_duplicate_option``
+     - An option key given twice, or one naming a key of the record itself (``type``, ``title``,
+       ``content``, ``doctype``): the first value stands.
+   * - ``multiline_need_nested_open``
+     - The open word starts a body line: it stays body text.
+
+The record
+^^^^^^^^^^
+
+``codelinks analyse`` writes each multi-line need to ``marked_content.json`` as one record of type
+``multiline-need``. For the C example above, in a repository on GitHub:
+
+.. code-block:: json
+
+   {
+       "filepath": "/home/me/repo/src/auth/login.c",
+       "remote_url": "https://github.com/useblocks/demo/blob/4f2a9c1e0b7d3a5f6e8c9b0a1d2e3f4a5b6c7d8e/src/auth/login.c#L4",
+       "source_map": {
+           "start": { "row": 3, "column": 3 },
+           "end": { "row": 10, "column": 11 }
+       },
+       "tagged_scope": "bool login(const char *user, const char *password) {\n    return false;\n}",
+       "need": {
+           "type": "req",
+           "title": "Login must be rate limited",
+           "id": "REQ_LOGIN_1",
+           "links": "SPEC_AUTH, SPEC_LOCK",
+           "status": "open",
+           "content": "After **five** failed attempts the account is locked;\nsee :need:`SPEC_AUTH`.",
+           "doctype": ".rst"
+       },
+       "markup": "rst",
+       "source": {
+           "project": "src",
+           "path": "src/auth/login.c",
+           "root": "git",
+           "commit": "4f2a9c1e0b7d3a5f6e8c9b0a1d2e3f4a5b6c7d8e",
+           "start": { "line": 4, "col": 3 },
+           "end": { "line": 11, "col": 11 },
+           "content_start": { "line": 9, "col": 3 },
+           "option_lines": { "id": 5, "links": 6, "status": 7 },
+           "scope": { "kind": "function_definition", "start": 13, "end": 15 }
+       },
+       "type": "multiline-need"
+   }
+
+- ``need`` -- the type, the title, the options in the order written with their values as written,
+  ``content`` (the body, ``\n``-joined) and ``doctype``.
+- ``markup`` -- the markup tag as resolved.
+- ``source`` -- the codelinks project; the file, relative to the git root (``root: "git"``) or else
+  to the project's source directory (``root: "src_dir"``), POSIX; the commit; the open line's start,
+  the close line's end and the first body line's start (``null`` without a body), each with a
+  1-based ``line`` and a 0-based ``col``; each option's line; and the code scope the block is
+  attached to (``null`` under the libclang engine).
+- ``filepath``, ``remote_url``, ``source_map`` and ``tagged_scope`` are the fields every
+  ``marked_content.json`` record has; ``source_map`` spans the open line to the close line, 0-based.
+
+``codelinks write rst`` ignores these records. The configuration is
+:ref:`get_multiline_needs <get_multiline_needs>` and :ref:`analyse.multiline_needs <multiline_needs_config>`.
 
 One-line Needs
 --------------

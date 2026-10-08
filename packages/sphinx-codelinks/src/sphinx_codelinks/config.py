@@ -82,23 +82,49 @@ class NeedIdRefsConfig:
         return errors
 
 
-class MarkedRstConfigType(TypedDict):
+class MultilineNeedsConfigType(TypedDict, total=False):
     start_sequence: str
     end_sequence: str
+    default_markup: str
+    markups: dict[str, str]
+
+
+DEFAULT_MARKUPS: dict[str, str] = {"rst": ".rst", "md": ".md"}
+"""The default ``markups`` table: markup tag -> the ``doctype`` suffix of the need."""
 
 
 @dataclass
-class MarkedRstConfig:
+class MultilineNeedsConfig:
+    """The markers and markups of multi-line needs (``[analyse.multiline_needs]``)."""
+
     @classmethod
     def field_names(cls) -> set[str]:
         return {item.name for item in fields(cls)}
 
-    start_sequence: str = field(default="@rst", metadata={"schema": {"type": "string"}})
-    """Chars sequence to indicate the start of the rst text."""
-    end_sequence: str = field(
-        default="@endrst", metadata={"schema": {"type": "string"}}
+    start_sequence: str = field(
+        default="@need", metadata={"schema": {"type": "string", "minLength": 1}}
     )
-    """Chars sequence to indicate the end of the rst text."""
+    """The word that opens a multi-line need, at the start of its line."""
+    end_sequence: str = field(
+        default="@endneed", metadata={"schema": {"type": "string", "minLength": 1}}
+    )
+    """The word that closes a multi-line need, alone on its line."""
+    default_markup: str = field(
+        default="rst", metadata={"schema": {"type": "string", "minLength": 1}}
+    )
+    """The markup tag of a block whose open line names none; a key of ``markups``."""
+    markups: dict[str, str] = field(
+        default_factory=lambda: dict(DEFAULT_MARKUPS),
+        metadata={
+            "schema": {
+                "type": "object",
+                "additionalProperties": {"type": "string"},
+                "minProperties": 1,
+            }
+        },
+    )
+    """Markup tag -> the ``doctype`` suffix the need's content is parsed with. Not
+    checked against any parser: the consumer decides what it can parse."""
 
     @classmethod
     def get_schema(cls, name: str) -> dict[str, Any] | None:
@@ -125,14 +151,16 @@ class MarkedRstConfig:
                 )
         return errors
 
-    def check_sequence_mutually_exclusive(self) -> list[str]:
-        errors = []
+    def check_fields_configuration(self) -> list[str]:
+        errors = self.check_schema()
         if self.start_sequence == self.end_sequence:
             errors.append("start_sequence and end_sequence cannot be the same.")
+        if isinstance(self.markups, dict) and self.default_markup not in self.markups:
+            errors.append(
+                f"default_markup {self.default_markup!r} is not a key of markups "
+                f"({', '.join(repr(tag) for tag in sorted(self.markups))})."
+            )
         return errors
-
-    def check_fields_configuration(self) -> list[str]:
-        return self.check_schema() + self.check_sequence_mutually_exclusive()
 
 
 @dataclass
@@ -391,11 +419,11 @@ class AnalyseSectionConfigType(TypedDict, total=False):
 
     get_need_id_refs: bool
     get_oneline_needs: bool
-    get_rst: bool
+    get_multiline_needs: bool
     outdir: str
     git_root: str
     need_id_refs: NeedIdRefsConfigType
-    marked_rst: MarkedRstConfigType
+    multiline_needs: MultilineNeedsConfigType
     oneline_comment_style: OneLineCommentStyleType
     preprocessor: dict[str, object]
 
@@ -408,10 +436,10 @@ class SourceAnalyseConfigType(TypedDict, total=False):
     comment_type: CommentType
     get_need_id_refs: bool
     get_oneline_needs: bool
-    get_rst: bool
+    get_multiline_needs: bool
     git_root: Path | None
     need_id_refs_config: NeedIdRefsConfig
-    marked_rst_config: MarkedRstConfig
+    multiline_needs_config: MultilineNeedsConfig
     oneline_comment_style: OneLineCommentStyle
     preprocessor: PreprocessorConfig | None
 
@@ -450,8 +478,10 @@ class SourceAnalyseConfig:
     )
     """Whether to extract oneline needs from comments"""
 
-    get_rst: bool = field(default=False, metadata={"schema": {"type": "boolean"}})
-    """Whether to extract rst texts from comments"""
+    get_multiline_needs: bool = field(
+        default=False, metadata={"schema": {"type": "boolean"}}
+    )
+    """Whether to extract multi-line needs (``@need`` … ``@endneed``) from comments"""
 
     git_root: Path | None = field(
         default=None, metadata={"schema": {"type": ["string", "null"]}}
@@ -462,8 +492,10 @@ class SourceAnalyseConfig:
     need_id_refs_config: NeedIdRefsConfig = field(default_factory=NeedIdRefsConfig)
     """Configuration for extracting need id references from comments."""
 
-    marked_rst_config: MarkedRstConfig = field(default_factory=MarkedRstConfig)
-    """Configuration for extracting rst texts from comments."""
+    multiline_needs_config: MultilineNeedsConfig = field(
+        default_factory=MultilineNeedsConfig
+    )
+    """Configuration for extracting multi-line needs from comments."""
 
     oneline_comment_style: OneLineCommentStyle = field(
         default_factory=OneLineCommentStyle
@@ -474,7 +506,7 @@ class SourceAnalyseConfig:
     """Opt-in libclang preprocessor engine. None => tree-sitter (default).
 
     No flat ``metadata["schema"]`` here: this is a nested dataclass, like the
-    sibling ``need_id_refs_config`` / ``marked_rst_config`` /
+    sibling ``need_id_refs_config`` / ``multiline_needs_config`` /
     ``oneline_comment_style`` fields. ``check_schema`` only validates fields that
     declare a flat schema; giving this field one made it validate the constructed
     ``PreprocessorConfig`` instance against JSON type ``object`` and fail at
@@ -516,18 +548,23 @@ class SourceAnalyseConfig:
         markers = set()
         markers.add(self.oneline_comment_style.start_sequence)
         markers.add(self.oneline_comment_style.end_sequence)
-        if self.marked_rst_config.start_sequence in markers:
-            errors.add(
-                f"Marker {self.marked_rst_config.start_sequence} is defined multiple times"
+        # equality only: the default one-line start ``@`` is a PREFIX of ``@need``, and
+        # what keeps the two apart is that a block's lines are hidden from the one-line
+        # parser, not this check. The two words are checked only when the feature is
+        # on: off, they are no markers of the project.
+        multiline_markers = (
+            (
+                self.multiline_needs_config.start_sequence,
+                self.multiline_needs_config.end_sequence,
             )
-        else:
-            markers.add(self.marked_rst_config.start_sequence)
-        if self.marked_rst_config.end_sequence in markers:
-            errors.add(
-                f"Marker {self.marked_rst_config.end_sequence} is defined multiple times"
-            )
-        else:
-            markers.add(self.marked_rst_config.end_sequence)
+            if self.get_multiline_needs
+            else ()
+        )
+        for marker in multiline_markers:
+            if marker in markers:
+                errors.add(f"Marker {marker} is defined multiple times")
+            else:
+                markers.add(marker)
 
         for marker in self.need_id_refs_config.markers:
             if marker in markers:
@@ -550,11 +587,11 @@ class SourceAnalyseConfig:
             if oneline_needs_errors:
                 errors.appendleft("OneLineCommentStyle configuration errors:")
                 errors.extend(oneline_needs_errors)
-        if self.get_rst:
-            marked_rst_errors = self.marked_rst_config.check_fields_configuration()
-            if marked_rst_errors:
-                errors.appendleft("MarkedRst configuration errors:")
-                errors.extend(self.marked_rst_config.check_fields_configuration())
+        if self.get_multiline_needs:
+            multiline_errors = self.multiline_needs_config.check_fields_configuration()
+            if multiline_errors:
+                errors.appendleft("MultilineNeeds configuration errors:")
+                errors.extend(multiline_errors)
         analyse_errors = self.check_markers_mutually_exclusive() + self.check_schema()
         if analyse_errors:
             errors.appendleft("analyse configuration errors:")
@@ -1064,17 +1101,48 @@ def _validate_preprocessor_dict(preproc: dict[str, object]) -> None:
             )
 
 
+REMOVED_ANALYSE_KEYS: dict[str, str] = {
+    "get_rst": "get_multiline_needs",
+    "marked_rst": "[analyse.multiline_needs]",
+}
+"""``[analyse]`` keys of the removed marked-rst blocks -> what replaces each."""
+
+
+def check_removed_analyse_keys(config_dict: AnalyseSectionConfigType) -> None:
+    """Refuse the keys of the removed ``@rst`` blocks with one message naming the cure.
+
+    Any other unknown key keeps failing as before, in the dataclass constructor.
+
+    :raises TypeError: through the channel every other configuration error of the
+        section takes (``typer.BadParameter`` in the CLI, the ``config-inited`` error of
+        a Sphinx build).
+    """
+    found = [key for key in REMOVED_ANALYSE_KEYS if key in config_dict]
+    if not found:
+        return
+    removed = " and ".join(
+        f"'{key}'" if key == "get_rst" else f"'[analyse.{key}]'" for key in found
+    )
+    replacements = " and ".join(REMOVED_ANALYSE_KEYS[key] for key in found)
+    raise TypeError(
+        f"analyse: {removed} {'is' if len(found) == 1 else 'are'} no longer supported: "
+        "the marked-rst blocks were replaced by multi-line needs (the @need and "
+        f"@endneed markers); use {replacements} instead"
+    )
+
+
 def convert_analyse_config(
     config_dict: AnalyseSectionConfigType | None,
     src_discover: SourceDiscover | None = None,
 ) -> SourceAnalyseConfig:
     analyse_config_dict: SourceAnalyseConfigType = {}
     if config_dict:
+        check_removed_analyse_keys(config_dict)
         for k, v in config_dict.items():
             if k not in {
-                "online_comment_style",
+                "oneline_comment_style",
                 "need_id_refs",
-                "marked_rst",
+                "multiline_needs",
                 "preprocessor",
             }:
                 # Convert string paths to Path objects
@@ -1098,14 +1166,16 @@ def convert_analyse_config(
         )
         need_id_refs_config = convert_need_id_refs_config(need_id_refs_config_dict)
 
-        # Get marked_rst configuration
-        marked_rst_config_dict: MarkedRstConfigType | None = config_dict.get(
-            "marked_rst"
+        # Get multiline_needs configuration
+        multiline_needs_config_dict: MultilineNeedsConfigType | None = config_dict.get(
+            "multiline_needs"
         )
-        marked_rst_config = convert_marked_rst_config(marked_rst_config_dict)
+        multiline_needs_config = convert_multiline_needs_config(
+            multiline_needs_config_dict
+        )
 
         analyse_config_dict["need_id_refs_config"] = need_id_refs_config
-        analyse_config_dict["marked_rst_config"] = marked_rst_config
+        analyse_config_dict["multiline_needs_config"] = multiline_needs_config
         analyse_config_dict["oneline_comment_style"] = oneline_comment_style
 
         preprocessor_dict = config_dict.get("preprocessor")
@@ -1167,17 +1237,15 @@ def convert_need_id_refs_config(
     return need_id_refs_config
 
 
-def convert_marked_rst_config(
-    config_dict: MarkedRstConfigType | None,
-) -> MarkedRstConfig:
+def convert_multiline_needs_config(
+    config_dict: MultilineNeedsConfigType | None,
+) -> MultilineNeedsConfig:
     if not config_dict:
-        marked_rst_config = MarkedRstConfig()
-    else:
-        try:
-            marked_rst_config = MarkedRstConfig(**config_dict)
-        except TypeError as e:
-            raise TypeError(f"Invalid oneline comment style configuration: {e}") from e
-    return marked_rst_config
+        return MultilineNeedsConfig()
+    try:
+        return MultilineNeedsConfig(**config_dict)
+    except TypeError as e:
+        raise TypeError(f"Invalid multiline_needs configuration: {e}") from e
 
 
 def generate_project_configs(

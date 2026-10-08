@@ -1,0 +1,106 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 3
+      },
+      "end": {
+        "row": 5,
+        "column": 11
+      }
+    },
+    "tagged_scope": "void indented() {}",
+    "need": {
+      "type": "req",
+      "title": "Indented options",
+      "id": "REQ_INDENTED",
+      "status": "open",
+      "content": "The body is indented as in RST.",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.cpp",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 1,
+        "col": 3
+      },
+      "end": {
+        "line": 6,
+        "col": 11
+      },
+      "content_start": {
+        "line": 5,
+        "col": 6
+      },
+      "option_lines": {
+        "id": 2,
+        "status": 3
+      },
+      "scope": {
+        "kind": "function_definition",
+        "start": 7,
+        "end": 7
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 8,
+        "column": 4
+      },
+      "end": {
+        "row": 12,
+        "column": 11
+      }
+    },
+    "tagged_scope": "void opener_row() {}",
+    "need": {
+      "type": "impl",
+      "title": "Opener row",
+      "id": "IMPL_OPENER_ROW",
+      "content": "Body after a blank line.",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.cpp",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 9,
+        "col": 4
+      },
+      "end": {
+        "line": 13,
+        "col": 11
+      },
+      "content_start": {
+        "line": 12,
+        "col": 7
+      },
+      "option_lines": {
+        "id": 10
+      },
+      "scope": {
+        "kind": "function_definition",
+        "start": 15,
+        "end": 15
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "function_definition"
+  }
+]

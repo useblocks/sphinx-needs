@@ -1,6 +1,6 @@
 # Declarative extraction-test fixtures
 
-Marker extraction (comment → one-line need / need-id-reference / marked-rst) is
+Marker extraction (comment → one-line need / need-id-reference / multi-line need) is
 tested declaratively: each case is a **fixture** (the input) plus a **snapshot**
 (the captured expected output). This keeps the inputs language-agnostic and the
 expected output reviewable, and lets us cover the whole language matrix without a
@@ -49,8 +49,11 @@ custom_brackets_c:
 - `config: default` uses the built-in `OneLineCommentStyle` default
   (`@` / newline / `,` with fields `title, id, type(default "impl"), links(list)`).
 - Field `type` is `str` or `list[str]`.
+- `config.multiline_needs` (optional): the multi-line need markers and markups,
+  `{start_sequence, end_sequence, default_markup, markups}` (defaults `@need`,
+  `@endneed`, `rst`, `{rst: ".rst", md: ".md"}`).
 - `extract` (optional): which extractors to run — a subset of
-  `[oneline, need_refs, rst]` (default: all three). Narrow it to keep a case
+  `[oneline, need_refs, multiline]` (default: all three). Narrow it to keep a case
   focused: a need-reference case sets `extract: [need_refs]` so the `@`-prefixed
   `@need-ids:` marker isn't also parsed as a one-line need.
 - `engine` (optional): `treesitter` (default) sees every comment; `libclang`
@@ -72,7 +75,7 @@ one per output production produces:
   `(filepath, source_map.start.row)`, one `Metadata.to_dict()`
   (`analyse/models.py`) per entry.
 - **warnings** (`…][warnings].json`): the `AnalyseWarning.__dict__` records of
-  `SourceAnalyse.oneline_warnings`. Production reports them apart from the
+  `SourceAnalyse.warnings`. Production reports them apart from the
   marked content (the `src-trace` directive as `codelinks.oneline` build
   warnings, `codelinks analyse` through `logger.warning`), so they are a
   separate snapshot.
@@ -133,28 +136,34 @@ The fields of a marked-content entry, as `Metadata.to_dict()` writes them:
   0-indexed.
 - `tagged_scope` — the full text of the declaration `find_associated_scope`
   associates with the marker, or `null`.
-- `type` — `"need"`, `"need-id-refs"` or `"rst"`; a need's own `type` (e.g.
+- `type` — `"need"`, `"need-id-refs"` or `"multiline-need"`; a need's own `type` (e.g.
   `"impl"`) is inside `need`.
 - the payload — `need` (the `OneLineNeed.need` dict as is), `need_ids` and
-  `marker` (one record for all the ids of a marker, not one per id), or `rst`.
+  `marker` (one record for all the ids of a marker, not one per id), or a
+  multi-line need's `need`, `markup` and `source` (below).
+
+A multi-line need (`"type": "multiline-need"`, the cases of `multiline_needs.yaml`)
+carries `need` (`type`, `title`, the options in the order written as directive
+strings, `content`, `doctype`), `markup` (the resolved tag) and `source`: here
+always `project` `""`, `path` `case.<ext>` with `root` `"src_dir"` and `commit` `null`, the
+`start`/`end`/`content_start` positions (1-based `line`, 0-based character
+`col`; `content_start` `null` without a body), `option_lines` and `scope`
+(`{kind, start, end}` or `null`). Its refusals and notes are warning records
+with `type` `"multiline-need"` and a `multiline_need_*` `sub_type`.
 
 A warning record has `file_path`, `lineno`, `msg`, `type` (the
-`MarkedContentType` being parsed; always `"need"` today, since only the
-one-line parser warns) and `sub_type` (the kind, e.g. `"too_many_fields"`).
+`MarkedContentType` being parsed: `"need"` from the one-line parser,
+`"multiline-need"` from the multi-line one) and `sub_type` (the kind, e.g. `"too_many_fields"`).
 No `SourceComment` or tree-sitter node object is snapshotted: production's
 `to_dict()` drops the comment and writes the scope as its text.
 
-Three known production quirks show up as-is in these snapshots (deliberately
+Two known production quirks show up as-is in these snapshots (deliberately
 left unfixed — out of scope here):
 
 - a need-id-reference's `source_map` columns are shifted by the width of any
   whitespace between the marker and its ids: `extract_marker`
   (`analyse/analyse.py`) computes `start_column` from the pre-`strip()`
   position but `end_column` from the post-`strip()` length.
-- a multi-line `rst` block's `source_map` collapses `start.row`/`end.row` to
-  the same row, with the `start`/`end` columns being raw offsets into the
-  flattened multi-line comment text rather than a real position past the
-  first line.
 - a one-line need's `source_map` columns are relative to the comment's text,
   not to the line (`scope.yaml`'s `yaml_inline_same_row`: column 3, where the
   title starts at physical column 15); #2129 makes them physical.

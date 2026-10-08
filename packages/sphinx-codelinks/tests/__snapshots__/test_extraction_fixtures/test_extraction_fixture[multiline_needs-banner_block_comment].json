@@ -1,0 +1,101 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 3
+      },
+      "end": {
+        "row": 3,
+        "column": 11
+      }
+    },
+    "tagged_scope": "void closer() {}",
+    "need": {
+      "type": "impl",
+      "title": "Stars before the closer",
+      "id": "IMPL_BANNER_CLOSER",
+      "content": "",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.cpp",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 2,
+        "col": 3
+      },
+      "end": {
+        "line": 4,
+        "col": 11
+      },
+      "content_start": null,
+      "option_lines": {
+        "id": 3
+      },
+      "scope": {
+        "kind": "function_definition",
+        "start": 6,
+        "end": 6
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 8,
+        "column": 3
+      },
+      "end": {
+        "row": 12,
+        "column": 11
+      }
+    },
+    "tagged_scope": "void banner() {}",
+    "need": {
+      "type": "impl",
+      "title": "Full banner",
+      "id": "IMPL_BANNER_FULL",
+      "content": "Body in a banner.",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.cpp",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 9,
+        "col": 3
+      },
+      "end": {
+        "line": 13,
+        "col": 11
+      },
+      "content_start": {
+        "line": 12,
+        "col": 3
+      },
+      "option_lines": {
+        "id": 10
+      },
+      "scope": {
+        "kind": "function_definition",
+        "start": 15,
+        "end": 15
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "function_definition"
+  }
+]

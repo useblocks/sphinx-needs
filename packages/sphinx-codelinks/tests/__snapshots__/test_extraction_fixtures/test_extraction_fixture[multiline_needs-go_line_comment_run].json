@@ -1,0 +1,53 @@
+[
+  {
+    "filepath": "case.go",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 3
+      },
+      "end": {
+        "row": 6,
+        "column": 11
+      }
+    },
+    "tagged_scope": "func handle() {}",
+    "need": {
+      "type": "impl",
+      "title": "Go handler",
+      "id": "IMPL_GO",
+      "content": "Handles the request.",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.go",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 3,
+        "col": 3
+      },
+      "end": {
+        "line": 7,
+        "col": 11
+      },
+      "content_start": {
+        "line": 6,
+        "col": 3
+      },
+      "option_lines": {
+        "id": 4
+      },
+      "scope": {
+        "kind": "function_declaration",
+        "start": 8,
+        "end": 8
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "function_declaration"
+  }
+]

@@ -1,0 +1,53 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 3
+      },
+      "end": {
+        "row": 8,
+        "column": 11
+      }
+    },
+    "tagged_scope": "void reserved() {}",
+    "need": {
+      "type": "req",
+      "title": "Header title",
+      "id": "REQ_RESERVED",
+      "content": "The body.",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.cpp",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 1,
+        "col": 3
+      },
+      "end": {
+        "line": 9,
+        "col": 11
+      },
+      "content_start": {
+        "line": 8,
+        "col": 3
+      },
+      "option_lines": {
+        "id": 2
+      },
+      "scope": {
+        "kind": "function_definition",
+        "start": 10,
+        "end": 10
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "function_definition"
+  }
+]

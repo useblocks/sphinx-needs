@@ -1,0 +1,98 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 3
+      },
+      "end": {
+        "row": 3,
+        "column": 11
+      }
+    },
+    "tagged_scope": "void two() {}",
+    "need": {
+      "type": "impl",
+      "title": "First of two",
+      "id": "IMPL_ONE",
+      "content": "",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.cpp",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 2,
+        "col": 3
+      },
+      "end": {
+        "line": 4,
+        "col": 11
+      },
+      "content_start": null,
+      "option_lines": {
+        "id": 3
+      },
+      "scope": {
+        "kind": "function_definition",
+        "start": 10,
+        "end": 10
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 5,
+        "column": 3
+      },
+      "end": {
+        "row": 7,
+        "column": 11
+      }
+    },
+    "tagged_scope": "void two() {}",
+    "need": {
+      "type": "impl",
+      "title": "Second of two",
+      "id": "IMPL_TWO",
+      "content": "",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.cpp",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 6,
+        "col": 3
+      },
+      "end": {
+        "line": 8,
+        "col": 11
+      },
+      "content_start": null,
+      "option_lines": {
+        "id": 7
+      },
+      "scope": {
+        "kind": "function_definition",
+        "start": 10,
+        "end": 10
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "function_definition"
+  }
+]

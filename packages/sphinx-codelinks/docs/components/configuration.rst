@@ -447,7 +447,7 @@ Configures how **Sphinx-CodeLinks** analyse source files to extract markers from
    [codelinks.projects.my_project.analyse]
    get_need_id_refs = true
    get_oneline_needs = true
-   get_rst = true
+   get_multiline_needs = true
    # Optional: Explicit Git root for Bazel or deeply nested configs
    # git_root = "/path/to/repo"
 
@@ -466,9 +466,11 @@ Configures how **Sphinx-CodeLinks** analyse source files to extract markers from
    [codelinks.projects.my_project.analyse.need_id_refs]
    markers = ["@need-ids:"]
 
-   [codelinks.projects.my_project.analyse.marked_rst]
-   start_sequence = "@rst"
-   end_sequence = "@endrst"
+   [codelinks.projects.my_project.analyse.multiline_needs]
+   start_sequence = "@need"
+   end_sequence = "@endneed"
+   default_markup = "rst"
+   markups = { rst = ".rst", md = ".md" }
 
 get_need_id_refs
 ^^^^^^^^^^^^^^^^
@@ -496,10 +498,12 @@ Enables the extraction of one-line needs directly from source code comments. Whe
    [codelinks.projects.my_project.analyse]
    get_oneline_needs = false
 
-get_rst
-^^^^^^^
+.. _`get_multiline_needs`:
 
-Enables the extraction of marked RST text from source code comments. When enabled, **SourceAnalyse** will parse comments for specific markers that indicate RST blocks, allowing them to be extracted.
+get_multiline_needs
+^^^^^^^^^^^^^^^^^^^
+
+Enables the extraction of :ref:`multi-line needs <multiline_needs>` from source code comments: a need's type, title, options and body written between an ``@need`` line and an ``@endneed`` line. ``codelinks analyse`` writes them to ``marked_content.json``; the ``src-trace`` directive does not render them yet.
 
 **Type:** ``bool``
 **Default:** ``False``
@@ -507,7 +511,9 @@ Enables the extraction of marked RST text from source code comments. When enable
 .. code-block:: toml
 
    [codelinks.projects.my_project.analyse]
-   get_rst = false
+   get_multiline_needs = true
+
+It replaces ``get_rst`` and the ``@rst`` … ``@endrst`` blocks, which were extracted but never rendered. A configuration that still sets ``get_rst`` or ``[analyse.marked_rst]`` is refused with a message naming the replacement (``codelinks analyse`` exits with it; a Sphinx build stops at configuration time).
 
 .. _`git_root`:
 
@@ -603,24 +609,32 @@ Configuration for Sphinx-Needs ID reference extraction.
 
 - ``markers`` (``list[str]``) - List of marker strings that identify need ID references
 
-analyse.marked_rst
-^^^^^^^^^^^^^^^^^^
+.. _`multiline_needs_config`:
 
-Configuration for marked RST block extraction.
+analyse.multiline_needs
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Configuration for :ref:`multi-line need <multiline_needs>` extraction.
 
 **Type:** ``dict``
 **Default:** See below
 
 .. code-block:: toml
 
-   [codelinks.projects.my_project.analyse.marked_rst]
-   start_sequence = "@rst"
-   end_sequence = "@endrst"
+   [codelinks.projects.my_project.analyse.multiline_needs]
+   start_sequence = "@need"
+   end_sequence = "@endneed"
+   default_markup = "rst"
+   markups = { rst = ".rst", md = ".md" }
 
 **Configuration fields:**
 
-- ``start_sequence`` (``str``) - Marker that begins an RST block
-- ``end_sequence`` (``str``) - Marker that ends an RST block
+- ``start_sequence`` (``str``) - The word that opens a block, at the start of its line
+- ``end_sequence`` (``str``) - The word that closes a block, alone on its line; it must differ from ``start_sequence``
+- ``default_markup`` (``str``) - The markup of a block whose open line names none (``@need req: …`` rather than ``@need[md] req: …``); it must be a key of ``markups``
+- ``markups`` (``dict[str, str]``) - Markup tag → the ``doctype`` suffix the need's body is parsed with. A table given here replaces the default one, so list ``rst`` and ``md`` too when you add a tag (``myst = ".md"``, say). The suffixes are not checked here: whether a parser exists for one is decided when the need is rendered
+
+When ``get_multiline_needs`` is on, both words take part in the check that no two markers of a project are the same (as the one-line style's and the ``@need-ids:`` markers do); with it off they are no markers of the project, and a ``@need`` reference marker, say, stays valid. The check is for equality: the default one-line start ``@`` is a prefix of ``@need``, and what keeps the two apart is that :ref:`a block's lines are never read as one-line needs <multiline_needs>`.
 
 .. _`preprocessor_config`:
 

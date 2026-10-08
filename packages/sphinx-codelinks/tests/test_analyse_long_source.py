@@ -1,4 +1,4 @@
-# @Test that line numbers stay exact far past line 256, TEST_ANA_2, test, [IMPL_LNK_1, IMPL_ONE_1, IMPL_MRST_1, IMPL_JSONC_2]
+# @Test that line numbers stay exact far past line 256, TEST_ANA_2, test, [IMPL_LNK_1, IMPL_ONE_1, IMPL_MLN_1, IMPL_JSONC_2]
 """Line numbers far down a long source file, with the analysis in a subprocess.
 
 tree-sitter 0.26.0's ``Point.row`` and ``Point.column`` return a borrowed reference
@@ -13,7 +13,7 @@ test, naming the exit code, rather than the death of the whole pytest process.
 
 Two paths read tree-sitter points, and each case below reaches one or both of them:
 ``analyse.py`` reads ``start_point.row`` for every one-line need, need-id reference and
-marked-rst block, whatever the language; ``utils.find_prev_sibling_on_same_row`` reads
+multi-line need, whatever the language; ``utils.find_prev_sibling_on_same_row`` reads
 ``start_point.row`` and ``end_point.row`` to tie an inline comment to its structure, and
 only YAML and JSONC reach it.
 """
@@ -58,7 +58,7 @@ analyse = SourceAnalyse(
         src_dir=src.parent,
         get_need_id_refs=True,
         get_oneline_needs=True,
-        get_rst=True,
+        get_multiline_needs=True,
         comment_type=comment_type,
     )
 )
@@ -86,7 +86,7 @@ def _pad(lines: list[str], filler: str) -> None:
 
 
 def _cpp_source() -> tuple[str, list[Marker]]:
-    """A C++ file with a one-line need, a need-id reference and a marked-rst block per
+    """A C++ file with a one-line need, a need-id reference and a multi-line need per
     stanza, some on the first line of their comment and some further down it."""
     lines: list[str] = []
     expected: list[Marker] = []
@@ -102,12 +102,12 @@ def _cpp_source() -> tuple[str, list[Marker]]:
         expected.append(Marker("need-id-refs", len(lines), f"REQ_CPP_{i}"))
         lines.append(f"   @need-ids: REQ_CPP_{i}")
         lines.append("*/")
-        # a marked-rst block, reported at the row of its start sequence
+        # a multi-line need, reported at the row of its open line
         lines.append("/*")
-        expected.append(Marker("rst", len(lines), f"rst_{i}"))
-        lines.append("@rst")
-        lines.append(f"rst_{i}")
-        lines.append("@endrst")
+        expected.append(Marker("multiline-need", len(lines), f"MLN_CPP_{i}"))
+        lines.append(f"@need impl: Block {i}")
+        lines.append(f":id: MLN_CPP_{i}")
+        lines.append("@endneed")
         lines.append("*/")
         lines.append(f"void func_{i}() {{}}")
     return "\n".join(lines) + "\n", expected
@@ -166,14 +166,18 @@ def _reported(record: dict, with_scope: bool) -> Marker:
     """The Marker a ``to_dict()`` record from the child describes; the scope only when
     ``with_scope``, since it is tree-sitter point arithmetic only for YAML and JSONC."""
     start, end = record["source_map"]["start"], record["source_map"]["end"]
-    assert start["row"] == end["row"], record
     kind = record["type"]
-    if kind == "need":
+    if kind == "multiline-need":
+        # open line, one option line, close line
+        assert end["row"] == start["row"] + 2, record
+        assert record["source"]["start"]["line"] == start["row"] + 1, record
         key = record["need"]["id"]
-    elif kind == "need-id-refs":
-        (key,) = record["need_ids"]
+    elif kind == "need":
+        assert start["row"] == end["row"], record
+        key = record["need"]["id"]
     else:
-        key = record["rst"].strip()
+        assert start["row"] == end["row"], record
+        (key,) = record["need_ids"]
     scope = record["tagged_scope"] if with_scope else None
     return Marker(kind, start["row"], key, scope)
 

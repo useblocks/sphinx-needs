@@ -1,0 +1,53 @@
+[
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 4,
+        "column": 12
+      }
+    },
+    "tagged_scope": "fn main() {}",
+    "need": {
+      "type": "req",
+      "title": "Crate level need",
+      "id": "REQ_CRATE",
+      "content": "The crate parses inputs.",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.rs",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 1,
+        "col": 4
+      },
+      "end": {
+        "line": 5,
+        "col": 12
+      },
+      "content_start": {
+        "line": 4,
+        "col": 4
+      },
+      "option_lines": {
+        "id": 2
+      },
+      "scope": {
+        "kind": "function_item",
+        "start": 7,
+        "end": 7
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "function_item"
+  }
+]

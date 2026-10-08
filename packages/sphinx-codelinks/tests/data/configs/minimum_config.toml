@@ -5,4 +5,4 @@ gitignore = false
 [codelinks.projects.minimum_config.analyse]
 get_need_id_refs = true
 get_oneline_needs = false
-get_rst = true
+get_multiline_needs = true

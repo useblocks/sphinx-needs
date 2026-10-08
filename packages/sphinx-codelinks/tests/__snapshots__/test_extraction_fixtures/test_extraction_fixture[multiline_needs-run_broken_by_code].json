@@ -1,0 +1,53 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 3
+      },
+      "end": {
+        "row": 7,
+        "column": 11
+      }
+    },
+    "tagged_scope": "void broken() {}",
+    "need": {
+      "type": "req",
+      "title": "Second",
+      "id": "REQ_BROKEN_SECOND",
+      "content": "Body.",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.cpp",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 4,
+        "col": 3
+      },
+      "end": {
+        "line": 8,
+        "col": 11
+      },
+      "content_start": {
+        "line": 7,
+        "col": 3
+      },
+      "option_lines": {
+        "id": 5
+      },
+      "scope": {
+        "kind": "function_definition",
+        "start": 9,
+        "end": 9
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "function_definition"
+  }
+]

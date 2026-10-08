@@ -84,6 +84,39 @@ New and Improved
   both the attached field and the ``needextend``'d one: remove the include, and any
   ``needs_fields`` declaration of the field made for that route.
 
+- ✨ Multi-line needs: a need written across the lines of a comment, from an
+  ``@need[<markup>] <type>: <title>`` line with ``:key: value`` options to an ``@endneed``
+  line, its body in reStructuredText or Markdown
+  (`#2152 <https://github.com/useblocks/sphinx-needs/pull/2152>`__,
+  `#1885 <https://github.com/useblocks/sphinx-needs/issues/1885>`__,
+  `#1898 <https://github.com/useblocks/sphinx-needs/issues/1898>`__).
+
+  ``get_multiline_needs = true`` switches them on for a project, and
+  ``[analyse.multiline_needs]`` sets the two words, the default markup and the markups
+  table. A block lives in one comment, docstring or run of consecutive line comments, in
+  every supported language (C/C++, C#, Rust, Go, JSONC, Python, YAML, Bash); comment
+  prefixes are stripped by the comment's kind, the doxygen ``*`` leader only when every line
+  carries one, so ``*emphasis*`` in a body is kept. A block's lines are never read as
+  one-line needs or ``@need-ids:`` references. ``codelinks analyse`` writes each need to
+  ``marked_content.json`` as a ``"type": "multiline-need"`` record -- the need with its
+  option values as written, its ``doctype``, and a source with a root-relative path and
+  the open, close and body lines -- and prints a malformed block as an analyse warning at
+  its source line. The ``src-trace`` directive renders them in a following release, once
+  Sphinx-Needs can parse a need's content in its declared markup; until then it creates no
+  need from them.
+
+  **Removed:** the ``@rst`` … ``@endrst`` blocks, ``get_rst`` and
+  ``[analyse.marked_rst]``. Nothing ever rendered those blocks (#1885), so no project loses
+  output; a configuration still naming either key is refused with a message naming its
+  replacement.
+  The ``"type": "rst"`` entries of ``marked_content.json`` are gone, ``codelinks write rst``
+  ignores the new records, and the CLI prints every analyse warning as
+  ``Analyse warning in <file>:<line> - <kind>: <message>`` (it said ``Oneline parser
+  warning``). ``SourceAnalyse.oneline_warnings`` is now ``SourceAnalyse.warnings``, which
+  holds the multi-line kinds too; the old name stays as a read-only alias for one release.
+  The row fix for marked-rst blocks below (#1982) landed days before this change replaced
+  them; multi-line needs keep its rule, a block reported at the row of its open line.
+
 - 🐛 A source file added to a ``src-trace`` directive's scope is seen by the next
   incremental build, with no ``-E`` (`#2040 <https://github.com/useblocks/sphinx-needs/issues/2040>`__).
 

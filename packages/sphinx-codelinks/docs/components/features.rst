@@ -350,35 +350,40 @@ Features
    .. fault:: Sphinx-codelinks links code to wrong need items
       :id: FAULT_LNK_2
 
-.. feature:: Extract blocks of reStructuredText embedded within comments
-   :id: FE_RST_EXTRACTION
+.. feature:: Extract multi-line needs written in comments
+   :id: FE_MULTILINE_NEEDS
 
-   Extract blocks of reStructuredText embedded within comments, allowing you to
-   include rich documentation with associated metadata right next to your code.
+   Extract needs written across the lines of a comment: an open line
+   ``@need[<markup>] <type>: <title>``, ``:key: value`` options, a body in the declared
+   markup and a closing ``@endneed`` line, parsed by the analyser before any markup parser
+   runs (see :ref:`multiline_needs`).
 
-   This powerful feature enables you to write full reStructuredText content directly
-   in your source code comments, which will be extracted and processed as part of
-   your Sphinx documentation. This approach brings documentation closer to implementation,
-   making it easier to keep both synchronized.
+   This brings a need's full text -- its fields and a body with roles, links and
+   formatting -- next to the code it describes, in every supported language.
 
-   reStructuredText extraction features:
+   Multi-line need extraction:
 
-   * Full reStructuredText syntax support within comments
-   * Extraction of formatted documentation blocks
-   * Support for directives, roles, and inline markup
-   * Preservation of indentation and formatting
-   * Integration with Sphinx-Needs directives
-   * Markers for block start (``@rst``) and end (``@endrst``)
-   * Single-line and multi-line RST blocks
+   * One grammar for every language, the header parsed by the analyser and the body kept
+     as written
+   * Blocks over runs of line comments (``//``, ``///``, ``//!``, ``#``) as well as block
+     comments and Python docstrings
+   * Comment prefixes stripped by the comment's kind, the doxygen ``*`` leader only when
+     every line carries one, so ``*emphasis*`` in a body is kept
+   * The body's markup declared per block (``rst`` by default, ``md``), recorded as the
+     need's ``doctype``
+   * A block's lines are not read as one-line needs or ``@need-ids:`` references
+   * Malformed blocks reported at their source line
+   * One plain JSON record per need in ``codelinks analyse``'s ``marked_content.json``;
+     the ``src-trace`` directive does not render them yet
 
-   .. fault:: Extracting reStructuredText from comments fails
-      :id: FAULT_RST_EXTRACTION_1
+   .. fault:: Multi-line needs in comments are not extracted
+      :id: FAULT_MULTILINE_NEEDS_1
 
-   .. fault:: Sphinx-codelinks extracts wrong reStructuredText blocks
-      :id: FAULT_RST_EXTRACTION_2
+   .. fault:: Sphinx-codelinks extracts a wrong multi-line need
+      :id: FAULT_MULTILINE_NEEDS_2
 
-   .. fault:: Extracted reStructuredText blocks are malformed
-      :id: FAULT_RST_EXTRACTION_3
+   .. fault:: An extracted multi-line need's content or fields are malformed
+      :id: FAULT_MULTILINE_NEEDS_3
 
 .. feature:: Analyze marked content via CLI interface
    :id: FE_CLI_ANALYZE

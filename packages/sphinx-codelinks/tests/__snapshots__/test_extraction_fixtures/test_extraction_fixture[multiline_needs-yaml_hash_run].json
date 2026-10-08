@@ -1,0 +1,53 @@
+[
+  {
+    "filepath": "case.yaml",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 2
+      },
+      "end": {
+        "row": 4,
+        "column": 10
+      }
+    },
+    "tagged_scope": "timeout: 30",
+    "need": {
+      "type": "req",
+      "title": "Config key",
+      "id": "REQ_YAML",
+      "content": "The *timeout* key is in seconds.",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.yaml",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 1,
+        "col": 2
+      },
+      "end": {
+        "line": 5,
+        "col": 10
+      },
+      "content_start": {
+        "line": 4,
+        "col": 2
+      },
+      "option_lines": {
+        "id": 2
+      },
+      "scope": {
+        "kind": "block_mapping_pair",
+        "start": 6,
+        "end": 6
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "block_mapping_pair"
+  }
+]

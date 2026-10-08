@@ -1,0 +1,9 @@
+[
+  {
+    "file_path": "case.cpp",
+    "lineno": 1,
+    "msg": "no '@endneed' line before the comment ends; the block is skipped",
+    "type": "multiline-need",
+    "sub_type": "multiline_need_unterminated"
+  }
+]

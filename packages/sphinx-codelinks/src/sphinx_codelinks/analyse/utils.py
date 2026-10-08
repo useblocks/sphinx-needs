@@ -1,14 +1,13 @@
 import configparser
 from collections.abc import ByteString, Callable
 from pathlib import Path
-from typing import TypedDict
 from urllib.request import pathname2url
 
 from giturlparse import parse
 from tree_sitter import Language, Parser, Point, Query, QueryCursor
 from tree_sitter import Node as TreeSitterNode
 
-from sphinx_codelinks.config import UNIX_NEWLINE, CommentCategory
+from sphinx_codelinks.config import CommentCategory
 from sphinx_codelinks.logger import get_logger
 from sphinx_codelinks.source_discover.config import CommentType
 
@@ -517,95 +516,3 @@ def form_https_url(
         lineno=str(lineno),
     )
     return https_url
-
-
-def remove_leading_sequences(text: str, leading_sequences: list[str]) -> str:
-    lines = text.splitlines(keepends=True)
-    no_comment_lines = []
-    for line in lines:
-        leading_sequence_exist = False
-        for leading_sequence in leading_sequences:
-            leading_sequence_idx = line.find(leading_sequence)
-            if leading_sequence_idx == -1:
-                continue
-            no_comment_lines.append(
-                line[leading_sequence_idx + len(leading_sequence) :]
-            )
-            leading_sequence_exist = True
-            break
-
-        if not leading_sequence_exist:
-            no_comment_lines.append(line)
-
-    return "".join(no_comment_lines)
-
-
-class ExtractedRstType(TypedDict):
-    rst_text: str
-    row_offset: int
-    start_idx: int
-    end_idx: int
-
-
-# @Extract reStructuredText blocks embedded in comments, IMPL_RST_1, impl, [FE_RST_EXTRACTION]
-def extract_rst(
-    text: str, start_marker: str, end_marker: str
-) -> ExtractedRstType | None:
-    """Extract rst from a comment.
-
-    Two use cases:
-    1. Start_marker and end_marker one the same line.
-
-    The rst text is wrapped by start and the end markers on the same line,
-    so, there is no need to remove the leading chars.ArithmeticError
-    E.g.
-    @rst  .. admonition:: title here @endrst
-
-    2. Start_marker and end_marker in different lines.
-
-    The rst text is expected to start from the next line of the start_marker
-    and ends at he previous line of the end_marker.
-    E.g.
-    @rst
-    .. admonition:: title here
-      :collapsible: open
-
-      This example is collapsible, and initially open.
-    @endrst
-    """
-    start_idx = text.find(start_marker)
-    end_idx = text.rfind(end_marker)
-    if start_idx == -1 or end_idx == -1:
-        return None
-    rst_text = text[start_idx + len(start_marker) : end_idx]
-    # count newlines, not lines: text before a one-line block on the comment's first
-    # row holds no newline, yet splitlines() would count it as one line
-    row_offset = text[:start_idx].count(UNIX_NEWLINE)
-    if not rst_text.strip():
-        # empty string is out of the interest
-        return None
-    if UNIX_NEWLINE not in rst_text:
-        # single line rst text
-        oneline_rst: ExtractedRstType = {
-            "rst_text": rst_text,
-            "row_offset": row_offset,
-            "start_idx": start_idx + len(start_marker),
-            "end_idx": end_idx,
-        }
-        return oneline_rst
-
-    # multiline rst text
-
-    first_newline_idx = rst_text.find(UNIX_NEWLINE)
-    rst_text = rst_text[first_newline_idx + len(UNIX_NEWLINE) :]
-    multiline_rst: ExtractedRstType = {
-        "rst_text": rst_text,
-        "row_offset": row_offset,
-        "start_idx": start_idx
-        + len(start_marker)
-        + first_newline_idx
-        + len(UNIX_NEWLINE),
-        "end_idx": end_idx,
-    }
-
-    return multiline_rst

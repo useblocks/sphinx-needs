@@ -43,6 +43,7 @@ src/sphinx_codelinks/   # Main source code
 ├── analyse/            # Code analysis module
 │   ├── analyse.py      # Main analysis orchestration
 │   ├── models.py       # dataclasses/TypedDicts/Enums for analysis results
+│   ├── multiline_parser.py # Multi-line needs: comment runs, prefixes stripped by comment kind, the block grammar
 │   ├── oneline_parser.py # One-line comment parser
 │   ├── projects.py     # Project-specific analyzers (C++, Python, etc.)
 │   ├── references.py   # `NeedIdRef`: an @need-ids reference as plain, JSON-able data
@@ -364,7 +365,7 @@ the shape a TOML file may carry, and a `@dataclass` holding the loaded, validate
   directory, the marker styles, the need fields
 - `CodeLinksConfig` / `CodeLinksProjectConfigType`: the top level, one entry per traced
   project
-- `OneLineCommentStyle`, `NeedIdRefsConfig`, `MarkedRstConfig`, `PreprocessorConfig`: the
+- `OneLineCommentStyle`, `NeedIdRefsConfig`, `MultilineNeedsConfig`, `PreprocessorConfig`: the
   per-feature blocks
 - validation is `jsonschema`'s `validate(instance=…, schema=…)` per field, against a
   schema each config class returns from its own `get_schema`, collected by its
@@ -391,7 +392,7 @@ the shape a TOML file may carry, and a `@dataclass` holding the loaded, validate
 - **`oneline_parser.py`**: Tree-sitter based parser for extracting comment markers
 - **`models.py`**: `@dataclass` / `TypedDict` / `Enum` results — `SourceComment`,
   `SourceFile`, `Position`, `SourceMap`, and the `Metadata` hierarchy (`OneLineNeed`,
-  `NeedIdRefs`, `MarkedRst`)
+  `NeedIdRefs`, `MultilineNeed`)
 - **`utils.py`**: Helper functions for path handling, marker extraction
 
 #### Tree-sitter Integration
@@ -401,8 +402,8 @@ the shape a TOML file may carry, and a `@dataclass` holding the loaded, validate
 - Parses the one-line marker syntax inside a comment. The default `OneLineCommentStyle`
   is `@` to end of line, comma-separated, fields `title, id, type, links` -- start and end
   sequences, the split character and the field list are all configurable per project, and
-  `tests/data/dcdc` uses a `[[…]]` style to show that. Plus need-ID references and `@rst`
-  blocks
+  `tests/data/dcdc` uses a `[[…]]` style to show that. Plus need-ID references and multi-line
+  needs (`@need` … `@endneed`)
 - Maintains line number information for source tracing
 
 #### Sphinx Extension (`sphinx_extension/`)

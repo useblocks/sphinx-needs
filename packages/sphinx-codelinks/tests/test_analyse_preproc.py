@@ -20,7 +20,7 @@ def _run_get_oneline_ids(defines):
         src_dir=FIXTURE.parent,
         get_need_id_refs=False,
         get_oneline_needs=True,
-        get_rst=False,
+        get_multiline_needs=False,
         preprocessor=PreprocessorConfig(defines=defines),
     )
     analyse = SourceAnalyse(cfg)
@@ -328,7 +328,7 @@ def test_libclang_extracts_c_extension_header_via_cpp_language():
         src_dir=FIXTURE.parent,
         get_need_id_refs=False,
         get_oneline_needs=True,
-        get_rst=False,
+        get_multiline_needs=False,
         preprocessor=PreprocessorConfig(
             defines=["VARIANT_A=1", "PLATFORM_LINUX=1", "PROTOCOL_VERSION=3"]
         ),

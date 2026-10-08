@@ -1,0 +1,53 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 3
+      },
+      "end": {
+        "row": 4,
+        "column": 11
+      }
+    },
+    "tagged_scope": "void custom() {}",
+    "need": {
+      "type": "req",
+      "title": "Custom markers",
+      "id": "REQ_CUSTOM",
+      "content": "The block uses the project's own words.",
+      "doctype": ".md"
+    },
+    "markup": "myst",
+    "source": {
+      "project": "",
+      "path": "case.cpp",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 1,
+        "col": 3
+      },
+      "end": {
+        "line": 5,
+        "col": 11
+      },
+      "content_start": {
+        "line": 4,
+        "col": 3
+      },
+      "option_lines": {
+        "id": 2
+      },
+      "scope": {
+        "kind": "function_definition",
+        "start": 7,
+        "end": 7
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "function_definition"
+  }
+]

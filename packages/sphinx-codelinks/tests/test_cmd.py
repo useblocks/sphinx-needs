@@ -117,8 +117,8 @@ def test_analyse_outputs_warnings(tmp_path: Path) -> None:
     result = runner.invoke(app, options)
 
     assert result.exit_code == 0
-    # Verify that warnings are output to console
-    assert "Oneline parser warning" in result.output
+    # Verify that warnings are output to console, one shape for every kind
+    assert "Analyse warning in" in result.output
     assert "too_many_fields" in result.output
 
 
@@ -382,13 +382,12 @@ def test_write_rst_still_works_and_says_it_is_deprecated(tmp_path: Path) -> None
             [
                 {
                     "filepath": 123,
-                    "remote_url": "https://github.com/useblocks/sphinx-codelinks/blob/951e40e7845f06d5cfc4ca20ebb984308fdaf985/tests/data/marked_rst/dummy_1.cpp#L4",
+                    "remote_url": "https://github.com/useblocks/sphinx-codelinks/blob/951e40e7845f06d5cfc4ca20ebb984308fdaf985/tests/data/multiline_needs/dummy_1.cpp#L4",
                     "source_map": {
                         "start": {"row": 3, "column": 8},
                         "end": {"row": 3, "column": 61},
                     },
                     "tagged_scope": "void dummy_func1(){\n     //...\n }",
-                    "rst": ".. impl:: implement dummy function 1\n   :id: IMPL_71\n",
                     "type": "need-id-refs",
                 }
             ],
@@ -594,3 +593,167 @@ def test_analyse_too_deeply_nested_toml_is_a_bad_parameter(tmp_path: Path) -> No
 
     # 1 would be the uncaught exception; typer reports a BadParameter as 2
     assert exit_code == 2
+
+
+def _fake_git_repo(root: Path) -> None:
+    """A repository on GitHub with one commit: ``config``, ``HEAD`` and one ref."""
+    (root / ".git" / "refs" / "heads").mkdir(parents=True)
+    (root / ".git" / "config").write_text(
+        '[remote "origin"]\n    url = https://github.com/test/repo.git\n',
+        encoding="utf-8",
+    )
+    (root / ".git" / "HEAD").write_text("ref: refs/heads/main\n", encoding="utf-8")
+    (root / ".git" / "refs" / "heads" / "main").write_text(
+        "abc123def456\n", encoding="utf-8"
+    )
+
+
+def test_analyse_writes_a_multiline_need_record(tmp_path: Path) -> None:
+    """``codelinks analyse`` writes a multi-line need as one ``multiline-need`` record:
+    the need with its option values as written, the resolved markup, and a source whose
+    path is relative to the repository root."""
+    repo = tmp_path / "repo"
+    _fake_git_repo(repo)
+    (repo / "src").mkdir()
+    src_file = repo / "src" / "demo.cpp"
+    src_file.write_text(
+        "// @need[md] impl: Demo need\n"
+        "// :id: IMPL_DEMO\n"
+        "// :links: REQ_1, REQ_2\n"
+        "//\n"
+        "// Calls *nothing*.\n"
+        "// @endneed\n"
+        "void demo() {}\n",
+        encoding="utf-8",
+    )
+    config = repo / "ubproject.toml"
+    config.write_text(
+        "[codelinks.projects.demo.source_discover]\n"
+        'src_dir = "src"\n'
+        'comment_type = "cpp"\n'
+        "gitignore = false\n"
+        "[codelinks.projects.demo.analyse]\n"
+        "get_multiline_needs = true\n",
+        encoding="utf-8",
+    )
+    outdir = tmp_path / "out"
+    outdir.mkdir()
+
+    result = runner.invoke(app, ["analyse", str(config), "--outdir", str(outdir)])
+
+    assert result.exit_code == 0, result.output
+    marked = json.loads((outdir / "marked_content.json").read_text(encoding="utf-8"))
+    (record,) = marked["demo"]
+    assert Path(record.pop("filepath")) == src_file.resolve()
+    assert record == {
+        "remote_url": "https://github.com/test/repo/blob/abc123def456/src/demo.cpp#L1",
+        "source_map": {
+            "start": {"row": 0, "column": 3},
+            "end": {"row": 5, "column": 11},
+        },
+        "tagged_scope": "void demo() {}",
+        "type": "multiline-need",
+        "need": {
+            "type": "impl",
+            "title": "Demo need",
+            "id": "IMPL_DEMO",
+            "links": "REQ_1, REQ_2",
+            "content": "Calls *nothing*.",
+            "doctype": ".md",
+        },
+        "markup": "md",
+        "source": {
+            "project": "demo",
+            "path": "src/demo.cpp",
+            "root": "git",
+            "commit": "abc123def456",
+            "start": {"line": 1, "col": 3},
+            "end": {"line": 6, "col": 11},
+            "content_start": {"line": 5, "col": 3},
+            "option_lines": {"id": 2, "links": 3},
+            "scope": {"kind": "function_definition", "start": 7, "end": 7},
+        },
+    }
+
+
+def test_analyse_prints_a_multiline_need_warning_like_a_oneline_one(
+    tmp_path: Path,
+) -> None:
+    """A refused block is printed in the one shape every analyse warning takes."""
+    (tmp_path / "open.cpp").write_text(
+        "// @need impl: Never closed\nvoid f() {}\n", encoding="utf-8"
+    )
+    config = tmp_path / "ubproject.toml"
+    config.write_text(
+        "[codelinks.projects.p.source_discover]\n"
+        'src_dir = "./"\n'
+        'comment_type = "cpp"\n'
+        "[codelinks.projects.p.analyse]\n"
+        "get_multiline_needs = true\n",
+        encoding="utf-8",
+    )
+    outdir = tmp_path / "out"
+    outdir.mkdir()
+
+    result = runner.invoke(app, ["analyse", str(config), "--outdir", str(outdir)])
+
+    assert result.exit_code == 0, result.output
+    # rich wraps the console at its width, anywhere in a long path: compare without
+    # whitespace
+    expected = (
+        f"Analyse warning in {tmp_path.resolve() / 'open.cpp'}:1 - "
+        "multiline_need_unterminated: no '@endneed' line before the comment ends"
+    )
+    assert re.sub(r"\s+", "", expected) in re.sub(r"\s+", "", result.output)
+
+
+@pytest.mark.parametrize(
+    ("analyse", "message"),
+    [
+        pytest.param(
+            {"get_rst": True},
+            "analyse: 'get_rst' is no longer supported: the marked-rst blocks were "
+            "replaced by multi-line needs (the @need and @endneed markers); use "
+            "get_multiline_needs instead",
+            id="get_rst",
+        ),
+        pytest.param(
+            {"marked_rst": {"start_sequence": "@rst"}},
+            "analyse: '[analyse.marked_rst]' is no longer supported",
+            id="marked_rst",
+        ),
+        pytest.param(
+            {"get_rst": False, "marked_rst": {"end_sequence": "@endrst"}},
+            "analyse: 'get_rst' and '[analyse.marked_rst]' are no longer supported: "
+            "the marked-rst blocks were replaced by multi-line needs (the @need and "
+            "@endneed markers); use get_multiline_needs and [analyse.multiline_needs] "
+            "instead",
+            id="both",
+        ),
+    ],
+)
+def test_analyse_names_the_replacement_of_a_removed_key(
+    analyse: dict, message: str, tmp_path: Path
+) -> None:
+    """The keys of the removed marked-rst blocks stop the CLI with one message naming
+    what replaces them, through the channel of every other configuration error."""
+    config_file = tmp_path / "codelinks_config.toml"
+    with config_file.open("w", encoding="utf-8") as f:
+        toml.dump(
+            {
+                "codelinks": {
+                    "projects": {
+                        "p": {
+                            "source_discover": {"src_dir": str(tmp_path)},
+                            "analyse": analyse,
+                        }
+                    }
+                }
+            },
+            f,
+        )
+
+    result = runner.invoke(app, ["analyse", str(config_file)])
+
+    assert result.exit_code != 0
+    assert f"Invalid value: {message}" in _normalize_output(result.output)

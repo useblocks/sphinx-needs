@@ -20,7 +20,7 @@ gitignore = false
 [codelinks.projects.dcdc.analyse]
 get_need_id_refs = false
 get_oneline_needs = true
-get_rst = false
+get_multiline_needs = false
 
 [codelinks.projects.dcdc.analyse.oneline_comment_style]
 # Configuration for oneline comment style

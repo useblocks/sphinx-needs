@@ -1,4 +1,4 @@
-# @Test suite for source code analysis and marker extraction, TEST_ANA_1, test, [IMPL_LNK_1, IMPL_ONE_1, IMPL_MRST_1]
+# @Test suite for source code analysis and marker extraction, TEST_ANA_1, test, [IMPL_LNK_1, IMPL_ONE_1, IMPL_MLN_1]
 import json
 from pathlib import Path
 
@@ -24,7 +24,7 @@ TEST_DATA_DIR = Path(__file__).parent.parent / "tests" / "data"
             [
                 TEST_DATA_DIR / "oneline_comment_default" / "default_oneliners.c",
                 TEST_DATA_DIR / "need_id_refs" / "dummy_1.cpp",
-                TEST_DATA_DIR / "marked_rst" / "dummy_1.cpp",
+                TEST_DATA_DIR / "multiline_needs" / "dummy_1.cpp",
             ],
         )
     ],
@@ -35,7 +35,7 @@ def test_analyse(src_dir, src_paths, tmp_path, snapshot_marks):
         src_dir=src_dir,
         get_need_id_refs=True,
         get_oneline_needs=True,
-        get_rst=True,
+        get_multiline_needs=True,
     )
 
     analyse = SourceAnalyse(src_analyse_config)
@@ -52,6 +52,12 @@ def test_analyse(src_dir, src_paths, tmp_path, snapshot_marks):
         obj["filepath"] = (
             Path(obj["filepath"]).relative_to(src_analyse_config.src_dir)
         ).as_posix()
+        if "source" in obj:
+            # a multi-line need's path is relative to the git root when the checkout is
+            # a repository, else to src_dir: pin it against src_dir, as filepath is
+            assert obj["source"].pop("root") in ("git", "src_dir")
+            assert obj["source"]["path"].endswith(obj["filepath"])
+            obj["source"]["path"] = obj["filepath"]
     assert marked_content == snapshot_marks
 
 
@@ -142,7 +148,7 @@ def test_analyse_oneline_needs(
         src_dir=src_dir,
         get_need_id_refs=False,
         get_oneline_needs=True,
-        get_rst=False,
+        get_multiline_needs=False,
         oneline_comment_style=oneline_comment_style,
         comment_type=result.get("comment_type", CommentType.cpp),
     )
@@ -150,7 +156,7 @@ def test_analyse_oneline_needs(
     src_analyse.run()
 
     assert len(src_analyse.src_files) == result["num_src_files"]
-    assert len(src_analyse.oneline_warnings) == result["num_oneline_warnings"]
+    assert len(src_analyse.warnings) == result["num_oneline_warnings"]
 
     cnt_comments = 0
     for src_file in src_analyse.src_files:
@@ -192,7 +198,7 @@ def test_explicit_git_root_configuration(tmp_path):
         src_dir=src_dir,
         get_need_id_refs=False,
         get_oneline_needs=True,
-        get_rst=False,
+        get_multiline_needs=False,
         git_root=fake_git_root,
     )
 
@@ -215,7 +221,7 @@ def test_git_root_auto_detection_when_not_configured(tmp_path):
         src_dir=src_dir,
         get_need_id_refs=False,
         get_oneline_needs=True,
-        get_rst=False,
+        get_multiline_needs=False,
         # git_root is not set, so auto-detection should be used
     )
 
@@ -236,21 +242,23 @@ def test_oneline_parser_warnings_are_collected(tmp_path):
         src_dir=src_dir,
         get_need_id_refs=False,
         get_oneline_needs=True,
-        get_rst=False,
+        get_multiline_needs=False,
         oneline_comment_style=ONELINE_COMMENT_STYLE_DEFAULT,
     )
     src_analyse = SourceAnalyse(src_analyse_config)
     src_analyse.run()
 
     # Verify that warnings were collected
-    assert len(src_analyse.oneline_warnings) == 1
-    warning = src_analyse.oneline_warnings[0]
+    assert len(src_analyse.warnings) == 1
+    warning = src_analyse.warnings[0]
     assert "too_many_fields" in warning.sub_type
     assert warning.lineno == 17
+    # the old name reads the same list, for one release
+    assert src_analyse.oneline_warnings is src_analyse.warnings
 
 
 def test_count_pluralizes_nouns() -> None:
     assert _count(0, "file") == "0 files"
     assert _count(1, "file") == "1 file"
     assert _count(2, "marker") == "2 markers"
-    assert _count(1, "marked-rst block") == "1 marked-rst block"
+    assert _count(1, "multi-line need") == "1 multi-line need"
