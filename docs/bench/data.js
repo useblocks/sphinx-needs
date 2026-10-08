@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791449804068,
+  "lastUpdate": 1791454379090,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -23472,6 +23472,42 @@ window.BENCHMARK_DATA = {
             "value": 59.28582742099991,
             "unit": "s",
             "extra": "Commit: 7be5bf53c5d356a3d771a05759ccc8b28ff7ce44\nBranch: master\nTime: 2026-10-08T10:55:16+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ec0b626d833d88295f2321bb50e65d895579efda",
+          "message": "✨ sphinx-needs: add_need parses a need's content in its declared markup, and ingest_need_record is one path for needs from outside the page (#2135)\n\n## What\n\n- `add_need` accepts `content=MarkupContent(text, markup=\".md\",\nsource=(path, first_line))` (new, public,\n`sphinx_needs.api.MarkupContent`): the content is parsed by the parser\nthe project registers for `markup` (`\".rst\"`, `\".md\"`, or any suffix the\nproject's `source_suffix` maps to a reStructuredText or MyST parser),\nwhatever the page's parser is, bound to the page (labels in it register\nwith the page; a duplicate gets docutils' own warning); every\ndocutils-level diagnostic raised while parsing it, and every node\ncreated from it, names `source`'s file and the line each content line\nsits on; the need records `markup` as its `doctype` unless one is given.\nAn unregistered suffix, a file type with no parser, or any other parser\nraises `InvalidNeedException` before the need is recorded. There is no\nnew keyword argument on `add_need`, so no field or link name is\nreserved.\n- New public `sphinx_needs.api.ingest_need_record(app, state, record, *,\nneed_source, content_markup=None, content_source=None,\nallow_type_coercion=True, unknown_keys=None)`: creates one need from a\nneeds.json-style record (legacy `description` taken as content, unknown\nkeys dropped and returned, computed keys dropped silently, `type` →\n`need_type`) and raises what `add_need` raises. An optional\n`unknown_keys` set collects the record's unknown keys before the need is\ncreated, so a caller has them also for a record whose need cannot be\ncreated.\n- `needimport` now creates each of its needs through\n`ingest_need_record`; its observable behaviour is unchanged (filter,\ntags, id prefix, override options, one warning per failed need, one\nwarning for all unknown keys).\n- Nothing changes for existing callers: the existing parse path for\n`str` and `StringList` content is untouched.\n- The content's lines are reported through Sphinx's public\n`switch_source_input`, the same mechanism `sphinx.ext.autodoc` uses to\nreport a docstring's lines at the Python file; only reStructuredText\ncontent in a MyST page still builds its own RST state machine (a MyST\npage's `nested_parse` renders Markdown).\n- Docs: a \"Content written in another markup\" subsection in the Python\nAPI page; changelog entries.\n\n## Why\n\nThis is the primitive the multi-line needs in source comments of\nsphinx-codelinks build on (#1885, #1898): a need whose header codelinks\nparses and whose body is written in a declared markup, with its warnings\nat the source file and line. It is also what fixes `needimport`\nrendering Markdown content as reStructuredText (and the reverse) in a\nlater change, which will dispatch on each record's `doctype` behind a\nflag.\n\n## What this version does not do\n\nDeliberately minimal first slice. As documented in the API page, the\ncontent is parsed as the page would parse it and nothing is refused yet;\nthe refusals are #2130:\n\n- `include`, `literalinclude`, `csv-table :file:` and `raw` in the\ncontent are executed: Sphinx's `include`, `literalinclude` and images,\nand everything in MyST content, resolve against the page, while\n`csv-table :file:` and `raw :file:` in reStructuredText content resolve\nagainst the content's file; MyST raw HTML passes through;\n- a need or `needimport` directive in the content creates needs recorded\nagainst the page;\n- warnings that myst-parser logs itself (an unknown directive or role in\nMarkdown content) name the page with the content's line (myst-parser 5),\nor the content's path with `.rst` appended (myst-parser 4);\n- in a reStructuredText page, MyST content's `[text](#anchor)` links are\nnot resolved and a missing anchor is not reported (myst-parser's\ntransforms run only on documents it reads); the `{ref}` and `{need}`\nroles work in both.\n\nFound on the way, pre-existing and untouched here: #2131 (pre/post\ntemplate content of a need in a MyST page is reported at about twice the\nneed's line) and #2132 (`needimport :tags:` crashes when a record has no\n`tags` key).\n\n## ubCode\n\nubCode already routes imported content by `doctype` through the\nimporting project's `[parse.parsers.*]` table\n(`rust/ubc_parser_ctrl/src/virtual_content.rs`, `content_flavour` /\n`parser_index_for_doctype`), parses it with no host lexical environment,\nand applies its restricted external-content profile. Two gaps after this\nPR, registered in useblocks/ubcode#3915: content here sees the page's\nsubstitutions and `rst_prolog` (the divergence register's existing\nneedimport row), and the restrictions above are not applied (#2130\ncloses that from this side). Nothing to change in ubCode for this PR;\nthe producer and consumer halves of the comment-needs feature are\nuseblocks/ubcode#3914 and useblocks/ubcode#3915.\n\n## Tests\n\n`tests/test_need_content_markup.py`, inline projects with a test-only\ndriver extension calling the public API, RST and MyST content in RST and\nMyST pages: (a) rendering in the declared markup, (b) diagnostics at the\ncontent's file and line, (c) the need's `docname`/`lineno`/`doctype`,\n(d) roles, references and links into the page, (e) labels in content\nresolving from the page and another page, and duplicates reported at the\nsource line, (f) page-anchored content without `content_source` and the\nrefusals, (g) `ingest_need_record`, (h) the no-markup control against a\nneed directive and `needimport`'s override options, (i) `-j 2` with the\ntwo content pages in different workers, (j) an incremental rebuild; plus\nJinja-rendered content, images, content behind `rst_prolog` and an\n`include`, a form feed and CRLF in content, where `csv-table :file:`\nresolves, the page's reference-link definitions not reaching MyST\ncontent, a project field named `content_markup` being an ordinary field\n(directive and needimport), and needimport's unknown keys of a need it\nimports. Run on sphinx 9.1 / myst-parser 5.1, sphinx 8.2 / myst-parser\n5.1 and sphinx 7.4 / myst-parser 4.0; `tests/test_needimport.py`\nunchanged and green; the sphinx-codelinks and sphinx-test-reports suites\n(which call `add_need`) green on this branch.\n\nReviewed by two adversarial reviewers over four fix rounds; every gate\nand mutation reproduced independently.\n\nRefs #1885\nRefs #1898",
+          "timestamp": "2026-10-08T12:11:56+02:00",
+          "tree_id": "523af635f9de4950e47811c222bd7b6fae38cb56",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/ec0b626d833d88295f2321bb50e65d895579efda"
+        },
+        "date": 1791454371672,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.05980160699999715,
+            "unit": "s",
+            "extra": "Commit: ec0b626d833d88295f2321bb50e65d895579efda\nBranch: master\nTime: 2026-10-08T12:11:56+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 34.32837113599999,
+            "unit": "s",
+            "extra": "Commit: ec0b626d833d88295f2321bb50e65d895579efda\nBranch: master\nTime: 2026-10-08T12:11:56+02:00"
           }
         ]
       }
