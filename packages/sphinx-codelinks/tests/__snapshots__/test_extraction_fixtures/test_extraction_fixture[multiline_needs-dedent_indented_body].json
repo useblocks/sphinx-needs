@@ -1,20 +1,53 @@
-{
-  "needs": [],
-  "need_refs": [],
-  "multiline_needs": [
-    {
-      "need": {
-        "type": "impl",
-        "title": "Indented body",
-        "id": "IMPL_DEDENT",
-        "content": "The whole body is indented by four spaces.\n\n    This line keeps four more.",
-        "doctype": ".rst"
+[
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 2
       },
-      "markup": "rst",
-      "start_line": 1,
-      "end_line": 7,
-      "content_start_line": 4
-    }
-  ],
-  "warnings": []
-}
+      "end": {
+        "row": 6,
+        "column": 10
+      }
+    },
+    "tagged_scope": "def dedented():\n    pass",
+    "need": {
+      "type": "impl",
+      "title": "Indented body",
+      "id": "IMPL_DEDENT",
+      "content": "The whole body is indented by four spaces.\n\n    This line keeps four more.",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.py",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 1,
+        "col": 2
+      },
+      "end": {
+        "line": 7,
+        "col": 10
+      },
+      "content_start": {
+        "line": 4,
+        "col": 6
+      },
+      "option_lines": {
+        "id": 2
+      },
+      "scope": {
+        "kind": "function_definition",
+        "start": 8,
+        "end": 9
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "function_definition"
+  }
+]

@@ -1,25 +1,53 @@
-{
-  "needs": [],
-  "need_refs": [],
-  "multiline_needs": [
-    {
-      "need": {
-        "type": "impl",
-        "title": "Unknown markup",
-        "id": "IMPL_XYZ",
-        "content": "Rendered as the default markup.",
-        "doctype": ".rst"
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 3
       },
-      "markup": "rst",
-      "start_line": 1,
-      "end_line": 5,
-      "content_start_line": 4
-    }
-  ],
-  "warnings": [
-    {
-      "kind": "multiline_need_markup",
-      "line": 1
-    }
-  ]
-}
+      "end": {
+        "row": 4,
+        "column": 11
+      }
+    },
+    "tagged_scope": "void xyz() {}",
+    "need": {
+      "type": "impl",
+      "title": "Unknown markup",
+      "id": "IMPL_XYZ",
+      "content": "Rendered as the default markup.",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.cpp",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 1,
+        "col": 3
+      },
+      "end": {
+        "line": 5,
+        "col": 11
+      },
+      "content_start": {
+        "line": 4,
+        "col": 3
+      },
+      "option_lines": {
+        "id": 2
+      },
+      "scope": {
+        "kind": "function_definition",
+        "start": 6,
+        "end": 6
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "function_definition"
+  }
+]

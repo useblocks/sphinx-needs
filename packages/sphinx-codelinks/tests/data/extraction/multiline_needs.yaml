@@ -62,10 +62,13 @@
 #   extractors. A refused one-line form
 #   hides its own line; an unterminated open hides nothing.
 #
-# The snapshot's ``multiline_needs`` entries carry ``need`` (type, title, the options in
-# the order written, content, doctype), ``markup`` (the resolved tag), ``start_line`` (the
-# open line), ``end_line`` (the close line) and ``content_start_line`` (the first body line
-# after trimming, or null), all 1-indexed. No case sets ``extract``, so the one-line and
+# Each case's snapshot is the marked content of ``marked_content.json`` as dumped -- its
+# ``multiline-need`` record(s) beside any one-line need or reference -- plus the
+# ``[warnings]`` sidecar of the analyser's warnings. ubCode projects each record to
+# ``{need, markup, start_line, end_line, content_start_line}`` for its parity test:
+# ``need`` (type, title, the options in the order written, content, doctype), ``markup``
+# (the resolved tag), and the 1-indexed open line, close line and first body line after
+# trimming (or null), taken from ``source``. No case sets ``extract``, so the one-line and
 # need-reference extractors run too, with the default one-line style.
 
 # --- languages -------------------------------------------------------------------------

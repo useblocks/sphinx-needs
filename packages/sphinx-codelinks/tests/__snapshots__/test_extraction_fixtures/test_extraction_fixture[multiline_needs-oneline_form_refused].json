@@ -1,15 +1,1 @@
-{
-  "needs": [],
-  "need_refs": [],
-  "multiline_needs": [],
-  "warnings": [
-    {
-      "kind": "multiline_need_oneline_form",
-      "line": 1
-    },
-    {
-      "kind": "multiline_need_unterminated",
-      "line": 4
-    }
-  ]
-}
+[]

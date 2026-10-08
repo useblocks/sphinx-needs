@@ -1,20 +1,53 @@
-{
-  "needs": [],
-  "need_refs": [],
-  "multiline_needs": [
-    {
-      "need": {
-        "type": "impl",
-        "title": "CSharp method",
-        "id": "IMPL_CS",
-        "content": "Returns the sum.",
-        "doctype": ".rst"
+[
+  {
+    "filepath": "case.cs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 8
       },
-      "markup": "rst",
-      "start_line": 3,
-      "end_line": 7,
-      "content_start_line": 6
-    }
-  ],
-  "warnings": []
-}
+      "end": {
+        "row": 6,
+        "column": 16
+      }
+    },
+    "tagged_scope": "public int Add(int a, int b) { return a + b; }",
+    "need": {
+      "type": "impl",
+      "title": "CSharp method",
+      "id": "IMPL_CS",
+      "content": "Returns the sum.",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.cs",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 3,
+        "col": 8
+      },
+      "end": {
+        "line": 7,
+        "col": 16
+      },
+      "content_start": {
+        "line": 6,
+        "col": 8
+      },
+      "option_lines": {
+        "id": 4
+      },
+      "scope": {
+        "kind": "method_declaration",
+        "start": 8,
+        "end": 8
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "method_declaration"
+  }
+]

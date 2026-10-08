@@ -1,0 +1,9 @@
+[
+  {
+    "file_path": "case.cpp",
+    "lineno": 1,
+    "msg": "unknown markup 'xyz' (known: md, rst); the project default 'rst' is used",
+    "type": "multiline-need",
+    "sub_type": "multiline_need_markup"
+  }
+]

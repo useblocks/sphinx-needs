@@ -1,20 +1,53 @@
-{
-  "needs": [],
-  "need_refs": [],
-  "multiline_needs": [
-    {
-      "need": {
-        "type": "req",
-        "title": "JSON setting",
-        "id": "REQ_JSONC",
-        "content": "The value is a port number.",
-        "doctype": ".rst"
+[
+  {
+    "filepath": "case.jsonc",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 5
       },
-      "markup": "rst",
-      "start_line": 2,
-      "end_line": 6,
-      "content_start_line": 5
-    }
-  ],
-  "warnings": []
-}
+      "end": {
+        "row": 5,
+        "column": 13
+      }
+    },
+    "tagged_scope": "\"port\": 8080",
+    "need": {
+      "type": "req",
+      "title": "JSON setting",
+      "id": "REQ_JSONC",
+      "content": "The value is a port number.",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.jsonc",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 2,
+        "col": 5
+      },
+      "end": {
+        "line": 6,
+        "col": 13
+      },
+      "content_start": {
+        "line": 5,
+        "col": 5
+      },
+      "option_lines": {
+        "id": 3
+      },
+      "scope": {
+        "kind": "pair",
+        "start": 7,
+        "end": 7
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "pair"
+  }
+]

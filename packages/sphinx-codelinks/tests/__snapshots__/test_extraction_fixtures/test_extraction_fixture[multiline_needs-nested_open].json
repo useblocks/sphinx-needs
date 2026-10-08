@@ -1,25 +1,53 @@
-{
-  "needs": [],
-  "need_refs": [],
-  "multiline_needs": [
-    {
-      "need": {
-        "type": "impl",
-        "title": "Outer block",
-        "id": "IMPL_OUTER",
-        "content": "@need impl: Inner open\nstays body text.",
-        "doctype": ".rst"
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 3
       },
-      "markup": "rst",
-      "start_line": 1,
-      "end_line": 6,
-      "content_start_line": 4
-    }
-  ],
-  "warnings": [
-    {
-      "kind": "multiline_need_nested_open",
-      "line": 4
-    }
-  ]
-}
+      "end": {
+        "row": 5,
+        "column": 11
+      }
+    },
+    "tagged_scope": "void nested() {}",
+    "need": {
+      "type": "impl",
+      "title": "Outer block",
+      "id": "IMPL_OUTER",
+      "content": "@need impl: Inner open\nstays body text.",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.cpp",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 1,
+        "col": 3
+      },
+      "end": {
+        "line": 6,
+        "col": 11
+      },
+      "content_start": {
+        "line": 4,
+        "col": 3
+      },
+      "option_lines": {
+        "id": 2
+      },
+      "scope": {
+        "kind": "function_definition",
+        "start": 7,
+        "end": 7
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "function_definition"
+  }
+]

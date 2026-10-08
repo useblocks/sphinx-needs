@@ -1,0 +1,9 @@
+[
+  {
+    "file_path": "case.cpp",
+    "lineno": 3,
+    "msg": "option 'id' repeats an earlier 'id'; the first value is kept",
+    "type": "multiline-need",
+    "sub_type": "multiline_need_duplicate_option"
+  }
+]

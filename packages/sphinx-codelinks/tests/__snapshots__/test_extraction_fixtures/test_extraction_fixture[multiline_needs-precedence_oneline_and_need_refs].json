@@ -1,50 +1,141 @@
-{
-  "needs": [
-    {
-      "id": "DOC_1",
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 4
+      },
+      "end": {
+        "row": 1,
+        "column": 35
+      }
+    },
+    "tagged_scope": "void precedence(int a, int b) {}",
+    "need": {
       "title": "Doc comment marker",
+      "id": "DOC_1",
       "type": "impl",
-      "links": {
-        "links": []
-      },
-      "metadata": {},
-      "line": 2
+      "links": []
     },
-    {
-      "id": "OUT_1",
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 3
+      },
+      "end": {
+        "row": 7,
+        "column": 11
+      }
+    },
+    "tagged_scope": "void precedence(int a, int b) {}",
+    "need": {
+      "type": "req",
+      "title": "Title, with a comma",
+      "id": "REQ_PREC",
+      "content": "@param a, b the inputs\n@need-ids: REQ_IN_BODY",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.cpp",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 3,
+        "col": 3
+      },
+      "end": {
+        "line": 8,
+        "col": 11
+      },
+      "content_start": {
+        "line": 6,
+        "col": 3
+      },
+      "option_lines": {
+        "id": 4
+      },
+      "scope": {
+        "kind": "function_definition",
+        "start": 11,
+        "end": 11
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 8,
+        "column": 13
+      },
+      "end": {
+        "row": 8,
+        "column": 22
+      }
+    },
+    "tagged_scope": "void precedence(int a, int b) {}",
+    "need_ids": [
+      "REQ_AFTER"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 12,
+        "column": 4
+      },
+      "end": {
+        "row": 12,
+        "column": 31
+      }
+    },
+    "tagged_scope": "void outside() {}",
+    "need": {
       "title": "Outside marker",
+      "id": "OUT_1",
       "type": "impl",
-      "links": {
-        "links": []
-      },
-      "metadata": {},
-      "line": 13
-    }
-  ],
-  "need_refs": [
-    {
-      "need_id": "REQ_AFTER",
-      "line": 9
+      "links": []
     },
-    {
-      "need_id": "REQ_OUT",
-      "line": 14
-    }
-  ],
-  "multiline_needs": [
-    {
-      "need": {
-        "type": "req",
-        "title": "Title, with a comma",
-        "id": "REQ_PREC",
-        "content": "@param a, b the inputs\n@need-ids: REQ_IN_BODY",
-        "doctype": ".rst"
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 13,
+        "column": 13
       },
-      "markup": "rst",
-      "start_line": 3,
-      "end_line": 8,
-      "content_start_line": 6
-    }
-  ],
-  "warnings": []
-}
+      "end": {
+        "row": 13,
+        "column": 20
+      }
+    },
+    "tagged_scope": "void outside() {}",
+    "need_ids": [
+      "REQ_OUT"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "function_definition"
+  }
+]

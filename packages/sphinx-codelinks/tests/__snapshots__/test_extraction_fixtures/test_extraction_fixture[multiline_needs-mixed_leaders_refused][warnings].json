@@ -1,0 +1,9 @@
+[
+  {
+    "file_path": "case.cpp",
+    "lineno": 2,
+    "msg": "'@need' sits behind a '*' leader in a block comment whose other lines carry none; give every line the leader or none",
+    "type": "multiline-need",
+    "sub_type": "multiline_need_header"
+  }
+]

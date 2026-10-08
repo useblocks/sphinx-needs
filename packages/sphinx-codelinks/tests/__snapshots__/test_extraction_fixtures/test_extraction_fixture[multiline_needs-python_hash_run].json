@@ -1,21 +1,55 @@
-{
-  "needs": [],
-  "need_refs": [],
-  "multiline_needs": [
-    {
-      "need": {
-        "type": "impl",
-        "title": "Exponential back-off",
-        "id": "IMPL_BACKOFF",
-        "links": "REQ_LOGIN_1",
-        "content": "Doubles the delay after each failure, see {need}`REQ_LOGIN_1`.",
-        "doctype": ".md"
+[
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 2
       },
-      "markup": "md",
-      "start_line": 1,
-      "end_line": 6,
-      "content_start_line": 5
-    }
-  ],
-  "warnings": []
-}
+      "end": {
+        "row": 5,
+        "column": 10
+      }
+    },
+    "tagged_scope": "def backoff():\n    pass",
+    "need": {
+      "type": "impl",
+      "title": "Exponential back-off",
+      "id": "IMPL_BACKOFF",
+      "links": "REQ_LOGIN_1",
+      "content": "Doubles the delay after each failure, see {need}`REQ_LOGIN_1`.",
+      "doctype": ".md"
+    },
+    "markup": "md",
+    "source": {
+      "project": "",
+      "path": "case.py",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 1,
+        "col": 2
+      },
+      "end": {
+        "line": 6,
+        "col": 10
+      },
+      "content_start": {
+        "line": 5,
+        "col": 2
+      },
+      "option_lines": {
+        "id": 2,
+        "links": 3
+      },
+      "scope": {
+        "kind": "function_definition",
+        "start": 7,
+        "end": 8
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "function_definition"
+  }
+]

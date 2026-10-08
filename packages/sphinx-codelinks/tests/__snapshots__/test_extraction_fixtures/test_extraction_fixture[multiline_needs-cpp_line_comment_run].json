@@ -1,20 +1,53 @@
-{
-  "needs": [],
-  "need_refs": [],
-  "multiline_needs": [
-    {
-      "need": {
-        "type": "impl",
-        "title": "Line comment run",
-        "id": "IMPL_LINE_RUN",
-        "content": "First paragraph.\n\nSecond paragraph after a blank comment line.",
-        "doctype": ".rst"
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 3
       },
-      "markup": "rst",
-      "start_line": 1,
-      "end_line": 7,
-      "content_start_line": 4
-    }
-  ],
-  "warnings": []
-}
+      "end": {
+        "row": 6,
+        "column": 11
+      }
+    },
+    "tagged_scope": "void run() {}",
+    "need": {
+      "type": "impl",
+      "title": "Line comment run",
+      "id": "IMPL_LINE_RUN",
+      "content": "First paragraph.\n\nSecond paragraph after a blank comment line.",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.cpp",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 1,
+        "col": 3
+      },
+      "end": {
+        "line": 7,
+        "col": 11
+      },
+      "content_start": {
+        "line": 4,
+        "col": 3
+      },
+      "option_lines": {
+        "id": 2
+      },
+      "scope": {
+        "kind": "function_definition",
+        "start": 8,
+        "end": 8
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "function_definition"
+  }
+]

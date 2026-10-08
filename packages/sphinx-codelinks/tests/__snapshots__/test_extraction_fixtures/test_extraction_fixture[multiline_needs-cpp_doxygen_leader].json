@@ -1,22 +1,57 @@
-{
-  "needs": [],
-  "need_refs": [],
-  "multiline_needs": [
-    {
-      "need": {
-        "type": "req",
-        "title": "Login must be rate limited",
-        "id": "REQ_LOGIN_1",
-        "links": "SPEC_AUTH, SPEC_LOCK",
-        "status": "open",
-        "content": "After **five** failed attempts the account is locked.\n\nSome *emphasis* here, and a list:\n\n* item one",
-        "doctype": ".rst"
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 3
       },
-      "markup": "rst",
-      "start_line": 2,
-      "end_line": 12,
-      "content_start_line": 7
-    }
-  ],
-  "warnings": []
-}
+      "end": {
+        "row": 11,
+        "column": 11
+      }
+    },
+    "tagged_scope": "int login(const char *user) { return 0; }",
+    "need": {
+      "type": "req",
+      "title": "Login must be rate limited",
+      "id": "REQ_LOGIN_1",
+      "links": "SPEC_AUTH, SPEC_LOCK",
+      "status": "open",
+      "content": "After **five** failed attempts the account is locked.\n\nSome *emphasis* here, and a list:\n\n* item one",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.cpp",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 2,
+        "col": 3
+      },
+      "end": {
+        "line": 12,
+        "col": 11
+      },
+      "content_start": {
+        "line": 7,
+        "col": 3
+      },
+      "option_lines": {
+        "id": 3,
+        "links": 4,
+        "status": 5
+      },
+      "scope": {
+        "kind": "function_definition",
+        "start": 14,
+        "end": 14
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "function_definition"
+  }
+]

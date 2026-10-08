@@ -1,33 +1,93 @@
-{
-  "needs": [],
-  "need_refs": [],
-  "multiline_needs": [
-    {
-      "need": {
-        "type": "impl",
-        "title": "Always built",
-        "id": "IMPL_ALWAYS_BUILT",
-        "content": "",
-        "doctype": ".rst"
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 3
       },
-      "markup": "rst",
-      "start_line": 1,
-      "end_line": 3,
-      "content_start_line": null
+      "end": {
+        "row": 2,
+        "column": 11
+      }
     },
-    {
-      "need": {
-        "type": "impl",
-        "title": "Feature A",
-        "id": "IMPL_FEATURE_A",
-        "content": "Built when FEATURE_A is defined.",
-        "doctype": ".rst"
+    "tagged_scope": null,
+    "need": {
+      "type": "impl",
+      "title": "Always built",
+      "id": "IMPL_ALWAYS_BUILT",
+      "content": "",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.cpp",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 1,
+        "col": 3
       },
-      "markup": "rst",
-      "start_line": 7,
-      "end_line": 11,
-      "content_start_line": 10
-    }
-  ],
-  "warnings": []
-}
+      "end": {
+        "line": 3,
+        "col": 11
+      },
+      "content_start": null,
+      "option_lines": {
+        "id": 2
+      },
+      "scope": null
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 6,
+        "column": 3
+      },
+      "end": {
+        "row": 10,
+        "column": 11
+      }
+    },
+    "tagged_scope": null,
+    "need": {
+      "type": "impl",
+      "title": "Feature A",
+      "id": "IMPL_FEATURE_A",
+      "content": "Built when FEATURE_A is defined.",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.cpp",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 7,
+        "col": 3
+      },
+      "end": {
+        "line": 11,
+        "col": 11
+      },
+      "content_start": {
+        "line": 10,
+        "col": 3
+      },
+      "option_lines": {
+        "id": 8
+      },
+      "scope": null
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": null
+  }
+]
