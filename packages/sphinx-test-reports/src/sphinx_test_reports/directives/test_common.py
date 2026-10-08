@@ -36,18 +36,19 @@ logger = logging.getLogger(__name__)
 def warn(directive: Directive, subtype: str, message: str) -> None:
     """Report ``message`` as a warning of the ``test_reports.<subtype>`` family.
 
-    Located on ``directive`` -- its document and line, as ``(docname, lineno)``: Sphinx
-    reads a bare string location without a ``:`` as a docname, and a Windows path has one
-    -- and typed, so ``suppress_warnings`` takes ``test_reports`` or
+    Located on ``directive`` -- the file it is WRITTEN in and its line there, as
+    ``"<source>:<line>"`` (what Sphinx's own ``SphinxDirective.get_location()`` gives; a
+    directive in an ``.. include::``\ d file is located in that file, as docutils' own
+    errors are) -- and typed, so ``suppress_warnings`` takes ``test_reports`` or
     ``test_reports.<subtype>``. Any directive will do, ``test-results`` and ``test-env``
-    included: only its state and line are read.
+    included: only its state machine and line are read.
     """
-    env = directive.state.document.settings.env
+    source, line = directive.state_machine.get_source_and_line(directive.lineno)
     logger.warning(
         message,
         type="test_reports",
         subtype=subtype,
-        location=(env.docname, directive.lineno),
+        location=f"{source}:{line}",
     )
 
 

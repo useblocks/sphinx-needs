@@ -256,7 +256,7 @@ def test_basic_doc_builds_with_an_empty_warning_stream(
 # --- fix round 1 -----------------------------------------------------------------------
 
 #: A page that includes ``part.rst`` at its line 8; the directive is on ``part.rst``'s
-#: line 5 -- line 14 of the state machine's input, a line neither file has.
+#: line 6 -- line 15 of the state machine's input, a line neither file has.
 INCLUDING_PAGE = "x\n\ny\n\n.. include:: part.rst\n"
 PART = "Part\n----\n\nText.\n\n{directive}"
 
@@ -272,7 +272,7 @@ def test_a_directive_in_an_included_file_is_located_there(build_page):
         confoverrides={"exclude_patterns": ["part.rst"]},
     )
 
-    assert f"{_src(app, 'part.rst')}:5: WARNING: Test file not found: " in stream
+    assert f"{_src(app, 'part.rst')}:6: WARNING: Test file not found: " in stream
     assert "index.rst:" not in stream
 
 
