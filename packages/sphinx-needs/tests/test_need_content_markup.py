@@ -26,7 +26,6 @@ from sphinx.testing.util import SphinxTestApp
 from sphinx.util.parallel import parallel_available
 
 from sphinx_needs.api import get_needs_view
-from sphinx_needs.exceptions import NeedsApiConfigWarning
 from sphinx_needs_testkit import build_warnings
 from tests.util import needs_by_id
 
@@ -1083,94 +1082,13 @@ def test_an_image_in_content_resolves_against_the_page(test_app: SphinxTestApp):
     assert 'src="_images/pic.png"' in html(app, "images_md.html")
 
 
-TOML_FIELD = '[needs.fields.content_markup]\ndescription = "from toml"\n'
-TOML_LINK = (
-    '[needs.links.content_source]\noutgoing = "has source"\nincoming = "is source of"\n'
+FIELD_NAMED_CONTENT_MARKUP_CONF = (
+    CONF
+    + 'needs_fields = {"content_markup": {"description": "A field of this project"}}\n'
 )
+"""A project field named ``content_markup``: nothing in ``add_need`` is named so."""
 
-
-def _setup_calling(call: str) -> str:
-    return f"def setup(app):\n    from sphinx_needs.api import {call.split('(')[0]}\n    {call}\n"
-
-
-@pytest.mark.parametrize(
-    ("conf", "message"),
-    [
-        (
-            'needs_extra_options = ["content_markup"]',
-            "Cannot add need field with name 'content_markup' ('Added by "
-            "needs_extra_options config'), as it is an argument of add_need.",
-        ),
-        (
-            'needs_fields = {"content_source": {"description": "Where from"}}',
-            "Cannot add need field with name 'content_source' ('Where from'), "
-            "as it is an argument of add_need.",
-        ),
-        (
-            f'needs_from_toml = "ubproject.toml"  # {TOML_FIELD!r}',
-            "Cannot add need field with name 'content_markup' ('from toml'), "
-            "as it is an argument of add_need.",
-        ),
-        (
-            _setup_calling('add_field("content_source", "via api")'),
-            "Cannot add need field with name 'content_source' ('via api'), "
-            "as it is an argument of add_need.",
-        ),
-        (
-            _setup_calling('add_extra_option(app, "content_markup")'),
-            "Cannot add need field with name 'content_markup' ('Added by "
-            "add_extra_option API'), as it is an argument of add_need.",
-        ),
-        (
-            'needs_links = {"content_markup": {"outgoing": "marks", "incoming": "marked by"}}',
-            "Cannot add need link with name 'content_markup', as it is an argument "
-            "of add_need.",
-        ),
-        (
-            f'needs_from_toml = "ubproject.toml"  # {TOML_LINK!r}',
-            "Cannot add need link with name 'content_source', as it is an argument "
-            "of add_need.",
-        ),
-        (
-            'needs_extra_links = [{"option": "content_source", "incoming": "is source of", '
-            '"outgoing": "has source"}]',
-            "Cannot add need link with name 'content_source', as it is an argument "
-            "of add_need.",
-        ),
-    ],
-    ids=[
-        "needs_extra_options",
-        "needs_fields",
-        "toml_field",
-        "add_field",
-        "add_extra_option",
-        "needs_links",
-        "toml_link",
-        "needs_extra_links",
-    ],
-)
-def test_a_field_or_link_named_after_an_add_need_argument_is_refused(
-    tmp_path: Path, make_app, conf: str, message: str
-):
-    """``content_markup`` and ``content_source`` are arguments of ``add_need``.
-
-    A field or link of either name would be captured by the argument (a need setting
-    it refused, a ``needimport`` record carrying it a ``TypeError``), so the names are
-    refused at configuration, wherever the field or link is declared.
-    """
-    (tmp_path / "conf.py").write_text(
-        f'extensions = ["sphinx_needs"]\n{conf}\n', encoding="utf-8"
-    )
-    (tmp_path / "index.rst").write_text("Title\n=====\n", encoding="utf-8")
-    # a TOML case names its table in a comment on the conf line
-    toml = next((t for t in (TOML_FIELD, TOML_LINK) if repr(t) in conf), "")
-    (tmp_path / "ubproject.toml").write_text(toml, encoding="utf-8")
-    with pytest.raises(NeedsApiConfigWarning) as excinfo:
-        make_app(srcdir=tmp_path, freshenv=True)
-    assert str(excinfo.value) == message
-
-
-IMPORTED_WITH_UNKNOWN_KEYS = {
+IMPORTED_WITH_A_FIELD_NAMED_CONTENT_MARKUP = {
     "current_version": "1.0",
     "versions": {
         "1.0": {
@@ -1178,10 +1096,10 @@ IMPORTED_WITH_UNKNOWN_KEYS = {
                 "IMP_OK": {
                     "id": "IMP_OK",
                     "type": "req",
-                    "title": "Imported, with keys this project does not know",
+                    "title": "Imported, with a field named content_markup",
                     "content": "Imported *content*.",
-                    "content_source": "a field of the exporting project",
-                    "content_markup": ".md",
+                    "content_markup": "a value of the field",
+                    "exporter_only": "a key this project does not know",
                     "tags": [],
                 },
             }
@@ -1196,36 +1114,41 @@ IMPORTED_WITH_UNKNOWN_KEYS = {
         {
             "buildername": "html",
             "files": [
-                (Path("conf.py"), CONF),
+                (Path("conf.py"), FIELD_NAMED_CONTENT_MARKUP_CONF),
                 (Path("needcontent_ext.py"), DRIVER),
                 (
                     Path("index.rst"),
-                    "Import\n======\n\n.. needimport:: imported.json\n",
+                    "Import\n======\n\n.. needimport:: imported.json\n\n"
+                    ".. req:: A need setting the field\n"
+                    "   :id: REQ_FIELD\n"
+                    "   :content_markup: markdown, please\n",
                 ),
-                (Path("imported.json"), json.dumps(IMPORTED_WITH_UNKNOWN_KEYS)),
+                (
+                    Path("imported.json"),
+                    json.dumps(IMPORTED_WITH_A_FIELD_NAMED_CONTENT_MARKUP),
+                ),
             ],
         }
     ],
     indirect=True,
 )
-def test_needimport_reports_the_unknown_keys_of_a_need_it_imports(
-    test_app: SphinxTestApp,
-):
-    """A record that imports fine still reports its unknown keys, in the one warning.
+def test_a_field_named_content_markup_is_an_ordinary_field(test_app: SphinxTestApp):
+    """``add_need`` takes no argument named ``content_markup``: a field may be.
 
-    ``content_source`` and ``content_markup`` in a record are such keys -- they cannot
-    be a field of this project -- so they are dropped, and never reach ``add_need``'s
-    arguments of the same names.
+    A need directive sets it, and a needimport record carrying it imports it as the
+    field. The record's key the project does not know is reported in the one
+    ``unknown_import_keys`` warning, as for any record that imports fine.
     """
     app = test_app
     app.build()
     assert build_warnings(app) == [
         "<srcdir>/index.rst:4: WARNING: Unknown keys in import need source: "
-        "['content_markup', 'content_source'] [needs.unknown_import_keys]"
+        "['exporter_only'] [needs.unknown_import_keys]"
     ]
-    need = needs_by_id(app)["IMP_OK"]
-    assert need["doctype"] == ".rst"
-    assert "content_source" not in need
+    needs = needs_by_id(app)
+    assert needs["IMP_OK"]["content_markup"] == "a value of the field"
+    assert needs["IMP_OK"]["doctype"] == ".rst"
+    assert needs["REQ_FIELD"]["content_markup"] == "markdown, please"
 
 
 PROLOG_CONF = (
