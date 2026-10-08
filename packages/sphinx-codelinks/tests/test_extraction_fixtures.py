@@ -114,10 +114,16 @@ def _build_marked_content(analyse: SourceAnalyse, tmp_path: Path) -> list[dict]:
     """Reproduce ``SourceAnalyse.dump_marked_content``'s payload verbatim.
 
     Consumes ``analyse.all_marked_content`` — the exact list production dumps,
-    already sorted by ``(filepath, source_map.start.row)`` — and calls each
-    entry's own ``to_dict()``, so both the shape and the ordering come from
-    production itself rather than being re-derived from ``oneline_needs`` /
+    already sorted by ``(filepath, source_map.start.row,
+    source_map.start.column, kind)`` — and calls each entry's own
+    ``to_dict()``, so both the shape and the ordering come from production
+    itself rather than being re-derived from ``oneline_needs`` /
     ``need_id_refs`` / ``multiline_needs`` separately.
+
+    Entries starting at the same position are possible only with overlapping
+    markers (not refused today); they are listed references first, then
+    one-line needs, then multi-line needs, and two references from one comment
+    keep the marker order of the configuration.
     """
     items = []
     for entry in analyse.all_marked_content:

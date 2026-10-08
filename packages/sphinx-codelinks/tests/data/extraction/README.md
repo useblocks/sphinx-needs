@@ -71,8 +71,8 @@ one per output production produces:
 
 - **marked content** (`…].json`): `SourceAnalyse.dump_marked_content`'s
   payload — the flat list `all_marked_content` holds, sorted by
-  `(filepath, source_map.start.row)`, one `Metadata.to_dict()`
-  (`analyse/models.py`) per entry.
+  `(filepath, source_map.start.row, source_map.start.column, kind)`, one
+  `Metadata.to_dict()` (`analyse/models.py`) per entry.
 - **warnings** (`…][warnings].json`): the `AnalyseWarning.__dict__` records of
   `SourceAnalyse.warnings`. Production reports them apart from the
   marked content (the `src-trace` directive as `codelinks.oneline` build
@@ -157,9 +157,11 @@ A warning record has `file_path`, `lineno`, `msg`, `type` (the
 No `SourceComment` or tree-sitter node object is snapshotted: production's
 `to_dict()` drops the comment and writes the scope as its text.
 
-No case puts two entries of one kind on one row: production orders them by row
-only, so they keep tree-sitter's capture order, which differs between runs
-(#2150). On a row, references come before needs.
+Two entries on one row are listed in source order, so a case may put two
+on a row (#2150). Entries starting at the same position are possible only
+with overlapping markers (not refused today); they are listed references
+first, then one-line needs, then multi-line needs, and two references from
+one comment keep the marker order of the configuration.
 
 ## Portability
 
