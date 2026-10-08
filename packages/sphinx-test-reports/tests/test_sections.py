@@ -79,10 +79,11 @@ def _html(app, docname: str) -> str:
 
 def _assert_heading(html: str, level: int, title: str) -> str:
     """``title`` is an ``<h{level}>`` directly inside a ``<section>`` whose id its
-    permalink points to; returns that id."""
+    permalink points to; returns that id. (Under ``.. contents::`` the title text is a
+    back-link to its contents entry.)"""
     match = re.search(
-        rf'<section id="([^"]+)">\s*<h{level}>{re.escape(title)}'
-        rf'<a class="headerlink" href="#\1"',
+        rf'<section id="([^"]+)">\s*<h{level}>(?:<a class="toc-backref"[^>]*>)?'
+        rf'{re.escape(title)}(?:</a>)?<a class="headerlink" href="#\1"',
         html,
     )
     assert match, f"no <h{level}>{title} inside its own <section id>"
@@ -219,3 +220,39 @@ def test_the_section_bodies_are_unchanged(test_app):
     blocks = [b for b in raw.findall(nodes.literal_block) if b["language"] == "json"]
     assert len(blocks) == 3
     assert blocks[0].astext() == MASTER_RAW_JSON
+
+
+ASL_DOC = {"buildername": "html", "srcdir": "doc_test/sections_autosectionlabel"}
+
+
+@pytest.mark.parametrize("test_app", [ASL_DOC], indirect=True)
+def test_autosectionlabel_labels_the_generated_sections(test_app):
+    """A6: with ``autosectionlabel_prefix_document``, each page's suite is labelled under
+    the page's prefix, a ``:ref:`` to one resolves, and a same-page ```Title`_`` reference
+    resolves too (the section carries the title as its name). No warning."""
+    app = test_app
+    app.build()
+
+    labels = app.env.get_domain("std").labels
+    assert labels["one:pytest62"][:2] == ("one", "pytest62")
+    assert labels["two:pytest62"][:2] == ("two", "pytest62")
+    assert 'href="one.html#pytest62"' in _html(app, "index")
+    assert 'href="#pytest62"' in _html(app, "one")
+    assert "WARNING" not in app._warning.getvalue()
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{**ASL_DOC, "confoverrides": {"autosectionlabel_prefix_document": False}}],
+    indirect=True,
+)
+def test_autosectionlabel_without_a_prefix_reports_a_suite_name_on_two_pages(test_app):
+    """A6: without the prefix, one suite name on two pages is autosectionlabel's usual
+    duplicate label -- a warning, as for two authored headings of one title."""
+    app = test_app
+    app.build()
+
+    assert (
+        "WARNING: duplicate label pytest62, other instance in"
+        in app._warning.getvalue()
+    )
