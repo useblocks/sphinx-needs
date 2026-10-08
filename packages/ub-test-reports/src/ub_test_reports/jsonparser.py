@@ -104,5 +104,5 @@ class JsonParser:
         pass
 
 
-class JsonFileMissing(BaseException):
+class JsonFileMissing(Exception):
     pass

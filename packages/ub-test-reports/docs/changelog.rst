@@ -32,6 +32,32 @@ Fixed
   `#2050 <https://github.com/useblocks/sphinx-needs/issues/2050>`__,
   `#2149 <https://github.com/useblocks/sphinx-needs/pull/2149>`__
 
+- 🐛 The JUnit parser raises one typed error, ``ReportReadError`` (an ``Exception``), for a
+  report it cannot read: malformed XML (the message is the path, lxml's line and column,
+  then lxml's sentence), bytes that are not valid in the report's encoding, and a numeric
+  attribute that is not a number (``<testsuite> attribute tests="abc" is not an integer``,
+  ``<testcase> attribute time="1,5" is not a number`` -- the report is refused as a whole).
+  These escaped as lxml's ``XMLSyntaxError`` / ``OSError`` and a bare ``ValueError``. The
+  ``test-reports`` converter still exits 1 on such a report; its ``error:`` line now reads
+  ``error: <path>: <path> (line 1, column 34): Opening and ending tag mismatch: …`` for
+  malformed XML (it was lxml's sentence with lxml's ``(<file>, line 1)`` suffix).
+  `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
+  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+
+- 🐛 An empty ``<testsuites/>`` is an empty report: the parser returns no suites, where it
+  raised ``AttributeError: no such child: testsuite``, and ``test-reports build needs``
+  writes an empty ``needs.json`` with its "no test cases found" warning and exits 0, where
+  it exited 1.
+  `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
+  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+
+- 🐛 ``JUnitFileMissing`` and ``JsonFileMissing`` derive from ``Exception``, not
+  ``BaseException``, so a caller's ``except Exception`` catches a missing report. The
+  converter checks the path itself first and prints ``error: no such file: <path>`` as
+  before.
+  `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
+  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+
 .. _`release:1.0.0`:
 
 1.0.0
