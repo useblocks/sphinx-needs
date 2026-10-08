@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Nested suites three levels deep (#2050): direct cases at every level, one of them AFTER a
+  nested suite (`test_m2`, `test_o2`), the name `inner` under two parents (`outer > mid` and
+  `second`), and a second top-level suite. The trfix review's `deep.xml`, on which the
+  expansion measured equal to ubCode `e9fe0b2b16` in both id schemes.
+-->
+<testsuites>
+  <testsuite name="outer" tests="7" errors="0" failures="1" skipped="0" time="1.0">
+    <testcase classname="pkg.Outer" name="test_o1" file="tests/test_outer.py" line="3" time="0.1"/>
+    <testsuite name="mid" tests="4" errors="0" failures="0" skipped="0" time="0.5">
+      <testcase classname="pkg.Mid" name="test_m1" file="tests/test_mid.py" line="5" time="0.1"/>
+      <testsuite name="inner" tests="2" errors="0" failures="0" skipped="0" time="0.2">
+        <testcase classname="pkg.Inner" name="test_i1" file="tests/test_inner.py" line="7" time="0.1"/>
+        <testcase classname="pkg.Inner" name="test_i2[a-1]" file="tests/test_inner.py" line="9" time="0.1"/>
+      </testsuite>
+      <testcase classname="pkg.Mid" name="test_m2" file="tests/test_mid.py" line="11" time="0.1"/>
+    </testsuite>
+    <testsuite name="mid2" tests="1" errors="0" failures="1" skipped="0" time="0.1">
+      <testcase classname="pkg.Mid2" name="test_x" file="tests/test_mid2.py" line="2" time="0.1">
+        <failure message="boom" type="AssertionError">boom</failure>
+      </testcase>
+    </testsuite>
+    <testcase classname="pkg.Outer" name="test_o2" file="tests/test_outer.py" line="13" time="0.1"/>
+  </testsuite>
+  <testsuite name="second" tests="2" errors="0" failures="0" skipped="0" time="0.2">
+    <testcase classname="pkg.Second" name="test_s1" file="tests/test_second.py" line="1" time="0.1"/>
+    <testsuite name="inner" tests="1" errors="0" failures="0" skipped="0" time="0.1">
+      <testcase classname="pkg.SecondInner" name="test_si" file="tests/test_second.py" line="4" time="0.1"/>
+    </testsuite>
+  </testsuite>
+</testsuites>

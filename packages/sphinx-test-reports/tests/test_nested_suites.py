@@ -272,3 +272,142 @@ def test_auto_cases_without_auto_suites_is_still_an_error(test_app):
     """B7 control: ``:auto_cases:`` alone is a configuration error, as before."""
     with pytest.raises(TestReportIncompleteConfigurationError):
         test_app.build()
+
+
+#: The expansion of ``nested_deep.xml`` (three levels; a direct case after a nested suite;
+#: ``inner`` under two parents; a second top-level suite) as ``(id, type, title, links)``.
+#: A regression pin, not a parity pin -- ubCode has no fixture for this report -- but equal to
+#: ubCode ``e9fe0b2b16`` on the same report, measured by the trfix review in both id schemes.
+DEEP_NEEDS = {
+    ("REQ_1", "req", "A requirement", ()),
+    ("TF_DEEP", "testfile", "Deep report", ("REQ_1",)),
+    ("TF_DEEP_B14", "testsuite", "outer", ("REQ_1", "TF_DEEP")),
+    ("TF_DEEP_B14_9851F", "testcase", "test_o1", ("REQ_1", "TF_DEEP", "TF_DEEP_B14")),
+    ("TF_DEEP_B14_DC6D6", "testcase", "test_o2", ("REQ_1", "TF_DEEP", "TF_DEEP_B14")),
+    ("TF_DEEP_B14_F23", "testsuite", "mid", ("REQ_1", "TF_DEEP", "TF_DEEP_B14")),
+    (
+        "TF_DEEP_B14_F23_3455F",
+        "testcase",
+        "test_m1",
+        ("REQ_1", "TF_DEEP", "TF_DEEP_B14", "TF_DEEP_B14_F23"),
+    ),
+    (
+        "TF_DEEP_B14_F23_1C856",
+        "testcase",
+        "test_m2",
+        ("REQ_1", "TF_DEEP", "TF_DEEP_B14", "TF_DEEP_B14_F23"),
+    ),
+    (
+        "TF_DEEP_B14_F23_D2A",
+        "testsuite",
+        "inner",
+        ("REQ_1", "TF_DEEP", "TF_DEEP_B14", "TF_DEEP_B14_F23"),
+    ),
+    (
+        "TF_DEEP_B14_F23_D2A_51668",
+        "testcase",
+        "test_i1",
+        ("REQ_1", "TF_DEEP", "TF_DEEP_B14", "TF_DEEP_B14_F23", "TF_DEEP_B14_F23_D2A"),
+    ),
+    (
+        "TF_DEEP_B14_F23_D2A_A5614",
+        "testcase",
+        "test_i2[a-1]",
+        ("REQ_1", "TF_DEEP", "TF_DEEP_B14", "TF_DEEP_B14_F23", "TF_DEEP_B14_F23_D2A"),
+    ),
+    ("TF_DEEP_B14_DBE", "testsuite", "mid2", ("REQ_1", "TF_DEEP", "TF_DEEP_B14")),
+    (
+        "TF_DEEP_B14_DBE_6E55A",
+        "testcase",
+        "test_x",
+        ("REQ_1", "TF_DEEP", "TF_DEEP_B14", "TF_DEEP_B14_DBE"),
+    ),
+    ("TF_DEEP_352", "testsuite", "second", ("REQ_1", "TF_DEEP")),
+    ("TF_DEEP_352_011FC", "testcase", "test_s1", ("REQ_1", "TF_DEEP", "TF_DEEP_352")),
+    ("TF_DEEP_352_D2A", "testsuite", "inner", ("REQ_1", "TF_DEEP", "TF_DEEP_352")),
+    (
+        "TF_DEEP_352_D2A_C63AD",
+        "testcase",
+        "test_si",
+        ("REQ_1", "TF_DEEP", "TF_DEEP_352", "TF_DEEP_352_D2A"),
+    ),
+    ("TS_HAND_INNER", "testsuite", "Hand inner", ()),
+    ("TC_HAND_INNER", "testcase", "Hand inner case", ()),
+}
+
+DEEP_DOC = {"buildername": "needs", "srcdir": "doc_test/nested_deep"}
+
+
+@pytest.mark.parametrize("test_app", [DEEP_DOC], indirect=True)
+def test_the_expansion_mints_in_pre_order(test_app):
+    """The order the docs state: a suite, then its direct cases (in report order, also one
+    written after a nested suite), then its nested suites the same way. ``needs.json`` is
+    sorted by id, so the order is read off the page's need nodes."""
+    from sphinx_needs.nodes import Need
+
+    app = test_app
+    app.build()
+
+    order = [node["refid"] for node in app.env.get_doctree("index").findall(Need)]
+    assert order == [
+        "TF_DEEP",
+        "TF_DEEP_B14",
+        "TF_DEEP_B14_9851F",
+        "TF_DEEP_B14_DC6D6",
+        "TF_DEEP_B14_F23",
+        "TF_DEEP_B14_F23_3455F",
+        "TF_DEEP_B14_F23_1C856",
+        "TF_DEEP_B14_F23_D2A",
+        "TF_DEEP_B14_F23_D2A_51668",
+        "TF_DEEP_B14_F23_D2A_A5614",
+        "TF_DEEP_B14_DBE",
+        "TF_DEEP_B14_DBE_6E55A",
+        "TF_DEEP_352",
+        "TF_DEEP_352_011FC",
+        "TF_DEEP_352_D2A",
+        "TF_DEEP_352_D2A_C63AD",
+        "TS_HAND_INNER",
+        "TC_HAND_INNER",
+        "REQ_1",
+    ]
+    assert _rows(_needs(app), "index") == DEEP_NEEDS
+
+
+@pytest.mark.parametrize("test_app", [DEEP_DOC], indirect=True)
+def test_a_hand_written_case_finds_the_first_suite_of_the_name_in_pre_order(test_app):
+    """``inner`` is nested at depth 2 under ``outer > mid`` and at depth 1 under the LATER
+    ``second``: pre-order finds the depth-2 one first (a breadth-first search would find
+    ``second > inner``, which has no ``test_i1``)."""
+    app = test_app
+    app.build()
+
+    needs = _needs(app)
+    assert needs["TS_HAND_INNER"]["cases"] == 2
+    assert needs["TC_HAND_INNER"]["case"] == "test_i1"
+    assert needs["TC_HAND_INNER"]["classname"] == "pkg.Inner"
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "needs", "srcdir": "doc_test/nested_lookup"}],
+    indirect=True,
+)
+def test_a_name_twice_at_the_top_level_finds_the_first(test_app):
+    """A merged report holds ``<testsuite name="pytest">`` twice: ``:suite: pytest`` is the
+    first, two cases, not the second's three."""
+    app = test_app
+    app.build()
+
+    assert _needs(app)["TS_MERGED"]["cases"] == 2
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "needs", "srcdir": "doc_test/nested_twins"}],
+    indirect=True,
+)
+def test_two_suites_of_one_name_under_one_parent_still_raise(test_app):
+    """Their auto-suite ids collide, and the expansion raises as it did for top-level
+    suites. #2052 is to turn this into a warning; it updates this test."""
+    with pytest.raises(Exception, match=r"^Suite ID .* already exists"):
+        test_app.build()

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Two nested suites of one name under one parent: their auto-suite ids collide (#2050, #2052). -->
+<testsuites>
+  <testsuite name="outer" tests="2">
+    <testsuite name="twin" tests="1"><testcase classname="a.B" name="t1" time="0.1"/></testsuite>
+    <testsuite name="twin" tests="1"><testcase classname="a.B" name="t2" time="0.1"/></testsuite>
+  </testsuite>
+</testsuites>
