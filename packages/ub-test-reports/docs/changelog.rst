@@ -30,7 +30,7 @@ Fixed
   ``suite`` set to the name of the suite the case is directly in. Reports whose suites hold
   either cases or nested suites, never both, convert exactly as before.
   `#2050 <https://github.com/useblocks/sphinx-needs/issues/2050>`__,
-  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+  `#2149 <https://github.com/useblocks/sphinx-needs/pull/2149>`__
 
 .. _`release:1.0.0`:
 

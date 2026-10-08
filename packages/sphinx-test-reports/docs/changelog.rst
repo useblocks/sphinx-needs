@@ -278,7 +278,7 @@ Fixed
   and nested suites shows its own cases, where its table was empty. The IDs and links are
   the ones ubCode mints for the same report (an id collision aside, #2052).
   `#2050 <https://github.com/useblocks/sphinx-needs/issues/2050>`__,
-  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+  `#2149 <https://github.com/useblocks/sphinx-needs/pull/2149>`__
 
 What the move costs, stated rather than left to the CI diff
 ............................................................
