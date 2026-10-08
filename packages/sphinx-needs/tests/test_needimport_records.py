@@ -126,11 +126,11 @@ TAGS_RECORDS = [
 def test_tags_option_extends_the_record_tags(
     test_app: SphinxTestApp, expected: dict[str, list[str]]
 ) -> None:
-    """``:tags:`` is added to each record's own ``tags``: a missing, ``null`` or empty
-    ``tags`` gets the option's tags, a list is extended, and a string is extended and
-    then converted as ``add_need`` converts a string ``tags`` (on ``;``, ``,`` and ``|``,
-    a dynamic function kept whole and run). Without the option, each record keeps its
-    own (the control: what ``add_need`` makes of the same values)."""
+    """``:tags:`` is added to each record's own ``tags``: a missing or ``null`` ``tags``
+    gets the option's tags, a list is extended, and a string, an empty one included, is
+    extended and then converted as ``add_need`` converts a string ``tags`` (on ``;``,
+    ``,`` and ``|``, a dynamic function kept whole and run). Without the option, each
+    record keeps its own (the control: what ``add_need`` makes of the same values)."""
     test_app.build()
     assert test_app.statuscode == 0
     assert build_warnings(test_app) == []
@@ -142,7 +142,7 @@ def test_tags_option_extends_the_record_tags(
     [
         pytest.param(
             project(
-                [record("STR_TAGS", tags="x; y")],
+                [record("STR_TAGS", tags="x; y"), record("EMPTY_TAGS", tags="")],
                 [":allow_type_coercion: false", *options],
             ),
             id=name,
@@ -154,15 +154,18 @@ def test_tags_option_extends_the_record_tags(
 def test_tags_option_keeps_a_string_refused_without_coercion(
     test_app: SphinxTestApp,
 ) -> None:
-    """With ``:allow_type_coercion: false`` a string ``tags`` is refused, with or
-    without ``:tags:``, with the same text."""
+    """With ``:allow_type_coercion: false`` a string ``tags``, an empty one included,
+    is refused, with or without ``:tags:``, with the same text."""
     test_app.build()
     assert test_app.statuscode == 0
     assert build_warnings(test_app) == [
         not_imported(
             "STR_TAGS",
             "'tags' value is invalid: Invalid value for field 'tags': 'x; y'",
-        )
+        ),
+        not_imported(
+            "EMPTY_TAGS", "'tags' value is invalid: Invalid value for field 'tags': ''"
+        ),
     ]
     assert needs_by_id(test_app) == {}
 
