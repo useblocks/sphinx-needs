@@ -159,9 +159,10 @@ def extract_comments(
 ) -> list[TreeSitterNode] | None:
     """Get all comments from source files by tree-sitter.
 
-    The whole buffer is parsed in one piece: read one byte at a time, tree-sitter
-    lexes a multi-byte UTF-8 character as invalid, which loses a YAML comment after
-    it and the scope of a bash function or YAML key that contains one.
+    The whole buffer is parsed in one piece: read one byte at a time, a multi-byte
+    UTF-8 character inside a token (a YAML scalar, an identifier) is lexed as invalid,
+    which loses a YAML comment after it and the scope of a bash function or YAML key
+    that contains one.
     """
     tree = parser.parse(src_string)
     query_cursor = QueryCursor(query)

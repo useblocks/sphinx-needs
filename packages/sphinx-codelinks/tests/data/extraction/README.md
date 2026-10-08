@@ -8,10 +8,9 @@ bespoke test function per case.
 
 ## Shared with ubCode
 
-The YAML files of this directory that ubCode also has (today 11 of the 14)
-are copied byte for byte into ubCode
-(`rust/ubc_codelinks/tests/fixtures/extraction/`; ubCode's
-`sync_codelinks_expected.py` lists the shared files), and ubCode takes their
+The YAML files of this directory that ubCode's `sync_codelinks_expected.py`
+names in `SHARED_FIXTURES` are copied byte for byte into ubCode
+(`rust/ubc_codelinks/tests/fixtures/extraction/`), and ubCode takes their
 snapshots in `tests/__snapshots__/test_extraction_fixtures/` as the expected
 output of its parity test. A change to a case or a snapshot is therefore a
 contract change, which the ubCode side re-syncs. useblocks/ubcode#3014 points

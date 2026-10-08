@@ -504,6 +504,20 @@ New and Improved
   the start sequence is Python's own notion of alphanumeric, which ubCode's differs from
   on a few characters (combining marks, for one): a documented non-goal.
 
+Fixes
+.....
+
+- 🐛 tree-sitter reads the whole source file, so non-ASCII text no longer breaks its parse
+  (`#2155 <https://github.com/useblocks/sphinx-needs/issues/2155>`__).
+
+  The analysis fed tree-sitter one byte per read, and a multi-byte UTF-8 character inside
+  a token the grammar reads -- a YAML scalar, an identifier -- was lexed as invalid. A YAML
+  value with a non-ASCII character before an inline comment lost the comment, so its
+  one-line need or ``@need-ids:`` reference was not found (``key: "é"  # @Title, ID_1,
+  impl``); a bash function name or a YAML key with a non-ASCII character lost the scope of
+  the marker above it; and every other grammar except JSON parsed a non-ASCII identifier
+  into an error tree, with no other output change measured.
+
 .. _`release:1.4.0`:
 
 1.4.0
