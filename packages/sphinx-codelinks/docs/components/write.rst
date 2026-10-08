@@ -23,8 +23,8 @@ With the following extracted markers fron the ``analyse`` command,
                "filepath": "/home/demo/git_repo/ub/sphinx-codelinks/tests/data/need_id_refs/dummy_1.cpp",
                "remote_url": "https://github.com/useblocks/sphinx-codelinks/blob/951e40e7845f06d5cfc4ca20ebb984308fdaf985/tests/data/need_id_refs/dummy_1.cpp#L3",
                "source_map": {
-                   "start": {"row": 2, "column": 13},
-                   "end": {"row": 2, "column": 51}
+                   "start": {"row": 2, "column": 14},
+                   "end": {"row": 2, "column": 52}
                },
                "tagged_scope": "void dummy_func1(){\n     //...\n }",
                "need_ids": ["NEED_001", "NEED_002", "NEED_003", "NEED_004"],

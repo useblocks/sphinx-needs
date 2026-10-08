@@ -280,9 +280,8 @@ line of a block keeps its source line:
    * - Python string statement
      - the quotes, and the lines' common indentation, as ``inspect.cleandoc`` removes it
 
-Under the :ref:`libclang engine <preprocessor_engine>` a comment carries no column, so what precedes
-it on its row is read from the row itself; a block in an inactive preprocessor branch is not
-extracted.
+Under the :ref:`libclang engine <preprocessor_engine>` what precedes a comment on its row is read
+from the row itself; a block in an inactive preprocessor branch is not extracted.
 
 Precedence over one-line needs and references
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

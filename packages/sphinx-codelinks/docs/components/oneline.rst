@@ -258,9 +258,11 @@ reported as one of these kinds, the kind leading the message:
   its first and last characters, such as ``[REQ_1];``;
 - ``newline_in_field`` -- a field holding a newline (not produced from a source file,
   which is parsed one line at a time);
-- ``docstring_tag`` -- a line of a Python docstring (never a ``#`` comment) whose start
-  sequence is directly followed by a docstring tag such as ``param``, ``return`` or
-  ``raises`` in the Epydoc field shape, ``:`` directly or one word and ``:``
+- ``docstring_tag`` -- a line of a Python docstring (any bare string statement directly in
+  a module, class or function body; never a ``#`` comment) with nothing alphanumeric before
+  its start sequence, which is directly followed by a docstring tag such as ``param``,
+  ``return`` or ``raises`` in the Epydoc field shape ``:|[ \t]+[^ \t:]+:`` -- ``:``
+  directly, or spaces or tabs, one word without space, tab or ``:``, and ``:``
   (``@return: text``, ``@param a: text``):
   ``'@param' is a docstring tag, not a one-line need; use a start sequence that docstrings
   do not contain``. A start sequence the docstrings also use cannot tell a need from
