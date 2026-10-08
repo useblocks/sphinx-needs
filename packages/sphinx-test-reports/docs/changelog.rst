@@ -252,16 +252,17 @@ Fixed
 - 🐛 A ``test-env`` file that is valid JSON but not an object of objects no longer ends the
   build with a ``TypeError`` / ``IndexError``: a file that is not an object shows nothing,
   with a ``test_reports.env_shape`` warning and an error box; an environment that is not
-  an object is skipped with an ``env_shape`` warning naming it, the others shown -- with
-  ``:raw:`` too, where such an environment used to be shown as its JSON value.
+  an object is skipped with an ``env_shape`` warning naming it, the others shown. Under
+  ``:raw:`` without ``:data:`` such an environment is shown as its JSON block, without a
+  warning, as before. One input that rendered silently before now warns: an environment
+  whose value is ``[]`` (an empty section before).
   `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
   `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
 
 - 🐛 ``test-env``'s ``:env:`` and ``:data:`` ignore blank elements (``:env: py35, ,flake8``
   warned ``environment '' is not present``) and show a repeated one once
   (``:data: host, host`` warned that ``host`` was missing; ``:env: py35, py35`` showed the
-  environment twice). A ``:data:`` that names no variable (``:data: ,``) shows every
-  variable, where it showed none. A variable a shown environment lacks is one
+  environment twice). A variable a shown environment lacks is one
   ``test_reports.env_key_not_present`` warning per directive -- ``option 'x' is not present
   in JSON file`` when no environment holds it, else ``option 'x' is not present in 'flake8'
   environment file`` naming those that lack it -- where it was one warning per

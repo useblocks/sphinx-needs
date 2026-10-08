@@ -26,7 +26,8 @@ The file must be a JSON object of environments, each an object of variables.
 A file that is anything else (an array, a string, a number) shows nothing,
 with a ``test_reports.env_shape`` warning and the error box;
 an environment whose value is not an object is skipped with a ``test_reports.env_shape`` warning naming it,
-and the other environments are shown.
+and the other environments are shown --
+except with ``:raw:`` and no ``:data:``, where its value is shown as its JSON block, without a warning.
 
 A variable's value is shown as the file spells it:
 a string as it is (an empty string is an empty cell),
@@ -59,7 +60,8 @@ related dictionary of the requested environment.
 Sub-keys like ``python.version`` are currently not supported.
 
 Blank elements are ignored, and a variable named twice is shown once.
-A ``:data:`` that names no variable at all (``:data: ,``) shows every variable, as no ``:data:`` does.
+A ``:data:`` that names no variable at all (``:data: ,``) shows no variable,
+as an ``:env:`` that names no environment (``:env: ,``) shows no environment.
 A variable that a shown environment lacks is ONE ``test_reports.env_key_not_present`` warning per directive:
 ``option 'x' is not present in JSON file`` when no shown environment holds it,
 else ``option 'x' is not present in 'flake8, pylint' environment file``, naming the environments that lack it.
