@@ -19,6 +19,7 @@ from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.filter_common import filter_import_item
 from sphinx_needs.logging import log_warning
+from sphinx_needs.need_content import resolve_content_parser
 from sphinx_needs.need_item import NeedItemSourceImport
 from sphinx_needs.needsfile import SphinxNeedsFileException, check_needs_data
 from sphinx_needs.utils import (
@@ -53,6 +54,7 @@ class NeedimportDirective(SphinxDirective):
         "pre_template": directives.unchanged_required,
         "post_template": directives.unchanged_required,
         "allow_type_coercion": coerce_to_boolean,
+        "parse_by_doctype": coerce_to_boolean,
     }
 
     final_argument_whitespace = True
@@ -66,6 +68,9 @@ class NeedimportDirective(SphinxDirective):
         filter_string = self.options.get("filter")
         id_prefix = self.options.get("id_prefix", "")
         allow_type_coercion = self.options.get("allow_type_coercion", True)
+        parse_by_doctype = self.options.get(
+            "parse_by_doctype", needs_config.import_parse_by_doctype
+        )
 
         need_import_path = needs_config.import_keys.get(
             self.arguments[0], self.arguments[0]
@@ -214,6 +219,19 @@ class NeedimportDirective(SphinxDirective):
             "post_template",
         )
 
+        # parsing by doctype: the content is anchored at the directive, in the file and
+        # at the line it is written on, whatever the page's markup
+        content_source: tuple[str, int] | None = None
+        if parse_by_doctype:
+            path, line = self.get_source_info()
+            if path and isinstance(line, int) and line >= 1:
+                content_source = (str(path), line)
+        # each distinct doctype is resolved once: to ``None`` if the project parses it,
+        # else to the reason it does not
+        refusals: dict[str, str | None] = {}
+        # the unparseable doctypes of the needs with content, and why, in import order
+        fallbacks: dict[str, str] = {}
+
         need_nodes = []
         for need_params in needs_list.values():
             record = dict(need_params)
@@ -237,12 +255,21 @@ class NeedimportDirective(SphinxDirective):
                 path=need_import_path,
             )
 
+            # a template is a file of the importing project, written in the page's
+            # markup: a need rendered through one is parsed as the page's, as its
+            # pre and post templates always are
+            content_markup = None
+            if parse_by_doctype and not record.get("template"):
+                content_markup = self._content_markup(record, refusals, fallbacks)
+
             try:
                 need_node, _ = ingest_need_record(
                     self.env.app,
                     self.state,
                     record,
                     need_source=need_source,
+                    content_markup=content_markup,
+                    content_source=content_source if content_markup else None,
                     allow_type_coercion=allow_type_coercion,
                     # a need that cannot be created still reports its unknown keys
                     unknown_keys=unknown_keys,
@@ -257,6 +284,17 @@ class NeedimportDirective(SphinxDirective):
             else:
                 need_nodes.extend(need_node)
 
+        for doctype, reason in fallbacks.items():
+            log_warning(
+                logger,
+                f"Imported needs declare doctype {doctype!r}, which no parser of this "
+                f"project claims ({reason}); their content was parsed as this page's "
+                "markup instead. Add the suffix to source_suffix with a "
+                "reStructuredText or MyST parser, or set :parse_by_doctype: false.",
+                "import_doctype",
+                location=self.get_location(),
+            )
+
         if unknown_keys:
             log_warning(
                 logger,
@@ -268,6 +306,41 @@ class NeedimportDirective(SphinxDirective):
         add_doc(self.env, self.env.docname)
 
         return need_nodes
+
+    def _content_markup(
+        self,
+        record: dict[str, Any],
+        refusals: dict[str, str | None],
+        fallbacks: dict[str, str],
+    ) -> str | None:
+        """The markup to parse a record's content in: its ``doctype``, if the project
+        parses that; else ``None``, the page's markup.
+
+        A ``doctype`` that is empty, missing or not a ``str`` says nothing, and is the
+        page's markup silently. One that the project does not parse is noted in
+        ``fallbacks``, with the reason, for a record whose content is not blank.
+        """
+        doctype = record.get("doctype")
+        if not isinstance(doctype, str) or not doctype:
+            return None
+        if doctype not in refusals:
+            try:
+                resolve_content_parser(self.env.app, doctype)
+            except InvalidNeedException as err:
+                refusals[doctype] = err.message.removeprefix(
+                    "Content markup "
+                ).removesuffix(
+                    "; only reStructuredText and MyST parsers are supported."
+                )
+            else:
+                refusals[doctype] = None
+        if (reason := refusals[doctype]) is None:
+            return doctype
+        content = record.get("content") or record.get("description") or ""
+        blank = isinstance(content, str) and not content.strip()
+        if not blank:
+            fallbacks.setdefault(doctype, reason)
+        return None
 
     @property
     def docname(self) -> str:

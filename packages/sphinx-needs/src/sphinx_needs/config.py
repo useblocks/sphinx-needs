@@ -964,6 +964,10 @@ class NeedsSphinxConfig:
         default_factory=dict, metadata={"rebuild": "html", "types": (dict,)}
     )
     """Mapping of keys that can be used as needimport arguments and replaced by the value."""
+    import_parse_by_doctype: bool = field(
+        default=False, metadata={"rebuild": "env", "types": (bool,)}
+    )
+    """If True, needimport parses each imported need's content in the markup its doctype names."""
     external_needs: list[ExternalSource] = field(
         default_factory=list,
         metadata={
