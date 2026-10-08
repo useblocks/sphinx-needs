@@ -345,17 +345,22 @@ Bug fixes
 
   A ``:tags:`` option ended the build with ``KeyError: 'tags'`` on a needs.json record
   that has no ``tags`` key, as a hand-written file or another producer may omit it, and
-  with a ``TypeError`` on one whose ``tags`` is ``null`` or a string. The option's tags
-  are now added to the record's own whatever their shape: none for a missing or ``null``
-  ``tags``, appended to a list, and appended to a string split as the option is split.
-  A record whose ``content`` (or legacy ``description``) is present but not a string, such
-  as ``5`` or ``null``, ended the build with an ``AttributeError``, whether or not its
-  content was parsed by its ``doctype``; one whose ``type`` is a list or an object ended
-  it with a ``TypeError``. Each is now the ``needs.import_need`` warning naming the need
-  and the key (``content must be a string, not int``), and the need is skipped; a record
-  whose ``type`` is another value that is not a string, such as ``5`` or ``null``, is
-  reported with the same text instead of ``Unknown need type 5.``. A record with no
-  ``content`` key still imports with empty content.
+  with a ``TypeError`` on one whose ``tags`` is ``null``, a string or another value that
+  is not a list. The option's tags are now added to the record's own for a missing,
+  ``null``, list or string ``tags``: a missing, ``null`` or empty ``tags`` gets the
+  option's tags, a list is extended, and a string is extended with the option's tags,
+  and converted as ``add_need`` converts a string ``tags`` without the option (with
+  ``:allow_type_coercion: false``, the record's string is refused as it is without the
+  option); any other value is refused by ``add_need`` as a ``tags`` value that is
+  invalid. A record whose ``content`` -- or, when that is empty, the legacy
+  ``description`` -- is not a string, such as ``5`` or ``null``, ended the build with an
+  ``AttributeError``, whether or not its content was parsed by its ``doctype``; one whose
+  ``type`` is a list or an object ended it with a ``TypeError``. Each is now the
+  ``needs.import_need`` warning naming the need and the key (``content must be a string,
+  not int``), and the need is skipped; a record whose ``type`` is another value that is
+  not a string, such as ``5`` or ``null``, is reported with the same text instead of
+  ``Unknown need type 5.``. A record with no ``content`` key, or an empty one, still
+  imports with empty content.
 
 .. _`release:8.5.0`:
 
