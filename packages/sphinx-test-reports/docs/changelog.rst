@@ -237,6 +237,33 @@ Fixed
   `#1932 <https://github.com/useblocks/sphinx-needs/issues/1932>`__,
   `#2125 <https://github.com/useblocks/sphinx-needs/pull/2125>`__
 
+- 🐛 ``test-results`` and ``test-env`` make each suite / environment a real section now,
+  one level below the section the directive stands in: its heading is one level deeper
+  than before (an ``<h4>`` under an ``<h3>`` heading, where it was a second ``<h3>``), it
+  has an id and a permalink of its own, and ``.. contents::`` and the sidebar list it.
+  Before, the heading was a stray title of the enclosing section, at that section's level
+  and with that section's permalink, and either directive written inside a list item
+  failed the HTML build with ``AssertionError``. Text written after the directive in the
+  same section now follows the last generated section -- in a PDF (LaTeX) it is part of
+  it -- so write the directive at the end of its section, or give the text that follows a
+  heading of its own.
+
+  **This can fail a** ``-W`` **build** where a suite or environment is named like a
+  heading on the same page: the name is ambiguous then, and a ```Name`_`` reference to
+  either is docutils' ``ERROR: Duplicate target name, cannot be used as a unique
+  reference``. Under ``sphinx.ext.autosectionlabel`` the generated sections are labelled
+  like authored ones, so such a name is a duplicate label -- across the whole project
+  without ``autosectionlabel_prefix_document`` -- and a ``:ref:`` to it may land on the
+  generated section (autosectionlabel keeps the last one read). Rename the heading -- under
+  ``sphinx.ext.autosectionlabel`` the only way out on one page; without autosectionlabel an
+  explicit label on the heading, referenced instead of its title, also clears the error,
+  and ``autosectionlabel_prefix_document`` clears a clash with a heading on another page.
+  Two suites named alike on one page are two sections with distinct ids;
+  docutils reports that duplicate at INFO level, which leaves ``-W`` green only while
+  nothing references the name.
+  `#1959 <https://github.com/useblocks/sphinx-needs/issues/1959>`__,
+  `#2148 <https://github.com/useblocks/sphinx-needs/pull/2148>`__
+
 What the move costs, stated rather than left to the CI diff
 ............................................................
 
