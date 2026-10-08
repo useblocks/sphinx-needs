@@ -372,15 +372,20 @@ def test_a_json_file_is_a_report_read_error(tmp_path):
 
 
 def test_an_undecodable_report_is_a_report_read_error(tmp_path):
-    """lxml reports bytes that are not valid in the document's encoding as an ``OSError``
-    (``Error reading file …``), not an ``XMLSyntaxError``; it is the same refusal."""
+    """Bytes that are not valid in the document's encoding are the same refusal.
+
+    How libxml2 reports them differs by platform: an ``OSError`` (``Error reading file
+    '<path>': Invalid bytes in character encoding``) on macOS and Linux, an
+    ``XMLSyntaxError`` with a position (``Input is not proper UTF-8, indicate encoding !``)
+    on Windows. Either way it is a ``ReportReadError`` whose message starts with the path
+    and names it once (lxml's own ``Error reading file '<path>': `` prefix is dropped).
+    """
     from ub_test_reports.junitparser import JUnitParser, ReportReadError
 
     path = _report(tmp_path, b'<testsuite name="caf\xe9"/>')
     with pytest.raises(ReportReadError) as caught:
         JUnitParser(path)
-    # The path once: lxml's own `Error reading file '<path>': ` prefix is dropped.
-    assert str(caught.value).startswith(f"{path}: ")
+    assert str(caught.value).startswith(path)
     assert str(caught.value).count(path) == 1
 
 

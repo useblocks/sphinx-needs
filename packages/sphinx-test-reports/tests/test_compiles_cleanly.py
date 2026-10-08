@@ -1,4 +1,4 @@
-"""Every module of the package compiles without a warning (fix round 2 of #2052).
+r"""Every module of the package compiles without a warning (fix round 2 of #2052).
 
 A string that holds a backslash escape Python does not know (``"\\ "`` written as
 ``"\ "``) is a ``SyntaxWarning`` when the module is compiled without a cache -- a fresh
