@@ -1,10 +1,9 @@
 import configparser
-from collections.abc import ByteString, Callable
 from pathlib import Path
 from urllib.request import pathname2url
 
 from giturlparse import parse
-from tree_sitter import Language, Parser, Point, Query, QueryCursor
+from tree_sitter import Language, Parser, Query, QueryCursor
 from tree_sitter import Node as TreeSitterNode
 
 from sphinx_codelinks.config import CommentCategory
@@ -154,22 +153,17 @@ def init_tree_sitter(comment_type: CommentType) -> tuple[Parser, Query]:
     return parser, query
 
 
-def wrap_read_callable_point(
-    src_string: ByteString,
-) -> Callable[[int, Point], ByteString]:
-    def read_callable_byte_offset(byte_offset: int, _: Point) -> ByteString:
-        return src_string[byte_offset : byte_offset + 1]
-
-    return read_callable_byte_offset
-
-
 # @Comment extraction from source code using tree-sitter, IMPL_EXTR_1, impl, [FE_DEF]
 def extract_comments(
-    src_string: ByteString, parser: Parser, query: Query
+    src_string: bytes, parser: Parser, query: Query
 ) -> list[TreeSitterNode] | None:
-    """Get all comments from source files by tree-sitter."""
-    read_point_fn = wrap_read_callable_point(src_string)
-    tree = parser.parse(read_point_fn)
+    """Get all comments from source files by tree-sitter.
+
+    The whole buffer is parsed in one piece: read one byte at a time, tree-sitter
+    lexes a multi-byte UTF-8 character as invalid, which loses a YAML comment after
+    it and the scope of a bash function or YAML key that contains one.
+    """
+    tree = parser.parse(src_string)
     query_cursor = QueryCursor(query)
     captures: dict[str, list[TreeSitterNode]] = query_cursor.captures(tree.root_node)
 
