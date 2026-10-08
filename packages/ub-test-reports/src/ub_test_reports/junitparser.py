@@ -6,7 +6,10 @@ import os
 
 from lxml import etree, objectify  # ty: ignore[unresolved-import]
 
+from ub_test_reports.errors import ReportReadError
 from ub_test_reports.results import normalize_result
+
+__all__ = ["JUnitFileMissing", "JUnitParser", "ReportReadError"]
 
 #: Attributes the JUnit/googletest dialects define themselves. Every *other*
 #: attribute is a ``RecordProperty`` value in attribute form: googletest wrote
@@ -121,6 +124,25 @@ def _collect_captured_output(xml_object: objectify.ObjectifiedElement, tag: str)
     return "\n".join(block for block in blocks if block)
 
 
+def _numeric(path, element, name, convert):
+    """The ``name`` attribute of ``element`` as ``convert`` (``int`` or ``float``) reads it.
+
+    An absent attribute is ``-1``, the reader's long-standing sentinel. A value the
+    conversion refuses is a :class:`ReportReadError` naming the element, the attribute and
+    the value -- the report is refused as a whole.
+    """
+    value = element.attrib.get(name)
+    if value is None:
+        return convert(-1)
+    try:
+        return convert(value)
+    except ValueError:
+        kind = "an integer" if convert is int else "a number"
+        raise ReportReadError(
+            f'{path}: <{_child_tag(element)}> attribute {name}="{value}" is not {kind}'
+        ) from None
+
+
 class JUnitParser:
     def __init__(self, junit_xml, junit_xsd=None):
         self.junit_xml_path = junit_xml
@@ -137,7 +159,27 @@ class JUnitParser:
             raise JUnitFileMissing(
                 f"The given file does not exist: {self.junit_xml_path}"
             )
-        self.junit_xml_doc = etree.parse(self.junit_xml_path)
+        try:
+            self.junit_xml_doc = etree.parse(self.junit_xml_path)
+        except etree.XMLSyntaxError as error:
+            line, column = error.position
+            # lxml's sentence ends with the position ours leads with: said once.
+            message = error.msg
+            suffix = f", line {line}, column {column}"
+            if message.endswith(suffix):
+                message = message[: -len(suffix)]
+            raise ReportReadError(
+                f"{self.junit_xml_path} (line {line}, column {column}): {message}"
+            ) from error
+        except OSError as error:
+            # lxml reports bytes that are not valid in the document's encoding (and a
+            # path it cannot read, such as a directory) as an OSError naming the file,
+            # `Error reading file '<path>': …`; ours names it once.
+            message = str(error)
+            prefix = f"Error reading file '{self.junit_xml_path}': "
+            if message.startswith(prefix):
+                message = message[len(prefix) :]
+            raise ReportReadError(f"{self.junit_xml_path}: {message}") from error
 
         self.junit_xml_string = etree.tostring(self.junit_xml_doc)
         self.junit_xml_object = objectify.fromstring(self.junit_xml_string)
@@ -158,15 +200,17 @@ class JUnitParser:
         :return: list of test suites as dictionaries
         """
 
+        path = self.junit_xml_path
+
         def parse_testcase(xml_object):
             testcase = xml_object
 
             tc_dict = {
                 "classname": testcase.attrib.get("classname", "unknown"),
                 "file": testcase.attrib.get("file", "unknown"),
-                "line": int(testcase.attrib.get("line", -1)),
+                "line": _numeric(path, testcase, "line", int),
                 "name": testcase.attrib.get("name", "unknown"),
-                "time": float(testcase.attrib.get("time", -1)),
+                "time": _numeric(path, testcase, "time", float),
                 # googletest attributes; empty (never absent) so that consumers
                 # can emit every field unconditionally.
                 "timestamp": testcase.attrib.get("timestamp", ""),
@@ -226,15 +270,23 @@ class JUnitParser:
         def parse_testsuite(xml_object):
             testsuite = xml_object
 
-            tests = int(testsuite.attrib.get("tests", -1))
-            errors = int(testsuite.attrib.get("errors", -1))
-            failures = int(testsuite.attrib.get("failures", -1))
+            tests = _numeric(path, testsuite, "tests", int)
+            errors = _numeric(path, testsuite, "errors", int)
+            failures = _numeric(path, testsuite, "failures", int)
 
-            # fmt: off
-            skips = int(
-                testsuite.attrib.get("skips") or testsuite.attrib.get("skip") or testsuite.attrib.get("skipped") or -1
+            # The first of the three spellings that carries a value; an empty one counts
+            # as absent, as it did when this was an `or` chain.
+            skips_name = next(
+                (
+                    name
+                    for name in ("skips", "skip", "skipped")
+                    if testsuite.attrib.get(name)
+                ),
+                None,
             )
-            # fmt: on
+            skips = (
+                -1 if skips_name is None else _numeric(path, testsuite, skips_name, int)
+            )
 
             passed = int(tests - sum(x for x in [errors, failures, skips] if x > 0))
 
@@ -245,7 +297,7 @@ class JUnitParser:
                 "failures": failures,
                 "skips": skips,
                 "passed": passed,
-                "time": float(testsuite.attrib.get("time", -1)),
+                "time": _numeric(path, testsuite, "time", float),
                 "testcases": [],
                 "testsuite_nested": [],
             }
@@ -275,9 +327,12 @@ class JUnitParser:
         junit_dict = []
 
         if self.junit_xml_object.tag == "testsuites":
-            for testsuite_xml_object in self.junit_xml_object.testsuite:
-                complete_testsuite = parse_testsuite(testsuite_xml_object)
-                junit_dict.append(complete_testsuite)
+            # `<testsuites/>` holds no suite: an empty report, not `AttributeError: no
+            # such child: testsuite` (#2052; ubCode reads it the same way).
+            if hasattr(self.junit_xml_object, "testsuite"):
+                for testsuite_xml_object in self.junit_xml_object.testsuite:
+                    complete_testsuite = parse_testsuite(testsuite_xml_object)
+                    junit_dict.append(complete_testsuite)
         else:
             complete_testsuite = parse_testsuite(self.junit_xml_object)
             junit_dict.append(complete_testsuite)
@@ -288,5 +343,5 @@ class JUnitParser:
         pass
 
 
-class JUnitFileMissing(BaseException):
-    pass
+class JUnitFileMissing(Exception):
+    """The report path does not exist."""

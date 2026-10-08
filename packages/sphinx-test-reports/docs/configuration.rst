@@ -478,7 +478,8 @@ be silenced through Sphinx's ``suppress_warnings`` in a project that builds
 with ``-W``: ``test_reports.unknown_key`` for the unknown-key report above, and
 ``test_reports.missing_config`` for an explicitly named file that does not
 exist (see :ref:`tr_config_from_toml`). A known key with the wrong type is an
-error, not a warning, and cannot be suppressed.
+error, not a warning, and cannot be suppressed. :ref:`tr_warnings` lists every
+warning of the family.
 
 **Precedence.** ``-D`` on the ``sphinx-build`` command line beats the TOML
 file, which beats ``conf.py``, which beats the built-in default. The
@@ -530,3 +531,38 @@ declarative configuration off entirely.
 
    tr_config_from_toml = "../ubproject.toml"   # explicit path
    tr_config_from_toml = None                  # disable
+
+.. _tr_warnings:
+
+Warnings
+--------
+
+Every warning sphinx-test-reports emits has the type ``test_reports`` and a subtype,
+so ``suppress_warnings`` in ``conf.py`` silences the whole family (``"test_reports"``)
+or one member of it (``"test_reports.report_missing"``),
+for instance in a project that builds with ``-W``.
+Sphinx 8 and later print the type after the message, as ``[test_reports.report_missing]``.
+
+A failure in a directive -- a report it cannot find or read -- is one such warning,
+located on the directive (the file it is written in, an included one too, and its line),
+and the directive shows an error box with the same text where its need or table would have been;
+the build goes on.
+Suppressing the warning leaves the box in the page.
+The subtypes are the code tails of ubCode's ``needs.test_report_*`` findings,
+so one name silences the same problem in both tools.
+
+``test_reports.report_missing``
+   The report a directive names -- ``:file:``, or the argument of ``test-results`` -- does not exist.
+
+``test_reports.report_unreadable``
+   The report exists and cannot be read:
+   it is not well-formed XML,
+   a numeric attribute of a ``<testsuite>`` or ``<testcase>`` (``tests``, ``time``, ``line``, ...) is not a number,
+   a JSON report is not valid JSON, not UTF-8, not a list of test suites, or holds a suite that is not an object,
+   or ``test-results`` is given a ``.json`` file.
+
+``test_reports.unknown_key``, ``test_reports.missing_config``
+   The declarative configuration: see :ref:`tr_config_from_toml` and the warnings above it.
+
+``test_reports.deprecated``
+   The extension was loaded by its pre-3.0 name, ``sphinxcontrib.test_reports``.

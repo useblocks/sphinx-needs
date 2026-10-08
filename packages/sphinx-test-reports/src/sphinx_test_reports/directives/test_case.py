@@ -6,7 +6,11 @@ from docutils.parsers.rst import directives
 from sphinx_needs.api import add_need
 from sphinx_needs.utils import add_doc
 from sphinx_test_reports.config import DEFAULT_OPTIONS
-from sphinx_test_reports.directives.test_common import TestCommonDirective, find_suite
+from sphinx_test_reports.directives.test_common import (
+    TestCommonDirective,
+    error_node,
+    find_suite,
+)
 from sphinx_test_reports.exceptions import TestReportInvalidOptionError
 from ub_test_reports.identity import split_case_name
 
@@ -48,7 +52,9 @@ class TestCaseDirective(TestCommonDirective):
         suite is the one its ``:suite:`` names.
         """
         self.prepare_basic_options()
-        self.load_test_file()
+        if self.load_test_file() is None:
+            # The report does not exist or cannot be read: `load_test_file` has warned.
+            return [error_node(self.report_error)]
 
         suite_name = self.options.get("suite")
 

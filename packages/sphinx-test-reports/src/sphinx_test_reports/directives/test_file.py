@@ -10,6 +10,7 @@ from sphinx_needs.utils import add_doc
 from sphinx_test_reports.directives.test_common import (
     TestCommonDirective,
     _links_with,
+    error_node,
 )
 from sphinx_test_reports.exceptions import TestReportIncompleteConfigurationError
 
@@ -111,17 +112,9 @@ class TestFileDirective(TestCommonDirective):
         self.prepare_basic_options()
         results = self.load_test_file()
 
-        # Error handling, if file not found
+        # The report does not exist or cannot be read: `load_test_file` has warned.
         if results is None:
-            main_section = []
-            content = nodes.error()
-            para = nodes.paragraph()
-            text_string = f"Test file not found: {self.test_file}"
-            text = nodes.Text(text_string)
-            para += text
-            content.append(para)
-            main_section.append(content)
-            return main_section
+            return [error_node(self.report_error)]
 
         suites = len(self.results)
         cases = sum(int(x["tests"]) for x in self.results)

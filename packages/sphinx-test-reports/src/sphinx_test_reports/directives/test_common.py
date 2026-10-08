@@ -26,9 +26,42 @@ from sphinx_test_reports.exceptions import (
 )
 from ub_test_reports.identity import deterministic_case_id
 from ub_test_reports.jsonparser import JsonParser
-from ub_test_reports.junitparser import JUnitParser
+from ub_test_reports.junitparser import JUnitParser, ReportReadError
 
 # fmt: on
+
+logger = logging.getLogger(__name__)
+
+
+def warn(directive: Directive, subtype: str, message: str) -> None:
+    """Report ``message`` as a warning of the ``test_reports.<subtype>`` family.
+
+    Located on ``directive`` -- the file it is WRITTEN in and its line there, as
+    ``"<source>:<line>"`` (what Sphinx's own ``SphinxDirective.get_location()`` gives; a
+    directive in an included file is located in that file, as docutils' own
+    errors are) -- and typed, so ``suppress_warnings`` takes ``test_reports`` or
+    ``test_reports.<subtype>``. Any directive will do, ``test-results`` and ``test-env``
+    included: only its state machine and line are read.
+    """
+    source, line = directive.state_machine.get_source_and_line(directive.lineno)
+    logger.warning(
+        message,
+        type="test_reports",
+        subtype=subtype,
+        location=f"{source}:{line}",
+    )
+
+
+def error_node(message: str) -> nodes.error:
+    """The in-page box a directive returns in place of what it could not produce.
+
+    It holds the warning's text as is: Sphinx's smartquotes leaves it alone, so the
+    straight quotes of a message (``'<' not found``) are not curled in the page.
+    """
+    box = nodes.error()
+    box["support_smartquotes"] = False
+    box += nodes.paragraph(text=message)
+    return box
 
 
 def _links_with(existing: str, link_id: str) -> str:
@@ -123,6 +156,8 @@ class TestCommonDirective(Directive):
         self.test_id: str = ""
         self.test_content: str = ""
         self.test_file_given: str = ""
+        #: Why ``load_test_file`` returned ``None``: the text it warned, for the box.
+        self.report_error: str = ""
         self.test_links: str = ""
         self.test_tags: str = ""
         self.test_status: str | None = None
@@ -191,7 +226,9 @@ class TestCommonDirective(Directive):
 
         ``prepare_basic_options`` must be called first
 
-        :return: None
+        :return: the parsed report, or ``None`` when it does not exist or cannot be read
+            -- that is warned here, and ``report_error`` holds the warning's text for the
+            directive's error box.
         """
         if not self.test_file:
             raise TestReportFileNotSetError("Option test_file must be set.")
@@ -202,19 +239,23 @@ class TestCommonDirective(Directive):
             test_path = root_path / test_path
         self.test_file = str(test_path)
         if not test_path.exists():
-            # raise TestReportFileInvalidException('Given test_file path invalid: {}'.format(self.test_file))
-            self.log.warning(
-                f"Given test_file path invalid: {self.test_file} in {self.docname} (Line: {self.lineno})"
-            )
+            self.report_error = f"Test file not found: {self.test_file}"
+            warn(self, "report_missing", self.report_error)
             return None
 
         if self.test_file not in self.app.testreport_data:
-            if os.path.splitext(self.test_file)[1] == ".json":
-                mapping = next(iter(self.app.config.tr_json_mapping.values()))
-                parser = JsonParser(self.test_file, json_mapping=mapping)
-            else:
-                parser = JUnitParser(self.test_file)
-            self.app.testreport_data[self.test_file] = parser.parse()
+            try:
+                if os.path.splitext(self.test_file)[1] == ".json":
+                    mapping = next(iter(self.app.config.tr_json_mapping.values()))
+                    parser = JsonParser(self.test_file, json_mapping=mapping)
+                else:
+                    parser = JUnitParser(self.test_file)
+                self.app.testreport_data[self.test_file] = parser.parse()
+            except ReportReadError as error:
+                # Nothing is cached: every directive reading this report says so itself.
+                self.report_error = str(error)
+                warn(self, "report_unreadable", self.report_error)
+                return None
 
         self.results = self.app.testreport_data[self.test_file]
         return self.results

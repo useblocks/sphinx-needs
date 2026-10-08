@@ -1,5 +1,7 @@
 import os
 
+import pytest
+
 xml_path = os.path.join(os.path.dirname(__file__), "fixtures", "xml_data.xml")
 xml_pytest_path = os.path.join(os.path.dirname(__file__), "fixtures", "pytest_data.xml")
 xml_pytest51_path = os.path.join(
@@ -314,3 +316,136 @@ def test_a_suite_keeps_its_direct_cases_beside_its_nested_suites():
     assert second["name"] == "inner"
     assert [c["name"] for c in second["testcases"]] == ["test_top_level"]
     assert second["testsuite_nested"] == []
+
+
+# --- Reading errors (#2052): one typed error, catchable as ``Exception`` -------------
+#
+# The reader's failures used to escape as whatever the layer underneath raised: lxml's
+# ``XMLSyntaxError`` for malformed XML, a bare ``ValueError`` from ``int()`` / ``float()``
+# for a numeric attribute that is not a number, ``AttributeError: no such child`` for an
+# empty ``<testsuites/>``, and ``JUnitFileMissing`` -- a ``BaseException``, which
+# ``except Exception`` cannot catch -- for a missing path. Reports are written as BYTES:
+# lxml's line and column are claims about the bytes, on every platform.
+
+
+def _report(tmp_path, data: bytes, name: str = "report.xml") -> str:
+    path = tmp_path / name
+    path.write_bytes(data)
+    return str(path)
+
+
+def test_a_missing_report_is_an_ordinary_exception():
+    """``JUnitFileMissing`` derives from ``Exception``: a caller's ``except Exception``
+    catches it (it was a ``BaseException``, which escapes such a clause)."""
+    from ub_test_reports.junitparser import JUnitFileMissing, JUnitParser
+
+    assert issubclass(JUnitFileMissing, Exception)
+    try:
+        JUnitParser("nope.xml")
+    except Exception as error:
+        caught = error
+    assert isinstance(caught, JUnitFileMissing)
+
+
+def test_malformed_xml_is_a_report_read_error_naming_the_position(tmp_path):
+    from ub_test_reports.junitparser import JUnitParser, ReportReadError
+
+    path = _report(tmp_path, b"<testsuite><testcase></testsuite>")
+    with pytest.raises(ReportReadError) as caught:
+        JUnitParser(path)
+
+    message = str(caught.value)
+    # The stable start: the path, then lxml's position. lxml's own sentence follows; its
+    # wording is lxml's, so only its start is pinned -- and that the position it appends
+    # (`, line 1, column 34`) is not repeated after ours.
+    assert message.startswith(f"{path} (line 1, column 34): Opening and ending tag")
+    assert not message.endswith(", line 1, column 34")
+    assert isinstance(caught.value, Exception)
+
+
+def test_a_json_file_is_a_report_read_error(tmp_path):
+    from ub_test_reports.junitparser import JUnitParser, ReportReadError
+
+    path = _report(tmp_path, b'{"testsuites": []}', name="report.json")
+    with pytest.raises(ReportReadError, match="line 1, column 1"):
+        JUnitParser(path)
+
+
+def test_an_undecodable_report_is_a_report_read_error(tmp_path):
+    """Bytes that are not valid in the document's encoding are the same refusal.
+
+    How libxml2 reports them differs by platform: an ``OSError`` (``Error reading file
+    '<path>': Invalid bytes in character encoding``) on macOS and Linux, an
+    ``XMLSyntaxError`` with a position (``Input is not proper UTF-8, indicate encoding !``)
+    on Windows. Either way it is a ``ReportReadError`` whose message starts with the path
+    and names it once (lxml's own ``Error reading file '<path>': `` prefix is dropped).
+    """
+    from ub_test_reports.junitparser import JUnitParser, ReportReadError
+
+    path = _report(tmp_path, b'<testsuite name="caf\xe9"/>')
+    with pytest.raises(ReportReadError) as caught:
+        JUnitParser(path)
+    assert str(caught.value).startswith(path)
+    assert str(caught.value).count(path) == 1
+
+
+@pytest.mark.parametrize(
+    ("report", "expected"),
+    [
+        (
+            b'<testsuite name="S" tests="abc"><testcase classname="C" name="t"/>'
+            b"</testsuite>",
+            '<testsuite> attribute tests="abc" is not an integer',
+        ),
+        (
+            b'<testsuite name="S" tests="1" time="1,5"><testcase classname="C" name="t"/>'
+            b"</testsuite>",
+            '<testsuite> attribute time="1,5" is not a number',
+        ),
+        (
+            b'<testsuite name="S" tests="1"><testcase classname="C" name="t" line="x"/>'
+            b"</testsuite>",
+            '<testcase> attribute line="x" is not an integer',
+        ),
+        (
+            b'<testsuite name="S" tests="1"><testcase classname="C" name="t" time="x"/>'
+            b"</testsuite>",
+            '<testcase> attribute time="x" is not a number',
+        ),
+        (
+            b'<testsuite name="S" tests="1" skipped="some"><testcase classname="C" '
+            b'name="t"/></testsuite>',
+            '<testsuite> attribute skipped="some" is not an integer',
+        ),
+    ],
+    ids=["suite-tests", "suite-time", "case-line", "case-time", "suite-skipped"],
+)
+def test_a_non_numeric_numeric_attribute_refuses_the_report(tmp_path, report, expected):
+    """The element, the attribute and the value are named (ubCode's words); the report
+    is refused as a whole -- ubCode reads past it with a note instead, a registered
+    divergence. Master raised a bare ``ValueError`` (``invalid literal for int() with
+    base 10: 'abc'``)."""
+    from ub_test_reports.junitparser import JUnitParser, ReportReadError
+
+    path = _report(tmp_path, report)
+    with pytest.raises(ReportReadError) as caught:
+        JUnitParser(path).parse()
+    assert str(caught.value) == f"{path}: {expected}"
+
+
+@pytest.mark.parametrize("report", [b"<testsuites/>", b"<testsuites></testsuites>"])
+def test_an_empty_testsuites_is_an_empty_report(tmp_path, report):
+    """``<testsuites/>`` holds no suite: an EMPTY report, not ``AttributeError: no such
+    child: testsuite`` (ubCode's rule)."""
+    from ub_test_reports.junitparser import JUnitParser
+
+    assert JUnitParser(_report(tmp_path, report)).parse() == []
+
+
+def test_the_read_error_lives_in_its_own_module():
+    """``ReportReadError`` is shared by the JUnit and the JSON reader; the old import path
+    keeps working."""
+    from ub_test_reports import errors, jsonparser, junitparser
+
+    assert junitparser.ReportReadError is errors.ReportReadError
+    assert jsonparser.ReportReadError is errors.ReportReadError

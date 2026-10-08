@@ -176,6 +176,84 @@ class TestErrors:
             JsonParser(missing, json_mapping=_mapping())
 
     @pytest.mark.parametrize(
+        ("data", "expected"),
+        [
+            (b'[{"name": ', " (line 1, column 11): Expecting value"),
+            (
+                b'[{"name": "caf\xe9"}]',
+                " is not valid UTF-8 (invalid continuation byte at byte 14)",
+            ),
+        ],
+        ids=["not-json", "not-utf8"],
+    )
+    def test_an_unreadable_file_is_a_report_read_error(self, tmp_path, data, expected):
+        """#2052: these escaped as ``json.JSONDecodeError`` / ``UnicodeDecodeError`` and
+        ended a Sphinx build reading the report through ``test-file``."""
+        from ub_test_reports.errors import ReportReadError
+
+        path = tmp_path / "report.json"
+        path.write_bytes(data)
+        with pytest.raises(ReportReadError) as caught:
+            JsonParser(str(path), json_mapping=_mapping())
+        assert str(caught.value) == f"{path}{expected}"
+
+    @pytest.mark.parametrize(
+        ("data", "kind"), [(b'{"not": "a list"}', "an object"), (b"3", "a number")]
+    )
+    def test_a_report_that_is_not_a_list_is_a_report_read_error(
+        self, tmp_path, data, kind
+    ):
+        """A top level that is not a list of suites was walked anyway, and every field
+        fell back to its default (``int('unknown')`` downstream)."""
+        from ub_test_reports.errors import ReportReadError
+
+        path = tmp_path / "report.json"
+        path.write_bytes(data)
+        with pytest.raises(ReportReadError) as caught:
+            JsonParser(str(path), json_mapping=_mapping()).parse()
+        assert str(caught.value) == (
+            f"{path}: the JSON report is not a list of test suites (got {kind})"
+        )
+
+    @pytest.mark.parametrize(
+        ("data", "kind"),
+        [(b'[1, "x"]', "a number"), (b"[[]]", "an array")],
+        ids=["number", "array"],
+    )
+    def test_a_suite_that_is_not_an_object_is_a_report_read_error(
+        self, tmp_path, data, kind
+    ):
+        """A list whose items are not suites was walked anyway (``int('unknown')``
+        downstream) -- fix round 2. An array item is refused too (the loop-ender). An
+        EMPTY object item, ``[{}]``, is an object and is read as a suite of defaults --
+        it fails downstream, on master too; not this round's (follow-up V2-F4c)."""
+        from ub_test_reports.errors import ReportReadError
+
+        path = tmp_path / "report.json"
+        path.write_bytes(data)
+        with pytest.raises(ReportReadError) as caught:
+            JsonParser(str(path), json_mapping=_mapping()).parse()
+        assert (
+            str(caught.value) == f"{path}: test suite 0 is not an object (got {kind})"
+        )
+
+    def test_a_byte_order_mark_is_read_past(self, tmp_path):
+        """UTF-8 with or without a BOM, as ``test-env`` reads it (#2141's rule) -- fix
+        round 2. Before: ``Unexpected UTF-8 BOM (decode using utf-8-sig)``."""
+        plain = FIXTURES / "json_data.json"
+        bom = tmp_path / "bom.json"
+        bom.write_bytes(b"\xef\xbb\xbf" + plain.read_bytes())
+
+        assert _parse_path(bom) == _parse_path(plain)
+
+    def test_a_missing_file_is_an_ordinary_exception(self, tmp_path):
+        """``JsonFileMissing`` derives from ``Exception`` (it was a ``BaseException``,
+        which a caller's ``except Exception`` does not catch) (#2052)."""
+        assert issubclass(JsonFileMissing, Exception)
+        with pytest.raises(Exception, match=r"missing\.json"):
+            JsonParser(tmp_path / "missing.json", json_mapping=_mapping())
+
+    @pytest.mark.parametrize(
         ("items", "expected"),
         [
             (["nested", "a_list", 0, "finally"], "target_data"),
@@ -187,3 +265,7 @@ class TestErrors:
     def test_dict_get_falls_back_to_the_default(self, items, expected):
         data = {"nested": {"a_list": [{"finally": "target_data"}]}}
         assert dict_get(data, items, "default") == expected
+
+
+def _parse_path(path):
+    return JsonParser(str(path), json_mapping=_mapping()).parse()
