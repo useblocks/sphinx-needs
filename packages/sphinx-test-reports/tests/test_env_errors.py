@@ -220,6 +220,30 @@ def test_under_raw_without_data_a_non_object_environment_is_shown(
     assert blocks == [json.dumps(json.loads(value), indent=4), '{\n    "k": "v"\n}']
 
 
+def test_under_raw_with_an_empty_data_a_non_object_environment_is_skipped(build_page):
+    """Fix round 2, V1-F8c: ``:data: ,`` names no variable but IS a ``:data:`` -- the
+    ``:raw:`` exception above does not apply (ubCode: ``Some([])`` is not ``None``). The
+    object environment shows no variable, the other is skipped with ``env_shape``;
+    extending the exception to an empty ``:data:`` would reach ``.items()`` on ``3``."""
+    app, stream = build_page(
+        ".. test-env:: e.json\n   :raw:\n   :data: ,\n",
+        files={"e.json": b'{"a": {"k": 1}, "b": 3}'},
+    )
+
+    assert app.statuscode == 0
+    assert stream.count("WARNING:") == 1
+    assert (
+        "index.rst:4: WARNING: environment 'b' is not a JSON object (got a number); "
+        "skipped"
+    ) in stream
+    assert _sections(app) == ["a"]
+    blocks = [
+        block.astext()
+        for block in app.env.get_doctree("index").findall(nodes.literal_block)
+    ]
+    assert blocks == ["{}"]
+
+
 def test_the_shape_warning_is_typed(build_page):
     _, stream = build_page(
         ".. test-env:: e.json\n",
