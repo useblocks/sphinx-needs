@@ -478,7 +478,8 @@ be silenced through Sphinx's ``suppress_warnings`` in a project that builds
 with ``-W``: ``test_reports.unknown_key`` for the unknown-key report above, and
 ``test_reports.missing_config`` for an explicitly named file that does not
 exist (see :ref:`tr_config_from_toml`). A known key with the wrong type is an
-error, not a warning, and cannot be suppressed.
+error, not a warning, and cannot be suppressed. :ref:`tr_warnings` lists every
+warning of the family.
 
 **Precedence.** ``-D`` on the ``sphinx-build`` command line beats the TOML
 file, which beats ``conf.py``, which beats the built-in default. The
@@ -530,3 +531,65 @@ declarative configuration off entirely.
 
    tr_config_from_toml = "../ubproject.toml"   # explicit path
    tr_config_from_toml = None                  # disable
+
+.. _tr_warnings:
+
+Warnings
+--------
+
+Every warning sphinx-test-reports emits has the type ``test_reports`` and a subtype,
+so ``suppress_warnings`` in ``conf.py`` silences the whole family (``"test_reports"``)
+or one member of it (``"test_reports.report_missing"``),
+for instance in a project that builds with ``-W``.
+Sphinx 8 and later print the type after the message, as ``[test_reports.report_missing]``.
+
+A failure in a directive -- a report it cannot read, an option it refuses -- is one such warning,
+located on the directive (its page and line),
+and the directive shows an error box with the same text where its need or table would have been;
+the build goes on.
+Suppressing the warning leaves the box in the page.
+The subtypes are the code tails of ubCode's ``needs.test_report_*`` findings,
+so one name silences the same problem in both tools.
+
+``test_reports.report_missing``
+   The report a directive names -- ``:file:``, or the argument of ``test-results`` and ``test-env`` -- does not exist.
+
+``test_reports.report_unreadable``
+   The report exists and cannot be read:
+   it is not well-formed XML,
+   a numeric attribute of a ``<testsuite>`` or ``<testcase>`` (``tests``, ``time``, ``line``, ...) is not a number,
+   a ``test-env`` file is not valid JSON or not UTF-8,
+   or ``test-results`` is given a ``.json`` file.
+
+``test_reports.option_missing``
+   A required option is missing:
+   ``:file:``, ``:suite:`` on ``test-suite`` and ``test-case``, or ``:case:`` / ``:classname:`` on ``test-case``.
+
+``test_reports.option_invalid``
+   An option value is refused:
+   ``:collapse:`` that is neither true nor false,
+   or ``:auto_cases:`` without ``:auto_suites:`` (the file's need is still created; nothing is expanded).
+
+``test_reports.suite_not_found``, ``test_reports.case_not_found``
+   ``:suite:``, or ``:case:`` with ``:classname:``, selects nothing in the report.
+
+``test_reports.duplicate_id``
+   An ``:auto_suites:`` / ``:auto_cases:`` expansion produced one ID twice:
+   the first need is kept, the later one is not created.
+
+``test_reports.need``
+   Sphinx-Needs refused the need, for instance because another directive already holds its ID.
+
+``test_reports.env_shape``
+   A ``test-env`` file is not a JSON object of objects (nothing is shown),
+   or one of its environments is not an object (that environment is skipped).
+
+``test_reports.env_not_present``, ``test_reports.env_key_not_present``
+   ``test-env``'s ``:env:`` names an environment the file does not hold,
+   or ``:data:`` a variable that a shown environment lacks.
+
+``test_reports.unknown_key``, ``test_reports.missing_config``
+   The declarative configuration: see :ref:`tr_config_from_toml` and the warnings above it.
+
+``test_reports.deprecated``
+   The extension was loaded by its pre-3.0 name, ``sphinxcontrib.test_reports``.

@@ -21,6 +21,13 @@ that is why the note on this page stands above the examples.
 The examples below stand in this page's top section, so each suite is one of its subsections;
 the last one is a nested report.
 
+A report that does not exist, or that cannot be read -- it is not well-formed XML, a numeric attribute is not a number,
+or it is a ``.json`` file, which ``test-results`` does not read --
+is a ``test_reports.report_missing`` / ``test_reports.report_unreadable`` warning located on the directive,
+and an error box with the same text takes the place of the sections; the build goes on (see :ref:`tr_warnings`).
+The directive takes no options:
+an option written under it is docutils' ``unknown option`` error, as for any directive.
+
 .. note::
 
 	Each test framework, like pytest or nosetest, generates a little different junit-xml file with more or less data.
