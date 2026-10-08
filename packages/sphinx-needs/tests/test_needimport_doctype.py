@@ -223,7 +223,9 @@ def page_parsed_warnings(cell: str, first: int) -> list[str]:
     PINNED AS IT IS, defects included: a cross cell's body is mis-parsed silently (no
     warning at all); the undefined label of an RST page's content is reported at the
     line of its role WITHIN the content; and a MyST page reports its content at about
-    twice the directive's line (#2144).
+    twice the directive's line (#2144), the warnings myst-parser logs itself as it does
+    for content parsed in another markup (with myst-parser 4, at the page's path with
+    ``.rst`` appended).
     """
     if cell == "rr":
         role = at(RST_BODY, ":nosuchrole:")
@@ -236,14 +238,15 @@ def page_parsed_warnings(cell: str, first: int) -> list[str]:
             "'nosuchlabel_rr' [ref.ref]",
         ]
     if cell == "mm":
+        host = "a_host_md.md"
         role = 2 * first + at(MYST_BODY, "{nosuchrole}")
         empty_note = 2 * first + MYST_BODY.index(
             "```{note}", at(MYST_BODY, "{nosuchrole}")
         )
         return [
-            f"<srcdir>/a_host_md.md:{2 * first + at(MYST_BODY, '```{nosuchdirective}')}: "
+            f"{myst_logged(host, host, 2 * first + at(MYST_BODY, '```{nosuchdirective}'))}: "
             "WARNING: Unknown directive type: 'nosuchdirective' [myst.directive_unknown]",
-            f"<srcdir>/a_host_md.md:{role}: WARNING: Unknown interpreted text role "
+            f"{myst_logged(host, host, role)}: WARNING: Unknown interpreted text role "
             '"nosuchrole". [myst.role_unknown]',
             f"<srcdir>/a_host_md.md:{empty_note}: ERROR: Content block expected for "
             'the "note" directive; none found. [docutils]',
