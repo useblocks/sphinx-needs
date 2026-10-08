@@ -252,7 +252,7 @@ Fixed
   ``JsonFileNotFound`` and the never-raised ``InvalidEnvRequested`` stay defined, derive
   from ``Exception`` instead of ``BaseException``, and are not raised by the directive.
   `#2141 <https://github.com/useblocks/sphinx-needs/issues/2141>`__,
-  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+  `#2161 <https://github.com/useblocks/sphinx-needs/pull/2161>`__
 
 - 🐛 A ``test-env`` file that is valid JSON but not an object of objects no longer ends the
   build with a ``TypeError`` / ``IndexError``: a file that is not an object shows nothing,
@@ -263,7 +263,7 @@ Fixed
   whose value is ``[]`` (an empty section before), and a file whose top level is ``[]``
   (nothing, before).
   `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
-  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+  `#2161 <https://github.com/useblocks/sphinx-needs/pull/2161>`__
 
 - 🐛 ``test-env``'s ``:env:`` and ``:data:`` ignore blank elements (``:env: py35, ,flake8``
   warned ``environment '' is not present``) and show a repeated one once
@@ -276,14 +276,14 @@ Fixed
   directive is located on it and typed (``env_not_present`` for an ``:env:`` the file
   lacks).
   `#2140 <https://github.com/useblocks/sphinx-needs/issues/2140>`__,
-  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+  `#2161 <https://github.com/useblocks/sphinx-needs/pull/2161>`__
 
 - 🐛 ``test-env`` shows a scalar as the file spells it: ``true``, ``false``, ``null``,
   ``0`` and ``0.0`` were an empty cell or Python's ``True``, indistinguishable from a
   missing value or the string ``"True"``. A string is shown as it is, any other scalar as
   JSON (a float in Python's spelling, ``1e+16``).
   `#2139 <https://github.com/useblocks/sphinx-needs/issues/2139>`__,
-  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+  `#2161 <https://github.com/useblocks/sphinx-needs/pull/2161>`__
 
 - 🐛 ``tr_link`` no longer fails with ``'NoneType' object has no attribute 'split'`` on the
   usage the documentation shows, ``:links: [[tr_link('classname', 'title')]]``: every need
