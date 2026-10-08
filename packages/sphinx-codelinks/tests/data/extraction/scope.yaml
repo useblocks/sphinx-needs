@@ -220,6 +220,14 @@ bash_no_scope:
     # @No Scope, IMPL_BASH_NONE, impl, [REQ_BASH_NONE]
     echo hi
 
+bash_non_ascii_identifier_scope:
+  # A function name with a non-ASCII character still binds the marker above it.
+  lang: bash
+  config: default
+  source: |
+    # @T, ID_BASH_UTF8, impl
+    fé() { :; }
+
 yaml_inline_same_row:
   # An inline comment sharing a row with a key-value pair binds to that pair
   # (find_prev_sibling_on_same_row), not to whatever follows.
@@ -254,3 +262,11 @@ yaml_no_scope:
   config: default
   source: |
     # @No Scope, IMPL_YAML_NONE, impl, [REQ_YAML_NONE]
+
+yaml_non_ascii_key_scope:
+  # A key with a non-ASCII character still binds the leading marker above it.
+  lang: yaml
+  config: default
+  source: |
+    # @T, ID_YAML_UTF8, impl
+    ké: 1

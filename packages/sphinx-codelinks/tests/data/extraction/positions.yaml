@@ -64,6 +64,29 @@ non_ascii_need_ref:
     // @need-ids: RÉQ-001
     void f() {}
 
+non_ascii_before_comment_yaml:
+  # A non-ASCII character in a YAML value before an inline comment: the comment is found.
+  lang: yaml
+  config: default
+  source: |
+    key: "é"  # @After é, IMPL_YAML_UTF8, impl, [REQ_1]
+
+astral_before_need_ref_yaml:
+  # A four-byte character before an inline reference counts as one column.
+  lang: yaml
+  config: default
+  extract: [need_refs]
+  source: |
+    key: 𝔘  # @need-ids: REQ_1
+
+non_ascii_before_marker_in_comment_yaml:
+  # A non-ASCII character inside the comment, before a reference, counts as one column.
+  lang: yaml
+  config: default
+  extract: [need_refs]
+  source: |
+    key: v  # é @need-ids: REQ_IN
+
 block_comment_trailing_whitespace:
   # Whitespace after the marker inside a block comment; the span ends where
   # the end sequence (the newline) is.

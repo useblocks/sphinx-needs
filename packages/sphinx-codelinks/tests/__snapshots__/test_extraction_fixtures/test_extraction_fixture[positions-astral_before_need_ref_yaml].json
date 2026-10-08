@@ -1,0 +1,23 @@
+[
+  {
+    "filepath": "case.yaml",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 21
+      },
+      "end": {
+        "row": 0,
+        "column": 26
+      }
+    },
+    "tagged_scope": "key: \ud835\udd18",
+    "need_ids": [
+      "REQ_1"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "block_mapping_pair"
+  }
+]

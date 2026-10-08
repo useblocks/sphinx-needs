@@ -1,0 +1,25 @@
+[
+  {
+    "filepath": "case.yaml",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 3
+      },
+      "end": {
+        "row": 0,
+        "column": 24
+      }
+    },
+    "tagged_scope": "k\u00e9: 1",
+    "need": {
+      "title": "T",
+      "id": "ID_YAML_UTF8",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "block_mapping_pair"
+  }
+]
