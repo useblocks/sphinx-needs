@@ -8,7 +8,8 @@ bespoke test function per case.
 
 ## Shared with ubCode
 
-The YAML files of this directory are copied byte for byte into ubCode
+The YAML files of this directory that ubCode also has (today 11 of the 14)
+are copied byte for byte into ubCode
 (`rust/ubc_codelinks/tests/fixtures/extraction/`; ubCode's
 `sync_codelinks_expected.py` lists the shared files), and ubCode takes their
 snapshots in `tests/__snapshots__/test_extraction_fixtures/` as the expected
@@ -143,7 +144,7 @@ one-line parser warns) and `sub_type` (the kind, e.g. `"too_many_fields"`).
 No `SourceComment` or tree-sitter node object is snapshotted: production's
 `to_dict()` drops the comment and writes the scope as its text.
 
-Two known production quirks show up as-is in these snapshots (deliberately
+Three known production quirks show up as-is in these snapshots (deliberately
 left unfixed — out of scope here):
 
 - a need-id-reference's `source_map` columns are shifted by the width of any
@@ -154,6 +155,9 @@ left unfixed — out of scope here):
   the same row, with the `start`/`end` columns being raw offsets into the
   flattened multi-line comment text rather than a real position past the
   first line.
+- a one-line need's `source_map` columns are relative to the comment's text,
+  not to the line (`scope.yaml`'s `yaml_inline_same_row`: column 3, where the
+  title starts at physical column 15); #2129 makes them physical.
 
 ## Portability
 

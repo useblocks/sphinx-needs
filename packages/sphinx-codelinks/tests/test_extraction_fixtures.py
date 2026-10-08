@@ -4,9 +4,10 @@ Each case in ``tests/data/extraction/*.yaml`` supplies an input (``lang`` +
 ``config`` + ``source``); the extractor is run on it and its output is compared
 to two committed JSON snapshots. See ``tests/data/extraction/README.md``.
 
-The YAML corpus is shared byte for byte with ubCode, which takes these
-snapshots as the expected output of its parity test: a change to a case or a
-snapshot is a contract change, which the ubCode side re-syncs.
+The YAML files ubCode also has (today 11 of the 14) are copied byte for byte
+into ubCode, which takes their snapshots as the expected output of its parity
+test: a change to such a case or snapshot is a contract change, which the
+ubCode side re-syncs.
 """
 
 import json
@@ -78,13 +79,9 @@ def _write_exact(path: Path, text: str) -> None:
     """Write ``text`` to ``path`` with exactly the bytes it contains.
 
     ``Path.write_text`` opens the file in text mode (``newline=None``), which
-    makes Python translate every ``\\n`` to ``os.linesep`` on write. On
-    Windows that turns an LF-only fixture into CRLF on disk, which shifts
-    tree-sitter/libclang column positions at line ends, injects ``\\r`` into
-    any multi-line ``tagged_scope`` text, and moves warning positions —
-    so the same case would snapshot differently per platform. Writing through ``write_bytes`` bypasses text-mode translation
-    entirely, so the file on disk always matches the fixture verbatim,
-    independent of platform.
+    makes Python translate every ``\\n`` to ``os.linesep`` on write. Writing
+    through ``write_bytes`` bypasses that, so the file on disk holds the
+    case's bytes as they are, on every platform.
     """
     path.write_bytes(text.encode("utf-8"))
 

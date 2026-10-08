@@ -105,13 +105,13 @@ class ExtractionSnapshotExtension(SingleFileSnapshotExtension):
 
 @pytest.fixture
 def snapshot_extraction(snapshot):
-    """Snapshot fixture for the normalized extraction output.
+    """Snapshot fixture for the extraction output, in its production shape.
 
     Two JSON files per case, matching production's two independent
     outputs: the default (unnamed) snapshot holds the marked-content list
     (``SourceAnalyse.dump_marked_content``'s payload); ``snapshot(name=...)``
     is used for a second, separately named snapshot holding the warnings
-    list (``SourceAnalyse.oneline_warnings``' records). See
-    ``tests/test_extraction_fixtures.py`` for the normalization contract.
+    list (``SourceAnalyse.oneline_warnings``' records). See the snapshot
+    contract in ``tests/test_extraction_fixtures.py``.
     """
     return snapshot.with_defaults(extension_class=ExtractionSnapshotExtension)
