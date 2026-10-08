@@ -254,14 +254,16 @@ class JUnitParser:
                 testsuite, TESTSUITE_KNOWN_ATTRIBUTES
             )
 
-            # add nested testsuite objects to
+            # A suite may hold nested suites AND test cases of its own: keep both. Two
+            # independent steps, not `if … elif …`, which dropped the direct cases of every
+            # suite that also held a nested one (#2050).
             if hasattr(testsuite, "testsuite"):
                 for ts in testsuite.testsuite:
                     # dict from inner parse
                     inner_testsuite = parse_testsuite(ts)
                     ts_dict["testsuite_nested"].append(inner_testsuite)
 
-            elif hasattr(testsuite, "testcase"):
+            if hasattr(testsuite, "testcase"):
                 for tc in testsuite.testcase:
                     new_testcase = parse_testcase(tc)
                     ts_dict["testcases"].append(new_testcase)
