@@ -589,6 +589,33 @@ class TestDiagnostics:
         assert "no test cases" not in capsys.readouterr().err
 
 
+class TestUnreadableReports:
+    """A report the reader refuses is one ``error:`` line naming it, exit 1 (#2052)."""
+
+    def test_malformed_xml_names_the_report_and_the_position(self, tmp_path, capsys):
+        # Master printed lxml's sentence with lxml's own `(file, line 1)` suffix; the
+        # reader's typed error now leads with the path and the position.
+        bad = tmp_path / "bad.xml"
+        bad.write_bytes(b"<testsuite><testcase></testsuite>")
+        code, data = _convert(tmp_path, "--no-config", xml=bad)
+        assert code == 1
+        assert data is None
+        assert f"error: {bad}: {bad} (line 1, column " in capsys.readouterr().err
+
+    @pytest.mark.parametrize("report", [b"<testsuites/>", b"<testsuites></testsuites>"])
+    def test_an_empty_testsuites_is_an_empty_report(self, tmp_path, capsys, report):
+        # Master: exit 1 with `error: …: no such child: testsuite`. An empty report is
+        # converted like any report without cases: written, empty, and warned about.
+        empty = tmp_path / "empty.xml"
+        empty.write_bytes(report)
+        code, data = _convert(tmp_path, "--no-config", xml=empty)
+        assert code == 0
+        assert data["versions"][data["current_version"]]["needs_amount"] == 0
+        message = capsys.readouterr().err
+        assert "no such child" not in message
+        assert f"warning: {empty}: no test cases found" in message
+
+
 def test_the_cli_is_runnable_as_a_module():
     result = subprocess.run(
         [

@@ -175,6 +175,13 @@ class TestErrors:
         with pytest.raises(JsonFileMissing, match=r"missing\.json"):
             JsonParser(missing, json_mapping=_mapping())
 
+    def test_a_missing_file_is_an_ordinary_exception(self, tmp_path):
+        """``JsonFileMissing`` derives from ``Exception`` (it was a ``BaseException``,
+        which a caller's ``except Exception`` does not catch) (#2052)."""
+        assert issubclass(JsonFileMissing, Exception)
+        with pytest.raises(Exception, match=r"missing\.json"):
+            JsonParser(tmp_path / "missing.json", json_mapping=_mapping())
+
     @pytest.mark.parametrize(
         ("items", "expected"),
         [
