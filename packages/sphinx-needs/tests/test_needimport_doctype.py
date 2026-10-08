@@ -409,13 +409,19 @@ def fallback_warnings(line: int) -> list[str]:
         f"(registered suffixes: {registered})",
     }
     return [
+        doctype_warning(line, doctype, reason) for doctype, reason in reasons.items()
+    ]
+
+
+def doctype_warning(line: int, doctype: str, reason: str) -> str:
+    """The ``needs.import_doctype`` warning for ``doctype``, at ``index.rst:<line>``."""
+    return (
         f"<srcdir>/index.rst:{line}: WARNING: Imported needs declare doctype "
-        f"{doctype!r}, which no parser of this project claims ({reason}); their "
+        f"{doctype!r}, which this project cannot parse content in: {reason}. Their "
         "content was parsed as this page's markup instead. Add the suffix to "
         "source_suffix with a reStructuredText or MyST parser, or set "
         ":parse_by_doctype: false. [needs.import_doctype]"
-        for doctype, reason in reasons.items()
-    ]
+    )
 
 
 @pytest.mark.parametrize(
@@ -678,6 +684,7 @@ INTERACTION_RECORDS = [
 TEMPLATES = {
     "tpl": "**TPL bold** and a `tlink <https://example.com/t>`_, then: {{content}}",
     "pre": "A `prelink <https://example.com/pre>`_.",
+    "post": "A `postlink <https://example.com/post>`_.",
 }
 """Templates of the importing project: reStructuredText, as its pages are."""
 
@@ -688,6 +695,10 @@ INTERACTION_INDEX += rst_import(
 )
 INTERACTION_INDEX += rst_import(
     "interactions.json", {"ids": "MD1", "id_prefix": "PRE_", "pre_template": "pre"}
+)
+INTERACTION_INDEX += rst_import(
+    "interactions.json",
+    {"ids": "MD1", "id_prefix": "POST_", "post_template": "post"},
 )
 INTERACTION_INDEX += rst_import(
     "interactions.json", {"ids": "MD1, REF", "id_prefix": "P_"}
@@ -717,7 +728,8 @@ def test_jinja_templates_and_id_prefix(test_app: SphinxTestApp):
     """(4): ``jinja_content`` text is rendered, then parsed in the record's doctype;
     a need rendered through a template -- the record's ``template`` or the directive's
     ``:template:`` -- is parsed as the page's markup, the template's, content and all;
-    a ``:pre_template:`` is the page's markup and the content its doctype's; and
+    a ``:pre_template:`` or ``:post_template:`` is the page's markup and the content
+    its doctype's; and
     ``:id_prefix:`` rewrites a ``{need}`` role in MyST content, which then resolves."""
     app = test_app
     app.build()
@@ -737,15 +749,184 @@ def test_jinja_templates_and_id_prefix(test_app: SphinxTestApp):
         content = need_content_html(app, "index.html", need_id)
         assert f"<strong>TPL bold</strong> and a {link('tlink')}" in content, need_id
         assert f"then: Body [{body_link}](<a class" in content, need_id
-    # a pre template is parsed as the page's markup, the content as its doctype's
+    # a pre or post template is parsed as the page's markup, the content as its
+    # doctype's
     page = html(app, "index.html")
     assert f"A {link('prelink')}." in page
-    assert f"Body {link('mlink')}." in need_content_html(app, "index.html", "PRE_MD1")
+    assert f"A {link('postlink')}." in page
+    for need_id in ("PRE_MD1", "POST_MD1"):
+        content = need_content_html(app, "index.html", need_id)
+        assert f"Body {link('mlink')}." in content, need_id
     # the prefixed id in a MyST role
     assert '<a class="reference internal" href="#P_MD1"' in need_content_html(
         app, "index.html", "P_REF"
     )
     assert needs_by_id(app)["P_REF"]["content"] == "See {need}`P_MD1`."
+
+
+PROJECT_TEMPLATE_RECORDS = [
+    record("PT_MD", "Body [blink](https://example.com/b).", doctype=".md"),
+    record("PT_OTHER", "Body [olink](https://example.com/o).", doctype=".md"),
+]
+
+PROJECT_TEMPLATES = {
+    "default": '{"template": {"default": "tpl"}}',
+    "predicate": '{"template": {"predicates": [(\'id == "PT_MD"\', "tpl")]}}',
+}
+"""A template the project gives through ``needs_fields``: to every need, or to the
+need a predicate matches."""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        pytest.param(
+            {
+                "buildername": "html",
+                "files": [
+                    (Path("conf.py"), CONF + f"needs_fields = {fields}\n"),
+                    (
+                        Path("index.rst"),
+                        "Templated\n=========\n\n.. needimport:: pt.json\n",
+                    ),
+                    (Path("pt.json"), needs_json(PROJECT_TEMPLATE_RECORDS)),
+                    (Path("needs_templates", "tpl.need"), TEMPLATES["tpl"]),
+                ],
+                "confoverrides": {FLAG: True},
+            },
+            id=name,
+        )
+        for name, fields in PROJECT_TEMPLATES.items()
+    ],
+    indirect=True,
+)
+def test_a_template_the_project_gives(
+    test_app: SphinxTestApp, request: pytest.FixtureRequest
+):
+    """(4): a template the project gives through ``needs_fields`` -- the ``template``
+    field's ``default``, or a predicate -- is a template too: the need is parsed as the
+    page's markup, template and content together.
+
+    A predicate is decided only when the need is created, after needimport has chosen
+    the markup: so a project with ANY ``template`` predicate parses every imported need
+    as the page's markup, also one no predicate matches (``PT_OTHER`` under
+    ``predicate``) -- the documented over-approximation.
+    """
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+
+    templated = {"PT_MD", "PT_OTHER"}
+    if request.node.callspec.id == "predicate":
+        templated = {"PT_MD"}
+    for need_id, body_link in (("PT_MD", "blink"), ("PT_OTHER", "olink")):
+        assert needs_by_id(app)[need_id]["template"] == (
+            "tpl" if need_id in templated else None
+        ), need_id
+        content = need_content_html(app, "index.html", need_id)
+        # the MyST link is literal: the content is parsed as reStructuredText
+        assert f"Body [{body_link}](<a class" in content, need_id
+        if need_id in templated:
+            assert (
+                "<strong>TPL bold</strong> and a "
+                '<a class="reference external" href="https://example.com/t">tlink</a>'
+                in content
+            ), need_id
+
+
+HIDDEN_RECORDS = [
+    record("HID_MD", "Hidden *content*.", doctype=".md", hide=True),
+    record("VIS_MD", "Visible *content*.", doctype=".md"),
+]
+
+HIDDEN_INDEX = [
+    "Hidden",
+    "======",
+    "",
+    *rst_import("hidden.json", {"ids": "HID_MD"}),
+    *rst_import("hidden.json", {"ids": "VIS_MD", "hide": None, "id_prefix": "H_"}),
+    *rst_import("hidden.json", {"id_prefix": "B_"}),
+]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), NO_MYST_CONF),
+                (Path("plain_ext.py"), PLAIN_EXT),
+                (Path("index.rst"), "\n".join(HIDDEN_INDEX)),
+                (Path("hidden.json"), needs_json(HIDDEN_RECORDS)),
+            ],
+            "confoverrides": {FLAG: True},
+        }
+    ],
+    indirect=True,
+)
+def test_a_hidden_need_is_not_reported(test_app: SphinxTestApp):
+    """(2): a hidden need's content is never parsed -- hidden by its record or by
+    ``:hide:`` -- so its doctype is not reported; a visible need of the same doctype
+    beside it is."""
+    app = test_app
+    app.build()
+    reason = "'.md' is not a registered source suffix (registered: '.nope', '.plain', '.rst')"
+    assert build_warnings(app) == [
+        doctype_warning(line_of(HIDDEN_INDEX, ":id_prefix: B_") - 1, ".md", reason)
+    ]
+    assert sorted(needs_by_id(app)) == ["B_HID_MD", "B_VIS_MD", "HID_MD", "H_VIS_MD"]
+
+
+TWO_PROJECTS_INDEX = "Import\n======\n\n.. needimport:: one.json\n"
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF),
+                (Path("index.rst"), TWO_PROJECTS_INDEX),
+                (Path("one.json"), needs_json([record("ONE", "Text.", doctype=".md")])),
+            ],
+            "confoverrides": {FLAG: True},
+        }
+    ],
+    indirect=True,
+)
+def test_what_a_doctype_resolves_to_is_the_projects(
+    test_app: SphinxTestApp, make_app: Any, tmp_path: Path
+):
+    """(2): whether a doctype can be parsed is decided per project and per build: one
+    that parses ``.md`` does not make ``.md`` parseable for the next application in the
+    same process, which reads the same file without myst-parser and is told so."""
+    first = test_app
+    first.build()
+    assert build_warnings(first) == []
+    exported = Path(first.srcdir, "one.json").read_text(encoding="utf-8")
+    first.cleanup()
+
+    srcdir = tmp_path / "no_myst"
+    srcdir.mkdir()
+    for name, text in (
+        ("conf.py", NO_MYST_CONF),
+        ("plain_ext.py", PLAIN_EXT),
+        ("index.rst", TWO_PROJECTS_INDEX),
+        ("one.json", exported),
+    ):
+        Path(srcdir, name).write_text(text, encoding="utf-8")
+    second = make_app(buildername="html", srcdir=srcdir, confoverrides={FLAG: True})
+    try:
+        second.build()
+        reason = (
+            "'.md' is not a registered source suffix (registered: '.nope', '.plain', "
+            "'.rst')"
+        )
+        assert build_warnings(second) == [doctype_warning(4, ".md", reason)]
+    finally:
+        second.cleanup()
 
 
 # ------------------------------------------------------------------------------------
