@@ -254,9 +254,11 @@ Fixed
   reference``. Under ``sphinx.ext.autosectionlabel`` the generated sections are labelled
   like authored ones, so such a name is a duplicate label -- across the whole project
   without ``autosectionlabel_prefix_document`` -- and a ``:ref:`` to it may land on the
-  generated section (autosectionlabel keeps the last one read). Rename the heading, set
-  ``autosectionlabel_prefix_document``, or give the heading an explicit label and
-  reference that. Two suites named alike on one page are two sections with distinct ids;
+  generated section (autosectionlabel keeps the last one read). Rename the heading -- under
+  ``sphinx.ext.autosectionlabel`` the only way out on one page; without autosectionlabel an
+  explicit label on the heading, referenced instead of its title, also clears the error,
+  and ``autosectionlabel_prefix_document`` clears a clash with a heading on another page.
+  Two suites named alike on one page are two sections with distinct ids;
   docutils reports that duplicate at INFO level, which leaves ``-W`` green only while
   nothing references the name.
   `#1959 <https://github.com/useblocks/sphinx-needs/issues/1959>`__,
