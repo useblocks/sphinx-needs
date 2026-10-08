@@ -47,7 +47,8 @@ this, so no field or link name is reserved.
 :func:`~sphinx_needs.api.need.ingest_need_record` creates a need from a needs.json-style
 record, and is the path :ref:`needimport` itself takes for each need it imports; with
 :ref:`needs_import_parse_by_doctype` or its ``:parse_by_doctype:`` option set, needimport
-passes a record's ``doctype`` as the content's markup when the project parses it.
+passes a record's ``doctype`` as the content's markup when the project parses it and the
+need is not rendered through a template.
 
 .. autoclass:: sphinx_needs.api.MarkupContent
 

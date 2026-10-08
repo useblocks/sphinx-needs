@@ -187,8 +187,8 @@ If this project cannot parse a ``doctype`` -- ``.md`` without myst-parser, or a 
 that is not in ``source_suffix`` -- the content of those needs is parsed in the page's
 markup and they are imported as before, and one ``needs.import_doctype`` warning per
 directive names that ``doctype`` (none if none of those needs has content, or all of them
-are hidden). Register the suffix, set ``:parse_by_doctype: false``, or add
-``"needs.import_doctype"`` to ``suppress_warnings``.
+are hidden by their record or by ``:hide:``). Register the suffix, set
+``:parse_by_doctype: false``, or add ``"needs.import_doctype"`` to ``suppress_warnings``.
 
 The imported content is not restricted: what :ref:`api_content_markup` says content from
 another markup should not contain holds here too.
