@@ -4,7 +4,10 @@
 # wires it into NeedIdRefsConfig); the default marker is ``@need-ids:``. These
 # cases set ``extract: [need_refs]`` so only reference extraction runs (the
 # default one-line start is also ``@``, so running the one-line parser here would
-# add unrelated noise). A marker with no id after it is no reference.
+# add unrelated noise). A marker with no id after it is no reference. The whitespace
+# that separates ids is each tool's own (Python's ``str.split``, Rust's
+# ``char::is_whitespace``), which differ on U+001C to U+001F: a documented non-goal,
+# with no shared case.
 
 default_marker:
   # Default ``@need-ids:`` marker -> three need_refs (REQ_1, REQ_2, REQ_3).

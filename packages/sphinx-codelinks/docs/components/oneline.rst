@@ -266,7 +266,10 @@ reported as one of these kinds, the kind leading the message:
   (``@return: text``, ``@param a: text``):
   ``'@param' is a docstring tag, not a one-line need; use a start sequence that docstrings
   do not contain``. A start sequence the docstrings also use cannot tell a need from
-  documentation, so choose another one, ``[[`` for example.
+  documentation, so choose another one, ``[[`` for example. Whether anything alphanumeric
+  precedes the start sequence is Python's own notion of alphanumeric (``str.isalnum``),
+  which ubCode's differs from on a few characters, combining marks for one: a documented
+  non-goal.
 
 A line with nothing between the start and end sequences is not a marker. A marker that
 fits the style but whose need Sphinx-Needs refuses -- an id that does not match

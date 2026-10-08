@@ -13,6 +13,11 @@
 # (``@return: text``), or spaces or tabs, one word of characters other than space, tab
 # and ``:``, and ``:`` (``@param a: text``, ``@raise Exc: text``, ``@param ä: text``).
 # Every other line goes to the one-line parser.
+#
+# Whether anything alphanumeric precedes the start sequence is each tool's own notion
+# of alphanumeric (Python's ``str.isalnum``, Rust's ``char::is_alphanumeric``), which
+# differ on a few characters, combining marks for one: a documented non-goal, with no
+# shared case.
 
 docstring_trailing_whitespace:
   # Whitespace after the marker inside a docstring.

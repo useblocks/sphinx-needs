@@ -474,8 +474,9 @@ New and Improved
 
   They counted from the start of the comment, so an indented marker, a comment after code,
   or a comment after a non-ASCII character reported a column that was not its column in the
-  file -- to any tool that reads those columns, an editor jumping to a marker say, and in
-  the order of two references on one line. A reference's span also started at the
+  file, to any tool that reads those columns (an editor jumping to a marker, say). In a
+  build, whose links are line-based, only the order in which unknown ids on one line are
+  reported changes. A reference's span also started at the
   whitespace after ``@need-ids:`` rather than at its first id, and ended that many
   characters early. A comment's rows are split on line breaks only: a form feed no longer
   starts a row.
@@ -499,7 +500,9 @@ New and Improved
   spaces or tabs, one word without space, tab or ``:``, and ``:``), is now a
   ``docstring_tag`` warning that says to choose a start sequence the docstrings do not
   use. ``#`` comments are not affected, nor is a tag word that opens an ordinary marker
-  title, ``@todo fix the parser, IMPL_1, impl``.
+  title, ``@todo fix the parser, IMPL_1, impl``. Whether anything alphanumeric precedes
+  the start sequence is Python's own notion of alphanumeric, which ubCode's differs from
+  on a few characters (combining marks, for one): a documented non-goal.
 
 .. _`release:1.4.0`:
 
