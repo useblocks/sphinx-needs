@@ -46,6 +46,7 @@ if TYPE_CHECKING:
         Node,
         OutOfScope,
         Project,
+        Reason,
         Stratum,
     )
 
@@ -388,8 +389,14 @@ def _joined(parts: Sequence[str]) -> str:
     return parts[0] if len(parts) == 1 else f"{', '.join(parts[:-1])} and {parts[-1]}"
 
 
-def _reads_phrase(reads: Sequence[tuple[str, Sequence[str]]]) -> str:
-    """Each name once, with the one need it was read on, or a count and the first three."""
+def _reads_phrase(
+    reads: Sequence[tuple[str, Sequence[str]]], linked: Sequence[str] = ()
+) -> str:
+    """Each name once, with the one need it was read on, or a count and the first three.
+
+    :param linked: Names read on every need the reader's own links name, which are not
+        known yet.
+    """
     return _joined(
         [
             f"'{name}' on need '{ids[0]}'"
@@ -397,6 +404,7 @@ def _reads_phrase(reads: Sequence[tuple[str, Sequence[str]]]) -> str:
             else f"'{name}' on {counted_ids(ids, ' needs')}"
             for name, ids in reads
         ]
+        + [f"'{name}' on every need its links name" for name in linked]
     )
 
 
@@ -437,15 +445,20 @@ def _kept(value: Any) -> str:
     )
 
 
-def _through_clause(through: tuple[Column, str | None] | None) -> str:
+def _through_clause(through: tuple[Column, Reason] | None) -> str:
     """What a cycle member reads its cycle through, as its message says it.
 
-    :param through: The column on the cycle the member reads, with the filter that
-        made every need a candidate; ``None`` for no column.
+    :param through: The column on the cycle the member reads, with why every need is
+        its candidate; ``None`` for no column.
     """
     if through is None:
         return ""
     column, reason = through
+    if isinstance(reason, tuple):
+        return (
+            f", through its {reason[1]}, which are computed in the same step, "
+            "so every need is a candidate"
+        )
     if reason is not None:
         return (
             f", through the filter {reason!r}, which names a computed field, "
@@ -505,9 +518,11 @@ def _out_of_scope_message(option: str, out_of_scope: OutOfScope, value: Any) -> 
     for name, read_id in out_of_scope.reads:
         names.setdefault(name, []).append(read_id)
     reads = list(names.items())
+    linked = out_of_scope.linked
+    one = _one(reads) if not linked else not reads and len(linked) == 1
     return (
-        f"{what} for option '{option}' reads {_reads_phrase(reads)}, which "
-        f"{'is' if _one(reads) else 'are'} final only after the link fields are "
+        f"{what} for option '{option}' reads {_reads_phrase(reads, linked)}, which "
+        f"{'is' if one else 'are'} final only after the link fields are "
         f"computed: {not_run} and {_kept(value)}"
     )
 

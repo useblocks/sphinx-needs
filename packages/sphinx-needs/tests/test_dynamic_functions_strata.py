@@ -2504,3 +2504,220 @@ def test_a_none_result_adds_nothing_to_a_nullable_field(test_app):
             "dynamic_function",
         )
     ]
+
+
+# -- reading through the need's own computed links ----------------------------------
+#
+# A link field's check_linked_values or links_only sum reads its need's own links;
+# when a call computes those links in the same stratum, the needs they name are known
+# only once it has run, the written ones included. So the field is read as a column,
+# on every need: after every node that computes it in stratum 1; out of scope when it
+# is computed after stratum 1 or is a back link; final when no need computes it.
+
+THROUGH_LINKS_CONF = """\
+extensions = ["sphinx_needs"]
+needs_id_regex = "^.+$"
+needs_fields = {"summary": {"nullable": True}}
+needs_links = {"links": {}, "blocks": {}, "refs": {}}
+"""
+
+THROUGH_LINKS_INDEX = """\
+Through computed links
+======================
+
+.. req:: Target one
+   :id: T_ONE
+   :status: open
+
+.. req:: Target three, its refs computed
+   :id: T_THREE
+   :status: closed
+   :refs: [[copy("links", "OTHER_L")]]
+
+.. req:: Its summary computed after the link fields
+   :id: T_SUM
+   :summary: [[copy("title")]]
+
+.. req:: Other with a literal link
+   :id: OTHER_L
+   :links: T_ONE
+
+.. req:: Other linking T_THREE
+   :id: OTHER_L3
+   :links: T_THREE
+
+.. req:: A written target, its back links
+   :id: LL_WBACK
+   :links: T_ONE, [[copy("links", "OTHER_L")]]
+   :blocks: [[check_linked_values("T_ONE", "links_back", "X", one_hit=True)]]
+
+.. req:: An added target, its back links
+   :id: LL_ABACK
+   :links: [[copy("links", "OTHER_L")]]
+   :blocks: [[check_linked_values("T_ONE", "links_back", "X", one_hit=True)]]
+
+.. req:: A written target, a link type it computes
+   :id: LL_WLINK
+   :links: T_THREE, [[copy("links", "OTHER_L")]]
+   :blocks: [[check_linked_values("T_THREE", "refs", "T_ONE")]]
+
+.. req:: The same, one hit
+   :id: LL_WLINK1
+   :links: T_THREE, [[copy("links", "OTHER_L")]]
+   :blocks: [[check_linked_values("T_THREE", "refs", "T_ONE", one_hit=True)]]
+
+.. req:: An added target, a link type it computes
+   :id: LL_ALINK
+   :links: [[copy("links", "OTHER_L3")]]
+   :blocks: [[check_linked_values("T_ONE", "refs", "T_ONE")]]
+
+.. req:: A written target, a filter on a link type it computes
+   :id: LL_WFLT
+   :links: T_THREE, [[copy("links", "OTHER_L")]]
+   :blocks: [[check_linked_values("T_ONE", "status", "open", "len(refs) == 0")]]
+
+.. req:: A field computed after the link fields, on a need the links do not name
+   :id: LL_LATER
+   :links: [[copy("links", "OTHER_L")]]
+   :blocks: [[check_linked_values("T_ONE", "summary", "x")]]
+
+.. req:: A field no need computes
+   :id: LL_FINAL
+   :links: [[copy("links", "OTHER_L")]]
+   :blocks: [[check_linked_values("T_ONE", "status", "open")]]
+
+.. req:: Reads the link type it computes, through its computed links
+   :id: LL_SELF
+   :links: [[copy("links", "OTHER_L")]]
+   :refs: [[check_linked_values("T_ONE", "refs", "x")]]
+
+.. req:: Chain one
+   :id: CH1
+   :links: [[copy("links", "OTHER_L")]]
+
+.. req:: Chain two
+   :id: CH2
+   :links: [[copy("links", "CH1")]]
+
+.. req:: Chain three
+   :id: CH3
+   :links: [[copy("links", "CH2")]]
+
+.. req:: Its refs computed three links down
+   :id: A_THREE
+   :refs: [[copy("links", "CH3")]]
+
+.. req:: Other linking A_THREE
+   :id: OTHER_A
+   :links: A_THREE
+
+.. req:: An added target whose refs are computed three links down
+   :id: Z_ALINK
+   :links: [[copy("links", "OTHER_A")]]
+   :blocks: [[check_linked_values("T_ONE", "refs", "T_ONE")]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    _layouts(
+        one_page=[
+            (Path("conf.py"), THROUGH_LINKS_CONF),
+            (Path("index.rst"), THROUGH_LINKS_INDEX),
+        ]
+    ),
+    indirect=True,
+)
+def test_a_read_through_computed_links_is_a_column_read(test_app):
+    """A link field reading through its need's computed links reads a column.
+
+    The links name their needs only once computed, the written ones included, so the
+    field is read on every need, whatever the targets, the ids or the layout:
+
+    * computed in stratum 1 by some need (``refs``): after every need that computes
+      it, so the value read is the computed one and the check at run time reports
+      nothing (``LL_WLINK``, ``LL_WLINK1``, ``LL_ALINK``, ``Z_ALINK``; a check of a
+      list against a text fails, so all but the one-hit check return ``None``, which
+      a link field cannot hold); ``LL_WFLT``'s filter on ``refs`` keeps ``T_ONE``
+      alone;
+    * a back link (``LL_WBACK``, ``LL_ABACK``) or a field computed after stratum 1
+      (``summary``, on ``T_SUM``, which ``LL_LATER``'s links do not name): out of
+      scope, the call not run;
+    * computed by no need (``status``): final (``LL_FINAL``);
+    * the field the call computes (``LL_SELF``'s ``refs``): a cycle through the column.
+
+    The order used to walk the links stored before the call, empty for a computed
+    list: a written target got no edge, so its back links were read as reset by the
+    pass and a link type it computes read before it was, and an added target was read
+    in order or not by the luck of its id.
+    """
+    app = test_app
+    app.build()
+    needs = _needs(app)
+    assert {need_id: needs[need_id]["blocks"] for need_id in sorted(needs)} == {
+        "A_THREE": [],
+        "CH1": [],
+        "CH2": [],
+        "CH3": [],
+        "LL_ABACK": [],
+        "LL_ALINK": [],
+        "LL_FINAL": ["T_ONE"],
+        "LL_LATER": [],
+        "LL_SELF": [],
+        "LL_WBACK": [],
+        "LL_WFLT": ["T_ONE"],
+        "LL_WLINK": [],
+        "LL_WLINK1": ["T_THREE"],
+        "OTHER_A": [],
+        "OTHER_L": [],
+        "OTHER_L3": [],
+        "T_ONE": [],
+        "T_SUM": [],
+        "T_THREE": [],
+        "Z_ALINK": [],
+    }
+    assert (needs["T_THREE"]["refs"], needs["A_THREE"]["refs"]) == (
+        ["T_ONE"],
+        ["T_ONE"],
+    )
+    assert needs["LL_SELF"]["refs"] == []
+
+    def warning(need_id: str, message: str, subtype: str) -> str:
+        return _warning("index", THROUGH_LINKS_INDEX, need_id, message, subtype)
+
+    def scope(need_id: str, reads: str) -> str:
+        return warning(
+            need_id,
+            "dynamic function 'check_linked_values' for option 'blocks' reads "
+            f"{reads}, which is final only after the link fields are computed: "
+            "the call is not run and the field is left empty",
+            "derive_scope",
+        )
+
+    def type_error(need_id: str) -> str:
+        return warning(
+            need_id,
+            f"Error while resolving dynamic values for field 'blocks', of need "
+            f"'{need_id}': dynamic function value <class 'NoneType'> is not of type "
+            "'array' or item type 'string'",
+            "dynamic_function",
+        )
+
+    assert sorted(build_warnings(app)) == sorted(
+        [
+            scope("LL_ABACK", "'links_back' on every need its links name"),
+            scope("LL_WBACK", "'links_back' on every need its links name"),
+            scope("LL_LATER", "'summary' on need 'T_SUM'"),
+            type_error("LL_ALINK"),
+            type_error("LL_WLINK"),
+            type_error("Z_ALINK"),
+            warning(
+                "LL_SELF",
+                "dynamic function 'check_linked_values' for option 'refs' is on a "
+                "cycle: 'refs' on need 'LL_SELF', through its links, which are "
+                "computed in the same step, so every need is a candidate; "
+                "the field is left empty",
+                "derive_cycle",
+            ),
+        ]
+    )

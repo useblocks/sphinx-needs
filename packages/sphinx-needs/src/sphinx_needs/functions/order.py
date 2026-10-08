@@ -8,7 +8,10 @@ is computed after every node it reads, as the call text says what it reads: a
 :func:`~sphinx_needs.functions.common.calc_sum` the field of each of its candidates
 (through one *column* node per field, rather than one edge per need), a
 :func:`~sphinx_needs.functions.common.check_linked_values` the fields of every linked
-need, a variant the fields of its own need that any of its conditions names.
+need, a variant the fields of its own need that any of its conditions names. When the
+need's own ``links`` are computed in the same stratum as such a ``check_linked_values``
+(or ``links_only`` sum), which needs they name is known only once they are computed:
+the call reads each field through its column instead, on every need.
 
 A strongly connected group of nodes is a cycle: its members are not computed, and
 hold their placeholder (:func:`placeholder`: a list keeps its written items, any other
@@ -70,6 +73,12 @@ class Column:
 
 
 _Vertex = Node | Column
+
+Reason = str | Node | None
+"""Why a column is read on every need, not on the candidates of a filter: the filter
+that names a computed field; the node of the reader's own ``links``, computed in the
+same stratum, so which needs they name is not known before; or ``None``, a sum over
+every need (or over the candidates of its filter)."""
 
 #: the built-in functions, which the order knows the reads of, by their name
 BUILTINS: Final[Mapping[str, Callable[..., Any]]] = {
@@ -296,11 +305,14 @@ class OutOfScope:
         stratum: in stratum 1, another field, a back link.
     :ivar selectors: The ``need.<field>`` arguments that select what the call reads,
         while their field is computed in the same stratum.
+    :ivar linked: The back links and dead-link flags read on every need the reader's
+        own ``links`` name, while those are computed in the same stratum.
     """
 
     what: str
     reads: tuple[tuple[str, str], ...] = ()
     selectors: tuple[str, ...] = ()
+    linked: tuple[str, ...] = ()
 
 
 @dataclass(slots=True)
@@ -309,8 +321,8 @@ class NodeReads:
 
     :ivar first: The node's first call or variant (``None`` for variant data only).
     :ivar deps: The nodes of the same stratum it is computed after.
-    :ivar columns: The columns it reads, each with the filter that made every need a
-        candidate, or ``None`` for a sum over every need.
+    :ivar columns: The columns it reads, each with why every need is a candidate
+        (:data:`Reason`).
     :ivar scope: The calls and variants that cannot be computed in the stratum: the
         node is then a *sink*, not computed, holding its placeholder; it reads
         nothing (no ``deps``, no ``columns``), so it is on no cycle.
@@ -322,7 +334,7 @@ class NodeReads:
 
     first: DynamicFunctionParsed | VariantFunctionParsed | None
     deps: Sequence[Node] = ()
-    columns: Sequence[tuple[Column, str | None]] = ()
+    columns: Sequence[tuple[Column, Reason]] = ()
     scope: Sequence[OutOfScope] = ()
     user_functions: Sequence[str] = ()
     opaque: bool = False
@@ -477,7 +489,7 @@ class Project:
                 if item.name not in self.builtins:
                     reads.user_functions = _appended(reads.user_functions, item.name)
                     continue
-                _CallReads(self, reads, need, stratum, item).read()
+                _CallReads(self, reads, need, name, stratum, item).read()
             elif isinstance(item, VariantFunctionParsed):
                 scope: list[tuple[str, str]] = []
                 for expression, _, _ in item.expressions:
@@ -534,15 +546,20 @@ class _CallReads:
         project: Project,
         reads: NodeReads,
         need: NeedItem,
+        field: str,
         stratum: int,
         call: DynamicFunctionParsed,
     ) -> None:
         self.project = project
         self.reads = reads
         self.need = need
+        self.field = field
         self.stratum = stratum
         self.call = call
         self.scope: list[tuple[str, str]] = []
+        #: back links and dead-link flags read through the own links, computed in
+        #: the same stratum
+        self.linked: list[str] = []
 
     @property
     def what(self) -> str:
@@ -552,7 +569,7 @@ class _CallReads:
         if isinstance(name, str) and need_id in self.project.needs:
             _classify(self.project, self.reads, self.scope, self.stratum, need_id, name)
 
-    def _column(self, name: Any, candidates: str | None, reason: str | None) -> None:
+    def _column(self, name: Any, candidates: str | None, reason: Reason) -> None:
         if not isinstance(name, str):
             return
         if self.project.at_barrier(name):
@@ -627,9 +644,10 @@ class _CallReads:
             ):
                 return  # an id, a field or a filter that is no string: the call fails
             getattr(self, f"_{name}", lambda _: None)(args)
-        if self.scope:
+        if self.scope or self.linked:
             self.reads.scope = _appended(
-                self.reads.scope, OutOfScope(self.what, tuple(self.scope))
+                self.reads.scope,
+                OutOfScope(self.what, tuple(self.scope), linked=tuple(self.linked)),
             )
 
     def _copy(self, args: dict[str, Any]) -> None:
@@ -672,11 +690,7 @@ class _CallReads:
             names = filtered
         reads = sorted(names.names | names.current)  # current_need is the candidate
         if args.get("links_only"):
-            self._read(self.need.id, "links")
-            for target in self.need.get("links") or []:
-                self._read(target, option)
-                for read in reads:
-                    self._read(target, read)
+            self._linked([option, *reads])
             return
         if not filter_string:
             self._column(option, None, None)
@@ -695,11 +709,31 @@ class _CallReads:
             if names is None:
                 return
             reads = sorted(names.names | names.current)
-        self._read(self.need.id, "links")
+        self._linked([args.get("search_option"), *reads])
+
+    def _linked(self, names: Sequence[Any]) -> None:
+        """Read the need's own ``links``, then ``names`` on every need they name.
+
+        When the ``links`` are computed in the same stratum by another field's call,
+        the needs they name, the written ones included, are known only once they are
+        computed: each name is read through its column instead (on every need that
+        computes it in the stratum; out of scope when it is computed after the
+        stratum, or is a back link or a dead-link flag; final otherwise). A call in
+        the ``links`` themselves reads itself, and is a cycle.
+        """
+        links = (self.need.id, "links")
+        self._read(*links)
+        if self.field != "links" and self.project.nodes.get(links) == self.stratum:
+            for name in names:
+                if isinstance(name, str) and self.project.at_barrier(name):
+                    if name not in self.linked:
+                        self.linked.append(name)
+                else:
+                    self._column(name, None, links)
+            return
         for target in self.need.get("links") or []:
-            self._read(target, args.get("search_option"))
-            for read in reads:
-                self._read(target, read)
+            for name in names:
+                self._read(target, name)
 
     def _links_from_content(self, args: dict[str, Any]) -> None:
         filter_string = args.get("filter")
@@ -727,7 +761,7 @@ class Step:
 
     nodes: tuple[Node, ...]
     cycle: bool = False
-    through: tuple[tuple[Column, str | None] | None, ...] = ()
+    through: tuple[tuple[Column, Reason] | None, ...] = ()
 
 
 @dataclass(slots=True)
@@ -767,7 +801,7 @@ def build_stratum(project: Project, stratum: int) -> Stratum:
             targets.append(target)
 
     #: per column vertex, why each reader reads it
-    reasons: dict[tuple[int, int], str | None] = {}
+    reasons: dict[tuple[int, int], Reason] = {}
 
     def column_vertex(column: Column) -> int | None:
         if column in index:
@@ -830,14 +864,14 @@ def build_stratum(project: Project, stratum: int) -> Stratum:
 def _column_on_cycle(
     vertices: Sequence[_Vertex],
     edges: Sequence[Sequence[int] | None],
-    reasons: Mapping[tuple[int, int], str | None],
+    reasons: Mapping[tuple[int, int], Reason],
     inside: Collection[int],
     member: int,
-) -> tuple[Column, str | None] | None:
+) -> tuple[Column, Reason] | None:
     """The column on its cycle a member reads, with why every need is its candidate.
 
     Of several, a filter naming a computed field first, then a filter's candidates,
-    then a sum over every need.
+    then the member's own computed links, then a sum over every need.
     """
     read = [
         (column, reasons[(member, target)])
@@ -847,12 +881,16 @@ def _column_on_cycle(
     return min(read, key=_column_rank) if read else None
 
 
-def _column_rank(read: tuple[Column, str | None]) -> tuple[bool, bool, str, str, str]:
+def _column_rank(
+    read: tuple[Column, Reason],
+) -> tuple[bool, bool, bool, str, str, str]:
     column, reason = read
+    by_filter = reason if isinstance(reason, str) else None
     return (
-        reason is None,
+        by_filter is None,
         column.candidates is None,
-        reason or "",
+        reason is None,
+        by_filter or "",
         column.candidates or "",
         column.field,
     )

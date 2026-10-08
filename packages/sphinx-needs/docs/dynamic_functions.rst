@@ -248,6 +248,16 @@ A link list is read in the order it is written, followed by the links a ``needex
 a link written twice is read twice, so a ``calc_sum`` with ``links_only`` adds its value twice.
 The link lists are sorted, and a link written twice kept once, only in step 5.
 
+A ``check_linked_values``, or a ``calc_sum`` with ``links_only``, in a link field
+of a need whose ``links`` are computed too (``:links: REQ_1, [[copy("links", "REQ_2")]]``)
+cannot know in step 2 which needs those links will name,
+the written ones included,
+so it reads ``x`` and the filter's fields as on every need, not only on the linked ones:
+it is computed after each link field of step 2 that computes one of them, on any need;
+it is not run when one is a back link, a dead-link flag, or a field computed in step 4 on any need
+(:ref:`needs_derive_scope`);
+and a field no need computes is read as written.
+
 Your own functions run after every built-in function of their step, in need-id order, then by field.
 They read the values the built-in functions computed
 (but for a call whose filter cannot be read, which runs among them, see below);
@@ -285,6 +295,8 @@ so ``:hours: [[calc_sum("hours")]]`` reads its own value and is a cycle;
 sum into another field, or give a ``filter`` that excludes the need.
 A ``filter`` that names a computed field makes every need a candidate,
 so it can make a cycle that the filter itself would have excluded; the message then names the filter.
+So do a need's own computed links, for a ``check_linked_values`` or ``links_only`` sum in a link field
+(see :ref:`needs_processing_order`); the message then names the links.
 Filter on a value that is not computed, or break the cycle.
 A filter on values that are not computed but keeps the need itself, such as ``type == 'req'`` in a ``req``,
 is a cycle too, and its message names the filter.
@@ -302,7 +314,9 @@ These reads are reported as ``needs.derive_scope``:
   or ``has_dead_links`` or ``has_forbidden_dead_links``,
   all of which are final only after step 2 (they are computed, or set with the back links, after it):
   the call is not run (a variant's condition is not evaluated),
-  and the field keeps only the links written in it;
+  and the field keeps only the links written in it
+  (a ``check_linked_values`` or ``links_only`` sum whose need computes its ``links`` too
+  reads such a field on any need, see :ref:`needs_processing_order`);
 - a ``need.<field>`` :ref:`argument <dynamic_functions_need_arguments>` that selects what the call reads,
   while the field is computed in the same step: the call is not run,
   and its field keeps the items written in it (a link or array field) or is left empty;
