@@ -194,13 +194,17 @@ class NeedimportDirective(SphinxDirective):
         needs_list = needs_list_filtered
 
         # tags update
-        if tags := [
-            tag.strip()
-            for tag in re.split("[;,]", self.options.get("tags", ""))
-            if tag.strip()
-        ]:
+        if tags := _split_tags(self.options.get("tags", "")):
             for need in needs_list.values():
-                need["tags"] = need["tags"] + tags
+                # a record may have no tags, or give them as a string (which
+                # ``add_need`` accepts); any other value is left for it to refuse
+                need_tags = need.get("tags")
+                if need_tags is None:
+                    need["tags"] = tags
+                elif isinstance(need_tags, list):
+                    need["tags"] = need_tags + tags
+                elif isinstance(need_tags, str):
+                    need["tags"] = _split_tags(need_tags) + tags
 
         import_prefix_link_edit(
             needs_list, id_prefix, needs_schema.iter_link_field_names()
@@ -355,6 +359,11 @@ class NeedimportDirective(SphinxDirective):
     @property
     def docname(self) -> str:
         return self.env.docname
+
+
+def _split_tags(tags: str) -> list[str]:
+    """The tags of a ``;`` or ``,`` separated string, stripped, empty ones dropped."""
+    return [tag.strip() for tag in re.split("[;,]", tags) if tag.strip()]
 
 
 class VersionNotFound(BaseException):

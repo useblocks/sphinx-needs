@@ -339,6 +339,24 @@ Bug fixes
   apply, as for a value that cannot be converted. Whether a ``need.<attr>`` argument should
   be admitted in a ``needextend`` value is a separate question, unchanged here.
 
+- 🐛 :ref:`needimport` imports a need without ``tags`` under ``:tags:``, and reports a need
+  whose ``content`` is not a string instead of crashing the build **(changed output)**
+  (:issue:`2132`, :issue:`2147`)
+
+  A ``:tags:`` option ended the build with ``KeyError: 'tags'`` on a needs.json record
+  that has no ``tags`` key, as a hand-written file or another producer may omit it, and
+  with a ``TypeError`` on one whose ``tags`` is ``null`` or a string. The option's tags
+  are now added to the record's own whatever their shape: none for a missing or ``null``
+  ``tags``, appended to a list, and appended to a string split as the option is split.
+  A record whose ``content`` (or legacy ``description``) is present but not a string, such
+  as ``5`` or ``null``, ended the build with an ``AttributeError``, whether or not its
+  content was parsed by its ``doctype``; one whose ``type`` is a list or an object ended
+  it with a ``TypeError``. Each is now the ``needs.import_need`` warning naming the need
+  and the key (``content must be a string, not int``), and the need is skipped; a record
+  whose ``type`` is another value that is not a string, such as ``5`` or ``null``, is
+  reported with the same text instead of ``Unknown need type 5.``. A record with no
+  ``content`` key still imports with empty content.
+
 .. _`release:8.5.0`:
 
 8.5.0
