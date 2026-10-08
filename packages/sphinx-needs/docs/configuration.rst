@@ -2211,6 +2211,27 @@ needs_import_keys
 
 For use with the :ref:`needimport` directive, mapping keys to file paths, see :ref:`needimport-keys`.
 
+.. _`needs_import_parse_by_doctype`:
+
+needs_import_parse_by_doctype
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 9.0.0
+
+If ``True``, :ref:`needimport` parses each imported need's content in the markup its
+``doctype`` names, rather than in the markup of the importing page; the directive's
+:ref:`parse_by_doctype <needimport_parse_by_doctype>` option overrides it for one import.
+Default: ``False``.
+
+A ``doctype`` this project cannot parse is reported once per directive per ``doctype``
+as a ``needs.import_doctype`` warning, and that content is parsed in the page's markup, as
+before. To keep a ``-W`` build green while you register the suffix, add
+``"needs.import_doctype"`` to ``suppress_warnings``.
+
+.. code-block:: python
+
+   needs_import_parse_by_doctype = True
+
 .. _`needs_external_needs`:
 
 needs_external_needs

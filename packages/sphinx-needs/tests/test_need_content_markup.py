@@ -19,7 +19,6 @@ import time
 from pathlib import Path
 from typing import Any
 
-import myst_parser
 import pytest
 from docutils import nodes
 from sphinx.testing.util import SphinxTestApp
@@ -27,11 +26,17 @@ from sphinx.util.parallel import parallel_available
 
 from sphinx_needs.api import MarkupContent, get_needs_view
 from sphinx_needs_testkit import build_warnings
-from tests.util import needs_by_id
-
-MYST_MAJOR = int(myst_parser.__version__.split(".")[0])
-"""myst-parser 5 logs its own warnings at ``(env.docname, line)``; 4 at
-``(document["source"], line)``, which Sphinx then reads as a docname."""
+from tests.util import (
+    BODIES,
+    MYST_BODY,
+    RST_BODY,
+    at,
+    html,
+    line_of,
+    myst_logged,
+    need_content_html,
+    needs_by_id,
+)
 
 DRIVER = '''\
 """Test-only driver: creates needs through the public content-markup API."""
@@ -221,50 +226,6 @@ show_warning_types = True
 """``.nope`` maps to a file type no parser is registered for; ``.plain`` (registered
 by the driver) to a parser that is neither reStructuredText nor MyST."""
 
-RST_BODY = [
-    "Some *emphasis*, :ref:`host <hostlabel>`, :need:`REQ_HOST`.",
-    "",
-    ".. note:: An RST note.",
-    "",
-    ".. _inside_{cell}:",
-    "",
-    "A labelled paragraph.",
-    "",
-    ".. nosuchdirective::",
-    "",
-    ":nosuchrole:`x` and :ref:`nosuchlabel_{cell}`.",
-]
-"""A reStructuredText body; ``{cell}`` names the cell."""
-
-MYST_BODY = [
-    "Some *emphasis*, {ref}`host <hostlabel>`, {need}`REQ_HOST`, a [ref link][lnk].",
-    "",
-    "```{note}",
-    "A MyST note.",
-    "```",
-    "",
-    "(inside_{cell})=",
-    "A labelled paragraph.",
-    "",
-    "```{nosuchdirective}",
-    "```",
-    "",
-    "{nosuchrole}`x` and {ref}`nosuchlabel_{cell}`.",
-    "",
-    "```{note}",
-    "```",
-    "",
-    "[lnk]: https://example.com",
-]
-"""A MyST body; the empty ``note`` is an error docutils itself reports."""
-
-BODIES = {".rst": RST_BODY, ".md": MYST_BODY}
-
-
-def at(body: list[str], start: str) -> int:
-    """The 0-based offset of the first body line starting with ``start``."""
-    return next(i for i, line in enumerate(body) if line.startswith(start))
-
 
 def src(name: str) -> str:
     """A content file's path as warnings print it under ``<srcdir>/``."""
@@ -364,19 +325,6 @@ def four_cell_files() -> tuple[list[tuple[Path, str]], dict[str, int]]:
 FOUR_CELL_FILES, FOUR_CELL_LINENOS = four_cell_files()
 
 
-def myst_logged(host: str, source: str, line: int) -> str:
-    """Where a warning myst-parser logs itself points, for content from ``source``.
-
-    Not the content's file: this version does not rewrite myst-parser's own locations.
-    myst-parser 5 logs the page being read, with the content's line; myst-parser 4 logs
-    ``document["source"]`` -- the content's file for the duration -- which Sphinx reads
-    as a docname and gives the ``.rst`` suffix (the documented first-slice defect).
-    """
-    if MYST_MAJOR >= 5:
-        return f"<srcdir>/{host}:{line}"
-    return f"<srcdir>/{source}.rst:{line}"
-
-
 def four_cell_warnings(cells: tuple[str, ...] = tuple(CELLS)) -> list[str]:
     """Every warning the four-cell project emits for ``cells``."""
     expected = []
@@ -410,17 +358,6 @@ def four_cell_warnings(cells: tuple[str, ...] = tuple(CELLS)) -> list[str]:
                 f"'nosuchlabel_{cell}' [ref.ref]",
             ]
     return expected
-
-
-def html(app: SphinxTestApp, page: str) -> str:
-    return Path(app.outdir, page).read_text(encoding="utf-8")
-
-
-def need_content_html(app: SphinxTestApp, page: str, need_id: str) -> str:
-    """The HTML of the content cell of the need ``need_id``."""
-    text = html(app, page)
-    start = text.index('<td class="need content"', text.index(f'id="{need_id}"'))
-    return text[start : text.index("</td>", start)]
 
 
 SPLIT_PADDING = [
@@ -509,11 +446,6 @@ def test_content_is_parsed_in_its_markup_with_diagnostics_at_its_source(
             # a same-page reference, or one into the other page
             target = "" if defined_on == page else defined_on
             assert f'href="{target}#inside-{cell}"' in text, (page, cell)
-
-
-def line_of(page: list[str], text: str) -> int:
-    """The 1-based line of the first page line containing ``text``."""
-    return next(i for i, line in enumerate(page, 1) if text in line)
 
 
 LABEL_INDEX = [
