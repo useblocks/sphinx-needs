@@ -6,6 +6,8 @@ from docutils import nodes
 from docutils.parsers.rst import Directive, directives
 from sphinx.util import logging
 
+from sphinx_test_reports.directives.test_common import new_section
+
 logger = logging.getLogger(__name__)
 
 
@@ -91,11 +93,13 @@ class EnvReportDirective(Directive):
 
         if self.req_env_list is None and "raw" not in self.options:
             for enviro in results:
-                main_section += self._crete_table_b(enviro=enviro, results=results)
+                main_section.append(self._crete_table_b(enviro=enviro, results=results))
 
         elif "raw" not in self.options and self.req_env_list is not None:
             for req_env in self.req_env_list:
-                main_section += self._crete_table_b(enviro=req_env, results=results)
+                main_section.append(
+                    self._crete_table_b(enviro=req_env, results=results)
+                )
 
         elif "raw" in self.options and self.req_env_list is None:
             for enviro in results:
@@ -115,13 +119,12 @@ class EnvReportDirective(Directive):
 
                 del temp_dict
 
-                section = nodes.section()
-                section += nodes.title(text=enviro)
+                section = new_section(self.state, enviro)
                 results_string = json.dumps(temp_dict2[enviro], indent=4)
                 code_block = nodes.literal_block(results_string, results_string)
                 code_block["language"] = "json"
                 section += code_block  # nodes.literal_block(results, results)
-                main_section += section  # nodes.literal_block(enviro, results[enviro])
+                main_section.append(section)
                 del temp_dict2
 
         elif "raw" in self.options and self.req_env_list is not None:
@@ -146,21 +149,18 @@ class EnvReportDirective(Directive):
 
                 del temp_dict
 
-                section = nodes.section()
-                section += nodes.title(text=enviro)
+                section = new_section(self.state, enviro)
                 results_string = json.dumps(temp_dict2[enviro], indent=4)
                 code_block = nodes.literal_block(results_string, results_string)
                 code_block["language"] = "json"
                 section += code_block
-                main_section += section
+                main_section.append(section)
                 del temp_dict2
 
         return main_section
 
-    def _crete_table_b(self, enviro, results):
-        main_section = []
-        section = nodes.section()
-        section += nodes.title(text=enviro)
+    def _crete_table_b(self, enviro, results) -> nodes.section:
+        section = new_section(self.state, enviro)
 
         table = nodes.table()
         section += table
@@ -187,8 +187,6 @@ class EnvReportDirective(Directive):
             else:
                 tbody += self._create_rows((data, all_data[data]))
 
-        main_section += section
-
         # data option check
         if data_option is not None:
             if len(data_option) != 0:
@@ -196,7 +194,7 @@ class EnvReportDirective(Directive):
                     logger.warning(f"option '{opt}' is not present in JSON file")
             del data_option
 
-        return main_section
+        return section
 
     def _create_rows(self, row_cells):
         row = nodes.row()

@@ -237,6 +237,18 @@ Fixed
   `#1932 <https://github.com/useblocks/sphinx-needs/issues/1932>`__,
   `#2125 <https://github.com/useblocks/sphinx-needs/pull/2125>`__
 
+- 🐛 ``test-results`` and ``test-env`` make each suite / environment a real section now,
+  one level below the section the directive stands in: its heading is one level deeper
+  than before (an ``<h4>`` under an ``<h3>`` heading, where it was a second ``<h3>``), it
+  has an id and a permalink of its own, and ``.. contents::`` and the sidebar list it.
+  Before, the heading was a stray title of the enclosing section, at that section's level
+  and with that section's permalink, and either directive written inside a list item
+  failed the HTML build with ``AssertionError``. Under ``sphinx.ext.autosectionlabel`` the
+  generated sections are labelled like authored ones: one suite name on two pages is its
+  usual duplicate-label warning unless ``autosectionlabel_prefix_document`` is set.
+  `#1959 <https://github.com/useblocks/sphinx-needs/issues/1959>`__,
+  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+
 What the move costs, stated rather than left to the CI diff
 ............................................................
 

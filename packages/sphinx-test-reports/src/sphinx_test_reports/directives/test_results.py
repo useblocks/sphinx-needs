@@ -3,6 +3,7 @@ import os
 from docutils import nodes
 from docutils.parsers.rst import Directive
 
+from sphinx_test_reports.directives.test_common import new_section
 from ub_test_reports.junitparser import JUnitParser
 
 
@@ -41,8 +42,7 @@ class TestResultsDirective(Directive):
         main_section = []
 
         for testsuite in results:
-            section = nodes.section()
-            section += nodes.title(text=testsuite["name"])
+            section = new_section(self.state, testsuite["name"])
             section += nodes.paragraph(
                 text="Tests: {tests}, Failures: {failure}, Errors: {error}, "
                 "Skips: {skips}".format(
@@ -73,7 +73,7 @@ class TestResultsDirective(Directive):
             for testcase in testsuite["testcases"]:
                 tbody += self._create_testcase_row(testcase)
 
-            main_section += section
+            main_section.append(section)
 
         return main_section
 

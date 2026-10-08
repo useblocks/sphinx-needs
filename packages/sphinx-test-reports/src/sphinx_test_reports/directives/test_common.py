@@ -8,7 +8,9 @@ import pathlib
 import re
 from typing import Any
 
+from docutils import nodes
 from docutils.parsers.rst import Directive
+from docutils.parsers.rst.states import RSTState
 from sphinx.util import logging
 
 # `_make_hashed_id` has been sphinx-needs' spelling since its 4.0; the import narrowed to
@@ -42,6 +44,24 @@ def _links_with(existing: str, link_id: str) -> str:
     if link_id in (element.strip() for element in re.split("[;|,]", existing)):
         return existing
     return existing + ";" + link_id
+
+
+def new_section(state: RSTState, title_text: str) -> nodes.section:
+    """A section titled ``title_text``, registered the way an authored one is.
+
+    What the RST parser does for a section heading (``new_subsection`` in
+    ``docutils/parsers/rst/states.py``): the normalised title as the section's name, and
+    ``note_implicit_target``, which gives the section its id -- so it has a permalink, a
+    ``.. contents::`` entry and a place in the page's table of contents. A second section
+    of the same name on the page gets an id of its own; docutils reports the duplicate
+    name at INFO level, not as a warning. Append the section itself to the nodes a
+    directive returns: ``+=`` on a list splices its CHILDREN instead.
+    """
+    section = nodes.section()
+    section += nodes.title(text=title_text)
+    section["names"].append(nodes.fully_normalize_name(title_text))
+    state.document.note_implicit_target(section, section)
+    return section
 
 
 class TestCommonDirective(Directive):

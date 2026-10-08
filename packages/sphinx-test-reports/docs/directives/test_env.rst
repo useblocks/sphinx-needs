@@ -9,6 +9,10 @@ This can be operating system, used python version, installed package and much mo
 This information needs to be provided via json-file. Currently **sphinx-test-reports** supports the output of
 `tox-env-report <https://tox-envreport.readthedocs.io/en/latest/>`_ only.
 
+Each environment is a section of its own, titled with the environment's name,
+one level below the section the directive stands in.
+It has an id and a permalink, and ``.. contents::`` and the sidebar list it like any other section.
+
 tox based workflow
 ------------------
 
