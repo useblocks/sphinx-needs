@@ -340,3 +340,52 @@ def test_libclang_extracts_c_extension_header_via_cpp_language():
     ids = {n.need["id"] for n in analyse.oneline_needs}
     assert "IMPL_ALWAYS" in ids  # the .cpp translation unit extracts
     assert "IMPL_HDR_PLAIN" in ids  # the .h header extracts too (parsed as C++)
+
+
+#: a marker after code and a non-ASCII character, and a reference on a block's second row
+COLUMNS_SOURCE = (
+    "int x = 1; /* é */ // @After é, IMPL_COL, impl\n"
+    "  /*\n"
+    "   * @need-ids:   REQ_COL\n"
+    "   */\n"
+    "void f() {}\n"
+)
+
+
+@pytest.mark.parametrize("newline", ["\n", "\r\n", "\r"], ids=["lf", "crlf", "cr"])
+def test_libclang_columns_are_the_tree_sitter_columns(tmp_path, newline):
+    """Both engines report a marker's physical column, in characters, whatever the
+    line endings."""
+    src = tmp_path / "columns.cpp"
+    src.write_bytes(COLUMNS_SOURCE.replace("\n", newline).encode("utf-8"))
+
+    def spans(preprocessor):
+        analyse = SourceAnalyse(
+            SourceAnalyseConfig(
+                src_files=[src],
+                src_dir=tmp_path,
+                get_need_id_refs=True,
+                get_oneline_needs=True,
+                get_multiline_needs=False,
+                preprocessor=preprocessor,
+            )
+        )
+        analyse.git_remote_url = None
+        analyse.git_commit_rev = None
+        analyse.run(log_summary=False)
+        return [
+            (entry.type.value, entry.source_map) for entry in analyse.all_marked_content
+        ]
+
+    libclang = spans(PreprocessorConfig())
+    assert libclang == spans(None)
+    assert libclang == [
+        (
+            "need",
+            {"start": {"row": 0, "column": 23}, "end": {"row": 0, "column": 46}},
+        ),
+        (
+            "need-id-refs",
+            {"start": {"row": 2, "column": 18}, "end": {"row": 2, "column": 25}},
+        ),
+    ]
