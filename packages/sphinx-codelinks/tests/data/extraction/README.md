@@ -110,7 +110,7 @@ output of one case):
   {
     "filepath": "case.cpp",
     "remote_url": null,
-    "source_map": {"start": {"row": 0, "column": 13}, "end": {"row": 0, "column": 32}},
+    "source_map": {"start": {"row": 0, "column": 14}, "end": {"row": 0, "column": 33}},
     "tagged_scope": "void f() {}",
     "need_ids": ["REQ_1", "REQ_2", "REQ_3"],
     "marker": "@need-ids:",
@@ -133,7 +133,8 @@ The fields of a marked-content entry, as `Metadata.to_dict()` writes them:
 - `remote_url` — always `null`: the harness sets `git_remote_url` and
   `git_commit_rev` to `None` before `run()`.
 - `source_map` — `{"start": {"row", "column"}, "end": {"row", "column"}}`,
-  0-indexed.
+  0-indexed; a column counts the characters before it on its line. A one-line
+  need starts at its title, a reference at its first id and ends after its last.
 - `tagged_scope` — the full text of the declaration `find_associated_scope`
   associates with the marker, or `null`.
 - `type` — `"need"`, `"need-id-refs"` or `"multiline-need"`; a need's own `type` (e.g.
@@ -157,16 +158,9 @@ A warning record has `file_path`, `lineno`, `msg`, `type` (the
 No `SourceComment` or tree-sitter node object is snapshotted: production's
 `to_dict()` drops the comment and writes the scope as its text.
 
-Two known production quirks show up as-is in these snapshots (deliberately
-left unfixed — out of scope here):
-
-- a need-id-reference's `source_map` columns are shifted by the width of any
-  whitespace between the marker and its ids: `extract_marker`
-  (`analyse/analyse.py`) computes `start_column` from the pre-`strip()`
-  position but `end_column` from the post-`strip()` length.
-- a one-line need's `source_map` columns are relative to the comment's text,
-  not to the line (`scope.yaml`'s `yaml_inline_same_row`: column 3, where the
-  title starts at physical column 15); #2129 makes them physical.
+No case puts two entries of one kind on one row: production orders them by row
+only, so they keep tree-sitter's capture order, which differs between runs
+(#2150). On a row, references come before needs.
 
 ## Portability
 

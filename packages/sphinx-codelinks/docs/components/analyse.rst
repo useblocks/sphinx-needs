@@ -86,8 +86,8 @@ Below is an example of a C++ source file containing need ID references and the c
                 "filepath": "tests/data/need_id_refs/dummy_1.cpp",
                 "remote_url": "https://github.com/useblocks/sphinx-codelinks/blob/fa5a9129d60203355ae9fe4a725246a88522c60c/tests/data/need_id_refs/dummy_1.cpp#L3",
                 "source_map": {
-                    "start": { "row": 2, "column": 13 },
-                    "end": { "row": 2, "column": 51 }
+                    "start": { "row": 2, "column": 14 },
+                    "end": { "row": 2, "column": 52 }
                 },
                 "tagged_scope": "void dummy_func1(){\n     //...\n }",
                 "need_ids": ["need_001", "need_002", "need_003", "need_004"],
@@ -98,8 +98,8 @@ Below is an example of a C++ source file containing need ID references and the c
                 "filepath": "tests/data/need_id_refs/dummy_1.cpp",
                 "remote_url": "https://github.com/useblocks/sphinx-codelinks/blob/fa5a9129d60203355ae9fe4a725246a88522c60c/tests/data/need_id_refs/dummy_1.cpp#L8",
                 "source_map": {
-                    "start": { "row": 7, "column": 13 },
-                    "end": { "row": 7, "column": 21 }
+                    "start": { "row": 7, "column": 14 },
+                    "end": { "row": 7, "column": 22 }
                 },
                 "tagged_scope": "int main() {\n   std::cout << \"Starting demo_1...\" << std::endl;\n   dummy_func1();\n   std::cout << \"Demo_1 finished.\" << std::endl;\n   return 0;\n }",
                 "need_ids": ["need_003"],
