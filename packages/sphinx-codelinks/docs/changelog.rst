@@ -428,6 +428,12 @@ New and Improved
   warnings about its configuration file carry the type ``codelinks.config``, so
   ``suppress_warnings = ["codelinks.config"]`` silences them.
 
+- ✨ Added VHDL language support for the ``analyse`` module.
+
+  Comments in VHDL sources are now parsed for need ID references and one-line need
+  definitions. ``.vhd`` and ``.vhdl`` files are discovered when ``comment_type = "vhdl"``.
+  The supported comment styles are ``--`` and the VHDL-2008 ``/* */``.
+
 .. _`release:1.4.0`:
 
 1.4.0

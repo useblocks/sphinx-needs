@@ -11,6 +11,7 @@ import tree_sitter_go
 import tree_sitter_json
 import tree_sitter_python
 import tree_sitter_rust
+import tree_sitter_vhdl
 import tree_sitter_yaml
 from tree_sitter import Language, Parser, Query
 from tree_sitter import Node as TreeSitterNode
@@ -80,6 +81,14 @@ def init_jsonc_tree_sitter() -> tuple[Parser, Query]:
 def init_bash_tree_sitter() -> tuple[Parser, Query]:
     parsed_language = Language(tree_sitter_bash.language())
     query = Query(parsed_language, utils.BASH_QUERY)
+    parser = Parser(parsed_language)
+    return parser, query
+
+
+@pytest.fixture(scope="session")
+def init_vhdl_tree_sitter() -> tuple[Parser, Query]:
+    parsed_language = Language(tree_sitter_vhdl.language())
+    query = Query(parsed_language, utils.VHDL_QUERY)
     parser = Parser(parsed_language)
     return parser, query
 
@@ -1089,6 +1098,195 @@ def test_find_enclosing_scope_go(code, result, init_go_tree_sitter):
     assert node.text
     go_def = node.text.decode("utf-8")
     assert result in go_def
+
+
+@pytest.mark.parametrize(
+    ("code", "num_comments", "result"),
+    [
+        # a VHDL line comment node includes the trailing newline
+        (
+            b"""-- @req-id: need_001
+entity dummy is
+end entity dummy;
+""",
+            1,
+            "-- @req-id: need_001\n",
+        ),
+        (
+            b"""architecture rtl of dummy is
+begin
+  -- @req-id: need_001
+end architecture rtl;
+""",
+            1,
+            "-- @req-id: need_001\n",
+        ),
+        # VHDL-2008 block comment
+        (
+            b"""/* @req-id: need_001 */
+entity dummy is
+end entity dummy;
+""",
+            1,
+            "/* @req-id: need_001 */",
+        ),
+        (
+            b"""--  @req-id: need_001
+--
+--
+entity dummy is
+end entity dummy;
+""",
+            3,
+            "--  @req-id: need_001\n",
+        ),
+    ],
+)
+def test_vhdl_comment(code, num_comments, result, init_vhdl_tree_sitter):
+    parser, query = init_vhdl_tree_sitter
+    comments: list[TreeSitterNode] = utils.extract_comments(code, parser, query)
+    comments.sort(key=lambda x: x.start_point.row)
+    assert len(comments) == num_comments
+    assert comments[0].text
+    assert comments[0].text.decode("utf-8") == result
+
+
+@pytest.mark.parametrize(
+    ("code", "result"),
+    [
+        # leading comment at file level is associated with the entity inside
+        # the following design_unit
+        (
+            b"""-- @req-id: need_001
+entity dummy is
+end entity dummy;
+""",
+            "entity dummy is",
+        ),
+        # context clauses put the comment inside the design_unit, next to the entity
+        (
+            b"""library ieee;
+use ieee.std_logic_1164.all;
+
+-- @req-id: need_001
+entity dummy is
+end entity dummy;
+""",
+            "entity dummy is",
+        ),
+        # comment before a process is associated with the process
+        (
+            b"""architecture rtl of dummy is
+begin
+  -- @req-id: need_001
+  main_proc : process (clk)
+  begin
+  end process main_proc;
+end architecture rtl;
+""",
+            "main_proc : process (clk)",
+        ),
+        # block comment before an architecture is associated with it
+        (
+            b"""/* @req-id: need_001 */
+architecture rtl of dummy is
+begin
+end architecture rtl;
+""",
+            "architecture rtl of dummy",
+        ),
+        # inline comment in a port list falls back to the enclosing entity
+        (
+            b"""entity dummy is
+  port (
+    clk : in std_logic -- @req-id: need_001
+  );
+end entity dummy;
+""",
+            "entity dummy is",
+        ),
+    ],
+)
+def test_find_associated_scope_vhdl(code, result, init_vhdl_tree_sitter):
+    parser, query = init_vhdl_tree_sitter
+    comments = utils.extract_comments(code, parser, query)
+    node: TreeSitterNode | None = utils.find_associated_scope(
+        comments[0], CommentType.vhdl
+    )
+    assert node
+    assert node.text
+    vhdl_def = node.text.decode("utf-8")
+    assert result in vhdl_def
+
+
+@pytest.mark.parametrize(
+    ("code", "result"),
+    [
+        (
+            b"""-- @req-id: need_001
+entity dummy is
+end entity dummy;
+""",
+            "entity dummy is",
+        ),
+        # comment before a subprogram declaration in a package
+        (
+            b"""package dummy_pkg is
+  -- @req-id: need_001
+  function add_one(x : integer) return integer;
+end package dummy_pkg;
+""",
+            "function add_one(x : integer) return integer;",
+        ),
+    ],
+)
+def test_find_next_scope_vhdl(code, result, init_vhdl_tree_sitter):
+    parser, query = init_vhdl_tree_sitter
+    comments = utils.extract_comments(code, parser, query)
+    node: TreeSitterNode | None = utils.find_next_scope(comments[0], CommentType.vhdl)
+    assert node
+    assert node.text
+    vhdl_def = node.text.decode("utf-8")
+    assert result in vhdl_def
+
+
+@pytest.mark.parametrize(
+    ("code", "result"),
+    [
+        (
+            b"""architecture rtl of dummy is
+begin
+  main_proc : process (clk)
+  begin
+    -- @req-id: need_001
+  end process main_proc;
+end architecture rtl;
+""",
+            "main_proc : process (clk)",
+        ),
+        (
+            b"""package body dummy_pkg is
+  function add_one(x : integer) return integer is
+  begin
+    /* @req-id: need_001 */
+    return x + 1;
+  end function;
+end package body dummy_pkg;
+""",
+            "function add_one(x : integer) return integer is",
+        ),
+    ],
+)
+def test_find_enclosing_scope_vhdl(code, result, init_vhdl_tree_sitter):
+    parser, query = init_vhdl_tree_sitter
+    comments = utils.extract_comments(code, parser, query)
+    node: TreeSitterNode | None = utils.find_enclosing_scope(
+        comments[0], CommentType.vhdl
+    )
+    assert node
+    assert node.text
+    vhdl_def = node.text.decode("utf-8")
+    assert result in vhdl_def
 
 
 @pytest.mark.parametrize(

@@ -11,7 +11,7 @@ agent has to know that is true of sphinx-codelinks and not of the workspace.
 sphinx-codelinks is a Sphinx extension that provides fast source code traceability for
 sphinx-needs. It:
 
-- **analyses source code** — scans C, C++, C#, Python, Rust, Go, YAML, JSON and Bash files
+- **analyses source code** — scans C, C++, C#, Python, Rust, Go, YAML, JSON, Bash and VHDL files
   for special comment markers, with tree-sitter;
 - **creates needs from them** — turns discovered markers into sphinx-needs items;
 - **traces sources** — links documentation to exact source lines, and generates a

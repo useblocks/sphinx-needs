@@ -36,6 +36,7 @@ LANG_MAP: dict[str, tuple[CommentType, str]] = {
     "go": (CommentType.go, "go"),
     "jsonc": (CommentType.jsonc, "jsonc"),
     "bash": (CommentType.bash, "sh"),
+    "vhdl": (CommentType.vhdl, "vhd"),
 }
 
 

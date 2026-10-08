@@ -1,0 +1,2 @@
+.. src-trace::
+   :project: src

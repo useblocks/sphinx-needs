@@ -27,6 +27,8 @@ COMMENT_MARKERS = {
     CommentType.cs: ["//", "/*", "///"],
     # @Support Go style comments, IMPL_GO_2, impl, [FE_GO]
     CommentType.go: ["//", "/*"],
+    # @Support VHDL style comments, IMPL_VHDL_2, impl, [FE_VHDL]
+    CommentType.vhdl: ["--", "/*"],
 }
 ESCAPE = "\\"
 

@@ -68,7 +68,7 @@ _ONELINE_KIND = re.compile(
             [
                 "Project 'dcdc' has the following errors:",
                 "Schema validation error in field 'exclude': 123 is not of type 'string'",
-                "Schema validation error in field 'comment_type': 'java' is not one of ['bash', 'cpp', 'cs', 'go', 'jsonc', 'python', 'rust', 'yaml']",
+                "Schema validation error in field 'comment_type': 'java' is not one of ['bash', 'cpp', 'cs', 'go', 'jsonc', 'python', 'rust', 'vhdl', 'yaml']",
                 "Schema validation error in field 'gitignore': '_true' is not of type 'boolean'",
                 "Schema validation error in field 'include': 345 is not of type 'string'",
                 "Schema validation error in field 'src_dir': ['../dcdc'] is not of type 'string'",
@@ -209,6 +209,10 @@ def test_src_tracing_config_positive(make_app: Callable[..., SphinxTestApp], tmp
         (
             Path("doc_test") / "go_basic",
             Path("doc_test") / "go_basic",
+        ),
+        (
+            Path("doc_test") / "vhdl_basic",
+            Path("doc_test") / "vhdl_basic",
         ),
     ],
 )

@@ -59,7 +59,7 @@ def test_source_directory_is_worker_local(
                 "comment_type": "java",
             },
             [
-                "Schema validation error in field 'comment_type': 'java' is not one of ['bash', 'cpp', 'cs', 'go', 'jsonc', 'python', 'rust', 'yaml']"
+                "Schema validation error in field 'comment_type': 'java' is not one of ['bash', 'cpp', 'cs', 'go', 'jsonc', 'python', 'rust', 'vhdl', 'yaml']"
             ],
         ),
         (
@@ -193,6 +193,7 @@ def create_source_files(tmp_path: Path) -> Path:
         ("cpp", len(COMMENT_FILETYPE["cpp"])),
         ("python", len(COMMENT_FILETYPE["python"])),
         ("bash", len(COMMENT_FILETYPE["bash"])),
+        ("vhdl", len(COMMENT_FILETYPE["vhdl"])),
     ],
 )
 def test_comment_filetype(
