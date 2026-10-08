@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791447148190,
+  "lastUpdate": 1791449804068,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -23436,6 +23436,42 @@ window.BENCHMARK_DATA = {
             "value": 54.72657598399999,
             "unit": "s",
             "extra": "Commit: 1bba2ea10ab69876f07f2642e6150308af580841\nBranch: master\nTime: 2026-10-08T10:10:29+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7be5bf53c5d356a3d771a05759ccc8b28ff7ce44",
+          "message": "🐛 sphinx-needs: an empty need.FIELD selector fails the call, as an unset one does (#2136)\n\n## What\n\nPackage: `packages/sphinx-needs`.\n\nA `need.<field>` argument that selects what a built-in reads (`copy`'s\nid, field and filter; `calc_sum`'s field,\nfilter and `links_only`; `check_linked_values`' field and filter;\n`links_from_content`'s id and filter) now fails the\ncall when its field holds `\"\"`, exactly as it already did when the field\nholds `None`:\n\n```rst\n.. req:: Uses a selector its need does not set\n   :id: E_COPY\n   :summary: [[copy(\"title\", need.src)]]\n```\n\nWith `src` an untyped extra option (`needs_extra_options = [\"src\"]`)\nthat the need does not set, `src` is `\"\"`, and the\ncall ran as `copy(\"title\", \"\")`, which copies the need's **own** title,\nsilently. It is now one\n`needs.dynamic_function` warning, `Error while applying need to function\n'copy': need.src selects what the call reads,\nand is not set`, and the field keeps its placeholder (empty here). The\nsame holds for the call in an `:ndf:` role or a\nneedtable `:style_row:` (they share the check), and the dependency order\nreads nothing for such a call. A `need.<field>`\nin a value argument (`check_linked_values`' `result` or `search_value`,\n`copy`'s `upper`) still passes `\"\"` on.\n\n- `functions/order.py`: one `_UNSET = (None, \"\")` used by\n`unset_selector()` (the run-time check of the field, the role\n  and `:style_row:`) and by the order's own reading of a selector.\n- Docs: `dynamic_functions.rst`'s `need.<field>` paragraph says \"unset\nor empty\" (and that a value argument is `None`,\nor `\"\"` for an untyped extra option, when unset); the 9.0.0 entry of the\nchangelog likewise, in the *Unreleased*\nentry \"Dynamic functions and variants are computed in dependency order\",\nwhose cite list gains this pull request.\n\n## Why\n\n#2064 (derived values), #2134 (phase 1, merged), which made an unset\n(`None`) selector fail the call instead of\nletting `copy` fall back to the need's own field. ubCode's review of its\nown phase 1 found that an untyped extra option\nleft unset holds `\"\"`, not `None`, so the same silent fallback remained\nfor the most common kind of extra option, and\n`links_only=need.src` summed every need instead of the need's links.\nBoth tools now treat `\"\"` in a selector as unset,\nwith the same finding.\n\n## Tests\n\n- `test_an_empty_need_attribute_selector_fails_the_call`\n(`tests/test_dynamic_functions_strata.py`): an untyped extra\noption left unset in `copy`'s id, `calc_sum`'s field,\n`check_linked_values`' field and `links_only`, each `None` and\none `needs.dynamic_function` naming `need.src`; the `:ndf:` role renders\n`??`; `upper=need.src` is a value and copies\nnormally. Red before the change: `{'E_COPY': \"copy's need\"} !=\n{'E_COPY': None}` (the own-field copy) and\n  `{'E_ONLY': 2.0} != {'E_ONLY': None}` (every need summed).\n- `tests/test_functions_order.py`: two rows of the edge table, an empty\nselector of `copy` and an empty `links_only`,\nread nothing. Red before: `{'deps': [('RD', 'summary')]} != {'deps':\n[]}` and\n`{'columns': [(Column(field='hours', candidates=None), None)]} !=\n{'columns': []}`.\n\nThe full suite (`uv run poe test-needs -n 4 tests/`) passes but for the\n50 graphviz renders that need `dot` (the same 50\non master on a machine without it).\n\n## Checklist\n\n- [x] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\nBuilt in an orchestrated session from ubCode's review finding and the\ncode; the tests were written first and shown\n  red, and every line was read.\n- [x] I ran the package's tests (`uv run poe test-needs`) and they pass\n(the graphviz renders excepted on a machine\n  without `dot`, identically to master).\n- [x] Documentation is updated where behaviour or options change\n(`docs/dynamic_functions.rst`).\n- [x] The package's `docs/changelog.rst` has the change, in the existing\n*Unreleased* derived-values entry (its\n  `:pr:` cite now names this number).\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.\n\nRefs #2064.",
+          "timestamp": "2026-10-08T10:55:16+02:00",
+          "tree_id": "3478561e635e7ce39d9dfab8f4e74c759c31e094",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/7be5bf53c5d356a3d771a05759ccc8b28ff7ce44"
+        },
+        "date": 1791449796454,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.10850234399993042,
+            "unit": "s",
+            "extra": "Commit: 7be5bf53c5d356a3d771a05759ccc8b28ff7ce44\nBranch: master\nTime: 2026-10-08T10:55:16+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 59.28582742099991,
+            "unit": "s",
+            "extra": "Commit: 7be5bf53c5d356a3d771a05759ccc8b28ff7ce44\nBranch: master\nTime: 2026-10-08T10:55:16+02:00"
           }
         ]
       }
