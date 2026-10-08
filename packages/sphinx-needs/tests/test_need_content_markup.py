@@ -634,7 +634,7 @@ CONTROL_MD = [
     ],
     indirect=True,
 )
-def test_without_content_markup_the_page_parser_parses_the_content(
+def test_without_markup_content_the_page_parser_parses_the_content(
     test_app: SphinxTestApp,
 ):
     """(h): content that is no ``MarkupContent`` takes the existing path, a need directive's."""
@@ -696,7 +696,7 @@ ANCHOR_MD = [
     ],
     indirect=True,
 )
-def test_without_content_source_and_the_refusals(test_app: SphinxTestApp):
+def test_without_a_source_and_the_refusals(test_app: SphinxTestApp):
     """(f): no ``source``: the content's lines are the page's, as a directive's own.
 
     And what ``add_need`` refuses, before it records anything: a ``markup`` the project
@@ -1004,7 +1004,7 @@ JINJA_MD = [
 def test_rendered_content_is_parsed_in_its_markup_at_the_need(test_app: SphinxTestApp):
     """Content rendered by Jinja is in no file: it is anchored at the need's own line.
 
-    ``content_source`` is ignored for it, as for a template's content. In both pages,
+    The ``MarkupContent``'s ``source`` is ignored for it, as for a template's content. In both pages,
     the rendered text's lines count from the line of the directive that made the need.
     """
     app = test_app
@@ -1247,7 +1247,7 @@ def prolog_records(suffix: str) -> str:
 def test_content_anchored_in_the_page_behind_rst_prolog_and_an_include(
     test_app: SphinxTestApp,
 ):
-    """Content without ``content_source`` reports the page's lines, as a need directive's.
+    """Content without a ``source`` reports the page's lines, as a need directive's.
 
     ``rst_prolog`` and ``.. include::`` shift the parser's line count away from the
     file's; the anchor maps the parser's line back, so every message here names the
