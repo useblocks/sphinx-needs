@@ -83,11 +83,17 @@ class TestSphinxBridge:
         _write(tmp_path / "docs", "[test_reports]\nsuite_id_length = 'four'\n")
 
         from sphinx.application import Sphinx
+        from sphinx.util.docutils import docutils_namespace
 
         from sphinx_test_reports.exceptions import InvalidConfigurationError
 
         docs = tmp_path / "docs"
-        with pytest.raises(InvalidConfigurationError, match="suite_id_length"):
+        # Inside a docutils namespace: a bare `Sphinx(...)` leaves its directives,
+        # roles and nodes registered for every later test of the worker (#2052).
+        with (
+            docutils_namespace(),
+            pytest.raises(InvalidConfigurationError, match="suite_id_length"),
+        ):
             Sphinx(
                 srcdir=docs,
                 confdir=docs,
@@ -104,10 +110,16 @@ class TestSphinxBridge:
         _not_utf8(docs)
 
         from sphinx.application import Sphinx
+        from sphinx.util.docutils import docutils_namespace
 
         from sphinx_test_reports.exceptions import InvalidConfigurationError
 
-        with pytest.raises(InvalidConfigurationError, match="not valid UTF-8 TOML"):
+        # Inside a docutils namespace: a bare `Sphinx(...)` leaves its directives,
+        # roles and nodes registered for every later test of the worker (#2052).
+        with (
+            docutils_namespace(),
+            pytest.raises(InvalidConfigurationError, match="not valid UTF-8 TOML"),
+        ):
             Sphinx(
                 srcdir=docs,
                 confdir=docs,
@@ -125,19 +137,24 @@ def _build(srcdir, **kwargs):
     informational output as well; it is discarded by default.
     """
     from sphinx.application import Sphinx
+    from sphinx.util.docutils import docutils_namespace
 
     kwargs.setdefault("status", None)
     warnings = StringIO()
-    app = Sphinx(
-        srcdir=srcdir,
-        confdir=srcdir,
-        outdir=srcdir / "_build" / "html",
-        doctreedir=srcdir / "_build" / "doctrees",
-        buildername="html",
-        freshenv=True,
-        warning=warnings,
-        **kwargs,
-    )
+    # Inside a docutils namespace, so that the directives, roles and nodes the app
+    # registers are taken back afterwards (#2052). The callers read `app.config` and the
+    # warnings only; none of them builds.
+    with docutils_namespace():
+        app = Sphinx(
+            srcdir=srcdir,
+            confdir=srcdir,
+            outdir=srcdir / "_build" / "html",
+            doctreedir=srcdir / "_build" / "doctrees",
+            buildername="html",
+            freshenv=True,
+            warning=warnings,
+            **kwargs,
+        )
     return app, warnings.getvalue()
 
 

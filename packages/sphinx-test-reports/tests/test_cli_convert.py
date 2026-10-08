@@ -60,6 +60,7 @@ class TestImportIntoABuild:
         from shutil import copytree
 
         from sphinx.application import Sphinx
+        from sphinx.util.docutils import docutils_namespace
 
         docs = tmp_path / "docs"
         copytree(Path(__file__).parent / "doc_test" / "basic_doc", docs)
@@ -81,17 +82,21 @@ class TestImportIntoABuild:
         assert code == 0
 
         warnings = StringIO()
-        app = Sphinx(
-            srcdir=docs,
-            confdir=docs,
-            outdir=docs / "_build" / "html",
-            doctreedir=docs / "_build" / "doctrees",
-            buildername="html",
-            freshenv=True,
-            status=None,
-            warning=warnings,
-        )
-        app.build()
+        # Inside a docutils namespace, so that the directives, roles and nodes this
+        # app registers are taken back afterwards: a bare `Sphinx(...)` leaves them
+        # registered for every later test of the worker (#2052, fix round 2).
+        with docutils_namespace():
+            app = Sphinx(
+                srcdir=docs,
+                confdir=docs,
+                outdir=docs / "_build" / "html",
+                doctreedir=docs / "_build" / "doctrees",
+                buildername="html",
+                freshenv=True,
+                status=None,
+                warning=warnings,
+            )
+            app.build()
         text = warnings.getvalue()
         assert "Unknown keys" not in text, text
         assert "could not be imported" not in text, text
@@ -112,6 +117,7 @@ class TestImportIntoABuild:
         from shutil import copytree
 
         from sphinx.application import Sphinx
+        from sphinx.util.docutils import docutils_namespace
 
         docs = tmp_path / "docs"
         copytree(Path(__file__).parent / "doc_test" / "basic_doc", docs)
@@ -130,17 +136,18 @@ class TestImportIntoABuild:
         code, data = _convert(docs, "--config", str(config), xml=GTEST_XML)
         assert code == 0
 
-        app = Sphinx(
-            srcdir=docs,
-            confdir=docs,
-            outdir=docs / "_build" / "html",
-            doctreedir=docs / "_build" / "doctrees",
-            buildername="html",
-            freshenv=True,
-            status=None,
-            warning=None,
-        )
-        app.build()
+        with docutils_namespace():  # see the test above
+            app = Sphinx(
+                srcdir=docs,
+                confdir=docs,
+                outdir=docs / "_build" / "html",
+                doctreedir=docs / "_build" / "doctrees",
+                buildername="html",
+                freshenv=True,
+                status=None,
+                warning=None,
+            )
+            app.build()
         built = json.loads(
             (docs / "_build" / "html" / "needs.json").read_text(encoding="utf-8")
         )
