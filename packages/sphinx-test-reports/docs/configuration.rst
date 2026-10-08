@@ -558,7 +558,7 @@ so one name silences the same problem in both tools.
    The report exists and cannot be read:
    it is not well-formed XML,
    a numeric attribute of a ``<testsuite>`` or ``<testcase>`` (``tests``, ``time``, ``line``, ...) is not a number,
-   a JSON report is not valid JSON, not UTF-8 or not a list of test suites,
+   a JSON report is not valid JSON, not UTF-8, not a list of test suites, or holds a suite that is not an object,
    or ``test-results`` is given a ``.json`` file.
 
 ``test_reports.unknown_key``, ``test_reports.missing_config``

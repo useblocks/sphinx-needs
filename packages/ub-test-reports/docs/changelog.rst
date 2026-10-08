@@ -48,11 +48,14 @@ Fixed
 
 - 🐛 The JSON parser raises the same ``ReportReadError`` for a report that is not valid
   JSON (``<path> (line 1, column 11): Expecting value``), not UTF-8 (``<path> is not valid
-  UTF-8 (invalid continuation byte at byte 14)``), or whose top level is not a list of test
-  suites (``<path>: the JSON report is not a list of test suites (got an object)``). The
-  first two escaped as ``json.JSONDecodeError`` / ``UnicodeDecodeError``; the third was
-  walked as if it were suites, every field its default. The ``test-reports`` converter
-  reads JUnit XML only and is unchanged by this.
+  UTF-8 (invalid continuation byte at byte 14)``), whose top level is not a list of test
+  suites (``<path>: the JSON report is not a list of test suites (got an object)``), or one
+  of whose suites is not an object (``<path>: test suite 0 is not an object (got a
+  number)``). The first two escaped as ``json.JSONDecodeError`` / ``UnicodeDecodeError``;
+  the other two were walked as if they were suites, every field its default. A JSON report
+  saved with a UTF-8 byte-order mark is read now (it was refused, ``Unexpected UTF-8
+  BOM``), as ``test-env`` reads its file. The ``test-reports`` converter reads JUnit XML
+  only and is unchanged by this.
   `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
   `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
 

@@ -226,7 +226,8 @@ Fixed
 - 🐛 ``test-suite`` and ``test-case`` on a report that does not exist no longer fail with
   ``TypeError: 'NoneType' object is not iterable``, and none of the three need directives
   stops the build on a report it cannot read -- a JUnit XML report, or a JSON one that is
-  not valid JSON, not UTF-8 or not a list of test suites (``json.decoder.JSONDecodeError``
+  not valid JSON, not UTF-8, not a list of test suites or holds a suite that is not an
+  object (``json.decoder.JSONDecodeError``
   and ``ValueError: invalid literal for int() with base 10: 'unknown'`` before): each warns
   once, located on the directive
   (``test_reports.report_missing`` / ``test_reports.report_unreadable``), shows the error
