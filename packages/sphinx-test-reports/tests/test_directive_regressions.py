@@ -6,14 +6,13 @@ covered, which is why nothing caught any of them. The fourth is the positive con
 the third.
 """
 
+import io
 import re
 import warnings
 from pathlib import Path
 
 import pytest
 from docutils import nodes
-
-from sphinx_test_reports.exceptions import TestReportFileNotSetError
 
 #: docutils' deprecation for ``Text()``'s second argument. ONE constant, shared by the fence in
 #: the missing-file test and by its positive control, so that the two cannot drift apart. It is
@@ -50,21 +49,34 @@ def test_raw_env_report_without_a_data_option_builds(test_app):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/test_file_no_file"}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/test_file_no_file",
+            "warning": io.StringIO(),
+        }
+    ],
     indirect=True,
 )
-def test_a_test_file_without_a_file_option_raises_a_readable_error(test_app):
+def test_a_test_file_without_a_file_option_warns_and_shows_a_box(test_app):
     """A ``test-file`` written with no ``:file:`` used to crash with ``TypeError``.
 
     ``prepare_basic_options`` sliced ``self.options.get("file")`` -- ``None`` when the
     option is absent -- before the guard in ``load_test_file`` could run, so that guard was
     dead code and the build died on ``TypeError: 'NoneType' object is not subscriptable``.
-    Measured: that is exactly what ``app.build()`` raised on the published code, and it
-    reaches this call unwrapped, as does the error below. Every existing ``test-file``
-    fixture carried a ``:file:``.
+    The guard then raised ``TestReportFileNotSetError``, which ended the build too. Since
+    #2052 it is a located ``test_reports.option_missing`` warning with the same text, and an
+    error box where the need would have been; the build goes on.
     """
-    with pytest.raises(TestReportFileNotSetError, match="Option test_file must be set"):
-        test_app.build()
+    test_app.build()
+
+    assert (
+        "index.rst:4: WARNING: Option test_file must be set."
+        in test_app._warning.getvalue()
+    )
+    html = Path(test_app.outdir / "index.html").read_text(encoding="utf-8")
+    assert "Option test_file must be set." in html
+    assert "TESTFILE_NO_FILE" not in html
 
 
 @pytest.mark.parametrize(

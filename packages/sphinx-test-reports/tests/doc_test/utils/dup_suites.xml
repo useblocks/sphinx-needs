@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Two top-level suites of ONE name, each with a case of its own (#2052): their ids are
+     equal at any tr_suite_id_length; the first is expanded, the second is not. -->
+<testsuites>
+  <testsuite name="S" tests="1" errors="0" failures="0" skipped="0" time="0.1">
+    <testcase classname="C" name="a" time="0.1"/>
+  </testsuite>
+  <testsuite name="S" tests="1" errors="0" failures="0" skipped="0" time="0.1">
+    <testcase classname="C" name="b" time="0.1"/>
+  </testsuite>
+</testsuites>

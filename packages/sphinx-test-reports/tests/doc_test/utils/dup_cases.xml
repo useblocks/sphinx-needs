@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- One suite holding the case C.t twice (#2052): equal ids under either id scheme. -->
+<testsuite name="S" tests="2" errors="0" failures="0" skipped="0" time="0.2">
+  <testcase classname="C" name="t" time="0.1"/>
+  <testcase classname="C" name="t" time="0.1"/>
+</testsuite>
