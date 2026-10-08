@@ -165,7 +165,8 @@ class TestIngestRecords(SphinxDirective):
                 )
             except InvalidNeedException as err:
                 logger.warning(
-                    f"Need {record.get('id')!r} could not be imported: {err.message}",
+                    f"Need {record.get('id')!r} could not be imported ({err.type}): "
+                    f"{err.message}",
                     type="needs",
                     subtype="test_ingest_records",
                     location=self.get_location(),
@@ -840,7 +841,8 @@ def test_ingest_need_record(test_app: SphinxTestApp):
         [
             f"<srcdir>/{src('r.c')}:9: ERROR: Unknown directive type "
             '"nosuchdirective".\n\n.. nosuchdirective:: [docutils]',
-            "<srcdir>/index.rst:7: WARNING: Need 'SPEC_REC_BAD' could not be imported: "
+            "<srcdir>/index.rst:7: WARNING: Need 'SPEC_REC_BAD' could not be imported "
+            "(invalid_type): "
             "Unknown need type 'nosuchtype'. [needs.test_ingest_records]",
             # the failed record's key reaches the ``unknown_keys`` set; the returned
             # sets are those of the needs created
@@ -1518,3 +1520,47 @@ def test_a_malformed_markup_content_is_refused_where_it_is_made(
     with pytest.raises(exception) as excinfo:
         MarkupContent("Text.", **kwargs)
     assert str(excinfo.value) == message
+
+
+SOURCE_WITHOUT_MARKUP_RECORDS = [
+    {
+        "need": {"type": "spec", "title": "No markup", "id": "SPEC_NO_MARKUP"},
+        "source": {"path": "src/n.c", "line": 3},
+    },
+    {"need": {"type": "spec", "title": "Fine", "id": "SPEC_FINE"}},
+]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF),
+                (Path("needcontent_ext.py"), DRIVER),
+                (
+                    Path("index.rst"),
+                    "Records\n=======\n\n.. test-ingest-records:: r.json\n",
+                ),
+                (Path("r.json"), json.dumps(SOURCE_WITHOUT_MARKUP_RECORDS)),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_ingest_need_record_refuses_a_source_without_a_markup(test_app: SphinxTestApp):
+    """``ingest_need_record(content_source=...)`` without ``content_markup`` raises.
+
+    Its two arguments can be given apart (a ``MarkupContent`` cannot): the source alone
+    is refused as an ``InvalidNeedException`` of type ``content_markup``, before any
+    need is recorded, and the next record is still created.
+    """
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:4: WARNING: Need 'SPEC_NO_MARKUP' could not be imported "
+        "(content_markup): content_source is only meaningful together with "
+        "content_markup. [needs.test_ingest_records]"
+    ]
+    assert sorted(needs_by_id(app)) == ["SPEC_FINE"]
