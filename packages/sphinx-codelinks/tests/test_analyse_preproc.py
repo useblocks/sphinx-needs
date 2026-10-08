@@ -340,3 +340,68 @@ def test_libclang_extracts_c_extension_header_via_cpp_language():
     ids = {n.need["id"] for n in analyse.oneline_needs}
     assert "IMPL_ALWAYS" in ids  # the .cpp translation unit extracts
     assert "IMPL_HDR_PLAIN" in ids  # the .h header extracts too (parsed as C++)
+
+
+#: a marker after code and a non-ASCII character, and a reference on a block's second
+#: row; a one-row block-comment need, a need on a block's closing row, a form feed
+#: before a reference, and a marker with no id
+COLUMNS_SOURCE = (
+    "int x = 1; /* \u00e9 */ // @After \u00e9, IMPL_COL, impl\n"
+    "  /*\n"
+    "   * @need-ids:   REQ_COL\n"
+    "   */\n"
+    "void f() {}\n"
+    "/* @Row one, IMPL_R1, impl */\n"
+    "int t; /* x\n"
+    "   @Row two, IMPL_R2, impl */\n"
+    "int z; /* a\f @need-ids: FF1 */\n"
+    "/* @need-ids: */\n"
+    "void g() {}\n"
+)
+
+
+@pytest.mark.parametrize("newline", ["\n", "\r\n", "\r"], ids=["lf", "crlf", "cr"])
+def test_libclang_columns_are_the_tree_sitter_columns(tmp_path, newline):
+    """Both engines report a marker's physical column, in characters, whatever the
+    line endings."""
+    src = tmp_path / "columns.cpp"
+    src.write_bytes(COLUMNS_SOURCE.replace("\n", newline).encode("utf-8"))
+
+    def spans(preprocessor):
+        analyse = SourceAnalyse(
+            SourceAnalyseConfig(
+                src_files=[src],
+                src_dir=tmp_path,
+                get_need_id_refs=True,
+                get_oneline_needs=True,
+                get_multiline_needs=False,
+                preprocessor=preprocessor,
+            )
+        )
+        analyse.git_remote_url = None
+        analyse.git_commit_rev = None
+        analyse.run(log_summary=False)
+        return [
+            (
+                entry.type.value,
+                entry.source_map,
+                getattr(entry, "need_ids", None) or entry.need["type"],
+            )
+            for entry in analyse.all_marked_content
+        ]
+
+    def span(row: int, start: int, end: int) -> dict:
+        return {
+            "start": {"row": row, "column": start},
+            "end": {"row": row, "column": end},
+        }
+
+    libclang = spans(PreprocessorConfig())
+    assert libclang == spans(None)
+    assert libclang == [
+        ("need", span(0, 23, 46), "impl"),
+        ("need-id-refs", span(2, 18, 25), ["REQ_COL"]),
+        ("need", span(5, 4, 27), "impl"),
+        ("need", span(7, 4, 27), "impl"),
+        ("need-id-refs", span(8, 24, 27), ["FF1"]),
+    ]

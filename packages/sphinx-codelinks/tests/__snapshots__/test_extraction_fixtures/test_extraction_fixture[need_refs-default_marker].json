@@ -5,11 +5,11 @@
     "source_map": {
       "start": {
         "row": 0,
-        "column": 13
+        "column": 14
       },
       "end": {
         "row": 0,
-        "column": 32
+        "column": 33
       }
     },
     "tagged_scope": "void f() {}",

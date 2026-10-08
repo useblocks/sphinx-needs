@@ -5,11 +5,11 @@
     "source_map": {
       "start": {
         "row": 0,
-        "column": 3
+        "column": 15
       },
       "end": {
         "row": 0,
-        "column": 59
+        "column": 71
       }
     },
     "tagged_scope": "key: value",

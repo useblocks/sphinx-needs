@@ -130,7 +130,7 @@ def test_records_from_an_analysis(tmp_path: Path) -> None:
     assert first.marker == "@need-ids:"
     assert first.path == "src/refs.cpp"
     assert first.lineno == 1
-    assert (first.start_column, first.end_column) == (13, 29)
+    assert (first.start_column, first.end_column) == (14, 30)
     assert first.scope == "void implements_a() {}"
     assert first.scope_rows == (2, 2)
     assert first.root == "git"

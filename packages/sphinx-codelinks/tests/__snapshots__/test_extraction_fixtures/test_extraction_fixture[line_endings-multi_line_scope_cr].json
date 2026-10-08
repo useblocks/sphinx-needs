@@ -30,11 +30,11 @@
     "source_map": {
       "start": {
         "row": 7,
-        "column": 8
+        "column": 9
       },
       "end": {
         "row": 7,
-        "column": 20
+        "column": 21
       }
     },
     "tagged_scope": "void g() {}",

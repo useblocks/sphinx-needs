@@ -468,6 +468,42 @@ New and Improved
   emits, so such a marker had no ``tagged_scope``; it now names ``class_specifier`` and
   ``struct_specifier``, the kinds the grammar does emit.
 
+- 🐛 Marker positions are physical (changed output): a one-line need's or ``@need-ids``
+  reference's ``source_map`` columns in ``marked_content.json``, and a reference's
+  ``NeedIdRef`` span, count the characters before it on its line.
+
+  They counted from the start of the comment, so an indented marker, a comment after code,
+  or a comment after a non-ASCII character reported a column that was not its column in the
+  file, to any tool that reads those columns (an editor jumping to a marker, say). In a
+  build, whose links are line-based, only the order in which unknown ids on one line are
+  reported changes. A reference's span also started at the
+  whitespace after ``@need-ids:`` rather than at its first id, and ended that many
+  characters early. A comment's rows are split on line breaks only: a form feed no longer
+  starts a row.
+
+  A block comment's closing ``*/`` is not marker text: ``/* @need-ids: REQ_1 */`` no longer
+  names ``*/`` as a need id, and ``/* @T, IMPL_1, impl */`` no longer has the type
+  ``impl */``. A one-line need on a comment's last line -- the row of a block comment's
+  ``*/`` or of a docstring's closing quotes -- is no longer dropped, and a ``@need-ids:``
+  with no id after it is no longer a reference without ids.
+
+- 🐛 A Python docstring is read as its content, without its prefix letters and quotes: a
+  marker on a one-row docstring, ``"""@T, IMPL_1, impl"""``, no longer has the type
+  ``impl"""`` (`#2154 <https://github.com/useblocks/sphinx-needs/issues/2154>`__).
+
+  A field-shaped tag line in a docstring is no longer a need: with the default ``@`` start
+  sequence, ``@param a: the first, thing`` became a need with the id ``thing``. A line of a
+  docstring -- any bare string statement directly in a module, class or function body --
+  with nothing alphanumeric before its start sequence, which is directly followed by a
+  docstring tag (``@param``, ``@return``, ``@raises`` and the other Epydoc, Doxygen and
+  Sphinx field names) in the Epydoc field shape ``:|[ \t]+[^ \t:]+:`` (``:`` directly, or
+  spaces or tabs, one word without space, tab or ``:``, and ``:``), is now a
+  ``docstring_tag`` warning that says to choose a start sequence the docstrings do not
+  use. ``#`` comments are not affected, nor is a tag word that opens an ordinary marker
+  title, ``@todo fix the parser, IMPL_1, impl``. Whether anything alphanumeric precedes
+  the start sequence is Python's own notion of alphanumeric, which ubCode's differs from
+  on a few characters (combining marks, for one): a documented non-goal.
+
 .. _`release:1.4.0`:
 
 1.4.0

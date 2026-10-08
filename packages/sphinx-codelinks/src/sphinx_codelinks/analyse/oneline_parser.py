@@ -1,7 +1,90 @@
+import re
 from dataclasses import dataclass
 
 from sphinx_codelinks.analyse.models import WarningSubTypeEnum
 from sphinx_codelinks.config import ESCAPE, UNIX_NEWLINE, OneLineCommentStyle
+
+# Tags of Python docstring conventions (Epydoc, Doxygen, Sphinx field names)
+# that a one-line start sequence such as ``@`` also matches: ``@param a: the
+# first, thing`` would otherwise become a need with the id ``thing``.
+PYTHON_DOCSTRING_TAGS = frozenset(
+    {
+        "arg",
+        "argument",
+        "attention",
+        "author",
+        "brief",
+        "bug",
+        "cvar",
+        "deprecated",
+        "details",
+        "except",
+        "exception",
+        "invariant",
+        "ivar",
+        "key",
+        "keyword",
+        "kwarg",
+        "kwparam",
+        "note",
+        "param",
+        "parameter",
+        "post",
+        "pre",
+        "raise",
+        "raises",
+        "retval",
+        "return",
+        "returns",
+        "rtype",
+        "see",
+        "since",
+        "summary",
+        "throw",
+        "throws",
+        "todo",
+        "tparam",
+        "type",
+        "var",
+        "vartype",
+        "version",
+        "warning",
+        "yield",
+        "yields",
+        "ytype",
+    }
+)
+
+
+#: What follows the tag of an Epydoc field: ``:`` directly (``@return: text``), or
+#: spaces or tabs, one word of characters other than space, tab and ``:``, and ``:``,
+#: as in ``@param a: text``. Locale-free: ubCode spells the same.
+_FIELD_SHAPE = re.compile(r":|[ \t]+[^ \t:]+:")
+
+
+def docstring_tag(line: str, start_sequence: str) -> str | None:
+    """The docstring tag a docstring line starts with, if any.
+
+    The line starts with one when, after comment decoration and whitespace (no
+    alphanumeric character), it holds ``start_sequence`` directly followed by a
+    tag of :data:`PYTHON_DOCSTRING_TAGS` in the Epydoc field shape: ``:``
+    directly, or spaces or tabs, one word without space, tab or ``:``, and ``:``.
+    A line such as ``@todo fix it, IMPL_1, impl`` has no field shape and is left to
+    the one-line parser.
+    """
+    if not start_sequence:
+        return None
+    idx = line.find(start_sequence)
+    if idx == -1 or any(char.isalnum() for char in line[:idx]):
+        return None
+    rest = line[idx + len(start_sequence) :]
+    word_end = 0
+    while word_end < len(rest) and rest[word_end].isalpha():
+        word_end += 1
+    tag = rest[:word_end]
+    if tag not in PYTHON_DOCSTRING_TAGS or not _FIELD_SHAPE.match(rest, word_end):
+        return None
+    return tag
 
 
 @dataclass

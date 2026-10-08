@@ -5,11 +5,11 @@
     "source_map": {
       "start": {
         "row": 0,
-        "column": 12
+        "column": 13
       },
       "end": {
         "row": 0,
-        "column": 17
+        "column": 18
       }
     },
     "tagged_scope": "def f():\n    pass",

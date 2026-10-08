@@ -5,11 +5,11 @@
     "source_map": {
       "start": {
         "row": 2,
-        "column": 3
+        "column": 7
       },
       "end": {
         "row": 2,
-        "column": 61
+        "column": 65
       }
     },
     "tagged_scope": "greet() {\n    echo hi\n    # @Inside Function, IMPL_BASH_INSIDE, impl, [REQ_BASH_INSIDE]\n}",

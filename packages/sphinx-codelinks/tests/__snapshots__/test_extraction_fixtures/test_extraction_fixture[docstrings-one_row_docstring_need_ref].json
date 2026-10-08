@@ -1,0 +1,23 @@
+[
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 18
+      },
+      "end": {
+        "row": 1,
+        "column": 25
+      }
+    },
+    "tagged_scope": "def f():\n    \"\"\"@need-ids: REQ_ROW\"\"\"",
+    "need_ids": [
+      "REQ_ROW"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "function_definition"
+  }
+]

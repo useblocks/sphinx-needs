@@ -5,11 +5,11 @@
     "source_map": {
       "start": {
         "row": 2,
-        "column": 4
+        "column": 8
       },
       "end": {
         "row": 2,
-        "column": 62
+        "column": 66
       }
     },
     "tagged_scope": "fn outer() {\n    let x = 1;\n    // @Inside Function, IMPL_RUST_INSIDE, impl, [REQ_RUST_INSIDE]\n}",

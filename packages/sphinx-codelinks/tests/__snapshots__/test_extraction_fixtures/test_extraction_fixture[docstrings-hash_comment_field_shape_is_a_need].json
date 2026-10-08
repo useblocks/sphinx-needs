@@ -1,0 +1,25 @@
+[
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 7
+      },
+      "end": {
+        "row": 1,
+        "column": 34
+      }
+    },
+    "tagged_scope": "def f(a):\n    # @param a: x, IMPL_HASH, impl\n    pass",
+    "need": {
+      "title": "param a: x",
+      "id": "IMPL_HASH",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

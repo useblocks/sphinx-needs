@@ -4,6 +4,7 @@ import pytest
 from sphinx_codelinks.analyse.oneline_parser import (
     OnelineParserInvalidWarning,
     WarningSubTypeEnum,
+    docstring_tag,
     oneline_parser,
 )
 from sphinx_codelinks.config import ESCAPE, UNIX_NEWLINE, OneLineCommentStyle
@@ -681,3 +682,51 @@ def test_a_non_ascii_start_sequence_of_one_character_is_one_character() -> None:
     res = oneline_parser(f"// §a title, IMPL_SECT{UNIX_NEWLINE}", style)
     assert isinstance(res, dict)
     assert res["id"] == "IMPL_SECT"
+
+
+@pytest.mark.parametrize(
+    "line, expected",
+    [
+        pytest.param("@param a: the first, thing", "param", id="param_field"),
+        pytest.param("@return: nothing", "return", id="return_field"),
+        pytest.param("@raise ValueError: on bad input", "raise", id="raise_field"),
+        pytest.param("@type x_1: int", "type", id="type_field"),
+        pytest.param("@param a:", "param", id="field_empty_text"),
+        pytest.param('"""@return: nothing', "return", id="opening_quotes"),
+        pytest.param("@todo fix the parser, IMPL_DS, impl", None, id="todo_title"),
+        pytest.param(
+            '"""@todo fix the parser, IMPL_DS, impl"""',
+            None,
+            id="todo_title_opening_quotes",
+        ),
+        pytest.param("@param a the first, thing", None, id="doxygen_comma_form"),
+        pytest.param("@return", None, id="bare_tag"),
+        pytest.param("@param a b: text", None, id="two_words_before_colon"),
+        pytest.param("@param a : text", None, id="space_before_colon"),
+        pytest.param(
+            "@Todo fix the parser, IMPL_TODO2, impl", None, id="case_sensitive"
+        ),
+        pytest.param("@params a: text", None, id="not_a_tag"),
+        pytest.param("see @param a: text", None, id="text_before_start"),
+        # the field word is any run of characters other than space, tab and ``:``,
+        # after spaces or tabs only: ``:|[ \t]+[^ \t:]+:``, locale-free
+        pytest.param("@param नाम: text", "param", id="non_ascii_word_devanagari"),
+        pytest.param("@param ä: text", "param", id="non_ascii_word_latin"),
+        pytest.param("@param *args: text", "param", id="star_args_word"),
+        pytest.param("@type a.b: int", "type", id="dotted_word"),
+        pytest.param("@param\ta: text", "param", id="tab_separator"),
+        pytest.param("@param\x1ca: text", None, id="unit_separator_is_not_a_space"),
+        pytest.param(
+            "@param\u3000a: text", None, id="ideographic_space_is_not_a_space"
+        ),
+        pytest.param("@return : text", None, id="empty_word_before_colon"),
+        pytest.param("@param : text", None, id="empty_word_after_param"),
+        pytest.param("@param1: text", None, id="digit_glued_to_tag"),
+        pytest.param("@return_x: text", None, id="underscore_glued_to_tag"),
+    ],
+)
+def test_docstring_tag_field_shape(line: str, expected: str | None) -> None:
+    """A docstring line is a ``docstring_tag`` only when a listed tag right after the
+    start sequence has the Epydoc field shape: ``:`` directly, or spaces or tabs, one
+    word without space, tab or ``:``, and ``:``. The same table as ubCode's."""
+    assert docstring_tag(line, "@") == expected

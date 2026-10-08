@@ -1,0 +1,25 @@
+[
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 3
+      },
+      "end": {
+        "row": 0,
+        "column": 39
+      }
+    },
+    "tagged_scope": "def f():\n    pass",
+    "need": {
+      "title": "todo fix the parser",
+      "id": "IMPL_TODO",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

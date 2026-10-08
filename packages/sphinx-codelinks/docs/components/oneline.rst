@@ -257,7 +257,19 @@ reported as one of these kinds, the kind leading the message:
 - ``not_start_or_end_with_square_brackets`` -- a ``list[str]`` field whose brackets are not
   its first and last characters, such as ``[REQ_1];``;
 - ``newline_in_field`` -- a field holding a newline (not produced from a source file,
-  which is parsed one line at a time).
+  which is parsed one line at a time);
+- ``docstring_tag`` -- a line of a Python docstring (any bare string statement directly in
+  a module, class or function body; never a ``#`` comment) with nothing alphanumeric before
+  its start sequence, which is directly followed by a docstring tag such as ``param``,
+  ``return`` or ``raises`` in the Epydoc field shape ``:|[ \t]+[^ \t:]+:`` -- ``:``
+  directly, or spaces or tabs, one word without space, tab or ``:``, and ``:``
+  (``@return: text``, ``@param a: text``):
+  ``'@param' is a docstring tag, not a one-line need; use a start sequence that docstrings
+  do not contain``. A start sequence the docstrings also use cannot tell a need from
+  documentation, so choose another one, ``[[`` for example. Whether anything alphanumeric
+  precedes the start sequence is Python's own notion of alphanumeric (``str.isalnum``),
+  which ubCode's differs from on a few characters, combining marks for one: a documented
+  non-goal.
 
 A line with nothing between the start and end sequences is not a marker. A marker that
 fits the style but whose need Sphinx-Needs refuses -- an id that does not match

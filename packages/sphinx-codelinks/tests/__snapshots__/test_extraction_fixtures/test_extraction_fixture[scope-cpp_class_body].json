@@ -5,11 +5,11 @@
     "source_map": {
       "start": {
         "row": 1,
-        "column": 4
+        "column": 8
       },
       "end": {
         "row": 1,
-        "column": 58
+        "column": 62
       }
     },
     "tagged_scope": "class Widget {\n    // @Owns the buffer, IMPL_CPP_CLASS, impl, [REQ_CPP_CLASS]\n    int buf_;\n}",

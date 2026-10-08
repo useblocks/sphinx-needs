@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 5
+      },
+      "end": {
+        "row": 2,
+        "column": 41
+      }
+    },
+    "tagged_scope": "def f():\n    \"\"\"\n    @Doc tuple, IMPL_TUPLE, impl, [REQ_1]\n    \"\"\", \"second\"",
+    "need": {
+      "title": "Doc tuple",
+      "id": "IMPL_TUPLE",
+      "type": "impl",
+      "links": [
+        "REQ_1"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

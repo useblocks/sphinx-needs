@@ -1,0 +1,46 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 39
+      },
+      "end": {
+        "row": 0,
+        "column": 44
+      }
+    },
+    "tagged_scope": "void f() {}",
+    "need_ids": [
+      "REQ_2"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 5
+      },
+      "end": {
+        "row": 0,
+        "column": 25
+      }
+    },
+    "tagged_scope": "void f() {}",
+    "need": {
+      "id": "IMPL_PAIR",
+      "title": "Pair need",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

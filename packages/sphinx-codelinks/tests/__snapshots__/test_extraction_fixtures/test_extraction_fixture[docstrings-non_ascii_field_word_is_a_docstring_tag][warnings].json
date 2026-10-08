@@ -1,0 +1,9 @@
+[
+  {
+    "file_path": "case.py",
+    "lineno": 3,
+    "msg": "'@param' is a docstring tag, not a one-line need; use a start sequence that docstrings do not contain",
+    "type": "need",
+    "sub_type": "docstring_tag"
+  }
+]

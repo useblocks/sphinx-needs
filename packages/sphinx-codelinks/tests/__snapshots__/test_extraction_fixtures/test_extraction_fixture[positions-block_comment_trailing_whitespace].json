@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 4
+      },
+      "end": {
+        "row": 1,
+        "column": 46
+      }
+    },
+    "tagged_scope": "void f() {}",
+    "need": {
+      "title": "Block marker",
+      "id": "IMPL_BLOCK",
+      "type": "impl",
+      "links": [
+        "REQ_1"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

@@ -5,11 +5,11 @@
     "source_map": {
       "start": {
         "row": 2,
-        "column": 3
+        "column": 7
       },
       "end": {
         "row": 2,
-        "column": 57
+        "column": 61
       }
     },
     "tagged_scope": "def outer():\n    x = 1\n    # @Inside Function, IMPL_PY_INSIDE, impl, [REQ_PY_INSIDE]",

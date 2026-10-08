@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 15
+      },
+      "end": {
+        "row": 0,
+        "column": 52
+      }
+    },
+    "tagged_scope": "void f() {}",
+    "need": {
+      "title": "After code",
+      "id": "IMPL_AFTER",
+      "type": "impl",
+      "links": [
+        "REQ_1"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

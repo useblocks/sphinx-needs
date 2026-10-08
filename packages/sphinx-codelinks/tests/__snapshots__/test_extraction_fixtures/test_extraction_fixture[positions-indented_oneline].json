@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 8
+      },
+      "end": {
+        "row": 1,
+        "column": 44
+      }
+    },
+    "tagged_scope": "void f() {\n    // @Indented, IMPL_INDENT, impl, [REQ_1]\n    return;\n}",
+    "need": {
+      "title": "Indented",
+      "id": "IMPL_INDENT",
+      "type": "impl",
+      "links": [
+        "REQ_1"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

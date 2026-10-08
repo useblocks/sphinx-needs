@@ -1,0 +1,25 @@
+[
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 5
+      },
+      "end": {
+        "row": 2,
+        "column": 34
+      }
+    },
+    "tagged_scope": "def f():\n    \"\"\"\n    @return : text, IMPL_RET, impl\n    \"\"\"",
+    "need": {
+      "title": "return : text",
+      "id": "IMPL_RET",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

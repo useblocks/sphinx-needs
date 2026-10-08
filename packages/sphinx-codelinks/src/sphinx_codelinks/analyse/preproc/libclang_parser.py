@@ -25,9 +25,11 @@ class LibclangComment:
 
     is_libclang = True
 
-    def __init__(self, text: bytes, row: int) -> None:
+    def __init__(self, text: bytes, row: int, column: int = 0) -> None:
         self.text: bytes = text
         self.start_point = _Point(row)
+        # The column, in characters, at which the comment starts on its line.
+        self.column: int = column
 
 
 def _group_skipped(skipped: list[SkippedRange]) -> dict[str, list[tuple[int, int]]]:
@@ -98,5 +100,8 @@ def extract_active_comments(file_path: Path, args: list[str]) -> list[LibclangCo
             "utf-8", errors="replace"
         )
         spelling = text.replace("\r\n", "\n").replace("\r", "\n")
-        out.append(LibclangComment(spelling.encode("utf-8"), loc.line - 1))
+        start = tok.extent.start.offset
+        line_start = max(raw.rfind(b"\n", 0, start), raw.rfind(b"\r", 0, start)) + 1
+        column = len(raw[line_start:start].decode("utf-8", errors="replace"))
+        out.append(LibclangComment(spelling.encode("utf-8"), loc.line - 1, column))
     return out

@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 5
+      },
+      "end": {
+        "row": 2,
+        "column": 43
+      }
+    },
+    "tagged_scope": "def f():\n    \"\"\"\n    @Doc marker, IMPL_DOC, impl, [REQ_1]   \n    \"\"\"",
+    "need": {
+      "title": "Doc marker",
+      "id": "IMPL_DOC",
+      "type": "impl",
+      "links": [
+        "REQ_1"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

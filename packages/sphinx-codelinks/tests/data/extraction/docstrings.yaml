@@ -1,0 +1,138 @@
+# Python docstrings.
+#
+# A docstring is any bare string statement directly in a module, class or function
+# body. It is scanned like a comment, as the content of each of its strings: without
+# the prefix letters and the quotes, its columns counted from where that content
+# starts; the last line counts as terminated, like every other.
+#
+# A line warns ``docstring_tag`` (and yields no need) only when all of these hold: it
+# is inside a Python docstring (never a ``#`` comment, never another language); nothing
+# alphanumeric precedes the one-line start sequence on the line; after the start
+# sequence comes a tag of the shared list (``param``, ``return``, ``todo``, ...); and the
+# tag has the Epydoc field shape ``:|[ \t]+[^ \t:]+:`` -- ``:`` directly
+# (``@return: text``), or spaces or tabs, one word of characters other than space, tab
+# and ``:``, and ``:`` (``@param a: text``, ``@raise Exc: text``, ``@param ä: text``).
+# Every other line goes to the one-line parser.
+#
+# Whether anything alphanumeric precedes the start sequence is each tool's own notion
+# of alphanumeric (Python's ``str.isalnum``, Rust's ``char::is_alphanumeric``), which
+# differ on a few characters, combining marks for one: a documented non-goal, with no
+# shared case.
+
+docstring_trailing_whitespace:
+  # Whitespace after the marker inside a docstring.
+  lang: python
+  config: default
+  source: "def f():\n    \"\"\"\n    @Doc marker, IMPL_DOC, impl, [REQ_1]   \n    \"\"\"\n"
+
+docstring_with_second_string:
+  # The docstring statement holds a second string after it.
+  lang: python
+  config: default
+  source: |
+    def f():
+        """
+        @Doc tuple, IMPL_TUPLE, impl, [REQ_1]
+        """, "second"
+
+docstring_tags:
+  # Epydoc-style fields: each is a docstring_tag warning, and neither is a need.
+  lang: python
+  config: default
+  source: |
+    def f(a):
+        """Do a thing.
+
+        @param a: the first, thing
+        @return: nothing
+        """
+
+docstring_tag_without_field_shape_is_a_need:
+  # A tag word without the field shape: the line is a one-line need.
+  lang: python
+  config: default
+  source: |
+    def f():
+        """@todo fix the parser, IMPL_DS, impl
+        """
+
+docstring_tag_is_case_sensitive:
+  # "Todo" is not a tag of the list: the line is a one-line need.
+  lang: python
+  config: default
+  source: |
+    def f():
+        """@Todo fix the parser, IMPL_TODO2, impl
+        """
+
+hash_comment_tag_word_is_a_need:
+  # A "#" comment is never a docstring: the line is a one-line need.
+  lang: python
+  config: default
+  source: |
+    # @todo fix the parser, IMPL_TODO, impl
+    def f():
+        pass
+
+hash_comment_field_shape_is_a_need:
+  # A "#" comment is never a docstring, even with a field-shaped tag: a one-line need.
+  lang: python
+  config: default
+  source: |
+    def f(a):
+        # @param a: x, IMPL_HASH, impl
+        pass
+
+non_ascii_field_word_is_a_docstring_tag:
+  # The field word is any run of characters other than space, tab and ":".
+  lang: python
+  config: default
+  source: |
+    def f(नाम):
+        """
+        @param नाम: the name, thing
+        """
+
+space_before_colon_is_a_need:
+  # "@return :" has no field word: the line is a one-line need.
+  lang: python
+  config: default
+  source: |
+    def f():
+        """
+        @return : text, IMPL_RET, impl
+        """
+
+one_row_docstring_need:
+  # A one-row docstring is scanned without its quotes: the need's type is "impl".
+  lang: python
+  config: default
+  source: |
+    def f():
+        """@One row, IMPL_ROW, impl"""
+
+one_row_docstring_need_ref:
+  # A one-row docstring's reference: its closing quotes are not part of an id.
+  lang: python
+  config: default
+  source: |
+    def f():
+        """@need-ids: REQ_ROW"""
+
+prefixed_one_row_docstring_tag:
+  # The prefix letter is not content: the field-shaped tag line warns.
+  lang: python
+  config: default
+  source: |
+    def f(a):
+        r"""@param a: the first, thing"""
+
+docstring_last_line_need:
+  # A need on the row of the closing quotes: the last line counts as terminated.
+  lang: python
+  config: default
+  source: |
+    def f():
+        """Summary.
+
+        @Last line, IMPL_LAST, impl"""
