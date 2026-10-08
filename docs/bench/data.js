@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791465351048,
+  "lastUpdate": 1791467738459,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -23652,6 +23652,42 @@ window.BENCHMARK_DATA = {
             "value": 46.453767705000004,
             "unit": "s",
             "extra": "Commit: 2f40ce27c502abc2f3639f4822be0d4077807041\nBranch: master\nTime: 2026-10-08T15:14:29+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3816d91bfc5f01c5e9a972dcda82fc92b7d6ef46",
+          "message": "✨ sphinx-codelinks: multi-line needs in source comments (@need … @endneed); the never-rendered @rst blocks are removed (#2152)",
+          "timestamp": "2026-10-08T15:53:24+02:00",
+          "tree_id": "1cd6f6d04d192db2eaf5683a1b4a929a5ff4b313",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/3816d91bfc5f01c5e9a972dcda82fc92b7d6ef46"
+        },
+        "date": 1791467694860,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.13409104200000144,
+            "unit": "s",
+            "extra": "Commit: 3816d91bfc5f01c5e9a972dcda82fc92b7d6ef46\nBranch: master\nTime: 2026-10-08T15:53:24+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 62.753156136,
+            "unit": "s",
+            "extra": "Commit: 3816d91bfc5f01c5e9a972dcda82fc92b7d6ef46\nBranch: master\nTime: 2026-10-08T15:53:24+02:00"
           }
         ]
       }
