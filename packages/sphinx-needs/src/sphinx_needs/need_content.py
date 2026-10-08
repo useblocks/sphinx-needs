@@ -95,12 +95,43 @@ class MarkupContent:
         Ignored for content rendered from a template or with ``jinja_content``, which no
         file holds: that is anchored at the need's own line.
 
+    A malformed ``markup`` (not a non-empty ``str``) or ``source`` (not a ``str`` path,
+    non-empty, and an ``int`` line of at least 1) raises ``ValueError`` or ``TypeError``
+    here, where the object is made; whether the project registers the markup is
+    :func:`~sphinx_needs.api.need.add_need`'s question.
+
     .. versionadded:: 9.0.0
     """
 
     text: str | StringList
     markup: str = field(kw_only=True)
     source: tuple[str, int] | None = field(default=None, kw_only=True)
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.markup, str) or not self.markup:
+            raise ValueError(
+                f"MarkupContent.markup must be a non-empty source suffix, got {self.markup!r}"
+            )
+        if self.source is None:
+            return
+        if not (
+            isinstance(self.source, tuple)
+            and len(self.source) == 2
+            and isinstance(self.source[0], str)
+            and isinstance(self.source[1], int)
+            and not isinstance(self.source[1], bool)
+        ):
+            raise TypeError(
+                "MarkupContent.source must be a (path, first_line) tuple of a str and an "
+                f"int, got {self.source!r}"
+            )
+        path, first_line = self.source
+        if not path:
+            raise ValueError("MarkupContent.source: the path must not be empty")
+        if first_line < 1:
+            raise ValueError(
+                f"MarkupContent.source: the first line is 1-based, got {first_line}"
+            )
 
 
 def _myst_parser_class() -> type[Parser] | None:
