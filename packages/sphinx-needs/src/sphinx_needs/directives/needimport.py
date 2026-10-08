@@ -226,6 +226,15 @@ class NeedimportDirective(SphinxDirective):
             path, line = self.get_source_info()
             if path and isinstance(line, int) and line >= 1:
                 content_source = (str(path), line)
+        # a template the project gives through ``needs_fields`` is applied when the need
+        # is created, after the markup is chosen here: a default, or a predicate (which
+        # may not match the need -- an over-approximation; which predicate matches is
+        # only known there), counts as the need's template
+        template_field = needs_schema.get_core_field("template")
+        project_template = template_field is not None and (
+            template_field.default is not None
+            or bool(template_field.predicate_defaults)
+        )
         # each distinct doctype is resolved once: to ``None`` if the project parses it,
         # else to the reason it does not
         refusals: dict[str, str | None] = {}
@@ -259,7 +268,7 @@ class NeedimportDirective(SphinxDirective):
             # markup: a need rendered through one is parsed as the page's, as its
             # pre and post templates always are
             content_markup = None
-            if parse_by_doctype and not record.get("template"):
+            if parse_by_doctype and not record.get("template") and not project_template:
                 content_markup = self._content_markup(record, refusals, fallbacks)
 
             try:
@@ -287,9 +296,9 @@ class NeedimportDirective(SphinxDirective):
         for doctype, reason in fallbacks.items():
             log_warning(
                 logger,
-                f"Imported needs declare doctype {doctype!r}, which no parser of this "
-                f"project claims ({reason}); their content was parsed as this page's "
-                "markup instead. Add the suffix to source_suffix with a "
+                f"Imported needs declare doctype {doctype!r}, which this project "
+                f"cannot parse content in: {reason}. Their content was parsed as this "
+                "page's markup instead. Add the suffix to source_suffix with a "
                 "reStructuredText or MyST parser, or set :parse_by_doctype: false.",
                 "import_doctype",
                 location=self.get_location(),
@@ -318,7 +327,8 @@ class NeedimportDirective(SphinxDirective):
 
         A ``doctype`` that is empty, missing or not a ``str`` says nothing, and is the
         page's markup silently. One that the project does not parse is noted in
-        ``fallbacks``, with the reason, for a record whose content is not blank.
+        ``fallbacks``, with the reason, for a record whose content is not blank and is
+        rendered: a hidden need's content is never parsed.
         """
         doctype = record.get("doctype")
         if not isinstance(doctype, str) or not doctype:
@@ -338,7 +348,7 @@ class NeedimportDirective(SphinxDirective):
             return doctype
         content = record.get("content") or record.get("description") or ""
         blank = isinstance(content, str) and not content.strip()
-        if not blank:
+        if not blank and not record.get("hide"):
             fallbacks.setdefault(doctype, reason)
         return None
 
