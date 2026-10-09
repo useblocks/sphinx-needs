@@ -1,0 +1,53 @@
+[
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 7
+      },
+      "end": {
+        "row": 7,
+        "column": 12
+      }
+    },
+    "tagged_scope": "def escaped():\n    \"\"\"@need impl: Escaped close in a docstring\n    :id: IMPL_ESC_DOCSTRING\n\n    A literal block::\n\n       \\@endneed\n    @endneed\n    \"\"\"",
+    "need": {
+      "type": "impl",
+      "title": "Escaped close in a docstring",
+      "id": "IMPL_ESC_DOCSTRING",
+      "content": "A literal block::\n\n   @endneed",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.py",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 2,
+        "col": 7
+      },
+      "end": {
+        "line": 8,
+        "col": 12
+      },
+      "content_start": {
+        "line": 5,
+        "col": 4
+      },
+      "option_lines": {
+        "id": 3
+      },
+      "scope": {
+        "kind": "function_definition",
+        "start": 1,
+        "end": 9
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "function_definition"
+  }
+]

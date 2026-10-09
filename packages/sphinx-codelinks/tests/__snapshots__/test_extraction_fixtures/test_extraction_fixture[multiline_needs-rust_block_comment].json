@@ -1,0 +1,53 @@
+[
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 3
+      },
+      "end": {
+        "row": 5,
+        "column": 11
+      }
+    },
+    "tagged_scope": "fn block() {}",
+    "need": {
+      "type": "impl",
+      "title": "Rust block comment",
+      "id": "IMPL_RUST_BLOCK",
+      "content": "The body of a Rust block comment.",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.rs",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 2,
+        "col": 3
+      },
+      "end": {
+        "line": 6,
+        "col": 11
+      },
+      "content_start": {
+        "line": 5,
+        "col": 3
+      },
+      "option_lines": {
+        "id": 3
+      },
+      "scope": {
+        "kind": "function_item",
+        "start": 8,
+        "end": 8
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "function_item"
+  }
+]

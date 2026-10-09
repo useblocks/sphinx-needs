@@ -373,8 +373,8 @@ Features
      need's ``doctype``
    * A block's lines are not read as one-line needs or ``@need-ids:`` references
    * Malformed blocks reported at their source line
-   * One plain JSON record per need in ``codelinks analyse``'s ``marked_content.json``;
-     the ``src-trace`` directive does not render them yet
+   * One plain JSON record per need in ``codelinks analyse``'s ``marked_content.json``
+   * Rendered by the ``src-trace`` directive, the body parsed in its declared markup
 
    .. fault:: Multi-line needs in comments are not extracted
       :id: FAULT_MULTILINE_NEEDS_1

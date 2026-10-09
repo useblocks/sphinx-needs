@@ -1,0 +1,9 @@
+[
+  {
+    "file_path": "case.cpp",
+    "lineno": 2,
+    "msg": "no '@endneed' line before the comment ends; the block is skipped; the likely cause: the block comment's lines do not all carry the '*' leader",
+    "type": "multiline-need",
+    "sub_type": "multiline_need_unterminated"
+  }
+]

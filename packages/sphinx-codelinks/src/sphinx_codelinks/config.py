@@ -118,7 +118,7 @@ class MultilineNeedsConfig:
         metadata={
             "schema": {
                 "type": "object",
-                "additionalProperties": {"type": "string"},
+                "additionalProperties": {"type": "string", "minLength": 1},
                 "minProperties": 1,
             }
         },
@@ -1111,7 +1111,11 @@ REMOVED_ANALYSE_KEYS: dict[str, str] = {
 def check_removed_analyse_keys(config_dict: AnalyseSectionConfigType) -> None:
     """Refuse the keys of the removed ``@rst`` blocks with one message naming the cure.
 
-    Any other unknown key keeps failing as before, in the dataclass constructor.
+    Any other unknown key keeps failing as before, in the dataclass constructor. The one
+    exception: ``get_rst = false`` alone asks for nothing the blocks did, and
+    configuration scaffolds wrote it into ``ubproject.toml`` files ubCode reads too, so
+    it passes here silently -- this runs on every configuration read -- and the build
+    and the CLI warn once per project (:func:`get_rst_ignored_warning`).
 
     :raises TypeError: through the channel every other configuration error of the
         section takes (``typer.BadParameter`` in the CLI, the ``config-inited`` error of
@@ -1124,11 +1128,48 @@ def check_removed_analyse_keys(config_dict: AnalyseSectionConfigType) -> None:
         f"'{key}'" if key == "get_rst" else f"'[analyse.{key}]'" for key in found
     )
     replacements = " and ".join(REMOVED_ANALYSE_KEYS[key] for key in found)
+    if _tolerated_get_rst(config_dict):
+        return
     raise TypeError(
         f"analyse: {removed} {'is' if len(found) == 1 else 'are'} no longer supported: "
         "the marked-rst blocks were replaced by multi-line needs (the @need and "
         f"@endneed markers); use {replacements} instead"
     )
+
+
+GET_RST_IGNORED = (
+    "analyse: 'get_rst' is no longer read: the marked-rst blocks were replaced by "
+    "multi-line needs (the @need and @endneed markers); get_rst = false asks for "
+    "nothing and can be removed"
+)
+"""The warning for a tolerated ``get_rst = false``."""
+
+
+def _tolerated_get_rst(config_dict: Any) -> bool:
+    """Whether an ``[analyse]`` section's only removed key is ``get_rst = false``."""
+    return (
+        isinstance(config_dict, dict)
+        and config_dict.get("get_rst") is False
+        and not any(
+            key in config_dict for key in REMOVED_ANALYSE_KEYS if key != "get_rst"
+        )
+    )
+
+
+def get_rst_ignored_warning(name: str, project_config: Any) -> str | None:
+    """The warning for a project whose ``[analyse]`` section sets ``get_rst = false``
+    (tolerated, and dropped, by :func:`check_removed_analyse_keys`), else ``None``.
+
+    It names the project, as :func:`remote_url_pattern_warnings` does; the rest is
+    :data:`GET_RST_IGNORED`. Called once per project where a configuration is loaded --
+    a Sphinx build's ``config-inited``, the CLI before it analyses -- never per read
+    of it.
+    """
+    if isinstance(project_config, dict) and _tolerated_get_rst(
+        project_config.get("analyse")
+    ):
+        return f"Project {name!r}: {GET_RST_IGNORED}"
+    return None
 
 
 def convert_analyse_config(
@@ -1144,6 +1185,8 @@ def convert_analyse_config(
                 "need_id_refs",
                 "multiline_needs",
                 "preprocessor",
+                # tolerated (``check_removed_analyse_keys``) and ignored
+                "get_rst",
             }:
                 # Convert string paths to Path objects
                 if k in {"src_dir", "git_root"} and isinstance(v, str):

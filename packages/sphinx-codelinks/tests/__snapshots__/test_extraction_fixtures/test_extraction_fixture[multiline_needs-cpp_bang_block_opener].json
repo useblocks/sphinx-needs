@@ -1,0 +1,101 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 3
+      },
+      "end": {
+        "row": 3,
+        "column": 11
+      }
+    },
+    "tagged_scope": "void bang_row() {}",
+    "need": {
+      "type": "impl",
+      "title": "Bang opener on its own row",
+      "id": "IMPL_BANG_ROW",
+      "content": "",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.cpp",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 2,
+        "col": 3
+      },
+      "end": {
+        "line": 4,
+        "col": 11
+      },
+      "content_start": null,
+      "option_lines": {
+        "id": 3
+      },
+      "scope": {
+        "kind": "function_definition",
+        "start": 6,
+        "end": 6
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 7,
+        "column": 4
+      },
+      "end": {
+        "row": 11,
+        "column": 12
+      }
+    },
+    "tagged_scope": "void bang_open() {}",
+    "need": {
+      "type": "impl",
+      "title": "Bang opener on the open row",
+      "id": "IMPL_BANG_OPEN",
+      "content": "Body of the block.",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.cpp",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 8,
+        "col": 4
+      },
+      "end": {
+        "line": 12,
+        "col": 12
+      },
+      "content_start": {
+        "line": 11,
+        "col": 4
+      },
+      "option_lines": {
+        "id": 9
+      },
+      "scope": {
+        "kind": "function_definition",
+        "start": 14,
+        "end": 14
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "function_definition"
+  }
+]

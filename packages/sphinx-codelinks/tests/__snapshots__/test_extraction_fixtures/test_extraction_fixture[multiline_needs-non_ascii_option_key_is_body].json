@@ -1,0 +1,53 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 3
+      },
+      "end": {
+        "row": 3,
+        "column": 11
+      }
+    },
+    "tagged_scope": "void non_ascii_key() {}",
+    "need": {
+      "type": "req",
+      "title": "Non-ASCII option key",
+      "id": "REQ_NON_ASCII_KEY",
+      "content": ":pr\u00efority: 3",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.cpp",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 1,
+        "col": 3
+      },
+      "end": {
+        "line": 4,
+        "col": 11
+      },
+      "content_start": {
+        "line": 3,
+        "col": 3
+      },
+      "option_lines": {
+        "id": 2
+      },
+      "scope": {
+        "kind": "function_definition",
+        "start": 5,
+        "end": 5
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "function_definition"
+  }
+]

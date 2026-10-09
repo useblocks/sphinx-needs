@@ -1,0 +1,49 @@
+[
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 3
+      },
+      "end": {
+        "row": 5,
+        "column": 8
+      }
+    },
+    "tagged_scope": null,
+    "need": {
+      "type": "impl",
+      "title": "Bare string statement",
+      "id": "IMPL_BARE_STRING",
+      "content": "A string statement after code, not a docstring.",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.py",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 2,
+        "col": 3
+      },
+      "end": {
+        "line": 6,
+        "col": 8
+      },
+      "content_start": {
+        "line": 5,
+        "col": 0
+      },
+      "option_lines": {
+        "id": 3
+      },
+      "scope": null
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": null
+  }
+]
