@@ -143,3 +143,37 @@ form_feed_is_not_a_row_break:
   lang: cpp
   config: default
   source: "int z; /* a\f @need-ids: FF1 */\n/* b\f@Form feed, IMPL_FF, impl\n */\nvoid f() {}\n"
+
+two_need_refs_on_one_row:
+  # Two need references on one row are listed in source order.
+  lang: cpp
+  config: default
+  extract: [need_refs]
+  source: |
+    /* @need-ids: REQ_A */ /* @need-ids: REQ_B */
+    void f() {}
+
+two_needs_on_one_row:
+  # Two one-line needs on one row are listed in source order.
+  lang: cpp
+  config: default
+  source: |
+    /* @A, IMPL_A, impl */ /* @B, IMPL_B, impl */
+    void f() {}
+
+ref_then_need_on_one_row:
+  # A need reference before a one-line need on one row: the reference is listed
+  # first. With need_and_ref_on_one_row (the need first, listed first), this pins
+  # source order in both directions.
+  lang: cpp
+  config:
+    start_sequence: "[["
+    end_sequence: "]]"
+    needs_fields:
+      - {name: id}
+      - {name: title}
+      - {name: type, default: impl}
+      - {name: links, type: "list[str]", default: []}
+  source: |
+    /* @need-ids: REQ_1 */ /* [[IMPL_X, X need]] */
+    void f() {}
