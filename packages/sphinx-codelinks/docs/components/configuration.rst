@@ -525,7 +525,7 @@ Enables the extraction of one-line needs directly from source code comments. Whe
 get_multiline_needs
 ^^^^^^^^^^^^^^^^^^^
 
-Enables the extraction of :ref:`multi-line needs <multiline_needs>` from source code comments: a need's type, title, options and body written between an ``@need`` line and an ``@endneed`` line. ``codelinks analyse`` writes them to ``marked_content.json``; the ``src-trace`` directive does not render them yet.
+Enables the extraction of :ref:`multi-line needs <multiline_needs>` from source code comments: a need's type, title, options and body written between an ``@need`` line and an ``@endneed`` line. ``codelinks analyse`` writes them to ``marked_content.json``, and the ``src-trace`` directive creates a need from each, its body parsed in its declared markup (:ref:`multiline_needs_rendering`).
 
 **Type:** ``bool``
 **Default:** ``False``
@@ -535,7 +535,7 @@ Enables the extraction of :ref:`multi-line needs <multiline_needs>` from source 
    [codelinks.projects.my_project.analyse]
    get_multiline_needs = true
 
-It replaces ``get_rst`` and the ``@rst`` … ``@endrst`` blocks, which were extracted but never rendered. A configuration that still sets ``get_rst`` or ``[analyse.marked_rst]`` is refused with a message naming the replacement (``codelinks analyse`` exits with it; a Sphinx build stops at configuration time).
+It replaces ``get_rst`` and the ``@rst`` … ``@endrst`` blocks, which were extracted but never rendered. A configuration that still sets ``get_rst = true`` or ``[analyse.marked_rst]`` is refused with a message naming the replacement (``codelinks analyse`` exits with it; a Sphinx build stops at configuration time); ``get_rst = false`` alone asks for nothing: it is ignored, with one warning per project, naming it, that it is no longer read and can be removed (``codelinks.config`` in a Sphinx build, at configuration time; ``codelinks analyse`` warns for each project it analyses).
 
 .. _`git_root`:
 
@@ -656,7 +656,7 @@ Configuration for :ref:`multi-line need <multiline_needs>` extraction.
 - ``start_sequence`` (``str``) - The word that opens a block, at the start of its line
 - ``end_sequence`` (``str``) - The word that closes a block, alone on its line; it must differ from ``start_sequence``
 - ``default_markup`` (``str``) - The markup of a block whose open line names none (``@need req: …`` rather than ``@need[md] req: …``); it must be a key of ``markups``
-- ``markups`` (``dict[str, str]``) - Markup tag → the ``doctype`` suffix the need's body is parsed with. A table given here replaces the default one, so list ``rst`` and ``md`` too when you add a tag (``myst = ".md"``, say). The suffixes are not checked here: whether a parser exists for one is decided when the need is rendered
+- ``markups`` (``dict[str, str]``) - Markup tag → the ``doctype`` suffix the need's body is parsed with. A table given here replaces the default one, so list ``rst`` and ``md`` too when you add a tag (``myst = ".md"``, say). A suffix must not be empty; beyond that the suffixes are not checked here: whether a parser exists for one is decided when the need is rendered
 
 When ``get_multiline_needs`` is on, both words take part in the check that no two markers of a project are the same (as the one-line style's and the ``@need-ids:`` markers do); with it off they are no markers of the project, and a ``@need`` reference marker, say, stays valid. The check is for equality: the default one-line start ``@`` is a prefix of ``@need``, and what keeps the two apart is that :ref:`a block's lines are never read as one-line needs <multiline_needs>`.
 

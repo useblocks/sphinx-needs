@@ -1,0 +1,9 @@
+[
+  {
+    "file_path": "case.cpp",
+    "lineno": 2,
+    "msg": "'@need' and '@endneed' on one line: a one-line need is written with the one-line marker; the block is skipped",
+    "type": "multiline-need",
+    "sub_type": "multiline_need_oneline_form"
+  }
+]

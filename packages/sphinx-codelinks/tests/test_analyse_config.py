@@ -1,4 +1,6 @@
 # @Test suite for source analysis configuration validation, TEST_CONF_1, test, [IMPL_OLP_1, IMPL_MLN_1]
+from pathlib import Path
+
 import pytest
 
 from sphinx_codelinks.config import (
@@ -9,8 +11,10 @@ from sphinx_codelinks.config import (
     convert_analyse_config,
     generate_project_configs,
 )
+from sphinx_needs_testkit import build_warnings
 
 from .conftest import TEST_DIR
+from .test_need_id_refs import _SHOWS_WARNING_TYPES, _build, _MakeApp, _project
 
 
 @pytest.mark.parametrize(
@@ -246,6 +250,11 @@ def test_multiline_needs_config_defaults_are_valid() -> None:
             id="empty_start",
         ),
         pytest.param(
+            {"markups": {"rst": ".rst", "empty": ""}},
+            "Schema validation error in field 'markups': '' should be non-empty",
+            id="markup_suffix_empty",
+        ),
+        pytest.param(
             {"markups": {"rst": 1}},
             "Schema validation error in field 'markups': 1 is not of type 'string'",
             id="markup_suffix_not_a_string",
@@ -356,6 +365,85 @@ def test_convert_analyse_config_names_the_replacement_of_a_removed_key(
 
     assert named in str(excinfo.value)
     assert "multi-line needs" in str(excinfo.value)
+
+
+GET_RST_IGNORED = (
+    "analyse: 'get_rst' is no longer read: the marked-rst blocks were replaced by "
+    "multi-line needs (the @need and @endneed markers); get_rst = false asks for "
+    "nothing and can be removed"
+)
+
+
+def test_convert_analyse_config_tolerates_get_rst_false_silently(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """``get_rst = false`` asks for nothing the removed blocks did, and configuration
+    scaffolds wrote it into shared ``ubproject.toml`` files: the converter, called on
+    every configuration read, drops it without a word; the build and the CLI warn once
+    per project (``test_get_rst_false_warns_once_per_project_per_build``)."""
+    with caplog.at_level("WARNING"):
+        config = convert_analyse_config({"get_rst": False})
+
+    assert caplog.records == []
+    assert config.get_multiline_needs is False
+
+
+def test_get_rst_false_warns_once_per_project_per_build(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """The scaffold's shape -- two projects with ``get_rst = false``, a directive each:
+    one warning per project, at configuration time, on a fresh build and on an
+    incremental one alike."""
+    _project(
+        tmp_path,
+        files={
+            "src/refs.cpp": "// no markers\n",
+            "tests/t.cpp": "// no markers\n",
+            "docs/page_t.rst": "T\n=\n\n.. src-trace::\n   :project: tests\n",
+        },
+        toml_extra="""
+[codelinks.projects.src.analyse]
+get_rst = false
+
+[codelinks.projects.tests]
+remote_url_pattern = "https://github.com/example/demo/blob/{commit}/{path}#L{line}"
+
+[codelinks.projects.tests.source_discover]
+src_dir = "../tests"
+comment_type = "cpp"
+
+[codelinks.projects.tests.analyse]
+get_rst = false
+""",
+    )
+    suffix = " [codelinks.config]" if _SHOWS_WARNING_TYPES else ""
+    # one per project, each naming it: the two lines differ by the name alone
+    expected = [
+        f"WARNING: Project {name!r}: {GET_RST_IGNORED}{suffix}"
+        for name in ("src", "tests")
+    ]
+
+    fresh = _build(tmp_path, make_app)
+    assert [w for w in build_warnings(fresh) if "get_rst" in w] == expected
+
+    (tmp_path / "docs" / "page_t.rst").write_text(
+        "T\n=\n\nEdited.\n\n.. src-trace::\n   :project: tests\n", encoding="utf-8"
+    )
+    incremental = _build(tmp_path, make_app, freshenv=False)
+    assert [w for w in build_warnings(incremental) if "get_rst" in w] == expected
+
+
+@pytest.mark.parametrize(
+    "section",
+    [{"get_rst": True}, {"get_rst": False, "marked_rst": {}}, {"get_rst": 0}],
+    ids=["get_rst_true", "get_rst_false_and_marked_rst", "get_rst_zero"],
+)
+def test_convert_analyse_config_still_refuses_get_rst_true_or_marked_rst(
+    section: dict,
+) -> None:
+    """Only ``get_rst = false`` with nothing else removed is tolerated."""
+    with pytest.raises(TypeError, match="no longer supported"):
+        convert_analyse_config(section)
 
 
 def test_an_unknown_analyse_key_still_fails_in_the_constructor() -> None:

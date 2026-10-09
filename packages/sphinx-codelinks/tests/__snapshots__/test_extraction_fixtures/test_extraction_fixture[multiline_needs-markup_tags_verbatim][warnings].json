@@ -1,0 +1,23 @@
+[
+  {
+    "file_path": "case.cpp",
+    "lineno": 1,
+    "msg": "unknown markup '' (known: md, rst); the project default 'rst' is used",
+    "type": "multiline-need",
+    "sub_type": "multiline_need_markup"
+  },
+  {
+    "file_path": "case.cpp",
+    "lineno": 6,
+    "msg": "unknown markup 'RST' (known: md, rst); the project default 'rst' is used",
+    "type": "multiline-need",
+    "sub_type": "multiline_need_markup"
+  },
+  {
+    "file_path": "case.cpp",
+    "lineno": 11,
+    "msg": "unknown markup ' md ' (known: md, rst); the project default 'rst' is used",
+    "type": "multiline-need",
+    "sub_type": "multiline_need_markup"
+  }
+]

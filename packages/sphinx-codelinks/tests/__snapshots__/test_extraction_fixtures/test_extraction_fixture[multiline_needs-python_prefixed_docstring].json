@@ -1,0 +1,53 @@
+[
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 8
+      },
+      "end": {
+        "row": 5,
+        "column": 12
+      }
+    },
+    "tagged_scope": "def pattern():\n    r\"\"\"@need impl: Raw docstring\n    :id: IMPL_RAW_DOCSTRING\n\n    Matches \\d+ digits.\n    @endneed\n    \"\"\"",
+    "need": {
+      "type": "impl",
+      "title": "Raw docstring",
+      "id": "IMPL_RAW_DOCSTRING",
+      "content": "Matches \\d+ digits.",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.py",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 2,
+        "col": 8
+      },
+      "end": {
+        "line": 6,
+        "col": 12
+      },
+      "content_start": {
+        "line": 5,
+        "col": 4
+      },
+      "option_lines": {
+        "id": 3
+      },
+      "scope": {
+        "kind": "function_definition",
+        "start": 1,
+        "end": 7
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "function_definition"
+  }
+]

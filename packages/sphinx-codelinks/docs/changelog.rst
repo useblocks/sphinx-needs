@@ -101,14 +101,17 @@ New and Improved
   ``marked_content.json`` as a ``"type": "multiline-need"`` record -- the need with its
   option values as written, its ``doctype``, and a source with a root-relative path and
   the open, close and body lines -- and prints a malformed block as an analyse warning at
-  its source line. The ``src-trace`` directive renders them in a following release, once
-  Sphinx-Needs can parse a need's content in its declared markup; until then it creates no
-  need from them.
+  its source line. The ``src-trace`` directive renders them (the next bullet). A need type
+  and an option key are ASCII letters, digits, ``_`` and ``-``: ``@need réq:`` is refused
+  and ``:prïority: 3`` starts the body, as in ubCode. A ``markups`` value must be a
+  non-empty suffix.
 
   **Removed:** the ``@rst`` … ``@endrst`` blocks, ``get_rst`` and
   ``[analyse.marked_rst]``. Nothing ever rendered those blocks (#1885), so no project loses
   output; a configuration still naming either key is refused with a message naming its
-  replacement.
+  replacement -- except ``get_rst = false`` with nothing else removed, which asks for
+  nothing: it is ignored, with one warning per project, naming it, saying it can be removed
+  (configuration scaffolds wrote it into ``ubproject.toml`` files ubCode reads too).
   The ``"type": "rst"`` entries of ``marked_content.json`` are gone, ``codelinks write rst``
   ignores the new records, and the CLI prints every analyse warning as
   ``Analyse warning in <file>:<line> - <kind>: <message>`` (it said ``Oneline parser
@@ -116,6 +119,29 @@ New and Improved
   holds the multi-line kinds too; the old name stays as a read-only alias for one release.
   The row fix for marked-rst blocks below (#1982) landed days before this change replaced
   them; multi-line needs keep its rule, a block reported at the row of its open line.
+
+- ✨ The ``src-trace`` directive renders multi-line needs, each body parsed in the markup
+  it declares (`#1885 <https://github.com/useblocks/sphinx-needs/issues/1885>`__).
+
+  ``get_rst`` blocks were extracted and never rendered; their replacement was, until now,
+  extracted and dropped the same way. Every multi-line need of a directive's files is now a
+  need, created with the one-line needs in one order -- a block by its open line -- and by
+  their rules: one need per id (the earlier line keeps it, whatever the kinds), the
+  ``docname`` and ``lineno`` of the directive, local and remote URLs and the source page's
+  ``[docs]`` link at the open line. The body is parsed in its declared markup whatever the
+  page's, so a Markdown body renders its roles and lists in a reStructuredText page and the
+  reverse; a docutils or Sphinx warning about it names the source file and line (except in a
+  body rendered through a template or with ``jinja_content``, anchored at the need, and for
+  myst-parser's own warnings, which name the page). A block's options are a need directive's,
+  converted as ``.. req::`` converts them; any other key is ignored with a warning at its line.
+  A block rendered through a template, or in a project whose ``template`` field has a default
+  or a predicate, is parsed as the page's markup, and a markup no parser claims falls back to
+  the page's with one warning per directive, as ``needimport`` does. Every warning about a
+  block's own content or options, the analyser's included, is ``codelinks.multiline_need``; a
+  skipped duplicate shares ``codelinks.duplicate_need`` with one-line needs. What a body should
+  not contain is listed on the analyse page. Rendering uses Sphinx-Needs' ``ingest_need_record``, new in 9.0.0: with an older
+  Sphinx-Needs each directive with multi-line needs warns once and creates its one-line
+  needs only.
 
 - ✨ TypeScript and JavaScript comment type: ``comment_type = "ts"`` analyses the whole
   family, and source discovery picks up ``.ts``, ``.tsx``, ``.mts``, ``.cts``, ``.js``,
