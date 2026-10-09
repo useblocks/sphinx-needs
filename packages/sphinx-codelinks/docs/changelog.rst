@@ -135,7 +135,9 @@ New and Improved
   and a markup no parser claims falls back to the page's with one warning per directive, as
   ``needimport`` does. Every warning about blocks, the analyser's included, is
   ``codelinks.multiline_need``. What a body should not contain is listed on the analyse
-  page.
+  page. Rendering uses Sphinx-Needs' ``ingest_need_record``, new in 9.0.0: with an older
+  Sphinx-Needs each directive with multi-line needs warns once and creates its one-line
+  needs only.
 
 - 🐛 A source file added to a ``src-trace`` directive's scope is seen by the next
   incremental build, with no ``-E`` (`#2040 <https://github.com/useblocks/sphinx-needs/issues/2040>`__).
