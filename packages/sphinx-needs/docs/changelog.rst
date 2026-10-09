@@ -341,7 +341,7 @@ Bug fixes
 
 - 🐛 :ref:`needimport` imports a need without ``tags`` under ``:tags:``, and reports a need
   whose ``content`` is not a string instead of crashing the build **(changed output)**
-  (:issue:`2132`, :issue:`2147`)
+  (:issue:`2132`, :issue:`2147`, :pr:`2163`)
 
   A ``:tags:`` option ended the build with ``KeyError: 'tags'`` on a needs.json record
   that has no ``tags`` key, as a hand-written file or another producer may omit it, and
