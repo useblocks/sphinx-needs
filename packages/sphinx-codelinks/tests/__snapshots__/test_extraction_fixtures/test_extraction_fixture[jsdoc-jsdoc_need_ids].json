@@ -1,0 +1,24 @@
+[
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 14
+      },
+      "end": {
+        "row": 2,
+        "column": 26
+      }
+    },
+    "tagged_scope": "function handle(): void {}",
+    "need_ids": [
+      "REQ_1",
+      "REQ_2"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "function_declaration"
+  }
+]

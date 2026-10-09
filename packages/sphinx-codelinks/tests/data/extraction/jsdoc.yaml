@@ -29,6 +29,18 @@ jsdoc_tags:
       return a + b;
     }
 
+jsdoc_need_ids:
+  # A ``@need-ids:`` line behind the ``*`` leader of a JSDoc block: both ids are
+  # references, and the line is neither a need nor a ``jsdoc_tag`` warning.
+  lang: typescript
+  config: default
+  source: |
+    /**
+     * Handles the request.
+     * @need-ids: REQ_1, REQ_2
+     */
+    function handle(): void {}
+
 jsdoc_tag_end:
   # A tag ends at a space, a ``{`` or the end of the line; ``@parameters`` is no tag.
   lang: typescript
