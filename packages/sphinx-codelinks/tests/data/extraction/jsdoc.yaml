@@ -136,3 +136,20 @@ jsdoc_with_other_start_sequence:
      * [[Bracketed need, IMPL_BRACKETED]]
      */
     function f(a: number): void {}
+
+jsdoc_tag_asks_the_one_line_parser:
+  # The check asks the one-line parser, not the text. With ";" as the field separator,
+  # "@param a; b" would be read (a jsdoc_tag warning) and "@param a, b" would not
+  # (silent); "@param a; b; c; d; e" would be a parser warning (too many fields), so it
+  # is a jsdoc_tag warning too.
+  lang: typescript
+  config:
+    start_sequence: "@"
+    field_split_char: ";"
+  source: |
+    /**
+     * @param a; b
+     * @param a, b
+     * @param a; b; c; d; e
+     */
+    function f(a: number): void {}
