@@ -23,5 +23,51 @@
     },
     "type": "need",
     "tagged_scope_type": "lexical_declaration"
+  },
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 4
+      },
+      "end": {
+        "row": 2,
+        "column": 42
+      }
+    },
+    "tagged_scope": "let fn: (a: number) => void;",
+    "need": {
+      "title": "Declare Let",
+      "id": "IMPL_TS_DECLARE_LET",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "lexical_declaration"
+  },
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 4,
+        "column": 4
+      },
+      "end": {
+        "row": 4,
+        "column": 42
+      }
+    },
+    "tagged_scope": "var version: string;",
+    "need": {
+      "title": "Declare Var",
+      "id": "IMPL_TS_DECLARE_VAR",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "variable_declaration"
   }
 ]

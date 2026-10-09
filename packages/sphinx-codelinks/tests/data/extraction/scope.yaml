@@ -435,13 +435,20 @@ typescript_export_declare:
     export function unrelated(): void {}
 
 typescript_declare_const_binds:
-  # An ambient const holds no value, so it is a scope whatever its type: tsc
-  # writes `export const handle = () => {}` into a .d.ts as below.
+  # A const, let or var declared with `declare` holds no value, so it is a scope
+  # whatever its type: tsc writes `export const handle = () => {}` into a .d.ts as
+  # below. Only the `declare`-prefixed form: a variable inside a `declare namespace`,
+  # `module` or `global` body, or a bare `export const x: T;` in a .d.ts, still binds
+  # the next declaration.
   lang: typescript
   config: default
   source: |
     // @Declare Const, IMPL_TS_DECLARE_CONST, impl, [REQ_TS]
     export declare const handle: () => void;
+    // @Declare Let, IMPL_TS_DECLARE_LET, impl
+    export declare let fn: (a: number) => void;
+    // @Declare Var, IMPL_TS_DECLARE_VAR, impl
+    declare var version: string;
     export declare function unrelated(): void;
 
 typescript_namespace:

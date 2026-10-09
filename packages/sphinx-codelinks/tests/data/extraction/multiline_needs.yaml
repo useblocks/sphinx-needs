@@ -388,6 +388,17 @@ js_html_comment_run_is_no_block:
     <!-- @endneed
     function f() {}
 
+js_html_row_breaks_a_line_run:
+  # A <!-- row is no line comment, so it ends a // run: the open line above it has no
+  # close in its own run.
+  lang: js
+  config: default
+  source: |
+    // @need impl: Mixed run
+    <!-- :id: IMPL_MIXED
+    // @endneed
+    function g() {}
+
 # --- grammar ---------------------------------------------------------------------------
 
 markup_tag_md:
