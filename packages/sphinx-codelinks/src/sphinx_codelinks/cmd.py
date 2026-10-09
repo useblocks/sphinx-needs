@@ -134,7 +134,7 @@ def analyse(  # for CLI, so it needs the branches
     for project, _config in codelinks_config.projects.items():
         if projects and project not in projects:
             continue
-        if (ignored := get_rst_ignored_warning(_config)) is not None:
+        if (ignored := get_rst_ignored_warning(project, _config)) is not None:
             analysis_logger.warning(ignored, subtype="config")
         # Get source_discover configuration
         src_discover_config = _config["source_discover_config"]

@@ -779,11 +779,13 @@ def test_analyse_tolerates_get_rst_false(
     result = runner.invoke(app, ["analyse", str(config_file), *selected])
 
     assert result.exit_code == 0, result.output
-    assert (
-        _normalize_output(result.output).count(
-            "analyse: 'get_rst' is no longer read: the marked-rst blocks were replaced "
-            "by multi-line needs (the @need and @endneed markers); get_rst = false asks "
-            "for nothing and can be removed"
-        )
-        == warnings
+    output = _normalize_output(result.output)
+    ignored = (
+        "analyse: 'get_rst' is no longer read: the marked-rst blocks were replaced "
+        "by multi-line needs (the @need and @endneed markers); get_rst = false asks "
+        "for nothing and can be removed"
     )
+    assert output.count(ignored) == warnings
+    # each line names its project
+    named = [name for name in ("a", "b") if f"Project {name!r}: {ignored}" in output]
+    assert named == ["a", "b"][:warnings]

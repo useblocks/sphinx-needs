@@ -1156,17 +1156,19 @@ def _tolerated_get_rst(config_dict: Any) -> bool:
     )
 
 
-def get_rst_ignored_warning(project_config: Any) -> str | None:
+def get_rst_ignored_warning(name: str, project_config: Any) -> str | None:
     """The warning for a project whose ``[analyse]`` section sets ``get_rst = false``
     (tolerated, and dropped, by :func:`check_removed_analyse_keys`), else ``None``.
 
-    Called once per project where a configuration is loaded -- a Sphinx build's
-    ``config-inited``, the CLI before it analyses -- never per read of it.
+    It names the project, as :func:`remote_url_pattern_warnings` does; the rest is
+    :data:`GET_RST_IGNORED`. Called once per project where a configuration is loaded --
+    a Sphinx build's ``config-inited``, the CLI before it analyses -- never per read
+    of it.
     """
     if isinstance(project_config, dict) and _tolerated_get_rst(
         project_config.get("analyse")
     ):
-        return GET_RST_IGNORED
+        return f"Project {name!r}: {GET_RST_IGNORED}"
     return None
 
 

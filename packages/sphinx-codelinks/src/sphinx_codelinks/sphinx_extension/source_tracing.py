@@ -463,8 +463,8 @@ def check_sphinx_configuration(app: Sphinx, _config: _SphinxConfig) -> None:
     for warning in remote_url_pattern_warnings(config):
         logger.warning(warning, type="codelinks", subtype="remote_url_pattern")
     if isinstance(config.projects, dict):
-        for project_config in config.projects.values():
-            if (ignored := get_rst_ignored_warning(project_config)) is not None:
+        for name, project_config in config.projects.items():
+            if (ignored := get_rst_ignored_warning(name, project_config)) is not None:
                 logger.warning(ignored, type="codelinks", subtype="config")
     for warning in git_root_warnings(app.confdir, config):
         logger.warning(warning, type="codelinks", subtype="git_root")

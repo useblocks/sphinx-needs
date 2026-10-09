@@ -513,7 +513,7 @@ Enables the extraction of :ref:`multi-line needs <multiline_needs>` from source 
    [codelinks.projects.my_project.analyse]
    get_multiline_needs = true
 
-It replaces ``get_rst`` and the ``@rst`` … ``@endrst`` blocks, which were extracted but never rendered. A configuration that still sets ``get_rst = true`` or ``[analyse.marked_rst]`` is refused with a message naming the replacement (``codelinks analyse`` exits with it; a Sphinx build stops at configuration time); ``get_rst = false`` alone asks for nothing: it is ignored, with one warning per project that it is no longer read and can be removed (``codelinks.config`` in a Sphinx build, at configuration time; ``codelinks analyse`` warns for each project it analyses).
+It replaces ``get_rst`` and the ``@rst`` … ``@endrst`` blocks, which were extracted but never rendered. A configuration that still sets ``get_rst = true`` or ``[analyse.marked_rst]`` is refused with a message naming the replacement (``codelinks analyse`` exits with it; a Sphinx build stops at configuration time); ``get_rst = false`` alone asks for nothing: it is ignored, with one warning per project, naming it, that it is no longer read and can be removed (``codelinks.config`` in a Sphinx build, at configuration time; ``codelinks analyse`` warns for each project it analyses).
 
 .. _`git_root`:
 

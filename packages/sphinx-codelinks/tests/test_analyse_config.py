@@ -417,7 +417,11 @@ get_rst = false
 """,
     )
     suffix = " [codelinks.config]" if _SHOWS_WARNING_TYPES else ""
-    expected = [f"WARNING: {GET_RST_IGNORED}{suffix}"] * 2
+    # one per project, each naming it: the two lines differ by the name alone
+    expected = [
+        f"WARNING: Project {name!r}: {GET_RST_IGNORED}{suffix}"
+        for name in ("src", "tests")
+    ]
 
     fresh = _build(tmp_path, make_app)
     assert [w for w in build_warnings(fresh) if "get_rst" in w] == expected
