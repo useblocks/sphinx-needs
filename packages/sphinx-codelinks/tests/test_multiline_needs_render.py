@@ -358,8 +358,8 @@ Q3_BODY = "//\n// Body {{ 1 + 1 }} here.\n// @endneed\nvoid q() {}\n"
             [
                 (
                     3,
-                    "multi-line need option 'nosuch' is not an option of the need "
-                    "directive: ignored",
+                    "multi-line need option 'nosuch' is not an option a multi-line "
+                    "need takes: ignored",
                 )
             ],
             id="unknown_option_warned",
@@ -398,8 +398,8 @@ Q3_BODY = "//\n// Body {{ 1 + 1 }} here.\n// @endneed\nvoid q() {}\n"
             [
                 (
                     3,
-                    "multi-line need could not be created: Invalid value for "
-                    "'jinja_content' option: not a flag or case-insensitive "
+                    "invalid_option: multi-line need could not be created: Invalid "
+                    "value for 'jinja_content' option: not a flag or case-insensitive "
                     "true/false/yes/no",
                 )
             ],
@@ -411,13 +411,13 @@ Q3_BODY = "//\n// Body {{ 1 + 1 }} here.\n// @endneed\nvoid q() {}\n"
             [
                 (
                     3,
-                    "multi-line need option 'docname' is not an option of the need "
-                    "directive: ignored",
+                    "multi-line need option 'docname' is not an option a multi-line "
+                    "need takes: ignored",
                 ),
                 (
                     4,
-                    "multi-line need option 'lineno' is not an option of the need "
-                    "directive: ignored",
+                    "multi-line need option 'lineno' is not an option a multi-line "
+                    "need takes: ignored",
                 ),
             ],
             id="computed_keys_warned",
@@ -428,8 +428,8 @@ Q3_BODY = "//\n// Body {{ 1 + 1 }} here.\n// @endneed\nvoid q() {}\n"
             [
                 (
                     3,
-                    "multi-line need option 'parts' is not an option of the need "
-                    "directive: ignored",
+                    "multi-line need option 'parts' is not an option a multi-line "
+                    "need takes: ignored",
                 )
             ],
             id="parts_warned_not_crashing",
@@ -440,11 +440,29 @@ Q3_BODY = "//\n// Body {{ 1 + 1 }} here.\n// @endneed\nvoid q() {}\n"
             [
                 (
                     3,
-                    "multi-line need option 'arch' is not an option of the need "
-                    "directive: ignored",
+                    "multi-line need option 'arch' is not an option a multi-line "
+                    "need takes: ignored",
                 )
             ],
             id="arch_warned",
+        ),
+        pytest.param(
+            [":Status: open", ":TAGS: a, b"],
+            {"status": "open", "tags": ["a", "b"]},
+            [],
+            id="option_keys_lowercased",
+        ),
+        pytest.param(
+            [":status: open", ":Status: closed"],
+            {"status": "open"},
+            [
+                (
+                    4,
+                    "multi-line need option 'Status' repeats 'status': the first "
+                    "value is kept",
+                )
+            ],
+            id="option_key_repeated_in_another_case",
         ),
         pytest.param(
             [":delete: true"],
@@ -452,8 +470,8 @@ Q3_BODY = "//\n// Body {{ 1 + 1 }} here.\n// @endneed\nvoid q() {}\n"
             [
                 (
                     3,
-                    "multi-line need option 'delete' is not an option of the need "
-                    "directive: ignored",
+                    "multi-line need option 'delete' is not an option a multi-line "
+                    "need takes: ignored",
                 )
             ],
             id="directive_only_option_warned",
@@ -516,8 +534,8 @@ def test_an_empty_id_is_refused_with_the_directives_message(
     assert build_warnings(app) == [
         _multiline(
             "src/q.c:2",
-            "multi-line need could not be created: Invalid value for 'id' option: "
-            "'id' must not be empty",
+            "invalid_option: multi-line need could not be created: Invalid value for "
+            "'id' option: 'id' must not be empty",
         )
     ]
     assert not [
@@ -937,3 +955,50 @@ def test_without_ingest_need_record_one_warning_per_directive(
         upper = need_id.removeprefix("REQ_")
         assert need_id not in needs
         assert needs[f"IMPL_{upper}_ONE"]["docname"] == CELLS[need_id][1]
+
+
+def test_an_upper_case_id_is_the_id(tmp_path: Path, make_app: _MakeApp) -> None:
+    """docutils lowercases a directive's option names, so ``:ID:`` is the id."""
+    _blocks(
+        tmp_path,
+        {
+            "docs/page_q.rst": "Q\n=\n\n.. src-trace::\n   :project: src\n   :file: q.c\n",
+            "src/q.c": Q3_HEAD + "// :ID: REQ_UPPER\n" + Q3_BODY,
+        },
+    )
+    app = _build(tmp_path, make_app)
+
+    assert build_warnings(app) == []
+    assert _need(app, "REQ_UPPER") is not None
+
+
+def test_a_fallback_body_still_names_the_source_line(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """A body in a markup no parser claims is parsed in the page's markup, still
+    anchored at its source line: a bad role in it names the source file and line."""
+    _blocks(
+        tmp_path,
+        {
+            "docs/page_f.rst": "F\n=\n\n.. src-trace::\n   :project: src\n   :file: fb.c\n",
+            "src/fb.c": "// @need[txt] req: Fallback body\n// :id: REQ_FB\n//\n"
+            "// A bad role :nosuchrole:`x` here.\n// @endneed\nvoid fb() {}\n",
+        },
+        toml_extra=TXT_MARKUP,
+    )
+    app = _build(tmp_path, make_app)
+
+    docutils = " [docutils]" if _SHOWS_WARNING_TYPES else ""
+    assert build_warnings(app, srcdir=tmp_path) == [
+        f"<srcdir>/{_at('src', 'fb.c')}:4: ERROR: Unknown interpreted text role "
+        f'"nosuchrole".{docutils}',
+        _multiline(
+            f"<srcdir>/{_at('docs', 'page_f.rst')}:4",
+            "Multi-line needs declare doctype '.txt', which this project cannot parse "
+            "content in: '.txt' is not a registered source suffix (registered: '.md', "
+            "'.rst'). Their content was parsed as this page's markup instead. Add the "
+            "suffix to source_suffix with a reStructuredText or MyST parser, or map the "
+            "markup to a suffix it parses.",
+        ),
+    ]
+    assert _need(app, "REQ_FB")["doctype"] == ".txt"  # type: ignore[index]
