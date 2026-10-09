@@ -348,24 +348,31 @@ the type and title.
 - **Its options are a need directive's**: ``id``, ``status``, ``tags``, ``collapse``, ``hide``,
   ``style``, ``layout``, ``template``, ``pre_template``, ``post_template``, ``constraints``,
   ``jinja_content`` and the project's extra and link fields, converted as ``.. req::`` converts them
-  -- links and tags split, typed fields coerced, ``jinja_content`` a flag. Any other key
-  (``parts``, ``docname``, ``delete`` …) is ignored with a warning at its line, the need kept; an
-  empty ``:id:`` refuses the need, as the directive does, and so does a value Sphinx-Needs refuses
-  (warned at the open line).
+  -- a key lowercased (``:ID:`` is the id), links and tags split, typed fields coerced,
+  ``jinja_content`` a flag. Any other key (``parts``, ``docname``, the directive's own ``delete`` and
+  ``title_from_content`` …) is ignored with a warning at its line, the need kept; an empty ``:id:``
+  refuses the need, as the directive does (``invalid_option``), and so does a value Sphinx-Needs
+  refuses (warned at the open line). The title is the open line's, as a one-line need's is: an empty
+  one draws no "title is required" warning, and ``needs_title_from_content`` does not apply.
 - **Through a template, the page's markup.** A block rendered through a template -- its own
   ``:template:``, or one the project gives with the ``template`` field's default or a predicate (a
   predicate counts even where it does not match) -- is parsed as the page's markup, template and
   body together: a template is a file of the project, written in that markup. ``needimport`` does
   the same.
 - **A markup no parser claims** -- a ``markups`` entry such as ``txt = ".txt"``, or ``md`` in a
-  project without myst-parser -- falls back to the page's markup: the need is kept with its
-  declared ``doctype``, and the directive warns once per markup, at the directive (not for a hidden
-  block, or one without a body).
-- **Warnings.** Every warning about blocks is ``codelinks.multiline_need`` -- the malformed blocks
-  above included -- at the source file and line, relative to the git root. A warning about the body
-  itself, from docutils or Sphinx (an unknown role, an unresolved reference), names the source file
-  by its absolute path, at the body's line. myst-parser's own warnings about a Markdown body name the
-  page instead, with the body's line (myst-parser 4: the source file with ``.rst`` appended).
+  project without myst-parser -- falls back to the page's markup, still anchored at the body's
+  source line: the need is kept with its declared ``doctype``, and the directive warns once per
+  markup, at the directive (not for a hidden block, or one without a body).
+- **Warnings.** Every warning about a block's own content or options is
+  ``codelinks.multiline_need`` -- the malformed blocks above included -- at the source file and line,
+  relative to the git root; a skipped duplicate shares ``codelinks.duplicate_need`` with one-line
+  needs; the unclaimed-markup warning (and, below Sphinx-Needs 9.0.0, the one saying blocks are not
+  rendered) is at the directive. A warning about the body itself, from docutils or Sphinx (an
+  unknown role, an unresolved reference), names the source file by its absolute path, at the body's
+  line -- except for a body rendered through a template or with ``jinja_content``, whose rendered
+  text Sphinx-Needs anchors at the need (the page, at the directive's line), and for myst-parser's
+  own warnings about a Markdown body, which name the page with the body's line (myst-parser 4: the
+  source file with ``.rst`` appended).
 
 What a body should not contain
 ..............................
@@ -373,9 +380,11 @@ What a body should not contain
 A body is parsed as part of the page that traces it, and this version refuses nothing in it (a
 later Sphinx-Needs version will, as ubCode already does). So it should not contain:
 
-- directives that read files -- ``include``, ``literalinclude``, ``csv-table`` with ``:file:``,
-  ``raw`` with ``:file:`` -- or images: a relative path resolves against the page, so a block
-  traced from two pages reads two different files;
+- directives that read files (``include``, ``literalinclude``, ``csv-table`` with ``:file:``,
+  ``raw`` with ``:file:``), and images and other references to files by a relative path:
+  ``include``, ``literalinclude`` and images, and everything in a Markdown body, resolve against
+  the page -- so a block traced from two pages reads two different files -- while ``csv-table
+  :file:`` and ``raw :file:`` in a reStructuredText body resolve against the source file;
 - ``raw``, and raw HTML in Markdown;
 - need or ``needimport`` directives: the needs they create are recorded against the page, with the
   source file's line;
