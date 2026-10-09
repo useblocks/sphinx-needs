@@ -356,6 +356,12 @@ def find_next_scope(
             for child in current.named_children:
                 if _matches_scope(child, comment_type):
                     return child
+                # a container in a container, as ``export declare …`` nests an
+                # ``ambient_declaration`` in an ``export_statement``
+                if child.type in containers and child.type != "block":
+                    for grandchild in child.named_children:
+                        if _matches_scope(grandchild, comment_type):
+                            return grandchild
 
     return None
 
