@@ -221,8 +221,8 @@ After the comment's prefixes are stripped (see below), a block is:
 - **The open line** starts with the open word (``@need``), optionally followed by a markup tag in
   brackets, then whitespace, the need type and a colon, then the title -- the rest of the line,
   which may be empty. The open word counts only when ``[``, whitespace or the line end follows it:
-  ``@need-ids:`` and ``@needle`` open nothing. The type is a need type's name (letters, digits,
-  ``_`` and ``-``); it is checked when the need is rendered, not here. Write the whitespace:
+  ``@need-ids:`` and ``@needle`` open nothing. The type is a need type's name (ASCII letters,
+  digits, ``_`` and ``-``); it is checked when the need is rendered, not here. Write the whitespace:
   ``@need[md]req: T`` and ``@need req:T`` are refused.
 - **The markup tag** is looked up in the project's ``markups`` table, which gives the need's
   ``doctype`` (``rst`` → ``.rst`` and ``md`` → ``.md`` by default); without a tag the project's
@@ -232,10 +232,11 @@ After the comment's prefixes are stripped (see below), a block is:
   -- at the open line's, as MyST writes a directive's options, or indented under it as in RST.
   Their values are kept as written, as directive strings: ``:links: SPEC_AUTH, SPEC_LOCK`` is the
   string ``"SPEC_AUTH, SPEC_LOCK"``, converted with the project's field definitions when the need
-  is rendered, as a directive's options are. Whitespace must follow the key (``:id:R1`` is body
-  text). A line indented deeper than its option line continues the value, joined with one space,
-  so **separate the options from the body with a blank line**: an indented first body line written
-  directly after an option is read as that option's continuation.
+  is rendered, as a directive's options are. A key is ASCII letters, digits, ``_`` and ``-``, and
+  whitespace must follow it (``:prïority: 3`` and ``:id:R1`` are body text). A line indented
+  deeper than its option line continues the value, joined with one space, so **separate the
+  options from the body with a blank line**: an indented first body line written directly after
+  an option is read as that option's continuation.
 - **The body** is every line after the options up to the close line: dedented by its common
   indentation (a TAB counts as one character), never re-flowed, with leading and trailing blank
   lines trimmed; it may be indented or not. A comment line holding only its prefix (``//``, ``#``,

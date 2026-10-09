@@ -80,10 +80,10 @@ _STARS_ONLY = re.compile(r"^\s*\*+\s*$")
 
 _DOCSTRING_OPEN = re.compile(r"""^([rRuUbBfF]{0,2})(\"\"\"|'''|"|')""")
 
-_HEADER = re.compile(r"^(?:\[([^\]]*)\])?[ \t]+([\w-]+):(?:[ \t]+(.*))?$")
+_HEADER = re.compile(r"^(?:\[([^\]]*)\])?[ \t]+([A-Za-z0-9_-]+):(?:[ \t]+(.*))?$")
 """What follows the open word: ``[<markup>]``, whitespace, ``<type>:``, the title."""
 
-_OPTION = re.compile(r"^:([\w-]+):(?:[ \t]+(.*))?$")
+_OPTION = re.compile(r"^:([A-Za-z0-9_-]+):(?:[ \t]+(.*))?$")
 """An option line, leading whitespace removed: ``:<key>:`` then the value."""
 
 RESERVED_KEYS: frozenset[str] = frozenset({"type", "title", "content", "doctype"})
