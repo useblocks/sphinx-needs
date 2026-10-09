@@ -62,15 +62,18 @@ jsdoc_tag_end:
     function f(b: number): void {}
 
 jsdoc_more_tags:
-  # JSDoc's @modifies and TypeScript's JSX pragma @jsxImportSource are tags of the
-  # shared list too: each of these lines holds a comma, so each is a jsdoc_tag
-  # warning, not a need.
+  # JSDoc's @modifies and TypeScript's JSX pragmas (@jsx, @jsxFrag, @jsxImportSource,
+  # @jsxRuntime) are tags of the shared list too: each of these lines holds a comma, so
+  # each is a jsdoc_tag warning, not a need.
   lang: typescript
   config: default
   source: |
     /**
      * @jsxImportSource react, dom
      * @modifies state, cache
+     * @jsx h, x
+     * @jsxFrag Fragment, x
+     * @jsxRuntime automatic, x
      */
     function render(): void {}
 
