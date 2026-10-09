@@ -120,7 +120,8 @@ New and Improved
 - ✨ TypeScript and JavaScript comment type: ``comment_type = "ts"`` analyses the whole
   family, and source discovery picks up ``.ts``, ``.tsx``, ``.mts``, ``.cts``, ``.js``,
   ``.jsx``, ``.mjs`` and ``.cjs`` files for it
-  (`#1890 <https://github.com/useblocks/sphinx-needs/issues/1890>`__).
+  (`#2166 <https://github.com/useblocks/sphinx-needs/pull/2166>`__,
+  `#1890 <https://github.com/useblocks/sphinx-needs/issues/1890>`__).
 
   The grammar is chosen per file: ``.ts``, ``.mts`` and ``.cts`` are parsed as TypeScript,
   where a ``<T>value`` type assertion is legal, and every other suffix as TSX, which also
