@@ -189,6 +189,39 @@ def test_discover_cli_default_exclude_matches_ts_default(tmp_path: Path) -> None
     assert str(tmp_path / "dist" / "app.js") not in result.stdout
 
 
+def test_discover_cli_excludes_replace_the_ts_default(tmp_path: Path) -> None:
+    """``-e`` replaces the ``ts`` default rather than adding to it: the test file
+    it names is dropped, and ``dist/app.js``, which the default would drop, is
+    listed."""
+    (tmp_path / "src").mkdir()
+    for name in ("app.ts", "app.test.ts"):
+        (tmp_path / "src" / name).write_text(
+            "// @Feature A, IMPL_1, impl\n", encoding="utf-8"
+        )
+    (tmp_path / "dist").mkdir()
+    (tmp_path / "dist" / "app.js").write_text(
+        "// @Feature A, IMPL_1, impl\n", encoding="utf-8"
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "discover",
+            str(tmp_path),
+            "--comment-type",
+            "ts",
+            "--no-gitignore",
+            "-e",
+            "**/*.test.ts",
+        ],
+    )
+    assert result.exit_code == 0
+    assert "2 files discovered" in result.stdout
+    assert str(tmp_path / "src" / "app.ts") in result.stdout
+    assert str(tmp_path / "dist" / "app.js") in result.stdout
+    assert str(tmp_path / "src" / "app.test.ts") not in result.stdout
+
+
 def test_discover_cli_cpp_default_exclude_is_empty(tmp_path: Path) -> None:
     """Same D2 guard as above, from the other side: a non-``ts``
     ``comment_type`` (``cpp``, the CLI default) must resolve to an empty

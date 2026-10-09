@@ -7,7 +7,6 @@ import pytest
 
 from sphinx_codelinks.source_discover.config import (
     COMMENT_FILETYPE,
-    TS_DEFAULT_EXCLUDE,
     SourceDiscoverConfig,
     SourceDiscoverConfigType,
 )
@@ -232,8 +231,10 @@ def _make_generated_output_tree(tmp_path: Path) -> Path:
     """Lay out a source file alongside checked-in generated output.
 
     Mirrors a ``tsc``/bundler output tree: ``src/app.ts`` is the real source,
-    while ``lib/app.js``, ``dist/app.js`` and ``node_modules/pkg/index.js``
-    stand in for generated or vendored output that carries the same marker.
+    while ``dist/``, ``build/``, ``out/``, ``coverage/`` and ``node_modules/``
+    stand in for generated or vendored output that carries the same marker;
+    ``lib/app.js`` and the declaration file ``types/x.d.ts`` are not in the
+    default and stay discovered.
     """
     (tmp_path / "src").mkdir()
     (tmp_path / "src" / "app.ts").write_text(
@@ -246,6 +247,16 @@ def _make_generated_output_tree(tmp_path: Path) -> Path:
     (tmp_path / "dist").mkdir()
     (tmp_path / "dist" / "app.js").write_text(
         "// @Feature A, IMPL_1, impl\n", encoding="utf-8"
+    )
+    for output in ("build", "out", "coverage"):
+        (tmp_path / output).mkdir()
+        (tmp_path / output / "app.js").write_text(
+            "// @Feature A, IMPL_1, impl\n", encoding="utf-8"
+        )
+    (tmp_path / "types").mkdir()
+    (tmp_path / "types" / "x.d.ts").write_text(
+        "/** @Feature A, IMPL_1, impl */\nexport declare function a(): void;\n",
+        encoding="utf-8",
     )
     (tmp_path / "node_modules" / "pkg").mkdir(parents=True)
     (tmp_path / "node_modules" / "pkg" / "index.js").write_text(
@@ -260,13 +271,13 @@ def test_default_exclude_skips_generated_output(tmp_path: Path) -> None:
     — is still discovered (see the constant's docstring for why)."""
     src_dir = _make_generated_output_tree(tmp_path)
     config = SourceDiscoverConfig(src_dir=src_dir, comment_type="ts", gitignore=False)
-    assert config.exclude == TS_DEFAULT_EXCLUDE
 
     discover = SourceDiscover(config)
     discovered = sorted(str(p.relative_to(src_dir)) for p in discover.source_paths)
     assert discovered == [
         str(Path("lib") / "app.js"),
         str(Path("src") / "app.ts"),
+        str(Path("types") / "x.d.ts"),
     ]
 
 
@@ -302,10 +313,14 @@ def test_explicit_exclude_replaces_default(tmp_path: Path) -> None:
     discover = SourceDiscover(config)
     discovered = sorted(str(p.relative_to(src_dir)) for p in discover.source_paths)
     assert discovered == [
+        str(Path("build") / "app.js"),
+        str(Path("coverage") / "app.js"),
         str(Path("dist") / "app.js"),
         str(Path("lib") / "app.js"),
         str(Path("node_modules") / "pkg" / "index.js"),
+        str(Path("out") / "app.js"),
         str(Path("src") / "app.ts"),
+        str(Path("types") / "x.d.ts"),
     ]
 
 
