@@ -101,9 +101,9 @@ New and Improved
   ``marked_content.json`` as a ``"type": "multiline-need"`` record -- the need with its
   option values as written, its ``doctype``, and a source with a root-relative path and
   the open, close and body lines -- and prints a malformed block as an analyse warning at
-  its source line. The ``src-trace`` directive renders them in a following release, once
-  Sphinx-Needs can parse a need's content in its declared markup; until then it creates no
-  need from them.
+  its source line. The ``src-trace`` directive renders them (the next bullet). A need type
+  and an option key are ASCII letters, digits, ``_`` and ``-``: ``@need réq:`` is refused
+  and ``:prïority: 3`` starts the body, as in ubCode.
 
   **Removed:** the ``@rst`` … ``@endrst`` blocks, ``get_rst`` and
   ``[analyse.marked_rst]``. Nothing ever rendered those blocks (#1885), so no project loses
@@ -118,6 +118,24 @@ New and Improved
   holds the multi-line kinds too; the old name stays as a read-only alias for one release.
   The row fix for marked-rst blocks below (#1982) landed days before this change replaced
   them; multi-line needs keep its rule, a block reported at the row of its open line.
+
+- ✨ The ``src-trace`` directive renders multi-line needs, each body parsed in the markup
+  it declares (`#1885 <https://github.com/useblocks/sphinx-needs/issues/1885>`__).
+
+  ``get_rst`` blocks were extracted and never rendered; their replacement was, until now,
+  extracted and dropped the same way. Every multi-line need of a directive's files is now a
+  need, created with the one-line needs in one order -- a block by its open line -- and by
+  their rules: one need per id (the earlier line keeps it, whatever the kinds), the
+  ``docname`` and ``lineno`` of the directive, local and remote URLs and the source page's
+  ``[docs]`` link at the open line. The body is parsed in its declared markup whatever the
+  page's, so a Markdown body renders its roles and lists in a reStructuredText page and the
+  reverse; a warning about it names the source file and line. A block's options are a need
+  directive's, converted as ``.. req::`` converts them; any other key is ignored with a
+  warning at its line. A block rendered through a template is parsed as the page's markup,
+  and a markup no parser claims falls back to the page's with one warning per directive, as
+  ``needimport`` does. Every warning about blocks, the analyser's included, is
+  ``codelinks.multiline_need``. What a body should not contain is listed on the analyse
+  page.
 
 - 🐛 A source file added to a ``src-trace`` directive's scope is seen by the next
   incremental build, with no ``-E`` (`#2040 <https://github.com/useblocks/sphinx-needs/issues/2040>`__).

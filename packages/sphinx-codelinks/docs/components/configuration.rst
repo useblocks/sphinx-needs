@@ -503,7 +503,7 @@ Enables the extraction of one-line needs directly from source code comments. Whe
 get_multiline_needs
 ^^^^^^^^^^^^^^^^^^^
 
-Enables the extraction of :ref:`multi-line needs <multiline_needs>` from source code comments: a need's type, title, options and body written between an ``@need`` line and an ``@endneed`` line. ``codelinks analyse`` writes them to ``marked_content.json``; the ``src-trace`` directive does not render them yet.
+Enables the extraction of :ref:`multi-line needs <multiline_needs>` from source code comments: a need's type, title, options and body written between an ``@need`` line and an ``@endneed`` line. ``codelinks analyse`` writes them to ``marked_content.json``, and the ``src-trace`` directive creates a need from each, its body parsed in its declared markup (:ref:`multiline_needs_rendering`).
 
 **Type:** ``bool``
 **Default:** ``False``

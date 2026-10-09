@@ -151,7 +151,7 @@ Projects without a src-trace directive
 
 A project that no ``src-trace`` directive traces still has its ``@need-ids:`` references attached, as in ubCode: its whole source directory (``src_dir`` of :ref:`discover_config`) is discovered and analysed, and the references reach the needs they name exactly as a directive's do -- the same field, URLs, warnings and ``codelinks [<project>]: N references attached, M unknown`` line. The gate is the directive's own, and there is no switch of its own: local or remote URLs on, references extracted, at least one marker, and a :ref:`ref_url_field` that is not ``""``. A project that at least one directive traces is left to its directives.
 
-- **No need is created.** One-line needs and RST blocks in such a project's files are not rendered -- there is no directive, and so no document, to hold them. The project's line counts them: ``codelinks [src]: 12 files, 30 references, 2 one-line needs not created (no src-trace directive)``.
+- **No need is created.** One-line and multi-line needs in such a project's files are not rendered -- there is no directive, and so no document, to hold them. The project's line counts them: ``codelinks [src]: 12 files, 30 references, 2 one-line needs not created (no src-trace directive)``.
 - **When it is analysed.** Every build walks the project's source directory and compares the files, their modification times and sizes with the last analysis; it analyses the project again only when they differ or the configuration changed. The cost of an unchanged build is that walk, with no parsing (see *Incremental builds* above for what the walk costs). A build that analysed the project again rewrites the cards of the needs whose references changed -- or, when none did, writes the root document -- so that Sphinx keeps the result and the next build analyses nothing.
 - **Errors do not stop the build.** A missing source directory, or a discovery or analysis failure, warns once per project and build (``codelinks.need_id_ref``), and that project's references are not attached. A file whose target lies outside the source directory is skipped with a ``codelinks.outside_src_dir`` warning on every build, since the directory is walked every build -- a directive's scope warns only when its document is read.
 
@@ -162,13 +162,6 @@ Multi-line Needs
 
 A multi-line need is one need written across the lines of a comment: an open line with the
 need's type and title, its options, a body in a declared markup, and a close line.
-
-.. note::
-
-   **Status.** sphinx-codelinks extracts and reports these needs (``codelinks analyse``, below); the
-   ``src-trace`` directive renders them in a following release, once Sphinx-Needs ships the step
-   that parses a need's content in its declared markup (sphinx-needs PR …). Until then a
-   ``src-trace`` directive creates no need from them.
 
 .. tabs::
 
@@ -333,6 +326,63 @@ as ``Analyse warning in <file>:<line> - <kind>: <message>``.
        ``content``, ``doctype``): the first value stands.
    * - ``multiline_need_nested_open``
      - The open word starts a body line: it stays body text.
+
+.. _multiline_needs_rendering:
+
+Rendering
+^^^^^^^^^
+
+The ``src-trace`` directive creates a need from every multi-line need in its files, with the
+one-line needs and by the same rules: in one order, a block taking its place by its open line; one
+need per id, the earlier line keeping it whatever the kinds (the ``codelinks.duplicate_need``
+warning names the kind of the one skipped); the id written, or the one Sphinx-Needs generates from
+the type and title.
+
+- **The body is parsed in its declared markup**, whatever the page's: a Markdown body in a
+  reStructuredText page renders its roles, references and lists, and so does the reverse. In a
+  project written in MyST only, set ``default_markup = "md"`` (:ref:`multiline_needs_config`): a
+  block without a tag is otherwise reStructuredText, the default.
+- **The need is recorded at the directive**, as a one-line need is: its ``docname`` is the page and
+  its ``lineno`` the ``src-trace`` directive's line; its ``doctype`` is the body's markup. Its source
+  links (``local-url``, ``remote-url``) and the source page's ``[docs]`` link point at the open line.
+- **Its options are a need directive's**: ``id``, ``status``, ``tags``, ``collapse``, ``hide``,
+  ``style``, ``layout``, ``template``, ``pre_template``, ``post_template``, ``constraints``,
+  ``jinja_content`` and the project's extra and link fields, converted as ``.. req::`` converts them
+  -- links and tags split, typed fields coerced, ``jinja_content`` a flag. Any other key
+  (``parts``, ``docname``, ``delete`` …) is ignored with a warning at its line, the need kept; an
+  empty ``:id:`` refuses the need, as the directive does, and so does a value Sphinx-Needs refuses
+  (warned at the open line).
+- **Through a template, the page's markup.** A block rendered through a template -- its own
+  ``:template:``, or one the project gives with the ``template`` field's default or a predicate (a
+  predicate counts even where it does not match) -- is parsed as the page's markup, template and
+  body together: a template is a file of the project, written in that markup. ``needimport`` does
+  the same.
+- **A markup no parser claims** -- a ``markups`` entry such as ``txt = ".txt"``, or ``md`` in a
+  project without myst-parser -- falls back to the page's markup: the need is kept with its
+  declared ``doctype``, and the directive warns once per markup, at the directive (not for a hidden
+  block, or one without a body).
+- **Warnings.** Every warning about blocks is ``codelinks.multiline_need`` -- the malformed blocks
+  above included -- at the source file and line, relative to the git root. A warning about the body
+  itself, from docutils or Sphinx (an unknown role, an unresolved reference), names the source file
+  by its absolute path, at the body's line. myst-parser's own warnings about a Markdown body name the
+  page instead, with the body's line (myst-parser 4: the source file with ``.rst`` appended).
+
+What a body should not contain
+..............................
+
+A body is parsed as part of the page that traces it, and this version refuses nothing in it (a
+later Sphinx-Needs version will, as ubCode already does). So it should not contain:
+
+- directives that read files -- ``include``, ``literalinclude``, ``csv-table`` with ``:file:``,
+  ``raw`` with ``:file:`` -- or images: a relative path resolves against the page, so a block
+  traced from two pages reads two different files;
+- ``raw``, and raw HTML in Markdown;
+- need or ``needimport`` directives: the needs they create are recorded against the page, with the
+  source file's line;
+- labels (``.. _name:``, ``(name)=``): they belong to the page, so a block traced from two pages
+  defines each twice;
+- anything relying on the page's substitutions or ``rst_prolog``: it works, but the same block reads
+  differently on another page.
 
 The record
 ^^^^^^^^^^

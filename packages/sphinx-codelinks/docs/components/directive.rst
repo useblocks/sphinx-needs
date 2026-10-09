@@ -3,7 +3,9 @@
 Directive
 =========
 
-.. attention:: ``src-trace`` directive currently only supports :ref:`one-line need definition <oneline>`.
+The ``src-trace`` directive creates a need from every :ref:`one-line need <oneline>` in the source
+files it traces and, in a project that extracts them (:ref:`get_multiline_needs`), from every
+:ref:`multi-line need <multiline_needs>`, its body rendered in the markup it declares.
 
 ``CodeLinks`` provides ``src-trace`` directive and it can be used in the following ways:
 
@@ -98,5 +100,42 @@ The needs defined in source code are extracted and rendered to:
 .. src-trace::
    :project: dcdc
    :directory: ./discharge
+
+Multi-line needs
+~~~~~~~~~~~~~~~~
+
+With :ref:`get_multiline_needs` on, a project's multi-line needs are rendered too. This project
+traces one file holding one block:
+
+.. code-block:: toml
+   :caption: ubproject.toml
+
+   [codelinks.projects.multiline]
+   remote_url_pattern = "https://github.com/useblocks/sphinx-needs/blob/{commit}/{path}#L{line}"
+
+   [codelinks.projects.multiline.source_discover]
+   src_dir = "../tests/data/multiline_needs"
+   include = ["rate_limit.cpp"]
+
+   [codelinks.projects.multiline.analyse]
+   get_need_id_refs = false
+   get_multiline_needs = true
+
+.. literalinclude:: ../../tests/data/multiline_needs/rate_limit.cpp
+   :language: c
+   :caption: rate_limit.cpp
+
+.. code-block:: rst
+
+   .. src-trace::
+      :project: multiline
+      :file: rate_limit.cpp
+
+renders the need, its body parsed as reStructuredText -- the bold text, the role linking to the
+feature, the list and the literal:
+
+.. src-trace::
+   :project: multiline
+   :file: rate_limit.cpp
 
 To have a more customized configuration of ``CodeLinks``, please refer to :ref:`configuration <configuration>`.

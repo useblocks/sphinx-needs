@@ -107,6 +107,19 @@ needs_fields = [
   ] },
 ]
 
+# Configuration for source tracing project "multiline": one file with one multi-line need,
+# for the directive page's example. Only this project extracts multi-line needs.
+[codelinks.projects.multiline]
+remote_url_pattern = "https://github.com/useblocks/sphinx-needs/blob/{commit}/{path}#L{line}"
+
+[codelinks.projects.multiline.source_discover]
+src_dir = "../tests/data/multiline_needs"
+include = ["rate_limit.cpp"]
+
+[codelinks.projects.multiline.analyse]
+get_need_id_refs = false
+get_multiline_needs = true
+
 [codelinks.projects.src]
 remote_url_pattern = "https://github.com/useblocks/sphinx-needs/blob/{commit}/{path}#L{line}"
 
