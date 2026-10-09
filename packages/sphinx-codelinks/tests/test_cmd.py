@@ -759,32 +759,31 @@ def test_analyse_names_the_replacement_of_a_removed_key(
     assert f"Invalid value: {message}" in _normalize_output(result.output)
 
 
-def test_analyse_tolerates_get_rst_false(tmp_path: Path) -> None:
-    """``get_rst = false`` alone is warned about once and the analysis runs."""
+@pytest.mark.parametrize(
+    ("selected", "warnings"),
+    [pytest.param([], 2, id="every_project"), pytest.param(["-p", "a"], 1, id="one")],
+)
+def test_analyse_tolerates_get_rst_false(
+    tmp_path: Path, selected: list[str], warnings: int
+) -> None:
+    """``get_rst = false`` is warned about once per project the command analyses, and
+    the analysis runs."""
     config_file = tmp_path / "codelinks_config.toml"
+    project = {
+        "source_discover": {"src_dir": str(tmp_path)},
+        "analyse": {"get_rst": False},
+    }
     with config_file.open("w", encoding="utf-8") as f:
-        toml.dump(
-            {
-                "codelinks": {
-                    "projects": {
-                        "p": {
-                            "source_discover": {"src_dir": str(tmp_path)},
-                            "analyse": {"get_rst": False},
-                        }
-                    }
-                }
-            },
-            f,
-        )
+        toml.dump({"codelinks": {"projects": {"a": project, "b": project}}}, f)
 
-    result = runner.invoke(app, ["analyse", str(config_file)])
+    result = runner.invoke(app, ["analyse", str(config_file), *selected])
 
     assert result.exit_code == 0, result.output
     assert (
         _normalize_output(result.output).count(
-            "analyse: 'get_rst' is no longer supported: the marked-rst blocks were "
-            "replaced by multi-line needs (the @need and @endneed markers); use "
-            "get_multiline_needs instead"
+            "analyse: 'get_rst' is no longer read: the marked-rst blocks were replaced "
+            "by multi-line needs (the @need and @endneed markers); get_rst = false asks "
+            "for nothing and can be removed"
         )
-        == 1
+        == warnings
     )
