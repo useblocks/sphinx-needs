@@ -295,6 +295,8 @@ Features
      ``module.exports = function () {}`` and an anonymous default export count as
      scopes only when they hold a function or a class, seen through ``as``,
      ``satisfies``, ``!``, ``<T>`` and parentheses
+   * A JSDoc tag line (``@param a text``) under a start sequence JSDoc also uses is a
+     ``jsdoc_tag`` warning, never a need
    * File extensions ``.ts``, ``.tsx``, ``.mts``, ``.cts``, ``.js``, ``.jsx``,
      ``.mjs`` and ``.cjs`` auto-discovered when ``comment_type = "ts"``
 

@@ -1,0 +1,25 @@
+[
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 5
+      },
+      "end": {
+        "row": 2,
+        "column": 35
+      }
+    },
+    "tagged_scope": "function f(a: number): void {}",
+    "need": {
+      "title": "Bracketed need",
+      "id": "IMPL_BRACKETED",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  }
+]

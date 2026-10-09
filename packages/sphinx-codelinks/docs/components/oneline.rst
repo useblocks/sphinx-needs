@@ -270,6 +270,14 @@ reported as one of these kinds, the kind leading the message:
   precedes the start sequence is Python's own notion of alphanumeric (``str.isalnum``),
   which ubCode's differs from on a few characters, combining marks for one: a documented
   non-goal.
+- ``jsdoc_tag`` -- a line of a JSDoc comment (a block comment opened by exactly ``/**``)
+  under ``comment_type = "ts"``, with nothing alphanumeric before its start sequence, which
+  is directly followed by a JSDoc tag such as ``param``, ``returns``, ``deprecated`` or
+  ``link`` that ends there, at a space, a tab, a ``{``, a ``}`` or the end of the line
+  (``@param a text``, ``@param{number} a``, ``{@link Foo}``):
+  ``'@param' is a JSDoc tag, not a one-line need; use a start sequence that JSDoc comments
+  do not contain``. As for docstrings, choose a start sequence JSDoc does not use, such as
+  ``[[`` or ``@need``.
 
 A line with nothing between the start and end sequences is not a marker. A marker that
 fits the style but whose need Sphinx-Needs refuses -- an id that does not match

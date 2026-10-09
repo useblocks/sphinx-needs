@@ -1,0 +1,92 @@
+# JSDoc comments in TypeScript and JavaScript.
+#
+# A JSDoc comment is a block comment opened by exactly ``/**``, as JSDoc reads one:
+# ``/***`` and the empty ``/**/`` are not. A line of one warns ``jsdoc_tag`` (and yields
+# no need) only when all of these hold: the comment type is ``ts``; nothing
+# alphanumeric precedes the one-line start sequence on the line; after the start
+# sequence comes a tag of the shared list (``param``, ``returns``, ``deprecated``,
+# ``link``, ...); and the tag ends there, at a space, a tab, a ``{``, a ``}`` or the end
+# of the line. Tags are case-sensitive. Every other line goes to the one-line parser.
+#
+# A start sequence that JSDoc also uses cannot tell a need from documentation; the
+# warning says to choose another one.
+
+jsdoc_tags:
+  # Every tag line warns, with a comma or without; the marker that is no tag is a need.
+  lang: typescript
+  config: default
+  source: |
+    /**
+     * Adds two numbers.
+     * @param a the augend
+     * @param {number} b First, second
+     * @returns the sum
+     * @deprecated Use sum instead, it is faster
+     * {@link add}, the original
+     * @Real Need, IMPL_REAL, impl, [REQ_TS]
+     */
+    function add(a: number, b: number): number {
+      return a + b;
+    }
+
+jsdoc_tag_end:
+  # A tag ends at a space, a ``{`` or the end of the line; ``@parameters`` is no tag.
+  lang: typescript
+  config: default
+  source: |
+    /**
+     * @param{number} b First, second
+     * @returns
+     * @parameters Check, IMPL_PARAMETERS, impl
+     */
+    function f(b: number): void {}
+
+jsdoc_tag_is_case_sensitive:
+  lang: typescript
+  config: default
+  source: |
+    /**
+     * @Param check, IMPL_CASE, impl
+     */
+    function f(): void {}
+
+not_a_jsdoc_comment:
+  # A /* */ comment, a // comment and a /*** */ comment are no JSDoc comments: their tag
+  # lines are left to the one-line parser.
+  lang: typescript
+  config: default
+  source: |
+    /* @param a First, second */
+    // @param b Third, fourth
+    /***
+     * @param c Fifth, sixth
+     */
+    function f(a: number, b: number, c: number): void {}
+
+jsdoc_in_javascript:
+  lang: js
+  config: default
+  source: |
+    /**
+     * @param {string} name Who, to greet
+     */
+    export function greet(name) {}
+
+jsdoc_with_other_start_sequence:
+  # With a start sequence JSDoc does not use, the tag lines are plain text.
+  lang: typescript
+  config:
+    start_sequence: "[["
+    end_sequence: "]]"
+    field_split_char: ","
+    needs_fields:
+      - {name: title}
+      - {name: id}
+      - {name: type, default: impl}
+      - {name: links, type: "list[str]", default: []}
+  source: |
+    /**
+     * @param a First, second
+     * [[Bracketed need, IMPL_BRACKETED]]
+     */
+    function f(a: number): void {}

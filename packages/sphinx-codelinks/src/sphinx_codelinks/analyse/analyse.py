@@ -22,6 +22,7 @@ from sphinx_codelinks.analyse.models import (
 from sphinx_codelinks.analyse.oneline_parser import (
     OnelineParserInvalidWarning,
     docstring_tag,
+    jsdoc_tag,
     oneline_parser,
 )
 from sphinx_codelinks.analyse.references import _relative_posix
@@ -64,6 +65,24 @@ def _row_count(src_comment: SourceComment) -> int:
     """The rows a comment covers: a Rust ``///`` node's text ends with its newline, which
     starts no row of its own."""
     return (src_comment.node.text or b"").rstrip(b"\n").count(b"\n") + 1
+
+
+#: How a tag warning names the tag it found.
+_TAG_NAMES = {
+    WarningSubTypeEnum.docstring_tag: "docstring tag",
+    WarningSubTypeEnum.jsdoc_tag: "JSDoc tag",
+}
+
+
+def _is_jsdoc(node: TreeSitterNode) -> bool:
+    """A JSDoc comment: a block comment opened by exactly ``/**``, as JSDoc reads one
+    (``/***`` and the empty ``/**/`` are not)."""
+    text = node.text or b""
+    return (
+        text.startswith(b"/**")
+        and not text.startswith(b"/***")
+        and not text.startswith(b"/**/")
+    )
 
 
 def _docstring_contents(
@@ -486,26 +505,32 @@ class SourceAnalyse:
         in_docstring = (
             getattr(src_comment.node, "type", None) == CommentCategory.docstring
         )
+        # Only a TypeScript or JavaScript JSDoc comment can hold JSDoc tags.
+        in_jsdoc = self.analyse_config.comment_type == CommentType.ts and _is_jsdoc(
+            src_comment.node
+        )
         for line in lines:
             if self._is_need_id_refs_line(line):
                 row_offset += 1
                 continue
-            tag = (
-                docstring_tag(line, oneline_comment_style.start_sequence)
-                if in_docstring
-                else None
-            )
+            start_sequence = oneline_comment_style.start_sequence
+            tag, kind, holders = None, WarningSubTypeEnum.docstring_tag, "docstrings"
+            if in_docstring:
+                tag = docstring_tag(line, start_sequence)
+            elif in_jsdoc:
+                tag = jsdoc_tag(line, start_sequence)
+                kind, holders = WarningSubTypeEnum.jsdoc_tag, "JSDoc comments"
             if tag is not None:
                 if src_comment.source_file:
                     self.warnings.append(
                         AnalyseWarning(
                             str(src_comment.source_file.filepath),
                             first_row + row_offset + 1,
-                            f"'{oneline_comment_style.start_sequence}{tag}' is a docstring "
-                            "tag, not a one-line need; use a start sequence that "
-                            "docstrings do not contain",
+                            f"'{start_sequence}{tag}' is a {_TAG_NAMES[kind]}, not a "
+                            "one-line need; use a start sequence that "
+                            f"{holders} do not contain",
                             MarkedContentType.need,
-                            WarningSubTypeEnum.docstring_tag.value,
+                            kind.value,
                         )
                     )
                 row_offset += 1

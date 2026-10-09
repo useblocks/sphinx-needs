@@ -614,7 +614,7 @@ Is equivalent to this RST directive:
 
 .. important:: The ``type`` and ``title`` fields must be configured in ``needs_fields`` as they are mandatory for **Sphinx-Needs**.
 
-.. note:: For the TS/JS family (``comment_type = "ts"``), the default ``start_sequence = "@"`` collides with JSDoc tags such as ``@param``, ``@returns``, and ``@deprecated``: a tag description containing a comma is misparsed as a bogus one-line need. Set a more specific ``start_sequence`` (e.g. ``"@need"``) to avoid this.
+.. note:: For the TS/JS family (``comment_type = "ts"``), the default ``start_sequence = "@"`` collides with JSDoc tags such as ``@param``, ``@returns``, and ``@deprecated``: every such line of a JSDoc comment is a ``jsdoc_tag`` warning rather than a need. Set a ``start_sequence`` that JSDoc does not use (e.g. ``"@need"``) to tell needs from documentation.
 
 analyse.need_id_refs
 ^^^^^^^^^^^^^^^^^^^^

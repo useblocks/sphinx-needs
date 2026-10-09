@@ -131,7 +131,9 @@ New and Improved
   "**/out/**", "**/coverage/**"]``, so checked-in build output is not scanned beside the
   sources it was built from (which would define every need twice); an explicit ``exclude``,
   ``[]`` included, replaces the default, and ``lib/`` is deliberately not in it, being
-  hand-written source in many packages.
+  hand-written source in many packages. A line of a JSDoc comment that starts with a JSDoc
+  tag (``@param a the first, thing``) is a ``jsdoc_tag`` warning rather than a need with
+  the id ``thing``: with the default ``@`` start sequence, choose one JSDoc does not use.
 
 - 🐛 A source file added to a ``src-trace`` directive's scope is seen by the next
   incremental build, with no ``-E`` (`#2040 <https://github.com/useblocks/sphinx-needs/issues/2040>`__).

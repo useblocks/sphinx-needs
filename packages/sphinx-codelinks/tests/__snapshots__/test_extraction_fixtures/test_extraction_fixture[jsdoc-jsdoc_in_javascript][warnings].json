@@ -1,0 +1,9 @@
+[
+  {
+    "file_path": "case.js",
+    "lineno": 2,
+    "msg": "'@param' is a JSDoc tag, not a one-line need; use a start sequence that JSDoc comments do not contain",
+    "type": "need",
+    "sub_type": "jsdoc_tag"
+  }
+]

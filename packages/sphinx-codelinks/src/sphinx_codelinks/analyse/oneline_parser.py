@@ -87,6 +87,150 @@ def docstring_tag(line: str, start_sequence: str) -> str | None:
     return tag
 
 
+# Block tags of JSDoc, TSDoc and TypeScript's JSDoc support, and the inline tags that can
+# start a line, which a one-line start sequence such as ``@`` also matches: ``@param a
+# the first, thing`` would otherwise become a need with the id ``thing``.
+JSDOC_TAGS = frozenset(
+    {
+        "abstract",
+        "access",
+        "alias",
+        "alpha",
+        "arg",
+        "argument",
+        "async",
+        "augments",
+        "author",
+        "beta",
+        "borrows",
+        "callback",
+        "class",
+        "classdesc",
+        "const",
+        "constant",
+        "constructor",
+        "constructs",
+        "copyright",
+        "decorator",
+        "default",
+        "defaultValue",
+        "defaultvalue",
+        "deprecated",
+        "desc",
+        "description",
+        "emits",
+        "enum",
+        "event",
+        "eventProperty",
+        "example",
+        "exception",
+        "experimental",
+        "exports",
+        "extends",
+        "external",
+        "file",
+        "fileoverview",
+        "fires",
+        "func",
+        "function",
+        "generator",
+        "global",
+        "hideconstructor",
+        "host",
+        "ignore",
+        "implements",
+        "import",
+        "inheritDoc",
+        "inheritdoc",
+        "inner",
+        "instance",
+        "interface",
+        "internal",
+        "kind",
+        "label",
+        "lends",
+        "license",
+        "link",
+        "linkcode",
+        "linkplain",
+        "listens",
+        "member",
+        "memberof",
+        "method",
+        "mixes",
+        "mixin",
+        "module",
+        "name",
+        "namespace",
+        "overload",
+        "override",
+        "overview",
+        "package",
+        "packageDocumentation",
+        "param",
+        "private",
+        "privateRemarks",
+        "prop",
+        "property",
+        "protected",
+        "public",
+        "readonly",
+        "remarks",
+        "requires",
+        "return",
+        "returns",
+        "satisfies",
+        "sealed",
+        "see",
+        "since",
+        "static",
+        "summary",
+        "template",
+        "this",
+        "throws",
+        "todo",
+        "tutorial",
+        "type",
+        "typeParam",
+        "typedef",
+        "var",
+        "variation",
+        "version",
+        "virtual",
+        "yield",
+        "yields",
+    }
+)
+
+
+#: What ends a JSDoc tag: a space, a tab, a ``{type}``, the ``}`` of an inline tag, or the
+#: end of the line. Locale-free: ubCode spells the same.
+_JSDOC_TAG_END = re.compile(r"[ \t\n{}]|$")
+
+
+def jsdoc_tag(line: str, start_sequence: str) -> str | None:
+    """The JSDoc tag a line of a JSDoc comment starts with, if any.
+
+    The line starts with one when, after comment decoration and whitespace (no
+    alphanumeric character), it holds ``start_sequence`` directly followed by a tag of
+    :data:`JSDOC_TAGS` that ends there: at a space, a tab, a ``{``, a ``}`` or the end of
+    the line (``@param a text``, ``@param{number} a``, ``{@link Foo}``, ``@returns``).
+    """
+    if not start_sequence:
+        return None
+    idx = line.find(start_sequence)
+    if idx == -1 or any(char.isalnum() for char in line[:idx]):
+        return None
+    rest = line[idx + len(start_sequence) :]
+    word_end = 0
+    while word_end < len(rest) and rest[word_end].isalpha():
+        word_end += 1
+    tag = rest[:word_end]
+    if tag not in JSDOC_TAGS or not _JSDOC_TAG_END.match(rest, word_end):
+        return None
+    return tag
+
+
 @dataclass
 class OnelineParserInvalidWarning:
     """Invalid oneline comments."""
