@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791539340695,
+  "lastUpdate": 1791540175401,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -23904,6 +23904,42 @@ window.BENCHMARK_DATA = {
             "value": 55.45225416,
             "unit": "s",
             "extra": "Commit: b91d68368f2ba30295be9e906d5856b045a39718\nBranch: master\nTime: 2026-10-09T11:47:37+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "68b8e73f55b00cec7fd7e21f01deb947e00be693",
+          "message": "🐛 sphinx-codelinks: marked content on one row is listed in source order, so marked_content.json and the extraction snapshots are reproducible (#2164)\n\n## What\n\n`merge_marked_content` sorts the marked content by `(filepath, row,\ncolumn, kind)` instead of `(filepath, row)`, with an explicit kind rank\n(references, then one-line needs, then multi-line needs) for the one tie\nthat overlapping markers can produce. `oneline_needs`, the order\n`src-trace` creates and renders needs in, is sorted by `(row, file,\ncolumn)`: the column orders the markers of one file, and on one row the\nneeds of two files keep the order they had, the file compared as\ndiscovery compares it. The corpus README and the harness state the key,\nthat two entries on one row are listed in source order, and the order\nwithin a tie. The snapshot of `positions-need_and_ref_on_one_row` now\nlists the need (column 5) before the reference (column 39).\n\n## Why\n\nTree-sitter hands a file's comments over in an order that differs\nbetween parses (19 distinct orders in 20 parses of one source), and the\nrow-only sort kept that order within a row: 15 rows of two `@need-ids:`\ncomments gave 7 to 9 distinct orders in 20 runs, two one-line needs per\nrow 7 to 8, and `codelinks analyse` wrote three different\n`marked_content.json` files in three runs. A need and a reference on one\nrow were stable only because references are merged first, so always\nreference first whatever the columns. Of two one-line needs with one id\non one row of one file, which one `src-trace` created varied between\nbuilds; now it is the leftmost. Across files nothing changes.\n\nTwo entries can share a row and column only when markers overlap (a\nreference marker ending with the one-line start sequence, or one marker\na suffix of another), which the configuration check accepts today; #2159\nis the follow-up to refuse that, and the tie order exists until then.\n\n## ubCode parity\n\n`positions.yaml` is shared. After the re-vendor, three cases diverge\nfrom ubCode's parity harness until useblocks/ubcode#3935 mirrors the\nkey: `need_and_ref_on_one_row` (now need first),\n`two_need_refs_on_one_row` and `two_needs_on_one_row`.\n`ref_then_need_on_one_row` matches ubCode's refs-first tie-break today\nand is the case that fails a column-blind mirror the other way.\n`RealShapeItem::sort_key` is `(filepath, row)`\n(`rust/ubc_codelinks/tests/common/mod.rs:213`) and `normalize`\nstable-sorts the refs-then-needs list by it (`:653`, `:673`). ubCode's\nown walk lists two comments on one row in reverse source order (#3935),\nso its production needs the same rule. The tie order is stated for that\nmirror; useblocks/ubcode#3941 is the twin of #2159.\n\n## Tests\n\n- `tests/test_analyse_order.py`: four two-comments-per-row\nconstructions, 20 runs each, must give one order, the source order, for\n`all_marked_content` and `oneline_needs`; a unit case pins the tie order\n(to go when overlapping markers become a configuration error, #2159);\none pins start order against an end-position sort under the default\nconfiguration; two pin the file order of `oneline_needs` on one row\n(discovery's, not the `Path`'s).\n- Shared corpus: `positions.yaml` gains `two_need_refs_on_one_row`,\n`two_needs_on_one_row` and `ref_then_need_on_one_row`.\n- `tests/test_one_need_per_id.py`: a one-row build whose\n`extract_comments` returns the comments reversed (with a forward\ncontrol), where the leftmost of two same-id markers is created; a\ntwo-file build in which the first file's need keeps the id.\n- Mutations: the column dropped, `(column, row)`, rank before column,\nreversed rank, string rank, the end-position key, `(row, column)` and\n`(file, row, column)` for `oneline_needs`, and the `Path` as the file\nkey each turn a pin red. Review ran 18 constructions and four further\nwrong versions against the branch.\n\nCloses #2150",
+          "timestamp": "2026-10-09T12:01:28+02:00",
+          "tree_id": "99c24f4f418997fded4cce3d1da5921ded7a9c74",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/68b8e73f55b00cec7fd7e21f01deb947e00be693"
+        },
+        "date": 1791540167324,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1179624600000011,
+            "unit": "s",
+            "extra": "Commit: 68b8e73f55b00cec7fd7e21f01deb947e00be693\nBranch: master\nTime: 2026-10-09T12:01:28+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 58.217353206000006,
+            "unit": "s",
+            "extra": "Commit: 68b8e73f55b00cec7fd7e21f01deb947e00be693\nBranch: master\nTime: 2026-10-09T12:01:28+02:00"
           }
         ]
       }
