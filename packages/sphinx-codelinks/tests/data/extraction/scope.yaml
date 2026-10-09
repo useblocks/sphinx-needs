@@ -434,6 +434,16 @@ typescript_export_declare:
     export declare function render(): void;
     export function unrelated(): void {}
 
+typescript_declare_const_binds:
+  # An ambient const holds no value, so it is a scope whatever its type: tsc
+  # writes `export const handle = () => {}` into a .d.ts as below.
+  lang: typescript
+  config: default
+  source: |
+    // @Declare Const, IMPL_TS_DECLARE_CONST, impl, [REQ_TS]
+    export declare const handle: () => void;
+    export declare function unrelated(): void;
+
 typescript_namespace:
   lang: typescript
   config: default
