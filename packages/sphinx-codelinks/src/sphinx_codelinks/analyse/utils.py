@@ -279,8 +279,10 @@ def _is_function_like(value: TreeSitterNode | None) -> bool:
 
 def _declares_function(node: TreeSitterNode) -> bool:
     """A ``const``/``let``/``var`` declaration one of whose declarators is a function,
-    or an ambient one (``declare const x: T``), which holds no value and is the
-    declared thing itself."""
+    or one declared with ``declare`` (``declare const x: T``), which holds no value and
+    is the declared thing itself. Only the ``declare``-prefixed form: a variable inside a
+    ``declare namespace``, ``module`` or ``global`` body, or a bare ``export const x: T;``
+    in a ``.d.ts``, is no scope here and binds the next declaration."""
     if node.parent is not None and node.parent.type == "ambient_declaration":
         return True
     return any(

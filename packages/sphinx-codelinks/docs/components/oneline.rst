@@ -284,12 +284,15 @@ reported as one of these kinds, the kind leading the message:
   (``@param a the augend``, ``@returns the sum``) stays silent. Under the default ``@``, a
   JSDoc comment's tag lines are read by the one-line parser like any other line: one that
   it would turn into a marker (a comma, say) is a ``jsdoc_tag`` warning instead; choose a
-  start sequence other than ``@``, ``[[`` for example, and the check never runs: a JSDoc
-  line is then read as any other line, a marker only where it holds ``[[``. Whether
-  anything alphanumeric precedes the ``@`` is Python's own notion of alphanumeric
-  (``str.isalnum``): characters outside ASCII before the start sequence -- combining
-  marks, circled letters, and letters newer than the interpreter's Unicode tables -- are
-  where ubCode's notion of alphanumeric differs: a documented non-goal.
+  start sequence other than ``@``, ``[[`` or ``@@`` for example, and the check never runs:
+  a JSDoc line is then read as any other line, a marker only where it holds that start
+  sequence. Under ``[[``, ECMAScript's internal-slot notation in a JSDoc line is read as a
+  marker: ``[[Prototype]]`` alone is a ``too_few_fields`` warning, and
+  ``[[Prototype]], [[Extensible]]`` a need. Whether anything alphanumeric precedes the
+  ``@`` is Python's own notion of alphanumeric (``str.isalnum``): characters outside ASCII
+  before the start sequence -- combining marks, circled letters, and letters newer than
+  the interpreter's Unicode tables -- are where ubCode's notion of alphanumeric differs: a
+  documented non-goal.
 
 A line with nothing between the start and end sequences is not a marker. A marker that
 fits the style but whose need Sphinx-Needs refuses -- an id that does not match
