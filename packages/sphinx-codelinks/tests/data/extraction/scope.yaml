@@ -401,6 +401,17 @@ typescript_declare:
     // @Declare Module, IMPL_TS_DECLARE_MODULE, impl, [REQ_TS]
     declare module "widgets" {}
 
+typescript_export_declare:
+  # `export declare …` nests one container in another (export_statement >
+  # ambient_declaration), the shape tsc writes into every .d.ts: the declaration
+  # inside binds, not the function after it.
+  lang: typescript
+  config: default
+  source: |
+    // @Export Declare, IMPL_TS_EXPORT_DECLARE, impl, [REQ_TS]
+    export declare function render(): void;
+    export function unrelated(): void {}
+
 typescript_namespace:
   lang: typescript
   config: default

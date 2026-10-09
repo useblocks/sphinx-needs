@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 58
+      }
+    },
+    "tagged_scope": "function render(): void;",
+    "need": {
+      "title": "Export Declare",
+      "id": "IMPL_TS_EXPORT_DECLARE",
+      "type": "impl",
+      "links": [
+        "REQ_TS"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_signature"
+  }
+]
