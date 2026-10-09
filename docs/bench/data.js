@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791489735512,
+  "lastUpdate": 1791537851031,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -23796,6 +23796,42 @@ window.BENCHMARK_DATA = {
             "value": 43.097810452000004,
             "unit": "s",
             "extra": "Commit: 1044de72b988159f4a28a29cb89012c7398dce9b\nBranch: master\nTime: 2026-10-08T22:01:06+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "269f5d2641d336731191e1cdd06ebe2f94445d2a",
+          "message": "🐛 sphinx-codelinks: tree-sitter reads the whole source, so non-ASCII text no longer breaks its parse (lost YAML comments; lost bash, YAML and Go scopes) (#2160)\n\n## What\n\n`extract_comments` now hands tree-sitter the whole source buffer\n(`parser.parse(src_bytes)`) instead of a read callback that returned one\nbyte per call; the callback (`wrap_read_callable_point`) is removed and\nthe parameter is annotated `bytes`. Effects, each pinned by a shared\ncorpus case:\n\n- A non-ASCII character in a YAML value lost every comment after it in\nthe file, with the one-line needs, `@need-ids:` references and\nmulti-line needs they held. `key: \"é\" # @Title, ID, impl` now gives its\nneed, `key: 𝔘 # @need-ids: REQ_1` its reference, and a marker rows below\n`a: é` is found again.\n- A bash function name or a YAML key with a non-ASCII character keeps\nthe scope of the marker above it (it was `null`).\n- A Go rune literal with a non-ASCII character lost the scope of a\nmarker after it; it no longer does.\n- Non-ASCII identifiers in C, C++, Python, C#, Rust and Go no longer\nparse into an error tree; their output was unchanged in every case\nmeasured.\n\nAlso: the corpus README and the extraction harness's docstring name\nubCode's `SHARED_FIXTURES` instead of a count of shared files, which\nmoved with every corpus edit.\n\n## Why\n\nRead one byte at a time, tree-sitter lexes a multi-byte UTF-8 character\ninside a token (a YAML scalar, an identifier, a Rust, Go or C# character\nliteral) as invalid and produces an `ERROR` node. The issue said the\nother grammars tolerate the byte-wise reads; measured, that holds for\nnon-ASCII text inside strings and comments only, and is false for\nidentifiers and character literals: every grammar but JSON returns an\nerror tree for an identifier like `fé`, bash and YAML lose the marker's\nscope, and Go loses it after a rune literal. Across 114 identifier cases\nin cpp, c, python, csharp, rust and go the output was identical on both\nroutes; the Go rune literal was the one further output change. Parsing\nthe same bytes in one piece gives the correct tree in every grammar.\nOver all 144 existing corpus cases the two routes differ in one tree\n(`docstrings/non_ascii_field_word_is_a_docstring_tag`, a Devanagari\nparameter name), whose captured comment and snapshot are unchanged; no\nexisting snapshot changes.\n\nThe callback dates from the first analyse module and recorded no reason.\nThe docstring now says not to reintroduce one: a chunk boundary inside a\ncharacter breaks the parse the same way.\n\n## ubCode parity\n\nubCode parses whole buffers in all seven grammars (`.parse(source,\nNone)` in `rust/ubc_codelinks/src/parse/*.rs`) and counts columns in\ncharacters (`parse/common.rs` `char_column`), so it already finds the\nYAML comments and attaches the bash, YAML and Go scopes: this closes a\ncurrent divergence. The seven new cases sit in `positions.yaml` and\n`scope.yaml`, both in ubCode's `SHARED_FIXTURES`, and are expected to\npass its parity test at the next re-vendor; their columns are character\ncolumns (`é` and `𝔘` one column each).\n\n## Tests\n\nSeven new shared extraction cases. `positions.yaml`:\n`non_ascii_before_comment_yaml`, `astral_before_need_ref_yaml`,\n`yaml_non_ascii_value_then_later_marker`, and\n`non_ascii_before_marker_in_comment_yaml` (a character-column pin that\npasses either way). `scope.yaml`: `bash_non_ascii_identifier_scope`,\n`yaml_non_ascii_key_scope`, `go_non_ascii_rune_literal_scope`. Six of\nthem fail against the byte-wise read and pass with the fix; every\nexisting snapshot is unchanged. Review probed 21 further constructions\nthrough production on master and on the branch, including 114 non-ASCII\nidentifier shapes across six grammars.\n\nCloses #2155",
+          "timestamp": "2026-10-09T11:22:48+02:00",
+          "tree_id": "5077ca47c3523751ba7cb00f50b9d4633a55a188",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/269f5d2641d336731191e1cdd06ebe2f94445d2a"
+        },
+        "date": 1791537843701,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.12169643100000371,
+            "unit": "s",
+            "extra": "Commit: 269f5d2641d336731191e1cdd06ebe2f94445d2a\nBranch: master\nTime: 2026-10-09T11:22:48+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 54.794177914,
+            "unit": "s",
+            "extra": "Commit: 269f5d2641d336731191e1cdd06ebe2f94445d2a\nBranch: master\nTime: 2026-10-09T11:22:48+02:00"
           }
         ]
       }
