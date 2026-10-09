@@ -279,7 +279,11 @@ def _is_function_like(value: TreeSitterNode | None) -> bool:
 
 
 def _declares_function(node: TreeSitterNode) -> bool:
-    """A ``const``/``let``/``var`` declaration one of whose declarators is a function."""
+    """A ``const``/``let``/``var`` declaration one of whose declarators is a function,
+    or an ambient one (``declare const x: T``), which holds no value and is the
+    declared thing itself."""
+    if node.parent is not None and node.parent.type == "ambient_declaration":
+        return True
     return any(
         _is_function_like(declarator.child_by_field_name("value"))
         for declarator in node.named_children
