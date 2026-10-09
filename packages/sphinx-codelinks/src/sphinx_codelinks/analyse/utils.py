@@ -1,10 +1,9 @@
 import configparser
-from collections.abc import ByteString, Callable
 from pathlib import Path
 from urllib.request import pathname2url
 
 from giturlparse import parse
-from tree_sitter import Language, Parser, Point, Query, QueryCursor
+from tree_sitter import Language, Parser, Query, QueryCursor
 from tree_sitter import Node as TreeSitterNode
 
 from sphinx_codelinks.config import CommentCategory
@@ -154,22 +153,21 @@ def init_tree_sitter(comment_type: CommentType) -> tuple[Parser, Query]:
     return parser, query
 
 
-def wrap_read_callable_point(
-    src_string: ByteString,
-) -> Callable[[int, Point], ByteString]:
-    def read_callable_byte_offset(byte_offset: int, _: Point) -> ByteString:
-        return src_string[byte_offset : byte_offset + 1]
-
-    return read_callable_byte_offset
-
-
 # @Comment extraction from source code using tree-sitter, IMPL_EXTR_1, impl, [FE_DEF]
 def extract_comments(
-    src_string: ByteString, parser: Parser, query: Query
+    src_string: bytes, parser: Parser, query: Query
 ) -> list[TreeSitterNode] | None:
-    """Get all comments from source files by tree-sitter."""
-    read_point_fn = wrap_read_callable_point(src_string)
-    tree = parser.parse(read_point_fn)
+    """Get all comments from source files by tree-sitter.
+
+    The whole buffer is parsed in one piece: read one byte at a time, a multi-byte
+    UTF-8 character inside a token (a YAML scalar, an identifier, a Rust, Go or C#
+    character literal) is lexed as invalid, which loses every YAML comment after it
+    and the scope a marker binds to in bash, YAML or Go. Do not reintroduce a read
+    callback: a chunk boundary inside a character breaks the parse the same way (a
+    from-offset chunk of four bytes or more happens to work; a block-aligned one
+    does not).
+    """
+    tree = parser.parse(src_string)
     query_cursor = QueryCursor(query)
     captures: dict[str, list[TreeSitterNode]] = query_cursor.captures(tree.root_node)
 

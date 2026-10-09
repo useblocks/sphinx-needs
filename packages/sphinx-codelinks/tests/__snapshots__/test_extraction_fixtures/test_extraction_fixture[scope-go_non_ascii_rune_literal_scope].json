@@ -1,0 +1,25 @@
+[
+  {
+    "filepath": "case.go",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 4
+      },
+      "end": {
+        "row": 2,
+        "column": 23
+      }
+    },
+    "tagged_scope": "func f() {}",
+    "need": {
+      "title": "T",
+      "id": "ID_GO_UTF8",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  }
+]

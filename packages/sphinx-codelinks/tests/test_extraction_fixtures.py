@@ -4,8 +4,8 @@ Each case in ``tests/data/extraction/*.yaml`` supplies an input (``lang`` +
 ``config`` + ``source``); the extractor is run on it and its output is compared
 to two committed JSON snapshots. See ``tests/data/extraction/README.md``.
 
-The YAML files ubCode also has (today 15 of the 16, all but
-``multiline_needs.yaml``) are copied byte for byte
+The YAML files ubCode's ``sync_codelinks_expected.py`` names in
+``SHARED_FIXTURES`` are copied byte for byte
 into ubCode, which takes their snapshots as the expected output of its parity
 test: a change to such a case or snapshot is a contract change, which the
 ubCode side re-syncs.

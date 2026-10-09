@@ -192,6 +192,16 @@ go_no_scope:
     // @No Scope, IMPL_GO_NONE, impl, [REQ_GO_NONE]
     var x = 1
 
+go_non_ascii_rune_literal_scope:
+  # A rune literal with a non-ASCII character before the marker: the function still binds.
+  lang: go
+  config: default
+  source: |
+    package m
+    var c = 'é'
+    // @T, ID_GO_UTF8, impl
+    func f() {}
+
 bash_above_function:
   # Marker directly above a function definition -> binds to that function.
   lang: bash
@@ -219,6 +229,14 @@ bash_no_scope:
   source: |
     # @No Scope, IMPL_BASH_NONE, impl, [REQ_BASH_NONE]
     echo hi
+
+bash_non_ascii_identifier_scope:
+  # A function name with a non-ASCII character still binds the marker above it.
+  lang: bash
+  config: default
+  source: |
+    # @T, ID_BASH_UTF8, impl
+    fé() { :; }
 
 yaml_inline_same_row:
   # An inline comment sharing a row with a key-value pair binds to that pair
@@ -254,3 +272,11 @@ yaml_no_scope:
   config: default
   source: |
     # @No Scope, IMPL_YAML_NONE, impl, [REQ_YAML_NONE]
+
+yaml_non_ascii_key_scope:
+  # A key with a non-ASCII character still binds the leading marker above it.
+  lang: yaml
+  config: default
+  source: |
+    # @T, ID_YAML_UTF8, impl
+    ké: 1
