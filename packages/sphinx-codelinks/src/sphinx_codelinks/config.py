@@ -8,7 +8,6 @@ from jsonschema import ValidationError, validate
 from sphinx.application import Sphinx
 from sphinx.config import Config as _SphinxConfig
 
-from sphinx_codelinks.logger import get_logger
 from sphinx_codelinks.source_discover.config import (
     CommentType,
     SourceDiscoverConfig,
@@ -119,7 +118,7 @@ class MultilineNeedsConfig:
         metadata={
             "schema": {
                 "type": "object",
-                "additionalProperties": {"type": "string"},
+                "additionalProperties": {"type": "string", "minLength": 1},
                 "minProperties": 1,
             }
         },
@@ -1115,7 +1114,8 @@ def check_removed_analyse_keys(config_dict: AnalyseSectionConfigType) -> None:
     Any other unknown key keeps failing as before, in the dataclass constructor. The one
     exception: ``get_rst = false`` alone asks for nothing the blocks did, and
     configuration scaffolds wrote it into ``ubproject.toml`` files ubCode reads too, so
-    it is warned about with the same message instead.
+    it passes here silently -- this runs on every configuration read -- and the build
+    and the CLI warn once per project (:func:`get_rst_ignored_warning`).
 
     :raises TypeError: through the channel every other configuration error of the
         section takes (``typer.BadParameter`` in the CLI, the ``config-inited`` error of
@@ -1128,15 +1128,46 @@ def check_removed_analyse_keys(config_dict: AnalyseSectionConfigType) -> None:
         f"'{key}'" if key == "get_rst" else f"'[analyse.{key}]'" for key in found
     )
     replacements = " and ".join(REMOVED_ANALYSE_KEYS[key] for key in found)
-    message = (
+    if _tolerated_get_rst(config_dict):
+        return
+    raise TypeError(
         f"analyse: {removed} {'is' if len(found) == 1 else 'are'} no longer supported: "
         "the marked-rst blocks were replaced by multi-line needs (the @need and "
         f"@endneed markers); use {replacements} instead"
     )
-    if found == ["get_rst"] and config_dict.get("get_rst") is False:
-        get_logger(__name__).warning(message, subtype="config")
-        return
-    raise TypeError(message)
+
+
+GET_RST_IGNORED = (
+    "analyse: 'get_rst' is no longer read: the marked-rst blocks were replaced by "
+    "multi-line needs (the @need and @endneed markers); get_rst = false asks for "
+    "nothing and can be removed"
+)
+"""The warning for a tolerated ``get_rst = false``."""
+
+
+def _tolerated_get_rst(config_dict: Any) -> bool:
+    """Whether an ``[analyse]`` section's only removed key is ``get_rst = false``."""
+    return (
+        isinstance(config_dict, dict)
+        and config_dict.get("get_rst") is False
+        and not any(
+            key in config_dict for key in REMOVED_ANALYSE_KEYS if key != "get_rst"
+        )
+    )
+
+
+def get_rst_ignored_warning(project_config: Any) -> str | None:
+    """The warning for a project whose ``[analyse]`` section sets ``get_rst = false``
+    (tolerated, and dropped, by :func:`check_removed_analyse_keys`), else ``None``.
+
+    Called once per project where a configuration is loaded -- a Sphinx build's
+    ``config-inited``, the CLI before it analyses -- never per read of it.
+    """
+    if isinstance(project_config, dict) and _tolerated_get_rst(
+        project_config.get("analyse")
+    ):
+        return GET_RST_IGNORED
+    return None
 
 
 def convert_analyse_config(
