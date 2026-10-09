@@ -90,6 +90,17 @@ jsx_inline_oneliner_tsx:
       </div>
     );
 
+# JSX text is not a comment: .tsx parses with the TSX grammar, where the // and
+# /* */ inside an element's text are text, so neither yields a marker. The
+# TypeScript grammar would read both as comments, and widen the first scope
+jsx_text_oneliner_tsx:
+  lang: tsx
+  config: default
+  source: |
+    // @Login button, IMPL_TSX_LOGIN, impl, [REQ_TSX]
+    export const Login = () => <p>// @Fake line, FAKE_LINE, impl</p>;
+    export const Note = () => <p>/* @Fake block, FAKE_BLOCK, impl */</p>;
+
 # the one-row form of a block comment in TypeScript
 block_oneliner_typescript:
   lang: typescript

@@ -775,6 +775,29 @@ def test_find_associated_scope_typescript_jsx_no_parse_error(
     assert not tree.root_node.has_error
 
 
+@pytest.mark.parametrize(
+    ("name", "grammar"),
+    [
+        ("a.ts", "typescript"),
+        ("a.mts", "typescript"),
+        ("a.cts", "typescript"),
+        ("A.TS", "typescript"),
+        ("a.Mts", "typescript"),
+        # a declaration file's suffix is ``.ts``: TypeScript, as any ``.ts`` file
+        ("a.d.ts", "typescript"),
+        ("a.tsx", "tsx"),
+        ("a.js", "tsx"),
+        ("a.jsx", "tsx"),
+        ("a.mjs", "tsx"),
+        ("a.cjs", "tsx"),
+    ],
+)
+def test_ts_grammar_key(name: str, grammar: str) -> None:
+    """TypeScript's own suffixes, in any case, get the TypeScript grammar, where a
+    ``<T>x`` cast is legal; every other suffix of the family gets TSX."""
+    assert utils.ts_grammar_key(Path(name)) == grammar
+
+
 def test_typescript_ts_suffix_recovers_markers_around_angle_bracket_cast():
     """A ``.ts`` file must use the plain TypeScript grammar, not TSX.
 

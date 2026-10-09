@@ -322,6 +322,48 @@ def test_a_hash_comment_is_never_a_docstring_tag(tmp_path: Path) -> None:
     assert [need.need["id"] for need in src_analyse.oneline_needs] == ["thing"]
 
 
+@pytest.mark.parametrize("ts_first", [True, False], ids=["ts-first", "tsx-first"])
+def test_a_ts_and_a_tsx_file_in_one_run_each_get_their_grammar(
+    tmp_path: Path, ts_first: bool
+) -> None:
+    """One analysis of a ``.ts`` and a ``.tsx`` file parses each with its own
+    grammar, whichever comes first: the ``.ts`` marker after a ``<T>`` cast is kept
+    (the TypeScript grammar), and the ``//`` in the ``.tsx`` file's JSX text is text,
+    not a marker (the TSX grammar)."""
+    ts_src = tmp_path / "a.ts"
+    ts_src.write_text(
+        "// @Before cast, IMPL_BEFORE, impl\n"
+        "const v = <string>x;\n"
+        "// @After cast, IMPL_AFTER, impl\n"
+        "function g(): void {}\n",
+        encoding="utf-8",
+    )
+    tsx_src = tmp_path / "b.tsx"
+    tsx_src.write_text(
+        "// @Component, IMPL_COMPONENT, impl\n"
+        "export const A = () => <p>// @Fake, FAKE_ID, impl</p>;\n",
+        encoding="utf-8",
+    )
+    src_analyse = SourceAnalyse(
+        SourceAnalyseConfig(
+            src_files=[ts_src, tsx_src] if ts_first else [tsx_src, ts_src],
+            src_dir=tmp_path,
+            comment_type=CommentType.ts,
+            get_need_id_refs=False,
+            get_oneline_needs=True,
+            get_multiline_needs=False,
+            oneline_comment_style=ONELINE_COMMENT_STYLE_DEFAULT,
+        )
+    )
+    src_analyse.run()
+
+    assert sorted(need.need["id"] for need in src_analyse.oneline_needs) == [
+        "IMPL_AFTER",
+        "IMPL_BEFORE",
+        "IMPL_COMPONENT",
+    ]
+
+
 def test_count_pluralizes_nouns() -> None:
     assert _count(0, "file") == "0 files"
     assert _count(1, "file") == "1 file"
