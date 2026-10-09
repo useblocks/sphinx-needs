@@ -164,9 +164,10 @@ def multiline_record(
 
     A block's option values are directive strings, so it takes what ``.. req::`` takes
     (:data:`NEED_DIRECTIVE_OPTIONS` and the project's extra and link fields) and nothing
-    else: a key the directive does not know -- ``parts``, ``docname`` -- is ignored with a
-    warning, as the directive ignores an unknown option, ``jinja_content`` is a flag, and
-    an empty ``id`` is refused with the directive's message.
+    else: a key lowercased first, as docutils lowercases a directive's option names; a
+    key it does not take -- ``parts``, ``docname``, the directive-only ``delete`` -- is
+    ignored with a warning; ``jinja_content`` is a flag; and an empty ``id`` is refused
+    with the directive's message.
 
     :param mneed: The multi-line need.
     :param fields: The project's extra and link field names.
@@ -175,20 +176,32 @@ def multiline_record(
     """
     open_line = int(mneed.source["start"]["line"])
     option_lines: Mapping[str, int] = mneed.source.get("option_lines") or {}
-    record: dict[str, Any] = {}
+    # the record's own keys, as the analysis wrote them; an option never replaces one
+    record: dict[str, Any] = {
+        key: value for key, value in mneed.need.items() if key in RECORD_KEYS
+    }
     notes: list[tuple[int, str]] = []
     refused = False
-    for key, value in mneed.need.items():
-        line = option_lines.get(key, open_line)
+    for written, value in mneed.need.items():
+        if written in RECORD_KEYS:
+            continue
+        line = option_lines.get(written, open_line)
+        key = written.lower()
         invalid: str | None = None
-        if key in RECORD_KEYS:
-            record[key] = value
+        if key in record:
+            notes.append(
+                (
+                    line,
+                    f"multi-line need option {written!r} repeats {key!r}: the first "
+                    "value is kept",
+                )
+            )
         elif key not in NEED_DIRECTIVE_OPTIONS and key not in fields:
             notes.append(
                 (
                     line,
-                    f"multi-line need option {key!r} is not an option of the need "
-                    "directive: ignored",
+                    f"multi-line need option {written!r} is not an option a multi-line "
+                    "need takes: ignored",
                 )
             )
         elif key == "id" and not value:
@@ -205,8 +218,8 @@ def multiline_record(
             notes.append(
                 (
                     line,
-                    "multi-line need could not be created: Invalid value for "
-                    f"{key!r} option: {invalid}",
+                    "invalid_option: multi-line need could not be created: Invalid "
+                    f"value for {key!r} option: {invalid}",
                 )
             )
     return (None if refused else record), notes
@@ -495,6 +508,8 @@ class SourceTracingDirective(SphinxDirective):
             # a template is a file of the project, written in the page's markup
             markup = None
         content_start = mneed.source.get("content_start")
+        # :func:`multiline_record` keeps only keys the project knows, so the keys
+        # ``ingest_need_record`` drops as unknown to it are none: a sink, not read
         unknown: set[str] = set()
 
         def ingest(markup: str | None) -> list[nodes.Node]:
@@ -524,7 +539,16 @@ class SourceTracingDirective(SphinxDirective):
                 # raised before the need is recorded: try again in the page's markup
                 if err.type != "content_markup" or markup is None:
                     raise
-                created = ingest(None)
+                # the page's own suffix, so the body keeps its source anchor; with no
+                # parser claiming that either (neither reStructuredText nor MyST), the
+                # page's parser unanchored
+                page = os.path.splitext(self.env.doc2path(self.env.docname))[1]
+                try:
+                    created = ingest(page)
+                except InvalidNeedException as again:
+                    if again.type != "content_markup":
+                        raise
+                    created = ingest(None)
                 self._warn_unclaimed(markup, err.message, record, need_id)
                 return created
         except InvalidNeedException as err:
@@ -535,18 +559,6 @@ class SourceTracingDirective(SphinxDirective):
                 location=location(open_line),
             )
             return None
-        finally:
-            # :func:`multiline_record` keeps only keys the project knows, so this is
-            # empty unless the two disagree; then the key is lost, and said so
-            option_lines: Mapping[str, int] = mneed.source.get("option_lines") or {}
-            for key in sorted(unknown):
-                logger.warning(
-                    f"multi-line need option {key!r} is not an option of the need "
-                    "directive: ignored",
-                    type="codelinks",
-                    subtype="multiline_need",
-                    location=location(option_lines.get(key, open_line)),
-                )
 
     def _warn_unclaimed(
         self, markup: str, reason: str, record: Mapping[str, Any], need_id: str | None
