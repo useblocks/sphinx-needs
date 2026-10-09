@@ -16,13 +16,16 @@
 #   <close>                             alone on its line; defaults to "@endneed"
 #
 # - The open word counts only when followed by "[", whitespace or the line end
-#   (so "@need-ids:" never opens a block). <type> is [\w-]+; <title> may be empty.
+#   (so "@need-ids:" never opens a block). <type> is ASCII letters, digits, "_" and
+#   "-" ([A-Za-z0-9_-]+), so "@need réq: T" is a header refusal; <title> may be empty.
 #   Whitespace is required after "]" and after "<type>:" when a title follows:
 #   "@need[md]req: T" and "@need req:T" are header refusals. A markup tag is matched
 #   verbatim and case-sensitively ("[RST]" and "[ md ]" are unknown); "[]" is an unknown
 #   empty tag.
 # - An option line is ":<key>:" followed by whitespace and the value, or by nothing, at
-#   ANY indentation; ":id:R1" is no option and starts the body. A line indented deeper
+#   ANY indentation; <key> is [A-Za-z0-9_-]+ as <type> is, so ":prïority: 3" is no
+#   option, and neither is ":id:R1": each starts the body. (ASCII on both sides because
+#   Python's and Rust's Unicode word classes differ on combining marks.) A line indented deeper
 #   than its option line continues it, so an indented first body line written directly
 #   after an option is read as that option's continuation: a blank line ends the
 #   options.
@@ -442,6 +445,18 @@ option_without_space_starts_body:
     // @endneed
     void no_space() {}
 
+non_ascii_option_key_is_body:
+  # An option key is ASCII ([A-Za-z0-9_-]+): ":prïority: 3" is no option line, so it is
+  # the first body line, and the options end before it.
+  lang: cpp
+  config: default
+  source: |
+    // @need req: Non-ASCII option key
+    // :id: REQ_NON_ASCII_KEY
+    // :prïority: 3
+    // @endneed
+    void non_ascii_key() {}
+
 indented_body_line_continues_option:
   # A line indented deeper than the option line before it continues that option, even
   # when it was meant as the first body line: status is "open This line was meant as the
@@ -613,6 +628,17 @@ header_whitespace_refused:
     // @param a, b the inputs
     // @endneed
     void no_space_colon(int a, int b) {}
+
+non_ascii_type_refused:
+  # A need type is ASCII ([A-Za-z0-9_-]+): "réq" does not match, so the open line warns
+  # multiline_need_header and the block is consumed up to its close, with no need.
+  lang: cpp
+  config: default
+  source: |
+    // @need réq: Non-ASCII type
+    // :id: REQ_NON_ASCII_TYPE
+    // @endneed
+    void non_ascii_type() {}
 
 unterminated_run:
   # The comment run ends before a close line: multiline_need_unterminated at the open
