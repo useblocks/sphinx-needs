@@ -267,17 +267,22 @@ reported as one of these kinds, the kind leading the message:
   ``'@param' is a docstring tag, not a one-line need; use a start sequence that docstrings
   do not contain``. A start sequence the docstrings also use cannot tell a need from
   documentation, so choose another one, ``[[`` for example. Whether anything alphanumeric
-  precedes the start sequence is Python's own notion of alphanumeric (``str.isalnum``),
-  which ubCode's differs from on a few characters, combining marks for one: a documented
-  non-goal.
+  precedes the start sequence is Python's own notion of alphanumeric (``str.isalnum``):
+  characters outside ASCII before the start sequence -- combining marks, circled letters,
+  and letters newer than the interpreter's Unicode tables -- are where ubCode's notion of
+  alphanumeric differs: a documented non-goal.
 - ``jsdoc_tag`` -- a line of a JSDoc comment (a block comment opened by exactly ``/**``)
   under ``comment_type = "ts"``, with nothing alphanumeric before its start sequence, which
   is directly followed by a JSDoc tag such as ``param``, ``returns``, ``deprecated`` or
   ``link`` that ends there, at a space, a tab, a ``{``, a ``}`` or the end of the line
   (``@param a text``, ``@param{number} a``, ``{@link Foo}``):
   ``'@param' is a JSDoc tag, not a one-line need; use a start sequence that JSDoc comments
-  do not contain``. As for docstrings, choose a start sequence JSDoc does not use, such as
-  ``[[`` or ``@need``.
+  do not contain``. As for docstrings, choose a start sequence JSDoc does not use, ``[[`` for
+  example. Whether anything alphanumeric precedes the start sequence is Python's own
+  notion of alphanumeric (``str.isalnum``): characters outside ASCII before the start
+  sequence -- combining marks, circled letters, and letters newer than the interpreter's
+  Unicode tables -- are where ubCode's notion of alphanumeric differs: a documented
+  non-goal.
 
 A line with nothing between the start and end sequences is not a marker. A marker that
 fits the style but whose need Sphinx-Needs refuses -- an id that does not match

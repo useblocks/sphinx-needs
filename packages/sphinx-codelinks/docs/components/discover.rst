@@ -46,5 +46,6 @@ Usage Examples
    [source_discover]
    src_dir = "./frontend"
    include = ["**/*.ts", "**/*.tsx"]
-   exclude = ["**/*.test.ts", "**/*.spec.ts"]
    comment_type = "ts"
+
+``exclude`` is left out: it defaults to the build-output directories (``node_modules``, ``dist``, ``build``, ``out``, ``coverage``) for this comment type; an explicit list, ``[]`` included, replaces that default.

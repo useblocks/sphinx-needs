@@ -276,6 +276,8 @@ Defines a list of glob patterns for files and directories to exclude from discov
 
    ``**/lib/**`` is deliberately **not** in the ``ts`` default: it is ambiguous even within the JS/TS ecosystem, since many packages use ``lib/`` for hand-written source rather than as a ``tsc`` ``outDir`` — and it is common hand-written C/C++ library source outside that ecosystem entirely. If your ``ts`` project's ``outDir`` is ``lib``, add ``"**/lib/**"`` to your own ``exclude`` explicitly.
 
+   ``build/`` and ``out/`` are excluded wherever they occur, so a hand-written ``src/build/`` or ``src/out/`` is not analysed: set ``exclude`` explicitly (``[]``, or a list without that name) when a project keeps sources under those names. The default knows only these five names, so a ``tsc`` ``declarationDir`` or ``outDir`` elsewhere (``types/``, ``lib/``) duplicates every marker a JSDoc comment holds, and is the project's to add. For a ``:directory:`` scope of the ``src-trace`` directive the patterns are matched relative to that directory, so a scope at or inside an excluded directory analyses it.
+
    Setting ``exclude`` explicitly — including to ``[]`` — replaces the derived default outright rather than adding to it, and does so regardless of ``comment_type``.
 
    This is resolved identically whether the project is loaded through the Sphinx extension or through the ``discover``/``analyse`` CLI commands: passing ``-e``/``--excludes`` to ``discover`` behaves the same way — omit it to get the ``comment_type``-derived default, or pass it (one or more times) to replace that default outright.
@@ -352,7 +354,7 @@ Specifies the comment syntax style used in the source code files. This determine
      - ``"ts"``
      - ``//`` (single-line),
        ``/* */`` (multi-line),
-       ``<!--`` (legacy single-line, JavaScript)
+       ``<!--`` and a line-initial ``-->`` (legacy, each to the end of its line; valid only in classic JavaScript scripts — TypeScript and ES modules reject them)
      - ``.ts``, ``.tsx``, ``.mts``, ``.cts``, ``.js``, ``.jsx``, ``.mjs``
        and ``.cjs``
    * - YAML
@@ -614,7 +616,7 @@ Is equivalent to this RST directive:
 
 .. important:: The ``type`` and ``title`` fields must be configured in ``needs_fields`` as they are mandatory for **Sphinx-Needs**.
 
-.. note:: For the TS/JS family (``comment_type = "ts"``), the default ``start_sequence = "@"`` collides with JSDoc tags such as ``@param``, ``@returns``, and ``@deprecated``: every such line of a JSDoc comment is a ``jsdoc_tag`` warning rather than a need. Set a ``start_sequence`` that JSDoc does not use (e.g. ``"@need"``) to tell needs from documentation.
+.. note:: For the TS/JS family (``comment_type = "ts"``), the default ``start_sequence = "@"`` collides with JSDoc tags such as ``@param``, ``@returns``, and ``@deprecated``: every such line of a JSDoc comment is a ``jsdoc_tag`` warning rather than a need. Set a ``start_sequence`` that JSDoc does not use (e.g. ``"[["``) to tell needs from documentation. ``@`` also starts TypeScript's ``// @ts-ignore`` and ``// @ts-expect-error`` comments and the decorators quoted inside an ``@example``; with ``@`` as the start sequence a comma on such a line makes a marker.
 
 analyse.need_id_refs
 ^^^^^^^^^^^^^^^^^^^^

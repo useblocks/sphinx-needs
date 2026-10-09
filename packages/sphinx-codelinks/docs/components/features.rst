@@ -270,7 +270,7 @@ Features
    :id: FE_TS
 
    Support for defining traceability objects in TypeScript and JavaScript source
-   files via one-line comment annotations.
+   files via one-line and multi-line comment annotations.
 
    The TypeScript language parser leverages tree-sitter to identify and extract
    comments from TypeScript and JavaScript sources: single-line (``//``) and block
