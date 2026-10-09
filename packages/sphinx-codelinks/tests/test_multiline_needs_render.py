@@ -232,6 +232,104 @@ def test_four_cells_render_in_the_declared_markup(
         ) in source_page.read_text(encoding="utf-8"), need_id
 
 
+#: a second project, ``ts``, beside the fixture's ``src``
+TS_PROJECT = """
+[codelinks.projects.ts]
+remote_url_pattern = "https://github.com/example/demo/blob/{commit}/{path}#L{line}"
+
+[codelinks.projects.ts.source_discover]
+src_dir = "../ts"
+comment_type = "ts"
+
+[codelinks.projects.ts.analyse]
+get_oneline_needs = true
+get_multiline_needs = true
+"""
+
+TS_FILES = {
+    "docs/page_ts.rst": """\
+TypeScript page
+===============
+
+.. src-trace::
+   :project: ts
+   :file: handler.ts
+
+.. src-trace::
+   :project: ts
+   :file: button.tsx
+""",
+    # a run of // comments, its body in RST, opening on line 4
+    "ts/handler.ts": """\
+// @handler entry, IMPL_TS_ONE, impl, [REQ_HOST]
+export function entry(): void {}
+
+// @need[rst] req: Handler body
+// :id: REQ_TS_HANDLER
+// :links: REQ_HOST, IMPL_TS_ONE
+//
+// Body in RST, see :need:`REQ_HOST`.
+//
+// - item one
+// - item two
+// @endneed
+export function handle(request: Request): Response {
+  return new Response();
+}
+""",
+    # a JSDoc block, its body in MyST, opening on line 5
+    "ts/button.tsx": """\
+// @button entry, IMPL_TSX_ONE, impl, [REQ_HOST]
+export const entry = 1;
+
+/**
+ * @need[md] req: Button body
+ * :id: REQ_TSX_BUTTON
+ * :links: REQ_HOST, IMPL_TSX_ONE
+ *
+ * Body in MyST, see {need}`REQ_HOST`.
+ *
+ * - item one
+ * - item two
+ * @endneed
+ */
+export const LoginButton = () => <button>Log in</button>;
+""",
+}
+
+
+def test_typescript_blocks_render(tmp_path: Path, make_app: _MakeApp) -> None:
+    """A ``//`` run in a ``.ts`` file and a JSDoc block in a ``.tsx`` file render
+    through ``src-trace`` as the C blocks do: each body in its declared markup, the
+    need recorded at its directive, its URL at the block's open line."""
+    _blocks(tmp_path, TS_FILES, toml_extra=TS_PROJECT)
+    app = _build(tmp_path, make_app)
+
+    assert build_warnings(app) == []
+    expected = {
+        "REQ_TS_HANDLER": ("handler.ts", 4, ".rst", "IMPL_TS_ONE", 4),
+        "REQ_TSX_BUTTON": ("button.tsx", 8, ".md", "IMPL_TSX_ONE", 5),
+    }
+    for need_id, (source, lineno, doctype, one_line, open_line) in expected.items():
+        need = _need(app, need_id)
+        assert need is not None, need_id
+        assert {
+            key: need[key] for key in ("docname", "lineno", "doctype", "links")
+        } == {
+            "docname": "page_ts",
+            "lineno": lineno,
+            "doctype": doctype,
+            # Sphinx-Needs keeps a need's links sorted
+            "links": [one_line, "REQ_HOST"],
+        }, need_id
+        assert need["local-url"] == f"ts/{source}#L{open_line}"
+        html = _content_html(app, "page_ts.html", need_id)
+        assert 'href="index.html#REQ_HOST"' in html, need_id
+        assert '<ul class="simple">' in html, need_id
+        assert ":need:" not in html, need_id
+        assert "{need}" not in html, need_id
+
+
 def _at(*parts: str) -> str:
     """A path below the project root as a warning prints it after ``<srcdir>/``: with
     the OS's separators, since Sphinx and docutils print the file's own path."""
