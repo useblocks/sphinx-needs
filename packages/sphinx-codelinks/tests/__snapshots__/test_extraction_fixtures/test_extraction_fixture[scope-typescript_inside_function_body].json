@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 6
+      },
+      "end": {
+        "row": 2,
+        "column": 53
+      }
+    },
+    "tagged_scope": "function outer(): void {\n  const x = 1;\n  // @Inside Function, IMPL_TS_INSIDE, impl, [REQ_TS]\n}",
+    "need": {
+      "title": "Inside Function",
+      "id": "IMPL_TS_INSIDE",
+      "type": "impl",
+      "links": [
+        "REQ_TS"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  }
+]

@@ -1,0 +1,52 @@
+[
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 54
+      }
+    },
+    "tagged_scope": "const ids = function* () {};",
+    "need": {
+      "title": "Const Generator",
+      "id": "IMPL_TS_CONST_GEN",
+      "type": "impl",
+      "links": [
+        "REQ_TS"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "lexical_declaration"
+  },
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 4
+      },
+      "end": {
+        "row": 2,
+        "column": 52
+      }
+    },
+    "tagged_scope": "const Widget = class {};",
+    "need": {
+      "title": "Const Class",
+      "id": "IMPL_TS_CONST_CLASS",
+      "type": "impl",
+      "links": [
+        "REQ_TS"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "lexical_declaration"
+  }
+]

@@ -1,4 +1,5 @@
 import configparser
+from collections.abc import Callable
 from pathlib import Path
 from urllib.request import pathname2url
 
@@ -27,12 +28,27 @@ SCOPE_NODE_TYPES = {
     CommentType.cpp: {"function_definition", "class_specifier", "struct_specifier"},
     CommentType.cs: {"method_declaration", "class_declaration", "property_declaration"},
     # @TypeScript Scope Node Types, IMPL_TS_2, impl, [FE_TS]
+    # The last five are scopes only when they hold a function or a class: see
+    # SCOPE_PREDICATES.
     CommentType.ts: {
         "function_declaration",
+        "generator_function_declaration",
+        "function_signature",
         "class_declaration",
+        "abstract_class_declaration",
+        "interface_declaration",
+        "type_alias_declaration",
+        "enum_declaration",
+        "module",
+        "internal_module",
         "method_definition",
+        "method_signature",
+        "abstract_method_signature",
         "lexical_declaration",
         "variable_declaration",
+        "public_field_definition",
+        "assignment_expression",
+        "export_statement",
     },
     # @Rust Scope Node Types, IMPL_RUST_2, impl, [FE_RUST]
     CommentType.rust: {
@@ -70,8 +86,8 @@ PYTHON_QUERY = """
                 (function_definition (block (expression_statement (string)) @comment))
                 (class_definition (block (expression_statement (string)) @comment))
             """
-CPP_QUERY = """(comment) @comment"""
-C_SHARP_QUERY = """(comment) @comment"""
+# The query of every grammar whose comments are one ``comment`` node kind.
+SIMPLE_COMMENT_QUERY = """(comment) @comment"""
 # @TypeScript comment query for tree-sitter, IMPL_TS_3, impl, [FE_TS]
 # ``html_comment`` is a separate node kind the TypeScript/TSX grammars emit
 # for legacy ``<!-- ... -->`` comments, which are valid in the ``.js`` sources
@@ -81,18 +97,10 @@ TYPE_SCRIPT_QUERY = """
     (comment) @comment
     (html_comment) @comment
 """
-YAML_QUERY = """(comment) @comment"""
 RUST_QUERY = """
     (line_comment) @comment
     (block_comment) @comment
 """
-# @Go comment query for tree-sitter, IMPL_GO_3, impl, [FE_GO]
-GO_QUERY = """
-    (comment) @comment
-"""
-JSONC_QUERY = """(comment) @comment"""
-# @Bash comment query for tree-sitter, IMPL_BASH_3, impl, [FE_BASH]
-BASH_QUERY = """(comment) @comment"""
 
 # JSON value node types that can be associated with a comment.
 JSON_STRUCTURE_TYPES = {
@@ -123,7 +131,9 @@ def ts_grammar_key(src_path: Path) -> str:
     grammar in ``init_tree_sitter`` and, by callers that parse many files, to
     cache one parser per grammar instead of rebuilding one per file.
     """
-    return "typescript" if src_path.suffix in TS_STRICT_GRAMMAR_SUFFIXES else "tsx"
+    return (
+        "typescript" if src_path.suffix.lower() in TS_STRICT_GRAMMAR_SUFFIXES else "tsx"
+    )
 
 
 def is_text_file(filepath: Path, sample_size: int = 2048) -> bool:
@@ -157,7 +167,7 @@ def init_tree_sitter(
         import tree_sitter_cpp
 
         parsed_language = Language(tree_sitter_cpp.language())
-        query = Query(parsed_language, CPP_QUERY)
+        query = Query(parsed_language, SIMPLE_COMMENT_QUERY)
     elif comment_type == CommentType.python:
         import tree_sitter_python
 
@@ -167,9 +177,9 @@ def init_tree_sitter(
         import tree_sitter_c_sharp
 
         parsed_language = Language(tree_sitter_c_sharp.language())
-        query = Query(parsed_language, C_SHARP_QUERY)
+        query = Query(parsed_language, SIMPLE_COMMENT_QUERY)
     elif comment_type == CommentType.ts:
-        import tree_sitter_typescript  # noqa: PLC0415
+        import tree_sitter_typescript
 
         # Legacy angle-bracket type assertions (``<T>x``) are valid TypeScript
         # syntax in .ts/.mts/.cts, but the same text is JSX syntax under the TSX
@@ -189,27 +199,29 @@ def init_tree_sitter(
         import tree_sitter_yaml
 
         parsed_language = Language(tree_sitter_yaml.language())
-        query = Query(parsed_language, YAML_QUERY)
+        query = Query(parsed_language, SIMPLE_COMMENT_QUERY)
     elif comment_type == CommentType.rust:
         import tree_sitter_rust
 
         parsed_language = Language(tree_sitter_rust.language())
         query = Query(parsed_language, RUST_QUERY)
     elif comment_type == CommentType.go:
+        # @Go comment query for tree-sitter, IMPL_GO_3, impl, [FE_GO]
         import tree_sitter_go
 
         parsed_language = Language(tree_sitter_go.language())
-        query = Query(parsed_language, GO_QUERY)
+        query = Query(parsed_language, SIMPLE_COMMENT_QUERY)
     elif comment_type == CommentType.jsonc:
         import tree_sitter_json
 
         parsed_language = Language(tree_sitter_json.language())
-        query = Query(parsed_language, JSONC_QUERY)
+        query = Query(parsed_language, SIMPLE_COMMENT_QUERY)
     elif comment_type == CommentType.bash:
+        # @Bash comment query for tree-sitter, IMPL_BASH_3, impl, [FE_BASH]
         import tree_sitter_bash
 
         parsed_language = Language(tree_sitter_bash.language())
-        query = Query(parsed_language, BASH_QUERY)
+        query = Query(parsed_language, SIMPLE_COMMENT_QUERY)
     else:
         raise ValueError(f"Unsupported comment style: {comment_type}")
     parser = Parser(parsed_language)
@@ -237,46 +249,92 @@ def extract_comments(
     return captures.get("comment")
 
 
-TS_FUNCTION_VALUE_TYPES = {"arrow_function", "function_expression"}
+# What a TypeScript declaration's value can be wrapped in without changing what it
+# is: ``(() => {}) as Handler``, ``<Handler>(() => {})``, ``f!``, ``x satisfies T``.
+TS_VALUE_WRAPPER_TYPES = {
+    "parenthesized_expression",
+    "as_expression",
+    "satisfies_expression",
+    "non_null_expression",
+    "type_assertion",
+}
+# The values that make a declaration a scope.
+TS_FUNCTION_VALUE_TYPES = {
+    "arrow_function",
+    "function_expression",
+    "generator_function",
+    "class",
+}
 
 
-def _is_function_like_lexical_declaration(node: TreeSitterNode) -> bool:
-    """True if a TS lexical/variable declaration's declarator is a function.
-
-    ``const``/``let``/``var`` declarations are only treated as scopes when they
-    assign a function or arrow function, so a leading comment doesn't bind to an
-    unrelated ``const`` that merely precedes the function it documents.
-    """
-    for declarator in node.named_children:
-        if declarator.type != "variable_declarator":
-            continue
-        value = declarator.child_by_field_name("value")
-        if value is not None and value.type in TS_FUNCTION_VALUE_TYPES:
-            return True
-    return False
+def _is_function_like(value: TreeSitterNode | None) -> bool:
+    """True if ``value``, seen through its wrappers, is a function or a class."""
+    while value is not None and value.type in TS_VALUE_WRAPPER_TYPES:
+        children = value.named_children
+        if not children:
+            return False
+        # ``<T>x`` names its type first, every other wrapper its expression
+        value = children[-1] if value.type == "type_assertion" else children[0]
+    return value is not None and value.type in TS_FUNCTION_VALUE_TYPES
 
 
-def _matches_scope(
-    node: TreeSitterNode, scope_types: set[str], comment_type: CommentType
-) -> bool:
-    if node.type not in scope_types:
+def _declares_function(node: TreeSitterNode) -> bool:
+    """A ``const``/``let``/``var`` declaration one of whose declarators is a function."""
+    return any(
+        _is_function_like(declarator.child_by_field_name("value"))
+        for declarator in node.named_children
+        if declarator.type == "variable_declarator"
+    )
+
+
+def _value_is_function(node: TreeSitterNode) -> bool:
+    """A class field (``handler = () => {}``) or a default export of a function or class."""
+    return _is_function_like(node.child_by_field_name("value"))
+
+
+def _assigns_function(node: TreeSitterNode) -> bool:
+    """An assignment of a function, as ``module.exports = function () {}`` is."""
+    return _is_function_like(node.child_by_field_name("right"))
+
+
+# Node types a scope can be wrapped in, per language: when the next sibling of a comment
+# is one of them, its children are searched for the scope. Every language has ``block``.
+DEFAULT_SCOPE_CONTAINER_TYPES = frozenset({"block"})
+SCOPE_CONTAINER_TYPES: dict[CommentType, frozenset[str]] = {
+    # ``export …``, ``declare …``, and an expression statement holding an assignment
+    # or a top-level ``namespace``
+    CommentType.ts: DEFAULT_SCOPE_CONTAINER_TYPES
+    | {"export_statement", "ambient_declaration", "expression_statement"},
+}
+
+# Scope node types that are a scope only when their predicate holds, per language, so
+# that a comment does not bind to a declaration that merely precedes the one it
+# documents (``const flag = true;`` before a function).
+SCOPE_PREDICATES: dict[CommentType, dict[str, Callable[[TreeSitterNode], bool]]] = {
+    CommentType.ts: {
+        "lexical_declaration": _declares_function,
+        "variable_declaration": _declares_function,
+        "public_field_definition": _value_is_function,
+        "assignment_expression": _assigns_function,
+        "export_statement": _value_is_function,
+    },
+}
+
+
+def _matches_scope(node: TreeSitterNode, comment_type: CommentType) -> bool:
+    if node.type not in SCOPE_NODE_TYPES.get(comment_type, ()):
         return False
-    if comment_type == CommentType.ts and node.type in {
-        "lexical_declaration",
-        "variable_declaration",
-    }:
-        return _is_function_like_lexical_declaration(node)
-    return True
+    predicate = SCOPE_PREDICATES.get(comment_type, {}).get(node.type)
+    return predicate is None or predicate(node)
 
 
 def find_enclosing_scope(
     node: TreeSitterNode, comment_type: CommentType = CommentType.cpp
 ) -> TreeSitterNode | None:
     """Find the enclosing scope of a comment."""
-    scope_types = SCOPE_NODE_TYPES.get(comment_type, SCOPE_NODE_TYPES[CommentType.cpp])
     current: TreeSitterNode = node
     while current:
-        if _matches_scope(current, scope_types, comment_type):
+        if _matches_scope(current, comment_type):
             return current
         current: TreeSitterNode | None = current.parent  # required for node traversal
     return None
@@ -286,18 +344,19 @@ def find_next_scope(
     node: TreeSitterNode, comment_type: CommentType = CommentType.cpp
 ) -> TreeSitterNode | None:
     """Find the next scope of a comment."""
-    scope_types = SCOPE_NODE_TYPES.get(comment_type, SCOPE_NODE_TYPES[CommentType.cpp])
+    containers = SCOPE_CONTAINER_TYPES.get(comment_type, DEFAULT_SCOPE_CONTAINER_TYPES)
     current: TreeSitterNode = node
     while current:
-        if _matches_scope(current, scope_types, comment_type):
+        if _matches_scope(current, comment_type):
             return current
         current: TreeSitterNode | None = (
             current.next_named_sibling
         )  # required for node traversal
-        if current and current.type in {"block", "export_statement"}:
+        if current and current.type in containers:
             for child in current.named_children:
-                if _matches_scope(child, scope_types, comment_type):
+                if _matches_scope(child, comment_type):
                     return child
+
     return None
 
 

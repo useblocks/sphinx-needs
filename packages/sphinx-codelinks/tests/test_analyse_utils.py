@@ -4,97 +4,76 @@ import subprocess
 from pathlib import Path
 
 import pytest
-import tree_sitter_bash
-import tree_sitter_c_sharp
-import tree_sitter_cpp
-import tree_sitter_go
-import tree_sitter_json
-import tree_sitter_python
-import tree_sitter_rust
-import tree_sitter_typescript
-import tree_sitter_yaml
-from tree_sitter import Language, Parser, Query
 from tree_sitter import Node as TreeSitterNode
+from tree_sitter import Parser, Query
 
 from sphinx_codelinks.analyse import utils
-from sphinx_codelinks.source_discover.config import CommentType
+from sphinx_codelinks.source_discover.config import COMMENT_FILETYPE, CommentType
 
 
+# The fixtures build the parsers the way analysis does, through init_tree_sitter.
 @pytest.fixture(scope="session")
 def init_cpp_tree_sitter() -> tuple[Parser, Query]:
-    parsed_language = Language(tree_sitter_cpp.language())
-    query = Query(parsed_language, utils.CPP_QUERY)
-    parser = Parser(parsed_language)
-    return parser, query
+    return utils.init_tree_sitter(CommentType.cpp)
 
 
 @pytest.fixture(scope="session")
 def init_python_tree_sitter() -> tuple[Parser, Query]:
-    parsed_language = Language(tree_sitter_python.language())
-    query = Query(parsed_language, utils.PYTHON_QUERY)
-    parser = Parser(parsed_language)
-    return parser, query
+    return utils.init_tree_sitter(CommentType.python)
 
 
 @pytest.fixture(scope="session")
 def init_csharp_tree_sitter() -> tuple[Parser, Query]:
-    parsed_language = Language(tree_sitter_c_sharp.language())
-    query = Query(parsed_language, utils.C_SHARP_QUERY)
-    parser = Parser(parsed_language)
-    return parser, query
+    return utils.init_tree_sitter(CommentType.cs)
 
 
 @pytest.fixture(scope="session")
 def init_yaml_tree_sitter() -> tuple[Parser, Query]:
-    parsed_language = Language(tree_sitter_yaml.language())
-    query = Query(parsed_language, utils.YAML_QUERY)
-    parser = Parser(parsed_language)
-    return parser, query
+    return utils.init_tree_sitter(CommentType.yaml)
 
 
 @pytest.fixture(scope="session")
 def init_rust_tree_sitter() -> tuple[Parser, Query]:
-    parsed_language = Language(tree_sitter_rust.language())
-    query = Query(parsed_language, utils.RUST_QUERY)
-    parser = Parser(parsed_language)
-    return parser, query
+    return utils.init_tree_sitter(CommentType.rust)
 
 
 @pytest.fixture(scope="session")
 def init_typescript_tree_sitter() -> tuple[Parser, Query]:
-    # The TSX grammar, matching what utils.init_tree_sitter picks for
-    # CommentType.ts when the file isn't one of TypeScript's own module
-    # variants (.ts/.mts/.cts) — see utils.ts_grammar_key. Fine for the plain
-    # TS fixtures below too, since none of them use a legacy angle-bracket
-    # cast (the one construct where the two grammars disagree).
-    parsed_language = Language(tree_sitter_typescript.language_tsx())
-    query = Query(parsed_language, utils.TYPE_SCRIPT_QUERY)
-    parser = Parser(parsed_language)
-    return parser, query
+    # A .tsx file: the TSX grammar, which the JSX fixtures below need
+    return utils.init_tree_sitter(CommentType.ts, Path("fixture.tsx"))
 
 
 @pytest.fixture(scope="session")
 def init_go_tree_sitter() -> tuple[Parser, Query]:
-    parsed_language = Language(tree_sitter_go.language())
-    query = Query(parsed_language, utils.GO_QUERY)
-    parser = Parser(parsed_language)
-    return parser, query
+    return utils.init_tree_sitter(CommentType.go)
 
 
 @pytest.fixture(scope="session")
 def init_jsonc_tree_sitter() -> tuple[Parser, Query]:
-    parsed_language = Language(tree_sitter_json.language())
-    query = Query(parsed_language, utils.JSONC_QUERY)
-    parser = Parser(parsed_language)
-    return parser, query
+    return utils.init_tree_sitter(CommentType.jsonc)
 
 
 @pytest.fixture(scope="session")
 def init_bash_tree_sitter() -> tuple[Parser, Query]:
-    parsed_language = Language(tree_sitter_bash.language())
-    query = Query(parsed_language, utils.BASH_QUERY)
-    parser = Parser(parsed_language)
-    return parser, query
+    return utils.init_tree_sitter(CommentType.bash)
+
+
+def test_every_comment_type_is_wired():
+    """A comment type is a ``CommentType`` member plus an entry in each of several
+    tables; a member one of them misses fails here, rather than as a ``KeyError`` in
+    discovery or as no scope at all."""
+    members = set(CommentType)
+    assert set(COMMENT_FILETYPE) == {member.value for member in members}
+    # YAML and JSONC bind to data structures, not scopes (find_associated_scope)
+    assert set(utils.SCOPE_NODE_TYPES) == members - {
+        CommentType.yaml,
+        CommentType.jsonc,
+    }
+    assert set(utils.SCOPE_CONTAINER_TYPES) <= set(utils.SCOPE_NODE_TYPES)
+    for comment_type, predicates in utils.SCOPE_PREDICATES.items():
+        assert set(predicates) <= utils.SCOPE_NODE_TYPES[comment_type]
+    for member in members:
+        utils.init_tree_sitter(member)
 
 
 @pytest.mark.parametrize(

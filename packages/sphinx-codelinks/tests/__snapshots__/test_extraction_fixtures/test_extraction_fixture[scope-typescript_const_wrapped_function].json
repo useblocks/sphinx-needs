@@ -1,0 +1,77 @@
+[
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 34
+      }
+    },
+    "tagged_scope": "const onClick = (() => {}) as Handler;",
+    "need": {
+      "title": "As",
+      "id": "IMPL_TS_AS",
+      "type": "impl",
+      "links": [
+        "REQ_TS"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "lexical_declaration"
+  },
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 4
+      },
+      "end": {
+        "row": 2,
+        "column": 48
+      }
+    },
+    "tagged_scope": "const onKey = (() => {}) satisfies Handler;",
+    "need": {
+      "title": "Satisfies",
+      "id": "IMPL_TS_SATISFIES",
+      "type": "impl",
+      "links": [
+        "REQ_TS"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "lexical_declaration"
+  },
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 4,
+        "column": 4
+      },
+      "end": {
+        "row": 4,
+        "column": 46
+      }
+    },
+    "tagged_scope": "const onDrop = (() => {})!;",
+    "need": {
+      "title": "Non Null",
+      "id": "IMPL_TS_NON_NULL",
+      "type": "impl",
+      "links": [
+        "REQ_TS"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "lexical_declaration"
+  }
+]

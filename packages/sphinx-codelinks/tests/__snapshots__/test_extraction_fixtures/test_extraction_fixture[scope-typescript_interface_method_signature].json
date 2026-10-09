@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 6
+      },
+      "end": {
+        "row": 1,
+        "column": 50
+      }
+    },
+    "tagged_scope": "load(id: string): void",
+    "need": {
+      "title": "Signature",
+      "id": "IMPL_TS_SIGNATURE",
+      "type": "impl",
+      "links": [
+        "REQ_TS"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "method_signature"
+  }
+]
