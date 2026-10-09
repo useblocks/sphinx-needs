@@ -304,6 +304,16 @@ typescript_plain_const_is_skipped:
     const enabled = true;
     function handle(): void {}
 
+typescript_plain_var_is_skipped:
+  # A `var` declaration is a scope only when it holds a function: the marker binds
+  # the function after `var limit = 3;`.
+  lang: typescript
+  config: default
+  source: |
+    // @Skip Var, IMPL_TS_SKIP_VAR, impl, [REQ_TS]
+    var limit = 3;
+    function check(): void {}
+
 typescript_interface:
   # Type-level declarations bind; the function after them does not.
   lang: typescript
@@ -391,6 +401,18 @@ typescript_class_field_function:
       label = "ok";
     }
 
+typescript_plain_class_field_is_skipped:
+  # A class field is a scope only when it holds a function: the marker binds the
+  # method after `label = "ok";`.
+  lang: typescript
+  config: default
+  source: |
+    class Button {
+      // @Skip Field, IMPL_TS_SKIP_FIELD, impl, [REQ_TS]
+      label = "ok";
+      render(): void {}
+    }
+
 typescript_declare:
   # Ambient declarations (`declare …`, the shape of a .d.ts file) bind.
   lang: typescript
@@ -431,6 +453,18 @@ typescript_interface_method_signature:
       load(id: string): void;
     }
 
+typescript_abstract_method_signature:
+  # An abstract method signature is a scope: the marker binds it, not the method
+  # after it.
+  lang: typescript
+  config: default
+  source: |
+    abstract class Job {
+      // @Abstract Method, IMPL_TS_ABSTRACT_METHOD, impl, [REQ_TS]
+      abstract run(): void;
+      helper(): void {}
+    }
+
 js_module_exports_function:
   # CommonJS assignments of a function bind to the assignment.
   lang: js
@@ -449,6 +483,26 @@ js_export_default_anonymous:
   source: |
     // @Default Export, IMPL_JS_DEFAULT, impl, [REQ_JS]
     export default () => {};
+
+js_plain_assignment_is_skipped:
+  # An assignment is a scope only when it assigns a function: the marker binds the
+  # function after `count = 1;`.
+  lang: js
+  config: default
+  source: |
+    // @Skip Assignment, IMPL_JS_SKIP_ASSIGN, impl, [REQ_JS]
+    count = 1;
+    function tick() {}
+
+js_export_default_value_is_skipped:
+  # A default export is a scope only when it exports a function or a class: the
+  # marker binds the function after `export default 42;`.
+  lang: js
+  config: default
+  source: |
+    // @Skip Default, IMPL_JS_SKIP_DEFAULT, impl, [REQ_JS]
+    export default 42;
+    function tick() {}
 
 js_jsx_component:
   # JSX in a .js file parses with the TSX grammar, so the component binds.

@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.js",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 56
+      }
+    },
+    "tagged_scope": "function tick() {}",
+    "need": {
+      "title": "Skip Assignment",
+      "id": "IMPL_JS_SKIP_ASSIGN",
+      "type": "impl",
+      "links": [
+        "REQ_JS"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  }
+]
