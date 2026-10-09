@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791537851031,
+  "lastUpdate": 1791538070421,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -23832,6 +23832,42 @@ window.BENCHMARK_DATA = {
             "value": 54.794177914,
             "unit": "s",
             "extra": "Commit: 269f5d2641d336731191e1cdd06ebe2f94445d2a\nBranch: master\nTime: 2026-10-09T11:22:48+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e6cd51f042a9d1a17dfade274423bb658c7664c2",
+          "message": "🐛 sphinx-test-reports: test-env reads UTF-8 with a BOM, warns located and typed, spells scalars as JSON (#2161)\n\n**What**\n- The file is read as UTF-8 with or without a BOM; missing / undecodable\n/ invalid JSON is `report_missing` /\n  `report_unreadable` with a box.\n- A file that is not an object of objects is `env_shape` + box; an\nenvironment that is not an object is skipped with\n`env_shape` — except under `:raw:` without `:data:`, where its JSON\nblock is shown, no warning, as before (ubCode's\nrule). One input that rendered silently before now warns: an environment\nwhose value is `[]`.\n- `:env:` / `:data:` drop blank elements and keep a repeat once (at its\nfirst position); `:env: ,` / `:data: ,` show\nno environment / no variable; a missing key is ONE `env_key_not_present`\nwarning\nper directive naming the environments that lack it; `:env:` names absent\n→ `env_not_present`; all located.\n- Scalars spelled as JSON (`true`, `false`, `null`, `0`); a string\nverbatim.\n- `InvalidJsonFile`, `JsonFileNotFound`, `InvalidEnvRequested` derive\nfrom `Exception`, no longer raised.\n\n**Why** — #2139, #2140, #2141 and #2052's shape rows: crashes, empty\ncells for falsy values, unlocated per-environment\nwarnings, a BOM refusing a valid file.\n\n**ubCode parity** — the missing-key texts and the one-per-key rule are\nubCode's `MissingKey::message`\n(`env.rs:393-404`); float spelling equal (`python_float_repr`); a\nnon-object environment under `:raw:` without\n`:data:` is rendered and `:data: ,` shows no variable — both ubCode's\nrules (`env.rs:415-420`, `split_list`). The box\nhas no ubCode twin.\n\n**Tests** — `tests/test_env_errors.py`; `test_env.py`'s warning test now\nasserts each warning once, located.\n\nBranched from the report-errors pull request #2156 and rebased onto\nmaster after it merged (its commits are already there; this PR carries\nonly the `test-env` work).\n\nCloses #2139\nCloses #2140\nCloses #2141\nPart of #2052",
+          "timestamp": "2026-10-09T11:26:28+02:00",
+          "tree_id": "e92e3267010c1543b47cd1aacda556e0b2d0938a",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/e6cd51f042a9d1a17dfade274423bb658c7664c2"
+        },
+        "date": 1791538061115,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.125821025999997,
+            "unit": "s",
+            "extra": "Commit: e6cd51f042a9d1a17dfade274423bb658c7664c2\nBranch: master\nTime: 2026-10-09T11:26:28+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 49.242825669,
+            "unit": "s",
+            "extra": "Commit: e6cd51f042a9d1a17dfade274423bb658c7664c2\nBranch: master\nTime: 2026-10-09T11:26:28+02:00"
           }
         ]
       }
