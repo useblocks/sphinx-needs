@@ -96,15 +96,15 @@ New and Improved
   table. A block lives in one comment, docstring or run of consecutive line comments, in
   every supported language (C/C++, C#, Rust, Go, TypeScript and JavaScript, JSONC, Python,
   YAML, Bash); comment prefixes are stripped by the comment's kind, the doxygen ``*`` leader
-  only when every line carries one, so ``*emphasis*`` in a body is kept. A block's lines are never read as
-  one-line needs or ``@need-ids:`` references. ``codelinks analyse`` writes each need to
-  ``marked_content.json`` as a ``"type": "multiline-need"`` record -- the need with its
-  option values as written, its ``doctype``, and a source with a root-relative path and
-  the open, close and body lines -- and prints a malformed block as an analyse warning at
-  its source line. The ``src-trace`` directive renders them (the next bullet). A need type
-  and an option key are ASCII letters, digits, ``_`` and ``-``: ``@need réq:`` is refused
-  and ``:prïority: 3`` starts the body, as in ubCode. A ``markups`` value must be a
-  non-empty suffix.
+  only when every line carries one, so ``*emphasis*`` in a body is kept. A block's lines
+  are never read as one-line needs or ``@need-ids:`` references. ``codelinks analyse``
+  writes each need to ``marked_content.json`` as a ``"type": "multiline-need"`` record --
+  the need with its option values as written, its ``doctype``, and a source with a
+  root-relative path and the open, close and body lines -- and prints a malformed block as
+  an analyse warning at its source line. The ``src-trace`` directive renders them (the
+  next bullet). A need type and an option key are ASCII letters, digits, ``_`` and ``-``:
+  ``@need réq:`` is refused and ``:prïority: 3`` starts the body, as in ubCode. A
+  ``markups`` value must be a non-empty suffix.
 
   **Removed:** the ``@rst`` … ``@endrst`` blocks, ``get_rst`` and
   ``[analyse.marked_rst]``. Nothing ever rendered those blocks (#1885), so no project loses

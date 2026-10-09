@@ -163,13 +163,8 @@ def test_discover(gitignore: bool, stdout: str, source_directory: Path) -> None:
 
 
 def test_discover_cli_default_exclude_matches_ts_default(tmp_path: Path) -> None:
-    """Regression guard for D2: ``discover`` used to hardcode ``exclude=[]``
-    and bypass the comment_type-derived default entirely, so the CLI and the
-    Sphinx extension / ``analyse`` path (which both go through
-    ``SourceDiscoverConfig``'s own resolution) would silently disagree on
-    what's excluded for the same project. With no ``-e/--excludes``,
-    ``discover`` must resolve the same ``ts`` default as
-    ``SourceDiscoverConfig`` itself."""
+    """Without ``-e``, ``discover --comment-type ts`` excludes what a ``ts`` project's
+    configuration does: ``dist/app.js`` is not listed, ``src/app.ts`` is."""
     (tmp_path / "src").mkdir()
     (tmp_path / "src" / "app.ts").write_text(
         "// @Feature A, IMPL_1, impl\n", encoding="utf-8"
@@ -223,10 +218,8 @@ def test_discover_cli_excludes_replace_the_ts_default(tmp_path: Path) -> None:
 
 
 def test_discover_cli_cpp_default_exclude_is_empty(tmp_path: Path) -> None:
-    """Same D2 guard as above, from the other side: a non-``ts``
-    ``comment_type`` (``cpp``, the CLI default) must resolve to an empty
-    default exclude via the CLI too, so hand-written ``lib/`` source is
-    still discovered — matching ``SourceDiscoverConfig``'s own resolution."""
+    """Without ``-e``, ``discover`` for ``cpp`` (the CLI's default) excludes nothing:
+    ``lib/widget.cpp`` is listed."""
     lib_dir = tmp_path / "lib"
     lib_dir.mkdir()
     (lib_dir / "widget.cpp").write_text(

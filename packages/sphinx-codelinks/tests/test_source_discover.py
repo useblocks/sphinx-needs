@@ -284,10 +284,8 @@ def test_default_exclude_skips_generated_output(tmp_path: Path) -> None:
 def test_cpp_project_default_exclude_is_empty_and_finds_lib_marker(
     tmp_path: Path,
 ) -> None:
-    """Regression guard for the D1 defect: the ``ts``-family default exclude
-    must not leak to other ``comment_type`` values. ``cpp`` projects very
-    commonly keep hand-written library source under ``lib/`` — unlike a
-    ``tsc``/bundler ``lib/`` output dir, it must still be discovered."""
+    """The ``ts`` default ``exclude`` is ``ts``'s alone: a ``cpp`` project's is ``[]``, and
+    its hand-written ``lib/`` source is discovered."""
     lib_dir = tmp_path / "lib"
     lib_dir.mkdir()
     (lib_dir / "widget.cpp").write_text(
