@@ -448,19 +448,30 @@ class SourceTracingDirective(SphinxDirective):
         notes: list[tuple[int, str]],
         filepath: Path,
         location: Callable[[int], str],
+        *,
+        need_id: str | None,
+        project_template: bool,
     ) -> list[nodes.Node] | None:
         """Create one multi-line need: its record, through ``ingest_need_record``.
 
         Its content is parsed in the markup its ``doctype`` names, anchored at the
         body's first line in the source file, so a message about the body names that
         file and line; the need itself is recorded at this directive, as a one-line
-        need is.
+        need is. Two exceptions, ``needimport``'s: a need rendered through a template
+        (its own, or one the project gives) is parsed as the page's markup, the
+        template's; and a markup no parser of the project claims falls back to the
+        page's, warned once per directive and markup, for a need whose content is
+        parsed (not hidden, not blank).
 
         :param mneed: The multi-line need.
         :param record: Its record (:func:`multiline_record`), the URL fields added.
         :param notes: The warnings :func:`multiline_record` gave, reported here.
         :param filepath: The analysed file.
         :param location: The warning location of a line of the source file.
+        :param need_id: The id the need gets (:func:`would_be_id`).
+        :param project_template: Whether the project gives needs a template (the
+            ``template`` field's default, or a predicate): a need it may apply to counts
+            as rendered through one.
         :return: The need's nodes, or ``None`` when Sphinx-Needs refuses the need (warned
             at the open line).
         """
@@ -474,14 +485,13 @@ class SourceTracingDirective(SphinxDirective):
         open_line = mneed.source_map["start"]["row"] + 1
         doctype = record.get("doctype")
         markup = doctype if isinstance(doctype, str) and doctype else None
+        if record.get("template") or project_template:
+            # a template is a file of the project, written in the page's markup
+            markup = None
         content_start = mneed.source.get("content_start")
-        content_source = (
-            (os.path.abspath(filepath), int(content_start["line"]))
-            if markup is not None and content_start
-            else None
-        )
         unknown: set[str] = set()
-        try:
+
+        def ingest(markup: str | None) -> list[nodes.Node]:
             created, _ = ingest_need_record(
                 self.env.app,
                 self.state,
@@ -490,9 +500,25 @@ class SourceTracingDirective(SphinxDirective):
                     docname=self.env.docname, lineno=self.lineno
                 ),
                 content_markup=markup,
-                content_source=content_source,
+                content_source=(
+                    (os.path.abspath(filepath), int(content_start["line"]))
+                    if markup is not None and content_start
+                    else None
+                ),
                 unknown_keys=unknown,
             )
+            return created
+
+        try:
+            try:
+                return ingest(markup)
+            except InvalidNeedException as err:
+                # raised before the need is recorded: try again in the page's markup
+                if err.type != "content_markup" or markup is None:
+                    raise
+                created = ingest(None)
+                self._warn_unclaimed(markup, err.message, record, need_id)
+                return created
         except InvalidNeedException as err:
             logger.warning(
                 f"{err.type}: multi-line need could not be created: {err.message}",
@@ -513,7 +539,35 @@ class SourceTracingDirective(SphinxDirective):
                     subtype="multiline_need",
                     location=location(option_lines.get(key, open_line)),
                 )
-        return created
+
+    def _warn_unclaimed(
+        self, markup: str, reason: str, record: Mapping[str, Any], need_id: str | None
+    ) -> None:
+        """Warn, once per directive and markup, that a need's content was parsed as
+        the page's markup because no parser claims its own -- unless the need is hidden
+        or its content blank, when nothing was parsed."""
+        if markup in self._unclaimed or not str(record.get("content", "")).strip():
+            return
+        need = (
+            SphinxNeedsData(self.env).get_needs_mutable().get(need_id)
+            if need_id is not None
+            else None
+        )
+        if need is not None and need["hide"]:
+            return
+        self._unclaimed.add(markup)
+        reason = reason.removeprefix("Content markup ").removesuffix(
+            "; only reStructuredText and MyST parsers are supported."
+        )
+        logger.warning(
+            f"Multi-line needs declare doctype {markup!r}, which this project cannot "
+            f"parse content in: {reason}. Their content was parsed as this page's markup "
+            "instead. Add the suffix to source_suffix with a reStructuredText or MyST "
+            "parser, or map the markup to a suffix it parses.",
+            type="codelinks",
+            subtype="multiline_need",
+            location=self.get_location(),
+        )
 
     def render_needs(
         self,
@@ -547,11 +601,20 @@ class SourceTracingDirective(SphinxDirective):
                 marker.source_map["start"]["column"],
             ),
         )
+        # the markups whose content was parsed as the page's, warned once each
+        self._unclaimed: set[str] = set()
         fields: frozenset[str] = frozenset()
+        project_template = False
         if src_analyse.multiline_needs:
             schema = SphinxNeedsData(self.env).get_schema()
             fields = frozenset(
                 [*schema.iter_extra_field_names(), *schema.iter_link_field_names()]
+            )
+            # a default or a predicate (which may not match the need: which one matches
+            # is only known when the need is created, after its markup is chosen)
+            template = schema.get_core_field("template")
+            project_template = template is not None and (
+                template.default is not None or bool(template.predicate_defaults)
             )
         for marker in markers:
             filepath = src_analyse.analyse_config.src_dir / marker.filepath
@@ -605,7 +668,13 @@ class SourceTracingDirective(SphinxDirective):
                 if remote_url_field and remote_link_name is not None:
                     record[remote_url_field] = remote_link_name
                 created = self.ingest_multiline(
-                    marker, record, notes, filepath, location
+                    marker,
+                    record,
+                    notes,
+                    filepath,
+                    location,
+                    need_id=need_id,
+                    project_template=project_template,
                 )
             elif marker.need:
                 # render needs from one-line marker
