@@ -38,6 +38,7 @@ class InvalidNeedException(Exception):
             "global_option",
             "failed_init",
             "content_markup",
+            "content",
         ],
         message: str,
     ) -> None:
@@ -68,6 +69,7 @@ class InvalidNeedException(Exception):
         "global_option",
         "failed_init",
         "content_markup",
+        "content",
     ]:
         return self._type
 

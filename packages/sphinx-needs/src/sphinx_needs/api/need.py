@@ -850,15 +850,28 @@ def ingest_need_record(
         several records has them also for a record whose need cannot be created.
     :return: The need's nodes, and the set of the record's keys that were dropped as
         unknown to the project (the caller decides whether to warn about them).
-    :raises InvalidNeedException: What :func:`add_need` raises, and (type
-        ``content_markup``) if ``content_source`` is given without ``content_markup``;
-        the caller decides how to report it.
+    :raises InvalidNeedException: What :func:`add_need` raises; (type ``content``) if
+        the record's ``content`` (or the legacy ``description`` taken as it) is present
+        but not a string; (type ``invalid_type``) if its ``type`` is not a string; and
+        (type ``content_markup``) if ``content_source`` is given without
+        ``content_markup``. The caller decides how to report it.
 
     .. versionadded:: 9.0.0
     """
     params, unknown = _need_record_params(record, SphinxNeedsData(app.env).get_schema())
     if unknown_keys is not None:
         unknown_keys.update(unknown)
+    # what ``add_need`` reads as a string before it validates any field
+    if "content" in params and not isinstance(params["content"], str):
+        raise InvalidNeedException(
+            "content",
+            f"content must be a string, not {type(params['content']).__name__}",
+        )
+    if not isinstance(params["need_type"], str):
+        raise InvalidNeedException(
+            "invalid_type",
+            f"type must be a string, not {type(params['need_type']).__name__}",
+        )
     if content_markup is not None:
         params["content"] = MarkupContent(
             params.get("content", ""), markup=content_markup, source=content_source
