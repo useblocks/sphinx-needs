@@ -1002,3 +1002,61 @@ def test_a_fallback_body_still_names_the_source_line(
         ),
     ]
     assert _need(app, "REQ_FB")["doctype"] == ".txt"  # type: ignore[index]
+
+
+def test_full_title_does_not_move_the_predicted_id(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """A block without ``:id:`` but with ``:full_title:`` (not an option it takes, so
+    ignored): the id predicted for the duplicate check and the ``[docs]`` link is the
+    one the need gets, from the title alone."""
+    _blocks(
+        tmp_path,
+        {
+            "docs/page_f.rst": "F\n=\n\n.. src-trace::\n   :project: src\n   :file: f.c\n",
+            "src/f.c": "// @need req: Short title\n// :full_title: A much longer title\n"
+            "// @endneed\nvoid f() {}\n",
+        },
+    )
+    app = _build(tmp_path, make_app)
+    need_id = "R_" + hashlib.sha1(b"Short title").hexdigest().upper()[:5]
+    assert need_id in _json(app)["needs"]
+    page = Path(app.outdir, "src", "f.html").read_text(encoding="utf-8")
+    assert f'href="../page_f.html#{need_id}">[docs]</a>' in page
+
+
+def test_one_line_needs_keep_the_analysis_order(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """Two files whose string order and path order differ (``a-c.c`` before ``a/b.c``
+    as strings, after as paths), a one-line need on the same row in each: the cards
+    keep the order the analysis gives, the one before multi-line needs."""
+    _blocks(
+        tmp_path,
+        {
+            "src/o2/a/b.c": "// @one-line in b, IMPL_AB_ONE, impl\n",
+            "src/o2/a-c.c": "// @one-line in ac, IMPL_AC_ONE, impl\n",
+            "docs/page_o2.rst": "O\n=\n\n.. src-trace::\n   :project: src\n"
+            "   :directory: o2\n",
+        },
+    )
+    app = _build(tmp_path, make_app)
+    assert _card_order(app, "page_o2.html") == ["IMPL_AC_ONE", "IMPL_AB_ONE"]
+
+
+def test_without_ingest_need_record_no_blocks_no_warning(
+    tmp_path: Path, make_app: _MakeApp, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Below Sphinx-Needs 9.0.0, a directive whose files hold no block warns nothing.
+    (Remove at the 9.0.0 floor bump, with the guard.)"""
+    monkeypatch.setattr(src_trace, "ingest_need_record", None)
+    _blocks(
+        tmp_path,
+        {
+            "src/g.c": "// @one-line only, IMPL_G_ONE, impl\n",
+            "docs/page_g.rst": "G\n=\n\n.. src-trace::\n   :project: src\n   :file: g.c\n",
+        },
+    )
+    app = _build(tmp_path, make_app)
+    assert _warnings(app) == []
+    assert "IMPL_G_ONE" in _json(app)["needs"]
