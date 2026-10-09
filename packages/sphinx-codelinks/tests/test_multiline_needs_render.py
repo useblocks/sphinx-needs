@@ -18,6 +18,7 @@ import pytest
 from sphinx.testing.util import SphinxTestApp
 from sphinx.util.parallel import parallel_available
 
+from sphinx_codelinks.sphinx_extension.directives import src_trace
 from sphinx_needs_testkit import build_warnings
 
 from .test_need_id_refs import _SHOWS_WARNING_TYPES, _build, _json, _MakeApp, _project
@@ -899,3 +900,33 @@ def test_a_templated_block_is_parsed_as_the_page(
     # ... and so the body is reStructuredText too: its Markdown link is text
     assert "[blink](" in html
     assert _need(app, "REQ_TPL")["doctype"] == ".md"  # type: ignore[index]
+
+
+def test_without_ingest_need_record_one_warning_per_directive(
+    tmp_path: Path, make_app: _MakeApp, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Below Sphinx-Needs 9.0.0 there is no ``ingest_need_record``: the extension still
+    imports, each directive with multi-line needs warns once, and its one-line needs are
+    created as before. (Remove at the 9.0.0 floor bump, with the guard.)"""
+    monkeypatch.setattr(src_trace, "ingest_need_record", None)
+    _blocks(tmp_path, FOUR_CELLS)
+    app = _build(tmp_path, make_app)
+
+    def floor(location: str) -> str:
+        return _multiline(
+            location,
+            "this sphinx-needs has no ingest_need_record; multi-line needs are rendered "
+            "from sphinx-needs 9.0.0 on: 1 not rendered, the one-line needs were created",
+        )
+
+    assert build_warnings(app) == [
+        floor("<srcdir>/page_md.md:3"),
+        floor("<srcdir>/page_md.md:8"),
+        floor("<srcdir>/page_rst.rst:4"),
+        floor("<srcdir>/page_rst.rst:8"),
+    ]
+    needs = _json(app)["needs"]
+    for need_id in CELLS:
+        upper = need_id.removeprefix("REQ_")
+        assert need_id not in needs
+        assert needs[f"IMPL_{upper}_ONE"]["docname"] == CELLS[need_id][1]
