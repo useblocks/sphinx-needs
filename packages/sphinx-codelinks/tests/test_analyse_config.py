@@ -435,8 +435,8 @@ get_rst = false
 
 @pytest.mark.parametrize(
     "section",
-    [{"get_rst": True}, {"get_rst": False, "marked_rst": {}}],
-    ids=["get_rst_true", "get_rst_false_and_marked_rst"],
+    [{"get_rst": True}, {"get_rst": False, "marked_rst": {}}, {"get_rst": 0}],
+    ids=["get_rst_true", "get_rst_false_and_marked_rst", "get_rst_zero"],
 )
 def test_convert_analyse_config_still_refuses_get_rst_true_or_marked_rst(
     section: dict,

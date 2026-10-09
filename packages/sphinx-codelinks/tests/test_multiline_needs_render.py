@@ -465,6 +465,22 @@ Q3_BODY = "//\n// Body {{ 1 + 1 }} here.\n// @endneed\nvoid q() {}\n"
             id="option_key_repeated_in_another_case",
         ),
         pytest.param(
+            [":Type: spec", ":Content: x"],
+            {"type": "req", "content": "Body {{ 1 + 1 }} here."},
+            [
+                (
+                    3,
+                    "multi-line need option 'Type' repeats the block's own 'type': ignored",
+                ),
+                (
+                    4,
+                    "multi-line need option 'Content' repeats the block's own "
+                    "'content': ignored",
+                ),
+            ],
+            id="option_naming_a_record_key_in_another_case",
+        ),
+        pytest.param(
             [":delete: true"],
             {"title": "Q3 block"},
             [
@@ -1060,3 +1076,99 @@ def test_without_ingest_need_record_no_blocks_no_warning(
     app = _build(tmp_path, make_app)
     assert _warnings(app) == []
     assert "IMPL_G_ONE" in _json(app)["needs"]
+
+
+XPARSER = """\
+from docutils.parsers.rst import Parser as _Rst
+from sphinx.parsers import Parser as _SphinxParser
+
+
+class XParser(_SphinxParser):
+    supported = ("xrst",)
+
+    def parse(self, inputstring, document):
+        _Rst().parse(inputstring, document)
+
+
+def setup(app):
+    app.add_source_suffix(".xrst", "xrst")
+    app.add_source_parser(XParser)
+"""
+
+
+def test_a_fallback_on_a_page_of_a_third_parser_keeps_the_need(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """On a page whose own parser is neither reStructuredText nor MyST, the page's
+    suffix is unclaimed too: the body is parsed by the page's parser, unanchored (its
+    warnings at the page), and the need is kept."""
+    _blocks(
+        tmp_path,
+        {
+            "docs/xparser_ext.py": XPARSER,
+            "docs/conf.py": CONF
+            + "import os, sys\nsys.path.insert(0, os.path.dirname(__file__))\n"
+            "extensions.append('xparser_ext')\n"
+            'source_suffix = {".rst": "restructuredtext", ".md": "markdown", '
+            '".xrst": "xrst"}\n',
+            "docs/page_x.xrst": "X\n=\n\n.. src-trace::\n   :project: src\n   :file: fbx.c\n",
+            "src/fbx.c": "// @need[txt] req: Third parser\n// :id: REQ_FBX\n//\n"
+            "// A bad role :nosuchrole:`x` and *em*.\n// @endneed\nvoid f() {}\n",
+        },
+        toml_extra=TXT_MARKUP,
+    )
+    app = _build(tmp_path, make_app)
+
+    docutils = " [docutils]" if _SHOWS_WARNING_TYPES else ""
+    assert build_warnings(app) == [
+        f'<srcdir>/page_x.xrst:4: ERROR: Unknown interpreted text role "nosuchrole".'
+        f"{docutils}",
+        _multiline(
+            "<srcdir>/page_x.xrst:4",
+            "Multi-line needs declare doctype '.txt', which this project cannot parse "
+            "content in: '.txt' is not a registered source suffix (registered: '.md', "
+            "'.rst', '.xrst'). Their content was parsed as this page's markup instead. "
+            "Add the suffix to source_suffix with a reStructuredText or MyST parser, or "
+            "map the markup to a suffix it parses.",
+        ),
+    ]
+    assert _need(app, "REQ_FBX")["doctype"] == ".txt"  # type: ignore[index]
+    assert "<em>em</em>" in _content_html(app, "page_x.html", "REQ_FBX")
+
+
+def test_a_fallback_on_a_myst_page_is_myst(tmp_path: Path, make_app: _MakeApp) -> None:
+    """On a MyST page an unclaimed markup falls back to MyST, the page's markup, still
+    anchored at the body's source line: its Markdown link renders, and an unresolved
+    ``{ref}`` names the source file and line."""
+    _blocks(
+        tmp_path,
+        {
+            "docs/page_m.md": "# M\n\n```{src-trace}\n:project: src\n:file: fbm.c\n```\n",
+            "src/fbm.c": "// @need[txt] req: MyST fallback\n// :id: REQ_FBM\n//\n"
+            "// A [link](https://x.example) and {ref}`nolabel_md`.\n// @endneed\n"
+            "void f() {}\n",
+        },
+        toml_extra=TXT_MARKUP,
+    )
+    app = _build(tmp_path, make_app)
+
+    ref = " [ref.ref]" if _SHOWS_WARNING_TYPES else ""
+    assert sorted(build_warnings(app, srcdir=tmp_path)) == sorted(
+        [
+            f"<srcdir>/{_at('src', 'fbm.c')}:4: WARNING: undefined label: "
+            f"'nolabel_md'{ref}",
+            _multiline(
+                f"<srcdir>/{_at('docs', 'page_m.md')}:3",
+                "Multi-line needs declare doctype '.txt', which this project cannot "
+                "parse content in: '.txt' is not a registered source suffix "
+                "(registered: '.md', '.rst'). Their content was parsed as this page's "
+                "markup instead. Add the suffix to source_suffix with a "
+                "reStructuredText or MyST parser, or map the markup to a suffix it "
+                "parses.",
+            ),
+        ]
+    )
+    assert _need(app, "REQ_FBM")["doctype"] == ".txt"  # type: ignore[index]
+    assert '<a class="reference external" href="https://x.example">link</a>' in (
+        _content_html(app, "page_m.html", "REQ_FBM")
+    )
