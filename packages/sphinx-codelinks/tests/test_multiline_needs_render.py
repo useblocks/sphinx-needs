@@ -761,3 +761,141 @@ def test_analyser_warnings_on_blocks_are_multiline_need(
             "oneline",
         ),
     ]
+
+
+TXT_MARKUP = """
+[codelinks.projects.src.analyse.multiline_needs]
+markups = { rst = ".rst", md = ".md", txt = ".txt" }
+"""
+
+PAGE_K = """\
+K
+=
+
+.. src-trace::
+   :project: src
+   :file: k.c
+
+.. src-trace::
+   :project: src
+   :file: k2.c
+
+.. src-trace::
+   :project: src
+   :file: k3.c
+"""
+
+
+def _txt_block(need_id: str, *, hide: bool = False, body: str | None = None) -> str:
+    """A ``@need[txt]`` block: ``.txt`` is a suffix no parser of the project claims."""
+    lines = [f"// @need[txt] req: {need_id} title", f"// :id: {need_id}"]
+    if hide:
+        lines.append("// :hide:")
+    if body is not None:
+        lines += ["//", f"// {body}"]
+    return "\n".join([*lines, "// @endneed", f"void {need_id.lower()}() {{}}", ""])
+
+
+UNCLAIMED = {
+    "docs/page_k.rst": PAGE_K,
+    # two blocks with a body and a hidden one: one warning for the directive
+    "src/k.c": _txt_block("TXT_1", body="Plain *one* text.")
+    + _txt_block("TXT_2", body="Plain *two* text.")
+    + _txt_block("TXT_HIDDEN", hide=True, body="Hidden *text*."),
+    # a hidden block and one without a body: nothing is parsed, nothing warned
+    "src/k2.c": _txt_block("TXT_HIDDEN_2", hide=True, body="Hidden *text*.")
+    + _txt_block("TXT_BLANK"),
+    # another directive: warned again
+    "src/k3.c": _txt_block("TXT_3", body="Plain *three* text."),
+}
+
+
+def test_an_unclaimed_markup_is_parsed_as_the_page(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """A markup whose suffix no parser claims is parsed as the page's markup: every
+    need kept, its ``doctype`` as declared, and one warning per directive and markup at
+    the directive -- none where every such block is hidden or has no body."""
+    _blocks(tmp_path, UNCLAIMED, toml_extra=TXT_MARKUP)
+    app = _build(tmp_path, make_app)
+
+    unclaimed = (
+        "Multi-line needs declare doctype '.txt', which this project cannot parse "
+        "content in: '.txt' is not a registered source suffix (registered: '.md', "
+        "'.rst'). Their content was parsed as this page's markup instead. Add the suffix "
+        "to source_suffix with a reStructuredText or MyST parser, or map the markup to a "
+        "suffix it parses."
+    )
+    assert build_warnings(app) == [
+        _multiline("<srcdir>/page_k.rst:4", unclaimed),
+        _multiline("<srcdir>/page_k.rst:12", unclaimed),
+    ]
+    needs = _json(app)["needs"]
+    for need_id in (
+        "TXT_1",
+        "TXT_2",
+        "TXT_HIDDEN",
+        "TXT_HIDDEN_2",
+        "TXT_BLANK",
+        "TXT_3",
+    ):
+        assert needs[need_id]["doctype"] == ".txt", need_id
+    for need_id, word in (("TXT_1", "one"), ("TXT_2", "two"), ("TXT_3", "three")):
+        assert f"<em>{word}</em>" in _content_html(app, "page_k.html", need_id)
+    assert _card(app, "page_k.html", "TXT_HIDDEN") is None
+
+
+TEMPLATE = "**TPL bold** and `tlink <https://t.example>`_ then: {{content}}\n"
+TEMPLATED_BLOCK = """\
+// @need[md] req: Templated block
+// :id: REQ_TPL
+// {option}
+//
+// Body [blink](https://b.example).
+// @endneed
+void templated() {{}}
+"""
+
+
+@pytest.mark.parametrize(
+    ("option", "conf"),
+    [
+        pytest.param(":template: rsttpl", "", id="the_blocks_template"),
+        pytest.param(
+            ":status: open",
+            'needs_fields = {"template": {"default": "rsttpl"}}\n',
+            id="the_projects_default",
+        ),
+        pytest.param(
+            ":status: open",
+            'needs_fields = {"template": {"predicates": '
+            '[(\'id == "REQ_TPL"\', "rsttpl")]}}\n',
+            id="a_project_predicate",
+        ),
+    ],
+)
+def test_a_templated_block_is_parsed_as_the_page(
+    tmp_path: Path, make_app: _MakeApp, option: str, conf: str
+) -> None:
+    """A template is a file of the project, written in the page's markup: a block
+    rendered through one -- its own ``:template:``, or one the project gives -- is
+    parsed as the page's markup, template and body together, as ``needimport`` does."""
+    _blocks(
+        tmp_path,
+        {
+            "docs/conf.py": CONF.replace("needs_fields = ", "_unused = ") + conf,
+            "docs/needs_templates/rsttpl.need": TEMPLATE,
+            "docs/page_t.rst": "T\n=\n\n.. src-trace::\n   :project: src\n   :file: t.c\n",
+            "src/t.c": TEMPLATED_BLOCK.format(option=option),
+        },
+    )
+    app = _build(tmp_path, make_app)
+
+    assert build_warnings(app) == []
+    html = _content_html(app, "page_t.html", "REQ_TPL")
+    # the template's reStructuredText renders ...
+    assert "<strong>TPL bold</strong>" in html
+    assert '<a class="reference external" href="https://t.example">tlink</a>' in html
+    # ... and so the body is reStructuredText too: its Markdown link is text
+    assert "[blink](" in html
+    assert _need(app, "REQ_TPL")["doctype"] == ".md"  # type: ignore[index]
