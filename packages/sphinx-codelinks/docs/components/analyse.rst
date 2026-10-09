@@ -361,8 +361,10 @@ the type and title.
   the same.
 - **A markup no parser claims** -- a ``markups`` entry such as ``txt = ".txt"``, or ``md`` in a
   project without myst-parser -- falls back to the page's markup, still anchored at the body's
-  source line: the need is kept with its declared ``doctype``, and the directive warns once per
-  markup, at the directive (not for a hidden block, or one without a body).
+  source line (unless the page's own parser is neither reStructuredText nor MyST, when the body is
+  parsed by that parser and its warnings sit at the page): the need is kept with its declared
+  ``doctype``, and the directive warns once per markup, at the directive (not for a hidden block,
+  or one without a body).
 - **Warnings.** Every warning about a block's own content or options is
   ``codelinks.multiline_need`` -- the malformed blocks above included -- at the source file and line,
   relative to the git root; a skipped duplicate shares ``codelinks.duplicate_need`` with one-line
@@ -370,9 +372,10 @@ the type and title.
   rendered) is at the directive. A warning about the body itself, from docutils or Sphinx (an
   unknown role, an unresolved reference), names the source file by its absolute path, at the body's
   line -- except for a body rendered through a template or with ``jinja_content``, whose rendered
-  text Sphinx-Needs anchors at the need (the page, at the directive's line), and for myst-parser's
-  own warnings about a Markdown body, which name the page with the body's line (myst-parser 4: the
-  source file with ``.rst`` appended).
+  text Sphinx-Needs anchors at the need (the page, at the directive's line), for a fallback body
+  on a page of neither parser (above), and for myst-parser's own warnings about a Markdown body,
+  which name the page with the body's line (myst-parser 4: the source file with ``.rst``
+  appended).
 
 What a body should not contain
 ..............................

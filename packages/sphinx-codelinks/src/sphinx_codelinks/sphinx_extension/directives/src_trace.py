@@ -188,7 +188,16 @@ def multiline_record(
         line = option_lines.get(written, open_line)
         key = written.lower()
         invalid: str | None = None
-        if key in record:
+        if key in RECORD_KEYS:
+            # the producer's wording for a key the block sets itself
+            notes.append(
+                (
+                    line,
+                    f"multi-line need option {written!r} repeats the block's own "
+                    f"{key!r}: ignored",
+                )
+            )
+        elif key in record:
             notes.append(
                 (
                     line,
