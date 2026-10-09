@@ -277,6 +277,35 @@ bash_hash_run:
       echo deploy
     }
 
+typescript_line_comment_run:
+  # A run of TypeScript // comments forms one block.
+  lang: typescript
+  config: default
+  source: |
+    // @need impl: Request handler
+    // :id: IMPL_TS
+    //
+    // Handles the request.
+    // @endneed
+    export function handle(request: Request): Response {
+      return new Response();
+    }
+
+tsx_jsdoc_leader:
+  # A JSDoc /** */ block in a .tsx file follows the doxygen rule: the " * " leader on
+  # every line is stripped.
+  lang: tsx
+  config: default
+  source: |
+    /**
+     * @need impl: Login button
+     * :id: IMPL_TSX
+     *
+     * Renders the button.
+     * @endneed
+     */
+    export const LoginButton = () => <button>Log in</button>;
+
 # --- grammar ---------------------------------------------------------------------------
 
 markup_tag_md:

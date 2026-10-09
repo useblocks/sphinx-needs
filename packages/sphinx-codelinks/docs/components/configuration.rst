@@ -351,7 +351,8 @@ Specifies the comment syntax style used in the source code files. This determine
    * - TypeScript / JavaScript
      - ``"ts"``
      - ``//`` (single-line),
-       ``/* */`` (multi-line)
+       ``/* */`` (multi-line),
+       ``<!--`` (legacy single-line, JavaScript)
      - ``.ts``, ``.tsx``, ``.mts``, ``.cts``, ``.js``, ``.jsx``, ``.mjs``
        and ``.cjs``
    * - YAML

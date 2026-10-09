@@ -94,9 +94,9 @@ New and Improved
   ``get_multiline_needs = true`` switches them on for a project, and
   ``[analyse.multiline_needs]`` sets the two words, the default markup and the markups
   table. A block lives in one comment, docstring or run of consecutive line comments, in
-  every supported language (C/C++, C#, Rust, Go, JSONC, Python, YAML, Bash); comment
-  prefixes are stripped by the comment's kind, the doxygen ``*`` leader only when every line
-  carries one, so ``*emphasis*`` in a body is kept. A block's lines are never read as
+  every supported language (C/C++, C#, Rust, Go, TypeScript and JavaScript, JSONC, Python,
+  YAML, Bash); comment prefixes are stripped by the comment's kind, the doxygen ``*`` leader
+  only when every line carries one, so ``*emphasis*`` in a body is kept. A block's lines are never read as
   one-line needs or ``@need-ids:`` references. ``codelinks analyse`` writes each need to
   ``marked_content.json`` as a ``"type": "multiline-need"`` record -- the need with its
   option values as written, its ``doctype``, and a source with a root-relative path and

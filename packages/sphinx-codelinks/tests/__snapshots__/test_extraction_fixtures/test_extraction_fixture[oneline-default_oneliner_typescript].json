@@ -1,19 +1,27 @@
-{
-  "needs": [
-    {
-      "id": "IMPL_TS",
-      "title": "Ts Title",
-      "type": "impl",
-      "links": {
-        "links": [
-          "REQ_TS"
-        ]
+[
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
       },
-      "metadata": {},
-      "line": 1
-    }
-  ],
-  "need_refs": [],
-  "marked_rst": [],
-  "warnings": []
-}
+      "end": {
+        "row": 0,
+        "column": 37
+      }
+    },
+    "tagged_scope": "function f(): void {}",
+    "need": {
+      "title": "Ts Title",
+      "id": "IMPL_TS",
+      "type": "impl",
+      "links": [
+        "REQ_TS"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  }
+]

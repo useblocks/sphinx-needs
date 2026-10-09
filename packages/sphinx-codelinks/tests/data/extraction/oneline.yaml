@@ -65,12 +65,8 @@ default_oneliner_typescript:
     // @Ts Title, IMPL_TS, impl, [REQ_TS]
     function f(): void {}
 
-# a JSX comment ({/* ... */}) is an ordinary block-comment node in the TSX
-# grammar; the marker inside one must extract like any /* */ comment. The
-# marker sits on its own line: with the default newline end_sequence, a
-# marker sharing a line with the closing */ swallows the */ into its last
-# field (pre-existing engine behavior; deliberately not exercised by the
-# shared fixtures)
+# a JSX comment ({/* ... */}) is an ordinary block comment under the TSX
+# grammar, so a marker in one extracts like in any /* */ comment
 jsx_oneliner_tsx:
   lang: tsx
   config: default
@@ -83,12 +79,9 @@ jsx_oneliner_tsx:
       </div>
     );
 
-# legacy HTML-style comments (<!-- ...) are valid in .js sources and are a
-# separate ``html_comment`` node from ``comment`` under the TSX grammar; the
-# query must capture both or the marker is silently dropped. These comments
-# run to end of line like ``//`` (Annex B), so the closing ``-->`` sits on
-# its own line — sharing the marker's line would swallow it into the last
-# field, the same pre-existing engine behavior noted above for jsx_oneliner_tsx
+# a legacy HTML-like comment (<!-- ...), valid in JavaScript, is an
+# html_comment node, not a comment node, and the query captures both. It runs
+# to the end of its line like //, and so does a line that starts with -->
 html_comment_oneliner_js:
   lang: js
   config: default

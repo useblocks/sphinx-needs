@@ -1,0 +1,53 @@
+[
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 3
+      },
+      "end": {
+        "row": 4,
+        "column": 11
+      }
+    },
+    "tagged_scope": "function handle(request: Request): Response {\n  return new Response();\n}",
+    "need": {
+      "type": "impl",
+      "title": "Request handler",
+      "id": "IMPL_TS",
+      "content": "Handles the request.",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.ts",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 1,
+        "col": 3
+      },
+      "end": {
+        "line": 5,
+        "col": 11
+      },
+      "content_start": {
+        "line": 4,
+        "col": 3
+      },
+      "option_lines": {
+        "id": 2
+      },
+      "scope": {
+        "kind": "function_declaration",
+        "start": 6,
+        "end": 8
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "function_declaration"
+  }
+]

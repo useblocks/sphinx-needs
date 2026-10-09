@@ -1,0 +1,53 @@
+[
+  {
+    "filepath": "case.tsx",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 3
+      },
+      "end": {
+        "row": 5,
+        "column": 11
+      }
+    },
+    "tagged_scope": "const LoginButton = () => <button>Log in</button>;",
+    "need": {
+      "type": "impl",
+      "title": "Login button",
+      "id": "IMPL_TSX",
+      "content": "Renders the button.",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.tsx",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 2,
+        "col": 3
+      },
+      "end": {
+        "line": 6,
+        "col": 11
+      },
+      "content_start": {
+        "line": 5,
+        "col": 3
+      },
+      "option_lines": {
+        "id": 3
+      },
+      "scope": {
+        "kind": "lexical_declaration",
+        "start": 8,
+        "end": 8
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "lexical_declaration"
+  }
+]
