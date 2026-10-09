@@ -232,13 +232,19 @@ def test_four_cells_render_in_the_declared_markup(
         ) in source_page.read_text(encoding="utf-8"), need_id
 
 
+def _at(*parts: str) -> str:
+    """A path below the project root as a warning prints it after ``<srcdir>/``: with
+    the OS's separators, since Sphinx and docutils print the file's own path."""
+    return str(Path(*parts))
+
+
 def _myst_logged(page: str, source: str, line: int) -> str:
     """Where a warning myst-parser logs itself points, for a body in ``source``:
     myst-parser 5 names the page being read with the body's line, myst-parser 4 the
     body's file with an ``.rst`` suffix (Sphinx-Needs' documented first-slice gap)."""
     if MYST_MAJOR >= 5:
-        return f"<srcdir>/docs/{page}:{line}"
-    return f"<srcdir>/src/{source}.rst:{line}"
+        return f"<srcdir>/{_at('docs', page)}:{line}"
+    return f"<srcdir>/{_at('src', source)}.rst:{line}"
 
 
 def _diagnostics_cell(name: str, markup: str) -> str:
@@ -287,9 +293,10 @@ def test_body_diagnostics_name_the_source_line(
 
     def rst(source: str) -> list[str]:
         return [
-            f"<srcdir>/src/{source}:7: ERROR: Unknown interpreted text role "
+            f"<srcdir>/{_at('src', source)}:7: ERROR: Unknown interpreted text role "
             f'"nosuchrole".{docutils}',
-            f'<srcdir>/src/{source}:9: ERROR: Unknown directive type "nosuchdirective".'
+            f"<srcdir>/{_at('src', source)}:9: ERROR: Unknown directive type "
+            '"nosuchdirective".'
             "\n\n.. nosuchdirective:: arg"
             f"{docutils}",
         ]
