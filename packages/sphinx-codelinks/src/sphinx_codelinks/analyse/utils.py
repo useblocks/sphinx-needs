@@ -89,9 +89,8 @@ PYTHON_QUERY = """
 # The query of every grammar whose comments are one ``comment`` node kind.
 SIMPLE_COMMENT_QUERY = """(comment) @comment"""
 # ``html_comment`` is a separate node kind the TypeScript/TSX grammars emit
-# for legacy ``<!-- ... -->`` comments, which are valid in the ``.js`` sources
-# this comment type also covers. Without matching it, markers written in that
-# style are silently dropped.
+# for ``<!--`` comments: legacy one-line comments, valid in classic scripts only.
+# Without matching it, markers written in that style are silently dropped.
 TYPE_SCRIPT_QUERY = """
     (comment) @comment
     (html_comment) @comment

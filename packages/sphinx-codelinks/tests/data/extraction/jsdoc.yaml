@@ -1,17 +1,16 @@
 # JSDoc comments in TypeScript and JavaScript.
 #
 # A JSDoc comment is a block comment opened by exactly ``/**``, as JSDoc reads one:
-# ``/***`` and the empty ``/**/`` are not. A line of a JSDoc comment (a block comment
-# opened by exactly ``/**``, under ``comment_type = "ts"``) is a ``jsdoc_tag`` warning,
-# and never a need, when ALL hold: the one-line start sequence is ``@`` (JSDoc's own
-# sigil -- with any other start sequence the check does not run, so ``[[param a, b]]``
-# is the marker its author wrote); nothing alphanumeric precedes the ``@`` on the line;
-# a tag of the shared list (``param``, ``returns``, ``deprecated``, ``link``, ...)
-# directly follows it and ends at a space, a tab, ``{``, ``}`` or the line end; and the
-# one-line parser would otherwise have read the line as a marker or warned about it. A
-# tag line the one-line parser would have ignored (``@param a the augend``, ``@returns
-# the sum``) stays silent. Tags are case-sensitive. Every other line goes to the
-# one-line parser.
+# ``/***`` and the empty ``/**/`` are not. A line of a JSDoc comment (under
+# ``comment_type = "ts"``) is a ``jsdoc_tag`` warning, and never a need, when ALL hold:
+# the one-line start sequence is ``@`` (JSDoc's own sigil -- with any other start
+# sequence the check does not run, so ``[[param a, b]]`` is the marker its author
+# wrote); nothing alphanumeric precedes the ``@`` on the line; a tag of the shared list
+# (``param``, ``returns``, ``deprecated``, ``link``, ...) directly follows it and ends
+# at a space, a tab, ``{``, ``}`` or the line end; and the one-line parser would
+# otherwise have read the line as a marker or warned about it. A tag line the one-line
+# parser would have ignored (``@param a the augend``, ``@returns the sum``) stays
+# silent. Tags are case-sensitive. Every other line goes to the one-line parser.
 #
 # A start sequence that JSDoc also uses cannot tell a need from documentation; the
 # warning says to choose another one.
