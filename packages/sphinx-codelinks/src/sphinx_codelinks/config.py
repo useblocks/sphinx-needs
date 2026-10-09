@@ -8,6 +8,7 @@ from jsonschema import ValidationError, validate
 from sphinx.application import Sphinx
 from sphinx.config import Config as _SphinxConfig
 
+from sphinx_codelinks.logger import get_logger
 from sphinx_codelinks.source_discover.config import (
     CommentType,
     SourceDiscoverConfig,
@@ -1111,7 +1112,10 @@ REMOVED_ANALYSE_KEYS: dict[str, str] = {
 def check_removed_analyse_keys(config_dict: AnalyseSectionConfigType) -> None:
     """Refuse the keys of the removed ``@rst`` blocks with one message naming the cure.
 
-    Any other unknown key keeps failing as before, in the dataclass constructor.
+    Any other unknown key keeps failing as before, in the dataclass constructor. The one
+    exception: ``get_rst = false`` alone asks for nothing the blocks did, and
+    configuration scaffolds wrote it into ``ubproject.toml`` files ubCode reads too, so
+    it is warned about with the same message instead.
 
     :raises TypeError: through the channel every other configuration error of the
         section takes (``typer.BadParameter`` in the CLI, the ``config-inited`` error of
@@ -1124,11 +1128,15 @@ def check_removed_analyse_keys(config_dict: AnalyseSectionConfigType) -> None:
         f"'{key}'" if key == "get_rst" else f"'[analyse.{key}]'" for key in found
     )
     replacements = " and ".join(REMOVED_ANALYSE_KEYS[key] for key in found)
-    raise TypeError(
+    message = (
         f"analyse: {removed} {'is' if len(found) == 1 else 'are'} no longer supported: "
         "the marked-rst blocks were replaced by multi-line needs (the @need and "
         f"@endneed markers); use {replacements} instead"
     )
+    if found == ["get_rst"] and config_dict.get("get_rst") is False:
+        get_logger(__name__).warning(message, subtype="config")
+        return
+    raise TypeError(message)
 
 
 def convert_analyse_config(
@@ -1144,6 +1152,8 @@ def convert_analyse_config(
                 "need_id_refs",
                 "multiline_needs",
                 "preprocessor",
+                # tolerated (``check_removed_analyse_keys``) and ignored
+                "get_rst",
             }:
                 # Convert string paths to Path objects
                 if k in {"src_dir", "git_root"} and isinstance(v, str):

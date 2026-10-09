@@ -108,7 +108,9 @@ New and Improved
   **Removed:** the ``@rst`` … ``@endrst`` blocks, ``get_rst`` and
   ``[analyse.marked_rst]``. Nothing ever rendered those blocks (#1885), so no project loses
   output; a configuration still naming either key is refused with a message naming its
-  replacement.
+  replacement -- except ``get_rst = false`` with nothing else removed, which asks for
+  nothing and is warned about once with the same message (configuration scaffolds wrote it
+  into ``ubproject.toml`` files ubCode reads too).
   The ``"type": "rst"`` entries of ``marked_content.json`` are gone, ``codelinks write rst``
   ignores the new records, and the CLI prints every analyse warning as
   ``Analyse warning in <file>:<line> - <kind>: <message>`` (it said ``Oneline parser
