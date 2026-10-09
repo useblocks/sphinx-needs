@@ -129,7 +129,8 @@ New and Improved
   ``docname`` and ``lineno`` of the directive, local and remote URLs and the source page's
   ``[docs]`` link at the open line. The body is parsed in its declared markup whatever the
   page's, so a Markdown body renders its roles and lists in a reStructuredText page and the
-  reverse; a warning about it names the source file and line. A block's options are a need
+  reverse; a docutils or Sphinx warning about it names the source file and line (myst-parser's
+  own warnings still name the page). A block's options are a need
   directive's, converted as ``.. req::`` converts them; any other key is ignored with a
   warning at its line. A block rendered through a template is parsed as the page's markup,
   and a markup no parser claims falls back to the page's with one warning per directive, as
