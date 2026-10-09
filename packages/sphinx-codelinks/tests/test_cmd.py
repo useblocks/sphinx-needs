@@ -757,3 +757,34 @@ def test_analyse_names_the_replacement_of_a_removed_key(
 
     assert result.exit_code != 0
     assert f"Invalid value: {message}" in _normalize_output(result.output)
+
+
+def test_analyse_tolerates_get_rst_false(tmp_path: Path) -> None:
+    """``get_rst = false`` alone is warned about once and the analysis runs."""
+    config_file = tmp_path / "codelinks_config.toml"
+    with config_file.open("w", encoding="utf-8") as f:
+        toml.dump(
+            {
+                "codelinks": {
+                    "projects": {
+                        "p": {
+                            "source_discover": {"src_dir": str(tmp_path)},
+                            "analyse": {"get_rst": False},
+                        }
+                    }
+                }
+            },
+            f,
+        )
+
+    result = runner.invoke(app, ["analyse", str(config_file)])
+
+    assert result.exit_code == 0, result.output
+    assert (
+        _normalize_output(result.output).count(
+            "analyse: 'get_rst' is no longer supported: the marked-rst blocks were "
+            "replaced by multi-line needs (the @need and @endneed markers); use "
+            "get_multiline_needs instead"
+        )
+        == 1
+    )

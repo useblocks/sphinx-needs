@@ -358,6 +358,37 @@ def test_convert_analyse_config_names_the_replacement_of_a_removed_key(
     assert "multi-line needs" in str(excinfo.value)
 
 
+GET_RST_REMOVED = (
+    "analyse: 'get_rst' is no longer supported: the marked-rst blocks were replaced by "
+    "multi-line needs (the @need and @endneed markers); use get_multiline_needs instead"
+)
+
+
+def test_convert_analyse_config_tolerates_get_rst_false(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """``get_rst = false`` asks for nothing the removed blocks did, and configuration
+    scaffolds wrote it into shared ``ubproject.toml`` files: one warning, no error."""
+    with caplog.at_level("WARNING"):
+        config = convert_analyse_config({"get_rst": False})
+
+    assert [record.getMessage() for record in caplog.records] == [GET_RST_REMOVED]
+    assert config.get_multiline_needs is False
+
+
+@pytest.mark.parametrize(
+    "section",
+    [{"get_rst": True}, {"get_rst": False, "marked_rst": {}}],
+    ids=["get_rst_true", "get_rst_false_and_marked_rst"],
+)
+def test_convert_analyse_config_still_refuses_get_rst_true_or_marked_rst(
+    section: dict,
+) -> None:
+    """Only ``get_rst = false`` with nothing else removed is tolerated."""
+    with pytest.raises(TypeError, match="no longer supported"):
+        convert_analyse_config(section)
+
+
 def test_an_unknown_analyse_key_still_fails_in_the_constructor() -> None:
     """The unknown-key policy for every other key is unchanged."""
     with pytest.raises(TypeError, match="unexpected keyword argument 'foo'"):
