@@ -1,0 +1,55 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 3
+      },
+      "end": {
+        "row": 7,
+        "column": 11
+      }
+    },
+    "tagged_scope": "void tabs() {}",
+    "need": {
+      "type": "req",
+      "title": "Tab indentation",
+      "id": "REQ_TAB",
+      "links": "REQ_A, REQ_B",
+      "content": "First body line.\n  Second body line.",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.cpp",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 1,
+        "col": 3
+      },
+      "end": {
+        "line": 8,
+        "col": 11
+      },
+      "content_start": {
+        "line": 6,
+        "col": 3
+      },
+      "option_lines": {
+        "id": 2,
+        "links": 3
+      },
+      "scope": {
+        "kind": "function_definition",
+        "start": 9,
+        "end": 9
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "function_definition"
+  }
+]

@@ -1,0 +1,16 @@
+[
+  {
+    "file_path": "case.cpp",
+    "lineno": 1,
+    "msg": "the open line does not match '@need[<markup>] <type>: <title>'; the block up to '@endneed' is skipped",
+    "type": "multiline-need",
+    "sub_type": "multiline_need_header"
+  },
+  {
+    "file_path": "case.cpp",
+    "lineno": 6,
+    "msg": "the open line does not match '@need[<markup>] <type>: <title>'; the block up to '@endneed' is skipped",
+    "type": "multiline-need",
+    "sub_type": "multiline_need_header"
+  }
+]

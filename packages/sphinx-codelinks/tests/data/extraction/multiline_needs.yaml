@@ -64,12 +64,11 @@
 #
 # Each case's snapshot is the marked content of ``marked_content.json`` as dumped -- its
 # ``multiline-need`` record(s) beside any one-line need or reference -- plus the
-# ``[warnings]`` sidecar of the analyser's warnings. ubCode projects each record to
-# ``{need, markup, start_line, end_line, content_start_line}`` for its parity test:
-# ``need`` (type, title, the options in the order written, content, doctype), ``markup``
-# (the resolved tag), and the 1-indexed open line, close line and first body line after
-# trimming (or null), taken from ``source``. No case sets ``extract``, so the one-line and
-# need-reference extractors run too, with the default one-line style.
+# ``[warnings]`` sidecar of the analyser's warnings. ubCode compares each
+# ``multiline-need`` record in production shape, as it does every other kind: the whole
+# record (``need``, ``markup``, ``source`` with its positions, option lines and scope)
+# and the warnings, as the snapshots hold them. No case sets ``extract``, so the
+# one-line and need-reference extractors run too, with the default one-line style.
 
 # --- languages -------------------------------------------------------------------------
 
@@ -277,6 +276,71 @@ bash_hash_run:
       echo deploy
     }
 
+cpp_bang_block_opener:
+  # The "/*!" opener (Qt style) is a block comment opener like "/*" and "/**": on a row
+  # of its own it is a delimiter row and dropped; on the open line's row it is removed
+  # and the open word follows it.
+  lang: cpp
+  config: default
+  source: |
+    /*!
+     * @need impl: Bang opener on its own row
+     * :id: IMPL_BANG_ROW
+     * @endneed
+     */
+    void bang_row() {}
+
+    /*! @need impl: Bang opener on the open row
+     *  :id: IMPL_BANG_OPEN
+     *
+     *  Body of the block.
+     *  @endneed
+     */
+    void bang_open() {}
+
+rust_block_comment:
+  # A Rust /* */ block comment is a run of its own, stripped as a C block comment: the
+  # " * " leader on every line is removed.
+  lang: rust
+  config: default
+  source: |
+    /*
+     * @need impl: Rust block comment
+     * :id: IMPL_RUST_BLOCK
+     *
+     * The body of a Rust block comment.
+     * @endneed
+     */
+    fn block() {}
+
+python_bare_string_statement:
+  # A string statement that is not a docstring (it follows code in the module) is a run
+  # of its own all the same, stripped as a docstring is.
+  lang: python
+  config: default
+  source: |
+    VALUE = 1
+    """@need impl: Bare string statement
+    :id: IMPL_BARE_STRING
+
+    A string statement after code, not a docstring.
+    @endneed
+    """
+
+python_prefixed_docstring:
+  # A docstring with a string prefix (r""") loses the prefix with the quotes; the body's
+  # backslash is kept as written.
+  lang: python
+  config: default
+  source: |
+    def pattern():
+        r"""@need impl: Raw docstring
+        :id: IMPL_RAW_DOCSTRING
+
+        Matches \d+ digits.
+        @endneed
+        """
+
 # --- grammar ---------------------------------------------------------------------------
 
 markup_tag_md:
@@ -303,6 +367,28 @@ markup_tag_unknown:
     // Rendered as the default markup.
     // @endneed
     void xyz() {}
+
+markup_tags_verbatim:
+  # A markup tag is matched verbatim and case-sensitively: "[]" (an empty tag), "[RST]"
+  # and "[ md ]" are unknown, each warns multiline_need_markup at its open line, and each
+  # block gets the project default ("rst", doctype ".rst").
+  lang: cpp
+  config: default
+  source: |
+    // @need[] impl: Empty tag
+    // :id: IMPL_TAG_EMPTY
+    // @endneed
+    void empty_tag() {}
+
+    // @need[RST] impl: Upper case tag
+    // :id: IMPL_TAG_UPPER
+    // @endneed
+    void upper_tag() {}
+
+    // @need[ md ] impl: Spaced tag
+    // :id: IMPL_TAG_SPACED
+    // @endneed
+    void spaced_tag() {}
 
 no_title:
   # Nothing after "<type>:" gives an empty title (a generated title, or one taken from
@@ -343,6 +429,64 @@ option_continuation:
     // Body.
     // @endneed
     void continued() {}
+
+option_without_space_starts_body:
+  # ":id:R1" has no whitespace after its second colon, so it is no option line: it is the
+  # first body line, and the block has no id.
+  lang: cpp
+  config: default
+  source: |
+    // @need req: No space after the key
+    // :status: open
+    // :id:R1
+    // @endneed
+    void no_space() {}
+
+indented_body_line_continues_option:
+  # A line indented deeper than the option line before it continues that option, even
+  # when it was meant as the first body line: status is "open This line was meant as the
+  # body." and the content is empty. A blank line ends the options.
+  lang: cpp
+  config: default
+  source: |
+    // @need req: Indented first body line
+    // :status: open
+    //    This line was meant as the body.
+    // @endneed
+    void swallowed() {}
+
+tab_counts_as_one_character:
+  # A TAB counts as one character of indentation: the TAB-indented line after ":links:"
+  # is deeper than the option line (one character against none), so it continues the
+  # value, and the body's common indentation is the one TAB, so the second body line
+  # keeps the two spaces after its TAB.
+  lang: cpp
+  config: default
+  source: |
+    // @need req: Tab indentation
+    // :id: REQ_TAB
+    // :links: REQ_A,
+    //	REQ_B
+    //
+    //	First body line.
+    //	  Second body line.
+    // @endneed
+    void tabs() {}
+
+non_ascii_columns:
+  # Columns count characters, not bytes: the block comment opening after "/* café */"
+  # starts at character column 11 (byte column 12), so the open word is at column 14.
+  # The title and the body carry non-ASCII text, kept as written.
+  lang: cpp
+  config: default
+  source: |
+    /* café */ /* @need impl: Résumé of the block
+     * :id: IMPL_NON_ASCII_COLUMNS
+     *
+     * Ünïcödé body.
+     * @endneed
+     */
+    void non_ascii() {}
 
 duplicate_option:
   # A key given twice warns multiline_need_duplicate_option at the second line, and the
@@ -393,6 +537,22 @@ escaped_close:
     // @endneed
     void escaped() {}
 
+escaped_close_in_docstring:
+  # The escape in a docstring: an indented "\@endneed" body line keeps its indentation
+  # and loses the backslash; the block ends at the real close line.
+  lang: python
+  config: default
+  source: |
+    def escaped():
+        """@need impl: Escaped close in a docstring
+        :id: IMPL_ESC_DOCSTRING
+
+        A literal block::
+
+           \@endneed
+        @endneed
+        """
+
 nested_open:
   # The open word starting a body line warns multiline_need_nested_open at that line and
   # stays body text: the block ends at the first close line.
@@ -436,6 +596,23 @@ header_without_type_refused:
      * @endneed
      */
     void no_type(int a, int b) {}
+
+header_whitespace_refused:
+  # Whitespace is required after "]" and after "<type>:" when a title follows: both open
+  # lines warn multiline_need_header, and each block is consumed up to its close, so
+  # neither "@param a, b" line yields a one-line need.
+  lang: cpp
+  config: default
+  source: |
+    // @need[md]req: No space after the tag
+    // @param a, b the inputs
+    // @endneed
+    void no_space_tag(int a, int b) {}
+
+    // @need req:No space after the colon
+    // @param a, b the inputs
+    // @endneed
+    void no_space_colon(int a, int b) {}
 
 unterminated_run:
   # The comment run ends before a close line: multiline_need_unterminated at the open
@@ -607,6 +784,33 @@ mixed_leaders_refused:
      * @endneed
      */
     void mixed_leaders() {}
+
+mixed_leaders_unterminated:
+  # In a MIXED block (some lines carry the "*" leader, one does not) an open word behind
+  # its star with no close line is multiline_need_unterminated, and the message names the
+  # missing leader as the likely cause.
+  lang: cpp
+  config: default
+  source: |
+    /*
+     * @need impl: Mixed and unterminated
+       a line without a leader
+     * :id: IMPL_MIXED_UNTERMINATED
+     */
+    void mixed_unterminated() {}
+
+starred_oneline_form:
+  # In a block whose leader is not stripped, a starred open line that ends with the close
+  # word is the one-line form: multiline_need_oneline_form, its line hidden, so its comma
+  # makes no one-line need.
+  lang: cpp
+  config: default
+  source: |
+    /*
+     * @need impl: Starred, and closed on its line @endneed
+       a line without a leader
+     */
+    void starred_oneline() {}
 
 # --- precedence ------------------------------------------------------------------------
 

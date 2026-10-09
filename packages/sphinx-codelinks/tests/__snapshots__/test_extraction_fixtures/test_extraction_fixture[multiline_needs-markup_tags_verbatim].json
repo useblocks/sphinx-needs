@@ -1,0 +1,146 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 3
+      },
+      "end": {
+        "row": 2,
+        "column": 11
+      }
+    },
+    "tagged_scope": "void empty_tag() {}",
+    "need": {
+      "type": "impl",
+      "title": "Empty tag",
+      "id": "IMPL_TAG_EMPTY",
+      "content": "",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.cpp",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 1,
+        "col": 3
+      },
+      "end": {
+        "line": 3,
+        "col": 11
+      },
+      "content_start": null,
+      "option_lines": {
+        "id": 2
+      },
+      "scope": {
+        "kind": "function_definition",
+        "start": 4,
+        "end": 4
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 5,
+        "column": 3
+      },
+      "end": {
+        "row": 7,
+        "column": 11
+      }
+    },
+    "tagged_scope": "void upper_tag() {}",
+    "need": {
+      "type": "impl",
+      "title": "Upper case tag",
+      "id": "IMPL_TAG_UPPER",
+      "content": "",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.cpp",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 6,
+        "col": 3
+      },
+      "end": {
+        "line": 8,
+        "col": 11
+      },
+      "content_start": null,
+      "option_lines": {
+        "id": 7
+      },
+      "scope": {
+        "kind": "function_definition",
+        "start": 9,
+        "end": 9
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 10,
+        "column": 3
+      },
+      "end": {
+        "row": 12,
+        "column": 11
+      }
+    },
+    "tagged_scope": "void spaced_tag() {}",
+    "need": {
+      "type": "impl",
+      "title": "Spaced tag",
+      "id": "IMPL_TAG_SPACED",
+      "content": "",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.cpp",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 11,
+        "col": 3
+      },
+      "end": {
+        "line": 13,
+        "col": 11
+      },
+      "content_start": null,
+      "option_lines": {
+        "id": 12
+      },
+      "scope": {
+        "kind": "function_definition",
+        "start": 14,
+        "end": 14
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "function_definition"
+  }
+]
