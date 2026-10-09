@@ -271,18 +271,24 @@ reported as one of these kinds, the kind leading the message:
   characters outside ASCII before the start sequence -- combining marks, circled letters,
   and letters newer than the interpreter's Unicode tables -- are where ubCode's notion of
   alphanumeric differs: a documented non-goal.
-- ``jsdoc_tag`` -- a line of a JSDoc comment (a block comment opened by exactly ``/**``)
-  under ``comment_type = "ts"``, with nothing alphanumeric before its start sequence, which
-  is directly followed by a JSDoc tag such as ``param``, ``returns``, ``deprecated`` or
-  ``link`` that ends there, at a space, a tab, a ``{``, a ``}`` or the end of the line
-  (``@param a text``, ``@param{number} a``, ``{@link Foo}``):
-  ``'@param' is a JSDoc tag, not a one-line need; use a start sequence that JSDoc comments
-  do not contain``. As for docstrings, choose a start sequence JSDoc does not use, ``[[`` for
-  example. Whether anything alphanumeric precedes the start sequence is Python's own
-  notion of alphanumeric (``str.isalnum``): characters outside ASCII before the start
-  sequence -- combining marks, circled letters, and letters newer than the interpreter's
-  Unicode tables -- are where ubCode's notion of alphanumeric differs: a documented
-  non-goal.
+- ``jsdoc_tag`` -- a line of a JSDoc comment (a block comment opened by exactly ``/**``,
+  under ``comment_type = "ts"``) is a ``jsdoc_tag`` warning, and never a need, when all
+  hold: the one-line start sequence is ``@`` (JSDoc's own sigil -- with any other start
+  sequence the check does not run, so ``[[param a, b]]`` is the marker its author wrote);
+  nothing alphanumeric precedes the ``@`` on the line; a tag of the shared list
+  (``param``, ``returns``, ``deprecated``, ``link``, ...) directly follows it and ends at
+  a space, a tab, ``{``, ``}`` or the line end (``@param{number} a``, ``{@link Foo}``);
+  and the one-line parser would otherwise have read the line as a marker or warned about
+  it: ``'@param' is a JSDoc tag, not a one-line need; use a start sequence that JSDoc
+  comments do not contain``. A tag line the one-line parser would have ignored
+  (``@param a the augend``, ``@returns the sum``) stays silent. Under the default ``@``, a
+  JSDoc comment's tag lines are read by the one-line parser like any other line: one that
+  it would turn into a marker (a comma, say) is a ``jsdoc_tag`` warning instead; choose a
+  start sequence other than ``@``, ``[[`` for example, and no JSDoc line is ever read.
+  Whether anything alphanumeric precedes the ``@`` is Python's own notion of alphanumeric
+  (``str.isalnum``): characters outside ASCII before the start sequence -- combining
+  marks, circled letters, and letters newer than the interpreter's Unicode tables -- are
+  where ubCode's notion of alphanumeric differs: a documented non-goal.
 
 A line with nothing between the start and end sequences is not a marker. A marker that
 fits the style but whose need Sphinx-Needs refuses -- an id that does not match

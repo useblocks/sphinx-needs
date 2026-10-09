@@ -9,6 +9,29 @@
       },
       "end": {
         "row": 2,
+        "column": 15
+      }
+    },
+    "tagged_scope": "function f(a: number): void {}",
+    "need": {
+      "title": "param a",
+      "id": "b",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  },
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 5
+      },
+      "end": {
+        "row": 3,
         "column": 35
       }
     },

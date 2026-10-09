@@ -517,9 +517,15 @@ class SourceAnalyse:
             tag, kind, holders = None, WarningSubTypeEnum.docstring_tag, "docstrings"
             if in_docstring:
                 tag = docstring_tag(line, start_sequence)
-            elif in_jsdoc:
+            elif in_jsdoc and start_sequence == "@":
+                # ``@`` is JSDoc's own sigil: under any other start sequence a JSDoc
+                # line is read as any other line is
                 tag = jsdoc_tag(line, start_sequence)
                 kind, holders = WarningSubTypeEnum.jsdoc_tag, "JSDoc comments"
+                if tag is not None and not oneline_parser(line, oneline_comment_style):
+                    # a tag line the one-line parser would ignore stays silent
+                    row_offset += 1
+                    continue
             if tag is not None:
                 if src_comment.source_file:
                     self.warnings.append(

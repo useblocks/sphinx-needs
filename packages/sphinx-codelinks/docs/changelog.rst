@@ -160,10 +160,12 @@ New and Improved
   so checked-in build output (any directory of those five names, wherever it sits) is not
   scanned beside the sources it was built from (which would define every need twice); an
   explicit ``exclude``, ``[]`` included, replaces the default, and ``lib/`` is
-  deliberately not in it, being hand-written source in many packages. A line of a JSDoc
-  comment that starts with a JSDoc tag (``@param a the first, thing``) is a ``jsdoc_tag``
-  warning rather than a need with the id ``thing``: with the default ``@`` start sequence,
-  choose one JSDoc does not use.
+  deliberately not in it, being hand-written source in many packages. Under the default
+  ``@``, a JSDoc comment's tag lines are read by the one-line parser like any other line:
+  one that it would turn into a marker (a comma, say, as in ``@param a the first, thing``)
+  is a ``jsdoc_tag`` warning instead of a need with the id ``thing``, and a tag line it
+  would ignore stays silent; choose a start sequence other than ``@``, ``[[`` for example,
+  and no JSDoc line is ever read.
 
 - 🐛 A source file added to a ``src-trace`` directive's scope is seen by the next
   incremental build, with no ``-E`` (`#2040 <https://github.com/useblocks/sphinx-needs/issues/2040>`__).

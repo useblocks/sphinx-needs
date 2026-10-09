@@ -616,7 +616,7 @@ Is equivalent to this RST directive:
 
 .. important:: The ``type`` and ``title`` fields must be configured in ``needs_fields`` as they are mandatory for **Sphinx-Needs**.
 
-.. note:: For the TS/JS family (``comment_type = "ts"``), the default ``start_sequence = "@"`` collides with JSDoc tags such as ``@param``, ``@returns``, and ``@deprecated``: every such line of a JSDoc comment is a ``jsdoc_tag`` warning rather than a need. Set a ``start_sequence`` that JSDoc does not use (e.g. ``"[["``) to tell needs from documentation. ``@`` also starts TypeScript's ``// @ts-ignore`` and ``// @ts-expect-error`` comments and the decorators quoted inside an ``@example``; with ``@`` as the start sequence a comma on such a line makes a marker.
+.. note:: For the TS/JS family (``comment_type = "ts"``), the default ``start_sequence = "@"`` collides with JSDoc tags such as ``@param``, ``@returns``, and ``@deprecated``. Under the default ``@``, a JSDoc comment's tag lines are read by the one-line parser like any other line: one that it would turn into a marker (a comma, say) is a ``jsdoc_tag`` warning instead; choose a start sequence other than ``@``, ``[[`` for example, and no JSDoc line is ever read. ``@`` is the one start sequence the check runs for, being JSDoc's own sigil: a tag line the one-line parser would ignore (``@returns the sum``) stays silent, and under ``[[`` the line ``[[param a, b]]`` is the marker its author wrote. ``@`` also starts TypeScript's ``// @ts-ignore`` and ``// @ts-expect-error`` comments and the decorators quoted inside an ``@example``; with ``@`` as the start sequence a comma on such a line makes a marker.
 
 analyse.need_id_refs
 ^^^^^^^^^^^^^^^^^^^^

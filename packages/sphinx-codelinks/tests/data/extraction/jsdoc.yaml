@@ -1,18 +1,25 @@
 # JSDoc comments in TypeScript and JavaScript.
 #
 # A JSDoc comment is a block comment opened by exactly ``/**``, as JSDoc reads one:
-# ``/***`` and the empty ``/**/`` are not. A line of one warns ``jsdoc_tag`` (and yields
-# no need) only when all of these hold: the comment type is ``ts``; nothing
-# alphanumeric precedes the one-line start sequence on the line; after the start
-# sequence comes a tag of the shared list (``param``, ``returns``, ``deprecated``,
-# ``link``, ...); and the tag ends there, at a space, a tab, a ``{``, a ``}`` or the end
-# of the line. Tags are case-sensitive. Every other line goes to the one-line parser.
+# ``/***`` and the empty ``/**/`` are not. A line of a JSDoc comment (a block comment
+# opened by exactly ``/**``, under ``comment_type = "ts"``) is a ``jsdoc_tag`` warning,
+# and never a need, when ALL hold: the one-line start sequence is ``@`` (JSDoc's own
+# sigil -- with any other start sequence the check does not run, so ``[[param a, b]]``
+# is the marker its author wrote); nothing alphanumeric precedes the ``@`` on the line;
+# a tag of the shared list (``param``, ``returns``, ``deprecated``, ``link``, ...)
+# directly follows it and ends at a space, a tab, ``{``, ``}`` or the line end; and the
+# one-line parser would otherwise have read the line as a marker or warned about it. A
+# tag line the one-line parser would have ignored (``@param a the augend``, ``@returns
+# the sum``) stays silent. Tags are case-sensitive. Every other line goes to the
+# one-line parser.
 #
 # A start sequence that JSDoc also uses cannot tell a need from documentation; the
 # warning says to choose another one.
 
 jsdoc_tags:
-  # Every tag line warns, with a comma or without; the marker that is no tag is a need.
+  # A tag line warns where the one-line parser would read it (the three lines holding a
+  # comma); "@param a the augend" and "@returns the sum" would be ignored, so they stay
+  # silent. The marker that is no tag is a need.
   lang: typescript
   config: default
   source: |
@@ -42,7 +49,8 @@ jsdoc_need_ids:
     function handle(): void {}
 
 jsdoc_tag_end:
-  # A tag ends at a space, a ``{`` or the end of the line; ``@parameters`` is no tag.
+  # A tag ends at a space, a ``{`` or the end of the line; ``@parameters`` is no tag. The
+  # bare ``@returns`` holds nothing the one-line parser would read, so it stays silent.
   lang: typescript
   config: default
   source: |
@@ -109,7 +117,8 @@ doxygen_in_cpp_is_no_jsdoc:
     void retry() {}
 
 jsdoc_with_other_start_sequence:
-  # With a start sequence JSDoc does not use, the tag lines are plain text.
+  # With a start sequence other than ``@`` the check does not run: the ``@param`` line is
+  # plain text, and ``[[param a, b]]`` is the need its author wrote.
   lang: typescript
   config:
     start_sequence: "[["
@@ -123,6 +132,7 @@ jsdoc_with_other_start_sequence:
   source: |
     /**
      * @param a First, second
+     * [[param a, b]]
      * [[Bracketed need, IMPL_BRACKETED]]
      */
     function f(a: number): void {}
