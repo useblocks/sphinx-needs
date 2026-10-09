@@ -272,35 +272,31 @@ Features
    Support for defining traceability objects in TypeScript and JavaScript source
    files via one-line comment annotations.
 
-   The TypeScript language parser leverages tree-sitter to accurately identify and
-   extract comments from TypeScript and JavaScript sources, including single-line
-   (``//``) and multi-line (``/* */``) comment styles. The grammar is chosen per
-   file from its extension: ``.ts``, ``.mts``, and ``.cts`` — TypeScript's own
-   module variants — are parsed with the plain TypeScript grammar, since a legacy
-   angle-bracket type assertion (``<string>x``) is valid there but is JSX syntax
-   under the TSX grammar. Every other extension (``.tsx``, ``.jsx``, ``.js``,
-   ``.mjs``, ``.cjs``) is parsed with the TSX grammar, which is safe for plain
-   JavaScript and additionally handles JSX embedded in ``.tsx`` or ``.js`` sources.
-   JSX comment markers (``{/* ... */}``) are supported only when the marker
-   appears on its own line inside the comment block; single-line JSX comments
-   (``{/* @Title, ID, impl, [REQ] */}``) are not currently supported.
+   The TypeScript language parser leverages tree-sitter to identify and extract
+   comments from TypeScript and JavaScript sources: single-line (``//``) and block
+   (``/* */``) comments, JSX comments (``{/* */}``), and JavaScript's legacy
+   ``<!--`` comments. The grammar is chosen per file from its extension: ``.ts``,
+   ``.mts`` and ``.cts`` — TypeScript's own module variants — are parsed with the
+   TypeScript grammar, since a legacy angle-bracket type assertion (``<string>x``)
+   is valid there but is JSX syntax under the TSX grammar. Every other extension
+   (``.tsx``, ``.jsx``, ``.js``, ``.mjs``, ``.cjs``) is parsed with the TSX grammar,
+   which is safe for plain JavaScript and also reads JSX in ``.tsx`` or ``.js``
+   sources.
 
    Key capabilities:
 
-   * Detection of inline and block comments
-   * Association of comments with function, class, and method declarations
-   * ``const``/``let``/``var`` declarations count as scopes only when they assign
-     a function or arrow function
+   * Detection of inline and block comments, a marker sharing its row with a
+     block comment's closing ``*/`` included
+   * Association of comments with functions, generators, classes (abstract ones
+     included), methods, interfaces and their method signatures, type aliases,
+     enums and namespaces, through ``export`` and ``declare`` (so the
+     ambient declarations of a ``.d.ts`` file bind too)
+   * A ``const``/``let``/``var`` declaration, a class field, an assignment such as
+     ``module.exports = function () {}`` and an anonymous default export count as
+     scopes only when they hold a function or a class, seen through ``as``,
+     ``satisfies``, ``!``, ``<T>`` and parentheses
    * File extensions ``.ts``, ``.tsx``, ``.mts``, ``.cts``, ``.js``, ``.jsx``,
      ``.mjs`` and ``.cjs`` auto-discovered when ``comment_type = "ts"``
-   * Markers in TypeScript declaration files (``.d.ts``) are discovered but will not
-     resolve to an enclosing scope, since declaration files contain only type declarations
-
-   A ``@need-ids:`` reference marker that shares a line with a block comment's
-   closing ``*/`` — as in a single-line JSDoc comment such as
-   ``/** @need-ids: ID */`` — has the ``*/`` swallowed into the last need id.
-   Put the marker on its own line inside the block, or use a ``//`` comment
-   for reference markers, to avoid this.
 
    .. fault:: Traceability objects are not detected in TypeScript language
       :id: FAULT_TS_1

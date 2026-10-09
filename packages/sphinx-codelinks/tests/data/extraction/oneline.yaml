@@ -79,6 +79,38 @@ jsx_oneliner_tsx:
       </div>
     );
 
+# the one-row form of a JSX comment: the closing */ is no marker text
+jsx_inline_oneliner_tsx:
+  lang: tsx
+  config: default
+  source: |
+    const App = () => (
+      <div>
+        {/* @Tsx Inline, IMPL_TSX_INLINE, impl, [REQ_TSX] */}
+      </div>
+    );
+
+# the one-row form of a block comment in TypeScript
+block_oneliner_typescript:
+  lang: typescript
+  config: default
+  source: |
+    /* @Ts Block, IMPL_TS_BLOCK, impl, [REQ_TS] */
+    function f(): void {}
+
+# a legacy <T>x type assertion is valid in .ts, which therefore parses with the
+# TypeScript grammar: under TSX the cast opens a JSX element and every marker
+# after it is lost
+type_assertion_oneliner_typescript:
+  lang: typescript
+  config: default
+  source: |
+    // @Before Cast, IMPL_TS_BEFORE_CAST, impl, [REQ_TS]
+    function a(): void {}
+    const name = <string>value;
+    // @After Cast, IMPL_TS_AFTER_CAST, impl, [REQ_TS]
+    function b(): void {}
+
 # a legacy HTML-like comment (<!-- ...), valid in JavaScript, is an
 # html_comment node, not a comment node, and the query captures both. It runs
 # to the end of its line like //, and so does a line that starts with -->
@@ -88,4 +120,12 @@ html_comment_oneliner_js:
   source: |
     <!-- @Html Title, IMPL_HTML, impl, [REQ_HTML]
     -->
+    const x = 1;
+
+# the one-row form of a legacy HTML-like comment: a closing --> is no marker text
+html_comment_closed_oneliner_js:
+  lang: js
+  config: default
+  source: |
+    <!-- @Html Closed, IMPL_HTML_CLOSED, impl, [REQ_HTML] -->
     const x = 1;

@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.tsx",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 9
+      },
+      "end": {
+        "row": 2,
+        "column": 54
+      }
+    },
+    "tagged_scope": "const App = () => (\n  <div>\n    {/* @Tsx Inline, IMPL_TSX_INLINE, impl, [REQ_TSX] */}\n  </div>\n);",
+    "need": {
+      "title": "Tsx Inline",
+      "id": "IMPL_TSX_INLINE",
+      "type": "impl",
+      "links": [
+        "REQ_TSX"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "lexical_declaration"
+  }
+]
