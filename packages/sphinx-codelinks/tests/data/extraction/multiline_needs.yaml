@@ -34,6 +34,7 @@
 # - Blocks form over RUNS: one block comment, or one Python string statement (a
 #   docstring or any bare string statement), or consecutive line comments on
 #   consecutive rows with the same delimiter and only whitespace before each.
+#   "<!--" comments hold no block.
 # - Prefixes are stripped by the comment's kind: a line comment loses its delimiter and
 #   ONE space; a docstring loses its quotes and is dedented as inspect.cleandoc does. A
 #   block comment ("/*", "/**", "/*!" openers) first loses a first row holding only
@@ -372,6 +373,20 @@ tsx_jsdoc_leader:
      * @endneed
      */
     export const LoginButton = () => <button>Log in</button>;
+
+js_html_comment_run_is_no_block:
+  # An HTML comment line never opens a multi-line need: the stripping table knows `//`,
+  # `#` and `/* */` only, so these lines are unknown-kind, read unstripped, and the open
+  # word never starts a line.
+  lang: js
+  config: default
+  source: |
+    <!-- @need impl: Html block
+    <!-- :id: HTML_BLOCK
+    <!--
+    <!-- Body.
+    <!-- @endneed
+    function f() {}
 
 # --- grammar ---------------------------------------------------------------------------
 
