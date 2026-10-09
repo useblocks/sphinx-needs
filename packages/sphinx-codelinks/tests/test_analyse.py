@@ -62,101 +62,142 @@ def test_analyse(src_dir, src_paths, tmp_path, snapshot_marks):
 
 
 @pytest.mark.parametrize(
-    "src_dir, src_paths , oneline_comment_style, result",
+    "case",
     [
-        (
-            TEST_DIR / "data" / "dcdc",
-            [
+        {
+            "src_dir": TEST_DIR / "data" / "dcdc",
+            "src_paths": [
                 TEST_DIR / "data" / "dcdc" / "charge" / "demo_1.cpp",
                 TEST_DIR / "data" / "dcdc" / "charge" / "demo_2.cpp",
                 TEST_DIR / "data" / "dcdc" / "discharge" / "demo_3.cpp",
                 TEST_DIR / "data" / "dcdc" / "supercharge.cpp",
             ],
-            ONELINE_COMMENT_STYLE,
-            {
+            "comment_type": CommentType.cpp,
+            "oneline_comment_style": ONELINE_COMMENT_STYLE,
+            "result": {
                 "num_src_files": 4,
                 "num_uncached_files": 4,
                 "num_cached_files": 0,
                 "num_comments": 29,
                 "num_oneline_warnings": 0,
+                "num_oneline_needs": 12,
             },
-        ),
-        (
-            TEST_DIR / "data" / "oneline_comment_basic",
-            [
+        },
+        {
+            "src_dir": TEST_DIR / "data" / "oneline_comment_basic",
+            "src_paths": [
                 TEST_DIR / "data" / "oneline_comment_basic" / "basic_oneliners.c",
             ],
-            ONELINE_COMMENT_STYLE,
-            {
+            "comment_type": CommentType.cpp,
+            "oneline_comment_style": ONELINE_COMMENT_STYLE,
+            "result": {
                 "num_src_files": 1,
                 "num_uncached_files": 1,
                 "num_cached_files": 0,
                 "num_comments": 14,
                 "num_oneline_warnings": 0,
+                "num_oneline_needs": 8,
             },
-        ),
-        (
-            TEST_DIR / "data" / "oneline_comment_default",
-            [
+        },
+        {
+            "src_dir": TEST_DIR / "data" / "oneline_comment_default",
+            "src_paths": [
                 TEST_DIR / "data" / "oneline_comment_default" / "default_oneliners.c",
             ],
-            ONELINE_COMMENT_STYLE_DEFAULT,
-            {
+            "comment_type": CommentType.cpp,
+            "oneline_comment_style": ONELINE_COMMENT_STYLE_DEFAULT,
+            "result": {
                 "num_src_files": 1,
                 "num_uncached_files": 1,
                 "num_cached_files": 0,
                 "num_comments": 5,
                 "num_oneline_warnings": 1,
+                "num_oneline_needs": 4,
             },
-        ),
-        (
-            TEST_DIR / "data" / "rust",
-            [
+        },
+        {
+            "src_dir": TEST_DIR / "data" / "rust",
+            "src_paths": [
                 TEST_DIR / "data" / "rust" / "demo.rs",
             ],
-            ONELINE_COMMENT_STYLE_DEFAULT,
-            {
+            "comment_type": CommentType.rust,
+            "oneline_comment_style": ONELINE_COMMENT_STYLE_DEFAULT,
+            "result": {
                 "num_src_files": 1,
                 "num_uncached_files": 1,
                 "num_cached_files": 0,
                 "num_comments": 6,
                 "num_oneline_warnings": 0,
+                "num_oneline_needs": 4,
             },
-        ),
-        (
-            TEST_DIR / "data" / "jsonc",
-            [
-                TEST_DIR / "data" / "jsonc" / "demo.jsonc",
+        },
+        {
+            "src_dir": TEST_DIR / "data" / "typescript",
+            "src_paths": [
+                TEST_DIR / "data" / "typescript" / "demo.ts",
             ],
-            ONELINE_COMMENT_STYLE_DEFAULT,
-            {
+            "comment_type": CommentType.ts,
+            "oneline_comment_style": ONELINE_COMMENT_STYLE_DEFAULT,
+            "result": {
                 "num_src_files": 1,
                 "num_uncached_files": 1,
                 "num_cached_files": 0,
                 "num_comments": 4,
                 "num_oneline_warnings": 0,
-                "comment_type": CommentType.jsonc,
+                "num_oneline_needs": 1,
             },
-        ),
+        },
+        {
+            "src_dir": TEST_DIR / "data" / "typescript",
+            "src_paths": [
+                TEST_DIR / "data" / "typescript" / "demo.tsx",
+            ],
+            "comment_type": CommentType.ts,
+            "oneline_comment_style": ONELINE_COMMENT_STYLE_DEFAULT,
+            "result": {
+                "num_src_files": 1,
+                "num_uncached_files": 1,
+                "num_cached_files": 0,
+                "num_comments": 1,
+                "num_oneline_warnings": 0,
+                "num_oneline_needs": 1,
+            },
+        },
+        {
+            "src_dir": TEST_DIR / "data" / "jsonc",
+            "src_paths": [
+                TEST_DIR / "data" / "jsonc" / "demo.jsonc",
+            ],
+            "comment_type": CommentType.jsonc,
+            "oneline_comment_style": ONELINE_COMMENT_STYLE_DEFAULT,
+            "result": {
+                "num_src_files": 1,
+                "num_uncached_files": 1,
+                "num_cached_files": 0,
+                "num_comments": 4,
+                "num_oneline_warnings": 0,
+                "num_oneline_needs": 3,
+            },
+        },
     ],
 )
-def test_analyse_oneline_needs(
-    tmp_path, src_dir, src_paths, oneline_comment_style, result
-):
+def test_analyse_oneline_needs(tmp_path, case):
     src_analyse_config = SourceAnalyseConfig(
-        src_files=src_paths,
-        src_dir=src_dir,
+        src_files=case["src_paths"],
+        src_dir=case["src_dir"],
         get_need_id_refs=False,
         get_oneline_needs=True,
         get_multiline_needs=False,
-        oneline_comment_style=oneline_comment_style,
-        comment_type=result.get("comment_type", CommentType.cpp),
+        oneline_comment_style=case["oneline_comment_style"],
+        comment_type=case["comment_type"],
     )
     src_analyse = SourceAnalyse(src_analyse_config)
     src_analyse.run()
 
+    result = case["result"]
     assert len(src_analyse.src_files) == result["num_src_files"]
     assert len(src_analyse.warnings) == result["num_oneline_warnings"]
+    assert len(src_analyse.oneline_needs) == result["num_oneline_needs"]
 
     cnt_comments = 0
     for src_file in src_analyse.src_files:
@@ -279,6 +320,48 @@ def test_a_hash_comment_is_never_a_docstring_tag(tmp_path: Path) -> None:
 
     assert src_analyse.warnings == []
     assert [need.need["id"] for need in src_analyse.oneline_needs] == ["thing"]
+
+
+@pytest.mark.parametrize("ts_first", [True, False], ids=["ts-first", "tsx-first"])
+def test_a_ts_and_a_tsx_file_in_one_run_each_get_their_grammar(
+    tmp_path: Path, ts_first: bool
+) -> None:
+    """One analysis of a ``.ts`` and a ``.tsx`` file parses each with its own
+    grammar, whichever comes first: the ``.ts`` marker after a ``<T>`` cast is kept
+    (the TypeScript grammar), and the ``//`` in the ``.tsx`` file's JSX text is text,
+    not a marker (the TSX grammar)."""
+    ts_src = tmp_path / "a.ts"
+    ts_src.write_text(
+        "// @Before cast, IMPL_BEFORE, impl\n"
+        "const v = <string>x;\n"
+        "// @After cast, IMPL_AFTER, impl\n"
+        "function g(): void {}\n",
+        encoding="utf-8",
+    )
+    tsx_src = tmp_path / "b.tsx"
+    tsx_src.write_text(
+        "// @Component, IMPL_COMPONENT, impl\n"
+        "export const A = () => <p>// @Fake, FAKE_ID, impl</p>;\n",
+        encoding="utf-8",
+    )
+    src_analyse = SourceAnalyse(
+        SourceAnalyseConfig(
+            src_files=[ts_src, tsx_src] if ts_first else [tsx_src, ts_src],
+            src_dir=tmp_path,
+            comment_type=CommentType.ts,
+            get_need_id_refs=False,
+            get_oneline_needs=True,
+            get_multiline_needs=False,
+            oneline_comment_style=ONELINE_COMMENT_STYLE_DEFAULT,
+        )
+    )
+    src_analyse.run()
+
+    assert sorted(need.need["id"] for need in src_analyse.oneline_needs) == [
+        "IMPL_AFTER",
+        "IMPL_BEFORE",
+        "IMPL_COMPONENT",
+    ]
 
 
 def test_count_pluralizes_nouns() -> None:

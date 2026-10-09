@@ -1,0 +1,37 @@
+[
+  {
+    "file_path": "case.ts",
+    "lineno": 2,
+    "msg": "'@jsxImportSource' is a JSDoc tag, not a one-line need; use a start sequence that JSDoc comments do not contain",
+    "type": "need",
+    "sub_type": "jsdoc_tag"
+  },
+  {
+    "file_path": "case.ts",
+    "lineno": 3,
+    "msg": "'@modifies' is a JSDoc tag, not a one-line need; use a start sequence that JSDoc comments do not contain",
+    "type": "need",
+    "sub_type": "jsdoc_tag"
+  },
+  {
+    "file_path": "case.ts",
+    "lineno": 4,
+    "msg": "'@jsx' is a JSDoc tag, not a one-line need; use a start sequence that JSDoc comments do not contain",
+    "type": "need",
+    "sub_type": "jsdoc_tag"
+  },
+  {
+    "file_path": "case.ts",
+    "lineno": 5,
+    "msg": "'@jsxFrag' is a JSDoc tag, not a one-line need; use a start sequence that JSDoc comments do not contain",
+    "type": "need",
+    "sub_type": "jsdoc_tag"
+  },
+  {
+    "file_path": "case.ts",
+    "lineno": 6,
+    "msg": "'@jsxRuntime' is a JSDoc tag, not a one-line need; use a start sequence that JSDoc comments do not contain",
+    "type": "need",
+    "sub_type": "jsdoc_tag"
+  }
+]

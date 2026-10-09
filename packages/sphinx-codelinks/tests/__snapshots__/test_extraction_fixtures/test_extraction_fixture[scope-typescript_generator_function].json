@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 48
+      }
+    },
+    "tagged_scope": "function* ids(): Generator<number> {}",
+    "need": {
+      "title": "Generator",
+      "id": "IMPL_TS_GENERATOR",
+      "type": "impl",
+      "links": [
+        "REQ_TS"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "generator_function_declaration"
+  }
+]

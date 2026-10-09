@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 45
+      }
+    },
+    "tagged_scope": "type Handler = (event: string) => void;",
+    "need": {
+      "title": "Type Alias",
+      "id": "IMPL_TS_ALIAS",
+      "type": "impl",
+      "links": [
+        "REQ_TS"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "type_alias_declaration"
+  }
+]

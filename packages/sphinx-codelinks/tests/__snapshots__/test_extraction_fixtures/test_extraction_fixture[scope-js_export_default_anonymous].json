@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.js",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 51
+      }
+    },
+    "tagged_scope": "export default () => {};",
+    "need": {
+      "title": "Default Export",
+      "id": "IMPL_JS_DEFAULT",
+      "type": "impl",
+      "links": [
+        "REQ_JS"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "export_statement"
+  }
+]

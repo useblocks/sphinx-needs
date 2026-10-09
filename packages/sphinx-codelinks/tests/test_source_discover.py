@@ -59,7 +59,7 @@ def test_source_directory_is_worker_local(
                 "comment_type": "java",
             },
             [
-                "Schema validation error in field 'comment_type': 'java' is not one of ['bash', 'cpp', 'cs', 'go', 'jsonc', 'python', 'rust', 'yaml']"
+                "Schema validation error in field 'comment_type': 'java' is not one of ['bash', 'cpp', 'cs', 'go', 'jsonc', 'python', 'rust', 'ts', 'yaml']"
             ],
         ),
         (
@@ -108,6 +108,13 @@ def test_schema_negative(config, msgs):
             "include": ["include1", "include2"],
             "gitignore": True,
             "comment_type": "python",
+        },
+        {
+            "src_dir": "/path/to/root",
+            "exclude": ["exclude1", "exclude2"],
+            "include": ["include1", "include2"],
+            "gitignore": True,
+            "comment_type": "ts",
         },
         {
             "src_dir": "/path/to/root",
@@ -192,6 +199,7 @@ def create_source_files(tmp_path: Path) -> Path:
     [
         ("cpp", len(COMMENT_FILETYPE["cpp"])),
         ("python", len(COMMENT_FILETYPE["python"])),
+        ("ts", len(COMMENT_FILETYPE["ts"])),
         ("bash", len(COMMENT_FILETYPE["bash"])),
     ],
 )
@@ -217,6 +225,101 @@ def test_jsonc_discover_gate() -> None:
     assert "demo.jsonc" in discovered
     assert "with_modeline.json" in discovered
     assert "plain.json" not in discovered
+
+
+def _make_generated_output_tree(tmp_path: Path) -> Path:
+    """Lay out a source file alongside checked-in generated output.
+
+    Mirrors a ``tsc``/bundler output tree: ``src/app.ts`` is the real source,
+    while ``dist/``, ``build/``, ``out/``, ``coverage/`` and ``node_modules/``
+    stand in for generated or vendored output that carries the same marker;
+    ``lib/app.js`` and the declaration file ``types/x.d.ts`` are not in the
+    default and stay discovered.
+    """
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "app.ts").write_text(
+        "// @Feature A, IMPL_1, impl\n", encoding="utf-8"
+    )
+    (tmp_path / "lib").mkdir()
+    (tmp_path / "lib" / "app.js").write_text(
+        "// @Feature A, IMPL_1, impl\n", encoding="utf-8"
+    )
+    (tmp_path / "dist").mkdir()
+    (tmp_path / "dist" / "app.js").write_text(
+        "// @Feature A, IMPL_1, impl\n", encoding="utf-8"
+    )
+    for output in ("build", "out", "coverage"):
+        (tmp_path / output).mkdir()
+        (tmp_path / output / "app.js").write_text(
+            "// @Feature A, IMPL_1, impl\n", encoding="utf-8"
+        )
+    (tmp_path / "types").mkdir()
+    (tmp_path / "types" / "x.d.ts").write_text(
+        "/** @Feature A, IMPL_1, impl */\nexport declare function a(): void;\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "node_modules" / "pkg").mkdir(parents=True)
+    (tmp_path / "node_modules" / "pkg" / "index.js").write_text(
+        "// vendored\n", encoding="utf-8"
+    )
+    return tmp_path
+
+
+def test_default_exclude_skips_generated_output(tmp_path: Path) -> None:
+    """The ``ts``-derived default ``exclude`` keeps generated/vendored JS out
+    of discovery, while ``lib/`` — deliberately not in ``TS_DEFAULT_EXCLUDE``
+    — is still discovered (see the constant's docstring for why)."""
+    src_dir = _make_generated_output_tree(tmp_path)
+    config = SourceDiscoverConfig(src_dir=src_dir, comment_type="ts", gitignore=False)
+
+    discover = SourceDiscover(config)
+    discovered = sorted(str(p.relative_to(src_dir)) for p in discover.source_paths)
+    assert discovered == [
+        str(Path("lib") / "app.js"),
+        str(Path("src") / "app.ts"),
+        str(Path("types") / "x.d.ts"),
+    ]
+
+
+def test_cpp_project_default_exclude_is_empty_and_finds_lib_marker(
+    tmp_path: Path,
+) -> None:
+    """The ``ts`` default ``exclude`` is ``ts``'s alone: a ``cpp`` project's is ``[]``, and
+    its hand-written ``lib/`` source is discovered."""
+    lib_dir = tmp_path / "lib"
+    lib_dir.mkdir()
+    (lib_dir / "widget.cpp").write_text(
+        "// @Feature A, IMPL_1, impl\n", encoding="utf-8"
+    )
+
+    config = SourceDiscoverConfig(src_dir=tmp_path, comment_type="cpp", gitignore=False)
+    assert config.exclude == []
+
+    discover = SourceDiscover(config)
+    discovered = sorted(str(p.relative_to(tmp_path)) for p in discover.source_paths)
+    assert discovered == [str(Path("lib") / "widget.cpp")]
+
+
+def test_explicit_exclude_replaces_default(tmp_path: Path) -> None:
+    """An explicit ``exclude`` (even ``[]``) fully replaces the default list."""
+    src_dir = _make_generated_output_tree(tmp_path)
+    config = SourceDiscoverConfig(
+        src_dir=src_dir, comment_type="ts", gitignore=False, exclude=[]
+    )
+    assert config.exclude == []
+
+    discover = SourceDiscover(config)
+    discovered = sorted(str(p.relative_to(src_dir)) for p in discover.source_paths)
+    assert discovered == [
+        str(Path("build") / "app.js"),
+        str(Path("coverage") / "app.js"),
+        str(Path("dist") / "app.js"),
+        str(Path("lib") / "app.js"),
+        str(Path("node_modules") / "pkg" / "index.js"),
+        str(Path("out") / "app.js"),
+        str(Path("src") / "app.ts"),
+        str(Path("types") / "x.d.ts"),
+    ]
 
 
 def test_follow_links(tmp_path: Path) -> None:

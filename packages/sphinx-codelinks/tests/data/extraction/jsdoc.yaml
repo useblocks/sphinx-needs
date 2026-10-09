@@ -1,0 +1,157 @@
+# JSDoc comments in TypeScript and JavaScript.
+#
+# A JSDoc comment is a block comment opened by exactly ``/**``, as JSDoc reads one:
+# ``/***`` and the empty ``/**/`` are not. A line of a JSDoc comment (under
+# ``comment_type = "ts"``) is a ``jsdoc_tag`` warning, and never a need, when ALL hold:
+# the one-line start sequence is ``@`` (JSDoc's own sigil -- with any other start
+# sequence the check does not run, so ``[[param a, b]]`` is the marker its author
+# wrote); nothing alphanumeric precedes the ``@`` on the line; a tag of the shared list
+# (``param``, ``returns``, ``deprecated``, ``link``, ...) directly follows it and ends
+# at a space, a tab, ``{``, ``}`` or the line end; and the one-line parser would
+# otherwise have read the line as a marker or warned about it. A tag line the one-line
+# parser would have ignored (``@param a the augend``, ``@returns the sum``) stays
+# silent. Tags are case-sensitive. Every other line goes to the one-line parser.
+#
+# A start sequence that JSDoc also uses cannot tell a need from documentation; the
+# warning says to choose another one.
+
+jsdoc_tags:
+  # A tag line warns where the one-line parser would read it (the three lines holding a
+  # comma); "@param a the augend" and "@returns the sum" would be ignored, so they stay
+  # silent. The marker that is no tag is a need.
+  lang: typescript
+  config: default
+  source: |
+    /**
+     * Adds two numbers.
+     * @param a the augend
+     * @param {number} b First, second
+     * @returns the sum
+     * @deprecated Use sum instead, it is faster
+     * {@link add}, the original
+     * @Real Need, IMPL_REAL, impl, [REQ_TS]
+     */
+    function add(a: number, b: number): number {
+      return a + b;
+    }
+
+jsdoc_need_ids:
+  # A ``@need-ids:`` line behind the ``*`` leader of a JSDoc block: both ids are
+  # references, and the line is neither a need nor a ``jsdoc_tag`` warning.
+  lang: typescript
+  config: default
+  source: |
+    /**
+     * Handles the request.
+     * @need-ids: REQ_1, REQ_2
+     */
+    function handle(): void {}
+
+jsdoc_tag_end:
+  # A tag ends at a space, a ``{`` or the end of the line; ``@parameters`` is no tag. The
+  # bare ``@returns`` holds nothing the one-line parser would read, so it stays silent.
+  lang: typescript
+  config: default
+  source: |
+    /**
+     * @param{number} b First, second
+     * @returns
+     * @parameters Check, IMPL_PARAMETERS, impl
+     */
+    function f(b: number): void {}
+
+jsdoc_more_tags:
+  # JSDoc's @modifies and TypeScript's JSX pragmas (@jsx, @jsxFrag, @jsxImportSource,
+  # @jsxRuntime) are tags of the shared list too: each of these lines holds a comma, so
+  # each is a jsdoc_tag warning, not a need.
+  lang: typescript
+  config: default
+  source: |
+    /**
+     * @jsxImportSource react, dom
+     * @modifies state, cache
+     * @jsx h, x
+     * @jsxFrag Fragment, x
+     * @jsxRuntime automatic, x
+     */
+    function render(): void {}
+
+jsdoc_tag_is_case_sensitive:
+  lang: typescript
+  config: default
+  source: |
+    /**
+     * @Param check, IMPL_CASE, impl
+     */
+    function f(): void {}
+
+not_a_jsdoc_comment:
+  # A /* */ comment, a // comment and a /*** */ comment are no JSDoc comments: their tag
+  # lines are left to the one-line parser.
+  lang: typescript
+  config: default
+  source: |
+    /* @param a First, second */
+    // @param b Third, fourth
+    /***
+     * @param c Fifth, sixth
+     */
+    function f(a: number, b: number, c: number): void {}
+
+jsdoc_in_javascript:
+  lang: js
+  config: default
+  source: |
+    /**
+     * @param {string} name Who, to greet
+     */
+    export function greet(name) {}
+
+doxygen_in_cpp_is_no_jsdoc:
+  # Only comment_type ts reads JSDoc: in C++ a /** */ comment's tag lines are left to
+  # the one-line parser, so this @see line is a need, not a jsdoc_tag warning.
+  lang: cpp
+  config: default
+  source: |
+    /**
+     * @see Retry policy, IMPL_RETRY, impl
+     */
+    void retry() {}
+
+jsdoc_with_other_start_sequence:
+  # With a start sequence other than ``@`` the check does not run: the ``@param`` line is
+  # plain text, and ``[[param a, b]]`` is the need its author wrote.
+  lang: typescript
+  config:
+    start_sequence: "[["
+    end_sequence: "]]"
+    field_split_char: ","
+    needs_fields:
+      - {name: title}
+      - {name: id}
+      - {name: type, default: impl}
+      - {name: links, type: "list[str]", default: []}
+  source: |
+    /**
+     * @param a First, second
+     * [[param a, b]]
+     * [[Bracketed need, IMPL_BRACKETED]]
+     */
+    function f(a: number): void {}
+
+jsdoc_tag_asks_the_one_line_parser:
+  # The check asks the one-line parser, not the text. With ";" as the field separator,
+  # "@param a; b" would be read (a jsdoc_tag warning) and "@param a, b" would not
+  # (silent); "@param a; b; c; d; e" would be a parser warning (too many fields), so it
+  # is a jsdoc_tag warning too.
+  lang: typescript
+  config:
+    start_sequence: "@"
+    field_split_char: ";"
+  source: |
+    /**
+     * @param a; b
+     * @param a, b
+     * @param a; b; c; d; e
+     */
+    function f(a: number): void {}

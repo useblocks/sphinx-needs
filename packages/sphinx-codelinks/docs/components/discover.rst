@@ -38,3 +38,14 @@ Usage Examples
    include = []
    exclude = ["tests/**", "setup.py"]
    comment_type = "python"
+
+**TypeScript Project:**
+
+.. code-block:: toml
+
+   [source_discover]
+   src_dir = "./frontend"
+   include = ["**/*.ts", "**/*.tsx"]
+   comment_type = "ts"
+
+``exclude`` is left out: it defaults to the build-output directories (``node_modules``, ``dist``, ``build``, ``out``, ``coverage``) for this comment type; an explicit list, ``[]`` included, replaces that default.

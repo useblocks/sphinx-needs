@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 7,
+        "column": 4
+      },
+      "end": {
+        "row": 7,
+        "column": 40
+      }
+    },
+    "tagged_scope": "function add(a: number, b: number): number {\n  return a + b;\n}",
+    "need": {
+      "title": "Real Need",
+      "id": "IMPL_REAL",
+      "type": "impl",
+      "links": [
+        "REQ_TS"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  }
+]

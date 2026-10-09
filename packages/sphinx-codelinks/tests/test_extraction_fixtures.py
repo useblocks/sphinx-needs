@@ -43,6 +43,11 @@ LANG_MAP: dict[str, tuple[CommentType, str]] = {
     "go": (CommentType.go, "go"),
     "jsonc": (CommentType.jsonc, "jsonc"),
     "bash": (CommentType.bash, "sh"),
+    # The suffix picks the grammar (utils.ts_grammar_key): TypeScript for .ts, TSX
+    # for .tsx and the JavaScript family, so each key pins the grammar it runs.
+    "typescript": (CommentType.ts, "ts"),
+    "tsx": (CommentType.ts, "tsx"),
+    "js": (CommentType.ts, "js"),
 }
 
 

@@ -4,83 +4,76 @@ import subprocess
 from pathlib import Path
 
 import pytest
-import tree_sitter_bash
-import tree_sitter_c_sharp
-import tree_sitter_cpp
-import tree_sitter_go
-import tree_sitter_json
-import tree_sitter_python
-import tree_sitter_rust
-import tree_sitter_yaml
-from tree_sitter import Language, Parser, Query
 from tree_sitter import Node as TreeSitterNode
+from tree_sitter import Parser, Query
 
 from sphinx_codelinks.analyse import utils
-from sphinx_codelinks.source_discover.config import CommentType
+from sphinx_codelinks.source_discover.config import COMMENT_FILETYPE, CommentType
 
 
+# The fixtures build the parsers the way analysis does, through init_tree_sitter.
 @pytest.fixture(scope="session")
 def init_cpp_tree_sitter() -> tuple[Parser, Query]:
-    parsed_language = Language(tree_sitter_cpp.language())
-    query = Query(parsed_language, utils.CPP_QUERY)
-    parser = Parser(parsed_language)
-    return parser, query
+    return utils.init_tree_sitter(CommentType.cpp)
 
 
 @pytest.fixture(scope="session")
 def init_python_tree_sitter() -> tuple[Parser, Query]:
-    parsed_language = Language(tree_sitter_python.language())
-    query = Query(parsed_language, utils.PYTHON_QUERY)
-    parser = Parser(parsed_language)
-    return parser, query
+    return utils.init_tree_sitter(CommentType.python)
 
 
 @pytest.fixture(scope="session")
 def init_csharp_tree_sitter() -> tuple[Parser, Query]:
-    parsed_language = Language(tree_sitter_c_sharp.language())
-    query = Query(parsed_language, utils.C_SHARP_QUERY)
-    parser = Parser(parsed_language)
-    return parser, query
+    return utils.init_tree_sitter(CommentType.cs)
 
 
 @pytest.fixture(scope="session")
 def init_yaml_tree_sitter() -> tuple[Parser, Query]:
-    parsed_language = Language(tree_sitter_yaml.language())
-    query = Query(parsed_language, utils.YAML_QUERY)
-    parser = Parser(parsed_language)
-    return parser, query
+    return utils.init_tree_sitter(CommentType.yaml)
 
 
 @pytest.fixture(scope="session")
 def init_rust_tree_sitter() -> tuple[Parser, Query]:
-    parsed_language = Language(tree_sitter_rust.language())
-    query = Query(parsed_language, utils.RUST_QUERY)
-    parser = Parser(parsed_language)
-    return parser, query
+    return utils.init_tree_sitter(CommentType.rust)
+
+
+@pytest.fixture(scope="session")
+def init_typescript_tree_sitter() -> tuple[Parser, Query]:
+    # A .tsx file: the TSX grammar, which the JSX fixtures below need
+    return utils.init_tree_sitter(CommentType.ts, Path("fixture.tsx"))
 
 
 @pytest.fixture(scope="session")
 def init_go_tree_sitter() -> tuple[Parser, Query]:
-    parsed_language = Language(tree_sitter_go.language())
-    query = Query(parsed_language, utils.GO_QUERY)
-    parser = Parser(parsed_language)
-    return parser, query
+    return utils.init_tree_sitter(CommentType.go)
 
 
 @pytest.fixture(scope="session")
 def init_jsonc_tree_sitter() -> tuple[Parser, Query]:
-    parsed_language = Language(tree_sitter_json.language())
-    query = Query(parsed_language, utils.JSONC_QUERY)
-    parser = Parser(parsed_language)
-    return parser, query
+    return utils.init_tree_sitter(CommentType.jsonc)
 
 
 @pytest.fixture(scope="session")
 def init_bash_tree_sitter() -> tuple[Parser, Query]:
-    parsed_language = Language(tree_sitter_bash.language())
-    query = Query(parsed_language, utils.BASH_QUERY)
-    parser = Parser(parsed_language)
-    return parser, query
+    return utils.init_tree_sitter(CommentType.bash)
+
+
+def test_every_comment_type_is_wired():
+    """A comment type is a ``CommentType`` member plus an entry in each of several
+    tables; a member one of them misses fails here, rather than as a ``KeyError`` in
+    discovery or as no scope at all."""
+    members = set(CommentType)
+    assert set(COMMENT_FILETYPE) == {member.value for member in members}
+    # YAML and JSONC bind to data structures, not scopes (find_associated_scope)
+    assert set(utils.SCOPE_NODE_TYPES) == members - {
+        CommentType.yaml,
+        CommentType.jsonc,
+    }
+    assert set(utils.SCOPE_CONTAINER_TYPES) <= set(utils.SCOPE_NODE_TYPES)
+    for comment_type, predicates in utils.SCOPE_PREDICATES.items():
+        assert set(predicates) <= utils.SCOPE_NODE_TYPES[comment_type]
+    for member in members:
+        utils.init_tree_sitter(member)
 
 
 @pytest.mark.parametrize(
@@ -485,6 +478,99 @@ def test_find_associated_scope_bash(code, result, init_bash_tree_sitter):
     [
         (
             b"""
+                // @req-id: need_001
+                function dummyFunc1() {
+                }
+            """,
+            "function dummyFunc1()",
+        ),
+        (
+            b"""
+                class DummyClass {
+                    // @req-id: need_001
+                    method1() {
+                    }
+                }
+            """,
+            "method1()",
+        ),
+        # leading comment on an exported function must descend into
+        # export_statement, not resolve to no scope
+        (
+            b"""
+                // @req-id: need_001
+                export function dummyFunc1() {
+                }
+            """,
+            "function dummyFunc1()",
+        ),
+        # leading comment on an exported class
+        (
+            b"""
+                // @req-id: need_001
+                export class DummyClass {
+                }
+            """,
+            "class DummyClass",
+        ),
+        # leading comment on an exported const arrow function
+        (
+            b"""
+                // @req-id: need_001
+                export const dummyFunc1 = () => {
+                };
+            """,
+            "dummyFunc1",
+        ),
+        # a plain (non-function) const between the comment and the function it
+        # documents must not steal the association
+        (
+            b"""
+                // @req-id: need_001
+                const helperFlag = true;
+                function dummyFunc1() {
+                }
+            """,
+            "function dummyFunc1()",
+        ),
+        # arrow-function const still resolves to itself
+        (
+            b"""
+                // @req-id: need_001
+                const dummyFunc1 = () => {
+                };
+            """,
+            "dummyFunc1",
+        ),
+        # JSX-returning component parses cleanly and resolves scope (.tsx content)
+        (
+            b"""
+                // @req-id: need_001
+                export function Button() {
+                    return <button>Click me</button>;
+                }
+            """,
+            "function Button()",
+        ),
+    ],
+)
+def test_find_associated_scope_typescript(code, result, init_typescript_tree_sitter):
+    parser, query = init_typescript_tree_sitter
+    comments = utils.extract_comments(code, parser, query)
+    node: TreeSitterNode | None = utils.find_associated_scope(
+        comments[0], CommentType.ts
+    )
+    assert node
+    assert node.text
+    ts_def = node.text.decode("utf-8")
+    assert result in ts_def
+
+
+@pytest.mark.parametrize(
+    ("code", "result"),
+    [
+        (
+            b"""
                 def dummy_func1():
                     # @req-id: need_001
                     pass
@@ -632,6 +718,116 @@ def test_find_next_scope_csharp(code, result, init_csharp_tree_sitter):
     assert node.text
     func_def = node.text.decode("utf-8")
     assert result in func_def
+
+
+@pytest.mark.parametrize(
+    ("code", "result"),
+    [
+        (
+            b"""
+                // @req-id: need_001
+                function dummyFunc1() {
+                }
+            """,
+            "function dummyFunc1()",
+        ),
+        (
+            b"""
+                // @req-id: need_001
+                export function dummyFunc1() {
+                }
+            """,
+            "function dummyFunc1()",
+        ),
+        (
+            b"""
+                // @req-id: need_001
+                const helperFlag = true;
+                function dummyFunc1() {
+                }
+            """,
+            "function dummyFunc1()",
+        ),
+    ],
+)
+def test_find_next_scope_typescript(code, result, init_typescript_tree_sitter):
+    parser, query = init_typescript_tree_sitter
+    comments = utils.extract_comments(code, parser, query)
+    node: TreeSitterNode | None = utils.find_next_scope(comments[0], CommentType.ts)
+    assert node
+    assert node.text
+    func_def = node.text.decode("utf-8")
+    assert result in func_def
+
+
+def test_find_associated_scope_typescript_jsx_no_parse_error(
+    init_typescript_tree_sitter,
+):
+    """A JSX-returning component must parse cleanly under the TSX grammar."""
+    code = b"""
+        // @req-id: need_001
+        export function Button() {
+            return <button>Click me</button>;
+        }
+    """
+    parser, _ = init_typescript_tree_sitter
+    tree = parser.parse(code)
+    assert not tree.root_node.has_error
+
+
+@pytest.mark.parametrize(
+    ("name", "grammar"),
+    [
+        ("a.ts", "typescript"),
+        ("a.mts", "typescript"),
+        ("a.cts", "typescript"),
+        ("A.TS", "typescript"),
+        ("a.Mts", "typescript"),
+        # a declaration file's suffix is ``.ts``: TypeScript, as any ``.ts`` file
+        ("a.d.ts", "typescript"),
+        ("a.tsx", "tsx"),
+        ("a.js", "tsx"),
+        ("a.jsx", "tsx"),
+        ("a.mjs", "tsx"),
+        ("a.cjs", "tsx"),
+    ],
+)
+def test_ts_grammar_key(name: str, grammar: str) -> None:
+    """TypeScript's own suffixes, in any case, get the TypeScript grammar, where a
+    ``<T>x`` cast is legal; every other suffix of the family gets TSX."""
+    assert utils.ts_grammar_key(Path(name)) == grammar
+
+
+def test_typescript_ts_suffix_recovers_markers_around_angle_bracket_cast():
+    """A ``.ts`` file must use the plain TypeScript grammar, not TSX.
+
+    ``<string>x`` is a legacy angle-bracket type assertion: valid TypeScript
+    syntax, but JSX syntax under the TSX grammar. There it parses as a
+    ``jsx_opening_element`` and swallows the rest of the file into a single
+    ``jsx_text`` node, silently dropping every marker after it (``has_error``
+    is also set). ``init_tree_sitter`` must pick the plain TypeScript grammar
+    for a ``.ts`` path, via ``ts_grammar_key``, so markers both above and
+    below the cast all survive.
+    """
+    code = b"""// @Top, IMPL_TOP
+const v = <string>x;
+// @Bottom, IMPL_BOTTOM
+const y = 2;
+// @Third, IMPL_THIRD
+"""
+    parser, query = utils.init_tree_sitter(CommentType.ts, Path("dummy.ts"))
+    tree = parser.parse(code)
+    assert not tree.root_node.has_error
+
+    comments = utils.extract_comments(code, parser, query)
+    assert comments is not None
+    comments.sort(key=lambda node: node.start_point.row)
+    texts = [node.text.decode("utf-8") for node in comments if node.text]
+    assert texts == [
+        "// @Top, IMPL_TOP",
+        "// @Bottom, IMPL_BOTTOM",
+        "// @Third, IMPL_THIRD",
+    ]
 
 
 @pytest.mark.parametrize(
@@ -881,6 +1077,37 @@ def test_python_comment(code, num_comments, result, init_python_tree_sitter):
 )
 def test_csharp_comment(code, num_comments, result, init_csharp_tree_sitter):
     parser, query = init_csharp_tree_sitter
+    comments: list[TreeSitterNode] = utils.extract_comments(code, parser, query)
+    comments.sort(key=lambda x: x.start_point.row)
+    assert len(comments) == num_comments
+    assert comments[0].text
+    assert comments[0].text.decode("utf-8") == result
+
+
+@pytest.mark.parametrize(
+    ("code", "num_comments", "result"),
+    [
+        (
+            b"""
+                // @req-id: need_001
+                function dummyFunc1() {
+                }
+            """,
+            1,
+            "// @req-id: need_001",
+        ),
+        (
+            b"""
+                /* @req-id: need_001 */
+                const value = 1;
+            """,
+            1,
+            "/* @req-id: need_001 */",
+        ),
+    ],
+)
+def test_typescript_comment(code, num_comments, result, init_typescript_tree_sitter):
+    parser, query = init_typescript_tree_sitter
     comments: list[TreeSitterNode] = utils.extract_comments(code, parser, query)
     comments.sort(key=lambda x: x.start_point.row)
     assert len(comments) == num_comments

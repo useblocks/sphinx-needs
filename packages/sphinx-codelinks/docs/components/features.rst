@@ -266,6 +266,46 @@ Features
    .. fault:: Sphinx-codelinks hallucinates traceability objects in Bash
       :id: FAULT_BASH_2
 
+.. feature:: TypeScript Language Support
+   :id: FE_TS
+
+   Support for defining traceability objects in TypeScript and JavaScript source
+   files via one-line and multi-line comment annotations.
+
+   The TypeScript language parser leverages tree-sitter to identify and extract
+   comments from TypeScript and JavaScript sources: single-line (``//``) and block
+   (``/* */``) comments, JSX comments (``{/* */}``), and JavaScript's legacy
+   ``<!--`` comments. The grammar is chosen per file from its extension: ``.ts``,
+   ``.mts`` and ``.cts`` — TypeScript's own module variants — are parsed with the
+   TypeScript grammar, since a legacy angle-bracket type assertion (``<string>x``)
+   is valid there but is JSX syntax under the TSX grammar. Every other extension
+   (``.tsx``, ``.jsx``, ``.js``, ``.mjs``, ``.cjs``) is parsed with the TSX grammar,
+   which is safe for plain JavaScript and also reads JSX in ``.tsx`` or ``.js``
+   sources.
+
+   Key capabilities:
+
+   * Detection of inline and block comments, a marker sharing its row with a
+     block comment's closing ``*/`` included
+   * Association of comments with functions, generators, classes (abstract ones
+     included), methods, interfaces and their method signatures, type aliases,
+     enums and namespaces, through ``export`` and ``declare`` (so the
+     ambient declarations of a ``.d.ts`` file bind too)
+   * A ``const``/``let``/``var`` declaration, a class field, an assignment such as
+     ``module.exports = function () {}`` and an anonymous default export count as
+     scopes only when they hold a function or a class, seen through ``as``,
+     ``satisfies``, ``!``, ``<T>`` and parentheses
+   * A JSDoc tag line (``@param a text``) under a start sequence JSDoc also uses is a
+     ``jsdoc_tag`` warning, never a need
+   * File extensions ``.ts``, ``.tsx``, ``.mts``, ``.cts``, ``.js``, ``.jsx``,
+     ``.mjs`` and ``.cjs`` auto-discovered when ``comment_type = "ts"``
+
+   .. fault:: Traceability objects are not detected in TypeScript language
+      :id: FAULT_TS_1
+
+   .. fault:: Sphinx-codelinks hallucinates traceability objects in TypeScript
+      :id: FAULT_TS_2
+
 .. feature:: Preprocessor-Aware C/C++ Extraction
    :id: FE_PREPROC
 

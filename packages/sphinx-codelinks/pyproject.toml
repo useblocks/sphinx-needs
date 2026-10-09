@@ -40,6 +40,7 @@ dependencies = [
   # fixed by #466, unreleased at 2026-09-29). Once 0.26.1 ships: `>=0.25.1,!=0.26.0,<0.27`, proven by test_analyse_long_source.py
   "tree-sitter~=0.25.1",
   "tree-sitter-c-sharp>=0.23.1",
+  "tree-sitter-typescript>=0.23.2",
   "tree-sitter-yaml>=0.7.1",
   "tree-sitter-rust>=0.23.0",
   "tree-sitter-go>=0.23.0",

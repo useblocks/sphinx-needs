@@ -1,0 +1,25 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 4
+      },
+      "end": {
+        "row": 1,
+        "column": 38
+      }
+    },
+    "tagged_scope": "void retry() {}",
+    "need": {
+      "title": "see Retry policy",
+      "id": "IMPL_RETRY",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

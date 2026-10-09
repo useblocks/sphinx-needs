@@ -34,6 +34,7 @@
 # - Blocks form over RUNS: one block comment, or one Python string statement (a
 #   docstring or any bare string statement), or consecutive line comments on
 #   consecutive rows with the same delimiter and only whitespace before each.
+#   "<!--" comments hold no block.
 # - Prefixes are stripped by the comment's kind: a line comment loses its delimiter and
 #   ONE space; a docstring loses its quotes and is dedented as inspect.cleandoc does. A
 #   block comment ("/*", "/**", "/*!" openers) first loses a first row holding only
@@ -343,6 +344,60 @@ python_prefixed_docstring:
         Matches \d+ digits.
         @endneed
         """
+
+typescript_line_comment_run:
+  # A run of TypeScript // comments forms one block.
+  lang: typescript
+  config: default
+  source: |
+    // @need impl: Request handler
+    // :id: IMPL_TS
+    //
+    // Handles the request.
+    // @endneed
+    export function handle(request: Request): Response {
+      return new Response();
+    }
+
+tsx_jsdoc_leader:
+  # A JSDoc /** */ block in a .tsx file follows the doxygen rule: the " * " leader on
+  # every line is stripped.
+  lang: tsx
+  config: default
+  source: |
+    /**
+     * @need impl: Login button
+     * :id: IMPL_TSX
+     *
+     * Renders the button.
+     * @endneed
+     */
+    export const LoginButton = () => <button>Log in</button>;
+
+js_html_comment_run_is_no_block:
+  # An HTML comment line never opens a multi-line need: the stripping table knows `//`,
+  # `#` and `/* */` only, so these lines are unknown-kind, read unstripped, and the open
+  # word never starts a line.
+  lang: js
+  config: default
+  source: |
+    <!-- @need impl: Html block
+    <!-- :id: HTML_BLOCK
+    <!--
+    <!-- Body.
+    <!-- @endneed
+    function f() {}
+
+js_html_row_breaks_a_line_run:
+  # A <!-- row is no line comment, so it ends a // run: the open line above it has no
+  # close in its own run.
+  lang: js
+  config: default
+  source: |
+    // @need impl: Mixed run
+    <!-- :id: IMPL_MIXED
+    // @endneed
+    function g() {}
 
 # --- grammar ---------------------------------------------------------------------------
 

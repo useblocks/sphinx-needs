@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from tree_sitter import Node as TreeSitterNode
+from tree_sitter import Parser, Query
 
 from sphinx_codelinks.analyse import multiline_parser, utils
 from sphinx_codelinks.analyse.models import (
@@ -21,6 +22,7 @@ from sphinx_codelinks.analyse.models import (
 from sphinx_codelinks.analyse.oneline_parser import (
     OnelineParserInvalidWarning,
     docstring_tag,
+    jsdoc_tag,
     oneline_parser,
 )
 from sphinx_codelinks.analyse.references import _relative_posix
@@ -65,6 +67,24 @@ def _row_count(src_comment: SourceComment) -> int:
     return (src_comment.node.text or b"").rstrip(b"\n").count(b"\n") + 1
 
 
+#: How a tag warning names the tag it found.
+_TAG_NAMES = {
+    WarningSubTypeEnum.docstring_tag: "docstring tag",
+    WarningSubTypeEnum.jsdoc_tag: "JSDoc tag",
+}
+
+
+def _is_jsdoc(node: TreeSitterNode) -> bool:
+    """A JSDoc comment: a block comment opened by exactly ``/**``, as JSDoc reads one
+    (``/***`` and the empty ``/**/`` are not)."""
+    text = node.text or b""
+    return (
+        text.startswith(b"/**")
+        and not text.startswith(b"/***")
+        and not text.startswith(b"/**/")
+    )
+
+
 def _docstring_contents(
     node: TreeSitterNode, column: int
 ) -> list[tuple[str, int, int]]:
@@ -107,8 +127,9 @@ def _scanned_texts(
 
     Each text comes with the 0-based row and the column, in characters, at which it
     starts. A docstring is scanned as its content, without the quotes; a block
-    comment without its closing ``*/``, which is not marker text. The rows a
-    multi-line need claims are blanked.
+    comment without its closing ``*/``, and a legacy ``<!-- … -->`` comment without
+    its ``-->``, which are not marker text. The rows a multi-line need claims are
+    blanked.
     """
     node = src_comment.node
     if getattr(node, "type", None) == CommentCategory.docstring:
@@ -117,6 +138,8 @@ def _scanned_texts(
         text = node.text.decode("utf-8") if node.text else ""
         if text.startswith("/*") and text.endswith("*/"):
             text = text[:-2]
+        elif text.startswith("<!--") and text.endswith("-->"):
+            text = text[:-3]
         texts = [(text, node.start_point.row, src_comment.column)]
     if claimed_rows:
         # a block's lines are its own: no one-line need and no reference in them
@@ -186,9 +209,29 @@ class SourceAnalyse:
             yield src_path, text.encode("utf-8")
 
     def create_src_objects(self) -> None:
-        parser, query = utils.init_tree_sitter(self.analyse_config.comment_type)
+        comment_type = self.analyse_config.comment_type
+        # One (parser, query) pair per distinct grammar actually needed, built
+        # lazily so a parser is never rebuilt per file. Every comment type
+        # except TypeScript uses a single grammar for the whole run;
+        # TypeScript alone varies its grammar per file (utils.ts_grammar_key)
+        # because a legacy TypeScript-only cast parses as JSX under the wrong
+        # grammar — see the CommentType.ts branch of utils.init_tree_sitter.
+        parser_cache: dict[str, tuple[Parser, Query]] = {}
 
         for src_path, src_string in self.get_src_strings():
+            # `comment_type` is normally a CommentType member, but a few call
+            # sites carry it as a plain (possibly invalid) str instead — see
+            # SourceAnalyseConfig.comment_type — so key on `str(comment_type)`
+            # rather than `.value`, which only the enum has.
+            cache_key = (
+                utils.ts_grammar_key(src_path)
+                if comment_type == CommentType.ts
+                else str(comment_type)
+            )
+            if cache_key not in parser_cache:
+                parser_cache[cache_key] = utils.init_tree_sitter(comment_type, src_path)
+            parser, query = parser_cache[cache_key]
+
             comments: list[TreeSitterNode] | None = utils.extract_comments(
                 src_string, parser, query
             )
@@ -462,26 +505,38 @@ class SourceAnalyse:
         in_docstring = (
             getattr(src_comment.node, "type", None) == CommentCategory.docstring
         )
+        # Only a TypeScript or JavaScript JSDoc comment can hold JSDoc tags.
+        in_jsdoc = self.analyse_config.comment_type == CommentType.ts and _is_jsdoc(
+            src_comment.node
+        )
         for line in lines:
             if self._is_need_id_refs_line(line):
                 row_offset += 1
                 continue
-            tag = (
-                docstring_tag(line, oneline_comment_style.start_sequence)
-                if in_docstring
-                else None
-            )
+            start_sequence = oneline_comment_style.start_sequence
+            tag, kind, holders = None, WarningSubTypeEnum.docstring_tag, "docstrings"
+            if in_docstring:
+                tag = docstring_tag(line, start_sequence)
+            elif in_jsdoc and start_sequence == "@":
+                # ``@`` is JSDoc's own sigil: under any other start sequence a JSDoc
+                # line is read as any other line is
+                tag = jsdoc_tag(line, start_sequence)
+                kind, holders = WarningSubTypeEnum.jsdoc_tag, "JSDoc comments"
+                if tag is not None and not oneline_parser(line, oneline_comment_style):
+                    # a tag line the one-line parser would ignore stays silent
+                    row_offset += 1
+                    continue
             if tag is not None:
                 if src_comment.source_file:
                     self.warnings.append(
                         AnalyseWarning(
                             str(src_comment.source_file.filepath),
                             first_row + row_offset + 1,
-                            f"'{oneline_comment_style.start_sequence}{tag}' is a docstring "
-                            "tag, not a one-line need; use a start sequence that "
-                            "docstrings do not contain",
+                            f"'{start_sequence}{tag}' is a {_TAG_NAMES[kind]}, not a "
+                            "one-line need; use a start sequence that "
+                            f"{holders} do not contain",
                             MarkedContentType.need,
-                            WarningSubTypeEnum.docstring_tag.value,
+                            kind.value,
                         )
                     )
                 row_offset += 1

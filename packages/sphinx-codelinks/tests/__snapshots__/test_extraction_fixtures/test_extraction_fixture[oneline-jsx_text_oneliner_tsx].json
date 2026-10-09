@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.tsx",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 49
+      }
+    },
+    "tagged_scope": "const Login = () => <p>// @Fake line, FAKE_LINE, impl</p>;",
+    "need": {
+      "title": "Login button",
+      "id": "IMPL_TSX_LOGIN",
+      "type": "impl",
+      "links": [
+        "REQ_TSX"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "lexical_declaration"
+  }
+]

@@ -9,6 +9,9 @@
 # path (``find_enclosing_scope`` rather than ``find_next_scope``), and YAML
 # exercises its bespoke structure-association path (inline same-row
 # association, and leading comments bound to a following structure).
+# TypeScript exercises the declarations wrapped in ``export``, ``declare`` or an
+# expression statement, and those that bind only when they hold a function or
+# a class (a ``const``, a class field, an assignment, a default export).
 
 cpp_above_function:
   # Marker directly above a function definition -> binds to that function.
@@ -237,6 +240,305 @@ bash_non_ascii_identifier_scope:
   source: |
     # @T, ID_BASH_UTF8, impl
     fé() { :; }
+
+typescript_above_function:
+  # Marker directly above a function declaration -> binds to it.
+  lang: typescript
+  config: default
+  source: |
+    // @Above Function, IMPL_TS_ABOVE, impl, [REQ_TS]
+    function handle(): void {}
+
+typescript_inside_function_body:
+  # Nothing follows the marker in the body -> the enclosing function binds.
+  lang: typescript
+  config: default
+  source: |
+    function outer(): void {
+      const x = 1;
+      // @Inside Function, IMPL_TS_INSIDE, impl, [REQ_TS]
+    }
+
+typescript_no_scope:
+  # Only a plain (not function-valued) const follows -> no scope.
+  lang: typescript
+  config: default
+  source: |
+    // @No Scope, IMPL_TS_NONE, impl, [REQ_TS]
+    const limit = 3;
+
+typescript_class_method:
+  # Marker inside a class body above a method -> binds to the method.
+  lang: typescript
+  config: default
+  source: |
+    class Service {
+      // @Method, IMPL_TS_METHOD, impl, [REQ_TS]
+      run(): void {}
+    }
+
+typescript_export_function:
+  # An exported declaration is wrapped in export_statement; the declaration
+  # inside binds.
+  lang: typescript
+  config: default
+  source: |
+    // @Exported, IMPL_TS_EXPORT, impl, [REQ_TS]
+    export function handle(): void {}
+
+typescript_const_arrow:
+  # A const whose value is an arrow function binds.
+  lang: typescript
+  config: default
+  source: |
+    // @Arrow, IMPL_TS_ARROW, impl, [REQ_TS]
+    export const handle = (): void => {};
+
+typescript_plain_const_is_skipped:
+  # A plain const between the marker and the function it documents does not
+  # take the association.
+  lang: typescript
+  config: default
+  source: |
+    // @Skip Const, IMPL_TS_SKIP, impl, [REQ_TS]
+    const enabled = true;
+    function handle(): void {}
+
+typescript_plain_var_is_skipped:
+  # A `var` declaration is a scope only when it holds a function: the marker binds
+  # the function after `var limit = 3;`.
+  lang: typescript
+  config: default
+  source: |
+    // @Skip Var, IMPL_TS_SKIP_VAR, impl, [REQ_TS]
+    var limit = 3;
+    function check(): void {}
+
+typescript_interface:
+  # Type-level declarations bind; the function after them does not.
+  lang: typescript
+  config: default
+  source: |
+    // @Interface, IMPL_TS_INTERFACE, impl, [REQ_TS]
+    interface Options {
+      retries: number;
+    }
+    function unrelated(): void {}
+
+typescript_enum:
+  lang: typescript
+  config: default
+  source: |
+    // @Enum, IMPL_TS_ENUM, impl, [REQ_TS]
+    enum Mode { Fast, Safe }
+    function unrelated(): void {}
+
+typescript_type_alias:
+  lang: typescript
+  config: default
+  source: |
+    // @Type Alias, IMPL_TS_ALIAS, impl, [REQ_TS]
+    type Handler = (event: string) => void;
+    function unrelated(): void {}
+
+typescript_abstract_class:
+  lang: typescript
+  config: default
+  source: |
+    // @Abstract Class, IMPL_TS_ABSTRACT, impl, [REQ_TS]
+    abstract class Base {}
+    function unrelated(): void {}
+
+typescript_generator_function:
+  lang: typescript
+  config: default
+  source: |
+    // @Generator, IMPL_TS_GENERATOR, impl, [REQ_TS]
+    function* ids(): Generator<number> {}
+    function unrelated(): void {}
+
+typescript_const_generator_and_class:
+  # A const holding a generator function or a class expression binds.
+  lang: typescript
+  config: default
+  source: |
+    // @Const Generator, IMPL_TS_CONST_GEN, impl, [REQ_TS]
+    const ids = function* () {};
+    // @Const Class, IMPL_TS_CONST_CLASS, impl, [REQ_TS]
+    const Widget = class {};
+    function unrelated(): void {}
+
+typescript_const_wrapped_function:
+  # The function value is seen through `as`, `satisfies`, `!` and parentheses.
+  lang: typescript
+  config: default
+  source: |
+    // @As, IMPL_TS_AS, impl, [REQ_TS]
+    const onClick = (() => {}) as Handler;
+    // @Satisfies, IMPL_TS_SATISFIES, impl, [REQ_TS]
+    const onKey = (() => {}) satisfies Handler;
+    // @Non Null, IMPL_TS_NON_NULL, impl, [REQ_TS]
+    const onDrop = (() => {})!;
+    function unrelated(): void {}
+
+typescript_const_type_assertion:
+  # A legacy <T>x assertion, legal in .ts only: it parses (no JSX) and binds.
+  lang: typescript
+  config: default
+  source: |
+    // @Assertion, IMPL_TS_ASSERTION, impl, [REQ_TS]
+    const onFocus = <Handler>(() => {});
+    function unrelated(): void {}
+
+typescript_class_field_function:
+  # A class field holding an arrow function binds to the field, not the class.
+  lang: typescript
+  config: default
+  source: |
+    class Button {
+      // @Field, IMPL_TS_FIELD, impl, [REQ_TS]
+      onClick = () => {};
+      label = "ok";
+    }
+
+typescript_plain_class_field_is_skipped:
+  # A class field is a scope only when it holds a function: the marker binds the
+  # method after `label = "ok";`.
+  lang: typescript
+  config: default
+  source: |
+    class Button {
+      // @Skip Field, IMPL_TS_SKIP_FIELD, impl, [REQ_TS]
+      label = "ok";
+      render(): void {}
+    }
+
+typescript_declare:
+  # Ambient declarations (`declare …`, the shape of a .d.ts file) bind.
+  lang: typescript
+  config: default
+  source: |
+    // @Declare Function, IMPL_TS_DECLARE_FN, impl, [REQ_TS]
+    declare function render(): void;
+    // @Declare Module, IMPL_TS_DECLARE_MODULE, impl, [REQ_TS]
+    declare module "widgets" {}
+
+typescript_export_declare:
+  # `export declare …` nests one container in another (export_statement >
+  # ambient_declaration), the shape tsc writes into every .d.ts: the declaration
+  # inside binds, not the function after it.
+  lang: typescript
+  config: default
+  source: |
+    // @Export Declare, IMPL_TS_EXPORT_DECLARE, impl, [REQ_TS]
+    export declare function render(): void;
+    export function unrelated(): void {}
+
+typescript_declare_const_binds:
+  # A const, let or var declared with `declare` holds no value, so it is a scope
+  # whatever its type: tsc writes `export const handle = () => {}` into a .d.ts as
+  # below. Only the `declare`-prefixed form: a variable inside a `declare namespace`,
+  # `module` or `global` body, or a bare `export const x: T;` in a .d.ts, still binds
+  # the next declaration.
+  lang: typescript
+  config: default
+  source: |
+    // @Declare Const, IMPL_TS_DECLARE_CONST, impl, [REQ_TS]
+    export declare const handle: () => void;
+    // @Declare Let, IMPL_TS_DECLARE_LET, impl
+    export declare let fn: (a: number) => void;
+    // @Declare Var, IMPL_TS_DECLARE_VAR, impl
+    declare var version: string;
+    export declare function unrelated(): void;
+
+typescript_namespace:
+  lang: typescript
+  config: default
+  source: |
+    // @Namespace, IMPL_TS_NAMESPACE, impl, [REQ_TS]
+    namespace Geometry {
+      export const unit = 1;
+    }
+
+typescript_interface_method_signature:
+  # Marker above a method signature inside an interface binds to the signature.
+  lang: typescript
+  config: default
+  source: |
+    interface Store {
+      // @Signature, IMPL_TS_SIGNATURE, impl, [REQ_TS]
+      load(id: string): void;
+    }
+
+typescript_abstract_method_signature:
+  # An abstract method signature is a scope: the marker binds it, not the method
+  # after it.
+  lang: typescript
+  config: default
+  source: |
+    abstract class Job {
+      // @Abstract Method, IMPL_TS_ABSTRACT_METHOD, impl, [REQ_TS]
+      abstract run(): void;
+      helper(): void {}
+    }
+
+js_module_exports_function:
+  # CommonJS assignments of a function bind to the assignment.
+  lang: js
+  config: default
+  source: |
+    // @Module Exports, IMPL_JS_EXPORTS, impl, [REQ_JS]
+    module.exports = function handle() {};
+    // @Prototype, IMPL_JS_PROTOTYPE, impl, [REQ_JS]
+    Widget.prototype.render = function () {};
+    function unrelated() {}
+
+js_export_default_anonymous:
+  # An anonymous default export binds to the export statement.
+  lang: js
+  config: default
+  source: |
+    // @Default Export, IMPL_JS_DEFAULT, impl, [REQ_JS]
+    export default () => {};
+
+js_plain_assignment_is_skipped:
+  # An assignment is a scope only when it assigns a function: the marker binds the
+  # function after `count = 1;`.
+  lang: js
+  config: default
+  source: |
+    // @Skip Assignment, IMPL_JS_SKIP_ASSIGN, impl, [REQ_JS]
+    count = 1;
+    function tick() {}
+
+js_export_default_value_is_skipped:
+  # A default export is a scope only when it exports a function or a class: the
+  # marker binds the function after `export default 42;`.
+  lang: js
+  config: default
+  source: |
+    // @Skip Default, IMPL_JS_SKIP_DEFAULT, impl, [REQ_JS]
+    export default 42;
+    function tick() {}
+
+js_jsx_component:
+  # JSX in a .js file parses with the TSX grammar, so the component binds.
+  lang: js
+  config: default
+  source: |
+    // @Component, IMPL_JS_JSX, impl, [REQ_JS]
+    export function Button() {
+      return <button>Click</button>;
+    }
+
+tsx_jsx_component:
+  lang: tsx
+  config: default
+  source: |
+    // @Component, IMPL_TSX_JSX, impl, [REQ_TSX]
+    export function Button(): JSX.Element {
+      return <button>Click</button>;
+    }
 
 yaml_inline_same_row:
   # An inline comment sharing a row with a key-value pair binds to that pair

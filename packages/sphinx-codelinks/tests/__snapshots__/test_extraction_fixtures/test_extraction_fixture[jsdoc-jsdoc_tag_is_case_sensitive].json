@@ -1,0 +1,25 @@
+[
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 4
+      },
+      "end": {
+        "row": 1,
+        "column": 32
+      }
+    },
+    "tagged_scope": "function f(): void {}",
+    "need": {
+      "title": "Param check",
+      "id": "IMPL_CASE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  }
+]

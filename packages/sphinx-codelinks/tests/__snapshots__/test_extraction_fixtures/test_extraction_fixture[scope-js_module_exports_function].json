@@ -1,0 +1,52 @@
+[
+  {
+    "filepath": "case.js",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 51
+      }
+    },
+    "tagged_scope": "module.exports = function handle() {}",
+    "need": {
+      "title": "Module Exports",
+      "id": "IMPL_JS_EXPORTS",
+      "type": "impl",
+      "links": [
+        "REQ_JS"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "assignment_expression"
+  },
+  {
+    "filepath": "case.js",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 4
+      },
+      "end": {
+        "row": 2,
+        "column": 48
+      }
+    },
+    "tagged_scope": "Widget.prototype.render = function () {}",
+    "need": {
+      "title": "Prototype",
+      "id": "IMPL_JS_PROTOTYPE",
+      "type": "impl",
+      "links": [
+        "REQ_JS"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "assignment_expression"
+  }
+]

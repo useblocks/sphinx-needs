@@ -205,7 +205,8 @@ Configures how **Sphinx-CodeLinks** discovers and processes source files within 
 
    [codelinks.projects.my_project.source_discover]
    src_dir = "./"
-   exclude = []
+   # exclude is omitted here to keep its comment_type-derived default; see
+   # the `exclude` field below.
    include = []
    gitignore = true
    follow_links = false
@@ -247,7 +248,7 @@ exclude
 Defines a list of glob patterns for files and directories to exclude from discovery. This is useful for ignoring build artifacts, temporary files, or specific source files that shouldn't be processed.
 
 **Type:** ``list[str]``
-**Default:** ``[]``
+**Default:** Derived from ``comment_type`` — see the note below. ``[]`` for every ``comment_type`` except ``ts``, where it is ``["**/node_modules/**", "**/dist/**", "**/build/**", "**/out/**", "**/coverage/**"]``.
 
 .. code-block:: toml
 
@@ -265,6 +266,21 @@ Defines a list of glob patterns for files and directories to exclude from discov
 - ``"*.o"`` - Exclude object files
 - ``"**/__pycache__/**"`` - Exclude Python cache directories
 - ``"node_modules/**"`` - Exclude Node.js dependencies
+
+.. note::
+
+   When ``exclude`` is not set, its default is derived from this project's own :ref:`comment_type <discover_config>`, not applied globally:
+
+   - ``comment_type = "ts"`` (the TypeScript/JavaScript family, which also discovers ``.js``/``.jsx``/``.mjs``/``.cjs`` files) defaults ``exclude`` to ``["**/node_modules/**", "**/dist/**", "**/build/**", "**/out/**", "**/coverage/**"]``. Without this, checked-in bundler/``tsc`` output would be scanned as source alongside the ``.ts`` it was generated from, producing duplicate need ids for the same marker.
+   - Every other ``comment_type`` (``cpp``, ``python``, ``rust``, ``go``, ``yaml``, ``jsonc``, ``bash``, ``cs``, ...) defaults ``exclude`` to ``[]`` — no default exclusion at all.
+
+   ``**/lib/**`` is deliberately **not** in the ``ts`` default: it is ambiguous even within the JS/TS ecosystem, since many packages use ``lib/`` for hand-written source rather than as a ``tsc`` ``outDir`` — and it is common hand-written C/C++ library source outside that ecosystem entirely. If your ``ts`` project's ``outDir`` is ``lib``, add ``"**/lib/**"`` to your own ``exclude`` explicitly.
+
+   ``build/`` and ``out/`` are excluded wherever they occur, so a hand-written ``src/build/`` or ``src/out/`` is not analysed: set ``exclude`` explicitly (``[]``, or a list without that name) when a project keeps sources under those names. The default knows only these five names, so a ``tsc`` ``declarationDir`` or ``outDir`` elsewhere (``types/``, ``lib/``) is the project's to add: a ``declarationDir`` duplicates every marker a JSDoc comment holds, an ``outDir`` every marker. For a ``:directory:`` scope of the ``src-trace`` directive the patterns are matched relative to that directory, so a scope at or inside an excluded directory analyses it.
+
+   Setting ``exclude`` explicitly — including to ``[]`` — replaces the derived default outright rather than adding to it, and does so regardless of ``comment_type``.
+
+   This is resolved identically whether the project is loaded through the Sphinx extension or through the ``discover``/``analyse`` CLI commands: passing ``-e``/``--excludes`` to ``discover`` behaves the same way — omit it to get the ``comment_type``-derived default, or pass it (one or more times) to replace that default outright.
 
 include
 ^^^^^^^
@@ -301,7 +317,7 @@ Specifies the comment syntax style used in the source code files. This determine
 
 **Type:** ``str``
 **Default:** ``"cpp"``
-**Supported values:** ``"cpp"``, ``"python"``, ``"cs"``, ``"yaml"``, ``"rust"``, ``"go"``, ``"jsonc"``, ``"bash"``
+**Supported values:** ``"cpp"``, ``"python"``, ``"cs"``, ``"ts"``, ``"yaml"``, ``"rust"``, ``"go"``, ``"jsonc"``, ``"bash"``
 
 .. code-block:: toml
 
@@ -334,6 +350,13 @@ Specifies the comment syntax style used in the source code files. This determine
        ``/* */`` (multi-line),
        ``///`` (XML doc comments)
      - ``.cs``
+   * - TypeScript / JavaScript
+     - ``"ts"``
+     - ``//`` (single-line),
+       ``/* */`` (multi-line),
+       ``<!--`` and a line-initial ``-->`` (legacy, each to the end of its line; valid only in classic JavaScript scripts — TypeScript and ES modules reject them)
+     - ``.ts``, ``.tsx``, ``.mts``, ``.cts``, ``.js``, ``.jsx``, ``.mjs``
+       and ``.cjs``
    * - YAML
      - ``"yaml"``
      - ``#`` (single-line)
@@ -438,7 +461,8 @@ Configures how **Sphinx-CodeLinks** analyse source files to extract markers from
 
    [codelinks.projects.my_project.source_discover]
    src_dir = "./"
-   exclude = []
+   # exclude is omitted here to keep its comment_type-derived default; see
+   # the `exclude` field below.
    include = []
    gitignore = true
    follow_links = false
@@ -591,6 +615,8 @@ Is equivalent to this RST directive:
       :links: SPEC_1, SPEC_2
 
 .. important:: The ``type`` and ``title`` fields must be configured in ``needs_fields`` as they are mandatory for **Sphinx-Needs**.
+
+.. note:: For the TS/JS family (``comment_type = "ts"``), the default ``start_sequence = "@"`` collides with JSDoc tags such as ``@param``, ``@returns``, and ``@deprecated``. Under the default ``@``, a JSDoc comment's tag lines are read by the one-line parser like any other line: one that it would turn into a marker (a comma, say) is a ``jsdoc_tag`` warning instead; choose a start sequence other than ``@``, ``[[`` or ``@@`` for example, and the check never runs: a JSDoc line is then read as any other line, a marker only where it holds that start sequence. Under ``[[``, ECMAScript's internal-slot notation in a JSDoc line is read as a marker: ``[[Prototype]]`` alone is a ``too_few_fields`` warning, and ``[[Prototype]], [[Extensible]]`` a need. ``@`` is the one start sequence the check runs for, being JSDoc's own sigil: a tag line the one-line parser would ignore (``@returns the sum``) stays silent, and under ``[[`` the line ``[[param a, b]]`` is the marker its author wrote. ``@`` also starts TypeScript's ``// @ts-ignore`` and ``// @ts-expect-error`` comments and the decorators quoted inside an ``@example``; with ``@`` as the start sequence a comma on such a line makes a marker.
 
 analyse.need_id_refs
 ^^^^^^^^^^^^^^^^^^^^

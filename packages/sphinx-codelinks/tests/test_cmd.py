@@ -162,6 +162,76 @@ def test_discover(gitignore: bool, stdout: str, source_directory: Path) -> None:
     assert stdout in result.stdout
 
 
+def test_discover_cli_default_exclude_matches_ts_default(tmp_path: Path) -> None:
+    """Without ``-e``, ``discover --comment-type ts`` excludes what a ``ts`` project's
+    configuration does: ``dist/app.js`` is not listed, ``src/app.ts`` is."""
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "app.ts").write_text(
+        "// @Feature A, IMPL_1, impl\n", encoding="utf-8"
+    )
+    (tmp_path / "dist").mkdir()
+    (tmp_path / "dist" / "app.js").write_text(
+        "// @Feature A, IMPL_1, impl\n", encoding="utf-8"
+    )
+
+    result = runner.invoke(
+        app,
+        ["discover", str(tmp_path), "--comment-type", "ts", "--no-gitignore"],
+    )
+    assert result.exit_code == 0
+    assert "1 files discovered" in result.stdout
+    assert str(tmp_path / "src" / "app.ts") in result.stdout
+    assert str(tmp_path / "dist" / "app.js") not in result.stdout
+
+
+def test_discover_cli_excludes_replace_the_ts_default(tmp_path: Path) -> None:
+    """``-e`` replaces the ``ts`` default rather than adding to it: the test file
+    it names is dropped, and ``dist/app.js``, which the default would drop, is
+    listed."""
+    (tmp_path / "src").mkdir()
+    for name in ("app.ts", "app.test.ts"):
+        (tmp_path / "src" / name).write_text(
+            "// @Feature A, IMPL_1, impl\n", encoding="utf-8"
+        )
+    (tmp_path / "dist").mkdir()
+    (tmp_path / "dist" / "app.js").write_text(
+        "// @Feature A, IMPL_1, impl\n", encoding="utf-8"
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "discover",
+            str(tmp_path),
+            "--comment-type",
+            "ts",
+            "--no-gitignore",
+            "-e",
+            "**/*.test.ts",
+        ],
+    )
+    assert result.exit_code == 0
+    assert "2 files discovered" in result.stdout
+    assert str(tmp_path / "src" / "app.ts") in result.stdout
+    assert str(tmp_path / "dist" / "app.js") in result.stdout
+    assert str(tmp_path / "src" / "app.test.ts") not in result.stdout
+
+
+def test_discover_cli_cpp_default_exclude_is_empty(tmp_path: Path) -> None:
+    """Without ``-e``, ``discover`` for ``cpp`` (the CLI's default) excludes nothing:
+    ``lib/widget.cpp`` is listed."""
+    lib_dir = tmp_path / "lib"
+    lib_dir.mkdir()
+    (lib_dir / "widget.cpp").write_text(
+        "// @Feature A, IMPL_1, impl\n", encoding="utf-8"
+    )
+
+    result = runner.invoke(app, ["discover", str(tmp_path), "--no-gitignore"])
+    assert result.exit_code == 0
+    assert "1 files discovered" in result.stdout
+    assert str(lib_dir / "widget.cpp") in result.stdout
+
+
 @pytest.mark.parametrize(
     ("src_discover_dict", "analyse_dict", "output_lines"),
     [

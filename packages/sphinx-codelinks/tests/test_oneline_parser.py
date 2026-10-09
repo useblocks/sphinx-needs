@@ -5,6 +5,7 @@ from sphinx_codelinks.analyse.oneline_parser import (
     OnelineParserInvalidWarning,
     WarningSubTypeEnum,
     docstring_tag,
+    jsdoc_tag,
     oneline_parser,
 )
 from sphinx_codelinks.config import ESCAPE, UNIX_NEWLINE, OneLineCommentStyle
@@ -730,3 +731,34 @@ def test_docstring_tag_field_shape(line: str, expected: str | None) -> None:
     start sequence has the Epydoc field shape: ``:`` directly, or spaces or tabs, one
     word without space, tab or ``:``, and ``:``. The same table as ubCode's."""
     assert docstring_tag(line, "@") == expected
+
+
+@pytest.mark.parametrize(
+    ("line", "expected"),
+    [
+        pytest.param(" * @param a the first, thing", "param", id="param"),
+        pytest.param(" * @param {number} a text", "param", id="param_type"),
+        pytest.param(" * @param{number} a text", "param", id="brace_glued_to_tag"),
+        pytest.param(" * @returns", "returns", id="bare_tag"),
+        pytest.param(" * @returns\n", "returns", id="bare_tag_terminated"),
+        pytest.param(" * @deprecated\tUse x, it is faster", "deprecated", id="tab"),
+        pytest.param(" * {@link Foo}, the original", "link", id="inline_tag"),
+        pytest.param(" * {@inheritDoc}", "inheritDoc", id="inline_tag_closed"),
+        pytest.param("@typeParam T the type, of it", "typeParam", id="camel_case_tag"),
+        pytest.param(" * @Param check, IMPL_1, impl", None, id="case_sensitive"),
+        pytest.param(" * @parameters Check, IMPL_1, impl", None, id="longer_word"),
+        pytest.param(" * @param1 text", None, id="digit_glued_to_tag"),
+        pytest.param(" * @param-a text", None, id="dash_glued_to_tag"),
+        pytest.param(" * @param: text", None, id="colon_glued_to_tag"),
+        pytest.param(" * see @param a text", None, id="text_before_start"),
+        pytest.param(" * @Real Need, IMPL_1, impl", None, id="not_a_tag"),
+        pytest.param(
+            " * @param\u3000a text", None, id="ideographic_space_ends_nothing"
+        ),
+    ],
+)
+def test_jsdoc_tag(line: str, expected: str | None) -> None:
+    """A JSDoc comment line is a ``jsdoc_tag`` only when a listed tag right after the
+    start sequence ends at a space, a tab, a ``{``, a ``}`` or the end of the line. The
+    same table as ubCode's."""
+    assert jsdoc_tag(line, "@") == expected

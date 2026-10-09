@@ -1,0 +1,71 @@
+[
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 26
+      }
+    },
+    "tagged_scope": "function f(a: number, b: number, c: number): void {}",
+    "need": {
+      "title": "param a First",
+      "id": "second",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  },
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 4
+      },
+      "end": {
+        "row": 1,
+        "column": 25
+      }
+    },
+    "tagged_scope": "function f(a: number, b: number, c: number): void {}",
+    "need": {
+      "title": "param b Third",
+      "id": "fourth",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  },
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 4
+      },
+      "end": {
+        "row": 3,
+        "column": 24
+      }
+    },
+    "tagged_scope": "function f(a: number, b: number, c: number): void {}",
+    "need": {
+      "title": "param c Fifth",
+      "id": "sixth",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  }
+]

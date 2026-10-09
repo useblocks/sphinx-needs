@@ -217,13 +217,19 @@ def discover(  # CLI command requires multiple parameters
         ),
     ],
     exclude: Annotated[
-        list[str],
+        list[str] | None,
         typer.Option(
             "--excludes",
             "-e",
-            help="Glob patterns to be excluded.",
+            help=(
+                "Glob patterns to be excluded. When omitted, defaults to "
+                "the comment-type-derived default (non-empty only for "
+                "--comment-type ts); passing this option one or more times "
+                "replaces that default outright."
+            ),
+            show_default=False,
         ),
-    ] = [],  # noqa: B006   # to show the default value on CLI
+    ] = None,
     include: Annotated[
         list[str],
         typer.Option(
@@ -258,12 +264,17 @@ def discover(  # CLI command requires multiple parameters
 
     src_discover_dict: SourceDiscoverConfigType = {
         "src_dir": src_dir,
-        "exclude": exclude,
         "include": include,
         "gitignore": gitignore,
         "follow_links": follow_links,
         "comment_type": comment_type,
     }
+    # Only pass "exclude" through when the user actually gave -e/--excludes;
+    # otherwise leave it out so SourceDiscoverConfig resolves its own
+    # comment_type-derived default, same as the Sphinx extension / `analyse`
+    # path does for a project's TOML config that omits `exclude`.
+    if exclude is not None:
+        src_discover_dict["exclude"] = exclude
 
     src_discover_config = SourceDiscoverConfig(**src_discover_dict)
 

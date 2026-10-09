@@ -94,17 +94,18 @@ New and Improved
   ``get_multiline_needs = true`` switches them on for a project, and
   ``[analyse.multiline_needs]`` sets the two words, the default markup and the markups
   table. A block lives in one comment, docstring or run of consecutive line comments, in
-  every supported language (C/C++, C#, Rust, Go, JSONC, Python, YAML, Bash); comment
-  prefixes are stripped by the comment's kind, the doxygen ``*`` leader only when every line
-  carries one, so ``*emphasis*`` in a body is kept. A block's lines are never read as
-  one-line needs or ``@need-ids:`` references. ``codelinks analyse`` writes each need to
-  ``marked_content.json`` as a ``"type": "multiline-need"`` record -- the need with its
-  option values as written, its ``doctype``, and a source with a root-relative path and
-  the open, close and body lines -- and prints a malformed block as an analyse warning at
-  its source line. The ``src-trace`` directive renders them (the next bullet). A need type
-  and an option key are ASCII letters, digits, ``_`` and ``-``: ``@need réq:`` is refused
-  and ``:prïority: 3`` starts the body, as in ubCode. A ``markups`` value must be a
-  non-empty suffix.
+  every supported language (C/C++, C#, Rust, Go, TypeScript and JavaScript, JSONC, Python,
+  YAML, Bash; ``<!--`` comments hold none); comment prefixes are stripped by the comment's
+  kind, the doxygen ``*`` leader only when every line carries one, so ``*emphasis*`` in a
+  body is kept. A block's lines are never read as one-line needs or ``@need-ids:``
+  references. ``codelinks analyse`` writes each need to ``marked_content.json`` as a
+  ``"type": "multiline-need"`` record -- the need with its option values as written, its
+  ``doctype``, and a source with a root-relative path and the open, close and body lines
+  -- and prints a malformed block as an analyse warning at its source line. The
+  ``src-trace`` directive renders them (the next bullet). A need type and an option key
+  are ASCII letters, digits, ``_`` and ``-``: ``@need réq:`` is refused and
+  ``:prïority: 3`` starts the body, as in ubCode. A ``markups`` value must be a non-empty
+  suffix.
 
   **Removed:** the ``@rst`` … ``@endrst`` blocks, ``get_rst`` and
   ``[analyse.marked_rst]``. Nothing ever rendered those blocks (#1885), so no project loses
@@ -142,6 +143,29 @@ New and Improved
   not contain is listed on the analyse page. Rendering uses Sphinx-Needs' ``ingest_need_record``, new in 9.0.0: with an older
   Sphinx-Needs each directive with multi-line needs warns once and creates its one-line
   needs only.
+
+- ✨ TypeScript and JavaScript comment type: ``comment_type = "ts"`` analyses the whole
+  family, and source discovery picks up ``.ts``, ``.tsx``, ``.mts``, ``.cts``, ``.js``,
+  ``.jsx``, ``.mjs`` and ``.cjs`` files for it
+  (`#2166 <https://github.com/useblocks/sphinx-needs/pull/2166>`__,
+  `#1890 <https://github.com/useblocks/sphinx-needs/issues/1890>`__).
+
+  The grammar is chosen per file: ``.ts``, ``.mts`` and ``.cts`` are parsed as TypeScript,
+  where a ``<T>value`` type assertion is legal, and every other suffix as TSX, which also
+  reads JSX; a JSX comment, ``{/* … */}``, is a block comment like any other. Legacy
+  ``<!--`` comments, valid in classic scripts only, are read as one-line comments: they
+  hold one-line markers, never a multi-line need. For this comment type ``exclude``
+  defaults to ``["**/node_modules/**", "**/dist/**", "**/build/**", "**/out/**",
+  "**/coverage/**"]``, so checked-in build output (any directory of those five names,
+  wherever it sits) is not scanned beside the sources it was built from (which would
+  define every need twice); an explicit ``exclude``, ``[]`` included, replaces the
+  default, and ``lib/`` is deliberately not in it, being hand-written source in many
+  packages. Under the default ``@``, a JSDoc comment's tag lines are read by the one-line
+  parser like any other line: one that it would turn into a marker (a comma, say, as in
+  ``@param a the first, thing``) is a ``jsdoc_tag`` warning instead of a need with the id
+  ``thing``, and a tag line it would ignore stays silent; choose a start sequence other
+  than ``@``, ``[[`` for example, and the check never runs: a JSDoc line is then read as
+  any other line, a marker only where it holds ``[[``.
 
 - 🐛 A source file added to a ``src-trace`` directive's scope is seen by the next
   incremental build, with no ``-E`` (`#2040 <https://github.com/useblocks/sphinx-needs/issues/2040>`__).

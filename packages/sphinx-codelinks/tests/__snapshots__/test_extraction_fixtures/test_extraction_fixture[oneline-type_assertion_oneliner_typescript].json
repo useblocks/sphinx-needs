@@ -1,0 +1,52 @@
+[
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 52
+      }
+    },
+    "tagged_scope": "function a(): void {}",
+    "need": {
+      "title": "Before Cast",
+      "id": "IMPL_TS_BEFORE_CAST",
+      "type": "impl",
+      "links": [
+        "REQ_TS"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  },
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 4
+      },
+      "end": {
+        "row": 3,
+        "column": 50
+      }
+    },
+    "tagged_scope": "function b(): void {}",
+    "need": {
+      "title": "After Cast",
+      "id": "IMPL_TS_AFTER_CAST",
+      "type": "impl",
+      "links": [
+        "REQ_TS"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  }
+]

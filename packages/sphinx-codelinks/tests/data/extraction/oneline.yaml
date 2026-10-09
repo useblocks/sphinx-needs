@@ -57,3 +57,86 @@ shebang_oneliner_bash:
     #!/bin/bash
     # @Bash Title, IMPL_BASH_SHEBANG, impl, [REQ_BASH]
     function greet { echo hi; }
+
+default_oneliner_typescript:
+  lang: typescript
+  config: default
+  source: |
+    // @Ts Title, IMPL_TS, impl, [REQ_TS]
+    function f(): void {}
+
+# a JSX comment ({/* ... */}) is an ordinary block comment under the TSX
+# grammar, so a marker in one extracts like in any /* */ comment
+jsx_oneliner_tsx:
+  lang: tsx
+  config: default
+  source: |
+    const App = () => (
+      <div>
+        {/*
+          @Tsx Title, IMPL_TSX, impl, [REQ_TSX]
+        */}
+      </div>
+    );
+
+# the one-row form of a JSX comment: the closing */ is no marker text
+jsx_inline_oneliner_tsx:
+  lang: tsx
+  config: default
+  source: |
+    const App = () => (
+      <div>
+        {/* @Tsx Inline, IMPL_TSX_INLINE, impl, [REQ_TSX] */}
+      </div>
+    );
+
+# JSX text is not a comment: .tsx parses with the TSX grammar, where the // and
+# /* */ inside an element's text are text, so neither yields a marker. The
+# TypeScript grammar would read both as comments, and widen the first scope
+jsx_text_oneliner_tsx:
+  lang: tsx
+  config: default
+  source: |
+    // @Login button, IMPL_TSX_LOGIN, impl, [REQ_TSX]
+    export const Login = () => <p>// @Fake line, FAKE_LINE, impl</p>;
+    export const Note = () => <p>/* @Fake block, FAKE_BLOCK, impl */</p>;
+
+# the one-row form of a block comment in TypeScript
+block_oneliner_typescript:
+  lang: typescript
+  config: default
+  source: |
+    /* @Ts Block, IMPL_TS_BLOCK, impl, [REQ_TS] */
+    function f(): void {}
+
+# a legacy <T>x type assertion is valid in .ts, which therefore parses with the
+# TypeScript grammar: under TSX the cast opens a JSX element and every marker
+# after it is lost
+type_assertion_oneliner_typescript:
+  lang: typescript
+  config: default
+  source: |
+    // @Before Cast, IMPL_TS_BEFORE_CAST, impl, [REQ_TS]
+    function a(): void {}
+    const name = <string>value;
+    // @After Cast, IMPL_TS_AFTER_CAST, impl, [REQ_TS]
+    function b(): void {}
+
+# a legacy HTML-like comment (<!-- ...), valid in JavaScript, is an
+# html_comment node, not a comment node, and the query captures both. It runs
+# to the end of its line like //, and so does a line that starts with -->
+html_comment_oneliner_js:
+  lang: js
+  config: default
+  source: |
+    <!-- @Html Title, IMPL_HTML, impl, [REQ_HTML]
+    -->
+    const x = 1;
+
+# the one-row form of a legacy HTML-like comment: a closing --> is no marker text
+html_comment_closed_oneliner_js:
+  lang: js
+  config: default
+  source: |
+    <!-- @Html Closed, IMPL_HTML_CLOSED, impl, [REQ_HTML] -->
+    const x = 1;
