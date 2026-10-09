@@ -216,7 +216,9 @@ Changed
   error: a ``tr_extra_options`` that names a built-in option (``Status``, ``Suite``, ...),
   or two names that differ only in case.
   `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
-  `#2156 <https://github.com/useblocks/sphinx-needs/pull/2156>`__
+  `#2156 <https://github.com/useblocks/sphinx-needs/pull/2156>`__,
+  `#2161 <https://github.com/useblocks/sphinx-needs/pull/2161>`__,
+  `#2162 <https://github.com/useblocks/sphinx-needs/pull/2162>`__
 
 Fixed
 .....
@@ -306,7 +308,7 @@ Fixed
   ``TestReportIncompleteConfigurationError`` there), and nothing is expanded. The three
   exception classes stay defined for ``except`` clauses.
   `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
-  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+  `#2162 <https://github.com/useblocks/sphinx-needs/pull/2162>`__
 
 - 🐛 A duplicate ID in an ``:auto_suites:`` / ``:auto_cases:`` expansion no longer stops the
   build with a bare ``Exception``: the first need is kept, the later one is left out (a
@@ -321,7 +323,7 @@ Fixed
   with ``A need with ID '…' already exists``. A report two of whose suites collide at the
   default ``tr_suite_id_length`` builds now, without the later of the two.
   `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
-  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+  `#2162 <https://github.com/useblocks/sphinx-needs/pull/2162>`__
 
 - 🐛 A need that sphinx-needs refuses -- typically an ID another directive holds: a
   hand-written ``test-case`` for a case ``:auto_cases:`` created already under
@@ -335,7 +337,7 @@ Fixed
   (before: it warned, and the ``test-file`` it generated warned again, at a line the page
   does not have).
   `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
-  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+  `#2162 <https://github.com/useblocks/sphinx-needs/pull/2162>`__
 
 - 👌 A ``tr_extra_options`` name with an upper-case letter can be written on a directive:
   docutils lowercases option names, so ``Owner`` is registered as ``:owner:`` and the
@@ -346,7 +348,7 @@ Fixed
   ``status`` failed with ``TypeError: add_need() got multiple values for keyword argument
   'status'``). The JUnit ``<property name="Owner">`` route is unchanged.
   `#2115 <https://github.com/useblocks/sphinx-needs/issues/2115>`__,
-  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+  `#2162 <https://github.com/useblocks/sphinx-needs/pull/2162>`__
 
 - 🐛 ``tr_link`` no longer fails with ``'NoneType' object has no attribute 'split'`` on the
   usage the documentation shows, ``:links: [[tr_link('classname', 'title')]]``: every need
