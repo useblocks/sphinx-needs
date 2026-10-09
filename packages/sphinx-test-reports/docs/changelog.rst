@@ -200,6 +200,11 @@ Changed
   warns: an option line under ``test-results`` in a MyST page (MyST's own ``Unknown option
   keys`` warning). ub-test-reports' ``JUnitFileMissing`` / ``JsonFileMissing`` derive from
   ``Exception`` now, not ``BaseException``. :ref:`tr_warnings` lists the family.
+  ``test-env`` joins the family: a file it cannot find or read (``report_missing`` /
+  ``report_unreadable``), a file or environment of the wrong shape (``env_shape``), and an
+  ``:env:`` / ``:data:`` name the file lacks (``env_not_present`` /
+  ``env_key_not_present``), each located; ``InvalidJsonFile`` and ``JsonFileNotFound`` are
+  no longer raised by it (the classes stay, deriving from ``Exception`` now).
   `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
   `#2156 <https://github.com/useblocks/sphinx-needs/pull/2156>`__
 
@@ -237,6 +242,48 @@ Fixed
   location inside the message).
   `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
   `#2156 <https://github.com/useblocks/sphinx-needs/pull/2156>`__
+
+- 🐛 ``test-env`` reads its file as UTF-8 with or without a byte-order mark, on every
+  platform: a file saved with a BOM (Windows editors, PowerShell's ``Out-File``) ended the
+  build with ``InvalidJsonFile``, as did a UTF-8 file on a machine whose locale is not
+  UTF-8. A file that does not exist, is not UTF-8 or is not valid JSON is now a located
+  ``test_reports.report_missing`` / ``test_reports.report_unreadable`` warning naming the
+  line and column (or the byte), and an error box; ``InvalidJsonFile``,
+  ``JsonFileNotFound`` and the never-raised ``InvalidEnvRequested`` stay defined, derive
+  from ``Exception`` instead of ``BaseException``, and are not raised by the directive.
+  `#2141 <https://github.com/useblocks/sphinx-needs/issues/2141>`__,
+  `#2161 <https://github.com/useblocks/sphinx-needs/pull/2161>`__
+
+- 🐛 A ``test-env`` file that is valid JSON but not an object of objects no longer ends the
+  build with a ``TypeError`` / ``IndexError``: a file that is not an object shows nothing,
+  with a ``test_reports.env_shape`` warning and an error box; an environment that is not
+  an object is skipped with an ``env_shape`` warning naming it, the others shown. Under
+  ``:raw:`` without ``:data:`` such an environment is shown as its JSON block, without a
+  warning, as before. Two inputs that rendered silently before now warn: an environment
+  whose value is ``[]`` (an empty section before), and a file whose top level is ``[]``
+  (nothing, before).
+  `#2052 <https://github.com/useblocks/sphinx-needs/issues/2052>`__,
+  `#2161 <https://github.com/useblocks/sphinx-needs/pull/2161>`__
+
+- 🐛 ``test-env``'s ``:env:`` and ``:data:`` ignore blank elements (``:env: py35, ,flake8``
+  warned ``environment '' is not present``) and show a repeated one once
+  (``:data: host, host`` warned that ``host`` was missing; ``:env: py35, py35`` showed the
+  environment twice). A variable a shown environment lacks is one
+  ``test_reports.env_key_not_present`` warning per directive -- ``option 'x' is not present
+  in JSON file`` when no environment holds it, else ``option 'x' is not present in 'flake8'
+  environment file`` naming those that lack it -- where it was one warning per
+  environment, worded differently with and without ``:raw:``. Every warning of the
+  directive is located on it and typed (``env_not_present`` for an ``:env:`` the file
+  lacks).
+  `#2140 <https://github.com/useblocks/sphinx-needs/issues/2140>`__,
+  `#2161 <https://github.com/useblocks/sphinx-needs/pull/2161>`__
+
+- 🐛 ``test-env`` shows a scalar as the file spells it: ``true``, ``false``, ``null``,
+  ``0`` and ``0.0`` were an empty cell or Python's ``True``, indistinguishable from a
+  missing value or the string ``"True"``. A string is shown as it is, any other scalar as
+  JSON (a float in Python's spelling, ``1e+16``).
+  `#2139 <https://github.com/useblocks/sphinx-needs/issues/2139>`__,
+  `#2161 <https://github.com/useblocks/sphinx-needs/pull/2161>`__
 
 - 🐛 ``tr_link`` no longer fails with ``'NoneType' object has no attribute 'split'`` on the
   usage the documentation shows, ``:links: [[tr_link('classname', 'title')]]``: every need

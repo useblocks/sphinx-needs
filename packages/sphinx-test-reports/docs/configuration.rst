@@ -552,14 +552,24 @@ The subtypes are the code tails of ubCode's ``needs.test_report_*`` findings,
 so one name silences the same problem in both tools.
 
 ``test_reports.report_missing``
-   The report a directive names -- ``:file:``, or the argument of ``test-results`` -- does not exist.
+   The report a directive names -- ``:file:``, or the argument of ``test-results`` and ``test-env`` -- does not exist.
 
 ``test_reports.report_unreadable``
    The report exists and cannot be read:
    it is not well-formed XML,
    a numeric attribute of a ``<testsuite>`` or ``<testcase>`` (``tests``, ``time``, ``line``, ...) is not a number,
    a JSON report is not valid JSON, not UTF-8, not a list of test suites, or holds a suite that is not an object,
+   a ``test-env`` file is not valid JSON or not UTF-8,
    or ``test-results`` is given a ``.json`` file.
+
+``test_reports.env_shape``
+   A ``test-env`` file is not a JSON object of objects (nothing is shown),
+   or one of its environments is not an object (that environment is skipped,
+   unless ``:raw:`` is given without ``:data:``).
+
+``test_reports.env_not_present``, ``test_reports.env_key_not_present``
+   ``test-env``'s ``:env:`` names an environment the file does not hold,
+   or ``:data:`` a variable that a shown environment lacks.
 
 ``test_reports.unknown_key``, ``test_reports.missing_config``
    The declarative configuration: see :ref:`tr_config_from_toml` and the warnings above it.
