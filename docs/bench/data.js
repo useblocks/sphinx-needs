@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791538070421,
+  "lastUpdate": 1791539340695,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -23868,6 +23868,42 @@ window.BENCHMARK_DATA = {
             "value": 49.242825669,
             "unit": "s",
             "extra": "Commit: e6cd51f042a9d1a17dfade274423bb658c7664c2\nBranch: master\nTime: 2026-10-09T11:26:28+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b91d68368f2ba30295be9e906d5856b045a39718",
+          "message": "🐛 sphinx-needs: needimport imports a record without tags under :tags:, and reports a record whose content is not a string instead of crashing (#2163)\n\n## What\n\n- `needimport`'s `:tags:` now adds the option's tags to a record's own\nfor a missing, `null`, list or string `tags`. A missing or `null` `tags`\ngets the option's tags; a list is extended; a string, an empty one\nincluded, is extended with the option's tags and handed to `add_need`\nwhole, so it is converted exactly as a string `tags` is without the\noption (split on `;`, `,` and `|`, dynamic functions and variants kept\nwhole and run; an empty string is no tags). With `:allow_type_coercion:\nfalse` the record's string is left as it is and `add_need` refuses it\nwith the same text as without the option. Any other value is left for\n`add_need` to refuse, as before.\n- `ingest_need_record` refuses a record whose `content` (or the legacy\n`description` taken as it) is present but not a string, with\n`InvalidNeedException(\"content\", \"content must be a string, not\n<type>\")`, and one whose `type` is not a string, with\n`InvalidNeedException(\"invalid_type\", \"type must be a string, not\n<type>\")`, before `add_need` runs. `needimport` reports either through\nits existing `needs.import_need` warning naming the need, and skips it;\nthe file's other needs import. A record with no `content` key, or an\nempty `content` or `description`, still imports with empty content.\n- Changelog: one 🐛 bullet under *Bug fixes*, marked **(changed\noutput)**.\n\nNot in this PR: a record whose `id` is missing or not a string still\ncrashes in the directive before the record reaches this check (#2158),\nand `check_needs_data`'s schema errors stay at INFO level.\n\n## Why\n\n- #2132: `need[\"tags\"] + tags` raised `KeyError: 'tags'` for a record\nwithout `tags` (a hand-written needs.json, or a producer that omits\nempty lists), and `TypeError` for a `tags` that is `null`, a string or\nanother value that is not a list.\n- #2147: `check_needs_data` logs schema errors at INFO only, so\n`\"content\": 5` or `null` reached the content parse and ended the build\nwith `AttributeError` (`splitlines` on the page-markup route, `split` on\nthe `doctype` route). The check sits before the `MarkupContent` wrap, so\nboth routes go through it. `type: []` / `{}` crashed the same way\n(`TypeError: unhashable type` in the need-type lookup) and is refused by\nthe same seam check; a `type` of `5` or `null`, already a warning, now\nreads `type must be a string, not int` instead of `Unknown need type\n5.`.\n\nThe string rule went through review: a first version split the record's\nstring the way the directive splits its own option, which diverged from\n`add_need`'s conversion on `|`, on a dynamic function holding a comma,\nand with coercion off. Handing `add_need` the whole string is what makes\n\"as without the option\" true.\n\n## ubCode parity\n\n- `tags`: ubCode (`rust/ubc_needs/src/import.rs` ~1866–1888) also sets a\nmissing `tags` and extends an array; it leaves a `null` or string `tags`\nuntouched and drops the option's tags silently. Here those get the\noption's tags.\n- `content`: ubCode reads a non-string `content` as no content\n(`item_builder.rs` `with_content_from_json`) and imports the need\nwithout a diagnostic; here the need is refused with a warning.\n- `type`: ubCode refuses a missing or non-string `type`\n(`item_builder.rs` `with_type_from_json`); matches.\n\n## Tests\n\nNew `tests/test_needimport_records.py` (inline projects, warnings\nmatched in full): `:tags:` over records with no, `null`, empty, list,\n`;`-separated, `|`-separated and dynamic-function `tags`, each against\nthe no-option import of the same file; a string `tags` and an empty one\nunder `:allow_type_coercion: false`, each refused with the same text\nwith and without `:tags:`; `content: 5`, `content: null` and\n`description: null` on the page-markup and the `doctype` routes; a\nrecord with no `content`, an empty `content` and an empty `description`\non both routes (the controls); a `type` of `5`, `null`, `[]` and `{}`.\nThe pins were committed first and fail on the unfixed code. Review\nprobed 18 further record shapes on master and on the branch and 17\nmutations and wrong versions.\n\nCloses #2132\nCloses #2147",
+          "timestamp": "2026-10-09T11:47:37+02:00",
+          "tree_id": "e84dc5eaf39a1e315895b45be6e56541aa7c37d3",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/b91d68368f2ba30295be9e906d5856b045a39718"
+        },
+        "date": 1791539332606,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.10662012800000298,
+            "unit": "s",
+            "extra": "Commit: b91d68368f2ba30295be9e906d5856b045a39718\nBranch: master\nTime: 2026-10-09T11:47:37+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 55.45225416,
+            "unit": "s",
+            "extra": "Commit: b91d68368f2ba30295be9e906d5856b045a39718\nBranch: master\nTime: 2026-10-09T11:47:37+02:00"
           }
         ]
       }
