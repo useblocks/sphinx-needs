@@ -53,6 +53,19 @@ jsdoc_tag_end:
      */
     function f(b: number): void {}
 
+jsdoc_more_tags:
+  # JSDoc's @modifies and TypeScript's JSX pragma @jsxImportSource are tags of the
+  # shared list too: each of these lines holds a comma, so each is a jsdoc_tag
+  # warning, not a need.
+  lang: typescript
+  config: default
+  source: |
+    /**
+     * @jsxImportSource react, dom
+     * @modifies state, cache
+     */
+    function render(): void {}
+
 jsdoc_tag_is_case_sensitive:
   lang: typescript
   config: default
@@ -83,6 +96,17 @@ jsdoc_in_javascript:
      * @param {string} name Who, to greet
      */
     export function greet(name) {}
+
+doxygen_in_cpp_is_no_jsdoc:
+  # Only comment_type ts reads JSDoc: in C++ a /** */ comment's tag lines are left to
+  # the one-line parser, so this @see line is a need, not a jsdoc_tag warning.
+  lang: cpp
+  config: default
+  source: |
+    /**
+     * @see Retry policy, IMPL_RETRY, impl
+     */
+    void retry() {}
 
 jsdoc_with_other_start_sequence:
   # With a start sequence JSDoc does not use, the tag lines are plain text.
