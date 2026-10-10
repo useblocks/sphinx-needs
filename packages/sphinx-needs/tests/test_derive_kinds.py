@@ -559,3 +559,46 @@ def test_no_rule_runs_on_an_imported_need(test_app):
     needs = _needs(app)
     assert needs["IMP_001"]["total"] == 42.0
     assert needs["REQ_002"]["total"] == 3.0
+
+
+ADD_FIELD_CONF = """\
+from sphinx_needs.api import add_field
+
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_fields = {"hours": {"schema": {"type": "number"}}}
+
+
+def setup(app):
+    add_field(
+        "total",
+        "The hours of the linked needs",
+        schema={"type": "number"},
+        derive={"kind": "sum", "field": "hours", "over": "links"},
+    )
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), ADD_FIELD_CONF),
+                (
+                    Path("index.rst"),
+                    "API\n===\n\n.. req:: Hours\n   :id: REQ_001\n   :hours: 3\n\n"
+                    ".. req:: Sums\n   :id: REQ_002\n   :links: REQ_001\n",
+                ),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_add_field_declares_a_derived_field(test_app):
+    """An extension declares a derived field through the ``add_field`` API."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    assert _needs(app)["REQ_002"]["total"] == 3.0
