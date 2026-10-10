@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- One failed case per line-break character an XML report can carry (CR, CR+LF, NEL, LINE SEPARATOR,
+     PARAGRAPH SEPARATOR): its failure message, failure text and captured output each hold the character
+     followed by a raw directive at column 0 and a marker element. XML 1.0 does not allow VT, FF, FS, GS or RS
+     even as character references; `line_breaks.json` carries all ten. -->
+<testsuite name="S" tests="5" errors="0" failures="5" skipped="0" time="0.5">
+  <testcase classname="C" name="t_CR" time="0.1">
+    <failure message="before&#13;.. raw:: html&#13;&#13;   &lt;b&gt;M_MSG_CR&lt;/b&gt;&#13;after">before&#13;.. raw:: html&#13;&#13;   &lt;b&gt;M_TXT_CR&lt;/b&gt;&#13;after</failure>
+    <system-out>before&#13;.. raw:: html&#13;&#13;   &lt;b&gt;M_OUT_CR&lt;/b&gt;&#13;after</system-out>
+  </testcase>
+  <testcase classname="C" name="t_CRLF" time="0.1">
+    <failure message="before&#13;&#10;.. raw:: html&#13;&#10;&#13;&#10;   &lt;b&gt;M_MSG_CRLF&lt;/b&gt;&#13;&#10;after">before&#13;&#10;.. raw:: html&#13;&#10;&#13;&#10;   &lt;b&gt;M_TXT_CRLF&lt;/b&gt;&#13;&#10;after</failure>
+    <system-out>before&#13;&#10;.. raw:: html&#13;&#10;&#13;&#10;   &lt;b&gt;M_OUT_CRLF&lt;/b&gt;&#13;&#10;after</system-out>
+  </testcase>
+  <testcase classname="C" name="t_NEL" time="0.1">
+    <failure message="before&#133;.. raw:: html&#133;&#133;   &lt;b&gt;M_MSG_NEL&lt;/b&gt;&#133;after">before&#133;.. raw:: html&#133;&#133;   &lt;b&gt;M_TXT_NEL&lt;/b&gt;&#133;after</failure>
+    <system-out>before&#133;.. raw:: html&#133;&#133;   &lt;b&gt;M_OUT_NEL&lt;/b&gt;&#133;after</system-out>
+  </testcase>
+  <testcase classname="C" name="t_LS" time="0.1">
+    <failure message="before&#8232;.. raw:: html&#8232;&#8232;   &lt;b&gt;M_MSG_LS&lt;/b&gt;&#8232;after">before&#8232;.. raw:: html&#8232;&#8232;   &lt;b&gt;M_TXT_LS&lt;/b&gt;&#8232;after</failure>
+    <system-out>before&#8232;.. raw:: html&#8232;&#8232;   &lt;b&gt;M_OUT_LS&lt;/b&gt;&#8232;after</system-out>
+  </testcase>
+  <testcase classname="C" name="t_PS" time="0.1">
+    <failure message="before&#8233;.. raw:: html&#8233;&#8233;   &lt;b&gt;M_MSG_PS&lt;/b&gt;&#8233;after">before&#8233;.. raw:: html&#8233;&#8233;   &lt;b&gt;M_TXT_PS&lt;/b&gt;&#8233;after</failure>
+    <system-out>before&#8233;.. raw:: html&#8233;&#8233;   &lt;b&gt;M_OUT_PS&lt;/b&gt;&#8233;after</system-out>
+  </testcase>
+</testsuite>
