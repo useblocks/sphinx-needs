@@ -50,7 +50,6 @@ Improvements
   now listed in its documentation.
 
 - ✨ Dynamic functions and variants are computed in dependency order,
-  a field can be derived by a rule declared in its configuration,
   and a value that cannot be computed is reported **(changed output)**
   (:issue:`2064`, :pr:`2080`, :pr:`2081`, :pr:`2134`, :pr:`2136`, :pr:`2143`)
 
@@ -103,8 +102,10 @@ Improvements
   adds nothing to a field: alone in a nullable string or array field it leaves the field unset,
   where it was stored as the text ``"None"``, or as ``[None]``, which schema validation then refused.
 
-  A field or link type can be :ref:`derived <needs_derive>`: a ``derive`` table on its
-  :ref:`needs_fields` or :ref:`needs_links` entry, in :file:`conf.py` or the TOML file,
+- ✨ A field or link type can be :ref:`derived <needs_derive>` by a rule declared in its configuration
+  (:issue:`2030`)
+
+  A ``derive`` table on its :ref:`needs_fields` or :ref:`needs_links` entry, in :file:`conf.py` or the TOML file,
   names a kind and the kind's roles, and the rule computes the value for every need.
   The kinds are ``copy``, ``sum``, ``count``, ``min``, ``max``, ``any``, ``all``, ``collect`` and ``hash`` on a field,
   and ``links`` and ``content_links`` on a link type; the built-in functions are their per-need spellings
@@ -116,7 +117,7 @@ Improvements
   a ``default`` or ``predicates`` beside a rule is reported the same way, and ignored.
   The schema in :ref:`needs.json <needs_builder_format>` marks a derived field or link type ``"readOnly": true``,
   and a need created by ``needimport`` keeps the derived values it carries.
-  A rule on a core field is not available in this release, and is reported.
+  A rule on a core field, or on the ``parent_needs`` link type, is not available in this release, and is reported.
   `ubCode`_ reads the same configuration and gives the same findings.
 
 - ✨ ``needextend`` gains ``:extend_priority:`` (default 500, lower applied first)
