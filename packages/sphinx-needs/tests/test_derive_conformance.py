@@ -33,7 +33,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "derive_conformance.toml"
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 29
+EXPECTED_CASE_COUNT = 30
 
 #: The codes of the derived-field contract, compared as bare subcodes; every other
 #: finding (a dead link, a deprecated option) is each tool's own.
