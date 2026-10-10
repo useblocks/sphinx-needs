@@ -1301,3 +1301,353 @@ p_bool = 3
 p_cmp = 2
 p_fn = 2
 p_mix = 1
+
+# --- the rulings after phase 2's first slice ----------------------------------------
+
+[[case]]
+name = "where-unevaluable-false"
+why = "a where or test that cannot be evaluated on a candidate (a field it lacks) is false for that candidate, silently, in every kind and in links_from_filter, which so gives what the links kind gives"
+config = '''
+[needs.fields.hours]
+schema = { type = "number" }
+
+[needs.fields.n_big]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = "hours > 1" }
+
+[needs.fields.all_big]
+schema = { type = "boolean" }
+derive = { kind = "all", over = "links", test = "hours > 1" }
+
+[needs.fields.any_big]
+schema = { type = "boolean" }
+derive = { kind = "any", over = "links", test = "hours > 1" }
+
+[needs.links.big]
+derive = { kind = "links", where = "hours > 1" }
+
+[needs.links.mentioned_big]
+derive = { kind = "content_links", where = "hours > 1" }
+
+[needs.links.inline_big]
+'''
+source = '''
+.. req:: Two hours
+   :id: REQ_A
+   :hours: 2
+
+.. req:: No hours
+   :id: REQ_B
+
+.. req:: Half an hour
+   :id: REQ_C
+   :hours: 0.5
+
+.. spec:: Reads them
+   :id: SPEC_1
+   :links: REQ_A, REQ_B, REQ_C
+   :inline_big: [[links_from_filter("hours > 1")]]
+
+   Mentions :need:`REQ_A`, :need:`REQ_B` and :need:`REQ_C`.
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+n_big = 1
+all_big = false
+any_big = true
+big = ["REQ_A"]
+mentioned_big = ["REQ_A"]
+inline_big = ["REQ_A"]
+[case.expect.needs.REQ_B]
+n_big = 0
+all_big = true
+any_big = false
+big = ["REQ_A"]
+[case.expect.needs.REQ_A]
+big = []
+
+[[case]]
+name = "result-type-follows-field"
+why = "a result is stored, exported and hashed in the type of the field holding it: a count, or the sum, maximum, copy or items of an integer field, is a float in a number field (0.0 over no candidate) and an integer in an integer field"
+config = '''
+[needs.fields.points]
+schema = { type = "integer" }
+
+[needs.fields.t_count_n]
+schema = { type = "number" }
+derive = { kind = "count", over = "links" }
+
+[needs.fields.t_sum_n]
+schema = { type = "number" }
+derive = { kind = "sum", field = "points", over = "links" }
+
+[needs.fields.t_sum_i]
+schema = { type = "integer" }
+derive = { kind = "sum", field = "points", over = "links" }
+
+[needs.fields.t_copy_n]
+schema = { type = "number" }
+derive = { kind = "copy", field = "points" }
+
+[needs.fields.t_max_n]
+schema = { type = "number" }
+derive = { kind = "max", field = "points", over = "links" }
+
+[needs.fields.t_collect_n]
+schema = { type = "array", items = { type = "number" } }
+derive = { kind = "collect", field = "points", over = "links" }
+
+[needs.fields.t_hash]
+schema = { type = "string" }
+derive = { kind = "hash", fields = ["t_sum_n", "t_count_n", "points"] }
+'''
+source = '''
+.. req:: Three points
+   :id: REQ_1
+   :points: 3
+
+.. req:: Four points
+   :id: REQ_2
+   :points: 4
+
+.. spec:: Rolls them up
+   :id: SPEC_1
+   :links: REQ_2, REQ_1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+t_count_n = 2.0
+t_sum_n = 7.0
+t_sum_i = 7
+t_max_n = 4.0
+t_collect_n = [4.0, 3.0]
+t_hash = "e83b12ce646e40a6b4e1d9087b8665b7c87d451a65e793689c3f687f2e03d202"
+[case.expect.needs.REQ_1]
+t_count_n = 0.0
+t_sum_n = 0.0
+t_sum_i = 0
+t_copy_n = 3.0
+t_collect_n = []
+t_hash = "2fe26378e845779721e237f0d53db55efda234730adb1b5602e5510fded2812a"
+[case.expect.nulls]
+SPEC_1 = ["t_copy_n"]
+REQ_1 = ["t_max_n"]
+
+[[case]]
+name = "set-means-not-null"
+why = "a candidate sets a field when its value is not null: an empty value (a default \"\", a link type with no links) is set, so count counts it, copy first and unique take it, unique counts it among distinct needs (equal values included, not a need linked twice or one leaving it unset), and collect keeps it and each item of a list"
+config = '''
+[needs.links.parent]
+
+[needs.links.tests]
+
+[needs.fields.owner]
+schema = { type = "string" }
+nullable = false
+default = ""
+
+[needs.fields.who]
+schema = { type = "string" }
+
+[needs.fields.labels]
+schema = { type = "array", items = { type = "string" } }
+
+[needs.fields.n_owner]
+schema = { type = "integer" }
+derive = { kind = "count", over = "parent", field = "owner" }
+
+[needs.fields.n_tests]
+schema = { type = "integer" }
+derive = { kind = "count", over = "parent", field = "tests" }
+
+[needs.fields.first_owner]
+schema = { type = "string" }
+nullable = false
+derive = { kind = "copy", field = "owner", over = "parent" }
+
+[needs.fields.unique_owner]
+schema = { type = "string" }
+nullable = false
+derive = { kind = "copy", field = "owner", over = "parent", select = "unique" }
+
+[needs.fields.unique_who]
+schema = { type = "string" }
+derive = { kind = "copy", field = "who", over = "parent", select = "unique" }
+
+[needs.fields.owners]
+schema = { type = "array", items = { type = "string" } }
+derive = { kind = "collect", field = "owner", over = "parent" }
+
+[needs.fields.all_labels]
+schema = { type = "array", items = { type = "string" } }
+derive = { kind = "collect", field = "labels", over = "parent" }
+'''
+source = '''
+.. req:: Owner left at its default
+   :id: PAR_1
+
+.. req:: Owned by bob
+   :id: PAR_2
+   :owner: bob
+   :who: zed
+   :labels: x, y
+
+.. req:: Owned by bob too
+   :id: PAR_3
+   :owner: bob
+   :labels: y
+
+.. spec:: Three parents
+   :id: CHD_1
+   :parent: PAR_2, PAR_1, PAR_3
+
+.. spec:: One parent, twice
+   :id: CHD_2
+   :parent: PAR_2, PAR_2
+
+.. spec:: A parent setting who, one not
+   :id: CHD_3
+   :parent: PAR_2, PAR_1
+'''
+[case.expect]
+[case.expect.needs.CHD_1]
+n_owner = 3
+n_tests = 3
+first_owner = ""
+unique_owner = ""
+owners = ["bob", ""]
+all_labels = ["x", "y"]
+[case.expect.needs.CHD_2]
+unique_owner = "bob"
+[case.expect.needs.CHD_3]
+unique_who = "zed"
+[[case.expect.findings]]
+code = "derive_unique"
+need = "CHD_1"
+field = "unique_owner"
+[[case.expect.findings]]
+code = "derive_unique"
+need = "CHD_3"
+field = "unique_owner"
+
+[[case]]
+name = "refused-result"
+why = "a computed result the field's schema refuses (enum, pattern, minimum, const) is not stored: it is a dynamic_function finding where it is computed, and the field holds its empty value, even when the result equals it (a count of 0 under minimum 1, an all of false under const true); a rule finding no value gives the empty value without a finding"
+config = '''
+[needs.fields.fruit]
+schema = { type = "string" }
+
+[needs.fields.hours]
+schema = { type = "number" }
+
+[needs.fields.pick]
+schema = { type = "string", enum = ["apple", "pear"] }
+nullable = false
+derive = { kind = "copy", field = "fruit" }
+
+[needs.fields.code]
+schema = { type = "string", pattern = "^[a-z]+$" }
+derive = { kind = "copy", field = "fruit" }
+
+[needs.fields.total]
+schema = { type = "number", minimum = 0 }
+nullable = false
+derive = { kind = "sum", field = "hours", over = "links" }
+
+[needs.fields.n]
+schema = { type = "integer", minimum = 1 }
+nullable = false
+derive = { kind = "count", over = "links" }
+
+[needs.fields.ok]
+schema = { type = "boolean", const = true }
+nullable = false
+derive = { kind = "all", over = "links", test = "hours > 0" }
+'''
+source = '''
+.. req:: Banana
+   :id: REQ_1
+   :fruit: Banana
+   :hours: -2
+
+.. req:: Apple
+   :id: REQ_2
+   :fruit: apple
+   :hours: 3
+
+.. spec:: Sums REQ_1
+   :id: SPEC_1
+   :links: REQ_1
+
+.. spec:: Sums REQ_2
+   :id: SPEC_2
+   :links: REQ_2
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+pick = ""
+n = 0
+ok = true
+[case.expect.needs.REQ_2]
+pick = "apple"
+code = "apple"
+[case.expect.needs.SPEC_1]
+pick = ""
+total = 0.0
+n = 1
+ok = false
+[case.expect.needs.SPEC_2]
+total = 3.0
+ok = true
+[case.expect.nulls]
+REQ_1 = ["code"]
+SPEC_1 = ["code"]
+[[case.expect.findings]]
+code = "dynamic_function"
+need = "REQ_1"
+field = "code"
+[[case.expect.findings]]
+code = "dynamic_function"
+need = "REQ_1"
+field = "pick"
+[[case.expect.findings]]
+code = "dynamic_function"
+need = "REQ_1"
+field = "n"
+[[case.expect.findings]]
+code = "dynamic_function"
+need = "REQ_2"
+field = "n"
+[[case.expect.findings]]
+code = "dynamic_function"
+need = "SPEC_1"
+field = "total"
+[[case.expect.findings]]
+code = "dynamic_function"
+need = "SPEC_1"
+field = "ok"
+
+[[case]]
+name = "advisory"
+why = "ubCode reports a project declaring derive once, naming the sphinx-needs release that reads it; sphinx-needs has no such finding"
+ubcode_only = true
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.fields.owner_copy]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner" }
+'''
+source = '''
+.. req:: Owned
+   :id: REQ_1
+   :owner: alice
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+owner_copy = "alice"
+[[case.expect.findings]]
+code = "derive_sphinx_minimum"
