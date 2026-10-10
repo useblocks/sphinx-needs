@@ -13,11 +13,13 @@ import hashlib
 import json
 import os
 import time
+from collections import Counter
 from pathlib import Path
 
 import pytest
 from sphinx.util.parallel import parallel_available
 
+from sphinx_needs.functions import common
 from sphinx_needs_testkit import build_warnings
 
 KINDS = {"buildername": "needs", "srcdir": "doc_test/doc_derive_kinds"}
@@ -249,6 +251,33 @@ def test_links_and_content_links(test_app):
     # the derived links are back links like any other
     assert "SPEC_1" in needs["REQ_C"]["l_open_back"]
     assert "REQ_C" not in needs["REQ_C"]["l_open_back"]
+
+
+@pytest.mark.parametrize("test_app", [KINDS], indirect=True)
+def test_a_links_rule_tests_each_candidate_once(test_app, monkeypatch):
+    """A ``links`` rule's ``where`` is tested once on each candidate per build, not once
+    per need holding the rule: it reads the candidate only, so every need gets the
+    same candidates, less itself (and its parts) unless ``include_self``.
+
+    The project has 10 needs and one part: ``l_open`` tests the 10 needs once each,
+    and ``l_parts`` (``include_parts``) the 10 needs and the part, where testing per
+    reader made it 10 times as many.
+    """
+    calls: Counter[str | None] = Counter()
+    passes = common._passes
+
+    def counting(candidate, predicate, config, reads):
+        calls[predicate] += 1
+        return passes(candidate, predicate, config, reads)
+
+    monkeypatch.setattr(common, "_passes", counting)
+    app = test_app
+    app.build()
+    needs = _needs(app)
+    assert len(needs) == 10
+    assert calls["type == 'req' and status == 'open'"] == 10
+    assert calls["is_part and id_parent == 'REQ_A'"] == 11
+    assert needs["SPEC_1"]["l_open"] == ["REQ_A", "REQ_C"]
 
 
 NEGATIVE_CONF = """\

@@ -735,6 +735,7 @@ def _links_to(
     """
     reader_id = None if reader is None else reader["id_complete"]
     links: list[NeedLink] = []
+    seen: set[NeedLink] = set()
     for result in found:
         if (
             not include_self
@@ -750,7 +751,8 @@ def _links_to(
             if result["is_part"]
             else NeedLink(id=result["id"])
         )
-        if link not in links:
+        if link not in seen:
+            seen.add(link)
             links.append(link)
     return links
 
@@ -792,7 +794,7 @@ def execute_rule(
     config = NeedsSphinxConfig(app.config)
     link_fields = frozenset(schema.iter_link_field_names())
     if rule.kind == "links":
-        return _rule_links(need, needs, rule, config)
+        return _rule_links(need, needs, rule, config, cache)
     if rule.kind == "content_links":
         found = links_from_content(app, need, needs, need_id=rule.from_need)
         if rule.where is None:
@@ -1030,15 +1032,35 @@ def _rule_links(
     needs: NeedsMutable | NeedsView,
     rule: DeriveRule,
     config: NeedsSphinxConfig,
+    cache: dict[Any, Any] | None,
 ) -> list[NeedLink]:
-    """``links``: every need (and part) passing ``where``, in need-id order."""
+    """``links``: every need (and part) passing ``where``, in need-id order.
+
+    ``where`` reads the candidate only, so every need holding the rule gets the same
+    candidates: they are tested once per pass (``cache``), and each need leaves out
+    itself and its parts unless ``include_self``.
+    """
     assert rule.where is not None, "links has a where"
-    found = [
-        candidate
-        for candidate in _every_need_and_part(needs, include_parts=rule.include_parts)
-        if _passes(candidate, rule.where, config, None)
-    ]
-    return _links_to(found, need, include_self=rule.include_self)
+    key = ("links", rule.where, rule.include_parts)
+    found: list[tuple[NeedLink, str]] | None = None if cache is None else cache.get(key)
+    if found is None:
+        found = [
+            (
+                NeedLink(id=candidate["id_parent"], part=candidate["id"])
+                if candidate["is_part"]
+                else NeedLink(id=candidate["id"]),
+                candidate["id_parent"] if candidate["is_part"] else candidate["id"],
+            )
+            for candidate in _every_need_and_part(
+                needs, include_parts=rule.include_parts
+            )
+            if _passes(candidate, rule.where, config, None)
+        ]
+        if cache is not None:
+            cache[key] = found
+    if rule.include_self:
+        return [link for link, _ in found]
+    return [link for link, owner in found if owner != need["id"]]
 
 
 def _rule_transitive(
