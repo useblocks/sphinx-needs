@@ -376,6 +376,125 @@ def test_content_links_reads_a_hidden_need(test_app):
     assert "H_N" not in needs
 
 
+SET_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_id_regex = "^.+$"
+needs_fields = {
+    "owner": {"schema": {"type": "string"}, "nullable": False, "default": ""},
+    "who": {"schema": {"type": "string"}},
+    "labels": {"schema": {"type": "array", "items": {"type": "string"}}},
+    "n_owner": {
+        "schema": {"type": "integer"},
+        "derive": {"kind": "count", "over": "parent", "field": "owner"},
+    },
+    "n_tests": {
+        "schema": {"type": "integer"},
+        "derive": {"kind": "count", "over": "parent", "field": "tests"},
+    },
+    "first_owner": {
+        "schema": {"type": "string"},
+        "nullable": False,
+        "derive": {"kind": "copy", "field": "owner", "over": "parent"},
+    },
+    "unique_owner": {
+        "schema": {"type": "string"},
+        "nullable": False,
+        "derive": {"kind": "copy", "field": "owner", "over": "parent", "select": "unique"},
+    },
+    "unique_who": {
+        "schema": {"type": "string"},
+        "derive": {"kind": "copy", "field": "who", "over": "parent", "select": "unique"},
+    },
+    "owners": {
+        "schema": {"type": "array", "items": {"type": "string"}},
+        "derive": {"kind": "collect", "field": "owner", "over": "parent"},
+    },
+    "all_labels": {
+        "schema": {"type": "array", "items": {"type": "string"}},
+        "derive": {"kind": "collect", "field": "labels", "over": "parent"},
+    },
+}
+needs_links = {"parent": {}, "tests": {}}
+"""
+
+SET_INDEX = """\
+Set
+===
+
+.. req:: Owner left at its default, ""
+   :id: P_1
+
+.. req:: Owned by bob
+   :id: P_2
+   :owner: bob
+   :who: zed
+   :labels: x, y
+
+.. req:: Owned by bob too
+   :id: P_3
+   :owner: bob
+   :labels: y
+
+.. spec:: Three parents
+   :id: C_1
+   :parent: P_2, P_1, P_3
+
+.. spec:: One parent, twice
+   :id: C_2
+   :parent: P_2, P_2
+
+.. spec:: A parent setting who, one not
+   :id: C_3
+   :parent: P_2, P_1
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), SET_CONF),
+                (Path("index.rst"), SET_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_set_means_not_null(test_app):
+    """A candidate sets a field when its value is not null: an empty value (``""``, an
+    empty list, a link type with no links) is set.
+
+    So ``count`` with a ``field`` counts ``P_1``, whose ``owner`` is ``""``, and every
+    parent's empty ``tests``; ``copy`` takes the lowest id among the setters, ``P_1``'s
+    ``""``; ``unique`` warns when more than one distinct target need sets the field,
+    equal values included (``C_1``, and ``C_3``, whose ``P_1`` sets ``""``), not for
+    one need linked twice (``C_2``) or a setter beside a need leaving the field unset
+    (``C_3``'s ``who``); ``collect`` keeps ``""`` and each item of a list.
+    """
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:18: WARNING: derive rule 'copy' for option 'unique_owner' "
+        "found 3 needs setting 'owner' (P_1, P_2, P_3); the lowest id, 'P_1', is "
+        "copied [needs.derive_unique]",
+        # P_1's "" is set: C_3's two parents both set owner
+        "<srcdir>/index.rst:26: WARNING: derive rule 'copy' for option 'unique_owner' "
+        "found 2 needs setting 'owner' (P_1, P_2); the lowest id, 'P_1', is copied "
+        "[needs.derive_unique]",
+    ]
+    needs = _needs(app)
+    c_1, c_2, c_3 = needs["C_1"], needs["C_2"], needs["C_3"]
+    assert (c_1["n_owner"], c_1["n_tests"]) == (3, 3)
+    assert (c_1["first_owner"], c_1["unique_owner"]) == ("", "")
+    assert c_1["owners"] == ["bob", ""]
+    assert c_1["all_labels"] == ["x", "y"]
+    assert c_2["unique_owner"] == "bob"
+    assert c_3["unique_who"] == "zed"
+
+
 NEGATIVE_CONF = """\
 extensions = ["sphinx_needs"]
 needs_build_json = True

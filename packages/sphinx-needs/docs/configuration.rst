@@ -664,7 +664,9 @@ after every other field, every other kind with the other fields; each after ever
   ``where`` drops the candidates it does not hold on, then ``test`` is tested on the others.
   A ``where`` or ``test`` that cannot be evaluated on a candidate (a field the candidate lacks,
   as ``hours > 1`` on a need without ``hours``) does not hold on it, without a warning.
-- **Unset values.** A candidate whose ``field`` is unset is skipped by ``sum``, ``min``, ``max``, ``collect``,
+- **Unset values.** A field is unset when it is null: an empty value (``""``, ``[]``, a link type with no links)
+  is set, so ``count`` with a ``field`` counts it, and ``copy`` and ``collect`` take it.
+  A candidate whose ``field`` is unset is skipped by ``sum``, ``min``, ``max``, ``collect``,
   and ``count`` with a ``field`` (which so counts the candidates that set it);
   ``any`` and ``all`` read it as false.
   ``sum`` skips a value that is not a number.
