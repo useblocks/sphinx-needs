@@ -145,6 +145,21 @@ def _myst_parser_class() -> type[Parser] | None:
     return MystParser
 
 
+def page_content_parser(state: object) -> type[Parser] | None:
+    """The parser to give the content of a need in a MyST page, ``None`` in any other.
+
+    A MyST page's own nested parse renders with the page's renderer, into the page's
+    document and its markdown-it environment (its footnotes among them): a content that
+    must reach nothing of the page is parsed with a fresh one instead, as a declared
+    MyST content is (``parse_need_content``).
+
+    :param state: The parser state of the directive (an RST state, or myst-parser's).
+    """
+    if isinstance(state, RSTState):
+        return None
+    return _myst_parser_class()
+
+
 def content_route(parser: type[Parser]) -> ContentRoute | None:
     """Which route parses content for ``parser``, or ``None`` if neither can."""
     if issubclass(parser, RstParser):

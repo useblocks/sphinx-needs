@@ -18,6 +18,7 @@ from docutils.parsers.rst.states import RSTState
 from docutils.statemachine import StringList
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
+from sphinx.util.docutils import new_document
 from sphinx.util.logging import suppress_logging
 
 from sphinx_needs._jinja import render_template_string
@@ -39,6 +40,7 @@ from sphinx_needs.functions.functions import DynamicFunctionParsed
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_content import (
     MarkupContent,
+    page_content_parser,
     parse_need_content,
     resolve_content_parser,
 )
@@ -1186,6 +1188,34 @@ def _text_role(
     return [nodes.Text(text)], []
 
 
+@contextmanager
+def _scratch_document(state: RSTState) -> Iterator[None]:
+    """While parsing, the state writes into a scratch document, not the page's.
+
+    The scratch document has the page's settings and reporter, so the parse reads the
+    same configuration and reports at the same lines; but what the parsed content
+    registers on its document (a footnote and its number, a label, a target, a
+    substitution) is registered on the scratch one, and so reaches nothing of the page.
+    """
+    live = state.document
+    scratch = new_document(live["source"], live.settings)
+    scratch.reporter = live.reporter
+    holders: list[Any] = [state]
+    if (memo := getattr(state, "memo", None)) is not None:
+        holders.append(memo)
+    machine = getattr(state, "state_machine", None)
+    if machine is not None and hasattr(machine, "document"):
+        holders.append(machine)
+    saved = [(holder, holder.document) for holder in holders]
+    for holder in holders:
+        holder.document = scratch
+    try:
+        yield
+    finally:
+        for holder, document in saved:
+            holder.document = document
+
+
 def _store_hidden_references(
     data: NeedItem,
     env: BuildEnvironment,
@@ -1199,22 +1229,25 @@ def _store_hidden_references(
 
     A hidden need's content is not rendered, but a ``content_links`` rule or a
     ``links_from_content`` reads its ``:need:`` references like any need's. Only they
-    are parsed: no other directive or role runs, and nothing is reported. The node is
-    marked hidden, so that a ``needextract`` does not render it.
+    are parsed: no other directive or role runs, and nothing is reported; and they are
+    parsed into a scratch document, so that a footnote, label, target or substitution
+    of the content reaches nothing of the page. The node is marked hidden, so that a
+    ``needextract`` does not render it.
     """
     text = "\n".join(content) if isinstance(content, StringList) else content
     if ":need:" not in text and "{need}" not in text:
         return
     node = Need("", ids=[data["id"]], refid=data["id"])
     node["hidden"] = True
-    with suppress_logging(), _only_need_references():
+    with suppress_logging(), _only_need_references(), _scratch_document(state):
         _parse_content(
             data,
             env,
             state,
             content,
             node,
-            content_parser=content_parser,
+            # in a MyST page, with a fresh renderer rather than the page's own
+            content_parser=content_parser or page_content_parser(state),
             content_source=content_source,
         )
     SphinxNeedsData(env).set_need_node(data["id"], node)

@@ -12,6 +12,7 @@ over no candidate).
 import hashlib
 import json
 import os
+import re
 import time
 from collections import Counter
 from pathlib import Path
@@ -374,6 +375,133 @@ def test_content_links_reads_a_hidden_need(test_app):
     assert needs["R_1"].get_links("mentions") == []
     assert needs["H_2"].get_links("mentions") == []
     assert "H_N" not in needs
+
+
+ISOLATED_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_links = {"mentions": {"derive": {"kind": "content_links"}}}
+"""
+
+ISOLATED_INDEX = """\
+Page
+====
+
+.. req:: Hidden
+   :id: HIDE_1
+   :hide:
+
+   Mentions :need:`REQ_1` and has a footnote [#]_.
+
+   .. [#] The hidden footnote.
+
+   .. _hid_label:
+
+   A labelled paragraph.
+
+Visible text with a footnote [#]_ and a reference to :ref:`hid_label`.
+
+.. [#] The visible footnote.
+
+.. req:: One
+   :id: REQ_1
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), ISOLATED_CONF),
+                (Path("index.rst"), ISOLATED_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_hidden_need_adds_nothing_to_its_page(test_app):
+    """A hidden need's content is parsed for its references alone: its footnotes,
+    labels and targets reach nothing of the page it is written in.
+
+    The page's own footnote is ``[1]``, and a ``:ref:`` to a label in the hidden
+    content is undefined -- the warning sphinx-needs gave before it read a hidden need's
+    references at all -- rather than a reference to an anchor the page does not have.
+    The hidden need's ``content_links`` value is read all the same.
+    """
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:16: WARNING: undefined label: 'hid_label' [ref.ref]",
+    ]
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    numbers = re.findall(
+        r'class="footnote-reference brackets"[^>]*>'
+        r'<span class="fn-bracket">\[</span>(\d+)<',
+        html,
+    )
+    assert numbers == ["1"]
+    needs = SphinxNeedsData(app.env).get_needs_view()
+    assert needs["HIDE_1"].get_links("mentions") == ["REQ_1"]
+
+
+ISOLATED_MD_CONF = """\
+extensions = ["myst_parser", "sphinx_needs"]
+needs_build_json = True
+needs_links = {"mentions": {"derive": {"kind": "content_links"}}}
+"""
+
+ISOLATED_MD_INDEX = """\
+# Page
+
+```{req} Hidden
+:id: HIDE_1
+:hide:
+
+Mentions {need}`REQ_1` and has a footnote[^h].
+
+[^h]: The hidden footnote.
+```
+
+Visible text with a footnote[^v].
+
+[^v]: The visible footnote.
+
+```{req} One
+:id: REQ_1
+```
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), ISOLATED_MD_CONF),
+                (Path("index.md"), ISOLATED_MD_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_hidden_need_adds_nothing_to_its_myst_page(test_app):
+    """In a MyST page too: the hidden content is parsed with a renderer of its own, so
+    its footnote is not one of the page's, whose own footnote is ``[1]``."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    numbers = re.findall(
+        r'class="footnote-reference brackets"[^>]*>'
+        r'<span class="fn-bracket">\[</span>(\d+)<',
+        html,
+    )
+    assert numbers == ["1"]
+    needs = SphinxNeedsData(app.env).get_needs_view()
+    assert needs["HIDE_1"].get_links("mentions") == ["REQ_1"]
 
 
 SET_CONF = """\
