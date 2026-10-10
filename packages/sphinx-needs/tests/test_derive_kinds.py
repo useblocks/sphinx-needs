@@ -387,6 +387,7 @@ def five(app, need, needs):
 
 
 needs_functions = [five]
+needs_variant_data = {"n": 3}
 needs_fields = {
     "n_int": {"schema": {"type": "integer"}},
     "ints": {"schema": {"type": "array", "items": {"type": "integer"}}},
@@ -394,6 +395,8 @@ needs_fields = {
     "from_fn": {"schema": {"type": "number"}},
     "nums": {"schema": {"type": "array", "items": {"type": "number"}}},
     "still_int": {"schema": {"type": "integer"}},
+    "from_var": {"schema": {"type": "number"}, "parse_variants": True},
+    "from_variant": {"schema": {"type": "number"}, "parse_variants": True},
     "digest": {
         "schema": {"type": "string"},
         "derive": {"kind": "hash", "fields": ["n_num", "from_fn", "nums"]},
@@ -413,6 +416,8 @@ Inline result types
    :from_fn: [[five()]]
    :nums: [[copy("ints")]]
    :still_int: [[copy("n_int")]]
+   :from_var: <{ var.n }>
+   :from_variant: <<type == 'req':3, 2>>
 """
 
 
@@ -430,7 +435,8 @@ Inline result types
     indirect=True,
 )
 def test_an_inline_result_takes_the_type_of_its_field(test_app):
-    """An integer a ``[[…]]`` returns (a built-in's or your own) is stored in a
+    """An integer a ``[[…]]`` returns (a built-in's or your own), or a variant gives
+    (``<{ var.n }>`` from the variant data, a ``<<…>>``'s value), is stored in a
     ``number`` field as a float, as an authored value of the field is, and so exported
     and hashed as one; an ``integer`` field keeps it an integer."""
     app = test_app
@@ -441,6 +447,8 @@ def test_an_inline_result_takes_the_type_of_its_field(test_app):
     for value, expected in [
         (need["n_num"], 3.0),
         (need["from_fn"], 5.0),
+        (need["from_var"], 3.0),
+        (need["from_variant"], 3.0),
         *zip(need["nums"], [1.0, 2.0], strict=True),
     ]:
         assert type(value) is float and value == expected, (value, expected)

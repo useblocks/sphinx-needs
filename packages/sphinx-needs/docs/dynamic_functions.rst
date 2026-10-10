@@ -381,7 +381,8 @@ Each field on the cycle is reported as ``needs.derive_cycle``, once per field, n
 
 A value computed from a field on a cycle is computed from the value it holds, and is not reported.
 A result takes the type of the field holding it, as an authored value does:
-an integer a call returns is a float in a ``number`` field (``3.0``), and stays an integer in an ``integer`` field.
+an integer a call returns, or a variant gives, is a float in a ``number`` field (``3.0``),
+and stays an integer in an ``integer`` field.
 A field whose call fails, or returns a result the field cannot hold, holds the same as a field on a cycle
 (``LIT_1, [[copy("hours")]]`` in a link field keeps ``LIT_1``), and the call is reported as ``needs.dynamic_function``.
 A sum over every need includes the need that holds it,
