@@ -1,0 +1,197 @@
+# Conformance corpus for DECLARED DERIVED FIELDS: the `derive` rule of a `[needs.fields.*]`
+# or `[needs.links.*]` entry -- how a rule is read and checked, what each kind computes,
+# and what is reported.
+#
+# Repository of record: useblocks/sphinx-needs (public)
+# Canonical path:       packages/sphinx-needs/tests/fixtures/derive_conformance.toml
+#
+# THIS copy is CANONICAL. ubCode is to vendor it byte-for-byte, with a provenance block
+# (this path, and the commit it was taken from) prepended and nothing else changed, and to
+# run it against its own engine. The corpus travels public -> private, so vendoring with a
+# recorded source commit is the sync mechanism.
+#
+# Do not reformat this file. `.gitattributes` pins its line endings, and the taplo hook
+# excludes it: every `config = '''...'''` and `source = '''...'''` body below is the INPUT
+# of a case, so a formatter touching one silently changes what the case tests. A change
+# here is a change to the contract, and owes ubCode a re-vendor.
+#
+# Rules for every runner:
+#   - a case is one project. `config` is its `ubproject.toml` (the `[needs]` configuration
+#     only); `source` is the body of its one reStructuredText document, `index.rst`, under
+#     a title the runner adds; `files` (optional) are other files of the project, relative
+#     to the case directory. A case writes only inside its own directory: a `files` key
+#     that would land outside it (`../x.json`) is a broken case, and the runner refuses it
+#   - every need id satisfies the default id regex (`^[A-Z0-9_]{5,}`); the need types are
+#     the default ones (`req`, `spec`, `impl`, `test`)
+#   - a case with `python_only = true` is one only sphinx-needs runs, and ubCode's runner
+#     skips it; `ubcode_only = true` is the converse
+#   - values are compared as `needs.json` writes them, TYPE INCLUDED: `7.0` is a float and
+#     `7` an integer, and the two differ; a link list is a list of id strings
+#     (`<need>.<part>` for a part), as `needs.json` writes it
+#   - findings are compared as a MULTISET of `code`, and of `need` and `field` where the
+#     finding names them; a key a finding leaves out is not compared. `code` is the BARE
+#     subcode (`derive_invalid`, not `needs.derive_invalid` or `config.derive_invalid`).
+#     Messages and severities are NOT compared. Only the codes of the derived-field
+#     contract are compared --
+#         derive_invalid, derive_authored, derive_unique, derive_cycle, derive_scope,
+#         dynamic_function, derive_sphinx_minimum
+#     -- every other finding (a dead link, a deprecated option) is each tool's own
+#   - a finding's `need` is the need it is reported at (the need's directive); a finding
+#     of the configuration has none, and so has one at a `needextend`. Its `field` is the
+#     field or link type it is about
+#
+# `packages/sphinx-needs/tests/test_derive_conformance.py` runs every case with the `needs`
+# builder AND asserts the case COUNT, so a truncated copy is a red test rather than reduced
+# coverage. The prose half of the contract is the "Derived fields" section of the
+# sphinx-needs documentation.
+#
+# Each `[[case]]` has:
+#   name         - unique, kebab-case
+#   why          - one line saying what the case pins
+#   config       - the `ubproject.toml`
+#   source       - the body of `index.rst`
+#   files        - optional; other files, relative to the case directory, and their text
+#   python_only  - optional; see the rules above
+#   ubcode_only  - optional; see the rules above
+#   [case.expect]
+#     findings         - the findings, `[]` for none; or one `[[case.expect.findings]]`
+#                        table per finding: `code`, and `need` and `field` where named
+#     needs.<ID>       - one table per pinned need: field = value
+#     nulls            - <ID> = [the fields pinned as unset] (TOML has no null)
+
+# --- copy ---------------------------------------------------------------------------
+
+[[case]]
+name = "copy-own-field"
+why = "copy without over or from reads the need's own field, a core one included; an unset one is unset"
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.fields.title_copy]
+schema = { type = "string" }
+derive = { kind = "copy", field = "title" }
+
+[needs.fields.owner_copy]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner" }
+'''
+source = '''
+.. req:: Größe
+   :id: REQ_1
+   :owner: alice
+
+.. req:: No owner
+   :id: REQ_2
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+title_copy = "Größe"
+owner_copy = "alice"
+[case.expect.needs.REQ_2]
+title_copy = "No owner"
+[case.expect.nulls]
+REQ_2 = ["owner_copy"]
+
+[[case]]
+name = "copy-from-id"
+why = "copy with from reads the named need on every need, itself included; from naming no need fails the rule on each"
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.fields.from_owner]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner", from = "REQ_1" }
+
+[needs.fields.from_missing]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner", from = "NOPE_1" }
+'''
+source = '''
+.. req:: Owned
+   :id: REQ_1
+   :owner: alice
+
+.. spec:: Reads it
+   :id: SPEC_1
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+from_owner = "alice"
+[case.expect.needs.SPEC_1]
+from_owner = "alice"
+[case.expect.nulls]
+REQ_1 = ["from_missing"]
+SPEC_1 = ["from_missing"]
+[[case.expect.findings]]
+code = "dynamic_function"
+need = "REQ_1"
+field = "from_missing"
+[[case.expect.findings]]
+code = "dynamic_function"
+need = "SPEC_1"
+field = "from_missing"
+
+[[case]]
+name = "copy-over-link-select"
+why = "copy over a link type: first is the lowest id among the targets that set the field; unique the same, reporting several; list every value in written order, duplicates kept, a list's items each"
+config = '''
+[needs.links.parent]
+
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.fields.labels]
+schema = { type = "array", items = { type = "string" } }
+
+[needs.fields.c_first]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner", over = "parent" }
+
+[needs.fields.c_unique]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner", over = "parent", select = "unique" }
+
+[needs.fields.c_list]
+schema = { type = "array", items = { type = "string" } }
+derive = { kind = "copy", field = "owner", over = "parent", select = "list" }
+
+[needs.fields.c_labels]
+schema = { type = "array", items = { type = "string" } }
+derive = { kind = "copy", field = "labels", over = "parent", select = "list" }
+'''
+source = '''
+.. req:: Bob's
+   :id: REQ_2
+   :owner: bob
+   :labels: y, z
+
+.. req:: Alice's
+   :id: REQ_1
+   :owner: alice
+   :labels: x, y
+
+.. req:: Nobody's
+   :id: REQ_3
+
+.. spec:: Child
+   :id: SPEC_1
+   :parent: REQ_2, REQ_3, REQ_1, REQ_2
+'''
+[case.expect]
+[case.expect.needs.SPEC_1]
+c_first = "alice"
+c_unique = "alice"
+c_list = ["bob", "alice", "bob"]
+c_labels = ["y", "z", "x", "y", "y", "z"]
+[case.expect.needs.REQ_1]
+c_list = []
+c_labels = []
+[case.expect.nulls]
+REQ_1 = ["c_first", "c_unique"]
+[[case.expect.findings]]
+code = "derive_unique"
+need = "SPEC_1"
+field = "c_unique"
