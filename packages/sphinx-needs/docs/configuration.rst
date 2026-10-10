@@ -673,8 +673,8 @@ after every other field, every other kind with the other fields; each after ever
   ``sum`` skips a value that is not a number.
 - **No candidate.** ``sum`` and ``count`` are ``0`` (``0.0`` in a ``number`` field), ``any`` ``false``, ``all`` ``true``,
   ``collect`` ``[]``; ``min``, ``max`` and ``copy`` leave the field at its empty value.
-- **Values.** A result takes the type of the field holding it, as an authored value does:
-  an integer in an ``integer`` field, a float in a ``number`` field
+- **Values.** A result takes the type of the field holding it, as an authored value does,
+  and as the result of a ``[[…]]`` does: an integer in an ``integer`` field, a float in a ``number`` field
   (a ``count``, or the ``sum`` of an ``integer`` field, is ``13.0`` there), in ``needs.json`` and in a ``hash``.
   ``sum`` adds in the order of the candidates.
   ``min`` and ``max`` order numbers by value, and a string by the order of its ``enum``.
