@@ -140,7 +140,7 @@ Schema
              FieldLiteralValue, LinkSchema, LinkDisplayConfig, LinksLiteralValue, AllowedTypes
 
 .. automodule:: sphinx_needs.derive
-   :members: DeriveRule, DeriveInvalid
+   :members: DeriveRule, DeriveInvalid, DeriveCall
 
 .. automodule:: sphinx_needs.schema.config
    :members: FieldStringSchemaType, FieldBooleanSchemaType,

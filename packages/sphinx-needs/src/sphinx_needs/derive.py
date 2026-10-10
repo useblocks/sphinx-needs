@@ -177,6 +177,24 @@ Derive: TypeAlias = DeriveRule | DeriveInvalid
 """What a derived field or link type holds: its rule, or the marker of one that cannot be read."""
 
 
+@dataclass(frozen=True, slots=True)
+class DeriveCall:
+    """A derived field's rule, as the value the pass computes for one need.
+
+    The pass gives every need from the project's sources one per derived field, from
+    the current schema, as the field's one dynamic item: a structured value, ordered
+    and computed like a ``[[…]]`` of the kind's stratum.
+
+    :ivar rule: The rule.
+    """
+
+    rule: DeriveRule
+
+    def describe(self) -> str:
+        """The rule as messages name it: ``derive rule 'sum'``."""
+        return f"derive rule {self.rule.kind!r}"
+
+
 def parse_derive(raw: Any, *, on_link: bool) -> Derive:
     """Read a ``derive`` table: the kind, and that its roles fit the kind.
 

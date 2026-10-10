@@ -89,7 +89,8 @@ Improvements
   Removed on ubCode's side by its own phase 1: a copy of an empty back link list (``[]`` here),
   and an authored array field that is not computed (on a cycle, or whose result the field cannot hold),
   which keeps its written items here.
-  Not evaluated by ubCode at all: the ``filter`` arguments of the built-in functions.
+  Not evaluated by ubCode: a ``filter`` naming ``needs``, or reading ``current_need`` by a key that is
+  not written out, which ubCode reports instead.
   The notice warning ``needs.derive_unresolved`` of the unreleased :pr:`2080`, which reported such reads,
   is gone, and a ``suppress_warnings`` entry naming it is a no-op.
 
@@ -106,10 +107,16 @@ Improvements
   (:issue:`2030`, :pr:`2178`)
 
   A ``derive`` table on its :ref:`needs_fields` or :ref:`needs_links` entry, in :file:`conf.py` or the TOML file,
-  names a kind and the kind's roles, and the rule computes the value for every need.
-  The kinds are ``copy``, ``sum``, ``count``, ``min``, ``max``, ``any``, ``all``, ``collect`` and ``hash`` on a field,
-  and ``links`` and ``content_links`` on a link type; the built-in functions are their per-need spellings
-  (:ref:`dynamic_functions_derived`).
+  names a kind and the kind's roles, and the rule computes the value for every need from the project's sources.
+  The kinds are ``copy`` (a lookup: the need's own field, a named need's, or over a link type),
+  ``sum``, ``count``, ``min``, ``max``, ``any``, ``all`` and ``collect`` (roll-ups over a link type
+  or its back links, narrowed by a ``where`` filter), ``max`` / ``min`` closed over a link type (``transitive``),
+  and ``hash`` (computed after every other field) on a field;
+  ``links`` (every need passing a filter) and ``content_links`` (the needs a need's content references)
+  on a link type. A rule is computed with the ``[[…]]`` of its step, in dependency order, and its findings are
+  those of a call (``needs.derive_cycle``, ``needs.derive_scope``, ``needs.dynamic_function``), with
+  ``needs.derive_unique`` for a ``copy`` with ``select = "unique"`` that finds several values.
+  The built-in functions are their per-need spellings (:ref:`dynamic_functions_derived`).
   A derived field is closed to authors: a value written for it in a need, or set by a ``needextend``,
   is ignored and reported as ``needs.derive_authored``, and it takes no default.
   A rule is checked when the configuration is read: one that cannot be read is one ``needs.derive_invalid``
@@ -121,6 +128,15 @@ Improvements
   and a need created by ``needimport`` keeps the derived values it carries.
   A rule on a core field, or on the ``parent_needs`` link type, is not available in this release, and is reported.
   `ubCode`_ reads the same configuration and gives the same findings.
+
+- ✨ New dynamic function :ref:`links_from_filter`, which links to every need that passes
+  a :ref:`filter string <filter_string>` (:pr:`1984`)
+
+  ``:links: [[links_from_filter("type == 'req' and status == 'open'")]]`` links a need to
+  every open requirement, in need-id order. The need that contains the call, and its own
+  parts, are left out unless ``include_self=True``; parts are tested only with
+  ``include_parts=True``. No match is no link, and no warning; an empty filter is an error.
+  It is the per-need spelling of the ``links`` kind of a derived link type.
 
 - ✨ ``needextend`` gains ``:extend_priority:`` (default 500, lower applied first)
   (:issue:`1658`, :issue:`2064`, :pr:`2083`)
@@ -240,6 +256,26 @@ Bug fixes
 
   It is a ``needs.config`` warning; an entry carrying a ``derive`` rule is reported as a
   rule on a core field, ``needs.derive_invalid``. The link type works as before.
+
+- 🐛 :ref:`copy` with ``upper=True`` or ``lower=True`` changes the case of each item of a
+  list **(changed output)** (:pr:`1984`)
+
+  The whole list used to be converted to its printed form first, so
+  ``:tags: [[copy("tags", "SRC_1", upper=True)]]`` on a need tagged ``alpha, beta`` gave
+  one tag, ``['ALPHA', 'BETA']``, brackets and quotes included. It now gives the two
+  tags ``ALPHA`` and ``BETA``. A value that is not a list is unaffected.
+
+- 🐛 ``c.this_doc()`` works in the ``filter`` of :ref:`copy` (:pr:`1984`)
+
+  The filter was evaluated without the document of the need, so ``c.this_doc()`` ended
+  in a ``this_doc can not be used in this context`` warning, nothing passed the filter,
+  and ``copy`` read the current need instead.
+
+- 🐛 :ref:`ndf` shows a link a dynamic function returns as its need id (:pr:`1984`)
+
+  A function returning links, such as :ref:`links_from_content <links_content>`, was
+  shown as ``NeedLink(id='REQ_1', part=None, condition=None)``; it is now ``REQ_1``, or
+  ``REQ_1.p1`` for a part.
 
 - 🐛 ``needextend``'s ``:+field:`` on a nullable field the need never set sets the field,
   instead of crashing the build (:issue:`2038`, :pr:`2102`)
