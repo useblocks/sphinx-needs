@@ -322,8 +322,9 @@ def test_what_a_rule_cannot_compute(test_app):
       is computed after them: not run (``needs.derive_scope``).
     - ``summary`` copies the ``hash`` ``digest``, computed in the late step: not run
       (``needs.derive_scope``).
-    - ``from`` names no need, and ``where`` cannot be evaluated on ``B`` (no ``hours``):
-      ``needs.dynamic_function``.
+    - ``from`` names no need: ``needs.dynamic_function``.
+    - ``where`` cannot be evaluated on ``B`` (no ``hours``): ``B`` does not pass, and
+      ``A``'s sum is of no candidate, without a finding.
     A copy of a derived value of the same step waits for it (``reads_total``).
     """
     app = test_app
@@ -344,10 +345,6 @@ def test_what_a_rule_cannot_compute(test_app):
         "<srcdir>/index.rst:4: WARNING: Error while resolving dynamic values for field "
         "'from_missing', of need 'A': 'from' names no need: 'NOPE_9' "
         "[needs.dynamic_function]",
-        "<srcdir>/index.rst:4: WARNING: Error while resolving dynamic values for field "
-        "'raising', of need 'A': on need 'B': Filter 'hours > 1' not valid. Error: '>' "
-        "not supported between instances of 'NoneType' and 'int'. "
-        "[needs.dynamic_function]",
         "<srcdir>/index.rst:4: WARNING: dynamic function 'copy' for option 'summary' "
         "reads 'digest' on need 'A', which is computed in the late step, after every "
         "other field (a derive rule of the kind 'hash' or with after = \"derived\"): "
@@ -359,10 +356,97 @@ def test_what_a_rule_cannot_compute(test_app):
     needs = _needs(app)
     a, b = needs["A"], needs["B"]
     assert (a["cyc"], b["cyc"], a["big"], b["big"]) == (None, None, [], [])
-    assert (a["from_missing"], a["raising"], b["raising"]) == (None, None, 2.0)
+    assert (a["from_missing"], a["raising"], b["raising"]) == (None, 0.0, 2.0)
     assert (a["total"], b["total"], a["reads_total"]) == (0.0, 2.0, 0.0)
     assert a["summary"] is None
     assert a["digest"] == _sha256('["A"]')
+
+
+UNEVALUABLE_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_id_regex = "^.+$"
+needs_fields = {
+    "hours": {"schema": {"type": "number"}},
+    "n_big": {
+        "schema": {"type": "integer"},
+        "nullable": False,
+        "derive": {"kind": "count", "over": "links", "where": "hours > 1"},
+    },
+    "all_big": {
+        "schema": {"type": "boolean"},
+        "nullable": False,
+        "derive": {"kind": "all", "over": "links", "test": "hours > 1"},
+    },
+    "any_big": {
+        "schema": {"type": "boolean"},
+        "nullable": False,
+        "derive": {"kind": "any", "over": "links", "test": "hours > 1"},
+    },
+}
+needs_links = {
+    "big": {"derive": {"kind": "links", "where": "hours > 1"}},
+    "mentioned_big": {"derive": {"kind": "content_links", "where": "hours > 1"}},
+    "inline_big": {},
+}
+"""
+
+UNEVALUABLE_INDEX = """\
+Unevaluable
+===========
+
+.. req:: Two hours
+   :id: R_2
+   :hours: 2
+
+.. req:: No hours
+   :id: R_0
+
+.. req:: Half an hour
+   :id: R_H
+   :hours: 0.5
+
+.. spec:: Reads them
+   :id: S_1
+   :links: R_2, R_0, R_H
+   :inline_big: [[links_from_filter("hours > 1")]]
+
+   Mentions :need:`R_2`, :need:`R_0` and :need:`R_H`.
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), UNEVALUABLE_CONF),
+                (Path("index.rst"), UNEVALUABLE_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_predicate_that_cannot_be_evaluated_is_false(test_app):
+    """A ``where`` or ``test`` that cannot be evaluated on a candidate is false for it.
+
+    ``hours > 1`` cannot be evaluated on a need without ``hours`` (``R_0``, and
+    ``S_1``): that candidate does not pass, silently, and the rule computes with the
+    others, in every kind, as in ``links_from_filter``, which so gives what the
+    ``links`` kind gives.
+    """
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    needs = _needs(app)
+    s_1, r_0 = needs["S_1"], needs["R_0"]
+    assert (s_1["n_big"], s_1["all_big"], s_1["any_big"]) == (1, False, True)
+    assert (r_0["n_big"], r_0["all_big"], r_0["any_big"]) == (0, True, False)
+    for need_id, need in needs.items():
+        assert need["big"] == ([] if need_id == "R_2" else ["R_2"]), need_id
+    assert s_1["mentioned_big"] == ["R_2"]
+    assert s_1["inline_big"] == s_1["big"] == ["R_2"]
 
 
 # -- a chain of rules across documents, in two layouts, serial and -j 2 ---------------

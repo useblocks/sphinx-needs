@@ -138,6 +138,8 @@ Improvements
   every open requirement, in need-id order. The need that contains the call, and its own
   parts, are left out unless ``include_self=True``; parts are tested only with
   ``include_parts=True``. No match is no link, and no warning; an empty filter is an error.
+  A need the filter cannot be evaluated on, such as ``hours > 1`` on a need without
+  ``hours``, is not linked, without a warning, as for the ``links`` kind.
   It is the per-need spelling of the ``links`` kind of a derived link type.
 
 - ✨ ``needextend`` gains ``:extend_priority:`` (default 500, lower applied first)
