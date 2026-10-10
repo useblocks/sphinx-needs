@@ -239,7 +239,8 @@ Bug fixes
 .........
 
 - 🐛 :ref:`check_linked_values <check_linked_values>` and :ref:`calc_sum <calc_sum>` with
-  ``links_only`` read the need of a link to a need part (:issue:`2173`, :pr:`2177`)
+  ``links_only`` read the need of a link to a need part, and skip a link to no need
+  **(changed output)** (:issue:`2173`, :pr:`2177`)
 
   A link may name a need part (``:links: REQ_1.a``), and both functions looked such a link
   up by its whole text, which names no need: the call failed with a
@@ -248,8 +249,9 @@ Bug fixes
   need read that need twice, as a need linked twice is read. A link whose text has a dot
   is read as ``<need>.<part>``, as every other reader of a link reads it, so one naming a
   part the need does not have reads the need, and one whose text before the dot names no
-  need fails the call, as a link naming no need still does. `ubCode`_ computes the same
-  values for the calls without a filter.
+  need is a link to no need. A link to no need is now skipped, as the derived-field kinds
+  skip it; it failed the call, a second report of the dead link, which is reported as
+  before, and the field was left empty. `ubCode`_ computes the same values.
 
 - 🐛 A :ref:`needs_fields` entry named ``parent_needs``, the core link type, is reported
   and ignored, instead of stopping the build with "Field 'parent_needs' already exists"

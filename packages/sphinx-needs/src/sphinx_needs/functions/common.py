@@ -218,7 +218,8 @@ def check_linked_values(
 
     If ``one_hit`` is set to True, only one linked need must have a positive match for the searched value.
 
-    A link to a need part (``REQ_1.a``) checks the part's need.
+    A link to a need part (``REQ_1.a``) checks the part's need,
+    and a link to no need is skipped.
 
     **Examples**
 
@@ -312,8 +313,11 @@ def check_linked_values(
         search_value = [search_value]
 
     for link in links:
-        # a link to a need part (``ID.part``) reads the part's need
-        need = needs[NeedLink.parse_address(link).id]
+        # a link to a need part (``ID.part``) reads the part's need; a link to no need
+        # is skipped (it is reported as a dead link)
+        if (target_id := NeedLink.parse_address(link).id) not in needs:
+            continue
+        need = needs[target_id]
         if filter_string:
             try:
                 if not filter_single_need(need, needs_config, filter_string):
@@ -357,7 +361,8 @@ def calc_sum(
     The values are added in ascending need-id order, comparing ids as strings
     (so ``REQ_10`` comes before ``REQ_9``);
     with ``links_only``, in the order the links are written,
-    a link to a need part (``REQ_1.a``) adding the part's need.
+    a link to a need part (``REQ_1.a``) adding the part's need and a link to no need
+    skipped.
     The order can change the last digits of a total of non-integer values,
     so it is fixed rather than left to the order the needs were read in.
 
@@ -432,9 +437,14 @@ def calc_sum(
     # ``links_only`` keeps the order the links are written in, and a link to a need
     # part (``ID.part``) reads the part's need
     check_needs = (
-        [needs[NeedLink.parse_address(link).id] for link in need["links"]]
+        [
+            needs[target_id]
+            for link in need["links"]
+            # a link to no need is skipped (it is reported as a dead link)
+            if (target_id := NeedLink.parse_address(link).id) in needs
+        ]
         if links_only
-        else (needs[need_id] for need_id in sorted(needs))
+        else [needs[need_id] for need_id in sorted(needs)]
     )
 
     calculated_sum = 0.0
