@@ -697,3 +697,201 @@ def test_calc_sum_outside_a_need_names_itself(test_app):
         "Error while executing function 'calc_sum': No need given for calc_sum"
         in warnings[0]
     )
+
+
+# -- a link to a need part reads the part's need (#2173) -----------------------
+#
+# A link may name a need PART (``REQ_1.a``): it is accepted, rendered as a part link
+# and counted on ``REQ_1``'s back links. ``check_linked_values`` and a ``links_only``
+# ``calc_sum`` read the fields of each need the links name, and they looked a part
+# link up by its whole text, which no need has: both calls failed. They now read the
+# part's need, as ubCode does on the same sources.
+
+PART_LINKS_CONF = """\
+extensions = ["sphinx_needs"]
+needs_fields = {
+    "hours": {"schema": {"type": "number"}, "nullable": True},
+    "total": {"schema": {"type": "number"}, "nullable": True},
+    "verdict": {"nullable": True},
+}
+"""
+
+PART_LINKS_INDEX = """\
+Part links
+==========
+
+.. req:: Req one
+   :id: REQ_1
+   :status: open
+   :hours: 3
+
+   :np:`(a) part a` and :np:`(b) part b`
+
+.. req:: Req two
+   :id: REQ_2
+   :status: open
+   :hours: 5
+
+.. spec:: Closed spec
+   :id: SPEC_C
+   :status: closed
+   :hours: 100
+
+.. spec:: A part link and a need link
+   :id: SPEC_1
+   :links: REQ_1.a, REQ_2
+   :verdict: [[check_linked_values('all-open', 'status', 'open')]]
+   :total: [[calc_sum('hours', links_only=True)]]
+
+.. spec:: Two parts of one need
+   :id: SPEC_2
+   :links: REQ_1.a, REQ_1.b
+   :verdict: [[check_linked_values('all-open', 'status', 'open')]]
+   :total: [[calc_sum('hours', links_only=True)]]
+
+.. spec:: A filter tests the part's need
+   :id: SPEC_3
+   :links: REQ_1.b, SPEC_C
+   :verdict: [[check_linked_values('all-open', 'status', 'open', 'type == "req"')]]
+   :total: [[calc_sum('hours', 'type == "req"', links_only=True)]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), PART_LINKS_CONF),
+                (Path("index.rst"), PART_LINKS_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_part_links_read_the_parts_need(test_app):
+    """``check_linked_values`` and a ``links_only`` ``calc_sum`` read a part link's need.
+
+    ``SPEC_1`` is the issue's own shape (#2173): ``'all-open'`` and ``3 + 5``. Two
+    parts of one need name that need twice, so its value is added twice, as a need
+    linked twice is (``SPEC_2``). A filter is tested on the part's need (``SPEC_3``:
+    the part's need is a ``req``, the closed ``spec`` is filtered out).
+    """
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    needs = _built_needs(app)
+    assert needs["SPEC_1"]["verdict"] == "all-open"
+    assert needs["SPEC_1"]["total"] == 8.0
+    assert needs["SPEC_2"]["verdict"] == "all-open"
+    assert needs["SPEC_2"]["total"] == 6.0
+    assert needs["SPEC_3"]["verdict"] == "all-open"
+    assert needs["SPEC_3"]["total"] == 3.0
+
+
+PART_LINKS_ORDER_INDEX = """\
+Part links, computed
+====================
+
+.. req:: Source of the hours
+   :id: SRC_1
+   :status: open
+   :hours: 4
+
+.. req:: The part's need computes the values the reader reads
+   :id: Z_REQ
+   :status: [[copy("status", "SRC_1")]]
+   :hours: [[copy("hours", "SRC_1")]]
+
+   :np:`(p) a part`
+
+.. spec:: Reads through a part link, and sorts before the need it reads
+   :id: A_SPEC
+   :links: Z_REQ.p
+   :verdict: [[check_linked_values('all-open', 'status', 'open')]]
+   :total: [[calc_sum('hours', links_only=True)]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), PART_LINKS_CONF),
+                (Path("index.rst"), PART_LINKS_ORDER_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_part_links_are_read_after_the_parts_need_is_computed(test_app):
+    """The order of the pass reads a part link's need too.
+
+    ``A_SPEC`` sorts before ``Z_REQ``, so only a read of ``Z_REQ``'s computed
+    ``status`` and ``hours`` puts its calls after them: read through the part
+    link's whole text, which names no need, they ran first and read the empty values,
+    and the pass reported a read it did not account for.
+    """
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    needs = _built_needs(app)
+    assert needs["A_SPEC"]["verdict"] == "all-open"
+    assert needs["A_SPEC"]["total"] == 4.0
+
+
+DEAD_LINK_INDEX = """\
+Dead link
+=========
+
+.. req:: Req two
+   :id: REQ_2
+   :status: open
+   :hours: 5
+
+.. spec:: A dead link
+   :id: SPEC_D
+   :links: REQ_2, NOPE_1
+   :verdict: [[check_linked_values('all-open', 'status', 'open')]]
+   :total: [[calc_sum('hours', links_only=True)]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), PART_LINKS_CONF),
+                (Path("index.rst"), DEAD_LINK_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_dead_link_still_fails_the_call(test_app):
+    """A link naming no need still fails ``check_linked_values`` and a ``links_only`` sum.
+
+    Only a part link is resolved to its need; a dead link fails the call, as before
+    (and as ubCode, which mirrors it), and is reported as a dead link as well.
+    """
+    app = test_app
+    app.build()
+    warnings = build_warnings(app)
+    assert warnings == [
+        "<srcdir>/index.rst:9: WARNING: Error while resolving dynamic values for field "
+        "'total', of need 'SPEC_D': Error while executing function 'calc_sum': "
+        "'NOPE_1' [needs.dynamic_function]",
+        "<srcdir>/index.rst:9: WARNING: Error while resolving dynamic values for field "
+        "'verdict', of need 'SPEC_D': Error while executing function "
+        "'check_linked_values': 'NOPE_1' [needs.dynamic_function]",
+        "<srcdir>/index.rst:9: WARNING: Need 'SPEC_D' has unknown outgoing link "
+        "'NOPE_1' in field 'links' [needs.link_outgoing]",
+    ]
+    needs = _built_needs(app)
+    assert needs["SPEC_D"]["verdict"] is None
+    assert needs["SPEC_D"]["total"] is None

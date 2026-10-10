@@ -50,7 +50,7 @@ from sphinx_needs.functions.functions import (
     NeedAttribute,
     _condition_names,
 )
-from sphinx_needs.need_item import NeedItem, NeedPartItem
+from sphinx_needs.need_item import NeedItem, NeedLink, NeedPartItem
 from sphinx_needs.needs_schema import FieldSchema, FieldsSchema, LinkSchema
 from sphinx_needs.variant_data import VariantDataParsed
 from sphinx_needs.variants import VariantFunctionParsed
@@ -732,8 +732,10 @@ class _CallReads:
                     self._column(name, None, links)
             return
         for target in self.need.get("links") or []:
+            # a link to a need part (``ID.part``) reads the part's need
+            target_id = NeedLink.parse_address(target).id
             for name in names:
-                self._read(target, name)
+                self._read(target_id, name)
 
     def _links_from_content(self, args: dict[str, Any]) -> None:
         filter_string = args.get("filter")

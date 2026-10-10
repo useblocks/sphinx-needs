@@ -202,6 +202,16 @@ Breaking changes
 Bug fixes
 .........
 
+- 🐛 :ref:`check_linked_values <check_linked_values>` and :ref:`calc_sum <calc_sum>` with
+  ``links_only`` read the need of a link to a need part (:issue:`2173`)
+
+  A link may name a need part (``:links: REQ_1.a``), and both functions looked such a link
+  up by its whole text, which names no need: the call failed with a
+  ``needs.dynamic_function`` warning and the field was left empty. A part link now reads
+  its need's fields, as the back links already count it on that need, so two parts of one
+  need read that need twice, as a need linked twice is read. A link naming no need still
+  fails the call. `ubCode`_ computes the same values.
+
 - 🐛 ``needextend``'s ``:+field:`` on a nullable field the need never set sets the field,
   instead of crashing the build (:issue:`2038`, :pr:`2102`)
 
