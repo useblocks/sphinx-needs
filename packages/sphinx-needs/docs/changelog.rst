@@ -237,11 +237,12 @@ Bug fixes
   skip it; it failed the call, a second report of the dead link, which is reported as
   before, and the field was left empty. `ubCode`_ computes the same values.
 
-- 🐛 A :ref:`needs_fields` entry named ``parent_needs``, the core link type, is reported
-  and ignored, instead of stopping the build with "Field 'parent_needs' already exists"
+- 🐛 A :ref:`needs_fields` entry named after a link type (``links``, ``parent_needs``, or one
+  of :ref:`needs_links` or ``needs_extra_links``) is reported and ignored, instead of
+  stopping the build ("Field 'tests' already exists", or "Same name for link and field")
 
-  It is a ``needs.config`` warning; an entry carrying a ``derive`` rule is reported as a
-  rule on a core field, ``needs.derive_invalid``. The link type works as before.
+  It is a ``needs.config`` warning; a ``parent_needs`` entry carrying a ``derive`` rule is
+  reported as a rule on a core field, ``needs.derive_invalid``. The link type works as before.
 
 - 🐛 :ref:`copy` with ``upper=True`` or ``lower=True`` changes the case of each item of a
   list **(changed output)** (:pr:`1984`)
