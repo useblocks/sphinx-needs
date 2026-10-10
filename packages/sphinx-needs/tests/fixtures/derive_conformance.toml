@@ -1651,3 +1651,40 @@ source = '''
 owner_copy = "alice"
 [[case.expect.findings]]
 code = "derive_sphinx_minimum"
+
+[[case]]
+name = "inline-result-type-follows-field"
+why = "an integer a computed value gives -- an inline copy of an integer field, a variant's value -- is stored, exported and hashed as a float in a number field, as an authored value is; an integer field keeps it an integer"
+config = '''
+[needs.fields.n_int]
+schema = { type = "integer" }
+
+[needs.fields.n_num]
+schema = { type = "number" }
+
+[needs.fields.v_num]
+schema = { type = "number" }
+parse_variants = true
+
+[needs.fields.still_int]
+schema = { type = "integer" }
+
+[needs.fields.digest]
+schema = { type = "string" }
+derive = { kind = "hash", fields = ["n_num", "v_num"] }
+'''
+source = '''
+.. req:: Integers
+   :id: REQ_1
+   :n_int: 3
+   :n_num: [[copy("n_int")]]
+   :v_num: <<type == 'req':3, 2>>
+   :still_int: [[copy("n_int")]]
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+n_num = 3.0
+v_num = 3.0
+still_int = 3
+digest = "d1e2bcedec5b0867f3b6a22712b19fa0579bb1567a5a514717d3bf9b1c79a1bd"
