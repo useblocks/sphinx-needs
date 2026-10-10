@@ -177,8 +177,13 @@ The built-in functions are the per-need spellings of the kinds:
    * - ``links_from_filter(filter, include_self, include_parts)``
      - ``links``, with the ``where`` ``filter`` and the same ``include_self`` and ``include_parts``
 
-The ``join`` role, which will spell sphinx-test-reports' ``tr_link``, is reserved for a later release:
-a rule naming it is reported as ``needs.derive_invalid``.
+A ``where`` that cannot be evaluated on a candidate (one lacking a field it names) drops that candidate,
+without a warning, in every kind and in ``links_from_filter``;
+the ``filter`` of ``calc_sum``, ``check_linked_values`` and ``links_from_content`` keeps its own behaviour.
+
+The ``join`` role, which will spell sphinx-test-reports' ``tr_link``, and the ``types`` role,
+which will name the need types a rule computes on, are reserved for a later release:
+a rule naming either is reported as ``needs.derive_invalid``.
 
 Develop own functions
 ---------------------

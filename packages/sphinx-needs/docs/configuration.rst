@@ -612,7 +612,7 @@ A ``where`` or ``test`` reads the candidate only:
 a filter naming ``needs``, ``current_need`` or a ``c.`` check (such as ``c.this_doc()``) cannot be declared,
 so that a rule means the same in every tool that reads the configuration.
 
-The ``join`` role is reserved for a later release, and a rule naming it is reported.
+The ``join`` and ``types`` roles are reserved for a later release, and a rule naming either is reported.
 A rule on a core field (``status``, ``tags``, ``title`` and the other core fields, and the ``parent_needs`` link type)
 is not available in this release: it is reported, and ignored.
 
