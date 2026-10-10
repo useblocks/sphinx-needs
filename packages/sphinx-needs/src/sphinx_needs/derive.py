@@ -340,10 +340,11 @@ def invalid_message(name: str, *, on_link: bool, reason: str) -> str:
     )
 
 
-def core_message(name: str) -> str:
-    """The ``needs.derive_invalid`` warning for a rule on a core field."""
+def core_message(name: str, *, on_link: bool) -> str:
+    """The ``needs.derive_invalid`` warning for a rule on a core field or link type."""
+    what = _what(on_link)
     return (
-        f"Invalid derive of field {name!r}: a core field cannot carry a derive rule "
+        f"Invalid derive of {what} {name!r}: a core {what} cannot carry a derive rule "
         "in this release; the rule is ignored"
     )
 
@@ -453,12 +454,16 @@ def _result_problem(
                         f"field, and the field's schema is {result.describe()}"
                     )
                 expected = _ValueType("array", source.item or source.type)
-            else:
-                expected = source
-            if not _holds(result, expected):
+                if not _holds(result, expected):
+                    return (
+                        f"{prefix}: the role 'select' is \"list\", so the rule gives "
+                        f"{expected.describe()}, which the field's schema "
+                        f"({result.describe()}) cannot hold"
+                    )
+            elif not _holds(result, source):
                 return (
                     f"{prefix}: the role 'field' names {rule.field!r} "
-                    f"({expected.describe()}), which the field's schema "
+                    f"({source.describe()}), which the field's schema "
                     f"({result.describe()}) cannot hold"
                 )
         case "sum":
@@ -470,7 +475,7 @@ def _result_problem(
                 )
             if not _holds(result, source):
                 return (
-                    f"{prefix} gives a {source.type}, which the field's schema "
+                    f"{prefix} gives {_a(source.type)}, which the field's schema "
                     f"({result.describe()}) cannot hold"
                 )
         case "count":
@@ -521,6 +526,11 @@ def _result_problem(
                     f"({result.describe()}) cannot hold"
                 )
     return None
+
+
+def _a(type_: str) -> str:
+    """A type's name with its article: ``a number``, ``an integer``."""
+    return f"{'an' if type_[0] in 'aeiou' else 'a'} {type_}"
 
 
 def _holds(result: _ValueType, value: _ValueType) -> bool:
@@ -623,17 +633,38 @@ def _cycle_problems(
     for component in _components(edges):
         if len(component) == 1 and component[0] not in edges[component[0]]:
             continue
-        members = sorted(component)
-        inside = set(members)
-        for name in members:
+        inside = set(component)
+        for name in sorted(component):
             rule = rules[name][0]
-            read = next(r for r in edges[name] if r in inside)
-            path = " -> ".join([name, *[m for m in members if m != name], name])
+            path = _cycle_path(name, edges, inside)
             problems[name] = (
-                f"{rule.describe()}: the role {roles[name]!r} reads {read!r}, "
-                f"whose rule reads this field back ({path}), so no need can compute it"
+                f"{rule.describe()}: the role {roles[name]!r} reads {path[1]!r}, "
+                f"whose rule reads this field back ({' -> '.join(path)}), "
+                "so no need can compute it"
             )
     return problems
+
+
+def _cycle_path(
+    name: str, edges: Mapping[str, list[str]], inside: set[str]
+) -> list[str]:
+    """The shortest path of reads from a rule's field back to it, within its cycle.
+
+    Each step is a read: the path starts and ends at ``name``.
+    """
+    parents: dict[str, str] = {}
+    queue = [name]
+    for vertex in queue:
+        for target in edges[vertex]:
+            if target == name:
+                path = [vertex]
+                while path[-1] != name:
+                    path.append(parents[path[-1]])
+                return [*reversed(path), name]
+            if target in inside and target not in parents:
+                parents[target] = vertex
+                queue.append(target)
+    raise AssertionError("a member of a cycle reads its way back to itself")
 
 
 def _components(edges: Mapping[str, list[str]]) -> list[list[str]]:

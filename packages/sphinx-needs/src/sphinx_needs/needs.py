@@ -1255,7 +1255,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         ):
             # a core field is not derived: the rule is reported and ignored
             derive_problems.append(
-                DeriveProblem(name, False, core_message(name), core=True)
+                DeriveProblem(name, False, core_message(name, on_link=False), core=True)
             )
     for name, data in NeedsCoreFields.items():
         if not data.get("add_to_field_schema", False):
@@ -1481,7 +1481,9 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 if name in CORE_LINK_TYPES:
                     # a core link type is not derived: the rule is reported and ignored
                     derive_problems.append(
-                        DeriveProblem(name, True, core_message(name), core=True)
+                        DeriveProblem(
+                            name, True, core_message(name, on_link=True), core=True
+                        )
                     )
                 else:
                     derive = parse_derive(raw_derive, on_link=True)

@@ -39,10 +39,12 @@ def _invalid_link(name: str, reason: str) -> str:
     )
 
 
-#: The findings of ``doc_derive_config``, in the order they are reported: the rule on
-#: a core field, then every field by name, then every link type by name, then the
-#: authored values as the needs are read.
+#: The findings of ``doc_derive_config``, in the order they are reported: the rules on
+#: a core field or link type, then every field by name, then every link type by name,
+#: then the authored values as the needs are read.
 EXPECTED_WARNINGS = [
+    "WARNING: Invalid derive of link type 'parent_needs': a core link type cannot "
+    "carry a derive rule in this release; the rule is ignored [needs.derive_invalid]",
     "WARNING: Invalid derive of field 'status': a core field cannot carry a derive "
     "rule in this release; the rule is ignored [needs.derive_invalid]",
     _invalid("bad_after", "kind 'copy': the role 'after' must be \"derived\""),
@@ -119,6 +121,25 @@ EXPECTED_WARNINGS = [
     "WARNING: Invalid derive of field 'bad_predicates': kind 'copy': 'predicates' "
     "cannot be given beside derive, and is ignored; the rule applies "
     "[needs.derive_invalid]",
+    # each path follows the reads, from the field back to it
+    _invalid(
+        "bad_ring_a",
+        "kind 'copy': the role 'field' reads 'bad_ring_c', whose rule reads this field "
+        "back (bad_ring_a -> bad_ring_c -> bad_ring_b -> bad_ring_a), so no need can "
+        "compute it",
+    ),
+    _invalid(
+        "bad_ring_b",
+        "kind 'copy': the role 'field' reads 'bad_ring_a', whose rule reads this field "
+        "back (bad_ring_b -> bad_ring_a -> bad_ring_c -> bad_ring_b), so no need can "
+        "compute it",
+    ),
+    _invalid(
+        "bad_ring_c",
+        "kind 'copy': the role 'field' reads 'bad_ring_b', whose rule reads this field "
+        "back (bad_ring_c -> bad_ring_b -> bad_ring_a -> bad_ring_c), so no need can "
+        "compute it",
+    ),
     _invalid("bad_role_not_taken", "kind 'sum' does not take the role 'test'"),
     _invalid("bad_role_type", "kind 'max': the role 'transitive' must be a boolean"),
     _invalid(
@@ -127,7 +148,16 @@ EXPECTED_WARNINGS = [
         "the field's schema is string",
     ),
     _invalid(
+        "bad_select_list_item",
+        "kind 'copy': the role 'select' is \"list\", so the rule gives an array of "
+        "string, which the field's schema (an array of number) cannot hold",
+    ),
+    _invalid(
         "bad_select_no_over", "kind 'copy' takes the role 'select' only with 'over'"
+    ),
+    _invalid(
+        "bad_sum_result",
+        "kind 'sum' gives an integer, which the field's schema (string) cannot hold",
     ),
     _invalid(
         "bad_sum_type",
@@ -269,7 +299,7 @@ def test_derived_fields_are_read_only_in_the_export(test_app):
             "related_open",
         ]
     )
-    for name in ("hours", "status", "links", "mentions_back", "tests"):
+    for name in ("hours", "status", "links", "mentions_back", "tests", "parent_needs"):
         assert "readOnly" not in properties[name], name
     assert properties["d_total"] == {
         "description": "Added by needs_fields config",
@@ -311,6 +341,9 @@ def test_a_derived_field_is_closed(test_app):
         assert isinstance(schema.get_extra_field(name).derive, DeriveInvalid), name
     status = schema.get_core_field("status")
     assert status is not None and status.derive is None
+    parent_needs = schema.get_link_field("parent_needs")
+    assert parent_needs is not None and parent_needs.derive is None
+    assert parent_needs.directive_option and parent_needs.allow_extend
     assert schema.get_extra_field("hours").derive is None
 
 

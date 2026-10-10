@@ -10,6 +10,9 @@ incoming = "tested by"
 [needs.fields.hours]
 schema = { type = "number" }
 
+[needs.fields.points]
+schema = { type = "integer" }
+
 [needs.fields.owner]
 schema = { type = "string" }
 
@@ -92,6 +95,11 @@ derive = { kind = "content_links", from = "SPEC_AUTH", where = "type == 'req'" }
 [needs.fields.status]
 derive = { kind = "copy", field = "owner" }
 
+# -- a rule on a core link type: reported, ignored, the link type untouched ------
+
+[needs.links.parent_needs]
+derive = { kind = "links", where = "type == 'req'" }
+
 # -- invalid rules: one `needs.derive_invalid` each ------------------------------
 
 [needs.fields.bad_after]
@@ -163,6 +171,16 @@ derive = { kind = "sum", field = "hours", over = "nope" }
 derive = { kind = "copy", field = "owner" }
 predicates = [["type == 'req'", "req owner"]]
 
+# a cycle of three, each reading the next in an order that is not the names' order
+[needs.fields.bad_ring_a]
+derive = { kind = "copy", field = "bad_ring_c" }
+
+[needs.fields.bad_ring_b]
+derive = { kind = "copy", field = "bad_ring_a" }
+
+[needs.fields.bad_ring_c]
+derive = { kind = "copy", field = "bad_ring_b" }
+
 [needs.fields.bad_role_not_taken]
 schema = { type = "number" }
 derive = { kind = "sum", field = "hours", over = "links", test = "status == 'open'" }
@@ -174,8 +192,16 @@ derive = { kind = "max", field = "hours", over = "links", transitive = "yes" }
 [needs.fields.bad_select_list]
 derive = { kind = "copy", field = "owner", over = "links", select = "list" }
 
+[needs.fields.bad_select_list_item]
+schema = { type = "array", items = { type = "number" } }
+derive = { kind = "copy", field = "owner", over = "links", select = "list" }
+
 [needs.fields.bad_select_no_over]
 derive = { kind = "copy", field = "owner", select = "unique" }
+
+[needs.fields.bad_sum_result]
+schema = { type = "string" }
+derive = { kind = "sum", field = "points", over = "links" }
 
 [needs.fields.bad_sum_type]
 schema = { type = "number" }
