@@ -583,3 +583,188 @@ REQ_1 = ["bad_hash"]
 [[case.expect.findings]]
 code = "derive_invalid"
 field = "bad_hash"
+
+# --- the link kinds -----------------------------------------------------------------
+
+[[case]]
+name = "links-where-include-self"
+why = "links: every need passing where, in need-id order, the need itself left out unless include_self; an empty where is refused, and an empty filter fails the inline links_from_filter"
+config = '''
+[needs.links.l_open]
+derive = { kind = "links", where = "type == 'req' and status == 'open'" }
+
+[needs.links.l_specs]
+derive = { kind = "links", where = "type == 'spec'", include_self = true }
+
+[needs.links.bad_empty]
+derive = { kind = "links", where = "" }
+
+[needs.links.inline_empty]
+'''
+source = '''
+.. req:: Open
+   :id: REQ_1
+   :status: open
+
+.. req:: Closed
+   :id: REQ_2
+   :status: closed
+
+.. req:: Open too
+   :id: REQ_3
+   :status: open
+
+.. spec:: A spec
+   :id: SPEC_1
+
+.. spec:: Another spec
+   :id: SPEC_2
+   :inline_empty: [[links_from_filter("")]]
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+l_open = ["REQ_3"]
+l_specs = ["SPEC_1", "SPEC_2"]
+bad_empty = []
+[case.expect.needs.REQ_2]
+l_open = ["REQ_1", "REQ_3"]
+[case.expect.needs.SPEC_1]
+l_open = ["REQ_1", "REQ_3"]
+l_specs = ["SPEC_1", "SPEC_2"]
+[case.expect.needs.SPEC_2]
+inline_empty = []
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_empty"
+[[case.expect.findings]]
+code = "dynamic_function"
+need = "SPEC_2"
+field = "inline_empty"
+
+[[case]]
+name = "links-include-parts"
+why = "links with include_parts tests every need's parts too (a part after its need, in part-id order), linked as <need>.<part>; the need's own parts are left out unless include_self"
+python_only = true
+config = '''
+[needs.links.l_parts]
+derive = { kind = "links", where = "is_part and id_parent == 'REQ_1'", include_parts = true }
+
+[needs.links.l_parts_self]
+derive = { kind = "links", where = "is_part and id_parent == 'REQ_1'", include_parts = true, include_self = true }
+
+[needs.links.l_family]
+derive = { kind = "links", where = "id_parent == 'REQ_1'", include_parts = true }
+'''
+source = '''
+.. req:: With parts
+   :id: REQ_1
+
+   Two parts: :np:`(p2) second` and :np:`(p1) first`.
+
+.. spec:: Links them
+   :id: SPEC_1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+l_parts = ["REQ_1.p1", "REQ_1.p2"]
+l_family = ["REQ_1", "REQ_1.p1", "REQ_1.p2"]
+[case.expect.needs.REQ_1]
+l_parts = []
+l_parts_self = ["REQ_1.p1", "REQ_1.p2"]
+l_family = []
+
+[[case]]
+name = "content-links-from-where"
+why = "content_links: the content's :need: references, each once (a part reference a part link, a dead one and the need itself kept; a disabled one and those in a nested need not); where keeps the references to needs it holds on (a part through its need); from reads another need's content"
+config = '''
+[needs.links.l_mentions]
+derive = { kind = "content_links" }
+
+[needs.links.l_reqs]
+derive = { kind = "content_links", where = "type == 'req'" }
+
+[needs.links.l_from]
+derive = { kind = "content_links", from = "SPEC_1" }
+'''
+source = '''
+.. req:: Mentioned
+   :id: REQ_1
+
+   A part: :np:`(p) the part`.
+
+.. req:: Disabled
+   :id: REQ_2
+
+.. spec:: Mentions
+   :id: SPEC_1
+
+   Mentions :need:`REQ_1`, :need:`REQ_1.p`, :need:`NOPE_1`, :need:`SPEC_1`,
+   :need:`!REQ_2` and :need:`REQ_1` again.
+
+   .. req:: Nested
+      :id: REQ_3
+
+      Mentions :need:`REQ_2`.
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+l_mentions = ["NOPE_1", "REQ_1", "REQ_1.p", "SPEC_1"]
+l_reqs = ["REQ_1", "REQ_1.p"]
+l_from = ["NOPE_1", "REQ_1", "REQ_1.p", "SPEC_1"]
+[case.expect.needs.REQ_3]
+l_mentions = ["REQ_2"]
+l_reqs = ["REQ_2"]
+[case.expect.needs.REQ_1]
+l_mentions = []
+l_from = ["NOPE_1", "REQ_1", "REQ_1.p", "SPEC_1"]
+
+[[case]]
+name = "content-links-hidden"
+why = "a :hide: need's references in its text and in docutils' containers of body content (a note) are read, by its content_links rule and by a links_from_content naming it; one with none has none, without a finding. UNPINNED: a reference nested in any other directive (only, a figure caption, ...), which ubCode reads and sphinx-needs does not (a registered divergence)"
+config = '''
+[needs.links.mentions]
+derive = { kind = "content_links" }
+
+[needs.links.inline]
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+
+.. req:: Two
+   :id: REQ_2
+
+   A part: :np:`(p) the part`.
+
+.. req:: Three
+   :id: REQ_3
+
+.. req:: Hidden
+   :id: HIDE_1
+   :hide:
+
+   Mentions :need:`REQ_1`, :need:`REQ_2.p` and :need:`REQ_1` again.
+
+   .. note:: In a note, :need:`REQ_3`.
+
+.. req:: Hidden, mentioning nothing
+   :id: HIDE_2
+   :hide:
+
+   No reference.
+
+.. spec:: Reads the hidden one
+   :id: SPEC_1
+   :inline: [[links_from_content("HIDE_1")]]
+'''
+[case.expect]
+findings = []
+[case.expect.needs.HIDE_1]
+mentions = ["REQ_1", "REQ_2.p", "REQ_3"]
+[case.expect.needs.HIDE_2]
+mentions = []
+[case.expect.needs.SPEC_1]
+inline = ["REQ_1", "REQ_2.p", "REQ_3"]
+mentions = []
