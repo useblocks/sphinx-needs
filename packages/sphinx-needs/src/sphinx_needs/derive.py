@@ -77,7 +77,7 @@ ROLES: Final = (
 )
 
 #: Roles that are reserved for a later release: a rule naming one cannot be read.
-RESERVED_ROLES: Final = frozenset({"join"})
+RESERVED_ROLES: Final = frozenset({"join", "types"})
 
 #: The core fields, besides every ``NeedsCoreFields`` entry, that cannot carry a rule.
 CORE_LINK_TYPES: Final = frozenset({"parent_needs"})

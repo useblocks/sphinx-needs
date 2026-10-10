@@ -955,6 +955,13 @@ def test_parse_derive_reads_a_rule(raw, on_link, expected):
             id="join-on-copy",
         ),
         pytest.param(
+            {"kind": "copy", "field": "x", "types": ["req"]},
+            False,
+            "copy",
+            "kind 'copy': the 'types' role is reserved and not available yet",
+            id="types-reserved",
+        ),
+        pytest.param(
             {"kind": "count", "over": "links", "zz": 1, "aa": 2},
             False,
             "count",
