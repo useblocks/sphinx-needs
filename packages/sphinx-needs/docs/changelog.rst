@@ -129,7 +129,8 @@ Improvements
   The schema in :ref:`needs.json <needs_builder_format>` marks a derived field or link type ``"readOnly": true``,
   and a need created by ``needimport`` keeps the derived values it carries.
   A rule on a core field, or on the ``parent_needs`` link type, is not available in this release, and is reported.
-  `ubCode`_ reads the same configuration and gives the same findings.
+  `ubCode`_ reads the same configuration, and computes the same values and findings, from
+  its phase-2 release.
 
 - ✨ New dynamic function :ref:`links_from_filter`, which links to every need that passes
   a :ref:`filter string <filter_string>` (:pr:`1984`)
