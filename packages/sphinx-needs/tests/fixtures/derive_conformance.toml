@@ -195,3 +195,391 @@ REQ_1 = ["c_first", "c_unique"]
 code = "derive_unique"
 need = "SPEC_1"
 field = "c_unique"
+
+# --- the roll-ups -------------------------------------------------------------------
+
+[[case]]
+name = "sum-over-links"
+why = "sum reads each link in written order: a target twice twice, a part target its need, a dead target (and a dotted id naming no need) skipped; the result takes the field's type; the inline links_only calc_sum is the same sum"
+config = '''
+[needs.fields.hours]
+schema = { type = "number" }
+
+[needs.fields.points]
+schema = { type = "integer" }
+
+[needs.fields.total]
+schema = { type = "number" }
+nullable = false
+derive = { kind = "sum", field = "hours", over = "links" }
+
+[needs.fields.total_points]
+schema = { type = "integer" }
+nullable = false
+derive = { kind = "sum", field = "points", over = "links" }
+
+[needs.fields.total_points_n]
+schema = { type = "number" }
+nullable = false
+derive = { kind = "sum", field = "points", over = "links" }
+
+[needs.fields.inline_total]
+schema = { type = "number" }
+'''
+source = '''
+.. req:: A
+   :id: REQ_1
+   :hours: 2
+   :points: 3
+
+   A part: :np:`(p) the part`.
+
+.. req:: B
+   :id: REQ_2
+   :hours: 0.5
+   :points: 4
+
+.. spec:: Sums
+   :id: SPEC_1
+   :links: REQ_2, REQ_1, REQ_1, REQ_1.p, NOPE_1, NOPE_2.x
+   :inline_total: [[calc_sum("hours", links_only=True)]]
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+total = 6.5
+total_points = 13
+total_points_n = 13.0
+inline_total = 6.5
+[case.expect.needs.REQ_1]
+total = 0.0
+total_points = 0
+total_points_n = 0.0
+[case.expect.nulls]
+REQ_1 = ["inline_total"]
+
+[[case]]
+name = "count-over-backlinks-where"
+why = "count over <t>_back: each linking need once, in need-id order; where narrows; with field, the candidates that set it"
+config = '''
+[needs.links.tests]
+outgoing = "tests"
+incoming = "tested by"
+
+[needs.fields.hours]
+schema = { type = "number" }
+
+[needs.fields.n_all]
+schema = { type = "integer" }
+derive = { kind = "count", over = "tests_back" }
+
+[needs.fields.n_passed]
+schema = { type = "integer" }
+derive = { kind = "count", over = "tests_back", where = "status == 'passed'" }
+
+[needs.fields.n_hours]
+schema = { type = "integer" }
+derive = { kind = "count", over = "tests_back", field = "hours" }
+'''
+source = '''
+.. req:: Tested
+   :id: REQ_1
+
+.. test:: One
+   :id: TEST_1
+   :tests: REQ_1
+   :status: passed
+   :hours: 1
+
+.. test:: Two
+   :id: TEST_2
+   :tests: REQ_1
+   :status: failed
+
+.. test:: Three, linking twice
+   :id: TEST_3
+   :tests: REQ_1, REQ_1
+   :status: passed
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+n_all = 3
+n_passed = 2
+n_hours = 1
+[case.expect.needs.TEST_1]
+n_all = 0
+n_passed = 0
+n_hours = 0
+
+[[case]]
+name = "any-all-test-no-candidates"
+why = "any / all with a test or a boolean field (unset reads as false); over no candidate all is true and any false"
+config = '''
+[needs.links.tests]
+
+[needs.fields.passed]
+schema = { type = "boolean" }
+
+[needs.fields.all_passed]
+schema = { type = "boolean" }
+derive = { kind = "all", test = "status == 'passed'", over = "tests_back" }
+
+[needs.fields.any_passed]
+schema = { type = "boolean" }
+derive = { kind = "any", test = "status == 'passed'", over = "tests_back" }
+
+[needs.fields.all_field]
+schema = { type = "boolean" }
+derive = { kind = "all", field = "passed", over = "tests_back" }
+
+[needs.fields.any_field]
+schema = { type = "boolean" }
+derive = { kind = "any", field = "passed", over = "tests_back" }
+'''
+source = '''
+.. req:: Tested
+   :id: REQ_1
+
+.. req:: Untested
+   :id: REQ_2
+
+.. test:: Passes
+   :id: TEST_1
+   :tests: REQ_1
+   :status: passed
+   :passed: true
+
+.. test:: Fails, passed unset
+   :id: TEST_2
+   :tests: REQ_1
+   :status: failed
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+all_passed = false
+any_passed = true
+all_field = false
+any_field = true
+[case.expect.needs.REQ_2]
+all_passed = true
+any_passed = false
+all_field = true
+any_field = false
+
+[[case]]
+name = "min-max-over-links"
+why = "min / max of a number by value, of a string with an enum by the enum's order; unset values skipped; over no candidate the field is unset"
+config = '''
+[needs.fields.hours]
+schema = { type = "number" }
+
+[needs.fields.level]
+schema = { type = "string", enum = ["low", "mid", "high"] }
+
+[needs.fields.m_min]
+schema = { type = "number" }
+derive = { kind = "min", field = "hours", over = "links" }
+
+[needs.fields.m_max]
+schema = { type = "number" }
+derive = { kind = "max", field = "hours", over = "links" }
+
+[needs.fields.l_min]
+schema = { type = "string", enum = ["low", "mid", "high"] }
+derive = { kind = "min", field = "level", over = "links" }
+
+[needs.fields.l_max]
+schema = { type = "string", enum = ["low", "mid", "high"] }
+derive = { kind = "max", field = "level", over = "links" }
+'''
+source = '''
+.. req:: Five, mid
+   :id: REQ_1
+   :hours: 5
+   :level: mid
+
+.. req:: Two, high
+   :id: REQ_2
+   :hours: 2
+   :level: high
+
+.. req:: Nothing set
+   :id: REQ_3
+
+.. spec:: Reads them
+   :id: SPEC_1
+   :links: REQ_1, REQ_2, REQ_3
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+m_min = 2.0
+m_max = 5.0
+l_min = "mid"
+l_max = "high"
+[case.expect.nulls]
+REQ_1 = ["m_min", "m_max", "l_min", "l_max"]
+
+[[case]]
+name = "collect-over-links"
+why = "collect is a set in candidate order, a list's items each; over no candidate it is []"
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.fields.labels]
+schema = { type = "array", items = { type = "string" } }
+
+[needs.fields.owners]
+schema = { type = "array", items = { type = "string" } }
+derive = { kind = "collect", field = "owner", over = "links" }
+
+[needs.fields.all_labels]
+schema = { type = "array", items = { type = "string" } }
+derive = { kind = "collect", field = "labels", over = "links" }
+'''
+source = '''
+.. req:: Bob's
+   :id: REQ_1
+   :owner: bob
+   :labels: y, z
+
+.. req:: Alice's
+   :id: REQ_2
+   :owner: alice
+   :labels: x, y
+
+.. req:: Bob's again
+   :id: REQ_3
+   :owner: bob
+
+.. spec:: Collects
+   :id: SPEC_1
+   :links: REQ_1, REQ_2, REQ_3, REQ_1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+owners = ["bob", "alice"]
+all_labels = ["y", "z", "x"]
+[case.expect.needs.REQ_1]
+owners = []
+all_labels = []
+
+[[case]]
+name = "max-transitive-enum"
+why = "max transitive reads every need reachable through over, each once; a need on a cycle reaches itself; include_self adds its own value; a field with no order is refused"
+config = '''
+[needs.links.satisfies]
+
+[needs.fields.note]
+schema = { type = "string" }
+
+[needs.fields.asil_own]
+schema = { type = "string", enum = ["QM", "A", "B", "C", "D"] }
+
+[needs.fields.asil]
+schema = { type = "string", enum = ["QM", "A", "B", "C", "D"] }
+derive = { kind = "max", field = "asil_own", over = "satisfies", transitive = true, include_self = true }
+
+[needs.fields.asil_out]
+schema = { type = "string", enum = ["QM", "A", "B", "C", "D"] }
+derive = { kind = "max", field = "asil_own", over = "satisfies", transitive = true }
+
+[needs.fields.bad_order]
+derive = { kind = "max", field = "note", over = "satisfies", transitive = true }
+'''
+source = '''
+.. req:: Enters the cycle
+   :id: TRAN_1
+   :asil_own: QM
+   :satisfies: TRAN_2
+
+.. req:: On the cycle
+   :id: TRAN_2
+   :asil_own: A
+   :satisfies: TRAN_3
+
+.. req:: On the cycle too
+   :id: TRAN_3
+   :asil_own: C
+   :satisfies: TRAN_2
+
+.. req:: Above it all
+   :id: TRAN_4
+   :asil_own: D
+   :satisfies: TRAN_1
+
+.. req:: Alone
+   :id: TRAN_5
+   :asil_own: B
+'''
+[case.expect]
+[case.expect.needs.TRAN_1]
+asil = "C"
+asil_out = "C"
+[case.expect.needs.TRAN_2]
+asil = "C"
+asil_out = "C"
+[case.expect.needs.TRAN_3]
+asil = "C"
+asil_out = "C"
+[case.expect.needs.TRAN_4]
+asil = "D"
+asil_out = "C"
+[case.expect.needs.TRAN_5]
+asil = "B"
+[case.expect.nulls]
+TRAN_5 = ["asil_out", "bad_order"]
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_order"
+
+[[case]]
+name = "hash-late"
+why = "hash is the SHA-256 of the compact JSON array of the listed fields, computed after every other rule (a derived field hashed as computed), a link list sorted and deduplicated, a number field's float as 4.0; a <t>_back is refused"
+config = '''
+[needs.fields.hours]
+schema = { type = "number" }
+
+[needs.fields.d_total]
+schema = { type = "number" }
+nullable = false
+derive = { kind = "sum", field = "hours", over = "links" }
+
+[needs.fields.h_all]
+schema = { type = "string" }
+derive = { kind = "hash", fields = ["title", "status", "d_total", "links"] }
+
+[needs.fields.h_two]
+schema = { type = "string" }
+derive = { kind = "hash", fields = ["hours", "title"] }
+
+[needs.fields.bad_hash]
+derive = { kind = "hash", fields = ["title", "links_back"] }
+'''
+source = '''
+.. req:: Größe
+   :id: REQ_1
+   :status: open
+   :hours: 2
+
+.. spec:: Spec
+   :id: SPEC_1
+   :status: open
+   :links: REQ_1, REQ_1
+'''
+[case.expect]
+[case.expect.needs.SPEC_1]
+h_all = "3d71b7f078fd90feec0d9c9e12a6420ea9102b689833d21292a9efbe24a1eaac"
+h_two = "85370a75e506227c0cb45ac5450a0935f2e9543d04b5e80d7aaaa2d6d3553764"
+[case.expect.needs.REQ_1]
+h_all = "7410a8991c69d8f917ea1d2b85f2ccd75a9d8e0cac45249448a0eb3b96642c9c"
+h_two = "03571c08cce08fd7013de6bb9f18b255c69252477d0d8257fee0b1aab875b0c1"
+[case.expect.nulls]
+REQ_1 = ["bad_hash"]
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_hash"
