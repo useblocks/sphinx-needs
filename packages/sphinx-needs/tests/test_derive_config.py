@@ -5,7 +5,7 @@ table is derived: an author cannot set it, in a need or by a ``needextend``
 (``needs.derive_authored``, the value ignored), and it is marked ``readOnly`` in the
 schema ``needs.json`` exports. A rule that cannot be read is one
 ``needs.derive_invalid`` warning, and the field stays derived, holding its empty value.
-The rules are not computed yet: every derived field holds its empty value.
+Their values are computed by the rules (``test_derive_kinds.py``).
 """
 
 import dataclasses
@@ -268,34 +268,45 @@ def test_derive_findings(test_app):
     [{"buildername": "needs", "srcdir": "doc_test/doc_derive_config"}],
     indirect=True,
 )
-def test_derived_fields_hold_their_empty_value(test_app):
-    """A derived field holds its empty value; an authored one is ignored.
+def test_derived_fields_hold_their_rules_value(test_app):
+    """A derived field holds its rule's value; what an author wrote is ignored.
 
-    ``None`` for a nullable field, else the empty value of its type (``0.0``, ``0``,
-    ``False``, ``[]``, ``""``), and no links for a link type: what the need, the
-    inline call or the ``needextend`` wrote is not kept. An imported need keeps the
-    values it carries, as data. A rule on a core field is ignored: ``status`` is
-    authored as usual.
+    ``SPEC_AUTH`` wrote ``d_total`` 99 and ``mentions`` ``REQ_001``, ``SPEC_CALL`` a call
+    in ``d_owner``, a ``needextend`` set ``SPEC_EXT``'s ``d_total``: each holds the
+    rule's value. A rule that cannot be read leaves its field empty (``bad_kind``); one
+    with a ``default`` beside it applies, without the default (``bad_default``). An
+    imported need keeps the values it carries. A rule on a core field is ignored:
+    ``status`` is authored as usual.
     """
     app = test_app
     app.build()
     needs = _built(app)["needs"]
+    auth, call, ext, req = (
+        needs[i] for i in ("SPEC_AUTH", "SPEC_CALL", "SPEC_EXT", "REQ_001")
+    )
+    assert (auth["d_total"], call["d_total"], ext["d_total"]) == (3.0, 0.0, 0.0)
+    assert auth["mentions"] == ["REQ_001"]
+    assert call["d_owner"] is None
+    assert (req["d_title"], req["d_from"], req["d_late"]) == (
+        "Requirement one",
+        "alice",
+        "alice",
+    )
+    assert (req["d_asil"], req["d_verified"], req["d_any"]) == ("B", True, False)
+    assert auth["d_owners"] == ["alice"]
+    assert (auth["related_open"], req["related_open"]) == (["REQ_001"], [])
+    assert {needs[i]["mentioned_reqs"][0] for i in needs if i != "IMP_001"} == {
+        "REQ_001"
+    }
     for need_id in ("REQ_001", "SPEC_AUTH", "SPEC_CALL", "SPEC_EXT"):
-        need = needs[need_id]
-        assert need["d_total"] == 0.0, need_id
-        assert need["d_n_tests"] == 0, need_id
-        assert need["d_verified"] is False, need_id
-        assert need["d_owners"] == [], need_id
-        assert need["d_digest"] == "", need_id
-        for nullable in ("d_title", "d_owner", "d_asil", "d_any", "bad_kind"):
-            assert need[nullable] is None, (need_id, nullable)
-        for link_type in ("mentions", "related_open", "mentioned_reqs"):
-            assert need[link_type] == [], (need_id, link_type)
+        assert needs[need_id]["bad_kind"] is None, need_id
+    assert (req["bad_default"], auth["bad_default"]) == ("alice", None)
     imported = needs["IMP_001"]
     assert imported["d_total"] == 7.5
     assert imported["mentions"] == ["REQ_001"]
-    assert needs["REQ_001"]["status"] == "open"
-    assert needs["SPEC_EXT"]["status"] == "draft"
+    assert imported["d_title"] is None
+    assert req["status"] == "open"
+    assert ext["status"] == "draft"
 
 
 @pytest.mark.parametrize(
@@ -432,7 +443,7 @@ def test_derive_in_conf_py(test_app):
         "cannot be set in a need; the value '4' is ignored [needs.derive_authored]",
     ]
     built = _built(app)
-    assert built["needs"]["SPEC_001"]["total"] == 0.0
+    assert built["needs"]["SPEC_001"]["total"] == 3.0
     properties = built["needs_schema"]["properties"]
     assert properties["total"]["readOnly"] is True
     assert properties["broken"]["readOnly"] is True

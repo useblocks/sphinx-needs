@@ -886,28 +886,23 @@ Dead link
     ],
     indirect=True,
 )
-def test_a_dead_link_still_fails_the_call(test_app):
-    """A link naming no need still fails ``check_linked_values`` and a ``links_only`` sum.
+def test_a_dead_link_is_skipped(test_app):
+    """A link naming no need is skipped by ``check_linked_values`` and a ``links_only`` sum.
 
-    Only a part link is resolved to its need; a dead link fails the call, as before
-    (and as ubCode, which mirrors it), and is reported as a dead link as well.
+    It is reported as a dead link, and the calls read the needs the other links name,
+    as the derived-field kinds skip a dead target. It used to fail both calls (a second
+    report of the same fault, which hid the live targets' values) **(changed output)**.
     """
     app = test_app
     app.build()
     warnings = build_warnings(app)
     assert warnings == [
-        "<srcdir>/index.rst:9: WARNING: Error while resolving dynamic values for field "
-        "'total', of need 'SPEC_D': Error while executing function 'calc_sum': "
-        "'NOPE_1' [needs.dynamic_function]",
-        "<srcdir>/index.rst:9: WARNING: Error while resolving dynamic values for field "
-        "'verdict', of need 'SPEC_D': Error while executing function "
-        "'check_linked_values': 'NOPE_1' [needs.dynamic_function]",
         "<srcdir>/index.rst:9: WARNING: Need 'SPEC_D' has unknown outgoing link "
         "'NOPE_1' in field 'links' [needs.link_outgoing]",
     ]
     needs = _built_needs(app)
-    assert needs["SPEC_D"]["verdict"] is None
-    assert needs["SPEC_D"]["total"] is None
+    assert needs["SPEC_D"]["verdict"] == "all-open"
+    assert needs["SPEC_D"]["total"] == 5.0
 
 
 MISSING_PART_INDEX = """\
@@ -965,18 +960,13 @@ def test_a_link_to_a_missing_part_reads_the_need(test_app):
     reads the text before the dot as the need and the rest as the part, so both calls
     read ``REQ_1`` (as the back links count the link on it, and as ubCode reads it),
     while the link checker reports the unknown part. A dotted id that names no need
-    before its dot is a dead link and fails the calls, as ``NOPE_1`` does, even where
-    a need carries that dotted id (``REQ_9.x``: its 7 hours are never read).
+    before its dot is a dead link and is skipped, as ``NOPE_1`` is, even where a need
+    carries that dotted id (``REQ_9.x``: its 7 hours are never read): no live target,
+    so the check gives its result and the sum is 0.
     """
     app = test_app
     app.build()
     assert build_warnings(app) == [
-        "<srcdir>/index.rst:22: WARNING: Error while resolving dynamic values for field "
-        "'total', of need 'SPEC_DOT': Error while executing function 'calc_sum': "
-        "'REQ_9' [needs.dynamic_function]",
-        "<srcdir>/index.rst:22: WARNING: Error while resolving dynamic values for field "
-        "'verdict', of need 'SPEC_DOT': Error while executing function "
-        "'check_linked_values': 'REQ_9' [needs.dynamic_function]",
         "<srcdir>/index.rst:16: WARNING: Need 'SPEC_Z' has unknown outgoing link "
         "'REQ_1.zz' in field 'links' [needs.link_outgoing]",
         "<srcdir>/index.rst:22: WARNING: Need 'SPEC_DOT' has unknown outgoing link "
@@ -985,5 +975,413 @@ def test_a_link_to_a_missing_part_reads_the_need(test_app):
     needs = _built_needs(app)
     assert needs["SPEC_Z"]["verdict"] == "all-open"
     assert needs["SPEC_Z"]["total"] == 8.0
-    assert needs["SPEC_DOT"]["verdict"] is None
-    assert needs["SPEC_DOT"]["total"] is None
+    assert needs["SPEC_DOT"]["verdict"] == "all-open"
+    assert needs["SPEC_DOT"]["total"] == 0.0
+
+
+# -- links_from_filter ---------------------------------------------------------------
+#
+# The per-need spelling of a derived link type of the kind ``links``: every need
+# passing the filter, in need-id order, the need itself and its parts left out unless
+# ``include_self``, parts tested only with ``include_parts``. The needs below are
+# written in the reverse of need-id order, so the ``ndf`` role, which shows the links in
+# the order the call returns them, tells need-id order from document order.
+
+LINKS_FROM_FILTER_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+"""
+
+LINKS_FROM_FILTER_INDEX = """\
+Links from a filter
+===================
+
+.. req:: Closed requirement
+   :id: LFF_R3
+   :status: closed
+
+.. req:: Open requirement
+   :id: LFF_R2
+   :status: open
+
+.. req:: Open requirement with a part
+   :id: LFF_R1
+   :status: open
+
+   Part: :np:`(p1) part one`
+
+.. spec:: Collector
+   :id: LFF_COLL
+   :links: [[links_from_filter("type == 'req' and status == 'open'")]]
+
+.. spec:: Collector matching itself
+   :id: LFF_SELF_EX
+   :links: [[links_from_filter("id == 'LFF_R2' or id == 'LFF_SELF_EX'")]]
+
+.. spec:: Collector matching itself, kept
+   :id: LFF_SELF_IN
+   :links: [[links_from_filter("id == 'LFF_R2' or id == 'LFF_SELF_IN'", include_self=True)]]
+
+.. spec:: Parts not searched
+   :id: LFF_PARTS_DEF
+   :links: [[links_from_filter("id_parent == 'LFF_R1'")]]
+
+.. spec:: Parts searched
+   :id: LFF_PARTS_IN
+   :links: [[links_from_filter("id_parent == 'LFF_R1'", include_parts=True)]]
+
+.. spec:: Parts searched, own parts excluded
+   :id: LFF_OWN_EX
+   :links: [[links_from_filter("id_parent == 'LFF_R1' or id_parent == 'LFF_OWN_EX'", include_parts=True)]]
+
+   Own part: :np:`(q1) own part`
+
+.. spec:: Parts searched, own parts kept
+   :id: LFF_OWN_IN
+   :links: [[links_from_filter("id_parent == 'LFF_OWN_IN'", include_parts=True, include_self=True)]]
+
+   Own part: :np:`(q1) own part`
+
+.. spec:: Nothing found
+   :id: LFF_NONE
+   :links: [[links_from_filter("status == 'nonexistent'")]]
+
+.. spec:: Only itself found
+   :id: LFF_ONLY_SELF
+   :links: [[links_from_filter("id == 'LFF_ONLY_SELF'")]]
+
+.. spec:: Links as text
+   :id: LFF_NDF
+
+   Open requirements: :ndf:`links_from_filter("type == 'req' and status == 'open'")`
+
+   With the part: :ndf:`links_from_filter("id_parent == 'LFF_R1'", include_parts=True)`
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), LINKS_FROM_FILTER_CONF),
+                (Path("index.rst"), LINKS_FROM_FILTER_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_links_from_filter(test_app):
+    """``links_from_filter`` links to the needs that pass, in need-id order.
+
+    Nothing found is no link and no warning (the declared ``links`` kind, which applies
+    to every need, has no match on most of them).
+    """
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    needs = _built_needs(app)
+
+    assert needs["LFF_COLL"]["links"] == ["LFF_R1", "LFF_R2"]
+    assert "LFF_COLL" in needs["LFF_R1"]["links_back"]
+    assert "LFF_COLL" not in needs["LFF_R3"]["links_back"]
+    assert needs["LFF_SELF_EX"]["links"] == ["LFF_R2"]
+    assert needs["LFF_SELF_IN"]["links"] == ["LFF_R2", "LFF_SELF_IN"]
+    assert needs["LFF_PARTS_DEF"]["links"] == ["LFF_R1"]
+    assert needs["LFF_PARTS_IN"]["links"] == ["LFF_R1", "LFF_R1.p1"]
+    assert needs["LFF_OWN_EX"]["links"] == ["LFF_R1", "LFF_R1.p1"]
+    assert needs["LFF_OWN_IN"]["links"] == ["LFF_OWN_IN", "LFF_OWN_IN.q1"]
+    assert needs["LFF_NONE"]["links"] == []
+    assert needs["LFF_ONLY_SELF"]["links"] == []
+
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    # need-id order (the needs are written LFF_R2, then LFF_R1), and a link as its id
+    assert "Open requirements: LFF_R1, LFF_R2" in html
+    assert "With the part: LFF_R1, LFF_R1.p1" in html
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), LINKS_FROM_FILTER_CONF),
+                (
+                    Path("index.rst"),
+                    "Empty filter\n============\n\n"
+                    ".. req:: Requirement\n   :id: LFF_R1\n\n"
+                    ".. spec:: Collector\n   :id: LFF_COLL\n"
+                    '   :links: [[links_from_filter("")]]\n',
+                ),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_links_from_filter_refuses_an_empty_filter(test_app):
+    """An empty filter would link every need: the call fails, and links nothing."""
+    app = test_app
+    app.build()
+    warnings = build_warnings(app)
+    assert len(warnings) == 1, warnings
+    assert "links_from_filter needs a non-empty filter" in warnings[0]
+    assert "[needs.dynamic_function]" in warnings[0]
+    assert _built_needs(app)["LFF_COLL"]["links"] == []
+
+
+LINKS_FROM_FILTER_CHAPTER = (
+    "[[links_from_filter('c.this_doc() and sections == current_need[\"sections\"]')]]"
+)
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), LINKS_FROM_FILTER_CONF),
+                (
+                    Path("index.rst"),
+                    "Vehicle\n=======\n\n.. toctree::\n\n   other\n\n"
+                    "Braking\n-------\n\n"
+                    ".. req:: Brake\n   :id: LFF_BRAKE\n\n"
+                    ".. req:: Brake light\n   :id: LFF_BRAKE_LIGHT\n\n"
+                    ".. spec:: Braking collector\n   :id: LFF_BRAKE_SPEC\n"
+                    f"   :links: {LINKS_FROM_FILTER_CHAPTER}\n\n"
+                    "Emergency braking\n~~~~~~~~~~~~~~~~~\n\n"
+                    ".. req:: Emergency brake\n   :id: LFF_EMERGENCY\n\n"
+                    "Steering\n--------\n\n"
+                    ".. req:: Steer\n   :id: LFF_STEER\n\n"
+                    ".. spec:: Steering collector\n   :id: LFF_STEER_SPEC\n"
+                    f"   :links: {LINKS_FROM_FILTER_CHAPTER}\n",
+                ),
+                (
+                    Path("other.rst"),
+                    "Vehicle\n=======\n\n"
+                    "Braking\n-------\n\n"
+                    ".. req:: Brake in another file\n   :id: LFF_BRAKE_OTHER\n",
+                ),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_links_from_filter_same_file_and_chapter(test_app):
+    """``current_need`` is the need the call is in, and ``c.this_doc()`` its document."""
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    needs = _built_needs(app)
+    # only c.this_doc() tells these two apart
+    assert needs["LFF_BRAKE_OTHER"]["sections"] == needs["LFF_BRAKE"]["sections"]
+    assert needs["LFF_BRAKE_SPEC"]["links"] == ["LFF_BRAKE", "LFF_BRAKE_LIGHT"]
+    assert needs["LFF_STEER_SPEC"]["links"] == ["LFF_STEER"]
+
+
+# -- three fixes from the links_from_filter work ----------------------------------------
+
+COPY_CASE_INDEX = """\
+Copy with a case change
+=======================
+
+.. req:: Source
+   :id: SRC_1
+   :tags: Alpha, beta
+   :status: Open
+
+   Tags as text: :ndf:`copy("tags", upper=True)`
+
+.. spec:: Upper-cased tags
+   :id: UPPER
+   :tags: [[copy("tags", "SRC_1", upper=True)]]
+   :status: [[copy("status", "SRC_1", upper=True)]]
+
+.. spec:: Lower-cased tags
+   :id: LOWER
+   :tags: [[copy("tags", "SRC_1", lower=True)]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), LINKS_FROM_FILTER_CONF),
+                (Path("index.rst"), COPY_CASE_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_copy_cases_each_item_of_a_list(test_app):
+    """``copy`` with ``upper`` / ``lower`` cases each item of a list **(changed output)**.
+
+    It used to case the list's printed form, so two tags became the one tag
+    ``"['ALPHA', 'BETA']"``.
+    """
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    needs = _built_needs(app)
+    assert needs["UPPER"]["tags"] == ["ALPHA", "BETA"]
+    assert needs["LOWER"]["tags"] == ["alpha", "beta"]
+    assert needs["UPPER"]["status"] == "OPEN"
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    assert "Tags as text: ALPHA, BETA" in html
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), LINKS_FROM_FILTER_CONF),
+                (
+                    Path("index.rst"),
+                    "Copy in this document\n=====================\n\n"
+                    ".. toctree::\n\n   a_other\n\n"
+                    ".. req:: Source in this document\n"
+                    "   :id: COPY_THIS_DOC\n"
+                    "   :status: here\n\n"
+                    ".. spec:: Copier\n"
+                    "   :id: COPY_TARGET\n"
+                    '   :status: [[copy("status", filter="c.this_doc() and type == \'req\'")]]\n',
+                ),
+                # its id is the lower, so without c.this_doc() it would be the source
+                (
+                    Path("a_other.rst"),
+                    "Other document\n==============\n\n"
+                    ".. req:: Source in another document\n"
+                    "   :id: COPY_OTHER_DOC\n"
+                    "   :status: elsewhere\n",
+                ),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_copy_filter_this_doc(test_app):
+    """``c.this_doc()`` in ``copy``'s filter selects the needs of the call's document.
+
+    It failed with ``this_doc can not be used in this context``, nothing passed, and
+    ``copy`` read the current need instead.
+    """
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    assert _built_needs(app)["COPY_TARGET"]["status"] == "here"
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), LINKS_FROM_FILTER_CONF),
+                (
+                    Path("index.rst"),
+                    "Links as text\n=============\n\n"
+                    ".. req:: Part holder\n   :id: NDF_R1\n\n   :np:`(p1) a part`\n\n"
+                    ".. spec:: Mentions\n   :id: NDF_S1\n\n"
+                    "   Mentions :need:`NDF_R1.p1`.\n\n"
+                    "   As text: :ndf:`links_from_content()`\n",
+                ),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_ndf_shows_a_link_as_its_id(test_app):
+    """The ``ndf`` role shows a link a function returns as ``NDF_R1.p1``, not its repr."""
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    assert "As text: NDF_R1.p1" in html
+    assert "NeedLink(" not in html
+
+
+# -- calc_sum's filter sees ``needs`` ---------------------------------------------------
+
+NEEDS_FILTER_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_types = [
+    {"directive": "spec", "title": "Specification", "prefix": "S_"},
+    {"directive": "story", "title": "Story", "prefix": "US_"},
+]
+needs_fields = {
+    "hours": {"schema": {"type": "number"}, "nullable": True},
+    "amount": {"schema": {"type": "number"}, "nullable": True},
+}
+"""
+
+NEEDS_FILTER_INDEX = """\
+Needs in a filter
+=================
+
+.. spec:: Sum of the specs an open story links to
+   :id: A_RESULT
+   :amount: [[calc_sum('hours', filter='any(id in s["links"] for s in needs if s["type"] == "story" and s["status"] == "open")')]]
+
+.. spec:: TEST_1
+   :id: TEST_1
+   :hours: 10
+
+.. spec:: TEST_2
+   :id: TEST_2
+   :hours: 200
+
+.. spec:: TEST_3
+   :id: TEST_3
+   :hours: [[copy("hours", "TEST_SRC")]]
+
+.. spec:: The source of TEST_3's hours
+   :id: TEST_SRC
+   :hours: 3000
+
+.. story:: Open story
+   :id: US_OPEN
+   :status: open
+   :links: TEST_1, TEST_3
+
+.. story:: Done story
+   :id: US_DONE
+   :status: done
+   :links: TEST_2
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), NEEDS_FILTER_CONF),
+                (Path("index.rst"), NEEDS_FILTER_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_calc_sum_filter_sees_needs(test_app):
+    """``calc_sum``'s filter may name ``needs``, as a view's filter does.
+
+    It was evaluated without it: ``name 'needs' is not defined`` for every need, and the
+    sum taken as if there were no filter. What such a filter reads cannot be told from
+    its text, so the call runs after the other built-in calls: ``TEST_3``'s computed
+    hours are read (``A_RESULT`` sorts first). The declared form, a flag on each need and
+    a filter naming it, is the portable spelling.
+    """
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    assert _built_needs(app)["A_RESULT"]["amount"] == 3010.0

@@ -396,6 +396,32 @@ EVERY_STATUS = 'status == "open"'
             },
         ),
         ("links", "[[links_from_content(filter='grp == \"g\"')]]", {}),
+        # links_from_filter: every need is a candidate, so a name computed in the same
+        # stratum is a column, one computed after it out of scope, a final one nothing;
+        # current_need is the need the call is in
+        ("links", "[[links_from_filter('grp == \"g\"')]]", {}),
+        (
+            "links",
+            "[[links_from_filter('current_need[\"grp\"] == grp')]]",
+            {},
+        ),
+        (
+            "links",
+            f"[[links_from_filter('{EVERY_STATUS}')]]",
+            {
+                "scope": [
+                    OutOfScope(
+                        "dynamic function 'links_from_filter'", (("status", "DYN"),)
+                    )
+                ]
+            },
+        ),
+        # calc_sum's filter may name ``needs``: what it reads cannot be told, so last
+        (
+            "out",
+            "[[calc_sum('hours', filter='any(id in s[\"links\"] for s in needs)')]]",
+            {"opaque": True},
+        ),
     ],
 )
 def test_what_a_call_reads(field, text, expected):

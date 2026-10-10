@@ -1,0 +1,176 @@
+# One cluster of derive rules per kind. Every rule applies to every need; the test
+# pins the values of the needs each cluster is written for.
+
+[needs.links.tests]
+outgoing = "tests"
+incoming = "tested by"
+
+[needs.links.satisfies]
+
+[needs.links.parent]
+
+[needs.fields.hours]
+schema = { type = "number" }
+
+[needs.fields.points]
+schema = { type = "integer" }
+
+[needs.fields.score]
+schema = { type = "number" }
+
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.fields.labels]
+schema = { type = "array", items = { type = "string" } }
+
+[needs.fields.asil_own]
+schema = { type = "string", enum = ["QM", "A", "B", "C", "D"] }
+
+[needs.fields.passed]
+schema = { type = "boolean" }
+
+# -- copy ---------------------------------------------------------------------------
+
+[needs.fields.c_title]
+schema = { type = "string" }
+derive = { kind = "copy", field = "title" }
+
+[needs.fields.c_from]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner", from = "REQ_A" }
+
+[needs.fields.c_first]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner", over = "parent" }
+
+[needs.fields.c_unique]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner", over = "parent", select = "unique" }
+
+[needs.fields.c_list]
+schema = { type = "array", items = { type = "string" } }
+derive = { kind = "copy", field = "owner", over = "parent", select = "list" }
+
+[needs.fields.c_labels]
+schema = { type = "array", items = { type = "string" } }
+derive = { kind = "copy", field = "labels", over = "parent", select = "list" }
+
+# -- sum, count ----------------------------------------------------------------------
+
+[needs.fields.s_hours]
+schema = { type = "number" }
+nullable = false
+derive = { kind = "sum", field = "hours", over = "links" }
+
+[needs.fields.s_points]
+schema = { type = "integer" }
+nullable = false
+derive = { kind = "sum", field = "points", over = "links" }
+
+[needs.fields.s_open]
+schema = { type = "number" }
+nullable = false
+derive = { kind = "sum", field = "hours", over = "links", where = "status == 'open'" }
+
+[needs.fields.n_passed]
+schema = { type = "integer" }
+nullable = false
+derive = { kind = "count", over = "tests_back", where = "status == 'passed'" }
+
+[needs.fields.n_hours]
+schema = { type = "integer" }
+nullable = false
+derive = { kind = "count", over = "tests_back", field = "hours" }
+
+# -- any, all ------------------------------------------------------------------------
+
+[needs.fields.a_all]
+schema = { type = "boolean" }
+nullable = false
+derive = { kind = "all", test = "status == 'passed'", over = "tests_back" }
+
+[needs.fields.a_any]
+schema = { type = "boolean" }
+nullable = false
+derive = { kind = "any", test = "status == 'passed'", over = "tests_back" }
+
+[needs.fields.a_field]
+schema = { type = "boolean" }
+nullable = false
+derive = { kind = "any", field = "passed", over = "tests_back" }
+
+# -- min, max, collect ---------------------------------------------------------------
+
+[needs.fields.m_min]
+schema = { type = "number" }
+derive = { kind = "min", field = "hours", over = "links" }
+
+[needs.fields.m_max]
+schema = { type = "number" }
+derive = { kind = "max", field = "hours", over = "links" }
+
+[needs.fields.m_asil]
+schema = { type = "string", enum = ["QM", "A", "B", "C", "D"] }
+derive = { kind = "max", field = "asil_own", over = "links" }
+
+[needs.fields.k_owners]
+schema = { type = "array", items = { type = "string" } }
+nullable = false
+derive = { kind = "collect", field = "owner", over = "links" }
+
+[needs.fields.k_labels]
+schema = { type = "array", items = { type = "string" } }
+nullable = false
+derive = { kind = "collect", field = "labels", over = "links" }
+
+# -- transitive ----------------------------------------------------------------------
+
+[needs.fields.t_asil]
+schema = { type = "string", enum = ["QM", "A", "B", "C", "D"] }
+derive = { kind = "max", field = "asil_own", over = "satisfies", transitive = true, include_self = true }
+
+[needs.fields.t_asil_out]
+schema = { type = "string", enum = ["QM", "A", "B", "C", "D"] }
+derive = { kind = "max", field = "asil_own", over = "satisfies", transitive = true }
+
+# -- hash, and the late step ---------------------------------------------------------
+
+[needs.fields.h_digest]
+schema = { type = "string" }
+nullable = false
+derive = { kind = "hash", fields = ["title", "status", "s_hours", "links"] }
+
+[needs.fields.h_numbers]
+schema = { type = "string" }
+nullable = false
+derive = { kind = "hash", fields = ["points", "score"] }
+
+[needs.fields.h_list]
+schema = { type = "string" }
+nullable = false
+derive = { kind = "hash", fields = ["labels", "owner"] }
+
+[needs.fields.l_digest]
+schema = { type = "string" }
+derive = { kind = "copy", field = "h_digest", after = "derived" }
+
+# -- links, content_links ------------------------------------------------------------
+
+[needs.links.l_open]
+derive = { kind = "links", where = "type == 'req' and status == 'open'" }
+
+[needs.links.l_specs]
+derive = { kind = "links", where = "type == 'spec'", include_self = true }
+
+[needs.links.l_parts]
+derive = { kind = "links", where = "is_part and id_parent == 'REQ_A'", include_parts = true }
+
+[needs.links.l_mentions]
+derive = { kind = "content_links" }
+
+[needs.links.l_mentioned_reqs]
+derive = { kind = "content_links", where = "type == 'req'" }
+
+[needs.links.l_from]
+derive = { kind = "content_links", from = "REQ_A" }
