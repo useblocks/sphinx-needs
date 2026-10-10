@@ -49,6 +49,10 @@ EXPECTED_WARNINGS = [
     "rule in this release; the rule is ignored [needs.derive_invalid]",
     _invalid("bad_after", "kind 'copy': the role 'after' must be \"derived\""),
     _invalid(
+        "bad_all_result",
+        "kind 'all' gives a boolean, which the field's schema (string) cannot hold",
+    ),
+    _invalid(
         "bad_any_both", "kind 'any' takes exactly one of the roles 'field' and 'test'"
     ),
     _invalid(
@@ -56,8 +60,18 @@ EXPECTED_WARNINGS = [
         "kind 'any': the role 'field' names 'hours' (number), which is not a boolean",
     ),
     _invalid(
+        "bad_collect_result",
+        "kind 'collect' gives an array of number, which the field's schema (an array "
+        "of string) cannot hold",
+    ),
+    _invalid(
         "bad_copy_both",
         "kind 'copy' takes one of the roles 'from' and 'over', not both",
+    ),
+    _invalid(
+        "bad_copy_type",
+        "kind 'copy': the role 'field' names 'owner' (string), which the field's "
+        "schema (number) cannot hold",
     ),
     _invalid(
         "bad_count_result",
@@ -92,6 +106,10 @@ EXPECTED_WARNINGS = [
         "be hashed",
     ),
     _invalid(
+        "bad_hash_result",
+        "kind 'hash' gives a string, which the field's schema (number) cannot hold",
+    ),
+    _invalid(
         "bad_include_self",
         "kind 'max' takes the role 'include_self' only with 'transitive = true'",
     ),
@@ -109,6 +127,11 @@ EXPECTED_WARNINGS = [
         "bad_max_order",
         "kind 'max': the role 'field' names 'owner' (string), which has no order; "
         "min and max read a number or a string with an enum",
+    ),
+    _invalid(
+        "bad_min_result",
+        "kind 'min': the role 'field' names 'hours' (number), which the field's schema "
+        "(string) cannot hold",
     ),
     _invalid("bad_missing", "kind 'sum' requires the role 'over'"),
     _invalid("bad_no_kind", "it has no 'kind'"),

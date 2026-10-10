@@ -90,6 +90,15 @@ derive = { kind = "content_links" }
 [needs.links.mentioned_reqs]
 derive = { kind = "content_links", from = "SPEC_AUTH", where = "type == 'req'" }
 
+# a number field holds an integer result
+[needs.fields.d_n_links]
+schema = { type = "number" }
+derive = { kind = "count", over = "links" }
+
+[needs.fields.d_points]
+schema = { type = "number" }
+derive = { kind = "copy", field = "points" }
+
 # -- a rule on a core field: reported, ignored, the field untouched ---------------
 
 [needs.fields.status]
@@ -105,6 +114,10 @@ derive = { kind = "links", where = "type == 'req'" }
 [needs.fields.bad_after]
 derive = { kind = "copy", field = "owner", after = "later" }
 
+[needs.fields.bad_all_result]
+schema = { type = "string" }
+derive = { kind = "all", test = "status == 'passed'", over = "links" }
+
 [needs.fields.bad_any_both]
 schema = { type = "boolean" }
 derive = { kind = "any", field = "passed", test = "status == 'open'", over = "links" }
@@ -113,8 +126,16 @@ derive = { kind = "any", field = "passed", test = "status == 'open'", over = "li
 schema = { type = "boolean" }
 derive = { kind = "any", field = "hours", over = "links" }
 
+[needs.fields.bad_collect_result]
+schema = { type = "array", items = { type = "string" } }
+derive = { kind = "collect", field = "hours", over = "links" }
+
 [needs.fields.bad_copy_both]
 derive = { kind = "copy", field = "owner", from = "REQ_001", over = "links" }
+
+[needs.fields.bad_copy_type]
+schema = { type = "number" }
+derive = { kind = "copy", field = "owner" }
 
 [needs.fields.bad_count_result]
 schema = { type = "string" }
@@ -140,6 +161,10 @@ derive = { kind = "copy", field = "nope" }
 [needs.fields.bad_hash_back]
 derive = { kind = "hash", fields = ["title", "links_back"] }
 
+[needs.fields.bad_hash_result]
+schema = { type = "number" }
+derive = { kind = "hash", fields = ["title"] }
+
 [needs.fields.bad_include_self]
 schema = { type = "number" }
 derive = { kind = "max", field = "hours", over = "links", include_self = true }
@@ -152,6 +177,10 @@ derive = { kind = "links", where = "type == 'req'" }
 
 [needs.fields.bad_max_order]
 derive = { kind = "max", field = "owner", over = "satisfies", transitive = true }
+
+[needs.fields.bad_min_result]
+schema = { type = "string" }
+derive = { kind = "min", field = "hours", over = "links" }
 
 [needs.fields.bad_missing]
 schema = { type = "number" }
