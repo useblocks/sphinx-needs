@@ -313,6 +313,9 @@ so its links are in the back links of step 3.
 A later release is to let a function declare what it reads, which will order it like a built-in one.
 A ``filter`` that names ``needs``, or reads ``current_need`` by a key that is not written out,
 cannot be ordered either: its call runs with your own functions.
+``calc_sum``'s filter may name ``needs`` (every need, as in the filter of a view),
+but such a filter is evaluated on every need for every need it is tested on,
+and only Sphinx-Needs evaluates it.
 
 .. _needs_derive_cycle:
 
