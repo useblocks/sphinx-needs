@@ -696,8 +696,10 @@ after every other field, every other kind with the other fields; each after ever
 A rule that cannot be computed on a need leaves the field at its empty value, and is reported:
 a cycle of rules or calls reading one another (``needs.derive_cycle``, see :ref:`needs_derive_cycle`),
 a read of a value its step cannot wait for (``needs.derive_scope``, see :ref:`needs_derive_scope`),
-or a ``from`` naming no need and a ``where`` or ``test`` that cannot be evaluated on a candidate
-(``needs.dynamic_function``).
+or a ``from`` naming no need, a ``where`` or ``test`` that cannot be evaluated on a candidate,
+and a result the field's ``schema`` refuses, such as a value outside its ``enum`` or under its ``minimum``
+(``needs.dynamic_function``); a result is checked even when it equals the empty value,
+such as a ``count`` of ``0`` under ``minimum = 1``.
 To silence a warning, add its type to Sphinx's ``suppress_warnings``:
 
 .. code-block:: python
