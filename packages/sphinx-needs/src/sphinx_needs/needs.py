@@ -751,6 +751,7 @@ def load_config(app: Sphinx, *_args: Any) -> None:
     for option in needs_config._extra_options:
         description = "Added by needs_extra_options config"
         schema = None
+        derive = None
         if isinstance(option, str):
             name = option
         elif isinstance(option, dict):
@@ -766,6 +767,7 @@ def load_config(app: Sphinx, *_args: Any) -> None:
                 continue
             description = option.get("description", description)
             schema = option.get("schema")
+            derive = option.get("derive")
         else:
             log_warning(
                 LOGGER,
@@ -776,7 +778,12 @@ def load_config(app: Sphinx, *_args: Any) -> None:
             continue
 
         _NEEDS_CONFIG.add_field(
-            name, description, "needs_extra_options", schema=schema, override=True
+            name,
+            description,
+            "needs_extra_options",
+            schema=schema,
+            derive=derive,
+            override=True,
         )
 
     if not isinstance(needs_config._fields, dict):
@@ -1395,9 +1402,10 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 schema=_schema,
                 nullable=nullable,
                 # note, default follows that of legacy (pre-schema) extra option,
-                # i.e. default to "" only if no schema is defined
+                # i.e. default to "" only if no schema is defined; a derived field
+                # takes none
                 default=None
-                if not back_compatible or field_data.schema is not None
+                if not authored or not back_compatible or field_data.schema is not None
                 else FieldLiteralValue(""),
                 allow_defaults=authored,
                 allow_extend=authored,

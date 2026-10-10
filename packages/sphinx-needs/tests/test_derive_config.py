@@ -433,6 +433,59 @@ def test_derive_in_conf_py(test_app):
     assert "readOnly" not in properties["hours"]
 
 
+CONF_PY_EXTRA_OPTIONS = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_extra_options = [
+    "hours",
+    {"name": "copied", "derive": {"kind": "copy", "field": "title"}},
+    {"name": "broken", "schema": {"type": "number"}, "derive": {"kind": "sum", "field": "hours"}},
+]
+"""
+
+EXTRA_OPTIONS_INDEX = """\
+needs_extra_options
+===================
+
+.. req:: Hours
+   :id: REQ_001
+   :hours: 3
+   :copied: authored
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), CONF_PY_EXTRA_OPTIONS),
+                (Path("index.rst"), EXTRA_OPTIONS_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_derive_in_needs_extra_options(test_app):
+    """``derive`` is read from a ``needs_extra_options`` entry too, as from
+    ``needs_extra_links``, rather than dropped, which left the field open."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        'WARNING: Config option "needs_extra_options" is deprecated. Please use '
+        '"needs_fields" instead. [needs.deprecated]',
+        _invalid("broken", "kind 'sum' requires the role 'over'"),
+        "<srcdir>/index.rst:4: WARNING: Field 'copied' is derived (kind 'copy') and "
+        "cannot be set in a need; the value 'authored' is ignored "
+        "[needs.derive_authored]",
+    ]
+    properties = _built(app)["needs_schema"]["properties"]
+    assert properties["copied"]["readOnly"] is True
+    assert properties["broken"]["readOnly"] is True
+    assert "readOnly" not in properties["hours"]
+
+
 CONF_PY_COPY_INTO_LINKS = """\
 extensions = ["sphinx_needs"]
 needs_build_json = True

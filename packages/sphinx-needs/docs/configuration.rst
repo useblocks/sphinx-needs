@@ -3494,6 +3494,11 @@ And use it like:
    :ref:`needs_schema_definitions_from_json`. If specified via :ref:`needs_fields`,
    the constraints are applied to *all* usages of the option.
 
+.. versionadded:: 9.0.0
+
+   A dictionary entry can carry a ``derive`` rule, which makes the option a
+   :ref:`derived field <needs_derive>`, as on a :ref:`needs_fields` entry.
+
 .. _`needs_global_options`:
 .. _`global_option_filters`:
 
