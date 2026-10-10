@@ -1,0 +1,133 @@
+[
+  {
+    "name": "S",
+    "tests": 10,
+    "errors": 0,
+    "failures": 10,
+    "skips": 0,
+    "passed": 0,
+    "time": "1.0",
+    "testcase": [
+      {
+        "name": "t_CR",
+        "classname": "C",
+        "file": "test_lb.py",
+        "line": 1,
+        "time": "0.1",
+        "result": "failure",
+        "type": "AssertionError",
+        "text": "before\r.. raw:: html\r\r   <b>M_TXT_CR</b>\rafter",
+        "message": "before\r.. raw:: html\r\r   <b>M_MSG_CR</b>\rafter",
+        "system-out": "before\r.. raw:: html\r\r   <b>M_OUT_CR</b>\rafter"
+      },
+      {
+        "name": "t_CRLF",
+        "classname": "C",
+        "file": "test_lb.py",
+        "line": 1,
+        "time": "0.1",
+        "result": "failure",
+        "type": "AssertionError",
+        "text": "before\r\n.. raw:: html\r\n\r\n   <b>M_TXT_CRLF</b>\r\nafter",
+        "message": "before\r\n.. raw:: html\r\n\r\n   <b>M_MSG_CRLF</b>\r\nafter",
+        "system-out": "before\r\n.. raw:: html\r\n\r\n   <b>M_OUT_CRLF</b>\r\nafter"
+      },
+      {
+        "name": "t_VT",
+        "classname": "C",
+        "file": "test_lb.py",
+        "line": 1,
+        "time": "0.1",
+        "result": "failure",
+        "type": "AssertionError",
+        "text": "before\u000b.. raw:: html\u000b\u000b   <b>M_TXT_VT</b>\u000bafter",
+        "message": "before\u000b.. raw:: html\u000b\u000b   <b>M_MSG_VT</b>\u000bafter",
+        "system-out": "before\u000b.. raw:: html\u000b\u000b   <b>M_OUT_VT</b>\u000bafter"
+      },
+      {
+        "name": "t_FF",
+        "classname": "C",
+        "file": "test_lb.py",
+        "line": 1,
+        "time": "0.1",
+        "result": "failure",
+        "type": "AssertionError",
+        "text": "before\f.. raw:: html\f\f   <b>M_TXT_FF</b>\fafter",
+        "message": "before\f.. raw:: html\f\f   <b>M_MSG_FF</b>\fafter",
+        "system-out": "before\f.. raw:: html\f\f   <b>M_OUT_FF</b>\fafter"
+      },
+      {
+        "name": "t_FS",
+        "classname": "C",
+        "file": "test_lb.py",
+        "line": 1,
+        "time": "0.1",
+        "result": "failure",
+        "type": "AssertionError",
+        "text": "before\u001c.. raw:: html\u001c\u001c   <b>M_TXT_FS</b>\u001cafter",
+        "message": "before\u001c.. raw:: html\u001c\u001c   <b>M_MSG_FS</b>\u001cafter",
+        "system-out": "before\u001c.. raw:: html\u001c\u001c   <b>M_OUT_FS</b>\u001cafter"
+      },
+      {
+        "name": "t_GS",
+        "classname": "C",
+        "file": "test_lb.py",
+        "line": 1,
+        "time": "0.1",
+        "result": "failure",
+        "type": "AssertionError",
+        "text": "before\u001d.. raw:: html\u001d\u001d   <b>M_TXT_GS</b>\u001dafter",
+        "message": "before\u001d.. raw:: html\u001d\u001d   <b>M_MSG_GS</b>\u001dafter",
+        "system-out": "before\u001d.. raw:: html\u001d\u001d   <b>M_OUT_GS</b>\u001dafter"
+      },
+      {
+        "name": "t_RS",
+        "classname": "C",
+        "file": "test_lb.py",
+        "line": 1,
+        "time": "0.1",
+        "result": "failure",
+        "type": "AssertionError",
+        "text": "before\u001e.. raw:: html\u001e\u001e   <b>M_TXT_RS</b>\u001eafter",
+        "message": "before\u001e.. raw:: html\u001e\u001e   <b>M_MSG_RS</b>\u001eafter",
+        "system-out": "before\u001e.. raw:: html\u001e\u001e   <b>M_OUT_RS</b>\u001eafter"
+      },
+      {
+        "name": "t_NEL",
+        "classname": "C",
+        "file": "test_lb.py",
+        "line": 1,
+        "time": "0.1",
+        "result": "failure",
+        "type": "AssertionError",
+        "text": "before\u0085.. raw:: html\u0085\u0085   <b>M_TXT_NEL</b>\u0085after",
+        "message": "before\u0085.. raw:: html\u0085\u0085   <b>M_MSG_NEL</b>\u0085after",
+        "system-out": "before\u0085.. raw:: html\u0085\u0085   <b>M_OUT_NEL</b>\u0085after"
+      },
+      {
+        "name": "t_LS",
+        "classname": "C",
+        "file": "test_lb.py",
+        "line": 1,
+        "time": "0.1",
+        "result": "failure",
+        "type": "AssertionError",
+        "text": "before\u2028.. raw:: html\u2028\u2028   <b>M_TXT_LS</b>\u2028after",
+        "message": "before\u2028.. raw:: html\u2028\u2028   <b>M_MSG_LS</b>\u2028after",
+        "system-out": "before\u2028.. raw:: html\u2028\u2028   <b>M_OUT_LS</b>\u2028after"
+      },
+      {
+        "name": "t_PS",
+        "classname": "C",
+        "file": "test_lb.py",
+        "line": 1,
+        "time": "0.1",
+        "result": "failure",
+        "type": "AssertionError",
+        "text": "before\u2029.. raw:: html\u2029\u2029   <b>M_TXT_PS</b>\u2029after",
+        "message": "before\u2029.. raw:: html\u2029\u2029   <b>M_MSG_PS</b>\u2029after",
+        "system-out": "before\u2029.. raw:: html\u2029\u2029   <b>M_OUT_PS</b>\u2029after"
+      }
+    ]
+  }
+]
