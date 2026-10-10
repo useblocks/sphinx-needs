@@ -41,7 +41,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 10
+ENV_DATA_VERSION: Final = 11
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -68,6 +68,14 @@ values (a chain's value, an empty cycle), and an unbumped rebuild over an existi
 ``_build`` writes them to ``needs.json`` but re-writes only the pages whose sources
 changed, leaving the old values on every other page. The bump makes an upgraded build
 re-read and re-write every page.
+
+Version 11 changes what the stored values mean again: a field with a ``derive`` rule is
+computed by it, and the inline calls read the needs differently (a link to no need is
+skipped by ``check_linked_values`` and a ``links_only`` ``calc_sum``, ``copy`` with
+``upper`` or ``lower`` cases each item of a list, ``calc_sum``'s filter may name
+``needs``), so the same sources give other values. As for version 10, an unbumped
+rebuild over an existing ``_build`` would leave the old values on the pages whose
+sources did not change.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """
