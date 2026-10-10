@@ -103,7 +103,7 @@ Improvements
   where it was stored as the text ``"None"``, or as ``[None]``, which schema validation then refused.
 
 - ✨ A field or link type can be :ref:`derived <needs_derive>` by a rule declared in its configuration
-  (:issue:`2030`)
+  (:issue:`2030`, :pr:`2178`)
 
   A ``derive`` table on its :ref:`needs_fields` or :ref:`needs_links` entry, in :file:`conf.py` or the TOML file,
   names a kind and the kind's roles, and the rule computes the value for every need.
