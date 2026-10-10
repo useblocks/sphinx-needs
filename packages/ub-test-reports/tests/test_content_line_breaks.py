@@ -39,7 +39,7 @@ def _assert_every_line_inside_a_block(content: str) -> None:
         )
 
 
-def _smuggler(boundary: str) -> str:
+def _text_breaking_at(boundary: str) -> str:
     return (
         f"before{boundary}.. raw:: html{boundary}{boundary}   <b>M</b>{boundary}after"
     )
@@ -58,7 +58,7 @@ def _case(block: str, text: str) -> dict:
 @pytest.mark.parametrize("boundary", BOUNDARIES)
 @pytest.mark.parametrize("block", ["message", "text", "system-out", "system-err"])
 def test_a_block_keeps_every_line_inside_it(block, boundary):
-    content = build_content(_case(block, _smuggler(BOUNDARIES[boundary])))
+    content = build_content(_case(block, _text_breaking_at(BOUNDARIES[boundary])))
     assert "<b>M</b>" in content
     _assert_every_line_inside_a_block(content)
 
