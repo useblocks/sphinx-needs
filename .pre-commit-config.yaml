@@ -4,8 +4,9 @@ repos:
     rev: v0.9.3
     hooks:
       - id: taplo-format
-        # the two TOML conformance corpora are (or, for the `ubproject.toml` reading one, are to be) shared
-        # byte-for-byte with ubCode, so a formatter local to this repository must not rewrite them. taplo's current
+        # the three TOML conformance corpora are (or, for the `ubproject.toml` reading one and the
+        # derived-field one, are to be) shared byte-for-byte with ubCode, so a formatter local to this repository
+        # must not rewrite them. taplo's current
         # defaults happen to leave the variant-condition one alone; the `ubproject.toml` reading
         # corpus they do NOT -- measured: every expectation line past taplo's column limit
         # is rewrapped across several lines, eleven of them -- and a vendored copy that
@@ -13,7 +14,8 @@ repos:
         exclude: |-
           (?x)^(
             packages/sphinx-mounts/tests/fixtures/variant_condition_conformance\.toml|
-            packages/ub-project/tests/fixtures/ubproject_reading_conformance\.toml
+            packages/ub-project/tests/fixtures/ubproject_reading_conformance\.toml|
+            packages/sphinx-needs/tests/fixtures/derive_conformance\.toml
           )$
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
@@ -35,7 +37,8 @@ repos:
           (?x)^(
             packages/sphinx-needs/tests/conformance/|
             packages/sphinx-codelinks/tests/data/extraction/|
-            packages/ub-project/tests/fixtures/ubproject_reading_conformance\.toml$
+            packages/ub-project/tests/fixtures/ubproject_reading_conformance\.toml$|
+            packages/sphinx-needs/tests/fixtures/derive_conformance\.toml$
           )
 
   - repo: local

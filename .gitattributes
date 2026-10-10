@@ -21,6 +21,12 @@ packages/sphinx-mounts/tests/fixtures/variant_condition_conformance.toml text eo
 # what the cases test.
 packages/ub-project/tests/fixtures/ubproject_reading_conformance.toml text eol=lf
 
+# The derived-field conformance corpus is the fourth, and this repository is its repository of
+# RECORD too: ubCode is to vendor it byte-for-byte. Its `config = '...'` and `source = '...'`
+# bodies are case inputs (a `ubproject.toml` and a reStructuredText document), so a CRLF checkout
+# would change what the cases test.
+packages/sphinx-needs/tests/fixtures/derive_conformance.toml text eol=lf
+
 # sphinx-codelinks' extraction corpus is shared byte-for-byte with ubCode, which copies its
 # YAML cases and takes the snapshots as the expected output of its parity test, so their
 # bytes must be the same on every platform. The tests do not depend on it: YAML normalises
