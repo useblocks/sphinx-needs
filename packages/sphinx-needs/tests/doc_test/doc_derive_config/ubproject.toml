@@ -1,0 +1,210 @@
+# Every way a `derive` rule is read: one valid rule per kind, then one rule per
+# `needs.derive_invalid` shape (each named `bad_*`, one finding each).
+
+[needs.links.tests]
+outgoing = "tests"
+incoming = "tested by"
+
+[needs.links.satisfies]
+
+[needs.fields.hours]
+schema = { type = "number" }
+
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.fields.asil_own]
+schema = { type = "string", enum = ["QM", "A", "B", "C", "D"] }
+
+[needs.fields.passed]
+schema = { type = "boolean" }
+
+# -- valid rules: no finding; each field holds its empty value --------------------
+
+[needs.fields.d_title]
+schema = { type = "string" }
+derive = { kind = "copy", field = "title" }
+
+[needs.fields.d_from]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner", from = "REQ_001" }
+
+[needs.fields.d_owner]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner", over = "parent_needs", select = "unique" }
+
+[needs.fields.d_tested_by]
+schema = { type = "array", items = { type = "string" } }
+derive = { kind = "copy", field = "tests_back", over = "links", select = "list" }
+
+[needs.fields.d_late]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner", after = "derived" }
+
+[needs.fields.d_total]
+schema = { type = "number" }
+nullable = false
+derive = { kind = "sum", field = "hours", over = "links" }
+
+[needs.fields.d_n_tests]
+schema = { type = "integer" }
+nullable = false
+derive = { kind = "count", over = "tests_back", where = "status == 'passed'" }
+
+[needs.fields.d_min]
+schema = { type = "number" }
+derive = { kind = "min", field = "hours", over = "links", where = "type in ['req', 'spec']" }
+
+[needs.fields.d_asil]
+schema = { type = "string", enum = ["QM", "A", "B", "C", "D"] }
+derive = { kind = "max", field = "asil_own", over = "satisfies", transitive = true, include_self = true }
+
+[needs.fields.d_any]
+schema = { type = "boolean" }
+derive = { kind = "any", field = "passed", over = "links" }
+
+[needs.fields.d_verified]
+schema = { type = "boolean" }
+nullable = false
+derive = { kind = "all", test = "status == 'passed'", over = "tests_back", where = "type == 'test'" }
+
+[needs.fields.d_owners]
+schema = { type = "array", items = { type = "string" } }
+nullable = false
+derive = { kind = "collect", field = "owner", over = "links" }
+
+[needs.fields.d_digest]
+schema = { type = "string" }
+nullable = false
+derive = { kind = "hash", fields = ["title", "status", "d_total", "links"] }
+
+[needs.links.related_open]
+derive = { kind = "links", where = "type == 'req' and status == 'open'" }
+
+[needs.links.mentions]
+derive = { kind = "content_links" }
+
+[needs.links.mentioned_reqs]
+derive = { kind = "content_links", from = "SPEC_AUTH", where = "type == 'req'" }
+
+# -- a rule on a core field: reported, ignored, the field untouched ---------------
+
+[needs.fields.status]
+derive = { kind = "copy", field = "owner" }
+
+# -- invalid rules: one `needs.derive_invalid` each ------------------------------
+
+[needs.fields.bad_after]
+derive = { kind = "copy", field = "owner", after = "later" }
+
+[needs.fields.bad_any_both]
+schema = { type = "boolean" }
+derive = { kind = "any", field = "passed", test = "status == 'open'", over = "links" }
+
+[needs.fields.bad_any_type]
+schema = { type = "boolean" }
+derive = { kind = "any", field = "hours", over = "links" }
+
+[needs.fields.bad_copy_both]
+derive = { kind = "copy", field = "owner", from = "REQ_001", over = "links" }
+
+[needs.fields.bad_count_result]
+schema = { type = "string" }
+derive = { kind = "count", over = "links" }
+
+[needs.fields.bad_cycle_a]
+derive = { kind = "copy", field = "bad_cycle_b" }
+
+[needs.fields.bad_cycle_b]
+derive = { kind = "copy", field = "bad_cycle_a" }
+
+[needs.fields.bad_default]
+derive = { kind = "copy", field = "owner" }
+default = "nobody"
+
+[needs.fields.bad_field_and_default]
+derive = { kind = "copy", field = "nope" }
+default = "nobody"
+
+[needs.fields.bad_field_unknown]
+derive = { kind = "copy", field = "nope" }
+
+[needs.fields.bad_hash_back]
+derive = { kind = "hash", fields = ["title", "links_back"] }
+
+[needs.fields.bad_include_self]
+schema = { type = "number" }
+derive = { kind = "max", field = "hours", over = "links", include_self = true }
+
+[needs.fields.bad_kind]
+derive = { kind = "expr", expr = "1" }
+
+[needs.fields.bad_link_kind]
+derive = { kind = "links", where = "type == 'req'" }
+
+[needs.fields.bad_max_order]
+derive = { kind = "max", field = "owner", over = "satisfies", transitive = true }
+
+[needs.fields.bad_missing]
+schema = { type = "number" }
+derive = { kind = "sum", field = "hours" }
+
+[needs.fields.bad_no_kind]
+derive = { field = "owner" }
+
+[needs.fields.bad_not_table]
+derive = "copy"
+
+[needs.fields.bad_over]
+schema = { type = "number" }
+derive = { kind = "sum", field = "hours", over = "nope" }
+
+[needs.fields.bad_predicates]
+derive = { kind = "copy", field = "owner" }
+predicates = [["type == 'req'", "req owner"]]
+
+[needs.fields.bad_role_not_taken]
+schema = { type = "number" }
+derive = { kind = "sum", field = "hours", over = "links", test = "status == 'open'" }
+
+[needs.fields.bad_role_type]
+schema = { type = "number" }
+derive = { kind = "max", field = "hours", over = "links", transitive = "yes" }
+
+[needs.fields.bad_select_list]
+derive = { kind = "copy", field = "owner", over = "links", select = "list" }
+
+[needs.fields.bad_select_no_over]
+derive = { kind = "copy", field = "owner", select = "unique" }
+
+[needs.fields.bad_sum_type]
+schema = { type = "number" }
+derive = { kind = "sum", field = "owner", over = "links" }
+
+[needs.fields.bad_unknown_role]
+derive = { kind = "copy", field = "owner", frm = "REQ_001" }
+
+[needs.fields.bad_where_c]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = "c.this_doc()" }
+
+[needs.fields.bad_where_current]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = "current_need['status'] == 'open'" }
+
+[needs.fields.bad_where_needs]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = "any(n['id'] == id for n in needs)" }
+
+[needs.fields.bad_where_syntax]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = "type ==" }
+
+[needs.links.bad_link_empty_where]
+derive = { kind = "links", where = "  " }
+
+[needs.links.bad_link_join]
+derive = { kind = "links", where = "type == 'test'", join = { field = "owner", equals = "owner" } }
+
+[needs.links.bad_link_value_kind]
+derive = { kind = "sum", field = "hours", over = "links" }
