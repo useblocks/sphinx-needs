@@ -129,7 +129,8 @@ Improvements
   The schema in :ref:`needs.json <needs_builder_format>` marks a derived field or link type ``"readOnly": true``,
   and a need created by ``needimport`` keeps the derived values it carries.
   A rule on a core field, or on the ``parent_needs`` link type, is not available in this release, and is reported.
-  `ubCode`_ reads the same configuration and gives the same findings.
+  `ubCode`_ reads the same configuration, and computes the same values and findings, from
+  its phase-2 release.
 
 - ✨ New dynamic function :ref:`links_from_filter`, which links to every need that passes
   a :ref:`filter string <filter_string>` (:pr:`1984`)
@@ -255,7 +256,8 @@ Bug fixes
   part the need does not have reads the need, and one whose text before the dot names no
   need is a link to no need. A link to no need is now skipped, as the derived-field kinds
   skip it; it failed the call, a second report of the dead link, which is reported as
-  before, and the field was left empty. `ubCode`_ computes the same values.
+  before, and the field was left empty. `ubCode`_ reads a part link the same way, and
+  skips a link to no need as it does from its phase-2 release.
 
 - 🐛 A :ref:`needs_fields` entry named ``parent_needs``, the core link type, is reported
   and ignored, instead of stopping the build with "Field 'parent_needs' already exists"
@@ -291,7 +293,7 @@ Bug fixes
   shown as ``NeedLink(id='REQ_1', part=None, condition=None)``; it is now ``REQ_1``, or
   ``REQ_1.p1`` for a part.
 
-- 🐛 The ``filter`` of :ref:`calc_sum` can name ``needs`` (:pr:`1453`)
+- 🐛 The ``filter`` of :ref:`calc_sum` can name ``needs`` (:issue:`1452`, :pr:`1453`)
 
   The filter was evaluated without the list of all needs, although a
   :ref:`filter_string` documents it, so a filter such as
