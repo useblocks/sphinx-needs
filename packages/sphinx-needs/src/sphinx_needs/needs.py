@@ -807,7 +807,9 @@ def load_config(app: Sphinx, *_args: Any) -> None:
                 None,
             )
             continue
-        if option_name in NeedsCoreFields:
+        if option_name in NeedsCoreFields or option_name in CORE_LINK_TYPES:
+            # a core field's entry specializes it (create_schema), and a core link
+            # type is not a field (reported there)
             continue
         _NEEDS_CONFIG.add_field(
             option_name,
@@ -1257,14 +1259,22 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
     #: the ``derive`` findings, reported once the schema is complete
     derive_problems: list[DeriveProblem] = []
     for name, params in needs_config._fields.items():
-        if (
-            name in NeedsCoreFields
-            and isinstance(params, dict)
-            and params.get("derive") is not None
+        if not isinstance(params, dict) or (
+            name not in NeedsCoreFields and name not in CORE_LINK_TYPES
         ):
+            continue
+        if params.get("derive") is not None:
             # a core field is not derived: the rule is reported and ignored
             derive_problems.append(
                 DeriveProblem(name, False, core_message(name, on_link=False), core=True)
+            )
+        elif name in CORE_LINK_TYPES:
+            log_warning(
+                LOGGER,
+                f"needs_fields entry {name!r} names the core link type {name!r}, "
+                "which is not a field; the entry is ignored",
+                "config",
+                None,
             )
     for name, data in NeedsCoreFields.items():
         if not data.get("add_to_field_schema", False):

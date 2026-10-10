@@ -235,6 +235,12 @@ Bug fixes
   need fails the call, as a link naming no need still does. `ubCode`_ computes the same
   values for the calls without a filter.
 
+- 🐛 A :ref:`needs_fields` entry named ``parent_needs``, the core link type, is reported
+  and ignored, instead of stopping the build with "Field 'parent_needs' already exists"
+
+  It is a ``needs.config`` warning; an entry carrying a ``derive`` rule is reported as a
+  rule on a core field, ``needs.derive_invalid``. The link type works as before.
+
 - 🐛 ``needextend``'s ``:+field:`` on a nullable field the need never set sets the field,
   instead of crashing the build (:issue:`2038`, :pr:`2102`)
 

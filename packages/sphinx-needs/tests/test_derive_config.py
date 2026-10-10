@@ -493,6 +493,68 @@ def test_derive_in_needs_extra_options(test_app):
     assert "readOnly" not in properties["hours"]
 
 
+PARENT_NEEDS_INDEX = """\
+parent_needs
+============
+
+.. req:: Parent
+   :id: REQ_001
+
+   .. req:: Child
+      :id: REQ_002
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app,expected",
+    [
+        pytest.param(
+            {
+                "buildername": "needs",
+                "files": [
+                    (
+                        Path("conf.py"),
+                        'extensions = ["sphinx_needs"]\nneeds_build_json = True\n'
+                        "needs_fields = {'parent_needs': "
+                        "{'derive': {'kind': 'copy', 'field': 'title'}}}\n",
+                    ),
+                    (Path("index.rst"), PARENT_NEEDS_INDEX),
+                ],
+            },
+            "WARNING: Invalid derive of field 'parent_needs': a core field cannot "
+            "carry a derive rule in this release; the rule is ignored "
+            "[needs.derive_invalid]",
+            id="derive",
+        ),
+        pytest.param(
+            {
+                "buildername": "needs",
+                "files": [
+                    (
+                        Path("conf.py"),
+                        'extensions = ["sphinx_needs"]\nneeds_build_json = True\n'
+                        "needs_fields = {'parent_needs': {'description': 'mine'}}\n",
+                    ),
+                    (Path("index.rst"), PARENT_NEEDS_INDEX),
+                ],
+            },
+            "WARNING: needs_fields entry 'parent_needs' names the core link type "
+            "'parent_needs', which is not a field; the entry is ignored [needs.config]",
+            id="no-derive",
+        ),
+    ],
+    indirect=["test_app"],
+)
+def test_needs_fields_parent_needs(test_app, expected):
+    """A ``needs_fields`` entry named ``parent_needs``, the core link type, is reported
+    and ignored, where it stopped the build ("Field 'parent_needs' already exists");
+    with a ``derive``, as a rule on a core field. The link type works as before."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [expected]
+    assert _built(app)["needs"]["REQ_002"]["parent_needs"] == ["REQ_001"]
+
+
 CONF_PY_COPY_INTO_LINKS = """\
 extensions = ["sphinx_needs"]
 needs_build_json = True
