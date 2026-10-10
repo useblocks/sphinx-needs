@@ -125,6 +125,13 @@ links_from_content
 
 .. autofunction:: sphinx_needs.functions.common.links_from_content
 
+.. _links_from_filter:
+
+links_from_filter
+~~~~~~~~~~~~~~~~~
+
+.. autofunction:: sphinx_needs.functions.common.links_from_filter
+
 
 .. _dynamic_functions_derived:
 
@@ -167,6 +174,8 @@ The built-in functions are the per-need spellings of the kinds:
        giving ``result``; with ``one_hit``, ``result`` even when no linked need matches, which ``any`` does not
    * - ``links_from_content()``, ``links_from_content("ID", filter=…)``
      - ``content_links``, with ``from = "ID"`` and the ``where`` ``filter``
+   * - ``links_from_filter(filter, include_self, include_parts)``
+     - ``links``, with the ``where`` ``filter`` and the same ``include_self`` and ``include_parts``
 
 The ``join`` role, which will spell sphinx-test-reports' ``tr_link``, is reserved for a later release:
 a rule naming it is reported as ``needs.derive_invalid``.
@@ -232,11 +241,15 @@ Once every document has been read, and before any page is written, the needs are
    which is then computed like one written in the need; until it is, the field holds what is written in it
    besides calls: an array the items written before a call was appended to them, any other field its empty value.
 2. The ``[[…]]``, ``<<…>>`` and ``<{…}>`` of the :ref:`link fields <needs_links>` are computed,
+   with the rules of the :ref:`derived link types <needs_derive>` (``links``, ``content_links``),
    each after the link fields it reads, and those that call your own :ref:`functions <needs_functions>` last.
 3. The back links are built from the links of steps 1 and 2, each back link list in need-id order.
-4. Every other ``[[…]]``, ``<<…>>`` and ``<{…}>`` is computed, each after every value it reads
+4. Every other ``[[…]]``, ``<<…>>`` and ``<{…}>`` is computed, with the rules of the
+   :ref:`derived fields <needs_derive>`, each after every value it reads
    (a field of its own need or of another need, a field of a linked need, a back link),
    and those that call your own functions last.
+   Then the rules of the kind ``hash``, and those with ``after = "derived"``, are computed, each after the
+   values it reads; a ``[[…]]`` of step 4 that reads one of their fields is not run (:ref:`needs_derive_scope`).
 5. Link conditions are checked, against the computed values and the complete back links,
    and links to unknown needs are reported.
    Then the link lists are sorted for the output, and constraints are checked (:ref:`needs_constraints`).
@@ -278,8 +291,33 @@ call                                   reads
 ``check_linked_values(…, "x", …)``     its own ``links``, and ``x`` (and the filter's fields) of every linked need
 ``links_from_content()``               the need's content
 ``links_from_content(filter=…)``       the filter's fields of each need the content references
+``links_from_filter(filter)``          the filter's fields of every need; ``current_need`` is its own need
 ``<<[cond]:a, b>>``                    the fields of its own need that any of its conditions names, evaluated or not
 =====================================  ==============================================================================
+
+And what each :ref:`derive rule <needs_derive>` reads:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 45 55
+
+   * - rule
+     - reads
+   * - ``copy``, ``field = "x"``
+     - ``x`` of its own need
+   * - ``copy``, ``field = "x"``, ``from = "ID"``
+     - ``x`` of the need ``ID``
+   * - ``copy``, ``sum``, ``count``, ``min``, ``max``, ``any``, ``all`` or ``collect``, ``over = "<t>"``
+     - its own ``<t>`` (or ``<t>_back``), and ``field`` and the names of ``where`` and ``test``
+       on each need it names
+   * - ``min`` or ``max`` with ``transitive = true``
+     - ``field`` and the names of ``where`` on every need ``over`` reaches (and on its own, with ``include_self``)
+   * - ``hash``, ``fields = [...]``
+     - the listed fields of its own need, after every other rule
+   * - ``links``, ``where = …``
+     - the names of ``where`` on every need (and part)
+   * - ``content_links``
+     - the need's content (or that of the need ``from`` names), and the names of ``where`` on each need it references
 
 A ``filter`` that names only values final before its step is evaluated before the step, so its matches are known:
 values nothing computes, and, in step 4, the link fields and back links of steps 2 and 3.

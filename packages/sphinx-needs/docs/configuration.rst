@@ -649,11 +649,57 @@ A ``default`` or ``predicates`` beside ``derive`` is reported as ``needs.derive_
 the rule applies.
 So is a link type declared with ``copy = true`` while ``links`` is derived:
 nothing is copied into ``links``, which holds what its rule computes.
-To silence either warning, add its type to Sphinx's ``suppress_warnings``:
+
+How a rule is computed
+^^^^^^^^^^^^^^^^^^^^^^
+
+A rule is computed with the ``[[…]]`` of its step (see :ref:`needs_processing_order`):
+``links`` and ``content_links`` with the link fields, ``hash`` and the rules with ``after = "derived"``
+after every other field, every other kind with the other fields; each after every value it reads.
+
+- **Candidates.** ``over = "<t>"``: the needs this need's ``<t>`` names, once the link fields are computed,
+  in the order written; a need named twice is a candidate twice;
+  a link to a :ref:`need part <need_part>` is its need, and a link to no need is skipped.
+  ``over = "<t>_back"``: the needs that link to this need (or to one of its parts), in need-id order, each once.
+  ``where`` drops the candidates it does not hold on, then ``test`` is tested on the others.
+- **Unset values.** A candidate whose ``field`` is unset is skipped by ``sum``, ``min``, ``max``, ``collect``,
+  and ``count`` with a ``field`` (which so counts the candidates that set it);
+  ``any`` and ``all`` read it as false.
+  ``sum`` skips a value that is not a number.
+- **No candidate.** ``sum`` is ``0`` (or ``0.0``), ``count`` ``0``, ``any`` ``false``, ``all`` ``true``,
+  ``collect`` ``[]``; ``min``, ``max`` and ``copy`` leave the field at its empty value.
+- **Values.** ``sum`` adds in the order of the candidates, an integer for an ``integer`` field, else a number.
+  ``min`` and ``max`` order numbers by value, and a string by the order of its ``enum``.
+  ``collect`` keeps each value once, in the order of the candidates, a list's items each.
+  ``copy`` over several targets takes the one with the lowest need id among those that set the field
+  (``select = "first"``), the same and a ``needs.derive_unique`` warning when several set it (``"unique"``),
+  or every value in the order written, a list's items each (``"list"``).
+- **transitive.** ``min`` and ``max`` read every need reachable through ``over``, each once:
+  a need on a cycle reaches itself, so every member of a cycle has the same value;
+  ``include_self`` adds the need's own ``field``.
+- **hash.** The lowercase hex SHA-256 of the UTF-8 text of one JSON array:
+  the listed fields' values in the listed order, each as :ref:`needs.json <needs_builder_format>` holds it
+  (a link list sorted and without duplicates, an unset field ``null``),
+  with no whitespace, non-ASCII characters not escaped, and numbers as Python writes them (``3.0``, ``1e+16``).
+  For ``fields = ["title", "status"]`` on a need titled ``Größe`` with status ``open``,
+  the text is ``["Größe","open"]``.
+- **links.** Every need, and with ``include_parts`` every need's parts (after it, in part-id order),
+  in need-id order; this need and its parts are left out unless ``include_self``.
+- **content_links.** The ``:need:`` references of this need's content (or of the content of the need ``from`` names),
+  in document order, each once: a reference to a part is a part link, a reference to this need is kept,
+  a reference to no need is kept (and reported as any dead link), a disabled one (``!ID``) and those inside a
+  nested need are not. With ``where``, only the references to needs it holds on are kept (a part through its need).
+
+A rule that cannot be computed on a need leaves the field at its empty value, and is reported:
+a cycle of rules or calls reading one another (``needs.derive_cycle``, see :ref:`needs_derive_cycle`),
+a read of a value its step cannot wait for (``needs.derive_scope``, see :ref:`needs_derive_scope`),
+or a ``from`` naming no need and a ``where`` or ``test`` that cannot be evaluated on a candidate
+(``needs.dynamic_function``).
+To silence a warning, add its type to Sphinx's ``suppress_warnings``:
 
 .. code-block:: python
 
-   suppress_warnings = ["needs.derive_invalid", "needs.derive_authored"]
+   suppress_warnings = ["needs.derive_invalid", "needs.derive_authored", "needs.derive_unique"]
 
 .. _`needs_links`:
 
