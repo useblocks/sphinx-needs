@@ -123,7 +123,7 @@ Improvements
   A rule is checked when the configuration is read: one that cannot be read is one ``needs.derive_invalid``
   warning, naming the kind and the role, and the field holds its empty value;
   a ``default`` or ``predicates`` beside a rule is reported the same way, and ignored,
-  as is a link type's ``copy = true`` into a derived ``links``.
+  as is a link type's ``copy = true`` into a derived ``links``, or on a derived link type.
   The empty value a derived field holds is not checked against the field's ``schema``, as ``None`` is not;
   a computed value the schema refuses is reported as ``needs.dynamic_function``, and the field holds its empty value.
   The schema in :ref:`needs.json <needs_builder_format>` marks a derived field or link type ``"readOnly": true``,
