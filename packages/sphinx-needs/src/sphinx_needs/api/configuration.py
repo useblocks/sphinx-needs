@@ -147,6 +147,7 @@ def add_field(
     predicates: list[tuple[str, Any]] | None = None,
     parse_variants: bool | None = None,
     parse_dynamic_functions: bool | None = None,
+    derive: dict[str, Any] | None = None,
 ) -> None:
     """
     Adds an need field to the configured need schema.
@@ -167,6 +168,12 @@ def add_field(
     :param predicates: List of (need filter, value) pairs for default predicate values.
     :param parse_variants: Whether variants are parsed in this field.
     :param parse_dynamic_functions: Whether dynamic functions are parsed in this field.
+    :param derive: A rule computing the field for every need, which makes it a
+        :ref:`derived field <needs_derive>`: a dict naming a ``kind`` and its roles.
+
+    .. versionchanged:: 9.0.0
+
+       The ``derive`` parameter.
     """
     _NEEDS_CONFIG.add_field(
         name,
@@ -178,6 +185,7 @@ def add_field(
         predicates=predicates,
         parse_variants=parse_variants,
         parse_dynamic_functions=parse_dynamic_functions,
+        derive=derive,
     )
 
 
