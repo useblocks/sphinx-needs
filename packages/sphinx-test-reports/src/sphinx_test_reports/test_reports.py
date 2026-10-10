@@ -235,12 +235,50 @@ def setup(app: Sphinx) -> dict[str, object]:
     }
 
 
+#: The three need directives' OWN option names, read before any `tr_extra_options` is
+#: registered into their (class-level, mutated) `option_spec`.
+_BUILT_IN_OPTIONS = {
+    "test-file": frozenset(TestFileDirective.option_spec or {}),
+    "test-suite": frozenset(TestSuiteDirective.option_spec or {}),
+    "test-case": frozenset(TestCaseDirective.option_spec or {}),
+}
+
+
 def register_tr_extra_options(app: Sphinx) -> None:
     """Register extra options with directives."""
 
     log = logging.getLogger(__name__)
     tr_extra_options = getattr(app.config, "tr_extra_options", [])
     log.debug(f"tr_extra_options = {tr_extra_options}")
+
+    # docutils lowercases an option's name before it looks it up in `option_spec`, so a
+    # name is registered in lower case and written that way on a directive; the need field
+    # keeps the configured spelling (#2115). Two names that differ only in case would be
+    # one option.
+    written: dict[str, str] = {}
+    for option_name in tr_extra_options or []:
+        lowered = option_name.lower()
+        if written.get(lowered, option_name) != option_name:
+            raise InvalidConfigurationError(
+                f"tr_extra_options holds '{written[lowered]}' and '{option_name}', which a "
+                f"directive cannot tell apart: docutils lowercases option names, so both "
+                f"are written :{lowered}:. Keep one of them."
+            )
+        written[lowered] = option_name
+        # A name a directive already has would alias its own option (`Status` read as
+        # `:status:`), or reach `add_need` twice (`status`).
+        for directive_name, own in _BUILT_IN_OPTIONS.items():
+            if lowered in own:
+                raise InvalidConfigurationError(
+                    f"tr_extra_options holds '{option_name}', which {directive_name} "
+                    f"reads as its own :{lowered}: option; choose another name."
+                )
+        if lowered != option_name:
+            log.info(
+                f"tr_extra_options: write '{option_name}' on a directive as "
+                f":{lowered}: (docutils lowercases option names); the need field stays "
+                f"'{option_name}'."
+            )
 
     if tr_extra_options:
         for direc in [TestSuiteDirective, TestFileDirective, TestCaseDirective]:
@@ -250,7 +288,7 @@ def register_tr_extra_options(app: Sphinx) -> None:
             # for and the classes do not produce.
             spec = direc.option_spec or {}
             for option_name in tr_extra_options:
-                spec[option_name] = directives.unchanged
+                spec[option_name.lower()] = directives.unchanged
                 log.debug(f"Registered {option_name} with {direc}")
                 log.debug(f"{direc}.option_spec now has keys: {list(spec.keys())}")
             direc.option_spec = spec  # ty: ignore[invalid-assignment]

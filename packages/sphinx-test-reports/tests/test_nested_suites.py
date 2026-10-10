@@ -21,14 +21,13 @@ and links for the same report:
   parent's own table.
 """
 
+import io
 import json
 import re
 from pathlib import Path
 
 import pytest
 from docutils import nodes
-
-from sphinx_test_reports.exceptions import TestReportIncompleteConfigurationError
 
 #: ubCode's expected needs for its shared fixture's page ``docs/nested.rst`` (the page is
 #: ``doc_test/nested_parity/nested.rst`` verbatim), as ``(id, type, title, links)``: read
@@ -265,13 +264,27 @@ def test_the_counters_line_of_a_flat_report_is_unchanged(test_app):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/auto_cases_only"}],
+    [
+        {
+            "buildername": "needs",
+            "srcdir": "doc_test/auto_cases_only",
+            "warning": io.StringIO(),
+        }
+    ],
     indirect=True,
 )
 def test_auto_cases_without_auto_suites_is_still_an_error(test_app):
-    """B7 control: ``:auto_cases:`` alone is a configuration error, as before."""
-    with pytest.raises(TestReportIncompleteConfigurationError):
-        test_app.build()
+    """B7 control: ``:auto_cases:`` alone is a configuration error, as before -- since
+    #2052 a located ``test_reports.option_invalid`` warning, not a raised
+    ``TestReportIncompleteConfigurationError``: the file's need is created, nothing is
+    expanded."""
+    test_app.build()
+
+    assert (
+        "index.rst:4: WARNING: option auto_cases must be used together with auto_suites"
+        in test_app._warning.getvalue()
+    )
+    assert sorted(_needs(test_app)) == ["TF_CASES_ONLY"]
 
 
 #: The expansion of ``nested_deep.xml`` (three levels; a direct case after a nested suite;
@@ -403,11 +416,23 @@ def test_a_name_twice_at_the_top_level_finds_the_first(test_app):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "needs", "srcdir": "doc_test/nested_twins"}],
+    [
+        {
+            "buildername": "needs",
+            "srcdir": "doc_test/nested_twins",
+            "warning": io.StringIO(),
+        }
+    ],
     indirect=True,
 )
 def test_two_suites_of_one_name_under_one_parent_still_raise(test_app):
-    """Their auto-suite ids collide, and the expansion raises as it did for top-level
-    suites. #2052 is to turn this into a warning; it updates this test."""
-    with pytest.raises(Exception, match=r"^Suite ID .* already exists"):
-        test_app.build()
+    """Their auto-suite ids collide, as they do for top-level suites. Since #2052 that is
+    a ``test_reports.duplicate_id`` warning, not a raised ``Exception``: the first twin is
+    expanded, the second -- and its case -- is not."""
+    test_app.build()
+
+    assert (
+        "index.rst:4: WARNING: Suite ID TF_TWINS_B14_BE6 already exists by twin (twin): "
+        "the report holds two suites named twin; only the first is expanded"
+    ) in test_app._warning.getvalue()
+    assert sorted(_needs(test_app)) == ["TF_TWINS", "TF_TWINS_B14", "TF_TWINS_B14_BE6"]

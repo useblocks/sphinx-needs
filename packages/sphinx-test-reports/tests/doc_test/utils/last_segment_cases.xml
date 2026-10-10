@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Two DIFFERENT cases, a.C.t and b.C.t, in one suite (#2052): a deterministic id keeps only
+     the last part of the classname, so both are testcase__C__t_…; legacy ids keep them apart. -->
+<testsuite name="S" tests="2" errors="0" failures="0" skipped="0" time="0.2">
+  <testcase classname="a.C" name="t" time="0.1"/>
+  <testcase classname="b.C" name="t" time="0.1"/>
+</testsuite>

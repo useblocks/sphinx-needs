@@ -20,10 +20,8 @@ from sphinx.util import logging
 # `sphinx_needs.api` entirely (measured against 8.5.0).
 from sphinx_needs.api.need import _make_hashed_id
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_test_reports.exceptions import (
-    SphinxError,
-    TestReportFileNotSetError,
-)
+from sphinx_needs.exceptions import InvalidNeedException
+from sphinx_test_reports.exceptions import SphinxError
 from ub_test_reports.identity import deterministic_case_id
 from ub_test_reports.jsonparser import JsonParser
 from ub_test_reports.junitparser import JUnitParser, ReportReadError
@@ -104,6 +102,78 @@ def find_suite(results: list[dict[str, Any]], name: str) -> dict[str, Any] | Non
     return None
 
 
+#: Who minted an id of an ``:auto_suites:`` / ``:auto_cases:`` expansion: ``("suite",
+#: name)`` or ``("case", classname, name, suite id, suite name)`` -- the suite the case is
+#: directly in, by its (unique) id and its name. One registry per expansion, suites and
+#: cases together (ubCode's ``Planner.seen``).
+IdHolder = tuple[str, ...]
+
+
+def _holder_name(holder: IdHolder) -> str:
+    """The name of what minted an id: a suite's name, or a case's."""
+    return holder[1] if holder[0] == "suite" else holder[2]
+
+
+def suite_collision(suite_id: str, first: IdHolder, name: str) -> str:
+    """The ``duplicate_id`` text for a suite whose id ``first`` minted already.
+
+    Chosen on whether the two claimants' NAMES are equal, never on the id scheme: two
+    suites of one name collide at any length, two different names only in one slice.
+    """
+    if first == ("suite", name):
+        return (
+            f"Suite ID {suite_id} already exists by {name} ({name}): the report holds two "
+            f"suites named {name}; only the first is expanded"
+        )
+    return (
+        f"Suite ID {suite_id} already exists by {_holder_name(first)} ({name}); "
+        "raise tr_suite_id_length"
+    )
+
+
+def case_collision(
+    case_id: str,
+    first: IdHolder,
+    case: IdHolder,
+    deterministic: bool,
+) -> str:
+    """The ``duplicate_id`` text for a case (``case``, an :data:`IdHolder`) whose id
+    ``first`` minted already -- ubCode's texts (``case_collision`` in its
+    ``ubc_test_reports/src/expansion.rs``), with this extension's option names.
+
+    The same ``classname`` and ``name`` in two suites (deterministic ids do not depend on
+    the suite); the same twice in one suite; two different cases that share a
+    deterministic id (it keeps only the last dot-separated part of the classname); two
+    different cases in one ``tr_case_id_length`` slice of a legacy id. "Only the first is
+    expanded" also when sphinx-needs refused the first (another directive held its id):
+    the registry records an id before the need is created -- rare, left as is.
+    """
+    _, classname, name, suite_id, suite_name = case
+    if first[0] == "case" and first[1:3] == (classname, name):
+        if first[3] != suite_id:
+            return (
+                f"Case ID exists: {case_id}: the report holds the case {classname}.{name} "
+                f"in two suites ({first[4]} and {suite_name}); with deterministic ids "
+                "they share one id \N{EM DASH} switch tr_deterministic_case_ids off to "
+                "keep them apart, or only the first is expanded"
+            )
+        return (
+            f"Case ID exists: {case_id}: the report holds the case {classname}.{name} "
+            "twice; only the first is expanded"
+        )
+    if first[0] == "case" and deterministic:
+        return (
+            f"Case ID exists: {case_id}: the cases {first[1]}.{first[2]} and "
+            f"{classname}.{name} share a deterministic id (a deterministic id keeps only "
+            "the last part of the classname and joins it to the name with `__`); only "
+            "the first is expanded"
+        )
+    return (
+        f"Case ID exists: {case_id}; raise tr_case_id_length, or switch "
+        "tr_deterministic_case_ids on"
+    )
+
+
 def new_section(state: RSTState, title_text: str) -> nodes.section:
     """A section titled ``title_text``, registered the way an authored one is.
 
@@ -146,8 +216,8 @@ class TestCommonDirective(Directive):
         # directives, so `test_file_given = self.test_file[:]` raised TypeError on a
         # directive written without `:file:` before the guard in `load_test_file` could
         # ever be reached -- that guard was dead code. The slice is now a no-op and the
-        # guard is live, so such a directive raises TestReportFileNotSetError, a
-        # SphinxError.
+        # guard is live: such a directive is an `option_missing` refusal (#2052; it raised
+        # TestReportFileNotSetError, a SphinxError, until then).
         self.test_file: str = ""
         #: Whatever the JUnit/JSON parser returned -- untyped by construction.
         self.results: Any = None
@@ -158,6 +228,10 @@ class TestCommonDirective(Directive):
         self.test_file_given: str = ""
         #: Why ``load_test_file`` returned ``None``: the text it warned, for the box.
         self.report_error: str = ""
+        #: The first option the directive refuses, as ``(subtype, message)``: recorded by
+        #: ``prepare_basic_options`` (and the directive's own option checks), reported by
+        #: ``run`` through ``refuse`` before any need is created.
+        self.refusal: tuple[str, str] | None = None
         self.test_links: str = ""
         self.test_tags: str = ""
         self.test_status: str | None = None
@@ -210,15 +284,45 @@ class TestCommonDirective(Directive):
             prefix=self.app.config.tr_case[1],
         )
 
+    def refuse(self, subtype: str, message: str) -> list[nodes.Node]:
+        """Warn ``message`` as ``test_reports.<subtype>`` and return the error box."""
+        warn(self, subtype, message)
+        return [error_node(message)]
+
+    def refuse_option(self, subtype: str, message: str) -> None:
+        """Record an option refusal; the first one recorded is the one reported."""
+        if self.refusal is None:
+            self.refusal = (subtype, message)
+
+    def need_refused(self, error: InvalidNeedException) -> list[nodes.Node]:
+        """Report sphinx-needs' refusal of this directive's need, and return the box.
+
+        An id the directive did not author -- generated, because no ``:id:`` was written --
+        gets the way out added. An expansion hands its directives the ids it minted as
+        options, so theirs count as authored: the expansion's own collisions are its
+        ``duplicate_id`` warnings, and this is another directive holding the id.
+        """
+        # sphinx-needs' own `need` directive's shape, without its `[duplicate_id]`-style
+        # tag, which would read like a subtype of this family.
+        message = f"Need could not be created: {error.message}"
+        if "id" not in self.options:
+            message = message.rstrip(".") + "; give the directive an :id: of its own"
+        return self.refuse("need", message)
+
     def collect_extra_options(self):
-        """Collect any extra options and their values that were specified in the directive"""
+        """Collect any extra options and their values that were specified in the directive.
+
+        docutils lowercases an option's name before it looks it up, so a configured name is
+        registered and read in lower case, and stored under the name it was configured with
+        -- the need field's name.
+        """
         tr_extra_options = getattr(self.app.config, "tr_extra_options", [])
         self.extra_options = {}
 
         if tr_extra_options:
             for option_name in tr_extra_options:
-                if option_name in self.options:
-                    self.extra_options[option_name] = self.options[option_name]
+                if option_name.lower() in self.options:
+                    self.extra_options[option_name] = self.options[option_name.lower()]
 
     def load_test_file(self):
         """
@@ -231,7 +335,11 @@ class TestCommonDirective(Directive):
             directive's error box.
         """
         if not self.test_file:
-            raise TestReportFileNotSetError("Option test_file must be set.")
+            # `prepare_basic_options` has recorded this refusal; a directive reports it
+            # before reading. Said here too for a caller that did not.
+            self.report_error = "Option test_file must be set."
+            warn(self, "option_missing", self.report_error)
+            return None
 
         test_path = pathlib.Path(self.test_file)
         if not test_path.is_absolute():
@@ -263,6 +371,10 @@ class TestCommonDirective(Directive):
     def prepare_basic_options(self):
         """
         Reads and checks the needed basic data like name, id, links, status, ...
+
+        A ``:collapse:`` that is not true or false and a missing ``:file:`` are recorded in
+        ``refusal`` rather than raised; the directive reports it.
+
         :return: None
         """
         self.docname = self.state.document.settings.env.docname
@@ -303,9 +415,16 @@ class TestCommonDirective(Directive):
             elif self.collapse.upper() in ["FALSE", 0, "NO"]:
                 self.collapse = False
             else:
-                raise Exception("collapse attribute must be true or false")
+                self.refuse_option(
+                    "option_invalid", "collapse attribute must be true or false"
+                )
+                self.collapse = getattr(self.app.config, "needs_collapse_details", True)
         else:
             self.collapse = getattr(self.app.config, "needs_collapse_details", True)
+
+        # After `:collapse:`, the order the two used to raise in.
+        if not self.test_file:
+            self.refuse_option("option_missing", "Option test_file must be set.")
 
         # Also collect any extra options while we're at it
         self.collect_extra_options()

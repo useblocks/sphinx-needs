@@ -35,6 +35,14 @@ The suite that ``suite`` names, in which the case is looked up, is the first top
 else the first suite of that name nested at any depth, in report order (a suite before the suites nested in it).
 A name used under two different parents always finds the first one; there is no syntax to name a suite by its path.
 
+A ``suite``, or ``case`` / ``classname``, that selects nothing is a ``test_reports.suite_not_found`` /
+``test_reports.case_not_found`` warning located on the directive,
+and a missing ``suite``, ``file``, or both ``case`` and ``classname``, a ``test_reports.option_missing`` one;
+either way an error box takes the place of the need, no need is created, and the build goes on (see :ref:`tr_warnings`).
+A ``test-case`` without an ``:id:`` whose generated ID another need already holds
+-- with :ref:`tr_deterministic_case_ids`, the case an ``:auto_cases:`` expansion created already --
+is a ``test_reports.need`` warning that says to give the directive an ``:id:`` of its own.
+
 As different test-frameworks handle the values for test-name and test-classname differently, it is allowed
 to specify only ``case`` or ``classname``. It depends on the loaded test-data, if this results in a unique test-case
 or if it selects only the first found test case. The best case is to always try to specify both values, ``case`` and

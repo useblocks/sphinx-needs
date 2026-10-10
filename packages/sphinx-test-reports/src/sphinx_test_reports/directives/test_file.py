@@ -6,13 +6,16 @@ from docutils.parsers.rst import directives
 
 import sphinx_test_reports.directives.test_suite
 from sphinx_needs.api import add_need
+from sphinx_needs.exceptions import InvalidNeedException
 from sphinx_needs.utils import add_doc
 from sphinx_test_reports.directives.test_common import (
+    IdHolder,
     TestCommonDirective,
     _links_with,
     error_node,
+    suite_collision,
+    warn,
 )
-from sphinx_test_reports.exceptions import TestReportIncompleteConfigurationError
 
 
 class TestFile(nodes.General, nodes.Element):
@@ -42,10 +45,12 @@ class TestFileDirective(TestCommonDirective):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        #: Every suite id this expansion minted, at every depth, with its suite's name. Keyed
-        #: on the full id, which carries the parent's: two suites named alike under
-        #: different parents do not collide, two of one name under one parent do.
-        self.suite_ids: dict[str, str] = {}
+        #: Every id this expansion minted -- suites at every depth AND their cases -- with
+        #: who minted it. Keyed on the full id, which for a suite carries the parent's: two
+        #: suites named alike under different parents do not collide, two of one name under
+        #: one parent do. Handed to each suite directive the expansion runs, so a case id is
+        #: checked against the whole report, not one suite's.
+        self.seen: dict[str, IdHolder] = {}
 
     def _expand_suites(
         self,
@@ -71,12 +76,16 @@ class TestFileDirective(TestCommonDirective):
                 .upper()[: self.app.config.tr_suite_id_length]
             )
 
-            if suite_id not in self.suite_ids:
-                self.suite_ids[suite_id] = suite["name"]
-            else:
-                raise Exception(
-                    f"Suite ID {suite_id} already exists by {self.suite_ids[suite_id]} ({suite['name']})"
+            # First wins: a later suite of the same id is not created, and neither are its
+            # cases and nested suites -- the check sits before its directive exists.
+            if suite_id in self.seen:
+                warn(
+                    self,
+                    "duplicate_id",
+                    suite_collision(suite_id, self.seen[suite_id], suite["name"]),
                 )
+                continue
+            self.seen[suite_id] = ("suite", suite["name"])
 
             # A copy per suite: the dict is handed on to the suite's cases and nested
             # suites, and a shared one would carry this suite's id and links into its
@@ -102,7 +111,7 @@ class TestFileDirective(TestCommonDirective):
                 )
             )
 
-            nodes_ += suite_directive.run(suite=suite)
+            nodes_ += suite_directive.run(suite=suite, seen=self.seen)
             nodes_ += self._expand_suites(
                 suite.get("testsuite_nested", []), suite_id, options
             )
@@ -110,6 +119,8 @@ class TestFileDirective(TestCommonDirective):
 
     def run(self):
         self.prepare_basic_options()
+        if self.refusal is not None:
+            return self.refuse(*self.refusal)
         results = self.load_test_file()
 
         # The report does not exist or cannot be read: `load_test_file` has warned.
@@ -133,32 +144,38 @@ class TestFileDirective(TestCommonDirective):
             self.report_file_field(): self.test_file_given,
             **self.extra_options,
         }
-        main_section += add_need(
-            self.app,
-            self.state,
-            docname,
-            self.lineno,
-            need_type=self.need_type,
-            title=self.test_name,
-            id=self.test_id,
-            content=self.test_content,
-            links=self.test_links,
-            tags=self.test_tags,
-            status=self.test_status,
-            collapse=self.collapse,
-            suites=suites,
-            cases=cases,
-            passed=passed,
-            skipped=skipped,
-            failed=failed,
-            errors=errors,
-            **report_fields,
-        )
+        try:
+            main_section += add_need(
+                self.app,
+                self.state,
+                docname,
+                self.lineno,
+                need_type=self.need_type,
+                title=self.test_name,
+                id=self.test_id,
+                content=self.test_content,
+                links=self.test_links,
+                tags=self.test_tags,
+                status=self.test_status,
+                collapse=self.collapse,
+                suites=suites,
+                cases=cases,
+                passed=passed,
+                skipped=skipped,
+                failed=failed,
+                errors=errors,
+                **report_fields,
+            )
+        except InvalidNeedException as error:
+            return self.need_refused(error)
 
+        # Said AFTER the file's need is created, which stays; nothing is expanded.
         if "auto_cases" in self.options and "auto_suites" not in self.options:
-            raise TestReportIncompleteConfigurationError(
+            warn(
+                self,
+                "option_invalid",
                 "option auto_cases must be used together with "
-                "auto_suites for test-file directives."
+                "auto_suites for test-file directives.",
             )
 
         if "auto_suites" in self.options:

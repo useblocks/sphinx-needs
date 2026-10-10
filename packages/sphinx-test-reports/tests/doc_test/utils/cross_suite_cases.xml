@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Two suites, each holding the case C.t (#2052): legacy ids keep them apart (the suite's id
+     is part of the case's), deterministic ids do not (they are suite-independent). -->
+<testsuites>
+  <testsuite name="A" tests="1" errors="0" failures="0" skipped="0" time="0.1">
+    <testcase classname="C" name="t" time="0.1"/>
+  </testsuite>
+  <testsuite name="B" tests="1" errors="0" failures="0" skipped="0" time="0.1">
+    <testcase classname="C" name="t" time="0.1"/>
+  </testsuite>
+</testsuites>

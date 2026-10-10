@@ -221,6 +221,13 @@ These options also have to be registered in either needs_extra_options or needs_
    # Define as regular options
    needs_extra_options = ['more_info', 'priority']
 
+Write them on a directive in lower case: docutils lowercases an option's name before it looks it up,
+so a name configured as ``Owner`` is written ``:owner:`` (``:Owner:`` works too, being read the same way),
+and the need field keeps the configured spelling, ``Owner``.
+The build says so at its start, once per such name.
+Two names that differ only in case cannot both be written on a directive, and are a configuration error;
+so is a name the directives already have as an option of their own (``Status`` or ``status``, ``Tags``, ``File``, ...).
+
 You can then use these options in your directives:
 
 .. code-block:: rst
@@ -543,7 +550,7 @@ or one member of it (``"test_reports.report_missing"``),
 for instance in a project that builds with ``-W``.
 Sphinx 8 and later print the type after the message, as ``[test_reports.report_missing]``.
 
-A failure in a directive -- a report it cannot find or read -- is one such warning,
+A failure in a directive -- a report it cannot find or read, an option it refuses -- is one such warning,
 located on the directive (the file it is written in, an included one too, and its line),
 and the directive shows an error box with the same text where its need or table would have been;
 the build goes on.
@@ -570,6 +577,25 @@ so one name silences the same problem in both tools.
 ``test_reports.env_not_present``, ``test_reports.env_key_not_present``
    ``test-env``'s ``:env:`` names an environment the file does not hold,
    or ``:data:`` a variable that a shown environment lacks.
+
+``test_reports.option_missing``
+   A required option is missing:
+   ``:file:``, ``:suite:`` on ``test-suite`` and ``test-case``, or ``:case:`` / ``:classname:`` on ``test-case``.
+
+``test_reports.option_invalid``
+   An option value is refused:
+   ``:collapse:`` that is neither true nor false,
+   or ``:auto_cases:`` without ``:auto_suites:`` (the file's need is still created; nothing is expanded).
+
+``test_reports.suite_not_found``, ``test_reports.case_not_found``
+   ``:suite:``, or ``:case:`` with ``:classname:``, selects nothing in the report.
+
+``test_reports.duplicate_id``
+   An ``:auto_suites:`` / ``:auto_cases:`` expansion produced one ID twice:
+   the first need is kept, the later one is not created.
+
+``test_reports.need``
+   Sphinx-Needs refused the need, for instance because another directive already holds its ID.
 
 ``test_reports.unknown_key``, ``test_reports.missing_config``
    The declarative configuration: see :ref:`tr_config_from_toml` and the warnings above it.

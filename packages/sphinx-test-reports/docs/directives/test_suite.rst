@@ -30,6 +30,10 @@ The suite that ``suite`` names is the first top-level suite of that name in the 
 else the first suite of that name nested at any depth, in report order (a suite before the suites nested in it).
 A name used under two different parents always finds the first one; there is no syntax to name a suite by its path.
 
+A ``suite`` that selects nothing is a ``test_reports.suite_not_found`` warning located on the directive,
+and a missing ``suite`` or ``file`` a ``test_reports.option_missing`` one;
+either way an error box takes the place of the need, no need is created, and the build goes on (see :ref:`tr_warnings`).
+
 ``test-suite`` creates a need of type ``testsuite`` and adds the following options automatically:
 
 * **cases**: Amount of found cases in test file.
