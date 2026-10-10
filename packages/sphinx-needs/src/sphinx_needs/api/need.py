@@ -1429,9 +1429,16 @@ def _copy_links(
     links: dict[str, LinksLiteralValue | LinksFunctionArray | None],
     schema: FieldsSchema,
 ) -> None:
-    """Implement 'copy' logic for links."""
+    """Implement 'copy' logic for links.
+
+    Nothing is copied into a derived ``links``: it holds what its rule computes.
+    """
     if "links" not in links:
         return  # should not happen, but be defensive
+    if (target := schema.get_link_field("links")) is not None and (
+        target.derive is not None
+    ):
+        return
     copy_links: list[
         NeedLink | DynamicFunctionParsed | VariantFunctionParsed | VariantDataParsed
     ] = []

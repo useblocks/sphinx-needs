@@ -55,6 +55,7 @@ from sphinx_needs.derive import (
     DeriveRule,
     beside_message,
     check_derive_rules,
+    copy_problem,
     core_message,
     invalid_message,
     parse_derive,
@@ -1603,8 +1604,9 @@ def _report_derive_problems(
     A rule that cannot be read is replaced by its :class:`DeriveInvalid` marker, so the
     field stays derived (closed to authors and needextend) and holds its empty value.
     One ``needs.derive_invalid`` warning per rule (a rule that cannot be read is
-    reported for that alone, not for a default beside it), in a fixed order: the core
-    fields, then the fields, then the link types, each by name.
+    reported for that alone, not for a default beside it, or a link type copying into
+    a derived ``links``), in a fixed order: the core fields, then the fields, then the
+    link types, each by name.
     """
     checked = {(p.on_link, p.name): p for p in check_derive_rules(schema)}
     for (on_link, name), problem in checked.items():
@@ -1620,6 +1622,8 @@ def _report_derive_problems(
     core = sorted((p for p in read_problems if p.core), key=lambda p: p.name)
     findings = {(p.on_link, p.name): p for p in read_problems if not p.core}
     findings.update(checked)
+    if (True, "links") not in findings and (copied := copy_problem(schema)) is not None:
+        findings[(True, "links")] = copied
     for problem in [*core, *(findings[key] for key in sorted(findings))]:
         log_warning(LOGGER, problem.message, "derive_invalid", None)
 

@@ -433,6 +433,66 @@ def test_derive_in_conf_py(test_app):
     assert "readOnly" not in properties["hours"]
 
 
+CONF_PY_COPY_INTO_LINKS = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_links = {
+    "links": {"derive": {"kind": "links", "where": "type == 'test'"}},
+    "tests": {"copy": True},
+    "satisfies": {"copy": True},
+    "mentions": {},
+}
+"""
+
+COPY_INTO_LINKS_INDEX = """\
+Copy into links
+===============
+
+.. req:: A requirement
+   :id: REQ_001
+
+.. spec:: Satisfies and tests it
+   :id: SPEC_001
+   :satisfies: REQ_001
+   :tests: REQ_001
+   :mentions: REQ_001
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), CONF_PY_COPY_INTO_LINKS),
+                (Path("index.rst"), COPY_INTO_LINKS_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_copy_into_derived_links_is_ignored(test_app):
+    """A link type with ``copy = true`` copies nothing into a derived ``links``.
+
+    ``links`` holds what its rule computes, so the copy, a second writer, is not
+    made, and it is one ``needs.derive_invalid`` at the ``links`` rule, naming every
+    copying link type; the rule applies, and the copying link types keep their links.
+    """
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "WARNING: Invalid derive of link type 'links': kind 'links': 'links' is "
+        "derived; the copy of the link types 'satisfies' and 'tests' into it is "
+        "ignored; the rule applies [needs.derive_invalid]",
+    ]
+    spec = _built(app)["needs"]["SPEC_001"]
+    assert spec["links"] == []
+    assert spec["satisfies"] == ["REQ_001"]
+    assert spec["tests"] == ["REQ_001"]
+    assert spec["mentions"] == ["REQ_001"]
+
+
 @pytest.mark.parametrize(
     "raw,on_link,expected",
     [

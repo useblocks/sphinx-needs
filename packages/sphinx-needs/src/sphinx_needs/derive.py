@@ -359,6 +359,33 @@ def beside_message(name: str, *, on_link: bool, rule: Derive, keys: list[str]) -
     )
 
 
+def copy_problem(schema: FieldsSchema) -> DeriveProblem | None:
+    """The finding of a derived ``links`` that link types are declared to copy into.
+
+    A link type with ``copy = true`` copies its links into ``links``; when ``links``
+    holds what a rule computes, nothing is copied, and that is reported at the rule,
+    naming every copying link type. The rule applies.
+    """
+    links = schema.get_link_field("links")
+    if links is None or links.derive is None:
+        return None
+    copying = sorted(
+        link.name
+        for link in schema.iter_link_fields()
+        if link.copy and link.name != "links"
+    )
+    if not copying:
+        return None
+    named = " and ".join(repr(name) for name in copying)
+    what = "link types" if len(copying) > 1 else "link type"
+    return DeriveProblem(
+        "links",
+        True,
+        f"Invalid derive of link type 'links': {links.derive.describe()}: 'links' is "
+        f"derived; the copy of the {what} {named} into it is ignored; the rule applies",
+    )
+
+
 def check_derive_rules(schema: FieldsSchema) -> list[DeriveProblem]:
     """Check every rule of the schema against the declared fields and link types.
 

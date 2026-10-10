@@ -114,7 +114,8 @@ Improvements
   is ignored and reported as ``needs.derive_authored``, and it takes no default.
   A rule is checked when the configuration is read: one that cannot be read is one ``needs.derive_invalid``
   warning, naming the kind and the role, and the field holds its empty value;
-  a ``default`` or ``predicates`` beside a rule is reported the same way, and ignored.
+  a ``default`` or ``predicates`` beside a rule is reported the same way, and ignored,
+  as is a link type's ``copy = true`` into a derived ``links``.
   The schema in :ref:`needs.json <needs_builder_format>` marks a derived field or link type ``"readOnly": true``,
   and a need created by ``needimport`` keeps the derived values it carries.
   A rule on a core field, or on the ``parent_needs`` link type, is not available in this release, and is reported.

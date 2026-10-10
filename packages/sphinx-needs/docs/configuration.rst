@@ -645,6 +645,8 @@ The field stays derived: it cannot be set, and it holds its empty value
 (``None``, or for a field that is not nullable ``""``, ``0``, ``0.0``, ``False`` or ``[]``; no links for a link type).
 A ``default`` or ``predicates`` beside ``derive`` is reported as ``needs.derive_invalid`` too, and ignored;
 the rule applies.
+So is a link type declared with ``copy = true`` while ``links`` is derived:
+nothing is copied into ``links``, which holds what its rule computes.
 To silence either warning, add its type to Sphinx's ``suppress_warnings``:
 
 .. code-block:: python
@@ -681,6 +683,7 @@ Each configured link can define:
 - ``outgoing`` (optional): Outgoing text, to use for outgoing links. E.g. "blocks". Default: "<name>".
 - ``copy`` (optional): True/False. If True, the links will be copied also to the common link-list (link type ``links``).
   Default: False.
+  Nothing is copied into a :ref:`derived <needs_derive>` ``links``, and the ``copy`` is reported.
 - ``allow_dead_links`` (optional): True/False. If True, dead links are allowed and do not throw a warning.
   See :ref:`allow_dead_links` for details. Default: False.
 - ``style`` (optional): A plantuml style description, e.g. "#FFCC00". Used for :ref:`needflow`. See :ref:`links_style`.
