@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791632453969,
+  "lastUpdate": 1791659523681,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -24084,6 +24084,42 @@ window.BENCHMARK_DATA = {
             "value": 35.45883885799992,
             "unit": "s",
             "extra": "Commit: 568cdb3af4b6dffb83c58de7fc52076cfe363419\nBranch: master\nTime: 2026-10-10T13:39:53+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "87f0a9a2fa321f60ca29669017b86c2b8c1c5a8d",
+          "message": "🐛 sphinx-test-reports: the need directives warn instead of crashing; duplicate ids keep the first; extra options are case-blind (#2162)\n\n**What**\n- Option refusals (`:file:`, `:collapse:`, `:suite:`, `:case:` /\n`:classname:`, a selection that finds nothing) are\nlocated `option_missing` / `option_invalid` / `suite_not_found` /\n`case_not_found` warnings with the texts kept, and\nan error box; no need. `:auto_cases:` alone warns after the file's need.\n- One id registry per expansion for suites and cases: a duplicate is a\n`duplicate_id` warning with a cause-specific\nhint; the first need stands, the later one (a suite with its cases and\nnested suites) is not created.\n- sphinx-needs' refusal of a need is a `need` warning (`Need could not\nbe created: …`, sphinx-needs' own words) and a\nbox, with \"give the directive an :id: of its own\" for a generated id.\n`test-report` on a report it cannot read\nwarns once and generates nothing; a warning of the `test-file` a\n`test-report` generates is located on the\n  `test-report`.\n- `tr_extra_options` names are registered lower-case and stored under\nthe configured name (#2115); a name the\ndirectives already have as an option (`Status`, `status`, …) is a\nconfiguration error.\n\n**Why** — #2052's remaining rows: bare `Exception`s, raised\n`SphinxError`s and an uncaught `InvalidNeedException`\nended the build; #2115: a capitalised extra option could never be\nwritten.\n\n**ubCode parity** — first-wins and the per-expansion registry are\nubCode's `Planner`\n(`rust/ubc_test_reports/src/expansion.rs`), and so are the case texts,\nincluding the two for deterministic ids (one\ncase in two suites; `a.C.t` / `b.C.t` sharing an id). Registered: ubCode\nseeds the registry with the file's own id\n(the oracle leaves that to sphinx-needs' `need` warning); a directive\nwith two mistakes reports the first; fix it and\nthe next appears (docutils' own rule; ubCode reports all at once); every\ngenerated line of a `test-report`, the\ndirective's body included, is located on the `test-report`'s line;\nubCode locates a body line on its own page line;\nthe box has no ubCode twin. #2115 follows the ruling on\nuseblocks/ubcode#3876.\n\n**Tests** — `tests/test_need_directive_errors.py`, fixtures\n`dup_suites.xml`, `dup_cases.xml`,\n`cross_suite_cases.xml`; three tests that pinned the old crashes now pin\nthe warnings.\n\nBranched from the report-errors pull request #2156 and rebased onto\nmaster after it and the test-env pull request #2161 merged (their\ncommits are already there; this PR carries only the need directives'\nwork).\n\nCloses #2052\nCloses #2115",
+          "timestamp": "2026-10-10T21:10:36+02:00",
+          "tree_id": "48cdf920b89458c921baa225c1572c1a55298849",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/87f0a9a2fa321f60ca29669017b86c2b8c1c5a8d"
+        },
+        "date": 1791659514667,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.10365616200000005,
+            "unit": "s",
+            "extra": "Commit: 87f0a9a2fa321f60ca29669017b86c2b8c1c5a8d\nBranch: master\nTime: 2026-10-10T21:10:36+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 53.895116333,
+            "unit": "s",
+            "extra": "Commit: 87f0a9a2fa321f60ca29669017b86c2b8c1c5a8d\nBranch: master\nTime: 2026-10-10T21:10:36+02:00"
           }
         ]
       }
