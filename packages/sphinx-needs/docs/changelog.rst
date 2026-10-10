@@ -50,6 +50,7 @@ Improvements
   now listed in its documentation.
 
 - ✨ Dynamic functions and variants are computed in dependency order,
+  a field can be derived by a rule declared in its configuration,
   and a value that cannot be computed is reported **(changed output)**
   (:issue:`2064`, :pr:`2080`, :pr:`2081`, :pr:`2134`, :pr:`2136`, :pr:`2143`)
 
@@ -101,6 +102,22 @@ Improvements
   A ``None`` result, such as a ``copy`` of an unset field or a failed ``check_linked_values``,
   adds nothing to a field: alone in a nullable string or array field it leaves the field unset,
   where it was stored as the text ``"None"``, or as ``[None]``, which schema validation then refused.
+
+  A field or link type can be :ref:`derived <needs_derive>`: a ``derive`` table on its
+  :ref:`needs_fields` or :ref:`needs_links` entry, in :file:`conf.py` or the TOML file,
+  names a kind and the kind's roles, and the rule computes the value for every need.
+  The kinds are ``copy``, ``sum``, ``count``, ``min``, ``max``, ``any``, ``all``, ``collect`` and ``hash`` on a field,
+  and ``links`` and ``content_links`` on a link type; the built-in functions are their per-need spellings
+  (:ref:`dynamic_functions_derived`).
+  A derived field is closed to authors: a value written for it in a need, or set by a ``needextend``,
+  is ignored and reported as ``needs.derive_authored``, and it takes no default.
+  A rule is checked when the configuration is read: one that cannot be read is one ``needs.derive_invalid``
+  warning, naming the kind and the role, and the field holds its empty value;
+  a ``default`` or ``predicates`` beside a rule is reported the same way, and ignored.
+  The schema in :ref:`needs.json <needs_builder_format>` marks a derived field or link type ``"readOnly": true``,
+  and a need created by ``needimport`` keeps the derived values it carries.
+  A rule on a core field is not available in this release, and is reported.
+  `ubCode`_ reads the same configuration and gives the same findings.
 
 - ✨ ``needextend`` gains ``:extend_priority:`` (default 500, lower applied first)
   (:issue:`1658`, :issue:`2064`, :pr:`2083`)

@@ -135,6 +135,15 @@ class NeedextendDirective(SphinxDirective):
             if (field_schema := needs_schema.get_any_field(key)) is None:
                 self._log_warning(f"Unknown option '{etype.value}{key}'")
                 continue
+            if field_schema.derive is not None:
+                what = "Link type" if isinstance(field_schema, LinkSchema) else "Field"
+                self._log_warning(
+                    f"{what} {key!r} is derived ({field_schema.derive.describe()}) "
+                    f"and cannot be set by a needextend; the option "
+                    f"'{etype.value}{key}' is ignored",
+                    "derive_authored",
+                )
+                continue
             if not field_schema.allow_extend:
                 self._log_warning(
                     f"Option '{etype.value}{key}' does not support extend operations."

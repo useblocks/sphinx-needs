@@ -266,9 +266,22 @@ def generate_need(
             f"Constraints {unknown_constraints!r} not in 'needs_constraints'.",
         )
 
+    # a need from outside the project's sources (imported, external) keeps the values
+    # of its derived fields, as data; any other need takes the rule's value, and what
+    # an author wrote in a derived field is ignored
+    from_outside = bool(
+        source.dict_repr["is_import"] or source.dict_repr["is_external"]
+    )
+
     extras_no_defaults: dict[str, FieldLiteralValue | FieldFunctionArray | None] = {}
     for extra_field in needs_schema.iter_extra_fields():
-        if extra_field.name not in kwargs:
+        if not extra_field.directive_option and (
+            not from_outside or kwargs.get(extra_field.name) is None
+        ):
+            if not from_outside:
+                _refuse_authored(extra_field, kwargs, location)
+            extras_no_defaults[extra_field.name] = _closed_field_value(extra_field)
+        elif extra_field.name not in kwargs:
             extras_no_defaults[extra_field.name] = None
         else:
             try:
@@ -287,7 +300,13 @@ def generate_need(
 
     links_no_defaults: dict[str, LinksLiteralValue | LinksFunctionArray | None] = {}
     for link_field in needs_schema.iter_link_fields():
-        if link_field.name not in kwargs:
+        if not link_field.directive_option and (
+            not from_outside or kwargs.get(link_field.name) is None
+        ):
+            if not from_outside:
+                _refuse_authored(link_field, kwargs, location)
+            links_no_defaults[link_field.name] = LinksLiteralValue([])
+        elif link_field.name not in kwargs:
             links_no_defaults[link_field.name] = None
         else:
             try:
@@ -517,6 +536,66 @@ def generate_need(
     return needs_info
 
 
+def _refuse_authored(
+    field_schema: FieldSchema | LinkSchema,
+    kwargs: Mapping[str, Any],
+    location: tuple[str | None, int | None] | None,
+) -> None:
+    """Report a value given for a field an author cannot set: a derived one.
+
+    The value, a literal or a ``[[…]]``, ``<<…>>`` or ``<{…}>``, is ignored.
+    """
+    if (value := kwargs.get(field_schema.name)) is None:
+        return
+    what = "Link type" if isinstance(field_schema, LinkSchema) else "Field"
+    rule = (
+        "derived"
+        if field_schema.derive is None
+        else f"derived ({field_schema.derive.describe()})"
+    )
+    log_warning(
+        logger,
+        f"{what} {field_schema.name!r} is {rule} and cannot be set in a need; "
+        f"the value {value!r} is ignored",
+        "derive_authored",
+        location,
+    )
+
+
+def _closed_field_value(field_schema: FieldSchema) -> FieldLiteralValue | None:
+    """The value of a field an author cannot set, at the need's creation.
+
+    A derived field holds its empty value: ``None`` when it is nullable, else the
+    empty value of its type.
+    """
+    if field_schema.nullable:
+        return None
+    return FieldLiteralValue(_typed_empty(field_schema))
+
+
+def _typed_empty(field_schema: FieldSchema) -> Any:
+    """The empty value of a field's type: ``""``, ``False``, ``0``, ``0.0`` or ``[]``.
+
+    :raises InvalidNeedException: If the field's type is unknown.
+    """
+    match field_schema.type:
+        case "string":
+            return ""
+        case "boolean":
+            return False
+        case "integer":
+            return 0
+        case "number":
+            return 0.0
+        case "array":
+            return []
+        case other:
+            raise InvalidNeedException(
+                "invalid_value",
+                f"Field {field_schema.name!r} has unknown type {other!r}.",
+            )
+
+
 def _unwrap_field_value(
     field_schema: FieldSchema,
     converted: FieldLiteralValue | FieldFunctionArray | None,
@@ -539,25 +618,7 @@ def _unwrap_field_value(
         return converted.value, None
     elif isinstance(converted, FieldFunctionArray):
         # Use a type-appropriate placeholder while the dynamic function is unresolved
-        if field_schema.nullable:
-            placeholder: Any = None
-        else:
-            match field_schema.type:
-                case "string":
-                    placeholder = ""
-                case "boolean":
-                    placeholder = False
-                case "integer":
-                    placeholder = 0
-                case "number":
-                    placeholder = 0.0
-                case "array":
-                    placeholder = []
-                case other:
-                    raise InvalidNeedException(
-                        "invalid_value",
-                        f"Field {field_schema.name!r} has unknown type {other!r}.",
-                    )
+        placeholder = None if field_schema.nullable else _typed_empty(field_schema)
         return placeholder, converted
     else:
         raise InvalidNeedException(

@@ -139,6 +139,9 @@ Schema
    :members: FieldsSchema, FieldSchema, FieldFunctionArray, LinksFunctionArray,
              FieldLiteralValue, LinkSchema, LinkDisplayConfig, LinksLiteralValue, AllowedTypes
 
+.. automodule:: sphinx_needs.derive
+   :members: DeriveRule, DeriveInvalid
+
 .. automodule:: sphinx_needs.schema.config
    :members: FieldStringSchemaType, FieldBooleanSchemaType,
              FieldIntegerSchemaType, FieldNumberSchemaType,

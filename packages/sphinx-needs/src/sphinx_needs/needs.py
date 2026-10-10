@@ -48,6 +48,17 @@ from sphinx_needs.defaults import (
     LAYOUTS,
     NEEDFLOW_CONFIG_DEFAULTS,
 )
+from sphinx_needs.derive import (
+    CORE_LINK_TYPES,
+    DeriveInvalid,
+    DeriveProblem,
+    DeriveRule,
+    beside_message,
+    check_derive_rules,
+    core_message,
+    invalid_message,
+    parse_derive,
+)
 from sphinx_needs.directives.list2need import List2Need, List2NeedDirective
 from sphinx_needs.directives.need import (
     NeedDirective,
@@ -799,6 +810,7 @@ def load_config(app: Sphinx, *_args: Any) -> None:
             predicates=option_params.get("predicates"),
             parse_variants=option_params.get("parse_variants"),
             parse_dynamic_functions=option_params.get("parse_dynamic_functions"),
+            derive=option_params.get("derive"),
             override=True,
         )
 
@@ -1233,6 +1245,18 @@ def _get_core_schema(data: CoreFieldParameters) -> tuple[dict[str, Any], bool]:
 def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> None:
     needs_config = NeedsSphinxConfig(app.config)
     schema = FieldsSchema()
+    #: the ``derive`` findings, reported once the schema is complete
+    derive_problems: list[DeriveProblem] = []
+    for name, params in needs_config._fields.items():
+        if (
+            name in NeedsCoreFields
+            and isinstance(params, dict)
+            and params.get("derive") is not None
+        ):
+            # a core field is not derived: the rule is reported and ignored
+            derive_problems.append(
+                DeriveProblem(name, False, core_message(name), core=True)
+            )
     for name, data in NeedsCoreFields.items():
         if not data.get("add_to_field_schema", False):
             continue
@@ -1319,6 +1343,8 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 and field_data.schema is None
                 and field_data.default is None
                 and field_data.nullable is None
+                # a derived field takes no default, so the advice does not apply
+                and field_data.derive is None
             ):
                 log_warning(
                     LOGGER,
@@ -1354,6 +1380,14 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 if field_data.parse_dynamic_functions is None
                 else field_data.parse_dynamic_functions
             )
+            derive = (
+                None
+                if field_data.derive is None
+                else parse_derive(field_data.derive, on_link=False)
+            )
+            # a derived field is computed: an author cannot set it, nor a needextend,
+            # and it takes no default
+            authored = derive is None
             field = FieldSchema(
                 name=name,
                 description=field_data.description,
@@ -1364,20 +1398,44 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 default=None
                 if not back_compatible or field_data.schema is not None
                 else FieldLiteralValue(""),
-                allow_defaults=True,
-                allow_extend=True,
+                allow_defaults=authored,
+                allow_extend=authored,
                 parse_dynamic_functions=parse_dynamic_functions,
                 parse_variants=parse_variants,
-                directive_option=True,
+                directive_option=authored,
+                derive=derive,
             )
-            if field_data.default is not None:
-                _set_default_on_field(
-                    field, field_data.default, field_data.source, allow_coercion=True
+            if derive is not None:
+                derive_problems.extend(
+                    _derive_parse_problems(
+                        name,
+                        False,
+                        derive,
+                        beside=[
+                            key
+                            for key, value in (
+                                ("default", field_data.default),
+                                ("predicates", field_data.predicates),
+                            )
+                            if value is not None
+                        ],
+                    )
                 )
-            if field_data.predicates is not None:
-                _set_predicates_on_field(
-                    field, field_data.predicates, field_data.source, allow_coercion=True
-                )
+            else:
+                if field_data.default is not None:
+                    _set_default_on_field(
+                        field,
+                        field_data.default,
+                        field_data.source,
+                        allow_coercion=True,
+                    )
+                if field_data.predicates is not None:
+                    _set_predicates_on_field(
+                        field,
+                        field_data.predicates,
+                        field_data.source,
+                        allow_coercion=True,
+                    )
             schema.add_extra_field(field)
         except Exception as exc:
             raise NeedsConfigException(f"Invalid field {name!r}: {exc}") from exc
@@ -1418,37 +1476,60 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 if key in link:
                     display_kwargs[key] = link[key]
             display_config = LinkDisplayConfig(**display_kwargs)
+            derive = None
+            if (raw_derive := link.get("derive")) is not None:
+                if name in CORE_LINK_TYPES:
+                    # a core link type is not derived: the rule is reported and ignored
+                    derive_problems.append(
+                        DeriveProblem(name, True, core_message(name), core=True)
+                    )
+                else:
+                    derive = parse_derive(raw_derive, on_link=True)
+            authored = derive is None
             link_field = LinkSchema(
                 name=name,
                 description=link.get("description", "Link field"),
                 schema=_schema,
                 default=LinksLiteralValue([]),
-                allow_defaults=True,
-                allow_extend=True,
+                allow_defaults=authored,
+                allow_extend=authored,
                 parse_dynamic_functions=link.get(
                     "parse_dynamic_functions", needs_config._parse_dynamic_functions
                 ),
                 parse_variants=link.get("parse_variants", False),
                 parse_conditions=link.get("parse_conditions", True),
-                directive_option=True,
+                directive_option=authored,
                 display=display_config,
                 copy=link.get("copy", False),
                 allow_dead_links=link.get("allow_dead_links", False),
+                derive=derive,
             )
-            if "default" in link:
-                _set_default_on_field(
-                    link_field,
-                    link["default"],
-                    config_source,
-                    allow_coercion=True,
+            if derive is not None:
+                derive_problems.extend(
+                    _derive_parse_problems(
+                        name,
+                        True,
+                        derive,
+                        beside=[
+                            key for key in ("default", "predicates") if key in link
+                        ],
+                    )
                 )
-            if "predicates" in link:
-                _set_predicates_on_field(
-                    link_field,
-                    link["predicates"],
-                    config_source,
-                    allow_coercion=True,
-                )
+            else:
+                if "default" in link:
+                    _set_default_on_field(
+                        link_field,
+                        link["default"],
+                        config_source,
+                        allow_coercion=True,
+                    )
+                if "predicates" in link:
+                    _set_predicates_on_field(
+                        link_field,
+                        link["predicates"],
+                        config_source,
+                        allow_coercion=True,
+                    )
             schema.add_link_field(link_field)
         except Exception as exc:
             raise NeedsConfigException(f"Invalid link {name!r}: {exc}") from exc
@@ -1481,7 +1562,64 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             schema, "needs_global_options", name, default_config, allow_coercion=True
         )
 
+    _report_derive_problems(schema, derive_problems)
+
     SphinxNeedsData(env)._set_schema(schema)
+
+
+def _derive_parse_problems(
+    name: str, on_link: bool, derive: DeriveRule | DeriveInvalid, *, beside: list[str]
+) -> list[DeriveProblem]:
+    """The finding of a rule as read: it cannot be read, or a default is beside it.
+
+    One finding per rule: a rule that cannot be read is reported for that alone.
+    """
+    if isinstance(derive, DeriveInvalid):
+        return [
+            DeriveProblem(
+                name,
+                on_link,
+                invalid_message(name, on_link=on_link, reason=derive.reason),
+            )
+        ]
+    if beside:
+        return [
+            DeriveProblem(
+                name,
+                on_link,
+                beside_message(name, on_link=on_link, rule=derive, keys=beside),
+            )
+        ]
+    return []
+
+
+def _report_derive_problems(
+    schema: FieldsSchema, read_problems: list[DeriveProblem]
+) -> None:
+    """Check the rules against the complete schema, and report every finding.
+
+    A rule that cannot be read is replaced by its :class:`DeriveInvalid` marker, so the
+    field stays derived (closed to authors and needextend) and holds its empty value.
+    One ``needs.derive_invalid`` warning per rule (a rule that cannot be read is
+    reported for that alone, not for a default beside it), in a fixed order: the core
+    fields, then the fields, then the link types, each by name.
+    """
+    checked = {(p.on_link, p.name): p for p in check_derive_rules(schema)}
+    for (on_link, name), problem in checked.items():
+        target = (
+            schema.get_link_field(name) if on_link else schema.get_extra_field(name)
+        )
+        assert target is not None, "a checked rule is on a field of the schema"
+        object.__setattr__(
+            target,
+            "derive",
+            DeriveInvalid(getattr(target.derive, "kind", None), problem.reason),
+        )
+    core = sorted((p for p in read_problems if p.core), key=lambda p: p.name)
+    findings = {(p.on_link, p.name): p for p in read_problems if not p.core}
+    findings.update(checked)
+    for problem in [*core, *(findings[key] for key in sorted(findings))]:
+        log_warning(LOGGER, problem.message, "derive_invalid", None)
 
 
 class _DefaultsDictType(TypedDict, total=False):

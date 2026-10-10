@@ -126,6 +126,51 @@ links_from_content
 .. autofunction:: sphinx_needs.functions.common.links_from_content
 
 
+.. _dynamic_functions_derived:
+
+Derived fields: the declared form
+---------------------------------
+
+.. versionadded:: 9.0.0
+
+A built-in call computes a value for the one need it is written in.
+A :ref:`derived field <needs_derive>` declares the same computation once, in :ref:`needs_fields` or :ref:`needs_links`,
+for every need of the project:
+
+.. code-block:: toml
+
+   [needs.fields.total_hours]
+   schema = { type = "number" }
+   derive = { kind = "sum", field = "hours", over = "links" }
+
+is the declared form of ``:total_hours: [[calc_sum("hours", links_only=True)]]`` written in every need,
+and both are computed in the same step (see :ref:`needs_processing_order`): a declared rule is the field's value,
+as a call written in it would be, but an author cannot set the field.
+The built-in functions are the per-need spellings of the kinds:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 46 54
+
+   * - inline call
+     - the kind it spells
+   * - ``copy("x")``, ``copy("x", "ID")``
+     - ``copy`` with ``field = "x"``, and ``from = "ID"``
+   * - ``copy("x", filter=…)``
+     - no declared form: the lowest-id need the filter keeps, read from every need
+   * - ``calc_sum("x", links_only=True)``
+     - ``sum`` with ``field = "x"`` and ``over = "links"``; its ``filter`` is the ``where``
+   * - ``calc_sum("x")``, ``calc_sum("x", filter=…)``
+     - no declared form: a sum over every need
+   * - ``check_linked_values(result, "x", values, filter, one_hit)``
+     - ``all`` over ``links`` (``any`` with ``one_hit``), with the ``test`` ``x in values`` and the ``where`` ``filter``,
+       giving ``result``; with ``one_hit``, ``result`` even when no linked need matches, which ``any`` does not
+   * - ``links_from_content()``, ``links_from_content("ID", filter=…)``
+     - ``content_links``, with ``from = "ID"`` and the ``where`` ``filter``
+
+The ``join`` role, which will spell sphinx-test-reports' ``tr_link``, is reserved for a later release:
+a rule naming it is reported as ``needs.derive_invalid``.
+
 Develop own functions
 ---------------------
 
