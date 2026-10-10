@@ -662,6 +662,8 @@ after every other field, every other kind with the other fields; each after ever
   a link to a :ref:`need part <need_part>` is its need, and a link to no need is skipped.
   ``over = "<t>_back"``: the needs that link to this need (or to one of its parts), in need-id order, each once.
   ``where`` drops the candidates it does not hold on, then ``test`` is tested on the others.
+  A ``where`` or ``test`` that cannot be evaluated on a candidate (a field the candidate lacks,
+  as ``hours > 1`` on a need without ``hours``) does not hold on it, without a warning.
 - **Unset values.** A candidate whose ``field`` is unset is skipped by ``sum``, ``min``, ``max``, ``collect``,
   and ``count`` with a ``field`` (which so counts the candidates that set it);
   ``any`` and ``all`` read it as false.
@@ -696,8 +698,7 @@ after every other field, every other kind with the other fields; each after ever
 A rule that cannot be computed on a need leaves the field at its empty value, and is reported:
 a cycle of rules or calls reading one another (``needs.derive_cycle``, see :ref:`needs_derive_cycle`),
 a read of a value its step cannot wait for (``needs.derive_scope``, see :ref:`needs_derive_scope`),
-or a ``from`` naming no need, a ``where`` or ``test`` that cannot be evaluated on a candidate,
-and a result the field's ``schema`` refuses, such as a value outside its ``enum`` or under its ``minimum``
+or a ``from`` naming no need, and a result the field's ``schema`` refuses, such as a value outside its ``enum`` or under its ``minimum``
 (``needs.dynamic_function``); a result is checked even when it equals the empty value,
 such as a ``count`` of ``0`` under ``minimum = 1``.
 To silence a warning, add its type to Sphinx's ``suppress_warnings``:

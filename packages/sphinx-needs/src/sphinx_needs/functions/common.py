@@ -639,7 +639,8 @@ def links_from_filter(
     every need as well, each after its need, in part-id order; a part that passes the
     filter is linked as ``<need id>.<part id>``.
     No need passing the filter gives no links; an empty filter is an error, as it would
-    link every need.
+    link every need. A need the filter cannot be evaluated on (one lacking a field it
+    names, say) does not pass, and nothing is reported, as for the ``links`` kind.
 
     .. syntax-example::
 
@@ -683,15 +684,27 @@ def links_from_filter(
             "links_from_filter needs a non-empty filter, as it would otherwise link every need"
         )
     candidates = _every_need_and_part(needs, include_parts=include_parts)
-    location = (need["docname"], need["lineno"]) if need and need["docname"] else None
-    found = filter_needs_and_parts(
-        candidates,
-        NeedsSphinxConfig(app.config),
-        filter,
-        need,
-        location=location,
-        origin_docname=need["docname"] if need else None,
-    )
+    config = NeedsSphinxConfig(app.config)
+    # a filter that does not parse fails the call
+    compiled = compile(filter, "<links_from_filter>", "eval")
+    origin_docname = need["docname"] if need else None
+    found: list[NeedItem | NeedPartItem] = []
+    for candidate in candidates:
+        try:
+            passes = filter_single_need(
+                candidate,
+                config,
+                filter,
+                candidates,
+                need,
+                filter_compiled=compiled,
+                origin_docname=origin_docname,
+            )
+        except NeedsInvalidFilter:
+            # it cannot be evaluated on this candidate: the candidate does not pass
+            passes = False
+        if passes:
+            found.append(candidate)
     return _links_to(found, need, include_self=include_self)
 
 
@@ -774,16 +787,23 @@ def execute_rule(
         no value (a ``copy``, ``min`` or ``max`` with nothing to read), for which the
         field holds its empty value.
     :raises ValueError: If the rule cannot be computed on this need: ``from`` names no
-        need, or a ``where`` / ``test`` cannot be evaluated on a candidate.
+        need.
     """
     config = NeedsSphinxConfig(app.config)
     link_fields = frozenset(schema.iter_link_field_names())
     if rule.kind == "links":
         return _rule_links(need, needs, rule, config)
     if rule.kind == "content_links":
-        return links_from_content(
-            app, need, needs, need_id=rule.from_need, filter=rule.where
-        )
+        found = links_from_content(app, need, needs, need_id=rule.from_need)
+        if rule.where is None:
+            return found
+        # a reference is kept if its need passes (a part through its need); one to no
+        # need is dropped
+        return [
+            link
+            for link in found
+            if link.id in needs and _passes(needs[link.id], rule.where, config, None)
+        ]
     if rule.kind == "hash":
         return _rule_hash(need, rule, link_fields, reads)
     if rule.kind == "copy" and rule.over is None:
@@ -876,7 +896,8 @@ def _passes(
 ) -> bool:
     """Whether a ``where`` / ``test`` holds on a candidate (no predicate: it does).
 
-    :raises ValueError: If it cannot be evaluated on the candidate.
+    A predicate that cannot be evaluated on the candidate (a field it lacks, a type
+    error) does not hold on it: the candidate does not pass, and nothing is reported.
     """
     if predicate is None:
         return True
@@ -889,8 +910,8 @@ def _passes(
                 reads.note_read(candidate, name)
     try:
         return filter_single_need(candidate, config, predicate)
-    except NeedsInvalidFilter as err:
-        raise ValueError(f"on need {candidate['id']!r}: {err}") from err
+    except NeedsInvalidFilter:
+        return False
 
 
 def _items(value: Any) -> list[Any]:
