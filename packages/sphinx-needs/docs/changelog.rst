@@ -289,6 +289,14 @@ Bug fixes
   a flag declared on each need, and a filter naming it, is the portable and faster
   spelling (:ref:`needs_derive`).
 
+- 🐛 A change to :ref:`needs_fields` or :ref:`needs_links` (and the deprecated
+  ``needs_extra_options`` and ``needs_extra_links``) re-reads every document
+
+  The needs of the documents an incremental build did not re-read kept what they were
+  created with: a ``default`` or ``predicates`` added to a field was not applied to them,
+  and a field made derived kept its authored value there. A changed field or link
+  configuration now re-reads every document.
+
 - 🐛 ``needextend``'s ``:+field:`` on a nullable field the need never set sets the field,
   instead of crashing the build (:issue:`2038`, :pr:`2102`)
 
