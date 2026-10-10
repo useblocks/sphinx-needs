@@ -1033,10 +1033,14 @@ def _resolve_field(
                 raise ValueError(
                     f"Field {field!r} of type {field_schema.type!r} cannot have multiple values"
                 )
-            need[field] = resolved[0]
+            # the type of the field, not of the result: an integer a call returns
+            # is a float in a number field, as an authored value is
+            need[field] = _in_field_type(resolved[0], field_schema)
         else:
             need[field] = (
-                None if resolved and not values and field_schema.nullable else values
+                None
+                if resolved and not values and field_schema.nullable
+                else _in_field_type(values, field_schema)
             )
     except Exception as err:
         log_warning(
@@ -1052,11 +1056,12 @@ def _resolve_field(
 
 
 def _in_field_type(value: Any, field_schema: FieldSchema | LinkSchema) -> Any:
-    """A rule's result in the type of the field holding it.
+    """A computed value in the type of the field holding it.
 
-    An integer result in a ``number`` field (a ``count``, a ``sum`` or ``copy`` of an
-    ``integer`` field, or its items in an array of numbers) is stored as a float, as an
-    authored value of the field is, so that it is exported and hashed as one.
+    An integer in a ``number`` field (a rule's ``count``, a ``sum`` or ``copy`` of an
+    ``integer`` field, or an integer a ``[[…]]`` returns, or the items of either in an
+    array of numbers) is stored as a float, as an authored value of the field is, so
+    that it is exported and hashed as one. A boolean is not a number here.
     """
 
     def number(item: Any) -> Any:

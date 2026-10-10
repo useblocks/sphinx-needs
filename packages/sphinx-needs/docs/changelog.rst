@@ -274,6 +274,16 @@ Bug fixes
   ``content_links`` kind of a derived link type reads them; nothing else of the hidden
   content is parsed.
 
+- 🐛 An integer a dynamic function returns is a float in a ``number`` field
+  **(changed output)**
+
+  ``:hours: [[copy("points")]]``, ``points`` being an ``integer`` field, stored ``3`` in the
+  ``number`` field ``hours``, where an authored ``3`` is ``3.0``: ``needs.json`` wrote ``3``,
+  and a ``hash`` rule over the field read ``[3]``. A value computed into a field takes the
+  field's type, as a derived field's does and as `ubCode`_ stores it: a float in a
+  ``number`` field (and in an array of numbers), an integer in an ``integer`` field. A
+  float returned into an ``integer`` field is still reported, and a boolean is not a number.
+
 - 🐛 :ref:`copy` with ``upper=True`` or ``lower=True`` changes the case of each item of a
   list **(changed output)** (:pr:`1984`)
 

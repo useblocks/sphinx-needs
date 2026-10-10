@@ -377,6 +377,77 @@ def test_content_links_reads_a_hidden_need(test_app):
     assert "H_N" not in needs
 
 
+INLINE_TYPE_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+
+
+def five(app, need, needs):
+    return 5
+
+
+needs_functions = [five]
+needs_fields = {
+    "n_int": {"schema": {"type": "integer"}},
+    "ints": {"schema": {"type": "array", "items": {"type": "integer"}}},
+    "n_num": {"schema": {"type": "number"}},
+    "from_fn": {"schema": {"type": "number"}},
+    "nums": {"schema": {"type": "array", "items": {"type": "number"}}},
+    "still_int": {"schema": {"type": "integer"}},
+    "digest": {
+        "schema": {"type": "string"},
+        "derive": {"kind": "hash", "fields": ["n_num", "from_fn", "nums"]},
+    },
+}
+"""
+
+INLINE_TYPE_INDEX = """\
+Inline result types
+===================
+
+.. req:: Integers
+   :id: REQ_1
+   :n_int: 3
+   :ints: 1, 2
+   :n_num: [[copy("n_int")]]
+   :from_fn: [[five()]]
+   :nums: [[copy("ints")]]
+   :still_int: [[copy("n_int")]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), INLINE_TYPE_CONF),
+                (Path("index.rst"), INLINE_TYPE_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_an_inline_result_takes_the_type_of_its_field(test_app):
+    """An integer a ``[[…]]`` returns (a built-in's or your own) is stored in a
+    ``number`` field as a float, as an authored value of the field is, and so exported
+    and hashed as one; an ``integer`` field keeps it an integer."""
+    app = test_app
+    app.build()
+    # Sphinx's own ``config.cache`` note for a function in conf.py aside
+    assert [w for w in build_warnings(app) if "[needs." in w] == []
+    need = _needs(app)["REQ_1"]
+    for value, expected in [
+        (need["n_num"], 3.0),
+        (need["from_fn"], 5.0),
+        *zip(need["nums"], [1.0, 2.0], strict=True),
+    ]:
+        assert type(value) is float and value == expected, (value, expected)
+    assert type(need["still_int"]) is int and need["still_int"] == 3
+    assert need["digest"] == _sha256("[3.0,5.0,[1.0,2.0]]")
+
+
 ISOLATED_CONF = """\
 extensions = ["sphinx_needs"]
 needs_build_json = True
