@@ -648,7 +648,8 @@ the field's ``schema`` does not check it, so an ``enum``, a ``minimum`` or a ``p
 A ``default`` or ``predicates`` beside ``derive`` is reported as ``needs.derive_invalid`` too, and ignored;
 the rule applies.
 So is a link type declared with ``copy = true`` while ``links`` is derived:
-nothing is copied into ``links``, which holds what its rule computes.
+nothing is copied into ``links``, which holds what its rule computes;
+and ``copy = true`` on a derived link type, which is not available in this release: nothing is copied.
 
 How a rule is computed
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -741,7 +742,8 @@ Each configured link can define:
 - ``outgoing`` (optional): Outgoing text, to use for outgoing links. E.g. "blocks". Default: "<name>".
 - ``copy`` (optional): True/False. If True, the links will be copied also to the common link-list (link type ``links``).
   Default: False.
-  Nothing is copied into a :ref:`derived <needs_derive>` ``links``, and the ``copy`` is reported.
+  Nothing is copied into a :ref:`derived <needs_derive>` ``links``, nor from a derived link type
+  (``copy`` is not available on one in this release), and the ``copy`` is reported.
 - ``allow_dead_links`` (optional): True/False. If True, dead links are allowed and do not throw a warning.
   See :ref:`allow_dead_links` for details. Default: False.
 - ``style`` (optional): A plantuml style description, e.g. "#FFCC00". Used for :ref:`needflow`. See :ref:`links_style`.

@@ -1588,7 +1588,8 @@ def _copy_links(
         NeedLink | DynamicFunctionParsed | VariantFunctionParsed | VariantDataParsed
     ] = []
     for link_field in schema.iter_link_fields():
-        if link_field.copy and link_field.name != "links":
+        # a derived link type copies nothing (it is reported at load)
+        if link_field.copy and link_field.name != "links" and link_field.derive is None:
             other = links[link_field.name]
             if isinstance(other, LinksLiteralValue | LinksFunctionArray):
                 copy_links.extend(other.value)

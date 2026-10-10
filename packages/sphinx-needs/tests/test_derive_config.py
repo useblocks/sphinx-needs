@@ -634,6 +634,58 @@ def test_needs_fields_named_after_a_link_type(test_app):
     assert spec["owner"] == "alice"
 
 
+COPY_DERIVED_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_links = {
+    "mentions": {"copy": True, "derive": {"kind": "content_links"}},
+    "broken": {"copy": True, "derive": {"kind": "links"}},
+}
+"""
+
+COPY_DERIVED_INDEX = """\
+Copy of a derived link type
+===========================
+
+.. req:: Mentioned
+   :id: REQ_001
+
+.. spec:: Mentions it
+   :id: SPEC_001
+
+   Mentions :need:`REQ_001`.
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), COPY_DERIVED_CONF),
+                (Path("index.rst"), COPY_DERIVED_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_copy_on_a_derived_link_type(test_app):
+    """``copy = true`` on a derived link type is one ``needs.derive_invalid`` at its
+    rule, and nothing is copied into ``links``; the rule applies. A rule that cannot
+    be read is reported for that alone."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        _invalid_link("broken", "kind 'links' requires the role 'where'"),
+        "WARNING: Invalid derive of link type 'mentions': kind 'content_links': "
+        "'copy' is not available on a derived link type in this release, and is "
+        "ignored; the rule applies [needs.derive_invalid]",
+    ]
+    spec = _built(app)["needs"]["SPEC_001"]
+    assert (spec["mentions"], spec["links"]) == (["REQ_001"], [])
+
+
 CONF_PY_COPY_INTO_LINKS = """\
 extensions = ["sphinx_needs"]
 needs_build_json = True
