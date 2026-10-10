@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791628763757,
+  "lastUpdate": 1791632453969,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -24048,6 +24048,42 @@ window.BENCHMARK_DATA = {
             "value": 46.29044025099998,
             "unit": "s",
             "extra": "Commit: 86ee08c72adcf7a98017a76114fa505c3a6765ad\nBranch: master\nTime: 2026-10-10T12:38:08+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "568cdb3af4b6dffb83c58de7fc52076cfe363419",
+          "message": "✨ sphinx-needs: declared derived fields — derive on needs_fields and needs_links (configuration) (#2178)\n\n## What\n\n`packages/sphinx-needs`: a `needs_fields` or `needs_links` entry, in\n`conf.py` or the TOML file, may carry a\n`derive` table that makes the field (or link type) **derived**:\n\n    [needs.fields.total_hours]\n    schema = { type = \"number\" }\n    derive = { kind = \"sum\", field = \"hours\", over = \"links\" }\n\nThis PR is the configuration surface; the rules are computed by the next\nPR of the series (the kinds), until\nwhich a derived field holds its empty value.\n\n- **Read**: the table names one of eleven kinds — `copy`, `sum`,\n`count`, `min`, `max`, `any`, `all`, `collect`,\n`hash` on a field; `links`, `content_links` on a link type — and the\nkind's roles (`field`, `fields`, `over`,\n`from`, `where`, `test`, `select`, `transitive`, `include_self`,\n`include_parts`, `after`). It is held as a\n`DeriveRule` on the field's `FieldSchema` / `LinkSchema` (new module\n`sphinx_needs.derive`).\n- **Checked when the configuration is read**, once every field and link\ntype is known: one `needs.derive_invalid`\nwarning per rule that cannot be read, naming the kind and the role — an\nunknown kind or role, a role the kind\ndoes not take or requires, a wrong value type, a kind on the wrong side,\nan `over` / `field` naming nothing, a\nresult the field's `schema` cannot hold, a `min`/`max` over a field with\nno order, a `hash` of a back link, a\n`where`/`test` that does not parse or reads more than the candidate\n(`needs`, `current_need`, a `c.` check), an\nempty `where` on `links`, the reserved `join`, and rules reading one\nanother's own fields in a cycle. The field\nstays derived (a `DeriveInvalid` marker) and holds its empty value. A\n`default` / `predicates` beside a rule is\nreported and ignored. A rule on a core field is reported and ignored in\nthis release.\n- **Closed to authors**: a derived field is not a directive option,\ncannot be extended and takes no default\n(`FieldSchema.directive_option`, declared but consulted nowhere until\nnow, is enforced at need creation). A value\nwritten for it in a need — a literal or a `[[…]]` / `<<…>>` / `<{…}>` —\nis ignored with `needs.derive_authored`\nat the need; a `needextend` naming it likewise, at the `needextend`. A\nneed from `needimport` or external needs\n  keeps the values it carries.\n- **Export**: the `needs_schema` block of `needs.json` marks a derived\nfield or link type `\"readOnly\": true`.\nNothing moves for a project without `derive` (every existing needs.json\nsnapshot is unchanged).\n\n## Why\n\nThe derived-values plan shared with ubCode: a declared rule is computed\nfor every need instead of a `[[…]]`\nrepeated in every directive, with one semantics for the declared and the\ninline form, and a value an author can no\nlonger overwrite. ubCode reads the same `derive` tables and gives the\nsame findings; `readOnly` lets an importer\ntreat the value as data (#1430's question, for these fields).\n\n## Tests\n\n- `tests/doc_test/doc_derive_config/` (a TOML project: one valid rule\nper kind, one rule per `needs.derive_invalid`\nshape, a core-field rule, an authored value, an authored inline call, a\n`needextend`, a `needimport`ed need) and\n`tests/test_derive_config.py`: the findings in order; the empty value\nevery derived field holds and the imported\nvalues kept; `readOnly` exactly on the derived properties; the closed\nflags; the `conf.py` dict form; a\n  parametrised parse of the table (11 readable shapes, 18 refused).\n- Written before the code: against the previous source, every build test\nfails. The `directive_option`\nenforcement, `readOnly` and the unknown-role check were each removed in\nturn and the matching test went red.\n- `test_basic_doc`'s schema snapshot gains the new `derive=None`\nattribute of every `FieldSchema` / `LinkSchema`\n  (no value moves).\n- The review round (eight commits, each pinned by a test that fails when\nit is reverted): every result-type\ncheck and the `parent_needs` core-link refusal have a test; a link type\nwith `copy = true` while `links` is\nderived is one `needs.derive_invalid` at the `links` rule naming the\ncopier, and the copy is not made; the empty\nvalue a derived field holds is not a schema violation (a non-nullable\n`enum`, a `pattern`, a `minimum` build\nclean); `derive` is read from a `needs_extra_options` entry too; a\n`needs_fields` entry named `parent_needs`\nis a `needs.config` warning instead of a crash; the finding texts name\nthe kind and the role; an invalid rule\nrebuilds its field instead of mutating a frozen dataclass; the derive\nchangelog entry stands on its own.\n\n## Docs\n\n`configuration.rst`: the `derive` key of `needs_fields` / `needs_links`\nand a \"Derived fields\" reference (the kinds\ntable, the roles table, what a derived field holds, the findings);\n`dynamic_functions.rst`: \"Derived fields: the\ndeclared form\" with the inline spellings and the reserved `join`;\n`api.rst`: `DeriveRule`, `DeriveInvalid`;\n`changelog.rst`: the 9.0.0 entry.\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-needs`) and they pass.\n- [x] Documentation is updated where behaviour or options change.\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-10T13:39:53+02:00",
+          "tree_id": "1e38ba0d2cd7b8a579172106ee15387f10245343",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/568cdb3af4b6dffb83c58de7fc52076cfe363419"
+        },
+        "date": 1791632447313,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.06880911200005357,
+            "unit": "s",
+            "extra": "Commit: 568cdb3af4b6dffb83c58de7fc52076cfe363419\nBranch: master\nTime: 2026-10-10T13:39:53+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 35.45883885799992,
+            "unit": "s",
+            "extra": "Commit: 568cdb3af4b6dffb83c58de7fc52076cfe363419\nBranch: master\nTime: 2026-10-10T13:39:53+02:00"
           }
         ]
       }
