@@ -730,6 +730,11 @@ needs_fields = {
         "nullable": False,
         "derive": {"kind": "count", "over": "links"},
     },
+    "ok": {
+        "schema": {"type": "boolean", "const": True},
+        "nullable": False,
+        "derive": {"kind": "all", "over": "links", "test": "hours > 0"},
+    },
 }
 """
 
@@ -775,8 +780,10 @@ def test_a_result_the_field_schema_refuses(test_app):
     ``minimum``) is not stored: it is one ``needs.dynamic_function``, and the field
     keeps its empty value, which its schema does not check; so no schema violation.
 
-    A result equal to the empty value is checked too: a ``count`` of 0 under
-    ``minimum = 1`` is refused, though the field then holds 0 as its empty value.
+    A result equal to the empty value is checked too, where it is computed: a ``count``
+    of 0 under ``minimum = 1``, an ``all`` of false under ``const = true``, are refused,
+    though the field then holds that value as its empty value (which the schema
+    validation of the stored values does not check).
     """
     app = test_app
     app.build()
@@ -803,6 +810,8 @@ def test_a_result_the_field_schema_refuses(test_app):
         "<srcdir>/index.rst:9: "
         + refused.format("n", "REQ_2", "count", 0, "0 is less than the minimum of 1"),
         "<srcdir>/index.rst:14: "
+        + refused.format("ok", "SPEC_1", "all", False, "true was expected"),
+        "<srcdir>/index.rst:14: "
         + refused.format(
             "total", "SPEC_1", "sum", -2.0, "-2.0 is less than the minimum of 0"
         ),
@@ -815,6 +824,11 @@ def test_a_result_the_field_schema_refuses(test_app):
     assert (needs["REQ_2"]["pick"], needs["REQ_2"]["code"]) == ("apple", "apple")
     assert (needs["SPEC_1"]["total"], needs["SPEC_2"]["total"]) == (0.0, 3.0)
     assert (needs["REQ_1"]["n"], needs["SPEC_1"]["n"]) == (0, 1)
+    assert (needs["SPEC_1"]["ok"], needs["SPEC_2"]["ok"], needs["REQ_1"]["ok"]) == (
+        False,
+        True,
+        True,
+    )
 
 
 IMPORT_SOURCE = {
