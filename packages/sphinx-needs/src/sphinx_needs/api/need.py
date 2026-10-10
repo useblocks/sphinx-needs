@@ -13,10 +13,12 @@ from typing import Any, TypedDict, TypeVar, cast
 
 from docutils import nodes
 from docutils.parsers import Parser
+from docutils.parsers.rst import Directive, directives, roles
 from docutils.parsers.rst.states import RSTState
 from docutils.statemachine import StringList
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
+from sphinx.util.logging import suppress_logging
 
 from sphinx_needs._jinja import render_template_string
 from sphinx_needs.config import NeedsSphinxConfig, NeedType
@@ -1058,6 +1060,166 @@ def _parse_declared_content(
     )
 
 
+def _parse_content(
+    data: NeedItem,
+    env: BuildEnvironment,
+    state: RSTState,
+    content: str | StringList,
+    node: nodes.Element,
+    *,
+    content_parser: type[Parser] | None,
+    content_source: tuple[str, int] | None,
+) -> None:
+    """Parse a need's content into ``node``, in its markup."""
+    source = env.doc2path(data["docname"]) if data["docname"] else None
+    content_offset = 0
+    if data["lineno_content"]:
+        content_offset = data["lineno_content"] - 1
+    elif data["lineno"]:
+        content_offset = data["lineno"] - 1
+    if content_parser is not None:
+        _parse_declared_content(
+            data,
+            state,
+            content,
+            content_offset,
+            node,
+            parser=content_parser,
+            content_source=content_source,
+            host_source=str(source) if source else "",
+        )
+    elif isinstance(content, StringList):
+        state.nested_parse(content, content_offset, node, match_titles=False)
+    else:
+        state.nested_parse(
+            StringList(content.splitlines(), source=source),
+            content_offset,
+            node,
+            match_titles=False,
+        )
+
+
+#: The directives whose content a hidden need's references are read from: docutils'
+#: containers of body content, which add nothing to the project.
+_REFERENCE_CONTAINERS: frozenset[str] = frozenset(
+    {
+        "admonition",
+        "attention",
+        "caution",
+        "class",
+        "compound",
+        "container",
+        "danger",
+        "epigraph",
+        "error",
+        "highlights",
+        "hint",
+        "important",
+        "list-table",
+        "note",
+        "pull-quote",
+        "rst-class",
+        "sidebar",
+        "table",
+        "tip",
+        "topic",
+        "warning",
+    }
+)
+
+
+class _Skipped(Directive):
+    """A directive of a hidden need's content, which is not run."""
+
+    has_content = True
+    optional_arguments = 100
+    final_argument_whitespace = True
+    option_spec = None
+
+    def run(self) -> list[nodes.Node]:
+        return []
+
+
+@contextmanager
+def _only_need_references() -> Iterator[None]:
+    """While parsing, only the ``need`` role and the containers of body content run.
+
+    Every other directive is skipped (a nested need is not created, nothing is
+    registered), and every other role gives its text.
+    """
+    lookup_directive, lookup_role = directives.directive, roles.role
+
+    def directive(
+        directive_name: str, language_module: Any, document: nodes.document
+    ) -> tuple[type[Directive] | None, list[nodes.system_message]]:
+        if directive_name.lower() in _REFERENCE_CONTAINERS:
+            return lookup_directive(directive_name, language_module, document)
+        return _Skipped, []
+
+    def role(
+        role_name: str, language_module: Any, lineno: int, reporter: Any
+    ) -> tuple[Any, list[nodes.system_message]]:
+        if role_name.lower() == "need":
+            return lookup_role(role_name, language_module, lineno, reporter)
+        return _text_role, []
+
+    # the lookups are patched as Sphinx itself patches them while reading
+    directives.directive = directive  # ty: ignore[invalid-assignment]
+    roles.role = role  # ty: ignore[invalid-assignment]
+    try:
+        yield
+    finally:
+        directives.directive = lookup_directive
+        roles.role = lookup_role
+
+
+def _text_role(
+    _name: str,
+    _rawtext: str,
+    text: str,
+    _lineno: int,
+    _inliner: Any,
+    _options: Any = None,
+    _content: Any = None,
+) -> tuple[list[nodes.Node], list[nodes.system_message]]:
+    """A role of a hidden need's content, which gives its text."""
+    return [nodes.Text(text)], []
+
+
+def _store_hidden_references(
+    data: NeedItem,
+    env: BuildEnvironment,
+    state: RSTState,
+    content: str | StringList,
+    *,
+    content_parser: type[Parser] | None,
+    content_source: tuple[str, int] | None,
+) -> None:
+    """Store a hidden need's content references, as its stored node, for reading.
+
+    A hidden need's content is not rendered, but a ``content_links`` rule or a
+    ``links_from_content`` reads its ``:need:`` references like any need's. Only they
+    are parsed: no other directive or role runs, and nothing is reported. The node is
+    marked hidden, so that a ``needextract`` does not render it.
+    """
+    text = "\n".join(content) if isinstance(content, StringList) else content
+    if ":need:" not in text and "{need}" not in text:
+        return
+    node = Need("", ids=[data["id"]], refid=data["id"])
+    node["hidden"] = True
+    with suppress_logging(), _only_need_references():
+        _parse_content(
+            data,
+            env,
+            state,
+            content,
+            node,
+            content_parser=content_parser,
+            content_source=content_source,
+        )
+    SphinxNeedsData(env).set_need_node(data["id"], node)
+
+
 def _create_need_node(
     data: NeedItem,
     env: BuildEnvironment,
@@ -1105,6 +1267,14 @@ def _create_need_node(
         # TODO this is problematic because it will not populate ``parts`` or ``arch`` of the need,
         # nor will it find/add any child needs
         node_need["hidden"] = True
+        _store_hidden_references(
+            data,
+            env,
+            state,
+            content,
+            content_parser=content_parser,
+            content_source=content_source,
+        )
         return [node_need]
 
     return_nodes: list[nodes.Node] = []
@@ -1125,31 +1295,15 @@ def _create_need_node(
         nodes.target("", "", ids=[data["id"]], refid=data["id"], anonymous="")
     )
 
-    content_offset = 0
-    if data["lineno_content"]:
-        content_offset = data["lineno_content"] - 1
-    elif data["lineno"]:
-        content_offset = data["lineno"] - 1
-    if content_parser is not None:
-        _parse_declared_content(
-            data,
-            state,
-            content,
-            content_offset,
-            node_need,
-            parser=content_parser,
-            content_source=content_source,
-            host_source=str(source) if source else "",
-        )
-    elif isinstance(content, StringList):
-        state.nested_parse(content, content_offset, node_need, match_titles=False)
-    else:
-        state.nested_parse(
-            StringList(content.splitlines(), source=source),
-            content_offset,
-            node_need,
-            match_titles=False,
-        )
+    _parse_content(
+        data,
+        env,
+        state,
+        content,
+        node_need,
+        content_parser=content_parser,
+        content_source=content_source,
+    )
 
     # Extract plantuml diagrams and store needumls with keys in arch, e.g. need_info['arch']['diagram']
     arch = {}

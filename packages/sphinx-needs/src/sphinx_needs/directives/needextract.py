@@ -235,7 +235,9 @@ def _build_needextract(
     """Creates a new need representation."""
     env = app.env
 
-    if (need_node := SphinxNeedsData(env).get_need_node(need_data["id"])) is None:
+    need_node = SphinxNeedsData(env).get_need_node(need_data["id"])
+    if need_node is None or need_node.get("hidden"):
+        # a hidden need's stored node holds its content references only
         if need_data["is_external"]:
             message = f"External needs cannot be used as targets by needextract (ID {need_data['id']!r})."
         else:

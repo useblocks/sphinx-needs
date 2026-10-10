@@ -510,6 +510,12 @@ def links_from_content(
        It will emit a warning and return an empty list for needs without a
        stored node (e.g. external needs or need parts).
 
+    .. versionchanged:: 9.0.0
+
+       The references of a hidden need's (``:hide:``) content are read too: its
+       content is not rendered, but its ``:need:`` references are kept, where this
+       function warned that the need had no stored node.
+
     Example:
 
     .. req:: Requirement 1
@@ -571,10 +577,17 @@ def links_from_content(
         source_need_id = need["id"]
 
     need_node = SphinxNeedsData(app.env).get_need_node(source_need_id)
+    source_need = needs.get(source_need_id)
+    if (
+        need_node is None
+        and source_need is not None
+        and source_need["hide"]
+        and not source_need["is_external"]
+    ):
+        # a hidden need's references are stored only when its content has some
+        return []
     if need_node is None:
-        # This can happen for external needs or hidden needs,
-        # which do not have a stored doctree node.
-        source_need = needs.get(source_need_id)
+        # This can happen for external needs, which do not have a stored doctree node.
         if source_need is not None:
             location = (
                 (source_need["docname"], source_need["lineno"])

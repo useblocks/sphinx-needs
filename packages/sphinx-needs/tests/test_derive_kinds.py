@@ -19,6 +19,7 @@ from pathlib import Path
 import pytest
 from sphinx.util.parallel import parallel_available
 
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.functions import common
 from sphinx_needs_testkit import build_warnings
 
@@ -278,6 +279,101 @@ def test_a_links_rule_tests_each_candidate_once(test_app, monkeypatch):
     assert calls["type == 'req' and status == 'open'"] == 10
     assert calls["is_part and id_parent == 'REQ_A'"] == 11
     assert needs["SPEC_1"]["l_open"] == ["REQ_A", "REQ_C"]
+
+
+HIDDEN_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_id_regex = "^.+$"
+needs_links = {
+    "mentions": {"derive": {"kind": "content_links"}},
+    "inline": {},
+}
+"""
+
+HIDDEN_INDEX = """\
+Hidden
+======
+
+.. req:: One
+   :id: R_1
+
+.. req:: Two
+   :id: R_2
+
+   A part: :np:`(p) the part`.
+
+.. req:: Three
+   :id: R_3
+
+.. req:: Four
+   :id: R_4
+
+.. req:: Hidden
+   :id: H_1
+   :hide:
+
+   Mentions :need:`R_1`, :need:`R_2.p` and :need:`R_1` again,
+   and :need:`!R_4` disabled.
+
+   .. note:: In a note, :need:`R_3`.
+
+   .. req:: Nested
+      :id: H_N
+
+      Mentions :need:`R_4`.
+
+.. req:: Hidden, and mentions nothing
+   :id: H_2
+   :hide:
+
+   No reference here.
+
+.. spec:: Reads the hidden one
+   :id: S_1
+   :inline: [[links_from_content("H_1")]]
+
+.. needextract::
+   :filter: id == "H_1"
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), HIDDEN_CONF),
+                (Path("index.rst"), HIDDEN_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_content_links_reads_a_hidden_need(test_app):
+    """A ``:hide:`` need's content is not rendered, but its ``:need:`` references are
+    read like any need's: by its ``content_links`` rule, and by a ``links_from_content``
+    naming it. In document order, each once; a disabled one (``!R_4``) and those in a
+    nested need are not; one in a directive such as a note is. A hidden need with no
+    reference has none, without a finding.
+
+    Nothing else of the hidden content is read: the nested need is not created (as
+    before), and a ``needextract`` of the hidden need finds no content (as before).
+    """
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:42: WARNING: Content for requested need 'H_1' not found. "
+        "[needs.needextract]",
+    ]
+    needs = SphinxNeedsData(app.env).get_needs_view()
+    expected = ["R_1", "R_2.p", "R_3"]
+    assert needs["H_1"].get_links("mentions") == expected
+    assert needs["S_1"].get_links("inline") == expected
+    assert needs["R_1"].get_links("mentions") == []
+    assert needs["H_2"].get_links("mentions") == []
+    assert "H_N" not in needs
 
 
 NEGATIVE_CONF = """\

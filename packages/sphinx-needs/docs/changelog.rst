@@ -263,6 +263,14 @@ Bug fixes
   It is a ``needs.config`` warning; an entry carrying a ``derive`` rule is reported as a
   rule on a core field, ``needs.derive_invalid``. The link type works as before.
 
+- 🐛 :ref:`links_from_content <links_content>` reads the ``:need:`` references of a hidden
+  need's content
+
+  A need with ``:hide:`` had no stored content, so the call warned "no stored node" and
+  gave no links. Its content is still not rendered, but its references are read, as the
+  ``content_links`` kind of a derived link type reads them; nothing else of the hidden
+  content is parsed.
+
 - 🐛 :ref:`copy` with ``upper=True`` or ``lower=True`` changes the case of each item of a
   list **(changed output)** (:pr:`1984`)
 

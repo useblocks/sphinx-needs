@@ -694,6 +694,8 @@ after every other field, every other kind with the other fields; each after ever
   in document order, each once: a reference to a part is a part link, a reference to this need is kept,
   a reference to no need is kept (and reported as any dead link), a disabled one (``!ID``) and those inside a
   nested need are not. With ``where``, only the references to needs it holds on are kept (a part through its need).
+  A hidden need's references are read too: its content is not rendered, but the ``:need:`` references in its text,
+  lists, tables and admonitions are kept.
 
 A rule that cannot be computed on a need leaves the field at its empty value, and is reported:
 a cycle of rules or calls reading one another (``needs.derive_cycle``, see :ref:`needs_derive_cycle`),
