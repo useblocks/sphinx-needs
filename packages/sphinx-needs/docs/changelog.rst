@@ -203,7 +203,7 @@ Bug fixes
 .........
 
 - 🐛 :ref:`check_linked_values <check_linked_values>` and :ref:`calc_sum <calc_sum>` with
-  ``links_only`` read the need of a link to a need part (:issue:`2173`)
+  ``links_only`` read the need of a link to a need part (:issue:`2173`, :pr:`2177`)
 
   A link may name a need part (``:links: REQ_1.a``), and both functions looked such a link
   up by its whole text, which names no need: the call failed with a
