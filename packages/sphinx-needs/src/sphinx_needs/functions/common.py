@@ -824,7 +824,7 @@ def execute_rule(
             assert rule.field is not None, "sum has a field"
             return _sum(
                 [_read(c, rule.field, reads) for c in candidates],
-                integer=_type_of(schema, rule.field) == "integer",
+                integer=field_schema.type == "integer",
             )
         case "min" | "max":
             assert rule.field is not None, "min and max have a field"
@@ -914,12 +914,6 @@ def _items(value: Any) -> list[Any]:
     return [value]
 
 
-def _type_of(schema: FieldsSchema, name: str) -> str | None:
-    """The schema type of the field ``name`` reads, if it is a field."""
-    field = schema.get_extra_field(name) or schema.get_core_field(name)
-    return None if field is None else field.type
-
-
 def _order_of(schema: FieldsSchema, name: str) -> Callable[[Any], Any] | None:
     """How ``min`` / ``max`` order the values of a field: numbers by value, an enum by
     its declared order; ``None`` for a value outside the order."""
@@ -950,7 +944,10 @@ def _extremum(
 
 
 def _sum(values: Iterable[Any], *, integer: bool) -> int | float:
-    """The total of the numbers, in the order given; unset and non-numbers skipped."""
+    """The total of the numbers, in the order given; unset and non-numbers skipped.
+
+    An integer for an ``integer`` field (``integer``), else a float.
+    """
     total: int | float = 0 if integer else 0.0
     for value in values:
         if isinstance(value, bool) or not isinstance(value, int | float):

@@ -29,7 +29,7 @@ from sphinx_needs.exceptions import FunctionParsingException
 from sphinx_needs.filter_common import filter_needs_and_parts, filter_single_need
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import NeedItem, NeedLink, NeedPartItem
-from sphinx_needs.needs_schema import FieldsSchema
+from sphinx_needs.needs_schema import FieldSchema, FieldsSchema, LinkSchema
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_func import NeedFunc
 from sphinx_needs.utils import counted_ids
@@ -905,6 +905,7 @@ def _resolve_field(
                         f"{item.describe()} value {type(value)} is not of type "
                         f"{field_schema.type!r}"
                     )
+                value = _in_field_type(value, field_schema)
                 if isinstance(value, list | tuple):
                     resolved.extend(value)
                 else:
@@ -1032,6 +1033,28 @@ def _resolve_field(
         from sphinx_needs.functions.order import placeholder
 
         need[field] = placeholder(need, field, needs_schema)
+
+
+def _in_field_type(value: Any, field_schema: FieldSchema | LinkSchema) -> Any:
+    """A rule's result in the type of the field holding it.
+
+    An integer result in a ``number`` field (a ``count``, a ``sum`` or ``copy`` of an
+    ``integer`` field, or its items in an array of numbers) is stored as a float, as an
+    authored value of the field is, so that it is exported and hashed as one.
+    """
+
+    def number(item: Any) -> Any:
+        if isinstance(item, int) and not isinstance(item, bool):
+            return float(item)
+        return item
+
+    if field_schema.type == "number":
+        return number(value)
+    if field_schema.type == "array" and field_schema.item_type == "number":
+        if isinstance(value, list | tuple):
+            return [number(item) for item in value]
+        return number(value)
+    return value
 
 
 def _get_variant(

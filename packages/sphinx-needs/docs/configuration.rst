@@ -666,9 +666,12 @@ after every other field, every other kind with the other fields; each after ever
   and ``count`` with a ``field`` (which so counts the candidates that set it);
   ``any`` and ``all`` read it as false.
   ``sum`` skips a value that is not a number.
-- **No candidate.** ``sum`` is ``0`` (or ``0.0``), ``count`` ``0``, ``any`` ``false``, ``all`` ``true``,
+- **No candidate.** ``sum`` and ``count`` are ``0`` (``0.0`` in a ``number`` field), ``any`` ``false``, ``all`` ``true``,
   ``collect`` ``[]``; ``min``, ``max`` and ``copy`` leave the field at its empty value.
-- **Values.** ``sum`` adds in the order of the candidates, an integer for an ``integer`` field, else a number.
+- **Values.** A result takes the type of the field holding it, as an authored value does:
+  an integer in an ``integer`` field, a float in a ``number`` field
+  (a ``count``, or the ``sum`` of an ``integer`` field, is ``13.0`` there), in ``needs.json`` and in a ``hash``.
+  ``sum`` adds in the order of the candidates.
   ``min`` and ``max`` order numbers by value, and a string by the order of its ``enum``.
   ``collect`` keeps each value once, in the order of the candidates, a list's items each.
   ``copy`` over several targets takes the one with the lowest need id among those that set the field
