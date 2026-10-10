@@ -13,7 +13,7 @@ Fixed
   captured output inside the literal blocks it writes into the ``needs.json``, whatever
   line-break characters they hold (a carriage return, NEL, LINE SEPARATOR, …); text after
   such a character used to be read as reStructuredText by a build importing the file.
-  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+  `#2179 <https://github.com/useblocks/sphinx-needs/pull/2179>`__
 
 - 🐛 The JSON parser now reads report files as UTF-8 explicitly, so non-ASCII test names and
   messages do not depend on the process locale on Windows.

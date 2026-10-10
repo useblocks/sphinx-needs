@@ -226,7 +226,7 @@ Fixed
 - 🐛 A test case's message, text and captured output are kept inside the generated literal
   block whatever line-break characters they hold (a carriage return, NEL, LINE SEPARATOR,
   …); text after such a character used to be read as reStructuredText.
-  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__
+  `#2179 <https://github.com/useblocks/sphinx-needs/pull/2179>`__
 
 - 🐛 ``test-results`` on a report that does not exist, that is not well-formed XML, or whose
   numeric attribute is not a number no longer ends the build (``JUnitFileMissing``,
