@@ -108,6 +108,11 @@ class TestCaseDirective(TestCommonDirective):
 
         result = case["result"]
         content = self.test_content
+        # Each block's text is split where docutils will split it -- `str.splitlines()`:
+        # CR, CR+LF, VT, FF, FS, GS, RS, NEL, LINE SEPARATOR, PARAGRAPH SEPARATOR, not
+        # only `\n` -- and EVERY line indented, so none ends the literal block early (a
+        # line left at column 0 was read as reStructuredText). An empty line is written
+        # as the indent alone.
         if case["text"] is not None and len(case["text"]) > 0:
             content += """
 
@@ -115,7 +120,7 @@ class TestCaseDirective(TestCommonDirective):
 
    {}
 
-""".format("\n   ".join([x.lstrip() for x in case["text"].split("\n")]))
+""".format("\n   ".join([x.lstrip() for x in case["text"].splitlines()]))
 
         if case["message"] is not None and len(case["message"]) > 0:
             content += """
@@ -124,7 +129,7 @@ class TestCaseDirective(TestCommonDirective):
 
    {}
 
-""".format("\n   ".join([x.lstrip() for x in case["message"].split("\n")]))
+""".format("\n   ".join([x.lstrip() for x in case["message"].splitlines()]))
 
         if case["system-out"] is not None and len(case["system-out"]) > 0:
             content += """
@@ -133,7 +138,7 @@ class TestCaseDirective(TestCommonDirective):
 
    {}
 
-""".format("\n   ".join([x.lstrip() for x in case["system-out"].split("\n")]))
+""".format("\n   ".join([x.lstrip() for x in case["system-out"].splitlines()]))
 
         time = case["time"]
         # Ensure time is a string, SN 6.0.0 requires to be in one specific type
