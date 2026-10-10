@@ -267,7 +267,7 @@ Bug fixes
   reported as a rule on a core field, ``needs.derive_invalid``. The link type works as before.
 
 - 🐛 :ref:`links_from_content <links_content>` reads the ``:need:`` references of a hidden
-  need's content
+  need's content **(changed output)**
 
   A need with ``:hide:`` had no stored content, so the call warned "no stored node" and
   gave no links. Its content is still not rendered, but its references are read, as the
