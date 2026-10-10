@@ -76,8 +76,11 @@ def _literal_block(title: str, body: str) -> str:
 
     The body is dedented as a whole, not line by line: XML pretty-printing adds
     a common indentation that has to go, but a traceback or an assertion diff
-    is only readable if its *relative* indentation survives. It is split where
-    docutils splits it (`str.splitlines()`, not only on a line feed) and every line is
+    is only readable if its *relative* indentation survives. `textwrap.dedent`
+    sees lines on line feeds only, so that holds across line feeds; a line that
+    another line break (a carriage return, NEL, ...) starts keeps its own
+    indentation -- inside the block either way. The body is split where docutils
+    splits it (`str.splitlines()`, not only on a line feed) and every line is
     indented, so no line ends the block early; line breaks at either end are
     dropped, and an empty line is written as an empty line.
     """

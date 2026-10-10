@@ -15,8 +15,10 @@ element.
 ``line_breaks.xml`` carries the five characters an XML report can (CR, CR+LF, NEL, LINE
 SEPARATOR, PARAGRAPH SEPARATOR); XML 1.0 does not allow VT, FF, FS, GS or RS even as
 character references, so ``line_breaks.json`` carries all ten through the JSON reader. One
-case per character, one ``test-case`` per case. CR+LF never escaped (each line's trailing
-CR is dropped before the parse): its rows are the control.
+case per character, one ``test-case`` per case. CR+LF never escaped, and its rows are the
+control: under ``test-case`` the CR stays in the content, where docutils reads CR+LF as ONE
+line break, so the line after it is still a ``\n``-piece and still indented; through the
+converter, ``_literal_block``'s per-line ``rstrip()`` drops the line-final CR.
 """
 
 import io
