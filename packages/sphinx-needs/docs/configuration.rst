@@ -643,6 +643,8 @@ and rules reading one another's own fields in a circle (``copy`` without ``over`
 which no need could compute.
 The field stays derived: it cannot be set, and it holds its empty value
 (``None``, or for a field that is not nullable ``""``, ``0``, ``0.0``, ``False`` or ``[]``; no links for a link type).
+The empty value a derived field holds is its "no value", as ``None`` is for a nullable field:
+the field's ``schema`` does not check it, so an ``enum``, a ``minimum`` or a ``pattern`` that refuses it is no violation.
 A ``default`` or ``predicates`` beside ``derive`` is reported as ``needs.derive_invalid`` too, and ignored;
 the rule applies.
 So is a link type declared with ``copy = true`` while ``links`` is derived:

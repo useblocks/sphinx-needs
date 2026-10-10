@@ -493,6 +493,98 @@ def test_a_copy_into_derived_links_is_ignored(test_app):
     assert spec["mentions"] == ["REQ_001"]
 
 
+CONF_PY_PLACEHOLDER = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+_ASIL = {"type": "string", "enum": ["QM", "A", "B", "C", "D"]}
+needs_fields = {
+    "hours": {"schema": {"type": "number"}},
+    "asil_own": {"schema": _ASIL},
+    "asil": {
+        "schema": _ASIL,
+        "nullable": False,
+        "derive": {
+            "kind": "max",
+            "field": "asil_own",
+            "over": "satisfies",
+            "transitive": True,
+            "include_self": True,
+        },
+    },
+    "peak": {
+        "schema": {"type": "number", "minimum": 1},
+        "nullable": False,
+        "derive": {"kind": "max", "field": "hours", "over": "links"},
+    },
+    "digest": {
+        "schema": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "nullable": False,
+        "derive": {"kind": "hash", "fields": ["title"]},
+    },
+    "broken": {
+        "schema": {"type": "string", "enum": ["X"]},
+        "nullable": False,
+        "derive": {"kind": "sum", "field": "hours"},
+    },
+}
+needs_links = {"satisfies": {}}
+"""
+
+PLACEHOLDER_INDEX = """\
+Placeholders
+============
+
+.. req:: Assigned a level
+   :id: REQ_001
+   :asil_own: B
+
+.. spec:: Assigned nothing
+   :id: SPEC_001
+
+.. req:: Assigned a level the schema refuses
+   :id: REQ_002
+   :asil_own: Z
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), CONF_PY_PLACEHOLDER),
+                (Path("index.rst"), PLACEHOLDER_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_placeholder_is_not_validated(test_app):
+    """The empty value a derived field holds is not checked against its schema.
+
+    It is the field's "no value", as ``None`` is for a nullable field: a field that
+    is not nullable holds ``""`` or ``0.0`` where its ``enum``, ``minimum`` or
+    ``pattern`` refuses it, and that is not a schema violation, on a valid rule or
+    an invalid one. The schema of a field that is not derived is checked as before.
+    """
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        _invalid("broken", "kind 'sum' requires the role 'over'"),
+        "ERROR: Need 'REQ_002' has schema violations:\n"
+        "  Severity:       violation\n"
+        "  Field:          asil_own\n"
+        "  Need path:      REQ_002\n"
+        "  Schema path:    fields > schema > properties > asil_own > enum\n"
+        '  Schema message: "Z" is not one of "QM", "A" or 3 other candidates '
+        "[sn_schema_violation.field_fail]",
+    ]
+    spec = _built(app)["needs"]["SPEC_001"]
+    assert spec["asil"] == ""
+    assert spec["peak"] == 0.0
+
+
 @pytest.mark.parametrize(
     "raw,on_link,expected",
     [

@@ -26,6 +26,7 @@ from sphinx_needs.data import (
     NeedsPartType,
     SphinxNeedsData,
 )
+from sphinx_needs.derive import typed_empty
 from sphinx_needs.directives.needuml import Needuml, NeedumlException
 from sphinx_needs.exceptions import InvalidNeedException, NeedsInvalidFilter
 from sphinx_needs.filter_common import (
@@ -578,22 +579,12 @@ def _typed_empty(field_schema: FieldSchema) -> Any:
 
     :raises InvalidNeedException: If the field's type is unknown.
     """
-    match field_schema.type:
-        case "string":
-            return ""
-        case "boolean":
-            return False
-        case "integer":
-            return 0
-        case "number":
-            return 0.0
-        case "array":
-            return []
-        case other:
-            raise InvalidNeedException(
-                "invalid_value",
-                f"Field {field_schema.name!r} has unknown type {other!r}.",
-            )
+    if (empty := typed_empty(field_schema.type)) is None:
+        raise InvalidNeedException(
+            "invalid_value",
+            f"Field {field_schema.name!r} has unknown type {field_schema.type!r}.",
+        )
+    return empty
 
 
 def _unwrap_field_value(

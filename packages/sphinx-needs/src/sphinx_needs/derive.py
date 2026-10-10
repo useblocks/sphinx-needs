@@ -359,6 +359,26 @@ def beside_message(name: str, *, on_link: bool, rule: Derive, keys: list[str]) -
     )
 
 
+def typed_empty(type_: str) -> Any:
+    """The empty value of a field type: ``""``, ``False``, ``0``, ``0.0`` or ``[]``.
+
+    It is what a derived field that is not nullable holds until its rule computes
+    it (its placeholder), and ``None`` for a type that is not one of these.
+    """
+    match type_:
+        case "string":
+            return ""
+        case "boolean":
+            return False
+        case "integer":
+            return 0
+        case "number":
+            return 0.0
+        case "array":
+            return []
+    return None
+
+
 def copy_problem(schema: FieldsSchema) -> DeriveProblem | None:
     """The finding of a derived ``links`` that link types are declared to copy into.
 

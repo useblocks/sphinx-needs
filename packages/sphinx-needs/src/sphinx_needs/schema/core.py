@@ -10,6 +10,7 @@ import jsonschema_rs
 from jsonschema_rs import RegexOptions, ValidationError, Validator
 
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.derive import typed_empty
 from sphinx_needs.need_item import NeedItem
 from sphinx_needs.schema.config import (
     MAP_RULE_DEFAULT_SEVERITY,
@@ -56,7 +57,8 @@ def validate_field_link_schemas(
     Builds a single JSON Schema validator from all field and link schemas
     defined in ``fields_schema``, then validates each need against it.
     For each need, only the properties present in the schema are included
-    (excluding ``None`` values), so the validator only sees relevant fields.
+    (excluding ``None`` values, and the empty value a derived field holds until its
+    rule computes it), so the validator only sees relevant fields.
 
     Errors on link properties use :attr:`MessageRuleEnum.link_fail` and
     the ``links > schema`` schema path prefix, while errors on other
@@ -70,6 +72,17 @@ def validate_field_link_schemas(
     # Build combined properties from all field and link schemas
     combined_properties: dict[str, Any] = {}
     link_names: set[str] = set()
+    # the placeholder a derived field that is not nullable holds until its rule
+    # computes it (its empty value) is its "no value", as None is for a nullable
+    # field: it is not validated
+    placeholders: dict[str, Any] = {
+        field.name: typed_empty(field.type)
+        for field in (
+            *fields_schema.iter_extra_fields(),
+            *fields_schema.iter_link_fields(),
+        )
+        if field.derive is not None and not field.nullable
+    }
     for field in fields_schema.iter_core_fields():
         combined_properties[field.name] = field.schema
     for field in fields_schema.iter_extra_fields():
@@ -92,10 +105,13 @@ def validate_field_link_schemas(
     for need in needs.values():
         # Project the need to only the properties present in the schema,
         # excluding None values (we don't allow {"type": ["string", "null"]})
+        # and a derived field's placeholder
         need_data: dict[str, Any] = {
             key: value
             for key, value in need.items()
-            if key in schema_properties and value is not None
+            if key in schema_properties
+            and value is not None
+            and not (key in placeholders and value == placeholders[key])
         }
 
         warnings: list[OntologyWarning] = []
