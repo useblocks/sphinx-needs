@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import dataclasses
 import json
 from collections.abc import Callable, Mapping
 from copy import deepcopy
@@ -1609,8 +1610,9 @@ def _report_derive_problems(
 ) -> None:
     """Check the rules against the complete schema, and report every finding.
 
-    A rule that cannot be read is replaced by its :class:`DeriveInvalid` marker, so the
-    field stays derived (closed to authors and needextend) and holds its empty value.
+    A rule that cannot be read is replaced by its :class:`DeriveInvalid` marker (the
+    field, or link type, is replaced by a copy carrying it), so the field stays derived
+    (closed to authors and needextend) and holds its empty value.
     One ``needs.derive_invalid`` warning per rule (a rule that cannot be read is
     reported for that alone, not for a default beside it, or a link type copying into
     a derived ``links``), in a fixed order: the core fields, then the fields, then the
@@ -1622,10 +1624,13 @@ def _report_derive_problems(
             schema.get_link_field(name) if on_link else schema.get_extra_field(name)
         )
         assert target is not None, "a checked rule is on a field of the schema"
-        object.__setattr__(
-            target,
-            "derive",
-            DeriveInvalid(getattr(target.derive, "kind", None), problem.reason),
+        schema.replace_field(
+            dataclasses.replace(
+                target,
+                derive=DeriveInvalid(
+                    getattr(target.derive, "kind", None), problem.reason
+                ),
+            )
         )
     core = sorted((p for p in read_problems if p.core), key=lambda p: p.name)
     findings = {(p.on_link, p.name): p for p in read_problems if not p.core}

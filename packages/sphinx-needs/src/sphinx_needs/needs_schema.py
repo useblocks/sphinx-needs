@@ -986,6 +986,22 @@ class FieldsSchema:
             raise ValueError(f"Field '{field.name}' already exists.")
         self._link_fields[field.name] = field
 
+    def replace_field(self, field: FieldSchema | LinkSchema) -> None:
+        """Replace the extra field, or the link field, of the same name.
+
+        The field keeps its place in the iteration order.
+
+        :raises ValueError: if no extra field or link field of that name exists
+        """
+        if isinstance(field, LinkSchema):
+            if field.name not in self._link_fields:
+                raise ValueError(f"Link field '{field.name}' does not exist.")
+            self._link_fields[field.name] = field
+        else:
+            if field.name not in self._extra_fields:
+                raise ValueError(f"Extra field '{field.name}' does not exist.")
+            self._extra_fields[field.name] = field
+
     def get_any_field(self, name: str) -> FieldSchema | LinkSchema | None:
         """Get a field by name."""
         if name in self._core_fields:

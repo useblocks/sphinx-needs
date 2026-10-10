@@ -8,6 +8,7 @@ schema ``needs.json`` exports. A rule that cannot be read is one
 The rules are not computed yet: every derived field holds its empty value.
 """
 
+import dataclasses
 import json
 from pathlib import Path
 
@@ -15,6 +16,12 @@ import pytest
 
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.derive import DeriveInvalid, DeriveRule, parse_derive
+from sphinx_needs.needs_schema import (
+    FieldSchema,
+    FieldsSchema,
+    LinkDisplayConfig,
+    LinkSchema,
+)
 from sphinx_needs_testkit import build_warnings
 
 _CLOSED = (
@@ -852,3 +859,30 @@ def test_parse_derive_reads_a_rule(raw, on_link, expected):
 def test_parse_derive_refuses_a_rule(raw, on_link, kind, reason):
     """A rule whose roles do not fit its kind is a marker, with why, naming the role."""
     assert parse_derive(raw, on_link=on_link) == DeriveInvalid(kind, reason)
+
+
+def test_replace_field_keeps_its_place():
+    """A field is replaced by a new one of the same name, as a rule that cannot be
+    read is marked: the frozen field is rebuilt whole, not changed in place, and keeps
+    its place, so the order of the fields does not move."""
+    schema = FieldsSchema()
+    for name in ("a", "b", "c"):
+        schema.add_extra_field(FieldSchema(name=name, schema={"type": "string"}))
+    link = LinkSchema(
+        name="l",
+        schema={"type": "array", "items": {"type": "string"}},
+        display=LinkDisplayConfig(incoming="l in", outgoing="l"),
+    )
+    schema.add_link_field(link)
+    marker = DeriveInvalid("copy", "why")
+    old = schema.get_extra_field("b")
+    schema.replace_field(dataclasses.replace(old, derive=marker))
+    assert list(schema.iter_extra_field_names()) == ["a", "b", "c"]
+    assert schema.get_extra_field("b").derive == marker
+    assert old.derive is None
+    schema.replace_field(dataclasses.replace(link, derive=marker))
+    assert schema.get_link_field("l").derive == marker
+    with pytest.raises(ValueError, match="does not exist"):
+        schema.replace_field(FieldSchema(name="z", schema={"type": "string"}))
+    with pytest.raises(ValueError, match="does not exist"):
+        schema.replace_field(dataclasses.replace(link, name="a"))
