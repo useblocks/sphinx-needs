@@ -106,7 +106,8 @@ Improvements
 - ✨ A field or link type can be :ref:`derived <needs_derive>` by a rule declared in its configuration
   (:issue:`2030`, :pr:`2178`)
 
-  A ``derive`` table on its :ref:`needs_fields` or :ref:`needs_links` entry, in :file:`conf.py` or the TOML file,
+  A ``derive`` table on its :ref:`needs_fields` or :ref:`needs_links` entry, in :file:`conf.py` or the TOML file
+  (or passed to :py:func:`~sphinx_needs.api.configuration.add_field`),
   names a kind and the kind's roles, and the rule computes the value for every need from the project's sources.
   The kinds are ``copy`` (a lookup: the need's own field, a named need's, or over a link type),
   ``sum``, ``count``, ``min``, ``max``, ``any``, ``all`` and ``collect`` (roll-ups over a link type
