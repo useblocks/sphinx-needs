@@ -894,6 +894,13 @@ def _resolve_field(
                         reads=reads,
                         cache=reads_ctx.pass_.rule_cache,
                     )
+                if value is None:
+                    # the rule found no value: the field holds its empty value, which
+                    # is not a result, so its schema does not check it
+                    from sphinx_needs.functions.order import typed_empty
+
+                    resolved.append(typed_empty(field_schema))
+                    continue
                 if not (
                     field_schema.type_check(value)
                     or (
@@ -906,6 +913,15 @@ def _resolve_field(
                         f"{field_schema.type!r}"
                     )
                 value = _in_field_type(value, field_schema)
+                if (
+                    refused := _refused_by_schema(
+                        value, field_schema, reads_ctx.pass_.rule_cache
+                    )
+                ) is not None:
+                    raise ValueError(
+                        f"{item.describe()} value {_shown(value)!r} is refused by the "
+                        f"field's schema: {refused}"
+                    )
                 if isinstance(value, list | tuple):
                     resolved.extend(value)
                 else:
@@ -1055,6 +1071,42 @@ def _in_field_type(value: Any, field_schema: FieldSchema | LinkSchema) -> Any:
             return [number(item) for item in value]
         return number(value)
     return value
+
+
+def _shown(value: Any) -> Any:
+    """A rule's result as a message shows it: a link as its id."""
+    if isinstance(value, list | tuple):
+        return [_shown(item) for item in value]
+    return value.to_filter_string() if isinstance(value, NeedLink) else value
+
+
+def _refused_by_schema(
+    value: Any, field_schema: FieldSchema | LinkSchema, cache: dict[Any, Any]
+) -> str | None:
+    """Why the field's own ``schema`` refuses a rule's result, if it does.
+
+    The result is checked as schema validation checks the field's value (a link list
+    as its ids); ``None``, no value, is not checked. The field's validator is compiled
+    once per pass.
+    """
+    if value is None:
+        return None
+    key = ("field schema", field_schema.name)
+    if (validator := cache.get(key)) is None:
+        # imported here, as the schema module imports the data module, which this
+        # module's callers import
+        from sphinx_needs.schema.core import compile_validator
+
+        validator = cache[key] = compile_validator(
+            {"properties": {field_schema.name: field_schema.schema}}
+        )
+    error = next(
+        iter(
+            validator.compiled.iter_errors(instance={field_schema.name: _shown(value)})
+        ),
+        None,
+    )
+    return None if error is None else error.message
 
 
 def _get_variant(

@@ -592,6 +592,118 @@ def test_a_changed_global_option_rereads_every_document(test_app, make_app):
     assert _needs(second)["REQ_001"]["owner"] == "bob"
 
 
+REFUSED_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_fields = {
+    "fruit": {"schema": {"type": "string"}},
+    "hours": {"schema": {"type": "number"}},
+    "pick": {
+        "schema": {"type": "string", "enum": ["apple", "pear"]},
+        "nullable": False,
+        "derive": {"kind": "copy", "field": "fruit"},
+    },
+    "code": {
+        "schema": {"type": "string", "pattern": "^[a-z]+$"},
+        "derive": {"kind": "copy", "field": "fruit"},
+    },
+    "total": {
+        "schema": {"type": "number", "minimum": 0},
+        "nullable": False,
+        "derive": {"kind": "sum", "field": "hours", "over": "links"},
+    },
+    "n": {
+        "schema": {"type": "integer", "minimum": 1},
+        "nullable": False,
+        "derive": {"kind": "count", "over": "links"},
+    },
+}
+"""
+
+REFUSED_INDEX = """\
+Refused
+=======
+
+.. req:: Banana
+   :id: REQ_1
+   :fruit: Banana
+   :hours: -2
+
+.. req:: Apple
+   :id: REQ_2
+   :fruit: apple
+   :hours: 3
+
+.. spec:: Sums REQ_1
+   :id: SPEC_1
+   :links: REQ_1
+
+.. spec:: Sums REQ_2
+   :id: SPEC_2
+   :links: REQ_2
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), REFUSED_CONF),
+                (Path("index.rst"), REFUSED_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_result_the_field_schema_refuses(test_app):
+    """A computed result the field's ``schema`` refuses (an ``enum``, a ``pattern``, a
+    ``minimum``) is not stored: it is one ``needs.dynamic_function``, and the field
+    keeps its empty value, which its schema does not check; so no schema violation.
+
+    A result equal to the empty value is checked too: a ``count`` of 0 under
+    ``minimum = 1`` is refused, though the field then holds 0 as its empty value.
+    """
+    app = test_app
+    app.build()
+    refused = (
+        "WARNING: Error while resolving dynamic values for field '{}', of need '{}': "
+        "derive rule '{}' value {} is refused by the field's schema: {} "
+        "[needs.dynamic_function]"
+    )
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:4: "
+        + refused.format(
+            "code", "REQ_1", "copy", "'Banana'", '"Banana" does not match "^[a-z]+$"'
+        ),
+        "<srcdir>/index.rst:4: "
+        + refused.format("n", "REQ_1", "count", 0, "0 is less than the minimum of 1"),
+        "<srcdir>/index.rst:4: "
+        + refused.format(
+            "pick",
+            "REQ_1",
+            "copy",
+            "'Banana'",
+            '"Banana" is not one of "apple" or "pear"',
+        ),
+        "<srcdir>/index.rst:9: "
+        + refused.format("n", "REQ_2", "count", 0, "0 is less than the minimum of 1"),
+        "<srcdir>/index.rst:14: "
+        + refused.format(
+            "total", "SPEC_1", "sum", -2.0, "-2.0 is less than the minimum of 0"
+        ),
+    ]
+    needs = _needs(app)
+    # SPEC_1 and SPEC_2 have no fruit: the copy finds no value, and the empty value
+    # is held without a finding
+    assert (needs["SPEC_1"]["pick"], needs["SPEC_1"]["code"]) == ("", None)
+    assert (needs["REQ_1"]["pick"], needs["REQ_1"]["code"]) == ("", None)
+    assert (needs["REQ_2"]["pick"], needs["REQ_2"]["code"]) == ("apple", "apple")
+    assert (needs["SPEC_1"]["total"], needs["SPEC_2"]["total"]) == (0.0, 3.0)
+    assert (needs["REQ_1"]["n"], needs["SPEC_1"]["n"]) == (0, 1)
+
+
 IMPORT_SOURCE = {
     "current_version": "1.0",
     "versions": {

@@ -770,8 +770,9 @@ def execute_rule(
     :param schema: The schema of every field.
     :param reads: The record of the reads, as for a built-in function.
     :param cache: What a ``transitive`` rule computes once per pass, shared by the needs.
-    :return: The value: the empty value of the field's type when the rule finds none
-        (``None`` for a nullable field), a list of links for a link type.
+    :return: The value, a list of links for a link type; ``None`` when the rule finds
+        no value (a ``copy``, ``min`` or ``max`` with nothing to read), for which the
+        field holds its empty value.
     :raises ValueError: If the rule cannot be computed on this need: ``from`` names no
         need, or a ``where`` / ``test`` cannot be evaluated on a candidate.
     """
@@ -794,7 +795,7 @@ def execute_rule(
         assert rule.field is not None, "copy has a field"
         if reads is not None:
             reads.note_read(source, rule.field)
-        return _or_empty(source[rule.field], field_schema)
+        return source[rule.field]
 
     if rule.transitive:
         return _rule_transitive(
@@ -829,10 +830,7 @@ def execute_rule(
         case "min" | "max":
             assert rule.field is not None, "min and max have a field"
             values = [_read(c, rule.field, reads) for c in candidates]
-            return _or_empty(
-                _extremum(rule.kind, values, _order_of(schema, rule.field)),
-                field_schema,
-            )
+            return _extremum(rule.kind, values, _order_of(schema, rule.field))
         case "collect":
             assert rule.field is not None, "collect has a field"
             collected: list[Any] = []
@@ -893,16 +891,6 @@ def _passes(
         return filter_single_need(candidate, config, predicate)
     except NeedsInvalidFilter as err:
         raise ValueError(f"on need {candidate['id']!r}: {err}") from err
-
-
-def _or_empty(value: Any, field_schema: FieldSchema | LinkSchema) -> Any:
-    """``value``, or the field's empty value for ``None``."""
-    if value is not None:
-        return value
-    # imported here, as the order module imports this one
-    from sphinx_needs.functions.order import typed_empty
-
-    return typed_empty(field_schema)
 
 
 def _items(value: Any) -> list[Any]:
@@ -974,7 +962,7 @@ def _rule_copy_over(
         {t["id"]: t for t in targets if _read(t, rule.field, reads) is not None}.items()
     )
     if not setting:
-        return _or_empty(None, field_schema)
+        return None
     if rule.select == "unique" and len(setting) > 1:
         log_warning(
             logger,
@@ -1068,7 +1056,7 @@ def _rule_transitive(
 
     reached = graph.best(graph.component[need.id], rule.kind, order, value_of, best)
     own = value_of(need.id) if rule.include_self else None
-    return _or_empty(_extremum(rule.kind, [reached, own], order), field_schema)
+    return _extremum(rule.kind, [reached, own], order)
 
 
 class _Reach:
