@@ -705,7 +705,8 @@ def test_calc_sum_outside_a_need_names_itself(test_app):
 # and counted on ``REQ_1``'s back links. ``check_linked_values`` and a ``links_only``
 # ``calc_sum`` read the fields of each need the links name, and they looked a part
 # link up by its whole text, which no need has: both calls failed. They now read the
-# part's need, as ubCode does on the same sources.
+# part's need, as ubCode does on the same sources for the calls without a filter (ubCode
+# reports a filter argument as not yet supported until 9.0.0's inline spellings).
 
 PART_LINKS_CONF = """\
 extensions = ["sphinx_needs"]
@@ -754,6 +755,12 @@ Part links
    :links: REQ_1.b, SPEC_C
    :verdict: [[check_linked_values('all-open', 'status', 'open', 'type == "req"')]]
    :total: [[calc_sum('hours', 'type == "req"', links_only=True)]]
+
+.. spec:: The need is read, not the part
+   :id: SPEC_4
+   :links: REQ_1.a, SPEC_C
+   :verdict: [[check_linked_values('need', 'id', 'REQ_1', 'type == "req"')]]
+   :total: [[calc_sum('hours', 'id == "REQ_1"', links_only=True)]]
 """
 
 
@@ -776,7 +783,11 @@ def test_part_links_read_the_parts_need(test_app):
     ``SPEC_1`` is the issue's own shape (#2173): ``'all-open'`` and ``3 + 5``. Two
     parts of one need name that need twice, so its value is added twice, as a need
     linked twice is (``SPEC_2``). A filter is tested on the part's need (``SPEC_3``:
-    the part's need is a ``req``, the closed ``spec`` is filtered out).
+    the part's need is a ``req``, the closed ``spec`` is filtered out). It is the
+    NEED that is read, not the part: a part item shares its need's ``status``,
+    ``hours`` and ``type``, so only its ``id`` tells the two apart (``SPEC_4``:
+    ``id == "REQ_1"`` holds for the need and not for the part ``REQ_1.a``; the
+    check's filter keeps only the ``req``, so every remaining link must match).
     """
     app = test_app
     app.build()
@@ -788,6 +799,8 @@ def test_part_links_read_the_parts_need(test_app):
     assert needs["SPEC_2"]["total"] == 6.0
     assert needs["SPEC_3"]["verdict"] == "all-open"
     assert needs["SPEC_3"]["total"] == 3.0
+    assert needs["SPEC_4"]["verdict"] == "need"
+    assert needs["SPEC_4"]["total"] == 3.0
 
 
 PART_LINKS_ORDER_INDEX = """\
@@ -895,3 +908,82 @@ def test_a_dead_link_still_fails_the_call(test_app):
     needs = _built_needs(app)
     assert needs["SPEC_D"]["verdict"] is None
     assert needs["SPEC_D"]["total"] is None
+
+
+MISSING_PART_INDEX = """\
+Missing part
+============
+
+.. req:: Req one
+   :id: REQ_1
+   :status: open
+   :hours: 3
+
+   :np:`(a) part a`
+
+.. req:: Req two
+   :id: REQ_2
+   :status: open
+   :hours: 5
+
+.. spec:: A link to a part the need does not have
+   :id: SPEC_Z
+   :links: REQ_1.zz, REQ_2
+   :verdict: [[check_linked_values('all-open', 'status', 'open')]]
+   :total: [[calc_sum('hours', links_only=True)]]
+
+.. spec:: A dotted id that names no need before its dot
+   :id: SPEC_DOT
+   :links: REQ_9.x
+   :verdict: [[check_linked_values('all-open', 'status', 'open')]]
+   :total: [[calc_sum('hours', links_only=True)]]
+
+.. req:: A need whose id has a dot, which no reader of a link reads whole
+   :id: REQ_9.x
+   :status: open
+   :hours: 7
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), PART_LINKS_CONF),
+                (Path("index.rst"), MISSING_PART_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_link_to_a_missing_part_reads_the_need(test_app):
+    """A link to a part its need does not have reads the need, and is reported as a dead link.
+
+    ``REQ_1.zz`` names an existing need and a part it has not: every reader of a link
+    reads the text before the dot as the need and the rest as the part, so both calls
+    read ``REQ_1`` (as the back links count the link on it, and as ubCode reads it),
+    while the link checker reports the unknown part. A dotted id that names no need
+    before its dot is a dead link and fails the calls, as ``NOPE_1`` does, even where
+    a need carries that dotted id (``REQ_9.x``: its 7 hours are never read).
+    """
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:22: WARNING: Error while resolving dynamic values for field "
+        "'total', of need 'SPEC_DOT': Error while executing function 'calc_sum': "
+        "'REQ_9' [needs.dynamic_function]",
+        "<srcdir>/index.rst:22: WARNING: Error while resolving dynamic values for field "
+        "'verdict', of need 'SPEC_DOT': Error while executing function "
+        "'check_linked_values': 'REQ_9' [needs.dynamic_function]",
+        "<srcdir>/index.rst:16: WARNING: Need 'SPEC_Z' has unknown outgoing link "
+        "'REQ_1.zz' in field 'links' [needs.link_outgoing]",
+        "<srcdir>/index.rst:22: WARNING: Need 'SPEC_DOT' has unknown outgoing link "
+        "'REQ_9.x' in field 'links' [needs.link_outgoing]",
+    ]
+    needs = _built_needs(app)
+    assert needs["SPEC_Z"]["verdict"] == "all-open"
+    assert needs["SPEC_Z"]["total"] == 8.0
+    assert needs["SPEC_DOT"]["verdict"] is None
+    assert needs["SPEC_DOT"]["total"] is None

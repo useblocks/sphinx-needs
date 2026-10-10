@@ -209,8 +209,11 @@ Bug fixes
   up by its whole text, which names no need: the call failed with a
   ``needs.dynamic_function`` warning and the field was left empty. A part link now reads
   its need's fields, as the back links already count it on that need, so two parts of one
-  need read that need twice, as a need linked twice is read. A link naming no need still
-  fails the call. `ubCode`_ computes the same values.
+  need read that need twice, as a need linked twice is read. A link whose text has a dot
+  is read as ``<need>.<part>``, as every other reader of a link reads it, so one naming a
+  part the need does not have reads the need, and one whose text before the dot names no
+  need fails the call, as a link naming no need still does. `ubCode`_ computes the same
+  values for the calls without a filter.
 
 - 🐛 ``needextend``'s ``:+field:`` on a nullable field the need never set sets the field,
   instead of crashing the build (:issue:`2038`, :pr:`2102`)
