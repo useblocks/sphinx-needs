@@ -783,8 +783,9 @@ class NeedsSphinxConfig:
         """
         return _NEEDS_CONFIG.functions
 
+    # "env", as for ``_fields``: a default is given to a need as it is created
     _global_options: GlobalOptionsType = field(
-        default_factory=dict, metadata={"rebuild": "html", "types": (dict,)}
+        default_factory=dict, metadata={"rebuild": "env", "types": (dict,)}
     )
     """Default values given to specified fields of needs"""
 

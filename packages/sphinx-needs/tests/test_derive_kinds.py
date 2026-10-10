@@ -506,6 +506,62 @@ def test_a_changed_field_configuration_rereads_every_document(test_app, make_app
     assert needs["REQ_001"]["owner"] == "alice"
 
 
+GLOBAL_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_fields = {"owner": {"schema": {"type": "string"}}}
+"""
+
+GLOBAL_INDEX = """\
+Global options
+==============
+
+.. req:: Owned
+   :id: REQ_001
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), GLOBAL_CONF),
+                (Path("index.rst"), GLOBAL_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_changed_global_option_rereads_every_document(test_app, make_app):
+    """A ``needs_global_options`` default added between two builds applies at once.
+
+    It is read by every need as it is created, as the field configuration is: before,
+    the second build kept the need of the unchanged document without the default.
+    """
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    assert _needs(app)["REQ_001"]["owner"] is None
+
+    conf = Path(app.srcdir, "conf.py")
+    conf.write_text(
+        GLOBAL_CONF + 'needs_global_options = {"owner": {"default": "bob"}}\n',
+        encoding="utf-8",
+    )
+    later = time.time_ns() + 60_000_000_000
+    os.utime(conf, ns=(later, later))
+
+    second = make_app(buildername="needs", srcdir=app.srcdir)
+    second.build()
+    assert [w for w in build_warnings(second) if "[needs." in w] == [
+        'WARNING: Config option "needs_global_options" is deprecated. Please use '
+        "needs_fields and needs_links instead. [needs.deprecated]",
+    ]
+    assert _needs(second)["REQ_001"]["owner"] == "bob"
+
+
 IMPORT_SOURCE = {
     "current_version": "1.0",
     "versions": {
