@@ -205,6 +205,8 @@ def check_linked_values(
 
     If ``one_hit`` is set to True, only one linked need must have a positive match for the searched value.
 
+    A link to a need part (``REQ_1.a``) checks the part's need.
+
     **Examples**
 
     **Needs used as input data**
@@ -297,7 +299,8 @@ def check_linked_values(
         search_value = [search_value]
 
     for link in links:
-        need = needs[link]
+        # a link to a need part (``ID.part``) reads the part's need
+        need = needs[NeedLink.parse_address(link).id]
         if filter_string:
             try:
                 if not filter_single_need(need, needs_config, filter_string):
@@ -340,7 +343,8 @@ def calc_sum(
 
     The values are added in ascending need-id order, comparing ids as strings
     (so ``REQ_10`` comes before ``REQ_9``);
-    with ``links_only``, in the order the links are written.
+    with ``links_only``, in the order the links are written,
+    a link to a need part (``REQ_1.a``) adding the part's need.
     The order can change the last digits of a total of non-integer values,
     so it is fixed rather than left to the order the needs were read in.
 
@@ -412,9 +416,10 @@ def calc_sum(
     # float addition is not associative, so the order decides a total's last digits:
     # ascending need id (plain string order, not the natural order links are sorted
     # in), so a total does not depend on the order the needs reached the environment;
-    # ``links_only`` keeps the order the links are written in
+    # ``links_only`` keeps the order the links are written in, and a link to a need
+    # part (``ID.part``) reads the part's need
     check_needs = (
-        [needs[link] for link in need["links"]]
+        [needs[NeedLink.parse_address(link).id] for link in need["links"]]
         if links_only
         else (needs[need_id] for need_id in sorted(needs))
     )
