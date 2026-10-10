@@ -905,6 +905,7 @@ def _resolve_field(
                         f"{item.describe()} value {type(value)} is not of type "
                         f"{field_schema.type!r}"
                     )
+                value = _in_field_type(value, field_schema)
                 if isinstance(value, list | tuple):
                     resolved.extend(value)
                 else:
@@ -1041,10 +1042,10 @@ def _resolve_field(
 def _in_field_type(value: Any, field_schema: FieldSchema | LinkSchema) -> Any:
     """A computed value in the type of the field holding it.
 
-    An integer in a ``number`` field (an integer a ``[[…]]`` returns, or a variant
-    gives, or the items of either in an array of numbers) is stored as a float, as an
-    authored value of the field is, so that it is exported as one. A boolean is not a
-    number here.
+    An integer in a ``number`` field (a rule's ``count``, a ``sum`` or ``copy`` of an
+    ``integer`` field, or an integer a ``[[…]]`` returns, or the items of either in an
+    array of numbers) is stored as a float, as an authored value of the field is, so
+    that it is exported and hashed as one. A boolean is not a number here.
     """
 
     def number(item: Any) -> Any:

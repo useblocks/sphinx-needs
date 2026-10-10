@@ -98,6 +98,36 @@ def test_sum_and_count(test_app):
 
 
 @pytest.mark.parametrize("test_app", [KINDS], indirect=True)
+def test_a_result_takes_the_type_of_its_field(test_app):
+    """A result is stored, exported and hashed in the type of the field holding it.
+
+    ``points`` is an ``integer`` field: its sum, maximum, copy and items are integers,
+    and so is a ``count``, but in a ``number`` field each is a float (``13.0``, and
+    ``0.0`` over no candidate), as an authored value of that field is; in an
+    ``integer`` field it stays an integer (``s_points``). The hash writes the float.
+    """
+    app = test_app
+    app.build()
+    needs = _needs(app)
+    spec, req_a, req_c = needs["SPEC_1"], needs["REQ_A"], needs["REQ_C"]
+    floats = [
+        (spec["t_sum_n"], 13.0),
+        (req_a["t_sum_n"], 0.0),
+        (spec["t_count_n"], 2.0),
+        (req_a["t_count_n"], 0.0),
+        (req_a["t_copy_n"], 3.0),
+        (spec["t_max_n"], 4.0),
+        *zip(spec["t_collect_n"], [4.0, 3.0], strict=True),
+    ]
+    for value, expected in floats:
+        assert type(value) is float and value == expected, (value, expected)
+    assert req_c["t_copy_n"] is None
+    assert type(spec["s_points"]) is int
+    assert spec["t_hash_n"] == _sha256("[13.0,2.0,null]")
+    assert req_a["t_hash_n"] == _sha256("[0.0,0.0,3]")
+
+
+@pytest.mark.parametrize("test_app", [KINDS], indirect=True)
 def test_any_and_all(test_app):
     """``any`` / ``all`` over the tests of ``SPEC_1``; over none, ``all`` is true and
     ``any`` false."""

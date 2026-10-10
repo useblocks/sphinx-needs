@@ -174,3 +174,33 @@ derive = { kind = "content_links", where = "type == 'req'" }
 
 [needs.links.l_from]
 derive = { kind = "content_links", from = "REQ_A" }
+
+# -- a result takes the type of the field it is stored in ----------------------------
+
+[needs.fields.t_sum_n]
+schema = { type = "number" }
+nullable = false
+derive = { kind = "sum", field = "points", over = "links" }
+
+[needs.fields.t_count_n]
+schema = { type = "number" }
+nullable = false
+derive = { kind = "count", over = "tests_back" }
+
+[needs.fields.t_copy_n]
+schema = { type = "number" }
+derive = { kind = "copy", field = "points" }
+
+[needs.fields.t_max_n]
+schema = { type = "number" }
+derive = { kind = "max", field = "points", over = "links" }
+
+[needs.fields.t_collect_n]
+schema = { type = "array", items = { type = "number" } }
+nullable = false
+derive = { kind = "collect", field = "points", over = "links" }
+
+[needs.fields.t_hash_n]
+schema = { type = "string" }
+nullable = false
+derive = { kind = "hash", fields = ["t_sum_n", "t_count_n", "points"] }
