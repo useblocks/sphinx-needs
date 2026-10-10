@@ -566,6 +566,74 @@ def test_needs_fields_parent_needs(test_app, expected):
     assert _built(app)["needs"]["REQ_002"]["parent_needs"] == ["REQ_001"]
 
 
+LINK_NAMED_FIELDS_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_links = {"tests": {}}
+needs_extra_links = [{"option": "blocks", "incoming": "blocked by"}]
+needs_fields = {
+    "tests": {"schema": {"type": "string"}},
+    "links": {"derive": {"kind": "copy", "field": "title"}},
+    "blocks": {"description": "mine"},
+    "owner": {"schema": {"type": "string"}},
+}
+"""
+
+LINK_NAMED_FIELDS_INDEX = """\
+Link-named fields
+=================
+
+.. req:: Tested
+   :id: REQ_001
+
+.. spec:: Tests it
+   :id: SPEC_001
+   :tests: REQ_001
+   :links: REQ_001
+   :blocks: REQ_001
+   :owner: alice
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), LINK_NAMED_FIELDS_CONF),
+                (Path("index.rst"), LINK_NAMED_FIELDS_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_needs_fields_named_after_a_link_type(test_app):
+    """A ``needs_fields`` entry named after a declared link type (``needs_links``,
+    ``needs_extra_links``, or the default ``links``) is reported and ignored, where it
+    stopped the build ("Field 'tests' already exists"); a ``derive`` on it is ignored
+    with it. The link types work as before."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        'WARNING: Config option "needs_extra_links" is deprecated. Please use '
+        '"needs_links" instead. [needs.deprecated]',
+        "WARNING: needs_fields entry 'tests' names the link type 'tests', which is "
+        "not a field; the entry is ignored [needs.config]",
+        "WARNING: needs_fields entry 'links' names the link type 'links', which is "
+        "not a field; the entry is ignored [needs.config]",
+        "WARNING: needs_fields entry 'blocks' names the link type 'blocks', which is "
+        "not a field; the entry is ignored [needs.config]",
+    ]
+    spec = _built(app)["needs"]["SPEC_001"]
+    assert (spec["tests"], spec["links"], spec["blocks"]) == (
+        ["REQ_001"],
+        ["REQ_001"],
+        ["REQ_001"],
+    )
+    assert spec["owner"] == "alice"
+
+
 CONF_PY_COPY_INTO_LINKS = """\
 extensions = ["sphinx_needs"]
 needs_build_json = True
