@@ -768,3 +768,536 @@ mentions = []
 [case.expect.needs.SPEC_1]
 inline = ["REQ_1", "REQ_2.p", "REQ_3"]
 mentions = []
+
+# --- what is reported ---------------------------------------------------------------
+
+[[case]]
+name = "derive-authored"
+why = "a derived field is closed to authors: an authored value, an inline call and a needextend are each reported and ignored, and the rule's value is stored"
+config = '''
+[needs.fields.hours]
+schema = { type = "number" }
+
+[needs.fields.total]
+schema = { type = "number" }
+nullable = false
+derive = { kind = "sum", field = "hours", over = "links" }
+
+[needs.links.mentions]
+derive = { kind = "content_links" }
+'''
+source = '''
+.. req:: Hours
+   :id: REQ_1
+   :hours: 3
+
+.. spec:: Authored
+   :id: SPEC_1
+   :links: REQ_1
+   :total: 99
+   :mentions: REQ_1
+
+.. spec:: An inline call
+   :id: SPEC_2
+   :total: [[copy("hours", "REQ_1")]]
+
+.. spec:: Extended
+   :id: SPEC_3
+
+.. needextend:: SPEC_3
+   :total: 5
+'''
+[case.expect]
+[case.expect.needs.SPEC_1]
+total = 3.0
+mentions = []
+[case.expect.needs.SPEC_2]
+total = 0.0
+[case.expect.needs.SPEC_3]
+total = 0.0
+[[case.expect.findings]]
+code = "derive_authored"
+need = "SPEC_1"
+field = "total"
+[[case.expect.findings]]
+code = "derive_authored"
+need = "SPEC_1"
+field = "mentions"
+[[case.expect.findings]]
+code = "derive_authored"
+need = "SPEC_2"
+field = "total"
+[[case.expect.findings]]
+code = "derive_authored"
+field = "total"
+
+[[case]]
+name = "derive-invalid-shapes"
+why = "a rule that cannot be read is one derive_invalid per rule, at load, and its field holds its empty value; a default beside a rule is reported and the rule applies; a rule on a core field or the core link type is reported and ignored"
+config = '''
+[needs.links.tests]
+
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.fields.hours]
+schema = { type = "number" }
+
+[needs.fields.bad_kind]
+derive = { kind = "expr", expr = "1" }
+
+[needs.fields.bad_no_kind]
+derive = { field = "owner" }
+
+[needs.fields.bad_not_table]
+derive = "copy"
+
+[needs.fields.bad_unknown_role]
+derive = { kind = "copy", field = "owner", frm = "REQ_1" }
+
+[needs.fields.bad_role_not_taken]
+schema = { type = "number" }
+derive = { kind = "sum", field = "hours", over = "links", test = "status == 'open'" }
+
+[needs.fields.bad_missing]
+schema = { type = "number" }
+derive = { kind = "sum", field = "hours" }
+
+[needs.fields.bad_role_type]
+schema = { type = "number" }
+derive = { kind = "max", field = "hours", over = "links", transitive = "yes" }
+
+[needs.fields.bad_copy_both]
+derive = { kind = "copy", field = "owner", from = "REQ_1", over = "links" }
+
+[needs.fields.bad_select_no_over]
+derive = { kind = "copy", field = "owner", select = "unique" }
+
+[needs.fields.bad_any_both]
+schema = { type = "boolean" }
+derive = { kind = "any", field = "owner", test = "status == 'open'", over = "links" }
+
+[needs.fields.bad_include_self]
+schema = { type = "number" }
+derive = { kind = "max", field = "hours", over = "links", include_self = true }
+
+[needs.fields.bad_link_kind]
+derive = { kind = "links", where = "type == 'req'" }
+
+[needs.links.bad_value_kind]
+derive = { kind = "sum", field = "hours", over = "links" }
+
+[needs.fields.bad_over]
+schema = { type = "number" }
+derive = { kind = "sum", field = "hours", over = "nope" }
+
+[needs.fields.bad_field]
+derive = { kind = "copy", field = "nope" }
+
+[needs.fields.bad_where_needs]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = "any(n['id'] == id for n in needs)" }
+
+[needs.fields.bad_where_current]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = "current_need['status'] == 'open'" }
+
+[needs.fields.bad_where_c]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = "c.this_doc()" }
+
+[needs.fields.bad_where_syntax]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = "type ==" }
+
+[needs.fields.bad_result]
+schema = { type = "string" }
+derive = { kind = "count", over = "links" }
+
+[needs.fields.bad_select_list]
+derive = { kind = "copy", field = "owner", over = "links", select = "list" }
+
+[needs.fields.bad_default]
+derive = { kind = "copy", field = "owner" }
+default = "nobody"
+
+[needs.fields.status]
+derive = { kind = "copy", field = "owner" }
+
+[needs.links.parent_needs]
+derive = { kind = "links", where = "type == 'req'" }
+'''
+source = '''
+.. req:: Owned
+   :id: REQ_1
+   :owner: alice
+   :status: open
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+status = "open"
+bad_default = "alice"
+bad_value_kind = []
+[case.expect.nulls]
+REQ_1 = ["bad_kind", "bad_no_kind", "bad_not_table", "bad_unknown_role", "bad_role_not_taken", "bad_missing", "bad_role_type", "bad_copy_both", "bad_select_no_over", "bad_any_both", "bad_include_self", "bad_link_kind", "bad_over", "bad_field", "bad_where_needs", "bad_where_current", "bad_where_c", "bad_where_syntax", "bad_result", "bad_select_list"]
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_kind"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_no_kind"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_not_table"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_unknown_role"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_role_not_taken"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_missing"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_role_type"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_copy_both"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_select_no_over"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_any_both"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_include_self"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_link_kind"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_value_kind"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_over"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_field"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_where_needs"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_where_current"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_where_c"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_where_syntax"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_result"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_select_list"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_default"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "status"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "parent_needs"
+
+[[case]]
+name = "declared-cycle"
+why = "rules reading one another's own field in a circle are refused at load, each; a cycle through the needs (a rule over links, two needs linking each other) is reported on each need of it, and leaves the field empty"
+config = '''
+[needs.fields.c_a]
+derive = { kind = "copy", field = "c_b" }
+
+[needs.fields.c_b]
+derive = { kind = "copy", field = "c_a" }
+
+[needs.fields.cyc]
+derive = { kind = "copy", field = "cyc", over = "links" }
+'''
+source = '''
+.. req:: Links the other
+   :id: REQ_1
+   :links: REQ_2
+
+.. req:: Links back
+   :id: REQ_2
+   :links: REQ_1
+'''
+[case.expect]
+[case.expect.nulls]
+REQ_1 = ["c_a", "c_b", "cyc"]
+REQ_2 = ["cyc"]
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "c_a"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "c_b"
+[[case.expect.findings]]
+code = "derive_cycle"
+need = "REQ_1"
+field = "cyc"
+[[case.expect.findings]]
+code = "derive_cycle"
+need = "REQ_2"
+field = "cyc"
+
+[[case]]
+name = "join-reserved"
+why = "the join role is reserved for a later release: a rule naming it, on links or on copy, is refused"
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.links.bad_join]
+derive = { kind = "links", where = "type == 'test'", join = { field = "owner", equals = "owner" } }
+
+[needs.fields.bad_copy_join]
+derive = { kind = "copy", field = "owner", join = { field = "owner", equals = "owner" } }
+'''
+source = '''
+.. req:: Owned
+   :id: REQ_1
+   :owner: alice
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+bad_join = []
+[case.expect.nulls]
+REQ_1 = ["bad_copy_join"]
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_join"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_copy_join"
+
+[[case]]
+name = "types-reserved"
+why = "the types role (the need types a rule computes on) is reserved for a later release: a rule naming it, on a field or a link type, is refused"
+config = '''
+[needs.fields.bad_types]
+derive = { kind = "copy", field = "title", types = ["req"] }
+
+[needs.links.bad_types_link]
+derive = { kind = "links", where = "type == 'spec'", types = ["req"] }
+'''
+source = '''
+.. req:: A requirement
+   :id: REQ_1
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+bad_types_link = []
+[case.expect.nulls]
+REQ_1 = ["bad_types"]
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_types"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_types_link"
+
+[[case]]
+name = "copy-into-derived-links"
+why = "a link type with copy = true while links is derived is reported at the links rule, and nothing is copied: links holds what its rule computes"
+config = '''
+[needs.links.links]
+derive = { kind = "links", where = "type == 'test'" }
+
+[needs.links.sat]
+copy = true
+'''
+source = '''
+.. req:: Satisfied
+   :id: REQ_1
+
+.. spec:: Satisfies it
+   :id: SPEC_1
+   :sat: REQ_1
+'''
+[case.expect]
+[case.expect.needs.SPEC_1]
+links = []
+sat = ["REQ_1"]
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "links"
+
+[[case]]
+name = "copy-on-derived-link-type"
+why = "copy = true on a derived link type is not available in this release: it is reported at the rule, which applies, and nothing is copied into links"
+config = '''
+[needs.links.mentions]
+copy = true
+derive = { kind = "content_links" }
+'''
+source = '''
+.. req:: Mentioned
+   :id: REQ_1
+
+.. spec:: Mentions it
+   :id: SPEC_1
+
+   Mentions :need:`REQ_1`.
+'''
+[case.expect]
+[case.expect.needs.SPEC_1]
+mentions = ["REQ_1"]
+links = []
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "mentions"
+
+[[case]]
+name = "fields-named-after-link-type"
+why = "a [needs.fields] entry named after a declared link type is refused (each tool's configuration finding, not compared) and ignored; the build goes on, and the link type works"
+config = '''
+[needs.links.tests]
+
+[needs.fields.tests]
+schema = { type = "string" }
+'''
+source = '''
+.. req:: Tested
+   :id: REQ_1
+
+.. test:: Tests it
+   :id: TEST_1
+   :tests: REQ_1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.TEST_1]
+tests = ["REQ_1"]
+
+# --- the inline spellings and the predicates ----------------------------------------
+
+[[case]]
+name = "filter-inline-spellings"
+why = "calc_sum with a filter sums every need passing it; copy with a filter takes the lowest id passing it, and with no match the need need_id names, else its own need; links_from_filter links every need passing it"
+config = '''
+[needs.fields.hours]
+schema = { type = "number" }
+
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.fields.sum_req]
+schema = { type = "number" }
+
+[needs.fields.who]
+schema = { type = "string" }
+
+[needs.fields.who_named]
+schema = { type = "string" }
+
+[needs.fields.who_first]
+schema = { type = "string" }
+
+[needs.links.inline_links]
+'''
+source = '''
+.. req:: Two hours
+   :id: REQ_1
+   :hours: 2
+   :owner: alice
+
+.. req:: Three hours
+   :id: REQ_2
+   :hours: 3
+   :owner: bob
+
+.. spec:: The calls
+   :id: SPEC_1
+   :owner: carol
+   :sum_req: [[calc_sum("hours", filter="type == 'req'")]]
+   :who: [[copy("owner", filter="type == 'nothing'")]]
+   :who_named: [[copy("owner", "REQ_2", filter="type == 'nothing'")]]
+   :who_first: [[copy("owner", filter="type == 'req'")]]
+   :inline_links: [[links_from_filter("type == 'req'")]]
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+sum_req = 5.0
+who = "carol"
+who_named = "bob"
+who_first = "alice"
+inline_links = ["REQ_1", "REQ_2"]
+
+[[case]]
+name = "portable-predicates"
+why = "the portable predicate shapes: equality, in over a list, and / or / not, a comparison (false on a candidate lacking the field), search(), a parenthesised mix"
+config = '''
+[needs.fields.hours]
+schema = { type = "number" }
+
+[needs.fields.p_eq]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = "status == 'open'" }
+
+[needs.fields.p_in]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = "status in ['open', 'done']" }
+
+[needs.fields.p_bool]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = "type == 'req' and not (status == 'closed')" }
+
+[needs.fields.p_cmp]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = "hours > 1" }
+
+[needs.fields.p_fn]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = "search('alpha', title)" }
+
+[needs.fields.p_mix]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = "(status == 'open' or status == 'done') and hours >= 2" }
+'''
+source = '''
+.. req:: alpha one
+   :id: REQ_1
+   :status: open
+   :hours: 2
+
+.. req:: beta
+   :id: REQ_2
+   :status: done
+   :hours: 1
+
+.. req:: alpha three
+   :id: REQ_3
+   :status: closed
+   :hours: 3
+
+.. req:: gamma, nothing set
+   :id: REQ_4
+
+.. spec:: Counts them
+   :id: SPEC_1
+   :links: REQ_1, REQ_2, REQ_3, REQ_4
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+p_eq = 1
+p_in = 2
+p_bool = 3
+p_cmp = 2
+p_fn = 2
+p_mix = 1
