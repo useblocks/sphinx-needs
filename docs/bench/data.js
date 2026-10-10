@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791580500164,
+  "lastUpdate": 1791628763757,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -24012,6 +24012,42 @@ window.BENCHMARK_DATA = {
             "value": 62.769904839,
             "unit": "s",
             "extra": "Commit: 1ebe93027dbf9d490c1194b56be2d566f72afb1a\nBranch: master\nTime: 2026-10-09T23:13:24+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "86ee08c72adcf7a98017a76114fa505c3a6765ad",
+          "message": "🐛 sphinx-needs: check_linked_values and a links_only calc_sum read a part link's need (#2177)\n\n## What\n\n`packages/sphinx-needs`: `check_linked_values` and\n`calc_sum(links_only=True)` resolve each link through its\nneed id (`NeedLink.parse_address(link).id`), so a link to a need part\n(`:links: REQ_1.a`) reads the part's\nneed, as the back links already count it on that need. Two parts of one\nneed read that need twice, as a\nneed linked twice is read. The order of the pass resolves the same id,\nso a call reading through a part\nlink waits for its need's computed values. A link naming no need still\nfails the call, as before.\n\n## Why\n\nBoth calls looked a link up by its whole text, which names no need for a\npart link: the call failed with\n`KeyError: 'REQ_1.a'` (a `needs.dynamic_function` warning) and the field\nwas left empty. ubCode reads the\npart's need on the same sources (`'all-open'`, `8.0` for the issue's\nshape). The derived-field kinds of\n9.0.0 (`sum`, `all`/`any` over `links`) are defined over the same link\nlists.\n\nCloses #2173\n\n## Tests\n\n`tests/test_dynamic_functions.py`:\n- `test_part_links_read_the_parts_need`: the issue's shape\n(`'all-open'`, `8.0`), two parts of one need\n(`6.0`, the need read twice), a filter tested on the part's need, and a\ncheck by `id` that tells the need\n  from the part (a part item shares its need's other fields).\n- `test_a_link_to_a_missing_part_reads_the_need`: `REQ_1.zz` reads\n`REQ_1` and is reported as a dead link\n(both tools agree today); a dotted id with no need before the dot stays\na dead link.\n- `test_part_links_are_read_after_the_parts_need_is_computed`: the\nreader sorts before the part's need,\nwhose `status`/`hours` are computed; without the order fix the pass\nreported two \"did not account for\n  this read\" `needs.derive_scope` warnings.\n- `test_a_dead_link_still_fails_the_call`: pins the unchanged dead-link\nfailure.\n\nBoth part-link tests fail on master; each half of the fix was reverted\non its own and the matching test\nwent red. Two commits: the fix, and the review round's pins (the\nneed-versus-part check, the missing part)\nwith the changelog's wording on dotted ids.\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-needs`) and they pass.\n- [x] Documentation is updated where behaviour or options change (the\ntwo docstrings and the changelog).\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+          "timestamp": "2026-10-10T12:38:08+02:00",
+          "tree_id": "32f02ea0af5029ac68fc7f513c91040e0dc900fc",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/86ee08c72adcf7a98017a76114fa505c3a6765ad"
+        },
+        "date": 1791628755555,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.0763312429999985,
+            "unit": "s",
+            "extra": "Commit: 86ee08c72adcf7a98017a76114fa505c3a6765ad\nBranch: master\nTime: 2026-10-10T12:38:08+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 46.29044025099998,
+            "unit": "s",
+            "extra": "Commit: 86ee08c72adcf7a98017a76114fa505c3a6765ad\nBranch: master\nTime: 2026-10-10T12:38:08+02:00"
           }
         ]
       }
