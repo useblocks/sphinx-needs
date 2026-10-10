@@ -102,6 +102,26 @@ Improvements
   adds nothing to a field: alone in a nullable string or array field it leaves the field unset,
   where it was stored as the text ``"None"``, or as ``[None]``, which schema validation then refused.
 
+- ✨ A field or link type can be :ref:`derived <needs_derive>` by a rule declared in its configuration
+  (:issue:`2030`, :pr:`2178`)
+
+  A ``derive`` table on its :ref:`needs_fields` or :ref:`needs_links` entry, in :file:`conf.py` or the TOML file,
+  names a kind and the kind's roles, and the rule computes the value for every need.
+  The kinds are ``copy``, ``sum``, ``count``, ``min``, ``max``, ``any``, ``all``, ``collect`` and ``hash`` on a field,
+  and ``links`` and ``content_links`` on a link type; the built-in functions are their per-need spellings
+  (:ref:`dynamic_functions_derived`).
+  A derived field is closed to authors: a value written for it in a need, or set by a ``needextend``,
+  is ignored and reported as ``needs.derive_authored``, and it takes no default.
+  A rule is checked when the configuration is read: one that cannot be read is one ``needs.derive_invalid``
+  warning, naming the kind and the role, and the field holds its empty value;
+  a ``default`` or ``predicates`` beside a rule is reported the same way, and ignored,
+  as is a link type's ``copy = true`` into a derived ``links``.
+  The empty value a derived field holds is not checked against the field's ``schema``, as ``None`` is not.
+  The schema in :ref:`needs.json <needs_builder_format>` marks a derived field or link type ``"readOnly": true``,
+  and a need created by ``needimport`` keeps the derived values it carries.
+  A rule on a core field, or on the ``parent_needs`` link type, is not available in this release, and is reported.
+  `ubCode`_ reads the same configuration and gives the same findings.
+
 - ✨ ``needextend`` gains ``:extend_priority:`` (default 500, lower applied first)
   (:issue:`1658`, :issue:`2064`, :pr:`2083`)
 
@@ -214,6 +234,12 @@ Bug fixes
   part the need does not have reads the need, and one whose text before the dot names no
   need fails the call, as a link naming no need still does. `ubCode`_ computes the same
   values for the calls without a filter.
+
+- 🐛 A :ref:`needs_fields` entry named ``parent_needs``, the core link type, is reported
+  and ignored, instead of stopping the build with "Field 'parent_needs' already exists"
+
+  It is a ``needs.config`` warning; an entry carrying a ``derive`` rule is reported as a
+  rule on a core field, ``needs.derive_invalid``. The link type works as before.
 
 - 🐛 ``needextend``'s ``:+field:`` on a nullable field the need never set sets the field,
   instead of crashing the build (:issue:`2038`, :pr:`2102`)

@@ -306,6 +306,10 @@ For new fields the following can be defined:
     Default: ``False``.
 - ``parse_dynamic_functions``: If set to ``True``, the field will support :ref:`dynamic_functions`.
     Default: the value of :ref:`needs_parse_dynamic_functions` (``True``).
+- ``derive``: A rule computing the field for every need (optional), which makes it a :ref:`derived field <needs_derive>`:
+    a table naming a ``kind`` and the kind's roles.
+    A derived field cannot be set in a need or by a ``needextend``, and takes no ``default`` or ``predicates``.
+    *New in version 9.0.0.*
 
 For example:
 
@@ -448,6 +452,209 @@ For example:
        },
    }
 
+.. _`needs_derive`:
+
+Derived fields
+++++++++++++++
+
+.. versionadded:: 9.0.0
+
+A field whose entry carries a ``derive`` table is **derived**: a rule computes its value
+for every need the project creates from its sources, and an author does not write it.
+The table names a ``kind``, and the kind's operands, each under a fixed role name.
+In the :ref:`TOML file <needs_from_toml>`:
+
+.. code-block:: toml
+
+   [needs.fields.hours]
+   schema = { type = "number" }
+
+   [needs.fields.total_hours]
+   schema = { type = "number" }
+   derive = { kind = "sum", field = "hours", over = "links" }
+
+   [needs.fields.verified]
+   schema = { type = "boolean" }
+   derive = { kind = "all", test = "status == 'passed'", over = "tests_back", where = "type == 'test'" }
+
+   [needs.links.mentions]
+   derive = { kind = "content_links" }
+
+or in :file:`conf.py`, as every other key of the entry:
+
+.. code-block:: python
+
+   needs_fields = {
+       "total_hours": {
+           "schema": {"type": "number"},
+           "derive": {"kind": "sum", "field": "hours", "over": "links"},
+       },
+   }
+
+A link type is derived the same way, with ``derive`` on its :ref:`needs_links` entry
+and one of the two kinds that compute a link list.
+How a rule relates to the ``[[…]]`` calls that compute a value per need is described in :ref:`dynamic_functions_derived`.
+
+The kinds
+^^^^^^^^^
+
+.. list-table::
+   :header-rows: 1
+   :widths: 14 10 16 26 34
+
+   * - kind
+     - declared on
+     - required roles
+     - optional roles
+     - result, which the field's ``schema`` must hold
+   * - ``copy``
+     - a field
+     - ``field``
+     - one of ``from`` and ``over``; ``select`` (only with ``over``)
+     - the type of the field read; with ``select = "list"``, an array of it
+   * - ``sum``
+     - a field
+     - ``field``, ``over``
+     - ``where``
+     - a ``number`` (or an ``integer``, when the field read is one)
+   * - ``count``
+     - a field
+     - ``over``
+     - ``field``, ``where``
+     - an ``integer``
+   * - ``min``, ``max``
+     - a field
+     - ``field``, ``over``
+     - ``where``; ``transitive``, ``include_self``
+     - the type of the field read, which must be a number or a string with an ``enum``
+   * - ``any``, ``all``
+     - a field
+     - ``over``, and exactly one of ``field`` (a boolean field) and ``test``
+     - ``where``
+     - a ``boolean``
+   * - ``collect``
+     - a field
+     - ``field``, ``over``
+     - ``where``
+     - an array of the item type of the field read
+   * - ``hash``
+     - a field
+     - ``fields``
+     - (none)
+     - a ``string``, computed after every other rule of the need
+   * - ``links``
+     - a link type
+     - ``where``
+     - ``include_self``, ``include_parts``
+     - a link list
+   * - ``content_links``
+     - a link type
+     - (none)
+     - ``from``, ``where``
+     - a link list
+
+Every kind that computes a value also takes ``after = "derived"``,
+which computes the field after every other rule of the need, as ``hash`` always is.
+
+The roles
+^^^^^^^^^
+
+.. list-table::
+   :header-rows: 1
+   :widths: 16 22 62
+
+   * - role
+     - value
+     - meaning
+   * - ``field``
+     - a field name
+     - The field read on each candidate: a field (one of :ref:`needs_fields`, or a core field such as ``title``),
+       a link type, or ``<link type>_back``.
+       On ``copy`` with neither ``over`` nor ``from``, this need's own field.
+   * - ``fields``
+     - a list of field names
+     - ``hash``: the need's own fields hashed, in the listed order (fields and link types; not a ``<link type>_back``).
+   * - ``over``
+     - a link type
+     - The candidates: the needs this need's ``<link type>`` names, in the order written, a need named twice counted twice;
+       or, for ``<link type>_back``, the needs that link to this one, in need-id order, each once.
+       A link to a need part reads the part's need; a link to no need is skipped.
+   * - ``from``
+     - a need id
+     - The one need whose ``field`` (``copy``) or content (``content_links``) is read.
+   * - ``where``
+     - a filter string
+     - Narrows the candidates: each is kept when the :ref:`filter string <filter_string>` holds on it.
+       On ``links``, the filter every need is tested with.
+   * - ``test``
+     - a filter string
+     - ``any`` / ``all``: what is asserted of each remaining candidate.
+       Over no candidates, ``all`` is ``true`` and ``any`` is ``false``.
+   * - ``select``
+     - ``"first"`` (default), ``"unique"``, ``"list"``
+     - ``copy`` over several targets: the target with the lowest need id among those that set the field;
+       the same, reported when several set it; or every value, as a list (the field must be an array).
+   * - ``transitive``
+     - ``true`` / ``false`` (default)
+     - ``min`` / ``max``: read every need reachable through ``over``, each once, not only the needs one link away.
+   * - ``include_self``
+     - ``true`` / ``false`` (default)
+     - ``min`` / ``max`` with ``transitive = true``: count this need's own ``field`` too.
+       ``links``: this need (and its parts) may be linked.
+   * - ``include_parts``
+     - ``true`` / ``false`` (default)
+     - ``links``: the parts of every need are candidates too, a passing part linked as ``<need>.<part>``.
+   * - ``after``
+     - ``"derived"``
+     - Compute the field after every other rule of the need.
+
+A ``where`` or ``test`` reads the candidate only:
+a filter naming ``needs``, ``current_need`` or a ``c.`` check (such as ``c.this_doc()``) cannot be declared,
+so that a rule means the same in every tool that reads the configuration.
+
+The ``join`` role is reserved for a later release, and a rule naming it is reported.
+A rule on a core field (``status``, ``tags``, ``title`` and the other core fields, and the ``parent_needs`` link type)
+is not available in this release: it is reported, and ignored.
+
+What a derived field holds
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A derived field is closed to authors:
+a value written for it in a need (a literal, or a ``[[…]]``, ``<<…>>`` or ``<{…}>``),
+or set by a :ref:`needextend`, is ignored and reported as ``needs.derive_authored``, at the need or the ``needextend``.
+It takes no ``default`` and no ``predicates``.
+A need from outside the project's sources, created by :ref:`needimport` or loaded from :ref:`needs_external_needs`,
+keeps the values it carries, as data: no rule runs on it.
+In the schema of the :ref:`needs.json <needs_builder_format>`, a derived field or link type is marked ``"readOnly": true``,
+so a project importing the file knows the value is computed, not authored.
+
+A rule is checked when the configuration is read.
+A rule that cannot be read is reported as ``needs.derive_invalid``, once per rule, naming the kind and the role:
+an unknown kind, an unknown role, a role the kind does not take or requires,
+a role holding the wrong type of value,
+a kind computing a link list declared on a field, or one computing a value declared on a link type,
+an ``over`` naming no link type, a ``field`` naming nothing a need has,
+a result the field's ``schema`` cannot hold,
+a ``min`` or ``max`` reading a field that has no order,
+a ``hash`` naming a ``<link type>_back``,
+a ``where`` or ``test`` that does not parse or reads more than the candidate,
+an empty ``where`` on ``links`` (it would link every need),
+and rules reading one another's own fields in a circle (``copy`` without ``over`` or ``from``, and ``hash``),
+which no need could compute.
+The field stays derived: it cannot be set, and it holds its empty value
+(``None``, or for a field that is not nullable ``""``, ``0``, ``0.0``, ``False`` or ``[]``; no links for a link type).
+The empty value a derived field holds is its "no value", as ``None`` is for a nullable field:
+the field's ``schema`` does not check it, so an ``enum``, a ``minimum`` or a ``pattern`` that refuses it is no violation.
+A ``default`` or ``predicates`` beside ``derive`` is reported as ``needs.derive_invalid`` too, and ignored;
+the rule applies.
+So is a link type declared with ``copy = true`` while ``links`` is derived:
+nothing is copied into ``links``, which holds what its rule computes.
+To silence either warning, add its type to Sphinx's ``suppress_warnings``:
+
+.. code-block:: python
+
+   suppress_warnings = ["needs.derive_invalid", "needs.derive_authored"]
+
 .. _`needs_links`:
 
 needs_links
@@ -470,10 +677,15 @@ Each configured link can define:
     Default: the value of :ref:`needs_parse_dynamic_functions` (``True``).
 - ``parse_conditions``: If set to ``False``, the ``[condition]`` bracket syntax will not be parsed for this link type.
     Default: ``True``. *New in version 8.0.0.*
+- ``derive`` (optional): A rule computing the links of every need, which makes the link type :ref:`derived <needs_derive>`:
+    a table naming the kind ``links`` or ``content_links``, and its roles.
+    A derived link type cannot be set in a need or by a ``needextend``, and takes no ``default`` or ``predicates``.
+    *New in version 9.0.0.*
 - ``incoming`` (optional): Incoming text, to use for incoming links. E.g. "is blocked by". Default: "<name> incoming".
 - ``outgoing`` (optional): Outgoing text, to use for outgoing links. E.g. "blocks". Default: "<name>".
 - ``copy`` (optional): True/False. If True, the links will be copied also to the common link-list (link type ``links``).
   Default: False.
+  Nothing is copied into a :ref:`derived <needs_derive>` ``links``, and the ``copy`` is reported.
 - ``allow_dead_links`` (optional): True/False. If True, dead links are allowed and do not throw a warning.
   See :ref:`allow_dead_links` for details. Default: False.
 - ``style`` (optional): A plantuml style description, e.g. "#FFCC00". Used for :ref:`needflow`. See :ref:`links_style`.
@@ -3281,6 +3493,11 @@ And use it like:
    be defined via :ref:`needs_schema_definitions` or in the file passed via
    :ref:`needs_schema_definitions_from_json`. If specified via :ref:`needs_fields`,
    the constraints are applied to *all* usages of the option.
+
+.. versionadded:: 9.0.0
+
+   A dictionary entry can carry a ``derive`` rule, which makes the option a
+   :ref:`derived field <needs_derive>`, as on a :ref:`needs_fields` entry.
 
 .. _`needs_global_options`:
 .. _`global_option_filters`:

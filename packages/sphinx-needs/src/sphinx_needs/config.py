@@ -76,6 +76,8 @@ class NewFieldParams:
     
     Used if the field has not been specifically set, and no predicate matches.
     """
+    derive: Any | None = None
+    """The ``derive`` rule computing the field, as configured (a dict), if any."""
 
 
 class NeedFunctionsType(TypedDict):
@@ -135,6 +137,7 @@ class _Config:
         predicates: list[tuple[str, Any]] | None = None,
         parse_variants: bool | None = None,
         parse_dynamic_functions: bool | None = None,
+        derive: Any | None = None,
         override: bool = False,
     ) -> None:
         """Adds a need field to the configuration."""
@@ -167,6 +170,7 @@ class _Config:
             predicates=predicates,
             parse_variants=parse_variants,
             parse_dynamic_functions=parse_dynamic_functions,
+            derive=derive,
         )
 
     @property
@@ -323,6 +327,14 @@ class NeedLinksConfig(TypedDict, total=False):
     """Whether dynamic functions are parsed in this field."""
     parse_conditions: NotRequired[bool]
     """Whether conditions (bracket syntax) are parsed in this field."""
+    derive: NotRequired[dict[str, Any]]
+    """
+    A rule computing the links of every need: a table naming a ``kind``
+    (``links`` or ``content_links``) and its roles.
+
+    A derived link type cannot be set in a need or by a ``needextend``,
+    and takes no ``default`` or ``predicates``.
+    """
 
 
 class LinkOptionsType(NeedLinksConfig):
@@ -370,6 +382,15 @@ class NeedFields(TypedDict):
     """Whether variants are parsed in this field."""
     parse_dynamic_functions: NotRequired[bool]
     """Whether dynamic functions are parsed in this field."""
+    derive: NotRequired[dict[str, Any]]
+    """
+    A rule computing the field for every need: a table naming a ``kind``
+    (``copy``, ``sum``, ``count``, ``min``, ``max``, ``any``, ``all``, ``collect``
+    or ``hash``) and its roles.
+
+    A derived field cannot be set in a need or by a ``needextend``,
+    and takes no ``default`` or ``predicates``.
+    """
 
 
 class NeedField(NeedFields):

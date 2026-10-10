@@ -1,0 +1,17 @@
+{
+  "current_version": "1.0",
+  "project": "imported",
+  "versions": {
+    "1.0": {
+      "needs": {
+        "IMP_001": {
+          "id": "IMP_001",
+          "type": "req",
+          "title": "An imported need",
+          "d_total": 7.5,
+          "mentions": ["REQ_001"]
+        }
+      }
+    }
+  }
+}

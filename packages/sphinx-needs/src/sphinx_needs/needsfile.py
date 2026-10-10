@@ -37,6 +37,9 @@ def generate_needs_schema(
     * the extra fields defined dynamically
     * the global options defined dynamically
     * the links defined dynamically
+
+    A derived field or link type (one with a ``derive`` rule) is marked
+    ``"readOnly": true``.
     """
     properties: dict[str, Any] = {}
 
@@ -52,6 +55,9 @@ def generate_needs_schema(
             properties[field.name]["default"] = field.default.value
         elif field.nullable:
             properties[field.name]["default"] = None
+        if field.derive is not None:
+            # derived: an importer takes the value as data, and does not compute it
+            properties[field.name]["readOnly"] = True
 
     # TODO currently extra fields can overlap with core fields,
     # in which case they are ignored,
@@ -70,6 +76,8 @@ def generate_needs_schema(
             "field_type": "links",
             "default": [],
         }
+        if link.derive is not None:
+            properties[link.name]["readOnly"] = True
         properties[link.name + "_back"] = {
             "type": "array",
             "items": {"type": "string"},

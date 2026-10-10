@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Generic, Literal, TypeAlias, TypeVar, cas
 import jsonschema_rs
 
 from sphinx_needs.config import NeedFields
+from sphinx_needs.derive import Derive, DeriveInvalid, DeriveRule
 from sphinx_needs.exceptions import VariantParsingException
 from sphinx_needs.need_item import NeedLink
 from sphinx_needs.schema.config import (
@@ -61,12 +62,24 @@ class FieldSchema:
     
     Used if the field has not been specifically set, and no predicate matches.
     """
+    derive: Derive | None = None
+    """The ``derive`` rule computing this field, if it is derived.
+
+    A derived field cannot be set in a need (``directive_option`` is ``False``) or by a
+    ``needextend`` (``allow_extend`` is ``False``), and takes no default.
+    A :class:`~sphinx_needs.derive.DeriveInvalid` marks a rule that cannot be read:
+    the field is closed all the same, and holds its empty value.
+    """
 
     def __post_init__(self) -> None:
         if not isinstance(self.name, str) or not self.name:
             raise ValueError("name must be a non-empty string.")
         if not isinstance(self.description, str):
             raise ValueError("description must be a string.")
+        if self.derive is not None and not isinstance(
+            self.derive, DeriveRule | DeriveInvalid
+        ):
+            raise ValueError("derive must be a DeriveRule or a DeriveInvalid.")
         try:
             validate_field_schema(self.schema)
         except TypeError as exc:
@@ -640,12 +653,23 @@ class LinkSchema:
     """If True, copy links to the common 'links' field."""
     allow_dead_links: bool = False
     """If True, add a 'forbidden' class to dead links instead of warning."""
+    derive: Derive | None = None
+    """The ``derive`` rule computing this link type, if it is derived.
+
+    A derived link type cannot be set in a need or by a ``needextend``, and takes no
+    default; a :class:`~sphinx_needs.derive.DeriveInvalid` marks a rule that cannot
+    be read, and the link type holds no links.
+    """
 
     def __post_init__(self) -> None:
         if not isinstance(self.name, str) or not self.name:
             raise ValueError("name must be a non-empty string.")
         if not isinstance(self.description, str):
             raise ValueError("description must be a string.")
+        if self.derive is not None and not isinstance(
+            self.derive, DeriveRule | DeriveInvalid
+        ):
+            raise ValueError("derive must be a DeriveRule or a DeriveInvalid.")
         try:
             validate_link_schema_type(self.schema)
         except TypeError as exc:
@@ -961,6 +985,22 @@ class FieldsSchema:
         ):
             raise ValueError(f"Field '{field.name}' already exists.")
         self._link_fields[field.name] = field
+
+    def replace_field(self, field: FieldSchema | LinkSchema) -> None:
+        """Replace the extra field, or the link field, of the same name.
+
+        The field keeps its place in the iteration order.
+
+        :raises ValueError: if no extra field or link field of that name exists
+        """
+        if isinstance(field, LinkSchema):
+            if field.name not in self._link_fields:
+                raise ValueError(f"Link field '{field.name}' does not exist.")
+            self._link_fields[field.name] = field
+        else:
+            if field.name not in self._extra_fields:
+                raise ValueError(f"Extra field '{field.name}' does not exist.")
+            self._extra_fields[field.name] = field
 
     def get_any_field(self, name: str) -> FieldSchema | LinkSchema | None:
         """Get a field by name."""
