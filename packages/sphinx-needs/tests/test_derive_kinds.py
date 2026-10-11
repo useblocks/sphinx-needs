@@ -306,6 +306,68 @@ def test_hash_drops_link_conditions_then_duplicates(test_app):
     assert sorted(needs["S_1"]["covers"]) == ["R_2", "R_2[status == 'open']"]
 
 
+TIE_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_id_regex = "^.+$"
+needs_links = {"covers": {}}
+needs_fields = {
+    "digest": {"schema": {"type": "string"}, "derive": {"kind": "hash", "fields": ["covers"]}},
+}
+"""
+
+TIE_INDEX = """\
+Ties
+====
+
+.. req:: Two
+   :id: R_2
+
+.. req:: Two, in lower case
+   :id: r_2
+
+.. req:: Two, with a leading zero
+   :id: R_02
+
+.. spec:: Covers all three
+   :id: S_1
+   :covers: r_2, R_2, R_02
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [(Path("conf.py"), TIE_CONF), (Path("index.rst"), TIE_INDEX)],
+        }
+    ],
+    indirect=True,
+)
+def test_a_sorted_link_list_breaks_ties_by_the_id(test_app):
+    """``R_02``, ``R_2`` and ``r_2`` have one natural key (digits as a number, letters
+    case-folded), so the natural order alone leaves them tied, and the build's set order
+    picked among them. The tie is broken by the id, compared as a string: ``R_02`` before
+    ``R_2`` before ``r_2``, in ``needs.json`` and in a ``hash``, in every build.
+    """
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    need = _needs(app)["S_1"]
+    assert need["covers"] == ["R_02", "R_2", "r_2"]
+    text = '[["R_02","R_2","r_2"]]'
+    assert (
+        json.dumps(json.loads(text), separators=(",", ":"), ensure_ascii=False) == text
+    )
+    assert _sha256(text) == (
+        "8e8a04b379e6aaf000b15b26eacb95b9707feb96b35ae16ed01bfe36cff2e1cf"
+    )
+    assert need["digest"] == (
+        "8e8a04b379e6aaf000b15b26eacb95b9707feb96b35ae16ed01bfe36cff2e1cf"
+    )
+
+
 @pytest.mark.parametrize("test_app", [KINDS], indirect=True)
 def test_links_and_content_links(test_app):
     """``links``: every need passing ``where``, the need itself (and its parts) left out
