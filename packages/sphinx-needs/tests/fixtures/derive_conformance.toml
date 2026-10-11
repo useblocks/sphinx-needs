@@ -1982,7 +1982,7 @@ source = '''
    :id: REQ_1
    :n_int: 3
    :n_num: [[copy("n_int")]]
-   :v_num: <<type == 'req':3, 2>>
+   :v_num: <<[type == 'req']:3, 2>>
    :still_int: [[copy("n_int")]]
 '''
 [case.expect]
