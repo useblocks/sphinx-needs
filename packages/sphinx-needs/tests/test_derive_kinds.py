@@ -752,6 +752,89 @@ def test_set_means_not_null(test_app):
     assert needs["C_4"]["unique_owner"] == "bob"
 
 
+NO_VALUE_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_id_regex = "^.+$"
+needs_fields = {
+    "owner": {"schema": {"type": "string"}},
+    "labels": {"schema": {"type": "array", "items": {"type": "string"}}},
+    "hours": {"schema": {"type": "number"}},
+    "c_list": {
+        "schema": {"type": "array", "items": {"type": "string"}},
+        "derive": {"kind": "copy", "field": "owner", "over": "parent", "select": "list"},
+    },
+    "c_labels": {
+        "schema": {"type": "array", "items": {"type": "string"}},
+        "derive": {"kind": "copy", "field": "labels", "over": "parent", "select": "list"},
+    },
+    "k_owners": {
+        "schema": {"type": "array", "items": {"type": "string"}},
+        "derive": {"kind": "collect", "field": "owner", "over": "parent"},
+    },
+    "c_first": {
+        "schema": {"type": "string"},
+        "derive": {"kind": "copy", "field": "owner", "over": "parent"},
+    },
+    "c_unique": {
+        "schema": {"type": "string"},
+        "derive": {"kind": "copy", "field": "owner", "over": "parent", "select": "unique"},
+    },
+    "m_max": {
+        "schema": {"type": "number"},
+        "derive": {"kind": "max", "field": "hours", "over": "parent"},
+    },
+}
+needs_links = {"parent": {}}
+"""
+
+NO_VALUE_INDEX = """\
+No value
+========
+
+.. req:: Sets nothing
+   :id: P_1
+
+.. req:: Sets nothing either
+   :id: P_2
+
+.. spec:: No parent
+   :id: C_0
+
+.. spec:: Parents, none setting a value
+   :id: C_1
+   :parent: P_2, P_1
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), NO_VALUE_CONF),
+                (Path("index.rst"), NO_VALUE_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_list_copy_of_no_value_is_an_empty_list(test_app):
+    """A ``copy`` with ``select = "list"`` is a list: over no candidate (``C_0``), and
+    over candidates none of which sets the field (``C_1``), it is ``[]``, as ``collect``
+    is, in a nullable field too. ``copy`` with ``select = "first"`` or ``"unique"``, and
+    ``max``, find no value there, and leave the field at its empty value, ``None``."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    needs = _needs(app)
+    for need_id in ("C_0", "C_1"):
+        need = needs[need_id]
+        assert (need["c_list"], need["c_labels"], need["k_owners"]) == ([], [], [])
+        assert (need["c_first"], need["c_unique"], need["m_max"]) == (None, None, None)
+
+
 NEGATIVE_CONF = """\
 extensions = ["sphinx_needs"]
 needs_build_json = True

@@ -672,7 +672,9 @@ after every other field, every other kind with the other fields; each after ever
   ``any`` and ``all`` read it as false.
   ``sum`` skips a value that is not a number.
 - **No candidate.** ``sum`` and ``count`` are ``0`` (``0.0`` in a ``number`` field), ``any`` ``false``, ``all`` ``true``,
-  ``collect`` ``[]``; ``min``, ``max`` and ``copy`` leave the field at its empty value.
+  ``collect`` and ``copy`` with ``select = "list"`` ``[]`` (a list, also when no candidate sets the field);
+  ``min``, ``max`` and ``copy`` with ``select = "first"`` or ``"unique"`` find no value,
+  over no candidate or over candidates none of which sets the field, and leave the field at its empty value.
 - **Values.** A result takes the type of the field holding it, as an authored value does,
   and as the result of a ``[[…]]`` or a variant does: an integer in an ``integer`` field, a float in a ``number`` field
   (a ``count``, or the ``sum`` of an ``integer`` field, is ``13.0`` there), in ``needs.json`` and in a ``hash``.
