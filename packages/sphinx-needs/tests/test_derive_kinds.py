@@ -364,6 +364,186 @@ def test_a_links_rule_tests_each_candidate_once(test_app, monkeypatch):
     assert needs["SPEC_1"]["l_open"] == ["REQ_A", "REQ_C"]
 
 
+SURVEY_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_id_regex = "^.+$"
+needs_external_needs = [{"base_url": "http://example.org/", "json_path": "external.json"}]
+needs_links = {
+    "tests": {},
+    "parent": {},
+    "own_parts": {
+        "derive": {
+            "kind": "links",
+            "where": "is_part and id_parent == 'REQ_1'",
+            "include_parts": True,
+        }
+    },
+}
+needs_fields = {
+    "hours": {"schema": {"type": "number"}},
+    "who": {"schema": {"type": "string"}},
+    "level": {"schema": {"type": "string", "enum": ["low", "mid", "high"]}},
+    "total": {
+        "schema": {"type": "number"},
+        "derive": {"kind": "sum", "field": "hours", "over": "links"},
+    },
+    "parts_in_order": {
+        "schema": {"type": "array", "items": {"type": "string"}},
+        "derive": {"kind": "copy", "field": "own_parts"},
+    },
+    "open_max": {
+        "schema": {"type": "string", "enum": ["low", "mid", "high"]},
+        "derive": {
+            "kind": "max",
+            "field": "level",
+            "over": "parent",
+            "transitive": True,
+            "where": "status == 'open'",
+        },
+    },
+    "testers": {
+        "schema": {"type": "array", "items": {"type": "string"}},
+        "derive": {"kind": "collect", "field": "who", "over": "tests_back"},
+    },
+    "ext_total": {"schema": {"type": "number"}},
+}
+"""
+
+SURVEY_INDEX = """\
+Survey
+======
+
+.. req:: Parts holder
+   :id: REQ_1
+   :hours: 1
+   :ext_total: [[copy("total", "EXT_1")]]
+
+   :np:`(b) part b` and :np:`(a) part a`.
+
+.. req:: Closed, high
+   :id: P_1
+   :status: closed
+   :level: high
+
+.. req:: Open, mid
+   :id: P_2
+   :status: open
+   :level: mid
+   :parent: P_1
+
+.. spec:: Child
+   :id: C_1
+   :parent: P_2, P_1
+
+.. test:: Nine
+   :id: T_9
+   :who: nine
+   :tests: C_1
+
+.. test:: Two
+   :id: T_2
+   :who: two
+   :tests: C_1
+
+.. test:: Ten
+   :id: T_10
+   :who: ten
+   :tests: C_1
+
+.. needextend:: total == 99
+   :who: nobody
+"""
+
+SURVEY_EXTERNAL = {
+    "current_version": "1.0",
+    "versions": {
+        "1.0": {
+            "needs": {
+                "EXT_1": {
+                    "id": "EXT_1",
+                    "type": "req",
+                    "title": "External",
+                    "links": ["REQ_1"],
+                    "total": 42.0,
+                }
+            }
+        }
+    },
+}
+
+SURVEY = {
+    "buildername": "needs",
+    "files": [
+        (Path("conf.py"), SURVEY_CONF),
+        (Path("index.rst"), SURVEY_INDEX),
+        (Path("external.json"), json.dumps(SURVEY_EXTERNAL)),
+    ],
+}
+
+
+@pytest.mark.parametrize("test_app", [SURVEY], indirect=True)
+def test_a_needextend_filter_naming_a_derived_field_is_reported(test_app):
+    """A ``needextend`` filter naming a derived field sees the value from before it is
+    computed (the field's empty value): ``needs.derive_scope``, once, naming the field
+    and every need of the project's sources, as for a field a ``[[…]]`` computes."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:41: WARNING: needextend filter 'total == 99' names 'total', "
+        "which a dynamic function or variant computes on 7 needs (C_1, P_1, P_2 and 4 "
+        "more): the filter sees the value from before it is computed "
+        "[needs.derive_scope]",
+    ]
+
+
+@pytest.mark.parametrize("test_app", [SURVEY], indirect=True)
+def test_links_lists_parts_in_part_id_order(test_app):
+    """``links`` with ``include_parts`` lists a need's parts in part-id order: ``REQ_1``
+    writes ``(b)`` before ``(a)``. ``needs.json`` sorts every link list, so the order is
+    read through a ``copy`` of the link type into an array field."""
+    app = test_app
+    app.build()
+    needs = _needs(app)
+    assert needs["C_1"]["parts_in_order"] == ["REQ_1.a", "REQ_1.b"]
+    # REQ_1's own parts are left out of its own list
+    assert needs["REQ_1"]["parts_in_order"] == []
+
+
+@pytest.mark.parametrize("test_app", [SURVEY], indirect=True)
+def test_a_transitive_max_reads_only_the_needs_passing_where(test_app):
+    """``max`` with ``transitive`` and ``where``: ``C_1`` reaches ``P_2`` (open, mid)
+    and ``P_1`` (closed, high), and only ``P_2`` passes ``status == 'open'``, so ``mid``.
+    ``P_2`` reaches only the closed ``P_1``: no value."""
+    app = test_app
+    app.build()
+    needs = _needs(app)
+    assert needs["C_1"]["open_max"] == "mid"
+    assert needs["P_2"]["open_max"] is None
+
+
+@pytest.mark.parametrize("test_app", [SURVEY], indirect=True)
+def test_no_rule_runs_on_an_external_need(test_app):
+    """An external need keeps the value it carries (``total`` 42.0), where the rule
+    would give 1.0 (``REQ_1``'s ``hours``): a ``copy`` of it reads 42.0. (``needs.json``
+    does not write an external need.)"""
+    app = test_app
+    app.build()
+    assert _needs(app)["REQ_1"]["ext_total"] == 42.0
+
+
+@pytest.mark.parametrize("test_app", [SURVEY], indirect=True)
+def test_back_link_candidates_in_need_id_order(test_app):
+    """``over = "<t>_back"`` reads the needs linking to this one in need-id order, the
+    ids compared as strings: ``T_10``, ``T_2``, ``T_9``, although the document writes
+    ``T_9``, ``T_2``, ``T_10`` (and ``needs.json`` writes ``T_2``, ``T_9``, ``T_10``)."""
+    app = test_app
+    app.build()
+    needs = _needs(app)
+    assert needs["C_1"]["testers"] == ["ten", "two", "nine"]
+    assert needs["C_1"]["tests_back"] == ["T_2", "T_9", "T_10"]
+
+
 INLINE_TYPE_CONF = """\
 extensions = ["sphinx_needs"]
 needs_build_json = True
@@ -514,6 +694,10 @@ Set
 .. spec:: A parent setting who, one not
    :id: C_3
    :parent: P_2, P_1
+
+.. spec:: Two parents, both owned by bob
+   :id: C_4
+   :parent: P_3, P_2
 """
 
 
@@ -537,9 +721,10 @@ def test_set_means_not_null(test_app):
     So ``count`` with a ``field`` counts ``P_1``, whose ``owner`` is ``""``, and every
     parent's empty ``tests``; ``copy`` takes the lowest id among the setters, ``P_1``'s
     ``""``; ``unique`` warns when more than one distinct target need sets the field,
-    equal values included (``C_1``, and ``C_3``, whose ``P_1`` sets ``""``), not for
-    one need linked twice (``C_2``) or a setter beside a need leaving the field unset
-    (``C_3``'s ``who``); ``collect`` keeps ``""`` and each item of a list.
+    equal values included (``C_4``, whose two parents both hold ``bob``; and ``C_1``
+    and ``C_3``, whose ``P_1`` sets ``""``), not for one need linked twice (``C_2``) or
+    a setter beside a need leaving the field unset (``C_3``'s ``who``); ``collect``
+    keeps ``""`` and each item of a list.
     """
     app = test_app
     app.build()
@@ -551,6 +736,10 @@ def test_set_means_not_null(test_app):
         "<srcdir>/index.rst:26: WARNING: derive rule 'copy' for option 'unique_owner' "
         "found 2 needs setting 'owner' (P_1, P_2); the lowest id, 'P_1', is copied "
         "[needs.derive_unique]",
+        # two distinct needs holding the same value are two
+        "<srcdir>/index.rst:30: WARNING: derive rule 'copy' for option 'unique_owner' "
+        "found 2 needs setting 'owner' (P_2, P_3); the lowest id, 'P_2', is copied "
+        "[needs.derive_unique]",
     ]
     needs = _needs(app)
     c_1, c_2, c_3 = needs["C_1"], needs["C_2"], needs["C_3"]
@@ -560,6 +749,7 @@ def test_set_means_not_null(test_app):
     assert c_1["all_labels"] == ["x", "y"]
     assert c_2["unique_owner"] == "bob"
     assert c_3["unique_who"] == "zed"
+    assert needs["C_4"]["unique_owner"] == "bob"
 
 
 NEGATIVE_CONF = """\
