@@ -89,8 +89,9 @@ Improvements
   Removed on ubCode's side by its own phase 1: a copy of an empty back link list (``[]`` here),
   and an authored array field that is not computed (on a cycle, or whose result the field cannot hold),
   which keeps its written items here.
-  Not evaluated by ubCode: a ``filter`` naming ``needs``, or reading ``current_need`` by a key that is
-  not written out, which ubCode reports instead.
+  Not evaluated by ubCode's phase 1: the ``filter`` arguments of the built-in functions,
+  which it evaluates from its phase-2 release, but for a ``filter`` naming ``needs``,
+  or reading ``current_need`` by a key that is not written out, which ubCode reports instead.
   The notice warning ``needs.derive_unresolved`` of the unreleased :pr:`2080`, which reported such reads,
   is gone, and a ``suppress_warnings`` entry naming it is a no-op.
 
