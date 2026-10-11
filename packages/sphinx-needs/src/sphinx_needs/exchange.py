@@ -203,7 +203,7 @@ class Document:
         if requested not in versions:
             raise ExchangeError(
                 VERSION_NOT_FOUND,
-                f"Version {requested} not found in the file: {list(versions)}",
+                f"Version {requested!r} not found in the file: {list(versions)}",
             )
         data = versions[requested]
         if not isinstance(data, Mapping) or not isinstance(data.get("needs"), Mapping):

@@ -325,11 +325,11 @@ REFUSED_SOURCES = {
     ),
     "version_not_found": (
         json.dumps({"current_version": "3.0", "versions": {"1.0": {"needs": ONE}}}),
-        "Version 3.0 not found in the file: ['1.0']",
+        "Version '3.0' not found in the file: ['1.0']",
     ),
     "versions_empty": (
         json.dumps({"current_version": "1.0", "versions": {}}),
-        "Version 1.0 not found in the file: []",
+        "Version '1.0' not found in the file: []",
     ),
     "needs_missing": (
         json.dumps(

@@ -298,7 +298,7 @@ def test_external_empty_versions(test_app):
     app.build()
     assert app.statuscode == 0
     assert build_warnings(app) == [
-        "WARNING: Could not load external needs from 'needs.json': Version 0.1.0 not "
+        "WARNING: Could not load external needs from 'needs.json': Version '0.1.0' not "
         "found in the file: [] [needs.external_needs]"
     ]
 

@@ -933,7 +933,7 @@ def _need_record_params(
 def _check_record_params(params: Mapping[str, Any]) -> None:
     """Refuse a record whose values ``add_need`` reads before it validates any field.
 
-    :raises InvalidNeedException: If its ``id`` is given but not a string, its ``title``
+    :raises InvalidNeedException: If its ``id`` is given but empty or not a string, its ``title``
         is missing or not a string, its ``content`` or ``type`` not a string, or its
         ``parts`` not a mapping of mappings.
     """
@@ -941,6 +941,8 @@ def _check_record_params(params: Mapping[str, Any]) -> None:
         raise InvalidNeedException(
             "invalid_id", f"id must be a string, not {type(need_id).__name__}"
         )
+    if need_id == "":
+        raise InvalidNeedException("invalid_id", "id is empty")
     if "title" not in params:
         raise InvalidNeedException("invalid_value", "title is missing")
     if not isinstance(params["title"], str):
@@ -1040,7 +1042,7 @@ def ingest_need_record(
         the record's ``content`` (or the legacy ``description`` taken as it) is present
         but not a string; (type ``invalid_type``) if its ``type`` is not a string;
         (type ``invalid_value``) if its ``title`` is missing or not a string; (type
-        ``invalid_id``) if its ``id`` is given but not a string; (type ``parts``) if its
+        ``invalid_id``) if its ``id`` is given but empty or not a string; (type ``parts``) if its
         ``parts`` is not a mapping of mappings; and (type ``content_markup``) if
         ``content_source`` is given without ``content_markup``. The caller decides how
         to report it.

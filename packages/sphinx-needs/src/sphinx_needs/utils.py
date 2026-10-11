@@ -271,6 +271,19 @@ def import_prefix_link_edit(
 
     needs_ids = set(needs.keys() if known_ids is None else known_ids)
     link_names_list = list(link_names)
+    # an id is matched where no letter, digit or ``_`` adjoins it, so an id inside a
+    # longer word is not one; the longest id is tried first, so ``REQ_AB`` is not
+    # matched as ``REQ_A``; a text is rewritten in one pass, so nothing is prefixed twice
+    ids_longest_first = sorted((i for i in needs_ids if i), key=len, reverse=True)
+    id_pattern = (
+        re.compile(
+            r"(?<![A-Za-z0-9_])(?:"
+            + "|".join(re.escape(i) for i in ids_longest_first)
+            + r")(?![A-Za-z0-9_])"
+        )
+        if ids_longest_first
+        else None
+    )
 
     def prefixed(link: str) -> str:
         parsed = NeedLink.from_string(link)
@@ -291,12 +304,14 @@ def import_prefix_link_edit(
                 ]
             elif isinstance(value, str):
                 need[link_name] = _prefix_link_string(value, prefixed)
-        # Manipulate descriptions
-        # ToDo: Use regex for better matches.
-        for id in needs_ids:
-            for key in ("content", "description"):
-                if key in need and isinstance(need[key], str):
-                    need[key] = need[key].replace(id, "".join([id_prefix, id]))
+        # the ids in the content: whole ids only, the longest first, each once
+        if id_pattern is None:
+            continue
+        for key in ("content", "description"):
+            if key in need and isinstance(need[key], str):
+                need[key] = id_pattern.sub(
+                    lambda match: id_prefix + match.group(0), need[key]
+                )
 
 
 def _prefix_link_string(value: str, prefixed: Callable[[str], str]) -> str:

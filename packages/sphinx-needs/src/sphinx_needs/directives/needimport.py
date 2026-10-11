@@ -78,7 +78,8 @@ class NeedimportDirective(SphinxDirective):
 
         # check if given argument is downloadable needs.json path
         url = urlparse(need_import_path)
-        if url.scheme and url.netloc:
+        # a file:// URL has no netloc: it is fetched as the external reader fetches it
+        if url.scheme and (url.netloc or url.scheme == "file"):
             # download needs.json
             logger.info(f"Downloading needs.json from url {need_import_path}")
             source_name = need_import_path
@@ -86,6 +87,7 @@ class NeedimportDirective(SphinxDirective):
             s.mount("file://", FileAdapter())
             try:
                 response = s.get(need_import_path)
+                response.raise_for_status()
             except Exception as e:
                 return self._refuse(
                     f"Could not load needs import file {need_import_path}: "
@@ -100,14 +102,15 @@ class NeedimportDirective(SphinxDirective):
             )[1]
             source_name = correct_need_import_path
 
+            # noted before the file is looked for, so that a file that is missing or
+            # cannot be read now is read again once it exists or changes (Sphinx takes
+            # a noted dependency that does not exist as changed)
+            self.env.note_dependency(correct_need_import_path)
+
             if not os.path.exists(correct_need_import_path):
                 return self._refuse(
                     f"Could not load needs import file {correct_need_import_path}"
                 )
-
-            # noted before the file is read, so that a file that cannot be read now
-            # is read again once it changes
-            self.env.note_dependency(correct_need_import_path)
             read = partial(exchange.load, correct_need_import_path)
 
         try:
