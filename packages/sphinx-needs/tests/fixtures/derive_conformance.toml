@@ -288,7 +288,7 @@ REQ_1 = ["inline_total", "verdict"]
 
 [[case]]
 name = "count-over-backlinks-where"
-why = "count over <t>_back: each linking need once, in need-id order; where narrows; with field, the candidates that set it"
+why = "count over <t>_back: each linking need once (TEST_3 links twice); where narrows; with field, the candidates that set it (the order <t>_back is read in is pinned by candidate-order)"
 config = '''
 [needs.links.tests]
 outgoing = "tests"
@@ -689,7 +689,7 @@ SPEC_1 = ["owner"]
 
 [[case]]
 name = "links-where-include-self"
-why = "links: every need passing where, in need-id order, the need itself left out unless include_self; an empty where is refused, and an empty filter fails the inline links_from_filter"
+why = "links: every need passing where, the need itself left out unless include_self; an empty where is refused, and an empty filter fails the inline links_from_filter (the order the links kind computes in is pinned by candidate-order)"
 config = '''
 [needs.links.l_open]
 derive = { kind = "links", where = "type == 'req' and status == 'open'" }
@@ -744,7 +744,7 @@ field = "inline_empty"
 
 [[case]]
 name = "links-include-parts"
-why = "links with include_parts tests every need's parts too (a part after its need, in part-id order), linked as <need>.<part>; the need's own parts are left out unless include_self"
+why = "links with include_parts tests every need's parts too (a part after its need, in part-id order: REQ_1 writes p2 first, and a copy into an array field reads p1 first), linked as <need>.<part>; the need's own parts are left out unless include_self"
 python_only = true
 config = '''
 [needs.links.l_parts]
@@ -755,6 +755,10 @@ derive = { kind = "links", where = "is_part and id_parent == 'REQ_1'", include_p
 
 [needs.links.l_family]
 derive = { kind = "links", where = "id_parent == 'REQ_1'", include_parts = true }
+
+[needs.fields.parts_in_order]
+schema = { type = "array", items = { type = "string" } }
+derive = { kind = "copy", field = "l_parts" }
 '''
 source = '''
 .. req:: With parts
@@ -770,6 +774,7 @@ findings = []
 [case.expect.needs.SPEC_1]
 l_parts = ["REQ_1.p1", "REQ_1.p2"]
 l_family = ["REQ_1", "REQ_1.p1", "REQ_1.p2"]
+parts_in_order = ["REQ_1.p1", "REQ_1.p2"]
 [case.expect.needs.REQ_1]
 l_parts = []
 l_parts_self = ["REQ_1.p1", "REQ_1.p2"]
@@ -1408,7 +1413,7 @@ field = "mentions"
 
 [[case]]
 name = "fields-named-after-link-type"
-why = "a [needs.fields] entry named after a declared link type is refused (each tool's configuration finding, not compared) and ignored; the build goes on, and the link type works"
+why = "a [needs.fields] entry named after a declared link type is refused (each tool's configuration finding, not compared) and ignored; the build goes on, and the link type works. UNPINNED: a [needs.fields.parent_needs] entry, which sphinx-needs refuses and ignores while ubCode keeps it as a field (a registered divergence)"
 config = '''
 [needs.links.tests]
 
