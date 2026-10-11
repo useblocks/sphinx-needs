@@ -23,6 +23,11 @@
 #     that would land outside it (`../x.json`) is a broken case, and the runner refuses it
 #   - every need id satisfies the default id regex (`^[A-Z0-9_]{5,}`); the need types are
 #     the default ones (`req`, `spec`, `impl`, `test`)
+#   - a `[needs.fields.<name>]` entry without `nullable` is nullable in both tools
+#     (sphinx-needs `needs.py`: `nullable = True` unless set; ubCode
+#     `nullable.unwrap_or(true)`), so its unset value, and a rule's empty value in it, is
+#     null; a `nulls` pin relies on it, and a case writes `nullable = false` where it
+#     means the type's empty value instead
 #   - a case with `python_only = true` is one only sphinx-needs runs, and ubCode's runner
 #     skips it; `ubcode_only = true` is the converse
 #   - values are compared as `needs.json` writes them, TYPE INCLUDED: `7.0` is a float and
