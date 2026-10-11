@@ -263,8 +263,8 @@ Breaking changes
   - :ref:`needs_id_regex` is no longer applied to imported needs (it never was to
     external ones);
   - a record without a ``title`` is refused by ``needimport`` (``needs.import_need``), as
-    it already was for external needs; a ``content`` or ``type`` that is not a string is
-    refused for external needs (``needs.load_external_need``), as it already was on import;
+    it already was for external needs; a ``content`` that is not a string is refused for
+    external needs (``needs.load_external_need``), as it already was on import;
   - the key of a need in the file is its id: an ``id`` that differs from it is a warning
     and ignored, where the ``id`` used to win;
   - an id that two external sources both define is kept from the first source and the
@@ -275,9 +275,14 @@ Breaking changes
   - a needs.json that cannot be obtained or read -- missing, a failed download, not valid
     JSON, without the version asked for, or without ``versions`` or ``needs`` -- is one
     warning and adds no need, where the build used to abort (or, for an external source with
-    empty ``versions``, stayed silent);
+    missing or empty ``versions``, stayed silent; a missing ``needimport`` file was already a
+    warning);
+  - with an ``id_prefix``, a link or a ``:need:`` reference in the content to a need of
+    the file that ``:ids:`` or ``:filter:`` leaves out gets the prefix too, so it no longer
+    resolves to an unprefixed import of that need (``needs.link_outgoing`` /
+    ``needs.link_ref``);
   - an external source's ``target_url`` template sees the need with the file's schema
-    defaults merged and its ``id`` the key.
+    defaults merged, its ``id`` the key, and a legacy ``description`` as ``content``.
 
   **The new warnings (** ``needs.needimport`` **and the new** ``needs.external_needs``
   **) fail a** ``-W`` **build that used to abort or stay silent**; to keep such a build
@@ -300,15 +305,21 @@ Bug fixes
   non-string ``id`` is read under its key instead of crashing the build, and an ``id``
   that differs from the key is warned about. A record whose ``parts`` is not a mapping is
   refused with a warning instead of crashing the build. A file written without its
-  defaults and without the schema to restore them is warned about. With an ``id_prefix``,
-  a link to a need of the file is prefixed also when ``:ids:`` or ``:filter:`` leaves that
-  need out, a link given as a string is prefixed too, and a ``null`` link no longer
-  crashes the build. An ``:ids:`` naming an id the file does not have is warned about, and
+  defaults and without the schema to restore them is warned about. A record whose ``id``
+  is empty is refused. With an ``id_prefix``, a link or a reference in the content to a
+  need of the file is prefixed also when ``:ids:`` or ``:filter:`` leaves that need out, a
+  link given as a string is prefixed too, a ``null`` link no longer crashes the build,
+  and an id inside a longer word of the content is no longer rewritten. An ``:ids:`` naming an id the file does not have is warned about, and
   a ``:filter:`` that fails is warned about once per directive rather than once per need.
-  An external need left from a previous build is replaced on an incremental build, and a
-  duplicate across this build's sources is warned about. An external source's
-  ``target_url`` template sees the need with its schema defaults merged and its ``id`` the
-  key.
+  An external need left from a previous build is replaced on an incremental build (or
+  removed, when the source now refuses its record), a need of this project that holds an
+  external need's id is reported with the same ``needs.create_need`` warning on every
+  build, and a duplicate across this build's sources is warned about. A download that
+  fails, also with an HTTP error status, is reported with its reason; ``needimport``
+  reads a ``file://`` URL as a URL, and a local file it misses is read on the next
+  incremental build once it exists. An external source's ``target_url`` template sees the
+  need with its schema defaults merged, its ``id`` the key, and a legacy ``description``
+  as ``content``.
 
 - 🐛 :ref:`check_linked_values <check_linked_values>` and :ref:`calc_sum <calc_sum>` with
   ``links_only`` read the need of a link to a need part, and skip a link to no need

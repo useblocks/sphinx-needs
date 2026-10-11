@@ -31,6 +31,12 @@ The directive argument can be one of the following formats:
 
      .. needimport:: https://my_company.com/docs/remote-needs.json
 
+- A ``file://`` URL, read as a URL is (the external reader reads it the same way):
+
+  .. code-block:: rst
+
+     .. needimport:: file:///absolute/path/to/needs.json
+
 - A local path relative to the containing document:
 
   .. code-block:: rst
@@ -61,8 +67,8 @@ The key of each need in the file is its id: a need whose ``id`` differs from its
 imported under its key, with a ``needs.needimport`` warning. :ref:`needs_id_regex` is not
 applied to imported needs. A file that cannot be read -- missing, not downloaded, not
 valid JSON, or without the version asked for -- is one ``needs.needimport`` warning at the
-directive, and
-the directive imports nothing; the build goes on.
+directive, and the directive imports nothing; the build goes on. A local file that is
+missing is read on the next incremental build once it exists.
 
 .. note::
 
@@ -81,7 +87,8 @@ This may be useful to avoid duplicated ids.
 
     When using ``:id_prefix:``, we replace all ids used for links and inside descriptions,
     if the id belongs to a need of the file -- also one that ``:ids:`` or ``:filter:``
-    leaves out.
+    leaves out. An id is replaced where it stands as a whole word: one inside a longer
+    word is left as it is.
 
 version
 ~~~~~~~
