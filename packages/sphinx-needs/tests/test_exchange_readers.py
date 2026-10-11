@@ -739,6 +739,39 @@ def test_an_imported_duplicate_of_a_page_need_is_refused_naming_it(
     assert needs_by_id(app)["LOCAL_001"]["title"] == "local need"
 
 
+IMPORT_FIRST = PAGE.replace(
+    ".. req:: local need", ".. needimport:: data.json\n\n.. req:: local need"
+)
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            **project("external", LOCAL_DATA, sources=[]),
+            "files": [
+                (Path("conf.py"), CONF),
+                (Path("exchange_ingest_driver.py"), DRIVER),
+                (Path("data.json"), LOCAL_DATA),
+                (Path("index.rst"), IMPORT_FIRST),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_page_need_after_an_imported_one_is_refused_naming_it(
+    test_app: SphinxTestApp,
+):
+    """Read order, the other way round: an imported need is not replaced."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:6: WARNING: Need could not be created: A need with ID "
+        "'LOCAL_001' already exists (imported at index:4). [needs.create_need]"
+    ]
+    assert needs_by_id(app)["LOCAL_001"]["title"] == "external title"
+
+
 SHARED = envelope({"SHARED_1": rec("SHARED_1", title="external title", docname="spec")})
 
 
