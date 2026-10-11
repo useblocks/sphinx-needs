@@ -57,6 +57,12 @@ The directive argument can be one of the following formats:
 
      .. needimport:: c:\absolute\path\to\needs.json
 
+The key of each need in the file is its id: a need whose ``id`` differs from its key is
+imported under its key, with a ``needs.needimport`` warning. :ref:`needs_id_regex` is not
+applied to imported needs. A file that cannot be read -- missing, not valid JSON, or
+without the version asked for -- is one ``needs.needimport`` warning at the directive, and
+the directive imports nothing; the build goes on.
+
 .. note::
 
    If you are rebuilding documentation incrementally (for example, when using ``sphinx-autobuild``), Sphinx  automatically detects changes to the *local* JSON files. However, with remote URLs, you must run a Sphinx build with the ``-E`` flag to rebuild the environment from scratch when the remote file changes.
@@ -73,7 +79,8 @@ This may be useful to avoid duplicated ids.
 .. note::
 
     When using ``:id_prefix:``, we replace all ids used for links and inside descriptions,
-    if the id belongs to an imported need.
+    if the id belongs to a need of the file -- also one that ``:ids:`` or ``:filter:``
+    leaves out.
 
 version
 ~~~~~~~
@@ -99,6 +106,7 @@ ids
 You can use the ``:ids:`` option to import only the needs with the given ids
 (as a comma-separated list).
 This is useful if you want to import only a subset of the needs from the JSON file.
+An id the file has no need for is named in one ``needs.needimport`` warning.
 
 filter
 ~~~~~~
@@ -108,6 +116,7 @@ This is a string that is evaluated as a Python expression,
 it is less performant than the ``:ids:`` option, but more flexible.
 
 Please read :ref:`filter` for more information.
+A filter that fails is one ``needs.needimport`` warning for the directive.
 
 hide
 ~~~~

@@ -251,8 +251,59 @@ Breaking changes
   The notice warning ``needs.needextend_match_order`` of the unreleased :pr:`2083` is gone,
   and a ``suppress_warnings`` entry naming it is a no-op.
 
+- ‼️ ``needimport`` and ``needs_external_needs`` read a needs.json alike **(changed output)**
+  (:issue:`2003`, :issue:`1414`, :pr:`0`)
+
+  The two readers now read the file, and create each need, through one path, so a project
+  that read a needs.json one way through one of them can notice:
+
+  - an external source's ``id_prefix`` is added as written: it is no longer upper-cased,
+    so the ids of a lowercase prefix change (``ext_`` gives ``ext_REQ_1``, not
+    ``EXT_REQ_1``), and every reference to them has to follow;
+  - :ref:`needs_id_regex` is no longer applied to imported needs (it never was to
+    external ones);
+  - a record without a ``title`` is refused by ``needimport`` (``needs.import_need``), as
+    it already was for external needs; a ``content`` or ``type`` that is not a string is
+    refused for external needs (``needs.load_external_need``), as it already was on import;
+  - the key of a need in the file is its id: an ``id`` that differs from it is a warning
+    and ignored, where the ``id`` used to win;
+  - an id that two external sources both define is kept from the first source and the
+    other is warned about, where the last one used to replace it silently when the two
+    shared a ``base_url``;
+  - a need of this project with the id of an external need replaces the external need,
+    with a ``needs.create_need`` warning, where it used to be refused and not rendered;
+  - a needs.json that cannot be read -- missing, not valid JSON, without the version asked
+    for, or without ``versions`` or ``needs`` -- is one warning and adds no need, where the
+    build used to abort (or, for an external source with empty ``versions``, stayed silent).
+
+  **The new warnings (** ``needs.needimport`` **and the new** ``needs.external_needs``
+  **) fail a** ``-W`` **build that used to abort or stay silent**; to keep such a build
+  green while you fix the file, add ``"needs.needimport"`` or ``"needs.external_needs"``
+  to ``suppress_warnings``.
+
 Bug fixes
 .........
+
+- 🐛 needimport and needs_external_needs read needs.json through one reader and one record
+  path (:issue:`2003`, :issue:`1414`, :issue:`2158`, :issue:`2165`, :issue:`1472`,
+  :pr:`0`)
+
+  Both readers take the file's envelope, the version and the need records from one reader,
+  and create each need through one record path, which keeps the ten fields each reader
+  reads differently (how an imported need is rendered; where an external need was) as
+  the one stated difference. A file no need can be read from is one warning, at the
+  directive for ``needimport`` and as ``needs.external_needs`` for an external source, and
+  the build goes on. The key of each record is its id, so a record with a missing or
+  non-string ``id`` is read under its key instead of crashing the build, and an ``id``
+  that differs from the key is warned about. A record whose ``parts`` is not a mapping is
+  refused with a warning instead of crashing the build. A file written without its
+  defaults and without the schema to restore them is warned about. With an ``id_prefix``,
+  a link to a need of the file is prefixed also when ``:ids:`` or ``:filter:`` leaves that
+  need out, a link given as a string is prefixed too, and a ``null`` link no longer
+  crashes the build. An ``:ids:`` naming an id the file does not have is warned about, and
+  a ``:filter:`` that fails is warned about once per directive rather than once per need.
+  An external need left from a previous build is replaced on an incremental build, and a
+  duplicate across this build's sources is warned about.
 
 - 🐛 :ref:`check_linked_values <check_linked_values>` and :ref:`calc_sum <calc_sum>` with
   ``links_only`` read the need of a link to a need part, and skip a link to no need

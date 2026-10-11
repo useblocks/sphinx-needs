@@ -2320,6 +2320,11 @@ Default value: ``^[A-Z0-9_]{5,}``
 By default, an ID is allowed to contain upper characters, numbers and underscore only.
 The ID length must be at least 3 characters.
 
+The regular expression applies to the needs defined in this project's sources. It is not
+applied to imported needs (:ref:`needimport`) or to external needs
+(:ref:`needs_external_needs`): their ids are the data of the project that wrote them, and an
+``id_prefix`` may not match any pattern of this project.
+
 .. warning::
 
    An automatically generated ID of needs without a manually given ID must match
@@ -2788,7 +2793,7 @@ keys:
   ``json_url``. |br| The value must be a relative path, which is relative to the project configuration folder
   (where the **conf.py** is stored). (Since version ``0.7.1``)
 :version: Defines the version to use inside the ``needs.json`` file (*optional*).
-:id_prefix: Prefix as string, which will be added to all id of external needs. Needed, if there is the risk that
+:id_prefix: Prefix as string, which will be added, as written, to all id of external needs. Needed, if there is the risk that
   needs from different projects may have the same id (*optional*).
 :css_class: A class name as string, which gets set in link representations like :ref:`needtable`.
   The related CSS class definition must be done by the user, e.g. by :ref:`own_css`.
@@ -2798,6 +2803,15 @@ keys:
   For example if the ``tags`` need field is provided as a string like ``"tag1,tag2,[[func()]]"``, it will be parsed only if this option is set to ``True``,
   otherwise will fail.
   (*optional*) (*default*: ``True``)
+
+Each source is read as a ``needimport`` reads its file: the key of a need in the file is
+its id (a differing ``id`` in the need is reported and ignored), and :ref:`needs_id_regex`
+is not applied. A source that cannot be obtained or read -- a missing ``json_path``, a
+failed download, a file that is not valid JSON, or one without the version asked for -- is
+one ``needs.external_needs`` warning, and adds no need; the build goes on. When two sources
+define the same id, the first one listed keeps it and the other is warned about
+(``needs.load_external_need``). A need of this project with the id of an external need
+replaces the external need, with a ``needs.create_need`` warning naming where it came from.
 
 .. _`needs_needextend_strict`:
 
