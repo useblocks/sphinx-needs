@@ -68,7 +68,12 @@ class IngestProbe(SphinxDirective):
     required_arguments = 1
 
     def run(self):
-        record = {"id": self.arguments[0], "type": "req", "title": "from a comment"}
+        arg = self.arguments[0]
+        record = {
+            "id": int(arg) if arg.isdigit() else arg,
+            "type": "req",
+            "title": "from a comment",
+        }
         try:
             created, _ = ingest_need_record(
                 self.env.app,
@@ -376,26 +381,115 @@ REMOTE = "http://ext.example/docs/needs.json"
     ],
     indirect=["test_app"],
 )
-def test_a_download_that_fails_is_one_warning(test_app: SphinxTestApp, reader: str):
+@pytest.mark.parametrize(
+    ("response", "reason"),
+    [
+        pytest.param(
+            {"body": requests.ConnectionError("no route to host")},
+            "no route to host",
+            id="no_route",
+        ),
+        pytest.param(
+            {"status": 404, "body": "<html>no such page</html>"},
+            f"404 Client Error: Not Found for url: {REMOTE}",
+            id="http_404",
+        ),
+    ],
+)
+def test_a_download_that_fails_is_one_warning(
+    test_app: SphinxTestApp, reader: str, response: dict[str, Any], reason: str
+):
     app = test_app
     with responses.RequestsMock() as mock:
-        mock.get(REMOTE, body=requests.ConnectionError("no route to host"))
+        mock.get(REMOTE, **response)
         app.build()
     assert app.statuscode == 0
     if reader == "import":
         expected = at_import(
-            f"Could not load needs import file {REMOTE}: getting it failed: "
-            "no route to host",
+            f"Could not load needs import file {REMOTE}: getting it failed: {reason}",
             "needimport",
         )
     else:
         expected = unlocated(
             f"Could not load external needs from {REMOTE!r}: getting it failed: "
-            "no route to host",
+            f"{reason}",
             "external_needs",
         )
     assert build_warnings(app) == [expected]
     assert from_file(app) == {}
+
+
+FILE_URL_CONF = """
+needs_external_needs = [
+    {"base_url": "http://ext.example/docs/", "json_url": Path(__file__).parent.joinpath("data.json").as_uri()}
+]
+"""
+
+
+@pytest.mark.parametrize(
+    ("test_app", "reader"),
+    [
+        pytest.param(project("import", envelope(ONE)), "import", id="import"),
+        pytest.param(
+            {
+                **project(
+                    "external", envelope(ONE), files={"conf.py": CONF + FILE_URL_CONF}
+                ),
+                # the source is the one conf.py gives, by an absolute file:// URL
+                "confoverrides": {},
+            },
+            "external",
+            id="external",
+        ),
+    ],
+    indirect=["test_app"],
+)
+def test_a_file_url_is_read(test_app: SphinxTestApp, reader: str):
+    """A ``file://`` URL is fetched as a URL by both readers, not read as a path."""
+    app = test_app
+    if reader == "import":
+        url = Path(str(app.srcdir), "data.json").as_uri()
+        Path(str(app.srcdir), "index.rst").write_text(
+            PAGE + f".. needimport:: {url}\n", encoding="utf-8"
+        )
+    app.build()
+    assert build_warnings(app) == []
+    assert sorted(from_file(app)) == ["REQ_A"]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [project("import", None, imports=(("file:///nonexistent/needs.json", ()),))],
+    indirect=True,
+)
+def test_a_file_url_to_a_missing_file_is_one_warning(test_app: SphinxTestApp):
+    """The reason is the operating system's own words, so only its frame is asserted."""
+    app = test_app
+    app.build()
+    (warning,) = build_warnings(app)
+    assert warning.startswith(
+        f"<srcdir>/index.rst:{IMPORT_LINE}: WARNING: Could not load needs import file "
+        "file:///nonexistent/needs.json: getting it failed: 404 Client Error: "
+    )
+    assert warning.endswith(
+        "for url: file:///nonexistent/needs.json [needs.needimport]"
+    )
+    assert from_file(app) == {}
+
+
+@pytest.mark.parametrize("test_app", [project("import", None)], indirect=True)
+def test_a_missing_import_file_is_read_once_it_exists(test_app: SphinxTestApp):
+    """An incremental build re-reads the page once the missing file is there."""
+    app = test_app
+    app.build()
+    first = build_warnings(app)
+    assert first == [
+        at_import(f"Could not load needs import file {DATA_PATH}", "needimport")
+    ]
+    Path(str(app.srcdir), "data.json").write_text(envelope(ONE), encoding="utf-8")
+    app.build()
+    assert build_warnings(app)[len(first) :] == []
+    assert sorted(from_file(app)) == ["REQ_A"]
 
 
 @pytest.mark.parametrize(
@@ -511,6 +605,46 @@ def test_a_record_is_checked_alike_by_both_readers(
     app.build()
     assert build_warnings(app) == [refused_need(reader, "BAD", message)]
     assert sorted(from_file(app)) == ["GOOD"]
+
+
+@pytest.mark.parametrize(
+    ("test_app", "reader"),
+    both(envelope({"": {"id": "", "type": "req", "title": "t"}, "GOOD": rec("GOOD")})),
+    indirect=["test_app"],
+)
+def test_an_empty_id_is_refused(test_app: SphinxTestApp, reader: str):
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [refused_need(reader, "", "id is empty")]
+    assert sorted(from_file(app)) == ["GOOD"]
+
+
+@pytest.mark.parametrize(
+    ("test_app", "reader"),
+    both(envelope({"REQ_A": rec("REQ_A", title="")})),
+    indirect=["test_app"],
+)
+def test_an_empty_title_is_accepted(test_app: SphinxTestApp, reader: str):
+    """A record WITHOUT a title is refused; one whose title is empty is not."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    assert from_file(app)["REQ_A"]["title"] == ""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [project("external", None, sources=[], page_extra=".. ingest-probe:: 5\n")],
+    indirect=True,
+)
+def test_a_record_of_the_project_with_a_numeric_id_is_refused(test_app: SphinxTestApp):
+    """A codelinks-shaped ``ingest_need_record`` call with ``"id": 5``: refused, no crash."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        f"<srcdir>/index.rst:{IMPORT_LINE}: WARNING: Need 5 could not be ingested: "
+        "id must be a string, not int [needs.test_ingest]"
+    ]
 
 
 # ------------------------------------------------------------------------------------
@@ -720,20 +854,15 @@ def test_a_need_of_the_project_replaces_an_external_need(test_app: SphinxTestApp
 
 
 @pytest.mark.parametrize("test_app", [project("external", LOCAL_DATA)], indirect=True)
-def test_on_an_incremental_build_the_external_need_is_refused(test_app: SphinxTestApp):
-    """The need of the project is in the environment before the source is read again."""
+def test_on_an_incremental_build_the_external_need_is_replaced(test_app: SphinxTestApp):
+    """The need of the project is in the environment before the source is read again:
+    the second build reports the replacement as the first did, code and wording."""
     app = test_app
     app.build()
     first = build_warnings(app)
     assert first == [REPLACES]
     app.build()
-    assert build_warnings(app)[len(first) :] == [
-        refused_need(
-            "external",
-            "LOCAL_001",
-            f"A need with ID 'LOCAL_001' already exists (defined at index:{PAGE_NEED_LINE}).",
-        )
-    ]
+    assert build_warnings(app)[len(first) :] == [REPLACES]
     assert not _is_external(app, "LOCAL_001")
 
 
@@ -835,15 +964,18 @@ SHARED = envelope({"SHARED_1": rec("SHARED_1", title="external title", docname="
     indirect=True,
 )
 def test_an_imported_need_replaces_an_external_need(test_app: SphinxTestApp):
+    """On a fresh build, and again on an incremental one."""
     app = test_app
+    replaces = at_import(
+        "Need 'SHARED_1' replaces the external need of the same id from "
+        "http://ext.example/docs/spec.html#SHARED_1",
+        "create_need",
+    )
     app.build()
-    assert build_warnings(app) == [
-        at_import(
-            "Need 'SHARED_1' replaces the external need of the same id from "
-            "http://ext.example/docs/spec.html#SHARED_1",
-            "create_need",
-        )
-    ]
+    first = build_warnings(app)
+    assert first == [replaces]
+    app.build()
+    assert build_warnings(app)[len(first) :] == [replaces]
     assert not _is_external(app, "SHARED_1")
     assert SphinxNeedsData(app.env).get_needs_view()["SHARED_1"]["is_import"]
 
@@ -933,6 +1065,25 @@ def test_imported_duplicates_keep_the_first(test_app: SphinxTestApp):
 @pytest.mark.parametrize(
     "test_app", [project("external", envelope(ONE))], indirect=True
 )
+def test_an_external_need_its_source_now_refuses_is_removed(test_app: SphinxTestApp):
+    """The previous build's need does not outlive the record the source now holds."""
+    app = test_app
+    app.build()
+    first = build_warnings(app)
+    assert first == []
+    Path(str(app.srcdir), "data.json").write_text(
+        envelope({"REQ_A": {"id": "REQ_A", "type": "req"}}), encoding="utf-8"
+    )
+    app.build()
+    assert build_warnings(app)[len(first) :] == [
+        refused_need("external", "REQ_A", "title is missing")
+    ]
+    assert "REQ_A" not in needs_by_id(app)
+
+
+@pytest.mark.parametrize(
+    "test_app", [project("external", envelope(ONE))], indirect=True
+)
 def test_an_external_need_of_the_previous_build_is_replaced(test_app: SphinxTestApp):
     app = test_app
     app.build()
@@ -975,6 +1126,68 @@ def test_a_link_to_a_need_left_out_is_prefixed(test_app: SphinxTestApp):
         )
     ]
     assert from_file(app)["px_REQ_A"]["links"] == ["px_REQ_B"]
+
+
+WORDS = envelope(
+    {
+        "REQ_A": rec("REQ_A", content="see REQ_AB and REQ_A, PREREQ_B, REQ_BX"),
+        "REQ_AB": rec("REQ_AB"),
+        "REQ_B": rec("REQ_B"),
+    }
+)
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        pytest.param(
+            project("import", WORDS, options=(":id_prefix: px_",)), id="import"
+        ),
+        pytest.param(
+            project("external", WORDS, source={"id_prefix": "px_"}), id="external"
+        ),
+    ],
+    indirect=True,
+)
+def test_the_content_is_prefixed_by_whole_ids(test_app: SphinxTestApp):
+    """An id inside a longer word is not one; a longer id is not rewritten by a shorter."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    assert (
+        from_file(app)["px_REQ_A"]["content"]
+        == "see px_REQ_AB and px_REQ_A, PREREQ_B, REQ_BX"
+    )
+
+
+ROLE = envelope(
+    {"REQ_A": rec("REQ_A", content="Depends on :need:`REQ_B`."), "REQ_B": rec("REQ_B")}
+)
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        project(
+            "import",
+            ROLE,
+            imports=(
+                ("data.json", (":id_prefix: px_", ":ids: REQ_A")),
+                ("data.json", ()),
+            ),
+        )
+    ],
+    indirect=True,
+)
+def test_a_reference_in_the_content_to_a_need_left_out_is_prefixed(
+    test_app: SphinxTestApp,
+):
+    """It no longer resolves to an unprefixed import of the same need."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        at_import("linked need px_REQ_B not found", "link_ref")
+    ]
 
 
 def _prefixed(reader: str, data: str) -> dict[str, Any]:
