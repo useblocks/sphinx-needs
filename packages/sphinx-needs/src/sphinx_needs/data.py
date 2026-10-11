@@ -1124,7 +1124,15 @@ def merge_data(
     # hidden need) stands
     already_held: list[str] = []
     for other_id, other_need in other_needs.items():
-        if other_id in needs:
+        if (
+            other_id in needs
+            and needs[other_id]["is_external"]
+            and not other_need["is_external"]
+        ):
+            # the worker created a need of the project with an external need's id,
+            # which replaced the external need there (and warned): it does here too
+            needs[other_id] = other_need
+        elif other_id in needs:
             already_held.append(other_id)
             # we only want to warn if the need comes from one of the docs parsed in this worker
             _docname = other_need["docname"]

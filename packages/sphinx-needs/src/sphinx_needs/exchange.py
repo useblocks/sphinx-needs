@@ -21,7 +21,6 @@ The rules a record is read by:
 
 from __future__ import annotations
 
-import copy
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass, field
@@ -56,7 +55,8 @@ NOT_AN_OBJECT = "not_an_object"
 VERSIONS_MISSING = "versions_missing"
 """``versions`` is absent or not an object."""
 CURRENT_VERSION_MISSING = "current_version_missing"
-"""No version is requested, and ``current_version`` is absent, empty or not a string."""
+"""No version is requested, and ``current_version`` is absent, not a string, or empty
+(and the file has no version of that empty name)."""
 VERSION_NOT_FOUND = "version_not_found"
 """The version asked for (requested, or the current one) is not a key of ``versions``."""
 NEEDS_MISSING = "needs_missing"
@@ -137,8 +137,11 @@ class Version:
         """The version's records, in the file's order.
 
         A value of ``needs`` that is not an object is not a record (it is reported in
-        :attr:`diagnostics`). Every record is a copy: changing one changes neither the
-        document nor another record.
+        :attr:`diagnostics`). Each record's ``fields`` is a new dict, but its values are
+        not copied: a list or object value is the document's own, and a default is the
+        same object in every record it fills. A reader replaces a value rather than
+        changing it in place. (Copying them costs more than reading the file: about a
+        second for a needs.json of twenty thousand needs.)
 
         :param apply_schema_defaults: Merge the ``needs_schema`` defaults under each
             record.
@@ -149,7 +152,7 @@ class Version:
         for key, value in needs.items():
             if not isinstance(value, Mapping):
                 continue
-            fields = {**copy.deepcopy(defaults), **copy.deepcopy(dict(value))}
+            fields = {**defaults, **value}
             diagnostics: list[Diagnostic] = []
             if "id" in value and value["id"] != key:
                 diagnostics.append(
@@ -187,7 +190,10 @@ class Document:
             )
         if requested is None:
             current = self.data.get("current_version")
-            if not isinstance(current, str) or not current:
+            # an empty name is a version's name when the file has one by it: the
+            # writer names the version after the project's ``version``, which may be
+            # unset
+            if not isinstance(current, str) or not (current or current in versions):
                 raise ExchangeError(
                     CURRENT_VERSION_MISSING,
                     "no version is requested and 'current_version' is missing, "

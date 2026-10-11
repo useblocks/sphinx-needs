@@ -241,16 +241,27 @@ def row_col_maker(
 
 
 def import_prefix_link_edit(
-    needs: dict[str, Any], id_prefix: str, link_names: Iterable[str]
+    needs: dict[str, Any],
+    id_prefix: str,
+    link_names: Iterable[str],
+    *,
+    known_ids: Iterable[str] | None = None,
 ) -> None:
     """
     Changes existing links to support given prefix.
-    Only link-ids get touched, which are part of ``needs`` (so are linking them).
+    Only link-ids get touched, which are needs of the file (so are linking them).
     Other links do not get the prefix, as they are treated as "external" links.
 
-    :param needs: Dict of all needs
+    A link value that is a list has each of its items prefixed; one that is a string
+    (a ``,`` or ``;`` separated list of links, which ``add_need`` splits) is prefixed
+    item by item and stays a string; ``None`` and any other value are left alone.
+    Each value is replaced, not changed in place.
+
+    :param needs: The needs to change, by id
     :param id_prefix: Prefix as string
     :param link_names: Iterable of link field names to be prefixed
+    :param known_ids: The ids of the file the needs are read from, if ``needs`` is only
+        part of it: a link to any of them is prefixed. By default, the ids of ``needs``.
     :return:
     """
     if not id_prefix:
@@ -258,28 +269,51 @@ def import_prefix_link_edit(
 
     from sphinx_needs.need_item import NeedLink
 
-    needs_ids = set(needs.keys())
+    needs_ids = set(needs.keys() if known_ids is None else known_ids)
     link_names_list = list(link_names)
+
+    def prefixed(link: str) -> str:
+        parsed = NeedLink.from_string(link)
+        if parsed.id not in needs_ids:
+            return link
+        return NeedLink(
+            id=f"{id_prefix}{parsed.id}",
+            part=parsed.part,
+            condition=parsed.condition,
+        ).to_link_string()
 
     for need in needs.values():
         for link_name in link_names_list:
-            if link_name not in need:
-                continue
-            for n, link in enumerate(need[link_name]):
-                parsed = NeedLink.from_string(link)
-                if parsed.id in needs_ids:
-                    prefixed = NeedLink(
-                        id=f"{id_prefix}{parsed.id}",
-                        part=parsed.part,
-                        condition=parsed.condition,
-                    )
-                    need[link_name][n] = prefixed.to_link_string()
+            value = need.get(link_name)
+            if isinstance(value, list):
+                need[link_name] = [
+                    prefixed(link) if isinstance(link, str) else link for link in value
+                ]
+            elif isinstance(value, str):
+                need[link_name] = _prefix_link_string(value, prefixed)
         # Manipulate descriptions
         # ToDo: Use regex for better matches.
         for id in needs_ids:
             for key in ("content", "description"):
-                if key in need:
+                if key in need and isinstance(need[key], str):
                     need[key] = need[key].replace(id, "".join([id_prefix, id]))
+
+
+def _prefix_link_string(value: str, prefixed: Callable[[str], str]) -> str:
+    """A ``,`` or ``;`` separated string of links, each prefixed by ``prefixed``.
+
+    A string that holds a dynamic function or a variant (``[[``, ``<<``, ``<{``) is
+    left as it is: its separators are not all link separators.
+    """
+    if "[[" in value or "<<" in value or "<{" in value:
+        return value
+    parts = re.split(r"([,;])", value)
+    for n in range(0, len(parts), 2):
+        item = parts[n]
+        if stripped := item.strip():
+            start = item.index(stripped)
+            parts[n] = item[:start] + prefixed(stripped) + item[start + len(stripped) :]
+    return "".join(parts)
 
 
 FuncT = TypeVar("FuncT")
