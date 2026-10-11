@@ -379,8 +379,8 @@ def test_a_generated_id_another_need_holds_says_to_author_one(build_page):
     )
 
     message = (
-        f"Need could not be created: A need with ID '{ADDITION}' already exists; "
-        "give the directive an :id: of its own"
+        f"Need could not be created: A need with ID '{ADDITION}' already exists "
+        "(defined at index:4); give the directive an :id: of its own"
     )
     assert app.statuscode == 0
     assert stream.count("WARNING:") == 1
@@ -396,7 +396,10 @@ def test_an_authored_id_another_need_holds_is_reported_plainly(build_page):
         conf=DETERMINISTIC,
     )
 
-    message = f"Need could not be created: A need with ID '{ADDITION}' already exists."
+    message = (
+        f"Need could not be created: A need with ID '{ADDITION}' already exists "
+        "(defined at index:4)."
+    )
     assert stream.count("WARNING:") == 1
     assert f"index.rst:10: WARNING: {message}" in stream
     assert "give the directive" not in stream
@@ -413,7 +416,10 @@ def test_a_need_holding_an_expansion_id_first_keeps_it(build_page):
         conf=ANY_ID,
     )
 
-    message = f"Need could not be created: A need with ID '{suite_id}' already exists."
+    message = (
+        f"Need could not be created: A need with ID '{suite_id}' already exists "
+        "(defined at index:4)."
+    )
     assert app.statuscode == 0
     assert stream.count("WARNING:") == 1
     assert f"index.rst:7: WARNING: {message}" in stream
@@ -580,7 +586,7 @@ def test_a_second_test_report_of_one_id_warns_on_its_own_line(build_page):
     assert stream.count("WARNING:") == 1
     assert (
         "index.rst:8: WARNING: Need could not be created: A need with ID 'TR_ONE' "
-        "already exists." in stream
+        "already exists (defined at index:44)." in stream
     )
 
 
