@@ -306,6 +306,58 @@ def test_hash_drops_link_conditions_then_duplicates(test_app):
     assert sorted(needs["S_1"]["covers"]) == ["R_2", "R_2[status == 'open']"]
 
 
+CONDITIONS_INDEX = """\
+Conditions
+==========
+
+.. req:: Two
+   :id: R_2
+   :status: open
+
+.. spec:: One target under three conditions
+   :id: S_1
+   :covers: R_2[status == 'open'], R_2, R_2[status == 'closed']
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), CONDITIONAL_CONF),
+                (Path("index.rst"), CONDITIONS_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_one_target_under_several_conditions_exports_in_one_order(test_app):
+    """``needs.json`` keeps each link's condition, so three links to ``R_2`` share one id
+    and one natural key: the link with its condition, compared as a string, orders them
+    (``R_2``, then ``[status == 'closed']``, then ``[status == 'open']``), in every
+    build. The hash drops the conditions and writes ``R_2`` once."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:8: WARNING: Need 'S_1' link 'R_2' in field 'covers': "
+        "condition \"status == 'closed'\" not satisfied by target need 'R_2' "
+        "[needs.link_condition_failed]",
+    ]
+    need = _needs(app)["S_1"]
+    assert need["covers"] == [
+        "R_2",
+        "R_2[status == 'closed']",
+        "R_2[status == 'open']",
+    ]
+    assert (
+        need["digest"]
+        == _sha256('[["R_2"]]')
+        == ("5d82d655c789b1715e46e424e599e1f5110ecaf22c082e32bae73cb7cd97369d")
+    )
+
+
 TIE_CONF = """\
 extensions = ["sphinx_needs"]
 needs_build_json = True
