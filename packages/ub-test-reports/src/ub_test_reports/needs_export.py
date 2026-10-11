@@ -65,14 +65,26 @@ def _contains(haystack: str, needle: str) -> bool:
     return _WHITESPACE.sub(" ", needle).strip() in _WHITESPACE.sub(" ", haystack)
 
 
+#: The characters `str.splitlines()` -- and so docutils, reading a need's content --
+#: ends a line at: LF, CR (alone or before an LF), VT, FF, FS, GS, RS, NEL, LINE
+#: SEPARATOR, PARAGRAPH SEPARATOR.
+_LINE_BREAKS = "\n\r\x0b\x0c\x1c\x1d\x1e\x85\u2028\u2029"
+
+
 def _literal_block(title: str, body: str) -> str:
     """An RST literal block, indented so the need content stays valid.
 
     The body is dedented as a whole, not line by line: XML pretty-printing adds
     a common indentation that has to go, but a traceback or an assertion diff
-    is only readable if its *relative* indentation survives.
+    is only readable if its *relative* indentation survives. `textwrap.dedent`
+    sees lines on line feeds only, so that holds across line feeds; a line that
+    another line break (a carriage return, NEL, ...) starts keeps its own
+    indentation -- inside the block either way. The body is split where docutils
+    splits it (`str.splitlines()`, not only on a line feed) and every line is
+    indented, so no line ends the block early; line breaks at either end are
+    dropped, and an empty line is written as an empty line.
     """
-    lines = textwrap.dedent(body).strip("\n").split("\n")
+    lines = textwrap.dedent(body).strip(_LINE_BREAKS).splitlines()
     indented = "\n".join(
         f"   {line.rstrip()}" if line.strip() else "" for line in lines
     )
