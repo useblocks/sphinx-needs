@@ -71,6 +71,10 @@ _WARNING = re.compile(
     re.DOTALL,
 )
 _FIELD = re.compile(r"(?:[Ff]ield|option|[Ll]ink type) '([^']+)'")
+#: a record naming a shared code anywhere, to catch one ``_WARNING`` cannot read
+_SHARED_MENTION = re.compile(
+    r"\[[a-z_]+\.(?:" + "|".join(sorted(SHARED_CODES)) + r")\]"
+)
 
 
 def _corpus() -> list[dict[str, Any]]:
@@ -163,12 +167,16 @@ def test_a_case_cannot_write_outside_its_directory(relative: str) -> None:
         _files({"config": "", "source": "", "files": {relative: "{}"}})
 
 
-def _findings(app: Any, needs: dict[str, dict[str, Any]]) -> Counter[tuple]:
-    """The build's findings of the shared codes, as ``(code, need, field)``.
+def _findings(
+    app: Any, needs: dict[str, dict[str, Any]]
+) -> tuple[Counter[tuple], list[str]]:
+    """The build's findings of the shared codes, as ``(code, need, field)``, and the
+    records that name a shared code but cannot be read as one.
 
     ``need`` is the need whose directive the finding is reported at (none for a finding
     of the configuration, or one at a ``needextend``); ``field`` the first field, option
-    or link type the message names.
+    or link type the message names. A record this runner cannot read is not skipped: a
+    finding of the contract it fails to see would otherwise pass unnoticed.
     """
     at_line = {
         (need["docname"], need["lineno"]): need_id
@@ -176,8 +184,12 @@ def _findings(app: Any, needs: dict[str, dict[str, Any]]) -> Counter[tuple]:
         if need.get("lineno") is not None
     }
     found: Counter[tuple] = Counter()
+    unread: list[str] = []
     for warning in build_warnings(app):
         match = _WARNING.match(warning)
+        if match is None and _SHARED_MENTION.search(warning):
+            unread.append(warning)
+            continue
         if (
             match is None
             or match["code"] not in SHARED_CODES
@@ -190,7 +202,7 @@ def _findings(app: Any, needs: dict[str, dict[str, Any]]) -> Counter[tuple]:
             need = at_line.get((match["doc"], int(match["line"])))
         field = _FIELD.search(match["message"])
         found[(match["code"], need, field[1] if field else None)] += 1
-    return found
+    return found, unread
 
 
 def _match(found: Counter[tuple], expected: list[dict[str, str]]) -> list[str]:
@@ -264,8 +276,17 @@ def test_case(test_app: Any, case: dict[str, Any]) -> None:
             if not _same(actual, value):
                 problems.append(f"{need_id}.{name}: {actual!r}, expected {value!r}")
     for need_id, names in expect.get("nulls", {}).items():
+        # needs.json writes every declared field on every need, null included, so a
+        # null pin names a need of the case and a field that need carries
+        if need_id not in needs:
+            problems.append(f"{need_id}: no such need")
+            continue
         for name in names:
-            if (actual := needs.get(need_id, {}).get(name)) is not None:
+            if name not in needs[need_id]:
+                problems.append(f"{need_id}.{name}: no such field")
+            elif (actual := needs[need_id][name]) is not None:
                 problems.append(f"{need_id}.{name}: {actual!r}, expected null")
-    problems += _match(_findings(app, needs), expect["findings"])
+    found, unread = _findings(app, needs)
+    problems += [f"a record naming a shared code is unreadable: {w!r}" for w in unread]
+    problems += _match(found, expect["findings"])
     assert problems == [], case["why"]

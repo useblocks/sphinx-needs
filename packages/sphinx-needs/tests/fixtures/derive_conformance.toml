@@ -41,7 +41,12 @@
 #     other case's runner drops it before comparing; it appears in no other case's findings
 #   - a finding's `need` is the need it is reported at (the need's directive); a finding
 #     of the configuration has none, and so has one at a `needextend`. Its `field` is the
-#     field or link type it is about
+#     field or link type it is about. A runner that cannot read a record carrying one of
+#     these codes FAILS the case rather than skip the record
+#   - a `nulls` entry names a need of the case and a field that need carries: `needs.json`
+#     writes every declared field (and link type) on every need, null included, so a
+#     runner asserts the need and the field are PRESENT, then that the value is null; a
+#     missing need or field fails the case
 #
 # `packages/sphinx-needs/tests/test_derive_conformance.py` runs every case with the `needs`
 # builder AND asserts the case COUNT, so a truncated copy is a red test rather than reduced
