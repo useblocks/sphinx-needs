@@ -149,7 +149,7 @@ field = "from_missing"
 
 [[case]]
 name = "copy-over-link-select"
-why = "copy over a link type: first is the lowest id among the targets that set the field; unique the same, reporting several; list every value in written order, duplicates kept, a list's items each"
+why = "copy over a link type: first is the lowest id among the targets that set the field; unique the same, reporting several; list every value in written order, duplicates kept, a list's items each. With no candidate (REQ_1), or candidates none of which sets the field (SPEC_2), list is [], a list as collect's, and first / unique leave the field unset (A-19)"
 config = '''
 [needs.links.parent]
 
@@ -192,6 +192,10 @@ source = '''
 .. spec:: Child
    :id: SPEC_1
    :parent: REQ_2, REQ_3, REQ_1, REQ_2
+
+.. spec:: A parent setting nothing
+   :id: SPEC_2
+   :parent: REQ_3
 '''
 [case.expect]
 [case.expect.needs.SPEC_1]
@@ -202,8 +206,12 @@ c_labels = ["y", "z", "x", "y", "y", "z"]
 [case.expect.needs.REQ_1]
 c_list = []
 c_labels = []
+[case.expect.needs.SPEC_2]
+c_list = []
+c_labels = []
 [case.expect.nulls]
 REQ_1 = ["c_first", "c_unique"]
+SPEC_2 = ["c_first", "c_unique"]
 [[case.expect.findings]]
 code = "derive_unique"
 need = "SPEC_1"
