@@ -72,7 +72,7 @@ missing is read on the next incremental build once it exists.
 
 .. note::
 
-   If you are rebuilding documentation incrementally (for example, when using ``sphinx-autobuild``), Sphinx  automatically detects changes to the *local* JSON files. However, with remote URLs, you must run a Sphinx build with the ``-E`` flag to rebuild the environment from scratch when the remote file changes.
+   If you are rebuilding documentation incrementally (for example, when using ``sphinx-autobuild``), Sphinx  automatically detects changes to the *local* JSON files. However, with remote URLs or a ``file://`` URL, you must run a Sphinx build with the ``-E`` flag to rebuild the environment from scratch when the remote file changes.
 
 Options
 -------

@@ -306,8 +306,8 @@ Bug fixes
   non-string ``id`` is read under its key instead of crashing the build, and an ``id``
   that differs from the key is warned about. A record whose ``parts`` is not a mapping is
   refused with a warning instead of crashing the build. A file written without its
-  defaults and without the schema to restore them is warned about. A record whose ``id``
-  is empty is refused. With an ``id_prefix``, a link or a reference in the content to a
+  defaults and without the schema to restore them is warned about. A record whose key is
+  empty is refused. With an ``id_prefix``, a link or a reference in the content to a
   need of the file is prefixed also when ``:ids:`` or ``:filter:`` leaves that need out, a
   link given as a string is prefixed too, a ``null`` link no longer crashes the build,
   and an id inside a longer word of the content is no longer rewritten. An ``:ids:``
@@ -315,8 +315,7 @@ Bug fixes
   warned about once per directive rather than once per need.
   An external need left from a previous build is replaced on an incremental build (or
   removed, when the source now refuses its record), a need of this project that holds an
-  external need's id is reported with the same ``needs.create_need`` warning on every
-  build, and a duplicate across this build's sources is warned about. A download that
+  external need's id is reported with a ``needs.create_need`` warning on every build, and a duplicate across this build's sources is warned about. A download that
   fails, also with an HTTP error status, is reported with its reason; ``needimport``
   reads a ``file://`` URL as a URL, and a local file it misses is read on the next
   incremental build once it exists. An external source's ``target_url`` template sees the
