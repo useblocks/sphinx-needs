@@ -222,6 +222,90 @@ def test_hash(test_app):
         assert need["l_digest"] == need["h_digest"], need_id
 
 
+CONDITIONAL_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_id_regex = "^.+$"
+needs_links = {"covers": {}}
+needs_fields = {
+    "digest": {"schema": {"type": "string"}, "derive": {"kind": "hash", "fields": ["covers"]}},
+}
+"""
+
+CONDITIONAL_INDEX = """\
+Conditional links
+=================
+
+.. req:: Two
+   :id: R_2
+   :status: open
+
+.. req:: Ten
+   :id: R_10
+   :status: open
+
+.. spec:: With and without a condition
+   :id: S_1
+   :covers: R_2[status == 'open'], R_2
+
+.. spec:: Two conditions
+   :id: S_2
+   :covers: R_2[status == 'open'], R_2[status != 'closed']
+
+.. spec:: And another target
+   :id: S_3
+   :covers: R_10, R_2[status == 'open'], R_2
+"""
+
+#: the JSON text each pinned hash is the SHA-256 of, and the hex, written out by hand
+HASHED_CONDITIONAL = {
+    "S_1": (
+        '[["R_2"]]',
+        "5d82d655c789b1715e46e424e599e1f5110ecaf22c082e32bae73cb7cd97369d",
+    ),
+    "S_2": (
+        '[["R_2"]]',
+        "5d82d655c789b1715e46e424e599e1f5110ecaf22c082e32bae73cb7cd97369d",
+    ),
+    "S_3": (
+        '[["R_2","R_10"]]',
+        "c59e839489078b248d34520275684e04a3454b44fd2d36c815ed174dd1e415f0",
+    ),
+}
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), CONDITIONAL_CONF),
+                (Path("index.rst"), CONDITIONAL_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_hash_drops_link_conditions_then_duplicates(test_app):
+    """``hash`` writes a link list as its targets' ids: the conditions dropped, then
+    each id once, sorted as ``needs.json`` sorts (``R_2`` before ``R_10``).
+
+    So a target named with and without a condition (``S_1``), or under two conditions
+    (``S_2``), is hashed once, although ``needs.json`` keeps each condition's text.
+    """
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    needs = _needs(app)
+    for need_id, (text, hexdigest) in HASHED_CONDITIONAL.items():
+        values = json.loads(text)
+        assert json.dumps(values, separators=(",", ":"), ensure_ascii=False) == text
+        assert _sha256(text) == hexdigest, need_id
+        assert needs[need_id]["digest"] == hexdigest, (need_id, text)
+    assert sorted(needs["S_1"]["covers"]) == ["R_2", "R_2[status == 'open']"]
+
+
 @pytest.mark.parametrize("test_app", [KINDS], indirect=True)
 def test_links_and_content_links(test_app):
     """``links``: every need passing ``where``, the need itself (and its parts) left out
