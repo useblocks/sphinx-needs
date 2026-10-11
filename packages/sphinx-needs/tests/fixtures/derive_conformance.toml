@@ -614,7 +614,7 @@ field = "bad_hash"
 
 [[case]]
 name = "hash-numbers-and-link-lists"
-why = "hash writes a number field's float as Python's repr (1e+16, 1.5e-05) beside an integer, a link list in the export's natural order (REQ_2 before REQ_10), two ids with one natural key by the id in code-point order (REQ_02 before REQ_2), deduplicated, beside a null, and a target named with and without a condition once, its condition dropped; needs.json writes the list in the same order (A-23)"
+why = "hash writes a number field's float as Python's repr (1e+16, 1.5e-05) beside an integer, a link list in the export's natural order (REQ_2 before REQ_10), two ids with one natural key by the id in code-point order (REQ_02 before REQ_2), deduplicated, beside a null, and a target named with and without a condition once, its condition dropped; needs.json writes the link list in the same order (A-23), and the target with and without its condition in the order of the link written out, condition included (A-25)"
 # the JSON texts hashed, and their SHA-256:
 #   SPEC_1 h_numbers    [1e+16,1.5e-05,3]
 #                       d6a79d9582de05f6e8b5c4b0cbb06a9bad773301ced18780b158f77a4e53bab4
@@ -680,6 +680,7 @@ big = 1e16
 small = 1.5e-05
 points = 3
 links = ["REQ_02", "REQ_2", "REQ_9", "REQ_10"]
+covers = ["REQ_2", "REQ_2[status == 'open']"]
 h_numbers = "d6a79d9582de05f6e8b5c4b0cbb06a9bad773301ced18780b158f77a4e53bab4"
 h_list_null = "bd32dabcd08ebfb5b93daff2b2d0f428597cb2bf8ff6bd76cb48ad35696ad7ec"
 h_conditions = "8768542c20e4152df9fcc800c8eefe9de919189612b4bcedf2b4adc4b9c96b21"
