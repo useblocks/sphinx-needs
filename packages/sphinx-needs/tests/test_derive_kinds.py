@@ -1304,6 +1304,15 @@ needs_fields = {
         "nullable": False,
         "derive": {"kind": "all", "over": "links", "test": "hours > 0"},
     },
+    "low": {
+        "schema": {"type": "number", "minimum": 1},
+        "nullable": False,
+        "derive": {"kind": "min", "field": "hours", "over": "links"},
+    },
+    "fruits": {
+        "schema": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+        "derive": {"kind": "copy", "field": "fruit", "over": "links", "select": "list"},
+    },
 }
 """
 
@@ -1352,7 +1361,11 @@ def test_a_result_the_field_schema_refuses(test_app):
     A result equal to the empty value is checked too, where it is computed: a ``count``
     of 0 under ``minimum = 1``, an ``all`` of false under ``const = true``, are refused,
     though the field then holds that value as its empty value (which the schema
-    validation of the stored values does not check).
+    validation of the stored values does not check). So is a rule that ran over no
+    candidate: ``REQ_1``'s ``count`` of 0, and its ``select = "list"`` copy's ``[]`` under
+    ``minItems = 1``, which leaves the nullable field ``None``. A rule that found no
+    value leaves the empty value, unchecked: ``REQ_1``'s ``min`` over no link, 0.0
+    under ``minimum = 1``, and ``SPEC_1``'s copy of no ``fruit`` into ``pick``.
     """
     app = test_app
     app.build()
@@ -1367,6 +1380,8 @@ def test_a_result_the_field_schema_refuses(test_app):
             "code", "REQ_1", "copy", "'Banana'", '"Banana" does not match "^[a-z]+$"'
         ),
         "<srcdir>/index.rst:4: "
+        + refused.format("fruits", "REQ_1", "copy", [], "[] has less than 1 item"),
+        "<srcdir>/index.rst:4: "
         + refused.format("n", "REQ_1", "count", 0, "0 is less than the minimum of 1"),
         "<srcdir>/index.rst:4: "
         + refused.format(
@@ -1377,7 +1392,13 @@ def test_a_result_the_field_schema_refuses(test_app):
             '"Banana" is not one of "apple" or "pear"',
         ),
         "<srcdir>/index.rst:9: "
+        + refused.format("fruits", "REQ_2", "copy", [], "[] has less than 1 item"),
+        "<srcdir>/index.rst:9: "
         + refused.format("n", "REQ_2", "count", 0, "0 is less than the minimum of 1"),
+        "<srcdir>/index.rst:14: "
+        + refused.format(
+            "low", "SPEC_1", "min", -2.0, "-2.0 is less than the minimum of 1"
+        ),
         "<srcdir>/index.rst:14: "
         + refused.format("ok", "SPEC_1", "all", False, "true was expected"),
         "<srcdir>/index.rst:14: "
@@ -1397,6 +1418,14 @@ def test_a_result_the_field_schema_refuses(test_app):
         False,
         True,
         True,
+    )
+    # a rule that ran over no candidate: its [] is refused, the field keeps None
+    assert (needs["REQ_1"]["fruits"], needs["SPEC_2"]["fruits"]) == (None, ["apple"])
+    # a rule that found no value: the empty value 0.0, which minimum = 1 does not check
+    assert (needs["REQ_1"]["low"], needs["SPEC_1"]["low"], needs["SPEC_2"]["low"]) == (
+        0.0,
+        0.0,
+        3.0,
     )
 
 

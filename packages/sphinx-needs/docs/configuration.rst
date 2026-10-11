@@ -675,6 +675,9 @@ after every other field, every other kind with the other fields; each after ever
   ``collect`` and ``copy`` with ``select = "list"`` ``[]`` (a list, also when no candidate sets the field);
   ``min``, ``max`` and ``copy`` with ``select = "first"`` or ``"unique"`` find no value,
   over no candidate or over candidates none of which sets the field, and leave the field at its empty value.
+  The values a rule computes over no candidate (and an empty link list) are checked against the field's ``schema``
+  as any result is, so a ``count`` of ``0`` under ``minimum = 1`` is refused,
+  while the empty value of a rule that found no value is not checked.
 - **Values.** A result takes the type of the field holding it, as an authored value does,
   and as the result of a ``[[…]]`` or a variant does: an integer in an ``integer`` field, a float in a ``number`` field
   (a ``count``, or the ``sum`` of an ``integer`` field, is ``13.0`` there), in ``needs.json`` and in a ``hash``.
