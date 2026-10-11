@@ -49,6 +49,12 @@ SHARED_CODES = frozenset(
     }
 )
 
+#: The codes only ubCode reports: compared in a ``ubcode_only`` case alone, and dropped
+#: before comparing in every other case. ``derive_sphinx_minimum`` is ubCode's notice
+#: that a project declares ``derive``, once per project, so it fires in nearly every
+#: case; sphinx-needs has no such finding.
+UBCODE_ONLY_CODES = frozenset({"derive_sphinx_minimum"})
+
 #: The configuration the runner gives every case besides its ``ubproject.toml``.
 CONF_PY = """\
 extensions = ["sphinx_needs"]
@@ -113,6 +119,10 @@ def test_every_case_has_a_complete_expectation() -> None:
         for finding in expect["findings"]:
             assert set(finding) <= {"code", "need", "field"}, name
             assert finding["code"] in SHARED_CODES, name
+            # a code only ubCode reports is compared in a case only ubCode runs
+            assert finding["code"] not in UBCODE_ONLY_CODES or case.get(
+                "ubcode_only"
+            ), name
 
 
 def test_the_corpus_header_records_where_it_is_canonical() -> None:
@@ -168,7 +178,12 @@ def _findings(app: Any, needs: dict[str, dict[str, Any]]) -> Counter[tuple]:
     found: Counter[tuple] = Counter()
     for warning in build_warnings(app):
         match = _WARNING.match(warning)
-        if match is None or match["code"] not in SHARED_CODES:
+        if (
+            match is None
+            or match["code"] not in SHARED_CODES
+            # this runner skips every ubcode_only case, so it drops them everywhere
+            or match["code"] in UBCODE_ONLY_CODES
+        ):
             continue
         need = None
         if match["line"] is not None:

@@ -36,6 +36,9 @@
 #         derive_invalid, derive_authored, derive_unique, derive_cycle, derive_scope,
 #         dynamic_function, derive_sphinx_minimum
 #     -- every other finding (a dead link, a deprecated option) is each tool's own
+#   - `derive_sphinx_minimum` is ubCode's alone (its notice, once per project, that the
+#     project declares `derive`): it is compared ONLY in a `ubcode_only` case, and every
+#     other case's runner drops it before comparing; it appears in no other case's findings
 #   - a finding's `need` is the need it is reported at (the need's directive); a finding
 #     of the configuration has none, and so has one at a `needextend`. Its `field` is the
 #     field or link type it is about
