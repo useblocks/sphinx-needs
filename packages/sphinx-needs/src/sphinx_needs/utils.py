@@ -271,15 +271,16 @@ def import_prefix_link_edit(
 
     needs_ids = set(needs.keys() if known_ids is None else known_ids)
     link_names_list = list(link_names)
-    # an id is matched where no letter, digit or ``_`` adjoins it, so an id inside a
-    # longer word is not one; the longest id is tried first, so ``REQ_AB`` is not
-    # matched as ``REQ_A``; a text is rewritten in one pass, so nothing is prefixed twice
+    # an id is matched where no word character (a letter of any script, a digit, ``_``)
+    # adjoins it, so an id inside a longer word is not one; the longest id is tried
+    # first, so an id holding another (``REQ_X-REQ_Y``) is matched whole; a text is
+    # rewritten in one pass, so nothing is prefixed twice
     ids_longest_first = sorted((i for i in needs_ids if i), key=len, reverse=True)
     id_pattern = (
         re.compile(
-            r"(?<![A-Za-z0-9_])(?:"
+            r"(?<!\w)(?:"
             + "|".join(re.escape(i) for i in ids_longest_first)
-            + r")(?![A-Za-z0-9_])"
+            + r")(?!\w)"
         )
         if ids_longest_first
         else None

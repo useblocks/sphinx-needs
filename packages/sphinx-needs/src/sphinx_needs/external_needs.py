@@ -114,6 +114,25 @@ def load_external_needs(
                 external_url = f"{source['base_url']}/{need.get('docname', '__error__')}.html#{key}"
 
             existing = data.get_needs_mutable().get(ext_need_id)
+            if (
+                existing is not None
+                and existing["is_external"]
+                and ext_need_id not in added
+            ):
+                # an external need left from a previous build: removed before its
+                # record is read again, so a record now refused leaves no need behind.
+                # One added in this pass, by this source or another, is a duplicate:
+                # ``add_external_need`` refuses it
+                del_need(app, ext_need_id)
+
+            try:
+                need_params, _ = _record_params(
+                    need, needs_schema, reader="external", unknown_keys=unknown_keys
+                )
+            except InvalidNeedException as err:
+                _refuse_need(ext_need_id, source_str, err)
+                continue
+
             if existing is not None and not existing["is_external"]:
                 # a need of this project holds the id: it wins, as when it is created
                 # after the external need (an incremental build keeps it from the
@@ -128,20 +147,7 @@ def load_external_needs(
                     else None,
                 )
                 continue
-            if existing is not None and ext_need_id not in added:
-                # an external need left from a previous build: removed before its
-                # record is read again, so a record now refused leaves no need behind.
-                # One added in this pass, by this source or another, is a duplicate:
-                # ``add_external_need`` refuses it
-                del_need(app, ext_need_id)
 
-            try:
-                need_params, _ = _record_params(
-                    need, needs_schema, reader="external", unknown_keys=unknown_keys
-                )
-            except InvalidNeedException as err:
-                _refuse_need(ext_need_id, source_str, err)
-                continue
             need_params["id"] = ext_need_id
             need_params["external_css"] = source.get("css_class")
 
