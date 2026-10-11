@@ -31,7 +31,7 @@ The directive argument can be one of the following formats:
 
      .. needimport:: https://my_company.com/docs/remote-needs.json
 
-- A ``file://`` URL, read as a URL is (the external reader reads it the same way):
+- A ``file://`` URL, which is read as a URL (as :ref:`needs_external_needs` reads a ``json_url``):
 
   .. code-block:: rst
 

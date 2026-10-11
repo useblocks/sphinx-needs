@@ -266,7 +266,8 @@ Breaking changes
     it already was for external needs; a ``content`` that is not a string is refused for
     external needs (``needs.load_external_need``), as it already was on import;
   - the key of a need in the file is its id: an ``id`` that differs from it is a warning
-    and ignored, where the ``id`` used to win;
+    and ignored, where the ``id`` used to win; an empty key is refused by both readers,
+    where an external source created a need with an empty id;
   - an id that two external sources both define is kept from the first source and the
     other is warned about, where the last one used to replace it silently when the two
     shared a ``base_url``;
@@ -309,8 +310,9 @@ Bug fixes
   is empty is refused. With an ``id_prefix``, a link or a reference in the content to a
   need of the file is prefixed also when ``:ids:`` or ``:filter:`` leaves that need out, a
   link given as a string is prefixed too, a ``null`` link no longer crashes the build,
-  and an id inside a longer word of the content is no longer rewritten. An ``:ids:`` naming an id the file does not have is warned about, and
-  a ``:filter:`` that fails is warned about once per directive rather than once per need.
+  and an id inside a longer word of the content is no longer rewritten. An ``:ids:``
+  naming an id the file does not have is warned about, and a ``:filter:`` that fails is
+  warned about once per directive rather than once per need.
   An external need left from a previous build is replaced on an incremental build (or
   removed, when the source now refuses its record), a need of this project that holds an
   external need's id is reported with the same ``needs.create_need`` warning on every
