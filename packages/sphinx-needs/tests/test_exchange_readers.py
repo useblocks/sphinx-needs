@@ -1063,6 +1063,25 @@ def test_imported_duplicates_keep_the_first(test_app: SphinxTestApp):
 
 
 @pytest.mark.parametrize(
+    "test_app",
+    [project("external", envelope({"LOCAL_001": {"id": "LOCAL_001", "type": "req"}}))],
+    indirect=True,
+)
+def test_a_refused_record_a_page_need_holds_is_refused_on_every_build(
+    test_app: SphinxTestApp,
+):
+    """The record is checked before the collision with the project's need is reported."""
+    app = test_app
+    refused = refused_need("external", "LOCAL_001", "title is missing")
+    app.build()
+    first = build_warnings(app)
+    assert first == [refused]
+    app.build()
+    assert build_warnings(app)[len(first) :] == [refused]
+    assert needs_by_id(app)["LOCAL_001"]["title"] == "local need"
+
+
+@pytest.mark.parametrize(
     "test_app", [project("external", envelope(ONE))], indirect=True
 )
 def test_an_external_need_its_source_now_refuses_is_removed(test_app: SphinxTestApp):
@@ -1158,6 +1177,62 @@ def test_the_content_is_prefixed_by_whole_ids(test_app: SphinxTestApp):
         from_file(app)["px_REQ_A"]["content"]
         == "see px_REQ_AB and px_REQ_A, PREREQ_B, REQ_BX"
     )
+
+
+def _content_after_prefix(ids: list[str], content: str) -> list[Any]:
+    """Both readers of a file whose first need carries ``content``, prefixed ``px_``."""
+    data = envelope(
+        {i: rec(i, content=content if n == 0 else "") for n, i in enumerate(ids)}
+    )
+    return [
+        pytest.param(
+            project("import", data, options=(":id_prefix: px_",)), id="import"
+        ),
+        pytest.param(
+            project("external", data, source={"id_prefix": "px_"}), id="external"
+        ),
+    ]
+
+
+def _content_of_first(app: SphinxTestApp, first: str) -> str:
+    return from_file(app)[f"px_{first}"]["content"]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    _content_after_prefix(["REQ_A", "ANF_Ü"], "REQ_Aü üREQ_A ANF_Ü. REQ_A"),
+    indirect=True,
+)
+def test_a_whole_word_in_the_content_is_a_unicode_word(test_app: SphinxTestApp):
+    """A letter beside an id, ASCII or not, makes it part of a longer word."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    assert _content_of_first(app, "REQ_A") == "REQ_Aü üREQ_A px_ANF_Ü. px_REQ_A"
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    _content_after_prefix(["REQ_X", "REQ_Y", "REQ_X-REQ_Y"], "REQ_X-REQ_Y and REQ_Y"),
+    indirect=True,
+)
+def test_an_id_holding_another_is_matched_whole(test_app: SphinxTestApp):
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    assert _content_of_first(app, "REQ_X") == "px_REQ_X-REQ_Y and px_REQ_Y"
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    _content_after_prefix(["REQ+(1)", "REQ.1"], "REQ+(1) REQ1 REQX1 REQ.1"),
+    indirect=True,
+)
+def test_an_id_with_pattern_characters_is_matched_as_written(test_app: SphinxTestApp):
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    assert _content_of_first(app, "REQ+(1)") == "px_REQ+(1) REQ1 REQX1 px_REQ.1"
 
 
 ROLE = envelope(
