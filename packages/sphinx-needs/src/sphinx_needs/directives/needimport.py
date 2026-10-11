@@ -87,8 +87,9 @@ class NeedimportDirective(SphinxDirective):
             try:
                 response = s.get(need_import_path)
             except Exception as e:
-                raise NeedimportException(
-                    f"Getting {need_import_path} didn't work. Reason: {e}."
+                return self._refuse(
+                    f"Could not load needs import file {need_import_path}: "
+                    f"getting it failed: {e}"
                 )
             read = partial(exchange.parse, response.content)
         else:
@@ -370,4 +371,5 @@ class CorruptedNeedsFile(BaseException):
 
 
 class NeedimportException(BaseException):
-    """Raised when a remote needs.json cannot be downloaded."""
+    """No longer raised: a needs.json that cannot be downloaded is one
+    ``needs.needimport`` warning, and the directive imports nothing."""

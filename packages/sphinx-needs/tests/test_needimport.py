@@ -8,7 +8,6 @@ import responses
 from syrupy.filters import props
 
 from sphinx_needs.data import SphinxNeedsData
-from sphinx_needs.directives.needimport import NeedimportException
 from sphinx_needs_testkit import assert_no_warnings, build_warnings
 
 
@@ -467,12 +466,15 @@ def test_needimport_needs_json_download(test_app, snapshot):
     indirect=True,
 )
 def test_needimport_needs_json_download_negative(test_app):
-    with pytest.raises(NeedimportException) as err:
-        test_app.build()
-    assert (
-        "Getting http://my_wrong_name_company.com/docs/v1/remote-needs.json didn't work."
-        in err.value.args[0]
+    """A download that fails is one warning; the reason is the network's own words."""
+    test_app.build()
+    assert test_app.statuscode == 0
+    (warning,) = build_warnings(test_app)
+    assert warning.startswith(
+        "<srcdir>/index.rst:14: WARNING: Could not load needs import file "
+        "http://my_wrong_name_company.com/docs/v1/remote-needs.json: getting it failed: "
     )
+    assert warning.endswith(" [needs.needimport]")
 
 
 @pytest.mark.parametrize(
