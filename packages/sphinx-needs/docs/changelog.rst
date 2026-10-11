@@ -105,7 +105,7 @@ Improvements
   where it was stored as the text ``"None"``, or as ``[None]``, which schema validation then refused.
 
 - ✨ A field or link type can be :ref:`derived <needs_derive>` by a rule declared in its configuration
-  (:issue:`2030`, :pr:`2178`)
+  (:issue:`2030`, :pr:`2178`, :pr:`2191`)
 
   A ``derive`` table on its :ref:`needs_fields` or :ref:`needs_links` entry, in :file:`conf.py` or the TOML file
   (or passed to :py:func:`~sphinx_needs.api.configuration.add_field`),
@@ -134,7 +134,7 @@ Improvements
   its phase-2 release.
 
 - ✨ New dynamic function :ref:`links_from_filter`, which links to every need that passes
-  a :ref:`filter string <filter_string>` (:pr:`1984`)
+  a :ref:`filter string <filter_string>` (:pr:`1984`, :pr:`2191`)
 
   ``:links: [[links_from_filter("type == 'req' and status == 'open'")]]`` links a need to
   every open requirement, in need-id order. The need that contains the call, and its own
