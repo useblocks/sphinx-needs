@@ -32,7 +32,7 @@ from sphinx_needs.need_item import (
     NeedItem,
     NeedLink,
     NeedPartItem,
-    _natural_sort_key,
+    _natural_sort_key_total,
 )
 from sphinx_needs.needs_schema import FieldSchema, FieldsSchema, LinkSchema
 from sphinx_needs.nodes import Need
@@ -1008,7 +1008,8 @@ def _rule_hash(
     """The lowercase hex SHA-256 of the listed fields, as one compact JSON array.
 
     Each value as ``needs.json`` writes it, but for a link list: its targets' ids, the
-    conditions dropped, then each id once, sorted as ``needs.json`` sorts them; no
+    conditions dropped, then each id once, sorted as ``needs.json`` sorts them
+    (naturally, ids with one natural key by the id itself); no
     whitespace in the JSON, non-ASCII characters not escaped, numbers as Python writes
     them (``3.0``, ``1e+16``).
     """
@@ -1025,7 +1026,7 @@ def _rule_hash(
                         link.to_filter_string()
                         for link in need.get_links(name, as_str=False)
                     },
-                    key=_natural_sort_key,
+                    key=_natural_sort_key_total,
                 )
             )
         else:

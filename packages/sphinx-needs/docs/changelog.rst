@@ -321,8 +321,9 @@ Bug fixes
   links, which could change from one build to the next. They now follow the id itself,
   compared character by character: ``R_02``, ``R_2``, ``r_2``, and links to one target
   under several conditions follow the link with its condition (``R_2``, then
-  ``R_2[status == 'closed']``, then ``R_2[status == 'open']``). `ubCode`_ sorts them the
-  same way from its phase-2 release.
+  ``R_2[status == 'closed']``, then ``R_2[status == 'open']``). A ``hash`` rule writes ids
+  with one natural key in the same order, and a target under several conditions once,
+  as it drops the conditions. `ubCode`_ sorts them the same way from its phase-2 release.
 
 - 🐛 A change to :ref:`needs_fields` or :ref:`needs_links` (and the deprecated
   ``needs_extra_options``, ``needs_extra_links`` and ``needs_global_options``) re-reads
