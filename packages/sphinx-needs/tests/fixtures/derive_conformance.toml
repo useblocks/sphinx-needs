@@ -1475,7 +1475,7 @@ p_mix = 1
 
 [[case]]
 name = "where-unevaluable-false"
-why = "a where or test that cannot be evaluated on a candidate (a field it lacks) is false for that candidate, silently, in every kind and in links_from_filter, which so gives what the links kind gives"
+why = "a where or test that cannot be evaluated on a candidate (a field it lacks) is false for that candidate, silently, in every kind and in links_from_filter, which so gives what the links kind gives; SPEC_2's all is false because REQ_B's test is false, where skipping REQ_B would give true"
 config = '''
 [needs.fields.hours]
 schema = { type = "number" }
@@ -1518,6 +1518,10 @@ source = '''
    :inline_big: [[links_from_filter("hours > 1")]]
 
    Mentions :need:`REQ_A`, :need:`REQ_B` and :need:`REQ_C`.
+
+.. spec:: Reads one that passes, and one that cannot be evaluated
+   :id: SPEC_2
+   :links: REQ_A, REQ_B
 '''
 [case.expect]
 findings = []
@@ -1528,6 +1532,10 @@ any_big = true
 big = ["REQ_A"]
 mentioned_big = ["REQ_A"]
 inline_big = ["REQ_A"]
+[case.expect.needs.SPEC_2]
+n_big = 1
+all_big = false
+any_big = true
 [case.expect.needs.REQ_B]
 n_big = 0
 all_big = true
@@ -1606,7 +1614,7 @@ REQ_1 = ["t_max_n"]
 
 [[case]]
 name = "set-means-not-null"
-why = "a candidate sets a field when its value is not null: an empty value (a default \"\", a link type with no links) is set, so count counts it, copy first and unique take it, unique counts it among distinct needs (equal values included, not a need linked twice or one leaving it unset), and collect keeps it and each item of a list"
+why = "a candidate sets a field when its value is not null: an empty value (a default \"\", a link type with no links) is set, so count counts it, copy first and unique take it, unique counts it among distinct needs (equal values included: CHD_4's two parents both hold bob; not a need linked twice or one leaving it unset), and collect keeps it and each item of a list"
 config = '''
 [needs.links.parent]
 
@@ -1679,6 +1687,10 @@ source = '''
 .. spec:: A parent setting who, one not
    :id: CHD_3
    :parent: PAR_2, PAR_1
+
+.. spec:: Two parents holding the same owner
+   :id: CHD_4
+   :parent: PAR_3, PAR_2
 '''
 [case.expect]
 [case.expect.needs.CHD_1]
@@ -1692,6 +1704,9 @@ all_labels = ["x", "y"]
 unique_owner = "bob"
 [case.expect.needs.CHD_3]
 unique_who = "zed"
+[case.expect.needs.CHD_4]
+unique_owner = "bob"
+all_labels = ["y", "x"]
 [[case.expect.findings]]
 code = "derive_unique"
 need = "CHD_1"
@@ -1699,6 +1714,10 @@ field = "unique_owner"
 [[case.expect.findings]]
 code = "derive_unique"
 need = "CHD_3"
+field = "unique_owner"
+[[case.expect.findings]]
+code = "derive_unique"
+need = "CHD_4"
 field = "unique_owner"
 
 [[case]]
