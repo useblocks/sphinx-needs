@@ -221,7 +221,7 @@ field = "c_unique"
 
 [[case]]
 name = "sum-over-links"
-why = "sum reads each link in written order: a target twice twice, a part target its need, a dead target (and a dotted id naming no need) skipped; the result takes the field's type; the inline links_only calc_sum is the same sum"
+why = "sum reads each link in written order: a target twice twice, a part target its need (a part the need does not have, REQ_1.zz, too), a dead target (and a dotted id naming no need) skipped; the result takes the field's type; the inline links_only calc_sum is the same sum, and the inline check_linked_values skips the dead targets as all does"
 config = '''
 [needs.fields.hours]
 schema = { type = "number" }
@@ -246,10 +246,14 @@ derive = { kind = "sum", field = "points", over = "links" }
 
 [needs.fields.inline_total]
 schema = { type = "number" }
+
+[needs.fields.verdict]
+schema = { type = "string" }
 '''
 source = '''
 .. req:: A
    :id: REQ_1
+   :status: open
    :hours: 2
    :points: 3
 
@@ -257,27 +261,30 @@ source = '''
 
 .. req:: B
    :id: REQ_2
+   :status: open
    :hours: 0.5
    :points: 4
 
 .. spec:: Sums
    :id: SPEC_1
-   :links: REQ_2, REQ_1, REQ_1, REQ_1.p, NOPE_1, NOPE_2.x
+   :links: REQ_2, REQ_1, REQ_1, REQ_1.p, NOPE_1, NOPE_2.x, REQ_1.zz
    :inline_total: [[calc_sum("hours", links_only=True)]]
+   :verdict: [[check_linked_values("all-open", "status", ["open"])]]
 '''
 [case.expect]
 findings = []
 [case.expect.needs.SPEC_1]
-total = 6.5
-total_points = 13
-total_points_n = 13.0
-inline_total = 6.5
+total = 8.5
+total_points = 16
+total_points_n = 16.0
+inline_total = 8.5
+verdict = "all-open"
 [case.expect.needs.REQ_1]
 total = 0.0
 total_points = 0
 total_points_n = 0.0
 [case.expect.nulls]
-REQ_1 = ["inline_total"]
+REQ_1 = ["inline_total", "verdict"]
 
 [[case]]
 name = "count-over-backlinks-where"
@@ -1224,6 +1231,75 @@ need = "REQ_2"
 field = "cyc"
 
 [[case]]
+name = "derive-scope"
+why = "a read its step cannot wait for is reported on each need holding the rule, and leaves the field empty: a links rule whose where names a field a value rule computes (big: no links), and a value rule reading a hash, which is computed in the late step (reads_digest: null); a rule with after = \"derived\" is computed in the late step itself, after the hash it reads (late_digest)"
+# digest: REQ_1 sha256 of ["Hours"] = 6ebd59e9aeb9bdd72744685653ca083262219011fdba5fe060a24e1cd7fc7c5a,
+#         SPEC_1 sha256 of ["Sums"] = 8357ee310f0a4c34b9cdc9f686817d8ae23eae18175c90a9660b6936efc82745
+config = '''
+[needs.fields.hours]
+schema = { type = "number" }
+
+[needs.fields.total]
+schema = { type = "number" }
+nullable = false
+derive = { kind = "sum", field = "hours", over = "links" }
+
+[needs.links.big]
+derive = { kind = "links", where = "total > 1" }
+
+[needs.fields.digest]
+schema = { type = "string" }
+derive = { kind = "hash", fields = ["title"] }
+
+[needs.fields.reads_digest]
+schema = { type = "string" }
+derive = { kind = "copy", field = "digest" }
+
+[needs.fields.late_digest]
+schema = { type = "string" }
+derive = { kind = "copy", field = "digest", after = "derived" }
+'''
+source = '''
+.. req:: Hours
+   :id: REQ_1
+   :hours: 2
+
+.. spec:: Sums
+   :id: SPEC_1
+   :links: REQ_1
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+total = 0.0
+big = []
+digest = "6ebd59e9aeb9bdd72744685653ca083262219011fdba5fe060a24e1cd7fc7c5a"
+late_digest = "6ebd59e9aeb9bdd72744685653ca083262219011fdba5fe060a24e1cd7fc7c5a"
+[case.expect.needs.SPEC_1]
+total = 2.0
+big = []
+digest = "8357ee310f0a4c34b9cdc9f686817d8ae23eae18175c90a9660b6936efc82745"
+late_digest = "8357ee310f0a4c34b9cdc9f686817d8ae23eae18175c90a9660b6936efc82745"
+[case.expect.nulls]
+REQ_1 = ["reads_digest"]
+SPEC_1 = ["reads_digest"]
+[[case.expect.findings]]
+code = "derive_scope"
+need = "REQ_1"
+field = "big"
+[[case.expect.findings]]
+code = "derive_scope"
+need = "SPEC_1"
+field = "big"
+[[case.expect.findings]]
+code = "derive_scope"
+need = "REQ_1"
+field = "reads_digest"
+[[case.expect.findings]]
+code = "derive_scope"
+need = "SPEC_1"
+field = "reads_digest"
+
+[[case]]
 name = "join-reserved"
 why = "the join role is reserved for a later release: a rule naming it, on links or on copy, is refused"
 config = '''
@@ -1351,6 +1427,46 @@ source = '''
 findings = []
 [case.expect.needs.TEST_1]
 tests = ["REQ_1"]
+
+[[case]]
+name = "legacy-list-forms"
+why = "derive is read on the legacy list forms too, as on the table forms: an [needs] extra_options entry and a [[needs.extra_links]] entry compute their rules, and an authored value is reported and ignored (the forms' deprecation findings are each tool's own)"
+config = '''
+[needs]
+extra_options = [
+  { name = "total", schema = { type = "number" }, derive = { kind = "sum", field = "hours", over = "links" } },
+]
+
+[[needs.extra_links]]
+option = "mentions"
+derive = { kind = "content_links" }
+
+[needs.fields.hours]
+schema = { type = "number" }
+'''
+source = '''
+.. req:: Hours
+   :id: REQ_1
+   :hours: 2
+
+.. spec:: Sums and mentions
+   :id: SPEC_1
+   :links: REQ_1
+   :total: 7
+
+   Mentions :need:`REQ_1`.
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+total = 0.0
+mentions = []
+[case.expect.needs.SPEC_1]
+total = 2.0
+mentions = ["REQ_1"]
+[[case.expect.findings]]
+code = "derive_authored"
+need = "SPEC_1"
+field = "total"
 
 # --- the inline spellings and the predicates ----------------------------------------
 
