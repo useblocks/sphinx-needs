@@ -481,7 +481,7 @@ Survey
    :hours: 1
    :ext_total: [[copy("total", "EXT_1")]]
 
-   :np:`(b) part b` and :np:`(a) part a`.
+   :np:`(c) part c`, :np:`(a) part a` and :np:`(b) part b`.
 
 .. req:: Closed, high
    :id: P_1
@@ -562,12 +562,13 @@ def test_a_needextend_filter_naming_a_derived_field_is_reported(test_app):
 @pytest.mark.parametrize("test_app", [SURVEY], indirect=True)
 def test_links_lists_parts_in_part_id_order(test_app):
     """``links`` with ``include_parts`` lists a need's parts in part-id order: ``REQ_1``
-    writes ``(b)`` before ``(a)``. ``needs.json`` sorts every link list, so the order is
-    read through a ``copy`` of the link type into an array field."""
+    writes ``(c)``, ``(a)``, ``(b)``, so part-id order is neither the order written nor
+    its reverse. ``needs.json`` sorts every link list, so the order is read through a
+    ``copy`` of the link type into an array field."""
     app = test_app
     app.build()
     needs = _needs(app)
-    assert needs["C_1"]["parts_in_order"] == ["REQ_1.a", "REQ_1.b"]
+    assert needs["C_1"]["parts_in_order"] == ["REQ_1.a", "REQ_1.b", "REQ_1.c"]
     # REQ_1's own parts are left out of its own list
     assert needs["REQ_1"]["parts_in_order"] == []
 
