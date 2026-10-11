@@ -614,12 +614,12 @@ field = "bad_hash"
 
 [[case]]
 name = "hash-numbers-and-link-lists"
-why = "hash writes a number field's float as Python's repr (1e+16, 1.5e-05) beside an integer, a link list in the export's natural order (REQ_2 before REQ_10) deduplicated beside a null, and a target named with and without a condition once, its condition dropped"
+why = "hash writes a number field's float as Python's repr (1e+16, 1.5e-05) beside an integer, a link list in the export's natural order (REQ_2 before REQ_10), two ids with one natural key by the id in code-point order (REQ_02 before REQ_2), deduplicated, beside a null, and a target named with and without a condition once, its condition dropped; needs.json writes the list in the same order (A-23)"
 # the JSON texts hashed, and their SHA-256:
 #   SPEC_1 h_numbers    [1e+16,1.5e-05,3]
 #                       d6a79d9582de05f6e8b5c4b0cbb06a9bad773301ced18780b158f77a4e53bab4
-#   SPEC_1 h_list_null  [["REQ_2","REQ_9","REQ_10"],null,1e+16]
-#                       4928d7d64d9030405c3aadfdbc9effa2e34b32d597e59d880a1fdef3dc42b69d
+#   SPEC_1 h_list_null  [["REQ_02","REQ_2","REQ_9","REQ_10"],null,1e+16]
+#                       bd32dabcd08ebfb5b93daff2b2d0f428597cb2bf8ff6bd76cb48ad35696ad7ec
 #   SPEC_1 h_conditions [["REQ_2"]]
 #                       8768542c20e4152df9fcc800c8eefe9de919189612b4bcedf2b4adc4b9c96b21
 #   REQ_2  h_numbers    [null,null,null]
@@ -662,12 +662,15 @@ source = '''
 .. req:: Ten
    :id: REQ_10
 
+.. req:: Two, with a leading zero
+   :id: REQ_02
+
 .. spec:: Numbers and link lists
    :id: SPEC_1
    :big: 1e16
    :small: 1.5e-5
    :points: 3
-   :links: REQ_10, REQ_9, REQ_2, REQ_9
+   :links: REQ_10, REQ_9, REQ_2, REQ_9, REQ_02
    :covers: REQ_2[status == 'open'], REQ_2
 '''
 [case.expect]
@@ -676,9 +679,9 @@ findings = []
 big = 1e16
 small = 1.5e-05
 points = 3
-links = ["REQ_2", "REQ_9", "REQ_10"]
+links = ["REQ_02", "REQ_2", "REQ_9", "REQ_10"]
 h_numbers = "d6a79d9582de05f6e8b5c4b0cbb06a9bad773301ced18780b158f77a4e53bab4"
-h_list_null = "4928d7d64d9030405c3aadfdbc9effa2e34b32d597e59d880a1fdef3dc42b69d"
+h_list_null = "bd32dabcd08ebfb5b93daff2b2d0f428597cb2bf8ff6bd76cb48ad35696ad7ec"
 h_conditions = "8768542c20e4152df9fcc800c8eefe9de919189612b4bcedf2b4adc4b9c96b21"
 [case.expect.needs.REQ_2]
 h_numbers = "fe44a8cccd89edae70b54c5e58399979bd7d8b12643a8396ad62d089a781b692"
@@ -744,7 +747,7 @@ field = "inline_empty"
 
 [[case]]
 name = "links-include-parts"
-why = "links with include_parts tests every need's parts too (a part after its need, in part-id order: REQ_1 writes p2 first, and a copy into an array field reads p1 first), linked as <need>.<part>; the need's own parts are left out unless include_self"
+why = "links with include_parts tests every need's parts too (a part after its need, in part-id order, code-point order: REQ_1 writes p2 first, and a copy into an array field reads p1 first), linked as <need>.<part>; the need's own parts are left out unless include_self"
 python_only = true
 config = '''
 [needs.links.l_parts]
@@ -923,7 +926,7 @@ need = "SPEC_1"
 
 [[case]]
 name = "candidate-order"
-why = "the orders a rule reads in, where needs.json shows another: <t>_back in need-id order, the ids compared as strings (TEST_10, TEST_2, TEST_9; collect and a list copy), the links kind in need-id order and content_links in document order, first occurrence kept (each read through a copy into an array field); needs.json writes every link list in natural order (REQ_2, REQ_9, REQ_10)"
+why = "the orders a rule reads in, where needs.json shows another: <t>_back in need-id order, the ids in code-point order (TEST_10, TEST_2, TEST_9; collect and a list copy), the links kind in need-id order, code-point order too, and content_links in document order, first occurrence kept (each read through a copy into an array field); needs.json writes every link list in natural order (REQ_2, REQ_9, REQ_10) (A-24)"
 config = '''
 [needs.links.tests]
 
