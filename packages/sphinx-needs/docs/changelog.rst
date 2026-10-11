@@ -252,7 +252,7 @@ Breaking changes
   and a ``suppress_warnings`` entry naming it is a no-op.
 
 - ‼️ ``needimport`` and ``needs_external_needs`` read a needs.json alike **(changed output)**
-  (:issue:`2003`, :issue:`1414`, :pr:`0`)
+  (:issue:`2003`, :issue:`1414`, :pr:`2189`)
 
   The two readers now read the file, and create each need, through one path, so a project
   that read a needs.json one way through one of them can notice:
@@ -295,7 +295,7 @@ Bug fixes
 
 - 🐛 needimport and needs_external_needs read needs.json through one reader and one record
   path (:issue:`2003`, :issue:`1414`, :issue:`2158`, :issue:`2165`, :issue:`1472`,
-  :pr:`0`)
+  :pr:`2189`)
 
   Both readers take the file's envelope, the version and the need records from one reader,
   and create each need through one record path, which keeps the ten fields each reader
