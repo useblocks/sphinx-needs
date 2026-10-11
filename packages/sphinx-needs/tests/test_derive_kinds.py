@@ -931,6 +931,76 @@ def test_a_changed_field_configuration_rereads_every_document(test_app, make_app
     assert needs["REQ_001"]["owner"] == "alice"
 
 
+PER_BUILD_CONF = """\
+from sphinx_needs.api import add_field
+
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_fields = {
+    "hrs": {"schema": {"type": "number"}},
+    "pts": {"schema": {"type": "number"}},
+}
+#: not a confval: editing it re-reads no document
+SUMMED = "hrs"
+
+
+def setup(app):
+    add_field(
+        "tot",
+        "The total of the linked needs",
+        schema={"type": "number"},
+        derive={"kind": "sum", "field": SUMMED, "over": "links"},
+    )
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), PER_BUILD_CONF),
+                (
+                    Path("index.rst"),
+                    "Index\n=====\n\n.. toctree::\n\n   other\n\n"
+                    ".. req:: A\n   :id: A_001\n   :hrs: 2\n   :pts: 3\n",
+                ),
+                (
+                    Path("other.rst"),
+                    "Other\n=====\n\n.. req:: B\n   :id: B_001\n   :links: A_001\n",
+                ),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_rule_is_read_from_the_schema_of_each_build(test_app, make_app):
+    """A rule's value is computed from the rule of the build, on every build, never
+    from the rule the need was created under.
+
+    An extension's ``add_field`` changes the rule without a confval changing, so the
+    second build re-reads no document ("0 added, 0 changed"), and ``B_001``'s ``tot``
+    still follows the rule: the sum of ``pts`` (3.0), no longer of ``hrs`` (2.0).
+    """
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    assert _needs(app)["B_001"]["tot"] == 2.0
+
+    conf = Path(app.srcdir, "conf.py")
+    conf.write_text(
+        PER_BUILD_CONF.replace('SUMMED = "hrs"', 'SUMMED = "pts"'), encoding="utf-8"
+    )
+    later = time.time_ns() + 60_000_000_000
+    os.utime(conf, ns=(later, later))
+
+    second = make_app(buildername="needs", srcdir=app.srcdir)
+    second.build()
+    assert "0 added, 0 changed, 0 removed" in second._status.getvalue()
+    assert _needs(second)["B_001"]["tot"] == 3.0
+
+
 REFUSED_CONF = """\
 extensions = ["sphinx_needs"]
 needs_build_json = True
