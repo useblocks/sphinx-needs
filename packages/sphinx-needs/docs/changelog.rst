@@ -315,8 +315,9 @@ Bug fixes
   warned about once per directive rather than once per need.
   An external need left from a previous build is replaced on an incremental build (or
   removed, when the source now refuses its record), a need of this project that holds an
-  external need's id is reported with a ``needs.create_need`` warning on every build, and a duplicate across this build's sources is warned about. A download that
-  fails, also with an HTTP error status, is reported with its reason; ``needimport``
+  external need's id is reported with a ``needs.create_need`` warning on every build, and
+  a duplicate across this build's sources is warned about. A download that fails, also
+  with an HTTP error status, is reported with its reason; ``needimport``
   reads a ``file://`` URL as a URL, and a local file it misses is read on the next
   incremental build once it exists. An external source's ``target_url`` template sees the
   need with its schema defaults merged, its ``id`` the key, and a legacy ``description``
