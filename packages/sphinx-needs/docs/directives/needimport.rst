@@ -59,8 +59,9 @@ The directive argument can be one of the following formats:
 
 The key of each need in the file is its id: a need whose ``id`` differs from its key is
 imported under its key, with a ``needs.needimport`` warning. :ref:`needs_id_regex` is not
-applied to imported needs. A file that cannot be read -- missing, not valid JSON, or
-without the version asked for -- is one ``needs.needimport`` warning at the directive, and
+applied to imported needs. A file that cannot be read -- missing, not downloaded, not
+valid JSON, or without the version asked for -- is one ``needs.needimport`` warning at the
+directive, and
 the directive imports nothing; the build goes on.
 
 .. note::

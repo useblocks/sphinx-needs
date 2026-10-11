@@ -272,9 +272,12 @@ Breaking changes
     shared a ``base_url``;
   - a need of this project with the id of an external need replaces the external need,
     with a ``needs.create_need`` warning, where it used to be refused and not rendered;
-  - a needs.json that cannot be read -- missing, not valid JSON, without the version asked
-    for, or without ``versions`` or ``needs`` -- is one warning and adds no need, where the
-    build used to abort (or, for an external source with empty ``versions``, stayed silent).
+  - a needs.json that cannot be obtained or read -- missing, a failed download, not valid
+    JSON, without the version asked for, or without ``versions`` or ``needs`` -- is one
+    warning and adds no need, where the build used to abort (or, for an external source with
+    empty ``versions``, stayed silent);
+  - an external source's ``target_url`` template sees the need with the file's schema
+    defaults merged and its ``id`` the key.
 
   **The new warnings (** ``needs.needimport`` **and the new** ``needs.external_needs``
   **) fail a** ``-W`` **build that used to abort or stay silent**; to keep such a build
@@ -303,7 +306,9 @@ Bug fixes
   crashes the build. An ``:ids:`` naming an id the file does not have is warned about, and
   a ``:filter:`` that fails is warned about once per directive rather than once per need.
   An external need left from a previous build is replaced on an incremental build, and a
-  duplicate across this build's sources is warned about.
+  duplicate across this build's sources is warned about. An external source's
+  ``target_url`` template sees the need with its schema defaults merged and its ``id`` the
+  key.
 
 - 🐛 :ref:`check_linked_values <check_linked_values>` and :ref:`calc_sum <calc_sum>` with
   ``links_only`` read the need of a link to a need part, and skip a link to no need
