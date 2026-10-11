@@ -577,7 +577,9 @@ The roles
    * - ``over``
      - a link type
      - The candidates: the needs this need's ``<link type>`` names, in the order written, a need named twice counted twice;
-       or, for ``<link type>_back``, the needs that link to this one, in need-id order, each once.
+       or, for ``<link type>_back``, the needs that link to this one, in need-id order, each once
+       (need-id order compares the ids as strings, by code point: ``T_10``, ``T_2``, ``T_9``;
+       ``needs.json`` sorts a link list naturally instead: ``T_2``, ``T_9``, ``T_10``).
        A link to a need part reads the part's need; a link to no need is skipped.
    * - ``from``
      - a need id
@@ -661,7 +663,9 @@ after every other field, every other kind with the other fields; each after ever
 - **Candidates.** ``over = "<t>"``: the needs this need's ``<t>`` names, once the link fields are computed,
   in the order written; a need named twice is a candidate twice;
   a link to a :ref:`need part <need_part>` is its need, and a link to no need is skipped.
-  ``over = "<t>_back"``: the needs that link to this need (or to one of its parts), in need-id order, each once.
+  ``over = "<t>_back"``: the needs that link to this need (or to one of its parts), in need-id order, each once
+  (need-id order compares the ids as strings, by code point: ``T_10``, ``T_2``, ``T_9``, as a back link list is read;
+  ``needs.json`` sorts a link list naturally instead: ``T_2``, ``T_9``, ``T_10``).
   ``where`` drops the candidates it does not hold on, then ``test`` is tested on the others.
   A ``where`` or ``test`` that cannot be evaluated on a candidate (a field the candidate lacks,
   as ``hours > 1`` on a need without ``hours``) does not hold on it, without a warning.
@@ -699,7 +703,9 @@ after every other field, every other kind with the other fields; each after ever
   For ``fields = ["title", "status"]`` on a need titled ``Größe`` with status ``open``,
   the text is ``["Größe","open"]``.
 - **links.** Every need, and with ``include_parts`` every need's parts (after it, in part-id order),
-  in need-id order; this need and its parts are left out unless ``include_self``.
+  in need-id order (the ids compared as strings, by code point: ``T_10``, ``T_2``, ``T_9``);
+  this need and its parts are left out unless ``include_self``.
+  ``needs.json`` writes the list sorted naturally, as every link list (``T_2``, ``T_9``, ``T_10``).
 - **content_links.** The ``:need:`` references of this need's content (or of the content of the need ``from`` names),
   in document order, each once: a reference to a part is a part link, a reference to this need is kept,
   a reference to no need is kept (and reported as any dead link), a disabled one (``!ID``) and those inside a

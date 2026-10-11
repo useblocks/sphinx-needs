@@ -330,7 +330,9 @@ One that names a value computed in the same step makes every need a candidate, a
 that field and ``x`` on every need.
 A filter reads the needs themselves, so only these rules order what it reads:
 the check at run time (:ref:`needs_derive_scope`) does not see a filter's reads.
-The needs of a set are read in need-id order, comparing ids as strings (``REQ_10`` comes before ``REQ_9``):
+The needs of a set are read in need-id order, comparing ids as strings, by code point
+(``REQ_10``, ``REQ_2``, ``REQ_9``), where a sorted link list, of step 5 and of ``needs.json``,
+is in natural order (``REQ_2``, ``REQ_9``, ``REQ_10``):
 the candidates of a ``calc_sum`` or a ``filter``, and a back link list.
 A link list is read in the order it is written, followed by the links a ``needextend`` added;
 a link written twice is read twice, so a ``calc_sum`` with ``links_only`` adds its value twice.
