@@ -19,6 +19,8 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+import requests
+import responses
 from sphinx.testing.util import SphinxTestApp
 from sphinx.util.parallel import parallel_available
 
@@ -351,6 +353,49 @@ def test_a_source_that_cannot_be_read_is_one_warning(
     assert build_warnings(app) == [refused_source(reader, message)]
     assert from_file(app) == {}
     assert "Local body." in Path(app.outdir, "index.html").read_text(encoding="utf-8")
+
+
+REMOTE = "http://ext.example/docs/needs.json"
+
+
+@pytest.mark.parametrize(
+    ("test_app", "reader"),
+    [
+        pytest.param(
+            project("import", None, imports=((REMOTE, ()),)), "import", id="import"
+        ),
+        pytest.param(
+            project(
+                "external",
+                None,
+                sources=[{"base_url": BASE_URL, "json_url": REMOTE}],
+            ),
+            "external",
+            id="external",
+        ),
+    ],
+    indirect=["test_app"],
+)
+def test_a_download_that_fails_is_one_warning(test_app: SphinxTestApp, reader: str):
+    app = test_app
+    with responses.RequestsMock() as mock:
+        mock.get(REMOTE, body=requests.ConnectionError("no route to host"))
+        app.build()
+    assert app.statuscode == 0
+    if reader == "import":
+        expected = at_import(
+            f"Could not load needs import file {REMOTE}: getting it failed: "
+            "no route to host",
+            "needimport",
+        )
+    else:
+        expected = unlocated(
+            f"Could not load external needs from {REMOTE!r}: getting it failed: "
+            "no route to host",
+            "external_needs",
+        )
+    assert build_warnings(app) == [expected]
+    assert from_file(app) == {}
 
 
 @pytest.mark.parametrize(
