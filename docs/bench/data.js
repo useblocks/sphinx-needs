@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791659523681,
+  "lastUpdate": 1791679715317,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -24120,6 +24120,42 @@ window.BENCHMARK_DATA = {
             "value": 53.895116333,
             "unit": "s",
             "extra": "Commit: 87f0a9a2fa321f60ca29669017b86c2b8c1c5a8d\nBranch: master\nTime: 2026-10-10T21:10:36+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e33b4386974f46804a4bd21efcc4f3654513d282",
+          "message": "🐛 sphinx-test-reports, ub-test-reports: report text keeps every line inside its literal block (#2179)\n\n**What** — `test-case` writes a failed case's message, text and captured\noutput into the need as indented literal\nblocks, and the `test-reports build needs` converter (`build_content`)\nwrites the same blocks into `needs.json`. Both\nnow split the report's text with `str.splitlines()` — where docutils\nsplits the source it reads: a carriage return\n(alone or before a line feed), VT, FF, FS, GS, RS, NEL, LINE SEPARATOR,\nPARAGRAPH SEPARATOR — instead of on a line\nfeed only, and indent every resulting line. The converter also drops\nline breaks of every kind at either end of a\nblock.\n\n**Why** — text split on a line feed only left anything after one of\nthose other characters at column 0, where it\nended the literal block early (\"Literal block ends without a blank\nline\") and was read as reStructuredText: a\ndirective written there was run, on the page that shows the test case\nand on any page importing the converter's\n`needs.json`. A carriage return followed by a line feed was already\nhandled (docutils reads CR+LF as one line break;\nthe converter's `rstrip()` drops a line-final CR); the other nine\ncharacters were not.\n\n**ubCode parity** — ubCode's converter splits its blocks on a line feed\nonly (`content.rs::literal_block`), so its\n`needs.json` export carries the same characters: useblocks/ubcode#4003.\nIts own pages treat these characters as text.\n\n**Tests** — `tests/test_report_text_line_breaks.py`\n(sphinx-test-reports): one case per character, XML (the five\ncharacters XML 1.0 can carry) and JSON (all ten), every block, plus the\n`needimport` route; red at master for every\ncharacter but CR+LF (the control), 63 green after.\n`tests/test_content_line_breaks.py` (ub-test-reports): every line of\n`build_content`'s blocks stays inside its block, for every block and\ncharacter (48 rows, 42 red at master). Every\n`doc_test` project and every pre-existing converter fixture renders\nbyte-identical before and after.",
+          "timestamp": "2026-10-11T02:47:26+02:00",
+          "tree_id": "fe35e4c0bb43c94c1c11b4e0754a7e802025b27a",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/e33b4386974f46804a4bd21efcc4f3654513d282"
+        },
+        "date": 1791679708457,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07750634900000009,
+            "unit": "s",
+            "extra": "Commit: e33b4386974f46804a4bd21efcc4f3654513d282\nBranch: master\nTime: 2026-10-11T02:47:26+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 40.89772805300001,
+            "unit": "s",
+            "extra": "Commit: e33b4386974f46804a4bd21efcc4f3654513d282\nBranch: master\nTime: 2026-10-11T02:47:26+02:00"
           }
         ]
       }
