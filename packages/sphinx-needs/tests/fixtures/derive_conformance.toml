@@ -876,6 +876,52 @@ inline = ["REQ_1", "REQ_2.p", "REQ_3"]
 mentions = []
 
 [[case]]
+name = "content-links-from-no-need"
+why = "content_links with from naming no need, or naming a part, gives [] and a dynamic_function on each need holding the rule; so does the inline links_from_content naming no need (A-22). The findings' field is left out: the message of the failed read names the need it read, not the field"
+config = '''
+[needs.links.from_missing]
+derive = { kind = "content_links", from = "NOPE_9" }
+
+[needs.links.from_part]
+derive = { kind = "content_links", from = "REQ_1.p" }
+
+[needs.links.inline_missing]
+'''
+source = '''
+.. req:: With a part
+   :id: REQ_1
+
+   A part: :np:`(p) the part`, and :need:`REQ_1`.
+
+.. spec:: Calls it
+   :id: SPEC_1
+   :inline_missing: [[links_from_content("NOPE_9")]]
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+from_missing = []
+from_part = []
+[case.expect.needs.SPEC_1]
+from_missing = []
+from_part = []
+inline_missing = []
+[[case.expect.findings]]
+code = "dynamic_function"
+need = "REQ_1"
+[[case.expect.findings]]
+code = "dynamic_function"
+need = "REQ_1"
+[[case.expect.findings]]
+code = "dynamic_function"
+need = "SPEC_1"
+[[case.expect.findings]]
+code = "dynamic_function"
+need = "SPEC_1"
+[[case.expect.findings]]
+code = "dynamic_function"
+need = "SPEC_1"
+
+[[case]]
 name = "candidate-order"
 why = "the orders a rule reads in, where needs.json shows another: <t>_back in need-id order, the ids compared as strings (TEST_10, TEST_2, TEST_9; collect and a list copy), the links kind in need-id order and content_links in document order, first occurrence kept (each read through a copy into an array field); needs.json writes every link list in natural order (REQ_2, REQ_9, REQ_10)"
 config = '''
@@ -1091,6 +1137,14 @@ derive = { kind = "count", over = "links", where = "c.this_doc()" }
 schema = { type = "integer" }
 derive = { kind = "count", over = "links", where = "type ==" }
 
+[needs.fields.bad_blank_where]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = "  " }
+
+[needs.fields.bad_blank_test]
+schema = { type = "boolean" }
+derive = { kind = "any", over = "links", test = "" }
+
 [needs.fields.bad_result]
 schema = { type = "string" }
 derive = { kind = "count", over = "links" }
@@ -1120,7 +1174,7 @@ status = "open"
 bad_default = "alice"
 bad_value_kind = []
 [case.expect.nulls]
-REQ_1 = ["bad_kind", "bad_no_kind", "bad_not_table", "bad_unknown_role", "bad_role_not_taken", "bad_missing", "bad_role_type", "bad_copy_both", "bad_select_no_over", "bad_any_both", "bad_include_self", "bad_link_kind", "bad_over", "bad_field", "bad_where_needs", "bad_where_current", "bad_where_c", "bad_where_syntax", "bad_result", "bad_select_list"]
+REQ_1 = ["bad_kind", "bad_no_kind", "bad_not_table", "bad_unknown_role", "bad_role_not_taken", "bad_missing", "bad_role_type", "bad_copy_both", "bad_select_no_over", "bad_any_both", "bad_include_self", "bad_link_kind", "bad_over", "bad_field", "bad_where_needs", "bad_where_current", "bad_where_c", "bad_where_syntax", "bad_result", "bad_select_list", "bad_blank_where", "bad_blank_test"]
 [[case.expect.findings]]
 code = "derive_invalid"
 field = "bad_kind"
@@ -1180,6 +1234,12 @@ code = "derive_invalid"
 field = "bad_where_syntax"
 [[case.expect.findings]]
 code = "derive_invalid"
+field = "bad_blank_where"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_blank_test"
+[[case.expect.findings]]
+code = "derive_invalid"
 field = "bad_result"
 [[case.expect.findings]]
 code = "derive_invalid"
@@ -1196,7 +1256,7 @@ field = "parent_needs"
 
 [[case]]
 name = "declared-cycle"
-why = "rules reading one another's own field in a circle are refused at load, each; a cycle through the needs (a rule over links, two needs linking each other) is reported on each need of it, and leaves the field empty"
+why = "rules reading one another's own field in a circle are refused at load, each (a copy and a copy; a hash naming a field and a copy of the hash); a cycle through the needs (a rule over links, two needs linking each other) is reported on each need of it, and leaves the field empty"
 config = '''
 [needs.fields.c_a]
 derive = { kind = "copy", field = "c_b" }
@@ -1206,6 +1266,12 @@ derive = { kind = "copy", field = "c_a" }
 
 [needs.fields.cyc]
 derive = { kind = "copy", field = "cyc", over = "links" }
+
+[needs.fields.h_x]
+derive = { kind = "hash", fields = ["title", "h_y"] }
+
+[needs.fields.h_y]
+derive = { kind = "copy", field = "h_x" }
 '''
 source = '''
 .. req:: Links the other
@@ -1218,14 +1284,20 @@ source = '''
 '''
 [case.expect]
 [case.expect.nulls]
-REQ_1 = ["c_a", "c_b", "cyc"]
-REQ_2 = ["cyc"]
+REQ_1 = ["c_a", "c_b", "cyc", "h_x", "h_y"]
+REQ_2 = ["cyc", "h_x", "h_y"]
 [[case.expect.findings]]
 code = "derive_invalid"
 field = "c_a"
 [[case.expect.findings]]
 code = "derive_invalid"
 field = "c_b"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "h_x"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "h_y"
 [[case.expect.findings]]
 code = "derive_cycle"
 need = "REQ_1"
@@ -1527,6 +1599,40 @@ who = "carol"
 who_named = "bob"
 who_first = "alice"
 inline_links = ["REQ_1", "REQ_2"]
+
+[[case]]
+name = "inline-copy-case-of-a-list"
+why = "the inline copy with upper or lower changes the case of each item of a list, and of a value that is not a list as before"
+config = '''
+[needs.fields.labels]
+schema = { type = "array", items = { type = "string" } }
+
+[needs.fields.upper_labels]
+schema = { type = "array", items = { type = "string" } }
+
+[needs.fields.lower_labels]
+schema = { type = "array", items = { type = "string" } }
+
+[needs.fields.upper_title]
+schema = { type = "string" }
+'''
+source = '''
+.. req:: Source
+   :id: REQ_1
+   :labels: Alpha, beta
+
+.. spec:: Copies it
+   :id: SPEC_1
+   :upper_labels: [[copy("labels", "REQ_1", upper=True)]]
+   :lower_labels: [[copy("labels", "REQ_1", lower=True)]]
+   :upper_title: [[copy("title", "REQ_1", upper=True)]]
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+upper_labels = ["ALPHA", "BETA"]
+lower_labels = ["alpha", "beta"]
+upper_title = "SOURCE"
 
 [[case]]
 name = "portable-predicates"
@@ -1937,6 +2043,38 @@ field = "total"
 code = "dynamic_function"
 need = "SPEC_1"
 field = "ok"
+
+[[case]]
+name = "imported-need-untouched"
+why = "no rule runs on a need created by needimport: it keeps the value it carries (IMP_1: 42.0, where the rule would give 3.0), and one carrying no value of a nullable derived field holds null (IMP_2)"
+config = '''
+[needs.fields.hours]
+schema = { type = "number" }
+
+[needs.fields.total]
+schema = { type = "number" }
+derive = { kind = "sum", field = "hours", over = "links" }
+'''
+source = '''
+.. req:: Hours
+   :id: REQ_1
+   :hours: 3
+
+.. req:: Sums
+   :id: REQ_2
+   :links: REQ_1
+
+.. needimport:: imported.json
+'''
+files = { "imported.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"IMP_1": {"id": "IMP_1", "type": "req", "title": "Imported", "links": ["REQ_1"], "total": 42.0}, "IMP_2": {"id": "IMP_2", "type": "req", "title": "Imported, no total", "links": ["REQ_1"]}}}}}''' }
+[case.expect]
+findings = []
+[case.expect.needs.IMP_1]
+total = 42.0
+[case.expect.needs.REQ_2]
+total = 3.0
+[case.expect.nulls]
+IMP_2 = ["total"]
 
 [[case]]
 name = "advisory"
