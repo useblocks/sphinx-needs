@@ -863,6 +863,81 @@ mentions = []
 inline = ["REQ_1", "REQ_2.p", "REQ_3"]
 mentions = []
 
+[[case]]
+name = "candidate-order"
+why = "the orders a rule reads in, where needs.json shows another: <t>_back in need-id order, the ids compared as strings (TEST_10, TEST_2, TEST_9; collect and a list copy), the links kind in need-id order and content_links in document order, first occurrence kept (each read through a copy into an array field); needs.json writes every link list in natural order (REQ_2, REQ_9, REQ_10)"
+config = '''
+[needs.links.tests]
+
+[needs.fields.who]
+schema = { type = "string" }
+
+[needs.fields.testers]
+schema = { type = "array", items = { type = "string" } }
+derive = { kind = "collect", field = "who", over = "tests_back" }
+
+[needs.fields.testers_list]
+schema = { type = "array", items = { type = "string" } }
+derive = { kind = "copy", field = "who", over = "tests_back", select = "list" }
+
+[needs.links.l_reqs]
+derive = { kind = "links", where = "type == 'req'" }
+
+[needs.links.mentions]
+derive = { kind = "content_links" }
+
+[needs.fields.reqs_in_order]
+schema = { type = "array", items = { type = "string" } }
+derive = { kind = "copy", field = "l_reqs" }
+
+[needs.fields.mentions_in_order]
+schema = { type = "array", items = { type = "string" } }
+derive = { kind = "copy", field = "mentions" }
+'''
+source = '''
+.. req:: Nine
+   :id: REQ_9
+
+.. req:: Two
+   :id: REQ_2
+
+.. req:: Ten
+   :id: REQ_10
+
+.. spec:: Tested, and mentions the requirements
+   :id: SPEC_1
+
+   Mentions :need:`REQ_9`, :need:`REQ_2`, :need:`REQ_10` and :need:`REQ_9` again.
+
+.. test:: Nine
+   :id: TEST_9
+   :who: nine
+   :tests: SPEC_1
+
+.. test:: Two
+   :id: TEST_2
+   :who: two
+   :tests: SPEC_1
+
+.. test:: Ten
+   :id: TEST_10
+   :who: ten
+   :tests: SPEC_1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+testers = ["ten", "two", "nine"]
+testers_list = ["ten", "two", "nine"]
+reqs_in_order = ["REQ_10", "REQ_2", "REQ_9"]
+mentions_in_order = ["REQ_9", "REQ_2", "REQ_10"]
+l_reqs = ["REQ_2", "REQ_9", "REQ_10"]
+mentions = ["REQ_2", "REQ_9", "REQ_10"]
+tests_back = ["TEST_2", "TEST_9", "TEST_10"]
+[case.expect.needs.REQ_2]
+reqs_in_order = ["REQ_10", "REQ_9"]
+l_reqs = ["REQ_9", "REQ_10"]
+
 # --- what is reported ---------------------------------------------------------------
 
 [[case]]
@@ -1281,7 +1356,7 @@ tests = ["REQ_1"]
 
 [[case]]
 name = "filter-inline-spellings"
-why = "calc_sum with a filter sums every need passing it; copy with a filter takes the lowest id passing it, and with no match the need need_id names, else its own need; links_from_filter links every need passing it"
+why = "calc_sum with a filter sums every need passing it; copy with a filter takes the lowest id passing it (REQ_1, written after REQ_2: the lowest id, not the first in the document), and with no match the need need_id names, else its own need; links_from_filter links every need passing it"
 config = '''
 [needs.fields.hours]
 schema = { type = "number" }
@@ -1304,15 +1379,15 @@ schema = { type = "string" }
 [needs.links.inline_links]
 '''
 source = '''
-.. req:: Two hours
-   :id: REQ_1
-   :hours: 2
-   :owner: alice
-
 .. req:: Three hours
    :id: REQ_2
    :hours: 3
    :owner: bob
+
+.. req:: Two hours
+   :id: REQ_1
+   :hours: 2
+   :owner: alice
 
 .. spec:: The calls
    :id: SPEC_1
