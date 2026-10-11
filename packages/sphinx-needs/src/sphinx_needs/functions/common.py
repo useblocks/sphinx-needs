@@ -32,7 +32,7 @@ from sphinx_needs.need_item import (
     NeedItem,
     NeedLink,
     NeedPartItem,
-    _link_natural_sort_key,
+    _natural_sort_key,
 )
 from sphinx_needs.needs_schema import FieldSchema, FieldsSchema, LinkSchema
 from sphinx_needs.nodes import Need
@@ -1007,19 +1007,27 @@ def _rule_hash(
 ) -> str:
     """The lowercase hex SHA-256 of the listed fields, as one compact JSON array.
 
-    Each value as ``needs.json`` writes it: a link list sorted and without duplicates;
-    no whitespace in the JSON, non-ASCII characters not escaped, numbers as Python
-    writes them (``3.0``, ``1e+16``).
+    Each value as ``needs.json`` writes it, but for a link list: its targets' ids, the
+    conditions dropped, then each id once, sorted as ``needs.json`` sorts them; no
+    whitespace in the JSON, non-ASCII characters not escaped, numbers as Python writes
+    them (``3.0``, ``1e+16``).
     """
     values: list[Any] = []
     for name in rule.fields:
         if name in link_fields:
             if reads is not None:
                 reads.note_read(need, name)
-            links = sorted(
-                set(need.get_links(name, as_str=False)), key=_link_natural_sort_key
+            # the conditions dropped first, so a target named with and without one
+            # (or under two) is hashed once
+            values.append(
+                sorted(
+                    {
+                        link.to_filter_string()
+                        for link in need.get_links(name, as_str=False)
+                    },
+                    key=_natural_sort_key,
+                )
             )
-            values.append([link.to_filter_string() for link in links])
         else:
             value = _read(need, name, reads)
             values.append(list(value) if isinstance(value, tuple) else value)

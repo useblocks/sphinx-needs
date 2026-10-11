@@ -687,8 +687,10 @@ after every other field, every other kind with the other fields; each after ever
   ``include_self`` adds the need's own ``field``.
 - **hash.** The lowercase hex SHA-256 of the UTF-8 text of one JSON array:
   the listed fields' values in the listed order, each as :ref:`needs.json <needs_builder_format>` holds it
-  (a link list sorted and without duplicates, an unset field ``null``),
+  (an unset field ``null``),
   with no whitespace, non-ASCII characters not escaped, and numbers as Python writes them (``3.0``, ``1e+16``).
+  A link list is written as the ids it links to, without their conditions, sorted and without duplicates,
+  so a need linked with and without a condition is hashed once.
   For ``fields = ["title", "status"]`` on a need titled ``Größe`` with status ``open``,
   the text is ``["Größe","open"]``.
 - **links.** Every need, and with ``include_parts`` every need's parts (after it, in part-id order),
