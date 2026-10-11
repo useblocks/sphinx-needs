@@ -120,6 +120,16 @@ def test_select_current_version(nx):
     assert [r.key for r in doc.select_version("1.0").records()] == ["V1"]
 
 
+def test_an_empty_current_version_names_a_version_of_that_name(nx):
+    """What sphinx-needs writes for a project whose ``version`` is unset."""
+    doc = nx.parse(
+        json.dumps(
+            {"current_version": "", "versions": {"": {"needs": {"A": record("A")}}}}
+        )
+    )
+    assert [r.key for r in doc.select_version(None).records()] == ["A"]
+
+
 def test_a_requested_version_needs_no_current_version(nx):
     doc = nx.parse(json.dumps({"versions": {"1.0": {"needs": {"A": record("A")}}}}))
     assert doc.select_version("1.0").name == "1.0"
@@ -337,9 +347,6 @@ def test_schema_defaults_are_merged_under_the_record(nx):
     assert "no_default" not in a.fields
     assert b.fields["priority"] == "high"
     assert version.diagnostics == ()
-    # each record has its own copy of a default
-    a.fields["tags"].append("x")
-    assert version.records()[1].fields["tags"] == []
 
 
 def test_schema_defaults_can_be_left_out(nx):

@@ -42,23 +42,23 @@ needs_external_needs = [
         "base_url": "http://my_company.com/docs/v1/",
         "target_url": "issue/{{need['id']}}",
         "json_path": "needs_test_small.json",
-        "id_prefix": "ext_need_id_",
+        "id_prefix": "EXT_NEED_ID_",
     },
     {
         "base_url": "http://my_company.com/docs/v1/",
         "target_url": "issue/fixed_string",
         "json_path": "needs_test_small.json",
-        "id_prefix": "ext_string_",
+        "id_prefix": "EXT_STRING_",
     },
     {
         "base_url": "http://my_company.com/docs/v1/",
         "target_url": "issue/{{need['type']|upper()}}",
         "json_path": "needs_test_small.json",
-        "id_prefix": "ext_need_type_",
+        "id_prefix": "EXT_NEED_TYPE_",
     },
     {
         "base_url": "http://my_company.com/docs/v1/",
         "json_path": "needs_test_small.json",
-        "id_prefix": "ext_default_",
+        "id_prefix": "EXT_DEFAULT_",
     },
 ]

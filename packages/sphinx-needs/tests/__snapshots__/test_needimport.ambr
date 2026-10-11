@@ -37,7 +37,6 @@
               'R_F4722',
             ]),
             'links_back': list([
-              'filter_IMPL_01',
               'IMPL_01',
               'T_C3893',
             ]),
@@ -708,11 +707,13 @@
             'content': 'Incoming links of this spec: :need_incoming:`filter_IMPL_01`.',
             'docname': 'index',
             'external_css': 'external_link',
+            'has_dead_links': True,
+            'has_forbidden_dead_links': True,
             'id': 'filter_IMPL_01',
             'is_import': True,
             'lineno': 29,
             'links': list([
-              'OWN_ID_123',
+              'filter_OWN_ID_123',
             ]),
             'section_name': 'FILTERED',
             'sections': list([

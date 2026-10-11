@@ -353,6 +353,19 @@ def test_a_source_that_cannot_be_read_is_one_warning(
     assert "Local body." in Path(app.outdir, "index.html").read_text(encoding="utf-8")
 
 
+@pytest.mark.parametrize(
+    ("test_app", "reader"),
+    both(json.dumps({"current_version": "", "versions": {"": {"needs": ONE}}})),
+    indirect=["test_app"],
+)
+def test_an_unnamed_current_version_is_read(test_app: SphinxTestApp, reader: str):
+    """A needs.json of a project whose ``version`` is unset: its one version is ``""``."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    assert sorted(from_file(app)) == ["REQ_A"]
+
+
 @pytest.mark.parametrize(("test_app", "reader"), both(None), indirect=["test_app"])
 def test_a_missing_file_is_one_warning(test_app: SphinxTestApp, reader: str):
     app = test_app
@@ -932,7 +945,13 @@ def test_string_and_null_links_with_a_prefix(test_app: SphinxTestApp, expected):
 
 @pytest.mark.parametrize(
     "test_app",
-    [project("import", PREFIXED, options=(":ids: REQ_A, NOPE, ALSO_NOPE",))],
+    [
+        project(
+            "import",
+            envelope({"REQ_A": rec("REQ_A"), "REQ_B": rec("REQ_B")}),
+            options=(":ids: REQ_A, NOPE, ALSO_NOPE",),
+        )
+    ],
     indirect=True,
 )
 def test_ids_the_file_does_not_have_warn(test_app: SphinxTestApp):

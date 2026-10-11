@@ -297,9 +297,12 @@ def test_external_empty_versions(test_app):
     app = test_app
     app.build()
     assert app.statuscode == 0
-    assert not app._warning.getvalue()
+    assert build_warnings(app) == [
+        "WARNING: Could not load external needs from 'needs.json': Version 0.1.0 not "
+        "found in the file: [] [needs.external_needs]"
+    ]
 
     needs_json = Path(test_app.outdir, "needs.json").read_text()
     needs = json.loads(needs_json)
-    # the empty external needs should just be ignored without crashing.
+    # the empty external needs are reported, and the build goes on
     assert "TEST_01" not in needs["versions"][""]["needs"]

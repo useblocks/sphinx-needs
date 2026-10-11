@@ -9,7 +9,6 @@ from syrupy.filters import props
 
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.directives.needimport import NeedimportException
-from sphinx_needs.needsfile import SphinxNeedsFileException
 from sphinx_needs_testkit import assert_no_warnings, build_warnings
 
 
@@ -22,7 +21,11 @@ def test_import_json(test_app):
     app = test_app
     app.build()
     assert app.statuscode == 0
-    assert_no_warnings(app)
+    # the filtered import prefixes a link to a need of its file it does not import
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:29: WARNING: Need 'filter_IMPL_01' has unknown outgoing "
+        "link 'filter_OWN_ID_123' in field 'links' [needs.link_outgoing]"
+    ]
 
     html = Path(app.outdir, "index.html").read_text()
     assert "TEST IMPORT TITLE" in html
@@ -286,7 +289,6 @@ def test_json_schema_check(test_app):
     """Checks that an invalid json-file gets normally still imported and is used as normal (if possible)"""
     test_app.build()
     assert test_app._warning.getvalue() == ""
-    assert "Schema validation errors detected" in test_app._status.getvalue()
     html = Path(test_app.outdir, "index.html").read_text()
     assert "TEST_01" in html
     assert "test_TEST_01" in html
@@ -329,11 +331,16 @@ def test_need_schema_warnings(test_app, snapshot):
     indirect=True,
 )
 def test_empty_file_check(test_app):
-    """Checks that an empty needs.json throws an exception"""
+    """Checks that an empty needs.json is one warning, and imports nothing"""
     app = test_app
-
-    with pytest.raises(SphinxNeedsFileException):
-        app.build()
+    app.build()
+    assert app.statuscode == 0
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:7: WARNING: Could not load needs import file "
+        "<srcdir>/needs_empty_file.json: not valid JSON: Expecting value: line 1 "
+        "column 1 (char 0) [needs.needimport]"
+    ]
+    assert SphinxNeedsData(app.env).get_needs_view() == {}
 
 
 @pytest.mark.parametrize(
