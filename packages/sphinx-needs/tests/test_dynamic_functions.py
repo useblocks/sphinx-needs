@@ -1181,6 +1181,93 @@ def test_links_from_filter_same_file_and_chapter(test_app):
     assert needs["LFF_STEER_SPEC"]["links"] == ["LFF_STEER"]
 
 
+# ``links_from_filter`` replacing a project's own function, which linked a need to
+# every system requirement in its own directory:
+#
+#     path = need["docname"].replace("index", "")
+#     for nd in needs.values():
+#         if not nd["is_external"] and nd["docname"].startswith(path) and nd["type"] == ...:
+#             links.append(nd["id"])
+#
+# The filter cuts the docname after its last "/" instead of removing the string
+# "index", so a collector outside an ``index`` document finds its directory too.
+
+LINKS_FROM_FILTER_SYSTEM_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_types = [
+    {"directive": "sysreq", "title": "System requirement", "prefix": "SR_"},
+    {"directive": "sysarch", "title": "System architecture", "prefix": "SA_"},
+]
+"""
+
+LINKS_FROM_FILTER_SYSTEM_FILTER = (
+    "not is_external and docname"
+    # the collector's directory: its docname up to and including the last "/"
+    ' and docname.startswith(current_need["docname"][: current_need["docname"].rfind("/") + 1])'
+    ' and type == "sysreq"'
+)
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), LINKS_FROM_FILTER_SYSTEM_CONF),
+                (
+                    Path("index.rst"),
+                    "Root\n====\n\n.. toctree::\n\n   system/index\n",
+                ),
+                # listed first, so that ``system/`` exists for the files below it
+                (
+                    Path("system/index.rst"),
+                    "System\n======\n\n.. toctree::\n\n"
+                    "   central_locking/index\n"
+                    "   central_locking/details\n"
+                    "   other/index\n",
+                ),
+                (
+                    Path("system/central_locking/index.rst"),
+                    "Central locking\n===============\n\n"
+                    ".. sysreq:: Lock\n   :id: SR_LOCK\n\n"
+                    ".. sysarch:: Locking architecture\n   :id: SA_LOCK\n"
+                    f"   :links: [[links_from_filter('{LINKS_FROM_FILTER_SYSTEM_FILTER}')]]\n",
+                ),
+                (
+                    Path("system/central_locking/details.rst"),
+                    "Details\n=======\n\n"
+                    ".. sysreq:: Unlock\n   :id: SR_UNLOCK\n\n"
+                    ".. sysarch:: Unlocking architecture\n   :id: SA_UNLOCK\n"
+                    f"   :links: [[links_from_filter('{LINKS_FROM_FILTER_SYSTEM_FILTER}')]]\n",
+                ),
+                (
+                    Path("system/other/index.rst"),
+                    "Other\n=====\n\n"
+                    ".. sysreq:: Other\n   :id: SR_OTHER\n\n"
+                    ".. sysarch:: Other architecture\n   :id: SA_OTHER\n"
+                    f"   :links: [[links_from_filter('{LINKS_FROM_FILTER_SYSTEM_FILTER}')]]\n",
+                ),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_links_from_filter_system_requirements(test_app):
+    """A collector per directory: the filter slices ``current_need["docname"]``, the
+    document of the need the call is in, and so links every system requirement of its
+    own directory, whichever document of it holds the requirement."""
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    needs = _built_needs(app)
+    assert needs["SA_LOCK"]["links"] == ["SR_LOCK", "SR_UNLOCK"]
+    assert needs["SA_OTHER"]["links"] == ["SR_OTHER"]
+    # not an ``index`` document: ``replace("index", "")`` would have found SR_UNLOCK only
+    assert needs["SA_UNLOCK"]["links"] == ["SR_LOCK", "SR_UNLOCK"]
+
+
 # -- three fixes from #1984 -------------------------------------------------------------
 
 PLAIN_CONF = """\
