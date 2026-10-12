@@ -23,6 +23,8 @@
 #     that would land outside it (`../x.json`) is a broken case, and the runner refuses it
 #   - every need id satisfies the default id regex (`^[A-Z0-9_]{5,}`); the need types are
 #     the default ones (`req`, `spec`, `impl`, `test`)
+#   - a hidden need's content is unpinned until the hidden-needs follow-up (ubCode reads its
+#     references; sphinx-needs 9.0.0 does not)
 #   - a `[needs.fields.<name>]` entry without `nullable` is nullable in both tools
 #     (sphinx-needs `needs.py`: `nullable = True` unless set; ubCode
 #     `nullable.unwrap_or(true)`), so its unset value, and a rule's empty value in it, is
@@ -829,55 +831,6 @@ l_reqs = ["REQ_2"]
 [case.expect.needs.REQ_1]
 l_mentions = []
 l_from = ["NOPE_1", "REQ_1", "REQ_1.p", "SPEC_1"]
-
-[[case]]
-name = "content-links-hidden"
-why = "a :hide: need's references in its text and in docutils' containers of body content (a note) are read, by its content_links rule and by a links_from_content naming it; one with none has none, without a finding. UNPINNED: a reference nested in any other directive (only, a figure caption, ...), which ubCode reads and sphinx-needs does not (a registered divergence)"
-config = '''
-[needs.links.mentions]
-derive = { kind = "content_links" }
-
-[needs.links.inline]
-'''
-source = '''
-.. req:: One
-   :id: REQ_1
-
-.. req:: Two
-   :id: REQ_2
-
-   A part: :np:`(p) the part`.
-
-.. req:: Three
-   :id: REQ_3
-
-.. req:: Hidden
-   :id: HIDE_1
-   :hide:
-
-   Mentions :need:`REQ_1`, :need:`REQ_2.p` and :need:`REQ_1` again.
-
-   .. note:: In a note, :need:`REQ_3`.
-
-.. req:: Hidden, mentioning nothing
-   :id: HIDE_2
-   :hide:
-
-   No reference.
-
-.. spec:: Reads the hidden one
-   :id: SPEC_1
-   :inline: [[links_from_content("HIDE_1")]]
-'''
-[case.expect]
-findings = []
-[case.expect.needs.HIDE_1]
-mentions = ["REQ_1", "REQ_2.p", "REQ_3"]
-[case.expect.needs.HIDE_2]
-mentions = []
-[case.expect.needs.SPEC_1]
-inline = ["REQ_1", "REQ_2.p", "REQ_3"]
-mentions = []
 
 [[case]]
 name = "content-links-from-no-need"
