@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791790487994,
+  "lastUpdate": 1791791827943,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -24300,6 +24300,42 @@ window.BENCHMARK_DATA = {
             "value": 43.445366930000006,
             "unit": "s",
             "extra": "Commit: 5d685edb44a7e85a4c3365bfdb6f18a5e8663409\nBranch: master\nTime: 2026-10-12T09:33:34+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8ac3974b36e9584adbe04c1d520dd2f471c643fd",
+          "message": "🧪 sphinx-needs: the derived-field conformance corpus (#2195)\n\n## What\n\n`packages/sphinx-needs/tests/fixtures/derive_conformance.toml` — 36\ncases, the executable record of the `derive`\ncontract that sphinx-needs and ubCode are both held to; ubCode vendors\nit byte-for-byte with a sha256 and count fence —\nand its runner `tests/test_derive_conformance.py`: the case count,\nunique names, complete and TYPE-exact expectations\n(`13.0` is not `13`), findings as a multiset of code / need / field,\n`python_only` and `ubcode_only` cases, ubCode's\n`derive_sphinx_minimum` compared only in a `ubcode_only` case, a null\npin checked for the need's and the field's presence,\nan unreadable shared-code record failing its case, a case writing only\ninside its directory. `.gitattributes`\n(`eol=lf`) and the taplo / yamlfmt excludes protect the file; the root\n`AGENTS.md` corpus row and the package `AGENTS.md`\ntest tree name it.\n\nEach case is one project (`ubproject.toml` + `index.rst`) with its\nexpected values, nulls and findings: every kind and\nrole, the candidate orders a rule reads in (code point) against the\norders a list exports in (natural, total), the\nno-candidate values, computed-versus-placeholder validation, the hash\ntexts (exponent floats, a null, a sorted link list,\na tie of natural keys, a target under several conditions), the inline\nspellings, the portable predicates, the closed\nfield, the invalid shapes, cycles, imported needs, the legacy list forms\nand the reserved roles. A hidden need's content\nis deliberately left unpinned until the hidden-needs follow-up (#2191\nkept the pre-existing behaviour there), and the\nheader says so.\n\n## Why\n\nOne statement of the two-tool contract that a test can run: what the\ncorpus does not discriminate, neither tool can be\nheld to. Its repository of record is this one; ubCode's copy carries a\nprovenance block naming this path and commit.\nFollows #2191, which computes what the corpus pins.\n\n## Tests\n\nThe runner (43 passed, 1 skipped — the `ubcode_only` advisory case);\nevery expectation produced by a sphinx-needs build\nand checked by hand against the contract; the corpus built twice, with\nits needs reversed, split over two documents and\nunder `-j 2`, with identical values and findings; the runner's fences\nmutation-proven (a trimmed corpus, a duplicated\nname, a misplaced advisory, a typo'd null pin, an unreadable record:\neach red). Reviewed case by case against the\ncontract (a refuting review, then a validation round).\n\n## Docs\n\nThe corpus header states every rule a runner needs: the compared codes,\nthe advisory, null presence, default\nnullability, the id regex, type-exact values.\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-needs`) and they pass.\n- [x] Documentation is updated where behaviour or options change.\n- [ ] The package's `docs/changelog.rst` has an entry under *Unreleased*\n— not needed: tests and fixtures only.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-12T09:55:57+02:00",
+          "tree_id": "7d0b286f4220af01100eb1ff92bf8d60460b801f",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/8ac3974b36e9584adbe04c1d520dd2f471c643fd"
+        },
+        "date": 1791791819876,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07648119000000975,
+            "unit": "s",
+            "extra": "Commit: 8ac3974b36e9584adbe04c1d520dd2f471c643fd\nBranch: master\nTime: 2026-10-12T09:55:57+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 42.55012797500001,
+            "unit": "s",
+            "extra": "Commit: 8ac3974b36e9584adbe04c1d520dd2f471c643fd\nBranch: master\nTime: 2026-10-12T09:55:57+02:00"
           }
         ]
       }
