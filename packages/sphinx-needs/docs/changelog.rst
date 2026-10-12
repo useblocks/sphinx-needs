@@ -224,7 +224,7 @@ Bug fixes
 
 - 🐛 :ref:`check_linked_values <check_linked_values>` and :ref:`calc_sum <calc_sum>` with
   ``links_only`` read the need of a link to a need part, and skip a link to no need
-  **(changed output)** (:issue:`2173`, :pr:`2177`)
+  **(changed output)** (:issue:`2173`, :pr:`2177`, :pr:`2194`)
 
   A link may name a need part (``:links: REQ_1.a``), and both functions looked such a link
   up by its whole text, which names no need: the call failed with a
@@ -241,12 +241,13 @@ Bug fixes
 - 🐛 A :ref:`needs_fields` entry named after a link type (``links``, ``parent_needs``, or one
   of :ref:`needs_links` or ``needs_extra_links``) is reported and ignored, instead of
   stopping the build ("Field 'tests' already exists", or "Same name for link and field")
+  (:pr:`2194`)
 
   It is a ``needs.config`` warning; a ``parent_needs`` entry carrying a ``derive`` rule is
   reported as a rule on a core field, ``needs.derive_invalid``. The link type works as before.
 
 - 🐛 An integer a dynamic function or a variant gives is a float in a ``number`` field
-  **(changed output)**
+  **(changed output)** (:pr:`2194`)
 
   ``:hours: [[copy("points")]]``, ``points`` being an ``integer`` field, stored ``3`` in the
   ``number`` field ``hours``, where an authored ``3`` is ``3.0``: ``needs.json`` wrote ``3``;
@@ -256,28 +257,29 @@ Bug fixes
   an ``integer`` field is still reported, and a boolean is not a number.
 
 - 🐛 :ref:`copy` with ``upper=True`` or ``lower=True`` changes the case of each item of a
-  list **(changed output)** (:pr:`1984`)
+  list **(changed output)** (:pr:`1984`, :pr:`2194`)
 
   The whole list used to be converted to its printed form first, so
   ``:tags: [[copy("tags", "SRC_1", upper=True)]]`` on a need tagged ``alpha, beta`` gave
   one tag, ``['ALPHA', 'BETA']``, brackets and quotes included. It now gives the two
   tags ``ALPHA`` and ``BETA``. A value that is not a list is unaffected.
 
-- 🐛 ``c.this_doc()`` works in the ``filter`` of :ref:`copy` **(changed output)** (:pr:`1984`)
+- 🐛 ``c.this_doc()`` works in the ``filter`` of :ref:`copy` **(changed output)**
+  (:pr:`1984`, :pr:`2194`)
 
   The filter was evaluated without the document of the need, so ``c.this_doc()`` ended
   in a ``this_doc can not be used in this context`` warning, nothing passed the filter,
   and ``copy`` read the current need instead.
 
 - 🐛 :ref:`ndf` shows a link a dynamic function returns as its need id **(changed output)**
-  (:pr:`1984`)
+  (:pr:`1984`, :pr:`2194`)
 
   A function returning links, such as :ref:`links_from_content <links_content>`, was
   shown as ``NeedLink(id='REQ_1', part=None, condition=None)``; it is now ``REQ_1``, or
   ``REQ_1.p1`` for a part.
 
 - 🐛 The ``filter`` of :ref:`calc_sum` can name ``needs`` **(changed output)**
-  (:issue:`1452`, :pr:`1453`)
+  (:issue:`1452`, :pr:`1453`, :pr:`2194`)
 
   The filter was evaluated without the list of all needs, although a
   :ref:`filter_string` documents it, so a filter such as
