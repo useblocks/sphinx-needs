@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791788404013,
+  "lastUpdate": 1791788630117,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -24228,6 +24228,42 @@ window.BENCHMARK_DATA = {
             "value": 56.587354645999994,
             "unit": "s",
             "extra": "Commit: 4047bcee0b5dd872ce1170e7bd67f86bdf70bb9e\nBranch: master\nTime: 2026-10-12T08:58:40+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "34a9d6f1789f169d7f7cb3b8321e252bcd9673fc",
+          "message": "🐛 sphinx-needs: the inline dynamic functions' parity fixes (#2194)\n\n## What\n\n`packages/sphinx-needs`: fixes to existing built-in dynamic functions\nand to how a computed value is stored, each\n**(changed output)**:\n\n- `copy` with `upper` / `lower` cases each item of a list (#1984), where\nit cased the list's printed form (one tag\n  `\"['ALPHA', 'BETA']\"`).\n- `c.this_doc()` works in `copy`'s `filter` (#1984), in the call and in\nthe order's precomputed match; it failed with\n`this_doc can not be used in this context` and `copy` read the current\nneed.\n- `:ndf:` shows a link a function returns as its id (`REQ_1`,\n`REQ_1.p1`), not `NeedLink(…)` (#1984).\n- `calc_sum`'s `filter` can name `needs`, as a view's filter can (#1452,\n#1453); such a call runs after the other\n  built-in calls, as what it reads cannot be told from its text.\n- `check_linked_values` and a `links_only` `calc_sum` skip a link to no\nneed, which is still reported as a dead link;\n  they failed the call and hid the live targets' values.\n- An integer a `[[…]]` returns, or a variant gives (`<{ var.n }>`, a\n`<<…>>` value), is a float in a `number` field and\nin an array of numbers, as an authored value is; an `integer` field\nkeeps it an integer.\n\nAnd one crash: a `needs_fields` entry named after any link type\n(`links`, a `needs_links` type or a `needs_extra_links`\noption) is reported (`needs.config`) and ignored, where it stopped the\nbuild.\n\n## Why\n\nEach makes the inline form compute what the docs say, and what the\ndeclared form (#2191) and ubCode compute: one\nsemantics for the inline and the declared form. The three `copy` /\n`:ndf:` fixes are #1984's, the `calc_sum` filter\nfix is #1453's; both are credited in the changelog entries.\n\nSplit out of #2191, which keeps the derive kinds and\n`links_from_filter`: it lands first, and #2191 is rebased onto\nit. The stored values change; the `ENV_DATA_VERSION` bump to 11 stays\nwith #2191, as master's 10 is not released yet.\n\n## Tests\n\n`tests/test_dynamic_functions.py`: one pin per fix (the two dead-link\ntests now expect the live targets' values), all\nred at master; `tests/test_functions_order.py`: the reads of a filter\nnaming `needs`;\n\n`tests/test_derive_config.py::test_needs_fields_named_after_a_link_type`.\n\n## Docs\n\n`dynamic_functions.rst`: a `calc_sum` filter naming `needs`, and the\ntype a computed value takes; 🐛 changelog entries\nunder 9.0.0 *Unreleased*.\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-needs`) and they pass.\n- [x] Documentation is updated where behaviour or options change.\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-12T09:02:27+02:00",
+          "tree_id": "669d924d0bdf3b6323291ec5c02294b25fb41f53",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/34a9d6f1789f169d7f7cb3b8321e252bcd9673fc"
+        },
+        "date": 1791788622601,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.11352593700000568,
+            "unit": "s",
+            "extra": "Commit: 34a9d6f1789f169d7f7cb3b8321e252bcd9673fc\nBranch: master\nTime: 2026-10-12T09:02:27+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 56.134999897,
+            "unit": "s",
+            "extra": "Commit: 34a9d6f1789f169d7f7cb3b8321e252bcd9673fc\nBranch: master\nTime: 2026-10-12T09:02:27+02:00"
           }
         ]
       }
