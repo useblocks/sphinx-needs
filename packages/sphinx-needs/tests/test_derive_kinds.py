@@ -1439,7 +1439,7 @@ def setup(app):
     "test_app",
     [
         {
-            "buildername": "needs",
+            "buildername": "html",
             "files": [
                 (Path("conf.py"), PER_BUILD_CONF),
                 (
@@ -1463,6 +1463,10 @@ def test_a_rule_is_read_from_the_schema_of_each_build(test_app, make_app):
     An extension's ``add_field`` changes the rule without a confval changing, so the
     second build re-reads no document ("0 added, 0 changed"), and ``B_001``'s ``tot``
     still follows the rule: the sum of ``pts`` (3.0), no longer of ``hrs`` (2.0).
+
+    Built with ``html``, which writes ``needs.json`` when the build finishes: with no
+    document out of date, Sphinx 7 stops before the write phase, so a build with the
+    ``needs`` builder, which writes the file in that phase, would write nothing.
     """
     app = test_app
     app.build()
@@ -1476,7 +1480,7 @@ def test_a_rule_is_read_from_the_schema_of_each_build(test_app, make_app):
     later = time.time_ns() + 60_000_000_000
     os.utime(conf, ns=(later, later))
 
-    second = make_app(buildername="needs", srcdir=app.srcdir)
+    second = make_app(buildername="html", srcdir=app.srcdir)
     second.build()
     assert "0 added, 0 changed, 0 removed" in second._status.getvalue()
     assert _needs(second)["B_001"]["tot"] == 3.0
