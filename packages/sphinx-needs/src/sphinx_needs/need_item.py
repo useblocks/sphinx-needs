@@ -412,10 +412,13 @@ def _natural_sort_key_total(value: str) -> tuple[list[str | int], str]:
     return _natural_sort_key(value), value
 
 
-def _link_natural_sort_key(link: NeedLink) -> tuple[list[str | int], str]:
-    """Natural sort key for a :class:`NeedLink`, based on its filter string, total over
-    the filter strings (see :func:`_natural_sort_key_total`)."""
-    return _natural_sort_key_total(link.to_filter_string())
+def _link_natural_sort_key(link: NeedLink) -> tuple[list[str | int], str, str]:
+    """Natural sort key for a :class:`NeedLink`: its filter string's total natural key
+    (see :func:`_natural_sort_key_total`), then the link with its condition, so that
+    links to one target under different conditions (``R_2``, ``R_2[status == 'open']``)
+    are ordered too, and the order is total."""
+    natural, filter_string = _natural_sort_key_total(link.to_filter_string())
+    return natural, filter_string, link.to_link_string()
 
 
 class NeedItem:
@@ -948,10 +951,11 @@ class NeedItem:
 
         Sorts outgoing links, backlinks, and part backlinks by the link's
         string representation, treating embedded digit sequences as integers
-        so that e.g. ``REQ_2`` < ``REQ_9`` < ``REQ_10``, and ids with one such
-        key by the string itself (``R_02`` < ``R_2`` < ``r_2``). This makes the
-        order of linked need IDs deterministic, regardless of the order in which
-        they were added or the iteration order of the needs collection.
+        so that e.g. ``REQ_2`` < ``REQ_9`` < ``REQ_10``, ids with one such key
+        by the string itself (``R_02`` < ``R_2`` < ``r_2``), and links to one
+        target by the link with its condition (``R_2`` < ``R_2[status == 'open']``).
+        This makes the order of linked need IDs deterministic, regardless of the
+        order in which they were added or the iteration order of the needs collection.
         Duplicate :class:`NeedLink` entries (same id, part, and condition)
         are collapsed.
         """

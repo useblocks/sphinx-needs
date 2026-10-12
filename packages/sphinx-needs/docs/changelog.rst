@@ -247,7 +247,9 @@ Bug fixes
   (``REQ_2`` < ``REQ_9`` < ``REQ_10``, letters case-folded), and ids that order alike
   in it, such as ``R_02``, ``R_2`` and ``r_2``, came in the order of the build's set of
   links, which could change from one build to the next. They now follow the id itself,
-  compared character by character: ``R_02``, ``R_2``, ``r_2``. `ubCode`_ sorts them the
+  compared character by character: ``R_02``, ``R_2``, ``r_2``, and links to one target
+  under several conditions follow the link with its condition (``R_2``, then
+  ``R_2[status == 'closed']``, then ``R_2[status == 'open']``). `ubCode`_ sorts them the
   same way from its phase-2 release.
 
 - 🐛 ``needextend``'s ``:+field:`` on a nullable field the need never set sets the field,
