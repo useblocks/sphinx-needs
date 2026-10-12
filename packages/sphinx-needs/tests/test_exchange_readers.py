@@ -619,6 +619,42 @@ def test_an_empty_id_is_refused(test_app: SphinxTestApp, reader: str):
     assert sorted(from_file(app)) == ["GOOD"]
 
 
+EMPTY_KEY = envelope(
+    {"": {"id": "REQ_V1", "type": "req", "title": "t"}, "GOOD": rec("GOOD")}
+)
+
+
+@pytest.mark.parametrize(
+    ("test_app", "reader"),
+    [
+        pytest.param(
+            project("import", EMPTY_KEY, options=(":id_prefix: px_",)),
+            "import",
+            id="import",
+        ),
+        pytest.param(
+            project("external", EMPTY_KEY, source={"id_prefix": "px_"}),
+            "external",
+            id="external",
+        ),
+    ],
+    indirect=["test_app"],
+)
+def test_an_empty_key_is_refused_with_a_prefix(test_app: SphinxTestApp, reader: str):
+    """The key is checked, not the prefixed id: a prefix alone is no need's id."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        diagnostic(
+            reader,
+            "the need keyed '' has the id 'REQ_V1'; the key is its id",
+            "versions.1.0.needs..id",
+        ),
+        refused_need(reader, "px_", "id is empty"),
+    ]
+    assert sorted(from_file(app)) == ["px_GOOD"]
+
+
 @pytest.mark.parametrize(
     ("test_app", "reader"),
     both(envelope({"REQ_A": rec("REQ_A", title="")})),
