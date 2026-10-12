@@ -243,7 +243,7 @@ Bug fixes
 
 - 🐛 A change to :ref:`needs_fields` or :ref:`needs_links` (and the deprecated
   ``needs_extra_options``, ``needs_extra_links`` and ``needs_global_options``) re-reads
-  every document
+  every document (:pr:`2192`)
 
   The needs of the documents an incremental build did not re-read kept what they were
   created with: a ``default`` or ``predicates`` added to a field (or to
