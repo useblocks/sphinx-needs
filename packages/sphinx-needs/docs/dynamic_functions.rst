@@ -353,7 +353,8 @@ A ``filter`` that names ``needs``, or reads ``current_need`` by a key that is no
 cannot be ordered either: its call runs with your own functions.
 ``calc_sum``'s filter may name ``needs`` (every need, as in the filter of a view),
 but such a filter is evaluated on every need for every need it is tested on,
-and only Sphinx-Needs evaluates it.
+and only Sphinx-Needs evaluates it: rather declare a flag on each need and filter on the flag
+(a derived ``any`` over the links the filter would search, see :ref:`needs_derive`).
 
 .. _needs_derive_cycle:
 

@@ -301,7 +301,9 @@ Bug fixes
   :ref:`filter_string` documents it, so a filter such as
   ``any(id in s["links"] for s in needs if s["type"] == "story")`` ended in a
   ``name 'needs' is not defined`` warning for every need, and the value was summed as if
-  there were no filter. Such a filter is evaluated after the other built-in functions.
+  there were no filter. Such a filter is evaluated after the other built-in functions;
+  a flag declared on each need, and a filter naming it, is the portable and faster
+  spelling (:ref:`needs_derive`).
 
 - 🐛 Link ids that sort alike are listed in one order in every build
   **(changed output)** (:pr:`2193`)
