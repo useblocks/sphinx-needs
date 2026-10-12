@@ -322,7 +322,7 @@ def _whole_ids_pattern(ids: Iterable[str]) -> re.Pattern[str] | None:
         return None
     try:
         return re.compile(r"(?<!\w)" + _trie_pattern(ids) + r"(?!\w)")
-    except (RecursionError, re.error):
+    except RecursionError:
         longest = sorted(ids, key=len, reverse=True)
         return re.compile(
             r"(?<!\w)(?:" + "|".join(re.escape(i) for i in longest) + r")(?!\w)"
