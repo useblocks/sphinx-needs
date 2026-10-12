@@ -242,8 +242,18 @@ class NeedimportDirective(SphinxDirective):
             if "hide" in self.options:
                 record["hide"] = True
 
-            # Replace id, to get unique ids
+            # Replace id, to get unique ids; an empty key is no id, whatever the prefix
+            # (the record path refuses it only before the prefix is added)
+            key_is_empty = not record["id"]
             need_id = record["id"] = id_prefix + record["id"]
+            if key_is_empty:
+                log_warning(
+                    logger,
+                    f"Need {need_id!r} could not be imported: id is empty",
+                    "import_need",
+                    location=self.get_location(),
+                )
+                continue
 
             # set location
             need_source = NeedItemSourceImport(
