@@ -235,7 +235,8 @@ Bug fixes
   part the need does not have reads the need, and one whose text before the dot names no
   need is a link to no need. A link to no need is now skipped, as the derived-field kinds
   skip it; it failed the call, a second report of the dead link, which is reported as
-  before, and the field was left empty. `ubCode`_ computes the same values.
+  before, and the field was left empty. `ubCode`_ reads a part link the same way, and
+  skips a link to no need as it does from its phase-2 release.
 
 - 🐛 A :ref:`needs_fields` entry named after a link type (``links``, ``parent_needs``, or one
   of :ref:`needs_links` or ``needs_extra_links``) is reported and ignored, instead of
@@ -275,7 +276,8 @@ Bug fixes
   shown as ``NeedLink(id='REQ_1', part=None, condition=None)``; it is now ``REQ_1``, or
   ``REQ_1.p1`` for a part.
 
-- 🐛 The ``filter`` of :ref:`calc_sum` can name ``needs`` (:pr:`1453`)
+- 🐛 The ``filter`` of :ref:`calc_sum` can name ``needs`` **(changed output)**
+  (:issue:`1452`, :pr:`1453`)
 
   The filter was evaluated without the list of all needs, although a
   :ref:`filter_string` documents it, so a filter such as
