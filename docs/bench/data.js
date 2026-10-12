@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791788630117,
+  "lastUpdate": 1791790487994,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -24264,6 +24264,42 @@ window.BENCHMARK_DATA = {
             "value": 56.134999897,
             "unit": "s",
             "extra": "Commit: 34a9d6f1789f169d7f7cb3b8321e252bcd9673fc\nBranch: master\nTime: 2026-10-12T09:02:27+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5d685edb44a7e85a4c3365bfdb6f18a5e8663409",
+          "message": "✨ sphinx-needs: declared derived fields are computed — the kinds, links_from_filter (#2191)\n\n## What\n\n`packages/sphinx-needs`: the `derive` rules that #2178 read, checked and\nclosed are now **computed** — on a\n`needs_fields` / `needs_links` entry in `conf.py` or `ubproject.toml`,\non the legacy list forms, or through\n`add_field`. Every need indexed from source holds the value its rule\ngives, in `needs.json`, in filters, in the HTML\nand in every view:\n\n    [needs.fields.total_hours]\n    schema = { type = \"number\" }\n    derive = { kind = \"sum\", field = \"hours\", over = \"links\" }\n\n- **The eleven kinds**: `copy` (own field, `from` a need, or `over` a\nlink type with `select = \"first\"` / `\"unique\"` /\n`\"list\"`), the roll-ups `sum`, `count`, `min`, `max`, `any`, `all`,\n`collect` over a link type or its back links\n(`<t>_back`), with `where` / `test` predicates in the portable filter\nlanguage; `max` / `min` with `transitive`\n(one pass over strongly-connected components, `include_self`); `hash`\n(the SHA-256 of the listed fields as one\ncompact JSON array, byte-identical with ubCode); `links` (every need\npassing `where`, in need-id order, the need\nitself left out unless `include_self`; `include_parts` adds parts) and\n`content_links` (the `:need:` references of\nthe need's content, or of the need `from` names, narrowed by `where`) on\nlink types.\n- **Strata**: the link kinds run with the link-valued dynamic functions,\nthe value kinds after them through the\nexisting dependency order, `hash` and `after = \"derived\"` rules in a\nlate step; a rule that reads past its stratum is\n`needs.derive_scope`, an instance cycle `needs.derive_cycle`, several\n`unique` candidates `needs.derive_unique` —\n  each with the typed empty value.\n- **The value a rule gives follows the field** (an integer `sum` in a\n`number` field is `13.0`), as an inline call's\ndoes since #2194. A computed value the field's `schema` refuses is\n`needs.dynamic_function` and the field keeps its\nempty value, which is itself never checked; a `content_links` rule that\ncannot read its content leaves it unchecked.\n- **Candidates**: written order under `over = \"<t>\"` (a target twice\ncounts twice; a part reads its need; a link to no\nneed is skipped), need-id order for `<t>_back` and `links`; \"set\" means\nnot null; a `where` / `test` that cannot be\nevaluated on a candidate is false for it, silently. A hidden need's\ncontent is not processed (deferred).\n- **`links_from_filter(filter, include_self=False,\ninclude_parts=False)`**, the inline spelling of `links` (#1984,\n  without `allow_empty` and its warning; results in need-id order).\n- **Configuration**: a rule's value is read from the schema of each\nbuild, never only at need creation; `add_field`\ntakes `derive`; `copy = true` on a derived link type is reported and\ncopies nothing; a rule on a link type named\nafter a core field is reported at load; the `types` role is reserved\nbeside `join`.\n- **A `hash` writes a link list's ids in the total order of the export**\n(#2193): conditions dropped first, each id\nonce, sorted by the natural key and then the id. \"Need-id order\"\n(candidates) is code point order; the export sorts\n  naturally — the docs now say which.\n- **`ENV_DATA_VERSION` 11** (the rules' values, and the inline fixes of\n#2194).\n\n## Why\n\nThe derived-values plan shared with ubCode: a declared rule computed for\nevery need, with one semantics for the\ndeclared and the inline form, the same values in both tools, and a\ntwo-tool conformance corpus (the next PR) as the\nrecord. ubCode computes the link kinds and the inline spellings from its\nnext release and the value kinds from the one\nafter; the `hash` bytes, the candidate orders and the type rule are what\nthe corpus pins.\n\nRebased onto #2192 (the field and link confvals rebuild the\nenvironment), #2194 (the inline functions' parity fixes)\nand #2193 (the total link order), which landed first; this PR carries\nthe kinds alone. Supersedes #1984\n(`links_from_filter` lands here, its three fixes to existing functions\nlanded in #2194) and #1453 (landed in #2194).\n\n## Tests\n\n- `tests/doc_test/doc_derive_kinds/` (one need cluster per kind, the\ncontract's cases: orders, duplicates, dead and part\ntargets, strata, cycles, the late step, the hash texts with hand-typed\nhexes, imports and externals; a hidden need's\ncontent links pinned in their deferred state) and\n`tests/test_derive_kinds.py`; the `-j 2` and reversed-layout parity\n  runs; the ubCode-fixture parity tests.\n- #1984's `links_from_filter` tests carried over (re-premised on need-id\norder), with its per-directory collector.\n- Written before the code. Each behaviour has a mutation proof (the\nself-exclusion, the need-id order, the set in\n`collect`, the SCC sharing, the hash separators, the once-per-pass\n`where`, the per-build materialisation, …).\n- Two independent reviews, each with validation rounds until nothing was\nleft.\n\n## Docs\n\n`configuration.rst` (\"Derived fields\": how a rule is computed,\ncandidates and orders, the no-candidate values, the\nfindings); `dynamic_functions.rst`: the page now leads with the declared\nform — its intro names the three mechanisms\n(a declared rule, recommended; an inline call; a variant) with when to\nuse which and the one limitation, and \"Derived\nfields: the declared form\" is its first section; the reads table with\nthe kinds, the late step,\n`links_from_filter`, the flag form of a `needs` filter; `api.rst`\n(`DeriveCall`); `changelog.rst` (the 9.0.0 ✨\nentries).\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-needs`) and they pass.\n- [x] Documentation is updated where behaviour or options change.\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-12T09:33:34+02:00",
+          "tree_id": "bd27975e46fae30cbbd0ec09c5cf0d026034e027",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/5d685edb44a7e85a4c3365bfdb6f18a5e8663409"
+        },
+        "date": 1791790479092,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07587458100000077,
+            "unit": "s",
+            "extra": "Commit: 5d685edb44a7e85a4c3365bfdb6f18a5e8663409\nBranch: master\nTime: 2026-10-12T09:33:34+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 43.445366930000006,
+            "unit": "s",
+            "extra": "Commit: 5d685edb44a7e85a4c3365bfdb6f18a5e8663409\nBranch: master\nTime: 2026-10-12T09:33:34+02:00"
           }
         ]
       }
