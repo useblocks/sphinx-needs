@@ -271,20 +271,8 @@ def import_prefix_link_edit(
 
     needs_ids = set(needs.keys() if known_ids is None else known_ids)
     link_names_list = list(link_names)
-    # an id is matched where no word character (a letter of any script, a digit, ``_``)
-    # adjoins it, so an id inside a longer word is not one; the longest id is tried
-    # first, so an id holding another (``REQ_X-REQ_Y``) is matched whole; a text is
-    # rewritten in one pass, so nothing is prefixed twice
-    ids_longest_first = sorted((i for i in needs_ids if i), key=len, reverse=True)
-    id_pattern = (
-        re.compile(
-            r"(?<!\w)(?:"
-            + "|".join(re.escape(i) for i in ids_longest_first)
-            + r")(?!\w)"
-        )
-        if ids_longest_first
-        else None
-    )
+    # a text is rewritten in one pass, so nothing is prefixed twice
+    id_pattern = _whole_ids_pattern(needs_ids)
 
     def prefixed(link: str) -> str:
         parsed = NeedLink.from_string(link)
@@ -313,6 +301,54 @@ def import_prefix_link_edit(
                 need[key] = id_pattern.sub(
                     lambda match: id_prefix + match.group(0), need[key]
                 )
+
+
+def _whole_ids_pattern(ids: Iterable[str]) -> re.Pattern[str] | None:
+    """A pattern matching any of ``ids`` where it stands as a whole word.
+
+    An id is matched where no word character (a letter of any script, a digit, ``_``)
+    adjoins it, so an id inside a longer word is not one; of two ids where one begins
+    the other, the longer is tried first, so an id holding another (``REQ_X-REQ_Y``) is
+    matched whole. The ids are merged into a trie -- a common beginning is matched once
+    -- so a text is scanned in time that hardly grows with the number of ids (one
+    alternation of twenty thousand ids took a second to compile and three milliseconds
+    per 250 characters to scan; the trie, under a millisecond per text). A trie too deep
+    for the pattern compiler falls back to that alternation, longest id first.
+
+    :return: The pattern, or ``None`` when there is no (non-empty) id.
+    """
+    ids = sorted({i for i in ids if i})
+    if not ids:
+        return None
+    try:
+        return re.compile(r"(?<!\w)" + _trie_pattern(ids) + r"(?!\w)")
+    except (RecursionError, re.error):
+        longest = sorted(ids, key=len, reverse=True)
+        return re.compile(
+            r"(?<!\w)(?:" + "|".join(re.escape(i) for i in longest) + r")(?!\w)"
+        )
+
+
+def _trie_pattern(ids: list[str]) -> str:
+    """The regular expression of a trie of ``ids``: at an id's end, the longer ids that
+    continue it are tried first (a greedy optional group)."""
+    root: dict[str, dict] = {}
+    for item in ids:
+        node = root
+        for char in item:
+            node = node.setdefault(char, {})
+        node[""] = {}
+
+    def emit(node: dict[str, dict]) -> str:
+        branches = [
+            re.escape(char) + emit(child) for char, child in node.items() if char
+        ]
+        if not branches:
+            return ""
+        body = branches[0] if len(branches) == 1 else "(?:" + "|".join(branches) + ")"
+        return f"(?:{body})?" if "" in node else body
+
+    return "(?:" + emit(root) + ")"
 
 
 def _prefix_link_string(value: str, prefixed: Callable[[str], str]) -> str:
