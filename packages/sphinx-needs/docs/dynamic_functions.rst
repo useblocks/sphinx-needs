@@ -4,10 +4,91 @@ Delayed field evaluation
 
 Sphinx-needs offers the possibility to delay the evaluation of certain need field values until all needs have been collected, and thus can be based on this data.
 
-There are two syntaxes provided to achieve this:
+There are three mechanisms to achieve this, and which one to use depends on what the value depends on:
 
-- Using double square brackets ``[[...]]`` to encapsulate a dynamic function call.
-- Using double angled brackets ``<<...>>`` to encapsulate a variant definition.
+.. list-table::
+   :header-rows: 1
+   :widths: 22 30 48
+
+   * - mechanism
+     - written as
+     - use it when
+   * - a :ref:`declared derive rule <dynamic_functions_derived>` (recommended)
+     - in the configuration: ``[needs.fields.<name>] derive = {…}``, or under ``[needs.links.<name>]``
+     - a field is computed the same way on every need:
+       a roll-up over links or back links, a lookup, a hash, a filtered link list.
+   * - an :ref:`inline dynamic function <dynamic_functions>`
+     - ``[[…]]`` in a need's option, the :ref:`ndf` role in its content
+     - the value is a one-off: only some needs compute it, or different needs compute it differently;
+       or it calls your own Python function (:ref:`needs_functions`), ``echo`` or ``test``;
+       or no kind expresses the computation yet.
+   * - a :ref:`variant <needs_variant_support>`
+     - ``<<…>>``, or a :ref:`variant data reference <needs_variant_data_references>` ``<{ var.* }>``
+     - the value depends on which build you are making (its variant data):
+       a different axis from derivation, as a derived field's rule does not vary from build to build.
+
+Prefer a declared rule where it fits.
+It is declared once, instead of repeated in every need;
+it is checked when the build starts, before any document is read, so a typo is reported at once (``needs.derive_invalid``);
+it is closed to authors, so no stale value written in a need overrides it (``needs.derive_authored``);
+`ubCode <https://ubcode.useblocks.com/>`__ computes the same values from its phase-2 release, but for the differences its documentation lists;
+and the schema in :ref:`needs.json <needs_builder_format>` marks the field ``"readOnly": true``.
+Its one limitation: a rule applies to every need of the project
+(the ``types`` role, which will name the need types a rule computes on, is reserved for a later release).
+Where only some need types should carry the value, an inline call in those needs is today's way:
+a rule's ``where`` narrows the candidates it reads, not the needs that carry the field.
+
+.. _dynamic_functions_derived:
+
+Derived fields: the declared form
+=================================
+
+.. versionadded:: 9.0.0
+
+A built-in call computes a value for the one need it is written in.
+A :ref:`derived field <needs_derive>` declares the same computation once, in :ref:`needs_fields` or :ref:`needs_links`,
+for every need of the project:
+
+.. code-block:: toml
+
+   [needs.fields.total_hours]
+   schema = { type = "number" }
+   derive = { kind = "sum", field = "hours", over = "links" }
+
+is the declared form of ``:total_hours: [[calc_sum("hours", links_only=True)]]`` written in every need,
+and both are computed in the same step (see :ref:`needs_processing_order`): a declared rule is the field's value,
+as a call written in it would be, but an author cannot set the field.
+The built-in functions are the per-need spellings of the kinds:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 46 54
+
+   * - inline call
+     - the kind it spells
+   * - ``copy("x")``, ``copy("x", "ID")``
+     - ``copy`` with ``field = "x"``, and ``from = "ID"``
+   * - ``copy("x", filter=…)``
+     - no declared form: the lowest-id need the filter keeps, read from every need
+   * - ``calc_sum("x", links_only=True)``
+     - ``sum`` with ``field = "x"`` and ``over = "links"``; its ``filter`` is the ``where``
+   * - ``calc_sum("x")``, ``calc_sum("x", filter=…)``
+     - no declared form: a sum over every need
+   * - ``check_linked_values(result, "x", values, filter, one_hit)``
+     - ``all`` over ``links`` (``any`` with ``one_hit``), with the ``test`` ``x in values`` and the ``where`` ``filter``,
+       giving ``result``; with ``one_hit``, ``result`` even when no linked need matches, which ``any`` does not
+   * - ``links_from_content()``, ``links_from_content("ID", filter=…)``
+     - ``content_links``, with ``from = "ID"`` and the ``where`` ``filter``
+   * - ``links_from_filter(filter, include_self, include_parts)``
+     - ``links``, with the ``where`` ``filter`` and the same ``include_self`` and ``include_parts``
+
+A ``where`` that cannot be evaluated on a candidate (one lacking a field it names) drops that candidate,
+without a warning, in every kind and in ``links_from_filter``;
+the ``filter`` of ``calc_sum``, ``check_linked_values`` and ``links_from_content`` keeps its own behaviour.
+
+The ``join`` role, which will spell sphinx-test-reports' ``tr_link``, and the ``types`` role,
+which will name the need types a rule computes on, are reserved for a later release:
+a rule naming either is reported as ``needs.derive_invalid``.
 
 .. _dynamic_functions:
 
@@ -132,58 +213,6 @@ links_from_filter
 
 .. autofunction:: sphinx_needs.functions.common.links_from_filter
 
-
-.. _dynamic_functions_derived:
-
-Derived fields: the declared form
----------------------------------
-
-.. versionadded:: 9.0.0
-
-A built-in call computes a value for the one need it is written in.
-A :ref:`derived field <needs_derive>` declares the same computation once, in :ref:`needs_fields` or :ref:`needs_links`,
-for every need of the project:
-
-.. code-block:: toml
-
-   [needs.fields.total_hours]
-   schema = { type = "number" }
-   derive = { kind = "sum", field = "hours", over = "links" }
-
-is the declared form of ``:total_hours: [[calc_sum("hours", links_only=True)]]`` written in every need,
-and both are computed in the same step (see :ref:`needs_processing_order`): a declared rule is the field's value,
-as a call written in it would be, but an author cannot set the field.
-The built-in functions are the per-need spellings of the kinds:
-
-.. list-table::
-   :header-rows: 1
-   :widths: 46 54
-
-   * - inline call
-     - the kind it spells
-   * - ``copy("x")``, ``copy("x", "ID")``
-     - ``copy`` with ``field = "x"``, and ``from = "ID"``
-   * - ``copy("x", filter=…)``
-     - no declared form: the lowest-id need the filter keeps, read from every need
-   * - ``calc_sum("x", links_only=True)``
-     - ``sum`` with ``field = "x"`` and ``over = "links"``; its ``filter`` is the ``where``
-   * - ``calc_sum("x")``, ``calc_sum("x", filter=…)``
-     - no declared form: a sum over every need
-   * - ``check_linked_values(result, "x", values, filter, one_hit)``
-     - ``all`` over ``links`` (``any`` with ``one_hit``), with the ``test`` ``x in values`` and the ``where`` ``filter``,
-       giving ``result``; with ``one_hit``, ``result`` even when no linked need matches, which ``any`` does not
-   * - ``links_from_content()``, ``links_from_content("ID", filter=…)``
-     - ``content_links``, with ``from = "ID"`` and the ``where`` ``filter``
-   * - ``links_from_filter(filter, include_self, include_parts)``
-     - ``links``, with the ``where`` ``filter`` and the same ``include_self`` and ``include_parts``
-
-A ``where`` that cannot be evaluated on a candidate (one lacking a field it names) drops that candidate,
-without a warning, in every kind and in ``links_from_filter``;
-the ``filter`` of ``calc_sum``, ``check_linked_values`` and ``links_from_content`` keeps its own behaviour.
-
-The ``join`` role, which will spell sphinx-test-reports' ``tr_link``, and the ``types`` role,
-which will name the need types a rule computes on, are reserved for a later release:
-a rule naming either is reported as ``needs.derive_invalid``.
 
 Develop own functions
 ---------------------
