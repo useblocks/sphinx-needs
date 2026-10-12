@@ -17,6 +17,15 @@ The rules a record is read by:
   and an ``id`` that differs from it is reported (``id_mismatch``) and ignored;
 - a legacy ``description`` is the ``content`` when that is absent or empty;
 - the version's ``needs_schema`` defaults are merged under each record.
+
+The ids a file contains are its namespace, and the file owns them. A reference to one of
+them -- a link, or the id written in a need's ``content`` -- names that need of the file,
+whether a reader takes the need or not; a reference to an id the file does not contain
+names something outside it, which may be a need of the reading project. A reader that
+adds a prefix to the file's ids (the namespace's name) therefore rewrites every reference
+to one of the file's ids, and no other, and the reading project references those needs
+by their prefixed ids. ``content`` is opaque markup: every whole-word occurrence of a file
+id in it is such a reference, inside code blocks and file names too.
 """
 
 from __future__ import annotations

@@ -85,10 +85,19 @@ This may be useful to avoid duplicated ids.
 
 .. note::
 
-    When using ``:id_prefix:``, we replace all ids used for links and inside descriptions,
-    if the id belongs to a need of the file -- also one that ``:ids:`` or ``:filter:``
-    leaves out. An id is replaced where it stands as a whole word: one inside a longer
-    word is left as it is.
+    The ids of the file are its namespace, and the prefix is that namespace's name. The
+    file owns the ids it contains: a reference to one of them -- a link field, or the id
+    written in a need's content -- gets the prefix whether that need is imported or not
+    (``:ids:`` and ``:filter:`` leaving it out change nothing). A reference to an id the
+    file does **not** contain is left as it is, and may resolve to a need of the
+    importing project. So the importing project references the imported needs by their
+    prefixed ids, and a reference rewritten to a need that is not imported with the same
+    prefix is a dead link (``needs.link_outgoing`` for a link field, ``needs.link_ref``
+    for a ``:need:`` role in the content).
+
+    The content is opaque markup: every occurrence of a file id as a whole word is
+    rewritten, inside code blocks and file names too; an id inside a longer word is left
+    as it is.
 
 version
 ~~~~~~~

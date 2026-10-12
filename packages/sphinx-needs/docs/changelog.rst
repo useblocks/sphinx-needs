@@ -261,16 +261,25 @@ Breaking changes
     so the ids of a lowercase prefix change (``ext_`` gives ``ext_REQ_1``, not
     ``EXT_REQ_1``), and every reference to them has to follow;
   - :ref:`needs_id_regex` is no longer applied to imported needs (it never was to
-    external ones);
+    external ones): the regex is for the ids this project authors, not for the ids it
+    reads -- an imported or external need's id is the data of the project that wrote it,
+    and an ``id_prefix`` may not match any pattern of this project;
   - a record without a ``title`` is refused by ``needimport`` (``needs.import_need``), as
     it already was for external needs; a ``content`` that is not a string is refused for
     external needs (``needs.load_external_need``), as it already was on import;
-  - the key of a need in the file is its id: an ``id`` that differs from it is a warning
-    and ignored, where the ``id`` used to win; an empty key is refused by both readers,
-    where an external source created a need with an empty id;
-  - an id that two external sources both define is kept from the first source and the
-    other is warned about, where the last one used to replace it silently when the two
-    shared a ``base_url``;
+  - a need's id is the **key** of its record in the version's ``needs`` object, not the
+    record's ``id`` field. A record whose ``id`` field differs from its key is imported
+    under the key and reported (``needs.needimport`` / ``needs.external_needs``); the
+    ``id`` field used to win, silently. A record whose key is empty is refused by both
+    readers, where the key used to be ignored and the record imported under its ``id``
+    field (an external source whose ``id`` field was empty too created a need with an
+    empty id, or with the bare, upper-cased ``id_prefix``);
+  - when two external sources define the same id, the first source listed keeps it and
+    the second is refused with a ``needs.load_external_need`` warning (the first among
+    the records that were added: a first source whose record is refused leaves the id to
+    the next). This used to depend on the sources' ``base_url``: with different values the
+    second was already refused (the first won), but with the *same* ``base_url`` the
+    second source silently deleted and replaced the first (the last won);
   - a need of this project with the id of an external need replaces the external need,
     with a ``needs.create_need`` warning, where it used to be refused and not rendered;
   - a needs.json that cannot be obtained or read -- missing, a failed download, not valid
@@ -278,17 +287,26 @@ Breaking changes
     warning and adds no need, where the build used to abort (or, for an external source with
     missing or empty ``versions``, stayed silent; a missing ``needimport`` file was already a
     warning);
-  - with an ``id_prefix``, a link or a ``:need:`` reference in the content to a need of
-    the file that ``:ids:`` or ``:filter:`` leaves out gets the prefix too, so it no longer
-    resolves to an unprefixed import of that need (``needs.link_outgoing`` /
-    ``needs.link_ref``);
+  - with an ``id_prefix``, a link field or an id written in the ``content`` that names a
+    need of the file gets the prefix **even when** ``:ids:`` or ``:filter:`` leaves that
+    need out of the import. It used to be prefixed only when the target was imported, so
+    such a reference could resolve to a need of the importing project, or to the same id
+    imported unprefixed by another ``needimport``. It is now rewritten to the prefixed id,
+    which exists only if that need is imported with the same prefix; otherwise it becomes a
+    dead link, reported as ``needs.link_outgoing`` or ``needs.link_ref`` -- not as a reader
+    warning, so ``suppress_warnings`` has to name those. A reference to an id the file does
+    **not** contain is still left unprefixed and may resolve in the importing project: the
+    file's ids are its namespace, and the prefix is the only way to say so;
   - an external source's ``target_url`` template sees the need with the file's schema
     defaults merged, its ``id`` the key, and a legacy ``description`` as ``content``.
 
   **The new warnings (** ``needs.needimport`` **and the new** ``needs.external_needs``
   **) fail a** ``-W`` **build that used to abort or stay silent**; to keep such a build
   green while you fix the file, add ``"needs.needimport"`` or ``"needs.external_needs"``
-  to ``suppress_warnings``.
+  to ``suppress_warnings``. A reference the prefix rewrites to a need that is not imported
+  is reported as ``needs.link_outgoing`` (a link field) or ``needs.link_ref`` (a ``:need:``
+  role in the content), not as a reader warning, so suppressing the two reader codes does
+  not keep such a build green: ``suppress_warnings`` has to name those two as well.
 
 Bug fixes
 .........
