@@ -734,11 +734,13 @@ class NeedsSphinxConfig:
         default=30, metadata={"rebuild": "html", "types": (int,)}
     )
     """Maximum length of the title in the need role output."""
+    # "env": a changed field re-reads every document, so its default, predicates and
+    # derive rule apply to the needs of unchanged documents too
     _fields: dict[str, NeedFields] = field(
-        default_factory=dict, metadata={"rebuild": "html", "types": (dict,)}
+        default_factory=dict, metadata={"rebuild": "env", "types": (dict,)}
     )
     _extra_options: list[str | NeedField] = field(
-        default_factory=list, metadata={"rebuild": "html", "types": (list,)}
+        default_factory=list, metadata={"rebuild": "env", "types": (list,)}
     )
     """List of extra options for needs, that get added as directive options and need fields."""
 
@@ -815,12 +817,13 @@ class NeedsSphinxConfig:
         default="→\xa0", metadata={"rebuild": "html", "types": (str,)}
     )
     """Prefix for need_part output in tables"""
+    # "env", as for ``_fields``
     _links: dict[str, NeedLinksConfig] = field(
-        default_factory=dict, metadata={"rebuild": "html", "types": (dict,)}
+        default_factory=dict, metadata={"rebuild": "env", "types": (dict,)}
     )
     """Dict of additional link types between needs (name -> config)."""
     _extra_links: list[LinkOptionsType] = field(
-        default_factory=list, metadata={"rebuild": "html", "types": ()}
+        default_factory=list, metadata={"rebuild": "env", "types": ()}
     )
     """DEPRECATED: List of additional link types between needs. Use needs_links instead."""
     report_dead_links: bool = field(
