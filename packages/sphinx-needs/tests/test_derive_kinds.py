@@ -659,6 +659,99 @@ def test_back_link_candidates_in_need_id_order(test_app):
     assert needs["C_1"]["tests_back"] == ["T_2", "T_9", "T_10"]
 
 
+HIDDEN_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_id_regex = "^.+$"
+needs_links = {
+    "mentions": {"derive": {"kind": "content_links"}},
+    "inline": {},
+}
+"""
+
+HIDDEN_INDEX = """\
+Hidden
+======
+
+.. req:: One
+   :id: R_1
+
+.. req:: Hidden
+   :id: H_1
+   :hide:
+
+   Mentions :need:`R_1`.
+
+.. spec:: Reads the hidden one
+   :id: S_1
+   :inline: [[links_from_content("H_1")]]
+
+   Mentions :need:`R_1`.
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), HIDDEN_CONF),
+                (Path("index.rst"), HIDDEN_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_content_links_of_a_hidden_need_is_deferred(test_app):
+    """A ``:hide:`` need keeps no content node, so its ``content_links`` rule and a
+    ``links_from_content`` naming it give no links and the warning the call has always
+    given for it ("no stored node", at the hidden need). How a hidden need's content is
+    processed is left to a follow-up of its own; this pins the behaviour until then.
+    """
+    app = test_app
+    app.build()
+    no_node = (
+        "<srcdir>/index.rst:7: WARNING: links_from_content: no stored node for need "
+        "'H_1' [needs.dynamic_function]"
+    )
+    assert build_warnings(app) == [no_node, no_node]
+    needs = _needs(app)
+    assert needs["H_1"]["mentions"] == []
+    assert needs["S_1"]["inline"] == []
+    assert needs["S_1"]["mentions"] == ["R_1"]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (
+                    Path("conf.py"),
+                    'extensions = ["sphinx_needs"]\nneeds_id_regex = "^.+$"\n',
+                ),
+                (
+                    Path("index.rst"),
+                    "Hidden\n======\n\n.. req:: One\n   :id: R_1\n\n"
+                    ".. req:: Hidden\n   :id: H_1\n   :hide:\n\n"
+                    "   Mentions :need:`R_1` and has a footnote [#]_.\n\n"
+                    "   .. [#] The hidden footnote.\n",
+                ),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_hidden_need_without_a_rule_is_untouched(test_app):
+    """A hidden need in a project declaring no rule, and calling no function, gives no
+    warning: nothing of the derived fields reads a hidden need's content."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+
+
 INLINE_TYPE_CONF = """\
 extensions = ["sphinx_needs"]
 needs_build_json = True
