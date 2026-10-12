@@ -1637,6 +1637,45 @@ def test_a_result_the_field_schema_refuses(test_app):
     )
 
 
+FAILED_READ_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_links = {
+    "from_missing": {
+        "schema": {"type": "array", "minItems": 1},
+        "derive": {"kind": "content_links", "from": "NOPE_9"},
+    },
+}
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), FAILED_READ_CONF),
+                (Path("index.rst"), "Read\n====\n\n.. req:: One\n   :id: REQ_001\n"),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_failed_read_leaves_the_placeholder_unchecked(test_app):
+    """A ``content_links`` rule whose ``from`` names no need fails its read: one
+    ``needs.dynamic_function`` warning, and the field keeps its placeholder (no links),
+    which the field's ``schema`` does not check, though ``minItems = 1`` refuses it --
+    a failed read is no computed value."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:4: WARNING: links_from_content: no stored node for need "
+        "'NOPE_9' [needs.dynamic_function]",
+    ]
+    assert _needs(app)["REQ_001"]["from_missing"] == []
+
+
 IMPORT_SOURCE = {
     "current_version": "1.0",
     "versions": {
