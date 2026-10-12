@@ -979,6 +979,295 @@ def test_a_link_to_a_missing_part_reads_the_need(test_app):
     assert needs["SPEC_DOT"]["total"] == 0.0
 
 
+# -- links_from_filter ---------------------------------------------------------------
+#
+# The per-need spelling of a derived link type of the kind ``links``: every need
+# passing the filter, in need-id order, the need itself and its parts left out unless
+# ``include_self``, parts tested only with ``include_parts``. The needs below are
+# written in the reverse of need-id order, so the ``ndf`` role, which shows the links in
+# the order the call returns them, tells need-id order from document order.
+
+LINKS_FROM_FILTER_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+"""
+
+LINKS_FROM_FILTER_INDEX = """\
+Links from a filter
+===================
+
+.. req:: Closed requirement
+   :id: LFF_R3
+   :status: closed
+
+.. req:: Open requirement
+   :id: LFF_R2
+   :status: open
+
+.. req:: Open requirement with a part
+   :id: LFF_R1
+   :status: open
+
+   Part: :np:`(p1) part one`
+
+.. spec:: Collector
+   :id: LFF_COLL
+   :links: [[links_from_filter("type == 'req' and status == 'open'")]]
+
+.. spec:: Collector matching itself
+   :id: LFF_SELF_EX
+   :links: [[links_from_filter("id == 'LFF_R2' or id == 'LFF_SELF_EX'")]]
+
+.. spec:: Collector matching itself, kept
+   :id: LFF_SELF_IN
+   :links: [[links_from_filter("id == 'LFF_R2' or id == 'LFF_SELF_IN'", include_self=True)]]
+
+.. spec:: Parts not searched
+   :id: LFF_PARTS_DEF
+   :links: [[links_from_filter("id_parent == 'LFF_R1'")]]
+
+.. spec:: Parts searched
+   :id: LFF_PARTS_IN
+   :links: [[links_from_filter("id_parent == 'LFF_R1'", include_parts=True)]]
+
+.. spec:: Parts searched, own parts excluded
+   :id: LFF_OWN_EX
+   :links: [[links_from_filter("id_parent == 'LFF_R1' or id_parent == 'LFF_OWN_EX'", include_parts=True)]]
+
+   Own part: :np:`(q1) own part`
+
+.. spec:: Parts searched, own parts kept
+   :id: LFF_OWN_IN
+   :links: [[links_from_filter("id_parent == 'LFF_OWN_IN'", include_parts=True, include_self=True)]]
+
+   Own part: :np:`(q1) own part`
+
+.. spec:: Nothing found
+   :id: LFF_NONE
+   :links: [[links_from_filter("status == 'nonexistent'")]]
+
+.. spec:: Only itself found
+   :id: LFF_ONLY_SELF
+   :links: [[links_from_filter("id == 'LFF_ONLY_SELF'")]]
+
+.. spec:: Links as text
+   :id: LFF_NDF
+
+   Open requirements: :ndf:`links_from_filter("type == 'req' and status == 'open'")`
+
+   With the part: :ndf:`links_from_filter("id_parent == 'LFF_R1'", include_parts=True)`
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), LINKS_FROM_FILTER_CONF),
+                (Path("index.rst"), LINKS_FROM_FILTER_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_links_from_filter(test_app):
+    """``links_from_filter`` links to the needs that pass, in need-id order.
+
+    Nothing found is no link and no warning (the declared ``links`` kind, which applies
+    to every need, has no match on most of them).
+    """
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    needs = _built_needs(app)
+
+    assert needs["LFF_COLL"]["links"] == ["LFF_R1", "LFF_R2"]
+    assert "LFF_COLL" in needs["LFF_R1"]["links_back"]
+    assert "LFF_COLL" not in needs["LFF_R3"]["links_back"]
+    assert needs["LFF_SELF_EX"]["links"] == ["LFF_R2"]
+    assert needs["LFF_SELF_IN"]["links"] == ["LFF_R2", "LFF_SELF_IN"]
+    assert needs["LFF_PARTS_DEF"]["links"] == ["LFF_R1"]
+    assert needs["LFF_PARTS_IN"]["links"] == ["LFF_R1", "LFF_R1.p1"]
+    assert needs["LFF_OWN_EX"]["links"] == ["LFF_R1", "LFF_R1.p1"]
+    assert needs["LFF_OWN_IN"]["links"] == ["LFF_OWN_IN", "LFF_OWN_IN.q1"]
+    assert needs["LFF_NONE"]["links"] == []
+    assert needs["LFF_ONLY_SELF"]["links"] == []
+
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    # need-id order (the needs are written LFF_R2, then LFF_R1), and a link as its id
+    assert "Open requirements: LFF_R1, LFF_R2" in html
+    assert "With the part: LFF_R1, LFF_R1.p1" in html
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), LINKS_FROM_FILTER_CONF),
+                (
+                    Path("index.rst"),
+                    "Empty filter\n============\n\n"
+                    ".. req:: Requirement\n   :id: LFF_R1\n\n"
+                    ".. spec:: Collector\n   :id: LFF_COLL\n"
+                    '   :links: [[links_from_filter("")]]\n',
+                ),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_links_from_filter_refuses_an_empty_filter(test_app):
+    """An empty filter would link every need: the call fails, and links nothing."""
+    app = test_app
+    app.build()
+    warnings = build_warnings(app)
+    assert len(warnings) == 1, warnings
+    assert "links_from_filter needs a non-empty filter" in warnings[0]
+    assert "[needs.dynamic_function]" in warnings[0]
+    assert _built_needs(app)["LFF_COLL"]["links"] == []
+
+
+LINKS_FROM_FILTER_CHAPTER = (
+    "[[links_from_filter('c.this_doc() and sections == current_need[\"sections\"]')]]"
+)
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), LINKS_FROM_FILTER_CONF),
+                (
+                    Path("index.rst"),
+                    "Vehicle\n=======\n\n.. toctree::\n\n   other\n\n"
+                    "Braking\n-------\n\n"
+                    ".. req:: Brake\n   :id: LFF_BRAKE\n\n"
+                    ".. req:: Brake light\n   :id: LFF_BRAKE_LIGHT\n\n"
+                    ".. spec:: Braking collector\n   :id: LFF_BRAKE_SPEC\n"
+                    f"   :links: {LINKS_FROM_FILTER_CHAPTER}\n\n"
+                    "Emergency braking\n~~~~~~~~~~~~~~~~~\n\n"
+                    ".. req:: Emergency brake\n   :id: LFF_EMERGENCY\n\n"
+                    "Steering\n--------\n\n"
+                    ".. req:: Steer\n   :id: LFF_STEER\n\n"
+                    ".. spec:: Steering collector\n   :id: LFF_STEER_SPEC\n"
+                    f"   :links: {LINKS_FROM_FILTER_CHAPTER}\n",
+                ),
+                (
+                    Path("other.rst"),
+                    "Vehicle\n=======\n\n"
+                    "Braking\n-------\n\n"
+                    ".. req:: Brake in another file\n   :id: LFF_BRAKE_OTHER\n",
+                ),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_links_from_filter_same_file_and_chapter(test_app):
+    """``current_need`` is the need the call is in, and ``c.this_doc()`` its document."""
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    needs = _built_needs(app)
+    # only c.this_doc() tells these two apart
+    assert needs["LFF_BRAKE_OTHER"]["sections"] == needs["LFF_BRAKE"]["sections"]
+    assert needs["LFF_BRAKE_SPEC"]["links"] == ["LFF_BRAKE", "LFF_BRAKE_LIGHT"]
+    assert needs["LFF_STEER_SPEC"]["links"] == ["LFF_STEER"]
+
+
+# ``links_from_filter`` replacing a project's own function, which linked a need to
+# every system requirement in its own directory:
+#
+#     path = need["docname"].replace("index", "")
+#     for nd in needs.values():
+#         if not nd["is_external"] and nd["docname"].startswith(path) and nd["type"] == ...:
+#             links.append(nd["id"])
+#
+# The filter cuts the docname after its last "/" instead of removing the string
+# "index", so a collector outside an ``index`` document finds its directory too.
+
+LINKS_FROM_FILTER_SYSTEM_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_types = [
+    {"directive": "sysreq", "title": "System requirement", "prefix": "SR_"},
+    {"directive": "sysarch", "title": "System architecture", "prefix": "SA_"},
+]
+"""
+
+LINKS_FROM_FILTER_SYSTEM_FILTER = (
+    "not is_external and docname"
+    # the collector's directory: its docname up to and including the last "/"
+    ' and docname.startswith(current_need["docname"][: current_need["docname"].rfind("/") + 1])'
+    ' and type == "sysreq"'
+)
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), LINKS_FROM_FILTER_SYSTEM_CONF),
+                (
+                    Path("index.rst"),
+                    "Root\n====\n\n.. toctree::\n\n   system/index\n",
+                ),
+                # listed first, so that ``system/`` exists for the files below it
+                (
+                    Path("system/index.rst"),
+                    "System\n======\n\n.. toctree::\n\n"
+                    "   central_locking/index\n"
+                    "   central_locking/details\n"
+                    "   other/index\n",
+                ),
+                (
+                    Path("system/central_locking/index.rst"),
+                    "Central locking\n===============\n\n"
+                    ".. sysreq:: Lock\n   :id: SR_LOCK\n\n"
+                    ".. sysarch:: Locking architecture\n   :id: SA_LOCK\n"
+                    f"   :links: [[links_from_filter('{LINKS_FROM_FILTER_SYSTEM_FILTER}')]]\n",
+                ),
+                (
+                    Path("system/central_locking/details.rst"),
+                    "Details\n=======\n\n"
+                    ".. sysreq:: Unlock\n   :id: SR_UNLOCK\n\n"
+                    ".. sysarch:: Unlocking architecture\n   :id: SA_UNLOCK\n"
+                    f"   :links: [[links_from_filter('{LINKS_FROM_FILTER_SYSTEM_FILTER}')]]\n",
+                ),
+                (
+                    Path("system/other/index.rst"),
+                    "Other\n=====\n\n"
+                    ".. sysreq:: Other\n   :id: SR_OTHER\n\n"
+                    ".. sysarch:: Other architecture\n   :id: SA_OTHER\n"
+                    f"   :links: [[links_from_filter('{LINKS_FROM_FILTER_SYSTEM_FILTER}')]]\n",
+                ),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_links_from_filter_system_requirements(test_app):
+    """A collector per directory: the filter slices ``current_need["docname"]``, the
+    document of the need the call is in, and so links every system requirement of its
+    own directory, whichever document of it holds the requirement."""
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    needs = _built_needs(app)
+    assert needs["SA_LOCK"]["links"] == ["SR_LOCK", "SR_UNLOCK"]
+    assert needs["SA_OTHER"]["links"] == ["SR_OTHER"]
+    # not an ``index`` document: ``replace("index", "")`` would have found SR_UNLOCK only
+    assert needs["SA_UNLOCK"]["links"] == ["SR_LOCK", "SR_UNLOCK"]
+
+
 # -- three fixes from #1984 -------------------------------------------------------------
 
 PLAIN_CONF = """\

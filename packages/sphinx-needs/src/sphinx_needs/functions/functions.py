@@ -24,6 +24,7 @@ from sphinx.util.logging import suppress_logging
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsMutable, SphinxNeedsData
 from sphinx_needs.debug import measure_time_func
+from sphinx_needs.derive import DeriveCall, DeriveRule
 from sphinx_needs.exceptions import FunctionParsingException
 from sphinx_needs.filter_common import filter_needs_and_parts, filter_single_need
 from sphinx_needs.logging import get_logger, log_warning
@@ -493,18 +494,25 @@ def _derive_cycle_message(
     )
 
 
-def _out_of_scope_message(option: str, out_of_scope: OutOfScope, value: Any) -> str:
+def _out_of_scope_message(
+    option: str, out_of_scope: OutOfScope, value: Any, stratum: int = 1
+) -> str:
     """Return the ``needs.derive_scope`` message for a call or variant not computed.
 
     :param option: The field it computes.
     :param out_of_scope: The call or variant, and why it cannot be computed in its
         stratum.
     :param value: The value the field holds instead (its placeholder).
+    :param stratum: The stratum it is computed in: a read out of the scope of stratum 1
+        is of a value final after the link fields, one of stratum 2 of a value computed
+        in the late step.
     """
     what = out_of_scope.what
     not_run = (
         "the condition is not evaluated"
         if what == "variant condition"
+        else "the rule is not run"
+        if what.startswith("derive rule")
         else "the call is not run"
     )
     if selectors := out_of_scope.selectors:
@@ -520,10 +528,15 @@ def _out_of_scope_message(option: str, out_of_scope: OutOfScope, value: Any) -> 
     reads = list(names.items())
     linked = out_of_scope.linked
     one = _one(reads) if not linked else not reads and len(linked) == 1
+    final = (
+        "final only after the link fields are computed"
+        if stratum == 1
+        else "computed in the late step, after every other field "
+        "(a derive rule of the kind 'hash' or with after = \"derived\")"
+    )
     return (
         f"{what} for option '{option}' reads {_reads_phrase(reads, linked)}, which "
-        f"{'is' if one else 'are'} final only after the link fields are "
-        f"computed: {not_run} and {_kept(value)}"
+        f"{'is' if one else 'are'} {final}: {not_run} and {_kept(value)}"
     )
 
 
@@ -536,6 +549,9 @@ class _Pass:
     def __init__(self, project: Project) -> None:
         self.project = project
         self.stratum: Stratum | None = None
+        #: what the derive rules compute once per pass (the components of a
+        #: ``transitive`` rule's links), shared by the needs
+        self.rule_cache: dict[Any, Any] = {}
         #: the ``(need id, name)`` values not computed yet, a name being the field's,
         #: or ``parent_need`` for a computed ``parent_needs``
         self.pending: set[tuple[str, str]] = set(project.nodes)
@@ -722,8 +738,10 @@ def resolve_functions(
             else [ref["need_link"].id for ref in _find_need_refs(node)]
         )
 
+    rules = materialise_derive_rules(needs, needs_schema)
     project = Project(
         needs,
+        rules=rules,
         link_fields=list(needs_schema.iter_link_field_names()),
         variants=needs_config.variants,
         not_fields={*needs_config.filter_data, "build_tags", "var"},
@@ -740,6 +758,43 @@ def resolve_functions(
     _resolve_stratum(app, needs, pass_, 1, needs_schema, needs_config)
     build_backlinks(needs, needs_schema, reset=False)
     _resolve_stratum(app, needs, pass_, 2, needs_schema, needs_config)
+    # the late step: the derive rules of the kind ``hash`` or with after = "derived"
+    _resolve_stratum(app, needs, pass_, 3, needs_schema, needs_config)
+
+
+def materialise_derive_rules(
+    needs: NeedsMutable, schema: FieldsSchema
+) -> dict[tuple[str, str], DeriveCall]:
+    """Give every derived field of every need from the project's sources its rule.
+
+    Each pass reads the rules from the current schema, so a need's derived values never
+    depend on the configuration it was created under. The rule is the field's one
+    computed item (a :class:`~sphinx_needs.derive.DeriveCall`), and the field holds its
+    empty value until it is computed; a rule that cannot be read leaves it empty. A need
+    created by ``needimport`` or loaded as an external need keeps the values it carries:
+    no rule runs on it.
+
+    :return: The rule of each ``(need id, field)`` computed by one.
+    """
+    # imported here, as the order module imports this one
+    from sphinx_needs.functions.order import typed_empty
+
+    derived = [
+        field
+        for field in (*schema.iter_extra_fields(), *schema.iter_link_fields())
+        if field.derive is not None
+    ]
+    rules: dict[tuple[str, str], DeriveCall] = {}
+    if not derived:
+        return rules
+    for need_id, need in needs.items():
+        if need["is_import"] or need["is_external"]:
+            continue
+        for field in derived:
+            if isinstance(field.derive, DeriveRule):
+                rules[(need_id, field.name)] = DeriveCall(field.derive)
+            need[field.name] = typed_empty(field)
+    return rules
 
 
 def _resolve_stratum(
@@ -788,7 +843,7 @@ def _resolve_stratum(
             for out_of_scope in node_reads.scope:
                 log_warning(
                     logger,
-                    _out_of_scope_message(field, out_of_scope, value),
+                    _out_of_scope_message(field, out_of_scope, value, number),
                     "derive_scope",
                     location=_location(need),
                 )
@@ -823,8 +878,59 @@ def _resolve_field(
         if (field_schema := needs_schema.get_any_field(field)) is None:
             raise RuntimeError("does not exist in schema")
         resolved: list[Any] = []
-        for item in need._dynamic_fields[field].value:
-            if isinstance(item, DynamicFunctionParsed):
+        for item in reads_ctx.pass_.project.items((need.id, field)):
+            if isinstance(item, DeriveCall):
+                with _reads_reported(item.describe(), field, need, reads_ctx) as reads:
+                    # imported here, as the common module imports this one
+                    from sphinx_needs.functions.common import execute_rule
+
+                    value = execute_rule(
+                        app,
+                        need,
+                        needs,
+                        item.rule,
+                        field_schema,
+                        needs_schema,
+                        reads=reads,
+                        cache=reads_ctx.pass_.rule_cache,
+                    )
+                if value is None:
+                    # the rule found no value: the field holds its empty value, which
+                    # is not a result, so its schema does not check it
+                    from sphinx_needs.functions.order import typed_empty
+
+                    # a list (an array's or a link type's) has no items to add
+                    if isinstance(empty := typed_empty(field_schema), list):
+                        resolved.extend(empty)
+                    else:
+                        resolved.append(empty)
+                    continue
+                if not (
+                    field_schema.type_check(value)
+                    or (
+                        field_schema.type == "array"
+                        and field_schema.type_check_item(value)
+                    )
+                ):
+                    raise ValueError(
+                        f"{item.describe()} value {type(value)} is not of type "
+                        f"{field_schema.type!r}"
+                    )
+                value = _in_field_type(value, field_schema)
+                if (
+                    refused := _refused_by_schema(
+                        value, field_schema, reads_ctx.pass_.rule_cache
+                    )
+                ) is not None:
+                    raise ValueError(
+                        f"{item.describe()} value {_shown(value)!r} is refused by the "
+                        f"field's schema: {refused}"
+                    )
+                if isinstance(value, list | tuple):
+                    resolved.extend(value)
+                else:
+                    resolved.append(value)
+            elif isinstance(item, DynamicFunctionParsed):
                 with _reads_reported(
                     f"dynamic function '{item.name}'", field, need, reads_ctx
                 ) as reads:
@@ -956,10 +1062,10 @@ def _resolve_field(
 def _in_field_type(value: Any, field_schema: FieldSchema | LinkSchema) -> Any:
     """A computed value in the type of the field holding it.
 
-    An integer in a ``number`` field (an integer a ``[[…]]`` returns, or a variant
-    gives, or the items of either in an array of numbers) is stored as a float, as an
-    authored value of the field is, so that it is exported as one. A boolean is not a
-    number here.
+    An integer in a ``number`` field (a rule's ``count``, a ``sum`` or ``copy`` of an
+    ``integer`` field, or an integer a ``[[…]]`` returns, or the items of either in an
+    array of numbers) is stored as a float, as an authored value of the field is, so
+    that it is exported and hashed as one. A boolean is not a number here.
     """
 
     def number(item: Any) -> Any:
@@ -974,6 +1080,42 @@ def _in_field_type(value: Any, field_schema: FieldSchema | LinkSchema) -> Any:
             return [number(item) for item in value]
         return number(value)
     return value
+
+
+def _shown(value: Any) -> Any:
+    """A rule's result as a message shows it: a link as its id."""
+    if isinstance(value, list | tuple):
+        return [_shown(item) for item in value]
+    return value.to_filter_string() if isinstance(value, NeedLink) else value
+
+
+def _refused_by_schema(
+    value: Any, field_schema: FieldSchema | LinkSchema, cache: dict[Any, Any]
+) -> str | None:
+    """Why the field's own ``schema`` refuses a rule's result, if it does.
+
+    The result is checked as schema validation checks the field's value (a link list
+    as its ids); ``None``, no value, is not checked. The field's validator is compiled
+    once per pass.
+    """
+    if value is None:
+        return None
+    key = ("field schema", field_schema.name)
+    if (validator := cache.get(key)) is None:
+        # imported here, as the schema module imports the data module, which this
+        # module's callers import
+        from sphinx_needs.schema.core import compile_validator
+
+        validator = cache[key] = compile_validator(
+            {"properties": {field_schema.name: field_schema.schema}}
+        )
+    error = next(
+        iter(
+            validator.compiled.iter_errors(instance={field_schema.name: _shown(value)})
+        ),
+        None,
+    )
+    return None if error is None else error.message
 
 
 def _get_variant(

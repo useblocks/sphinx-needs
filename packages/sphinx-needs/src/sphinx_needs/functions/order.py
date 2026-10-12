@@ -37,12 +37,15 @@ from dataclasses import dataclass
 from functools import lru_cache
 from typing import Any, Final, TypeVar
 
+from sphinx_needs.derive import DeriveCall
 from sphinx_needs.functions.common import (
     calc_sum,
     check_linked_values,
     copy,
     echo,
     links_from_content,
+    links_from_filter,
+    over_candidates,
     test,
 )
 from sphinx_needs.functions.functions import (
@@ -83,7 +86,15 @@ every need (or over the candidates of its filter)."""
 #: the built-in functions, which the order knows the reads of, by their name
 BUILTINS: Final[Mapping[str, Callable[..., Any]]] = {
     func.__name__: func
-    for func in (test, echo, copy, check_linked_values, calc_sum, links_from_content)
+    for func in (
+        test,
+        echo,
+        copy,
+        check_linked_values,
+        calc_sum,
+        links_from_content,
+        links_from_filter,
+    )
 }
 
 
@@ -102,7 +113,10 @@ _SELECTORS: Final[Mapping[str, frozenset[str]]] = {
     "check_linked_values": frozenset({"search_option", "filter_string"}),
     "calc_sum": frozenset({"option", "filter", "links_only"}),
     "links_from_content": frozenset({"need_id", "filter"}),
+    "links_from_filter": frozenset({"filter", "include_self", "include_parts"}),
 }
+#: the selectors that hold a flag, not a name or a filter
+_FLAGS: Final = frozenset({"links_only", "include_self", "include_parts"})
 _PARAMETERS: Final[Mapping[str, tuple[str, ...]]] = {
     name: _parameters(func) for name, func in BUILTINS.items()
 }
@@ -332,7 +346,7 @@ class NodeReads:
     :ivar reads_itself_by_variant: A variant condition of the node names its field.
     """
 
-    first: DynamicFunctionParsed | VariantFunctionParsed | None
+    first: DynamicFunctionParsed | VariantFunctionParsed | DeriveCall | None
     deps: Sequence[Node] = ()
     columns: Sequence[tuple[Column, Reason]] = ()
     scope: Sequence[OutOfScope] = ()
@@ -356,10 +370,14 @@ class NodeReads:
         return not self.scope and (bool(self.user_functions) or self.opaque)
 
 
-def _what(item: DynamicFunctionParsed | VariantFunctionParsed | None) -> str:
-    """A call or a variant, as messages name it."""
+def _what(
+    item: DynamicFunctionParsed | VariantFunctionParsed | DeriveCall | None,
+) -> str:
+    """A call, a variant or a derive rule, as messages name it."""
     if isinstance(item, DynamicFunctionParsed):
         return f"dynamic function '{item.name}'"
+    if isinstance(item, DeriveCall):
+        return item.describe()
     return "variant condition" if item is not None else "variant data"
 
 
@@ -392,6 +410,7 @@ class Project:
         self,
         needs: Mapping[str, NeedItem],
         *,
+        rules: Mapping[Node, DeriveCall] | None = None,
         link_fields: Collection[str],
         variants: Mapping[str, str],
         not_fields: Collection[str],
@@ -411,15 +430,32 @@ class Project:
         self._sum_candidates = sum_candidates
         self._sum_memo: dict[str, Sequence[str]] = {}
         self.content_refs = content_refs
-        #: every node, by stratum (1 for a link field, 2 for any other)
+        #: the rule of each node a derived field's rule computes
+        self.rules: Mapping[Node, DeriveCall] = rules or {}
+        #: every node, by stratum (1 for a link field, 3 for a late derive rule, 2 for
+        #: any other)
         self.nodes: dict[Node, int] = {}
         #: the fields computed on at least one need, with their stratum
         self.computed_fields: dict[str, int] = {}
         for need_id, need in needs.items():
             for name in need._dynamic_fields:
-                stratum = 1 if name in self.link_fields else 2
-                self.nodes[(need_id, name)] = stratum
-                self.computed_fields[name] = stratum
+                self._add((need_id, name), late=False)
+        for node, rule in self.rules.items():
+            self._add(node, late=rule.rule.late)
+
+    def _add(self, node: Node, *, late: bool) -> None:
+        name = node[1]
+        stratum = 1 if name in self.link_fields else 3 if late else 2
+        self.nodes[node] = stratum
+        self.computed_fields[name] = stratum
+
+    def items(self, node: Node) -> Sequence[Any]:
+        """What a node computes: a derived field's rule, or the field's ``[[…]]``,
+        ``<<…>>``, ``<{…}>`` and written items, in the order written."""
+        if (rule := self.rules.get(node)) is not None:
+            return (rule,)
+        need_id, name = node
+        return self.needs[need_id]._dynamic_fields[name].value
 
     def stratum_nodes(self, stratum: int) -> list[Node]:
         """The nodes of ``stratum``, in ``(need id, field)`` order."""
@@ -443,14 +479,14 @@ class Project:
     def final(self, name: str, stratum: int) -> bool:
         """Whether every need's ``name`` is final before ``stratum`` is computed."""
         if self.at_barrier(name):
-            return stratum == 2
+            return stratum >= 2
         computed = self.computed_fields.get(self.field_of(name))
         return computed is None or computed < stratum
 
     def final_on(self, need_id: str, name: str, stratum: int) -> bool:
         """Whether ``name`` of one need is final before ``stratum`` is computed."""
         if self.at_barrier(name):
-            return stratum == 2
+            return stratum >= 2
         computed = self.nodes.get((need_id, self.field_of(name)))
         return computed is None or computed < stratum
 
@@ -473,19 +509,23 @@ class Project:
         """
         need_id, name = node
         need = self.needs[need_id]
-        items = need._dynamic_fields[name].value
+        items = self.items(node)
         reads = NodeReads(
             next(
                 (
                     item
                     for item in items
-                    if isinstance(item, DynamicFunctionParsed | VariantFunctionParsed)
+                    if isinstance(
+                        item, DynamicFunctionParsed | VariantFunctionParsed | DeriveCall
+                    )
                 ),
                 None,
             )
         )
         for item in items:
-            if isinstance(item, DynamicFunctionParsed):
+            if isinstance(item, DeriveCall):
+                _RuleReads(self, reads, need, name, stratum, item).read()
+            elif isinstance(item, DynamicFunctionParsed):
                 if item.name not in self.builtins:
                     reads.user_functions = _appended(reads.user_functions, item.name)
                     continue
@@ -548,7 +588,7 @@ class _CallReads:
         need: NeedItem,
         field: str,
         stratum: int,
-        call: DynamicFunctionParsed,
+        call: DynamicFunctionParsed | DeriveCall,
     ) -> None:
         self.project = project
         self.reads = reads
@@ -600,6 +640,7 @@ class _CallReads:
         return names
 
     def read(self) -> None:
+        assert isinstance(self.call, DynamicFunctionParsed), "a call of a built-in"
         name = self.call.name
         args: dict[str, Any] = {}
         if name in _VARARGS:
@@ -640,7 +681,7 @@ class _CallReads:
         if not self.scope:
             if any(
                 args.get(key) is not None and not isinstance(args[key], str)
-                for key in _SELECTORS.get(name, frozenset()) - {"links_only"}
+                for key in _SELECTORS.get(name, frozenset()) - _FLAGS
             ):
                 return  # an id, a field or a filter that is no string: the call fails
             getattr(self, f"_{name}", lambda _: None)(args)
@@ -748,6 +789,96 @@ class _CallReads:
         for target in self.project.content_refs(source):
             for read in sorted(names.names | names.current):
                 self._read(target, read)
+
+    def _links_from_filter(self, args: dict[str, Any]) -> None:
+        # every need is a candidate: the filter's names are read through their columns
+        filter_string = args.get("filter")
+        if not filter_string:
+            return  # the call fails: an empty filter
+        names = self._filter(filter_string)
+        if names is None:
+            return
+        # current_need is the need the call is in
+        for key in sorted(names.current):
+            self._read(self.need.id, key)
+        for read in sorted(names.names):
+            self._column(read, None, filter_string)
+
+
+class _RuleReads(_CallReads):
+    """The reads of one derive rule, added to its node's :class:`NodeReads`.
+
+    A rule says what it reads in its roles: its own ``field`` or the field of the need
+    ``from`` names (``copy``); on each need ``over`` names, the ``field`` and the names
+    of ``where`` and ``test`` (the roll-ups, ``copy`` over a link type); every need
+    ``over`` reaches (``transitive``); the listed own ``fields`` (``hash``); the names
+    of ``where`` on every need (``links``, through their columns) or on each need the
+    content references (``content_links``).
+    """
+
+    def read(self) -> None:
+        assert isinstance(self.call, DeriveCall), "a derive rule"
+        rule = self.call.rule
+        where = self._names(rule.where)
+        test = self._names(rule.test)
+        if rule.kind == "links":
+            for name in sorted(where):
+                self._column(name, None, rule.where)
+        elif rule.kind == "content_links":
+            source = rule.from_need or self.need.id
+            for target in self.project.content_refs(source):
+                for name in sorted(where):
+                    self._read(target, name)
+        elif rule.kind == "hash":
+            for name in rule.fields:
+                self._read(self.need.id, name)
+        elif rule.kind == "copy" and rule.over is None:
+            self._read(rule.from_need or self.need.id, rule.field)
+        else:
+            assert rule.over is not None, "every other kind has an over"
+            targets = (
+                self._reachable(rule.over, include_self=rule.include_self)
+                if rule.transitive
+                else [t["id"] for t in self._over(self.need.id, rule.over)]
+            )
+            names = [n for n in (rule.field, *sorted(where | test)) if n is not None]
+            for target in targets:
+                for name in names:
+                    self._read(target, name)
+        if self.scope:
+            self.reads.scope = _appended(
+                self.reads.scope, OutOfScope(self.what, tuple(self.scope))
+            )
+
+    def _names(self, predicate: str | None) -> frozenset[str]:
+        if predicate is None:
+            return frozenset()
+        return filter_names(predicate, self.project.not_fields).names
+
+    def _over(self, need_id: str, over: str) -> list[NeedItem]:
+        return over_candidates(
+            self.project.needs[need_id],
+            over,
+            self.project.needs,
+            self.project.link_fields,
+        )
+
+    def _reachable(self, over: str, *, include_self: bool) -> list[str]:
+        """The ids of the needs reachable from the reader through ``over``, in order.
+
+        The reader is among them when it is on a cycle, or with ``include_self``.
+        """
+        seen: dict[str, None] = {}
+        stack = [t["id"] for t in self._over(self.need.id, over)]
+        while stack:
+            need_id = stack.pop()
+            if need_id in seen:
+                continue
+            seen[need_id] = None
+            stack.extend(t["id"] for t in self._over(need_id, over))
+        if include_self:
+            seen[self.need.id] = None
+        return sorted(seen)
 
 
 @dataclass(frozen=True, slots=True)

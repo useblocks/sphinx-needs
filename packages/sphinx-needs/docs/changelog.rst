@@ -89,7 +89,9 @@ Improvements
   Removed on ubCode's side by its own phase 1: a copy of an empty back link list (``[]`` here),
   and an authored array field that is not computed (on a cycle, or whose result the field cannot hold),
   which keeps its written items here.
-  Not evaluated by ubCode at all: the ``filter`` arguments of the built-in functions.
+  Not evaluated by ubCode's phase 1: the ``filter`` arguments of the built-in functions,
+  which it evaluates from its phase-2 release, but for a ``filter`` naming ``needs``,
+  or reading ``current_need`` by a key that is not written out, which ubCode reports instead.
   The notice warning ``needs.derive_unresolved`` of the unreleased :pr:`2080`, which reported such reads,
   is gone, and a ``suppress_warnings`` entry naming it is a no-op.
 
@@ -103,24 +105,44 @@ Improvements
   where it was stored as the text ``"None"``, or as ``[None]``, which schema validation then refused.
 
 - ✨ A field or link type can be :ref:`derived <needs_derive>` by a rule declared in its configuration
-  (:issue:`2030`, :pr:`2178`)
+  (:issue:`2030`, :pr:`2178`, :pr:`2191`)
 
-  A ``derive`` table on its :ref:`needs_fields` or :ref:`needs_links` entry, in :file:`conf.py` or the TOML file,
-  names a kind and the kind's roles, and the rule computes the value for every need.
-  The kinds are ``copy``, ``sum``, ``count``, ``min``, ``max``, ``any``, ``all``, ``collect`` and ``hash`` on a field,
-  and ``links`` and ``content_links`` on a link type; the built-in functions are their per-need spellings
-  (:ref:`dynamic_functions_derived`).
+  A ``derive`` table on its :ref:`needs_fields` or :ref:`needs_links` entry, in :file:`conf.py` or the TOML file
+  (or passed to :py:func:`~sphinx_needs.api.configuration.add_field`),
+  names a kind and the kind's roles, and the rule computes the value for every need from the project's sources.
+  The kinds are ``copy`` (a lookup: the need's own field, a named need's, or over a link type),
+  ``sum``, ``count``, ``min``, ``max``, ``any``, ``all`` and ``collect`` (roll-ups over a link type
+  or its back links, narrowed by a ``where`` filter), ``max`` / ``min`` closed over a link type (``transitive``),
+  and ``hash`` (computed after every other field) on a field;
+  ``links`` (every need passing a filter) and ``content_links`` (the needs a need's content references)
+  on a link type. A rule is computed with the ``[[…]]`` of its step, in dependency order, and its findings are
+  those of a call (``needs.derive_cycle``, ``needs.derive_scope``, ``needs.dynamic_function``), with
+  ``needs.derive_unique`` for a ``copy`` with ``select = "unique"`` that finds several values.
+  The built-in functions are their per-need spellings (:ref:`dynamic_functions_derived`).
   A derived field is closed to authors: a value written for it in a need, or set by a ``needextend``,
   is ignored and reported as ``needs.derive_authored``, and it takes no default.
   A rule is checked when the configuration is read: one that cannot be read is one ``needs.derive_invalid``
   warning, naming the kind and the role, and the field holds its empty value;
   a ``default`` or ``predicates`` beside a rule is reported the same way, and ignored,
-  as is a link type's ``copy = true`` into a derived ``links``.
-  The empty value a derived field holds is not checked against the field's ``schema``, as ``None`` is not.
+  as is a link type's ``copy = true`` into a derived ``links``, or on a derived link type.
+  The empty value a derived field holds is not checked against the field's ``schema``, as ``None`` is not;
+  a computed value the schema refuses is reported as ``needs.dynamic_function``, and the field holds its empty value.
   The schema in :ref:`needs.json <needs_builder_format>` marks a derived field or link type ``"readOnly": true``,
   and a need created by ``needimport`` keeps the derived values it carries.
   A rule on a core field, or on the ``parent_needs`` link type, is not available in this release, and is reported.
-  `ubCode`_ reads the same configuration and gives the same findings.
+  `ubCode`_ reads the same configuration, and computes the same values and findings, from
+  its phase-2 release.
+
+- ✨ New dynamic function :ref:`links_from_filter`, which links to every need that passes
+  a :ref:`filter string <filter_string>` (:pr:`1984`, :pr:`2191`)
+
+  ``:links: [[links_from_filter("type == 'req' and status == 'open'")]]`` links a need to
+  every open requirement, in need-id order. The need that contains the call, and its own
+  parts, are left out unless ``include_self=True``; parts are tested only with
+  ``include_parts=True``. No match is no link, and no warning; an empty filter is an error.
+  A need the filter cannot be evaluated on, such as ``hours > 1`` on a need without
+  ``hours``, is not linked, without a warning, as for the ``links`` kind.
+  It is the per-need spelling of the ``links`` kind of a derived link type.
 
 - ✨ ``needextend`` gains ``:extend_priority:`` (default 500, lower applied first)
   (:issue:`1658`, :issue:`2064`, :pr:`2083`)
@@ -250,11 +272,12 @@ Bug fixes
   **(changed output)** (:pr:`2194`)
 
   ``:hours: [[copy("points")]]``, ``points`` being an ``integer`` field, stored ``3`` in the
-  ``number`` field ``hours``, where an authored ``3`` is ``3.0``: ``needs.json`` wrote ``3``;
-  so did ``<{ var.n }>`` with ``n`` an integer in the variant data. A value computed into
-  a field takes the field's type, as `ubCode`_ stores it: a float in a ``number`` field
-  (and in an array of numbers), an integer in an ``integer`` field. A float returned into
-  an ``integer`` field is still reported, and a boolean is not a number.
+  ``number`` field ``hours``, where an authored ``3`` is ``3.0``: ``needs.json`` wrote ``3``,
+  and a ``hash`` rule over the field read ``[3]``; so did ``<{ var.n }>`` with ``n`` an
+  integer in the variant data. A value computed into a field takes the field's type, as a
+  derived field's does and as `ubCode`_ stores it: a float in a ``number`` field (and in
+  an array of numbers), an integer in an ``integer`` field. A float returned into an
+  ``integer`` field is still reported, and a boolean is not a number.
 
 - 🐛 :ref:`copy` with ``upper=True`` or ``lower=True`` changes the case of each item of a
   list **(changed output)** (:pr:`1984`, :pr:`2194`)
@@ -285,7 +308,9 @@ Bug fixes
   :ref:`filter_string` documents it, so a filter such as
   ``any(id in s["links"] for s in needs if s["type"] == "story")`` ended in a
   ``name 'needs' is not defined`` warning for every need, and the value was summed as if
-  there were no filter. Such a filter is evaluated after the other built-in functions.
+  there were no filter. Such a filter is evaluated after the other built-in functions;
+  a flag declared on each need, and a filter naming it, is the portable and faster
+  spelling (:ref:`needs_derive`).
 
 - 🐛 Link ids that sort alike are listed in one order in every build
   **(changed output)** (:pr:`2193`)
@@ -296,8 +321,9 @@ Bug fixes
   links, which could change from one build to the next. They now follow the id itself,
   compared character by character: ``R_02``, ``R_2``, ``r_2``, and links to one target
   under several conditions follow the link with its condition (``R_2``, then
-  ``R_2[status == 'closed']``, then ``R_2[status == 'open']``). `ubCode`_ sorts them the
-  same way from its phase-2 release.
+  ``R_2[status == 'closed']``, then ``R_2[status == 'open']``). A ``hash`` rule writes ids
+  with one natural key in the same order, and a target under several conditions once,
+  as it drops the conditions. `ubCode`_ sorts them the same way from its phase-2 release.
 
 - 🐛 A change to :ref:`needs_fields` or :ref:`needs_links` (and the deprecated
   ``needs_extra_options``, ``needs_extra_links`` and ``needs_global_options``) re-reads

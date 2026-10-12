@@ -4,6 +4,7 @@ from sphinx_needs.functions.common import (
     copy,
     echo,
     links_from_content,
+    links_from_filter,
     test,
 )
 from sphinx_needs.functions.functions import (  # noqa: F401
@@ -19,4 +20,5 @@ NEEDS_COMMON_FUNCTIONS: list[DynamicFunction] = [
     check_linked_values,
     calc_sum,
     links_from_content,
+    links_from_filter,
 ]

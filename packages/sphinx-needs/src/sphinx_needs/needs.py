@@ -56,6 +56,7 @@ from sphinx_needs.derive import (
     DeriveRule,
     beside_message,
     check_derive_rules,
+    copy_on_derived_message,
     copy_problem,
     core_message,
     invalid_message,
@@ -1521,8 +1522,10 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             display_config = LinkDisplayConfig(**display_kwargs)
             derive = None
             if (raw_derive := link.get("derive")) is not None:
-                if name in CORE_LINK_TYPES:
-                    # a core link type is not derived: the rule is reported and ignored
+                if name in CORE_LINK_TYPES or name in NeedsCoreFields:
+                    # a core link type is not derived, nor a link type named after a
+                    # core field (a need computes ``parts``, ``id_parent`` and others
+                    # itself): the rule is reported and ignored
                     derive_problems.append(
                         DeriveProblem(
                             name, True, core_message(name, on_link=True), core=True
@@ -1558,6 +1561,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                         beside=[
                             key for key in ("default", "predicates") if key in link
                         ],
+                        copied=bool(link.get("copy", False)),
                     )
                 )
             else:
@@ -1613,9 +1617,15 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
 
 
 def _derive_parse_problems(
-    name: str, on_link: bool, derive: DeriveRule | DeriveInvalid, *, beside: list[str]
+    name: str,
+    on_link: bool,
+    derive: DeriveRule | DeriveInvalid,
+    *,
+    beside: list[str],
+    copied: bool = False,
 ) -> list[DeriveProblem]:
-    """The finding of a rule as read: it cannot be read, or a default is beside it.
+    """The finding of a rule as read: it cannot be read, a default is beside it, or its
+    link type is declared ``copy = true``.
 
     One finding per rule: a rule that cannot be read is reported for that alone.
     """
@@ -1634,6 +1644,10 @@ def _derive_parse_problems(
                 on_link,
                 beside_message(name, on_link=on_link, rule=derive, keys=beside),
             )
+        ]
+    if copied:
+        return [
+            DeriveProblem(name, on_link, copy_on_derived_message(name, rule=derive))
         ]
     return []
 

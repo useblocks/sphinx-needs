@@ -577,7 +577,9 @@ The roles
    * - ``over``
      - a link type
      - The candidates: the needs this need's ``<link type>`` names, in the order written, a need named twice counted twice;
-       or, for ``<link type>_back``, the needs that link to this one, in need-id order, each once.
+       or, for ``<link type>_back``, the needs that link to this one, in need-id order, each once
+       (need-id order compares the ids as strings, by code point: ``T_10``, ``T_2``, ``T_9``;
+       ``needs.json`` sorts a link list naturally instead: ``T_2``, ``T_9``, ``T_10``).
        A link to a need part reads the part's need; a link to no need is skipped.
    * - ``from``
      - a need id
@@ -612,9 +614,9 @@ A ``where`` or ``test`` reads the candidate only:
 a filter naming ``needs``, ``current_need`` or a ``c.`` check (such as ``c.this_doc()``) cannot be declared,
 so that a rule means the same in every tool that reads the configuration.
 
-The ``join`` role is reserved for a later release, and a rule naming it is reported.
-A rule on a core field (``status``, ``tags``, ``title`` and the other core fields, and the ``parent_needs`` link type)
-is not available in this release: it is reported, and ignored.
+The ``join`` and ``types`` roles are reserved for a later release, and a rule naming either is reported.
+A rule on a core field (``status``, ``tags``, ``title`` and the other core fields, and the ``parent_needs`` link type),
+or on a link type named after a core field (such as ``parts``), is not available in this release: it is reported, and ignored.
 
 What a derived field holds
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -648,12 +650,78 @@ the field's ``schema`` does not check it, so an ``enum``, a ``minimum`` or a ``p
 A ``default`` or ``predicates`` beside ``derive`` is reported as ``needs.derive_invalid`` too, and ignored;
 the rule applies.
 So is a link type declared with ``copy = true`` while ``links`` is derived:
-nothing is copied into ``links``, which holds what its rule computes.
-To silence either warning, add its type to Sphinx's ``suppress_warnings``:
+nothing is copied into ``links``, which holds what its rule computes;
+and ``copy = true`` on a derived link type, which is not available in this release: nothing is copied.
+
+How a rule is computed
+^^^^^^^^^^^^^^^^^^^^^^
+
+A rule is computed with the ``[[…]]`` of its step (see :ref:`needs_processing_order`):
+``links`` and ``content_links`` with the link fields, ``hash`` and the rules with ``after = "derived"``
+after every other field, every other kind with the other fields; each after every value it reads.
+
+- **Candidates.** ``over = "<t>"``: the needs this need's ``<t>`` names, once the link fields are computed,
+  in the order written; a need named twice is a candidate twice;
+  a link to a :ref:`need part <need_part>` is its need, and a link to no need is skipped.
+  ``over = "<t>_back"``: the needs that link to this need (or to one of its parts), in need-id order, each once
+  (need-id order compares the ids as strings, by code point: ``T_10``, ``T_2``, ``T_9``, as a back link list is read;
+  ``needs.json`` sorts a link list naturally instead: ``T_2``, ``T_9``, ``T_10``).
+  ``where`` drops the candidates it does not hold on, then ``test`` is tested on the others.
+  A ``where`` or ``test`` that cannot be evaluated on a candidate (a field the candidate lacks,
+  as ``hours > 1`` on a need without ``hours``) does not hold on it, without a warning.
+- **Unset values.** A field is unset when it is null: an empty value (``""``, ``[]``, a link type with no links)
+  is set, so ``count`` with a ``field`` counts it, and ``copy`` and ``collect`` take it.
+  A candidate whose ``field`` is unset is skipped by ``sum``, ``min``, ``max``, ``collect``,
+  and ``count`` with a ``field`` (which so counts the candidates that set it);
+  ``any`` and ``all`` read it as false.
+  ``sum`` skips a value that is not a number.
+- **No candidate.** ``sum`` and ``count`` are ``0`` (``0.0`` in a ``number`` field), ``any`` ``false``, ``all`` ``true``,
+  ``collect`` and ``copy`` with ``select = "list"`` ``[]`` (a list, also when no candidate sets the field);
+  ``min``, ``max`` and ``copy`` with ``select = "first"`` or ``"unique"`` find no value,
+  over no candidate or over candidates none of which sets the field, and leave the field at its empty value.
+  The values a rule computes over no candidate (and an empty link list) are checked against the field's ``schema``
+  as any result is, so a ``count`` of ``0`` under ``minimum = 1`` is refused,
+  while the empty value of a rule that found no value is not checked.
+- **Values.** A result takes the type of the field holding it, as an authored value does,
+  and as the result of a ``[[…]]`` or a variant does: an integer in an ``integer`` field, a float in a ``number`` field
+  (a ``count``, or the ``sum`` of an ``integer`` field, is ``13.0`` there), in ``needs.json`` and in a ``hash``.
+  ``sum`` adds in the order of the candidates.
+  ``min`` and ``max`` order numbers by value, and a string by the order of its ``enum``.
+  ``collect`` keeps each value once, in the order of the candidates, a list's items each.
+  ``copy`` over several targets takes the one with the lowest need id among those that set the field
+  (``select = "first"``), the same and a ``needs.derive_unique`` warning when several set it (``"unique"``),
+  or every value in the order written, a list's items each (``"list"``).
+- **transitive.** ``min`` and ``max`` read every need reachable through ``over``, each once:
+  a need on a cycle reaches itself, so every member of a cycle has the same value;
+  ``include_self`` adds the need's own ``field``.
+- **hash.** The lowercase hex SHA-256 of the UTF-8 text of one JSON array:
+  the listed fields' values in the listed order, each as :ref:`needs.json <needs_builder_format>` holds it
+  (an unset field ``null``),
+  with no whitespace, non-ASCII characters not escaped, and numbers as Python writes them (``3.0``, ``1e+16``).
+  A link list is written as the ids it links to, without their conditions, sorted and without duplicates,
+  so a need linked with and without a condition is hashed once.
+  For ``fields = ["title", "status"]`` on a need titled ``Größe`` with status ``open``,
+  the text is ``["Größe","open"]``.
+- **links.** Every need, and with ``include_parts`` every need's parts (after it, in part-id order),
+  in need-id order (the ids compared as strings, by code point: ``T_10``, ``T_2``, ``T_9``);
+  this need and its parts are left out unless ``include_self``.
+  ``needs.json`` writes the list sorted naturally, as every link list (``T_2``, ``T_9``, ``T_10``).
+- **content_links.** The ``:need:`` references of this need's content (or of the content of the need ``from`` names),
+  in document order, each once: a reference to a part is a part link, a reference to this need is kept,
+  a reference to no need is kept (and reported as any dead link), a disabled one (``!ID``) and those inside a
+  nested need are not. With ``where``, only the references to needs it holds on are kept (a part through its need).
+
+A rule that cannot be computed on a need leaves the field at its empty value, and is reported:
+a cycle of rules or calls reading one another (``needs.derive_cycle``, see :ref:`needs_derive_cycle`),
+a read of a value its step cannot wait for (``needs.derive_scope``, see :ref:`needs_derive_scope`),
+or a ``from`` naming no need, and a result the field's ``schema`` refuses, such as a value outside its ``enum`` or under its ``minimum``
+(``needs.dynamic_function``); a result is checked even when it equals the empty value,
+such as a ``count`` of ``0`` under ``minimum = 1``.
+To silence a warning, add its type to Sphinx's ``suppress_warnings``:
 
 .. code-block:: python
 
-   suppress_warnings = ["needs.derive_invalid", "needs.derive_authored"]
+   suppress_warnings = ["needs.derive_invalid", "needs.derive_authored", "needs.derive_unique"]
 
 .. _`needs_links`:
 
@@ -685,7 +753,8 @@ Each configured link can define:
 - ``outgoing`` (optional): Outgoing text, to use for outgoing links. E.g. "blocks". Default: "<name>".
 - ``copy`` (optional): True/False. If True, the links will be copied also to the common link-list (link type ``links``).
   Default: False.
-  Nothing is copied into a :ref:`derived <needs_derive>` ``links``, and the ``copy`` is reported.
+  Nothing is copied into a :ref:`derived <needs_derive>` ``links``, nor from a derived link type
+  (``copy`` is not available on one in this release), and the ``copy`` is reported.
 - ``allow_dead_links`` (optional): True/False. If True, dead links are allowed and do not throw a warning.
   See :ref:`allow_dead_links` for details. Default: False.
 - ``style`` (optional): A plantuml style description, e.g. "#FFCC00". Used for :ref:`needflow`. See :ref:`links_style`.

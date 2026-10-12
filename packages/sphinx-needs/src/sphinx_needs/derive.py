@@ -77,7 +77,7 @@ ROLES: Final = (
 )
 
 #: Roles that are reserved for a later release: a rule naming one cannot be read.
-RESERVED_ROLES: Final = frozenset({"join"})
+RESERVED_ROLES: Final = frozenset({"join", "types"})
 
 #: The core fields, besides every ``NeedsCoreFields`` entry, that cannot carry a rule.
 CORE_LINK_TYPES: Final = frozenset({"parent_needs"})
@@ -175,6 +175,24 @@ class DeriveInvalid:
 
 Derive: TypeAlias = DeriveRule | DeriveInvalid
 """What a derived field or link type holds: its rule, or the marker of one that cannot be read."""
+
+
+@dataclass(frozen=True, slots=True)
+class DeriveCall:
+    """A derived field's rule, as the value the pass computes for one need.
+
+    The pass gives every need from the project's sources one per derived field, from
+    the current schema, as the field's one dynamic item: a structured value, ordered
+    and computed like a ``[[…]]`` of the kind's stratum.
+
+    :ivar rule: The rule.
+    """
+
+    rule: DeriveRule
+
+    def describe(self) -> str:
+        """The rule as messages name it: ``derive rule 'sum'``."""
+        return f"derive rule {self.rule.kind!r}"
 
 
 def parse_derive(raw: Any, *, on_link: bool) -> Derive:
@@ -349,6 +367,15 @@ def core_message(name: str, *, on_link: bool) -> str:
     )
 
 
+def copy_on_derived_message(name: str, *, rule: Derive) -> str:
+    """The ``needs.derive_invalid`` warning for ``copy = true`` on a derived link type."""
+    return (
+        f"Invalid derive of link type {name!r}: {rule.describe()}: 'copy' is not "
+        "available on a derived link type in this release, and is ignored; "
+        "the rule applies"
+    )
+
+
 def beside_message(name: str, *, on_link: bool, rule: Derive, keys: list[str]) -> str:
     """The ``needs.derive_invalid`` warning for a default beside a rule."""
     named = " and ".join(repr(key) for key in keys)
@@ -389,10 +416,11 @@ def copy_problem(schema: FieldsSchema) -> DeriveProblem | None:
     links = schema.get_link_field("links")
     if links is None or links.derive is None:
         return None
+    # a derived link type copies nothing, and is reported at its own rule
     copying = sorted(
         link.name
         for link in schema.iter_link_fields()
-        if link.copy and link.name != "links"
+        if link.copy and link.name != "links" and link.derive is None
     )
     if not copying:
         return None
