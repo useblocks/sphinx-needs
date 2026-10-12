@@ -141,8 +141,8 @@ def copy(
 
     :param option: Name of the option to copy
     :param need_id: id of the need, which contains the source option. If None, current need is taken
-    :param upper: Is set to True, copied value will be uppercase
-    :param lower: Is set to True, copied value will be lowercase
+    :param upper: Is set to True, copied value will be uppercase (each item, for a list)
+    :param lower: Is set to True, copied value will be lowercase (each item, for a list)
     :param filter: :ref:`filter_string`; of the needs it matches,
         the match with the lowest id is the copy source, comparing ids as strings
         (so ``REQ_10`` comes before ``REQ_9``).
@@ -161,6 +161,7 @@ def copy(
             filter,
             need,
             location=location,
+            origin_docname=need["docname"] if need else None,
         )
         if result:
             # the lowest id, so the source does not depend on the order the needs
@@ -177,6 +178,9 @@ def copy(
         reads.note_read(need, option)
     value = need[option]
 
+    if isinstance(value, list | tuple) and (lower or upper):
+        # each item of a list, not the list's printed form
+        return [str(item).lower() if lower else str(item).upper() for item in value]
     if lower:
         return str(value).lower()
     if upper:

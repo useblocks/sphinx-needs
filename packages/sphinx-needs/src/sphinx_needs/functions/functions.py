@@ -688,7 +688,11 @@ def resolve_functions(
         with suppress_logging():
             try:
                 found = filter_needs_and_parts(
-                    needs.values(), needs_config, filter_string, current
+                    needs.values(),
+                    needs_config,
+                    filter_string,
+                    current,
+                    origin_docname=current["docname"],
                 )
             except Exception:
                 return FAILED

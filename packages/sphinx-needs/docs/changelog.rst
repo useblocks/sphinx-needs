@@ -241,6 +241,27 @@ Bug fixes
   It is a ``needs.config`` warning; an entry carrying a ``derive`` rule is reported as a
   rule on a core field, ``needs.derive_invalid``. The link type works as before.
 
+- 🐛 :ref:`copy` with ``upper=True`` or ``lower=True`` changes the case of each item of a
+  list **(changed output)** (:pr:`1984`)
+
+  The whole list used to be converted to its printed form first, so
+  ``:tags: [[copy("tags", "SRC_1", upper=True)]]`` on a need tagged ``alpha, beta`` gave
+  one tag, ``['ALPHA', 'BETA']``, brackets and quotes included. It now gives the two
+  tags ``ALPHA`` and ``BETA``. A value that is not a list is unaffected.
+
+- 🐛 ``c.this_doc()`` works in the ``filter`` of :ref:`copy` **(changed output)** (:pr:`1984`)
+
+  The filter was evaluated without the document of the need, so ``c.this_doc()`` ended
+  in a ``this_doc can not be used in this context`` warning, nothing passed the filter,
+  and ``copy`` read the current need instead.
+
+- 🐛 :ref:`ndf` shows a link a dynamic function returns as its need id **(changed output)**
+  (:pr:`1984`)
+
+  A function returning links, such as :ref:`links_from_content <links_content>`, was
+  shown as ``NeedLink(id='REQ_1', part=None, condition=None)``; it is now ``REQ_1``, or
+  ``REQ_1.p1`` for a part.
+
 - 🐛 ``needextend``'s ``:+field:`` on a nullable field the need never set sets the field,
   instead of crashing the build (:issue:`2038`, :pr:`2102`)
 
