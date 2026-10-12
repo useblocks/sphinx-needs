@@ -55,7 +55,8 @@ def create_src_files_in_tmpdir(files: list[tuple[Path, str]], tmp: Path) -> Path
         file_path, content = file
         file_abs = tmproot.joinpath(str(file_path))
         file_abs.parent.mkdir(exist_ok=True)
-        file_abs.write_text(content)
+        # utf-8 whatever the platform's default: Sphinx reads a source as utf-8
+        file_abs.write_text(content, encoding="utf-8")
     return tmproot
 
 
