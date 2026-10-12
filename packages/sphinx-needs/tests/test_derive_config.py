@@ -634,6 +634,46 @@ def test_needs_fields_named_after_a_link_type(test_app):
     assert spec["owner"] == "alice"
 
 
+def _core_named_link_files(name: str) -> list[tuple[Path, str]]:
+    conf = (
+        'extensions = ["sphinx_needs"]\n'
+        "needs_build_json = True\n"
+        f"needs_links = {{{name!r}: "
+        "{'derive': {'kind': 'links', 'where': \"type == 'req'\"}}}\n"
+    )
+    index = (
+        "Core\n====\n\n.. req:: One\n   :id: REQ_001\n\n"
+        ".. spec:: Two\n   :id: SPEC_001\n"
+    )
+    return [(Path("conf.py"), conf), (Path("index.rst"), index)]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        pytest.param(
+            {"buildername": "needs", "files": _core_named_link_files(name)}, id=name
+        )
+        for name in ("parts", "id_parent", "is_need")
+    ],
+    indirect=True,
+)
+def test_a_rule_on_a_link_type_named_after_a_core_field(test_app):
+    """A link type named after a core field that a need computes (``parts``,
+    ``id_parent``, ``is_need``) cannot carry a rule, as ``parent_needs`` cannot: the
+    rule is one ``needs.derive_invalid`` warning at load, and ignored. It stopped the
+    build ("Cannot modify computed key 'parts' in NeedItem"). (The link type itself,
+    without a rule, is as before: what it collides with is not this test's matter.)"""
+    app = test_app
+    app.build()
+    name = next(iter(app.config.needs_links))
+    assert [w for w in build_warnings(app) if "[needs.derive" in w] == [
+        f"WARNING: Invalid derive of link type {name!r}: a core link type cannot "
+        "carry a derive rule in this release; the rule is ignored "
+        "[needs.derive_invalid]"
+    ]
+
+
 COPY_DERIVED_CONF = """\
 extensions = ["sphinx_needs"]
 needs_build_json = True
