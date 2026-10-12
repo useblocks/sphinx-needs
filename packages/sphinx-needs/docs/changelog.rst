@@ -244,6 +244,16 @@ Bug fixes
   It is a ``needs.config`` warning; a ``parent_needs`` entry carrying a ``derive`` rule is
   reported as a rule on a core field, ``needs.derive_invalid``. The link type works as before.
 
+- 🐛 An integer a dynamic function or a variant gives is a float in a ``number`` field
+  **(changed output)**
+
+  ``:hours: [[copy("points")]]``, ``points`` being an ``integer`` field, stored ``3`` in the
+  ``number`` field ``hours``, where an authored ``3`` is ``3.0``: ``needs.json`` wrote ``3``;
+  so did ``<{ var.n }>`` with ``n`` an integer in the variant data. A value computed into
+  a field takes the field's type, as `ubCode`_ stores it: a float in a ``number`` field
+  (and in an array of numbers), an integer in an ``integer`` field. A float returned into
+  an ``integer`` field is still reported, and a boolean is not a number.
+
 - 🐛 :ref:`copy` with ``upper=True`` or ``lower=True`` changes the case of each item of a
   list **(changed output)** (:pr:`1984`)
 
