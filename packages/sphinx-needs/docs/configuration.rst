@@ -615,8 +615,8 @@ a filter naming ``needs``, ``current_need`` or a ``c.`` check (such as ``c.this_
 so that a rule means the same in every tool that reads the configuration.
 
 The ``join`` and ``types`` roles are reserved for a later release, and a rule naming either is reported.
-A rule on a core field (``status``, ``tags``, ``title`` and the other core fields, and the ``parent_needs`` link type)
-is not available in this release: it is reported, and ignored.
+A rule on a core field (``status``, ``tags``, ``title`` and the other core fields, and the ``parent_needs`` link type),
+or on a link type named after a core field (such as ``parts``), is not available in this release: it is reported, and ignored.
 
 What a derived field holds
 ^^^^^^^^^^^^^^^^^^^^^^^^^^

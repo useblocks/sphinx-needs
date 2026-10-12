@@ -1522,8 +1522,10 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             display_config = LinkDisplayConfig(**display_kwargs)
             derive = None
             if (raw_derive := link.get("derive")) is not None:
-                if name in CORE_LINK_TYPES:
-                    # a core link type is not derived: the rule is reported and ignored
+                if name in CORE_LINK_TYPES or name in NeedsCoreFields:
+                    # a core link type is not derived, nor a link type named after a
+                    # core field (a need computes ``parts``, ``id_parent`` and others
+                    # itself): the rule is reported and ignored
                     derive_problems.append(
                         DeriveProblem(
                             name, True, core_message(name, on_link=True), core=True
