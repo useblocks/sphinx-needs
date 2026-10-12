@@ -15,6 +15,8 @@ from typing import Any
 import pytest
 from sphinx.testing.util import SphinxTestApp
 
+from sphinx_needs_testkit import build_warnings
+
 _LINK_FIELD_TYPES = {"links", "backlinks"}
 
 
@@ -109,3 +111,104 @@ def test_links_sort(
     assert _html_link_refs(html, set(needs_data)) == snapshot
 
     app.cleanup()
+
+
+def _exported_needs(app: SphinxTestApp) -> dict[str, Any]:
+    data = json.loads(Path(app.outdir, "needs.json").read_text("utf8"))
+    return data["versions"][data["current_version"]]["needs"]
+
+
+TIE_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_id_regex = "^.+$"
+needs_links = {"covers": {}}
+"""
+
+TIE_INDEX = """\
+Ties
+====
+
+.. req:: Two
+   :id: R_2
+
+.. req:: Two, in lower case
+   :id: r_2
+
+.. req:: Two, with a leading zero
+   :id: R_02
+
+.. spec:: Covers all three
+   :id: S_1
+   :covers: r_2, R_2, R_02
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [(Path("conf.py"), TIE_CONF), (Path("index.rst"), TIE_INDEX)],
+        }
+    ],
+    indirect=True,
+)
+def test_a_sorted_link_list_breaks_ties_by_the_id(test_app: SphinxTestApp) -> None:
+    """``R_02``, ``R_2`` and ``r_2`` have one natural key (digits as a number, letters
+    case-folded), so the natural order alone leaves them tied, and the build's set order
+    picked among them. The tie is broken by the id, compared as a string: ``R_02`` before
+    ``R_2`` before ``r_2``, in ``needs.json``, in every build.
+    """
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    assert _exported_needs(app)["S_1"]["covers"] == ["R_02", "R_2", "r_2"]
+
+
+CONDITIONS_INDEX = """\
+Conditions
+==========
+
+.. req:: Two
+   :id: R_2
+   :status: open
+
+.. spec:: One target under three conditions
+   :id: S_1
+   :covers: R_2[status == 'open'], R_2, R_2[status == 'closed']
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), TIE_CONF),
+                (Path("index.rst"), CONDITIONS_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_one_target_under_several_conditions_exports_in_one_order(
+    test_app: SphinxTestApp,
+) -> None:
+    """``needs.json`` keeps each link's condition, so three links to ``R_2`` share one id
+    and one natural key: the link with its condition, compared as a string, orders them
+    (``R_2``, then ``[status == 'closed']``, then ``[status == 'open']``), in every
+    build."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:8: WARNING: Need 'S_1' link 'R_2' in field 'covers': "
+        "condition \"status == 'closed'\" not satisfied by target need 'R_2' "
+        "[needs.link_condition_failed]",
+    ]
+    assert _exported_needs(app)["S_1"]["covers"] == [
+        "R_2",
+        "R_2[status == 'closed']",
+        "R_2[status == 'open']",
+    ]
