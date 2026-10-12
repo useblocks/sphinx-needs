@@ -750,7 +750,7 @@ field = "inline_empty"
 
 [[case]]
 name = "links-include-parts"
-why = "links with include_parts tests every need's parts too (a part after its need, in part-id order, code-point order: REQ_1 writes p2 first, and a copy into an array field reads p1 first), linked as <need>.<part>; the need's own parts are left out unless include_self"
+why = "links with include_parts tests every need's parts too, linked as <need>.<part>, a part after its need in part-id order, the ids in code-point order: REQ_1 writes p2, p10, p1, and the list a copy into an array field reads is p1, p10, p2, while needs.json writes it in natural order, p1, p2, p10 (A-24); the need's own parts are left out unless include_self"
 python_only = true
 config = '''
 [needs.links.l_parts]
@@ -770,7 +770,7 @@ source = '''
 .. req:: With parts
    :id: REQ_1
 
-   Two parts: :np:`(p2) second` and :np:`(p1) first`.
+   Three parts: :np:`(p2) second`, :np:`(p10) tenth` and :np:`(p1) first`.
 
 .. spec:: Links them
    :id: SPEC_1
@@ -778,12 +778,12 @@ source = '''
 [case.expect]
 findings = []
 [case.expect.needs.SPEC_1]
-l_parts = ["REQ_1.p1", "REQ_1.p2"]
-l_family = ["REQ_1", "REQ_1.p1", "REQ_1.p2"]
-parts_in_order = ["REQ_1.p1", "REQ_1.p2"]
+l_parts = ["REQ_1.p1", "REQ_1.p2", "REQ_1.p10"]
+l_family = ["REQ_1", "REQ_1.p1", "REQ_1.p2", "REQ_1.p10"]
+parts_in_order = ["REQ_1.p1", "REQ_1.p10", "REQ_1.p2"]
 [case.expect.needs.REQ_1]
 l_parts = []
-l_parts_self = ["REQ_1.p1", "REQ_1.p2"]
+l_parts_self = ["REQ_1.p1", "REQ_1.p2", "REQ_1.p10"]
 l_family = []
 
 [[case]]
