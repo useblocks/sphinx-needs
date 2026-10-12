@@ -241,7 +241,8 @@ Bug fixes
   It is a ``needs.config`` warning; an entry carrying a ``derive`` rule is reported as a
   rule on a core field, ``needs.derive_invalid``. The link type works as before.
 
-- 🐛 Link ids that sort alike are listed in one order in every build **(changed output)**
+- 🐛 Link ids that sort alike are listed in one order in every build
+  **(changed output)** (:pr:`2193`)
 
   ``needs.json`` and the HTML list a need's links and back links in natural order
   (``REQ_2`` < ``REQ_9`` < ``REQ_10``, letters case-folded), and ids that order alike
