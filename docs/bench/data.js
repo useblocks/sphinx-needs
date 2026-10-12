@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791787771022,
+  "lastUpdate": 1791788404013,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -24192,6 +24192,42 @@ window.BENCHMARK_DATA = {
             "value": 48.73353456800001,
             "unit": "s",
             "extra": "Commit: 5e384af809f63fbfbfdac1f0baf3dab11b473e4f\nBranch: master\nTime: 2026-10-12T08:48:16+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4047bcee0b5dd872ce1170e7bd67f86bdf70bb9e",
+          "message": "🐛 sphinx-needs: exported link lists have a total order (#2193)\n\n## What\n\n`packages/sphinx-needs`: `sort_links` orders a link list by the natural\nkey, then by the id string (code point), then by\nthe link with its condition. `R_02`, `R_2`, `r_2` (one natural key) and\n`R_2`, `R_2[status == 'closed']`,\n`R_2[status == 'open']` (one target under several conditions) are listed\nin that order in `needs.json` and the HTML\n**(changed output)**.\n\n## Why\n\nThe natural key alone left such links tied, in the order they came in or\nthat of a set, which follows\n`PYTHONHASHSEED`: the export changed from one build to the next.\n`ENV_DATA_VERSION` is unchanged, as the old order was\nnever stable.\n\nSplit out of #2191 (whose `hash` kind sorts a link list with the same\nkey): it lands first, and #2191 is rebased onto\nit.\n\n## Tests\n\n`tests/test_needs_sort.py`: the two orders in `needs.json`. Red at\nmaster: the ties under every `PYTHONHASHSEED`\ntried (1–6), the conditions under 1, 3, 4, 5 and 6.\n\n## Docs\n\nA 🐛 changelog entry under 9.0.0 *Unreleased*.\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-needs`) and they pass.\n- [x] Documentation is updated where behaviour or options change.\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+          "timestamp": "2026-10-12T08:58:40+02:00",
+          "tree_id": "ab381c4ca8951f25d5cc4aa78a9368837362bfa9",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/4047bcee0b5dd872ce1170e7bd67f86bdf70bb9e"
+        },
+        "date": 1791788396871,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.10721869799999695,
+            "unit": "s",
+            "extra": "Commit: 4047bcee0b5dd872ce1170e7bd67f86bdf70bb9e\nBranch: master\nTime: 2026-10-12T08:58:40+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 56.587354645999994,
+            "unit": "s",
+            "extra": "Commit: 4047bcee0b5dd872ce1170e7bd67f86bdf70bb9e\nBranch: master\nTime: 2026-10-12T08:58:40+02:00"
           }
         ]
       }
