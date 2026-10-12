@@ -313,6 +313,9 @@ so its links are in the back links of step 3.
 A later release is to let a function declare what it reads, which will order it like a built-in one.
 A ``filter`` that names ``needs``, or reads ``current_need`` by a key that is not written out,
 cannot be ordered either: its call runs with your own functions.
+``calc_sum``'s filter may name ``needs`` (every need, as in the filter of a view),
+but such a filter is evaluated on every need for every need it is tested on,
+and only Sphinx-Needs evaluates it.
 
 .. _needs_derive_cycle:
 
@@ -333,6 +336,9 @@ Each field on the cycle is reported as ``needs.derive_cycle``, once per field, n
    'summary' on 2 needs (CYC_A, CYC_B); the field is left empty [needs.derive_cycle]
 
 A value computed from a field on a cycle is computed from the value it holds, and is not reported.
+A result takes the type of the field holding it, as an authored value does:
+an integer a call returns, or a variant gives, is a float in a ``number`` field (``3.0``),
+and stays an integer in an ``integer`` field.
 A field whose call fails, or returns a result the field cannot hold, holds the same as a field on a cycle
 (``LIT_1, [[copy("hours")]]`` in a link field keeps ``LIT_1``), and the call is reported as ``needs.dynamic_function``.
 A sum over every need includes the need that holds it,

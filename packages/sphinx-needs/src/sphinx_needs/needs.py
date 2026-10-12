@@ -807,9 +807,11 @@ def load_config(app: Sphinx, *_args: Any) -> None:
                 None,
             )
             continue
-        if option_name in NeedsCoreFields or option_name in CORE_LINK_TYPES:
-            # a core field's entry specializes it (create_schema), and a core link
-            # type is not a field (reported there)
+        if option_name in NeedsCoreFields or option_name in _link_type_names(
+            needs_config
+        ):
+            # a core field's entry specializes it (create_schema), and a link type
+            # is not a field (reported there)
             continue
         _NEEDS_CONFIG.add_field(
             option_name,
@@ -1253,25 +1255,46 @@ def _get_core_schema(data: CoreFieldParameters) -> tuple[dict[str, Any], bool]:
     return schema, nullable
 
 
+def _link_type_names(needs_config: NeedsSphinxConfig) -> frozenset[str]:
+    """The declared link types: ``needs_links``, ``needs_extra_links``, and the two
+    every project has (``links``, ``parent_needs``)."""
+    return frozenset(
+        {
+            "links",
+            *CORE_LINK_TYPES,
+            *needs_config._links,
+            *(
+                link["option"]
+                for link in needs_config._extra_links
+                if isinstance(link, dict) and isinstance(link.get("option"), str)
+            ),
+        }
+    )
+
+
 def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> None:
     needs_config = NeedsSphinxConfig(app.config)
     schema = FieldsSchema()
     #: the ``derive`` findings, reported once the schema is complete
     derive_problems: list[DeriveProblem] = []
+    link_types = _link_type_names(needs_config)
     for name, params in needs_config._fields.items():
         if not isinstance(params, dict) or (
-            name not in NeedsCoreFields and name not in CORE_LINK_TYPES
+            name not in NeedsCoreFields and name not in link_types
         ):
             continue
-        if params.get("derive") is not None:
+        if params.get("derive") is not None and (
+            name in NeedsCoreFields or name in CORE_LINK_TYPES
+        ):
             # a core field is not derived: the rule is reported and ignored
             derive_problems.append(
                 DeriveProblem(name, False, core_message(name, on_link=False), core=True)
             )
-        elif name in CORE_LINK_TYPES:
+        elif name in link_types:
+            what = "core link type" if name in CORE_LINK_TYPES else "link type"
             log_warning(
                 LOGGER,
-                f"needs_fields entry {name!r} names the core link type {name!r}, "
+                f"needs_fields entry {name!r} names the {what} {name!r}, "
                 "which is not a field; the entry is ignored",
                 "config",
                 None,

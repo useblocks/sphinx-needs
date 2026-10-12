@@ -28,7 +28,7 @@ from sphinx_needs.exceptions import FunctionParsingException
 from sphinx_needs.filter_common import filter_needs_and_parts, filter_single_need
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import NeedItem, NeedLink, NeedPartItem
-from sphinx_needs.needs_schema import FieldsSchema
+from sphinx_needs.needs_schema import FieldSchema, FieldsSchema, LinkSchema
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_func import NeedFunc
 from sphinx_needs.utils import counted_ids
@@ -688,7 +688,11 @@ def resolve_functions(
         with suppress_logging():
             try:
                 found = filter_needs_and_parts(
-                    needs.values(), needs_config, filter_string, current
+                    needs.values(),
+                    needs_config,
+                    filter_string,
+                    current,
+                    origin_docname=current["docname"],
                 )
             except Exception:
                 return FAILED
@@ -927,10 +931,14 @@ def _resolve_field(
                 raise ValueError(
                     f"Field {field!r} of type {field_schema.type!r} cannot have multiple values"
                 )
-            need[field] = resolved[0]
+            # the type of the field, not of the result: an integer a call returns
+            # is a float in a number field, as an authored value is
+            need[field] = _in_field_type(resolved[0], field_schema)
         else:
             need[field] = (
-                None if resolved and not values and field_schema.nullable else values
+                None
+                if resolved and not values and field_schema.nullable
+                else _in_field_type(values, field_schema)
             )
     except Exception as err:
         log_warning(
@@ -943,6 +951,29 @@ def _resolve_field(
         from sphinx_needs.functions.order import placeholder
 
         need[field] = placeholder(need, field, needs_schema)
+
+
+def _in_field_type(value: Any, field_schema: FieldSchema | LinkSchema) -> Any:
+    """A computed value in the type of the field holding it.
+
+    An integer in a ``number`` field (an integer a ``[[…]]`` returns, or a variant
+    gives, or the items of either in an array of numbers) is stored as a float, as an
+    authored value of the field is, so that it is exported as one. A boolean is not a
+    number here.
+    """
+
+    def number(item: Any) -> Any:
+        if isinstance(item, int) and not isinstance(item, bool):
+            return float(item)
+        return item
+
+    if field_schema.type == "number":
+        return number(value)
+    if field_schema.type == "array" and field_schema.item_type == "number":
+        if isinstance(value, list | tuple):
+            return [number(item) for item in value]
+        return number(value)
+    return value
 
 
 def _get_variant(
