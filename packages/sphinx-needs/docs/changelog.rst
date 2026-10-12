@@ -241,6 +241,15 @@ Bug fixes
   It is a ``needs.config`` warning; an entry carrying a ``derive`` rule is reported as a
   rule on a core field, ``needs.derive_invalid``. The link type works as before.
 
+- 🐛 A change to :ref:`needs_fields` or :ref:`needs_links` (and the deprecated
+  ``needs_extra_options``, ``needs_extra_links`` and ``needs_global_options``) re-reads
+  every document (:pr:`2192`)
+
+  The needs of the documents an incremental build did not re-read kept what they were
+  created with: a ``default`` or ``predicates`` added to a field (or to
+  ``needs_global_options``) was not applied to them, and a field made derived kept its
+  authored value there. A changed field or link configuration now re-reads every document.
+
 - 🐛 ``needextend``'s ``:+field:`` on a nullable field the need never set sets the field,
   instead of crashing the build (:issue:`2038`, :pr:`2102`)
 
