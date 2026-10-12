@@ -899,7 +899,11 @@ def _resolve_field(
                     # is not a result, so its schema does not check it
                     from sphinx_needs.functions.order import typed_empty
 
-                    resolved.append(typed_empty(field_schema))
+                    # a list (an array's or a link type's) has no items to add
+                    if isinstance(empty := typed_empty(field_schema), list):
+                        resolved.extend(empty)
+                    else:
+                        resolved.append(empty)
                     continue
                 if not (
                     field_schema.type_check(value)

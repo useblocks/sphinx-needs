@@ -786,8 +786,9 @@ def execute_rule(
     :param reads: The record of the reads, as for a built-in function.
     :param cache: What a ``transitive`` rule computes once per pass, shared by the needs.
     :return: The value, a list of links for a link type; ``None`` when the rule finds
-        no value (a ``copy``, ``min`` or ``max`` with nothing to read), for which the
-        field holds its empty value.
+        no value (a ``copy``, ``min`` or ``max`` with nothing to read, a
+        ``content_links`` whose content cannot be read), for which the field holds its
+        empty value.
     :raises ValueError: If the rule cannot be computed on this need: ``from`` names no
         need.
     """
@@ -797,6 +798,12 @@ def execute_rule(
         return _rule_links(need, needs, rule, config, cache)
     if rule.kind == "content_links":
         found = links_from_content(app, need, needs, need_id=rule.from_need)
+        source_id = need["id"] if rule.from_need is None else rule.from_need
+        if SphinxNeedsData(app.env).get_need_node(source_id) is None:
+            # a failed read (no such need, a part, a need without stored content),
+            # which links_from_content reported: no value, so the field keeps its
+            # placeholder, which its schema does not check
+            return None
         if rule.where is None:
             return found
         # a reference is kept if its need passes (a part through its need); one to no
