@@ -241,6 +241,18 @@ Bug fixes
   It is a ``needs.config`` warning; an entry carrying a ``derive`` rule is reported as a
   rule on a core field, ``needs.derive_invalid``. The link type works as before.
 
+- 🐛 Link ids that sort alike are listed in one order in every build
+  **(changed output)** (:pr:`2193`)
+
+  ``needs.json`` and the HTML list a need's links and back links in natural order
+  (``REQ_2`` < ``REQ_9`` < ``REQ_10``, letters case-folded), and ids that order alike
+  in it, such as ``R_02``, ``R_2`` and ``r_2``, came in the order of the build's set of
+  links, which could change from one build to the next. They now follow the id itself,
+  compared character by character: ``R_02``, ``R_2``, ``r_2``, and links to one target
+  under several conditions follow the link with its condition (``R_2``, then
+  ``R_2[status == 'closed']``, then ``R_2[status == 'open']``). `ubCode`_ sorts them the
+  same way from its phase-2 release.
+
 - 🐛 A change to :ref:`needs_fields` or :ref:`needs_links` (and the deprecated
   ``needs_extra_options``, ``needs_extra_links`` and ``needs_global_options``) re-reads
   every document (:pr:`2192`)
