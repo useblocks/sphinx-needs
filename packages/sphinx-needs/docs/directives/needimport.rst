@@ -88,7 +88,8 @@ This may be useful to avoid duplicated ids.
     The ids of the file are its namespace, and the prefix is that namespace's name. The
     file owns the ids it contains: a reference to one of them -- a link field, or the id
     written in a need's content -- gets the prefix whether that need is imported or not
-    (``:ids:`` and ``:filter:`` leaving it out change nothing). A reference to an id the
+    (``:ids:`` and ``:filter:`` leaving it out change nothing); a link given as a string
+    that holds a dynamic function or a variant is left as written. A reference to an id the
     file does **not** contain is left as it is, and may resolve to a need of the
     importing project. So the importing project references the imported needs by their
     prefixed ids, and a reference rewritten to a need that is not imported with the same

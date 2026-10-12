@@ -292,8 +292,9 @@ Breaking changes
     need out of the import. It used to be prefixed only when the target was imported, so
     such a reference could resolve to a need of the importing project, or to the same id
     imported unprefixed by another ``needimport``. It is now rewritten to the prefixed id,
-    which exists only if that need is imported with the same prefix; otherwise it becomes a
-    dead link, reported as ``needs.link_outgoing`` or ``needs.link_ref`` -- not as a reader
+    which exists only if that need is imported with the same prefix; otherwise a link field
+    or a ``:need:`` role naming it is a dead link, reported as ``needs.link_outgoing`` or
+    ``needs.link_ref`` (a plain-text id is rewritten and nothing resolves it) -- not as a reader
     warning, so ``suppress_warnings`` has to name those. A reference to an id the file does
     **not** contain is still left unprefixed and may resolve in the importing project: the
     file's ids are its namespace, and the prefix is the only way to say so;
@@ -327,7 +328,8 @@ Bug fixes
   defaults and without the schema to restore them is warned about. A record whose key is
   empty is refused. With an ``id_prefix``, a link or a reference in the content to a
   need of the file is prefixed also when ``:ids:`` or ``:filter:`` leaves that need out, a
-  link given as a string is prefixed too, a ``null`` link no longer crashes the build,
+  link given as a string is prefixed too (unless it holds a dynamic function or a variant,
+  which is left as written), a ``null`` link no longer crashes the build,
   and an id inside a longer word of the content is no longer rewritten. An ``:ids:``
   naming an id the file does not have is warned about, and a ``:filter:`` that fails is
   warned about once per directive rather than once per need.

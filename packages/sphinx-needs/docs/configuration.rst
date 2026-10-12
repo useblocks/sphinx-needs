@@ -2796,7 +2796,8 @@ keys:
 :id_prefix: Prefix as string, which will be added, as written, to all id of external needs. Needed, if there is the risk that
   needs from different projects may have the same id (*optional*).
   |br| The ids of the file are its namespace, and the prefix is that namespace's name: a link field, or an id written
-  in the content, that names a need of the file gets the prefix; a reference to an id the file does **not** contain is
+  in the content, that names a need of the file gets the prefix (a link given as a string that holds a dynamic
+  function or a variant is left as written); a reference to an id the file does **not** contain is
   left as it is, and may resolve to a need of this project. This project references the external needs by their
   prefixed ids. The content is opaque markup, so every whole-word occurrence of a file id in it is rewritten, inside
   code blocks and file names too.

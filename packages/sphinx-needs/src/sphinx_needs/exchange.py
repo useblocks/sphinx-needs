@@ -23,8 +23,9 @@ them -- a link, or the id written in a need's ``content`` -- names that need of 
 whether a reader takes the need or not; a reference to an id the file does not contain
 names something outside it, which may be a need of the reading project. A reader that
 adds a prefix to the file's ids (the namespace's name) therefore rewrites every reference
-to one of the file's ids, and no other, and the reading project references those needs
-by their prefixed ids. ``content`` is opaque markup: every whole-word occurrence of a file
+to one of the file's ids, and no other (a link given as a string that holds a dynamic
+function or a variant is left for the reader to resolve first), and the reading project
+references those needs by their prefixed ids. ``content`` is opaque markup: every whole-word occurrence of a file
 id in it is such a reference, inside code blocks and file names too.
 """
 
