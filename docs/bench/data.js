@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791679715317,
+  "lastUpdate": 1791787771022,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -24156,6 +24156,42 @@ window.BENCHMARK_DATA = {
             "value": 40.89772805300001,
             "unit": "s",
             "extra": "Commit: e33b4386974f46804a4bd21efcc4f3654513d282\nBranch: master\nTime: 2026-10-11T02:47:26+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5e384af809f63fbfbfdac1f0baf3dab11b473e4f",
+          "message": "🐛 sphinx-needs: a changed field or link configuration re-reads every document (#2192)\n\n## What\n\n`packages/sphinx-needs`: `needs_fields`, `needs_links`, the deprecated\n`needs_extra_options` and `needs_extra_links`,\nand `needs_global_options` are `rebuild = \"env\"` confvals (they were\n`\"html\"`), so a change to any of them in `conf.py`\nre-reads every document.\n\n## Why\n\nEach is read by a need as the need is created. With `\"html\"`, an\nincremental build re-read only the changed documents,\nand the needs of the others kept what they were created with: a\n`default` or `predicates` added to a field was not\napplied to them (`owner` unset there while the exported schema named the\ndefault), a legacy option's new `schema` left\nan authored `3` the text `\"3\"`, and a field made derived kept its\nauthored value without a `needs.derive_authored`\nwarning.\n\nSplit out of #2191, which it is orthogonal to: it lands first, and #2191\nis rebased onto it.\n\n## Tests\n\n\n`tests/test_field_defaults.py::test_a_changed_configuration_rereads_every_document`,\nparametrised over the five\nconfvals: two documents, a first build, `conf.py` changed (a default, or\na legacy option's schema), a second build:\nboth needs follow, and Sphinx reports `[config changed ('<confval>')] 2\nadded`. Red at master for all five cases.\n\n## Docs\n\nA 🐛 changelog entry under 9.0.0 *Unreleased*.\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-needs`) and they pass.\n- [x] Documentation is updated where behaviour or options change.\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-12T08:48:16+02:00",
+          "tree_id": "6696d96df45b649c7a90e2e5541a9d44cfb7dc05",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/5e384af809f63fbfbfdac1f0baf3dab11b473e4f"
+        },
+        "date": 1791787763930,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.08981524800000784,
+            "unit": "s",
+            "extra": "Commit: 5e384af809f63fbfbfdac1f0baf3dab11b473e4f\nBranch: master\nTime: 2026-10-12T08:48:16+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 48.73353456800001,
+            "unit": "s",
+            "extra": "Commit: 5e384af809f63fbfbfdac1f0baf3dab11b473e4f\nBranch: master\nTime: 2026-10-12T08:48:16+02:00"
           }
         ]
       }
