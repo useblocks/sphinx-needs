@@ -1,4 +1,6 @@
 import json
+import os
+import time
 from pathlib import Path
 
 import pytest
@@ -199,3 +201,114 @@ def test_doc_field_defaults(test_app, snapshot):
     assert needs == snapshot(
         name="field_defaults_needs", exclude=props("created", "project", "creator")
     )
+
+
+def _needs(app) -> dict[str, dict]:
+    data = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf-8"))
+    return data["versions"][data["current_version"]]["needs"]
+
+
+#: per ``conf.py`` confval: its value before and after, the option the needs are
+#: written with, the field read, and its value before and after on both needs
+REREAD_CASES = {
+    "needs_fields": (
+        'needs_fields = {"owner": {"schema": {"type": "string"}}}\n',
+        'needs_fields = {"owner": {"schema": {"type": "string"}, "default": "alice"}}\n',
+        "",
+        "owner",
+        None,
+        "alice",
+    ),
+    # the legacy entry reads no default: the schema an authored value is converted by
+    "needs_extra_options": (
+        'needs_extra_options = [{"name": "hours"}]\n',
+        'needs_extra_options = [{"name": "hours", "schema": {"type": "number"}}]\n',
+        "   :hours: 3\n",
+        "hours",
+        "3",
+        3.0,
+    ),
+    "needs_links": (
+        'needs_links = {"covers": {}}\n',
+        'needs_links = {"covers": {"default": ["REQ_001"]}}\n',
+        "",
+        "covers",
+        [],
+        ["REQ_001"],
+    ),
+    "needs_extra_links": (
+        'needs_extra_links = [{"option": "covers"}]\n',
+        'needs_extra_links = [{"option": "covers", "default": ["REQ_001"]}]\n',
+        "",
+        "covers",
+        [],
+        ["REQ_001"],
+    ),
+    "needs_global_options": (
+        'needs_fields = {"owner": {"schema": {"type": "string"}}}\n',
+        'needs_fields = {"owner": {"schema": {"type": "string"}}}\n'
+        'needs_global_options = {"owner": {"default": "alice"}}\n',
+        "",
+        "owner",
+        None,
+        "alice",
+    ),
+}
+
+REREAD_HEAD = 'extensions = ["sphinx_needs"]\nneeds_build_json = True\n'
+
+
+def _reread_files(confval: str) -> list[tuple[Path, str]]:
+    before, _, option, *_ = REREAD_CASES[confval]
+    return [
+        (Path("conf.py"), REREAD_HEAD + before),
+        (
+            Path("index.rst"),
+            "Index\n=====\n\n.. toctree::\n\n   other\n\n"
+            f".. req:: One\n   :id: REQ_001\n{option}",
+        ),
+        (Path("other.rst"), f"Other\n=====\n\n.. req:: Two\n   :id: REQ_002\n{option}"),
+    ]
+
+
+@pytest.mark.parametrize(
+    ("test_app", "confval"),
+    [
+        pytest.param(
+            {"buildername": "needs", "files": _reread_files(confval)},
+            confval,
+            id=confval,
+        )
+        for confval in REREAD_CASES
+    ],
+    indirect=["test_app"],
+)
+def test_a_changed_configuration_rereads_every_document(test_app, make_app, confval):
+    """A ``default`` (or a legacy option's ``schema``) added in ``conf.py`` between two
+    builds applies at once, to the needs of documents that did not change.
+
+    Each of the five confvals is read by every need as it is created, so a change to
+    one re-reads every document: before, the second build kept the needs as the first
+    build created them (``needs_extra_options``'s ``hours`` the text ``"3"``).
+    """
+    _, after, _, field, old, new = REREAD_CASES[confval]
+    app = test_app
+    app.build()
+    assert {i: n[field] for i, n in _needs(app).items()} == {
+        "REQ_001": old,
+        "REQ_002": old,
+    }
+
+    conf = Path(app.srcdir, "conf.py")
+    conf.write_text(REREAD_HEAD + after, encoding="utf-8")
+    # newer than the first build, whatever the file system's clock resolution
+    later = time.time_ns() + 60_000_000_000
+    os.utime(conf, ns=(later, later))
+
+    second = make_app(buildername="needs", srcdir=app.srcdir)
+    second.build()
+    assert {i: n[field] for i, n in _needs(second).items()} == {
+        "REQ_001": new,
+        "REQ_002": new,
+    }
+    assert f"[config changed ('{confval}')] 2 added" in second._status.getvalue()
