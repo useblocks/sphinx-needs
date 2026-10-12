@@ -396,6 +396,12 @@ EVERY_STATUS = 'status == "open"'
             },
         ),
         ("links", "[[links_from_content(filter='grp == \"g\"')]]", {}),
+        # calc_sum's filter may name ``needs``: what it reads cannot be told, so last
+        (
+            "out",
+            "[[calc_sum('hours', filter='any(id in s[\"links\"] for s in needs)')]]",
+            {"opaque": True},
+        ),
     ],
 )
 def test_what_a_call_reads(field, text, expected):

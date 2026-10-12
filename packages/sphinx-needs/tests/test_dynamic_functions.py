@@ -886,28 +886,23 @@ Dead link
     ],
     indirect=True,
 )
-def test_a_dead_link_still_fails_the_call(test_app):
-    """A link naming no need still fails ``check_linked_values`` and a ``links_only`` sum.
+def test_a_dead_link_is_skipped(test_app):
+    """A link naming no need is skipped by ``check_linked_values`` and a ``links_only`` sum.
 
-    Only a part link is resolved to its need; a dead link fails the call, as before
-    (and as ubCode, which mirrors it), and is reported as a dead link as well.
+    It is reported as a dead link, and the calls read the needs the other links name,
+    as the derived-field kinds skip a dead target. It used to fail both calls (a second
+    report of the same fault, which hid the live targets' values) **(changed output)**.
     """
     app = test_app
     app.build()
     warnings = build_warnings(app)
     assert warnings == [
-        "<srcdir>/index.rst:9: WARNING: Error while resolving dynamic values for field "
-        "'total', of need 'SPEC_D': Error while executing function 'calc_sum': "
-        "'NOPE_1' [needs.dynamic_function]",
-        "<srcdir>/index.rst:9: WARNING: Error while resolving dynamic values for field "
-        "'verdict', of need 'SPEC_D': Error while executing function "
-        "'check_linked_values': 'NOPE_1' [needs.dynamic_function]",
         "<srcdir>/index.rst:9: WARNING: Need 'SPEC_D' has unknown outgoing link "
         "'NOPE_1' in field 'links' [needs.link_outgoing]",
     ]
     needs = _built_needs(app)
-    assert needs["SPEC_D"]["verdict"] is None
-    assert needs["SPEC_D"]["total"] is None
+    assert needs["SPEC_D"]["verdict"] == "all-open"
+    assert needs["SPEC_D"]["total"] == 5.0
 
 
 MISSING_PART_INDEX = """\
@@ -965,18 +960,13 @@ def test_a_link_to_a_missing_part_reads_the_need(test_app):
     reads the text before the dot as the need and the rest as the part, so both calls
     read ``REQ_1`` (as the back links count the link on it, and as ubCode reads it),
     while the link checker reports the unknown part. A dotted id that names no need
-    before its dot is a dead link and fails the calls, as ``NOPE_1`` does, even where
-    a need carries that dotted id (``REQ_9.x``: its 7 hours are never read).
+    before its dot is a dead link and is skipped, as ``NOPE_1`` is, even where a need
+    carries that dotted id (``REQ_9.x``: its 7 hours are never read): no live target,
+    so the check gives its result and the sum is 0.
     """
     app = test_app
     app.build()
     assert build_warnings(app) == [
-        "<srcdir>/index.rst:22: WARNING: Error while resolving dynamic values for field "
-        "'total', of need 'SPEC_DOT': Error while executing function 'calc_sum': "
-        "'REQ_9' [needs.dynamic_function]",
-        "<srcdir>/index.rst:22: WARNING: Error while resolving dynamic values for field "
-        "'verdict', of need 'SPEC_DOT': Error while executing function "
-        "'check_linked_values': 'REQ_9' [needs.dynamic_function]",
         "<srcdir>/index.rst:16: WARNING: Need 'SPEC_Z' has unknown outgoing link "
         "'REQ_1.zz' in field 'links' [needs.link_outgoing]",
         "<srcdir>/index.rst:22: WARNING: Need 'SPEC_DOT' has unknown outgoing link "
@@ -985,5 +975,292 @@ def test_a_link_to_a_missing_part_reads_the_need(test_app):
     needs = _built_needs(app)
     assert needs["SPEC_Z"]["verdict"] == "all-open"
     assert needs["SPEC_Z"]["total"] == 8.0
-    assert needs["SPEC_DOT"]["verdict"] is None
-    assert needs["SPEC_DOT"]["total"] is None
+    assert needs["SPEC_DOT"]["verdict"] == "all-open"
+    assert needs["SPEC_DOT"]["total"] == 0.0
+
+
+# -- three fixes from #1984 -------------------------------------------------------------
+
+PLAIN_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+"""
+
+COPY_CASE_INDEX = """\
+Copy with a case change
+=======================
+
+.. req:: Source
+   :id: SRC_1
+   :tags: Alpha, beta
+   :status: Open
+
+   Tags as text: :ndf:`copy("tags", upper=True)`
+
+.. spec:: Upper-cased tags
+   :id: UPPER
+   :tags: [[copy("tags", "SRC_1", upper=True)]]
+   :status: [[copy("status", "SRC_1", upper=True)]]
+
+.. spec:: Lower-cased tags
+   :id: LOWER
+   :tags: [[copy("tags", "SRC_1", lower=True)]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), PLAIN_CONF),
+                (Path("index.rst"), COPY_CASE_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_copy_cases_each_item_of_a_list(test_app):
+    """``copy`` with ``upper`` / ``lower`` cases each item of a list **(changed output)**.
+
+    It used to case the list's printed form, so two tags became the one tag
+    ``"['ALPHA', 'BETA']"``.
+    """
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    needs = _built_needs(app)
+    assert needs["UPPER"]["tags"] == ["ALPHA", "BETA"]
+    assert needs["LOWER"]["tags"] == ["alpha", "beta"]
+    assert needs["UPPER"]["status"] == "OPEN"
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    assert "Tags as text: ALPHA, BETA" in html
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), PLAIN_CONF),
+                (
+                    Path("index.rst"),
+                    "Copy in this document\n=====================\n\n"
+                    ".. toctree::\n\n   a_other\n\n"
+                    ".. req:: Source in this document\n"
+                    "   :id: COPY_THIS_DOC\n"
+                    "   :status: here\n\n"
+                    ".. spec:: Copier\n"
+                    "   :id: COPY_TARGET\n"
+                    '   :status: [[copy("status", filter="c.this_doc() and type == \'req\'")]]\n',
+                ),
+                # its id is the lower, so without c.this_doc() it would be the source
+                (
+                    Path("a_other.rst"),
+                    "Other document\n==============\n\n"
+                    ".. req:: Source in another document\n"
+                    "   :id: COPY_OTHER_DOC\n"
+                    "   :status: elsewhere\n",
+                ),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_copy_filter_this_doc(test_app):
+    """``c.this_doc()`` in ``copy``'s filter selects the needs of the call's document.
+
+    It failed with ``this_doc can not be used in this context``, nothing passed, and
+    ``copy`` read the current need instead.
+    """
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    assert _built_needs(app)["COPY_TARGET"]["status"] == "here"
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), PLAIN_CONF),
+                (
+                    Path("index.rst"),
+                    "Links as text\n=============\n\n"
+                    ".. req:: Part holder\n   :id: NDF_R1\n\n   :np:`(p1) a part`\n\n"
+                    ".. spec:: Mentions\n   :id: NDF_S1\n\n"
+                    "   Mentions :need:`NDF_R1.p1`.\n\n"
+                    "   As text: :ndf:`links_from_content()`\n",
+                ),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_ndf_shows_a_link_as_its_id(test_app):
+    """The ``ndf`` role shows a link a function returns as ``NDF_R1.p1``, not its repr."""
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    assert "As text: NDF_R1.p1" in html
+    assert "NeedLink(" not in html
+
+
+# -- calc_sum's filter sees ``needs`` ---------------------------------------------------
+
+NEEDS_FILTER_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_types = [
+    {"directive": "spec", "title": "Specification", "prefix": "S_"},
+    {"directive": "story", "title": "Story", "prefix": "US_"},
+]
+needs_fields = {
+    "hours": {"schema": {"type": "number"}, "nullable": True},
+    "amount": {"schema": {"type": "number"}, "nullable": True},
+}
+"""
+
+NEEDS_FILTER_INDEX = """\
+Needs in a filter
+=================
+
+.. spec:: Sum of the specs an open story links to
+   :id: A_RESULT
+   :amount: [[calc_sum('hours', filter='any(id in s["links"] for s in needs if s["type"] == "story" and s["status"] == "open")')]]
+
+.. spec:: TEST_1
+   :id: TEST_1
+   :hours: 10
+
+.. spec:: TEST_2
+   :id: TEST_2
+   :hours: 200
+
+.. spec:: TEST_3
+   :id: TEST_3
+   :hours: [[copy("hours", "TEST_SRC")]]
+
+.. spec:: The source of TEST_3's hours
+   :id: TEST_SRC
+   :hours: 3000
+
+.. story:: Open story
+   :id: US_OPEN
+   :status: open
+   :links: TEST_1, TEST_3
+
+.. story:: Done story
+   :id: US_DONE
+   :status: done
+   :links: TEST_2
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), NEEDS_FILTER_CONF),
+                (Path("index.rst"), NEEDS_FILTER_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_calc_sum_filter_sees_needs(test_app):
+    """``calc_sum``'s filter may name ``needs``, as a view's filter does.
+
+    It was evaluated without it: ``name 'needs' is not defined`` for every need, and the
+    sum taken as if there were no filter. What such a filter reads cannot be told from
+    its text, so the call runs after the other built-in calls: ``TEST_3``'s computed
+    hours are read (``A_RESULT`` sorts first). The declared form, a flag on each need and
+    a filter naming it, is the portable spelling.
+    """
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    assert _built_needs(app)["A_RESULT"]["amount"] == 3010.0
+
+
+# -- an integer a call returns or a variant gives, in a number field -------------------
+
+INLINE_TYPE_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+
+
+def five(app, need, needs):
+    return 5
+
+
+needs_functions = [five]
+needs_variant_data = {"n": 3}
+needs_fields = {
+    "n_int": {"schema": {"type": "integer"}},
+    "ints": {"schema": {"type": "array", "items": {"type": "integer"}}},
+    "n_num": {"schema": {"type": "number"}},
+    "from_fn": {"schema": {"type": "number"}},
+    "nums": {"schema": {"type": "array", "items": {"type": "number"}}},
+    "still_int": {"schema": {"type": "integer"}},
+    "from_var": {"schema": {"type": "number"}, "parse_variants": True},
+    "from_variant": {"schema": {"type": "number"}, "parse_variants": True},
+}
+"""
+
+INLINE_TYPE_INDEX = """\
+Inline result types
+===================
+
+.. req:: Integers
+   :id: REQ_1
+   :n_int: 3
+   :ints: 1, 2
+   :n_num: [[copy("n_int")]]
+   :from_fn: [[five()]]
+   :nums: [[copy("ints")]]
+   :still_int: [[copy("n_int")]]
+   :from_var: <{ var.n }>
+   :from_variant: <<type == 'req':3, 2>>
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), INLINE_TYPE_CONF),
+                (Path("index.rst"), INLINE_TYPE_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_an_inline_result_takes_the_type_of_its_field(test_app):
+    """An integer a ``[[…]]`` returns (a built-in's or your own), or a variant gives
+    (``<{ var.n }>`` from the variant data, a ``<<…>>``'s value), is stored in a
+    ``number`` field as a float, as an authored value of the field is, and so exported
+    as one; an ``integer`` field keeps it an integer."""
+    app = test_app
+    app.build()
+    # Sphinx's own ``config.cache`` note for a function in conf.py aside
+    assert [w for w in build_warnings(app) if "[needs." in w] == []
+    need = _built_needs(app)["REQ_1"]
+    for value, expected in [
+        (need["n_num"], 3.0),
+        (need["from_fn"], 5.0),
+        (need["from_var"], 3.0),
+        (need["from_variant"], 3.0),
+        *zip(need["nums"], [1.0, 2.0], strict=True),
+    ]:
+        assert type(value) is float and value == expected, (value, expected)
+    assert type(need["still_int"]) is int and need["still_int"] == 3
