@@ -1408,3 +1408,13 @@ def test_a_legacy_description_is_the_content(test_app: SphinxTestApp, reader: st
     app.build()
     assert build_warnings(app) == []
     assert from_file(app)["REQ_A"]["content"] == "legacy text"
+
+
+def test_ids_too_many_for_one_trie_still_match():
+    """A trie too deep to build falls back to one alternation, longest id first."""
+    from sphinx_needs.utils import _whole_ids_pattern
+
+    ids = ["A" * n for n in range(1, 1200)]
+    pattern = _whole_ids_pattern(ids)
+    assert pattern is not None
+    assert pattern.sub(lambda m: "px_" + m.group(0), "AAA AAAB") == "px_AAA AAAB"
