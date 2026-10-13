@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791916193762,
+  "lastUpdate": 1791921831618,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -24480,6 +24480,42 @@ window.BENCHMARK_DATA = {
             "value": 57.945861927,
             "unit": "s",
             "extra": "Commit: 5a3f17c3a49b4f8c63155306dce51659196db118\nBranch: master\nTime: 2026-10-13T20:28:20+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "96d1a7bbb37bd4c4cd37d08e5727e34670729ec1",
+          "message": "📚 sphinx-needs: the Python floor raise gets its changelog bullet, and builders.rst describes the needs.json that is written (#2211)\n\nTwo documentation corrections and one missing changelog entry, nothing\nelse.\n\n### Changelog\n\nThe Python floor was raised to 3.11 in #1844 (`requires-python >=3.11`;\n8.5.0 accepted 3.10), and the Unreleased section had no ‼️ bullet for\nit. It has one now, under *Breaking changes*.\n\n### `builders.rst` describes the `needs.json` that is written\n\nMeasured against `needsfile.py` on master:\n\n- it promised a `filters` section; nothing has written one since the\n`export_id` option was deprecated (#475 is the open issue for the\nfeature), so the sentence names what each version carries instead: the\n`needs` data, a `creator` (the program and version that wrote it, which\nthe page never mentioned) and the `needs_schema`;\n- `field_type` was listed with a `global` value the writer never emits;\nthe four it does (`core`, `links`, `backlinks`, `extra`) remain;\n- the `1.5` example put the schema's properties directly under\n`needs_schema`, unlike the `1.0` example beside it and the file itself:\nit gains the `$schema` and `properties` level.\n\n### AGENTS.md\n\n`typecheck` checks every package out of one configuration, not \"both\".\n\n### ubCode\n\nNothing to mirror: the needs.json contract itself is unchanged; ubCode's\ndocumentation of the format is its own.",
+          "timestamp": "2026-10-13T22:02:42+02:00",
+          "tree_id": "d2003a8ad5af2fcd41879673729adb5af89fe046",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/96d1a7bbb37bd4c4cd37d08e5727e34670729ec1"
+        },
+        "date": 1791921824150,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07945531500000413,
+            "unit": "s",
+            "extra": "Commit: 96d1a7bbb37bd4c4cd37d08e5727e34670729ec1\nBranch: master\nTime: 2026-10-13T22:02:42+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 39.525861227,
+            "unit": "s",
+            "extra": "Commit: 96d1a7bbb37bd4c4cd37d08e5727e34670729ec1\nBranch: master\nTime: 2026-10-13T22:02:42+02:00"
           }
         ]
       }
