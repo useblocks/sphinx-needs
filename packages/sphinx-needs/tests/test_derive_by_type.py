@@ -453,6 +453,9 @@ derive_by_type.req = { kind = "links", where = "type == 'spec'" }
 [needs.links.rel_default]
 default = ["REQ_1"]
 derive_by_type.spec = { kind = "links", where = "type == 'req'" }
+
+[needs.links.plain_default]
+default = ["REQ_1"]
 """
 
 LOAD_CHECKS_INDEX = """\
@@ -619,6 +622,13 @@ def test_what_the_load_checks_leave(test_app: Any) -> None:
     assert (req["links"], spec["links"]) == (["SPEC_1"], ["REQ_1"])
     assert (req["rel_beside"], spec["rel_beside"]) == (["SPEC_1"], [])
     assert (req["rel_default"], spec["rel_default"]) == (["REQ_1"], ["REQ_1"])
+    # the export's schema default of a link type derived by type alone is its
+    # off-type links; every other link type's is unchanged
+    exported = _export_schema(app)
+    assert [
+        exported[name]["default"]
+        for name in ("rel_default", "rel", "rel_beside", "plain_default", "links")
+    ] == [["REQ_1"], ["SPEC_1"], [], [], []]
     schema = SphinxNeedsData(app.env).get_schema()
     status, empty_table = (
         schema.get_core_field("status"),
