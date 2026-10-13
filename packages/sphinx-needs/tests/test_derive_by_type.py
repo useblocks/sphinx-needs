@@ -363,6 +363,11 @@ derive_by_type = {}
 schema = { type = "number" }
 derive_by_type = [1, 2]
 
+[needs.fields.table_beside_derive]
+schema = { type = "number" }
+derive = { kind = "copy", field = "hours" }
+derive_by_type = "spec"
+
 [needs.fields.entry_not_table]
 schema = { type = "number" }
 derive_by_type.req = 3
@@ -497,6 +502,11 @@ _UNKNOWN_FIELD = (
     "links of one"
 )
 _NO_TABLE = "; the field cannot be set in a need or by a needextend, and no need type has a rule"
+#: an unreadable derive_by_type beside a derive that stands (A-38)
+_USES_DERIVE = (
+    "; the field cannot be set in a need or by a needextend, and every need type uses "
+    "its derive"
+)
 
 
 @pytest.mark.parametrize(
@@ -541,6 +551,9 @@ def test_the_load_checks_in_their_order(test_app: Any) -> None:
         _by_type("ordered_beside", "'zzz' is not a need type; the entry is ignored"),
         _beside("ordered_beside", "'predicates'"),
         _by_type(
+            "table_beside_derive", "it is not a table of need types" + _USES_DERIVE
+        ),
+        _by_type(
             "title_key",
             "'Requirement' is not a need type (did you mean 'req'?); the entry is "
             "ignored",
@@ -576,6 +589,8 @@ def test_what_the_load_checks_leave(test_app: Any) -> None:
     assert (req["unknown_type"], spec["unknown_type"]) == (4.0, None)
     assert (req["title_key"], spec["title_key"]) == (None, None)
     assert (req["empty_table"], spec["empty_table"]) == (7.0, 7.0)
+    # an unreadable derive_by_type adds no rule: derive stands on every type
+    assert (req["table_beside_derive"], spec["table_beside_derive"]) == (2.0, 4.0)
     assert (req["entry_not_table"], spec["entry_not_table"]) == (None, 2.0)
     # the invalid req entry: its needs hold the placeholder, not the default 9
     assert (req["entry_invalid"], spec["entry_invalid"]) == (None, 2.0)
