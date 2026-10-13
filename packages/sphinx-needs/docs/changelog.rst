@@ -131,9 +131,11 @@ Improvements
   and a need created by ``needimport`` keeps the derived values it carries.
   A rule on a core field, or on the ``parent_needs`` link type, is not available in this release, and is reported.
   A ``fingerprint`` digests the whole need -- its id, type, title, status, tags, content and every field and link
-  type the project declares, each where it differs from its default, a link's condition dropped -- so that a link
-  condition naming it (``:links: REQ_1[fp == "…"]``) reports ``needs.link_condition_failed`` once ``REQ_1`` changes;
-  its one role, ``exclude``, leaves names out (:ref:`needs_derive`).
+  type the project declares that is not derived, ``links`` among them, each where it differs from its default,
+  a link's condition dropped -- so that a link condition naming it (``:links: REQ_1[fp == "…"]``) reports
+  ``needs.link_condition_failed`` once ``REQ_1`` changes; its one role, ``exclude``, leaves names out
+  (:ref:`needs_derive`). No later release changes which names a fingerprint includes, when a name enters, or how
+  the text is written: a fingerprint written down stays current until the need itself changes.
   `ubCode`_ reads the same configuration, and computes the same values and findings, from
   its phase-2 release.
 

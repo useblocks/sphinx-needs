@@ -716,7 +716,9 @@ A rule is computed with the ``[[…]]`` of its step (see :ref:`needs_processing_
   its keys sorted, written as for ``hash`` (no whitespace, non-ASCII characters not escaped, numbers as Python writes
   them, and a ``number`` field's value as a float).
 
-  - It includes ``id``, ``type``, ``title``, ``status``, ``tags`` and ``content`` (as ``needs.json`` holds it),
+  - It includes ``id``, ``type``, ``title``, ``status``, ``tags`` and ``content``
+    (as ``needs.json`` holds it: a need nested in another's body is part of the parent's ``content``,
+    so editing or moving the nested need changes its parent's fingerprint too),
     every field the project declares in :ref:`needs_fields` or :ref:`needs_extra_options`,
     and every link type, ``links`` among them; none of them derived.
   - It never includes a derived field or link type (so no ``hash`` and no other fingerprint),
@@ -724,7 +726,8 @@ A rule is computed with the ``[[…]]`` of its step (see :ref:`needs_processing_
     ``constraints``, where the need is (``docname``, ``lineno``, ``sections``),
     how it is shown (``layout``, ``style``, ``collapse``, ``hide``, the templates),
     what sphinx-needs records about it (``is_external``, ``has_dead_links`` and the like),
-    or a field an extension or a service registers, such as :ref:`needgantt`'s ``duration`` and ``completion``.
+    or a field an extension or a service registers, such as :ref:`needgantt`'s ``duration`` and ``completion``,
+    unless the project declares it itself in :ref:`needs_fields` or :ref:`needs_extra_options`.
   - A name enters only where the need's value differs from the field's default, compared as JSON text:
     the field's ``default``, else ``null`` for a nullable field
     (a default that is a ``[[…]]`` or a variant is no literal default, and so counts as none),
@@ -734,10 +737,15 @@ A rule is computed with the ``[[…]]`` of its step (see :ref:`needs_processing_
     A link type, and ``tags``, without a literal default are compared against ``[]``.
     A ``number`` field's value and default are compared, and written, as floats: ``default = 1`` is ``1.0``.
     So a value written equal to its default is the same as leaving it unset,
-    while ``""``, ``false``, ``0`` or ``[]`` differ from a ``null`` default, and ``-0.0`` from ``0.0``;
-    and declaring a new field or link type moves no fingerprint while the needs leave it at its default.
-    Changing a field's ``default`` moves the fingerprints of the needs that wrote the old default out,
-    not of those that rely on it.
+    while ``""``, ``false``, ``0`` or ``[]`` differ from a ``null`` default, and ``-0.0`` from ``0.0``.
+  - Declaring a new field or link type moves no fingerprint while the needs leave it unset,
+    if its default is a literal or there is none.
+    A default that is a ``[[…]]`` or a variant, and ``predicates``, give the needs a value,
+    which enters as a written one would:
+    adding ``owner`` with ``default = "[[copy('title')]]"`` moves the fingerprint of every need,
+    and adding ``severity`` with ``predicates = [["type == 'spec'", "major"]]`` that of every ``spec``.
+  - Changing a field's ``default`` moves the fingerprints of the needs that wrote the old or the new default out,
+    and not of those that rely on it, although their value changes.
   - A link list is written as for ``hash``, and compared with its default the same way: the ids it links to,
     without their conditions, sorted and without duplicates.
     So a condition pinning another need's fingerprint never moves the fingerprint of the need holding it,
@@ -747,8 +755,8 @@ A rule is computed with the ``[[…]]`` of its step (see :ref:`needs_processing_
   - It is computed after every other rule, from the need's final values
     (after every :ref:`needextend`, variant and ``[[…]]``), and reads no derived field,
     so two fingerprints with the same ``exclude`` hold the same value.
-  - The names a fingerprint includes are fixed: no later release adds a name beyond the fields and link types
-    the project declares, so a fingerprint written down keeps its meaning.
+  - No later release changes which names a fingerprint includes, when a name enters, or how the text is written:
+    a fingerprint written down stays current until the need itself changes.
 
   For a need ``REQ_1`` of type ``req``, titled ``Größe``, with status ``open`` and no other value set,
   the text is ``{"id":"REQ_1","status":"open","title":"Größe","type":"req"}``.

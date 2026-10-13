@@ -388,6 +388,11 @@ def fingerprint_names(schema: FieldsSchema) -> dict[str, Any]:
     for field in schema.iter_extra_fields():
         if field.derive is None and schema.is_project_field(field.name):
             names[field.name] = default_of(field)
+    # Every link type is the project's today: only needs_links and needs_extra_links
+    # declare one, and there is no API for an extension to add one. The set of names
+    # is frozen to what the project declares, so when such an API lands, its link
+    # types must be marked as the extension's (as add_extra_field's project flag
+    # marks a field) and left out here.
     for link in schema.iter_link_fields():
         if link.derive is None and link.name not in CORE_LINK_TYPES:
             names[link.name] = (
