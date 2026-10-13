@@ -561,17 +561,20 @@ def invalid_on_types_message(
     """The ``needs.derive_invalid`` warning for a ``derive`` rule in a cycle of
     own-field reads on some need types only."""
     what = _what(on_link)
-    holds = "hold no links" if on_link else "hold its empty value"
+    holds = "holds no links" if on_link else "holds its empty value"
     quoted = [repr(need_type) for need_type in need_types]
-    named = (
-        f"need type {quoted[0]}"
+    named, there = (
+        (f"need type {quoted[0]}", "that need type")
         if len(quoted) == 1
-        else f"need types {', '.join(quoted[:-1])} and {quoted[-1]}"
+        else (
+            f"need types {', '.join(quoted[:-1])} and {quoted[-1]}",
+            "those need types",
+        )
     )
     return (
         f"Invalid derive of {what} {name!r}: on {named}: {reason}; the {what} cannot "
-        f"be set in a need or by a needextend, the needs of the {named} {holds}, "
-        "and on every other need type the rule applies"
+        f"be set in a need or by a needextend, and on {there} {holds}; on every other "
+        "need type the rule applies"
     )
 
 
