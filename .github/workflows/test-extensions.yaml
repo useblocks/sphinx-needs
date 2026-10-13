@@ -258,8 +258,10 @@ jobs:
         # the action's default `cleanup: false` sets `CC_DOWNLOAD_DIR="."` and downloads its
         # CLI, `.SHA256SUM` and `.sig` into the CWD, removing them only under
         # `CC_CLEANUP=true`; the first run of the uploading cell (ubuntu, sphinx-9) is its
-        # measurement. git prints `/`-separated paths on Windows too, so the same script runs
-        # there. Same `if:` as the suites
+        # measurement. grep's exit 1 ("nothing left") is the only non-zero status let
+        # through, so a mistyped allowlist entry is a red step, not a silent green. git prints
+        # `/`-separated paths on Windows too, so the same script runs there. Same `if:` as
+        # the suites
         if: ${{ !cancelled() && steps.prepare.outcome == 'success' }}
         shell: bash
         run: |
@@ -275,7 +277,7 @@ jobs:
           )
           pattern="^(!!|\?\?) ($(IFS='|'; echo "${allowed[*]}"))\$"
           listing="$(git status --porcelain --ignored=traditional --untracked-files=normal)"
-          offending="$(grep -v -E "$pattern" <<<"$listing" || true)"
+          offending="$(grep -v -E "$pattern" <<<"$listing")" || { rc=$?; [ "$rc" -eq 1 ] || { echo "::error::the fence's own pattern failed (grep exit $rc)"; exit 1; }; }
           if [ -n "$offending" ]; then
             while IFS= read -r line; do
               echo "::error::a suite wrote into the checkout: $line"
