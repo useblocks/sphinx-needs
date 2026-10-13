@@ -167,9 +167,7 @@ class FieldSchema:
 
     def describe_derived(self) -> str:
         """The rules of a derived field, as messages name them: ``kind 'sum'``."""
-        if self.derive_by_type is None and self.derive is not None:
-            return self.derive.describe()
-        return "by need type"
+        return _describe_derived(self.derive, self.derive_by_type)
 
     def off_type_value(self) -> Any:
         """The value a need holds when its type has no rule (see :meth:`rule_for`).
@@ -559,6 +557,27 @@ This includes scalar types (str, bool, int, float) and their corresponding list 
 """
 
 
+def _describe_derived(
+    derive: Derive | None, derive_by_type: Mapping[str, Derive] | None
+) -> str:
+    """The rules of a derived field, as messages name them.
+
+    The field's ``derive`` when the configuration declares no ``derive_by_type`` (the
+    markers of a ``derive`` cycling on some types are not declared entries), else
+    ``by need type``.
+    """
+    declared = derive_by_type is not None and (
+        not derive_by_type
+        or any(
+            not (isinstance(rule, DeriveInvalid) and rule.fallback)
+            for rule in derive_by_type.values()
+        )
+    )
+    if derive is not None and not declared:
+        return derive.describe()
+    return "by need type"
+
+
 def _check_derive_by_type(derive_by_type: Mapping[str, Derive] | None) -> None:
     """Check the ``derive_by_type`` of a field or link type: need type to rule.
 
@@ -821,9 +840,7 @@ class LinkSchema:
 
     def describe_derived(self) -> str:
         """The rules of a derived link type, as messages name them: ``kind 'links'``."""
-        if self.derive_by_type is None and self.derive is not None:
-            return self.derive.describe()
-        return "by need type"
+        return _describe_derived(self.derive, self.derive_by_type)
 
     def off_type_value(self) -> list[NeedLink]:
         """The links a need holds when its type has no rule (see :meth:`rule_for`).

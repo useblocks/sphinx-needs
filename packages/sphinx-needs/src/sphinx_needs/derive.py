@@ -181,10 +181,14 @@ class DeriveInvalid:
 
     :ivar kind: The kind as written, if it is a string.
     :ivar reason: Why the rule cannot be read.
+    :ivar fallback: Whether the marker stands, in ``derive_by_type``, for the field's
+        ``derive`` on a need type where it cycles, rather than for an entry the
+        configuration declares.
     """
 
     kind: str | None
     reason: str
+    fallback: bool = False
 
     def describe(self) -> str:
         """The rule as messages name it."""
@@ -502,6 +506,8 @@ class DeriveProblem:
     :ivar on_types: For a ``derive`` rule in a cycle on some need types only (through
         their ``derive_by_type`` entries): those types. The rule cannot be read there,
         and applies on every other type.
+    :ivar type_reasons: For such a rule: each of those types with why it cannot be
+        read there (the cycle closes along its own path on each).
     """
 
     name: str
@@ -511,6 +517,7 @@ class DeriveProblem:
     core: bool = False
     part: str = "derive"
     on_types: tuple[str, ...] = ()
+    type_reasons: tuple[tuple[str, str], ...] = ()
 
     @property
     def order(self) -> tuple[bool, str, int, str]:
@@ -555,26 +562,41 @@ def invalid_entry_message(
     )
 
 
+def _named_types(need_types: list[str]) -> str:
+    quoted = [repr(need_type) for need_type in need_types]
+    if len(quoted) == 1:
+        return f"need type {quoted[0]}"
+    return f"need types {', '.join(quoted[:-1])} and {quoted[-1]}"
+
+
 def invalid_on_types_message(
-    name: str, *, on_link: bool, need_types: Iterable[str], reason: str
+    name: str,
+    *,
+    on_link: bool,
+    type_reasons: Iterable[tuple[str, str]],
+    everywhere: bool = False,
 ) -> str:
     """The ``needs.derive_invalid`` warning for a ``derive`` rule in a cycle of
-    own-field reads on some need types only."""
+    own-field reads on some need types: one clause per distinct cycle, naming the
+    types it closes on.
+
+    :param type_reasons: Each need type the rule cycles on, with why.
+    :param everywhere: Whether those are every need type, so it applies on none.
+    """
     what = _what(on_link)
     holds = "holds no links" if on_link else "holds its empty value"
-    quoted = [repr(need_type) for need_type in need_types]
-    named, there = (
-        (f"need type {quoted[0]}", "that need type")
-        if len(quoted) == 1
-        else (
-            f"need types {', '.join(quoted[:-1])} and {quoted[-1]}",
-            "those need types",
-        )
+    by_reason: dict[str, list[str]] = {}
+    for need_type, reason in sorted(type_reasons):
+        by_reason.setdefault(reason, []).append(need_type)
+    clauses = "; ".join(
+        f"on {_named_types(types)}: {reason}" for reason, types in by_reason.items()
     )
+    count = sum(len(types) for types in by_reason.values())
+    there = "that need type" if count == 1 else "those need types"
+    rest = "" if everywhere else "; on every other need type the rule applies"
     return (
-        f"Invalid derive of {what} {name!r}: on {named}: {reason}; the {what} cannot "
-        f"be set in a need or by a needextend, and on {there} {holds}; on every other "
-        "need type the rule applies"
+        f"Invalid derive of {what} {name!r}: {clauses}; the {what} cannot be set in a "
+        f"need or by a needextend, and on {there} {holds}{rest}"
     )
 
 
@@ -771,8 +793,8 @@ def _per_type_cycle_problems(
             groups.append(("", others))
         every_type = frozenset(declared)
     problems: dict[tuple[bool, str, str], DeriveProblem] = {}
-    #: a ``derive`` in a cycle: the types it cycles on, and why (on the first of them)
-    fallbacks: dict[str, tuple[list[str], str]] = {}
+    #: a ``derive`` in a cycle: each type it cycles on, with why there
+    fallbacks: dict[str, dict[str, str]] = {}
     for need_type, types in groups:
         rules: dict[str, tuple[DeriveRule, FieldSchema | LinkSchema]] = {}
         own: set[str] = set()
@@ -797,11 +819,16 @@ def _per_type_cycle_problems(
                     )
                 )
             else:
-                fallbacks.setdefault(name, ([], reason))[0].extend(types)
-    for name, (types, reason) in fallbacks.items():
+                for cycling in types:
+                    fallbacks.setdefault(name, {})[cycling] = reason
+    for name, reasons in fallbacks.items():
         on_link = valid[(name, "")][0].link_valued
-        if set(types) >= every_type:
-            # the rule cycles on every need type: it cannot be read anywhere
+        type_reasons = tuple(sorted(reasons.items()))
+        reason = type_reasons[0][1]
+        everywhere = set(reasons) >= every_type
+        if everywhere and len(set(reasons.values())) == 1:
+            # the rule cycles on every need type, along one path: it cannot be read
+            # anywhere, reported as a project without derive_by_type reports it
             problem = DeriveProblem(
                 name,
                 on_link,
@@ -809,15 +836,19 @@ def _per_type_cycle_problems(
                 reason=reason,
             )
         else:
-            on_types = tuple(sorted(types))
             problem = DeriveProblem(
                 name,
                 on_link,
                 invalid_on_types_message(
-                    name, on_link=on_link, need_types=on_types, reason=reason
+                    name,
+                    on_link=on_link,
+                    type_reasons=type_reasons,
+                    everywhere=everywhere,
                 ),
                 reason=reason,
-                on_types=on_types,
+                # a rule cycling on every type cannot be read on any
+                on_types=() if everywhere else tuple(t for t, _ in type_reasons),
+                type_reasons=() if everywhere else type_reasons,
             )
         problems[(on_link, name, "derive")] = problem
     return problems

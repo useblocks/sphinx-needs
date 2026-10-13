@@ -1835,13 +1835,17 @@ def _report_derive_problems(
             )
         else:
             # an entry, or a derive on the types it cycles on: invalid on those types
+            # (the derive's marked as such, so the field is still described by it)
             by_type = dict(target.derive_by_type or {})
-            for need_type in problem.on_types or (
-                part.removeprefix("derive_by_type."),
-            ):
-                rule = by_type.get(need_type, target.derive)
+            if problem.on_types:
+                for need_type, reason in problem.type_reasons:
+                    by_type[need_type] = DeriveInvalid(
+                        getattr(target.derive, "kind", None), reason, fallback=True
+                    )
+            else:
+                need_type = part.removeprefix("derive_by_type.")
                 by_type[need_type] = DeriveInvalid(
-                    getattr(rule, "kind", None), problem.reason
+                    getattr(by_type.get(need_type), "kind", None), problem.reason
                 )
             target = dataclasses.replace(target, derive_by_type=by_type)
         schema.replace_field(target)
