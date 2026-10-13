@@ -472,7 +472,7 @@ def test_write_rst_still_works_and_says_it_is_deprecated(tmp_path: Path) -> None
 )
 def test_write_rst_negative(json_objs: list[dict], output_lines, tmp_path) -> None:
     to_dump = {"project_1": json_objs}
-    jsonpath = Path("invalid_objs.json")
+    jsonpath = tmp_path / "invalid_objs.json"
     with jsonpath.open("w") as f:
         json.dump(to_dump, f)
     outpath = tmp_path / "needextend.rst"
@@ -846,7 +846,9 @@ def test_analyse_tolerates_get_rst_false(
     with config_file.open("w", encoding="utf-8") as f:
         toml.dump({"codelinks": {"projects": {"a": project, "b": project}}}, f)
 
-    result = runner.invoke(app, ["analyse", str(config_file), *selected])
+    result = runner.invoke(
+        app, ["analyse", str(config_file), "--outdir", str(tmp_path), *selected]
+    )
 
     assert result.exit_code == 0, result.output
     output = _normalize_output(result.output)
