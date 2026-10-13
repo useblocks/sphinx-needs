@@ -712,7 +712,8 @@ a value that varies per need is what a rule is for.
 
 ``derive_by_type`` is checked when the configuration is read, one ``needs.derive_invalid`` per entry:
 a key naming no need type is ignored (a type's title is not its directive name, and the warning says which is meant);
-an empty ``derive_by_type``, or one that is not a table, leaves the field derived, with no rule on any type;
+an empty ``derive_by_type``, or one that is not a table, adds no rule: the field stays derived,
+every need type using the ``derive`` beside it, or, without one, no rule;
 an entry that cannot be read, as a ``derive`` that cannot be read, leaves the needs of its type at the empty value,
 and the other types are unaffected.
 Rules reading one another's own fields in a circle are looked for per need type, among the rules each type uses:

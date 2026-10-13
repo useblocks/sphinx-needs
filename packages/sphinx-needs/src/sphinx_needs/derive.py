@@ -578,14 +578,25 @@ def invalid_on_types_message(
     )
 
 
-def by_type_message(name: str, *, on_link: bool, part: str, reason: str) -> str:
+def by_type_message(
+    name: str, *, on_link: bool, part: str, reason: str, uses_derive: bool = False
+) -> str:
     """The ``needs.derive_invalid`` warning for a ``derive_by_type`` table, or a key of
-    it, that cannot be read (see :func:`parse_derive_by_type`)."""
+    it, that cannot be read (see :func:`parse_derive_by_type`).
+
+    :param uses_derive: For the table: whether a ``derive`` beside it stands, which
+        every need type then uses (an unreadable table adds no rule).
+    """
     what = _what(on_link)
     if part == "derive_by_type":
+        rules = (
+            "every need type uses its derive"
+            if uses_derive
+            else "no need type has a rule"
+        )
         return (
             f"Invalid derive_by_type of {what} {name!r}: {reason}; the {what} cannot "
-            "be set in a need or by a needextend, and no need type has a rule"
+            f"be set in a need or by a needextend, and {rules}"
         )
     return f"Invalid derive_by_type of {what} {name!r}: {reason}"
 

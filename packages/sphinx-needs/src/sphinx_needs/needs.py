@@ -1846,7 +1846,11 @@ def _report_derive_problems(
             target = dataclasses.replace(target, derive_by_type=by_type)
         schema.replace_field(target)
     core = sorted((p for p in read_problems if p.core), key=lambda p: p.name)
-    findings = {(p.on_link, p.name, p.part): p for p in read_problems if not p.core}
+    findings = {
+        (p.on_link, p.name, p.part): _with_table_text(schema, p)
+        for p in read_problems
+        if not p.core
+    }
     findings.update(checked)
     if (copied := copy_problem(schema)) is not None and (
         True,
@@ -1857,6 +1861,29 @@ def _report_derive_problems(
     ordered = sorted(findings.values(), key=lambda problem: problem.order)
     for problem in [*core, *ordered]:
         log_warning(LOGGER, problem.message, "derive_invalid", None)
+
+
+def _with_table_text(schema: FieldsSchema, problem: DeriveProblem) -> DeriveProblem:
+    """A finding of an unreadable ``derive_by_type`` table, saying what the needs use:
+    the ``derive`` beside it when it stands (once checked), else no rule."""
+    if problem.part != "derive_by_type":
+        return problem
+    target = (
+        schema.get_link_field(problem.name)
+        if problem.on_link
+        else schema.get_extra_field(problem.name)
+    )
+    uses_derive = target is not None and isinstance(target.derive, DeriveRule)
+    return dataclasses.replace(
+        problem,
+        message=by_type_message(
+            problem.name,
+            on_link=problem.on_link,
+            part=problem.part,
+            reason=problem.reason,
+            uses_derive=uses_derive,
+        ),
+    )
 
 
 class _DefaultsDictType(TypedDict, total=False):

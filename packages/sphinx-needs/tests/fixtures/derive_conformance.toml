@@ -2720,7 +2720,7 @@ SPEC_1 = ["total_n"]
 
 [[case]]
 name = "by-type-invalid-shapes"
-why = "derive_by_type is checked at load, one derive_invalid per rule entry or key: a type key naming no need type (a title included) is ignored; an empty or non-table derive_by_type, a non-table entry and an invalid entry are reported and the field stays closed, needs of that type holding their empty value while the other types are unaffected; 'types' inside a rule is not a role; a default beside derive is refused as before; predicates, and a non-literal default, beside derive_by_type alone are refused"
+why = "derive_by_type is checked at load, one derive_invalid per rule entry or key: a type key naming no need type (a title included) is ignored; an empty or non-table derive_by_type, a non-table entry and an invalid entry are reported and the field stays closed (a derive beside an empty one computes on every type), needs of that type holding their empty value while the other types are unaffected; 'types' inside a rule is not a role; a default beside derive is refused as before; predicates, and a non-literal default, beside derive_by_type alone are refused"
 config = '''
 [needs.fields.hours]
 schema = { type = "number" }
@@ -2772,6 +2772,11 @@ schema = { type = "string" }
 default = "[[copy('title')]]"
 derive_by_type.spec = { kind = "copy", field = "title" }
 
+[needs.fields.table_beside_derive]
+schema = { type = "number" }
+derive = { kind = "copy", field = "hours" }
+derive_by_type = {}
+
 [needs.fields.status]
 derive_by_type.spec = { kind = "copy", field = "title" }
 '''
@@ -2790,12 +2795,14 @@ source = '''
 [case.expect.needs.REQ_1]
 unknown_type = 4.0
 beside_default = 4.0
+table_beside_derive = 2.0
 [case.expect.needs.SPEC_1]
 entry_not_table = 2.0
 entry_invalid = 2.0
 beside_default = 4.0
 beside_predicates = 4.0
 dynamic_default = "B"
+table_beside_derive = 4.0
 [case.expect.nulls]
 REQ_1 = ["title_key", "empty_table", "not_a_table", "entry_not_table", "entry_invalid", "types_role", "beside_predicates", "dynamic_default"]
 SPEC_1 = ["unknown_type", "title_key", "empty_table", "not_a_table", "types_role"]
@@ -2832,6 +2839,9 @@ field = "dynamic_default"
 [[case.expect.findings]]
 code = "derive_invalid"
 field = "status"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "table_beside_derive"
 
 [[case]]
 name = "by-type-declared-cycle-per-type"
