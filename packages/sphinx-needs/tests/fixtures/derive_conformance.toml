@@ -2183,7 +2183,7 @@ fp = "2f755a8726e0c1298e1986fbbf38a81dfc9c9dad765fac9368f321614ca460c0"
 
 [[case]]
 name = "fingerprint-new-field-keeps-digest"
-why = "declaring more fields and link types -- a nullable field, a field with a default, a boolean defaulting to false, a legacy extra option, a link type -- moves no fingerprint: each need leaves them at their default (the hexes are fingerprint-whole-need's)"
+why = "declaring more fields and link types -- a nullable field, a field with a default, a boolean defaulting to false, a number field defaulting to the integer 1, a legacy extra option, a link type -- moves no fingerprint: each need leaves them at their default, a number field's default and value compared as floats, so REQ_10 writing 1 is the default 1.0 too (the hexes are fingerprint-whole-need's)"
 config = '''
 [needs]
 extra_options = ["legacy"]
@@ -2223,6 +2223,10 @@ schema = { type = "boolean" }
 nullable = false
 default = false
 
+[needs.fields.added_number]
+schema = { type = "number" }
+default = 1
+
 [needs.fields.total]
 schema = { type = "number" }
 derive = { kind = "sum", field = "effort", over = "satisfies" }
@@ -2256,6 +2260,7 @@ source = '''
 
 .. req:: Ten
    :id: REQ_10
+   :added_number: 1
 
 .. spec:: The spec
    :id: SPEC_1
@@ -2277,6 +2282,7 @@ fp = "745d8ab73ad2fb3debf82dd2f3d1f4e74cc877d7019f19ae71d0062f7e8e6cc0"
 [case.expect.needs.REQ_2]
 fp = "1c11fc8d20259d1ca9f8b897729aefaa7bd03bad70aa98afbe9822d228416904"
 [case.expect.needs.REQ_10]
+added_number = 1.0
 fp = "1bf424b4b9eab80ace7427300cc83b71058cefee1969edd6b7061257c248359a"
 [case.expect.needs.SPEC_1]
 fp = "2f755a8726e0c1298e1986fbbf38a81dfc9c9dad765fac9368f321614ca460c0"
