@@ -3,8 +3,12 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:1.1.0`:
+
+1.1.0
+-----
+
+:Released: 2026-10-14
 
 Fixed
 .....
