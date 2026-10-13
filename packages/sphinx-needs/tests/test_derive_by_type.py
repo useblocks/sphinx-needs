@@ -458,7 +458,7 @@ derive_by_type.spec = { kind = "links", where = "type == 'req'" }
 default = ["REQ_1"]
 
 [needs.links.rel_unsorted]
-default = ["SPEC_1", "REQ_1[type == 'req']"]
+default = ["SPEC_1", "REQ_1[type == 'req']", "SPEC_1"]
 derive_by_type.impl = { kind = "links", where = "type == 'req'" }
 """
 
