@@ -3,8 +3,12 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:2.0.0`:
+
+2.0.0
+-----
+
+:Released: 14.10.2026
 
 New and Improved
 ................
