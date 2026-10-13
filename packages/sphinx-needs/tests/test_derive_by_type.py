@@ -1226,3 +1226,81 @@ def test_a_global_default_is_refused_as_on_any_derived_field(test_app: Any) -> N
         "does not allow defaults [needs.config]"
     ]
     assert _needs(app)["SPEC_1"]["label"] is None
+
+
+PATHS_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_types = [
+    {"directive": t, "title": t, "prefix": t.upper() + "_"}
+    for t in ("req", "spec", "impl", "test")
+]
+needs_fields = {
+    "a": {"schema": {"type": "string"}, "derive": {"kind": "copy", "field": "b"}},
+    "b": {
+        "schema": {"type": "string"},
+        "derive_by_type": {
+            "impl": {"kind": "copy", "field": "a"},
+            "req": {"kind": "copy", "field": "c"},
+        },
+    },
+    "c": {
+        "schema": {"type": "string"},
+        "derive_by_type": {"req": {"kind": "copy", "field": "a"}},
+    },
+    "x": {"schema": {"type": "string"}, "derive": {"kind": "copy", "field": "y"}},
+    "y": {
+        "schema": {"type": "string"},
+        "derive": {"kind": "copy", "field": "x"},
+        "derive_by_type": {"req": {"kind": "copy", "field": "title"}},
+    },
+}
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            PATHS_CONF,
+            ".. req:: A\n   :id: REQ_1\n\n.. spec:: B\n   :id: SPEC_1\n\n"
+            ".. needextend:: SPEC_1\n   :x: written\n",
+        )
+    ],
+    indirect=True,
+)
+def test_a_derive_cycling_on_some_types_names_each_path(test_app: Any) -> None:
+    """``a``'s ``derive`` closes a cycle on ``impl`` (``a -> b -> a``) and another on
+    ``req`` (``a -> b -> c -> a``): the finding gives each type its own path. ``x``,
+    declared with ``derive`` alone, cycles with ``y`` on every type but ``req`` (the github
+    service's types included); it is
+    still described by its own rule (``kind 'copy'``), never "by need type"."""
+    app = test_app
+    app.build()
+    cycle = (
+        "kind 'copy': the role 'field' reads {!r}, whose rule reads this field back "
+        "({}), so no need can compute it"
+    )
+    tail = (
+        f"; {_CLOSED}, and on those need types holds its empty value; on every other "
+        "need type the rule applies [needs.derive_invalid]"
+    )
+    assert _warnings(app) == [
+        "WARNING: Invalid derive of field 'a': on need type 'impl': "
+        + cycle.format("b", "a -> b -> a")
+        + "; on need type 'req': "
+        + cycle.format("b", "a -> b -> c -> a")
+        + tail,
+        _invalid("b", cycle.format("a", "b -> a -> b"), entry="impl"),
+        _invalid("b", cycle.format("c", "b -> c -> a -> b"), entry="req"),
+        _invalid("c", cycle.format("a", "c -> a -> b -> c"), entry="req"),
+        "WARNING: Invalid derive of field 'x': on need types 'commit', 'impl', "
+        "'issue', 'pr', 'spec' and 'test': " + cycle.format("y", "x -> y -> x") + tail,
+        "WARNING: Invalid derive of field 'y': on need types 'commit', 'impl', "
+        "'issue', 'pr', 'spec' and 'test': " + cycle.format("x", "y -> x -> y") + tail,
+        "<srcdir>/index.rst:10: WARNING: Field 'x' is derived (kind 'copy') and cannot "
+        "be set by a needextend; the option 'x' is ignored [needs.derive_authored]",
+    ]
+    needs = _needs(app)
+    assert (needs["REQ_1"]["x"], needs["REQ_1"]["y"]) == ("A", "A")
+    assert (needs["SPEC_1"]["x"], needs["SPEC_1"]["y"]) == (None, None)
