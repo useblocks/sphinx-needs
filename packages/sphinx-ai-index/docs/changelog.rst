@@ -10,9 +10,9 @@ Changelog
 
 :Released: 2026-10-14
 
-The first release from the Sphinx-Needs repository, and 1.0.0 because the
-``ai_docs_index.json`` it writes has been the format's ``"1.0"`` since the first release,
-and ubCode reads it in production. Nothing about what the extension writes changes:
+The first release from the Sphinx-Needs repository, and 1.0.0 because what it writes is
+a format in production use: ``ai_docs_index.json`` has been the format's ``"1.0"`` since
+the first release, and ubCode reads it. Nothing about what the extension writes changes:
 ``ai_docs_index.json`` is the same file, field for field, as 0.1.0 writes it. What changes
 is where it installs: Python 3.11 or newer and Sphinx 7.4 up to 9, the range every
 extension in that repository is tested against, with docutils 0.21 declared beside them

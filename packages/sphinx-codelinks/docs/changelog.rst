@@ -45,7 +45,10 @@ New and Improved
     requests concerning this package get a ``pkg: sphinx-codelinks`` label. Old issue URLs
     redirect.
   - **The documentation** (done): https://codelinks.useblocks.com stays the address, and
-    is now served by Read the Docs; nothing changes for a reader of that URL.
+    is now served by Read the Docs, under ``/en/latest/``. A link into the old GitHub Pages
+    layout (``…/components/analyse.html``) needs that prefix
+    (``…/en/latest/components/analyse.html``); ``/en/stable/`` does not show this
+    package's documentation yet.
   - **The old repository** will be archived rather than deleted, so every permalink and
     every ``git+https://…/sphinx-codelinks.git@<sha>`` pin keeps resolving. Repositories
     pinning ``@main`` will stop receiving updates and should re-point at PyPI or at

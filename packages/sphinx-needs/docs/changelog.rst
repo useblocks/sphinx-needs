@@ -230,8 +230,10 @@ Improvements
   :ref:`page_size <needtable_page_size>`. **Removed:** the Excel and PDF export buttons
   and the column reordering of 8.5.0's DataTables; a table exports through **Copy** and
   **CSV** only (a CSV file opens in a spreadsheet, and a browser prints). The script and
-  its stylesheet are added only to the pages with an interactive table, so
-  ``search.html``, ``genindex.html`` and every page without one load none of it.
+  its own stylesheet are added only to the pages with an interactive table, so
+  ``search.html``, ``genindex.html`` and every page without one load neither; the small
+  common ``needstable.css`` that styles every needtable is still on every page, as in
+  8.5.0.
 
 - ✨ The variant data can be declared in the ``[variants]`` table of the
   :ref:`needs_from_toml` file, which other tools reading the same file share

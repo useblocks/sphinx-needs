@@ -41,8 +41,8 @@ ub-test-reports has its own version number and
    installs ub-test-reports instead. The ``sphinx`` extra is accepted and ignored, and the
    ``pytest`` extra installs ``ub-test-reports[pytest]``, until 4.0.
 
-The extension supports Sphinx 7.4 or later, docutils 0.21 or later and Sphinx-Needs 8.5
-(``>=8.5.0,<9``); ``pip`` resolves those as it installs it, and the extension itself
+The extension supports Sphinx 7.4 or later, docutils 0.21 or later and Sphinx-Needs 9
+(``>=9.0.0,<10``); ``pip`` resolves those as it installs it, and the extension itself
 refuses an older Sphinx when it loads.
 
 After that the extension must be added to the ``conf.py`` file::
