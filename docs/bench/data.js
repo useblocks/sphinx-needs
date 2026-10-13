@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791896385267,
+  "lastUpdate": 1791916193762,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -24444,6 +24444,42 @@ window.BENCHMARK_DATA = {
             "value": 55.139835309000006,
             "unit": "s",
             "extra": "Commit: 8b7a465824b932516ec7e35a7e69482c8d313773\nBranch: master\nTime: 2026-10-13T14:58:21+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5a3f17c3a49b4f8c63155306dce51659196db118",
+          "message": "🧪 CI: the Extensions cell runs its four large suites on four workers (#2210)\n\nThe Extensions Windows cell is the run's critical path: 12.1 min in run\n38399647972, 5.2 min of it sphinx-codelinks' suite. Serially every suite\ncosts 1.9–2.4× on Windows what it costs on ubuntu, while the Needs\ncells, already at `-n 4`, pay 1.0–1.3×: the penalty is per-file and\nper-process latency, and four workers overlap it. This PR runs the four\nextension suites that take minutes at `-n 4`, and fixes what made that\nunsafe.\n\n### What changes\n\n- `test-extensions.yaml` gains a `pytest-workers` input (default `\"4\"`);\nthe sphinx-mounts, sphinx-codelinks, sphinx-test-reports and\nub-test-reports steps pass it as `-n`. ub-project and sphinx-ai-index\nstay serial (seconds, which xdist's start-up would eat).\n- `ci.yaml` passes `0` for the **sphinx-8 ubuntu** cell, which stays\nserial: every suite still runs once in collection order, in one process,\nso an `-n`-only failure shows as a difference between cells. That cell\nbecause it is the fastest (4.5 min) and sits under the Needs Windows\ncells, so its serial run is free on the critical path. `-n 0` is\npytest-xdist's own \"no workers\": measured identical to a run without\n`-n` (same counts, mounts' \"2 deselected\" included, no worker prefixes,\nsame coverage XML). The expression is `(matrix.os != 'ubuntu-latest' ||\nmatrix.sphinx-group != 'sphinx-8') && '4' || '0'`, and this PR's own CI\nis its measurement: the sphinx-8 ubuntu Extensions log should show `-n\n0` on the four suites, every other Extensions cell `-n 4`.\n- A last step fails the job if the suites wrote anything into the\ncheckout: `git status --porcelain --ignored`, minus a commented\nallowlist of what the cell itself creates (`.venv/`, `.pytest_cache/`,\n`__pycache__/`, `.coverage*`, the five coverage XMLs, `.hypothesis/`,\nand the codecov CLI that `codecov-action` downloads into the CWD). Two\nentries are not measured: `.coverage.*`, which only an interrupted\ncombine leaves, and the codecov one, read from the action's script,\nwhose measurement is the first sphinx-9 ubuntu run. `--ignored` is the\npoint: the `.gitignore` hides a fixed-path write such as `output/`, and\nthe step fails on the FIRST run of such a test instead of waiting for\ntwo workers to meet there. It fails closed: grep's \"nothing left\" is the\nonly non-zero status it lets through, so a mistyped allowlist entry is a\nred step, not a silent green.\n- The \"sphinx-codelinks' suite is under 20 seconds\" premise of three\ncomments is corrected (1051 tests in run 38399647972, and the job's\nlargest step); their conclusions still hold and are kept. Two more\ncomments in `prepare-cell` and `test-package.yaml` stop saying the cell\nruns \"two short suites\". The root `AGENTS.md` says the four suites take\n`-n 4` locally too.\n\n### Measured (locally, Apple M2 Pro; the step's own command with\ncoverage; median of 3)\n\n| suite | serial | `-n 4` | speed-up | tests |\n|---|---|---|---|---|\n| sphinx-codelinks | 94 s | 30 s | 3.1× | 1051 |\n| sphinx-mounts | 42 s | 18 s | 2.35× | 961 |\n| sphinx-test-reports | 39 s | 14 s | 2.75× | 462 |\n| ub-test-reports | 15.5 s | 6.3 s | 2.5× | 460 |\n\n60 runs (36 through the poe tasks, 24 in the step's own form) plus 12\norder and distribution probes (reverse order, `--dist loadfile`, `-n 8\n--dist worksteal`), all green with the serial counts; coverage totals\nidentical serial vs `-n 4` (codelinks' to one line, which varied between\nserial runs too).\n\n### Hazards found, and fixed\n\n- Six sphinx-codelinks tests wrote at fixed paths in the checkout:\n`test_analyse_tolerates_get_rst_false` (×2) wrote `output/` in the CWD,\n`test_write_rst_negative` wrote `invalid_objs.json` there, and three\n`test_src_tracing_config_*` tests made their Sphinx app on the in-tree\n`tests/data/sphinx`, writing its `_build`. They now use `tmp_path` (the\nthree copy `data/sphinx` + `data/dcdc` there, as `test_build_html`\ndoes). The `.gitignore` drops `invalid_objs.json` and keeps `output/`,\nwhich a `codelinks analyse` from a checkout still writes.\n- 🐛 A product race behind the first: `codelinks analyse` checked whether\nits output directory existed and then created it, so two runs started\ntogether in one directory failed the second with `FileExistsError`. Now\n`mkdir(parents=True, exist_ok=True)` (codelinks changelog, Unreleased).\nTwo processes released by a barrier: 64 of 300 trials failed before, 0\nof 300 after. The library method `SourceAnalyse.dump_marked_content` had\nthe same check-then-`mkdir` and gets the same fix. Both are pinned by a\ntest that makes the directory appear right after the check, the CLI one\nthrough a TOML `outdir` (the `--outdir` option is declared\n`exists=True`, so that route could never race).\n\n### Estimate (an estimate, not a measurement)\n\nWindows Extensions cell 12.1 → ~5.6–7.1 min; the run's wall ~12 → ~7–8.5\nmin, with Needs py3.12/sphinx-8 Windows becoming the critical path.\n\n### Not done, and why\n\nA per-package job split, caching `choco install graphviz`, and rewriting\nslow tests (the five-`git`-call fixture): once this lands nothing in the\nExtensions job is on the critical path, so none of them would shorten\nthe run.\n\n### Not measured\n\nThe Windows runner itself. The hazards fixed are path hazards, which are\nplatform-independent, and the Needs suite already runs `-n 4` in three\nWindows cells. The fence step is `shell: bash`, and git prints\n`/`-separated paths there.\n\n### ubCode\n\nNothing to mirror: ubCode's CI is cargo, not pytest.",
+          "timestamp": "2026-10-13T20:28:20+02:00",
+          "tree_id": "8028e385d9161a701e70435e3e3174a4a10c60c4",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/5a3f17c3a49b4f8c63155306dce51659196db118"
+        },
+        "date": 1791916184448,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.14927762300000325,
+            "unit": "s",
+            "extra": "Commit: 5a3f17c3a49b4f8c63155306dce51659196db118\nBranch: master\nTime: 2026-10-13T20:28:20+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 57.945861927,
+            "unit": "s",
+            "extra": "Commit: 5a3f17c3a49b4f8c63155306dce51659196db118\nBranch: master\nTime: 2026-10-13T20:28:20+02:00"
           }
         ]
       }
