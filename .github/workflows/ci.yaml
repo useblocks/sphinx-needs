@@ -332,9 +332,10 @@ jobs:
     # And ONE cell for all of them rather than a matrix per package. This used to rest on
     # sphinx-codelinks' suite being under 20 seconds; it is now 1051 tests and the job's
     # largest step (104-147 s serial on ubuntu, 313 s on Windows, in run 38399647972;
-    # ~30 s and an estimated ~100 s under `-n 4`). The premise changed and the conclusion
-    # holds: a matrix per package would pay the job start-up once more per package and per
-    # cell, and put one more entry per cell on every pull request's checks list for each.
+    # ~30 s locally and an estimated ~100 s on Windows under `-n 4`). The premise changed
+    # and the conclusion holds: a matrix per package would pay the job start-up once more
+    # per package and per cell, and put one more entry per cell on every pull request's
+    # checks list for each.
     strategy:
       fail-fast: false
       matrix:
