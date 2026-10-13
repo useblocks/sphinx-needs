@@ -4021,7 +4021,7 @@ Configuration example:
 needs_extra_links
 ~~~~~~~~~~~~~~~~~
 
-.. deprecated:: 6.3.0
+.. deprecated:: 7.0.0
    Use :ref:`needs_links` instead.
 
 Allows the definition of additional link types as a list.
