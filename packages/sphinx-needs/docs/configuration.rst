@@ -307,8 +307,16 @@ For new fields the following can be defined:
 - ``parse_dynamic_functions``: If set to ``True``, the field will support :ref:`dynamic_functions`.
     Default: the value of :ref:`needs_parse_dynamic_functions` (``True``).
 - ``derive``: A rule computing the field for every need (optional), which makes it a :ref:`derived field <needs_derive>`:
-    a table naming a ``kind`` and the kind's roles.
+    a table naming a ``kind`` and the kind's roles;
+    with ``derive_by_type`` beside it, for every need of a type ``derive_by_type`` does not list.
     A derived field cannot be set in a need or by a ``needextend``, and takes no ``default`` or ``predicates``.
+    *New in version 9.0.0.*
+- ``derive_by_type``: Rules per need type (optional), which make it a :ref:`derived field <needs_derive>` too:
+    a table of need type (the directive name, as ``type`` holds it) to a rule, as ``derive`` takes one,
+    overriding ``derive`` on that type.
+    A need of a type without a rule holds the ``default`` (a literal, given only without ``derive``),
+    else ``None``, or the empty value of the field's type when it is not nullable.
+    The field is derived on every need type, see :ref:`needs_derive_by_type`.
     *New in version 9.0.0.*
 
 For example:
@@ -622,21 +630,114 @@ A ``where`` or ``test`` reads the candidate only:
 a filter naming ``needs``, ``current_need`` or a ``c.`` check (such as ``c.this_doc()``) cannot be declared,
 so that a rule means the same in every tool that reads the configuration.
 
-The ``join`` and ``types`` roles are reserved for a later release, and a rule naming either is reported.
+The ``join`` role is reserved for a later release, and a rule naming it is reported.
+``types`` is not a role: a rule for some need types is declared under ``derive_by_type`` (:ref:`needs_derive_by_type`).
 A rule on a core field (``status``, ``tags``, ``title`` and the other core fields, and the ``parent_needs`` link type),
 or on a link type named after a core field (such as ``parts``), is not available in this release: it is reported, and ignored.
+
+.. _`needs_derive_by_type`:
+
+Rules per need type
+^^^^^^^^^^^^^^^^^^^
+
+Beside ``derive``, or instead of it, a ``derive_by_type`` table gives a rule per need type.
+Its keys are need types, by their directive name (the value ``type`` holds, as a filter reads it: ``type == 'story'``),
+and each value is a rule, as ``derive`` takes one.
+A need uses the rule of its type, else ``derive``, else none.
+
+Effort written on tasks and rolled up through stories and epics takes two fields:
+the one authors write, and a derived one, which copies it on a task and sums itself over the links of a story or an epic:
+
+.. code-block:: toml
+
+   [needs.fields.effort]
+   schema = { type = "number" }
+
+   [needs.fields.total_effort]
+   schema = { type = "number" }
+   nullable = false
+   derive_by_type.task = { kind = "copy", field = "effort" }
+   derive_by_type.story = { kind = "sum", field = "total_effort", over = "links" }
+   derive_by_type.epic = { kind = "sum", field = "total_effort", over = "links" }
+
+.. code-block:: rst
+
+   .. task:: Write the parser
+      :id: TASK_1
+      :effort: 3
+
+   .. task:: Write the tests
+      :id: TASK_2
+      :effort: 5
+
+   .. task:: Write the docs
+      :id: TASK_3
+      :effort: 2
+
+   .. story:: Parse the input
+      :id: STORY_1
+      :links: TASK_1, TASK_2
+
+   .. epic:: Ship the reader
+      :id: EPIC_1
+      :links: STORY_1, TASK_3
+
+Each task's ``total_effort`` is its ``effort`` (``3.0``, ``5.0``, ``2.0``),
+``STORY_1``'s is ``8.0``, and ``EPIC_1``'s ``10.0``: a rule reading its own field over a link type
+reads the value each linked need computes, through any depth.
+Needs linking one another in a cycle cannot compute such a value, and are reported (``needs.derive_cycle``).
+One field cannot do both: a derived field is closed on every need type, also where it has no rule.
+
+A need of a type without a rule holds the same value on every need of the type:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - beside ``derive_by_type``
+     - a need of a type without a rule holds
+   * - a ``default``
+     - the default, in the field's type (``default = 0`` is ``0.0`` in a ``number`` field);
+       the field's ``schema`` checks it, as it checks any default
+   * - no ``default``, nullable (as a field is unless ``nullable = false``)
+     - ``None``
+   * - no ``default``, ``nullable = false``
+     - the field's empty value (``""``, ``0``, ``0.0``, ``False`` or ``[]``; no links for a link type),
+       which the ``schema`` does not check
+
+The ``default`` must be a literal value, and is given only with ``derive_by_type`` alone:
+beside ``derive`` every need type has a rule, and a ``default`` is reported as ``needs.derive_invalid``, and ignored.
+A ``default`` that is a ``[[…]]`` or a variant, and ``predicates``, are reported beside ``derive_by_type`` too, and ignored:
+a value that varies per need is what a rule is for.
+
+``derive_by_type`` is checked when the configuration is read, one ``needs.derive_invalid`` per entry:
+a key naming no need type is ignored (a type's title is not its directive name, and the warning says which is meant);
+an empty ``derive_by_type``, or one that is not a table, leaves the field derived, with no rule on any type;
+an entry that cannot be read, as a ``derive`` that cannot be read, leaves the needs of its type at the empty value,
+and the other types are unaffected.
+Rules reading one another's own fields in a circle are looked for per need type, among the rules each type uses:
+a ``derive`` closing such a circle on some types only is reported naming them, and applies on every other type.
+
+Each need is computed in the step of its own rule, so one field may be computed after every other on one type
+(``after = "derived"``) and not on another: a value that reads the field waits for the rule of the need it reads,
+and only the needs whose rule comes later are reported (``needs.derive_scope``).
 
 What a derived field holds
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A derived field is closed to authors:
+A derived field (one with ``derive`` or ``derive_by_type``) is closed to authors, on every need type,
+also on a type it has no rule for:
 a value written for it in a need (a literal, or a ``[[…]]``, ``<<…>>`` or ``<{…}>``),
 or set by a :ref:`needextend`, is ignored and reported as ``needs.derive_authored``, at the need or the ``needextend``.
-It takes no ``default`` and no ``predicates``.
+It takes no ``default`` (but the value of the need types without a rule, see :ref:`needs_derive_by_type`)
+and no ``predicates``.
 A need from outside the project's sources, created by :ref:`needimport` or loaded from :ref:`needs_external_needs`,
 keeps the values it carries, as data: no rule runs on it.
+One lacking a derived field holds what a need of its type holds when no rule has computed it:
+the value of a type without a rule, else the empty value.
 In the schema of the :ref:`needs.json <needs_builder_format>`, a derived field or link type is marked ``"readOnly": true``,
-so a project importing the file knows the value is computed, not authored.
+so a project importing the file knows the value is computed, not authored;
+the schema's ``default`` of a field is the value of a need type without a rule.
 
 A rule is checked when the configuration is read.
 A rule that cannot be read is reported as ``needs.derive_invalid``, once per rule, naming the kind and the role:
@@ -704,6 +805,9 @@ A rule is computed with the ``[[…]]`` of its step (see :ref:`needs_processing_
 - **transitive.** ``min`` and ``max`` read every need reachable through ``over``, each once:
   a need on a cycle reaches itself, so every member of a cycle has the same value;
   ``include_self`` adds the need's own ``field``.
+  A rule whose ``field`` is its own field (a roll-up of one field per need type, see :ref:`needs_derive_by_type`)
+  reads the value each reached need computes, so needs linking one another in a cycle are reported
+  (``needs.derive_cycle``) rather than closed over.
 - **hash.** The lowercase hex SHA-256 of the UTF-8 text of one JSON array:
   the listed fields' values in the listed order, each as :ref:`needs.json <needs_builder_format>` holds it
   (an unset field ``null``),
@@ -721,7 +825,8 @@ A rule is computed with the ``[[…]]`` of its step (see :ref:`needs_processing_
     so editing or moving the nested need changes its parent's fingerprint too),
     every field the project declares in :ref:`needs_fields` or :ref:`needs_extra_options`,
     and every link type, ``links`` among them; none of them derived.
-  - It never includes a derived field or link type (so no ``hash`` and no other fingerprint),
+  - It never includes a derived field or link type, one with ``derive`` or ``derive_by_type``, on any need type
+    (so no ``hash`` and no other fingerprint),
     a back link list (``<link type>_back``), ``parent_needs``, ``parts`` (a part's text is in ``content``),
     ``constraints``, where the need is (``docname``, ``lineno``, ``sections``),
     how it is shown (``layout``, ``style``, ``collapse``, ``hide``, the templates),
@@ -830,8 +935,14 @@ Each configured link can define:
 - ``parse_conditions``: If set to ``False``, the ``[condition]`` bracket syntax will not be parsed for this link type.
     Default: ``True``. *New in version 8.0.0.*
 - ``derive`` (optional): A rule computing the links of every need, which makes the link type :ref:`derived <needs_derive>`:
-    a table naming the kind ``links`` or ``content_links``, and its roles.
+    a table naming the kind ``links`` or ``content_links``, and its roles;
+    with ``derive_by_type`` beside it, of every need of a type ``derive_by_type`` does not list.
     A derived link type cannot be set in a need or by a ``needextend``, and takes no ``default`` or ``predicates``.
+    *New in version 9.0.0.*
+- ``derive_by_type`` (optional): Rules per need type, which make the link type :ref:`derived <needs_derive>` too:
+    a table of need type (the directive name) to a rule, as ``derive`` takes one, overriding ``derive`` on that type.
+    A need of a type without a rule holds the ``default`` (a literal, given only without ``derive``), else no links.
+    See :ref:`needs_derive_by_type`.
     *New in version 9.0.0.*
 - ``incoming`` (optional): Incoming text, to use for incoming links. E.g. "is blocked by". Default: "<name> incoming".
 - ``outgoing`` (optional): Outgoing text, to use for outgoing links. E.g. "blocks". Default: "<name>".
@@ -3649,7 +3760,7 @@ And use it like:
 
 .. versionadded:: 9.0.0
 
-   A dictionary entry can carry a ``derive`` rule, which makes the option a
+   A dictionary entry can carry a ``derive`` rule, or ``derive_by_type`` rules, which make the option a
    :ref:`derived field <needs_derive>`, as on a :ref:`needs_fields` entry.
 
 .. _`needs_global_options`:
