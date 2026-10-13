@@ -359,6 +359,11 @@ schema = { type = "number" }
 default = 7
 derive_by_type = {}
 
+[needs.fields.mixed_order]
+schema = { type = "number" }
+derive_by_type.req = { kind = "copy", field = "hours", bogus = 1 }
+derive_by_type.impl = { kind = "copy", field = "nope" }
+
 [needs.fields.not_a_table]
 schema = { type = "number" }
 derive_by_type = [1, 2]
@@ -437,6 +442,7 @@ derive_by_type.spec = { kind = "links", where = "type == 'req'" }
 
 [needs.links.rel]
 copy = true
+default = ["SPEC_1"]
 derive_by_type.req = { kind = "links", where = "type == 'spec'" }
 
 [needs.links.rel_beside]
@@ -541,6 +547,9 @@ def test_the_load_checks_in_their_order(test_app: Any) -> None:
             "entry_invalid_fallback", "kind 'sum': " + _UNKNOWN_FIELD, entry="req"
         ),
         _invalid("entry_not_table", "it is not a table naming a 'kind'", entry="req"),
+        # a check-time entry (impl) before a read-time one (req): by need type
+        _invalid("mixed_order", "kind 'copy': " + _UNKNOWN_FIELD, entry="impl"),
+        _invalid("mixed_order", "kind 'copy': 'bogus' is not a role", entry="req"),
         _by_type("not_a_table", "it is not a table of need types" + _NO_TABLE),
         _invalid("ordered", "kind 'copy': " + _UNKNOWN_FIELD),
         _invalid("ordered", "kind 'copy' requires the role 'field'", entry="req"),
@@ -605,8 +614,9 @@ def test_what_the_load_checks_leave(test_app: Any) -> None:
     assert (req["variant_default"], spec["variant_default"]) == (None, "B")
     assert (req["wrong_default"], spec["wrong_default"]) == (None, 1)
     assert (req["status"], spec["status"]) == (None, None)
-    # rel's copy is not made, on any need
-    assert (req["rel"], spec["rel"], req["links"]) == (["SPEC_1"], [], ["SPEC_1"])
+    # rel's copy is not made, on any need: not even SPEC_1's off-type default
+    assert (req["rel"], spec["rel"]) == (["SPEC_1"], ["SPEC_1"])
+    assert (req["links"], spec["links"]) == (["SPEC_1"], ["REQ_1"])
     assert (req["rel_beside"], spec["rel_beside"]) == (["SPEC_1"], [])
     assert (req["rel_default"], spec["rel_default"]) == (["REQ_1"], ["REQ_1"])
     schema = SphinxNeedsData(app.env).get_schema()
@@ -621,10 +631,31 @@ def test_what_the_load_checks_leave(test_app: Any) -> None:
 COPIED_INTO_LINKS_TOML = """\
 [needs.links.links]
 derive_by_type.req = { kind = "links", where = "type == 'spec'" }
+derive_by_type.spec = { kind = "links", where = "" }
 
 [needs.links.copier]
 copy = true
+
+[needs.links.copier_by_type]
+copy = true
+derive_by_type.req = { kind = "links", where = "type == 'spec'" }
 """
+
+COPIED_IMPORT = {
+    "current_version": "1.0",
+    "versions": {
+        "1.0": {
+            "needs": {
+                "SPEC_9": {
+                    "id": "SPEC_9",
+                    "type": "spec",
+                    "title": "Imported",
+                    "copier": ["REQ_1"],
+                }
+            }
+        }
+    },
+}
 
 
 @pytest.mark.parametrize(
@@ -633,24 +664,40 @@ copy = true
         _toml_project(
             COPIED_INTO_LINKS_TOML,
             ".. req:: A\n   :id: REQ_1\n   :copier: SPEC_1\n\n"
-            ".. spec:: B\n   :id: SPEC_1\n   :copier: REQ_1\n",
+            ".. spec:: B\n   :id: SPEC_1\n   :copier: REQ_1\n\n"
+            ".. needimport:: imported.json\n",
+            **{"imported.json": json.dumps(COPIED_IMPORT)},
         )
     ],
     indirect=True,
 )
 def test_links_derived_on_one_type_takes_no_copy(test_app: Any) -> None:
     """``links`` derived on one need type is derived: a link type copying into it is
-    reported (the rule's finding, here beside ``derive_by_type``), and nothing is
-    copied on any need, of that type or not."""
+    reported (the rule's finding, here beside ``derive_by_type``, so after its
+    entries; link types by name), and nothing is copied on any need, of that type or not -- an imported
+    need too, whose ``links`` no rule recomputes. A copying link type that is itself
+    derived by type is reported once, for its own ``copy``, not as copying into
+    ``links``."""
     app = test_app
     app.build()
     assert _warnings(app) == [
+        "WARNING: Invalid derive of link type 'copier_by_type': by need type: 'copy' "
+        "is not available on a derived link type in this release, and is ignored; the "
+        "rule applies [needs.derive_invalid]",
+        "WARNING: Invalid derive of link type 'links': derive_by_type.spec: kind "
+        "'links' has an empty 'where', which would link every need; the link type "
+        "cannot be set in a need or by a needextend, and on need type 'spec' holds no "
+        "links [needs.derive_invalid]",
         "WARNING: Invalid derive of link type 'links': by need type: 'links' is derived; "
         "the copy of the link type 'copier' into it is ignored; the rule applies "
-        "[needs.derive_invalid]"
+        "[needs.derive_invalid]",
     ]
     needs = _needs(app)
-    assert (needs["REQ_1"]["links"], needs["SPEC_1"]["links"]) == (["SPEC_1"], [])
+    assert (needs["REQ_1"]["links"], needs["SPEC_1"]["links"]) == (
+        ["SPEC_1", "SPEC_9"],
+        [],
+    )
+    assert (needs["SPEC_9"]["copier"], needs["SPEC_9"]["links"]) == (["REQ_1"], [])
 
 
 # -- the off-type value and the field's schema -----------------------------------------
@@ -666,6 +713,7 @@ derive_by_type.req = { kind = "count", over = "links" }
 
 [needs.fields.zero]
 schema = { type = "number", minimum = 5 }
+nullable = false
 default = 0
 derive_by_type.req = { kind = "sum", field = "hours", over = "links" }
 
@@ -700,7 +748,7 @@ def test_an_off_type_default_is_a_value_the_schema_checks(test_app: Any) -> None
     """A need of a type without a rule holds the field's default as a VALUE, in the
     field's type (``0`` is ``0.0`` in a ``number`` field): the field's schema checks
     it, as it checks a plain field's default (``plain``), even where it equals the
-    empty value (``zero``). The empty value of a field without a default is the
+    empty value (``zero``, not nullable: its empty value is ``0.0``). The empty value of a field without a default is the
     placeholder, which the schema does not check (``grade``'s ``""`` under an
     ``enum``); ``unset`` is nullable: ``None``. The export's schema block carries the
     default, and marks the fields ``readOnly``."""
@@ -1166,6 +1214,9 @@ derive = { kind = "fingerprint" }
 [needs.fields.fp_excluding]
 schema = { type = "string" }
 derive = { kind = "fingerprint", exclude = ["est"] }
+
+[needs.links.rel]
+derive_by_type.req = { kind = "links", where = "type == 'spec'" }
 """
 
 
@@ -1181,9 +1232,10 @@ derive = { kind = "fingerprint", exclude = ["est"] }
     indirect=True,
 )
 def test_a_fingerprint_never_includes_a_field_derived_by_type(test_app: Any) -> None:
-    """A field with ``derive_by_type`` is derived, so no fingerprint includes it, on
-    any type: ``exclude`` naming it gets the text of a name a fingerprint never
-    includes."""
+    """A field or link type with ``derive_by_type`` is derived, so no fingerprint
+    includes it, on any type: the digests are those of the same project without
+    ``est`` and ``rel`` (the corpus case ``by-type-fingerprint-and-hash``), and
+    ``exclude`` naming one gets the text of a name a fingerprint never includes."""
     app = test_app
     app.build()
     assert _warnings(app) == [
@@ -1195,7 +1247,14 @@ def test_a_fingerprint_never_includes_a_field_derived_by_type(test_app: Any) -> 
     ]
     schema = SphinxNeedsData(app.env).get_schema()
     assert "est" not in fingerprint_names(schema)
+    assert "rel" not in fingerprint_names(schema)
     assert "hours" in fingerprint_names(schema)
+    needs = _needs(app)
+    assert needs["REQ_1"]["rel"] == ["SPEC_1"]
+    assert (needs["REQ_1"]["fp"], needs["SPEC_1"]["fp"]) == (
+        "aff891423da89b221952ecf256e2054839ae25536b6c3cfca15806c91bf65a69",
+        "bc58ea27891cd817e3a0160d1f0645eedc023dca7e52209358f376e2be541cae",
+    )
 
 
 GLOBAL_OPTIONS_CONF = """\
