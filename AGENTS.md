@@ -112,7 +112,7 @@ uv run poe test-reports               # the sphinx-test-reports suite
 uv run poe test-ub-test-reports       # the ub-test-reports suite (no Sphinx needed)
 uv run poe test-ai-index              # the sphinx-ai-index suite (no renderer, no network)
 uv run poe lint                       # every prek hook over the whole tree
-uv run poe typecheck                  # ty over both packages, against the oldest supported sphinx
+uv run poe typecheck                  # ty over every package, against the oldest supported sphinx
 uv run poe typecheck-js-needs         # tsc over the vendored needstable.js (needs node)
 uv run poe docs-needs                 # the furo docs build
 uv run poe docs-mounts                # the sphinx-mounts docs build
@@ -250,7 +250,7 @@ to the layout); CI runs only its `_time` and `_memory` subsets, which pass.
 **Naming rule:** a task that acts on the whole repository is bare (`lint`); a task that
 acts on one package ends in that package's short name — the distribution name minus its
 `sphinx-` prefix (`test-needs`, `docs-needs`, `test-mounts`, `docs-mounts`). `typecheck` is
-bare because it checks both packages out of one configuration and one environment.
+bare because it checks every package out of one configuration and one environment.
 
 ty reads the root `[tool.ty]` from any directory in the tree, because it walks up for a
 `pyproject.toml` and the package has no `[tool.ty]` of its own — so
