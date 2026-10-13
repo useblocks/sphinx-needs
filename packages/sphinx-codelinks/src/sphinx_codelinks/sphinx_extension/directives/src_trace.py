@@ -133,7 +133,7 @@ def would_be_id(app: Sphinx, need: Mapping[str, Any]) -> str | None:
     """The id ``add_need`` will give a one-line need: its ``id`` field, else the one
     Sphinx-Needs generates for a need without one -- ``generate_need`` calls
     ``_make_hashed_id(<the type's prefix>, <full_title, else title>, <content>, config)``
-    (``sphinx_needs/api/need.py``, the same at the 8.5.0 floor), with the type, title and
+    (``sphinx_needs/api/need.py``, at the 9.0.0 floor), with the type, title and
     fields :meth:`SourceTracingDirective.render_needs` passes. ``None`` when ``add_need``
     refuses the need before any id exists (an unknown type, ``needs_id_required``).
     """
@@ -522,7 +522,7 @@ class SourceTracingDirective(SphinxDirective):
         unknown: set[str] = set()
 
         def ingest(markup: str | None) -> list[nodes.Node]:
-            # render_needs passes no block on without it (the 8.5.0 floor's guard)
+            # render_needs passes no block on without it (the guard for a Sphinx-Needs before the 9.0.0 floor)
             assert ingest_need_record is not None
             created, _ = ingest_need_record(
                 self.env.app,

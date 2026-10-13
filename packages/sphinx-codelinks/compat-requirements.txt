@@ -5,7 +5,7 @@
 # wheel's own `Requires-Dist`.
 #
 # Unlike sphinx-mounts', this file is NOT covering an undeclared runtime dependency:
-# sphinx-codelinks declares `sphinx-needs>=8.5.0,<9` in `[project] dependencies`, so the
+# sphinx-codelinks declares `sphinx-needs>=9.0.0,<10` in `[project] dependencies`, so the
 # wheel's own metadata already fetches the published sphinx-needs and that half of the
 # cell is honest by construction.
 #
