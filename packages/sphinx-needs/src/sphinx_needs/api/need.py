@@ -275,13 +275,18 @@ def generate_need(
     )
 
     extras_no_defaults: dict[str, FieldLiteralValue | FieldFunctionArray | None] = {}
+    #: the fields an author cannot set: their value is final, no default applies
+    closed: set[str] = set()
     for extra_field in needs_schema.iter_extra_fields():
         if not extra_field.directive_option and (
             not from_outside or kwargs.get(extra_field.name) is None
         ):
             if not from_outside:
-                _refuse_authored(extra_field, kwargs, location)
-            extras_no_defaults[extra_field.name] = _closed_field_value(extra_field)
+                _refuse_authored(extra_field, kwargs, location, need_type)
+            extras_no_defaults[extra_field.name] = _closed_field_value(
+                extra_field, need_type
+            )
+            closed.add(extra_field.name)
         elif extra_field.name not in kwargs:
             extras_no_defaults[extra_field.name] = None
         else:
@@ -305,8 +310,12 @@ def generate_need(
             not from_outside or kwargs.get(link_field.name) is None
         ):
             if not from_outside:
-                _refuse_authored(link_field, kwargs, location)
-            links_no_defaults[link_field.name] = LinksLiteralValue([])
+                _refuse_authored(link_field, kwargs, location, need_type)
+            links_no_defaults[link_field.name] = LinksLiteralValue(
+                link_field.off_type_value()
+                if link_field.derived and link_field.rule_for(need_type) is None
+                else []
+            )
         elif link_field.name not in kwargs:
             links_no_defaults[link_field.name] = None
         else:
@@ -370,7 +379,7 @@ def generate_need(
 
     extras = {
         k: _get_field_default(needs_schema.get_extra_field(k), **context)
-        if v is None
+        if v is None and k not in closed
         else v
         for k, v in extras_no_defaults.items()
     }
@@ -541,19 +550,22 @@ def _refuse_authored(
     field_schema: FieldSchema | LinkSchema,
     kwargs: Mapping[str, Any],
     location: tuple[str | None, int | None] | None,
+    need_type: str,
 ) -> None:
     """Report a value given for a field an author cannot set: a derived one.
 
-    The value, a literal or a ``[[…]]``, ``<<…>>`` or ``<{…}>``, is ignored.
+    The value, a literal or a ``[[…]]``, ``<<…>>`` or ``<{…}>``, is ignored; also on a
+    need of a type the field has no rule for, which holds the field's default.
     """
     if (value := kwargs.get(field_schema.name)) is None:
         return
     what = "Link type" if isinstance(field_schema, LinkSchema) else "Field"
-    rule = (
-        "derived"
-        if field_schema.derive is None
-        else f"derived ({field_schema.derive.describe()})"
-    )
+    if not field_schema.derived:
+        rule = "derived"
+    elif (type_rule := field_schema.rule_for(need_type)) is not None:
+        rule = f"derived ({type_rule.describe()})"
+    else:
+        rule = f"derived (with no rule on need type {need_type!r})"
     log_warning(
         logger,
         f"{what} {field_schema.name!r} is {rule} and cannot be set in a need; "
@@ -563,12 +575,19 @@ def _refuse_authored(
     )
 
 
-def _closed_field_value(field_schema: FieldSchema) -> FieldLiteralValue | None:
+def _closed_field_value(
+    field_schema: FieldSchema, need_type: str
+) -> FieldLiteralValue | None:
     """The value of a field an author cannot set, at the need's creation.
 
-    A derived field holds its empty value: ``None`` when it is nullable, else the
-    empty value of its type.
+    A derived field holds its empty value until its rule computes it: ``None`` when it
+    is nullable, else the empty value of its type. On a need of a type it has no rule
+    for, it holds that type's value for good: its default (see
+    :meth:`~sphinx_needs.needs_schema.FieldSchema.off_type_value`).
     """
+    if field_schema.derived and field_schema.rule_for(need_type) is None:
+        value = field_schema.off_type_value()
+        return None if value is None else FieldLiteralValue(value)
     if field_schema.nullable:
         return None
     return FieldLiteralValue(_typed_empty(field_schema))
@@ -1426,16 +1445,14 @@ def _copy_links(
     """
     if "links" not in links:
         return  # should not happen, but be defensive
-    if (target := schema.get_link_field("links")) is not None and (
-        target.derive is not None
-    ):
+    if (target := schema.get_link_field("links")) is not None and target.derived:
         return
     copy_links: list[
         NeedLink | DynamicFunctionParsed | VariantFunctionParsed | VariantDataParsed
     ] = []
     for link_field in schema.iter_link_fields():
         # a derived link type copies nothing (it is reported at load)
-        if link_field.copy and link_field.name != "links" and link_field.derive is None:
+        if link_field.copy and link_field.name != "links" and not link_field.derived:
             other = links[link_field.name]
             if isinstance(other, LinksLiteralValue | LinksFunctionArray):
                 copy_links.extend(other.value)

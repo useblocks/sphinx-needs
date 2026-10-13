@@ -38,8 +38,9 @@ def generate_needs_schema(
     * the global options defined dynamically
     * the links defined dynamically
 
-    A derived field or link type (one with a ``derive`` rule) is marked
-    ``"readOnly": true``.
+    A derived field or link type (one with a ``derive`` or ``derive_by_type`` rule) is
+    marked ``"readOnly": true``; its ``default`` is the value of a need type without a
+    rule.
     """
     properties: dict[str, Any] = {}
 
@@ -55,7 +56,7 @@ def generate_needs_schema(
             properties[field.name]["default"] = field.default.value
         elif field.nullable:
             properties[field.name]["default"] = None
-        if field.derive is not None:
+        if field.derived:
             # derived: an importer takes the value as data, and does not compute it
             properties[field.name]["readOnly"] = True
 
@@ -76,7 +77,7 @@ def generate_needs_schema(
             "field_type": "links",
             "default": [],
         }
-        if link.derive is not None:
+        if link.derived:
             properties[link.name]["readOnly"] = True
         properties[link.name + "_back"] = {
             "type": "array",

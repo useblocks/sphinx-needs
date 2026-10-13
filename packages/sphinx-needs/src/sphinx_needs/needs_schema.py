@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import enum
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Iterable, Iterator, Mapping, Sequence
+from copy import deepcopy
 from dataclasses import dataclass, replace
 from functools import lru_cache, partial
 from typing import TYPE_CHECKING, Any, Generic, Literal, TypeAlias, TypeVar, cast
@@ -9,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Generic, Literal, TypeAlias, TypeVar, cas
 import jsonschema_rs
 
 from sphinx_needs.config import NeedFields
-from sphinx_needs.derive import Derive, DeriveInvalid, DeriveRule
+from sphinx_needs.derive import Derive, DeriveInvalid, DeriveRule, typed_empty
 from sphinx_needs.exceptions import VariantParsingException
 from sphinx_needs.need_item import NeedLink
 from sphinx_needs.schema.config import (
@@ -70,6 +71,16 @@ class FieldSchema:
     A :class:`~sphinx_needs.derive.DeriveInvalid` marks a rule that cannot be read:
     the field is closed all the same, and holds its empty value.
     """
+    derive_by_type: Mapping[str, Derive] | None = None
+    """The rules per need type (``derive_by_type``): need type to rule, each
+    overriding ``derive`` on its type, if any.
+
+    The field is derived (closed) on every need type. A need of a type without a rule
+    holds :meth:`off_type_value`: with ``derive_by_type`` and no ``derive``, the field
+    may carry a literal ``default`` for it (though it allows no other defaults).
+    An empty mapping is a field derived on no need type (its ``derive_by_type`` could
+    not be read).
+    """
 
     def __post_init__(self) -> None:
         if not isinstance(self.name, str) or not self.name:
@@ -80,6 +91,7 @@ class FieldSchema:
             self.derive, DeriveRule | DeriveInvalid
         ):
             raise ValueError("derive must be a DeriveRule or a DeriveInvalid.")
+        _check_derive_by_type(self.derive_by_type)
         try:
             validate_field_schema(self.schema)
         except TypeError as exc:
@@ -116,8 +128,65 @@ class FieldSchema:
             raise ValueError(
                 "default must be of type FieldLiteralValue or FieldFunctionArray."
             )
-        if self.default is not None and not self.allow_defaults:
+        if (
+            self.default is not None
+            and not self.allow_defaults
+            and not self._holds_off_type_default
+        ):
             raise ValueError("Defaults are not allowed for this field.")
+
+    @property
+    def _holds_off_type_default(self) -> bool:
+        """Whether ``default`` is the literal value of the need types without a rule."""
+        return (
+            self.derive is None
+            and self.derive_by_type is not None
+            and isinstance(self.default, FieldLiteralValue)
+        )
+
+    @property
+    def derived(self) -> bool:
+        """Whether the field is derived: it carries ``derive``, or ``derive_by_type``.
+
+        A derived field is closed on every need type, also on a type without a rule.
+        """
+        return self.derive is not None or self.derive_by_type is not None
+
+    def rule_for(self, need_type: str) -> Derive | None:
+        """The rule computing the field on a need of ``need_type``.
+
+        The type's own ``derive_by_type`` entry, else ``derive``, else ``None``: a need
+        of that type holds the field's :meth:`off_type_value`.
+        """
+        if (
+            self.derive_by_type is not None
+            and (rule := self.derive_by_type.get(need_type)) is not None
+        ):
+            return rule
+        return self.derive
+
+    def describe_derived(self) -> str:
+        """The rules of a derived field, as messages name them: ``kind 'sum'``."""
+        if self.derive_by_type is None and self.derive is not None:
+            return self.derive.describe()
+        return "by need type"
+
+    def off_type_value(self) -> Any:
+        """The value a need holds when its type has no rule (see :meth:`rule_for`).
+
+        The literal ``default``, in the field's type (an integer in a ``number`` field
+        is a float); else ``None`` when the field is nullable; else the empty value of
+        its type.
+        """
+        if self._holds_off_type_default:
+            assert isinstance(self.default, FieldLiteralValue)
+            # imported here, as the functions module imports this one
+            from sphinx_needs.functions.functions import _in_field_type
+
+            return _in_field_type(deepcopy(self.default.value), self)
+        if self.nullable:
+            return None
+        return typed_empty(self.type)
 
     @property
     def type(self) -> Literal["string", "boolean", "integer", "number", "array"]:
@@ -490,6 +559,22 @@ This includes scalar types (str, bool, int, float) and their corresponding list 
 """
 
 
+def _check_derive_by_type(derive_by_type: Mapping[str, Derive] | None) -> None:
+    """Check the ``derive_by_type`` of a field or link type: need type to rule.
+
+    :raises ValueError: if it is not a mapping of need type to rule.
+    """
+    if derive_by_type is None:
+        return
+    if not isinstance(derive_by_type, Mapping) or not all(
+        isinstance(need_type, str) and isinstance(rule, DeriveRule | DeriveInvalid)
+        for need_type, rule in derive_by_type.items()
+    ):
+        raise ValueError(
+            "derive_by_type must map need types to a DeriveRule or a DeriveInvalid."
+        )
+
+
 @dataclass(frozen=True, slots=True)
 class FieldLiteralValue:
     value: AllowedTypes
@@ -660,6 +745,14 @@ class LinkSchema:
     default; a :class:`~sphinx_needs.derive.DeriveInvalid` marks a rule that cannot
     be read, and the link type holds no links.
     """
+    derive_by_type: Mapping[str, Derive] | None = None
+    """The rules per need type (``derive_by_type``): need type to rule, each
+    overriding ``derive`` on its type, if any.
+
+    The link type is derived (closed) on every need type. A need of a type without a
+    rule holds :meth:`off_type_value`: the literal ``default``, which only
+    ``derive_by_type`` without ``derive`` may carry, else no links.
+    """
 
     def __post_init__(self) -> None:
         if not isinstance(self.name, str) or not self.name:
@@ -670,6 +763,7 @@ class LinkSchema:
             self.derive, DeriveRule | DeriveInvalid
         ):
             raise ValueError("derive must be a DeriveRule or a DeriveInvalid.")
+        _check_derive_by_type(self.derive_by_type)
         try:
             validate_link_schema_type(self.schema)
         except TypeError as exc:
@@ -703,6 +797,47 @@ class LinkSchema:
             raise ValueError(
                 "default must be of type LinksLiteralValue or LinksFunctionArray."
             )
+
+    @property
+    def derived(self) -> bool:
+        """Whether the link type is derived: it carries ``derive``, or ``derive_by_type``.
+
+        A derived link type is closed on every need type, also on a type without a rule.
+        """
+        return self.derive is not None or self.derive_by_type is not None
+
+    def rule_for(self, need_type: str) -> Derive | None:
+        """The rule computing the link type on a need of ``need_type``.
+
+        The type's own ``derive_by_type`` entry, else ``derive``, else ``None``: a need
+        of that type holds the link type's :meth:`off_type_value`.
+        """
+        if (
+            self.derive_by_type is not None
+            and (rule := self.derive_by_type.get(need_type)) is not None
+        ):
+            return rule
+        return self.derive
+
+    def describe_derived(self) -> str:
+        """The rules of a derived link type, as messages name them: ``kind 'links'``."""
+        if self.derive_by_type is None and self.derive is not None:
+            return self.derive.describe()
+        return "by need type"
+
+    def off_type_value(self) -> list[NeedLink]:
+        """The links a need holds when its type has no rule (see :meth:`rule_for`).
+
+        The literal ``default`` when ``derive_by_type`` stands without ``derive``, else
+        no links.
+        """
+        if (
+            self.derive is None
+            and self.derive_by_type is not None
+            and isinstance(self.default, LinksLiteralValue)
+        ):
+            return list(deepcopy(self.default.value))
+        return []
 
     @property
     def type(self) -> Literal["array"]:

@@ -9,10 +9,21 @@ the kind's operands, each under a fixed *role* name::
     schema = { type = "number" }
     derive = { kind = "sum", field = "hours", over = "links" }
 
-This module reads the table (``parse_derive``) and checks the rule against the
-declared fields and link types (``check_derive_rules``). A rule that cannot be read is
-kept as a :class:`DeriveInvalid` marker rather than dropped, so the field stays closed to
-authors and holds its empty value, as the rule promised it would not be authored.
+Beside it, or instead of it, a ``derive_by_type`` table gives a rule per need type,
+overriding ``derive`` on that type; a need of a type without a rule holds the field's
+default (else ``None``, or the empty value of its type). The field is derived, and
+closed, on every need type::
+
+    [needs.fields.total]
+    schema = { type = "number" }
+    default = 0
+    derive_by_type.epic = { kind = "sum", field = "hours", over = "links" }
+
+This module reads the tables (``parse_derive``, ``parse_derive_by_type``) and checks the
+rules against the declared fields and link types (``check_derive_rules``). A rule that
+cannot be read is kept as a :class:`DeriveInvalid` marker rather than dropped, so the
+field stays closed to authors and holds its empty value, as the rule promised it would
+not be authored.
 
 Nothing here touches Sphinx: the checks return the problems, and the caller reports them
 (as ``needs.derive_invalid``).
@@ -81,7 +92,7 @@ ROLES: Final = (
 )
 
 #: Roles that are reserved for a later release: a rule naming one cannot be read.
-RESERVED_ROLES: Final = frozenset({"join", "types"})
+RESERVED_ROLES: Final = frozenset({"join"})
 
 #: The core fields, besides every ``NeedsCoreFields`` entry, that cannot carry a rule.
 CORE_LINK_TYPES: Final = frozenset({"parent_needs"})
@@ -230,6 +241,13 @@ def parse_derive(raw: Any, *, on_link: bool) -> Derive:
             f"{prefix}: the {reserved[0]!r} role is reserved and not available yet",
         )
     if unknown := sorted(str(k) for k in raw if k != "kind" and k not in ROLES):
+        if unknown[0] == "types":
+            # the role this key replaced: say where a rule for some types goes
+            return DeriveInvalid(
+                kind,
+                f"{prefix}: 'types' is not a role; a rule for some need types is "
+                "declared under derive_by_type",
+            )
         return DeriveInvalid(kind, f"{prefix}: {unknown[0]!r} is not a role")
     if on_link and kind not in LINK_KINDS:
         return DeriveInvalid(
@@ -274,6 +292,51 @@ def parse_derive(raw: Any, *, on_link: bool) -> Derive:
         include_parts=raw.get("include_parts", False),
         after_derived="after" in raw,
     )
+
+
+def parse_derive_by_type(
+    raw: Any, *, on_link: bool, need_types: Mapping[str, str]
+) -> tuple[dict[str, Derive], list[tuple[str, str]]]:
+    """Read a ``derive_by_type`` table: need type to rule, each read by :func:`parse_derive`.
+
+    A key naming no declared need type is ignored; a rule that cannot be read is kept as
+    its :class:`DeriveInvalid` marker, so the needs of that type hold their empty value.
+    A ``derive_by_type`` that is not a table, or an empty one, gives no rule on any type.
+
+    :param raw: The ``derive_by_type`` value, as configured.
+    :param on_link: Whether it is declared on a link type.
+    :param need_types: The declared need types: each directive name, with its title.
+    :return: The rules by need type, and the problems found reading them, each as
+        ``(part, reason)``: the part is ``derive_by_type`` for the table, else
+        ``derive_by_type.<key>``.
+    """
+    if not isinstance(raw, Mapping):
+        return {}, [("derive_by_type", "it is not a table of need types")]
+    if not raw:
+        return {}, [("derive_by_type", "it names no need type")]
+    titles = {title: directive for directive, title in need_types.items()}
+    rules: dict[str, Derive] = {}
+    problems: list[tuple[str, str]] = []
+    for key in sorted(raw, key=str):
+        name = str(key)
+        if not isinstance(key, str) or key not in need_types:
+            hint = (
+                f" (did you mean {titles[name]!r}?)"
+                if name in titles and name not in need_types
+                else ""
+            )
+            problems.append(
+                (
+                    f"derive_by_type.{name}",
+                    f"{name!r} is not a need type{hint}; the entry is ignored",
+                )
+            )
+            continue
+        rule = parse_derive(raw[key], on_link=on_link)
+        rules[key] = rule
+        if isinstance(rule, DeriveInvalid):
+            problems.append((f"derive_by_type.{key}", rule.reason))
+    return rules, problems
 
 
 def _value_problem(role: str, value: Any) -> str | None:
@@ -386,7 +449,7 @@ def fingerprint_names(schema: FieldsSchema) -> dict[str, Any]:
         else:
             names[name] = NO_DEFAULT
     for field in schema.iter_extra_fields():
-        if field.derive is None and schema.is_project_field(field.name):
+        if not field.derived and schema.is_project_field(field.name):
             names[field.name] = default_of(field)
     # Every link type is the project's today: only needs_links and needs_extra_links
     # declare one, and there is no API for an extension to add one. The set of names
@@ -394,7 +457,7 @@ def fingerprint_names(schema: FieldsSchema) -> dict[str, Any]:
     # types must be marked as the extension's (as add_extra_field's project flag
     # marks a field) and left out here.
     for link in schema.iter_link_fields():
-        if link.derive is None and link.name not in CORE_LINK_TYPES:
+        if not link.derived and link.name not in CORE_LINK_TYPES:
             names[link.name] = (
                 list(link.default.value)
                 if isinstance(link.default, LinksLiteralValue)
@@ -433,6 +496,12 @@ class DeriveProblem:
     :ivar reason: Why the rule cannot be read, as its marker records it.
     :ivar core: Whether the rule is on a core field, which cannot carry one: the rule
         is ignored, and the field is not derived.
+    :ivar part: What of the field's configuration it is about: ``derive`` (the rule,
+        or a key beside it), ``derive_by_type`` (the table), ``derive_by_type.<type>``
+        (one entry), or ``beside`` (a key beside ``derive_by_type`` alone).
+    :ivar on_types: For a ``derive`` rule in a cycle on some need types only (through
+        their ``derive_by_type`` entries): those types. The rule cannot be read there,
+        and applies on every other type.
     """
 
     name: str
@@ -440,6 +509,22 @@ class DeriveProblem:
     message: str
     reason: str = ""
     core: bool = False
+    part: str = "derive"
+    on_types: tuple[str, ...] = ()
+
+    @property
+    def order(self) -> tuple[bool, str, int, str]:
+        """Where the finding is reported among the others: the fields, then the link
+        types, each by name; within a name ``derive``, the ``derive_by_type`` table,
+        its entries by need type, then the key beside ``derive_by_type``."""
+        if self.part.startswith("derive_by_type."):
+            rank, entry = 2, self.part.removeprefix("derive_by_type.")
+        else:
+            rank, entry = (
+                {"derive": 0, "derive_by_type": 1, "beside": 3}[self.part],
+                "",
+            )
+        return (self.on_link, self.name, rank, entry)
 
 
 def _what(on_link: bool) -> str:
@@ -456,6 +541,68 @@ def invalid_message(name: str, *, on_link: bool, reason: str) -> str:
     )
 
 
+def invalid_entry_message(
+    name: str, *, on_link: bool, need_type: str, reason: str
+) -> str:
+    """The ``needs.derive_invalid`` warning for a ``derive_by_type`` entry that cannot
+    be read."""
+    what = _what(on_link)
+    holds = "holds no links" if on_link else "holds its empty value"
+    return (
+        f"Invalid derive of {what} {name!r}: derive_by_type.{need_type}: {reason}; "
+        f"the {what} cannot be set in a need or by a needextend, and on need type "
+        f"{need_type!r} {holds}"
+    )
+
+
+def invalid_on_types_message(
+    name: str, *, on_link: bool, need_types: Iterable[str], reason: str
+) -> str:
+    """The ``needs.derive_invalid`` warning for a ``derive`` rule in a cycle of
+    own-field reads on some need types only."""
+    what = _what(on_link)
+    holds = "hold no links" if on_link else "hold its empty value"
+    quoted = [repr(need_type) for need_type in need_types]
+    named = (
+        f"need type {quoted[0]}"
+        if len(quoted) == 1
+        else f"need types {', '.join(quoted[:-1])} and {quoted[-1]}"
+    )
+    return (
+        f"Invalid derive of {what} {name!r}: on {named}: {reason}; the {what} cannot "
+        f"be set in a need or by a needextend, the needs of the {named} {holds}, "
+        "and on every other need type the rule applies"
+    )
+
+
+def by_type_message(name: str, *, on_link: bool, part: str, reason: str) -> str:
+    """The ``needs.derive_invalid`` warning for a ``derive_by_type`` table, or a key of
+    it, that cannot be read (see :func:`parse_derive_by_type`)."""
+    what = _what(on_link)
+    if part == "derive_by_type":
+        return (
+            f"Invalid derive_by_type of {what} {name!r}: {reason}; the {what} cannot "
+            "be set in a need or by a needextend, and no need type has a rule"
+        )
+    return f"Invalid derive_by_type of {what} {name!r}: {reason}"
+
+
+def beside_by_type_message(name: str, *, on_link: bool, keys: list[str]) -> str:
+    """The ``needs.derive_invalid`` warning for a key beside ``derive_by_type`` alone:
+    ``predicates``, or a ``default`` that is not a literal."""
+    named = " and ".join(repr(key) for key in keys)
+    verb = "are" if len(keys) > 1 else "is"
+    why = (
+        "; the default of the need types without a rule must be a literal value"
+        if "default" in keys
+        else ""
+    )
+    return (
+        f"Invalid derive of {_what(on_link)} {name!r}: {named} cannot be given beside "
+        f"derive_by_type, and {verb} ignored{why}; the rules apply"
+    )
+
+
 def core_message(name: str, *, on_link: bool) -> str:
     """The ``needs.derive_invalid`` warning for a rule on a core field or link type."""
     what = _what(on_link)
@@ -465,10 +612,13 @@ def core_message(name: str, *, on_link: bool) -> str:
     )
 
 
-def copy_on_derived_message(name: str, *, rule: Derive) -> str:
-    """The ``needs.derive_invalid`` warning for ``copy = true`` on a derived link type."""
+def copy_on_derived_message(name: str, *, described: str) -> str:
+    """The ``needs.derive_invalid`` warning for ``copy = true`` on a derived link type.
+
+    :param described: The link type's rules, as messages name them.
+    """
     return (
-        f"Invalid derive of link type {name!r}: {rule.describe()}: 'copy' is not "
+        f"Invalid derive of link type {name!r}: {described}: 'copy' is not "
         "available on a derived link type in this release, and is ignored; "
         "the rule applies"
     )
@@ -512,13 +662,13 @@ def copy_problem(schema: FieldsSchema) -> DeriveProblem | None:
     naming every copying link type. The rule applies.
     """
     links = schema.get_link_field("links")
-    if links is None or links.derive is None:
+    if links is None or not links.derived:
         return None
     # a derived link type copies nothing, and is reported at its own rule
     copying = sorted(
         link.name
         for link in schema.iter_link_fields()
-        if link.copy and link.name != "links" and link.derive is None
+        if link.copy and link.name != "links" and not link.derived
     )
     if not copying:
         return None
@@ -527,46 +677,136 @@ def copy_problem(schema: FieldsSchema) -> DeriveProblem | None:
     return DeriveProblem(
         "links",
         True,
-        f"Invalid derive of link type 'links': {links.derive.describe()}: 'links' is "
+        f"Invalid derive of link type 'links': {links.describe_derived()}: 'links' is "
         f"derived; the copy of the {what} {named} into it is ignored; the rule applies",
+        # reported with the rule, else as a key beside derive_by_type
+        part="derive" if links.derive is not None else "beside",
     )
 
 
-def check_derive_rules(schema: FieldsSchema) -> list[DeriveProblem]:
+def check_derive_rules(
+    schema: FieldsSchema, need_types: Iterable[str] | None = None
+) -> list[DeriveProblem]:
     """Check every rule of the schema against the declared fields and link types.
 
-    Each rule is checked on its own (what its roles name, the predicates, the type of
-    its result against the field's ``schema``), then the rules that read one another's
-    own fields are checked for a cycle, which no need could compute.
+    Each rule (``derive``, and each ``derive_by_type`` entry) is checked on its own
+    (what its roles name, the predicates, the type of its result against the field's
+    ``schema``), then the rules that read one another's own fields are checked for a
+    cycle, which no need could compute. A cycle is on one need, so it is looked for per
+    need type, among the rules that apply to that type: a type's own entry in a cycle
+    cannot be read; a ``derive`` in a cycle on some types only cannot be read on those
+    types (:attr:`DeriveProblem.on_types`), and applies on the others.
 
     :param schema: The schema, every field and link type added.
-    :return: One problem per rule that cannot be read, fields first, each by name.
+    :param need_types: The declared need types (directive names); if not given, the
+        types the ``derive_by_type`` entries name, and every other type as one.
+    :return: One problem per rule that cannot be read, in :attr:`DeriveProblem.order`.
     """
-    problems: dict[tuple[bool, str], DeriveProblem] = {}
-    rules: dict[str, tuple[DeriveRule, FieldSchema | LinkSchema]] = {}
-    for target in (*schema.iter_extra_fields(), *schema.iter_link_fields()):
-        rule = target.derive
-        if not isinstance(rule, DeriveRule):
-            continue
-        on_link = rule.link_valued
-        if (reason := _rule_problem(rule, target, schema)) is not None:
-            problems[(on_link, target.name)] = DeriveProblem(
-                target.name,
+    problems: dict[tuple[bool, str, str], DeriveProblem] = {}
+    targets = [*schema.iter_extra_fields(), *schema.iter_link_fields()]
+    #: the rules that can be read, by field and by entry ("" for ``derive``)
+    valid: dict[tuple[str, str], tuple[DeriveRule, FieldSchema | LinkSchema]] = {}
+    for target in targets:
+        entries = [("", target.derive), *sorted((target.derive_by_type or {}).items())]
+        for entry, rule in entries:
+            if not isinstance(rule, DeriveRule):
+                continue
+            on_link = rule.link_valued
+            if (reason := _rule_problem(rule, target, schema)) is not None:
+                part = f"derive_by_type.{entry}" if entry else "derive"
+                problems[(on_link, target.name, part)] = DeriveProblem(
+                    target.name,
+                    on_link,
+                    invalid_entry_message(
+                        target.name, on_link=on_link, need_type=entry, reason=reason
+                    )
+                    if entry
+                    else invalid_message(target.name, on_link=on_link, reason=reason),
+                    reason=reason,
+                    part=part,
+                )
+            else:
+                valid[(target.name, entry)] = (rule, target)
+    for key, problem in _per_type_cycle_problems(targets, valid, need_types).items():
+        problems.setdefault(key, problem)
+    return sorted(problems.values(), key=lambda problem: problem.order)
+
+
+def _per_type_cycle_problems(
+    targets: list[FieldSchema | LinkSchema],
+    valid: Mapping[tuple[str, str], tuple[DeriveRule, FieldSchema | LinkSchema]],
+    need_types: Iterable[str] | None,
+) -> dict[tuple[bool, str, str], DeriveProblem]:
+    """The rules in a cycle of own-field reads, looked for per need type.
+
+    The need types without a ``derive_by_type`` entry anywhere share their rules (every
+    ``derive``), so they are looked at once, together.
+    """
+    listed = sorted({t for target in targets for t in target.derive_by_type or {}})
+    #: each type an entry names, alone ("" for the others, together), with its types
+    groups: list[tuple[str, tuple[str, ...]]]
+    if need_types is None:
+        # every type the entries do not name, as one group
+        groups = [(t, (t,)) for t in listed]
+        groups.append(("", ("",)))
+        every_type: frozenset[str] = frozenset({*listed, ""})
+    else:
+        declared = sorted(set(need_types))
+        groups = [(t, (t,)) for t in listed if t in declared]
+        if others := tuple(t for t in declared if t not in listed):
+            groups.append(("", others))
+        every_type = frozenset(declared)
+    problems: dict[tuple[bool, str, str], DeriveProblem] = {}
+    #: a ``derive`` in a cycle: the types it cycles on, and why (on the first of them)
+    fallbacks: dict[str, tuple[list[str], str]] = {}
+    for need_type, types in groups:
+        rules: dict[str, tuple[DeriveRule, FieldSchema | LinkSchema]] = {}
+        own: set[str] = set()
+        for target in targets:
+            entry = need_type if need_type in (target.derive_by_type or {}) else ""
+            if (rule := valid.get((target.name, entry))) is not None:
+                rules[target.name] = rule
+                if entry:
+                    own.add(target.name)
+        for name, reason in _cycle_problems(rules).items():
+            on_link = rules[name][0].link_valued
+            if name in own:
+                problems[(on_link, name, f"derive_by_type.{need_type}")] = (
+                    DeriveProblem(
+                        name,
+                        on_link,
+                        invalid_entry_message(
+                            name, on_link=on_link, need_type=need_type, reason=reason
+                        ),
+                        reason=reason,
+                        part=f"derive_by_type.{need_type}",
+                    )
+                )
+            else:
+                fallbacks.setdefault(name, ([], reason))[0].extend(types)
+    for name, (types, reason) in fallbacks.items():
+        on_link = valid[(name, "")][0].link_valued
+        if set(types) >= every_type:
+            # the rule cycles on every need type: it cannot be read anywhere
+            problem = DeriveProblem(
+                name,
                 on_link,
-                invalid_message(target.name, on_link=on_link, reason=reason),
+                invalid_message(name, on_link=on_link, reason=reason),
                 reason=reason,
             )
         else:
-            rules[target.name] = (rule, target)
-    for name, reason in _cycle_problems(rules).items():
-        on_link = rules[name][0].link_valued
-        problems[(on_link, name)] = DeriveProblem(
-            name,
-            on_link,
-            invalid_message(name, on_link=on_link, reason=reason),
-            reason=reason,
-        )
-    return [problems[key] for key in sorted(problems)]
+            on_types = tuple(sorted(types))
+            problem = DeriveProblem(
+                name,
+                on_link,
+                invalid_on_types_message(
+                    name, on_link=on_link, need_types=on_types, reason=reason
+                ),
+                reason=reason,
+                on_types=on_types,
+            )
+        problems[(on_link, name, "derive")] = problem
+    return problems
 
 
 def _rule_problem(

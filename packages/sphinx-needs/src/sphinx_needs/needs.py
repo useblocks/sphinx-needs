@@ -8,7 +8,7 @@ from copy import deepcopy
 from itertools import chain
 from pathlib import Path
 from timeit import default_timer as timer  # Used for timing measurements
-from typing import Any, TypedDict, cast
+from typing import Any, TypedDict, TypeVar, cast
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -54,13 +54,17 @@ from sphinx_needs.derive import (
     DeriveInvalid,
     DeriveProblem,
     DeriveRule,
+    beside_by_type_message,
     beside_message,
+    by_type_message,
     check_derive_rules,
     copy_on_derived_message,
     copy_problem,
     core_message,
+    invalid_entry_message,
     invalid_message,
     parse_derive,
+    parse_derive_by_type,
 )
 from sphinx_needs.directives.list2need import List2Need, List2NeedDirective
 from sphinx_needs.directives.need import (
@@ -754,6 +758,7 @@ def load_config(app: Sphinx, *_args: Any) -> None:
         description = "Added by needs_extra_options config"
         schema = None
         derive = None
+        derive_by_type = None
         if isinstance(option, str):
             name = option
         elif isinstance(option, dict):
@@ -770,6 +775,7 @@ def load_config(app: Sphinx, *_args: Any) -> None:
             description = option.get("description", description)
             schema = option.get("schema")
             derive = option.get("derive")
+            derive_by_type = option.get("derive_by_type")
         else:
             log_warning(
                 LOGGER,
@@ -785,6 +791,7 @@ def load_config(app: Sphinx, *_args: Any) -> None:
             "needs_extra_options",
             schema=schema,
             derive=derive,
+            derive_by_type=derive_by_type,
             override=True,
         )
 
@@ -825,6 +832,7 @@ def load_config(app: Sphinx, *_args: Any) -> None:
             parse_variants=option_params.get("parse_variants"),
             parse_dynamic_functions=option_params.get("parse_dynamic_functions"),
             derive=option_params.get("derive"),
+            derive_by_type=option_params.get("derive_by_type"),
             override=True,
         )
 
@@ -1278,13 +1286,19 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
     schema = FieldsSchema()
     #: the ``derive`` findings, reported once the schema is complete
     derive_problems: list[DeriveProblem] = []
+    #: the declared need types, each directive name with its title
+    need_types = {
+        need_type["directive"]: str(need_type.get("title", ""))
+        for need_type in needs_config.types
+        if isinstance(need_type, dict) and isinstance(need_type.get("directive"), str)
+    }
     link_types = _link_type_names(needs_config)
     for name, params in needs_config._fields.items():
         if not isinstance(params, dict) or (
             name not in NeedsCoreFields and name not in link_types
         ):
             continue
-        if params.get("derive") is not None and (
+        if _declares_derive(params) and (
             name in NeedsCoreFields or name in CORE_LINK_TYPES
         ):
             # a core field is not derived: the rule is reported and ignored
@@ -1388,6 +1402,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 and field_data.nullable is None
                 # a derived field takes no default, so the advice does not apply
                 and field_data.derive is None
+                and field_data.derive_by_type is None
             ):
                 log_warning(
                     LOGGER,
@@ -1428,9 +1443,13 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 if field_data.derive is None
                 else parse_derive(field_data.derive, on_link=False)
             )
+            by_type, by_type_problems = _read_derive_by_type(
+                name, False, field_data.derive_by_type, need_types
+            )
+            derive_problems.extend(by_type_problems)
             # a derived field is computed: an author cannot set it, nor a needextend,
-            # and it takes no default
-            authored = derive is None
+            # and it takes no default (bar the value of the need types without a rule)
+            authored = derive is None and by_type is None
             field = FieldSchema(
                 name=name,
                 description=field_data.description,
@@ -1448,6 +1467,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 parse_variants=parse_variants,
                 directive_option=authored,
                 derive=derive,
+                derive_by_type=by_type,
             )
             if derive is not None:
                 derive_problems.extend(
@@ -1465,6 +1485,27 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                         ],
                     )
                 )
+            elif by_type is not None:
+                field, refused = _with_off_type_default(
+                    field, field_data.default, field_data.source
+                )
+                beside = [
+                    key
+                    for key, refused_key in (
+                        ("default", refused),
+                        ("predicates", field_data.predicates is not None),
+                    )
+                    if refused_key
+                ]
+                if beside:
+                    derive_problems.append(
+                        DeriveProblem(
+                            name,
+                            False,
+                            beside_by_type_message(name, on_link=False, keys=beside),
+                            part="beside",
+                        )
+                    )
             else:
                 if field_data.default is not None:
                     _set_default_on_field(
@@ -1524,19 +1565,25 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                     display_kwargs[key] = link[key]
             display_config = LinkDisplayConfig(**display_kwargs)
             derive = None
-            if (raw_derive := link.get("derive")) is not None:
+            by_type = None
+            if _declares_derive(link):
                 if name in CORE_LINK_TYPES or name in NeedsCoreFields:
                     # a core link type is not derived, nor a link type named after a
                     # core field (a need computes ``parts``, ``id_parent`` and others
-                    # itself): the rule is reported and ignored
+                    # itself): the rules are reported and ignored
                     derive_problems.append(
                         DeriveProblem(
                             name, True, core_message(name, on_link=True), core=True
                         )
                     )
                 else:
-                    derive = parse_derive(raw_derive, on_link=True)
-            authored = derive is None
+                    if (raw_derive := link.get("derive")) is not None:
+                        derive = parse_derive(raw_derive, on_link=True)
+                    by_type, by_type_problems = _read_derive_by_type(
+                        name, True, link.get("derive_by_type"), need_types
+                    )
+                    derive_problems.extend(by_type_problems)
+            authored = derive is None and by_type is None
             link_field = LinkSchema(
                 name=name,
                 description=link.get("description", "Link field"),
@@ -1554,6 +1601,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 copy=link.get("copy", False),
                 allow_dead_links=link.get("allow_dead_links", False),
                 derive=derive,
+                derive_by_type=by_type,
             )
             if derive is not None:
                 derive_problems.extend(
@@ -1567,6 +1615,38 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                         copied=bool(link.get("copy", False)),
                     )
                 )
+            elif by_type is not None:
+                link_field, refused = _with_off_type_default(
+                    link_field, link.get("default"), config_source
+                )
+                beside = [
+                    key
+                    for key, refused_key in (
+                        ("default", refused),
+                        ("predicates", "predicates" in link),
+                    )
+                    if refused_key
+                ]
+                if beside:
+                    derive_problems.append(
+                        DeriveProblem(
+                            name,
+                            True,
+                            beside_by_type_message(name, on_link=True, keys=beside),
+                            part="beside",
+                        )
+                    )
+                elif link.get("copy", False):
+                    derive_problems.append(
+                        DeriveProblem(
+                            name,
+                            True,
+                            copy_on_derived_message(
+                                name, described=link_field.describe_derived()
+                            ),
+                            part="beside",
+                        )
+                    )
             else:
                 if "default" in link:
                     _set_default_on_field(
@@ -1614,9 +1694,70 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             schema, "needs_global_options", name, default_config, allow_coercion=True
         )
 
-    _report_derive_problems(schema, derive_problems)
+    _report_derive_problems(schema, derive_problems, need_types)
 
     SphinxNeedsData(env)._set_schema(schema)
+
+
+def _declares_derive(params: Mapping[str, Any]) -> bool:
+    """Whether a field or link type entry carries a rule: ``derive`` or ``derive_by_type``."""
+    return params.get("derive") is not None or params.get("derive_by_type") is not None
+
+
+def _read_derive_by_type(
+    name: str, on_link: bool, raw: Any, need_types: Mapping[str, str]
+) -> tuple[dict[str, DeriveRule | DeriveInvalid] | None, list[DeriveProblem]]:
+    """Read the ``derive_by_type`` of a field or link type, if it has one.
+
+    :return: The rules by need type (``None`` without the key; empty when it cannot be
+        read, so the field is derived on no type), and one finding per problem.
+    """
+    if raw is None:
+        return None, []
+    rules, read = parse_derive_by_type(raw, on_link=on_link, need_types=need_types)
+    problems = []
+    for part, reason in read:
+        need_type = part.removeprefix("derive_by_type.")
+        message = (
+            invalid_entry_message(
+                name, on_link=on_link, need_type=need_type, reason=reason
+            )
+            if part != "derive_by_type" and need_type in rules
+            else by_type_message(name, on_link=on_link, part=part, reason=reason)
+        )
+        problems.append(DeriveProblem(name, on_link, message, reason=reason, part=part))
+    return rules, problems
+
+
+_SchemaT = TypeVar("_SchemaT", FieldSchema, LinkSchema)
+
+
+def _with_off_type_default(
+    field: _SchemaT, value: Any, config_name: str
+) -> tuple[_SchemaT, bool]:
+    """The field (or link type) with ``derive_by_type`` alone, given its ``default``.
+
+    A literal is the value of the need types without a rule. A dynamic function or a
+    variant is refused (a ``needs.derive_invalid`` the caller reports), and a value of
+    the wrong type is the ``needs.config`` warning of any default; either is ignored.
+
+    :return: The field, and whether the default was refused for not being a literal.
+    """
+    if value is None:
+        return field, False
+    try:
+        converted = field.convert_or_type_check(value, allow_coercion=True)
+    except Exception as exc:
+        log_warning(
+            LOGGER,
+            f"{config_name}[{field.name!r}]['default'] value is incorrect: {exc}",
+            "config",
+            None,
+        )
+        return field, False
+    if isinstance(converted, FieldLiteralValue | LinksLiteralValue):
+        return dataclasses.replace(field, default=converted), False
+    return field, converted is not None
 
 
 def _derive_parse_problems(
@@ -1650,44 +1791,71 @@ def _derive_parse_problems(
         ]
     if copied:
         return [
-            DeriveProblem(name, on_link, copy_on_derived_message(name, rule=derive))
+            DeriveProblem(
+                name,
+                on_link,
+                copy_on_derived_message(name, described=derive.describe()),
+            )
         ]
     return []
 
 
 def _report_derive_problems(
-    schema: FieldsSchema, read_problems: list[DeriveProblem]
+    schema: FieldsSchema,
+    read_problems: list[DeriveProblem],
+    need_types: Mapping[str, str],
 ) -> None:
     """Check the rules against the complete schema, and report every finding.
 
     A rule that cannot be read is replaced by its :class:`DeriveInvalid` marker (the
     field, or link type, is replaced by a copy carrying it), so the field stays derived
-    (closed to authors and needextend) and holds its empty value.
+    (closed to authors and needextend) and holds its empty value -- on the need type of
+    a ``derive_by_type`` entry, or on the types a ``derive`` cycles on, alone.
     One ``needs.derive_invalid`` warning per rule (a rule that cannot be read is
     reported for that alone, not for a default beside it, or a link type copying into
     a derived ``links``), in a fixed order: the core fields, then the fields, then the
-    link types, each by name.
+    link types, each by name; within a name, ``derive``, the ``derive_by_type`` table,
+    its entries by need type, and a key beside ``derive_by_type``.
     """
-    checked = {(p.on_link, p.name): p for p in check_derive_rules(schema)}
-    for (on_link, name), problem in checked.items():
+    checked = {
+        (p.on_link, p.name, p.part): p
+        for p in check_derive_rules(schema, need_types=need_types)
+    }
+    for (on_link, name, part), problem in checked.items():
         target = (
             schema.get_link_field(name) if on_link else schema.get_extra_field(name)
         )
         assert target is not None, "a checked rule is on a field of the schema"
-        schema.replace_field(
-            dataclasses.replace(
+        if part == "derive" and not problem.on_types:
+            target = dataclasses.replace(
                 target,
                 derive=DeriveInvalid(
                     getattr(target.derive, "kind", None), problem.reason
                 ),
             )
-        )
+        else:
+            # an entry, or a derive on the types it cycles on: invalid on those types
+            by_type = dict(target.derive_by_type or {})
+            for need_type in problem.on_types or (
+                part.removeprefix("derive_by_type."),
+            ):
+                rule = by_type.get(need_type, target.derive)
+                by_type[need_type] = DeriveInvalid(
+                    getattr(rule, "kind", None), problem.reason
+                )
+            target = dataclasses.replace(target, derive_by_type=by_type)
+        schema.replace_field(target)
     core = sorted((p for p in read_problems if p.core), key=lambda p: p.name)
-    findings = {(p.on_link, p.name): p for p in read_problems if not p.core}
+    findings = {(p.on_link, p.name, p.part): p for p in read_problems if not p.core}
     findings.update(checked)
-    if (True, "links") not in findings and (copied := copy_problem(schema)) is not None:
-        findings[(True, "links")] = copied
-    for problem in [*core, *(findings[key] for key in sorted(findings))]:
+    if (copied := copy_problem(schema)) is not None and (
+        True,
+        "links",
+        copied.part,
+    ) not in findings:
+        findings[(True, "links", copied.part)] = copied
+    ordered = sorted(findings.values(), key=lambda problem: problem.order)
+    for problem in [*core, *ordered]:
         log_warning(LOGGER, problem.message, "derive_invalid", None)
 
 

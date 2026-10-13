@@ -998,8 +998,9 @@ def test_parse_derive_reads_a_rule(raw, on_link, expected):
             {"kind": "copy", "field": "x", "types": ["req"]},
             False,
             "copy",
-            "kind 'copy': the 'types' role is reserved and not available yet",
-            id="types-reserved",
+            "kind 'copy': 'types' is not a role; a rule for some need types is "
+            "declared under derive_by_type",
+            id="types-not-a-role",
         ),
         pytest.param(
             {"kind": "count", "over": "links", "zz": 1, "aa": 2},
