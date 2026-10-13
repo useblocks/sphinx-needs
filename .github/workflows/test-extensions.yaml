@@ -252,10 +252,14 @@ jobs:
         #
         # `--ignored=traditional --untracked-files=normal` lists an ignored or untracked
         # directory as one line (`!! output/`), not every file under it: the same verdict,
-        # and a short listing. The allowlist is what the cell itself creates -- measured
-        # locally, and for the codecov entry read from the action's own script -- and
-        # anything else is printed as an error. git prints `/`-separated paths on Windows
-        # too, so the same script runs there. Same `if:` as the suites
+        # and a short listing. The allowlist is what the cell itself creates, measured locally,
+        # and anything else is printed as an error. One entry is NOT measured: `codecov…` is
+        # derived from reading `codecov-action@v7` (303a32d7) `dist/codecov.sh`, which with
+        # the action's default `cleanup: false` sets `CC_DOWNLOAD_DIR="."` and downloads its
+        # CLI, `.SHA256SUM` and `.sig` into the CWD, removing them only under
+        # `CC_CLEANUP=true`; the first run of the uploading cell (ubuntu, sphinx-9) is its
+        # measurement. git prints `/`-separated paths on Windows too, so the same script runs
+        # there. Same `if:` as the suites
         if: ${{ !cancelled() && steps.prepare.outcome == 'success' }}
         shell: bash
         run: |
@@ -267,7 +271,7 @@ jobs:
             '\.coverage\..+'          # a worker's data file, if one is left uncombined
             '(mounts|codelinks|reports|ub-test-reports|ai-index)\.xml'  # the `--cov-report=xml:` files
             '\.hypothesis/'           # sphinx-ai-index's example database
-            'codecov(\.SHA256SUM(\.sig)?)?'  # the upload steps' CLI, which codecov-action downloads into the CWD (`cleanup: false`)
+            'codecov(\.SHA256SUM(\.sig)?)?'  # the upload steps' CLI and its checksums (read, not measured: see above)
           )
           pattern="^(!!|\?\?) ($(IFS='|'; echo "${allowed[*]}"))\$"
           listing="$(git status --porcelain --ignored=traditional --untracked-files=normal)"
