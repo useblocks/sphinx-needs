@@ -581,7 +581,8 @@ New and Improved
   created in the order the files are discovered.
 
 - 🐛 Two ``codelinks analyse`` runs started together in one directory no longer race on
-  creating the output directory: the second used to fail with ``FileExistsError``.
+  creating the output directory: the second used to fail with ``FileExistsError``;
+  ``SourceAnalyse.dump_marked_content`` had the same check-then-create, and no longer does.
 
 .. _`release:1.4.0`:
 
