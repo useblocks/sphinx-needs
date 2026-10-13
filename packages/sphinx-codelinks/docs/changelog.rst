@@ -580,6 +580,9 @@ New and Improved
   builds. The order across files is unchanged: on one row, the needs of two files are
   created in the order the files are discovered.
 
+- 🐛 Two ``codelinks analyse`` runs started together in one directory no longer race on
+  creating the output directory: the second used to fail with ``FileExistsError``.
+
 .. _`release:1.4.0`:
 
 1.4.0

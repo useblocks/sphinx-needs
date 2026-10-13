@@ -23,8 +23,7 @@ class AnalyseProjects:
 
     def dump_markers(self) -> None:
         output_path = self.outdir / "marked_content.json"
-        if not output_path.parent.exists():
-            output_path.parent.mkdir(parents=True)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
         to_dump = {
             project: [marker.to_dict() for marker in analyse.all_marked_content]
             for project, analyse in self.projects_analyse.items()
