@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791876427893,
+  "lastUpdate": 1791893527118,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -24372,6 +24372,42 @@ window.BENCHMARK_DATA = {
             "value": 44.62387850099999,
             "unit": "s",
             "extra": "Commit: 1b2d3f8aaa79d327d98f8ad78878f342d36be001\nBranch: master\nTime: 2026-10-13T09:25:49+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ae04f91edf1cfca2964e0c2238dc71a6d40bbe77",
+          "message": "✨ sphinx-needs: derive_by_type — a derive rule per need type (#2205)\n\nA derived field can now carry a rule per need type. `derive_by_type`,\nbeside `derive` or instead of it, is a table from need type (the\ndirective name, as `type` holds it) to rule. An entry overrides `derive`\non its type; a need of a type with no rule holds the field's default.\n\n## What a user gets\n\nThe pattern this enables — effort written on tasks, rolled up through\nstories and epics:\n\n```toml\n[needs.fields.effort]\nschema = { type = \"number\" }\n\n[needs.fields.total_effort]\nschema = { type = \"number\" }\nnullable = false\nderive_by_type.task = { kind = \"copy\", field = \"effort\" }\nderive_by_type.story = { kind = \"sum\", field = \"total_effort\", over = \"links\" }\nderive_by_type.epic = { kind = \"sum\", field = \"total_effort\", over = \"links\" }\n```\n\nTasks of 3, 5 and 2 give a story over the first two `8.0`, and an epic\nover that story and the third task `10.0` (built from the docs example).\n\n## How it behaves\n\n- **The rule a need uses:** its type's `derive_by_type` entry, else\n`derive`, else none. A need's type cannot change after creation, so the\nchoice is fixed. The key is read wherever `derive` is: `needs_fields`,\n`needs_links`, the legacy `needs_extra_options` / `needs_extra_links`\nentries, and `add_field(…, derive_by_type=…)`.\n- **A type without a rule** holds the field's literal `default` (stored\nin the field's type, and checked by its schema like any default), else\n`None` when nullable, else the empty value of its type (exempt, like\nevery derived field's placeholder). A `default` is allowed only with\n`derive_by_type` alone; `predicates`, or a `[[…]]` / variant default,\nbeside it are reported and ignored. For a link type derived this way,\nthe needs.json schema block exports that default.\n- **Closed on every type:** the field is derived everywhere. An authored\nvalue, an inline call or a needextend is `needs.derive_authored` also on\na type without a rule; the export marks it `readOnly`; a `fingerprint`\nnever includes it. A field that is both written and rolled up is two\nfields, as in the example.\n- **Load checks**, one `needs.derive_invalid` per entry: a key naming no\nneed type (a type's title gets a \"did you mean\"), an empty or non-table\n`derive_by_type` (it adds no rules; a `derive` beside it still applies),\nan entry that cannot be read (that type's needs hold the empty value;\nother types are unaffected), either key on a core field. Load-time\ncycles of own-field reads are looked for per need type: a `derive`\nclosing a cycle on some types is reported for those types and still runs\non the others.\n- **The reserved `types` role is gone:** `types` in a rule is now an\nunknown role whose message points at `derive_by_type`.\n- **Ordering:** reads stay classified per need. One fix was needed for\nper-type rules in different stages: a read across every need of a field\nthat is computed late on one type is now ordered by that latest rule\n(before, it could read a placeholder).\n\nNothing changes for a project without `derive_by_type`: the 43 existing\nconformance cases build byte-identically (findings, values, schema\nblock), apart from the `types` role's new message.\n\n## Conformance corpus\n\nTen `by-type-*` cases appended to\n`tests/fixtures/derive_conformance.toml` (43 → 53): overrides, off-type\nvalues, invalid shapes, per-type cycles, closure, mixed stages,\nrecursive roll-ups, fingerprint and hash, imported needs, and a type a\nneedextend cannot change. `types-reserved` keeps its pins; only its\n`why` line changed. ubCode re-vendors the file in its twin PR\n(useblocks/ubcode#4029).\n\n## Tests, docs, changelog\n\n- `tests/test_derive_by_type.py`: the findings' texts and order, the\noff-type value against the schema, every spelling, per-type cycles, the\nstages, imports, the export.\n- The `test_basic_doc` schema snapshot gains `derive_by_type=None` per\nfield.\n- Docs: a \"Rules per need type\" section under Derived fields, the\n`needs_fields` / `needs_links` bullets, and the dynamic-functions page.\n- The 9.0.0 changelog entry gains one sentence. No `ENV_DATA_VERSION`\nbump: 9.0.0 is unreleased.\n\n`uv run poe lint` and `uv run poe typecheck` are green. In this sandbox\nthe only test failures are the graphviz ones that also fail on master\n(no `dot`); the docs build here adds 4 `collections.abc.Mapping`\ncross-reference warnings from the new annotations — the same\nunreachable-inventory class as master's other `collections.abc` warnings\nin this sandbox.\n\nCloses #2203",
+          "timestamp": "2026-10-13T14:10:39+02:00",
+          "tree_id": "585112189326f87b26f7078a2c43cabb520ce37d",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/ae04f91edf1cfca2964e0c2238dc71a6d40bbe77"
+        },
+        "date": 1791893517631,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.10615181999999379,
+            "unit": "s",
+            "extra": "Commit: ae04f91edf1cfca2964e0c2238dc71a6d40bbe77\nBranch: master\nTime: 2026-10-13T14:10:39+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 55.648987456,
+            "unit": "s",
+            "extra": "Commit: ae04f91edf1cfca2964e0c2238dc71a6d40bbe77\nBranch: master\nTime: 2026-10-13T14:10:39+02:00"
           }
         ]
       }
