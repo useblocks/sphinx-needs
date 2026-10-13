@@ -4,8 +4,13 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:9.0.0`:
+
+9.0.0
+-----
+
+:Released: 14.10.2026
+:Full Changelog: `8.5.0...sphinx-needs-v9.0.0 <https://github.com/useblocks/sphinx-needs/compare/8.5.0...sphinx-needs-v9.0.0>`__
 
 Improvements
 ............

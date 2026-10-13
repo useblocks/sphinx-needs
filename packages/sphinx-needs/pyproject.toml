@@ -11,7 +11,7 @@ name = "sphinx-needs"
 # `src/sphinx_needs/__init__.py` (which is stamped into every generated `needs.json`, so it
 # cannot become an `importlib.metadata` lookup); `tools/src/sn_tools/check_workspace.py` is
 # what keeps the two equal.
-version = "8.5.0"
+version = "9.0.0"
 # `description` stays dynamic: flit_core reads the module docstring by AST, so a static
 # version alongside a dynamic description is a supported combination.
 dynamic = ["description"]

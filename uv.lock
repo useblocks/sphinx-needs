@@ -3005,7 +3005,7 @@ provides-extras = ["docs"]
 
 [[package]]
 name = "sphinx-needs"
-version = "8.5.0"
+version = "9.0.0"
 source = { editable = "packages/sphinx-needs" }
 dependencies = [
     { name = "docutils", version = "0.21.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' or extra == 'group-22-sphinx-needs-workspace-sphinx-7' or extra == 'group-22-sphinx-needs-workspace-sphinx-8' or extra == 'group-22-sphinx-needs-workspace-typing'" },
