@@ -21,6 +21,7 @@ Fixed
 
 - 🐛 The JSON parser now reads report files as UTF-8 explicitly, so non-ASCII test names and
   messages do not depend on the process locale on Windows.
+  `#2024 <https://github.com/useblocks/sphinx-needs/pull/2024>`__
 
 - 🐛 Two ``--link-property`` flags (or two ``[test_reports.build.needs] link_properties``
   entries) that map different XML properties onto the SAME link field now merge (as the
