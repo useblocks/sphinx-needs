@@ -75,7 +75,11 @@ def generate_needs_schema(
             "items": {"type": "string"},
             "description": link.description,
             "field_type": "links",
-            "default": [],
+            # a link type derived by type alone: the links of a need type without a
+            # rule (its literal default); any other link type: none
+            "default": [li.to_link_string() for li in link.off_type_value()]
+            if link.derive is None and link.derive_by_type is not None
+            else [],
         }
         if link.derived:
             properties[link.name]["readOnly"] = True
