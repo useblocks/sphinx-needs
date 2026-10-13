@@ -322,17 +322,20 @@ jobs:
 
   tests-extensions:
     name: "Extensions ${{ matrix.sphinx-group }} ${{ matrix.os }}"
-    # One cell per sphinx series running BOTH extension packages' suites, as steps. A
+    # One cell per sphinx series running every extension package's suite, as steps. A
     # matrix of its own rather than more paths in `tests-core`, the way `tests-js` and
     # `tests-no-mpl` already sit beside it: these packages need a diagram renderer and a
     # libclang wheel the core cells do not, they want codecov flags of their own, and
     # sphinx-mounts takes 1-3 minutes -- which folded into the core matrix would be paid
     # eleven times, three of them on Windows.
     #
-    # And ONE cell for the two of them rather than a second three-cell matrix:
-    # sphinx-codelinks' whole suite is under 20 seconds, so a matrix of its own would
-    # spend more runner time starting jobs than testing, and would put three more entries
-    # on every pull request's checks list.
+    # And ONE cell for all of them rather than a matrix per package. This used to rest on
+    # sphinx-codelinks' suite being under 20 seconds; it is now the job's largest step
+    # (1051 tests in run 38399647972, 104-147 s serial on ubuntu and 313 s on Windows there;
+    # ~30 s locally and an estimated ~100 s on Windows under `-n 4`). The premise changed
+    # and the conclusion holds: a matrix per package would pay the job start-up once more
+    # per package and per cell, and put one more entry per cell on every pull request's
+    # checks list for each.
     strategy:
       fail-fast: false
       matrix:
@@ -354,6 +357,15 @@ jobs:
       sphinx-group: ${{ matrix.sphinx-group }}
       cache-suffix: extensions-${{ matrix.sphinx-group }}
       upload-coverage: ${{ matrix.os == 'ubuntu-latest' && matrix.sphinx-group == 'sphinx-9' }}
+      # `-n 4` (the unit's default) everywhere but the sphinx-8 ubuntu cell, which stays
+      # serial (`0`) so that every suite still runs once in collection order, in one
+      # process, and a failure that only `-n` produces shows as a difference between cells.
+      # That cell because it is the fastest (4.5 min serial in run 38399647972), under the
+      # Needs Windows cells, so its serial run costs nothing on the critical path. The
+      # expression names the `4` for the other cells too: a `with:` entry cannot be left out
+      # for one matrix cell. The condition is negated so that `'4'` is the `&&` branch: in
+      # `a && b || c` a falsy `b` yields `c`, and `'0'` must not depend on its own truthiness
+      pytest-workers: ${{ (matrix.os != 'ubuntu-latest' || matrix.sphinx-group != 'sphinx-8') && '4' || '0' }}
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 

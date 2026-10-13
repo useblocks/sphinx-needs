@@ -472,7 +472,7 @@ def test_write_rst_still_works_and_says_it_is_deprecated(tmp_path: Path) -> None
 )
 def test_write_rst_negative(json_objs: list[dict], output_lines, tmp_path) -> None:
     to_dump = {"project_1": json_objs}
-    jsonpath = Path("invalid_objs.json")
+    jsonpath = tmp_path / "invalid_objs.json"
     with jsonpath.open("w") as f:
         json.dump(to_dump, f)
     outpath = tmp_path / "needextend.rst"
@@ -846,7 +846,9 @@ def test_analyse_tolerates_get_rst_false(
     with config_file.open("w", encoding="utf-8") as f:
         toml.dump({"codelinks": {"projects": {"a": project, "b": project}}}, f)
 
-    result = runner.invoke(app, ["analyse", str(config_file), *selected])
+    result = runner.invoke(
+        app, ["analyse", str(config_file), "--outdir", str(tmp_path), *selected]
+    )
 
     assert result.exit_code == 0, result.output
     output = _normalize_output(result.output)
@@ -859,3 +861,35 @@ def test_analyse_tolerates_get_rst_false(
     # each line names its project
     named = [name for name in ("a", "b") if f"Project {name!r}: {ignored}" in output]
     assert named == ["a", "b"][:warnings]
+
+
+def test_analyse_when_its_outdir_appears_after_the_check(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """``codelinks analyse`` with its ``outdir`` from the TOML -- the route that can race,
+    since ``--outdir`` must name an existing directory -- succeeds when another process
+    creates that directory between a check for it and the ``mkdir``."""
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "a.cpp").write_text("// [[ID_1, title]]\n", encoding="utf-8")
+    outdir = tmp_path / "out"
+    config_file = tmp_path / "codelinks.toml"
+    config = {
+        "outdir": str(outdir),
+        "projects": {"a": {"source_discover": {"src_dir": str(src)}}},
+    }
+    config_file.write_text(toml.dumps({"codelinks": config}), encoding="utf-8")
+    real_exists = Path.exists
+
+    def exists_then_created_elsewhere(self: Path, *args, **kwargs) -> bool:
+        found = real_exists(self, *args, **kwargs)
+        if self == outdir and not found:
+            outdir.mkdir()  # the other process wins the race
+        return found
+
+    monkeypatch.setattr(Path, "exists", exists_then_created_elsewhere)
+    result = runner.invoke(app, ["analyse", str(config_file)])
+
+    assert result.exit_code == 0, (result.output, result.exception)
+    marked = json.loads((outdir / "marked_content.json").read_text(encoding="utf-8"))
+    assert "a" in marked

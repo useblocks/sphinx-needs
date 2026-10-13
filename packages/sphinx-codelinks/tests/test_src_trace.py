@@ -25,6 +25,19 @@ _ONELINE_KIND = re.compile(
 )
 
 
+def _sphinx_project_copy(tmp_path: Path) -> Path:
+    """Copy ``data/sphinx`` and ``data/dcdc``, which its ``src_trace.toml`` names as
+    ``src_dir = "../dcdc"``, side by side into ``tmp_path``; return the copy's srcdir.
+
+    A ``SphinxTestApp`` writes its ``_build`` under the srcdir, so an app made on the
+    in-tree project would write into the checkout, at one path for every test.
+    """
+    data = Path(__file__).parent / "data"
+    for name in ("sphinx", "dcdc"):
+        shutil.copytree(data / name, tmp_path / name)
+    return tmp_path / "sphinx"
+
+
 @pytest.mark.parametrize(
     ("codelinks_config", "result"),
     [
@@ -129,10 +142,9 @@ def test_src_tracing_config_negative(
     make_app: Callable[..., SphinxTestApp],
     codelinks_config,
     result,
+    tmp_path: Path,
 ):
-    this_file_dir = Path(__file__).parent
-    sphinx_project = Path("data") / "sphinx"
-    app = make_app(srcdir=(this_file_dir / sphinx_project))
+    app = make_app(srcdir=_sphinx_project_copy(tmp_path))
     set_config_to_sphinx(codelinks_config, app.env.config)
     codelinks_sphinx_config = CodeLinksConfig.from_sphinx(app.env.config)
     errors = check_configuration(codelinks_sphinx_config)
@@ -177,9 +189,7 @@ def test_src_tracing_config_positive(make_app: Callable[..., SphinxTestApp], tmp
             }
         },
     }
-    this_file_dir = Path(__file__).parent
-    sphinx_project = Path("data") / "sphinx"
-    app = make_app(srcdir=(this_file_dir / sphinx_project))
+    app = make_app(srcdir=_sphinx_project_copy(tmp_path))
     set_config_to_sphinx(codelinks_config, app.env.config)
     codelinks_sphinx_config = CodeLinksConfig.from_sphinx(app.env.config)
     errors = check_configuration(codelinks_sphinx_config)
