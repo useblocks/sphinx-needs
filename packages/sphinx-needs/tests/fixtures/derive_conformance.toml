@@ -1365,7 +1365,7 @@ field = "bad_copy_join"
 
 [[case]]
 name = "types-reserved"
-why = "the types role (the need types a rule computes on) is reserved for a later release: a rule naming it, on a field or a link type, is refused"
+why = "types is not a role (a rule for some need types is declared under derive_by_type, a key beside derive): a rule naming it, on a field or a link type, is refused"
 config = '''
 [needs.fields.bad_types]
 derive = { kind = "copy", field = "title", types = ["req"] }
@@ -2617,3 +2617,580 @@ fp = "da55a16ec834fc426ce4f6641040139d1ea8235ad8c9e947b94406f1d01cf959"
 [case.expect.needs.REQ_3]
 legacy = ""
 fp = "d51d1facf79607c5da7e39c0a85c22150cd9f847e742f479f14ff5f69cd7bdc3"
+
+# --- rules per need type: derive_by_type ----------------------------------------------
+
+[[case]]
+name = "by-type-overrides-derive"
+why = "derive_by_type overrides derive for the listed types; every other type runs derive (spec copies its own hours; req and impl sum over links)"
+config = '''
+[needs.fields.hours]
+schema = { type = "number" }
+
+[needs.fields.total]
+schema = { type = "number" }
+nullable = false
+derive = { kind = "sum", field = "hours", over = "links" }
+derive_by_type.spec = { kind = "copy", field = "hours" }
+'''
+source = '''
+.. req:: A
+   :id: REQ_1
+   :hours: 2
+
+.. req:: B
+   :id: REQ_2
+   :hours: 3
+   :links: REQ_1
+
+.. spec:: C
+   :id: SPEC_1
+   :hours: 7
+   :links: REQ_1, REQ_2
+
+.. impl:: D
+   :id: IMPL_1
+   :links: REQ_1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+total = 0.0
+[case.expect.needs.REQ_2]
+total = 2.0
+[case.expect.needs.SPEC_1]
+total = 7.0
+[case.expect.needs.IMPL_1]
+total = 2.0
+
+[[case]]
+name = "by-type-off-type-values"
+why = "derive_by_type alone: a need of another type holds the field's default (as the field's type: 0 on a number field is 0.0), else null when nullable, else the typed empty value; a derived link type holds no links there"
+config = '''
+[needs.fields.hours]
+schema = { type = "number" }
+
+[needs.fields.total_d]
+schema = { type = "number" }
+default = 0
+derive_by_type.req = { kind = "sum", field = "hours", over = "links" }
+
+[needs.fields.total_n]
+schema = { type = "number" }
+derive_by_type.req = { kind = "sum", field = "hours", over = "links" }
+
+[needs.fields.total_e]
+schema = { type = "number" }
+nullable = false
+derive_by_type.req = { kind = "sum", field = "hours", over = "links" }
+
+[needs.fields.state]
+schema = { type = "string", enum = ["open", "closed"] }
+nullable = false
+derive_by_type.req = { kind = "copy", field = "status" }
+
+[needs.links.related]
+derive_by_type.req = { kind = "links", where = "type == 'spec'" }
+'''
+source = '''
+.. req:: A
+   :id: REQ_1
+   :status: open
+   :links: SPEC_1
+
+.. spec:: B
+   :id: SPEC_1
+   :hours: 4
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+total_d = 4.0
+total_n = 4.0
+total_e = 4.0
+state = "open"
+related = ["SPEC_1"]
+[case.expect.needs.SPEC_1]
+total_d = 0.0
+total_e = 0.0
+state = ""
+related = []
+[case.expect.nulls]
+SPEC_1 = ["total_n"]
+
+[[case]]
+name = "by-type-invalid-shapes"
+why = "derive_by_type is checked at load, one derive_invalid per rule entry or key: a type key naming no need type (a title included) is ignored; an empty or non-table derive_by_type, a non-table entry and an invalid entry are reported and the field stays closed, needs of that type holding their empty value while the other types are unaffected; 'types' inside a rule is not a role; a default beside derive is refused as before; predicates, and a non-literal default, beside derive_by_type alone are refused"
+config = '''
+[needs.fields.hours]
+schema = { type = "number" }
+
+[needs.fields.unknown_type]
+schema = { type = "number" }
+derive_by_type.epic = { kind = "sum", field = "hours", over = "links" }
+derive_by_type.req = { kind = "sum", field = "hours", over = "links" }
+
+[needs.fields.title_key]
+schema = { type = "number" }
+derive_by_type.Requirement = { kind = "sum", field = "hours", over = "links" }
+
+[needs.fields.empty_table]
+schema = { type = "number" }
+derive_by_type = {}
+
+[needs.fields.not_a_table]
+schema = { type = "number" }
+derive_by_type = [1, 2]
+
+[needs.fields.entry_not_table]
+schema = { type = "number" }
+derive_by_type.req = 3
+derive_by_type.spec = { kind = "sum", field = "hours", over = "links" }
+
+[needs.fields.entry_invalid]
+schema = { type = "number" }
+derive_by_type.req = { kind = "sum", field = "nope", over = "links" }
+derive_by_type.spec = { kind = "sum", field = "hours", over = "links" }
+
+[needs.fields.types_role]
+schema = { type = "number" }
+derive = { kind = "sum", field = "hours", over = "links", types = ["req"] }
+
+[needs.fields.beside_default]
+schema = { type = "number" }
+default = 1
+derive = { kind = "sum", field = "hours", over = "links" }
+derive_by_type.spec = { kind = "copy", field = "hours" }
+
+[needs.fields.beside_predicates]
+schema = { type = "number" }
+predicates = [["status == 'open'", 5]]
+derive_by_type.spec = { kind = "copy", field = "hours" }
+
+[needs.fields.dynamic_default]
+schema = { type = "string" }
+default = "[[copy('title')]]"
+derive_by_type.spec = { kind = "copy", field = "title" }
+
+[needs.fields.status]
+derive_by_type.spec = { kind = "copy", field = "title" }
+'''
+source = '''
+.. req:: A
+   :id: REQ_1
+   :hours: 2
+   :links: SPEC_1
+
+.. spec:: B
+   :id: SPEC_1
+   :hours: 4
+   :links: REQ_1
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+unknown_type = 4.0
+beside_default = 4.0
+[case.expect.needs.SPEC_1]
+entry_not_table = 2.0
+entry_invalid = 2.0
+beside_default = 4.0
+beside_predicates = 4.0
+dynamic_default = "B"
+[case.expect.nulls]
+REQ_1 = ["title_key", "empty_table", "not_a_table", "entry_not_table", "entry_invalid", "types_role", "beside_predicates", "dynamic_default"]
+SPEC_1 = ["unknown_type", "title_key", "empty_table", "not_a_table", "types_role"]
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "unknown_type"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "title_key"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "empty_table"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "not_a_table"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "entry_not_table"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "entry_invalid"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "types_role"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "beside_default"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "beside_predicates"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "dynamic_default"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "status"
+
+[[case]]
+name = "by-type-declared-cycle-per-type"
+why = "a load-time cycle of own-field reads is per need type: cyc_a's derive and cyc_b's req rule read each other on req needs only, so both are reported (cyc_a's naming the type) and hold their empty value on req, while on spec cyc_b is off-type (null) and cyc_a computes from it"
+config = '''
+[needs.fields.cyc_a]
+schema = { type = "string" }
+derive = { kind = "copy", field = "cyc_b" }
+
+[needs.fields.cyc_b]
+schema = { type = "string" }
+derive_by_type.req = { kind = "copy", field = "cyc_a" }
+
+[needs.fields.label]
+schema = { type = "string" }
+derive = { kind = "copy", field = "title" }
+derive_by_type.req = { kind = "copy", field = "label_src" }
+
+[needs.fields.label_src]
+schema = { type = "string" }
+'''
+source = '''
+.. req:: A
+   :id: REQ_1
+   :label_src: from req
+
+.. spec:: B
+   :id: SPEC_1
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+label = "from req"
+[case.expect.needs.SPEC_1]
+label = "B"
+[case.expect.nulls]
+REQ_1 = ["cyc_a", "cyc_b"]
+SPEC_1 = ["cyc_a", "cyc_b"]
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "cyc_a"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "cyc_b"
+
+[[case]]
+name = "by-type-closed-off-type"
+why = "a field with derive_by_type is closed on EVERY need type: on an off-type need an authored value, an inline call and a needextend are each derive_authored and ignored, and the need holds the off-type value (the default)"
+config = '''
+[needs.fields.hours]
+schema = { type = "number" }
+
+[needs.fields.total]
+schema = { type = "number" }
+default = 1
+derive_by_type.req = { kind = "sum", field = "hours", over = "links" }
+
+[needs.links.related]
+derive_by_type.req = { kind = "links", where = "type == 'spec'" }
+'''
+source = '''
+.. req:: A
+   :id: REQ_1
+   :links: SPEC_1
+
+.. spec:: Authored off-type
+   :id: SPEC_1
+   :hours: 4
+   :total: 9
+   :related: REQ_1
+
+.. spec:: Inline call off-type
+   :id: SPEC_2
+   :total: [[copy("hours", "SPEC_1")]]
+
+.. spec:: Extended off-type
+   :id: SPEC_3
+
+.. needextend:: SPEC_3
+   :total: 5
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+total = 4.0
+related = ["SPEC_1", "SPEC_2", "SPEC_3"]
+[case.expect.needs.SPEC_1]
+total = 1.0
+related = []
+[case.expect.needs.SPEC_2]
+total = 1.0
+[case.expect.needs.SPEC_3]
+total = 1.0
+[[case.expect.findings]]
+code = "derive_authored"
+need = "SPEC_1"
+field = "total"
+[[case.expect.findings]]
+code = "derive_authored"
+need = "SPEC_1"
+field = "related"
+[[case.expect.findings]]
+code = "derive_authored"
+need = "SPEC_2"
+field = "total"
+[[case.expect.findings]]
+code = "derive_authored"
+field = "total"
+
+[[case]]
+name = "by-type-mixed-strata"
+why = "one field's rules may sit in different strata per type (req late, spec not): a read is decided by the TARGET need's rule, so a stratum-2 reader of the field is derive_scope only on the needs whose rule is late (REQ_1), never on the others, and a column read over every need names those needs alone"
+config = '''
+[needs.fields.num]
+schema = { type = "integer" }
+nullable = false
+derive_by_type.req = { kind = "count", over = "links", after = "derived" }
+derive_by_type.spec = { kind = "count", over = "links" }
+
+[needs.fields.label]
+schema = { type = "string" }
+derive_by_type.req = { kind = "copy", field = "title", after = "derived" }
+derive_by_type.spec = { kind = "copy", field = "title" }
+
+[needs.fields.seen]
+schema = { type = "string" }
+derive = { kind = "copy", field = "label", over = "links" }
+
+[needs.fields.total]
+schema = { type = "number" }
+'''
+source = '''
+.. impl:: Reader of every num
+   :id: IMPL_1
+   :total: [[calc_sum("num")]]
+
+.. impl:: Reader of a late label
+   :id: IMPL_2
+   :links: REQ_1
+
+.. impl:: Reader of a stratum-2 label
+   :id: IMPL_3
+   :links: SPEC_1
+
+.. req:: Late
+   :id: REQ_1
+   :links: IMPL_1, IMPL_2
+
+.. spec:: Not late
+   :id: SPEC_1
+   :links: IMPL_1
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+num = 2
+label = "Late"
+[case.expect.needs.SPEC_1]
+num = 1
+label = "Not late"
+[case.expect.needs.IMPL_1]
+num = 0
+[case.expect.needs.IMPL_3]
+seen = "Not late"
+[case.expect.nulls]
+IMPL_1 = ["total", "label"]
+IMPL_2 = ["seen"]
+[[case.expect.findings]]
+code = "derive_scope"
+need = "IMPL_1"
+field = "total"
+[[case.expect.findings]]
+code = "derive_scope"
+need = "IMPL_2"
+field = "seen"
+
+[[case]]
+name = "by-type-recursive-rollup"
+why = "per-type rules make the multi-level roll-up of one field: leaves (spec) copy an authored field, every req sums the same field over its links, through any depth; a transitive max of its own field likewise; a link cycle among the summing needs is an instance derive_cycle"
+config = '''
+[needs.fields.hours]
+schema = { type = "number" }
+
+[needs.fields.total]
+schema = { type = "number" }
+nullable = false
+derive_by_type.req = { kind = "sum", field = "total", over = "links" }
+derive_by_type.spec = { kind = "copy", field = "hours" }
+
+[needs.fields.level_own]
+schema = { type = "integer" }
+
+[needs.fields.level]
+schema = { type = "integer" }
+derive_by_type.req = { kind = "max", field = "level", over = "links", transitive = true }
+derive_by_type.spec = { kind = "copy", field = "level_own" }
+'''
+source = '''
+.. req:: Top
+   :id: REQ_1
+   :links: REQ_2, SPEC_1
+
+.. req:: Middle
+   :id: REQ_2
+   :links: SPEC_2
+
+.. spec:: Leaf one
+   :id: SPEC_1
+   :hours: 3
+   :level_own: 2
+
+.. spec:: Leaf two
+   :id: SPEC_2
+   :hours: 5
+   :level_own: 7
+
+.. req:: Cycle one
+   :id: REQ_8
+   :links: REQ_9
+
+.. req:: Cycle two
+   :id: REQ_9
+   :links: REQ_8, SPEC_1
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+total = 8.0
+level = 7
+[case.expect.needs.REQ_2]
+total = 5.0
+level = 7
+[case.expect.needs.SPEC_1]
+total = 3.0
+level = 2
+[case.expect.needs.REQ_8]
+total = 0.0
+[case.expect.needs.REQ_9]
+total = 0.0
+[case.expect.nulls]
+REQ_8 = ["level"]
+REQ_9 = ["level"]
+[[case.expect.findings]]
+code = "derive_cycle"
+need = "REQ_8"
+field = "total"
+[[case.expect.findings]]
+code = "derive_cycle"
+need = "REQ_9"
+field = "total"
+[[case.expect.findings]]
+code = "derive_cycle"
+need = "REQ_8"
+field = "level"
+[[case.expect.findings]]
+code = "derive_cycle"
+need = "REQ_9"
+field = "level"
+
+[[case]]
+name = "by-type-fingerprint-and-hash"
+why = "a field with derive_by_type is derived, so no fingerprint includes it on any type (these digests equal the same project's without the field 'est'), while a hash naming it reads the value each need holds: its rule's (4.0) or the off-type default (0.0)"
+config = '''
+[needs.fields.hours]
+schema = { type = "number" }
+
+[needs.fields.est]
+schema = { type = "number" }
+default = 0
+derive_by_type.req = { kind = "sum", field = "hours", over = "links" }
+
+[needs.fields.fp]
+schema = { type = "string" }
+derive = { kind = "fingerprint" }
+
+[needs.fields.h]
+schema = { type = "string" }
+derive = { kind = "hash", fields = ["est"] }
+'''
+source = '''
+.. req:: A
+   :id: REQ_1
+   :links: SPEC_1
+
+.. spec:: B
+   :id: SPEC_1
+   :hours: 4
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+est = 4.0
+fp = "aff891423da89b221952ecf256e2054839ae25536b6c3cfca15806c91bf65a69"
+h = "9cf6eb36eb71c8970c66ad367a1a2c7849d7ae5a4a0e8e2f3fdc111c1e194a51"
+[case.expect.needs.SPEC_1]
+est = 0.0
+fp = "bc58ea27891cd817e3a0160d1f0645eedc023dca7e52209358f376e2be541cae"
+h = "37aed087d1cfac1ac1185c1622819ee5100567b178df43d6c00e8a7db4bc244b"
+
+[[case]]
+name = "by-type-imported-needs"
+why = "no rule runs on an imported need: one of an off-type type lacking the field holds the off-type value (the default), one of a rule type lacking it holds its empty value (null), one carrying a value keeps it; a needextend filter sees the off-type default as written"
+config = '''
+[needs.fields.total]
+schema = { type = "number" }
+default = 3
+derive_by_type.req = { kind = "count", over = "links" }
+
+[needs.fields.flag]
+schema = { type = "string" }
+default = "off"
+derive_by_type.req = { kind = "copy", field = "title" }
+'''
+source = '''
+.. req:: A
+   :id: REQ_1
+
+.. spec:: B
+   :id: SPEC_1
+
+.. needextend:: flag == 'off'
+   :status: matched
+
+.. needimport:: imported.json
+'''
+files = { "imported.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"IMP_1": {"id": "IMP_1", "type": "spec", "title": "Imported spec"}, "IMP_2": {"id": "IMP_2", "type": "req", "title": "Imported req"}, "IMP_3": {"id": "IMP_3", "type": "spec", "title": "Imported spec with a value", "total": 42.0}}}}}''' }
+[case.expect]
+[case.expect.needs.REQ_1]
+total = 0.0
+flag = "A"
+[case.expect.needs.SPEC_1]
+total = 3.0
+flag = "off"
+status = "matched"
+[case.expect.needs.IMP_1]
+total = 3.0
+flag = "off"
+[case.expect.needs.IMP_3]
+total = 42.0
+[case.expect.nulls]
+IMP_2 = ["total", "flag"]
+REQ_1 = ["status"]
+[[case.expect.findings]]
+code = "derive_scope"
+
+[[case]]
+name = "by-type-needextend-keeps-type"
+why = "a need's type cannot be changed by a needextend (the option is refused as unknown, a finding each tool names its own way), so the rule of the type the need was written with applies"
+config = '''
+[needs.fields.label]
+schema = { type = "string" }
+derive_by_type.req = { kind = "copy", field = "title" }
+derive_by_type.spec = { kind = "copy", field = "id" }
+'''
+source = '''
+.. spec:: Written as a spec
+   :id: SPEC_1
+
+.. needextend:: SPEC_1
+   :type: req
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+type = "spec"
+label = "SPEC_1"
