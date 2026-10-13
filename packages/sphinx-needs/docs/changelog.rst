@@ -113,7 +113,7 @@ Improvements
   The kinds are ``copy`` (a lookup: the need's own field, a named need's, or over a link type),
   ``sum``, ``count``, ``min``, ``max``, ``any``, ``all`` and ``collect`` (roll-ups over a link type
   or its back links, narrowed by a ``where`` filter), ``max`` / ``min`` closed over a link type (``transitive``),
-  and ``hash`` (computed after every other field) on a field;
+  ``hash`` (computed after every other field) and ``fingerprint`` on a field;
   ``links`` (every need passing a filter) and ``content_links`` (the needs a need's content references)
   on a link type. A rule is computed with the ``[[…]]`` of its step, in dependency order, and its findings are
   those of a call (``needs.derive_cycle``, ``needs.derive_scope``, ``needs.dynamic_function``), with
@@ -130,6 +130,10 @@ Improvements
   The schema in :ref:`needs.json <needs_builder_format>` marks a derived field or link type ``"readOnly": true``,
   and a need created by ``needimport`` keeps the derived values it carries.
   A rule on a core field, or on the ``parent_needs`` link type, is not available in this release, and is reported.
+  A ``fingerprint`` digests the whole need -- its id, type, title, status, tags, content and every field and link
+  type the project declares, each where it differs from its default, a link's condition dropped -- so that a link
+  condition naming it (``:links: REQ_1[fp == "…"]``) reports ``needs.link_condition_failed`` once ``REQ_1`` changes;
+  its one role, ``exclude``, leaves names out (:ref:`needs_derive`).
   `ubCode`_ reads the same configuration, and computes the same values and findings, from
   its phase-2 release.
 

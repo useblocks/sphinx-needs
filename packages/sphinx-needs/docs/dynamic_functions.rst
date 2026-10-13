@@ -282,8 +282,9 @@ Once every document has been read, and before any page is written, the needs are
    :ref:`derived fields <needs_derive>`, each after every value it reads
    (a field of its own need or of another need, a field of a linked need, a back link),
    and those that call your own functions last.
-   Then the rules of the kind ``hash``, and those with ``after = "derived"``, are computed, each after the
-   values it reads; a ``[[…]]`` of step 4 that reads one of their fields is not run (:ref:`needs_derive_scope`).
+   Then the rules of the kind ``hash`` or ``fingerprint``, and those with ``after = "derived"``, are computed,
+   each after the values it reads;
+   a ``[[…]]`` of step 4 that reads one of their fields is not run (:ref:`needs_derive_scope`).
 5. Link conditions are checked, against the computed values and the complete back links,
    and links to unknown needs are reported.
    Then the link lists are sorted for the output, and constraints are checked (:ref:`needs_constraints`).
@@ -348,6 +349,8 @@ And what each :ref:`derive rule <needs_derive>` reads:
      - ``field`` and the names of ``where`` on every need ``over`` reaches (and on its own, with ``include_self``)
    * - ``hash``, ``fields = [...]``
      - the listed fields of its own need, after every other rule
+   * - ``fingerprint``
+     - every name it includes (less ``exclude``) of its own need, after every other rule
    * - ``links``, ``where = …``
      - the names of ``where`` on every need (and part)
    * - ``content_links``

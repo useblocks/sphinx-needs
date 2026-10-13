@@ -542,6 +542,11 @@ The kinds
      - ``fields``
      - (none)
      - a ``string``, computed after every other rule of the need
+   * - ``fingerprint``
+     - a field
+     - (none)
+     - ``exclude``
+     - a ``string``, computed after every other rule of the need
    * - ``links``
      - a link type
      - ``where``
@@ -553,8 +558,8 @@ The kinds
      - ``from``, ``where``
      - a link list
 
-Every kind that computes a value also takes ``after = "derived"``,
-which computes the field after every other rule of the need, as ``hash`` always is.
+Every kind that computes a value, but ``fingerprint``, also takes ``after = "derived"``,
+which computes the field after every other rule of the need, as ``hash`` and ``fingerprint`` always are.
 
 The roles
 ^^^^^^^^^
@@ -574,6 +579,9 @@ The roles
    * - ``fields``
      - a list of field names
      - ``hash``: the need's own fields hashed, in the listed order (fields and link types; not a ``<link type>_back``).
+   * - ``exclude``
+     - a list of field names
+     - ``fingerprint``: the names it leaves out, each a name it includes, once; an empty list leaves nothing out.
    * - ``over``
      - a link type
      - The candidates: the needs this need's ``<link type>`` names, in the order written, a need named twice counted twice;
@@ -639,6 +647,8 @@ an ``over`` naming no link type, a ``field`` naming nothing a need has,
 a result the field's ``schema`` cannot hold,
 a ``min`` or ``max`` reading a field that has no order,
 a ``hash`` naming a ``<link type>_back``,
+a ``fingerprint`` whose ``exclude`` is not a list of names, names one twice,
+or names what a fingerprint does not include (nothing a need has, or a name it never includes, such as ``docname``),
 a ``where`` or ``test`` that does not parse or reads more than the candidate,
 an empty ``where`` on ``links`` (it would link every need),
 and rules reading one another's own fields in a circle (``copy`` without ``over`` or ``from``, and ``hash``),
@@ -657,8 +667,8 @@ How a rule is computed
 ^^^^^^^^^^^^^^^^^^^^^^
 
 A rule is computed with the ``[[…]]`` of its step (see :ref:`needs_processing_order`):
-``links`` and ``content_links`` with the link fields, ``hash`` and the rules with ``after = "derived"``
-after every other field, every other kind with the other fields; each after every value it reads.
+``links`` and ``content_links`` with the link fields, ``hash``, ``fingerprint`` and the rules with
+``after = "derived"`` after every other field, every other kind with the other fields; each after every value it reads.
 
 - **Candidates.** ``over = "<t>"``: the needs this need's ``<t>`` names, once the link fields are computed,
   in the order written; a need named twice is a candidate twice;
@@ -702,6 +712,44 @@ after every other field, every other kind with the other fields; each after ever
   so a need linked with and without a condition is hashed once.
   For ``fields = ["title", "status"]`` on a need titled ``Größe`` with status ``open``,
   the text is ``["Größe","open"]``.
+- **fingerprint.** The lowercase hex SHA-256 of the UTF-8 text of one JSON object holding the whole need,
+  its keys sorted, written as for ``hash`` (no whitespace, non-ASCII characters not escaped, numbers as Python writes
+  them, and a ``number`` field's value as a float).
+
+  - It includes ``id``, ``type``, ``title``, ``status``, ``tags`` and ``content`` (as ``needs.json`` holds it),
+    every field the project declares in :ref:`needs_fields` or :ref:`needs_extra_options`,
+    and every link type, ``links`` among them; none of them derived.
+  - It never includes a derived field or link type (so no ``hash`` and no other fingerprint),
+    a back link list (``<link type>_back``), ``parent_needs``, ``parts`` (a part's text is in ``content``),
+    ``constraints``, where the need is (``docname``, ``lineno``, ``sections``),
+    how it is shown (``layout``, ``style``, ``collapse``, ``hide``, the templates),
+    what sphinx-needs records about it (``is_external``, ``has_dead_links`` and the like),
+    or a field an extension or a service registers, such as :ref:`needgantt`'s ``duration`` and ``completion``.
+  - A name enters only where the need's value differs from the field's default, compared as JSON text:
+    the field's ``default``, else ``null`` for a nullable field
+    (a default that is a ``[[…]]`` or a variant is no literal default, and so counts as none),
+    and for a field that is neither, nothing: it always enters.
+    ``status`` and ``tags`` are compared against theirs (``null`` and ``[]`` unless configured),
+    ``content`` against ``""``, and ``id``, ``type`` and ``title`` always enter.
+    So a value written equal to its default is the same as leaving it unset,
+    while ``""``, ``false``, ``0`` or ``[]`` differ from a ``null`` default, and ``-0.0`` from ``0.0``;
+    and declaring a new field or link type moves no fingerprint while the needs leave it at its default.
+    Changing a field's ``default`` moves the fingerprints of the needs that wrote the old default out,
+    not of those that rely on it.
+  - A link list is written as for ``hash``, and compared with its default the same way: the ids it links to,
+    without their conditions, sorted and without duplicates.
+    So a condition pinning another need's fingerprint never moves the fingerprint of the need holding it,
+    while linking another need does.
+  - ``exclude`` leaves names out, such as ``exclude = ["id"]``, under which two needs with the same contents
+    have the same fingerprint.
+  - It is computed after every other rule, from the need's final values
+    (after every :ref:`needextend`, variant and ``[[…]]``), and reads no derived field,
+    so two fingerprints with the same ``exclude`` hold the same value.
+  - The names a fingerprint includes are fixed: no later release adds a name beyond the fields and link types
+    the project declares, so a fingerprint written down keeps its meaning.
+
+  For a need ``REQ_1`` of type ``req``, titled ``Größe``, with status ``open`` and no other value set,
+  the text is ``{"id":"REQ_1","status":"open","title":"Größe","type":"req"}``.
 - **links.** Every need, and with ``include_parts`` every need's parts (after it, in part-id order),
   in need-id order (the ids compared as strings, by code point: ``T_10``, ``T_2``, ``T_9``);
   this need and its parts are left out unless ``include_self``.
@@ -722,6 +770,32 @@ To silence a warning, add its type to Sphinx's ``suppress_warnings``:
 .. code-block:: python
 
    suppress_warnings = ["needs.derive_invalid", "needs.derive_authored", "needs.derive_unique"]
+
+Detecting a changed need
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+A ``fingerprint`` changes whenever its need does,
+so a :ref:`link condition <need_conditional_links>` naming the fingerprint a need had when it was reviewed
+reports the need once it changes:
+
+.. code-block:: toml
+
+   [needs.fields.fp]
+   schema = { type = "string" }
+   derive = { kind = "fingerprint" }
+
+.. code-block:: rst
+
+   .. spec:: Reviewed against REQ_1
+      :id: SPEC_1
+      :links: REQ_1[fp == "3f9a1c2b7d4e0a8c6f1e5d2b9a7c4e3f8d6b1a0c9e7f5d3b2a4c6e8f0a1b3c5d"]
+
+While ``REQ_1`` is unchanged, the condition holds.
+Once its title, content, status or any other value it includes changes, its fingerprint does,
+and the build reports ``needs.link_condition_failed`` at ``SPEC_1``;
+writing the new fingerprint into the condition accepts the change.
+Writing only the start of the fingerprint is enough to tell a change apart:
+``REQ_1[fp.startswith('3f9a1c2b7d4e')]``.
 
 .. _`needs_links`:
 
