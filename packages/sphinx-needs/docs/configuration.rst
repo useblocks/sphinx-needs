@@ -731,6 +731,8 @@ A rule is computed with the ``[[…]]`` of its step (see :ref:`needs_processing_
     and for a field that is neither, nothing: it always enters.
     ``status`` and ``tags`` are compared against theirs (``null`` and ``[]`` unless configured),
     ``content`` against ``""``, and ``id``, ``type`` and ``title`` always enter.
+    A link type, and ``tags``, without a literal default are compared against ``[]``.
+    A ``number`` field's value and default are compared, and written, as floats: ``default = 1`` is ``1.0``.
     So a value written equal to its default is the same as leaving it unset,
     while ``""``, ``false``, ``0`` or ``[]`` differ from a ``null`` default, and ``-0.0`` from ``0.0``;
     and declaring a new field or link type moves no fingerprint while the needs leave it at its default.

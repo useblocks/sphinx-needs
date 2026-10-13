@@ -361,7 +361,8 @@ def fingerprint_names(schema: FieldsSchema) -> dict[str, Any]:
     the field's literal default, else ``None`` when it is nullable, else
     :data:`NO_DEFAULT` (it always enters). A default that is a dynamic function or a
     variant is no literal default. ``id``, ``type`` and ``title`` have none,
-    ``content`` has ``""``; a link type's default is its list of links.
+    ``content`` has ``""``; a link type's default is its list of links, and a link
+    type or ``tags`` without a literal default has ``[]``, its empty value.
 
     :param schema: The schema, every field and link type added.
     :return: Each name, in the order above, with its default.
@@ -380,6 +381,8 @@ def fingerprint_names(schema: FieldsSchema) -> dict[str, Any]:
             names[name] = ""
         elif name in {"status", "tags"} and (core := schema.get_core_field(name)):
             names[name] = default_of(core)
+            if name == "tags" and names[name] is NO_DEFAULT:
+                names[name] = []
         else:
             names[name] = NO_DEFAULT
     for field in schema.iter_extra_fields():
@@ -390,7 +393,7 @@ def fingerprint_names(schema: FieldsSchema) -> dict[str, Any]:
             names[link.name] = (
                 list(link.default.value)
                 if isinstance(link.default, LinksLiteralValue)
-                else NO_DEFAULT
+                else []
             )
     return names
 
