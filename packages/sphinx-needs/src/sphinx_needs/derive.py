@@ -21,6 +21,7 @@ Nothing here touches Sphinx: the checks return the problems, and the caller repo
 from __future__ import annotations
 
 import ast
+import enum
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final, Literal, TypeAlias
@@ -38,6 +39,7 @@ DeriveKind: TypeAlias = Literal[
     "all",
     "collect",
     "hash",
+    "fingerprint",
     "links",
     "content_links",
 ]
@@ -53,6 +55,7 @@ KINDS: Final[tuple[DeriveKind, ...]] = (
     "all",
     "collect",
     "hash",
+    "fingerprint",
     "links",
     "content_links",
 )
@@ -65,6 +68,7 @@ LINK_KINDS: Final = frozenset({"links", "content_links"})
 ROLES: Final = (
     "field",
     "fields",
+    "exclude",
     "over",
     "from",
     "where",
@@ -99,6 +103,7 @@ _ROLES_OF: Final[Mapping[str, tuple[frozenset[str], frozenset[str]]]] = {
     "all": (frozenset({"over"}), frozenset({"field", "test", "where", "after"})),
     "collect": (frozenset({"field", "over"}), frozenset({"where", "after"})),
     "hash": (frozenset({"fields"}), frozenset({"after"})),
+    "fingerprint": (frozenset(), frozenset({"exclude"})),
     "links": (frozenset({"where"}), frozenset({"include_self", "include_parts"})),
     "content_links": (frozenset(), frozenset({"from", "where"})),
 }
@@ -115,6 +120,7 @@ class DeriveRule:
     :ivar kind: The kind.
     :ivar field: The ``field`` role: the field read on each candidate, or on this need.
     :ivar fields: The ``fields`` role (``hash``): the own fields hashed, in order.
+    :ivar exclude: The ``exclude`` role (``fingerprint``): what it leaves out.
     :ivar over: The ``over`` role: a link type, or ``<link type>_back``.
     :ivar from_need: The ``from`` role: the id of the one need read.
     :ivar where: The ``where`` role: the predicate narrowing the candidates.
@@ -129,6 +135,7 @@ class DeriveRule:
     kind: DeriveKind
     field: str | None = None
     fields: tuple[str, ...] = ()
+    exclude: tuple[str, ...] = ()
     over: str | None = None
     from_need: str | None = None
     where: str | None = None
@@ -142,7 +149,7 @@ class DeriveRule:
     @property
     def late(self) -> bool:
         """Whether the rule runs in the late stage, after every other derivation."""
-        return self.kind == "hash" or self.after_derived
+        return self.kind in {"hash", "fingerprint"} or self.after_derived
 
     @property
     def link_valued(self) -> bool:
@@ -246,12 +253,17 @@ def parse_derive(raw: Any, *, on_link: bool) -> Derive:
     for role in ROLES:
         if role in raw and (problem := _value_problem(role, raw[role])) is not None:
             return DeriveInvalid(kind, f"{prefix}: the role {role!r} {problem}")
+    if (twice := _named_twice(raw.get("exclude", ()))) is not None:
+        return DeriveInvalid(
+            kind, f"{prefix}: the role 'exclude' names {twice!r} twice"
+        )
     if (problem := _combination_problem(kind, raw)) is not None:
         return DeriveInvalid(kind, f"{prefix} {problem}")
     return DeriveRule(
         kind=kind,
         field=raw.get("field"),
         fields=tuple(raw.get("fields", ())),
+        exclude=tuple(raw.get("exclude", ())),
         over=raw.get("over"),
         from_need=raw.get("from"),
         where=raw.get("where"),
@@ -281,11 +293,27 @@ def _value_problem(role: str, value: Any) -> str | None:
             or not all(isinstance(item, str) and item.strip() for item in value)
         ):
             return "must be a non-empty list of field names"
+    elif role == "exclude":
+        # an empty list leaves nothing out
+        if not isinstance(value, list | tuple) or not all(
+            isinstance(item, str) and item.strip() for item in value
+        ):
+            return "must be a list of field names"
     elif role == "select":
         if value not in _SELECT:
             return 'must be "first", "unique" or "list"'
     elif role == "after" and value != "derived":
         return 'must be "derived"'
+    return None
+
+
+def _named_twice(names: Iterable[str]) -> str | None:
+    """The first name a list names a second time, if any."""
+    seen: set[str] = set()
+    for name in names:
+        if name in seen:
+            return name
+        seen.add(name)
     return None
 
 
@@ -303,6 +331,68 @@ def _combination_problem(kind: str, raw: Mapping[str, Any]) -> str | None:
     if kind == "links" and not str(raw.get("where", "")).strip():
         return "has an empty 'where', which would link every need"
     return None
+
+
+# -- what a fingerprint includes ------------------------------------------------------
+
+
+class NoDefault(enum.Enum):
+    """The marker of a name a fingerprint always includes: it has no default to omit."""
+
+    NO_DEFAULT = "no default"
+
+
+#: A name without a default: it enters every fingerprint.
+NO_DEFAULT: Final = NoDefault.NO_DEFAULT
+
+#: The core fields a fingerprint includes, besides the project's fields and link types.
+FINGERPRINT_CORE: Final = ("id", "type", "title", "status", "tags", "content")
+
+
+def fingerprint_names(schema: FieldsSchema) -> dict[str, Any]:
+    """Every name a ``fingerprint`` includes, with the default it is compared against.
+
+    The names: ``id``, ``type``, ``title``, ``status``, ``tags`` and ``content``; every
+    field the project declares (``needs_fields``, ``needs_extra_options``) that is not
+    derived; every link type that is not derived, ``parent_needs`` aside. Never a field
+    an extension or a service registers, nor any other core field.
+
+    A name enters a need's fingerprint only when its value differs from its default:
+    the field's literal default, else ``None`` when it is nullable, else
+    :data:`NO_DEFAULT` (it always enters). A default that is a dynamic function or a
+    variant is no literal default. ``id``, ``type`` and ``title`` have none,
+    ``content`` has ``""``; a link type's default is its list of links.
+
+    :param schema: The schema, every field and link type added.
+    :return: Each name, in the order above, with its default.
+    """
+    # imported here, as the schema module imports this one
+    from sphinx_needs.needs_schema import FieldLiteralValue, LinksLiteralValue
+
+    def default_of(field: FieldSchema) -> Any:
+        if isinstance(field.default, FieldLiteralValue):
+            return field.default.value
+        return None if field.nullable else NO_DEFAULT
+
+    names: dict[str, Any] = {}
+    for name in FINGERPRINT_CORE:
+        if name == "content":
+            names[name] = ""
+        elif name in {"status", "tags"} and (core := schema.get_core_field(name)):
+            names[name] = default_of(core)
+        else:
+            names[name] = NO_DEFAULT
+    for field in schema.iter_extra_fields():
+        if field.derive is None and schema.is_project_field(field.name):
+            names[field.name] = default_of(field)
+    for link in schema.iter_link_fields():
+        if link.derive is None and link.name not in CORE_LINK_TYPES:
+            names[link.name] = (
+                list(link.default.value)
+                if isinstance(link.default, LinksLiteralValue)
+                else NO_DEFAULT
+            )
+    return names
 
 
 # -- the checks against the configuration ---------------------------------------------
@@ -501,6 +591,18 @@ def _rule_problem(
                 f"{prefix}: the role 'fields' names {name!r}, "
                 "which is not a field or a link type"
             )
+    included = fingerprint_names(schema) if rule.kind == "fingerprint" else {}
+    for name in rule.exclude:
+        if _value_type(name, schema, links) is None:
+            return (
+                f"{prefix}: the role 'exclude' names {name!r}, "
+                "which is not a field or a link type"
+            )
+        if name not in included:
+            return (
+                f"{prefix}: the role 'exclude' names {name!r}, "
+                "which a fingerprint never includes"
+            )
     for role, text in (("where", rule.where), ("test", rule.test)):
         if text is not None and (problem := filter_problem(text)) is not None:
             return f"{prefix}: the role {role!r} {problem}"
@@ -594,7 +696,7 @@ def _result_problem(
                     f"{prefix} gives {expected.describe()}, which the field's schema "
                     f"({result.describe()}) cannot hold"
                 )
-        case "hash":
+        case "hash" | "fingerprint":
             if result.type != "string":
                 return (
                     f"{prefix} gives a string, which the field's schema "

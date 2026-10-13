@@ -1480,7 +1480,10 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                         field_data.source,
                         allow_coercion=True,
                     )
-            schema.add_extra_field(field)
+            schema.add_extra_field(
+                field,
+                project=field_data.source in {"needs_fields", "needs_extra_options"},
+            )
         except Exception as exc:
             raise NeedsConfigException(f"Invalid field {name!r}: {exc}") from exc
 
