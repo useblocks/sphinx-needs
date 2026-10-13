@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791791827943,
+  "lastUpdate": 1791876427893,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -24336,6 +24336,42 @@ window.BENCHMARK_DATA = {
             "value": 42.55012797500001,
             "unit": "s",
             "extra": "Commit: 8ac3974b36e9584adbe04c1d520dd2f471c643fd\nBranch: master\nTime: 2026-10-12T09:55:57+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1b2d3f8aaa79d327d98f8ad78878f342d36be001",
+          "message": "✨ sphinx-needs: the fingerprint derive kind — a digest of the whole need (#2204)\n\n## Summary\n\nA new derive kind, `fingerprint`, gives a field the SHA-256 of the whole\nneed, for change detection:\n\n    [needs.fields.fp]\n    schema = { type = \"string\" }\n    derive = { kind = \"fingerprint\" }\n\n    .. spec:: Reviewed against REQ_1\n       :id: SPEC_1\n       :links: REQ_1[fp == \"<REQ_1's fingerprint when it was reviewed>\"]\n\nThe condition holds while `REQ_1` is unchanged, and reports\n`needs.link_condition_failed` once it changes;\nwriting the new value accepts the change. A prefix is enough:\n`REQ_1[fp.startswith('3f9a1c2b7d4e')]`.\n\n## Design\n\n- **The set**: `id`, `type`, `title`, `status`, `tags`, `content` (a\nneed nested in another's body is part of the\nparent's `content`), every field the project declares (`needs_fields`,\n`needs_extra_options`) and every link type,\n`links` included, none derived. Never: derived fields and link types\n(hashes, other fingerprints), back links,\n`parent_needs`, `parts`, `constraints`, location, presentation,\nbookkeeping, or fields an extension or service\n  registers (unless the project declares that name itself).\n- **The entry rule**: a name enters only where its value differs from\nthe field's default, compared as JSON text\n(a literal `default`, else `null` when nullable, else `[]` for a link\ntype or `tags`, else — a non-nullable field\nwithout a literal default — it always enters; `id`/`type`/`title`\nalways; a `number` field's value and default as\nfloats, so `default = 1` is `1.0`). A value written equal to its default\nis the same as unset, and `-0.0` differs\nfrom `0.0`. Declaring a field or link type moves no fingerprint while\nthe needs leave it unset, if its default is\na literal or there is none; a `[[…]]` or variant default, and\n`predicates`, give the needs a value, which enters as\na written one would (adding `owner` with `default = \"[[copy('title')]]\"`\nmoves every need's fingerprint).\n- **Frozen**: no later release changes which names a fingerprint\nincludes, when a name enters, or how the text is\nwritten: a fingerprint written down stays current until the need, or the\nconfiguration of the fields it\n  reads, changes.\n- **The text**: one compact JSON object, keys sorted, written as `hash`\nwrites values; SHA-256, lowercase hex.\n- **Link conditions dropped** (targets kept, deduplicated, in the\nexport's order), so pinning an upstream need's\n  fingerprint never moves the pinning need's own.\n- **`exclude`**: the one optional role, a list of names the fingerprint\nincludes, each once (`[]` allowed);\nanything else is `needs.derive_invalid`, as are `fields`/`after` on it\nand `exclude` on `hash`.\n- **Late**, like `hash`: computed from final values (needextend,\nvariants, `[[…]]`); a non-late reader is\n  `needs.derive_scope`; no rule runs on imported or external needs.\n\n## Tests\n\n- Seven cases appended to the derived-field conformance corpus\n(`EXPECTED_CASE_COUNT` 36 → 43; only additions, the\n36 existing cases byte-for-byte): `fingerprint-whole-need`,\n`fingerprint-new-field-keeps-digest`,\n`fingerprint-exclude-and-empty-values`,\n`fingerprint-in-a-link-condition`, `fingerprint-invalid-shapes`,\n`fingerprint-late-and-scope`, `fingerprint-defaults-compared-as-text`.\nTheir hexes were computed by an independent\nprototype of the byte format (amended for the float rule of a `number`\nfield's integer default) before the\n  implementation existed, and the implementation reproduces them.\n- `tests/test_derive_fingerprint.py`: every load check with its text and\norder, the included names, the entry\nrule's edges, registered fields, final values,\nhidden/nested/imported/external needs, change detection.\n- One order test in `tests/test_functions_order.py`.\n\nubCode follows in a twin PR, vendoring the corpus.\n\n## Changelog\n\nThe 9.0.0 \"Unreleased\" entry for derived fields gains `fingerprint` in\nits list of kinds, a sentence on what it\ndigests (every declared, non-derived field and link type, `links` among\nthem) and how a link condition uses it, and\nthe frozen promise.\n\n`uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-13T09:25:49+02:00",
+          "tree_id": "c6e41b953db80dfb18c6e2e120ec5c160e1a7d4e",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/1b2d3f8aaa79d327d98f8ad78878f342d36be001"
+        },
+        "date": 1791876418409,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.08952692900000159,
+            "unit": "s",
+            "extra": "Commit: 1b2d3f8aaa79d327d98f8ad78878f342d36be001\nBranch: master\nTime: 2026-10-13T09:25:49+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 44.62387850099999,
+            "unit": "s",
+            "extra": "Commit: 1b2d3f8aaa79d327d98f8ad78878f342d36be001\nBranch: master\nTime: 2026-10-13T09:25:49+02:00"
           }
         ]
       }
