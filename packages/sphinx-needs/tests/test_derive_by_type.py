@@ -903,6 +903,7 @@ needs_fields = {
     "cyc_a": {"schema": {"type": "string"}, "derive": {"kind": "copy", "field": "cyc_b"}},
     "cyc_b": {
         "schema": {"type": "string"},
+        "default": "off",
         "derive_by_type": {
             "req": {"kind": "copy", "field": "cyc_a"},
             "impl": {"kind": "copy", "field": "cyc_a"},
@@ -932,8 +933,8 @@ needs_fields = {
 def test_a_load_time_cycle_is_reported_per_need_type(test_app: Any) -> None:
     """``cyc_a``'s ``derive`` and ``cyc_b``'s ``req`` and ``impl`` entries read each
     other: each entry cannot be read, and ``derive`` cannot be read on those two types
-    -- the finding names them -- while it applies on ``spec`` and ``test``, where
-    ``cyc_b`` holds its off-type ``None``. ``echo``'s own ``spec`` entry reads itself:
+    -- the finding names them -- while it applies on ``spec`` and ``test``, where it
+    copies ``cyc_b``'s off-type default. ``echo``'s own ``spec`` entry reads itself:
     that entry alone cannot be read; its ``derive`` applies on every other type."""
     app = test_app
     app.build()
@@ -955,9 +956,10 @@ def test_a_load_time_cycle_is_reported_per_need_type(test_app: Any) -> None:
         _invalid("echo", cycle.format("echo", "echo -> echo"), entry="spec"),
     ]
     needs = _needs(app)
-    assert [needs[i]["cyc_a"] for i in ("REQ_1", "SPEC_1", "IMPL_1", "TEST_1")] == [
-        None
-    ] * 4
+    order = ("REQ_1", "SPEC_1", "IMPL_1", "TEST_1")
+    # on spec and test, cyc_b holds its default and cyc_a copies it
+    assert [needs[i]["cyc_b"] for i in order] == [None, "off", None, "off"]
+    assert [needs[i]["cyc_a"] for i in order] == [None, "off", None, "off"]
     assert [needs[i]["echo"] for i in ("REQ_1", "SPEC_1", "IMPL_1", "TEST_1")] == [
         "A",
         None,
