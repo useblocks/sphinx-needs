@@ -699,7 +699,9 @@ A need of a type without a rule holds the same value on every need of the type:
    * - a ``default``
      - the default, in the field's type (``default = 0`` is ``0.0`` in a ``number`` field);
        the field's ``schema`` checks it, as it checks any default
-   * - no ``default``, nullable (as a field is unless ``nullable = false``)
+       (but a link type's ``default = []``, which is its "no links", as no default is)
+   * - no ``default``, nullable (as the field is declared: a :ref:`needs_fields` entry is unless
+       ``nullable = false``; a :ref:`needs_extra_options` entry without a ``schema`` is not)
      - ``None``
    * - no ``default``, ``nullable = false``
      - the field's empty value (``""``, ``0``, ``0.0``, ``False`` or ``[]``; no links for a link type),
@@ -738,7 +740,7 @@ One lacking a derived field holds what a need of its type holds when no rule has
 the value of a type without a rule, else the empty value.
 In the schema of the :ref:`needs.json <needs_builder_format>`, a derived field or link type is marked ``"readOnly": true``,
 so a project importing the file knows the value is computed, not authored;
-the schema's ``default`` of a field is the value of a need type without a rule.
+the schema's ``default`` of a field, or of a link type derived by type alone, is the value of a need type without a rule.
 
 A rule is checked when the configuration is read.
 A rule that cannot be read is reported as ``needs.derive_invalid``, once per rule, naming the kind and the role:
@@ -809,6 +811,8 @@ A rule is computed with the ``[[…]]`` of its step (see :ref:`needs_processing_
   A rule whose ``field`` is its own field (a roll-up of one field per need type, see :ref:`needs_derive_by_type`)
   reads the value each reached need computes, so needs linking one another in a cycle are reported
   (``needs.derive_cycle``) rather than closed over.
+  With ``include_self = true`` such a rule reads its own value on every need, which is a ``needs.derive_cycle``
+  on each: an own-field roll-up leaves ``include_self`` off.
 - **hash.** The lowercase hex SHA-256 of the UTF-8 text of one JSON array:
   the listed fields' values in the listed order, each as :ref:`needs.json <needs_builder_format>` holds it
   (an unset field ``null``),

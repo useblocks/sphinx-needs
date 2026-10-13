@@ -76,8 +76,8 @@ def validate_field_link_schemas(
     # computes it (its empty value) is its "no value", as None is for a nullable
     # field: it is not validated. On a need of a type the field has no rule for, a
     # field with a default holds that default, which is a value and is validated, also
-    # where it equals the empty value (a link type's default differs from its empty
-    # value, no links, or is none)
+    # where it equals the empty value. A link type's ``default = []`` is its "no
+    # links", exempt as no default is (the two cannot be told apart)
     placeholders: dict[str, Any] = {
         field.name: typed_empty(field.type)
         for field in (

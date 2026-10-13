@@ -174,7 +174,9 @@ def add_field(
     :param derive_by_type: Rules per need type, which make it a
         :ref:`derived field <needs_derive>` too: a dict of need type (the directive
         name) to a rule as ``derive`` takes one, overriding ``derive`` on that type.
-        A need of a type without a rule holds ``default``.
+        A need of a type without a rule holds ``default`` (given only without
+        ``derive``), else ``None``, or the empty value of the field's type when it is
+        not nullable.
 
     .. versionchanged:: 9.0.0
 

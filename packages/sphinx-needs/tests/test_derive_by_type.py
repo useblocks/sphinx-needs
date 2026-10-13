@@ -1373,3 +1373,39 @@ def test_a_derive_cycling_on_some_types_names_each_path(test_app: Any) -> None:
     needs = _needs(app)
     assert (needs["REQ_1"]["x"], needs["REQ_1"]["y"]) == ("A", "A")
     assert (needs["SPEC_1"]["x"], needs["SPEC_1"]["y"]) == (None, None)
+
+
+INCLUDE_SELF_TOML = """\
+[needs.fields.lvl_own]
+schema = { type = "integer" }
+
+[needs.fields.lvl]
+schema = { type = "integer" }
+derive_by_type.req = { kind = "max", field = "lvl", over = "links", transitive = true, include_self = true }
+derive_by_type.spec = { kind = "copy", field = "lvl_own" }
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _toml_project(
+            INCLUDE_SELF_TOML,
+            ".. req:: A\n   :id: REQ_3\n   :links: SPEC_1\n\n"
+            ".. spec:: B\n   :id: SPEC_1\n   :lvl_own: 4\n",
+        )
+    ],
+    indirect=True,
+)
+def test_an_own_field_roll_up_with_include_self_reads_itself(test_app: Any) -> None:
+    """A transitive rule whose ``field`` is its own field reads, with
+    ``include_self = true``, its own value: a cycle on every need it runs on, though
+    no link cycles (the documented reason an own-field roll-up leaves it off)."""
+    app = test_app
+    app.build()
+    assert _warnings(app) == [
+        "<srcdir>/index.rst:4: WARNING: derive rule 'max' for option 'lvl' is on a "
+        "cycle: 'lvl' on need 'REQ_3'; the field is left empty [needs.derive_cycle]"
+    ]
+    needs = _needs(app)
+    assert (needs["REQ_3"]["lvl"], needs["SPEC_1"]["lvl"]) == (None, 4)
