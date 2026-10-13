@@ -35,7 +35,7 @@ from sphinx_needs.views import NeedsView
 if TYPE_CHECKING:
     from typing import NotRequired
 
-    from sphinx_needs.needs_schema import FieldSchema, FieldsSchema, LinkSchema
+    from sphinx_needs.needs_schema import FieldSchema, FieldsSchema
 
 # TODO(Marco): error for conflicting unevaluatedProperties
 
@@ -75,7 +75,9 @@ def validate_field_link_schemas(
     # the placeholder a derived field that is not nullable holds until its rule
     # computes it (its empty value) is its "no value", as None is for a nullable
     # field: it is not validated. On a need of a type the field has no rule for, a
-    # field with a default holds that default, which is a value and is validated
+    # field with a default holds that default, which is a value and is validated, also
+    # where it equals the empty value (a link type's default differs from its empty
+    # value, no links, or is none)
     placeholders: dict[str, Any] = {
         field.name: typed_empty(field.type)
         for field in (
@@ -84,22 +86,12 @@ def validate_field_link_schemas(
         )
         if field.derived and not field.nullable
     }
-    with_off_type_default: dict[str, FieldSchema | LinkSchema] = {
-        **{
-            field.name: field
-            for field in fields_schema.iter_extra_fields()
-            if field.name in placeholders
-            and field.derive is None
-            and field.default is not None
-        },
-        # a derived link type's default is its links: no links is its empty value
-        **{
-            link.name: link
-            for link in fields_schema.iter_link_fields()
-            if link.name in placeholders
-            and link.derive is None
-            and link.off_type_value()
-        },
+    with_off_type_default: dict[str, FieldSchema] = {
+        field.name: field
+        for field in fields_schema.iter_extra_fields()
+        if field.name in placeholders
+        and field.derive is None
+        and field.default is not None
     }
     for field in fields_schema.iter_core_fields():
         combined_properties[field.name] = field.schema
