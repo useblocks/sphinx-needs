@@ -532,7 +532,8 @@ def _out_of_scope_message(
         "final only after the link fields are computed"
         if stratum == 1
         else "computed in the late step, after every other field "
-        "(a derive rule of the kind 'hash' or with after = \"derived\")"
+        "(a derive rule of the kind 'hash' or 'fingerprint', or with "
+        'after = "derived")'
     )
     return (
         f"{what} for option '{option}' reads {_reads_phrase(reads, linked)}, which "
