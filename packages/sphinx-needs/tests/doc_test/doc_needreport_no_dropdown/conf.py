@@ -34,6 +34,6 @@ needs_external_needs = [
     {
         "base_url": "http://my_company.com/docs/v1/",
         "json_path": "external_reqs.json",
-        "id_prefix": "ext_",
+        "id_prefix": "EXT_",
     },
 ]

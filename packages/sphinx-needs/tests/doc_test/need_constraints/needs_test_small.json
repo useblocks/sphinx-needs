@@ -36,7 +36,7 @@
                     "type": "spec",
                     "type_name": "Specification"
                 },
-                "UI improvements": {
+                "TEST_04": {
                     "description": "develop a darkmode",
                     "id": "TEST_04",
                     "links": ["TEST_02"],

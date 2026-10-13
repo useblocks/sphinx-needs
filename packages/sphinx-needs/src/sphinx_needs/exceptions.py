@@ -39,6 +39,7 @@ class InvalidNeedException(Exception):
             "failed_init",
             "content_markup",
             "content",
+            "parts",
         ],
         message: str,
     ) -> None:
@@ -70,6 +71,7 @@ class InvalidNeedException(Exception):
         "failed_init",
         "content_markup",
         "content",
+        "parts",
     ]:
         return self._type
 

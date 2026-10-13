@@ -38,7 +38,8 @@ def test_doc_build_html(test_app):
     assert len(warnings) == 2, warnings
     assert duplicate.fullmatch(warnings[1]) or warnings[1] == (
         "<srcdir>/page_5.rst:4: WARNING: Need could not be created: "
-        "A need with ID 'STORY_PAGE_1' already exists. [needs.create_need]"
+        "A need with ID 'STORY_PAGE_1' already exists (defined at page_1:4). "
+        "[needs.create_need]"
     ), warnings[1]
 
     index_html = Path(app.outdir, "index.html").read_text()

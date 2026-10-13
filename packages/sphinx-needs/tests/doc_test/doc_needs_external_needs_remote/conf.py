@@ -41,6 +41,6 @@ needs_external_needs = [
     {
         "base_url": "http://my_company.com/docs/v1/",
         "json_url": "http://my_company.com/docs/v1/remote-needs.json",
-        "id_prefix": "ext_remote_",
+        "id_prefix": "EXT_REMOTE_",
     },
 ]

@@ -31,6 +31,12 @@ The directive argument can be one of the following formats:
 
      .. needimport:: https://my_company.com/docs/remote-needs.json
 
+- A ``file://`` URL, which is read as a URL (as :ref:`needs_external_needs` reads a ``json_url``):
+
+  .. code-block:: rst
+
+     .. needimport:: file:///absolute/path/to/needs.json
+
 - A local path relative to the containing document:
 
   .. code-block:: rst
@@ -57,9 +63,16 @@ The directive argument can be one of the following formats:
 
      .. needimport:: c:\absolute\path\to\needs.json
 
+The key of each need in the file is its id: a need whose ``id`` differs from its key is
+imported under its key, with a ``needs.needimport`` warning. :ref:`needs_id_regex` is not
+applied to imported needs. A file that cannot be read -- missing, not downloaded, not
+valid JSON, or without the version asked for -- is one ``needs.needimport`` warning at the
+directive, and the directive imports nothing; the build goes on. A local file that is
+missing is read on the next incremental build once it exists.
+
 .. note::
 
-   If you are rebuilding documentation incrementally (for example, when using ``sphinx-autobuild``), Sphinx  automatically detects changes to the *local* JSON files. However, with remote URLs, you must run a Sphinx build with the ``-E`` flag to rebuild the environment from scratch when the remote file changes.
+   If you are rebuilding documentation incrementally (for example, when using ``sphinx-autobuild``), Sphinx  automatically detects changes to the *local* JSON files. However, with remote URLs or a ``file://`` URL, you must run a Sphinx build with the ``-E`` flag to rebuild the environment from scratch when the remote file changes.
 
 Options
 -------
@@ -72,8 +85,20 @@ This may be useful to avoid duplicated ids.
 
 .. note::
 
-    When using ``:id_prefix:``, we replace all ids used for links and inside descriptions,
-    if the id belongs to an imported need.
+    The ids of the file are its namespace, and the prefix is that namespace's name. The
+    file owns the ids it contains: a reference to one of them -- a link field, or the id
+    written in a need's content -- gets the prefix whether that need is imported or not
+    (``:ids:`` and ``:filter:`` leaving it out change nothing); a link given as a string
+    that holds a dynamic function or a variant is left as written. A reference to an id the
+    file does **not** contain is left as it is, and may resolve to a need of the
+    importing project. So the importing project references the imported needs by their
+    prefixed ids, and a reference rewritten to a need that is not imported with the same
+    prefix is a dead link (``needs.link_outgoing`` for a link field, ``needs.link_ref``
+    for a ``:need:`` role in the content).
+
+    The content is opaque markup: every occurrence of a file id as a whole word is
+    rewritten, inside code blocks and file names too; an id inside a longer word is left
+    as it is.
 
 version
 ~~~~~~~
@@ -99,6 +124,7 @@ ids
 You can use the ``:ids:`` option to import only the needs with the given ids
 (as a comma-separated list).
 This is useful if you want to import only a subset of the needs from the JSON file.
+An id the file has no need for is named in one ``needs.needimport`` warning.
 
 filter
 ~~~~~~
@@ -108,6 +134,7 @@ This is a string that is evaluated as a Python expression,
 it is less performant than the ``:ids:`` option, but more flexible.
 
 Please read :ref:`filter` for more information.
+A filter that fails is one ``needs.needimport`` warning for the directive.
 
 hide
 ~~~~

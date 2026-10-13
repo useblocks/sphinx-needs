@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from copy import copy, deepcopy
 from dataclasses import replace
 from pathlib import Path
-from typing import Any, TypedDict, TypeVar, cast
+from typing import Any, Literal, TypedDict, TypeVar, cast
 
 from docutils import nodes
 from docutils.parsers import Parser
@@ -29,6 +29,7 @@ from sphinx_needs.data import (
 from sphinx_needs.derive import typed_empty
 from sphinx_needs.directives.needuml import Needuml, NeedumlException
 from sphinx_needs.exceptions import InvalidNeedException, NeedsInvalidFilter
+from sphinx_needs.exchange import map_legacy_keys
 from sphinx_needs.filter_common import (
     PredicateContextData,
     apply_default_predicate,
@@ -214,9 +215,15 @@ def generate_need(
         if id is None
         else id
     )
+    # a need from outside the project's sources (imported, external) is the source's
+    # data: its id is not checked against ``needs_id_regex`` (a prefix may break any
+    # pattern), and it keeps the values of its derived fields
+    from_outside = bool(
+        source.dict_repr["is_import"] or source.dict_repr["is_external"]
+    )
     if (
         needs_config.id_regex
-        and not is_external
+        and not from_outside
         and not re.match(needs_config.id_regex, need_id)
     ):
         raise InvalidNeedException(
@@ -267,13 +274,9 @@ def generate_need(
             f"Constraints {unknown_constraints!r} not in 'needs_constraints'.",
         )
 
-    # a need from outside the project's sources (imported, external) keeps the values
-    # of its derived fields, as data; any other need takes the rule's value, and what
-    # an author wrote in a derived field is ignored
-    from_outside = bool(
-        source.dict_repr["is_import"] or source.dict_repr["is_external"]
-    )
-
+    # a need from outside keeps the values of its derived fields, as data; any other
+    # need takes the rule's value, and what an author wrote in a derived field is
+    # ignored
     extras_no_defaults: dict[str, FieldLiteralValue | FieldFunctionArray | None] = {}
     #: the fields an author cannot set: their value is final, no default applies
     closed: set[str] = set()
@@ -802,15 +805,32 @@ def add_need(
         **kwargs,
     )
 
-    if SphinxNeedsData(app.env).has_need(needs_info["id"]):
-        if id is None:
-            # this is a generated ID
-            message = f"Unique ID could not be generated for need with title {needs_info['title']!r}."
+    data = SphinxNeedsData(app.env)
+    if (existing := data.get_needs_mutable().get(needs_info["id"])) is not None:
+        if existing["is_external"] and not needs_info["is_external"]:
+            # a need of this project (on a page, or imported) replaces an external need
+            # of its id: what is authored here wins over what lives elsewhere
+            data.remove_need(needs_info["id"])
+            log_warning(
+                logger,
+                f"Need {needs_info['id']!r} replaces the external need of the same id "
+                f"from {existing['external_url']}",
+                "create_need",
+                location=(needs_info["docname"], needs_info["lineno"])
+                if needs_info["docname"]
+                else None,
+            )
         else:
-            message = f"A need with ID {needs_info['id']!r} already exists."
-        raise InvalidNeedException("duplicate_id", message)
+            if id is None:
+                # this is a generated ID
+                message = f"Unique ID could not be generated for need with title {needs_info['title']!r}"
+            else:
+                message = f"A need with ID {needs_info['id']!r} already exists"
+            raise InvalidNeedException(
+                "duplicate_id", f"{message}{_defined_where(existing)}."
+            )
 
-    SphinxNeedsData(app.env).add_need(needs_info)
+    data.add_need(needs_info)
 
     if needs_info["is_external"]:
         return []
@@ -832,13 +852,41 @@ def add_need(
     )
 
 
-def _import_key_sets(needs_schema: FieldsSchema) -> tuple[set[str], set[str]]:
-    """The keys a need record may carry in this project, and those never imported.
+def _defined_where(need: NeedItem) -> str:
+    """Where an existing need is defined, as a parenthesised suffix of a message."""
+    if need["is_external"]:
+        return f" (external, {need['external_url']})"
+    if not (docname := need["docname"]):
+        return ""
+    where = f"{docname}:{need['lineno']}" if need["lineno"] else docname
+    if need["is_import"]:
+        return f" (imported at {where})"
+    return f" (defined at {where})"
 
+
+RecordReader = Literal["import", "external"]
+"""Which reader a needs.json record is read by: a ``needimport`` directive, or an
+external source of ``needs_external_needs``."""
+
+
+def _import_key_sets(
+    needs_schema: FieldsSchema, *, reader: RecordReader = "import"
+) -> tuple[set[str], set[str]]:
+    """The keys a need record may carry in this project, and those never read.
+
+    The core fields a reader omits are the ``exclude_import`` or ``exclude_external``
+    column of ``NeedsCoreFields``; the two differ on ten fields. An imported need is
+    rendered on the importing page, so it keeps how it is rendered (``collapse``,
+    ``hide``, ``layout``, ``style``, ``jinja_content`` and the templates) and takes its
+    ``sections`` and ``signature`` from that page; an external need lives elsewhere, so
+    it keeps the latter and drops the former.
+
+    :param reader: Which reader the record is read by.
     :return: ``(known, omitted)``: every need field the project knows (core fields,
         links and their ``_back`` names, extra fields, and the legacy ``full_title``),
-        and the subset that is computed rather than imported.
+        and the subset that is computed rather than read.
     """
+    flag = "exclude_import" if reader == "import" else "exclude_external"
     link_names = list(needs_schema.iter_link_field_names())
     known = {
         "full_title",  # legacy
@@ -849,26 +897,28 @@ def _import_key_sets(needs_schema: FieldsSchema) -> tuple[set[str], set[str]]:
     }
     omitted = {
         "full_title",  # legacy
-        *(k for k, v in NeedsCoreFields.items() if v.get("exclude_import")),
+        *(k for k, v in NeedsCoreFields.items() if v.get(flag)),
         *(f"{x}_back" for x in link_names),
     }
     return known, omitted
 
 
 def _need_record_params(
-    record: Mapping[str, Any], needs_schema: FieldsSchema
+    record: Mapping[str, Any],
+    needs_schema: FieldsSchema,
+    *,
+    reader: RecordReader = "import",
 ) -> tuple[dict[str, Any], set[str]]:
     """The ``add_need`` keyword arguments for a needs.json-style record.
 
+    :param reader: Which reader the record is read by: the core fields it omits.
     :return: The arguments, and the record's keys the project does not know (dropped).
     """
     params = dict(record)
-    if "description" in params and not params.get("content"):
-        # legacy versions of sphinx-needs changed "description" to "content" when outputting to json
-        params["content"] = params.pop("description")
+    map_legacy_keys(params)
     # Remove unknown keys, as they may be defined in the source system, but not in this
-    # project, and the keys that are computed rather than imported
-    known, omitted = _import_key_sets(needs_schema)
+    # project, and the keys that are computed rather than read
+    known, omitted = _import_key_sets(needs_schema, reader=reader)
     unknown: set[str] = set()
     for key in list(params):
         if key not in known:
@@ -877,6 +927,73 @@ def _need_record_params(
         elif key in omitted:
             del params[key]
     params["need_type"] = params.pop("type", "")
+    return params, unknown
+
+
+def _check_record_params(params: Mapping[str, Any]) -> None:
+    """Refuse a record whose values ``add_need`` reads before it validates any field.
+
+    :raises InvalidNeedException: If its ``id`` is given but empty or not a string, its ``title``
+        is missing or not a string, its ``content`` or ``type`` not a string, or its
+        ``parts`` not a mapping of mappings.
+    """
+    if (need_id := params.get("id")) is not None and not isinstance(need_id, str):
+        raise InvalidNeedException(
+            "invalid_id", f"id must be a string, not {type(need_id).__name__}"
+        )
+    if need_id == "":
+        raise InvalidNeedException("invalid_id", "id is empty")
+    if "title" not in params:
+        raise InvalidNeedException("invalid_value", "title is missing")
+    if not isinstance(params["title"], str):
+        raise InvalidNeedException(
+            "invalid_value",
+            f"title must be a string, not {type(params['title']).__name__}",
+        )
+    if "content" in params and not isinstance(params["content"], str):
+        raise InvalidNeedException(
+            "content",
+            f"content must be a string, not {type(params['content']).__name__}",
+        )
+    if not isinstance(params["need_type"], str):
+        raise InvalidNeedException(
+            "invalid_type",
+            f"type must be a string, not {type(params['need_type']).__name__}",
+        )
+    if (parts := params.get("parts")) is not None:
+        if not isinstance(parts, Mapping):
+            raise InvalidNeedException(
+                "parts", f"parts must be a mapping, not {type(parts).__name__}"
+            )
+        for part_id, part in parts.items():
+            if not isinstance(part, Mapping):
+                raise InvalidNeedException(
+                    "parts",
+                    f"part {part_id!r} must be a mapping, not {type(part).__name__}",
+                )
+
+
+def _record_params(
+    record: Mapping[str, Any],
+    needs_schema: FieldsSchema,
+    *,
+    reader: RecordReader,
+    unknown_keys: set[str] | None = None,
+) -> tuple[dict[str, Any], set[str]]:
+    """The one record path of both needs.json readers: a record's ``add_need``
+    keyword arguments, checked.
+
+    :param reader: Which reader the record is read by.
+    :param unknown_keys: If given, the record's keys unknown to the project are added
+        to it before the record is checked, so a caller collecting them over several
+        records has them also for a record that is refused.
+    :return: The arguments, and the record's keys the project does not know (dropped).
+    :raises InvalidNeedException: What :func:`_check_record_params` raises.
+    """
+    params, unknown = _need_record_params(record, needs_schema, reader=reader)
+    if unknown_keys is not None:
+        unknown_keys.update(unknown)
+    _check_record_params(params)
     return params, unknown
 
 
@@ -923,26 +1040,21 @@ def ingest_need_record(
         unknown to the project (the caller decides whether to warn about them).
     :raises InvalidNeedException: What :func:`add_need` raises; (type ``content``) if
         the record's ``content`` (or the legacy ``description`` taken as it) is present
-        but not a string; (type ``invalid_type``) if its ``type`` is not a string; and
-        (type ``content_markup``) if ``content_source`` is given without
-        ``content_markup``. The caller decides how to report it.
+        but not a string; (type ``invalid_type``) if its ``type`` is not a string;
+        (type ``invalid_value``) if its ``title`` is missing or not a string; (type
+        ``invalid_id``) if its ``id`` is given but empty or not a string; (type ``parts``) if its
+        ``parts`` is not a mapping of mappings; and (type ``content_markup``) if
+        ``content_source`` is given without ``content_markup``. The caller decides how
+        to report it.
 
     .. versionadded:: 9.0.0
     """
-    params, unknown = _need_record_params(record, SphinxNeedsData(app.env).get_schema())
-    if unknown_keys is not None:
-        unknown_keys.update(unknown)
-    # what ``add_need`` reads as a string before it validates any field
-    if "content" in params and not isinstance(params["content"], str):
-        raise InvalidNeedException(
-            "content",
-            f"content must be a string, not {type(params['content']).__name__}",
-        )
-    if not isinstance(params["need_type"], str):
-        raise InvalidNeedException(
-            "invalid_type",
-            f"type must be a string, not {type(params['need_type']).__name__}",
-        )
+    params, unknown = _record_params(
+        record,
+        SphinxNeedsData(app.env).get_schema(),
+        reader="import",
+        unknown_keys=unknown_keys,
+    )
     if content_markup is not None:
         params["content"] = MarkupContent(
             params.get("content", ""), markup=content_markup, source=content_source

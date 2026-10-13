@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import json
 import os
 import re
 from collections.abc import Sequence
+from functools import partial
 from typing import Any
 from urllib.parse import urlparse
 
@@ -13,6 +13,7 @@ from docutils.parsers.rst import directives
 from requests_file import FileAdapter
 from sphinx.util.docutils import SphinxDirective
 
+from sphinx_needs import exchange
 from sphinx_needs.api import InvalidNeedException, ingest_need_record
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
@@ -21,7 +22,6 @@ from sphinx_needs.filter_common import filter_import_item
 from sphinx_needs.logging import log_warning
 from sphinx_needs.need_content import resolve_content_parser
 from sphinx_needs.need_item import NeedItemSourceImport
-from sphinx_needs.needsfile import SphinxNeedsFileException, check_needs_data
 from sphinx_needs.utils import (
     add_doc,
     coerce_to_boolean,
@@ -78,120 +78,95 @@ class NeedimportDirective(SphinxDirective):
 
         # check if given argument is downloadable needs.json path
         url = urlparse(need_import_path)
-        if url.scheme and url.netloc:
+        # a file:// URL has no netloc: it is fetched as the external reader fetches it
+        if url.scheme and (url.netloc or url.scheme == "file"):
             # download needs.json
             logger.info(f"Downloading needs.json from url {need_import_path}")
+            source_name = need_import_path
             s = requests.Session()
             s.mount("file://", FileAdapter())
             try:
                 response = s.get(need_import_path)
-                needs_import_list = (
-                    response.json()
-                )  # The downloaded file MUST be json. Everything else we do not handle!
+                response.raise_for_status()
             except Exception as e:
-                raise NeedimportException(
-                    f"Getting {need_import_path} didn't work. Reason: {e}."
+                return self._refuse(
+                    f"Could not load needs import file {need_import_path}: "
+                    f"getting it failed: {e}"
                 )
+            read = partial(exchange.parse, response.content)
         else:
             logger.info(f"Importing needs from {need_import_path}")
 
             correct_need_import_path = self.env.relfn2path(
                 need_import_path, self.env.docname
             )[1]
+            source_name = correct_need_import_path
 
-            if not os.path.exists(correct_need_import_path):
-                warning_text = (
-                    f"Could not load needs import file {correct_need_import_path}"
-                )
-                log_warning(
-                    logger,
-                    warning_text,
-                    "needimport",
-                    location=(self.env.docname, self.lineno),
-                )
-
-                paragraph = nodes.paragraph(text=warning_text)
-                warning = nodes.warning()
-                warning += paragraph
-                return [warning]
-
-            try:
-                with open(correct_need_import_path) as needs_file:
-                    needs_import_list = json.load(needs_file)
-            except (OSError, json.JSONDecodeError) as e:
-                # TODO: Add exception handling
-                raise SphinxNeedsFileException(correct_need_import_path) from e
-
+            # noted before the file is looked for, so that a file that is missing or
+            # cannot be read now is read again once it exists or changes (Sphinx takes
+            # a noted dependency that does not exist as changed)
             self.env.note_dependency(correct_need_import_path)
 
-            errors = check_needs_data(needs_import_list)
-            if errors.schema:
-                logger.info(
-                    f"Schema validation errors detected in file {correct_need_import_path}:"
+            if not os.path.exists(correct_need_import_path):
+                return self._refuse(
+                    f"Could not load needs import file {correct_need_import_path}"
                 )
-                for error in errors.schema:
-                    logger.info(
-                        f"  {error.message} -> {'.'.join(str(p) for p in error.instance_path)}"
-                    )
+            read = partial(exchange.load, correct_need_import_path)
 
-        if version is None:
-            try:
-                version = needs_import_list["current_version"]
-                if not isinstance(version, str):
-                    raise KeyError
-            except KeyError:
-                raise CorruptedNeedsFile(
-                    f"Key 'current_version' missing or corrupted in {correct_need_import_path}"
-                )
-        if version not in needs_import_list["versions"]:
-            raise VersionNotFound(
-                f"Version {version} not found in needs import file {correct_need_import_path}"
+        try:
+            selected = read().select_version(version)
+        except exchange.ExchangeError as err:
+            return self._refuse(
+                f"Could not load needs import file {source_name}: {err.message}"
+            )
+        records = selected.records()
+        for diagnostic in (
+            *selected.diagnostics,
+            *(d for r in records for d in r.diagnostics),
+        ):
+            log_warning(
+                logger,
+                f"Needs import file {source_name}: {diagnostic.message} "
+                f"(at {diagnostic.path})",
+                "needimport",
+                location=(self.env.docname, self.lineno),
             )
 
-        data = needs_import_list["versions"][version]
+        # note this is not exactly NeedsInfoType, because the export removes/adds some keys
+        all_needs: dict[str, dict[str, Any]] = {r.key: r.fields for r in records}
+        needs_list = all_needs
 
         if ids := self.options.get("ids"):
             id_list = [i.strip() for i in ids.split(",") if i.strip()]
-            data["needs"] = {
-                key: data["needs"][key] for key in id_list if key in data["needs"]
-            }
-
-        # note this is not exactly NeedsInfoType, because the export removes/adds some keys
-        needs_list: dict[str, dict[str, Any]] = data["needs"]
-        if schema := data.get("needs_schema"):
-            # Set defaults from schema
-            defaults = {
-                name: value["default"]
-                for name, value in schema["properties"].items()
-                if "default" in value
-            }
-            needs_list = {
-                key: {**defaults, **value} for key, value in needs_list.items()
-            }
+            if absent := [i for i in id_list if i not in all_needs]:
+                log_warning(
+                    logger,
+                    f"Needs import file {source_name} has no needs with the ids "
+                    f"{absent!r}",
+                    "needimport",
+                    location=(self.env.docname, self.lineno),
+                )
+            needs_list = {key: all_needs[key] for key in id_list if key in all_needs}
 
         # Filter imported needs
-        needs_list_filtered = {}
-        for key, need in needs_list.items():
-            if filter_string is None:
-                needs_list_filtered[key] = need
-            else:
-                filter_context = need.copy()
-
-                if "description" in need and not need.get("content"):
-                    # legacy versions of sphinx-needs changed "description" to "content" when outputting to json
-                    filter_context["content"] = need["description"]
+        if filter_string is not None:
+            needs_list_filtered = {}
+            filter_error: Exception | None = None
+            for key, need in needs_list.items():
                 try:
-                    if filter_import_item(filter_context, needs_config, filter_string):
+                    if filter_import_item(need, needs_config, filter_string):
                         needs_list_filtered[key] = need
                 except Exception as e:
-                    log_warning(
-                        logger,
-                        f"needimport: Filter {filter_string} not valid. Error: {e}. {self.docname}{self.lineno}",
-                        "needimport",
-                        location=(self.env.docname, self.lineno),
-                    )
-
-        needs_list = needs_list_filtered
+                    # each need is still filtered on its own; the error is reported once
+                    filter_error = filter_error or e
+            if filter_error is not None:
+                log_warning(
+                    logger,
+                    f"needimport: {filter_error}",
+                    "needimport",
+                    location=(self.env.docname, self.lineno),
+                )
+            needs_list = needs_list_filtered
 
         # tags update
         if tags := _split_tags(self.options.get("tags", "")):
@@ -211,8 +186,12 @@ class NeedimportDirective(SphinxDirective):
                         f"{need_tags},{','.join(tags)}" if need_tags else tags
                     )
 
+        # a link is prefixed when its target is a need of the file, imported here or not
         import_prefix_link_edit(
-            needs_list, id_prefix, needs_schema.iter_link_field_names()
+            needs_list,
+            id_prefix,
+            needs_schema.iter_link_field_names(),
+            known_ids=all_needs,
         )
 
         # collect keys for warning logs, so that we only log one warning per key
@@ -263,8 +242,18 @@ class NeedimportDirective(SphinxDirective):
             if "hide" in self.options:
                 record["hide"] = True
 
-            # Replace id, to get unique ids
+            # Replace id, to get unique ids; an empty key is no id, whatever the prefix
+            # (the record path refuses it only before the prefix is added)
+            key_is_empty = not record["id"]
             need_id = record["id"] = id_prefix + record["id"]
+            if key_is_empty:
+                log_warning(
+                    logger,
+                    f"Need {need_id!r} could not be imported: id is empty",
+                    "import_need",
+                    location=self.get_location(),
+                )
+                continue
 
             # set location
             need_source = NeedItemSourceImport(
@@ -325,6 +314,19 @@ class NeedimportDirective(SphinxDirective):
 
         return need_nodes
 
+    def _refuse(self, message: str) -> list[nodes.Node]:
+        """Report a file no need can be imported from: one warning at the directive,
+        and the warning node in its place."""
+        log_warning(
+            logger,
+            message,
+            "needimport",
+            location=(self.env.docname, self.lineno),
+        )
+        warning = nodes.warning()
+        warning += nodes.paragraph(text=message)
+        return [warning]
+
     def _content_markup(
         self,
         record: dict[str, Any],
@@ -372,12 +374,15 @@ def _split_tags(tags: str) -> list[str]:
 
 
 class VersionNotFound(BaseException):
-    pass
+    """No longer raised: a needs.json without the version asked for is one
+    ``needs.needimport`` warning, and the directive imports nothing."""
 
 
 class CorruptedNeedsFile(BaseException):
-    pass
+    """No longer raised: a needs.json that cannot be read is one ``needs.needimport``
+    warning, and the directive imports nothing."""
 
 
 class NeedimportException(BaseException):
-    pass
+    """No longer raised: a needs.json that cannot be downloaded is one
+    ``needs.needimport`` warning, and the directive imports nothing."""

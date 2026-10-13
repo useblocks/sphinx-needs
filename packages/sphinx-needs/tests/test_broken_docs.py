@@ -32,7 +32,7 @@ def test_id_required_build_html(test_app: SphinxTestApp):
 def test_duplicate_id(test_app: SphinxTestApp):
     test_app.build()
     assert build_warnings(test_app) == [
-        "<srcdir>/index.rst:11: WARNING: Need could not be created: A need with ID 'SP_TOO_001' already exists. [needs.create_need]"
+        "<srcdir>/index.rst:11: WARNING: Need could not be created: A need with ID 'SP_TOO_001' already exists (defined at index:4). [needs.create_need]"
     ]
     html = (test_app.outdir / "index.html").read_text()
     assert "<h1>BROKEN DOCUMENT" in html

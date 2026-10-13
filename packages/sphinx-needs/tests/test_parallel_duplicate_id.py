@@ -181,10 +181,11 @@ DUPLICATE = re.compile(
     r"<srcdir>/(index|page_b)\.rst:\d+: WARNING: A need with ID REQ_DUP already "
     r"exists, title: 'Title from (index|page_b)'\. \[needs\.duplicate_id\]"
 )
-REFUSED = (
-    "<srcdir>/page_b.rst:4: WARNING: Need could not be created: "
-    "A need with ID 'REQ_DUP' already exists. [needs.create_need]"
+REFUSED = re.compile(
+    r"<srcdir>/page_b\.rst:4: WARNING: Need could not be created: A need with ID "
+    r"'REQ_DUP' already exists( \(defined at index:\d+\))?\. \[needs\.create_need\]"
 )
+"""The refusal names where the kept need is defined, when it has a document."""
 
 
 def serial_and_parallel(
@@ -211,7 +212,7 @@ def winner_and_loser(warnings: list[str], parallel: bool) -> tuple[str, str]:
     """
     assert len(warnings) == 1, warnings
     if not parallel:
-        assert warnings[0] == REFUSED
+        assert REFUSED.fullmatch(warnings[0]), warnings[0]
         return "index", "page_b"
     match = DUPLICATE.fullmatch(warnings[0])
     assert match, warnings[0]
@@ -356,7 +357,8 @@ def test_the_root_document_loses_in_an_assembled_document(test_app: Sphinx):
     else:
         expected = (
             "<srcdir>/zz_root.rst:8: WARNING: Need could not be created: "
-            "A need with ID 'REQ_DUP' already exists. [needs.create_need]"
+            "A need with ID 'REQ_DUP' already exists (defined at aa:4). "
+            "[needs.create_need]"
         )
     assert build_warnings(app) == [expected]
     if app.builder.name == "singlehtml":
@@ -539,9 +541,11 @@ def test_an_incremental_build_keeps_one_card(test_app: Sphinx, touched: str):
         assert second == []
     else:
         lineno = 4 if loser == "page_b" else 8
+        winner_lineno = 4 if winner == "page_b" else 8
         assert second == [
             f"<srcdir>/{loser}.rst:{lineno}: WARNING: Need could not be created: "
-            "A need with ID 'REQ_DUP' already exists. [needs.create_need]"
+            f"A need with ID 'REQ_DUP' already exists (defined at {winner}:"
+            f"{winner_lineno}). [needs.create_need]"
         ]
     assert_one_card(app, winner, loser)
 
