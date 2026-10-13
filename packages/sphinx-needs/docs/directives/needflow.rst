@@ -18,7 +18,7 @@ If you provide an argument, we use it as caption for the generated image.
       :show_link_names:
       :config: lefttoright
 
-.. versionadded:: 2.2.0
+.. versionadded:: 3.0.0
 
    You can now also set all or individual ``needflow`` directives to use the Graphviz engine for rendering the graph, which can speed up the rendering process for large amount of graphs.
 
@@ -72,7 +72,7 @@ Some further options are accepted only for :ref:`ubCode compatibility <ubcode_co
 engine
 ~~~~~~
 
-.. versionadded:: 2.3.0
+.. versionadded:: 3.0.0
 
 You can set the engine to use for rendering the flowchart,
 to either ``plantuml`` (default) or ``graphviz``.
@@ -86,7 +86,7 @@ to either ``plantuml`` (default) or ``graphviz``.
 alt
 ~~~
 
-.. versionadded:: 2.3.0
+.. versionadded:: 3.0.0
 
 Set the ``alt`` option to a string to add an alternative text to the generated image.
 
@@ -98,7 +98,7 @@ for a diagram that is purely decorative.
 root_id
 ~~~~~~~
 
-.. versionadded:: 2.2.0
+.. versionadded:: 3.0.0
 
 To select a root need for the flowchart and its connected needs, you can use the ``:root_id:`` option.
 This takes the id of the need you want to use as the root,

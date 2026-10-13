@@ -119,7 +119,7 @@ This may be useful to mark easily imported needs and to create specialised filte
 ids
 ~~~
 
-.. versionadded:: 3.1.0
+.. versionadded:: 4.0.0
 
 You can use the ``:ids:`` option to import only the needs with the given ids
 (as a comma-separated list).

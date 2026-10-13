@@ -1321,7 +1321,7 @@ If set, warn if any :ref:`needuml` or :ref:`needarch` jinja content rendering ta
 needs_flow_engine
 ~~~~~~~~~~~~~~~~~
 
-.. versionadded:: 2.2.0
+.. versionadded:: 3.0.0
 
 Select between the rendering engines for :ref:`needflow` diagrams,
 
@@ -1538,7 +1538,7 @@ See :ref:`needflow config option <needflow_config>` for more details and already
 needs_graphviz_styles
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. versionadded:: 2.2.0
+.. versionadded:: 3.0.0
 
 This must be a dictionary which can store multiple `Graphviz configurations <https://graphviz.org>`__.
 These configs can then be selected when using :ref:`needflow` and the engine is set to ``graphviz``.
@@ -3073,7 +3073,7 @@ e.g. by removing timestamps from the output.
 needs_json_exclude_fields
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. versionadded:: 2.2.0
+.. versionadded:: 3.0.0
 
 Setting ``needs_json_exclude_fields = ["key1", "key2"]`` will exclude the given fields from all needs in the ``needs.json`` output.
 
