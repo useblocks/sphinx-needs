@@ -95,8 +95,7 @@ Currently supported are:
 * NEED_PRINT: Profiles the need painting (creating final nodes)
 
 If this option is used, a ``profile`` folder gets created in the current working directory and a profile file with
-``<NAME>.prof`` is created. This file contains
-`CProfile Stats <https://docs.python.org/3/library/profile.html#pstats.Stats>`_ information.
+``<NAME>.prof`` is created. This file contains :class:`pstats.Stats` information.
 
 ``--profile`` can be used several times.
 
