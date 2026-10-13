@@ -109,7 +109,10 @@ Improvements
 
   A ``derive`` table on its :ref:`needs_fields` or :ref:`needs_links` entry, in :file:`conf.py` or the TOML file
   (or passed to :py:func:`~sphinx_needs.api.configuration.add_field`),
-  names a kind and the kind's roles, and the rule computes the value for every need from the project's sources.
+  names a kind and the kind's roles, and the rule computes the value for every need from the project's sources;
+  a ``derive_by_type`` table gives a rule per need type instead, overriding ``derive`` for the types it lists,
+  and a need of a type without a rule holds the field's default (else ``None``, or the empty value of its type),
+  the field closed on every type (:ref:`needs_derive_by_type`).
   The kinds are ``copy`` (a lookup: the need's own field, a named need's, or over a link type),
   ``sum``, ``count``, ``min``, ``max``, ``any``, ``all`` and ``collect`` (roll-ups over a link type
   or its back links, narrowed by a ``where`` filter), ``max`` / ``min`` closed over a link type (``transitive``),

@@ -148,6 +148,7 @@ def add_field(
     parse_variants: bool | None = None,
     parse_dynamic_functions: bool | None = None,
     derive: dict[str, Any] | None = None,
+    derive_by_type: dict[str, Any] | None = None,
 ) -> None:
     """
     Adds an need field to the configured need schema.
@@ -170,10 +171,16 @@ def add_field(
     :param parse_dynamic_functions: Whether dynamic functions are parsed in this field.
     :param derive: A rule computing the field for every need, which makes it a
         :ref:`derived field <needs_derive>`: a dict naming a ``kind`` and its roles.
+    :param derive_by_type: Rules per need type, which make it a
+        :ref:`derived field <needs_derive>` too: a dict of need type (the directive
+        name) to a rule as ``derive`` takes one, overriding ``derive`` on that type.
+        A need of a type without a rule holds ``default`` (given only without
+        ``derive``), else ``None``, or the empty value of the field's type when it is
+        not nullable.
 
     .. versionchanged:: 9.0.0
 
-       The ``derive`` parameter.
+       The ``derive`` and ``derive_by_type`` parameters.
     """
     _NEEDS_CONFIG.add_field(
         name,
@@ -186,6 +193,7 @@ def add_field(
         parse_variants=parse_variants,
         parse_dynamic_functions=parse_dynamic_functions,
         derive=derive,
+        derive_by_type=derive_by_type,
     )
 
 

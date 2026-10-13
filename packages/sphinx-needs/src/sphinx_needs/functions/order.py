@@ -439,7 +439,8 @@ class Project:
         #: every node, by stratum (1 for a link field, 3 for a late derive rule, 2 for
         #: any other)
         self.nodes: dict[Node, int] = {}
-        #: the fields computed on at least one need, with their stratum
+        #: the fields computed on at least one need, with the latest stratum they are
+        #: computed in on any need (a field's rules per need type may differ)
         self.computed_fields: dict[str, int] = {}
         for need_id, need in needs.items():
             for name in need._dynamic_fields:
@@ -451,7 +452,7 @@ class Project:
         name = node[1]
         stratum = 1 if name in self.link_fields else 3 if late else 2
         self.nodes[node] = stratum
-        self.computed_fields[name] = stratum
+        self.computed_fields[name] = max(stratum, self.computed_fields.get(name, 0))
 
     def items(self, node: Node) -> Sequence[Any]:
         """What a node computes: a derived field's rule, or the field's ``[[…]]``,

@@ -78,6 +78,9 @@ class NewFieldParams:
     """
     derive: Any | None = None
     """The ``derive`` rule computing the field, as configured (a dict), if any."""
+    derive_by_type: Any | None = None
+    """The rules per need type computing the field, as configured (a dict of need
+    type to rule), if any: each overrides ``derive`` on its need type."""
 
 
 class NeedFunctionsType(TypedDict):
@@ -138,6 +141,7 @@ class _Config:
         parse_variants: bool | None = None,
         parse_dynamic_functions: bool | None = None,
         derive: Any | None = None,
+        derive_by_type: Any | None = None,
         override: bool = False,
     ) -> None:
         """Adds a need field to the configuration."""
@@ -171,6 +175,7 @@ class _Config:
             parse_variants=parse_variants,
             parse_dynamic_functions=parse_dynamic_functions,
             derive=derive,
+            derive_by_type=derive_by_type,
         )
 
     @property
@@ -335,6 +340,16 @@ class NeedLinksConfig(TypedDict, total=False):
     A derived link type cannot be set in a need or by a ``needextend``,
     and takes no ``default`` or ``predicates``.
     """
+    derive_by_type: NotRequired[dict[str, Any]]
+    """
+    Rules per need type: a table of need type (the directive name) to a rule,
+    each as ``derive`` takes one, computing the links of the needs of that type
+    and overriding ``derive`` there.
+
+    A need of a type without a rule holds the ``default`` (a literal; only when
+    ``derive`` is not given), else no links. The link type is derived on every
+    need type: it cannot be set in a need or by a ``needextend``.
+    """
 
 
 class LinkOptionsType(NeedLinksConfig):
@@ -385,11 +400,22 @@ class NeedFields(TypedDict):
     derive: NotRequired[dict[str, Any]]
     """
     A rule computing the field for every need: a table naming a ``kind``
-    (``copy``, ``sum``, ``count``, ``min``, ``max``, ``any``, ``all``, ``collect``
-    or ``hash``) and its roles.
+    (``copy``, ``sum``, ``count``, ``min``, ``max``, ``any``, ``all``, ``collect``,
+    ``hash`` or ``fingerprint``) and its roles.
 
     A derived field cannot be set in a need or by a ``needextend``,
     and takes no ``default`` or ``predicates``.
+    """
+    derive_by_type: NotRequired[dict[str, Any]]
+    """
+    Rules per need type: a table of need type (the directive name) to a rule,
+    each as ``derive`` takes one, computing the field on the needs of that type
+    and overriding ``derive`` there.
+
+    A need of a type without a rule holds the ``default`` (a literal; only when
+    ``derive`` is not given), else ``None`` when the field is nullable, else the
+    empty value of its type. The field is derived on every need type: it cannot
+    be set in a need or by a ``needextend``, and takes no ``predicates``.
     """
 
 

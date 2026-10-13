@@ -33,9 +33,8 @@ it is checked when the build starts, before any document is read, so a typo is r
 it is closed to authors, so no stale value written in a need overrides it (``needs.derive_authored``);
 `ubCode <https://ubcode.useblocks.com/>`__ computes the same values from its phase-2 release, but for the differences its documentation lists;
 and the schema in :ref:`needs.json <needs_builder_format>` marks the field ``"readOnly": true``.
-Its one limitation: a rule applies to every need of the project
-(the ``types`` role, which will name the need types a rule computes on, is reserved for a later release).
-Where only some need types should carry the value, an inline call in those needs is today's way:
+A rule applies to every need of the project, or, declared under ``derive_by_type``, to the need types it names
+(a need of another type uses ``derive`` if given, else holds the field's default; see :ref:`needs_derive_by_type`);
 a rule's ``where`` narrows the candidates it reads, not the needs that carry the field.
 
 .. _dynamic_functions_derived:
@@ -86,9 +85,9 @@ A ``where`` that cannot be evaluated on a candidate (one lacking a field it name
 without a warning, in every kind and in ``links_from_filter``;
 the ``filter`` of ``calc_sum``, ``check_linked_values`` and ``links_from_content`` keeps its own behaviour.
 
-The ``join`` role, which will spell sphinx-test-reports' ``tr_link``, and the ``types`` role,
-which will name the need types a rule computes on, are reserved for a later release:
-a rule naming either is reported as ``needs.derive_invalid``.
+The ``join`` role, which will spell sphinx-test-reports' ``tr_link``, is reserved for a later release:
+a rule naming it is reported as ``needs.derive_invalid``.
+A rule for some need types is declared under ``derive_by_type`` (:ref:`needs_derive_by_type`), not with a role.
 
 .. _dynamic_functions:
 

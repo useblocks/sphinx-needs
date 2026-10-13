@@ -21,7 +21,7 @@ from sphinx.environment import BuildEnvironment
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
 from sphinx_needs.logging import get_logger, log_warning
-from sphinx_needs.need_item import NeedItem
+from sphinx_needs.need_item import NeedItem, _link_natural_sort_key
 from sphinx_needs.needs_schema import FieldLiteralValue, FieldsSchema
 
 log = get_logger(__name__)
@@ -38,8 +38,9 @@ def generate_needs_schema(
     * the global options defined dynamically
     * the links defined dynamically
 
-    A derived field or link type (one with a ``derive`` rule) is marked
-    ``"readOnly": true``.
+    A derived field or link type (one with a ``derive`` or ``derive_by_type`` rule) is
+    marked ``"readOnly": true``; its ``default`` is the value of a need type without a
+    rule.
     """
     properties: dict[str, Any] = {}
 
@@ -55,7 +56,7 @@ def generate_needs_schema(
             properties[field.name]["default"] = field.default.value
         elif field.nullable:
             properties[field.name]["default"] = None
-        if field.derive is not None:
+        if field.derived:
             # derived: an importer takes the value as data, and does not compute it
             properties[field.name]["readOnly"] = True
 
@@ -74,9 +75,17 @@ def generate_needs_schema(
             "items": {"type": "string"},
             "description": link.description,
             "field_type": "links",
-            "default": [],
+            # a link type derived by type alone: the links of a need type without a
+            # rule (its literal default); any other link type: none
+            "default": [
+                li.to_link_string()
+                # in the order the export writes a link list
+                for li in sorted(set(link.off_type_value()), key=_link_natural_sort_key)
+            ]
+            if link.derive is None and link.derive_by_type is not None
+            else [],
         }
-        if link.derive is not None:
+        if link.derived:
             properties[link.name]["readOnly"] = True
         properties[link.name + "_back"] = {
             "type": "array",

@@ -773,9 +773,11 @@ def materialise_derive_rules(
     Each pass reads the rules from the current schema, so a need's derived values never
     depend on the configuration it was created under. The rule is the field's one
     computed item (a :class:`~sphinx_needs.derive.DeriveCall`), and the field holds its
-    empty value until it is computed; a rule that cannot be read leaves it empty. A need
-    created by ``needimport`` or loaded as an external need keeps the values it carries:
-    no rule runs on it.
+    empty value until it is computed; a rule that cannot be read leaves it empty. The
+    rule is the one of the need's type (``derive_by_type``), else ``derive``; a need of
+    a type without one holds the field's default (else ``None``, or its empty value),
+    and has no computed item. A need created by ``needimport`` or loaded as an external
+    need keeps the values it carries: no rule runs on it.
 
     :return: The rule of each ``(need id, field)`` computed by one.
     """
@@ -785,7 +787,7 @@ def materialise_derive_rules(
     derived = [
         field
         for field in (*schema.iter_extra_fields(), *schema.iter_link_fields())
-        if field.derive is not None
+        if field.derived
     ]
     rules: dict[tuple[str, str], DeriveCall] = {}
     if not derived:
@@ -794,8 +796,12 @@ def materialise_derive_rules(
         if need["is_import"] or need["is_external"]:
             continue
         for field in derived:
-            if isinstance(field.derive, DeriveRule):
-                rules[(need_id, field.name)] = DeriveCall(field.derive)
+            rule = field.rule_for(need["type"])
+            if rule is None:
+                need[field.name] = field.off_type_value()
+                continue
+            if isinstance(rule, DeriveRule):
+                rules[(need_id, field.name)] = DeriveCall(rule)
             need[field.name] = typed_empty(field)
     return rules
 

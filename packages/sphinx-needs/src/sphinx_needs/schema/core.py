@@ -35,7 +35,7 @@ from sphinx_needs.views import NeedsView
 if TYPE_CHECKING:
     from typing import NotRequired
 
-    from sphinx_needs.needs_schema import FieldsSchema
+    from sphinx_needs.needs_schema import FieldSchema, FieldsSchema
 
 # TODO(Marco): error for conflicting unevaluatedProperties
 
@@ -74,14 +74,24 @@ def validate_field_link_schemas(
     link_names: set[str] = set()
     # the placeholder a derived field that is not nullable holds until its rule
     # computes it (its empty value) is its "no value", as None is for a nullable
-    # field: it is not validated
+    # field: it is not validated. On a need of a type the field has no rule for, a
+    # field with a default holds that default, which is a value and is validated, also
+    # where it equals the empty value. A link type's ``default = []`` is its "no
+    # links", exempt as no default is (the two cannot be told apart)
     placeholders: dict[str, Any] = {
         field.name: typed_empty(field.type)
         for field in (
             *fields_schema.iter_extra_fields(),
             *fields_schema.iter_link_fields(),
         )
-        if field.derive is not None and not field.nullable
+        if field.derived and not field.nullable
+    }
+    with_off_type_default: dict[str, FieldSchema] = {
+        field.name: field
+        for field in fields_schema.iter_extra_fields()
+        if field.name in placeholders
+        and field.derive is None
+        and field.default is not None
     }
     for field in fields_schema.iter_core_fields():
         combined_properties[field.name] = field.schema
@@ -111,7 +121,14 @@ def validate_field_link_schemas(
             for key, value in need.items()
             if key in schema_properties
             and value is not None
-            and not (key in placeholders and value == placeholders[key])
+            and not (
+                key in placeholders
+                and value == placeholders[key]
+                and not (
+                    key in with_off_type_default
+                    and with_off_type_default[key].rule_for(need["type"]) is None
+                )
+            )
         }
 
         warnings: list[OntologyWarning] = []

@@ -136,10 +136,10 @@ class NeedextendDirective(SphinxDirective):
             if (field_schema := needs_schema.get_any_field(key)) is None:
                 self._log_warning(f"Unknown option '{etype.value}{key}'")
                 continue
-            if field_schema.derive is not None:
+            if field_schema.derived:
                 what = "Link type" if isinstance(field_schema, LinkSchema) else "Field"
                 self._log_warning(
-                    f"{what} {key!r} is derived ({field_schema.derive.describe()}) "
+                    f"{what} {key!r} is derived ({field_schema.describe_derived()}) "
                     f"and cannot be set by a needextend; the option "
                     f"'{etype.value}{key}' is ignored",
                     "derive_authored",
@@ -465,7 +465,8 @@ def _report_filters_on_computed_fields(
     ``<{…}>`` is computed, so it saw such a field's value from before. Every need is a
     candidate of a filter, so any need computing the field counts, whether or not the
     filter matched it: a derived field is computed on every need from the project's
-    sources. The needs are looked at only when an extend has a filter, once.
+    sources, of a type it has a rule for. The needs are looked at only when an extend
+    has a filter, once.
     """
     filtered = [
         needextend for needextend, _ in targets if not needextend["filter_is_id"]
@@ -473,17 +474,19 @@ def _report_filters_on_computed_fields(
     if not filtered:
         return
     derived = [
-        field.name
+        field
         for field in (*schema.iter_extra_fields(), *schema.iter_link_fields())
-        if isinstance(field.derive, DeriveRule)
+        if field.derived
     ]
     computed: dict[str, dict[str, None]] = {}
     for need in all_needs.values():
         for field_name in need._dynamic_fields:
             computed.setdefault(field_name, {})[need.id] = None
         if derived and not (need["is_import"] or need["is_external"]):
-            for field_name in derived:
-                computed.setdefault(field_name, {})[need.id] = None
+            for field in derived:
+                # a need of a type without a rule holds a value that is final
+                if isinstance(field.rule_for(need["type"]), DeriveRule):
+                    computed.setdefault(field.name, {})[need.id] = None
     if not computed:
         return
     not_fields = frozenset(needs_config.filter_data)
