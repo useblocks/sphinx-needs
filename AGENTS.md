@@ -232,7 +232,10 @@ locally: the `-n auto` race the suite used to document was on a jar copied into 
 project, and since #1870 the jar is one file at a fixed path that nothing copies (measured at
 `-n 4` and `-n auto`: no failure, no flake). What still holds is that plantuml is load-sensitive
 across PROCESSES you start yourself: a docs or wheel build running alongside the suite has failed a
-zero-warnings assertion, so do not overlap those.
+zero-warnings assertion, so do not overlap those. The four large extension suites (sphinx-mounts,
+sphinx-codelinks, sphinx-test-reports, ub-test-reports) run at `-n 4` in CI too and take it locally
+(`uv run poe test-codelinks -n 4`); what breaks under it is a test writing at a fixed path inside the
+checkout, which the Extensions cell's last step fails on.
 
 Rough runtimes on a CI-class machine, so you can decide what to background: `lint` 15 s ·
 `typecheck` seconds once `.venvs/typing` exists (the first run creates it) ·
