@@ -10,15 +10,16 @@ name: Test the sphinx extensions
 # `.github/actions/prepare-cell`, which is what stops it being a second copy of them.
 #
 # WHY ONE JOB AND NOT ONE CALLER OF `test-package.yaml` PER PACKAGE. This used to rest on
-# sphinx-codelinks' suite being under 20 seconds. It is not any more: 1051 tests and the
-# job's largest step (104-147 s serial on ubuntu and 313 s on Windows in run 38399647972;
-# ~30 s under `-n 4` locally, ~100 s on Windows by estimate). The premise changed and the
-# conclusion holds: run as separate cells, every package would pay checkout, setup-uv and
-# a cell sync again (21-27 s on ubuntu, 52 s on Windows, in that run), and the checks list
-# on every pull request would grow by one entry per cell for every package split out. One
-# cell per series with a step per package keeps the checks list where it is and pays the
-# job start-up once. The cost is that a failure in one suite could hide the next, which is
-# why every pytest step after the first runs even when an earlier one has failed.
+# sphinx-codelinks' suite being under 20 seconds. It is not any more: it is the job's
+# largest step (1051 tests in run 38399647972, 104-147 s serial on ubuntu and 313 s on
+# Windows there; ~30 s under `-n 4` locally, ~100 s on Windows by estimate). The premise
+# changed and the conclusion holds: run as separate cells, every package would pay
+# checkout, setup-uv and a cell sync again (21-27 s on ubuntu, 52 s on Windows, in that
+# run), and the checks list on every pull request would grow by one entry per cell for
+# every package split out. One cell per series with a step per package keeps the checks
+# list where it is and pays the job start-up once. The cost is that a failure in one suite
+# could hide the next, which is why every pytest step after the first runs even when an
+# earlier one has failed.
 #
 # `./`-referenced workflows and actions come from the caller's own commit, so a pull
 # request that changes this file, the composite and `ci.yaml` together is tested as one
@@ -148,8 +149,8 @@ jobs:
         # `!cancelled()` and not the default `success()`: letting a sphinx-mounts failure
         # hide this suite would mean a second push to learn a second fact. The job is still
         # red either way. This once rested on this suite being 20 seconds and the one above
-        # minutes; it is now the largest step in the job (1051 tests), and the argument is
-        # truer for it: the suites are the same order of magnitude.
+        # minutes; it is now the largest step in the job (1051 tests in run 38399647972), and
+        # the argument is truer for it: the suites are the same order of magnitude.
         #
         # But `!cancelled()` ALONE would also run it when `prepare-cell` failed -- and then
         # there is no environment, `uv run --no-sync` silently CREATES an empty one, and
