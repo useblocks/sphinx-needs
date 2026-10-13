@@ -456,6 +456,10 @@ derive_by_type.spec = { kind = "links", where = "type == 'req'" }
 
 [needs.links.plain_default]
 default = ["REQ_1"]
+
+[needs.links.rel_unsorted]
+default = ["SPEC_1", "REQ_1[type == 'req']"]
+derive_by_type.impl = { kind = "links", where = "type == 'req'" }
 """
 
 LOAD_CHECKS_INDEX = """\
@@ -629,6 +633,15 @@ def test_what_the_load_checks_leave(test_app: Any) -> None:
         exported[name]["default"]
         for name in ("rel_default", "rel", "rel_beside", "plain_default", "links")
     ] == [["REQ_1"], ["SPEC_1"], [], [], []]
+    # in the order the export writes a link list, as the off-type needs hold it
+    assert (
+        exported["rel_unsorted"]["default"]
+        == spec["rel_unsorted"]
+        == [
+            "REQ_1[type == 'req']",
+            "SPEC_1",
+        ]
+    )
     schema = SphinxNeedsData(app.env).get_schema()
     status, empty_table = (
         schema.get_core_field("status"),
@@ -1409,3 +1422,135 @@ def test_an_own_field_roll_up_with_include_self_reads_itself(test_app: Any) -> N
     ]
     needs = _needs(app)
     assert (needs["REQ_3"]["lvl"], needs["SPEC_1"]["lvl"]) == (None, 4)
+
+
+#: every need type of a project declaring the four: its own, and the github service's
+ALL_TYPES = ("req", "spec", "impl", "test", "commit", "issue", "pr")
+
+EVERY_TYPE_CONF = f"""\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_types = [
+    {{"directive": t, "title": t, "prefix": t.upper() + "_"}}
+    for t in ("req", "spec", "impl", "test")
+]
+needs_fields = {{
+    "a": {{"schema": {{"type": "string"}}, "derive": {{"kind": "copy", "field": "b"}}}},
+    "b": {{
+        "schema": {{"type": "string"}},
+        "derive_by_type": {{
+            t: {{"kind": "copy", "field": "c" if t == "spec" else "a"}}
+            for t in {ALL_TYPES!r}
+        }},
+    }},
+    "c": {{
+        "schema": {{"type": "string"}},
+        "derive_by_type": {{"spec": {{"kind": "copy", "field": "a"}}}},
+    }},
+}}
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            EVERY_TYPE_CONF,
+            ".. req:: A\n   :id: REQ_1\n\n.. spec:: B\n   :id: SPEC_1\n",
+        )
+    ],
+    indirect=True,
+)
+def test_a_derive_cycling_on_every_type_along_two_paths(test_app: Any) -> None:
+    """``a``'s ``derive`` cycles on every need type, along ``a -> b -> a`` on all but
+    ``spec`` and ``a -> b -> c -> a`` on ``spec``: the finding names both paths, and
+    no type the rule would still apply on."""
+    app = test_app
+    app.build()
+    cycle = (
+        "kind 'copy': the role 'field' reads 'b', whose rule reads this field back "
+        "({}), so no need can compute it"
+    )
+    assert [w for w in _warnings(app) if "field 'a'" in w] == [
+        "WARNING: Invalid derive of field 'a': on need types 'commit', 'impl', "
+        "'issue', 'pr', 'req' and 'test': "
+        + cycle.format("a -> b -> a")
+        + "; on need type 'spec': "
+        + cycle.format("a -> b -> c -> a")
+        + f"; {_CLOSED}, and on those need types holds its empty value "
+        "[needs.derive_invalid]"
+    ]
+    needs = _needs(app)
+    assert (needs["REQ_1"]["a"], needs["SPEC_1"]["a"]) == (None, None)
+
+
+TABLE_TEXT_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_fields = {
+    "x": {
+        "schema": {"type": "string"},
+        "derive": {"kind": "copy", "field": "y"},
+        "derive_by_type": "bad",
+    },
+    "y": {
+        "schema": {"type": "string"},
+        "default": "yd",
+        "derive_by_type": {"req": {"kind": "copy", "field": "x"}},
+    },
+    "w": {
+        "schema": {"type": "string"},
+        "derive": {"kind": "copy", "field": "nope"},
+        "derive_by_type": {},
+    },
+    "e_plain": {
+        "schema": {"type": "string"},
+        "derive": {"kind": "copy", "field": "title"},
+        "derive_by_type": {},
+    },
+}
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            TABLE_TEXT_CONF,
+            ".. req:: A\n   :id: REQ_1\n\n.. spec:: B\n   :id: SPEC_1\n\n"
+            ".. needextend:: SPEC_1\n   :e_plain: written\n",
+        )
+    ],
+    indirect=True,
+)
+def test_an_unreadable_table_says_what_the_needs_use(test_app: Any) -> None:
+    """An unreadable ``derive_by_type`` adds no rule (A-38), and its finding says what
+    the needs use: the ``derive`` beside it on every type (``e_plain``), on the types
+    it does not cycle on (``x``, which cycles on ``req`` with ``y``), or no rule where
+    the ``derive`` cannot be read (``w``). ``e_plain`` is described by its ``derive``."""
+    app = test_app
+    app.build()
+    table = (
+        "WARNING: Invalid derive_by_type of field {!r}: {}; the field cannot be set "
+        "in a need or by a needextend, and {} [needs.derive_invalid]"
+    )
+    warnings = _warnings(app)
+    assert [w for w in warnings if "derive_by_type of" in w] == [
+        table.format(
+            "e_plain", "it names no need type", "every need type uses its derive"
+        ),
+        table.format("w", "it names no need type", "no need type has a rule"),
+        table.format(
+            "x",
+            "it is not a table of need types",
+            "every need type uses its derive, but those it cycles on",
+        ),
+    ]
+    assert warnings[-1] == (
+        "<srcdir>/index.rst:10: WARNING: Field 'e_plain' is derived (kind 'copy') and "
+        "cannot be set by a needextend; the option 'e_plain' is ignored "
+        "[needs.derive_authored]"
+    )
+    needs = _needs(app)
+    assert (needs["REQ_1"]["x"], needs["SPEC_1"]["x"]) == (None, "yd")
+    assert (needs["REQ_1"]["e_plain"], needs["SPEC_1"]["e_plain"]) == ("A", "B")
