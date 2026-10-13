@@ -10,6 +10,16 @@ Changelog
 
 :Released: 2026-10-14
 
+.. note::
+
+   **Variant data from** ``[variants]``: sphinx-mounts now reads the variant data from the
+   ``[variants]`` table of ``ubproject.toml`` that every tool shares, through ub-project,
+   which becomes a dependency (`#2000 <https://github.com/useblocks/sphinx-needs/pull/2000>`__).
+   ``[needs] variant_data*`` keeps working, but a project whose data is only in
+   ``[variants]`` and whose Sphinx-Needs reads the file needs **Sphinx-Needs 9.0.0**, or
+   the build is refused rather than silently excluding the gated content. Python 3.11 is
+   supported again; docutils 0.21 is the new floor.
+
 - **sphinx-mounts now lives in the Sphinx-Needs repository**, as
   `packages/sphinx-mounts <https://github.com/useblocks/sphinx-needs/tree/master/packages/sphinx-mounts>`__,
   and 0.3.0 is its first release from there

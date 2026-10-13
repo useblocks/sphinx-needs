@@ -12,6 +12,17 @@ Changelog
 :Released: 14.10.2026
 :Full Changelog: `8.5.0...sphinx-needs-v9.0.0 <https://github.com/useblocks/sphinx-needs/compare/8.5.0...sphinx-needs-v9.0.0>`__
 
+This release is about **computed values**. A field or link type can be **derived** by a rule
+in its configuration, per need type with ``derive_by_type`` (:pr:`2178`, :pr:`2191`,
+:pr:`2204`, :pr:`2205`), and every dynamic function, variant and rule is computed in
+dependency order (:pr:`2134`). It is a major release because computed values,
+``needextend`` filters (:pr:`2127`) and the needs.json readers (:pr:`2189`) change output
+under existing projects, and their new warnings can turn a ``-W`` build red until the cause is
+fixed or suppressed; Python 3.11 is the minimum (:pr:`1844`), and ``[[…]]`` in need content
+and the ``need_func`` role are gone (:pr:`1919`). Also new: ``[variants]`` in
+``ubproject.toml`` (:pr:`1996`), ``choose`` / ``when`` / ``otherwise`` (:pr:`2020`),
+``:extend_priority:`` (:pr:`2083`) and content parsed in its declared markup (:pr:`2135`).
+
 Improvements
 ............
 

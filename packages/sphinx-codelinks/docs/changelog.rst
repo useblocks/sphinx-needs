@@ -10,6 +10,18 @@ Changelog
 
 :Released: 14.10.2026
 
+The first release from the Sphinx-Needs repository, and a major one: it requires
+Sphinx-Needs 9.0 or newer, and the never-rendered ``@rst`` blocks and ``get_rst`` are
+removed in favour of **multi-line needs** (``@need`` … ``@endneed``), which ``src-trace`` now
+renders in the markup each declares
+(`#2152 <https://github.com/useblocks/sphinx-needs/pull/2152>`__,
+`#2168 <https://github.com/useblocks/sphinx-needs/pull/2168>`__). ``@need-ids:`` references
+are attached to the needs they name during the build
+(`#2049 <https://github.com/useblocks/sphinx-needs/pull/2049>`__), TypeScript and JavaScript
+join the supported languages (`#2166 <https://github.com/useblocks/sphinx-needs/pull/2166>`__),
+and incremental and parallel builds, symbolic links and overlapping directives no longer
+abort or go stale.
+
 New and Improved
 ................
 

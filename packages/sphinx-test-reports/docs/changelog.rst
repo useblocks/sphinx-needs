@@ -10,6 +10,22 @@ Changelog
 
 :Released: 14.10.2026
 
+A major release. The Sphinx-free half -- the ``test-reports`` converter, the pytest plugin,
+the parsers and the ``[test_reports]`` model -- is its own distribution now,
+**ub-test-reports**, and sphinx-test-reports is the Sphinx extension alone, imported as
+``sphinx_test_reports``. ``pip install sphinx-test-reports`` brings Sphinx, Sphinx-Needs 9
+and ub-test-reports again, reversing 2.0.0's install-footprint change: a test runner or a
+build action that wants only the command or the plugin installs ``ub-test-reports``.
+
+Upgrading a documentation project means writing ``extensions = ["sphinx_test_reports"]``;
+the old ``sphinxcontrib.test_reports`` names keep working, with a warning, until 4.0. Beyond
+that, the directives warn and show an error box where they used to stop the build on a report
+they cannot read or an option they refuse
+(`#2156 <https://github.com/useblocks/sphinx-needs/pull/2156>`__,
+`#2161 <https://github.com/useblocks/sphinx-needs/pull/2161>`__,
+`#2162 <https://github.com/useblocks/sphinx-needs/pull/2162>`__), and nested test suites are
+documented at every depth (`#2149 <https://github.com/useblocks/sphinx-needs/pull/2149>`__).
+
 The Sphinx-free half is its own distribution, ub-test-reports
 .............................................................
 

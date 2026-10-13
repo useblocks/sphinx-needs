@@ -10,6 +10,16 @@ Changelog
 
 :Released: 2026-10-14
 
+A bug-fix release for the converter and the parsers. A report the parsers cannot read is
+one typed ``ReportReadError`` naming the file and the position, where lxml's and the JSON
+decoder's own exceptions escaped (`#2156 <https://github.com/useblocks/sphinx-needs/pull/2156>`__);
+cases beside nested test suites are no longer dropped
+(`#2149 <https://github.com/useblocks/sphinx-needs/pull/2149>`__); two link properties mapped
+onto one field merge (`#2119 <https://github.com/useblocks/sphinx-needs/pull/2119>`__); and
+report text stays inside its literal blocks whatever line breaks it holds
+(`#2179 <https://github.com/useblocks/sphinx-needs/pull/2179>`__). sphinx-test-reports 3.0.0
+requires it.
+
 Fixed
 .....
 
