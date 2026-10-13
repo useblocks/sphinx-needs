@@ -491,6 +491,59 @@ def test_a_name_enters_where_it_differs_from_its_default(test_app):
     }
 
 
+LIST_DEFAULT_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_fields = {
+    "labels": {
+        "schema": {"type": "array", "items": {"type": "string"}},
+        "nullable": False,
+        "default": [],
+    },
+    "tags": {"default": "[[copy('labels')]]"},
+    "fp": {"schema": {"type": "string"}, "derive": {"kind": "fingerprint"}},
+}
+needs_links = {"covers": {"default": "[[copy('links')]]"}}
+"""
+
+LIST_DEFAULT_INDEX = """\
+Computed defaults
+=================
+
+.. req:: Nothing computed
+   :id: REQ_1
+
+.. req:: Computed
+   :id: REQ_2
+   :labels: a, b
+   :links: REQ_1
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app", [_project(LIST_DEFAULT_CONF, LIST_DEFAULT_INDEX)], indirect=True
+)
+def test_a_computed_default_of_a_link_type_or_tags_compares_as_empty(test_app):
+    """A default that is a dynamic function or a variant is no literal default; on a
+    link type, and on ``tags``, the value is then compared against ``[]``, their empty
+    value, not entered always: a need whose computed ``covers`` and ``tags`` are empty
+    adds neither (``REQ_1``), one whose computed lists are not adds both (``REQ_2``)."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    needs = _needs(app)
+    assert (needs["REQ_1"]["tags"], needs["REQ_1"]["covers"]) == ([], [])
+    assert needs["REQ_1"]["fp"] == _sha256(
+        '{"id":"REQ_1","title":"Nothing computed","type":"req"}'
+    )
+    assert needs["REQ_2"]["fp"] == _sha256(
+        '{"covers":["REQ_1"],"id":"REQ_2","labels":["a","b"],"links":["REQ_1"],'
+        '"tags":["a","b"],"title":"Computed","type":"req"}'
+    )
+    names = fingerprint_names(SphinxNeedsData(app.env).get_schema())
+    assert (names["tags"], names["covers"]) == ([], [])
+
+
 # -- what never moves a fingerprint --------------------------------------------------------
 
 BASE_CONF = """\
