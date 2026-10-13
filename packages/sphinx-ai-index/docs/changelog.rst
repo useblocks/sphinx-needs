@@ -3,8 +3,12 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:1.0.0`:
+
+1.0.0
+-----
+
+:Released: 2026-10-14
 
 Nothing about what the extension writes changes: ``ai_docs_index.json`` is the same file,
 field for field, as 0.1.0 writes it.
