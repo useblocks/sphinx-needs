@@ -43,10 +43,10 @@ version(s) inside the **needs.json**.
 Format
 ++++++
 
-As well as the ``filters`` and ``needs`` data, the **needs.json** file also contains the ``needs_schema``.
-This is a JSON schema of for the data structure of a single need,
+As well as the ``needs`` data, each version in the **needs.json** file carries a ``creator`` (the program and version that wrote it) and the ``needs_schema``.
+This is a JSON schema for the data structure of a single need,
 and also includes a ``field_type`` for each field, to denote the source of the field,
-that can be one of: ``core``, ``links``, ``backlinks``, ``extra``, ``global``.
+that can be one of: ``core``, ``links``, ``backlinks``, ``extra``.
 
 See also :ref:`needs_json_exclude_fields`, :ref:`needs_json_remove_defaults`, :ref:`needs_reproducible_json`, and :ref:`needs_json_include_link_conditions` for more options on modifying the content of the ``needs.json`` file.
 
@@ -109,35 +109,38 @@ See also :ref:`needs_json_exclude_fields`, :ref:`needs_json_remove_defaults`, :r
         "1.5": {
             "created": "2017-07-03T16:10:31.633425",
             "needs_schema": {
-                "id": {
-                    "description": "ID of the data.",
-                    "field_type": "core",
-                    "type": "string"
-                },
-                "type": {
-                    "description": "Type of the need.",
-                    "field_type": "core",
-                    "type": "string"
-                },
-                "links": {
-                    "description": "Link field",
-                    "field_type": "links",
-                    "items": {
+                "$schema": "http://json-schema.org/draft-07/schema#",
+                "properties": {
+                    "id": {
+                        "description": "ID of the data.",
+                        "field_type": "core",
                         "type": "string"
                     },
-                    "type": "array",
-                    "default": []
-                },
-                "status": {
-                    "description": "Status of the need.",
-                    "field_type": "core",
-                    "type": [
-                        "string",
-                        "null"
-                    ],
-                    "default": null
-                },
-                ...
+                    "type": {
+                        "description": "Type of the need.",
+                        "field_type": "core",
+                        "type": "string"
+                    },
+                    "links": {
+                        "description": "Link field",
+                        "field_type": "links",
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "default": []
+                    },
+                    "status": {
+                        "description": "Status of the need.",
+                        "field_type": "core",
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "default": null
+                    },
+                    ...
+                }
             },
             "needs_defaults_removed": true,
             "needs": {

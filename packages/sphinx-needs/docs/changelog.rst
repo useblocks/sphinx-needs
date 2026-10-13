@@ -202,6 +202,10 @@ Improvements
 Breaking changes
 ................
 
+- ‼️ Python 3.10 is no longer supported: the minimum is 3.11 (:pr:`1844`)
+
+  ``requires-python`` is now ``>=3.11``; 8.5.0 accepted 3.10.
+
 - ‼️ Computed values are computed in dependency order **(changed output)**
   (:issue:`2064`, :pr:`2134`)
 
