@@ -1181,3 +1181,33 @@ def test_a_fingerprint_never_includes_a_field_derived_by_type(test_app: Any) -> 
     schema = SphinxNeedsData(app.env).get_schema()
     assert "est" not in fingerprint_names(schema)
     assert "hours" in fingerprint_names(schema)
+
+
+GLOBAL_OPTIONS_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_fields = {
+    "label": {
+        "schema": {"type": "string"},
+        "derive_by_type": {"req": {"kind": "copy", "field": "title"}},
+    },
+}
+needs_global_options = {"label": {"default": "global"}}
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [_project(GLOBAL_OPTIONS_CONF, ".. spec:: B\n   :id: SPEC_1\n")],
+    indirect=True,
+)
+def test_a_global_default_is_refused_as_on_any_derived_field(test_app: Any) -> None:
+    """``needs_global_options`` gives a derived field no default, with
+    ``derive_by_type`` as with ``derive``: the off-type value is the entry's own."""
+    app = test_app
+    app.build()
+    assert _warnings(app) == [
+        "WARNING: needs_global_options['label']['default'] cannot be set, as field "
+        "does not allow defaults [needs.config]"
+    ]
+    assert _needs(app)["SPEC_1"]["label"] is None
