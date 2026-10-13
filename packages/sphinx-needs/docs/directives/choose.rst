@@ -3,7 +3,7 @@
 choose
 ======
 
-.. versionadded:: 8.6.0
+.. versionadded:: 9.0.0
 
 The ``choose`` directive includes one of several branches of content,
 chosen by :ref:`variant data <filter_variant_data>` at parse time.

@@ -41,7 +41,7 @@ app.add_typer(write_app, name="write", rich_help_panel="Sub-menus")
 
 WRITE_RST_DEPRECATED = (
     "`write rst` is deprecated: the build attaches `@need-ids:` references itself "
-    "(field `code_url`); it will be removed in sphinx-codelinks 2.0.0"
+    "(field `code_url`); it will be removed in sphinx-codelinks 3.0.0"
 )
 
 OptVerbose: TypeAlias = Annotated[  # has to be TypeAlias
