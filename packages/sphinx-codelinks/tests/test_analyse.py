@@ -369,3 +369,25 @@ def test_count_pluralizes_nouns() -> None:
     assert _count(1, "file") == "1 file"
     assert _count(2, "marker") == "2 markers"
     assert _count(1, "multi-line need") == "1 multi-line need"
+
+
+def test_dump_marked_content_when_its_directory_appears_after_the_check(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Another process may create the output directory between a check for it and the
+    ``mkdir``: the dump must not fail with ``FileExistsError`` then."""
+    outdir = tmp_path / "out"
+    real_exists = Path.exists
+
+    def exists_then_created_elsewhere(self: Path, *args, **kwargs) -> bool:
+        found = real_exists(self, *args, **kwargs)
+        if self == outdir and not found:
+            outdir.mkdir()  # the other process wins the race
+        return found
+
+    analyse = SourceAnalyse(SourceAnalyseConfig(src_files=[], src_dir=tmp_path))
+    monkeypatch.setattr(Path, "exists", exists_then_created_elsewhere)
+    analyse.dump_marked_content(outdir)
+
+    marked = json.loads((outdir / "marked_content.json").read_text(encoding="utf-8"))
+    assert marked == []

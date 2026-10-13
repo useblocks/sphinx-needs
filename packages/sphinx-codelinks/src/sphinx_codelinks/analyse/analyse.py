@@ -824,8 +824,7 @@ class SourceAnalyse:
 
     def dump_marked_content(self, outdir: Path) -> None:
         output_path = outdir / "marked_content.json"
-        if not output_path.parent.exists():
-            output_path.parent.mkdir(parents=True)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
         to_dump = [
             marked_content.to_dict() for marked_content in self.all_marked_content
         ]
