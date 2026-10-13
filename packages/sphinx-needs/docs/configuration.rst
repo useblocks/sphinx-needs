@@ -756,7 +756,7 @@ A rule is computed with the ``[[…]]`` of its step (see :ref:`needs_processing_
     (after every :ref:`needextend`, variant and ``[[…]]``), and reads no derived field,
     so two fingerprints with the same ``exclude`` hold the same value.
   - No later release changes which names a fingerprint includes, when a name enters, or how the text is written:
-    a fingerprint written down stays current until the need itself changes.
+    a fingerprint written down stays current until the need, or the configuration of the fields it reads, changes.
 
   For a need ``REQ_1`` of type ``req``, titled ``Größe``, with status ``open`` and no other value set,
   the text is ``{"id":"REQ_1","status":"open","title":"Größe","type":"req"}``.

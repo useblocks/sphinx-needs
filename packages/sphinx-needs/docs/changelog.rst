@@ -135,7 +135,8 @@ Improvements
   a link's condition dropped -- so that a link condition naming it (``:links: REQ_1[fp == "…"]``) reports
   ``needs.link_condition_failed`` once ``REQ_1`` changes; its one role, ``exclude``, leaves names out
   (:ref:`needs_derive`). No later release changes which names a fingerprint includes, when a name enters, or how
-  the text is written: a fingerprint written down stays current until the need itself changes.
+  the text is written: a fingerprint written down stays current until the need, or the configuration of the
+  fields it reads, changes.
   `ubCode`_ reads the same configuration, and computes the same values and findings, from
   its phase-2 release.
 
