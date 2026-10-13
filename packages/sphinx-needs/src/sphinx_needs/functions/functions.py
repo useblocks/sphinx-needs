@@ -24,7 +24,7 @@ from sphinx.util.logging import suppress_logging
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsMutable, SphinxNeedsData
 from sphinx_needs.debug import measure_time_func
-from sphinx_needs.derive import DeriveCall, DeriveRule
+from sphinx_needs.derive import DeriveCall, DeriveRule, fingerprint_names
 from sphinx_needs.exceptions import FunctionParsingException
 from sphinx_needs.filter_common import filter_needs_and_parts, filter_single_need
 from sphinx_needs.logging import get_logger, log_warning
@@ -532,7 +532,8 @@ def _out_of_scope_message(
         "final only after the link fields are computed"
         if stratum == 1
         else "computed in the late step, after every other field "
-        "(a derive rule of the kind 'hash' or with after = \"derived\")"
+        "(a derive rule of the kind 'hash' or 'fingerprint', or with "
+        'after = "derived")'
     )
     return (
         f"{what} for option '{option}' reads {_reads_phrase(reads, linked)}, which "
@@ -749,6 +750,7 @@ def resolve_functions(
         copy_match=copy_match,
         sum_candidates=sum_candidates,
         content_refs=content_refs,
+        fingerprint_names=list(fingerprint_names(needs_schema)),
     )
     pass_ = _Pass(project)
     # the one reset of the pass: a link field's function reads no back link of an
@@ -758,7 +760,8 @@ def resolve_functions(
     _resolve_stratum(app, needs, pass_, 1, needs_schema, needs_config)
     build_backlinks(needs, needs_schema, reset=False)
     _resolve_stratum(app, needs, pass_, 2, needs_schema, needs_config)
-    # the late step: the derive rules of the kind ``hash`` or with after = "derived"
+    # the late step: the derive rules of the kind ``hash`` or ``fingerprint``, or with
+    # after = "derived"
     _resolve_stratum(app, needs, pass_, 3, needs_schema, needs_config)
 
 

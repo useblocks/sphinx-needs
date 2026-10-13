@@ -2092,3 +2092,528 @@ n_num = 3.0
 v_num = 3.0
 still_int = 3
 digest = "d1e2bcedec5b0867f3b6a22712b19fa0579bb1567a5a514717d3bf9b1c79a1bd"
+
+# --- fingerprint ----------------------------------------------------------------------
+
+[[case]]
+name = "fingerprint-whole-need"
+why = "fingerprint is the SHA-256 of the need as ONE compact JSON object with sorted keys: id, type, title, status, tags, content, every declared field and link type that is not derived, each entering only when its value differs from the field's default (a link list with conditions dropped, deduplicated, in the export's order); location, presentation, derived fields, hashes and back links never enter, nor a value written equal to its default (SPEC_1's prio)"
+# the JSON texts hashed:
+#   REQ_1  {"content":"Some *body* text.\n\nÜnïcode paragraph.","done":false,"effort":1e+16,"id":"REQ_1","labels":["x","y"],"owner":"alice","points":3,"status":"open","tags":["b","a"],"title":"Größe \"quoted\"","type":"req"}
+#   REQ_2  {"effort":1.5e-05,"id":"REQ_2","title":"Two","type":"req"}
+#   REQ_10 {"id":"REQ_10","title":"Ten","type":"req"}
+#   SPEC_1 {"content":"Spec body.","id":"SPEC_1","satisfies":["REQ_1","REQ_2","REQ_10"],"title":"The spec","type":"spec"}
+config = '''
+[needs.links.satisfies]
+
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.fields.points]
+schema = { type = "integer" }
+
+[needs.fields.effort]
+schema = { type = "number" }
+
+[needs.fields.done]
+schema = { type = "boolean" }
+
+[needs.fields.labels]
+schema = { type = "array", items = { type = "string" } }
+
+[needs.fields.prio]
+schema = { type = "string" }
+default = "low"
+
+[needs.fields.total]
+schema = { type = "number" }
+derive = { kind = "sum", field = "effort", over = "satisfies" }
+
+[needs.fields.h_title]
+schema = { type = "string" }
+derive = { kind = "hash", fields = ["title"] }
+
+[needs.fields.fp]
+schema = { type = "string" }
+derive = { kind = "fingerprint" }
+'''
+source = '''
+.. req:: Größe "quoted"
+   :id: REQ_1
+   :status: open
+   :tags: b, a
+   :owner: alice
+   :points: 3
+   :effort: 1e16
+   :done: false
+   :labels: x, y
+
+   Some *body* text.
+
+   Ünïcode paragraph.
+
+.. req:: Two
+   :id: REQ_2
+   :effort: 1.5e-5
+
+.. req:: Ten
+   :id: REQ_10
+
+.. spec:: The spec
+   :id: SPEC_1
+   :satisfies: REQ_10, REQ_2[status == 'open'], REQ_2, REQ_1
+   :layout: clean
+   :style: green
+   :collapse: true
+   :prio: low
+
+   Spec body.
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+fp = "745d8ab73ad2fb3debf82dd2f3d1f4e74cc877d7019f19ae71d0062f7e8e6cc0"
+[case.expect.needs.REQ_2]
+fp = "1c11fc8d20259d1ca9f8b897729aefaa7bd03bad70aa98afbe9822d228416904"
+[case.expect.needs.REQ_10]
+fp = "1bf424b4b9eab80ace7427300cc83b71058cefee1969edd6b7061257c248359a"
+[case.expect.needs.SPEC_1]
+prio = "low"
+fp = "2f755a8726e0c1298e1986fbbf38a81dfc9c9dad765fac9368f321614ca460c0"
+
+[[case]]
+name = "fingerprint-new-field-keeps-digest"
+why = "declaring more fields and link types -- a nullable field, a field with a default, a boolean defaulting to false, a number field defaulting to the integer 1, a legacy extra option, a link type -- moves no fingerprint: each need leaves them at their default, a number field's default and value compared as floats, so REQ_10 writing 1 is the default 1.0 too (the hexes are fingerprint-whole-need's)"
+config = '''
+[needs]
+extra_options = ["legacy"]
+
+[needs.links.satisfies]
+
+[needs.links.verifies]
+
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.fields.points]
+schema = { type = "integer" }
+
+[needs.fields.effort]
+schema = { type = "number" }
+
+[needs.fields.done]
+schema = { type = "boolean" }
+
+[needs.fields.labels]
+schema = { type = "array", items = { type = "string" } }
+
+[needs.fields.prio]
+schema = { type = "string" }
+default = "low"
+
+[needs.fields.added_nullable]
+schema = { type = "string" }
+
+[needs.fields.added_default]
+schema = { type = "string" }
+default = "zzz"
+
+[needs.fields.added_flag]
+schema = { type = "boolean" }
+nullable = false
+default = false
+
+[needs.fields.added_number]
+schema = { type = "number" }
+default = 1
+
+[needs.fields.total]
+schema = { type = "number" }
+derive = { kind = "sum", field = "effort", over = "satisfies" }
+
+[needs.fields.h_title]
+schema = { type = "string" }
+derive = { kind = "hash", fields = ["title"] }
+
+[needs.fields.fp]
+schema = { type = "string" }
+derive = { kind = "fingerprint" }
+'''
+source = '''
+.. req:: Größe "quoted"
+   :id: REQ_1
+   :status: open
+   :tags: b, a
+   :owner: alice
+   :points: 3
+   :effort: 1e16
+   :done: false
+   :labels: x, y
+
+   Some *body* text.
+
+   Ünïcode paragraph.
+
+.. req:: Two
+   :id: REQ_2
+   :effort: 1.5e-5
+
+.. req:: Ten
+   :id: REQ_10
+   :added_number: 1
+
+.. spec:: The spec
+   :id: SPEC_1
+   :satisfies: REQ_10, REQ_2[status == 'open'], REQ_2, REQ_1
+   :layout: clean
+   :style: green
+   :collapse: true
+   :prio: low
+
+   Spec body.
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+legacy = ""
+added_default = "zzz"
+added_flag = false
+fp = "745d8ab73ad2fb3debf82dd2f3d1f4e74cc877d7019f19ae71d0062f7e8e6cc0"
+[case.expect.needs.REQ_2]
+fp = "1c11fc8d20259d1ca9f8b897729aefaa7bd03bad70aa98afbe9822d228416904"
+[case.expect.needs.REQ_10]
+added_number = 1.0
+fp = "1bf424b4b9eab80ace7427300cc83b71058cefee1969edd6b7061257c248359a"
+[case.expect.needs.SPEC_1]
+fp = "2f755a8726e0c1298e1986fbbf38a81dfc9c9dad765fac9368f321614ca460c0"
+[case.expect.nulls]
+REQ_1 = ["added_nullable"]
+
+[[case]]
+name = "fingerprint-exclude-and-empty-values"
+why = "exclude leaves the named fields out (here id, status, tags); an empty string, false, 0 and an empty list differ from a null default and enter; a needextend's value is read as final"
+# the JSON texts hashed:
+#   REQ_1 fp      {"done":false,"id":"REQ_1","labels":[],"owner":"","points":0,"status":"open","tags":["a"],"title":"Empty values","type":"req"}
+#   REQ_1 fp_less {"done":false,"labels":[],"owner":"","points":0,"title":"Empty values","type":"req"}
+#   REQ_2 fp      {"id":"REQ_2","owner":"bob","status":"closed","title":"Extended","type":"req"}
+#   REQ_2 fp_less {"owner":"bob","title":"Extended","type":"req"}
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.fields.points]
+schema = { type = "integer" }
+
+[needs.fields.done]
+schema = { type = "boolean" }
+
+[needs.fields.labels]
+schema = { type = "array", items = { type = "string" } }
+
+[needs.fields.fp]
+schema = { type = "string" }
+derive = { kind = "fingerprint" }
+
+[needs.fields.fp_less]
+schema = { type = "string" }
+derive = { kind = "fingerprint", exclude = ["id", "status", "tags"] }
+'''
+source = '''
+.. req:: Empty values
+   :id: REQ_1
+   :status: open
+   :tags: a
+   :owner:
+   :points: 0
+   :done: false
+   :labels:
+
+.. req:: Extended
+   :id: REQ_2
+
+.. needextend:: REQ_2
+   :status: closed
+   :owner: bob
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+owner = ""
+labels = []
+fp = "e96f0e9fe1e2ab10184d5c19dec3a5e37ca6b9ade11969774187523a58f86b58"
+fp_less = "71202b3be1d51111a32721f56946767d4b37454e6a3ced341cf4156c492d29cd"
+[case.expect.needs.REQ_2]
+owner = "bob"
+fp = "dc26d40bc34268d6a55eef7f722ebda421d515ad0191e5b1d672e0d12c9ce03b"
+fp_less = "9ced3c30008109270bd2b30311641dbfb989fc90b47d5d5946bf0c2c81b6a35b"
+
+[[case]]
+name = "fingerprint-in-a-link-condition"
+why = "a link condition naming a fingerprint holds while the target is unchanged (sphinx-needs reports no link_condition_failed, a finding the corpus does not compare), and the condition itself never enters a fingerprint: two needs differing only in the condition on their link share fp_noid"
+# the JSON texts hashed:
+#   REQ_A  fp      {"content":"Reviewed text.","id":"REQ_A","title":"Target","type":"req"}
+#   SPEC_B fp      {"id":"SPEC_B","links":["REQ_A"],"title":"Pinned","type":"spec"}
+#   SPEC_C fp      {"id":"SPEC_C","links":["REQ_A"],"title":"Pinned","type":"spec"}
+#   SPEC_B fp_noid {"links":["REQ_A"],"title":"Pinned","type":"spec"}  (and SPEC_C's)
+config = '''
+[needs.fields.fp]
+schema = { type = "string" }
+derive = { kind = "fingerprint" }
+
+[needs.fields.fp_noid]
+schema = { type = "string" }
+derive = { kind = "fingerprint", exclude = ["id"] }
+'''
+source = '''
+.. req:: Target
+   :id: REQ_A
+
+   Reviewed text.
+
+.. spec:: Pinned
+   :id: SPEC_B
+   :links: REQ_A[fp == "ea226ab3a6131633ec3630a57818dcfd73c8c2c465d1e84f4d8c8907ee654b28"]
+
+.. spec:: Pinned
+   :id: SPEC_C
+   :links: REQ_A
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_A]
+fp = "ea226ab3a6131633ec3630a57818dcfd73c8c2c465d1e84f4d8c8907ee654b28"
+fp_noid = "92bdde4ba29fa1d1c9f8c2e5dcdab99f39eef00370530079307cd8b390db147f"
+[case.expect.needs.SPEC_B]
+fp = "a941e7478c8f00ce6ca8c811efa51a0d9556f35f5b50fda5296ac071432a8a7a"
+fp_noid = "bd2e39e63e5b7c50dae8d47e95a5cd1cc5801eca1d5f70db01ebba6e1920ac9e"
+[case.expect.needs.SPEC_C]
+fp = "54cc575c7f78d0df28526016a0c9e5c833975dab9edd2bfbacabe1c1a40ea3b7"
+fp_noid = "bd2e39e63e5b7c50dae8d47e95a5cd1cc5801eca1d5f70db01ebba6e1920ac9e"
+
+[[case]]
+name = "fingerprint-invalid-shapes"
+why = "fingerprint takes one optional role, exclude: a list naming what the fingerprint would include, each once (an empty list leaves nothing out); exclude as a string, a name that is nothing a need has, a name a fingerprint never includes (a location, a derived field, back links, parent_needs), a name twice, the roles fields and after, exclude on hash, a schema that cannot hold a string and a fingerprint on a link type are each one derive_invalid, and the field holds its empty value"
+# the JSON text hashed, REQ_1 fp and fp_nothing_left_out: {"id":"REQ_1","status":"open","title":"Shapes","type":"req"}
+config = '''
+[needs.links.bad_on_link]
+derive = { kind = "fingerprint" }
+
+[needs.fields.total]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links" }
+
+[needs.fields.fp]
+schema = { type = "string" }
+derive = { kind = "fingerprint" }
+
+[needs.fields.fp_nothing_left_out]
+schema = { type = "string" }
+derive = { kind = "fingerprint", exclude = [] }
+
+[needs.fields.bad_exclude_string]
+schema = { type = "string" }
+derive = { kind = "fingerprint", exclude = "id" }
+
+[needs.fields.bad_exclude_unknown]
+schema = { type = "string" }
+derive = { kind = "fingerprint", exclude = ["nope"] }
+
+[needs.fields.bad_exclude_docname]
+schema = { type = "string" }
+derive = { kind = "fingerprint", exclude = ["docname"] }
+
+[needs.fields.bad_exclude_derived]
+schema = { type = "string" }
+derive = { kind = "fingerprint", exclude = ["total"] }
+
+[needs.fields.bad_exclude_back]
+schema = { type = "string" }
+derive = { kind = "fingerprint", exclude = ["links_back"] }
+
+[needs.fields.bad_exclude_parent]
+schema = { type = "string" }
+derive = { kind = "fingerprint", exclude = ["parent_needs"] }
+
+[needs.fields.bad_exclude_twice]
+schema = { type = "string" }
+derive = { kind = "fingerprint", exclude = ["status", "status"] }
+
+[needs.fields.bad_fields]
+schema = { type = "string" }
+derive = { kind = "fingerprint", fields = ["title"] }
+
+[needs.fields.bad_after]
+schema = { type = "string" }
+derive = { kind = "fingerprint", after = "derived" }
+
+[needs.fields.bad_hash_exclude]
+schema = { type = "string" }
+derive = { kind = "hash", fields = ["title"], exclude = ["id"] }
+
+[needs.fields.bad_integer]
+schema = { type = "integer" }
+derive = { kind = "fingerprint" }
+'''
+source = '''
+.. req:: Shapes
+   :id: REQ_1
+   :status: open
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+bad_on_link = []
+fp = "76e6082954e11e8493a1378613554b1047dd9f63cb1f64b5db6504dc8e6fbe2a"
+fp_nothing_left_out = "76e6082954e11e8493a1378613554b1047dd9f63cb1f64b5db6504dc8e6fbe2a"
+[case.expect.nulls]
+REQ_1 = ["bad_exclude_string", "bad_exclude_unknown", "bad_exclude_docname", "bad_exclude_derived", "bad_exclude_back", "bad_exclude_parent", "bad_exclude_twice", "bad_fields", "bad_after", "bad_hash_exclude", "bad_integer"]
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_on_link"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_exclude_string"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_exclude_unknown"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_exclude_docname"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_exclude_derived"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_exclude_back"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_exclude_parent"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_exclude_twice"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_fields"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_after"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_hash_exclude"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_integer"
+
+[[case]]
+name = "fingerprint-late-and-scope"
+why = "fingerprint is computed in the late step, like hash, from final values (owner, set by an inline copy, enters as computed): a rule outside the late step reading it is derive_scope and holds null (early_copy), a late rule reads it on this need (late_copy) and on another (upstream_fp), a hash can hash it (h_fp), and a second fingerprint reads no fingerprint, so it holds the same hex (fp_again)"
+# the JSON texts hashed:
+#   REQ_1  fp, fp_again {"id":"REQ_1","owner":"Late","title":"Late","type":"req"}
+#   SPEC_1 fp, fp_again {"id":"SPEC_1","links":["REQ_1"],"title":"Reads","type":"spec"}
+#   REQ_1  h_fp         ["a8a0b44a8bc7cbb9eef954c27b2aae886ab2512db7e7a321184caf05e2069b70"]
+#   SPEC_1 h_fp         ["3d54dc26e50dd6e318aa03ab4d57012f124507f30c4f8cb633d34b5d65469807"]
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.fields.fp]
+schema = { type = "string" }
+derive = { kind = "fingerprint" }
+
+[needs.fields.fp_again]
+schema = { type = "string" }
+derive = { kind = "fingerprint" }
+
+[needs.fields.early_copy]
+schema = { type = "string" }
+derive = { kind = "copy", field = "fp" }
+
+[needs.fields.late_copy]
+schema = { type = "string" }
+derive = { kind = "copy", field = "fp", after = "derived" }
+
+[needs.fields.upstream_fp]
+schema = { type = "string" }
+derive = { kind = "copy", field = "fp", over = "links", after = "derived" }
+
+[needs.fields.h_fp]
+schema = { type = "string" }
+derive = { kind = "hash", fields = ["fp"] }
+'''
+source = '''
+.. req:: Late
+   :id: REQ_1
+   :owner: [[copy("title")]]
+
+.. spec:: Reads
+   :id: SPEC_1
+   :links: REQ_1
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+owner = "Late"
+fp = "a8a0b44a8bc7cbb9eef954c27b2aae886ab2512db7e7a321184caf05e2069b70"
+fp_again = "a8a0b44a8bc7cbb9eef954c27b2aae886ab2512db7e7a321184caf05e2069b70"
+late_copy = "a8a0b44a8bc7cbb9eef954c27b2aae886ab2512db7e7a321184caf05e2069b70"
+h_fp = "cc81b1c7e0c04f02ef0c9fd463d5c61d90e4312f1528e4342f3939d455098d24"
+[case.expect.needs.SPEC_1]
+fp = "3d54dc26e50dd6e318aa03ab4d57012f124507f30c4f8cb633d34b5d65469807"
+fp_again = "3d54dc26e50dd6e318aa03ab4d57012f124507f30c4f8cb633d34b5d65469807"
+late_copy = "3d54dc26e50dd6e318aa03ab4d57012f124507f30c4f8cb633d34b5d65469807"
+upstream_fp = "a8a0b44a8bc7cbb9eef954c27b2aae886ab2512db7e7a321184caf05e2069b70"
+h_fp = "08570bbc0dd91a6c22fad612af6cdfa3f8c93a0d0d6cd3a5e8e293558704d5a1"
+[case.expect.nulls]
+REQ_1 = ["early_copy", "upstream_fp"]
+SPEC_1 = ["early_copy"]
+[[case.expect.findings]]
+code = "derive_scope"
+need = "REQ_1"
+field = "early_copy"
+[[case.expect.findings]]
+code = "derive_scope"
+need = "SPEC_1"
+field = "early_copy"
+
+[[case]]
+name = "fingerprint-defaults-compared-as-text"
+why = "a value is compared with its default as JSON text, not by value: -0.0 differs from a default 0.0 and enters, written -0.0, where 0 written in a number field is the default 0.0; a legacy extra option enters where it is set and adds no key where it is left at its empty default"
+# the JSON texts hashed:
+#   REQ_1 {"id":"REQ_1","legacy":"x","title":"Negative zero","type":"req","zero":-0.0}
+#   REQ_2 {"id":"REQ_2","title":"Zero written","type":"req"}
+#   REQ_3 {"id":"REQ_3","title":"Unset","type":"req"}
+config = '''
+[needs]
+extra_options = ["legacy"]
+
+[needs.fields.zero]
+schema = { type = "number" }
+default = 0.0
+
+[needs.fields.fp]
+schema = { type = "string" }
+derive = { kind = "fingerprint" }
+'''
+source = '''
+.. req:: Negative zero
+   :id: REQ_1
+   :zero: -0.0
+   :legacy: x
+
+.. req:: Zero written
+   :id: REQ_2
+   :zero: 0
+
+.. req:: Unset
+   :id: REQ_3
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+zero = -0.0
+legacy = "x"
+fp = "182be5c2f2042a8ab3d16529a6ca30d463c7216659a3539f50b5d340ee4a8afb"
+[case.expect.needs.REQ_2]
+zero = 0.0
+fp = "da55a16ec834fc426ce4f6641040139d1ea8235ad8c9e947b94406f1d01cf959"
+[case.expect.needs.REQ_3]
+legacy = ""
+fp = "d51d1facf79607c5da7e39c0a85c22150cd9f847e742f479f14ff5f69cd7bdc3"

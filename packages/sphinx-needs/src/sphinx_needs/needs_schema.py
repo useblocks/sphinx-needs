@@ -933,12 +933,14 @@ class LinkSchema:
 class FieldsSchema:
     """A schema for the fields of a single need."""
 
-    __slots__ = ("_core_fields", "_extra_fields", "_link_fields")
+    __slots__ = ("_core_fields", "_extra_fields", "_link_fields", "_project_fields")
 
     def __init__(self) -> None:
         self._core_fields: dict[str, FieldSchema] = {}
         self._extra_fields: dict[str, FieldSchema] = {}
         self._link_fields: dict[str, LinkSchema] = {}
+        #: the extra fields the project declares, not an extension or a service
+        self._project_fields: set[str] = set()
 
     def __repr__(self) -> str:
         return (
@@ -960,9 +962,11 @@ class FieldsSchema:
             raise ValueError(f"Field '{field.name}' already exists.")
         self._core_fields[field.name] = field
 
-    def add_extra_field(self, field: FieldSchema) -> None:
+    def add_extra_field(self, field: FieldSchema, *, project: bool = False) -> None:
         """Add an extra field to the schema.
 
+        :param project: Whether the project declares it (``needs_fields``,
+            ``needs_extra_options``), rather than an extension or a service.
         :raises ValueError: if a field with the same name already exists
         """
         if (
@@ -972,6 +976,12 @@ class FieldsSchema:
         ):
             raise ValueError(f"Field '{field.name}' already exists.")
         self._extra_fields[field.name] = field
+        if project:
+            self._project_fields.add(field.name)
+
+    def is_project_field(self, name: str) -> bool:
+        """Whether the extra field ``name`` is one the project declares."""
+        return name in self._project_fields
 
     def add_link_field(self, field: LinkSchema) -> None:
         """Add a link field to the schema.

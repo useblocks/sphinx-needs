@@ -404,6 +404,8 @@ class Project:
     :param sum_candidates: The ids of the needs ``calc_sum``'s filter keeps, in need-id
         order; evaluated before the stratum.
     :param content_refs: The ids a need's content references (``links_from_content``).
+    :param fingerprint_names: The names a ``fingerprint`` rule reads on its own need,
+        before its ``exclude``.
     """
 
     def __init__(
@@ -418,6 +420,7 @@ class Project:
         copy_match: Callable[[str, NeedItem], str | object | None],
         sum_candidates: Callable[[str], Sequence[str]],
         content_refs: Callable[[str], Sequence[str]],
+        fingerprint_names: Sequence[str] = (),
     ) -> None:
         self.needs = needs
         self.link_fields = frozenset(link_fields)
@@ -430,6 +433,7 @@ class Project:
         self._sum_candidates = sum_candidates
         self._sum_memo: dict[str, Sequence[str]] = {}
         self.content_refs = content_refs
+        self.fingerprint_names = tuple(fingerprint_names)
         #: the rule of each node a derived field's rule computes
         self.rules: Mapping[Node, DeriveCall] = rules or {}
         #: every node, by stratum (1 for a link field, 3 for a late derive rule, 2 for
@@ -811,7 +815,8 @@ class _RuleReads(_CallReads):
     A rule says what it reads in its roles: its own ``field`` or the field of the need
     ``from`` names (``copy``); on each need ``over`` names, the ``field`` and the names
     of ``where`` and ``test`` (the roll-ups, ``copy`` over a link type); every need
-    ``over`` reaches (``transitive``); the listed own ``fields`` (``hash``); the names
+    ``over`` reaches (``transitive``); the listed own ``fields`` (``hash``); every own
+    name a fingerprint includes and does not ``exclude`` (``fingerprint``); the names
     of ``where`` on every need (``links``, through their columns) or on each need the
     content references (``content_links``).
     """
@@ -832,6 +837,10 @@ class _RuleReads(_CallReads):
         elif rule.kind == "hash":
             for name in rule.fields:
                 self._read(self.need.id, name)
+        elif rule.kind == "fingerprint":
+            for name in self.project.fingerprint_names:
+                if name not in rule.exclude:
+                    self._read(self.need.id, name)
         elif rule.kind == "copy" and rule.over is None:
             self._read(rule.from_need or self.need.id, rule.field)
         else:

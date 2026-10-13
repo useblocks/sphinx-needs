@@ -20,13 +20,17 @@ from sphinx.application import Sphinx
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsMutable, SphinxNeedsData
-from sphinx_needs.derive import DeriveRule
+from sphinx_needs.derive import NO_DEFAULT, DeriveRule, fingerprint_names
 from sphinx_needs.exceptions import NeedsInvalidFilter
 from sphinx_needs.filter_common import (
     filter_needs_and_parts,
     filter_single_need,
 )
-from sphinx_needs.functions.functions import UnresolvedReads, records_reads
+from sphinx_needs.functions.functions import (
+    UnresolvedReads,
+    _in_field_type,
+    records_reads,
+)
 from sphinx_needs.logging import log_warning
 from sphinx_needs.need_item import (
     NeedItem,
@@ -815,6 +819,8 @@ def execute_rule(
         ]
     if rule.kind == "hash":
         return _rule_hash(need, rule, link_fields, reads)
+    if rule.kind == "fingerprint":
+        return _rule_fingerprint(need, rule, schema, link_fields, reads, cache)
     if rule.kind == "copy" and rule.over is None:
         source = need
         if rule.from_need is not None:
@@ -1041,6 +1047,77 @@ def _rule_hash(
             values.append(list(value) if isinstance(value, tuple) else value)
     text = json.dumps(values, separators=(",", ":"), ensure_ascii=False)
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _rule_fingerprint(
+    need: NeedItem,
+    rule: DeriveRule,
+    schema: FieldsSchema,
+    link_fields: Collection[str],
+    reads: UnresolvedReads | None,
+    cache: dict[Any, Any] | None,
+) -> str:
+    """The lowercase hex SHA-256 of the need, as one compact JSON object.
+
+    Its keys are the names a fingerprint includes (``fingerprint_names``) that the rule
+    does not ``exclude``, each only where the need's value differs from the name's
+    default, compared as JSON text; sorted, no whitespace, non-ASCII characters not
+    escaped. A value is written as ``hash`` writes it: a link list as its targets'
+    ids, the conditions dropped, each once, sorted as ``needs.json`` sorts them; a
+    number field's value as a float. What it reads, and the defaults' texts, are worked
+    out once per pass (``cache``).
+    """
+    key = ("fingerprint", rule.exclude)
+    names: list[tuple[str, FieldSchema | None, str | None]] | None = (
+        None if cache is None else cache.get(key)
+    )
+    if names is None:
+        names = []
+        for name, default in fingerprint_names(schema).items():
+            if name in rule.exclude:
+                continue
+            field = schema.get_extra_field(name)
+            if default is NO_DEFAULT:
+                names.append((name, field, None))
+                continue
+            if name in link_fields:
+                default = _link_ids(default)
+            elif field is not None:
+                default = _in_field_type(default, field)
+            names.append((name, field, _json_text(default)))
+        if cache is not None:
+            cache[key] = names
+    entries: dict[str, Any] = {}
+    for name, field, default_text in names:
+        if name in link_fields:
+            if reads is not None:
+                reads.note_read(need, name)
+            value: Any = _link_ids(need.get_links(name, as_str=False))
+        else:
+            value = _read(need, name, reads)
+            value = list(value) if isinstance(value, tuple) else value
+            if field is not None:
+                value = _in_field_type(value, field)
+        # the JSON text, not the value: -0.0 differs from 0.0, and 1 from True
+        if default_text is None or _json_text(value) != default_text:
+            entries[name] = value
+    text = json.dumps(
+        entries, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+    )
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _link_ids(links: Iterable[NeedLink]) -> list[str]:
+    """A link list as a fingerprint writes it: the targets' ids, the conditions dropped,
+    each once, sorted as ``needs.json`` sorts them."""
+    return sorted(
+        {link.to_filter_string() for link in links}, key=_natural_sort_key_total
+    )
+
+
+def _json_text(value: Any) -> str:
+    """A value as compact JSON, non-ASCII characters not escaped."""
+    return json.dumps(value, separators=(",", ":"), ensure_ascii=False)
 
 
 def _rule_links(

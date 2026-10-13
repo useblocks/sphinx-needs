@@ -12,6 +12,7 @@ from unittest.mock import Mock
 import pytest
 
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.derive import DeriveCall, DeriveRule
 from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.functions.functions import DynamicFunctionParsed
 from sphinx_needs.functions.order import (
@@ -516,6 +517,41 @@ def test_a_chain_is_computed_from_its_end():
         Step((("B", "summary"),)),
         Step((("A", "summary"),)),
     ]
+
+
+def test_a_fingerprint_reads_the_names_it_includes_on_its_own_need():
+    """A ``fingerprint`` rule is late, and reads each name it includes on its own need,
+    less its ``exclude``: a name computed in the late step too orders the fingerprint
+    after it (``fp``), unless the rule excludes it (``fp_less``). (A fingerprint never
+    includes a derived field; the late ``summary`` here stands for any value computed
+    in the step.)"""
+    rules = {
+        ("A", "fp"): DeriveCall(DeriveRule(kind="fingerprint")),
+        ("A", "fp_less"): DeriveCall(
+            DeriveRule(kind="fingerprint", exclude=("summary",))
+        ),
+        ("A", "summary"): DeriveCall(
+            DeriveRule(kind="copy", field="title", after_derived=True)
+        ),
+    }
+    project = Project(
+        {"A": _need("A", summary=None, fp=None, fp_less=None)},
+        rules=rules,
+        link_fields=("links",),
+        variants={},
+        not_fields=set(),
+        builtins=BUILTINS,
+        copy_match=lambda _filter, _caller: None,
+        sum_candidates=lambda _filter: [],
+        content_refs=lambda _need_id: [],
+        fingerprint_names=("id", "title", "summary", "links"),
+    )
+    assert project.nodes[("A", "fp")] == project.nodes[("A", "fp_less")] == 3
+    assert list(project.node_reads(("A", "fp"), 3).deps) == [("A", "summary")]
+    assert list(project.node_reads(("A", "fp_less"), 3).deps) == []
+    assert build_stratum(project, 3).steps.index(Step((("A", "summary"),))) < (
+        build_stratum(project, 3).steps.index(Step((("A", "fp"),)))
+    )
 
 
 def test_independent_nodes_by_need_id_then_field():

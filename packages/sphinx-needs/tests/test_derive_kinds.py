@@ -1139,8 +1139,9 @@ def test_what_a_rule_cannot_compute(test_app):
         "[needs.dynamic_function]",
         "<srcdir>/index.rst:4: WARNING: dynamic function 'copy' for option 'summary' "
         "reads 'digest' on need 'A', which is computed in the late step, after every "
-        "other field (a derive rule of the kind 'hash' or with after = \"derived\"): "
-        "the call is not run and the field is left empty [needs.derive_scope]",
+        "other field (a derive rule of the kind 'hash' or 'fingerprint', or with "
+        'after = "derived"): the call is not run and the field is left empty '
+        "[needs.derive_scope]",
         "<srcdir>/index.rst:11: WARNING: Error while resolving dynamic values for field "
         "'from_missing', of need 'B': 'from' names no need: 'NOPE_9' "
         "[needs.dynamic_function]",
