@@ -2572,3 +2572,48 @@ field = "early_copy"
 code = "derive_scope"
 need = "SPEC_1"
 field = "early_copy"
+
+[[case]]
+name = "fingerprint-defaults-compared-as-text"
+why = "a value is compared with its default as JSON text, not by value: -0.0 differs from a default 0.0 and enters, written -0.0, where 0 written in a number field is the default 0.0; a legacy extra option enters where it is set and adds no key where it is left at its empty default"
+# the JSON texts hashed:
+#   REQ_1 {"id":"REQ_1","legacy":"x","title":"Negative zero","type":"req","zero":-0.0}
+#   REQ_2 {"id":"REQ_2","title":"Zero written","type":"req"}
+#   REQ_3 {"id":"REQ_3","title":"Unset","type":"req"}
+config = '''
+[needs]
+extra_options = ["legacy"]
+
+[needs.fields.zero]
+schema = { type = "number" }
+default = 0.0
+
+[needs.fields.fp]
+schema = { type = "string" }
+derive = { kind = "fingerprint" }
+'''
+source = '''
+.. req:: Negative zero
+   :id: REQ_1
+   :zero: -0.0
+   :legacy: x
+
+.. req:: Zero written
+   :id: REQ_2
+   :zero: 0
+
+.. req:: Unset
+   :id: REQ_3
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+zero = -0.0
+legacy = "x"
+fp = "182be5c2f2042a8ab3d16529a6ca30d463c7216659a3539f50b5d340ee4a8afb"
+[case.expect.needs.REQ_2]
+zero = 0.0
+fp = "da55a16ec834fc426ce4f6641040139d1ea8235ad8c9e947b94406f1d01cf959"
+[case.expect.needs.REQ_3]
+legacy = ""
+fp = "d51d1facf79607c5da7e39c0a85c22150cd9f847e742f479f14ff5f69cd7bdc3"
