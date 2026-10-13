@@ -3403,7 +3403,7 @@ wheels = [
 
 [[package]]
 name = "sphinx-test-reports"
-version = "2.0.0"
+version = "3.0.0"
 source = { editable = "packages/sphinx-test-reports" }
 dependencies = [
     { name = "docutils", version = "0.21.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' or extra == 'group-22-sphinx-needs-workspace-sphinx-7' or extra == 'group-22-sphinx-needs-workspace-sphinx-8' or extra == 'group-22-sphinx-needs-workspace-typing'" },

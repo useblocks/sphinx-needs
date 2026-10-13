@@ -3,8 +3,12 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:3.0.0`:
+
+3.0.0
+-----
+
+:Released: 14.10.2026
 
 The Sphinx-free half is its own distribution, ub-test-reports
 .............................................................
