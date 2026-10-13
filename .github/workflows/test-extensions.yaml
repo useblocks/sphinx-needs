@@ -1,6 +1,6 @@
 name: Test the sphinx extensions
 
-# ONE cell running BOTH extension packages' suites, called once per sphinx series from
+# ONE cell running every extension package's suite, called once per sphinx series from
 # `ci.yaml`.
 #
 # `test-package.yaml` cannot do this and should not learn to: a `workflow_call` input is a
@@ -9,13 +9,16 @@ name: Test the sphinx extensions
 # units share, from the renderer installs to the sphinx-series fence, are
 # `.github/actions/prepare-cell`, which is what stops it being a second copy of them.
 #
-# WHY ONE JOB AND NOT TWO CALLERS OF `test-package.yaml`. sphinx-mounts' suite is 1-3
-# minutes and sphinx-codelinks' is under 20 seconds; run as separate cells the second
-# would spend more time on checkout, setup-uv and a cell sync than on its own tests, and
-# the checks list on every pull request would grow by three entries for it. One cell per
-# series with a step per extension keeps the checks list where it is and pays the ~40 s of
-# job start-up once. The cost is that a failure in the first suite would hide the second,
-# which is why the second pytest step runs even when the first has failed.
+# WHY ONE JOB AND NOT ONE CALLER OF `test-package.yaml` PER PACKAGE. This used to rest on
+# sphinx-codelinks' suite being under 20 seconds. It is not any more: 1051 tests and the
+# job's largest step (104-147 s serial on ubuntu and 313 s on Windows in run 38399647972;
+# ~30 s under `-n 4` locally, ~100 s on Windows by estimate). The premise changed and the
+# conclusion holds: run as separate cells, every package would pay checkout, setup-uv and
+# a cell sync again (21-27 s on ubuntu, 52 s on Windows, in that run), and the checks list
+# on every pull request would grow by one entry per cell for every package split out. One
+# cell per series with a step per package keeps the checks list where it is and pays the
+# job start-up once. The cost is that a failure in one suite could hide the next, which is
+# why every pytest step after the first runs even when an earlier one has failed.
 #
 # `./`-referenced workflows and actions come from the caller's own commit, so a pull
 # request that changes this file, the composite and `ci.yaml` together is tested as one
@@ -42,6 +45,14 @@ on:
         description: Whether THIS cell uploads coverage for both packages.
         type: boolean
         default: false
+      pytest-workers:
+        # pytest-xdist's `-n` for the four suites that take minutes; ub-project's and
+        # sphinx-ai-index's take seconds, which the workers' start-up would eat, and run
+        # serially everywhere. `0` is xdist's own "no workers": the suite runs in the pytest
+        # process, in collection order, which is how ci.yaml keeps one cell serial
+        description: "pytest-xdist's `-n` for the sphinx-mounts, sphinx-codelinks, sphinx-test-reports and ub-test-reports suites; `0` runs them serially."
+        type: string
+        default: "4"
     secrets:
       CODECOV_TOKEN:
         description: Read only by the upload steps, on this repository's own pull requests and on pushes to master.
@@ -103,7 +114,20 @@ jobs:
       # first and both uploads would carry the same numbers under different flags.
       - name: "sphinx-mounts: pytest"
         # `-m "not bazel"` deselects the two tests the `bazel` job owns
-        run: uv run --no-sync pytest -v packages/sphinx-mounts/tests -m "not bazel" --durations=25 --cov=sphinx_mounts --cov-report=xml:mounts.xml --cov-report=term-missing
+        #
+        # `-n`, here and on the next three suites: four workers by default, the runner's core
+        # count, as in the Needs cells. Measured locally in this step's own form, coverage
+        # on, three runs each (medians): sphinx-codelinks 94 s -> 30 s, sphinx-mounts
+        # 42 -> 18, sphinx-test-reports 39 -> 14, ub-test-reports 15.5 -> 6.3, every run green
+        # with the serial counts and the same coverage totals. Serially the Windows cell pays
+        # about 2.4x ubuntu on every suite; the Needs cells, at `-n 4`, pay 1.0-1.3x -- the
+        # workers overlap the platform's per-file and per-process latency. The suites had
+        # three hazards under it, all fixed, all sphinx-codelinks tests writing at one path
+        # in the checkout: `output/` and `invalid_objs.json` in the CWD, and a Sphinx
+        # `_build` under the in-tree `tests/data/sphinx`. The first also showed a race in
+        # `codelinks analyse` itself -- two runs creating its output directory -- fixed with
+        # it. The job's last step fails on the next such test
+        run: uv run --no-sync pytest -v packages/sphinx-mounts/tests -m "not bazel" -n ${{ inputs.pytest-workers }} --durations=25 --cov=sphinx_mounts --cov-report=xml:mounts.xml --cov-report=term-missing
       - name: "sphinx-mounts: upload to Codecov"
         # dependabot PRs get no secrets; without a token the upload fails and takes the required `check` gate with it.
         # A push to master uploads too. The fork guard below (#1229, 2024-08) had no push case, so no master commit
@@ -120,9 +144,11 @@ jobs:
           files: ./mounts.xml # `file` was renamed to `files` in codecov-action v5
           fail_ci_if_error: ${{ github.event_name == 'pull_request' }}
       - name: "sphinx-codelinks: pytest"
-        # `!cancelled()` and not the default `success()`: this suite is 20 seconds and the
-        # one above is minutes, so letting a sphinx-mounts failure hide it would mean a
-        # second push to learn a second fact. The job is still red either way.
+        # `!cancelled()` and not the default `success()`: letting a sphinx-mounts failure
+        # hide this suite would mean a second push to learn a second fact. The job is still
+        # red either way. This once rested on this suite being 20 seconds and the one above
+        # minutes; it is now the largest step in the job (1051 tests), and the argument is
+        # truer for it: the suites are the same order of magnitude.
         #
         # But `!cancelled()` ALONE would also run it when `prepare-cell` failed -- and then
         # there is no environment, `uv run --no-sync` silently CREATES an empty one, and
@@ -138,7 +164,9 @@ jobs:
         # that fix this suite passed only from `packages/sphinx-codelinks`, and a
         # `working-directory:` here would also have moved where `--cov-report` writes
         if: ${{ !cancelled() && steps.prepare.outcome == 'success' }}
-        run: uv run --no-sync pytest -v packages/sphinx-codelinks/tests --durations=25 --cov=sphinx_codelinks --cov-report=xml:codelinks.xml --cov-report=term-missing
+        #
+        # `-n`: see the sphinx-mounts step
+        run: uv run --no-sync pytest -v packages/sphinx-codelinks/tests -n ${{ inputs.pytest-workers }} --durations=25 --cov=sphinx_codelinks --cov-report=xml:codelinks.xml --cov-report=term-missing
       - name: "sphinx-codelinks: upload to Codecov"
         if: inputs.upload-coverage && github.repository == 'useblocks/sphinx-needs' && github.actor != 'dependabot[bot]' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         uses: codecov/codecov-action@v7
@@ -158,9 +186,9 @@ jobs:
         # under `sphinxcontrib/test_reports/` are exercised by the suite but not counted.
         # This cell needs no new tool: nothing in this
         # suite renders a diagram, so neither the graphviz nor the PlantUML the cell
-        # already installs for sphinx-mounts is for it.
+        # already installs for sphinx-mounts is for it. `-n`: see the sphinx-mounts step
         if: ${{ !cancelled() && steps.prepare.outcome == 'success' }}
-        run: uv run --no-sync pytest -v packages/sphinx-test-reports/tests --durations=25 --cov=sphinx_test_reports --cov-report=xml:reports.xml --cov-report=term-missing
+        run: uv run --no-sync pytest -v packages/sphinx-test-reports/tests -n ${{ inputs.pytest-workers }} --durations=25 --cov=sphinx_test_reports --cov-report=xml:reports.xml --cov-report=term-missing
       - name: "sphinx-test-reports: upload to Codecov"
         if: inputs.upload-coverage && github.repository == 'useblocks/sphinx-needs' && github.actor != 'dependabot[bot]' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         uses: codecov/codecov-action@v7
@@ -176,9 +204,9 @@ jobs:
         # Windows above all, where the converter's path handling and the plugin's source
         # locations are the platform-sensitive part -- and for coverage under a flag of its
         # own; `toolchain-free` in ci.yaml stays the run that proves it imports no Sphinx.
-        # Same `if:` as the steps above
+        # Same `if:` as the steps above; `-n`: see the sphinx-mounts step
         if: ${{ !cancelled() && steps.prepare.outcome == 'success' }}
-        run: uv run --no-sync pytest -v packages/ub-test-reports/tests --cov=ub_test_reports --cov-report=xml:ub-test-reports.xml --cov-report=term-missing
+        run: uv run --no-sync pytest -v packages/ub-test-reports/tests -n ${{ inputs.pytest-workers }} --cov=ub_test_reports --cov-report=xml:ub-test-reports.xml --cov-report=term-missing
       - name: "ub-test-reports: upload to Codecov"
         if: inputs.upload-coverage && github.repository == 'useblocks/sphinx-needs' && github.actor != 'dependabot[bot]' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         uses: codecov/codecov-action@v7
@@ -215,3 +243,39 @@ jobs:
           flags: ai-index
           files: ./ai-index.xml
           fail_ci_if_error: ${{ github.event_name == 'pull_request' }}
+      - name: Check the suites wrote nothing into the checkout
+        # What `-n` exposes is a test that writes at a fixed path inside the checkout: two
+        # workers meet there, and the failure is a rare race rather than a red step. The root
+        # `.gitignore` HIDES such a write (`output/` is ignored), so `--ignored` is what makes
+        # this step see it, and the step fails on the FIRST run of such a test instead of
+        # waiting for the race to fire. A suite that modifies a tracked file fails it too.
+        #
+        # `--ignored=traditional --untracked-files=normal` lists an ignored or untracked
+        # directory as one line (`!! output/`), not every file under it: the same verdict,
+        # and a short listing. The allowlist is what the cell itself creates -- measured
+        # locally, and for the codecov entry read from the action's own script -- and
+        # anything else is printed as an error. git prints `/`-separated paths on Windows
+        # too, so the same script runs there. Same `if:` as the suites
+        if: ${{ !cancelled() && steps.prepare.outcome == 'success' }}
+        shell: bash
+        run: |
+          allowed=(
+            '\.venv/'                 # the cell's `uv sync`
+            '\.pytest_cache/'         # pytest's cache, at the rootdir
+            '(.+/)?__pycache__/'      # bytecode, beside every imported module
+            '\.coverage'              # pytest-cov's data file
+            '\.coverage\..+'          # a worker's data file, if one is left uncombined
+            '(mounts|codelinks|reports|ub-test-reports|ai-index)\.xml'  # the `--cov-report=xml:` files
+            '\.hypothesis/'           # sphinx-ai-index's example database
+            'codecov(\.SHA256SUM(\.sig)?)?'  # the upload steps' CLI, which codecov-action downloads into the CWD (`cleanup: false`)
+          )
+          pattern="^(!!|\?\?) ($(IFS='|'; echo "${allowed[*]}"))\$"
+          listing="$(git status --porcelain --ignored=traditional --untracked-files=normal)"
+          offending="$(grep -v -E "$pattern" <<<"$listing" || true)"
+          if [ -n "$offending" ]; then
+            while IFS= read -r line; do
+              echo "::error::a suite wrote into the checkout: $line"
+            done <<<"$offending"
+            exit 1
+          fi
+          echo "the checkout holds nothing the suites wrote"
