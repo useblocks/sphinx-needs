@@ -13,7 +13,7 @@ from docutils.parsers.rst import directives
 from requests_file import FileAdapter
 from sphinx.util.docutils import SphinxDirective
 
-from sphinx_needs import exchange
+import ub_needs_exchange as exchange
 from sphinx_needs.api import InvalidNeedException, ingest_need_record
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
