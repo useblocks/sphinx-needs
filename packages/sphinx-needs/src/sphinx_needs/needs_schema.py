@@ -562,16 +562,13 @@ def _describe_derived(
 ) -> str:
     """The rules of a derived field, as messages name them.
 
-    The field's ``derive`` when the configuration declares no ``derive_by_type`` (the
-    markers of a ``derive`` cycling on some types are not declared entries), else
-    ``by need type``.
+    The field's ``derive`` unless the configuration declares a ``derive_by_type``
+    entry (an unreadable table declares none, and the markers of a ``derive`` cycling
+    on some types are not declared entries), else ``by need type``.
     """
-    declared = derive_by_type is not None and (
-        not derive_by_type
-        or any(
-            not (isinstance(rule, DeriveInvalid) and rule.fallback)
-            for rule in derive_by_type.values()
-        )
+    declared = any(
+        not (isinstance(rule, DeriveInvalid) and rule.fallback)
+        for rule in (derive_by_type or {}).values()
     )
     if derive is not None and not declared:
         return derive.describe()

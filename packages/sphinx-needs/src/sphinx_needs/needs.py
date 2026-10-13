@@ -8,7 +8,7 @@ from copy import deepcopy
 from itertools import chain
 from pathlib import Path
 from timeit import default_timer as timer  # Used for timing measurements
-from typing import Any, TypedDict, TypeVar, cast
+from typing import Any, Literal, TypedDict, TypeVar, cast
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -1869,7 +1869,8 @@ def _report_derive_problems(
 
 def _with_table_text(schema: FieldsSchema, problem: DeriveProblem) -> DeriveProblem:
     """A finding of an unreadable ``derive_by_type`` table, saying what the needs use:
-    the ``derive`` beside it when it stands (once checked), else no rule."""
+    the ``derive`` beside it where it stands once checked (on every type, or but those
+    it cycles on), else no rule."""
     if problem.part != "derive_by_type":
         return problem
     target = (
@@ -1877,7 +1878,10 @@ def _with_table_text(schema: FieldsSchema, problem: DeriveProblem) -> DeriveProb
         if problem.on_link
         else schema.get_extra_field(problem.name)
     )
-    uses_derive = target is not None and isinstance(target.derive, DeriveRule)
+    uses_derive: Literal["every", "uncycled", "none"] = "none"
+    if target is not None and isinstance(target.derive, DeriveRule):
+        # the markers of a derive cycling on some types are its only entries here
+        uses_derive = "uncycled" if target.derive_by_type else "every"
     return dataclasses.replace(
         problem,
         message=by_type_message(

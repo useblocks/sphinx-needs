@@ -21,7 +21,7 @@ from sphinx.environment import BuildEnvironment
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
 from sphinx_needs.logging import get_logger, log_warning
-from sphinx_needs.need_item import NeedItem
+from sphinx_needs.need_item import NeedItem, _link_natural_sort_key
 from sphinx_needs.needs_schema import FieldLiteralValue, FieldsSchema
 
 log = get_logger(__name__)
@@ -77,7 +77,11 @@ def generate_needs_schema(
             "field_type": "links",
             # a link type derived by type alone: the links of a need type without a
             # rule (its literal default); any other link type: none
-            "default": [li.to_link_string() for li in link.off_type_value()]
+            "default": [
+                li.to_link_string()
+                # in the order the export writes a link list
+                for li in sorted(set(link.off_type_value()), key=_link_natural_sort_key)
+            ]
             if link.derive is None and link.derive_by_type is not None
             else [],
         }
