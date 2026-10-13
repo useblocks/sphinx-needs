@@ -2835,7 +2835,7 @@ field = "status"
 
 [[case]]
 name = "by-type-declared-cycle-per-type"
-why = "a load-time cycle of own-field reads is per need type: cyc_a's derive and cyc_b's req rule read each other on req needs only, so both are reported (cyc_a's naming the type) and hold their empty value on req, while on spec cyc_b is off-type (null) and cyc_a computes from it"
+why = "a load-time cycle of own-field reads is per need type: cyc_a's derive and cyc_b's req rule read each other on req needs only, so both are reported (cyc_a's naming the type) and hold their empty value on req, while on spec cyc_b is off-type (its default) and cyc_a computes from it"
 config = '''
 [needs.fields.cyc_a]
 schema = { type = "string" }
@@ -2843,6 +2843,7 @@ derive = { kind = "copy", field = "cyc_b" }
 
 [needs.fields.cyc_b]
 schema = { type = "string" }
+default = "off"
 derive_by_type.req = { kind = "copy", field = "cyc_a" }
 
 [needs.fields.label]
@@ -2866,9 +2867,10 @@ source = '''
 label = "from req"
 [case.expect.needs.SPEC_1]
 label = "B"
+cyc_a = "off"
+cyc_b = "off"
 [case.expect.nulls]
 REQ_1 = ["cyc_a", "cyc_b"]
-SPEC_1 = ["cyc_a", "cyc_b"]
 [[case.expect.findings]]
 code = "derive_invalid"
 field = "cyc_a"
