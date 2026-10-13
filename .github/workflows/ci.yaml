@@ -362,8 +362,9 @@ jobs:
       # That cell because it is the fastest (4.5 min serial in run 38399647972), under the
       # Needs Windows cells, so its serial run costs nothing on the critical path. The
       # expression names the `4` for the other cells too: a `with:` entry cannot be left out
-      # for one matrix cell
-      pytest-workers: ${{ (matrix.os == 'ubuntu-latest' && matrix.sphinx-group == 'sphinx-8') && '0' || '4' }}
+      # for one matrix cell. The condition is negated so that `'4'` is the `&&` branch: in
+      # `a && b || c` a falsy `b` yields `c`, and `'0'` must not depend on its own truthiness
+      pytest-workers: ${{ (matrix.os != 'ubuntu-latest' || matrix.sphinx-group != 'sphinx-8') && '4' || '0' }}
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
