@@ -3,8 +3,12 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:0.3.0`:
+
+0.3.0
+-----
+
+:Released: 2026-10-14
 
 - **Python 3.11 is supported again**: the floor moves down from 3.12 to 3.11, so
   sphinx-mounts can be used from the same environment as the other useblocks Sphinx
