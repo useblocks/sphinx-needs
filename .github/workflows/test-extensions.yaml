@@ -42,7 +42,7 @@ on:
         type: string
         required: true
       upload-coverage:
-        description: Whether THIS cell uploads coverage for both packages.
+        description: Whether THIS cell uploads coverage, for every package whose step has an upload.
         type: boolean
         default: false
       pytest-workers:
