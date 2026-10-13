@@ -5,9 +5,9 @@ description: The renderer installs, the cell sync and the fences that guard them
 #
 # `test-package.yaml` runs ONE suite with ONE codecov upload, deliberately: `workflow_call`
 # inputs are scalars, a job's steps cannot be generated from data, and folding a second
-# suite in would need an input that switches the body. `test-extensions.yaml` runs two
-# suites in one job because the extensions share a cell and their suites are short. Neither
-# can be expressed as the other -- but the eight steps before the first `pytest` are the
+# suite in would need an input that switches the body. `test-extensions.yaml` runs every
+# extension package's suite in one job because the extensions share a cell. Neither can be
+# expressed as the other -- but the eight steps before the first `pytest` are the
 # same in both, and copying them would restore exactly the duplication #1864 removed.
 #
 # A composite action is what holds steps that are not a whole job. What it CANNOT hold

@@ -17,7 +17,7 @@ name: Test a package
 # here: folding them in would need an input that switches the body, which is how a
 # reusable workflow turns into a scripting language. `test-extensions.yaml` is the one
 # exception and it is a SECOND unit rather than an input on this one, for the same
-# reason: it runs two suites in one job. What the two units genuinely share -- everything
+# reason: it runs several suites in one job. What the two units genuinely share -- everything
 # from the renderer installs to the sphinx-series fence -- is
 # `.github/actions/prepare-cell`, so neither holds a copy of it.
 #
