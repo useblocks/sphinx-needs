@@ -1031,7 +1031,8 @@ def join_values(value: Any) -> list[str]:
 class _JoinIndex:
     """Every need by the values of one field (:func:`join_values`).
 
-    :ivar ids: Each value, with the ids of the needs holding it, in need-id order.
+    :ivar ids: Each value, with the ids of the needs holding it, as the needs come
+        (:func:`join_matches` takes each match once, in need-id order).
     :ivar pending: The needs whose field was not computed yet when the index was
         built (by your own function, which runs after every rule of the stratum).
     """
@@ -1046,14 +1047,12 @@ def _join_index(
     """Index every need by the values of ``field``."""
     ids: dict[str, list[str]] = {}
     pending: list[str] = []
-    for need_id in sorted(needs):
+    # neither the order nor a need listed twice matters: join_matches sorts a set
+    for need_id, candidate in needs.items():
         if reads is not None and reads.is_pending(need_id, field):
             pending.append(need_id)
-        for value in join_values(needs[need_id].get(field)):
-            holders = ids.setdefault(value, [])
-            # a need holding a value twice is listed once
-            if not holders or holders[-1] != need_id:
-                holders.append(need_id)
+        for value in join_values(candidate.get(field)):
+            ids.setdefault(value, []).append(need_id)
     return _JoinIndex(ids, tuple(pending))
 
 
