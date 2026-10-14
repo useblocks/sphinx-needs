@@ -36,7 +36,7 @@ Improvements
   ``copy``'s ``from`` / ``over`` / ``join`` and ``select`` texts).
 
 - 👌 A link type that computes more links than :ref:`needs_derive_max_links_per_need` (default ``100``)
-  per need of the project is reported once, as the warning ``needs.derive_dense`` (:issue:`2202`, :pr:`NNNN`)
+  per need of the project is reported once, as the warning ``needs.derive_dense`` (:issue:`2202`, :pr:`2258`)
 
   The links a ``links`` or ``content_links`` rule computes are counted, or, on a link type without
   one, those its ``links_from_filter``, ``links_from_content`` and ``links_from_match`` calls compute;
