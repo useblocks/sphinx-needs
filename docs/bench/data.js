@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791978703870,
+  "lastUpdate": 1791979323546,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -24732,6 +24732,42 @@ window.BENCHMARK_DATA = {
             "value": 56.66090426799997,
             "unit": "s",
             "extra": "Commit: 8c3fd018e4e287006245f8fbf4a69722918e1e6e\nBranch: master\nTime: 2026-10-14T13:50:19+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "05b4fd2d9fc8cff53ff6c66203a76d45951f59e1",
+          "message": "✨ sphinx-needs: the join role — links and copy over the needs that match (#2228)\n\nA derive rule can now match needs by value. `join = { field, equals }`\non a `links` or `copy` rule makes its candidates\nthe needs whose `field` equals one of this need's `equals` values — the\ncorrelated lookup that 9.0.0 reserved, and that\nsphinx-test-reports' `tr_link` computes for one need at a time.\n`links_from_match` is its inline spelling.\n\n## What a user gets\n\n```toml\n[needs.fields.case_name]\nschema = { type = \"string\" }\n\n[needs.fields.test_case]\nschema = { type = \"string\" }\n\n[needs.fields.owner]\nschema = { type = \"string\" }\n\n[needs.links.covers]\nderive = { kind = \"links\", join = { field = \"case_name\", equals = \"test_case\" } }\n\n[needs.fields.owners]\nschema = { type = \"array\", items = { type = \"string\" } }\nderive = { kind = \"copy\", field = \"owner\", join = { field = \"case_name\", equals = \"test_case\" }, select = \"list\" }\n```\n\nWith specs `SPEC_LOGIN` (`case_name: login`, owner alice),\n`SPEC_REMEMBER` (`login, remember`) and `SPEC_LOGOUT`\n(`logout`, owner bob), a test with `test_case: login, logout` covers\n`SPEC_LOGIN`, `SPEC_LOGOUT` and `SPEC_REMEMBER`, and\nits `owners` are `[\"alice\", \"bob\"]` (built from the docs example).\n\n## How it behaves\n\n- **The match:** both fields are read the same way — a string split on\n`,` and each value stripped, an array by item —\n  and a need matches when the two share a value, compared exactly.\n- **Candidates:** each matching need once, in need-id order; the need\nitself only with `include_self = true`; needs only,\n  never parts.\n- **`links`** links them, narrowed by `where` if given (it now requires\n`where` or `join`); **`copy`** reads them as over\na link type, `select` included, and takes one of `from`, `over` and\n`join`.\n- **Order:** a copy-join waits for the needs computing its fields; a\nlinks-join on a field computed after the link\nfields is out of scope (`needs.derive_scope`); a copy-join reading its\nown result is a cycle, and one whose `equals`\n  reads its own field back is refused at load.\n- **Refusals** (`needs.derive_invalid`): a `join` that is not a table of\n`field` and `equals`, a name that is no field,\na link type, a number or boolean field, `include_parts` beside it, and\nthe kinds that do not take it. Three existing\ntexts changed their words with it (`links` \"requires the role 'where' or\n'join'\", `copy`'s `from`/`over`/`join` and\n  `select`).\n- **Cost:** the needs are indexed by the field once for the link fields\nand once for the other fields (and once more\nfor the rules computed last), shared by every rule and call on it: +2.2\ns over the static build at 20 000 needs\n  (`perf/log-fr1-*`), where `tr_link` costs +94 s.\n\n## `links_from_match`\n\n`[[links_from_match(\"case_name\", \"test_case\")]]` links the same needs\nfrom one need; `filter` works as in\n`links_from_filter`, and a field that is not text fails the call, naming\nit. The nearest spelling of sphinx-test-reports'\n`tr_link(test_option, target_option)` is\n`links_from_match(target_option, test_option, include_self=True)` — the\narguments swapped. `tr_link` links a need once per value that matches\nit, in the order the project holds the needs,\ncompares each need's `target_option` whole (so an array, a number or a\ncomma-separated value never matches, and an unstripped one\nonly as written), and fails when this need's `test_option` is an array\nor a number; `links_from_match` reads both sides\nby value and fails the call on a number or boolean field. `tr_link`\nitself is unchanged here (its deprecation is a\nseparate sphinx-test-reports PR).\n\n## Conformance corpus\n\n`join-reserved` is replaced by eleven `join-*` cases (53 → 63): the\nmatch on both sides, self and order, needs only,\n`where`, `copy` + `select`, strata, cycles, the invalid shapes, the\n`tr_link` usage declared, and the inline spelling.\nubCode follows in a twin PR (useblocks/ubcode#4081), re-vendoring the\nfile.\n\n## Changelog, versioning\n\nAn `Unreleased` section (9.1.0) carries the feature. `ENV_DATA_VERSION`\nis 12, so after the upgrade a page whose\nsource did not change is re-written too, and shows a join that 9.0.0\nrefused, or a `links_from_match` it did not know.\n\n`uv run poe lint`, `uv run poe typecheck`, the full sphinx-needs suite,\nthe sphinx-test-reports suite and the docs build\n(no warnings) are green.\n\nCloses #2224",
+          "timestamp": "2026-10-14T14:00:34+02:00",
+          "tree_id": "3a91b79f620def47039e08c0f1ba4e09393e4e98",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/05b4fd2d9fc8cff53ff6c66203a76d45951f59e1"
+        },
+        "date": 1791979314708,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.10944187599999822,
+            "unit": "s",
+            "extra": "Commit: 05b4fd2d9fc8cff53ff6c66203a76d45951f59e1\nBranch: master\nTime: 2026-10-14T14:00:34+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 57.851865692000004,
+            "unit": "s",
+            "extra": "Commit: 05b4fd2d9fc8cff53ff6c66203a76d45951f59e1\nBranch: master\nTime: 2026-10-14T14:00:34+02:00"
           }
         ]
       }
