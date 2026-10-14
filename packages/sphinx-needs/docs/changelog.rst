@@ -11,7 +11,7 @@ Improvements
 ............
 
 - ✨ The :ref:`join <needs_derive_join>` role of a derive rule, reserved in 9.0.0, and its inline
-  spelling, the dynamic function :ref:`links_from_match` (:issue:`2224`, :pr:`PR`)
+  spelling, the dynamic function :ref:`links_from_match` (:issue:`2224`, :pr:`2228`)
 
   ``join = { field = "case_name", equals = "test_case" }`` on a ``links`` or ``copy`` rule makes its
   candidates the needs whose ``case_name`` equals one of the need's own ``test_case`` values: both are
@@ -35,7 +35,7 @@ Internal changes
 
 - 🔧 ``ENV_DATA_VERSION`` is 12: the first build after upgrading re-reads every document, so a
   ``join`` rule that 9.0.0 refused, and a ``links_from_match`` it did not know, are shown on the
-  pages whose sources did not change too (:pr:`PR`)
+  pages whose sources did not change too (:pr:`2228`)
 
 .. _`release:9.0.0`:
 
