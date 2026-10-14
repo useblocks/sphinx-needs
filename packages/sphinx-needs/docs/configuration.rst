@@ -721,17 +721,20 @@ and its ``owners`` are ``["alice", "bob"]``; a spec, which has no ``test_case``,
   A ``copy`` whose ``equals`` is its own field, or reads it back through other rules, can be computed on no need,
   and is reported when the configuration is read;
   one whose ``field`` is its own field reads its own result on every need, a cycle (``needs.derive_cycle``).
-  The needs are indexed by ``field`` once per step, so a join costs one pass over the needs,
+  The needs are indexed by ``field`` once for the link fields and once for the other fields
+  (and once more for the rules computed last), shared by every rule and call on it,
   however many needs hold the rule.
 
 The inline spelling is :ref:`links_from_match`:
 ``[[links_from_match("case_name", "test_case")]]`` in a link field of ``TEST_SESSION`` links the same needs.
-sphinx-test-reports' ``tr_link(test_option, target_option)`` is
+The nearest declared form of sphinx-test-reports' ``tr_link(test_option, target_option)`` is
 ``join = { field = "<target_option>", equals = "<test_option>" }`` with ``include_self = true``,
 or inline ``[[links_from_match("<target_option>", "<test_option>", include_self=True)]]``:
 the arguments come in the swapped order, the field read on every need first.
-The two differ where ``tr_link`` links a need once per value that matches it, in the order the project holds the needs,
-compares each need's ``target_option`` whole, without splitting it, and fails on an array.
+``tr_link`` links a need once per value that matches it, in the order the project holds the needs,
+compares each need's ``target_option`` whole (so an array or a comma-separated value never matches,
+and an unstripped one only as written), and fails when this need's ``test_option`` is an array or a number;
+``links_from_match`` reads both sides by value and fails the call on a number or boolean field.
 
 .. _`needs_derive_by_type`:
 

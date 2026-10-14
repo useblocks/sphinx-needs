@@ -92,7 +92,8 @@ The ``join`` role (:ref:`needs_derive_join`) spells such a correlated lookup, as
 and :ref:`links_from_match` is its inline spelling.
 A ``copy("x", filter=…)`` whose filter compares a need with ``current_need`` (``name == current_need['ref']``)
 is such a lookup too, its filter tested on every need for each need it is in:
-a ``copy`` with ``join`` declares it, and computes it from one index of the needs per step.
+a ``copy`` with ``join`` is the declared form of such a lookup (it splits the values,
+and finds no value rather than this need's own when nothing matches).
 A rule for some need types is declared under ``derive_by_type`` (:ref:`needs_derive_by_type`), not with a role.
 
 .. _dynamic_functions:
