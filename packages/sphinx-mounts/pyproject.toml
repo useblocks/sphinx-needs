@@ -32,6 +32,7 @@ classifiers = [
   "Topic :: Documentation",
   "Topic :: Documentation :: Sphinx",
   "Topic :: Software Development :: Documentation",
+  "Typing :: Typed",
 ]
 
 # The member's own extra. The root re-exports it as `docs-mounts` -- uv resolves
@@ -56,9 +57,9 @@ Changelog = "https://github.com/useblocks/sphinx-needs/blob/master/packages/sphi
 requires = ["flit_core >=3.4,<5"]
 build-backend = "flit_core.buildapi"
 
-# Deliberately NO `[tool.flit.sdist]`: this wheel and sdist carry no non-Python payload, so
-# flit's module-only sdist is exactly what is already published on PyPI and nothing
-# downstream builds from it (unlike sphinx-needs, whose sdist conda-forge consumes).
+# Deliberately NO `[tool.flit.sdist]`: this wheel and sdist carry nothing outside the module
+# (its `py.typed` marker included, which flit ships as part of it), so flit's module-only
+# sdist is the shape already published on PyPI and nothing downstream builds from it (unlike sphinx-needs, whose sdist conda-forge consumes).
 # Everything else -- ruff, ty, pytest and the dependency groups -- is the ROOT's, and
 # `tools/src/sn_tools/check_workspace.py` refuses those tables here: a member `[tool.ruff]`
 # does not extend the root's configuration, it replaces it.
