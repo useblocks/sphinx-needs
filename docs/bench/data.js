@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791987684518,
+  "lastUpdate": 1791989392963,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -24948,6 +24948,42 @@ window.BENCHMARK_DATA = {
             "value": 55.126505866,
             "unit": "s",
             "extra": "Commit: a2e696c0e146331c4a29161cbd6447534529265a\nBranch: master\nTime: 2026-10-14T16:19:52+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c3714f99153567aec8dbf73fd117d4ad3229695c",
+          "message": "🏷️ ruff ANN on shipped code: every function annotated (#2242)\n\n## What\n\nTurns on ruff's `ANN` rules (missing type annotations) for shipped code\nand CI scripts, and adds the 113 annotations they asked for:\n\n| Where | Annotations |\n|---|---|\n| `packages/sphinx-test-reports/src` | 55 |\n| `packages/ub-test-reports/src` | 27 |\n| `.github/scripts` | 13 |\n| `packages/sphinx-needs/src` | 7 |\n| `packages/sphinx-needs-testkit/src` | 7 |\n| `packages/sphinx-mounts/src` | 4 |\n\nConfiguration in the root `pyproject.toml`:\n- `ANN401` (an explicit `Any`) is ignored. Writing `Any` is a deliberate\nchoice, and removing those is a separate piece of work (#1835).\n- `flake8-annotations.mypy-init-return = true`: an `__init__` with an\nannotated parameter needs no `-> None`, as under mypy.\n- Per-file ignores exempt `packages/*/tests/**`, `packages/*/docs/**`,\n`packages/sphinx-needs/performance/**` and `tools/tests/**`. The\nper-file comment is updated to say a test-wide glob is right only for a\nrule about shipped code, like this one.\n\nNotable changes in the code:\n- **sphinx-needs:** `setup()` declares its types. The internal `profile`\ndecorator is typed with a `ParamSpec`, so the function it wraps keeps\nits signature. This was left over from #1725.\n- **sphinx-test-reports:** `tr_link` takes the types of sphinx-needs'\n`DynamicFunction` protocol, imported only for type checking. **One\nbehaviour change:** a call with no need now raises `ValueError` instead\nof reaching `None.get`. sphinx-needs reports either as the function's\nerror, so the call still fails, but with a clearer message.\n- **`.github/scripts`:** annotating `workspace_members() -> list[str]`\nlet an `Any` from `tomllib` reach the return. The\n`unsound-return-statement` rule that #2241 turned on for this path\ncaught it, and declaring the list's type fixes it.\n\n## Why\n\nty has no equivalent of mypy's `disallow_untyped_defs`. It treats an\nunannotated parameter as `Unknown`, and nothing passing through it is\nchecked. `mypy --strict` used to enforce annotations here, and this\nrestores that. It is the next step of #1835 after #2241.\n\n## Tests\n\nNo new tests: apart from `tr_link`'s error message, this changes\nannotations only. Run on this branch:\n\n| Check | Result |\n|---|---|\n| `uv run poe lint` | passes |\n| `uv run poe typecheck` | passes; no `# ty: ignore` was added |\n| `test-needs -n 4` | 2876 passed |\n| `test-mounts -n 4` | 960 passed |\n| `test-reports -n 4` | 462 passed |\n| `test-ub-test-reports -n 4` | 458 passed, 2 skipped (both skip because\nthe session runs as root) |\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue. *(Written by Claude Code at a\nmaintainer's request.)*\n- [x] I ran the package's tests (`uv run poe test-<package>`) and they\npass.\n- [x] Documentation is updated where behaviour or options change. *(No\nuser-facing options change.)*\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*. *(sphinx-needs, under Internal changes.)*\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-14T16:48:19+02:00",
+          "tree_id": "5b7f7e5aa18b664ffcadcc53116d4cbe535b6f19",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/c3714f99153567aec8dbf73fd117d4ad3229695c"
+        },
+        "date": 1791989383115,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.12955454199999394,
+            "unit": "s",
+            "extra": "Commit: c3714f99153567aec8dbf73fd117d4ad3229695c\nBranch: master\nTime: 2026-10-14T16:48:19+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.24198347999999,
+            "unit": "s",
+            "extra": "Commit: c3714f99153567aec8dbf73fd117d4ad3229695c\nBranch: master\nTime: 2026-10-14T16:48:19+02:00"
           }
         ]
       }
