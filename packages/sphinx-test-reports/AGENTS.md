@@ -178,8 +178,8 @@ Recorded here because none of it is visible in a diff:
 The docs used `sphinx_immaterial` and a vendored copy of the old `useblocks-theme`
 repository (`docs/ub_theme/`, with its own jQuery) until they converged on furo with the
 rest of the workspace (#1935). They now load the shared look from `docs-theme/` at the
-repository root; `docs/_static/test-reports.css` holds the one rule only this site needs,
-the height cap on its portrait logo.
+repository root, with a wordmark logo pair like the other sites' (the portrait
+`sphinx-test-reports-logo.svg` stays as the source of the `.png` the README shows).
 
 ## History
 
