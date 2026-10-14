@@ -2007,6 +2007,7 @@ needs_fields = {
             "kind": "copy",
             "field": "owner",
             "join": {"field": "late_key", "equals": "ref"},
+            "after": "derived",
         }
     },
     "loop": {
@@ -2017,6 +2018,7 @@ needs_fields = {
         }
     },
     "o_user": {
+        "schema": {"type": "array", "items": {"type": "string"}},
         "derive_by_type": {
             "test": {
                 "kind": "copy",

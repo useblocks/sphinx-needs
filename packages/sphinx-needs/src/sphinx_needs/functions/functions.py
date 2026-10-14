@@ -324,13 +324,21 @@ class UnresolvedReads:
     Kept by the name read, in the order first read, each need named once per name.
 
     :param pending: The ``(need id, name)`` values of the pass not computed yet.
+    :param shared: What the calls of one step of the pass work out once and share
+        (the index of a join), or ``None`` outside the pass.
     """
 
-    __slots__ = ("_pending", "_reads")
+    __slots__ = ("_pending", "_reads", "shared")
 
-    def __init__(self, pending: Container[tuple[str, str]]) -> None:
+    def __init__(
+        self,
+        pending: Container[tuple[str, str]],
+        shared: dict[Any, Any] | None = None,
+    ) -> None:
         self._pending = pending
         self._reads: dict[str, dict[str, None]] = {}
+        #: what the calls of the step share, from one call to the next
+        self.shared = shared
 
     def note(self, name: str, need_id: str) -> None:
         """Record that ``name`` was read on the need ``need_id``, unconditionally.
@@ -353,6 +361,11 @@ class UnresolvedReads:
         # a built-in reads every candidate of a sum through here: kept to one lookup
         if isinstance(need, NeedItem) and (need.id, name) in self._pending:
             self.note(name, need.id)
+
+    def is_pending(self, need_id: str, name: str) -> bool:
+        """Whether the field or link ``name`` of the need ``need_id`` is computed in the
+        pass and not computed yet."""
+        return (need_id, name) in self._pending
 
     def reads(self) -> list[tuple[str, list[str]]]:
         """Return each name read, with the ids of the needs it was read on."""
@@ -455,11 +468,16 @@ def _through_clause(through: tuple[Column, Reason] | None) -> str:
     if through is None:
         return ""
     column, reason = through
+    # it imports this module
+    from sphinx_needs.functions.order import JoinRead
+
     if isinstance(reason, tuple):
         return (
             f", through its {reason[1]}, which are computed in the same step, "
             "so every need is a candidate"
         )
+    if isinstance(reason, JoinRead):
+        return f", through the join on {column.field!r}"
     if reason is not None:
         return (
             f", through the filter {reason!r}, which names a computed field, "
@@ -553,6 +571,9 @@ class _Pass:
         #: what the derive rules compute once per pass (the components of a
         #: ``transitive`` rule's links), shared by the needs
         self.rule_cache: dict[Any, Any] = {}
+        #: what the calls compute once per stratum (the index of a join's field, built
+        #: from the values final in it), shared by the needs
+        self.stratum_cache: dict[Any, Any] = {}
         #: the ``(need id, name)`` values not computed yet, a name being the field's,
         #: or ``parent_need`` for a computed ``parent_needs``
         self.pending: set[tuple[str, str]] = set(project.nodes)
@@ -632,7 +653,7 @@ class _ReadsContext:
 
     def record(self) -> UnresolvedReads:
         """A new record, for one call or ``<<…>>`` variant."""
-        return UnresolvedReads(self.pass_.pending)
+        return UnresolvedReads(self.pass_.pending, self.pass_.stratum_cache)
 
     def report(
         self,
@@ -819,6 +840,8 @@ def _resolve_stratum(
     from sphinx_needs.functions.order import build_stratum, placeholder
 
     stratum = pass_.stratum = build_stratum(pass_.project, number)
+    # a value your own function computes is final only at the end of its stratum
+    pass_.stratum_cache = {}
     for step in stratum.steps:
         if step.cycle:
             for need_id, field in step.nodes:

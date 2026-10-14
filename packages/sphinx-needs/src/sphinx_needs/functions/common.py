@@ -12,6 +12,7 @@ import contextlib
 import hashlib
 import json
 from collections.abc import Callable, Collection, Iterable, Iterator, Mapping
+from dataclasses import dataclass
 from operator import itemgetter
 from typing import Any
 
@@ -798,6 +799,22 @@ def execute_rule(
     """
     config = NeedsSphinxConfig(app.config)
     link_fields = frozenset(schema.iter_link_field_names())
+    if rule.join is not None:
+        matched = join_matches(
+            need,
+            needs,
+            rule.join.field,
+            rule.join.equals,
+            include_self=rule.include_self,
+            reads=reads,
+        )
+        if rule.kind == "links":
+            return [
+                NeedLink(id=match["id"])
+                for match in matched
+                if _passes(match, rule.where, config, reads)
+            ]
+        return _rule_copy_over(need, matched, rule, field_schema, reads)
     if rule.kind == "links":
         return _rule_links(need, needs, rule, config, cache)
     if rule.kind == "content_links":
@@ -875,6 +892,90 @@ def execute_rule(
                         collected.append(value)
             return collected
     raise ValueError(f"unknown kind {rule.kind!r}")
+
+
+def join_values(value: Any) -> list[str]:
+    """The values a join compares a field by, on both sides of the join.
+
+    A string is split on ``,``; an array gives its string items, each one value (an
+    item is not split again); each value is stripped of whitespace (as Python's
+    ``str.strip()`` strips it) and an empty one dropped. Anything else (``None``, a
+    number, a boolean) gives none.
+    """
+    if isinstance(value, str):
+        items = value.split(",")
+    elif isinstance(value, list | tuple):
+        items = [item for item in value if isinstance(item, str)]
+    else:
+        return []
+    return [stripped for item in items if (stripped := item.strip())]
+
+
+@dataclass(frozen=True, slots=True)
+class _JoinIndex:
+    """Every need by the values of one field (:func:`join_values`).
+
+    :ivar ids: Each value, with the ids of the needs holding it, in need-id order.
+    :ivar pending: The needs whose field was not computed yet when the index was
+        built (by your own function, which runs after every rule of the step).
+    """
+
+    ids: dict[str, list[str]]
+    pending: tuple[str, ...]
+
+
+def _join_index(
+    needs: NeedsMutable | NeedsView, field: str, reads: UnresolvedReads | None
+) -> _JoinIndex:
+    """Index every need by the values of ``field``."""
+    ids: dict[str, list[str]] = {}
+    pending: list[str] = []
+    for need_id in sorted(needs):
+        if reads is not None and reads.is_pending(need_id, field):
+            pending.append(need_id)
+        for value in join_values(needs[need_id].get(field)):
+            holders = ids.setdefault(value, [])
+            # a need holding a value twice is listed once
+            if not holders or holders[-1] != need_id:
+                holders.append(need_id)
+    return _JoinIndex(ids, tuple(pending))
+
+
+def join_matches(
+    need: NeedItem | NeedPartItem,
+    needs: NeedsMutable | NeedsView,
+    field: str,
+    equals: str,
+    *,
+    include_self: bool,
+    reads: UnresolvedReads | None,
+) -> list[NeedItem]:
+    """The needs whose ``field`` shares a value with ``need``'s ``equals``.
+
+    Both sides are compared by :func:`join_values`; each need matched once, however many
+    values it shares, in need-id order (the ids compared as strings). Needs only: a
+    part is never one. ``need`` itself only with ``include_self``.
+
+    The index of ``field`` is built once per step of the pass, shared by every rule and
+    call of the step reading it (``reads.shared``); outside the pass, once per call.
+    """
+    shared = None if reads is None else reads.shared
+    key = ("join", field)
+    index: _JoinIndex | None = None if shared is None else shared.get(key)
+    if index is None:
+        index = _join_index(needs, field, reads)
+        if shared is not None:
+            shared[key] = index
+    if reads is not None:
+        reads.note_read(need, equals)
+        for need_id in index.pending:
+            reads.note_read(needs[need_id], field)
+    found: set[str] = set()
+    for value in join_values(need.get(equals)):
+        found.update(index.ids.get(value, ()))
+    if not include_self:
+        found.discard(need["id"])
+    return [needs[need_id] for need_id in sorted(found)]
 
 
 def over_candidates(

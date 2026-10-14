@@ -77,11 +77,21 @@ class Column:
 
 _Vertex = Node | Column
 
-Reason = str | Node | None
+
+@dataclass(frozen=True, slots=True)
+class JoinRead:
+    """Why a column is read on every need: a ``join`` (a derive rule's, or
+    ``links_from_match``'s) matches the reader's values against every need's."""
+
+
+#: the one :class:`JoinRead`
+JOIN_READ: Final = JoinRead()
+
+Reason = str | Node | JoinRead | None
 """Why a column is read on every need, not on the candidates of a filter: the filter
 that names a computed field; the node of the reader's own ``links``, computed in the
-same stratum, so which needs they name is not known before; or ``None``, a sum over
-every need (or over the candidates of its filter)."""
+same stratum, so which needs they name is not known before; a join (:data:`JOIN_READ`);
+or ``None``, a sum over every need (or over the candidates of its filter)."""
 
 #: the built-in functions, which the order knows the reads of, by their name
 BUILTINS: Final[Mapping[str, Callable[..., Any]]] = {
@@ -819,7 +829,9 @@ class _RuleReads(_CallReads):
     ``over`` reaches (``transitive``); the listed own ``fields`` (``hash``); every own
     name a fingerprint includes and does not ``exclude`` (``fingerprint``); the names
     of ``where`` on every need (``links``, through their columns) or on each need the
-    content references (``content_links``).
+    content references (``content_links``); for a ``join``, its ``equals`` on its own
+    need, and its ``field`` (with ``copy``'s ``field``, and ``where``'s names) on every
+    need, through their columns.
     """
 
     def read(self) -> None:
@@ -827,7 +839,16 @@ class _RuleReads(_CallReads):
         rule = self.call.rule
         where = self._names(rule.where)
         test = self._names(rule.test)
-        if rule.kind == "links":
+        if rule.join is not None:
+            # before an own copy's branch: a copy with a join reads more than its own
+            # field; which needs match is known only once the columns are final
+            self._read(self.need.id, rule.join.equals)
+            self._column(rule.join.field, None, JOIN_READ)
+            if rule.kind == "copy":
+                self._column(rule.field, None, JOIN_READ)
+            for name in sorted(where):
+                self._column(name, None, rule.where)
+        elif rule.kind == "links":
             for name in sorted(where):
                 self._column(name, None, rule.where)
         elif rule.kind == "content_links":
