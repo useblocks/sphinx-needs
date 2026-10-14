@@ -32,6 +32,7 @@ dependencies = [
   "sphinx-test-reports",
   "ub-test-reports",
   "ub-project",
+  "ub-needs-exchange",
   "sphinx-ai-index",
   "sphinx-needs-workspace-tools",
 ]
@@ -72,6 +73,7 @@ sphinx-codelinks = { workspace = true }
 sphinx-test-reports = { workspace = true }
 ub-test-reports = { workspace = true }
 ub-project = { workspace = true }
+ub-needs-exchange = { workspace = true }
 sphinx-ai-index = { workspace = true }
 sphinx-needs-workspace-tools = { workspace = true }
 sphinx-needs-testkit = { workspace = true }
@@ -294,6 +296,8 @@ src = [
   "packages/sphinx-needs-testkit/src",
   "packages/ub-project",
   "packages/ub-project/src",
+  "packages/ub-needs-exchange",
+  "packages/ub-needs-exchange/src",
   "packages/sphinx-ai-index",
   "packages/sphinx-ai-index/src",
 ]
@@ -364,6 +368,7 @@ include = [
   "packages/sphinx-test-reports/src",
   "packages/ub-test-reports/src",
   "packages/ub-project/src",
+  "packages/ub-needs-exchange/src",
   "packages/sphinx-ai-index/src",
   "tools/src",
   ".github/scripts",
@@ -766,6 +771,16 @@ help = "Run the ub-project suite; trailing args go to pytest"
 cmd = "pytest"
 cwd = "packages/ub-project"
 
+# ub-needs-exchange, the record of the needs.json format. Like ub-project's: the whole
+# distribution name, one task and no `-sphinxN` cells -- it depends on nothing but the
+# standard library, and the environment that matters is ci.yaml's `toolchain-free` job,
+# which runs this suite where Sphinx is not installed. No path is named, so
+# `poe test-ub-needs-exchange tests/test_reader.py` narrows the run rather than adding to it
+[tool.poe.tasks.test-ub-needs-exchange]
+help = "Run the ub-needs-exchange suite; trailing args go to pytest"
+cmd = "pytest"
+cwd = "packages/ub-needs-exchange"
+
 # ub-test-reports, the Sphinx-free core of sphinx-test-reports. Like ub-project's, the
 # short name keeps the whole distribution name (the naming rule drops only a `sphinx-`
 # prefix), and there are no `-sphinxN` cells: the package has no Sphinx, and the environment
@@ -789,7 +804,7 @@ help = "Type-check every package with ty against the oldest supported sphinx (th
 # but it is NOT a fence on `src.include` above: ty intersects the two, so a stale `include`
 # makes this check zero files and exit 0. The canary step in ci.yaml's Lint job is what
 # guards that.
-cmd = "ty check packages/sphinx-needs/src/sphinx_needs packages/sphinx-mounts/src/sphinx_mounts packages/sphinx-codelinks/src/sphinx_codelinks packages/sphinx-test-reports/src packages/ub-test-reports/src/ub_test_reports packages/ub-project/src/ub_project packages/sphinx-ai-index/src/sphinx_ai_index tools/src .github/scripts scripts docs-theme --python .venvs/typing"
+cmd = "ty check packages/sphinx-needs/src/sphinx_needs packages/sphinx-mounts/src/sphinx_mounts packages/sphinx-codelinks/src/sphinx_codelinks packages/sphinx-test-reports/src packages/ub-test-reports/src/ub_test_reports packages/ub-project/src/ub_project packages/ub-needs-exchange/src/ub_needs_exchange packages/sphinx-ai-index/src/sphinx_ai_index tools/src .github/scripts scripts docs-theme --python .venvs/typing"
 executor = { type = "uv", frozen = true, no-group = "dev", group = ["typing"] }
 env = { UV_PROJECT_ENVIRONMENT = ".venvs/typing" }
 
@@ -949,6 +964,16 @@ help = "Import every ub_project module from its built wheel, in an environment o
 # the wheel declares no dependencies at all, so what this proves is that the ARTEFACT is
 # complete -- every module present and importable -- rather than a sibling's API
 cmd = "python tools/src/sn_tools/import_check.py ub-project"
+
+[tool.poe.tasks.build-ub-needs-exchange]
+help = "Build the ub-needs-exchange sdist + wheel into dist/ub-needs-exchange"
+cmd = "uv build --package ub-needs-exchange --no-sources -o dist/ub-needs-exchange"
+
+[tool.poe.tasks.import-check-ub-needs-exchange]
+help = "Import every ub_needs_exchange module from its built wheel, in an environment of its own"
+# the wheel declares no dependencies at all, so what this proves is that the ARTEFACT is
+# complete -- every module present and importable -- rather than a sibling's API
+cmd = "python tools/src/sn_tools/import_check.py ub-needs-exchange"
 
 # There is no `smoke-mounts`. `scripts/smoke_needs.py`'s reason for existing is that 88% of
 # the sphinx-needs wheel by file count is non-Python payload that no test run touches;

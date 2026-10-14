@@ -27,9 +27,10 @@ the shim.
 | sphinx-test-reports' behaviour (the Sphinx extension), tests, documentation | `packages/sphinx-test-reports/{src/sphinx_test_reports,tests,docs}/` — start at [`packages/sphinx-test-reports/AGENTS.md`](packages/sphinx-test-reports/AGENTS.md); its `docs/` are ub-test-reports' too |
 | ub-test-reports' behaviour (the converter, the pytest plugin, the parsers, the `[test_reports]` model — no Sphinx), tests | `packages/ub-test-reports/{src/ub_test_reports,tests}/` — start at [`packages/ub-test-reports/AGENTS.md`](packages/ub-test-reports/AGENTS.md) |
 | how every tool reads `ubproject.toml` — finding, anchoring, `[variants]`, the variant-data merge | `packages/ub-project/{src/ub_project,tests,design}/` — start at [`packages/ub-project/AGENTS.md`](packages/ub-project/AGENTS.md) |
+| how a needs.json is read — the envelope, `format_version`, selecting a version, the records and their findings (the record of the format) | `packages/ub-needs-exchange/{src/ub_needs_exchange,tests,design}/` — start at [`packages/ub-needs-exchange/AGENTS.md`](packages/ub-needs-exchange/AGENTS.md); sphinx-needs' `needimport` and `needs_external_needs` are to read through it (from its next release), while the writer, the builder's `needs_file` and the readers' ingest policies are still sphinx-needs' (`needsfile.py`, `api/need.py`) |
 | sphinx-ai-index's behaviour (the `ai_docs_index.json` every docs site here publishes, and the `page-summary` directive), tests, the JSON contract | `packages/sphinx-ai-index/{src/sphinx_ai_index,tests,design}/` — start at [`packages/sphinx-ai-index/AGENTS.md`](packages/sphinx-ai-index/AGENTS.md) |
 | the fixtures, helpers and renderer resolution three suites share | `packages/sphinx-needs-testkit/` — a member this repository never publishes, installed through the root's `test` group and loaded by each suite's `tests/conftest.py` as a pytest plugin |
-| the four conformance corpora | `packages/sphinx-needs/tests/conformance/` (needflow) and `packages/sphinx-mounts/tests/fixtures/variant_condition_conformance.toml` (variant conditions), whose repository of record is ubCode, and `packages/ub-project/tests/fixtures/ubproject_reading_conformance.toml` (reading `ubproject.toml`) and `packages/sphinx-needs/tests/fixtures/derive_conformance.toml` (declared derived fields: each case a project, run by `tests/test_derive_conformance.py`), whose record is THIS repository and which ubCode is to vendor — all shared byte-for-byte; do not reformat any of them (`.gitattributes` plus the yamlfmt and taplo excludes protect them) |
+| the five conformance corpora | `packages/sphinx-needs/tests/conformance/` (needflow) and `packages/sphinx-mounts/tests/fixtures/variant_condition_conformance.toml` (variant conditions), whose repository of record is ubCode, and `packages/ub-project/tests/fixtures/ubproject_reading_conformance.toml` (reading `ubproject.toml`) and `packages/sphinx-needs/tests/fixtures/derive_conformance.toml` (declared derived fields: each case a project, run by `tests/test_derive_conformance.py`) and `packages/ub-needs-exchange/tests/fixtures/needs_json_reading_conformance.toml` (reading a needs.json), whose record is THIS repository and which ubCode is to vendor — all shared byte-for-byte; do not reformat any of them (`.gitattributes` plus the yamlfmt and taplo excludes protect them) |
 | a package's metadata, dependencies and extras | `packages/<pkg>/pyproject.toml` |
 | dependency groups (`test`, `benchmark`, `sphinx-7/8/9`, `typing`) | the root `pyproject.toml` — they are shared, and a group cannot be composed across the root/member boundary |
 | lint, format, type-check, pytest and task configuration | the root `pyproject.toml` |
@@ -82,6 +83,15 @@ it decides no policy — discovery, warnings and `-D` stay with each consumer. s
 sphinx-mounts, sphinx-codelinks and ub-test-reports depend on it, so each release of it
 re-floors all of them (`propagate_floors.py`).
 
+**`packages/ub-needs-exchange` is the record of the needs.json format, and it depends on
+nothing either**: its reader, its contract (`design/exchange-contract.md`) and its
+conformance corpus (ubCode is to vendor it), standard library only and fenced the same way.
+CI's `toolchain-free` job runs its suite beside ub-test-reports' and ub-project's, and is
+its only cell. It reads; what a project makes of a record — the ten-field table,
+`id_prefix`, coercion — stays in sphinx-needs. sphinx-needs is to depend on it at runtime
+from its next release; then a sphinx-needs release needs the tree's version of it on PyPI
+first, and each release of it re-floors sphinx-needs.
+
 **`packages/sphinx-ai-index` writes a file ubCode reads**: `ai_docs_index.json`, the page
 index every `sphinx-*` docs site here publishes and ubCode's documentation search builds its
 catalog from. That JSON is a contract whose other half lives in ubCode, and it is pinned in
@@ -94,7 +104,7 @@ dev version.
 
 **Naming: `sphinx-*` is a Sphinx extension; `ub-*` is a useblocks package that is not one**
 — a tool (such as `ub-test-reports`, import `ub_test_reports`) or a library (such as
-`ub-project`, import `ub_project`). The name does not say which of the two a `ub-*` package is; its README and
+`ub-project`, import `ub_project`, or `ub-needs-exchange`, import `ub_needs_exchange`). The name does not say which of the two a `ub-*` package is; its README and
 classifiers do. A `ub-*` library says in its README's first line that it is a library for
 the sphinx-needs family which the extensions pull in, and carries no `Framework :: Sphinx`
 classifier; a `ub-*` tool says it is a tool for the family, and carries none either. Their
@@ -111,6 +121,7 @@ uv run poe test-mounts                # the sphinx-mounts suite (bazel tests des
 uv run poe test-codelinks             # the sphinx-codelinks suite (adds the libclang group)
 uv run poe test-reports               # the sphinx-test-reports suite
 uv run poe test-ub-test-reports       # the ub-test-reports suite (no Sphinx needed)
+uv run poe test-ub-needs-exchange     # the ub-needs-exchange suite, its corpus included (no Sphinx)
 uv run poe test-ai-index              # the sphinx-ai-index suite (no renderer, no network)
 uv run poe lint                       # every prek hook over the whole tree
 uv run poe typecheck                  # ty over every package, against the oldest supported sphinx
@@ -129,6 +140,7 @@ uv run poe import-check-needs         # import the wheel against PyPI-resolved d
 uv run poe import-check-ub-test-reports  # the same for ub-test-reports (with its pytest extra)
 uv run poe import-check-codelinks     # the same for sphinx-codelinks (with its libclang extra)
 uv run poe import-check-ai-index      # the same for sphinx-ai-index
+uv run poe import-check-ub-needs-exchange  # the same for ub-needs-exchange
 uv run --frozen --no-sync pytest tools/tests -q   # the tooling's own tests
 UV_PYTHON=3.12 uv run --no-sync poe test-needs-sphinx8   # one CI matrix cell
 ```
@@ -272,12 +284,12 @@ the rootdir, so the tasks carry `--ignore=performance` instead of naming `tests`
 the task's own command would be *added* to yours rather than replaced by it.)
 
 **A bare `pytest` at the root collects sphinx-needs' suite and the tooling's — not
-sphinx-mounts', sphinx-codelinks', sphinx-test-reports', ub-test-reports' or ub-project's.** Their `tests` directories are deliberately
+sphinx-mounts', sphinx-codelinks', sphinx-test-reports', ub-test-reports', ub-project's or ub-needs-exchange's.** Their `tests` directories are deliberately
 absent from `testpaths`: every package ships a `tests/__init__.py`, so under
 `--import-mode=importlib` every `conftest.py` resolves to the module name `tests.conftest`
 and a rootdir-invoked pytest refuses the second outright — listing one there collects
 *nothing*, rather than more. Run those suites through `poe test-mounts`,
-`poe test-codelinks`, `poe test-reports`, `poe test-ub-test-reports` and `poe test-ub-project` (which cd into the package), the way CI does
+`poe test-codelinks`, `poe test-reports`, `poe test-ub-test-reports`, `poe test-ub-project` and `poe test-ub-needs-exchange` (which cd into the package), the way CI does
 with an explicit path.
 The Lint job's "Check a bare root pytest still collects" step is what keeps the list
 honest.
@@ -480,7 +492,7 @@ removed* (`error-on-warning` makes an unused suppression an error), never by loo
 
 Every issue and pull request carries one or more `pkg:` labels naming what it concerns:
 `pkg: <package>` (today `pkg: sphinx-needs`, `pkg: sphinx-mounts`,
-`pkg: sphinx-codelinks`, `pkg: sphinx-test-reports`, `pkg: sphinx-needs-testkit`, `pkg: ub-test-reports`, `pkg: ub-project` and `pkg: sphinx-ai-index`) or `pkg: workspace` for the repository
+`pkg: sphinx-codelinks`, `pkg: sphinx-test-reports`, `pkg: sphinx-needs-testkit`, `pkg: ub-test-reports`, `pkg: ub-project`, `pkg: ub-needs-exchange` and `pkg: sphinx-ai-index`) or `pkg: workspace` for the repository
 itself — workflows, CI, release, docker, tooling, the workspace root. Pull requests get
 theirs automatically from the paths they touch (`.github/labeler.yml`); the issue forms
 set it from their "Package" dropdown (`.github/issue-labeler.yml`). **An issue created

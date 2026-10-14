@@ -61,7 +61,7 @@ jobs:
         # ONE probe at a time, and one per package: with both planted at once a gate that had
         # dropped one package would still go red on the other and look healthy.
         run: |
-          probes="packages/sphinx-needs/src/sphinx_needs/_ty_gate_probe.py packages/sphinx-mounts/src/sphinx_mounts/_ty_gate_probe.py packages/sphinx-codelinks/src/sphinx_codelinks/_ty_gate_probe.py packages/sphinx-test-reports/src/sphinx_test_reports/_ty_gate_probe.py packages/ub-test-reports/src/ub_test_reports/_ty_gate_probe.py packages/ub-project/src/ub_project/_ty_gate_probe.py packages/sphinx-ai-index/src/sphinx_ai_index/_ty_gate_probe.py"
+          probes="packages/sphinx-needs/src/sphinx_needs/_ty_gate_probe.py packages/sphinx-mounts/src/sphinx_mounts/_ty_gate_probe.py packages/sphinx-codelinks/src/sphinx_codelinks/_ty_gate_probe.py packages/sphinx-test-reports/src/sphinx_test_reports/_ty_gate_probe.py packages/ub-test-reports/src/ub_test_reports/_ty_gate_probe.py packages/ub-project/src/ub_project/_ty_gate_probe.py packages/ub-needs-exchange/src/ub_needs_exchange/_ty_gate_probe.py packages/sphinx-ai-index/src/sphinx_ai_index/_ty_gate_probe.py"
           # shellcheck disable=SC2064
           trap "rm -f $probes" EXIT
           for probe in $probes; do
@@ -507,7 +507,7 @@ jobs:
         working-directory: packages/sphinx-test-reports
 
   toolchain-free:
-    name: Toolchain-free (ub-test-reports, ub-project)
+    name: Toolchain-free (ub-test-reports, ub-project, ub-needs-exchange)
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -522,17 +522,23 @@ jobs:
     # the lines a test reaches, and the plugin's pytester subprocess runs, all without the
     # toolchain.
     #
-    # The environment is on Python 3.11, the workspace floor: both packages it runs claim
-    # `>=3.11`, and no other cell runs either of them there -- the matrix cells vary the
+    # The environment is on Python 3.11, the workspace floor: the three packages it runs claim
+    # `>=3.11`, and no other cell runs any of them there -- the matrix cells vary the
     # sphinx series on the pinned interpreter -- so the job that proves "no toolchain"
     # proves the floor too.
     #
     # ub-project, the shared reader for `ubproject.toml`, is installed into the SAME
     # environment and its whole suite runs here: its contract is to import nothing outside
     # the standard library, so that every tool reading the file -- this converter included
-    # -- can use it without the toolchain. The assertion below runs after both installs, so
-    # it covers both. It has no other CI cell: with no Sphinx dependency, a sphinx series is
+    # -- can use it without the toolchain. The assertion below runs after every install, so
+    # it covers each of them. It has no other CI cell: with no Sphinx dependency, a sphinx series is
     # not an axis it has.
+    #
+    # ub-needs-exchange, the record of the needs.json format and its reader, is installed
+    # and run here for the same reason, and this is its ONLY cell: its contract is the
+    # standard library and nothing else, its suite takes seconds, and no Extensions cell runs
+    # it, since a sphinx series is not an axis it has either -- unlike ub-project, it resolves
+    # no paths, so the Windows cell would add nothing a POSIX run does not.
     #
     # It CANNOT be a matrix cell, and that is structural rather than a configuration gap:
     # the root's `[project] dependencies` name every member, `[project] dependencies` are
@@ -655,7 +661,7 @@ jobs:
         run: |
           uv venv --python 3.11 /tmp/toolchain-free
           wheel=$(ls /tmp/core-dist/*.whl)
-          uv pip install --python /tmp/toolchain-free --no-sources "${wheel}[pytest]" pytest-xdist packages/ub-project
+          uv pip install --python /tmp/toolchain-free --no-sources "${wheel}[pytest]" pytest-xdist packages/ub-project packages/ub-needs-exchange
       - name: Assert the toolchain really is absent, and pytest-xdist present
         # the fence's fence. Without this the job would still pass with Sphinx installed,
         # and would be testing nothing it claims to test. pytest-xdist the other way round:
@@ -684,6 +690,10 @@ jobs:
         # installed wheel is what is imported -- `src/` is never on `sys.path` -- so this also
         # tests the artefact
         run: /tmp/toolchain-free/bin/python -m pytest -q packages/ub-project/tests
+      - name: Run the ub-needs-exchange suite
+        # A step of its own, as ub-project's above and for the same reasons; the installed
+        # package is what is imported, so this tests the artefact too
+        run: /tmp/toolchain-free/bin/python -m pytest -q packages/ub-needs-exchange/tests
 
   plugin-floor:
     name: Plugin floor (pytest ${{ matrix.pytest }}, Python ${{ matrix.python }})

@@ -4,9 +4,9 @@ repos:
     rev: v0.9.3
     hooks:
       - id: taplo-format
-        # the three TOML conformance corpora are (or, for the `ubproject.toml` reading one and the
-        # derived-field one, are to be) shared byte-for-byte with ubCode, so a formatter local to this repository
-        # must not rewrite them. taplo's current
+        # the four TOML conformance corpora are (or, for the `ubproject.toml` reading one, the
+        # derived-field one and the needs.json reading one, are to be) shared byte-for-byte with ubCode, so a
+        # formatter local to this repository must not rewrite them. taplo's current
         # defaults happen to leave the variant-condition one alone; the `ubproject.toml` reading
         # corpus they do NOT -- measured: every expectation line past taplo's column limit
         # is rewrapped across several lines, eleven of them -- and a vendored copy that
@@ -15,7 +15,8 @@ repos:
           (?x)^(
             packages/sphinx-mounts/tests/fixtures/variant_condition_conformance\.toml|
             packages/ub-project/tests/fixtures/ubproject_reading_conformance\.toml|
-            packages/sphinx-needs/tests/fixtures/derive_conformance\.toml
+            packages/sphinx-needs/tests/fixtures/derive_conformance\.toml|
+            packages/ub-needs-exchange/tests/fixtures/needs_json_reading_conformance\.toml
           )$
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
@@ -31,14 +32,15 @@ repos:
       - id: yamlfmt
         # the conformance corpora are (or are to be) shared byte-for-byte with ubCode, so a
         # formatter local to this repository must not rewrite them. yamlfmt only matches YAML today,
-        # so the `ubproject.toml` reading corpus (TOML) is listed to state the intent rather than
+        # so the TOML corpora are listed to state the intent rather than
         # because the hook would reach it; sphinx-codelinks' extraction corpus is shared the same way
         exclude: |-
           (?x)^(
             packages/sphinx-needs/tests/conformance/|
             packages/sphinx-codelinks/tests/data/extraction/|
             packages/ub-project/tests/fixtures/ubproject_reading_conformance\.toml$|
-            packages/sphinx-needs/tests/fixtures/derive_conformance\.toml$
+            packages/sphinx-needs/tests/fixtures/derive_conformance\.toml$|
+            packages/ub-needs-exchange/tests/fixtures/needs_json_reading_conformance\.toml$
           )
 
   - repo: local
