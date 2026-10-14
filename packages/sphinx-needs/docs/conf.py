@@ -3,6 +3,7 @@
 import datetime
 import os
 import shutil
+import sys
 import tomllib
 from pathlib import Path
 from typing import Any
@@ -43,6 +44,15 @@ extensions = [
 ]
 if DOCS_THEME == "sphinx_immaterial":
     extensions.append("sphinx_immaterial")
+
+# the useblocks look for furo, shared with the repository's other docs sites
+# (docs-theme/README.md). It does nothing under any other theme, so it is loaded for all of
+# them. An sdist carries `docs/` but not the repository root, so a build from one has no
+# such directory and falls back to plain furo
+_DOCS_THEME = Path(__file__).resolve().parents[3] / "docs-theme"
+if _DOCS_THEME.is_dir():
+    sys.path.insert(0, str(_DOCS_THEME))
+    extensions.append("ub_docs_theme")
 
 # number the `syntax-example` rubrics per document ("Example 1", "Example 2", ...)
 syntax_example_numbering = True
@@ -131,31 +141,14 @@ if DOCS_THEME == "alabaster":
         "github_repo": "sphinx-needs",
     }
 elif DOCS_THEME == "furo":
-    # https://pradyunsg.me/furo
+    # https://pradyunsg.me/furo -- the sidebar, the view/edit buttons and the shared
+    # stylesheet come from `ub_docs_theme` above; `_css/furo.css` is this site's own rules
     html_css_files += ["_css/furo.css"]
     html_theme_options = {
-        "sidebar_hide_name": True,
-        "top_of_page_buttons": ["view", "edit"],
-        "source_repository": "https://github.com/useblocks/sphinx-needs",
-        "source_branch": "master",
         "source_directory": "packages/sphinx-needs/docs/",
         "light_logo": "sphinx-needs-logo-long-light.svg",
         "dark_logo": "sphinx-needs-logo-long-dark.svg",
     }
-    templates_path = ["_static/_templates/furo"]
-    html_sidebars = {
-        "**": [
-            "sidebar/brand.html",
-            "sidebar/search.html",
-            "sidebar/scroll-start.html",
-            "sidebar/navigation.html",
-            "sidebar/ethical-ads.html",
-            "sidebar/scroll-end.html",
-            "side-github.html",
-            "sidebar/variant-selector.html",
-        ]
-    }
-    html_context = {"repository": "useblocks/sphinx-needs"}
 elif DOCS_THEME == "pydata_sphinx_theme":
     # https://pydata-sphinx-theme.readthedocs.io
     html_css_files += ["_css/pydata_sphinx_theme.css"]
