@@ -23,6 +23,7 @@ members = [
     "sphinx-needs-workspace",
     "sphinx-needs-workspace-tools",
     "sphinx-test-reports",
+    "ub-needs-exchange",
     "ub-project",
     "ub-test-reports",
 ]
@@ -2876,7 +2877,7 @@ libclang = [
 requires-dist = [
     { name = "comment-parser", specifier = ">=1.2.4" },
     { name = "docutils", specifier = ">=0.21" },
-    { name = "furo", marker = "extra == 'docs'", specifier = ">=2024.5.6" },
+    { name = "furo", marker = "extra == 'docs'", specifier = ">=2025.12.19" },
     { name = "giturlparse", specifier = ">=0.12.0" },
     { name = "ignore-python", specifier = ">=0.3.3" },
     { name = "jinja2" },
@@ -2993,7 +2994,7 @@ docs = [
 [package.metadata]
 requires-dist = [
     { name = "docutils", specifier = ">=0.21" },
-    { name = "furo", marker = "extra == 'docs'", specifier = ">=2024.5.6" },
+    { name = "furo", marker = "extra == 'docs'", specifier = ">=2025.12.19" },
     { name = "ignore-python", specifier = ">=0.3.3" },
     { name = "myst-parser", marker = "extra == 'docs'", specifier = ">=4.0.0" },
     { name = "sphinx", specifier = ">=7.4,<10" },
@@ -3020,6 +3021,7 @@ dependencies = [
     { name = "sphinx-data-viewer" },
     { name = "sphinxcontrib-jquery" },
     { name = "typing-extensions" },
+    { name = "ub-needs-exchange" },
     { name = "ub-project" },
 ]
 
@@ -3072,6 +3074,7 @@ requires-dist = [
     { name = "sphinxcontrib-plantuml", marker = "extra == 'docs'", specifier = "~=0.0" },
     { name = "sphinxcontrib-programoutput", marker = "extra == 'docs'", specifier = "~=0.17" },
     { name = "typing-extensions", specifier = ">=4.14.0" },
+    { name = "ub-needs-exchange", editable = "packages/ub-needs-exchange" },
     { name = "ub-project", editable = "packages/ub-project" },
 ]
 provides-extras = ["plotting", "docs", "theme-im", "theme-furo", "theme-pds", "theme-rtd"]
@@ -3109,6 +3112,7 @@ dependencies = [
     { name = "sphinx-needs" },
     { name = "sphinx-needs-workspace-tools" },
     { name = "sphinx-test-reports" },
+    { name = "ub-needs-exchange" },
     { name = "ub-project" },
     { name = "ub-test-reports" },
 ]
@@ -3262,6 +3266,7 @@ requires-dist = [
     { name = "sphinx-needs-workspace-tools", virtual = "tools" },
     { name = "sphinx-test-reports", editable = "packages/sphinx-test-reports" },
     { name = "sphinx-test-reports", extras = ["docs"], marker = "extra == 'docs-reports'", editable = "packages/sphinx-test-reports" },
+    { name = "ub-needs-exchange", editable = "packages/ub-needs-exchange" },
     { name = "ub-project", editable = "packages/ub-project" },
     { name = "ub-test-reports", editable = "packages/ub-test-reports" },
 ]
@@ -3271,7 +3276,7 @@ provides-extras = ["plotting", "docs", "docs-mounts", "docs-codelinks", "docs-re
 benchmark = [
     { name = "beautifulsoup4", specifier = ">=4.12" },
     { name = "defusedxml", specifier = "~=0.7.1" },
-    { name = "furo", specifier = ">=2024.5.6" },
+    { name = "furo", specifier = ">=2025.12.19" },
     { name = "hypothesis", specifier = ">=6.0" },
     { name = "lxml", specifier = "~=6.1" },
     { name = "matplotlib", specifier = ">=3.3.0" },
@@ -3295,7 +3300,7 @@ codelinks-libclang = [{ name = "libclang", specifier = ">=18" }]
 dev = [
     { name = "beautifulsoup4", specifier = ">=4.12" },
     { name = "defusedxml", specifier = "~=0.7.1" },
-    { name = "furo", specifier = ">=2024.5.6" },
+    { name = "furo", specifier = ">=2025.12.19" },
     { name = "hypothesis", specifier = ">=6.0" },
     { name = "lxml", specifier = "~=6.1" },
     { name = "matplotlib", specifier = ">=3.3.0" },
@@ -3327,7 +3332,7 @@ sphinx-9 = [
 test = [
     { name = "beautifulsoup4", specifier = ">=4.12" },
     { name = "defusedxml", specifier = "~=0.7.1" },
-    { name = "furo", specifier = ">=2024.5.6" },
+    { name = "furo", specifier = ">=2025.12.19" },
     { name = "hypothesis", specifier = ">=6.0" },
     { name = "lxml", specifier = "~=6.1" },
     { name = "matplotlib", specifier = ">=3.3.0" },
@@ -3417,6 +3422,7 @@ dependencies = [
 
 [package.optional-dependencies]
 docs = [
+    { name = "furo" },
     { name = "packaging" },
     { name = "pillow" },
     { name = "sphinx", version = "7.4.7", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-22-sphinx-needs-workspace-sphinx-7' or extra == 'group-22-sphinx-needs-workspace-typing' or (extra == 'group-22-sphinx-needs-workspace-sphinx-8' and extra == 'group-22-sphinx-needs-workspace-sphinx-9')" },
@@ -3424,7 +3430,6 @@ docs = [
     { name = "sphinx", version = "9.1.0", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (python_full_version >= '3.12' and extra != 'group-22-sphinx-needs-workspace-sphinx-7' and extra != 'group-22-sphinx-needs-workspace-sphinx-8' and extra != 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-9' and extra == 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-sphinx-8') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-8' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (extra == 'group-22-sphinx-needs-workspace-sphinx-8' and extra == 'group-22-sphinx-needs-workspace-typing')" },
     { name = "sphinx-ai-index" },
     { name = "sphinx-design" },
-    { name = "sphinx-immaterial" },
     { name = "sphinx-needs" },
     { name = "sphinxcontrib-plantuml" },
 ]
@@ -3435,13 +3440,13 @@ pytest = [
 [package.metadata]
 requires-dist = [
     { name = "docutils", specifier = ">=0.21" },
+    { name = "furo", marker = "extra == 'docs'", specifier = ">=2025.12.19" },
     { name = "packaging", marker = "extra == 'docs'" },
     { name = "pillow", marker = "extra == 'docs'" },
     { name = "sphinx", specifier = ">=7.4" },
     { name = "sphinx", marker = "extra == 'docs'" },
     { name = "sphinx-ai-index", marker = "extra == 'docs'", editable = "packages/sphinx-ai-index" },
     { name = "sphinx-design", marker = "extra == 'docs'" },
-    { name = "sphinx-immaterial", marker = "extra == 'docs'" },
     { name = "sphinx-needs", editable = "packages/sphinx-needs" },
     { name = "sphinx-needs", marker = "extra == 'docs'", editable = "packages/sphinx-needs" },
     { name = "sphinxcontrib-plantuml", marker = "extra == 'docs'" },
@@ -3980,6 +3985,11 @@ sdist = { url = "https://files.pythonhosted.org/packages/a3/26/b09b8010994eccc3c
 wheels = [
     { url = "https://files.pythonhosted.org/packages/67/81/4add07e5172b7ac40d8ed5ff580409a7801a4fe26d529bdd915401dabfbe/typing_inspection-0.4.4-py3-none-any.whl", hash = "sha256:65b8397ba37ccbce054456aaccddfc91e6e3083c92824df348d96ca832f3f147", size = 14750, upload-time = "2026-08-12T12:37:24.648Z" },
 ]
+
+[[package]]
+name = "ub-needs-exchange"
+version = "1.0.0"
+source = { editable = "packages/ub-needs-exchange" }
 
 [[package]]
 name = "ub-project"

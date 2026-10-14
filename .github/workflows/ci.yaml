@@ -61,7 +61,7 @@ jobs:
         # ONE probe at a time, and one per package: with both planted at once a gate that had
         # dropped one package would still go red on the other and look healthy.
         run: |
-          probes="packages/sphinx-needs/src/sphinx_needs/_ty_gate_probe.py packages/sphinx-mounts/src/sphinx_mounts/_ty_gate_probe.py packages/sphinx-codelinks/src/sphinx_codelinks/_ty_gate_probe.py packages/sphinx-test-reports/src/sphinx_test_reports/_ty_gate_probe.py packages/ub-test-reports/src/ub_test_reports/_ty_gate_probe.py packages/ub-project/src/ub_project/_ty_gate_probe.py packages/sphinx-ai-index/src/sphinx_ai_index/_ty_gate_probe.py"
+          probes="packages/sphinx-needs/src/sphinx_needs/_ty_gate_probe.py packages/sphinx-mounts/src/sphinx_mounts/_ty_gate_probe.py packages/sphinx-codelinks/src/sphinx_codelinks/_ty_gate_probe.py packages/sphinx-test-reports/src/sphinx_test_reports/_ty_gate_probe.py packages/ub-test-reports/src/ub_test_reports/_ty_gate_probe.py packages/ub-project/src/ub_project/_ty_gate_probe.py packages/ub-needs-exchange/src/ub_needs_exchange/_ty_gate_probe.py packages/sphinx-ai-index/src/sphinx_ai_index/_ty_gate_probe.py"
           # shellcheck disable=SC2064
           trap "rm -f $probes" EXIT
           for probe in $probes; do
@@ -420,6 +420,42 @@ jobs:
         run: uv run --no-sync sphinx-build -nW --keep-going -b html docs docs/_build/html -T
         working-directory: packages/sphinx-codelinks
 
+  docs-mounts:
+    name: Docs mounts
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    # sphinx-mounts' docs had no job of their own: a break in them broke only the
+    # sphinx-mounts site, and its Read the Docs pull-request build is neither required nor
+    # run when the package did not change. They now load the useblocks look for furo from
+    # `docs-theme/` at the repository root, shared with every other furo site here, and
+    # sphinx-needs' furo build -- which loads it too -- runs in CI nowhere; so this job and
+    # its docs siblings are what gate a change to that directory. A few seconds of build,
+    # no renderer.
+    #
+    # No `paths:` filter and no `if:`, like its two siblings: the shared directory sits
+    # outside the package, so a filter on the package would miss exactly the change this
+    # job is for.
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          enable-cache: true
+          cache-suffix: docs-mounts
+          # no `python-version`, so this runs on the root `.python-version`
+          cache-python: true
+      - name: Install the docs environment
+        # `docs.yaml`'s idiom -- sync ONE environment, then run the builder in it with
+        # `--no-sync` -- rather than `uv run --frozen poe docs-mounts`, which pays for two
+        # environments because poe itself lives in the `dev` group. Keep in step with the
+        # `docs-mounts` poe task.
+        run: uv sync --frozen --no-default-groups --extra docs-mounts
+      - name: Build the docs
+        # `-nW --keep-going`, from the poe task, so a nitpick warning is an error. No
+        # renderer: these docs draw no diagrams
+        run: uv run --no-sync sphinx-build -nW --keep-going -b html docs docs/_build/html -T
+        working-directory: packages/sphinx-mounts
+
   docs-reports:
     name: Docs reports
     runs-on: ubuntu-latest
@@ -428,10 +464,10 @@ jobs:
     # sphinx-test-reports' docs went from five warnings to zero in this pull request, and
     # without this job nothing holds that: the Read the Docs build is not a required check,
     # it is `-W` WITHOUT `-n`, and that project's settings do not point at this repository
-    # yet. `docs.yaml`'s linkcheck is scoped to sphinx-needs' own docs. sphinx-mounts has no
-    # docs job either, so this is a deliberate departure from that precedent rather than an
-    # oversight -- the difference is that these docs RENDER, which is a failure mode a build
-    # catches and a reviewer does not.
+    # yet. `docs.yaml`'s linkcheck is scoped to sphinx-needs' own docs. sphinx-mounts had no
+    # docs job either when this one was added, so this was a deliberate departure from that
+    # precedent rather than an oversight -- the difference is that these docs RENDER, which
+    # is a failure mode a build catches and a reviewer does not.
     #
     # No `paths:` filter and no `if:`: a change to `src/` with no change to `docs/` is
     # precisely the change that breaks a docs build.
@@ -444,7 +480,7 @@ jobs:
           # no `python-version`, so this runs on the root `.python-version`
           cache-python: true
       - name: Install graphviz
-        # 13 `needflow` directives across three pages need `dot`; PlantUML needs a JDK,
+        # three `needflow` directives across two pages need `dot`; PlantUML needs a JDK,
         # which every Linux runner image already has
         run: sudo apt-get install graphviz
       - name: Point PLANTUML_JAR at the vendored jar
@@ -471,7 +507,7 @@ jobs:
         working-directory: packages/sphinx-test-reports
 
   toolchain-free:
-    name: Toolchain-free (ub-test-reports, ub-project)
+    name: Toolchain-free (ub-test-reports, ub-project, ub-needs-exchange)
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -486,17 +522,23 @@ jobs:
     # the lines a test reaches, and the plugin's pytester subprocess runs, all without the
     # toolchain.
     #
-    # The environment is on Python 3.11, the workspace floor: both packages it runs claim
-    # `>=3.11`, and no other cell runs either of them there -- the matrix cells vary the
+    # The environment is on Python 3.11, the workspace floor: the three packages it runs claim
+    # `>=3.11`, and no other cell runs any of them there -- the matrix cells vary the
     # sphinx series on the pinned interpreter -- so the job that proves "no toolchain"
     # proves the floor too.
     #
     # ub-project, the shared reader for `ubproject.toml`, is installed into the SAME
     # environment and its whole suite runs here: its contract is to import nothing outside
     # the standard library, so that every tool reading the file -- this converter included
-    # -- can use it without the toolchain. The assertion below runs after both installs, so
-    # it covers both. It has no other CI cell: with no Sphinx dependency, a sphinx series is
+    # -- can use it without the toolchain. The assertion below runs after every install, so
+    # it covers each of them. It has no other CI cell: with no Sphinx dependency, a sphinx series is
     # not an axis it has.
+    #
+    # ub-needs-exchange, the record of the needs.json format and its reader, is installed
+    # and run here for the same reason, and this is its ONLY cell: its contract is the
+    # standard library and nothing else, its suite takes seconds, and no Extensions cell runs
+    # it, since a sphinx series is not an axis it has either -- unlike ub-project, it resolves
+    # no paths, so the Windows cell would add nothing a POSIX run does not.
     #
     # It CANNOT be a matrix cell, and that is structural rather than a configuration gap:
     # the root's `[project] dependencies` name every member, `[project] dependencies` are
@@ -619,7 +661,7 @@ jobs:
         run: |
           uv venv --python 3.11 /tmp/toolchain-free
           wheel=$(ls /tmp/core-dist/*.whl)
-          uv pip install --python /tmp/toolchain-free --no-sources "${wheel}[pytest]" pytest-xdist packages/ub-project
+          uv pip install --python /tmp/toolchain-free --no-sources "${wheel}[pytest]" pytest-xdist packages/ub-project packages/ub-needs-exchange
       - name: Assert the toolchain really is absent, and pytest-xdist present
         # the fence's fence. Without this the job would still pass with Sphinx installed,
         # and would be testing nothing it claims to test. pytest-xdist the other way round:
@@ -648,6 +690,10 @@ jobs:
         # installed wheel is what is imported -- `src/` is never on `sys.path` -- so this also
         # tests the artefact
         run: /tmp/toolchain-free/bin/python -m pytest -q packages/ub-project/tests
+      - name: Run the ub-needs-exchange suite
+        # A step of its own, as ub-project's above and for the same reasons; the installed
+        # package is what is imported, so this tests the artefact too
+        run: /tmp/toolchain-free/bin/python -m pytest -q packages/ub-needs-exchange/tests
 
   plugin-floor:
     name: Plugin floor (pytest ${{ matrix.pytest }}, Python ${{ matrix.python }})
@@ -784,6 +830,7 @@ jobs:
       - tests-no-mpl
       - tests-extensions
       - docs-codelinks
+      - docs-mounts
       - docs-reports
       - toolchain-free
       - plugin-floor

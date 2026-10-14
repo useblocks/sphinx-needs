@@ -64,7 +64,7 @@ libclang = ["libclang>=16"]
 # the root there re-exports each member's extra (`docs-mounts = ["sphinx-mounts[docs]"]`),
 # because `uv sync --extra` resolves against the workspace root rather than the member.
 docs = [
-  "furo>=2024.5.6",
+  "furo>=2025.12.19",
   "myst-parser>=4.0.0",
   "sphinx-ai-index>=1.0.0,<2",
   "sphinx-design>=0.6.1",

@@ -3,7 +3,7 @@ on one corpus.
 
 Each case is built twice from the same needs.json: once imported by a ``needimport``
 directive on ``index.rst``, once loaded as an external source (a ``needs_external_needs``
-config override). Both read the file through ``sphinx_needs.exchange`` and create each
+config override). Both read the file through ``ub_needs_exchange`` and create each
 need through one record path, so most rows assert the SAME outcome for both readers;
 the rows where the two are different by design (the ten-field table, where a need is
 recorded, its ``parts``) assert the difference as the rule.

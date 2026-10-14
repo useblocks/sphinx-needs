@@ -28,6 +28,9 @@
 'pkg: ub-project':
   - changed-files:
       - any-glob-to-any-file: 'packages/ub-project/**'
+'pkg: ub-needs-exchange':
+  - changed-files:
+      - any-glob-to-any-file: 'packages/ub-needs-exchange/**'
 'pkg: sphinx-ai-index':
   - changed-files:
       - any-glob-to-any-file: 'packages/sphinx-ai-index/**'
@@ -40,6 +43,7 @@
           - 'scripts/**'
           - 'tools/**'
           - 'vendor/**'
+          - 'docs-theme/**'
           - 'pyproject.toml'
           - '.pre-commit-config.yaml'
           - '.readthedocs.yml'

@@ -20,8 +20,8 @@ build:
   jobs:
     post_checkout:
       # Every pull request against this repository builds every Read the Docs project it
-      # has. A pull request that leaves `packages/sphinx-codelinks/` untouched has nothing
-      # for this one to build, so cancel it. Exit code 183 is Read the Docs' documented
+      # has. A pull request that leaves this site's inputs (listed below) untouched has
+      # nothing for this one to build, so cancel it. Exit code 183 is Read the Docs' documented
       # "skip" code (https://docs.readthedocs.com/platform/stable/guides/build/skip-build.html):
       # the build is recorded as `cancelled`, and the commit status sent to GitHub is
       # `success` with the description "Read the Docs build skipped", so no pull request is
@@ -35,12 +35,14 @@ build:
       # and touched this package, the build runs although the pull request did not touch it.
       # That is the safe direction; it never skips a build that was needed.
       #
-      # `packages/sphinx-codelinks/` and `packages/sphinx-ai-index/` are the inputs that
-      # decide it: this file lives inside the first, `docs/conf.py` reads only the package's
-      # own `pyproject.toml`, and `python.install` below installs the extension that writes
-      # `ai_docs_index.json` from the checkout and then the package directory with its own
-      # `docs` extra, so no root file takes part in this build. Branch and tag builds (`latest`, releases)
-      # are never cancelled.
+      # `packages/sphinx-codelinks/`, `packages/sphinx-ai-index/`, `packages/ub-needs-exchange/`
+      # (installed from the checkout below, ahead of sphinx-needs) and `docs-theme/` are the
+      # inputs that decide it: this file lives inside the first, `python.install` below
+      # installs the extension that writes `ai_docs_index.json` from the checkout and then
+      # the package directory with its own `docs` extra, and `docs/conf.py` reads the
+      # package's own `pyproject.toml` and loads the useblocks look for furo from
+      # `docs-theme/` at the repository root -- the one root directory that takes part in
+      # this build. Branch and tag builds (`latest`, releases) are never cancelled.
       - |
         if [ "$READTHEDOCS_VERSION_TYPE" != "external" ]; then
           exit 0
@@ -49,8 +51,8 @@ build:
           echo "origin/master is not available in this clone; building to be safe"
           exit 0
         fi
-        if git diff --quiet origin/master -- packages/sphinx-codelinks/ packages/sphinx-ai-index/; then
-          echo "nothing under packages/sphinx-codelinks/ or packages/sphinx-ai-index/ changed; skipping this build (exit 183)"
+        if git diff --quiet origin/master -- packages/sphinx-codelinks/ packages/sphinx-ai-index/ packages/ub-needs-exchange/ docs-theme/; then
+          echo "nothing under packages/sphinx-codelinks/, packages/sphinx-ai-index/, packages/ub-needs-exchange/ or docs-theme/ changed; skipping this build (exit 183)"
           exit 183
         fi
 
@@ -72,6 +74,15 @@ python:
     # the member's requirement is satisfied and pip fetches nothing (tight tracking keeps
     # the checkout's version inside the member's floor and cap). CI's docs job builds from
     # the workspace lock and needs none of this.
+    # ub-needs-exchange before sphinx-needs, from this checkout too: sphinx-needs'
+    # `needimport` and `needs_external_needs` read through it, and sphinx-needs depends on it
+    # at runtime, so sphinx-needs installed on its own would resolve `ub-needs-exchange` from
+    # PyPI -- the released version, not the one beside it. With it already installed the
+    # requirement is satisfied and pip fetches nothing (tight tracking keeps the checkout's
+    # version inside the floor and cap). CI's docs jobs build from the workspace lock and
+    # need none of this.
+    - method: pip
+      path: packages/ub-needs-exchange
     - method: pip
       path: packages/sphinx-needs
     # sphinx-ai-index next, from this checkout too -- it writes the `ai_docs_index.json` this

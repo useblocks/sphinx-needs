@@ -1,7 +1,8 @@
 "$schema" = "https://ubcode.useblocks.com/ubproject.schema.json"
 
 # Branding for the `ubc build html` site — the ubCode counterpart of the
-# Sphinx/furo theming in conf.py + _static/_css/furo.css, written against
+# Sphinx/furo theming in conf.py, docs-theme/ at the repository root (the look
+# every furo site here shares) and _static/_css/furo.css, written against
 # ubCode's documented `--ubc-*` CSS variable contract.
 [build.html]
 title = "Sphinx-Needs"

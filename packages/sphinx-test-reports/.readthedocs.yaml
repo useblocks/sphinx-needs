@@ -12,8 +12,8 @@ version: 2
 
 build:
   # These apt packages ARE needed, unlike both SIBLING extensions', whose configs
-  # deliberately install none: 13 `needflow` directives across `filter.rst`,
-  # `functions.rst` and `examples/index.rst` need graphviz's `dot`, and PlantUML needs a
+  # deliberately install none: three `needflow` directives, in `functions.rst` and
+  # `examples/index.rst`, need graphviz's `dot`, and PlantUML needs a
   # JDK. (sphinx-needs' own docs render too, and its config installs the same two.) The jar itself
   # comes from the checkout -- `vendor/plantuml/` is outside this package, so
   # `python.install` below does not carry it, but RTD checks out the whole repository, so
@@ -27,9 +27,8 @@ build:
   jobs:
     post_checkout:
       # Every pull request against this repository builds every Read the Docs project it
-      # has. A pull request that leaves `packages/sphinx-test-reports/`,
-      # `packages/ub-test-reports/` and `packages/sphinx-ai-index/` untouched has nothing for
-      # this one to build, so cancel it. Exit code 183 is Read the Docs'
+      # has. A pull request that leaves this site's inputs (listed below) untouched has
+      # nothing for this one to build, so cancel it. Exit code 183 is Read the Docs'
       # documented "skip" code
       # (https://docs.readthedocs.com/platform/stable/guides/build/skip-build.html): the
       # build is recorded as `cancelled`, and the commit status sent to GitHub is `success`
@@ -44,10 +43,11 @@ build:
       # pull request did not touch it. That is the safe direction; it never skips a build
       # that was needed.
       #
-      # Those packages are ALMOST the complete set of inputs -- ub-test-reports is one
-      # because this site documents it and installs it from the checkout below, and
+      # Those paths are ALMOST the complete set of inputs -- ub-test-reports is one
+      # because this site documents it and installs it from the checkout below,
       # sphinx-ai-index because it writes this site's `ai_docs_index.json` and is installed
-      # from the checkout too -- and the one exception is deliberate: `docs/conf.py` also
+      # from the checkout too, as is ub-needs-exchange, ahead of sphinx-needs, and
+      # `docs-theme/` because `docs/conf.py` loads the useblocks look for furo from it -- and the one exception is deliberate: `docs/conf.py` also
       # reads `vendor/plantuml/pin.toml` and
       # the jar beside it. A bump there changes only which renderer version draws the
       # diagrams, never whether the build succeeds, so it is not worth widening the filter
@@ -60,8 +60,8 @@ build:
           echo "origin/master is not available in this clone; building to be safe"
           exit 0
         fi
-        if git diff --quiet origin/master -- packages/sphinx-test-reports/ packages/ub-test-reports/ packages/sphinx-ai-index/; then
-          echo "nothing under packages/sphinx-test-reports/, packages/ub-test-reports/ or packages/sphinx-ai-index/ changed; skipping this build (exit 183)"
+        if git diff --quiet origin/master -- packages/sphinx-test-reports/ packages/ub-test-reports/ packages/sphinx-ai-index/ packages/ub-needs-exchange/ docs-theme/; then
+          echo "nothing under packages/sphinx-test-reports/, packages/ub-test-reports/, packages/sphinx-ai-index/, packages/ub-needs-exchange/ or docs-theme/ changed; skipping this build (exit 183)"
           exit 183
         fi
 
@@ -85,6 +85,15 @@ python:
     # With the siblings already installed the member's requirements are satisfied and pip
     # fetches neither (tight tracking keeps the checkout's versions inside the member's floors
     # and caps).
+    # ub-needs-exchange before sphinx-needs, from this checkout too: sphinx-needs'
+    # `needimport` and `needs_external_needs` read through it, and sphinx-needs depends on it
+    # at runtime, so sphinx-needs installed on its own would resolve `ub-needs-exchange` from
+    # PyPI -- the released version, not the one beside it. With it already installed the
+    # requirement is satisfied and pip fetches nothing (tight tracking keeps the checkout's
+    # version inside the floor and cap). CI's docs jobs build from the workspace lock and
+    # need none of this.
+    - method: pip
+      path: packages/ub-needs-exchange
     - method: pip
       path: packages/sphinx-needs
     # sphinx-ai-index next, from this checkout too -- it writes the `ai_docs_index.json` this

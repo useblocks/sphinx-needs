@@ -84,8 +84,9 @@ to sit there, 8.6 MB, and was dead: the three `custom_tr_*` configs pointed at i
 `os.getcwd()`, which under pytest is the rootdir. It left with the import.)
 
 `uv run poe docs-reports` is the opposite case, and among the three EXTENSION packages it
-is the only docs build that renders: **13 `needflow` directives** across `filter.rst`, `functions.rst` and
-`examples/index.rst`. It needs `java` and `dot` on `PATH`, and it resolves the jar through
+is the only docs build that renders: **three `needflow` directives**, one in `functions.rst` and
+two in `examples/index.rst` (the others in the sources are examples inside literal blocks,
+and one commented out). It needs `java` and `dot` on `PATH`, and it resolves the jar through
 the workspace chain — `PLANTUML_JAR`, then the committed `vendor/plantuml/` jar, then a
 `plantuml` executable — written out in `docs/conf.py` rather than imported, because a docs
 build must not import a test-only member. `.readthedocs.yaml` therefore keeps
@@ -174,10 +175,11 @@ Recorded here because none of it is visible in a diff:
 - **Three prek hooks retired with it**: `end-of-file-fixer`, `trailing-whitespace` and
   `pretty-format-json`. The root config has no `pre-commit-hooks` repository at all.
 
-The docs still use `sphinx_immaterial` and the vendored `docs/ub_theme/`, where the rest of
-the workspace uses furo. Keeping it costs nothing in the lock (sphinx-immaterial is already
-there through sphinx-needs' `theme-im` extra); converging is a visible change to a live site
-with 41 Read the Docs versions and has an issue of its own.
+The docs used `sphinx_immaterial` and a vendored copy of the old `useblocks-theme`
+repository (`docs/ub_theme/`, with its own jQuery) until they converged on furo with the
+rest of the workspace (#1935). They now load the shared look from `docs-theme/` at the
+repository root; `docs/_static/test-reports.css` holds the one rule only this site needs,
+the height cap on its portrait logo.
 
 ## History
 

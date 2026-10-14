@@ -6,6 +6,7 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
+import sys
 import tomllib
 from datetime import datetime
 from pathlib import Path
@@ -34,6 +35,14 @@ extensions = [
     "sphinx_ai_index",
 ]
 
+# the useblocks look for furo, shared with the repository's other docs sites
+# (docs-theme/README.md at the repository root). A copy of these docs outside the
+# repository has no such directory, so a build from one falls back to plain furo
+_DOCS_THEME = Path(__file__).resolve().parents[3] / "docs-theme"
+if _DOCS_THEME.is_dir():
+    sys.path.insert(0, str(_DOCS_THEME))
+    extensions.append("ub_docs_theme")
+
 # The source directory IS this directory, so the build output and the shared ubCode project
 # file live inside it and have to be kept out of the document set. (`conf.py` itself is
 # excluded by Sphinx.)
@@ -58,31 +67,15 @@ html_theme = "furo"
 html_favicon = "_static/favicon.ico"
 html_static_path = ["_static"]
 
+# the sidebar, the view/edit buttons, the repository they point into and the shared
+# stylesheet come from `ub_docs_theme` above; what is here is this site's own
 html_theme_options = {
-    "sidebar_hide_name": True,
-    "top_of_page_buttons": ["view", "edit"],
-    # the monorepo this package lives in, and the path to these sources inside it:
-    # furo's "view"/"edit" buttons build `<repo>/blob|edit/<branch>/<directory><page>`
-    "source_repository": "https://github.com/useblocks/sphinx-needs",
-    "source_branch": "master",
+    # the path to these sources inside the monorepo: furo's "view"/"edit" buttons build
+    # `<repo>/blob|edit/<branch>/<directory><page>`
     "source_directory": "packages/sphinx-codelinks/docs/",
     "light_logo": "sphinx-codelinks-logo_light.svg",
     "dark_logo": "sphinx-codelinks-logo_dark.svg",
 }
-templates_path = ["_static/_templates/furo"]
-html_sidebars = {
-    "**": [
-        "sidebar/brand.html",
-        "sidebar/search.html",
-        "sidebar/scroll-start.html",
-        "sidebar/navigation.html",
-        "sidebar/ethical-ads.html",
-        "sidebar/scroll-end.html",
-        "side-github.html",
-        "sidebar/variant-selector.html",
-    ]
-}
-html_context = {"repository": "useblocks/sphinx-needs"}
 html_css_files = ["furo.css"]
 
 # Sphinx-Needs configuration
