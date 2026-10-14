@@ -1268,6 +1268,194 @@ def test_links_from_filter_system_requirements(test_app):
     assert needs["SA_UNLOCK"]["links"] == ["SR_LOCK", "SR_UNLOCK"]
 
 
+# -- links_from_match --------------------------------------------------------------------
+#
+# The per-need spelling of a derived link type of the kind ``links`` with a ``join``:
+# every need whose ``field`` shares a value with this need's ``equals`` (a string split
+# on ``,`` and stripped, an array by item), each once, in need-id order, the need itself
+# left out unless ``include_self``, then ``filter`` as ``links_from_filter`` reads it.
+
+LINKS_FROM_MATCH_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_fields = {
+    "name": {"nullable": True},
+    "names": {"nullable": True, "schema": {"type": "array", "items": {"type": "string"}}},
+    "ref": {"nullable": True},
+    "num": {"nullable": True, "schema": {"type": "integer"}},
+}
+"""
+
+LINKS_FROM_MATCH_INDEX = """\
+Links from a match
+==================
+
+.. req:: Zed, closed
+   :id: LFM_Z
+   :name: A
+   :status: closed
+
+.. req:: B
+   :id: LFM_B
+   :name: A
+
+.. req:: A and B
+   :id: LFM_AB
+   :name: A, B
+
+.. req:: A list
+   :id: LFM_LIST
+   :names: C, D
+
+.. spec:: Repeated values
+   :id: LFM_REPEAT
+   :ref: A, B ,A
+   :links: [[links_from_match("name", "ref")]]
+
+   As text: :ndf:`links_from_match("name", "ref")`
+
+.. spec:: Filtered, keyword arguments
+   :id: LFM_FILTER
+   :ref: A
+   :links: [[links_from_match(field="name", equals="ref", filter="status != 'closed'")]]
+
+.. spec:: Itself
+   :id: LFM_SELF
+   :name: A
+   :ref: A
+   :links: [[links_from_match("name", "ref", include_self=True, filter="type == 'spec'")]]
+
+.. spec:: Itself, left out
+   :id: LFM_SELF_EX
+   :name: A
+   :ref: A
+   :links: [[links_from_match("name", "ref", filter="type == 'spec'")]]
+
+.. spec:: An array on every need
+   :id: LFM_ARRAY
+   :ref: D
+   :links: [[links_from_match("names", "ref")]]
+
+.. spec:: The reader in the filter
+   :id: LFM_CURRENT
+   :ref: A
+   :status: closed
+   :links: [[links_from_match("name", "ref", filter="status == current_need['status']")]]
+
+.. spec:: The filter names every need
+   :id: LFM_NEEDS
+   :ref: B
+   :links: [[links_from_match("name", "ref", filter="len(needs) > 1")]]
+
+.. spec:: Nothing matches
+   :id: LFM_NONE
+   :ref: nothing
+   :links: [[links_from_match("name", "ref")]]
+
+.. spec:: The reader holds no value
+   :id: LFM_UNSET
+   :links: [[links_from_match("name", "ref")]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), LINKS_FROM_MATCH_CONF),
+                (Path("index.rst"), LINKS_FROM_MATCH_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_links_from_match(test_app):
+    """``links_from_match`` links to every need whose ``field`` shares a value with the
+    need's ``equals``, each once, in need-id order (written ``LFM_Z``, ``LFM_B``,
+    ``LFM_AB``); ``filter`` as ``links_from_filter`` reads it, ``current_need`` and
+    ``needs`` included. Nothing found is no link and no warning."""
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    needs = _built_needs(app)
+    assert needs["LFM_REPEAT"]["links"] == ["LFM_AB", "LFM_B", "LFM_Z"]
+    assert needs["LFM_FILTER"]["links"] == ["LFM_AB", "LFM_B"]
+    assert needs["LFM_SELF"]["links"] == ["LFM_SELF"]
+    assert needs["LFM_SELF_EX"]["links"] == []
+    assert needs["LFM_ARRAY"]["links"] == ["LFM_LIST"]
+    assert needs["LFM_CURRENT"]["links"] == ["LFM_Z"]
+    assert needs["LFM_NEEDS"]["links"] == ["LFM_AB"]
+    assert needs["LFM_NONE"]["links"] == needs["LFM_UNSET"]["links"] == []
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    # need-id order, each once, however many values match
+    assert "As text: LFM_AB, LFM_B, LFM_Z" in html
+
+
+@pytest.mark.parametrize(
+    "call,message",
+    [
+        pytest.param(
+            '[[links_from_match("", "ref")]]',
+            "links_from_match needs a non-empty 'field'",
+            id="empty-field",
+        ),
+        pytest.param(
+            '[[links_from_match("name", " ")]]',
+            "links_from_match needs a non-empty 'equals'",
+            id="blank-equals",
+        ),
+        pytest.param(
+            '[[links_from_match("name", "num")]]',
+            "links_from_match: the argument 'equals' names 'num' (integer); a join "
+            "compares a string or an array of strings",
+            id="non-text-reader",
+        ),
+        pytest.param(
+            '[[links_from_match("num", "ref")]]',
+            "links_from_match: the argument 'field' names 'num' (integer); a join "
+            "compares a string or an array of strings",
+            id="non-text-candidate",
+        ),
+        pytest.param(
+            '[[links_from_match("links", "ref")]]',
+            "links_from_match: the argument 'field' names 'links', a link type; a join "
+            "compares text fields",
+            id="link-type",
+        ),
+        pytest.param(
+            '[[links_from_match("nosuch", "ref")]]',
+            "links_from_match: the argument 'field' names 'nosuch', which is not a field",
+            id="no-such-field",
+        ),
+        pytest.param(
+            '[[links_from_match("name", "ref", filter="type ==")]]',
+            "invalid syntax",
+            id="filter-does-not-parse",
+        ),
+    ],
+)
+def test_links_from_match_fails(make_app, tmp_path, call, message):
+    """An empty name, a field that is not text (a number, a link type, nothing), and a
+    filter that does not parse fail the call: one ``needs.dynamic_function`` warning
+    naming why (the field and its type), and no links."""
+    (tmp_path / "conf.py").write_text(LINKS_FROM_MATCH_CONF)
+    (tmp_path / "index.rst").write_text(
+        "Fails\n=====\n\n"
+        ".. req:: Target\n   :id: LFM_T\n   :name: A\n\n"
+        f".. spec:: Reader\n   :id: LFM_R\n   :ref: A\n   :num: 7\n   :links: {call}\n"
+    )
+    app = make_app(srcdir=tmp_path, buildername="needs", freshenv=True)
+    app.build()
+    warnings = build_warnings(app)
+    assert len(warnings) == 1, warnings
+    assert message in warnings[0], warnings[0]
+    assert "links_from_match" in warnings[0]
+    assert warnings[0].endswith("[needs.dynamic_function]")
+    assert _built_needs(app)["LFM_R"]["links"] == []
+
+
 # -- three fixes from #1984 -------------------------------------------------------------
 
 PLAIN_CONF = """\

@@ -12,11 +12,12 @@ from unittest.mock import Mock
 import pytest
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.derive import DeriveCall, DeriveRule
+from sphinx_needs.derive import DeriveCall, DeriveJoin, DeriveRule
 from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.functions.functions import DynamicFunctionParsed
 from sphinx_needs.functions.order import (
     BUILTINS,
+    JOIN_READ,
     Column,
     FilterNames,
     OutOfScope,
@@ -417,6 +418,54 @@ EVERY_STATUS = 'status == "open"'
                 ]
             },
         ),
+        # links_from_match: the reader's own value, and the field on every need through
+        # its column, with the filter's names; computed after the stratum: out of scope
+        ("links", "[[links_from_match('grp', 'which')]]", {}),
+        (
+            "links",
+            "[[links_from_match('status', 'which')]]",
+            {
+                "scope": [
+                    OutOfScope(
+                        "dynamic function 'links_from_match'", (("status", "DYN"),)
+                    )
+                ]
+            },
+        ),
+        (
+            "links",
+            "[[links_from_match('grp', 'summary')]]",
+            {
+                "scope": [
+                    OutOfScope(
+                        "dynamic function 'links_from_match'", (("summary", "RD"),)
+                    )
+                ]
+            },
+        ),
+        (
+            "links",
+            f"[[links_from_match('grp', 'which', filter='{EVERY_STATUS}')]]",
+            {
+                "scope": [
+                    OutOfScope(
+                        "dynamic function 'links_from_match'", (("status", "DYN"),)
+                    )
+                ]
+            },
+        ),
+        (
+            "out",
+            "[[links_from_match('summary', 'which')]]",
+            {"columns": [(Column("summary"), JOIN_READ)]},
+        ),
+        (
+            "out",
+            "[[links_from_match('grp', 'which', filter='len(needs) > 1')]]",
+            {"opaque": True},
+        ),
+        # an empty name fails the call: it reads nothing
+        ("links", "[[links_from_match('', 'summary')]]", {}),
         # calc_sum's filter may name ``needs``: what it reads cannot be told, so last
         (
             "out",
@@ -552,6 +601,51 @@ def test_a_fingerprint_reads_the_names_it_includes_on_its_own_need():
     assert build_stratum(project, 3).steps.index(Step((("A", "summary"),))) < (
         build_stratum(project, 3).steps.index(Step((("A", "fp"),)))
     )
+
+
+def test_a_join_reads_its_own_value_and_its_columns():
+    """A rule with a ``join`` reads ``equals`` on its own need, and ``field`` (and a
+    ``copy``'s ``field``) on every need through their columns, whatever ``copy``
+    would read without the join: a computed column is waited for, and a column
+    computed after a ``links`` join's step is a read out of scope on each need
+    computing it."""
+    copy_join = DeriveRule(
+        kind="copy", field="hours", join=DeriveJoin("summary", "which")
+    )
+    links_join = DeriveRule(kind="links", join=DeriveJoin("summary", "which"))
+    rules = {
+        ("RD", "o"): DeriveCall(copy_join),
+        ("RD", "own"): DeriveCall(
+            DeriveRule(kind="copy", field="title", join=DeriveJoin("grp", "summary"))
+        ),
+        ("RD", "lnk"): DeriveCall(links_join),
+    }
+    project = Project(
+        {
+            "DYN": _need("DYN", summary="[[copy('title')]]", hours="[[copy('title')]]"),
+            "RD": _need("RD", summary="[[copy('title')]]", which="x", o=None, own=None),
+        },
+        rules=rules,
+        link_fields=("links", "lnk"),
+        variants={},
+        not_fields=set(),
+        builtins=BUILTINS,
+        copy_match=lambda _filter, _caller: None,
+        sum_candidates=lambda _filter: [],
+        content_refs=lambda _need_id: [],
+    )
+    reads = project.node_reads(("RD", "o"), 2)
+    assert list(reads.deps) == []
+    assert list(reads.columns) == [
+        (Column("summary"), JOIN_READ),
+        (Column("hours"), JOIN_READ),
+    ]
+    own = project.node_reads(("RD", "own"), 2)
+    assert (list(own.deps), list(own.columns)) == ([("RD", "summary")], [])
+    lnk = project.node_reads(("RD", "lnk"), 1)
+    assert list(lnk.scope) == [
+        OutOfScope("derive rule 'links'", (("summary", "DYN"), ("summary", "RD")))
+    ]
 
 
 def test_independent_nodes_by_need_id_then_field():
