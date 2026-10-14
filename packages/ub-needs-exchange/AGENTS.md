@@ -9,8 +9,8 @@ not repeat it.
 
 The record of the needs.json exchange format, and its reader: parsing the envelope,
 selecting a version, and handing out the version's need records with their findings.
-Its consumers are to be sphinx-needs' two readers (`needimport` and `needs_external_needs`,
-from sphinx-needs' next release) and — through the conformance corpus, which it is to vendor — ubCode.
+Its consumers are sphinx-needs' two readers (`needimport` and `needs_external_needs`) and
+— through the conformance corpus, which it is to vendor — ubCode.
 [`design/exchange-contract.md`](design/exchange-contract.md) is the normative
 specification; read it before changing behaviour. The writer (`NeedsList`, still in
 `sphinx_needs/needsfile.py`) and the readers' ingest policies (in `sphinx_needs/api/need.py`)
@@ -60,8 +60,7 @@ uv run poe build-ub-needs-exchange          # sdist + wheel into dist/ub-needs-e
   request that ubCode owes a re-vendor. `.gitattributes` and the taplo/yamlfmt excludes
   protect its bytes; never reformat it.
 - **A diagnostic's `path` and every code are part of the contract**; a message is not.
-  sphinx-needs prints both in its warnings, so once it reads through this package a changed
-  path is a changed warning there.
-- **A release re-floors every consumer.** Once sphinx-needs depends on it, each release
-  rewrites sphinx-needs' `ub-needs-exchange>=` floor (`propagate_floors.py`) and shows it as pending in
+  sphinx-needs prints both in its warnings, so a changed path is a changed warning there.
+- **A release re-floors every consumer.** Each release rewrites sphinx-needs'
+  `ub-needs-exchange>=` floor (`propagate_floors.py`) and shows it as pending in
   `poe release-plan`. Batch changes accordingly.

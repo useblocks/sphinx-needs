@@ -354,6 +354,16 @@ app.connect("env-before-read-docs", load_external_needs)   # Load external need 
 
 The `prepare_env` function initializes `BuildEnvironment` variables, registers services (GitHub), registers dynamic functions, initializes extra fields and links, and optionally starts process timing.
 
+**A needs.json is read through `ub-needs-exchange`** (a runtime dependency), by
+`load_external_needs` and the `needimport` directive alike: `parse`/`load`, `select_version`,
+`records()`. Each `ExchangeError` refuses that source with one warning, each `Diagnostic` is
+a warning naming the source and its path. What becomes of a record — the ten-field table, the
+per-record checks, prefixing — is sphinx-needs' own (`_record_params` in `api/need.py`).
+`sphinx_needs/exchange.py` is only the deprecated alias 9.0.0's users may import, removed at
+10.0; nothing in the package imports it (`tests/test_exchange.py`). The `needs` builder's
+`needs_file` (`NeedsList.load_json`) and `check_needs_file` still read with `json.load`; they
+move with the writer slice.
+
 #### Document Processing
 
 ```python

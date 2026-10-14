@@ -6,7 +6,7 @@ version holds, the schema defaults merged under them, and the findings reported 
 
 It exists because the file is written by two writers (sphinx-needs' `needs` builder and
 ubCode) and read for its records by six readers in two languages (sphinx-needs' `needimport`
-and `needs_external_needs`, which are to read through this package; ubCode's import, external,
+and `needs_external_needs`, which read through this package; ubCode's import, external,
 config-free and diff readers), and a rule that is only written down in one of them is a rule
 the others will diverge from. (sphinx-needs has a seventh: the `needs` builder's
 `needs_file`, see §13.) The
@@ -338,12 +338,10 @@ follows.
 
 ## 13. For consumers
 
-sphinx-needs' two readers of a needs.json are to read it through this package from
-sphinx-needs' next release — `needimport` (a directive's file or URL) and
-`needs_external_needs` (each configured source) — reporting each refusal as one warning that
-refuses that source (`needs.needimport`, `needs.external_needs`) and each finding as a
-warning naming the source and the path, as they do with the copy of this reader sphinx-needs
-9.0.0 shipped. What it then does with each record is its own (§11). `sphinx_needs.exchange`,
-where 9.0.0 shipped this reader, is then to become a deprecated alias of this package until
-sphinx-needs 10.0.
+sphinx-needs' two readers of a needs.json read it through this package — `needimport` (a
+directive's file or URL) and `needs_external_needs` (each configured source) — and report each
+refusal as one warning that refuses that source (`needs.needimport`,
+`needs.external_needs`) and each finding as a warning naming the source and the path. What
+it then does with each record is its own (§11). `sphinx_needs.exchange`, where 9.0.0
+shipped this reader, is a deprecated alias of this package until sphinx-needs 10.0.
 The `needs` builder's `needs_file` (`NeedsList.load_json`) and `check_needs_file` still read the file with `json.load`; they move with the writer, a later slice.

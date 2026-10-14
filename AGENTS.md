@@ -27,7 +27,7 @@ the shim.
 | sphinx-test-reports' behaviour (the Sphinx extension), tests, documentation | `packages/sphinx-test-reports/{src/sphinx_test_reports,tests,docs}/` — start at [`packages/sphinx-test-reports/AGENTS.md`](packages/sphinx-test-reports/AGENTS.md); its `docs/` are ub-test-reports' too |
 | ub-test-reports' behaviour (the converter, the pytest plugin, the parsers, the `[test_reports]` model — no Sphinx), tests | `packages/ub-test-reports/{src/ub_test_reports,tests}/` — start at [`packages/ub-test-reports/AGENTS.md`](packages/ub-test-reports/AGENTS.md) |
 | how every tool reads `ubproject.toml` — finding, anchoring, `[variants]`, the variant-data merge | `packages/ub-project/{src/ub_project,tests,design}/` — start at [`packages/ub-project/AGENTS.md`](packages/ub-project/AGENTS.md) |
-| how a needs.json is read — the envelope, `format_version`, selecting a version, the records and their findings (the record of the format) | `packages/ub-needs-exchange/{src/ub_needs_exchange,tests,design}/` — start at [`packages/ub-needs-exchange/AGENTS.md`](packages/ub-needs-exchange/AGENTS.md); sphinx-needs' `needimport` and `needs_external_needs` are to read through it (from its next release), while the writer, the builder's `needs_file` and the readers' ingest policies are still sphinx-needs' (`needsfile.py`, `api/need.py`) |
+| how a needs.json is read — the envelope, `format_version`, selecting a version, the records and their findings (the record of the format) | `packages/ub-needs-exchange/{src/ub_needs_exchange,tests,design}/` — start at [`packages/ub-needs-exchange/AGENTS.md`](packages/ub-needs-exchange/AGENTS.md); sphinx-needs' `needimport` and `needs_external_needs` read through it, while the writer, the builder's `needs_file` and the readers' ingest policies are still sphinx-needs' (`needsfile.py`, `api/need.py`) |
 | sphinx-ai-index's behaviour (the `ai_docs_index.json` every docs site here publishes, and the `page-summary` directive), tests, the JSON contract | `packages/sphinx-ai-index/{src/sphinx_ai_index,tests,design}/` — start at [`packages/sphinx-ai-index/AGENTS.md`](packages/sphinx-ai-index/AGENTS.md) |
 | the fixtures, helpers and renderer resolution three suites share | `packages/sphinx-needs-testkit/` — a member this repository never publishes, installed through the root's `test` group and loaded by each suite's `tests/conftest.py` as a pytest plugin |
 | the five conformance corpora | `packages/sphinx-needs/tests/conformance/` (needflow) and `packages/sphinx-mounts/tests/fixtures/variant_condition_conformance.toml` (variant conditions), whose repository of record is ubCode, and `packages/ub-project/tests/fixtures/ubproject_reading_conformance.toml` (reading `ubproject.toml`) and `packages/sphinx-needs/tests/fixtures/derive_conformance.toml` (declared derived fields: each case a project, run by `tests/test_derive_conformance.py`) and `packages/ub-needs-exchange/tests/fixtures/needs_json_reading_conformance.toml` (reading a needs.json), whose record is THIS repository and which ubCode is to vendor — all shared byte-for-byte; do not reformat any of them (`.gitattributes` plus the yamlfmt and taplo excludes protect them) |
@@ -88,9 +88,9 @@ nothing either**: its reader, its contract (`design/exchange-contract.md`) and i
 conformance corpus (ubCode is to vendor it), standard library only and fenced the same way.
 CI's `toolchain-free` job runs its suite beside ub-test-reports' and ub-project's, and is
 its only cell. It reads; what a project makes of a record — the ten-field table,
-`id_prefix`, coercion — stays in sphinx-needs. sphinx-needs is to depend on it at runtime
-from its next release; then a sphinx-needs release needs the tree's version of it on PyPI
-first, and each release of it re-floors sphinx-needs.
+`id_prefix`, coercion — stays in sphinx-needs. sphinx-needs depends on it at runtime, so a
+sphinx-needs release needs the tree's version of it on PyPI first, and each release of it
+re-floors sphinx-needs.
 
 **`packages/sphinx-ai-index` writes a file ubCode reads**: `ai_docs_index.json`, the page
 index every `sphinx-*` docs site here publishes and ubCode's documentation search builds its
