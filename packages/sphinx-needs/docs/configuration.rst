@@ -649,7 +649,7 @@ What a rule costs
 
 A rule is computed once per step for every need holding it (a ``links`` rule's ``where`` is tested once,
 on each candidate alone), so writing one costs little: what costs is what it **stores**.
-Every need holding a ``links`` rule with a ``where`` is linked to the same needs (but itself),
+Every need holding a ``links`` rule with a ``where`` (and no ``join``) is linked to the same needs (but itself),
 and each of them gets a back link from every one (a ``join`` links each need to its own matches):
 on every need of a project of 2 000, a rule whose ``where`` half the needs pass stores about 2 000 000 links
 and as many back links, and ``needs.json`` grows from about 2.5 MB to about 58 MB;
