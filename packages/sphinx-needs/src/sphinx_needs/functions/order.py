@@ -832,14 +832,12 @@ class _CallReads:
             for name in (field, equals)
         ):
             return  # the call fails: a link list is not text
-        filter_string = args.get("filter")
-        names = None
-        if filter_string:
-            names = self._filter(filter_string)
-            if names is None:
-                return
+        # the join's own reads, whatever the filter: a filter whose reads cannot be
+        # told (``needs``) makes the call last, never blind to these
         self._read(self.need.id, equals)
         self._column(field, None, JOIN_READ)
+        filter_string = args.get("filter")
+        names = self._filter(filter_string) if filter_string else None
         if names is not None:
             # current_need is the need the call is in
             for key in sorted(names.current):
