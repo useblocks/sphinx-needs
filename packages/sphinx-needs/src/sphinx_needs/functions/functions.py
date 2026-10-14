@@ -324,8 +324,9 @@ class UnresolvedReads:
     Kept by the name read, in the order first read, each need named once per name.
 
     :param pending: The ``(need id, name)`` values of the pass not computed yet.
-    :param shared: What the calls of one step of the pass work out once and share
-        (the index of a join), or ``None`` outside the pass.
+    :param shared: What the calls of one stratum of the pass (the link fields, the
+        other fields, the late rules) work out once and share (the index of a join),
+        or ``None`` outside the pass.
     """
 
     __slots__ = ("_pending", "_reads", "shared")
@@ -337,7 +338,7 @@ class UnresolvedReads:
     ) -> None:
         self._pending = pending
         self._reads: dict[str, dict[str, None]] = {}
-        #: what the calls of the step share, from one call to the next
+        #: what the calls of the stratum share, from one call to the next
         self.shared = shared
 
     def note(self, name: str, need_id: str) -> None:
@@ -571,8 +572,9 @@ class _Pass:
         #: what the derive rules compute once per pass (the components of a
         #: ``transitive`` rule's links), shared by the needs
         self.rule_cache: dict[Any, Any] = {}
-        #: what the calls compute once per stratum (the index of a join's field, built
-        #: from the values final in it), shared by the needs
+        #: what the calls compute once per stratum (the link fields, the other fields,
+        #: the late rules): the index of a join's field, built from the values final in
+        #: it, shared by the needs
         self.stratum_cache: dict[Any, Any] = {}
         #: the ``(need id, name)`` values not computed yet, a name being the field's,
         #: or ``parent_need`` for a computed ``parent_needs``

@@ -1956,9 +1956,10 @@ def _join_once_index(readers: int) -> str:
     ],
     indirect=True,
 )
-def test_a_join_index_is_built_once_per_step(test_app, monkeypatch):
+def test_a_join_index_is_built_once_per_stratum(test_app, monkeypatch):
     """A join reads its ``field`` on every need through one index from each value to
-    the needs holding it, built once per step of the build and shared by every need
+    the needs holding it, built once per stratum of the build (the link fields, the
+    other fields, the late rules) and shared by every need
     holding the rule and by every ``links_from_match`` of the same field: 12 needs
     hold ``tested`` (a link type, computed first) and 6 call ``links_from_match`` on
     ``name``, one index; 12 hold ``owner_of`` (computed with the other fields), one
@@ -2086,7 +2087,7 @@ def test_a_join_reads_final_values(test_app):
     ``where`` naming one is not (``needs.derive_scope``, naming the needs). A ``copy``
     join over its own result reads itself on every need: a cycle of every need
     holding it, through the join (``needs.derive_cycle``). Your own function computes
-    after every rule of its step, so a join reading what it computes says so, and
+    after every rule of its stratum, so a join reading what it computes says so, and
     reads the placeholder.
     """
     app = test_app

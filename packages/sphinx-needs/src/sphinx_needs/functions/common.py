@@ -769,11 +769,14 @@ def links_from_match(
 
            Links to the specs titled one of its values, ``LFM_SPEC_1`` and ``LFM_SPEC_2``.
 
-    sphinx-test-reports' ``tr_link(test_option, target_option)`` links the same needs as
-    ``links_from_match(target_option, test_option, include_self=True)`` -- note the
-    arguments' order, swapped -- with these differences: ``tr_link`` compares each
-    need's ``target_option`` whole, without splitting it, links a need once per value
-    that matches it, in the order the project holds the needs, and fails on an array.
+    The nearest spelling of sphinx-test-reports' ``tr_link(test_option, target_option)``
+    is ``links_from_match(target_option, test_option, include_self=True)`` -- note the
+    arguments' order, swapped. ``tr_link`` links a need once per value that matches it,
+    in the order the project holds the needs, compares each need's ``target_option``
+    whole (so an array or a comma-separated value never matches, and an unstripped one
+    only as written), and fails when this need's ``test_option`` is an array or a
+    number; ``links_from_match`` reads both sides by value and fails the call on a
+    number or boolean field.
 
     :param field: The field read on every need.
     :param equals: The field of this need whose values a need's ``field`` must share.
@@ -1030,7 +1033,7 @@ class _JoinIndex:
 
     :ivar ids: Each value, with the ids of the needs holding it, in need-id order.
     :ivar pending: The needs whose field was not computed yet when the index was
-        built (by your own function, which runs after every rule of the step).
+        built (by your own function, which runs after every rule of the stratum).
     """
 
     ids: dict[str, list[str]]
@@ -1069,8 +1072,9 @@ def join_matches(
     values it shares, in need-id order (the ids compared as strings). Needs only: a
     part is never one. ``need`` itself only with ``include_self``.
 
-    The index of ``field`` is built once per step of the pass, shared by every rule and
-    call of the step reading it (``reads.shared``); outside the pass, once per call.
+    The index of ``field`` is built once per stratum of the pass (the link fields, the
+    other fields, the late rules), shared by every rule and call of the stratum reading
+    it (``reads.shared``); outside the pass, once per call.
     """
     shared = None if reads is None else reads.shared
     key = ("join", field)
