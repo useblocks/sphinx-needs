@@ -29,7 +29,7 @@ from sphinx_needs.logging import WarningSubTypeDescription, WarningSubTypes
 from sphinx_needs_testkit import build_warnings
 
 
-def _conf(threshold: int | None, links: dict[str, Any], extra: str = "") -> str:
+def _conf(threshold: object, links: dict[str, Any], extra: str = "") -> str:
     """A ``conf.py`` declaring ``links`` and the threshold (unset with ``None``)."""
     text = (
         'extensions = ["sphinx_needs"]\n'
@@ -37,7 +37,7 @@ def _conf(threshold: int | None, links: dict[str, Any], extra: str = "") -> str:
         f"needs_links = {links!r}\n"
     )
     if threshold is not None:
-        text += f"needs_derive_max_links_per_need = {threshold}\n"
+        text += f"needs_derive_max_links_per_need = {threshold!r}\n"
     return text + extra
 
 
@@ -445,6 +445,28 @@ def test_the_threshold(test_app, expected):
     app = test_app
     app.build()
     assert _fields(app) == expected
+
+
+@pytest.mark.parametrize(
+    ("test_app", "kind"),
+    [
+        # 16 links on 5 needs: "3" would warn as 3, True as 1
+        (_project(_conf("3", OPEN_ALL), *FIVE), "str"),
+        (_project(_conf(True, OPEN_ALL), *FIVE), "bool"),
+    ],
+    indirect=["test_app"],
+)
+def test_a_threshold_that_is_not_an_integer_is_not_counted(test_app, kind):
+    """A string or a boolean threshold is reported by Sphinx's own type check, and the
+    links are not counted: the build goes on (a string compared with the links would
+    abort it from the ``write-started`` handler)."""
+    app = test_app
+    app.build()
+    warnings = build_warnings(app)
+    assert any(
+        "needs_derive_max_links_per_need" in w and f"`{kind}'" in w for w in warnings
+    ), warnings
+    assert _dense(app) == []
 
 
 @pytest.mark.parametrize(
