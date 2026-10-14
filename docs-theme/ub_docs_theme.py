@@ -63,9 +63,12 @@ def apply_defaults(app: Sphinx, config: Config) -> None:
         config.html_sidebars = {"**": list(SIDEBARS)}
     config.html_context = {"repository": REPOSITORY, **config.html_context}
     config.html_theme_options = {**THEME_OPTIONS, **config.html_theme_options}
-    # `html_css_files` entries load at priority 800, so at 600 a site's own stylesheet
-    # comes after this one and overrides it, rule for rule
-    app.add_css_file("ub-furo.css", priority=600)
+    # Between furo's own extension sheet and the site's: furo adds
+    # `styles/furo-extensions.css` at 600 (in `builder-inited`, after this, so a tie would
+    # put this one first and furo's sphinx-design tokens would win), and `html_css_files`
+    # entries load at 800, so a site's own stylesheet still comes after this one and
+    # overrides it, rule for rule
+    app.add_css_file("ub-furo.css", priority=700)
 
 
 def setup(app: Sphinx) -> dict[str, Any]:
