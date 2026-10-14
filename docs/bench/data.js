@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791961959249,
+  "lastUpdate": 1791975669630,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -24552,6 +24552,42 @@ window.BENCHMARK_DATA = {
             "value": 58.25676435599999,
             "unit": "s",
             "extra": "Commit: ef44b71217a3316b9ba816ee776af38d3d632d50\nBranch: master\nTime: 2026-10-14T09:11:08+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d048d9234783aa2a36ccb71cdd795334c887390e",
+          "message": "✨ ub-needs-exchange: a new library, the record of the needs.json format (#2219)\n\n`ub-needs-exchange` is a new library in the workspace: the record of the\nneeds.json exchange format — how the file\nis read, written down once — shaped like `ub-project`: standard library\nonly, no Sphinx, mechanisms and no policy,\nwith a contract document and one conformance corpus ubCode is to vendor.\nThis pull request adds the package alone;\nsphinx-needs does not depend on it yet (that is the next pull request,\nonce 1.0.0 is on PyPI).\n\n### What it holds\n\n- **The reader**: the one sphinx-needs 9.0.0 ships as\n`sphinx_needs/exchange.py`, copied (sphinx-needs keeps its\nown until the follow-up) — `parse` / `load` → `Document.select_version`\n→ `Version.records()`, `ExchangeError` with\na code for a file no record can be read from, `Diagnostic` (code, path,\nmessage) for what is read nonetheless.\n- **One addition**: a top-level `format_version`. Absent = format 1, the\nonly one there is; above 1 is read as 1 with\n`format_version_unsupported`; anything but an integer ≥ 1 refuses the\nfile (`format_version_invalid`). Nothing\n  writes it yet.\n- **Not here yet (later slices)**: the writer (`NeedsList`,\n`generate_needs_schema`, `needsfile.json`), the readers'\n  ingest policies, ub-test-reports' own writer.\n\n### The contract\n\n`packages/ub-needs-exchange/design/exchange-contract.md`: the text (what\nis JSON here, the BOM, duplicated keys), the\nenvelope (`format_version`, `versions`, `current_version`; the rest\ninformative, unknown keys ignored), selecting a\nversion (requested → `current_version` → the `\"\"` name), a record (the\nkey is the id, the legacy `description`,\nevery other key handed on), schema defaults, every code with its path,\nthe pre-3.0 / 3.x / 4.x shapes a v1 reader\nmust still read, the value serialisation the `hash` derive kind depends\non, and what the package does not decide.\nEvery rule names the corpus case or unit test that pins it.\n\n### The corpus\n\n`tests/fixtures/needs_json_reading_conformance.toml`: 74 cases, all of\nthe `document` layer; the `ingest` layer is\ndefined for the cases to come, and a runner skips — counts, never runs —\na layer it does not implement. Findings\ncompare as code + path, values as JSON values. The runner runs each case\nthrough `parse` and through `load`, and\npins the count. No case is `divergent`.\n\n### Base\n\nOn `master` after the 9.0.0 release train (`ef44b712`, #2213). The lock\ngains the member's eight lines and nothing\nelse (the train's own relock already carries uv's re-solve of the unused\npy<3.12 × sphinx-9 fork).\n\n### Release\n\n`packages/ub-needs-exchange/docs/changelog.rst` carries `:Released:\n2026-10-15`, PROVISIONAL — re-stamp it on the\nmerge day. Right after this merges: `git tag ub-needs-exchange-v1.0.0 &&\ngit push origin ub-needs-exchange-v1.0.0`\n(rehearse first: `gh workflow run release.yaml -f\ntag=ub-needs-exchange-v1.0.0`). No `bump`: the manifest already\nsays 1.0.0. Two things must exist first, both outside the repository:\nthe GitHub environment `pypi-ub-needs-exchange` with the\ntag policy `ub-needs-exchange-v*` (the shape of the existing\n`pypi-<dist>` environments), and the PyPI pending trusted\npublisher for `ub-needs-exchange` (owner `useblocks`, repository\n`sphinx-needs`, workflow `release.yaml`, environment\n`pypi-ub-needs-exchange`). Every check of this pull request is green —\nnothing in this tree depends on the package.\n\n### ubCode\n\nubCode is to vendor the corpus's `document` layer — after the shared\nversion-resolution refactor across its four\nneeds.json readers that useblocks/ubcode#4045 sets up — with a\nprovenance block and a case-count fence, as it vendors\nub-project's. None of the divergence register's needs.json rows is a\ndocument-layer behaviour, so no case is marked;\nthe cases ubCode's readers differ on today are its to follow. Nothing is\nowed until it vendors.",
+          "timestamp": "2026-10-14T12:59:47+02:00",
+          "tree_id": "b23eee81357f404af15e13a5e2333e2788b63191",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/d048d9234783aa2a36ccb71cdd795334c887390e"
+        },
+        "date": 1791975661017,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.10456287100001305,
+            "unit": "s",
+            "extra": "Commit: d048d9234783aa2a36ccb71cdd795334c887390e\nBranch: master\nTime: 2026-10-14T12:59:47+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 53.07983851900002,
+            "unit": "s",
+            "extra": "Commit: d048d9234783aa2a36ccb71cdd795334c887390e\nBranch: master\nTime: 2026-10-14T12:59:47+02:00"
           }
         ]
       }
