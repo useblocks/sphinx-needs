@@ -25,7 +25,7 @@ Improvements
   spelling of sphinx-test-reports' ``tr_link(test_option, target_option)`` is
   ``links_from_match(target_option, test_option, include_self=True)`` -- the arguments swapped, and it
   differs where ``tr_link`` links once per matching value, follows the project's order, compares the
-  candidate whole and fails on an array or number. A rule
+  candidate whole and fails when the need's own value is an array or number. A rule
   that cannot be read is reported as ``needs.derive_invalid``, as every rule is; three refusals of an
   existing rule changed their words with it (``links`` "requires the role 'where' or 'join'", and
   ``copy``'s ``from`` / ``over`` / ``join`` and ``select`` texts).
