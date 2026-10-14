@@ -2191,6 +2191,10 @@ Readers without values
 .. test:: Reads Z
    :id: TEST_4
    :ref: Z
+
+.. test:: Its ref by your function
+   :id: TEST_5
+   :ref: [[later()]]
 """
 
 
@@ -2210,12 +2214,15 @@ Readers without values
 def test_a_join_without_values_reads_no_other_need(test_app):
     """A need whose ``equals`` gives no value matches nothing, whatever the other needs
     hold, so it reads no need's ``field``: only the needs with values are told that
-    your own function computes a ``key`` after the rule read it."""
+    your own function computes a ``key`` after the rule read it. A need's own
+    ``equals`` is read whatever it holds: one your own function computes (``TEST_5``)
+    is told so, and matches nothing yet."""
     app = test_app
     app.build()
     needs = _needs(app)
     assert needs["TEST_1"]["o_join"] == "alice"
     assert needs["TEST_4"]["o_join"] is None
+    assert needs["TEST_5"]["o_join"] is None
     read = (
         "WARNING: derive rule 'copy' for option 'o_join' read 'key' on need 'REQ_2' "
         "before it was computed: it is computed by your own function 'later', which "
@@ -2224,6 +2231,10 @@ def test_a_join_without_values_reads_no_other_need(test_app):
     assert build_warnings(app) == [
         f"<srcdir>/index.rst:14: {read}",
         f"<srcdir>/index.rst:25: {read}",
+        "<srcdir>/index.rst:29: WARNING: derive rule 'copy' for option 'o_join' read "
+        "'ref' on need 'TEST_5' before it was computed: it is computed by your own "
+        "function 'later', which runs after the built-in functions "
+        "[needs.derive_scope]",
     ]
 
 
