@@ -43,6 +43,7 @@
           - 'scripts/**'
           - 'tools/**'
           - 'vendor/**'
+          - 'docs-theme/**'
           - 'pyproject.toml'
           - '.pre-commit-config.yaml'
           - '.readthedocs.yml'

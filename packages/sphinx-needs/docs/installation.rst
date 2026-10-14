@@ -91,7 +91,7 @@ For examples of how to adjust the CSS, this documentation is configured to build
 .. dropdown:: furo
     :icon: paintbrush
 
-    .. literalinclude:: _static/_css/furo.css
+    .. literalinclude:: ../../../docs-theme/static/ub-furo.css
         :language: css
         :start-after: /* doc config start */
         :end-before: /* doc config end */

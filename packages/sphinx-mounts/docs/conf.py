@@ -1,5 +1,6 @@
 """Sphinx configuration for the sphinx-mounts docs."""
 
+import sys
 import tomllib
 from datetime import datetime
 from pathlib import Path
@@ -21,8 +22,15 @@ extensions = [
     "sphinx_ai_index",
 ]
 
+# The useblocks look for furo, shared with the repository's other docs sites
+# (docs-theme/README.md at the repository root). A copy of these docs outside the
+# repository has no such directory, so a build from one falls back to plain furo.
+_DOCS_THEME = Path(__file__).resolve().parents[3] / "docs-theme"
+if _DOCS_THEME.is_dir():
+    sys.path.insert(0, str(_DOCS_THEME))
+    extensions.append("ub_docs_theme")
+
 exclude_patterns: list[str] = []
-templates_path = ["_static/_templates/furo"]
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
@@ -33,29 +41,14 @@ html_title = "sphinx-mounts"
 html_theme = "furo"
 html_static_path = ["_static"]
 html_favicon = "_static/favicon.svg"
+# The sidebar, the view/edit buttons, the repository they point into and the stylesheet
+# come from `ub_docs_theme` above (which also hides the textual title: the logo carries
+# the project name). What is here is this site's own.
 html_theme_options = {
-    # The logo carries the project name, so hide the textual title.
-    "sidebar_hide_name": True,
     "light_logo": "sphinx-mounts-logo_light.svg",
     "dark_logo": "sphinx-mounts-logo_dark.svg",
-    "source_repository": "https://github.com/useblocks/sphinx-needs",
-    "source_branch": "master",
     "source_directory": "packages/sphinx-mounts/docs/",
 }
-html_sidebars = {
-    "**": [
-        "sidebar/brand.html",
-        "sidebar/search.html",
-        "sidebar/scroll-start.html",
-        "sidebar/navigation.html",
-        "sidebar/ethical-ads.html",
-        "sidebar/scroll-end.html",
-        "side-github.html",
-        "sidebar/variant-selector.html",
-    ]
-}
-html_context = {"repository": "useblocks/sphinx-needs"}
-html_css_files = ["furo.css"]
 
 # Named hyperlink targets for sibling useblocks projects. Defined once
 # here (appended to every RST source via ``rst_epilog``) so the URLs are

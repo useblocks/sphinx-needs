@@ -1,8 +1,9 @@
 /*
  * useblocks branding for the `ubc build html` site.
  *
- * The ubCode counterpart of `furo.css`, which brands the Sphinx build: same
- * identity, different engine. Wired up by `extra_css` in `docs/ubproject.toml`,
+ * The ubCode counterpart of `docs-theme/static/ub-furo.css` at the repository
+ * root (the look every furo site here shares, which brands the Sphinx build) and
+ * of this site's own `_css/furo.css`: same identity, different engine. Wired up by `extra_css` in `docs/ubproject.toml`,
  * and written entirely against the documented theming surface — the `--ubc-*`
  * custom properties and the `ub-*` class names
  * (docs/source/configuration/build_html.rst). Nothing here reaches into a rule
@@ -17,8 +18,9 @@
  * NOTE for the Sphinx side: this file sits under `html_static_path`, so
  * `sphinx-build` copies it into its own `_static/` — but it is deliberately
  * ABSENT from `html_css_files` in `docs/conf.py`. Sphinx is branded by
- * `furo.css`; linking this one there too would apply two theme layers to one
- * page. Leave it unlinked.
+ * `ub-furo.css` (added by the `ub_docs_theme` extension) and `_css/furo.css`;
+ * linking this one there too would apply two theme layers to one page. Leave it
+ * unlinked.
  */
 
 :root {

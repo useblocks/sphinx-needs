@@ -2877,7 +2877,7 @@ libclang = [
 requires-dist = [
     { name = "comment-parser", specifier = ">=1.2.4" },
     { name = "docutils", specifier = ">=0.21" },
-    { name = "furo", marker = "extra == 'docs'", specifier = ">=2024.5.6" },
+    { name = "furo", marker = "extra == 'docs'", specifier = ">=2025.12.19" },
     { name = "giturlparse", specifier = ">=0.12.0" },
     { name = "ignore-python", specifier = ">=0.3.3" },
     { name = "jinja2" },
@@ -2994,7 +2994,7 @@ docs = [
 [package.metadata]
 requires-dist = [
     { name = "docutils", specifier = ">=0.21" },
-    { name = "furo", marker = "extra == 'docs'", specifier = ">=2024.5.6" },
+    { name = "furo", marker = "extra == 'docs'", specifier = ">=2025.12.19" },
     { name = "ignore-python", specifier = ">=0.3.3" },
     { name = "myst-parser", marker = "extra == 'docs'", specifier = ">=4.0.0" },
     { name = "sphinx", specifier = ">=7.4,<10" },
@@ -3274,7 +3274,7 @@ provides-extras = ["plotting", "docs", "docs-mounts", "docs-codelinks", "docs-re
 benchmark = [
     { name = "beautifulsoup4", specifier = ">=4.12" },
     { name = "defusedxml", specifier = "~=0.7.1" },
-    { name = "furo", specifier = ">=2024.5.6" },
+    { name = "furo", specifier = ">=2025.12.19" },
     { name = "hypothesis", specifier = ">=6.0" },
     { name = "lxml", specifier = "~=6.1" },
     { name = "matplotlib", specifier = ">=3.3.0" },
@@ -3298,7 +3298,7 @@ codelinks-libclang = [{ name = "libclang", specifier = ">=18" }]
 dev = [
     { name = "beautifulsoup4", specifier = ">=4.12" },
     { name = "defusedxml", specifier = "~=0.7.1" },
-    { name = "furo", specifier = ">=2024.5.6" },
+    { name = "furo", specifier = ">=2025.12.19" },
     { name = "hypothesis", specifier = ">=6.0" },
     { name = "lxml", specifier = "~=6.1" },
     { name = "matplotlib", specifier = ">=3.3.0" },
@@ -3330,7 +3330,7 @@ sphinx-9 = [
 test = [
     { name = "beautifulsoup4", specifier = ">=4.12" },
     { name = "defusedxml", specifier = "~=0.7.1" },
-    { name = "furo", specifier = ">=2024.5.6" },
+    { name = "furo", specifier = ">=2025.12.19" },
     { name = "hypothesis", specifier = ">=6.0" },
     { name = "lxml", specifier = "~=6.1" },
     { name = "matplotlib", specifier = ">=3.3.0" },

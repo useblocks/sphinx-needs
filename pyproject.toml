@@ -148,7 +148,7 @@ test = [
   # `html_theme = "furo"` and `test_src_trace.py` builds the first, so this is a test
   # dependency there rather than a docs one. It costs nothing in the lock -- it is already
   # here through `sphinx-needs[theme-furo]` -- only in what the `test` group installs
-  "furo>=2024.5.6",
+  "furo>=2025.12.19",
   # sphinx-ai-index: its property-based tests need it. It was in that package's own
   # `testing` group, which this group replaces; being HERE is also what carries it into the
   # release workflow's compat cell, which builds its environment from
@@ -373,6 +373,8 @@ include = [
   "tools/src",
   ".github/scripts",
   "scripts",
+  # the furo extension the docs sites load from the checkout; no package imports it
+  "docs-theme",
 ]
 # the scripts' own tests are not checked, for the same reason the package's are not: pytest
 # is deliberately absent from the `typing` environment, which pins the oldest supported
@@ -802,7 +804,7 @@ help = "Type-check every package with ty against the oldest supported sphinx (th
 # but it is NOT a fence on `src.include` above: ty intersects the two, so a stale `include`
 # makes this check zero files and exit 0. The canary step in ci.yaml's Lint job is what
 # guards that.
-cmd = "ty check packages/sphinx-needs/src/sphinx_needs packages/sphinx-mounts/src/sphinx_mounts packages/sphinx-codelinks/src/sphinx_codelinks packages/sphinx-test-reports/src packages/ub-test-reports/src/ub_test_reports packages/ub-project/src/ub_project packages/ub-needs-exchange/src/ub_needs_exchange packages/sphinx-ai-index/src/sphinx_ai_index tools/src .github/scripts scripts --python .venvs/typing"
+cmd = "ty check packages/sphinx-needs/src/sphinx_needs packages/sphinx-mounts/src/sphinx_mounts packages/sphinx-codelinks/src/sphinx_codelinks packages/sphinx-test-reports/src packages/ub-test-reports/src/ub_test_reports packages/ub-project/src/ub_project packages/ub-needs-exchange/src/ub_needs_exchange packages/sphinx-ai-index/src/sphinx_ai_index tools/src .github/scripts scripts docs-theme --python .venvs/typing"
 executor = { type = "uv", frozen = true, no-group = "dev", group = ["typing"] }
 env = { UV_PROJECT_ENVIRONMENT = ".venvs/typing" }
 

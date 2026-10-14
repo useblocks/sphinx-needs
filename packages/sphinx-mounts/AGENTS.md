@@ -99,6 +99,11 @@ That is not cosmetic: Read the Docs names a `conf.py` and then runs sphinx with 
 own directory as the source directory, with no `-c` — so the split layout this package used
 as a standalone repository cannot be built there at all. Do not reintroduce it.
 
+The look is not this package's: `docs/conf.py` loads the useblocks furo look from
+`docs-theme/` at the repository root, which the other furo sites share, so a change there
+changes this site too. CI builds these docs on every pull request (`Docs mounts` in
+`ci.yaml`), `-nW`, for that reason.
+
 ### Documentation Style (RST)
 
 - **No nested inline markup.** RST does not support inline markup nesting. Specifically,
