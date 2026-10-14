@@ -116,7 +116,7 @@ class FieldSchema:
             isinstance(pair, tuple)
             and len(pair) == 2
             and isinstance(pair[0], str)
-            and (isinstance(pair[1], FieldLiteralValue) | FieldFunctionArray)  # ty: ignore[unsupported-operator]
+            and isinstance(pair[1], FieldLiteralValue | FieldFunctionArray)
             for pair in self.predicate_defaults
         ):
             raise ValueError(

@@ -66,16 +66,12 @@ class FilterBase(SphinxDirective):
             else []
         )
 
-        status = self.options.get("status")
-        if status:
-            try:
-                status = str(status)
-                status = [stat.strip() for stat in re.split(";|,", status)]
-            except Exception:
-                # If we could not transform/use status information, we just skip this status
-                pass
-        else:
-            status = []
+        status_option = self.options.get("status")
+        status = (
+            [stat.strip() for stat in re.split(";|,", str(status_option))]
+            if status_option
+            else []
+        )
 
         types = self.options.get("types", [])
         if isinstance(types, str):
@@ -91,7 +87,7 @@ class FilterBase(SphinxDirective):
 
         # Add the need and all needed information
         collected_filter_options: FilterAttributesType = {
-            "status": status,  # ty: ignore[invalid-argument-type]
+            "status": status,
             "tags": tags,
             "types": types,
             "filter": self.options.get("filter"),  # ty: ignore[invalid-argument-type]

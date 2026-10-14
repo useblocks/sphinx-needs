@@ -68,6 +68,11 @@ Internal changes
   rules are on: the bug above is what the first found, and the rest of its findings are
   rewritten so the checker can follow them
 
+- 🏷️ A ``FieldSchema`` constructed with predicate defaults no longer raises ``TypeError``:
+  its value check read ``isinstance(v, A) | B``. No build reached it, as predicates are
+  attached after construction. That fix, and two in ``filter_common.py`` and ``views.py``,
+  remove three ``# ty: ignore`` comments (:issue:`1835`)
+
 - 🏷️ Every function in the shipped code is annotated, and ruff's ``ANN`` rules keep it so
   across the workspace; ``sphinx_needs.setup`` now declares its types, and the internal
   ``profile`` decorator preserves the signature of what it wraps

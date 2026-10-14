@@ -347,14 +347,15 @@ class NeedsAndPartsListView:
         selected_ids: Iterable[tuple[str, str | None]]
         if self._selected_ids is None:
             # the id can either be a need or a part id
-            selected_ids = [
+            need_and_part_ids: list[tuple[str, str | None]] = [
                 (need_id, None) for need_id in values if need_id in self._all_needs
             ]
             for part_id in values:
-                selected_ids.extend(
+                need_and_part_ids.extend(
                     (need_id, part_id)
-                    for need_id in self._indexes.indexes.parts_to_needs.get(part_id, [])  # ty: ignore[invalid-argument-type]
+                    for need_id in self._indexes.indexes.parts_to_needs.get(part_id, [])
                 )
+            selected_ids = need_and_part_ids
         else:
             val_set = set(values)
             selected_ids = (
