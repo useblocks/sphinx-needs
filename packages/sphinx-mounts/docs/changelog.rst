@@ -3,9 +3,34 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:0.3.0`:
 
+0.3.0
+-----
+
+:Released: 2026-10-14
+
+.. note::
+
+   **Variant data from** ``[variants]``: sphinx-mounts now reads the variant data from the
+   ``[variants]`` table of ``ubproject.toml`` that every tool shares, through ub-project,
+   which becomes a dependency (`#2000 <https://github.com/useblocks/sphinx-needs/pull/2000>`__).
+   ``[needs] variant_data*`` keeps working, but a project whose data is only in
+   ``[variants]`` and whose Sphinx-Needs reads the file needs **Sphinx-Needs 9.0.0**, or
+   the build is refused rather than silently excluding the gated content. Python 3.11 is
+   supported again; docutils 0.21 is the new floor.
+
+- **sphinx-mounts now lives in the Sphinx-Needs repository**, as
+  `packages/sphinx-mounts <https://github.com/useblocks/sphinx-needs/tree/master/packages/sphinx-mounts>`__,
+  and 0.3.0 is its first release from there
+  (`#1850 <https://github.com/useblocks/sphinx-needs/pull/1850>`__). The whole of
+  ``useblocks/sphinx-mounts``' history came with it, rewritten so that every historical
+  commit already places its files under that directory, and
+  ``packages/sphinx-mounts/design/import-commit-map.txt`` maps every old hash to its new
+  one. Issues and pull requests are opened at https://github.com/useblocks/sphinx-needs,
+  where issues about this package carry the ``pkg: sphinx-mounts`` label. Release tags are
+  prefixed: ``sphinx-mounts-v0.3.0`` rather than ``0.3.0``, and the six earlier releases
+  are tagged the same way there. The distribution and import names are unchanged.
 - **Python 3.11 is supported again**: the floor moves down from 3.12 to 3.11, so
   sphinx-mounts can be used from the same environment as the other useblocks Sphinx
   extensions. The CI matrix runs the floor against Sphinx 7.4, 8 and 9 (9.0.x is the last

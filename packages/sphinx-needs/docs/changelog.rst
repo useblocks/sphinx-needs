@@ -4,8 +4,27 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:9.0.0`:
+
+9.0.0
+-----
+
+:Released: 14.10.2026
+:Full Changelog: `8.5.0...sphinx-needs-v9.0.0 <https://github.com/useblocks/sphinx-needs/compare/8.5.0...sphinx-needs-v9.0.0>`__
+
+This release is about **computed values**. A field or link type can be **derived** by a rule
+in its configuration, per need type with ``derive_by_type`` (:pr:`2178`, :pr:`2191`,
+:pr:`2204`, :pr:`2205`), and every dynamic function, variant and rule is computed in
+dependency order (:pr:`2134`). It is a major release because computed values,
+``needextend`` filters (:pr:`2127`) and the needs.json readers (:pr:`2189`) can change need
+data in certain corner cases -- a value that reads another computed value, a ``needextend``
+filter that relied on an earlier ``needextend``'s change, an external source's lowercase
+``id_prefix``, or a record whose ``id`` differs from its key -- and their new warnings can
+turn a ``-W`` build red until the cause is fixed or suppressed; Python 3.11 is the minimum
+(:pr:`1844`), and ``[[…]]`` in need content and the ``need_func`` role are gone
+(:pr:`1919`). Also new: ``[variants]`` in ``ubproject.toml`` (:pr:`1996`), ``choose`` /
+``when`` / ``otherwise`` (:pr:`2020`), ``:extend_priority:`` (:pr:`2083`) and content
+parsed in its declared markup (:pr:`2135`).
 
 Improvements
 ............
@@ -105,7 +124,7 @@ Improvements
   where it was stored as the text ``"None"``, or as ``[None]``, which schema validation then refused.
 
 - ✨ A field or link type can be :ref:`derived <needs_derive>` by a rule declared in its configuration
-  (:issue:`2030`, :pr:`2178`, :pr:`2191`)
+  (:issue:`2030`, :pr:`2178`, :pr:`2191`, :pr:`2204`, :pr:`2205`)
 
   A ``derive`` table on its :ref:`needs_fields` or :ref:`needs_links` entry, in :file:`conf.py` or the TOML file
   (or passed to :py:func:`~sphinx_needs.api.configuration.add_field`),
@@ -199,12 +218,72 @@ Improvements
   warning per directive per ``doctype``; a need rendered through a ``template`` is parsed
   in the page's markup.
 
+- ✨ An interactive :ref:`needtable` is Sphinx-Needs' own script, ``needstable.js``, instead
+  of the vendored DataTables, and loads only on the pages that hold one (:pr:`1920`)
+
+  A table with the default ``:style: datatables`` still sorts, searches, pages, and
+  switches columns off, in place: every row and cell Sphinx-Needs rendered stays the same
+  element, so ``:style_row:`` classes and the links inside cells survive sorting and
+  searching. Two new options set its paging: :ref:`needs_table_page_size` (default
+  ``10``) and :ref:`needs_table_page_sizes` (default ``[10, 25, 50, 0]``, where ``0``
+  means all rows); a table can override the first with its own
+  :ref:`page_size <needtable_page_size>`. **Removed:** the Excel and PDF export buttons
+  and the column reordering of 8.5.0's DataTables; a table exports through **Copy** and
+  **CSV** only (a CSV file opens in a spreadsheet, and a browser prints). The script and
+  its own stylesheet are added only to the pages with an interactive table, so
+  ``search.html``, ``genindex.html`` and every page without one load neither; the small
+  common ``needstable.css`` that styles every needtable is still on every page, as in
+  8.5.0.
+
+- ✨ The variant data can be declared in the ``[variants]`` table of the
+  :ref:`needs_from_toml` file, which other tools reading the same file share
+  (:pr:`1996`, :pr:`1998`)
+
+  ``[variants] data`` and ``data_file`` (or ``[<prefix>.variants]`` under
+  ``needs_from_toml_table``) are read through ``ub-project``, the shared reader of
+  ``ubproject.toml``, which becomes a dependency (``ub-project>=1.1.0,<2``). The legacy
+  ``[needs] variant_data`` and ``variant_data_file`` keys keep working; when both
+  locations are set, ``[variants]`` wins, whole (:ref:`needs_from_toml_variants`). Two new
+  warning types, each of which fails a ``-W`` build until it is fixed or suppressed:
+  ``needs.variant_data_location``, once per ignored ``[needs]`` key when both locations
+  are set, and ``needs.variants_unknown_key``, for any other key in ``[variants]``. A
+  mistake in the variant data, whether declared in the TOML file or set in ``conf.py``, is
+  now reported in ``ub-project``'s words.
+
+- 👌 The common CSS files are registered in a sorted, deterministic order, so the HTML
+  and the CSS cascade no longer vary between otherwise identical builds
+  (:issue:`1913`, :pr:`1914`)
+
+- ⬆️ ``jsonschema-rs`` is allowed up to 0.58 (``>=0.37.1,<0.59``; 8.5.0 capped it below
+  0.53) **(changed output)** (:pr:`1851`, :pr:`1980`)
+
+  An invalid regex ``pattern`` in a schema now names its location in the error
+  (``On instance["properties"]["id"]["pattern"]:``) rather than ``On instance:``.
+
 Breaking changes
 ................
 
 - ‼️ Python 3.10 is no longer supported: the minimum is 3.11 (:pr:`1844`)
 
   ``requires-python`` is now ``>=3.11``; 8.5.0 accepted 3.10.
+
+- ⬆️ docutils 0.21 or newer is now required (:pr:`1977`)
+
+  8.5.0 declared none, so it accepted whatever Sphinx did, which is 0.20 for Sphinx 7.4
+  through 9.0. Sphinx-Needs imports docutils directly, and 0.21 is the oldest series it is
+  type-checked and tested against. The requirement has no upper bound: Sphinx caps
+  docutils per series itself.
+
+- ‼️ ``[[…]]`` in a need's content is plain text, and the ``need_func`` role is removed
+  (:pr:`1919`)
+
+  Both were deprecated in 4.0.0, with the :ref:`ndf` role as their replacement. A
+  ``[[…]]`` in a need's **content** is no longer executed: it renders as written, as in
+  any other Sphinx document. A document that still writes ``:need_func:`` gets docutils'
+  own ``Unknown interpreted text role "need_func"`` error. Write
+  ``:ndf:`copy("id")``` instead (see :ref:`dynamic_functions`). ``[[…]]`` in a need's
+  **options** -- ``:status:``, ``:tags:``, ``:links:``, extra fields, the
+  :ref:`needs_global_options` defaults -- is unchanged.
 
 - ‼️ Computed values are computed in dependency order **(changed output)**
   (:issue:`2064`, :pr:`2134`)
@@ -312,6 +391,26 @@ Breaking changes
   is reported as ``needs.link_outgoing`` (a link field) or ``needs.link_ref`` (a ``:need:``
   role in the content), not as a reader warning, so suppressing the two reader codes does
   not keep such a build green: ``suppress_warnings`` has to name those two as well.
+
+Internal changes
+................
+
+- 🔧 The repository is a uv workspace, and Sphinx-Needs lives in ``packages/sphinx-needs``
+  (:pr:`1839`, :pr:`1846`)
+
+  The published package is unchanged; two things that name the repository change. An
+  install from git of a commit after the move needs the subdirectory --
+  ``pip install "sphinx-needs @ git+https://github.com/useblocks/sphinx-needs@<ref>#subdirectory=packages/sphinx-needs"``
+  -- because the repository root is not a package. And release tags are
+  ``sphinx-needs-v<version>``, the shape every package in the repository shares; the bare
+  ``<version>`` tag is still pushed beside it, so ``git+…@<version>`` pins and the
+  documentation's ``stable`` version keep working.
+
+- 🔧 The sdist no longer ships ``tests/`` or ``performance/`` (:pr:`1905`)
+
+  The suite loads its fixtures from a workspace member that is never published, so a
+  shipped suite could not run; ``docs/`` is still included. Run the suite from a
+  repository snapshot.
 
 Bug fixes
 .........
@@ -596,6 +695,13 @@ Bug fixes
   not a string, such as ``5`` or ``null``, is reported with the same text instead of
   ``Unknown need type 5.``. A record with no ``content`` key, or an empty one, still
   imports with empty content.
+
+- 🐛 :ref:`needgantt` rounds a completion given as a float to a whole percentage
+  (:pr:`1870`)
+
+  PlantUML's gantt grammar takes an integer percentage, and PlantUML 1.2026.8 rejects a
+  statement such as ``is 90.0% completed``, losing the whole chart; a completion field
+  typed ``number`` is how such a float arrives.
 
 .. _`release:8.5.0`:
 

@@ -3,16 +3,37 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:3.0.0`:
+
+3.0.0
+-----
+
+:Released: 14.10.2026
+
+A major release. The Sphinx-free half -- the ``test-reports`` converter, the pytest plugin,
+the parsers and the ``[test_reports]`` model -- is its own distribution now,
+**ub-test-reports**, and sphinx-test-reports is the Sphinx extension alone, imported as
+``sphinx_test_reports``. ``pip install sphinx-test-reports`` brings Sphinx, Sphinx-Needs 9
+and ub-test-reports again, reversing 2.0.0's install-footprint change: a test runner or a
+build action that wants only the command or the plugin installs ``ub-test-reports``.
+
+Upgrading a documentation project means writing ``extensions = ["sphinx_test_reports"]``;
+the old ``sphinxcontrib.test_reports`` names keep working, with a warning, until 4.0. Beyond
+that, the directives warn and show an error box where they used to stop the build on a report
+they cannot read or an option they refuse
+(`#2156 <https://github.com/useblocks/sphinx-needs/pull/2156>`__,
+`#2161 <https://github.com/useblocks/sphinx-needs/pull/2161>`__,
+`#2162 <https://github.com/useblocks/sphinx-needs/pull/2162>`__), and nested test suites are
+documented at every depth (`#2149 <https://github.com/useblocks/sphinx-needs/pull/2149>`__).
 
 The Sphinx-free half is its own distribution, ub-test-reports
 .............................................................
 
 - ‼️ The ``test-reports`` converter, the pytest plugin, the parsers, the result
   vocabulary, the deterministic case IDs and the ``[test_reports]`` model of
-  ``ubproject.toml`` are now **ub-test-reports** 1.0.0, a distribution of their own with no
-  Sphinx in it, imported as ``ub_test_reports``. They moved unchanged::
+  ``ubproject.toml`` are now **ub-test-reports** 1.0.0 (3.0.0 requires 1.1.0), a
+  distribution of their own with no Sphinx in it, imported as ``ub_test_reports``. They
+  moved unchanged::
 
      pip install ub-test-reports              # the test-reports command
      pip install "ub-test-reports[pytest]"    # and the pytest plugin
@@ -453,7 +474,7 @@ What the move costs, stated rather than left to the CI diff
   suite against Sphinx-Needs 6.0.1, 6.3.0, 7.0.0, 8.0.0 and 8.5.0; in the workspace the
   suite runs against the sibling in the tree, across Sphinx 7.4, 8.2 and 9.1 instead. With
   it, **the declared floor narrows from** ``sphinx-needs>=6.0.1`` **to**
-  ``sphinx-needs>=8.5.0,<9`` (and from ``>=6`` in ``docs``). That is
+  ``sphinx-needs>=9.0.0,<10`` (and from ``>=6`` in ``docs``, to the same). That is
   the workspace's tight-tracking policy for a dependency on a sibling, and it is enforced;
   it means this release supports a narrower range of Sphinx-Needs than 2.0.0 did.
 - **Five ruff rule families are no longer enforced here** -- ``FURB``, ``PERF``, ``PGH``,

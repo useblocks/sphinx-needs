@@ -3,8 +3,24 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:2.0.0`:
+
+2.0.0
+-----
+
+:Released: 14.10.2026
+
+The first release from the Sphinx-Needs repository, and a major one: it requires
+Sphinx-Needs 9.0 or newer, and the never-rendered ``@rst`` blocks and ``get_rst`` are
+removed in favour of **multi-line needs** (``@need`` … ``@endneed``), which ``src-trace`` now
+renders in the markup each declares
+(`#2152 <https://github.com/useblocks/sphinx-needs/pull/2152>`__,
+`#2168 <https://github.com/useblocks/sphinx-needs/pull/2168>`__). ``@need-ids:`` references
+are attached to the needs they name during the build
+(`#2049 <https://github.com/useblocks/sphinx-needs/pull/2049>`__), TypeScript and JavaScript
+join the supported languages (`#2166 <https://github.com/useblocks/sphinx-needs/pull/2166>`__),
+and incremental and parallel builds, symbolic links and overlapping directives no longer
+abort or go stale.
 
 New and Improved
 ................
@@ -28,10 +44,11 @@ New and Improved
     *Package* dropdown with ``sphinx-codelinks`` among its options, and issues and pull
     requests concerning this package get a ``pkg: sphinx-codelinks`` label. Old issue URLs
     redirect.
-  - **The documentation** (in progress): https://codelinks.useblocks.com stays the address.
-    It is served by GitHub Pages from the old repository until the Read the Docs project
-    and the DNS move are done, and by Read the Docs afterwards; nothing changes for a
-    reader of that URL.
+  - **The documentation** (done): https://codelinks.useblocks.com stays the address, and
+    is now served by Read the Docs, under ``/en/latest/``. A link into the old GitHub Pages
+    layout (``…/components/analyse.html``) needs that prefix
+    (``…/en/latest/components/analyse.html``); ``/en/stable/`` does not show this
+    package's documentation yet.
   - **The old repository** will be archived rather than deleted, so every permalink and
     every ``git+https://…/sphinx-codelinks.git@<sha>`` pin keeps resolving. Repositories
     pinning ``@main`` will stop receiving updates and should re-point at PyPI or at
@@ -78,7 +95,7 @@ New and Improved
   ``Additional properties are not allowed ('ref_url_field' was unexpected)``.
 
   ``codelinks write rst`` still works and prints a deprecation notice on stderr; it will
-  be removed in 2.0.0. Its ``-r`` default stays ``remote_url`` -- not the extension's
+  be removed in 3.0.0. Its ``-r`` default stays ``remote_url`` -- not the extension's
   ``remote-url`` -- since changing what an existing invocation writes is not worth it for
   a command that is going away. A project that keeps including the generated file gets
   both the attached field and the ``needextend``'d one: remove the include, and any
@@ -140,9 +157,8 @@ New and Improved
   the page's with one warning per directive, as ``needimport`` does. Every warning about a
   block's own content or options, the analyser's included, is ``codelinks.multiline_need``; a
   skipped duplicate shares ``codelinks.duplicate_need`` with one-line needs. What a body should
-  not contain is listed on the analyse page. Rendering uses Sphinx-Needs' ``ingest_need_record``, new in 9.0.0: with an older
-  Sphinx-Needs each directive with multi-line needs warns once and creates its one-line
-  needs only.
+  not contain is listed on the analyse page. Rendering uses Sphinx-Needs' ``ingest_need_record``, new in 9.0.0, the release this one
+  requires.
 
 - ✨ TypeScript and JavaScript comment type: ``comment_type = "ts"`` analyses the whole
   family, and source discovery picks up ``.ts``, ``.tsx``, ``.mts``, ``.cts``, ``.js``,
@@ -361,6 +377,15 @@ New and Improved
   documentation build with ``-nW`` failed outright. Both shapes are now handled, with a
   regression test that builds a real worktree.
 
+- 🐛 ``get_current_rev`` reads the current commit from ``packed-refs`` when the branch's
+  loose ref is gone (`#1871 <https://github.com/useblocks/sphinx-needs/pull/1871>`__).
+
+  After ``git gc`` or ``git pack-refs --all`` -- which runs unattended on any long-lived
+  checkout -- the checked-out branch has no loose ref file, so no rev was found: every
+  ``remote-url`` link was missing and the build warned ``refs/heads/<x> does not exist``,
+  which fails a documentation build with ``-nW``. CI and Read the Docs check out a
+  detached ``HEAD`` and never took that path.
+
 - 🐛 The ``local-url`` and ``remote-url`` links render under ``sphinx-build -j N``, and each
   project's ``remote-url`` links with that project's ``remote_url_pattern``
   (`#2039 <https://github.com/useblocks/sphinx-needs/issues/2039>`__).
@@ -424,11 +449,11 @@ New and Improved
   unused ``pytest-docker``, ``moto`` and ``psutil`` test dependencies go with it. No
   behaviour changed; the whole diff is import order, suppressions and configuration.
 
-- ‼️ Sphinx-Needs 8.5 or newer is now required (previously 5.0 or newer).
+- ‼️ Sphinx-Needs 9.0 or newer is now required (previously 5.0 or newer).
 
   Sphinx-CodeLinks is being imported into the Sphinx-Needs repository as a package of its
   uv workspace, where there is exactly one Sphinx-Needs and the manifest is required to
-  track it tightly — ``sphinx-needs>=8.5.0,<9`` — so a wheel can never claim compatibility
+  track it tightly — ``sphinx-needs>=9.0.0,<10`` — so a wheel can never claim compatibility
   with a release it was not tested against. The per-Sphinx-Needs test factor is gone with
   it, and the two compatibility shims the old floor needed have been deleted: the
   ``add_field`` import fallback for Sphinx-Needs < 8, and the ``add_extra_option``

@@ -1,6 +1,6 @@
 [project]
 name = "sphinx-test-reports"
-version = "2.0.0"
+version = "3.0.0"
 description = "Sphinx extension for showing test results and test environment information inside sphinx documentations"
 readme = "README.rst"
 license = { text = "MIT" }
@@ -42,8 +42,8 @@ requires-python = ">=3.11,<4"
 dependencies = [
   "sphinx>=7.4",
   "docutils>=0.21",
-  "sphinx-needs>=8.5.0,<9",
-  "ub-test-reports>=1.0.0,<2",
+  "sphinx-needs>=9.0.0,<10",
+  "ub-test-reports>=1.1.0,<2",
 ]
 
 [project.optional-dependencies]
@@ -54,7 +54,7 @@ sphinx = []
 # A pass-through until 4.0: 2.0.0 documented `pip install "sphinx-test-reports[pytest]"` for
 # the plugin, which is `ub-test-reports[pytest]` now. Kept so that line still installs
 # pytest; check (4) wants the extra's specifier spelled with the same tight floor
-pytest = ["ub-test-reports[pytest]>=1.0.0,<2"]
+pytest = ["ub-test-reports[pytest]>=1.1.0,<2"]
 # There is no `test` extra any more: the workspace's test tooling is the ROOT's shared
 # `test` dependency group, which every cell and the release compat cell install, and
 # `check_workspace.py` check (7) refuses a `[dependency-groups]` table here. `nox` and
@@ -67,10 +67,10 @@ pytest = ["ub-test-reports[pytest]>=1.0.0,<2"]
 docs = [
   "packaging",
   "pillow",
-  "sphinx-ai-index>=0.1.0,<1",
+  "sphinx-ai-index>=1.0.0,<2",
   "sphinx-design",
   "sphinx-immaterial",
-  "sphinx-needs>=8.5.0,<9",
+  "sphinx-needs>=9.0.0,<10",
   "sphinx",
   "sphinxcontrib-plantuml",
 ]

@@ -156,7 +156,7 @@ Recorded here because none of it is visible in a diff:
 
 - **The sphinx-needs test axis went from five versions to one.** The retired `noxfile.py`
   ran 6.0.1, 6.3.0, 7.0.0, 8.0.0 and 8.5.0; the workspace tests against the sibling in the
-  tree, and the published floor narrowed from `>=6.0.1` to `>=8.5.0,<9` with it.
+  tree, and the published floor narrowed from `>=6.0.1` to `>=9.0.0,<10` with it.
 - **Five ruff rule families left**: `FURB`, `PERF`, `PGH`, `PIE`, `SLF`, which this package
   enabled and the root's shared set does not. All five are at zero violations today, which
   is exactly why the loss would otherwise be silent.

@@ -201,7 +201,7 @@ Both warnings above can be suppressed on their own, see :ref:`config-warnings`.
 .. note::
 
    `ubCode <https://ubcode.useblocks.com/>`__ does not read ``[variants]`` yet,
-   and `sphinx-mounts <https://sphinx-mounts.useblocks.com/>`__ reads it from its next release, 0.3.0.
+   and `sphinx-mounts <https://sphinx-mounts.useblocks.com/>`__ reads it from 0.3.0.
    A project that is also checked by ubCode, or built with an earlier sphinx-mounts,
    keeps its variant data in ``[needs]`` until the release of that tool that reads ``[variants]``.
 
@@ -1321,7 +1321,7 @@ If set, warn if any :ref:`needuml` or :ref:`needarch` jinja content rendering ta
 needs_flow_engine
 ~~~~~~~~~~~~~~~~~
 
-.. versionadded:: 2.2.0
+.. versionadded:: 3.0.0
 
 Select between the rendering engines for :ref:`needflow` diagrams,
 
@@ -1538,7 +1538,7 @@ See :ref:`needflow config option <needflow_config>` for more details and already
 needs_graphviz_styles
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. versionadded:: 2.2.0
+.. versionadded:: 3.0.0
 
 This must be a dictionary which can store multiple `Graphviz configurations <https://graphviz.org>`__.
 These configs can then be selected when using :ref:`needflow` and the engine is set to ``graphviz``.
@@ -3073,7 +3073,7 @@ e.g. by removing timestamps from the output.
 needs_json_exclude_fields
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. versionadded:: 2.2.0
+.. versionadded:: 3.0.0
 
 Setting ``needs_json_exclude_fields = ["key1", "key2"]`` will exclude the given fields from all needs in the ``needs.json`` output.
 
@@ -4021,7 +4021,7 @@ Configuration example:
 needs_extra_links
 ~~~~~~~~~~~~~~~~~
 
-.. deprecated:: 4.4.0
+.. deprecated:: 7.0.0
    Use :ref:`needs_links` instead.
 
 Allows the definition of additional link types as a list.

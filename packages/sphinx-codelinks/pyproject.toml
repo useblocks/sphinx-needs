@@ -1,6 +1,6 @@
 [project]
 name = "sphinx-codelinks"
-version = "1.4.0"
+version = "2.0.0"
 description = "Fast Source Code Traceability for Sphinx-Needs"
 authors = [{ name = "team useblocks", email = "info@useblocks.com" }]
 maintainers = [
@@ -27,7 +27,7 @@ dependencies = [
   # edge. uv never validates a specifier it resolves through `workspace = true` (uv#9811),
   # so the floor is the only statement of what was actually tested, and the cap is what
   # stops a future major being co-installed with a wheel written against this one.
-  "sphinx-needs>=8.5.0,<9",
+  "sphinx-needs>=9.0.0,<10",
   "ub-project>=1.1.0,<2",
   "jinja2",
   "pygments",
@@ -66,7 +66,7 @@ libclang = ["libclang>=16"]
 docs = [
   "furo>=2024.5.6",
   "myst-parser>=4.0.0",
-  "sphinx-ai-index>=0.1.0,<1",
+  "sphinx-ai-index>=1.0.0,<2",
   "sphinx-design>=0.6.1",
   "sphinx-code-tabs>=0.5.5",
   "sphinxcontrib-typer>=0.9.1", # tracks typer's rich_utils internals: 0.9.1+ needs typer>=0.26.8 and declares it; older releases break on it

@@ -36,7 +36,7 @@ from docutils.parsers.rst import Directive
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
 
 # ---------------------------------------------------------------------------
 # State Management

@@ -106,7 +106,7 @@ Path (relative to ``confdir``) of the TOML file this extension reads.
 ``mounts_from_toml``
 ~~~~~~~~~~~~~~~~~~~~
 
-.. deprecated:: next
+.. deprecated:: 0.2.0
 
    Renamed to :ref:`sources-from-toml`. The old name still works and reads
    exactly the same file; setting it explicitly emits a
@@ -606,7 +606,7 @@ Declare the array of tables under ``[source]``:
 mount is, and namespacing keeps the file's root from growing into a flat
 bag of keys.
 
-.. deprecated:: next
+.. deprecated:: 0.2.0
 
    The original top-level ``[[mounts]]`` spelling still loads, identically
    — same keys, same :ref:`path anchoring <path-anchoring>`, same

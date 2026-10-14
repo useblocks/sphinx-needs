@@ -1,6 +1,6 @@
 """Sphinx needs extension for managing needs/requirements and specifications"""
 
-__version__ = "8.5.0"
+__version__ = "9.0.0"
 
 
 def setup(app):

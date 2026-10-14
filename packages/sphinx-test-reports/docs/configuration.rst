@@ -303,7 +303,7 @@ Multiple properties can map to different link fields:
 
 tr_import_encoding
 ------------------
-.. versionadded:: 1.0.3
+.. versionadded:: 1.1.0
 
 Defines the encoding for imported files, e.g. in custom templates.
 
@@ -313,7 +313,7 @@ Default: **utf8**
 
 tr_json_mapping
 ---------------
-.. versionadded:: 1.0.3
+.. versionadded:: 1.1.0
 
 Takes a mapping configuration, which defines how to map the JSON structure to the internal structure used by
 ``Sphinx-Test-Reports``.

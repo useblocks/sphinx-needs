@@ -1,6 +1,6 @@
 [project]
 name = "sphinx-ai-index"
-version = "0.1.0"
+version = "1.0.0"
 description = "Sphinx extension that generates an AI-readable documentation index"
 authors = [{ name = "team useblocks", email = "info@useblocks.com" }]
 license = { file = "LICENSE" }

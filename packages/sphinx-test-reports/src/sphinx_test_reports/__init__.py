@@ -11,7 +11,7 @@ __all__ = ["__version__", "setup"]
 
 #: Checked against ``[project] version`` by ``check_workspace.py`` and stamped by
 #: ``poe bump``; the extension's metadata reads it from here.
-__version__ = "2.0.0"
+__version__ = "3.0.0"
 
 # The order is load-bearing: `test_reports` imports `__version__` from this package while
 # this import runs, so the literal above has to be assigned before it.
