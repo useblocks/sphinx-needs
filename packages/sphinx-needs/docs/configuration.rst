@@ -649,11 +649,12 @@ What a rule costs
 
 A rule is computed once per step for every need holding it (a ``links`` rule's ``where`` is tested once,
 on each candidate alone), so writing one costs little: what costs is what it **stores**.
-Every need holding a ``links`` rule is linked to the same needs, and each of them gets a back link from every one:
+Every need holding a ``links`` rule with a ``where`` is linked to the same needs (but itself),
+and each of them gets a back link from every one (a ``join`` links each need to its own matches):
 on every need of a project of 2 000, a rule whose ``where`` half the needs pass stores about 2 000 000 links
 and as many back links, and ``needs.json`` grows from about 2.5 MB to about 58 MB;
 at twice the needs it stores four times the links.
-A rule that ten needs pass stores ten links per need.
+A rule that ten needs pass stores about ten links per need.
 
 - Keep ``where`` selective, or declare the rule only for the need types that use it (:ref:`needs_derive_by_type`).
 - To show a set of needs, use a :ref:`needtable` or :ref:`needlist` with that filter: it shows the set once,
@@ -1425,7 +1426,7 @@ the warning ``needs.derive_dense`` names the link type once (see :ref:`needs_der
 Written links, those a :ref:`needextend` adds and back links are not counted;
 the needs of the project are every need, external and imported ones too, but not need parts.
 
-``0`` never warns; so does ``suppress_warnings = ["needs.derive_dense"]``.
+``0`` (or less) never warns, and ``suppress_warnings = ["needs.derive_dense"]`` silences it.
 Unlike :ref:`needs_filter_max_time` it counts rather than times, so every build of the same project warns alike.
 
 .. code-block:: toml

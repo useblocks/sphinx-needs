@@ -836,9 +836,10 @@ def _warn_dense(
     part; a link two calls of one need computed is stored, and counted, once. The
     needs of the project are every need, external and imported ones too, never a part.
     It counts the lists as the pass left them, so every build warns alike; ``0`` (or
-    less) never warns.
+    less) never warns, nor does a threshold that is not an integer (a boolean
+    included), which Sphinx's type check reports.
     """
-    if threshold <= 0:
+    if not isinstance(threshold, int) or isinstance(threshold, bool) or threshold <= 0:
         return
     densities: dict[str, _Density] = {}
     for (need_id, field), call in pass_.project.rules.items():

@@ -45,7 +45,7 @@ Improvements
   warning names the links, the needs computing them, the longest list, and what to do instead
   (:ref:`needs_derive_cost`). It is on by default: a build with ``-W`` and such a rule fails until the
   warning is silenced with ``suppress_warnings = ["needs.derive_dense"]``, or the threshold is raised
-  or set to ``0``, which never warns.
+  or set to ``0`` (or less), which never warns.
 
 Deprecations
 ............
