@@ -1334,36 +1334,6 @@ need = "SPEC_1"
 field = "reads_digest"
 
 [[case]]
-name = "join-reserved"
-why = "the join role is reserved for a later release: a rule naming it, on links or on copy, is refused"
-config = '''
-[needs.fields.owner]
-schema = { type = "string" }
-
-[needs.links.bad_join]
-derive = { kind = "links", where = "type == 'test'", join = { field = "owner", equals = "owner" } }
-
-[needs.fields.bad_copy_join]
-derive = { kind = "copy", field = "owner", join = { field = "owner", equals = "owner" } }
-'''
-source = '''
-.. req:: Owned
-   :id: REQ_1
-   :owner: alice
-'''
-[case.expect]
-[case.expect.needs.REQ_1]
-bad_join = []
-[case.expect.nulls]
-REQ_1 = ["bad_copy_join"]
-[[case.expect.findings]]
-code = "derive_invalid"
-field = "bad_join"
-[[case.expect.findings]]
-code = "derive_invalid"
-field = "bad_copy_join"
-
-[[case]]
 name = "types-reserved"
 why = "types is not a role (a rule for some need types is declared under derive_by_type, a key beside derive): a rule naming it, on a field or a link type, is refused"
 config = '''
@@ -3206,3 +3176,563 @@ findings = []
 [case.expect.needs.SPEC_1]
 type = "spec"
 label = "SPEC_1"
+
+# --- the join role ------------------------------------------------------------------
+
+[[case]]
+name = "join-links-string-field"
+why = "links with join: every need whose candidate field equals the reader's own field, each once, the reader left out; no match is no links"
+config = '''
+[needs.fields.case_name]
+schema = { type = "string" }
+[needs.fields.test_case]
+schema = { type = "string" }
+[needs.links.covers]
+derive = { kind = "links", join = { field = "case_name", equals = "test_case" } }
+'''
+source = '''
+.. req:: First
+   :id: REQ_1
+   :case_name: login
+
+.. req:: Second
+   :id: REQ_2
+   :case_name: logout
+
+.. req:: Third
+   :id: REQ_3
+   :case_name: login
+
+.. test:: Login test
+   :id: TEST_1
+   :test_case: login
+
+.. test:: Nothing matches
+   :id: TEST_2
+   :test_case: signup
+
+.. test:: Unset
+   :id: TEST_3
+'''
+[case.expect]
+findings = []
+[case.expect.needs.TEST_1]
+covers = ["REQ_1", "REQ_3"]
+[case.expect.needs.TEST_2]
+covers = []
+[case.expect.needs.TEST_3]
+covers = []
+[case.expect.needs.REQ_1]
+covers = []
+
+[[case]]
+name = "join-values-split-both-sides"
+why = "a string value is split on commas and stripped on BOTH sides, empty items dropped, a list taken by item; a need matched by several values is linked once; case-sensitive"
+config = '''
+[needs.fields.name]
+schema = { type = "string" }
+[needs.fields.names]
+schema = { type = "array", items = { type = "string" } }
+[needs.fields.ref]
+schema = { type = "string" }
+[needs.fields.refs]
+schema = { type = "array", items = { type = "string" } }
+[needs.links.by_name]
+derive = { kind = "links", join = { field = "name", equals = "ref" } }
+[needs.links.by_names]
+derive = { kind = "links", join = { field = "names", equals = "ref" } }
+[needs.links.by_name_list]
+derive = { kind = "links", join = { field = "name", equals = "refs" } }
+[needs.fields.n_by_name]
+schema = { type = "integer" }
+derive = { kind = "count", over = "by_name" }
+'''
+source = '''
+.. spec:: A
+   :id: SPEC_A
+   :name: A
+
+.. spec:: A and B
+   :id: SPEC_AB
+   :name: A, B
+
+.. spec:: lower a
+   :id: SPEC_LOW
+   :name: a
+
+.. spec:: list A C
+   :id: SPEC_LIST
+   :names: A, C
+
+.. test:: Repeated value
+   :id: TEST_1
+   :ref: A, B ,A
+
+.. test:: Empty items
+   :id: TEST_2
+   :ref: , ,C
+
+.. test:: List reader
+   :id: TEST_3
+   :refs: B, C
+'''
+[case.expect]
+findings = []
+[case.expect.needs.TEST_1]
+by_name = ["SPEC_A", "SPEC_AB"]
+by_names = ["SPEC_LIST"]
+n_by_name = 2
+[case.expect.needs.TEST_2]
+by_name = []
+by_names = ["SPEC_LIST"]
+[case.expect.needs.TEST_3]
+by_name_list = ["SPEC_AB"]
+
+[[case]]
+name = "join-self-and-order"
+why = "the reader is a candidate only with include_self; the matches are read in need-id order compared by code point (SPEC_10 before SPEC_9), each once, as a copy select = list over them shows"
+config = '''
+[needs.fields.key]
+schema = { type = "string" }
+[needs.fields.ref]
+schema = { type = "string" }
+[needs.links.same]
+derive = { kind = "links", join = { field = "key", equals = "ref" } }
+[needs.links.same_self]
+derive = { kind = "links", join = { field = "key", equals = "ref" }, include_self = true }
+[needs.fields.order]
+schema = { type = "array", items = { type = "string" } }
+derive = { kind = "copy", field = "id", join = { field = "key", equals = "ref" }, include_self = true, select = "list" }
+'''
+source = '''
+.. spec:: Nine
+   :id: SPEC_9
+   :key: K
+
+.. spec:: Ten
+   :id: SPEC_10
+   :key: K
+
+.. test:: Self
+   :id: TEST_1
+   :key: K
+   :ref: K, K
+'''
+[case.expect]
+findings = []
+[case.expect.needs.TEST_1]
+same = ["SPEC_9", "SPEC_10"]
+same_self = ["SPEC_9", "SPEC_10", "TEST_1"]
+order = ["SPEC_10", "SPEC_9", "TEST_1"]
+
+[[case]]
+name = "join-needs-only"
+why = "a join's candidates are needs only: a part never matches (it carries its need's fields, so its need matches once), and an id naming a part matches nothing"
+config = '''
+[needs.fields.key]
+schema = { type = "string" }
+[needs.fields.ref]
+schema = { type = "string" }
+[needs.links.by_key]
+derive = { kind = "links", join = { field = "key", equals = "ref" } }
+[needs.links.by_id]
+derive = { kind = "links", join = { field = "id", equals = "ref" } }
+'''
+source = '''
+.. req:: With parts
+   :id: REQ_1
+   :key: K
+
+   :np:`(p1) one` and :np:`(p2) two`
+
+.. test:: Key
+   :id: TEST_1
+   :ref: K
+
+.. test:: Part id
+   :id: TEST_2
+   :ref: p1, REQ_1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.TEST_1]
+by_key = ["REQ_1"]
+[case.expect.needs.TEST_2]
+by_id = ["REQ_1"]
+
+[[case]]
+name = "join-with-where"
+why = "where beside join narrows the matches, tested on each matched candidate"
+config = '''
+[needs.fields.key]
+schema = { type = "string" }
+[needs.fields.ref]
+schema = { type = "string" }
+[needs.links.open_same]
+derive = { kind = "links", join = { field = "key", equals = "ref" }, where = "status == 'open'" }
+'''
+source = '''
+.. req:: Open
+   :id: REQ_1
+   :key: K
+   :status: open
+
+.. req:: Closed
+   :id: REQ_2
+   :key: K
+   :status: closed
+
+.. test:: Reader
+   :id: TEST_1
+   :ref: K
+'''
+[case.expect]
+findings = []
+[case.expect.needs.TEST_1]
+open_same = ["REQ_1"]
+
+[[case]]
+name = "copy-join-select"
+why = "copy with join: the lowest id among the matches that set the field (first), the same with a finding when several do (unique), every value in candidate order (list); no match leaves null, and [] for list"
+config = '''
+[needs.fields.key]
+schema = { type = "string" }
+[needs.fields.ref]
+schema = { type = "string" }
+[needs.fields.owner]
+schema = { type = "string" }
+[needs.fields.o_first]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner", join = { field = "key", equals = "ref" } }
+[needs.fields.o_unique]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner", join = { field = "key", equals = "ref" }, select = "unique" }
+[needs.fields.o_list]
+schema = { type = "array", items = { type = "string" } }
+derive = { kind = "copy", field = "owner", join = { field = "key", equals = "ref" }, select = "list" }
+'''
+source = '''
+.. req:: Zed
+   :id: REQ_Z
+   :key: K
+   :owner: zed
+
+.. req:: Bob
+   :id: REQ_B
+   :key: K
+   :owner: bob
+
+.. req:: No owner
+   :id: REQ_A
+   :key: K
+
+.. test:: Reader
+   :id: TEST_1
+   :ref: K
+
+.. test:: No match
+   :id: TEST_2
+   :ref: nothing
+'''
+[case.expect]
+[case.expect.needs.TEST_1]
+o_first = "bob"
+o_unique = "bob"
+o_list = ["bob", "zed"]
+[case.expect.needs.TEST_2]
+o_list = []
+[case.expect.nulls]
+TEST_2 = ["o_first", "o_unique"]
+[[case.expect.findings]]
+code = "derive_unique"
+need = "TEST_1"
+field = "o_unique"
+
+[[case]]
+name = "join-strata"
+why = "a links join reading a field a value rule computes is out of scope (stratum 1 reads final values only), on the candidate field and on the reader's own field; a copy join over such a field waits for it"
+config = '''
+[needs.fields.key]
+schema = { type = "string" }
+[needs.fields.ref]
+schema = { type = "string" }
+[needs.fields.owner]
+schema = { type = "string" }
+[needs.fields.key_d]
+schema = { type = "string" }
+derive = { kind = "copy", field = "key" }
+[needs.fields.ref_d]
+schema = { type = "string" }
+derive = { kind = "copy", field = "ref" }
+[needs.links.by_derived_key]
+derive = { kind = "links", join = { field = "key_d", equals = "ref" } }
+[needs.links.by_derived_ref]
+derive = { kind = "links", join = { field = "key", equals = "ref_d" } }
+[needs.fields.o_derived]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner", join = { field = "key_d", equals = "ref_d" } }
+'''
+source = '''
+.. req:: Owned
+   :id: REQ_1
+   :key: K
+   :owner: alice
+
+.. test:: Reader
+   :id: TEST_1
+   :ref: K
+'''
+[case.expect]
+[case.expect.needs.TEST_1]
+by_derived_key = []
+by_derived_ref = []
+o_derived = "alice"
+[[case.expect.findings]]
+code = "derive_scope"
+need = "REQ_1"
+field = "by_derived_key"
+[[case.expect.findings]]
+code = "derive_scope"
+need = "TEST_1"
+field = "by_derived_key"
+[[case.expect.findings]]
+code = "derive_scope"
+need = "REQ_1"
+field = "by_derived_ref"
+[[case.expect.findings]]
+code = "derive_scope"
+need = "TEST_1"
+field = "by_derived_ref"
+
+[[case]]
+name = "join-cycles"
+why = "a copy join reading its own result as the candidate field is a cycle on every need that carries it; one reading its own result as the reader's field is a cycle of own-field reads, refused at load"
+config = '''
+[needs.fields.ref]
+schema = { type = "string" }
+[needs.fields.owner]
+schema = { type = "string" }
+[needs.fields.loop]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner", join = { field = "loop", equals = "ref" } }
+[needs.fields.own_loop]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner", join = { field = "ref", equals = "own_loop" } }
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+   :ref: K
+   :owner: alice
+
+.. test:: Two
+   :id: TEST_1
+   :ref: K
+'''
+[case.expect]
+[case.expect.nulls]
+REQ_1 = ["loop", "own_loop"]
+TEST_1 = ["loop", "own_loop"]
+[[case.expect.findings]]
+code = "derive_cycle"
+need = "REQ_1"
+field = "loop"
+[[case.expect.findings]]
+code = "derive_cycle"
+need = "TEST_1"
+field = "loop"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "own_loop"
+
+[[case]]
+name = "join-invalid-shapes"
+why = "a join that cannot be read is refused at load, one finding per rule: beside over or from, on a kind other than links and copy, missing field or equals, a name that is no field, a link type, a number, not a table, an extra key, include_parts beside it, include_self on copy without it, links with neither where nor join"
+config = '''
+[needs.fields.ref]
+schema = { type = "string" }
+[needs.fields.name]
+schema = { type = "string" }
+[needs.fields.num]
+schema = { type = "integer" }
+[needs.fields.c_over]
+schema = { type = "string" }
+derive = { kind = "copy", field = "name", over = "links", join = { field = "name", equals = "ref" } }
+[needs.fields.c_from]
+schema = { type = "string" }
+derive = { kind = "copy", field = "name", from = "REQ_1", join = { field = "name", equals = "ref" } }
+[needs.fields.s_join]
+schema = { type = "number" }
+derive = { kind = "sum", field = "num", over = "links", join = { field = "name", equals = "ref" } }
+[needs.fields.c_self]
+schema = { type = "string" }
+derive = { kind = "copy", field = "name", over = "links", include_self = true }
+[needs.links.j_nofield]
+derive = { kind = "links", join = { equals = "ref" } }
+[needs.links.j_noequals]
+derive = { kind = "links", join = { field = "name" } }
+[needs.links.j_unknown]
+derive = { kind = "links", join = { field = "nosuch", equals = "ref" } }
+[needs.links.j_link]
+derive = { kind = "links", join = { field = "links", equals = "ref" } }
+[needs.links.j_number]
+derive = { kind = "links", join = { field = "num", equals = "ref" } }
+[needs.links.j_notable]
+derive = { kind = "links", join = "name" }
+[needs.links.j_extra]
+derive = { kind = "links", join = { field = "name", equals = "ref", ignore_case = true } }
+[needs.links.j_parts]
+derive = { kind = "links", join = { field = "name", equals = "ref" }, include_parts = true }
+[needs.links.j_none]
+derive = { kind = "links", include_self = true }
+'''
+source = '''
+.. req:: R
+   :id: REQ_1
+   :name: A
+   :ref: A
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+j_nofield = []
+j_noequals = []
+j_unknown = []
+j_link = []
+j_number = []
+j_notable = []
+j_extra = []
+j_parts = []
+j_none = []
+[case.expect.nulls]
+REQ_1 = ["c_over", "c_from", "s_join", "c_self"]
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "c_over"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "c_from"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "s_join"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "c_self"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "j_nofield"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "j_noequals"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "j_unknown"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "j_link"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "j_number"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "j_notable"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "j_extra"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "j_parts"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "j_none"
+
+[[case]]
+name = "join-spells-tr-link"
+why = "tr_link(test_option, target_option) is links with join = { field = target_option, equals = test_option } and include_self = true: the sphinx-test-reports documented usage, declared"
+config = '''
+[needs.fields.classname]
+schema = { type = "string" }
+[needs.links.tested]
+derive = { kind = "links", join = { field = "title", equals = "classname" }, include_self = true }
+[needs.links.tested_back]
+derive = { kind = "links", join = { field = "classname", equals = "title" }, include_self = true }
+'''
+source = '''
+.. spec:: sphinxcontrib.test_reports.test_reports
+   :id: TESTSPEC_001
+
+.. spec:: None
+   :id: TESTSPEC_NONE
+
+.. test:: Flake8 test case
+   :id: TESTLINK_1
+   :classname: sphinxcontrib.test_reports.test_reports
+
+.. spec:: sphinxcontrib.test_reports.test_reports
+   :id: TESTSPEC_002
+'''
+[case.expect]
+findings = []
+[case.expect.needs.TESTLINK_1]
+tested = ["TESTSPEC_001", "TESTSPEC_002"]
+[case.expect.needs.TESTSPEC_002]
+tested_back = ["TESTLINK_1"]
+[case.expect.needs.TESTSPEC_NONE]
+tested = []
+tested_back = []
+
+[[case]]
+name = "join-inline-equivalence"
+why = "links_from_match(field, equals, include_self, filter) is the inline spelling of links with join: the same links as the declared rule on the same sources; a reader value that is not text fails the call"
+config = '''
+[needs.fields.key]
+schema = { type = "string" }
+[needs.fields.ref]
+schema = { type = "string" }
+[needs.fields.num]
+schema = { type = "integer" }
+[needs.links.declared]
+derive = { kind = "links", join = { field = "key", equals = "ref" }, where = "status == 'open'" }
+[needs.links.inline]
+'''
+source = '''
+.. req:: Open
+   :id: REQ_1
+   :key: K
+   :status: open
+
+.. req:: Closed
+   :id: REQ_2
+   :key: K
+   :status: closed
+
+.. test:: Reader
+   :id: TEST_1
+   :ref: K, K
+   :status: open
+   :key: K
+   :inline: [[links_from_match("key", "ref", filter="status == 'open'")]]
+
+.. test:: Reader with self
+   :id: TEST_2
+   :ref: K
+   :key: K
+   :status: open
+   :inline: [[links_from_match("key", "ref", include_self=True, filter="status == 'open'")]]
+
+.. test:: Not text
+   :id: TEST_3
+   :num: 7
+   :inline: [[links_from_match("key", "num")]]
+'''
+[case.expect]
+[case.expect.needs.TEST_1]
+declared = ["REQ_1", "TEST_2"]
+inline = ["REQ_1", "TEST_2"]
+[case.expect.needs.TEST_2]
+inline = ["REQ_1", "TEST_1", "TEST_2"]
+[case.expect.needs.TEST_3]
+inline = []
+[[case.expect.findings]]
+code = "dynamic_function"
+need = "TEST_3"
+field = "inline"
