@@ -1,3 +1,5 @@
+:sd_hide_title:
+
 .. sphinx-test-reports documentation master file, created by
    sphinx-quickstart on Thu Apr 26 09:23:44 2018.
    You can adapt this file completely to your liking, but it should at least
@@ -6,9 +8,50 @@
 Sphinx-Test-Reports
 ===================
 
-``Sphinx-Test-Reports`` shows test results inside `Sphinx <http://www.sphinx-doc.org/en/master/>`_ documentations.
+.. grid::
+   :class-row: sd-w-100
 
-It provides the following features:
+   .. grid-item::
+      :columns: 12
+      :child-align: justify
+      :class: sd-fs-3
+
+      .. div:: sd-font-weight-bold
+
+         Test results, inside your documentation.
+
+      .. div:: sd-fs-5 sd-font-italic
+
+         Turn JUnit XML and JSON test results into Sphinx-Needs items you can link, filter and
+         report on, right beside your requirements.
+
+      .. grid:: 1 1 2 2
+         :gutter: 2 2 3 3
+         :margin: 2
+         :padding: 0
+
+         .. grid-item::
+            :columns: auto
+
+            .. button-ref:: install
+               :ref-type: doc
+               :outline:
+               :color: primary
+               :class: sd-rounded-pill sd-px-4 sd-fs-5
+
+               Get Started
+
+         .. grid-item::
+            :columns: auto
+
+            .. button-link:: https://useblocks.com/
+               :outline:
+               :color: primary
+               :class: sd-rounded-pill sd-px-4 sd-fs-5
+
+               About useblocks
+
+``Sphinx-Test-Reports`` provides the following features:
 
 * :ref:`test-file`: Documents all test cases from a junit-based xml file.
 * :ref:`test-suite`: Documents a specific test-suite and its test-cases.
