@@ -13,6 +13,7 @@ import re
 from collections.abc import Callable, Container, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
+from dataclasses import field as dataclass_field
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Protocol, TypeAlias, TypeVar
 
@@ -576,6 +577,10 @@ class _Pass:
         #: the late rules): the index of a join's field, built from the values final in
         #: it, shared by the needs
         self.stratum_cache: dict[Any, Any] = {}
+        #: the links the link-valued calls (:data:`LINK_CALLS`) of each ``(need id,
+        #: link field)`` computed into its list, once stored: what
+        #: ``needs.derive_dense`` counts on a link type without a rule
+        self.called_links: dict[Node, tuple[int, frozenset[str]]] = {}
         #: the ``(need id, name)`` values not computed yet, a name being the field's,
         #: or ``parent_need`` for a computed ``parent_needs``
         self.pending: set[tuple[str, str]] = set(project.nodes)
@@ -786,6 +791,103 @@ def resolve_functions(
     # the late step: the derive rules of the kind ``hash`` or ``fingerprint``, or with
     # after = "derived"
     _resolve_stratum(app, needs, pass_, 3, needs_schema, needs_config)
+    # from the final lists, on every build
+    _warn_dense(needs, pass_, needs_schema, needs_config.derive_max_links_per_need)
+
+
+#: The dynamic functions that compute a list of links: on a link type without a derive
+#: rule, ``needs.derive_dense`` counts the links they computed.
+LINK_CALLS = frozenset({"links_from_content", "links_from_filter", "links_from_match"})
+
+
+@dataclass
+class _Density:
+    """The links a link type's rule, or its link-valued calls, computed on every need."""
+
+    #: the links, summed over the needs
+    links: int = 0
+    #: the needs whose list was computed
+    carriers: int = 0
+    #: the longest list, and the need computing it (the lowest id of a tie)
+    longest: int = -1
+    longest_need: str = ""
+    #: the kinds of the rule (``derive_by_type`` may differ per type), or the calls
+    sources: set[str] = dataclass_field(default_factory=set)
+    by_rule: bool = False
+
+    def add(self, need_id: str, links: int) -> None:
+        self.links += links
+        self.carriers += 1
+        if links > self.longest or (
+            links == self.longest and need_id < self.longest_need
+        ):
+            self.longest, self.longest_need = links, need_id
+
+
+def _warn_dense(
+    needs: NeedsMutable, pass_: _Pass, schema: FieldsSchema, threshold: int
+) -> None:
+    """Warn of each link type whose computed lists hold more links than ``threshold``
+    times the needs of the project (``needs.derive_dense``), once.
+
+    The lists a ``links`` or ``content_links`` rule computed are counted, or, on a link
+    type without a rule, the links :data:`LINK_CALLS` computed; never a written link,
+    one a ``needextend`` adds, or a back link. A link stored is counted, dead or to a
+    part; a link two calls of one need computed is stored, and counted, once. The
+    needs of the project are every need, external and imported ones too, never a part.
+    It counts the lists as the pass left them, so every build warns alike; ``0`` (or
+    less) never warns.
+    """
+    if threshold <= 0:
+        return
+    densities: dict[str, _Density] = {}
+    for (need_id, field), call in pass_.project.rules.items():
+        if call.rule.link_valued:
+            density = densities.setdefault(field, _Density(by_rule=True))
+            density.sources.add(call.rule.kind)
+            density.add(need_id, len(set(needs[need_id][field])))
+    for (need_id, field), (links, calls) in pass_.called_links.items():
+        # a derived link type ignores the calls written in it
+        density = densities.setdefault(field, _Density())
+        if not density.by_rule:
+            density.sources.update(calls)
+            density.add(need_id, links)
+    most = threshold * len(needs)
+    for field in schema.iter_link_field_names():
+        if (density := densities.get(field)) is None or density.links <= most:
+            continue
+        if density.by_rule:
+            kinds = sorted(density.sources)
+            source = (
+                f"its derive rule{'s' if len(kinds) > 1 else ''} "
+                f"(kind{'s' if len(kinds) > 1 else ''} "
+                f"{', '.join(repr(kind) for kind in kinds)})"
+            )
+            narrow = "the rule's where"
+        else:
+            calls = sorted(density.sources)
+            source = (
+                f"the dynamic function{'s' if len(calls) > 1 else ''} "
+                f"{', '.join(calls)}"
+            )
+            narrow = "the calls' filter"
+        log_warning(
+            logger,
+            f"Link type {field!r} stores {density.links} links computed by {source} on "
+            f"{_count(density.carriers, 'need')}, more than {threshold} per need of the "
+            f"project ({_count(len(needs), 'need')}, at most {most}); the longest list, "
+            f"{_count(density.longest, 'link')}, is {density.longest_need}'s. "
+            f"Narrow {narrow}, roll the set up on one need over the back links (a count "
+            "or collect over a '_back' field), or show it in a view such as needtable; "
+            "to keep it, raise needs_derive_max_links_per_need (0 never warns) or add "
+            "'needs.derive_dense' to suppress_warnings",
+            "derive_dense",
+            location=None,
+        )
+
+
+def _count(number: int, noun: str) -> str:
+    return f"{number} {noun}{'' if number == 1 else 's'}"
 
 
 def materialise_derive_rules(
@@ -912,6 +1014,9 @@ def _resolve_field(
         if (field_schema := needs_schema.get_any_field(field)) is None:
             raise RuntimeError("does not exist in schema")
         resolved: list[Any] = []
+        # the links the link-valued calls compute, and the calls (``needs.derive_dense``)
+        called: set[Any] = set()
+        calls: set[str] = set()
         for item in reads_ctx.pass_.project.items((need.id, field)):
             if isinstance(item, DeriveCall):
                 with _reads_reported(item.describe(), field, need, reads_ctx) as reads:
@@ -990,6 +1095,13 @@ def _resolve_field(
                         resolved.extend(func_return)
                     else:
                         resolved.append(func_return)
+                    if item.name in LINK_CALLS and isinstance(field_schema, LinkSchema):
+                        calls.add(item.name)
+                        called.update(
+                            func_return
+                            if isinstance(func_return, list | tuple)
+                            else (func_return,)
+                        )
             elif isinstance(item, VariantFunctionParsed):
                 # what a condition reads other than the need's own fields;
                 # these names win over a field of the same name
@@ -1079,6 +1191,11 @@ def _resolve_field(
                 None
                 if resolved and not values and field_schema.nullable
                 else _in_field_type(values, field_schema)
+            )
+        if calls:
+            reads_ctx.pass_.called_links[(need.id, field)] = (
+                len(called),
+                frozenset(calls),
             )
     except Exception as err:
         log_warning(

@@ -20,11 +20,12 @@ import json
 import os
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, get_args
 
 import pytest
 
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.logging import WarningSubTypeDescription, WarningSubTypes
 from sphinx_needs_testkit import build_warnings
 
 
@@ -96,6 +97,15 @@ def test_the_default_is_what_a_project_reads(test_app):
     app = test_app
     app.build()
     assert NeedsSphinxConfig(app.config).derive_max_links_per_need == 100
+
+
+def test_listed_with_the_build_warnings():
+    """The subtype is in the list the documentation renders for ``suppress_warnings``."""
+    assert "derive_dense" in get_args(WarningSubTypes)
+    assert WarningSubTypeDescription["derive_dense"] == (
+        "A link type's derive rule, or its link-valued dynamic functions, store more "
+        "links than needs_derive_max_links_per_need per need of the project"
+    )
 
 
 # --- the text ------------------------------------------------------------------------
@@ -516,4 +526,5 @@ def test_a_changed_threshold_applies_without_reading_a_document(test_app, make_a
     os.utime(conf, ns=(later, later))
     second = make_app(buildername="html", srcdir=app.srcdir)
     second.build()
+    assert "0 added, 0 changed, 0 removed" in second._status.getvalue()
     assert _fields(second) == []
