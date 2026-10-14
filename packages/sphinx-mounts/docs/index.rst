@@ -1,12 +1,54 @@
+:sd_hide_title:
+
 sphinx-mounts
 =============
 
-Mount external source trees into a Sphinx build **without copying or
-symlinking**. The sources stay where they live; Sphinx reads them in place
-under a configured docname prefix. Any format Sphinx knows how to parse
-is supported — ``.rst`` out of the box, ``.md`` via
-`myst-parser <https://myst-parser.readthedocs.io/>`__, plus anything else
-a parser extension registers.
+.. grid::
+   :class-row: sd-w-100
+
+   .. grid-item::
+      :columns: 12
+      :child-align: justify
+      :class: sd-fs-3
+
+      .. div:: sd-font-weight-bold
+
+         Your sources, mounted into Sphinx.
+
+      .. div:: sd-fs-5 sd-font-italic
+
+         Mount external source trees into a Sphinx build without copying or symlinking.
+         The sources stay where they live, and Sphinx reads them in place under a docname prefix.
+
+      .. grid:: 1 1 2 2
+         :gutter: 2 2 3 3
+         :margin: 2
+         :padding: 0
+
+         .. grid-item::
+            :columns: auto
+
+            .. button-ref:: installation
+               :ref-type: doc
+               :outline:
+               :color: primary
+               :class: sd-rounded-pill sd-px-4 sd-fs-5
+
+               Get Started
+
+         .. grid-item::
+            :columns: auto
+
+            .. button-link:: https://useblocks.com/
+               :outline:
+               :color: primary
+               :class: sd-rounded-pill sd-px-4 sd-fs-5
+
+               About useblocks
+
+Any format Sphinx knows how to parse is supported — ``.rst`` out of the box, ``.md`` via
+`myst-parser <https://myst-parser.readthedocs.io/>`__, plus anything else a parser extension
+registers.
 
 .. figure:: _static/concept.drawio.png
    :alt: Two external source bundles (one under bazel-out/, one in a sibling
