@@ -8,7 +8,7 @@ Changelog
 1.0.0
 -----
 
-:Released: 2026-10-15
+:Released: 2026-10-14
 
 The first release, as **1.0.0**: the record of the needs.json exchange format, and the one
 reader of it the sphinx-needs family is to share -- the reader sphinx-needs 9.0.0 shipped as
