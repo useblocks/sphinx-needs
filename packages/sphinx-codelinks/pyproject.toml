@@ -15,6 +15,7 @@ readme = "README.md"
 # locks, builds and publishes -- the gap shows up only as an install failure for a user on
 # an interpreter inside it.
 requires-python = ">=3.11,<4"
+classifiers = ["Typing :: Typed"]
 dependencies = [
   "comment-parser>=1.2.4",
   "ignore-python>=0.3.3",
@@ -84,9 +85,10 @@ Changelog = "https://github.com/useblocks/sphinx-needs/blob/master/packages/sphi
 requires = ["flit_core >=3.4,<4"]
 build-backend = "flit_core.buildapi"
 
-# Deliberately NO `[tool.flit.sdist]`: this distribution carries no non-Python payload, so
-# flit's module-only sdist is byte-for-byte the shape already published on PyPI, and
-# nothing downstream builds from it -- the git pins in the wild clone the repository.
+# Deliberately NO `[tool.flit.sdist]`: this distribution carries nothing outside the module
+# (its `py.typed` marker included, which flit ships as part of it), so flit's module-only
+# sdist is the shape already published on PyPI, and nothing downstream builds from it --
+# the git pins in the wild clone the repository.
 # Everything else -- ruff, ty, pytest and the dependency groups -- is the ROOT's, and
 # `tools/src/sn_tools/check_workspace.py` check (7) refuses those tables here: a member
 # `[tool.ruff]` does not extend the root's configuration, it replaces it.

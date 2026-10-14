@@ -9,6 +9,9 @@ Unreleased
 New and Improved
 ................
 
+- 🏷️ sphinx-codelinks ships a ``py.typed`` marker (:pep:`561`) and the ``Typing :: Typed``
+  classifier, so a type checker reads its annotations instead of treating the package as
+  untyped.
 - ⬆️ The ``docs`` extra now requires furo 2025.12.19 or newer (previously 2024.5.6), the
   first release of that theme that supports Sphinx 9: every earlier one caps Sphinx below
   9.0. It is the floor Sphinx-Needs' ``theme-furo`` extra already declares.

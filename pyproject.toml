@@ -315,8 +315,10 @@ extend-select = [
   "ICN", # flake8-import-conventions
   "ISC", # flake8-implicit-str-concat
   "N",   # pep8-naming
+  "PGH", # pygrep-hooks: no blanket `# type: ignore` or `# noqa`
   "RUF", # Ruff-specific rules
   "SIM", # flake8-simplify
+  "TID", # flake8-tidy-imports: no relative imports from a parent package
   "UP",  # pyupgrade
 ]
 # ISC004 is ignored for now: every occurrence here is a deliberately wrapped string
@@ -421,6 +423,40 @@ allowed-unresolved-imports = [
 # this a suppression that stopped suppressing anything would pass. There are no other
 # warning-level diagnostics in this tree
 error-on-warning = true
+
+[tool.ty.rules]
+# rules ty leaves off by default, switched on because each reports nothing in this tree
+# today: from here on they are fences rather than a burn-down. `blanket-ignore-comment`
+# refuses a suppression that names no rule (every one here names its rule, so each
+# silences one diagnostic and nothing else); the `possibly-missing-*` pair reports an
+# attribute or an import that exists on only some paths, and `unsound-yield` a `yield`
+# whose value is not truly a subtype of the declared one. Its siblings for `return` and
+# assignment are on per package below, where they are already clean (#1835)
+blanket-ignore-comment = "error"
+possibly-missing-attribute = "error"
+possibly-missing-import = "error"
+unsound-yield = "error"
+
+[[tool.ty.overrides]]
+# the paths where `unsound-return-statement` and `unsound-assignment` already report
+# nothing: they stay that way while the rest of the tree burns its diagnostics down (#1835).
+# A path joins a list when its own count reaches zero, and does not leave it again
+include = [
+  "packages/ub-needs-exchange/src",
+  "packages/sphinx-ai-index/src",
+  ".github/scripts",
+  "docs-theme",
+]
+[tool.ty.overrides.rules]
+unsound-return-statement = "error"
+unsound-assignment = "error"
+
+[[tool.ty.overrides]]
+# ub-project is clean of `unsound-return-statement` only: two `unsound-assignment`s remain
+# in `project.py`, a `tomllib.load` result and an `isinstance`-narrowed `dict`
+include = ["packages/ub-project/src"]
+[tool.ty.overrides.rules]
+unsound-return-statement = "error"
 
 [[tool.ty.overrides]]
 # SphinxNeedsData stores its state as dynamic attributes on BuildEnvironment (#1725, Tier 2)

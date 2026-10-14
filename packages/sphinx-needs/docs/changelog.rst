@@ -10,6 +10,11 @@ Unreleased
 Improvements
 ............
 
+- 🏷️ sphinx-needs ships a ``py.typed`` marker (:pep:`561`) and the ``Typing :: Typed``
+  classifier, so a type checker (mypy, pyright, ty) reads its annotations instead of
+  treating the package as untyped. A project that type-checks code calling sphinx-needs'
+  API may see new diagnostics where those calls disagree with the annotations.
+
 - ✨ The :ref:`join <needs_derive_join>` role of a derive rule, reserved in 9.0.0, and its inline
   spelling, the dynamic function :ref:`links_from_match` (:issue:`2224`, :pr:`2228`)
 
