@@ -14,8 +14,9 @@ Changed
   rather than tabs along the top, and loads one copy of jQuery rather than two. Nothing
   in the extension changed.
 - ⬆️ The ``docs`` extra installs furo 2025.12.19 or newer in place of sphinx-immaterial,
-  for the site above. 2025.12.19 is the first furo release that supports Sphinx 9, and the
-  floor every other documentation extra in the repository declares.
+  for the site above: the first release of that theme that supports Sphinx 9, as every
+  earlier one caps Sphinx below 9.0. It is the floor Sphinx-Needs' ``theme-furo`` extra
+  already declares.
 
 .. _`release:3.0.0`:
 
