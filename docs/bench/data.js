@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791976553936,
+  "lastUpdate": 1791977016938,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -24660,6 +24660,42 @@ window.BENCHMARK_DATA = {
             "value": 57.091379939999996,
             "unit": "s",
             "extra": "Commit: 871bd4722b2bf55cab32e4299eb2124af8c1ae1d\nBranch: master\nTime: 2026-10-14T13:12:24+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "45d946db784913328b7c4d72ec6900533522792d",
+          "message": "📚 sphinx-test-reports: the docs move from sphinx-immaterial to furo and the shared useblocks look (#2227)\n\n## What\n\nsphinx-test-reports' documentation site moves from sphinx-immaterial and\na vendored `docs/ub_theme/` to furo and `docs-theme/`, the look the\nrepository's other furo sites share (introduced by #2225). Package:\n`sphinx-test-reports` (docs and the `docs` extra). No extension code\nchanges.\n\n- **`docs/conf.py`**: furo, plus `ub_docs_theme` loaded from\n`docs-theme/` when the directory exists (guarded, as on the other\nsites). It keeps only its own options:\n  - `sphinx-test-reports-logo.svg` as both logos\n- `sidebar_hide_name: False`, because the logo is a portrait icon and\nnot a wordmark, so the name stays visible; furo prints it below the logo\n  - `source_directory`\n  - `_static/test-reports.css`, which caps the icon's height\n- **Removed from `docs/conf.py`**:\n  - `sys.path.append(\".\")` and the `ub_theme` import\n- `needs_css = \"dark.css\"`. It set dark need colours unconditionally,\nwhich matched immaterial's always-dark palette. Under furo's light\nscheme it would paint dark boxes, so the site now uses the default\n`modern.css`, like the other sites.\n  - `sphinx_immaterial`\n  - `pygments_style = \"sphinx\"` (no other site sets it)\n  - `templates_path`, including a `_templates` that does not exist\n  - `html_logo`\n  - `html_js_files = [\"jquery.js\"]`\n- **`docs/ub_theme/` is deleted** (8 files, 98 KB). It was a copy of the\nold useblocks-theme repository:\n  - its CSS targeted immaterial and the retired DataTables widget\n- its `layout.html` loaded jQuery 3.6.3 from code.jquery.com on every\npage\n- its `jquery.js` duplicated the one sphinx-needs already ships via\nsphinxcontrib.jquery\n  - its footer partial is replaced by furo's default footer\n- **Front page**: the five status badges above the title (licence,\nPython versions, RTD, CI, PyPI) are removed. They belong to the\nrepository README, which keeps them.\n- **rst markup**: `:hide-navigation:` is removed from 8 pages, including\n`changelog.rst`, and `:class-card: border` from 3 cards. Both are inert\nunder furo. `.. contents::` stays.\n- **`docs` extra**: `furo>=2025.12.19` replaces `sphinx-immaterial`. It\nis the first furo that supports Sphinx 9, and the floor that\nsphinx-mounts' and sphinx-codelinks' `docs` extras and sphinx-needs'\n`theme-furo` extra declare.\n- **Read the Docs filter**: gains `docs-theme/`, which `docs/conf.py`\nnow loads. Its documented, deliberate exclusion of `vendor/` is kept,\nand the comment is extended only to name `docs-theme/`.\n- **AGENTS.md**: the \"still uses sphinx_immaterial\" paragraph becomes\nhistory.\n- **Corrected \"13 `needflow` directives\" claim**, wherever it appeared:\nthe package's AGENTS.md and `.readthedocs.yaml`, the root AGENTS.md,\n`pyproject.toml` (the extra's and the poe task's comments) and\n`ci.yaml`. Three render: one in `functions.rst` and two in\n`examples/index.rst`, matching the three PlantUML images every build\nwrites. The rest of the `needflow` lines in the sources are examples in\nliteral blocks, plus one commented-out line in `filter.rst`.\n- **`docs-theme/README.md`** lists the site.\n\n## Why\n\nCloses #1935. This was the last site on immaterial, with its own\nvendored theme and a third-party jQuery fetch on every page view. The\nother three sites share one look.\n\n## Evidence (measured against a build of ef44b71)\n\n- **Build**: `-nW --keep-going` exits 0 with 0 warnings, the same as at\nef44b71, and again after merging current master. There are 3 PlantUML\nimages before and after.\n- **`index.html`, scripts**:\n`https://code.jquery.com/jquery-3.6.3.min.js` + `_static/jquery.js` →\nonly `_static/jquery.js`.\n- **`index.html`, stylesheets**: `sphinx_immaterial_theme…css`,\n`dark.css`, `ub-theme.css` → `styles/furo.css`, `modern.css`,\n`furo-extensions.css`, `ub-furo.css`, `test-reports.css`. The site's own\nstylesheet loads last.\n- **`index.html`, markup counts**:\n\n  | | before | after |\n  |---|---|---|\n  | `gh-source` | 0 | 7 |\n  | view/edit buttons | 0 | 2 |\n  | \"Sponsored and maintained\" footer | 1 | 0 |\n  | `md-tabs` | 8 | 0 |\n\n- **Computed colours** (body):\n  - brand: none → `#583eff` light / `#e4ff3e` dark\n  - background: always `rgb(30,33,41)` → follows the scheme\n  - needtable label: `#eee` → `#6b6f76` light / `#81868d` dark\n- **Logo**: 66×96 px with the cap; 177×258 px without it (measured by\noverriding the rule in the page).\n- **Lock**: `uv.lock | 4 ++--`. The `docs` extra's edges swap\n`sphinx-immaterial` for `furo`. Every package version is unchanged: furo\n2025.12.19, and sphinx-immaterial 0.13.9, which stays in the lock\nthrough sphinx-needs' `theme-im`.\n\nScreenshots of the index page before (immaterial, always dark) and after\n(furo, light and dark) were compared, along with a needtable page, a\ntest-report page and a needflow page.\n\n## Compatibility\n\n- **The site looks different, by design**:\n- it follows the reader's light/dark setting instead of being always\ndark\n  - it navigates from a left sidebar instead of tabs along the top\n  - it uses the useblocks brand colours\n- it uses furo's footer, and the front page opens with the title rather\nthan badges\n- **The extension is unchanged.**\n- **`pip install sphinx-test-reports[docs]`** now installs furo\n(2025.12.19 or newer) instead of sphinx-immaterial.\n\n## Changelog\n\nsphinx-test-reports, `Unreleased` / Changed:\n\n- 📚 The documentation site moved from sphinx-immaterial to furo and the\nshared useblocks look (#1935); the front page no longer opens with the\nREADME's status badges.\n- ⬆️ The `docs` extra installs furo 2025.12.19 or newer in place of\nsphinx-immaterial.\n\nBoth use the `Unreleased` shape that `poe bump` converts in place. A dry\nrun converts it to the next version and keeps both bullets.\n\n## Tests\n\nNo extension code changed. These were run, after merging current master:\n\n- `uv run poe lint`: 0\n- `uv run poe typecheck`: 0\n- `uv run poe check-workspace`: 0\n- `pytest tools/tests`: 0\n- `uv lock --check`: 0\n- the sphinx-test-reports docs build (`-nW`): 0, with 0 warnings\n- earlier in the branch: `uv run poe smoke-needs` (0), and a build of\nthese docs outside the repository (plain furo, exit 0)\n\n## Follow-ups noticed\n\n- A wordmark logo pair (`sphinx-test-reports-logo_light/_dark.svg`) like\nthe other sites have, so the name can be hidden like theirs. That is a\ndesign asset.\n- `linkcheck_ignore` still lists `fonts.googleapis.com`, which only\nimmaterial used.\n- For the maintainer: this site renders with the vendored PlantUML jar\nunder `fail_on_warning`, but its Read the Docs filter deliberately\nleaves `vendor/` out, so a pull request that only bumps the jar skips\nthis preview. sphinx-needs' filter lists `vendor/`. Whether to align\nthem is a separate decision.\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [ ] I ran the package's tests (`uv run poe test-<package>`) and they\npass. (Docs only: no package code changed; the docs build and gates\nabove were run.)\n- [x] Documentation is updated where behaviour or options change.\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-14T13:22:12+02:00",
+          "tree_id": "9eb67da643ac0f44e8ac3b561396929f8c11330e",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/45d946db784913328b7c4d72ec6900533522792d"
+        },
+        "date": 1791977008824,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1263348190000002,
+            "unit": "s",
+            "extra": "Commit: 45d946db784913328b7c4d72ec6900533522792d\nBranch: master\nTime: 2026-10-14T13:22:12+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 56.509164891,
+            "unit": "s",
+            "extra": "Commit: 45d946db784913328b7c4d72ec6900533522792d\nBranch: master\nTime: 2026-10-14T13:22:12+02:00"
           }
         ]
       }
