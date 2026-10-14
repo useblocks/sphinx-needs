@@ -1456,6 +1456,105 @@ def test_links_from_match_fails(make_app, tmp_path, call, message):
     assert _built_needs(app)["LFM_R"]["links"] == []
 
 
+LINKS_FROM_MATCH_LATER_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_fields = {
+    "key": {"nullable": True},
+    "ref": {"nullable": True},
+    "key_d": {"derive": {"kind": "copy", "field": "key"}},
+    "ref_d": {"derive": {"kind": "copy", "field": "ref"}},
+}
+"""
+
+LINKS_FROM_MATCH_LATER_INDEX = """\
+Fields computed after the links
+===============================
+
+.. req:: Keyed
+   :id: REQ_1
+   :key: K
+
+.. test:: Plain
+   :id: TEST_PLAIN
+   :ref: K
+   :links: [[links_from_match("key_d", "ref")]]
+
+.. test:: Names every need
+   :id: TEST_NEEDS
+   :ref: K
+   :links: [[links_from_match("key_d", "ref", filter="len(needs) > 0")]]
+
+.. test:: Reads the reader by a computed key
+   :id: TEST_CURRENT
+   :ref: K
+   :links: [[links_from_match("key_d", "ref", filter="current_need['re' + 'f'] is not None")]]
+
+.. test:: Derived equals
+   :id: TEST_EQ
+   :ref: K
+   :links: [[links_from_match("key", "ref_d")]]
+
+.. test:: Derived equals, filter names every need
+   :id: TEST_EQ_NEEDS
+   :ref: K
+   :links: [[links_from_match("key", "ref_d", filter="len(needs) > 0")]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), LINKS_FROM_MATCH_LATER_CONF),
+                (Path("index.rst"), LINKS_FROM_MATCH_LATER_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_links_from_match_reads_its_fields_whatever_the_filter(test_app):
+    """A ``links_from_match`` in a link field reads its ``field`` on every need and its
+    ``equals`` on its own need, which a rule computes after the link fields here: the
+    call is not run (``needs.derive_scope``), with or without a filter, also one whose
+    reads cannot be told from its text (naming ``needs``, or ``current_need`` by a
+    computed key), which would otherwise run on values not computed yet."""
+    app = test_app
+    app.build()
+    later = "which {} final only after the link fields are computed: the call is not run and the field is left empty [needs.derive_scope]"
+    key_d = (
+        "WARNING: dynamic function 'links_from_match' for option 'links' reads 'key_d' "
+        "on 6 needs (REQ_1, TEST_CURRENT, TEST_EQ and 3 more), " + later.format("are")
+    )
+
+    def ref_d(need_id: str) -> str:
+        return (
+            "WARNING: dynamic function 'links_from_match' for option 'links' reads "
+            f"'ref_d' on need '{need_id}', " + later.format("is")
+        )
+
+    assert sorted(build_warnings(app)) == sorted(
+        [
+            f"<srcdir>/index.rst:8: {key_d}",
+            f"<srcdir>/index.rst:13: {key_d}",
+            f"<srcdir>/index.rst:18: {key_d}",
+            f"<srcdir>/index.rst:23: {ref_d('TEST_EQ')}",
+            f"<srcdir>/index.rst:28: {ref_d('TEST_EQ_NEEDS')}",
+        ]
+    )
+    needs = _built_needs(app)
+    for need_id in (
+        "TEST_PLAIN",
+        "TEST_NEEDS",
+        "TEST_CURRENT",
+        "TEST_EQ",
+        "TEST_EQ_NEEDS",
+    ):
+        assert needs[need_id]["links"] == [], need_id
+
+
 # -- three fixes from #1984 -------------------------------------------------------------
 
 PLAIN_CONF = """\
