@@ -335,7 +335,9 @@ class NeedLinksConfig(TypedDict, total=False):
     derive: NotRequired[dict[str, Any]]
     """
     A rule computing the links of every need: a table naming a ``kind``
-    (``links`` or ``content_links``) and its roles.
+    (``links`` or ``content_links``) and its roles; ``links`` takes a ``where``
+    filter, a ``join`` (the needs whose field equals one of the need's values), or
+    both.
 
     A derived link type cannot be set in a need or by a ``needextend``,
     and takes no ``default`` or ``predicates``.
@@ -401,7 +403,8 @@ class NeedFields(TypedDict):
     """
     A rule computing the field for every need: a table naming a ``kind``
     (``copy``, ``sum``, ``count``, ``min``, ``max``, ``any``, ``all``, ``collect``,
-    ``hash`` or ``fingerprint``) and its roles.
+    ``hash`` or ``fingerprint``) and its roles; ``copy`` reads its own need, the
+    need ``from`` names, the needs ``over`` names, or the needs a ``join`` matches.
 
     A derived field cannot be set in a need or by a ``needextend``,
     and takes no ``default`` or ``predicates``.

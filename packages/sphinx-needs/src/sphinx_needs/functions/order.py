@@ -45,6 +45,7 @@ from sphinx_needs.functions.common import (
     echo,
     links_from_content,
     links_from_filter,
+    links_from_match,
     over_candidates,
     test,
 )
@@ -77,11 +78,21 @@ class Column:
 
 _Vertex = Node | Column
 
-Reason = str | Node | None
+
+@dataclass(frozen=True, slots=True)
+class JoinRead:
+    """Why a column is read on every need: a ``join`` (a derive rule's, or
+    ``links_from_match``'s) matches the reader's values against every need's."""
+
+
+#: the one :class:`JoinRead`
+JOIN_READ: Final = JoinRead()
+
+Reason = str | Node | JoinRead | None
 """Why a column is read on every need, not on the candidates of a filter: the filter
 that names a computed field; the node of the reader's own ``links``, computed in the
-same stratum, so which needs they name is not known before; or ``None``, a sum over
-every need (or over the candidates of its filter)."""
+same stratum, so which needs they name is not known before; a join (:data:`JOIN_READ`);
+or ``None``, a sum over every need (or over the candidates of its filter)."""
 
 #: the built-in functions, which the order knows the reads of, by their name
 BUILTINS: Final[Mapping[str, Callable[..., Any]]] = {
@@ -94,6 +105,7 @@ BUILTINS: Final[Mapping[str, Callable[..., Any]]] = {
         calc_sum,
         links_from_content,
         links_from_filter,
+        links_from_match,
     )
 }
 
@@ -114,6 +126,7 @@ _SELECTORS: Final[Mapping[str, frozenset[str]]] = {
     "calc_sum": frozenset({"option", "filter", "links_only"}),
     "links_from_content": frozenset({"need_id", "filter"}),
     "links_from_filter": frozenset({"filter", "include_self", "include_parts"}),
+    "links_from_match": frozenset({"field", "equals", "filter", "include_self"}),
 }
 #: the selectors that hold a flag, not a name or a filter
 _FLAGS: Final = frozenset({"links_only", "include_self", "include_parts"})
@@ -809,6 +822,29 @@ class _CallReads:
         for read in sorted(names.names):
             self._column(read, None, filter_string)
 
+    def _links_from_match(self, args: dict[str, Any]) -> None:
+        # the need's own values, then the field on every need through its column
+        field, equals = args.get("field"), args.get("equals")
+        if not field or not equals:
+            return  # the call fails: an empty name
+        if any(
+            name in self.project.link_fields or self.project.at_barrier(name)
+            for name in (field, equals)
+        ):
+            return  # the call fails: a link list is not text
+        # the join's own reads, whatever the filter: a filter whose reads cannot be
+        # told (``needs``) makes the call last, never blind to these
+        self._read(self.need.id, equals)
+        self._column(field, None, JOIN_READ)
+        filter_string = args.get("filter")
+        names = self._filter(filter_string) if filter_string else None
+        if names is not None:
+            # current_need is the need the call is in
+            for key in sorted(names.current):
+                self._read(self.need.id, key)
+            for read in sorted(names.names):
+                self._column(read, None, filter_string)
+
 
 class _RuleReads(_CallReads):
     """The reads of one derive rule, added to its node's :class:`NodeReads`.
@@ -819,7 +855,9 @@ class _RuleReads(_CallReads):
     ``over`` reaches (``transitive``); the listed own ``fields`` (``hash``); every own
     name a fingerprint includes and does not ``exclude`` (``fingerprint``); the names
     of ``where`` on every need (``links``, through their columns) or on each need the
-    content references (``content_links``).
+    content references (``content_links``); for a ``join``, its ``equals`` on its own
+    need, and its ``field`` (with ``copy``'s ``field``, and ``where``'s names) on every
+    need, through their columns.
     """
 
     def read(self) -> None:
@@ -827,7 +865,16 @@ class _RuleReads(_CallReads):
         rule = self.call.rule
         where = self._names(rule.where)
         test = self._names(rule.test)
-        if rule.kind == "links":
+        if rule.join is not None:
+            # before an own copy's branch: a copy with a join reads more than its own
+            # field; which needs match is known only once the columns are final
+            self._read(self.need.id, rule.join.equals)
+            self._column(rule.join.field, None, JOIN_READ)
+            if rule.kind == "copy":
+                self._column(rule.field, None, JOIN_READ)
+            for name in sorted(where):
+                self._column(name, None, rule.where)
+        elif rule.kind == "links":
             for name in sorted(where):
                 self._column(name, None, rule.where)
         elif rule.kind == "content_links":

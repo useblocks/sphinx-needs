@@ -80,13 +80,20 @@ The built-in functions are the per-need spellings of the kinds:
      - ``content_links``, with ``from = "ID"`` and the ``where`` ``filter``
    * - ``links_from_filter(filter, include_self, include_parts)``
      - ``links``, with the ``where`` ``filter`` and the same ``include_self`` and ``include_parts``
+   * - ``links_from_match(field, equals, include_self, filter)``
+     - ``links`` with ``join = { field = field, equals = equals }``, the same ``include_self``,
+       and the ``where`` ``filter``
 
 A ``where`` that cannot be evaluated on a candidate (one lacking a field it names) drops that candidate,
 without a warning, in every kind and in ``links_from_filter``;
 the ``filter`` of ``calc_sum``, ``check_linked_values`` and ``links_from_content`` keeps its own behaviour.
 
-The ``join`` role, which will spell sphinx-test-reports' ``tr_link``, is reserved for a later release:
-a rule naming it is reported as ``needs.derive_invalid``.
+The ``join`` role (:ref:`needs_derive_join`) spells such a correlated lookup, as sphinx-test-reports' ``tr_link`` does,
+and :ref:`links_from_match` is its inline spelling.
+A ``copy("x", filter=…)`` whose filter compares a need with ``current_need`` (``name == current_need['ref']``)
+is such a lookup too, its filter tested on every need for each need it is in:
+a ``copy`` with ``join`` is the declared form of such a lookup (it splits the values,
+and finds no value rather than this need's own when nothing matches).
 A rule for some need types is declared under ``derive_by_type`` (:ref:`needs_derive_by_type`), not with a role.
 
 .. _dynamic_functions:
@@ -164,8 +171,8 @@ The following functions are available by default.
 .. note::
 
    The parameters ``app``, ``need`` and ``needs`` of the following functions are set automatically.
-   So is ``reads``, the keyword-only parameter of :ref:`copy <copy>`, :ref:`check_linked_values <check_linked_values>`
-   and :ref:`calc_sum <calc_sum>` through which they report the reads that cannot be ordered
+   So is ``reads``, the keyword-only parameter of :ref:`copy <copy>`, :ref:`check_linked_values <check_linked_values>`,
+   :ref:`calc_sum <calc_sum>` and :ref:`links_from_match` through which they report the reads that cannot be ordered
    (see :ref:`needs_derive_scope`). It is reserved: do not give it in a call (doing so fails the call).
 
 test
@@ -211,6 +218,13 @@ links_from_filter
 ~~~~~~~~~~~~~~~~~
 
 .. autofunction:: sphinx_needs.functions.common.links_from_filter
+
+.. _links_from_match:
+
+links_from_match
+~~~~~~~~~~~~~~~~
+
+.. autofunction:: sphinx_needs.functions.common.links_from_match
 
 
 Develop own functions
@@ -326,6 +340,7 @@ call                                   reads
 ``links_from_content()``               the need's content
 ``links_from_content(filter=…)``       the filter's fields of each need the content references
 ``links_from_filter(filter)``          the filter's fields of every need; ``current_need`` is its own need
+``links_from_match("x", "y")``         ``y`` of its own need, and ``x`` (and the filter's fields) of every need
 ``<<[cond]:a, b>>``                    the fields of its own need that any of its conditions names, evaluated or not
 =====================================  ==============================================================================
 
@@ -352,6 +367,8 @@ And what each :ref:`derive rule <needs_derive>` reads:
      - every name it includes (less ``exclude``) of its own need, after every other rule
    * - ``links``, ``where = …``
      - the names of ``where`` on every need (and part)
+   * - ``links`` or ``copy``, ``join = { field = "x", equals = "y" }``
+     - ``y`` of its own need, and ``x`` (``copy``'s ``field`` too, and the names of ``where``) on every need
    * - ``content_links``
      - the need's content (or that of the need ``from`` names), and the names of ``where`` on each need it references
 
@@ -385,7 +402,8 @@ They read the values the built-in functions computed
 a built-in function that reads a field your own function computes
 reads it before it is computed, which is reported (:ref:`needs_derive_scope`).
 A function of your own in a link field, such as sphinx-test-reports' ``tr_link``, runs at the end of step 2,
-so its links are in the back links of step 3.
+so its links are in the back links of step 3
+(:ref:`links_from_match` is the built-in function for ``tr_link``'s links, ordered as the other built-in functions are).
 A later release is to let a function declare what it reads, which will order it like a built-in one.
 A ``filter`` that names ``needs``, or reads ``current_need`` by a key that is not written out,
 cannot be ordered either: its call runs with your own functions.
