@@ -41,7 +41,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 11
+ENV_DATA_VERSION: Final = 12
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -76,6 +76,12 @@ skipped by ``check_linked_values`` and a ``links_only`` ``calc_sum``, ``copy`` w
 ``needs``), so the same sources give other values. As for version 10, an unbumped
 rebuild over an existing ``_build`` would leave the old values on the pages whose
 sources did not change.
+
+Version 12 changes what the stored values mean again: a rule with the ``join`` role,
+which 9.0.0 refused as reserved and left empty, now computes, and ``links_from_match``,
+an unknown function in 9.0.0, now links; the configuration does not change, so without
+the bump an upgraded build would keep the empty values on the pages whose sources did
+not change.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """
