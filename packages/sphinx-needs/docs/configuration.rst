@@ -732,7 +732,7 @@ The nearest declared form of sphinx-test-reports' ``tr_link(test_option, target_
 or inline ``[[links_from_match("<target_option>", "<test_option>", include_self=True)]]``:
 the arguments come in the swapped order, the field read on every need first.
 ``tr_link`` links a need once per value that matches it, in the order the project holds the needs,
-compares each need's ``target_option`` whole (so an array or a comma-separated value never matches,
+compares each need's ``target_option`` whole (so an array, a number or a comma-separated value never matches,
 and an unstripped one only as written), and fails when this need's ``test_option`` is an array or a number;
 ``links_from_match`` reads both sides by value and fails the call on a number or boolean field.
 
