@@ -2,7 +2,7 @@
    :class-row: sd-w-100
 
    .. grid-item::
-      :columns: 12 8 8 8
+      :columns: 12
       :child-align: justify
       :class: sd-fs-3
 
