@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791977016938,
+  "lastUpdate": 1791978703870,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -24696,6 +24696,42 @@ window.BENCHMARK_DATA = {
             "value": 56.509164891,
             "unit": "s",
             "extra": "Commit: 45d946db784913328b7c4d72ec6900533522792d\nBranch: master\nTime: 2026-10-14T13:22:12+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8c3fd018e4e287006245f8fbf4a69722918e1e6e",
+          "message": "♻️ sphinx-needs reads needs.json through ub-needs-exchange; `sphinx_needs.exchange` becomes a deprecated alias (#2229)\n\nOn master after the 9.0.0 release and `ub-needs-exchange 1.0.0` (#2219,\npublished).\n\n`needimport` and `needs_external_needs` now read a needs.json through\nthe `ub-needs-exchange` library — a new\nruntime dependency, `ub-needs-exchange>=1.0.0,<2` — instead of\nsphinx-needs' own copy of the reader. Nothing they read\nor report changes, but for the library's one addition: a top-level\n`format_version` is now read (above 1: read as 1\nwith a warning; malformed: that source is refused). The `needs`\nbuilder's `needs_file` and `check_needs_file` still\nread with `json.load`; they move with the writer, a later slice.\n\n- **The alias**: `sphinx_needs.exchange`, where 9.0.0 shipped the\nreader, stays importable through 9.x — it\nre-exports the 9.0.0 names (the package's own objects) and warns once\nwith a DeprecationWarning naming\n`ub_needs_exchange` — and is removed in 10.0. Nothing in sphinx-needs\nimports it: a source grep, and a walk of every\n  module in a fresh interpreter with that warning as an error.\n- **Tests**: the reader's tests are the package's (its conformance\ncorpus); sphinx-needs' `tests/test_exchange.py`\nkeeps the alias's three. The suite: 2775 passed / 12 skipped (master\n2813: the 41 moved tests, + 3).\n- **Docs**: builders.rst links the contract; the changelog's new\n`Unreleased` → `Deprecations` entry; the three Read\nthe Docs sites that install sphinx-needs from the checkout install\n`ub-needs-exchange` from it first.\n- **The package's documents**: the contract's §13, its AGENTS.md and the\nroot AGENTS.md/README, which 1.0.0 worded as\nthe plan, now state it as the fact. (The released 1.0.0 changelog entry\nand the module's docstring are left as they\n  shipped.)\n- **The lock**: two lines (the dependency). The re-solve of the unused\npy<3.12 × sphinx-9 fork that adding a member\n  causes is already in master's lock.\n- **Red until 1.0.0 is on PyPI**: nothing now — `poe smoke-needs` and\n`poe import-check-needs` install the built wheel\n  against PyPI and are green.\n- **ubCode**: nothing owed by this pull request; its readers' parity is\nthe package's corpus.",
+          "timestamp": "2026-10-14T13:50:19+02:00",
+          "tree_id": "30c34a7038281fa6a73d201db65c2840704ed623",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/8c3fd018e4e287006245f8fbf4a69722918e1e6e"
+        },
+        "date": 1791978695917,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.11076439799990112,
+            "unit": "s",
+            "extra": "Commit: 8c3fd018e4e287006245f8fbf4a69722918e1e6e\nBranch: master\nTime: 2026-10-14T13:50:19+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 56.66090426799997,
+            "unit": "s",
+            "extra": "Commit: 8c3fd018e4e287006245f8fbf4a69722918e1e6e\nBranch: master\nTime: 2026-10-14T13:50:19+02:00"
           }
         ]
       }
