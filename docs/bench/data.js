@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791979323546,
+  "lastUpdate": 1791980486357,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -24768,6 +24768,42 @@ window.BENCHMARK_DATA = {
             "value": 57.851865692000004,
             "unit": "s",
             "extra": "Commit: 05b4fd2d9fc8cff53ff6c66203a76d45951f59e1\nBranch: master\nTime: 2026-10-14T14:00:34+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d5943748d45abe5cf7f9a54eed95bef91545c9d4",
+          "message": "📚 sphinx-test-reports: a TestReports wordmark pair and favicon, like the sibling sites' (#2237)\n\n## What\n\nsphinx-test-reports' docs get a light and a dark wordmark logo and a\nfavicon in the same flat style as sphinx-mounts' and sphinx-codelinks'\n(a follow-up to #2227). Package: `sphinx-test-reports` (docs only).\n\n- `docs/_static/sphinx-test-reports-logo_{light,dark}.svg`: a clipboard\nholding three results (pass, fail, pass) in the accent colour (`#583eff`\nlight / `#e4ff3e` dark), with \"TestReports\" below in Liberation Mono\nBold, the font the sibling wordmarks use. The name is converted to\noutlines, so it renders the same whether or not the reader has the font.\nThe two files differ only in their two colours.\n- `docs/_static/favicon.svg`: sphinx-mounts' convention, a dark rounded\nsquare with the clipboard and a single tick, because the three rows\nsmear together at 16 px.\n- `docs/conf.py`: the two logos and the favicon; the `sidebar_hide_name:\nFalse` override goes, so furo hides the textual title as on the other\nsites.\n- `docs/_static/test-reports.css` is deleted. Its only rule was the\nheight cap for the portrait icon.\n- The portrait `sphinx-test-reports-logo.svg` stays as the source of the\n`.png` the README shows.\n- AGENTS.md and the `Unreleased` changelog entry are updated.\n\n## Why\n\nThe site was the one furo site in the repository without a wordmark: it\nshowed the old portrait clipboard with the project name printed under\nit, height-capped to keep it off the first screen.\n\n## Evidence\n\n- `-nW --keep-going` docs build, after merging current master: exit 0, 0\nwarnings.\n- Built `index.html`: `sidebar-logo only-light` →\n`_static/sphinx-test-reports-logo_light.svg`, `only-dark` →\n`…_dark.svg`, `<link rel=\"shortcut icon\" href=\"_static/favicon.svg\">`,\nno `sidebar-brand-text`, no `test-reports.css`.\n- Rendered sidebar logo: 177×93 px in both schemes, the width the shared\n85% rule gives every site's logo.\n- All three SVGs parse as XML. The favicon was checked at 16, 32 and 64\npx beside sphinx-mounts'.\n- `uv run poe lint`: 0. `uv run poe typecheck`: 0. `uv lock --check`: 0.\n\n## Changelog\n\nsphinx-test-reports, `Unreleased` / Changed: the existing docs bullet\ngains \"…and the sidebar shows a \"TestReports\" wordmark, light and dark,\nlike the sibling sites' logos, with a matching favicon.\"\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [ ] I ran the package's tests (`uv run poe test-<package>`) and they\npass. (Docs only: no package code changed; the docs build and lint above\nwere run.)\n- [x] Documentation is updated where behaviour or options change.\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-14T14:20:15+02:00",
+          "tree_id": "d6b78f3ee53fecc148d0352b58a7b6ee49049a38",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/d5943748d45abe5cf7f9a54eed95bef91545c9d4"
+        },
+        "date": 1791980477045,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07604355200000157,
+            "unit": "s",
+            "extra": "Commit: d5943748d45abe5cf7f9a54eed95bef91545c9d4\nBranch: master\nTime: 2026-10-14T14:20:15+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 42.167398686,
+            "unit": "s",
+            "extra": "Commit: d5943748d45abe5cf7f9a54eed95bef91545c9d4\nBranch: master\nTime: 2026-10-14T14:20:15+02:00"
           }
         ]
       }
