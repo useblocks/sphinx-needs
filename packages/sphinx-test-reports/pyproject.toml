@@ -65,11 +65,11 @@ pytest = ["ub-test-reports[pytest]>=1.1.0,<2"]
 # The root re-exports it as `docs-reports` -- uv resolves `--extra` against the project,
 # which is the workspace root, so an extra that lives only here is not reachable by name.
 docs = [
+  "furo>=2025.12.19",
   "packaging",
   "pillow",
   "sphinx-ai-index>=1.0.0,<2",
   "sphinx-design",
-  "sphinx-immaterial",
   "sphinx-needs>=9.0.0,<10",
   "sphinx",
   "sphinxcontrib-plantuml",
