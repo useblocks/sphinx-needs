@@ -82,6 +82,7 @@ ROLES: Final = (
     "exclude",
     "over",
     "from",
+    "join",
     "where",
     "test",
     "select",
@@ -92,14 +93,18 @@ ROLES: Final = (
 )
 
 #: Roles that are reserved for a later release: a rule naming one cannot be read.
-RESERVED_ROLES: Final = frozenset({"join"})
+#: None is today (the ``expr`` kind of a later release is refused as an unknown kind).
+RESERVED_ROLES: Final = frozenset[str]()
 
 #: The core fields, besides every ``NeedsCoreFields`` entry, that cannot carry a rule.
 CORE_LINK_TYPES: Final = frozenset({"parent_needs"})
 
 #: Per kind, the roles it requires and the roles it may take besides.
 _ROLES_OF: Final[Mapping[str, tuple[frozenset[str], frozenset[str]]]] = {
-    "copy": (frozenset({"field"}), frozenset({"from", "over", "select", "after"})),
+    "copy": (
+        frozenset({"field"}),
+        frozenset({"from", "over", "join", "select", "include_self", "after"}),
+    ),
     "sum": (frozenset({"field", "over"}), frozenset({"where", "after"})),
     "count": (frozenset({"over"}), frozenset({"field", "where", "after"})),
     "min": (
@@ -115,13 +120,34 @@ _ROLES_OF: Final[Mapping[str, tuple[frozenset[str], frozenset[str]]]] = {
     "collect": (frozenset({"field", "over"}), frozenset({"where", "after"})),
     "hash": (frozenset({"fields"}), frozenset({"after"})),
     "fingerprint": (frozenset(), frozenset({"exclude"})),
-    "links": (frozenset({"where"}), frozenset({"include_self", "include_parts"})),
+    # ``where`` or ``join``: required as one, see parse_derive
+    "links": (
+        frozenset(),
+        frozenset({"where", "join", "include_self", "include_parts"}),
+    ),
     "content_links": (frozenset(), frozenset({"from", "where"})),
 }
 
 _STRING_ROLES: Final = frozenset({"field", "over", "from", "where", "test"})
 _BOOLEAN_ROLES: Final = frozenset({"transitive", "include_self", "include_parts"})
 _SELECT: Final = ("first", "unique", "list")
+#: The keys of the ``join`` role.
+_JOIN_KEYS: Final = ("field", "equals")
+
+
+@dataclass(frozen=True, slots=True)
+class DeriveJoin:
+    """The ``join`` role: the needs whose ``field`` equals one of this need's ``equals``.
+
+    Both are text fields: a string is split on ``,``, an array taken by item (see
+    :func:`~sphinx_needs.functions.common.join_values`).
+
+    :ivar field: The field read on every need, the candidates.
+    :ivar equals: The field read on the need holding the rule.
+    """
+
+    field: str
+    equals: str
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -134,6 +160,8 @@ class DeriveRule:
     :ivar exclude: The ``exclude`` role (``fingerprint``): what it leaves out.
     :ivar over: The ``over`` role: a link type, or ``<link type>_back``.
     :ivar from_need: The ``from`` role: the id of the one need read.
+    :ivar join: The ``join`` role (``links``, ``copy``): the needs whose field equals
+        one of this need's values.
     :ivar where: The ``where`` role: the predicate narrowing the candidates.
     :ivar test: The ``test`` role: the predicate asserted of each candidate.
     :ivar select: The ``select`` role of a ``copy`` over several targets.
@@ -149,6 +177,7 @@ class DeriveRule:
     exclude: tuple[str, ...] = ()
     over: str | None = None
     from_need: str | None = None
+    join: DeriveJoin | None = None
     where: str | None = None
     test: str | None = None
     select: Literal["first", "unique", "list"] = "first"
@@ -272,6 +301,8 @@ def parse_derive(raw: Any, *, on_link: bool) -> Derive:
     for role in ROLES:
         if role in required and role not in raw:
             return DeriveInvalid(kind, f"{prefix} requires the role {role!r}")
+    if kind == "links" and "where" not in raw and "join" not in raw:
+        return DeriveInvalid(kind, f"{prefix} requires the role 'where' or 'join'")
     for role in ROLES:
         if role in raw and (problem := _value_problem(role, raw[role])) is not None:
             return DeriveInvalid(kind, f"{prefix}: the role {role!r} {problem}")
@@ -288,6 +319,9 @@ def parse_derive(raw: Any, *, on_link: bool) -> Derive:
         exclude=tuple(raw.get("exclude", ())),
         over=raw.get("over"),
         from_need=raw.get("from"),
+        join=DeriveJoin(raw["join"]["field"], raw["join"]["equals"])
+        if "join" in raw
+        else None,
         where=raw.get("where"),
         test=raw.get("test"),
         select=raw.get("select", "first"),
@@ -371,6 +405,24 @@ def _value_problem(role: str, value: Any) -> str | None:
             return 'must be "first", "unique" or "list"'
     elif role == "after" and value != "derived":
         return 'must be "derived"'
+    elif role == "join":
+        return _join_shape_problem(value)
+    return None
+
+
+def _join_shape_problem(value: Any) -> str | None:
+    """What is wrong with the value of the ``join`` role, if anything: it is a table of
+    exactly ``field`` and ``equals``, each a field's name."""
+    if not isinstance(value, Mapping):
+        return "must be a table with 'field' and 'equals'"
+    if extra := sorted(str(key) for key in value if key not in _JOIN_KEYS):
+        return f"has the key {extra[0]!r}; it takes 'field' and 'equals'"
+    for key in _JOIN_KEYS:
+        if key not in value:
+            return f"has no {key!r}"
+    for key in _JOIN_KEYS:
+        if not isinstance(value[key], str) or not value[key].strip():
+            return f"must name a field in {key!r}"
     return None
 
 
@@ -387,15 +439,21 @@ def _named_twice(names: Iterable[str]) -> str | None:
 def _combination_problem(kind: str, raw: Mapping[str, Any]) -> str | None:
     """What is wrong with how the roles of a rule go together, if anything."""
     if kind == "copy":
-        if "from" in raw and "over" in raw:
-            return "takes one of the roles 'from' and 'over', not both"
-        if "select" in raw and "over" not in raw:
-            return "takes the role 'select' only with 'over'"
+        if sum(role in raw for role in ("from", "over", "join")) > 1:
+            return "takes one of the roles 'from', 'over' and 'join', not more"
+        if "select" in raw and "over" not in raw and "join" not in raw:
+            return "takes the role 'select' only with 'over' or 'join'"
+        # ``false``, the default, says nothing, as on min and max without transitive
+        if raw.get("include_self") and "join" not in raw:
+            return "takes the role 'include_self' only with 'join'"
+    if kind == "links" and "join" in raw and raw.get("include_parts"):
+        # a join's candidates are needs only
+        return "takes the role 'include_parts' only without 'join'"
     if kind in {"any", "all"} and ("field" in raw) == ("test" in raw):
         return "takes exactly one of the roles 'field' and 'test'"
     if kind in {"min", "max"} and raw.get("include_self") and not raw.get("transitive"):
         return "takes the role 'include_self' only with 'transitive = true'"
-    if kind == "links" and not str(raw.get("where", "")).strip():
+    if kind == "links" and "where" in raw and not str(raw["where"]).strip():
         return "has an empty 'where', which would link every need"
     return None
 
@@ -902,6 +960,10 @@ def _rule_problem(
                 f"{prefix}: the role 'exclude' names {name!r}, "
                 "which a fingerprint never includes"
             )
+    if rule.join is not None:
+        for key, name in (("field", rule.join.field), ("equals", rule.join.equals)):
+            if (problem := join_name_problem(name, schema, links)) is not None:
+                return f"{prefix}: the role 'join' names {name!r} in {key!r}{problem}"
     for role, text in (("where", rule.where), ("test", rule.test)):
         if text is not None and (problem := filter_problem(text)) is not None:
             return f"{prefix}: the role {role!r} {problem}"
@@ -1022,6 +1084,28 @@ def _holds(result: _ValueType, value: _ValueType) -> bool:
     return result.type != "array" and scalar(result.type, value.type)
 
 
+def join_name_problem(
+    name: str, schema: FieldsSchema, links: Iterable[str]
+) -> str | None:
+    """Why a join cannot compare ``name``, if it cannot: it must be a value field
+    holding a string (an enum included) or an array of strings.
+
+    :return: The rest of a sentence naming ``name``: a link type (or its back links),
+        a name that is no field, or a field of another type.
+    """
+    links = set(links)
+    if _is_link_name(name, links):
+        return ", a link type; a join compares text fields"
+    joined = _value_type(name, schema, links)
+    if joined is None:
+        return ", which is not a field"
+    if joined.type != "string" and joined != _LINK_LIST:
+        return (
+            f" ({joined.describe()}); a join compares a string or an array of strings"
+        )
+    return None
+
+
 def _is_link_name(name: str, links: Iterable[str]) -> bool:
     """Whether ``name`` is a link type, or the back links of one."""
     links = set(links)
@@ -1082,7 +1166,14 @@ def filter_problem(text: str) -> str | None:
 
 
 def _own_reads(rule: DeriveRule) -> tuple[str, list[str]]:
-    """The fields of its own need a rule reads (its S-edges), with the role naming them."""
+    """The fields of its own need a rule reads (its S-edges), with the role naming them.
+
+    A ``join`` reads ``equals`` on its own need, and its ``field`` on every need: only
+    the first is an S-edge (a ``links`` rule's names are text fields, which no link
+    rule computes, so only ``copy`` can close a cycle through them).
+    """
+    if rule.kind == "copy" and rule.join is not None:
+        return "join", [rule.join.equals]
     if rule.kind == "copy" and rule.over is None and rule.from_need is None:
         return "field", [rule.field] if rule.field is not None else []
     if rule.kind == "hash":
