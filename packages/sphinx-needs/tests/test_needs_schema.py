@@ -22,6 +22,37 @@ from sphinx_needs.variants import VariantFunctionParsed
 
 
 @pytest.mark.parametrize(
+    "value",
+    [FieldLiteralValue("open"), FieldFunctionArray(("open",))],
+    ids=["literal", "function_array"],
+)
+def test_predicate_defaults_accepted_at_construction(value):
+    """A schema built with predicate defaults is checked, not refused.
+
+    The check used to read ``isinstance(v, FieldLiteralValue) | FieldFunctionArray``,
+    a ``bool | type`` that raises ``TypeError`` for any (filter, value) pair; builds
+    escaped it only because predicates are attached after construction.
+    """
+    field = FieldSchema(
+        name="test_field",
+        schema={"type": "string"},
+        allow_defaults=True,
+        predicate_defaults=(('status == "draft"', value),),
+    )
+    assert field.predicate_defaults == (('status == "draft"', value),)
+
+
+def test_predicate_defaults_wrong_value_refused():
+    with pytest.raises(ValueError, match="predicate_defaults must be a list"):
+        FieldSchema(
+            name="test_field",
+            schema={"type": "string"},
+            allow_defaults=True,
+            predicate_defaults=(('status == "draft"', "open"),),
+        )
+
+
+@pytest.mark.parametrize(
     "type_,item_type,nullable,default,expected",
     [
         ("string", None, False, None, {"type": "string"}),

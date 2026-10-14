@@ -64,6 +64,10 @@ Bug fixes
 Internal changes
 ................
 
+- 🏷️ A ``FieldSchema`` constructed with predicate defaults no longer raises ``TypeError``:
+  its value check read ``isinstance(v, A) | B``. No build reached it, as predicates are
+  attached after construction; three ``# ty: ignore`` comments go with it (:issue:`1835`)
+
 - 🏷️ ty's ``possibly-unresolved-reference``, ``disjoint-cast`` and ``missing-type-argument``
   rules are on: the bug above is what the first found, and the rest of its findings are
   rewritten so the checker can follow them
