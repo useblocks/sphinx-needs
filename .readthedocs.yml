@@ -50,10 +50,10 @@ build:
       # and touched this package, the build runs although the pull request did not touch it.
       # That is the safe direction; it never skips a build that was needed.
       #
-      # FOUR paths. `packages/sphinx-needs/` and this file are the package's own inputs:
+      # FIVE paths. `packages/sphinx-needs/` and this file are the package's own inputs:
       # `python.install` below pip-installs the package directory with its own extras (the
       # root manifest and `uv.lock` take no part), and every `literalinclude` in the docs
-      # stays inside the package (`../../tests/doc_test/…`). Two more are recent.
+      # but one stays inside the package (`../../tests/doc_test/…`). Three more are recent.
       # `packages/sphinx-ai-index/`: `python.install` installs it from the checkout ahead of
       # this package, so a pull request that changes only the extension writing this site's
       # `ai_docs_index.json` has to rebuild it. `vendor/`: `docs/conf.py` no longer reads
@@ -61,6 +61,10 @@ build:
       # and renders with the jar committed beside it. Without `vendor/` here, a pull request
       # that bumps the pin would skip THIS build -- the only one that renders these docs under
       # `fail_on_warning` -- and report `success` to GitHub for a renderer nobody tried.
+      # `docs-theme/`: the useblocks look for furo that every furo site here shares.
+      # `docs/conf.py` loads it from the checkout, and the one `literalinclude` that leaves
+      # the package (`installation.rst`) shows its stylesheet, so a pull request that
+      # changes only the look has to rebuild this preview too.
       # `tools/` is deliberately NOT here: nothing under it runs in this build any more.
       # Branch and tag builds (`latest`, `stable`, releases) are never cancelled.
       - |
@@ -71,8 +75,8 @@ build:
           echo "origin/master is not available in this clone; building to be safe"
           exit 0
         fi
-        if git diff --quiet origin/master -- packages/sphinx-needs/ packages/sphinx-ai-index/ .readthedocs.yml vendor/; then
-          echo "nothing under packages/sphinx-needs/, packages/sphinx-ai-index/ or vendor/, and nothing in .readthedocs.yml, changed; skipping this build (exit 183)"
+        if git diff --quiet origin/master -- packages/sphinx-needs/ packages/sphinx-ai-index/ .readthedocs.yml vendor/ docs-theme/; then
+          echo "nothing under packages/sphinx-needs/, packages/sphinx-ai-index/, vendor/ or docs-theme/, and nothing in .readthedocs.yml, changed; skipping this build (exit 183)"
           exit 183
         fi
     pre_create_environment:
