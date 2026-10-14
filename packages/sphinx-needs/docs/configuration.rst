@@ -642,6 +642,31 @@ A ``join`` matches the needs whose field equals one of this need's values (:ref:
 A rule on a core field (``status``, ``tags``, ``title`` and the other core fields, and the ``parent_needs`` link type),
 or on a link type named after a core field (such as ``parts``), is not available in this release: it is reported, and ignored.
 
+.. _`needs_derive_cost`:
+
+What a rule costs
+^^^^^^^^^^^^^^^^^
+
+A rule is computed once per step for every need holding it (a ``links`` rule's ``where`` is tested once,
+on each candidate alone), so writing one costs little: what costs is what it **stores**.
+Every need holding a ``links`` rule is linked to the same needs, and each of them gets a back link from every one:
+on every need of a project of 2 000, a rule whose ``where`` half the needs pass stores about 2 000 000 links
+and as many back links, and ``needs.json`` grows from about 2.5 MB to about 58 MB;
+at twice the needs it stores four times the links.
+A rule that ten needs pass stores ten links per need.
+
+- Keep ``where`` selective, or declare the rule only for the need types that use it (:ref:`needs_derive_by_type`).
+- To show a set of needs, use a :ref:`needtable` or :ref:`needlist` with that filter: it shows the set once,
+  where a ``links`` rule copies it into every need.
+- To know on one need how many needs (or which) point at it, link the other way and read the back links:
+  ``{ kind = "count", over = "tests_back", where = "status == 'open'" }`` stores one number.
+- :ref:`links_from_filter` written in every need stores what the ``links`` rule stores, and also tests its filter
+  on every need once per call, so on many needs prefer the declared rule.
+
+A link type whose computed links number more than :ref:`needs_derive_max_links_per_need` (``100``) per need of the project
+is reported once, as the warning ``needs.derive_dense``,
+naming the links, the needs holding the rule and the longest list.
+
 .. _`needs_derive_join`:
 
 Matching a field: the join role
@@ -1382,6 +1407,31 @@ needs_filter_max_time
 .. versionadded:: 4.0.0
 
 If set, warn if any :ref:`filter processing <filter>` call takes longer than the given time in seconds.
+
+.. _`needs_derive_max_links_per_need`:
+
+needs_derive_max_links_per_need
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 9.1.0
+
+Default: ``100``
+
+How many links per need of the project a link type may compute before it is reported:
+when the lists a ``links`` or ``content_links`` rule computes (:ref:`needs_derive`),
+or the :ref:`links_from_filter`, :ref:`links_from_content <links_content>` and :ref:`links_from_match` calls of a link type without one,
+hold more links in all than this value times the needs of the project,
+the warning ``needs.derive_dense`` names the link type once (see :ref:`needs_derive_cost`).
+Written links, those a :ref:`needextend` adds and back links are not counted;
+the needs of the project are every need, external and imported ones too, but not need parts.
+
+``0`` never warns; so does ``suppress_warnings = ["needs.derive_dense"]``.
+Unlike :ref:`needs_filter_max_time` it counts rather than times, so every build of the same project warns alike.
+
+.. code-block:: toml
+
+   [needs]
+   derive_max_links_per_need = 500
 
 .. _`needs_views_max_items`:
 
