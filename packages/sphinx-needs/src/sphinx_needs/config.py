@@ -907,6 +907,11 @@ class NeedsSphinxConfig:
         default=None, metadata={"rebuild": "html", "types": (type(None), int, float)}
     )
     """Warn if process_filter runs for longer than this time (in seconds)."""
+    derive_max_links_per_need: int = field(
+        default=100, metadata={"rebuild": "html", "types": (int,)}
+    )
+    """Warn of a link type whose computed lists hold more links than this number times
+    the needs of the project (``needs.derive_dense``); 0 never warns."""
     views_max_items: int = field(
         default=0, metadata={"rebuild": "html", "types": (int,)}
     )

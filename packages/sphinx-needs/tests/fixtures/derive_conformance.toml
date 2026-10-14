@@ -3736,3 +3736,173 @@ inline = []
 code = "dynamic_function"
 need = "TEST_3"
 field = "inline"
+
+# --- a dense derived link type: derive_max_links_per_need ---------------------------------
+
+[[case]]
+name = "derive-dense-rule"
+why = "a links rule whose lists hold, in all, more links than derive_max_links_per_need times the needs of the project is reported once, as derive_dense naming the link type; one under it, one exactly at it (not more), and a derive_by_type rule whose few carriers hold more per carrier than the threshold but not per need of the project are not"
+config = '''
+[needs]
+derive_max_links_per_need = 2
+
+# N = 5 needs, K = 2: reported when a link type stores more than 2 x 5 = 10 links
+
+# REQ_1, REQ_2, REQ_3, SPEC_1 each link the other 3 open needs, SPEC_2 all 4:
+# 3 + 3 + 3 + 3 + 4 = 16 links, 16 > 10: reported
+[needs.links.open_all]
+derive = { kind = "links", where = "status == 'open'" }
+
+# the four open needs link SPEC_2, SPEC_2 links nothing: 1 + 1 + 1 + 1 + 0 = 4 links, 4 <= 10
+[needs.links.closed_all]
+derive = { kind = "links", where = "status == 'closed'" }
+
+# every need links SPEC_1 and SPEC_2: 2 x 5 = 10 links, 10 is not more than 10: not reported
+[needs.links.boundary]
+derive = { kind = "links", where = "type == 'spec'", include_self = true }
+
+# SPEC_1 and SPEC_2 each link the 3 reqs: 3 + 3 = 6 links, 6 <= 10 (per carrier it would be 3 > 2)
+[needs.links.by_type]
+derive_by_type.spec = { kind = "links", where = "type == 'req'" }
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+   :status: open
+
+.. req:: Two
+   :id: REQ_2
+   :status: open
+
+.. req:: Three
+   :id: REQ_3
+   :status: open
+
+.. spec:: Open spec
+   :id: SPEC_1
+   :status: open
+
+.. spec:: Closed spec
+   :id: SPEC_2
+   :status: closed
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+open_all = ["REQ_2", "REQ_3", "SPEC_1"]
+closed_all = ["SPEC_2"]
+boundary = ["SPEC_1", "SPEC_2"]
+by_type = []
+[case.expect.needs.SPEC_1]
+open_all = ["REQ_1", "REQ_2", "REQ_3"]
+boundary = ["SPEC_1", "SPEC_2"]
+by_type = ["REQ_1", "REQ_2", "REQ_3"]
+[case.expect.needs.SPEC_2]
+open_all = ["REQ_1", "REQ_2", "REQ_3", "SPEC_1"]
+closed_all = []
+by_type = ["REQ_1", "REQ_2", "REQ_3"]
+[[case.expect.findings]]
+code = "derive_dense"
+field = "open_all"
+
+[[case]]
+name = "derive-dense-inline"
+why = "the lists the inline links_from_filter computes on the needs of a plain link type are counted as a rule's are, and reported once at that link type; in a link type that also has written links, only the links the calls computed are counted"
+config = '''
+[needs]
+derive_max_links_per_need = 2
+
+# N = 5 needs, K = 2: reported when a link type stores more than 2 x 5 = 10 links
+
+# every need calls links_from_filter("status == 'open'"), which leaves the need itself out:
+# 3 + 3 + 3 + 3 + 4 = 16 computed links, 16 > 10: reported
+[needs.links.rel]
+
+# every need writes 2 links (10, not counted) and calls links_from_filter("status == 'closed'"):
+# 1 + 1 + 1 + 1 + 0 = 4 computed links, 4 <= 10 (with the written ones it would be 14)
+[needs.links.mixed]
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+   :status: open
+   :rel: [[links_from_filter("status == 'open'")]]
+   :mixed: REQ_2, REQ_3, [[links_from_filter("status == 'closed'")]]
+
+.. req:: Two
+   :id: REQ_2
+   :status: open
+   :rel: [[links_from_filter("status == 'open'")]]
+   :mixed: REQ_1, REQ_3, [[links_from_filter("status == 'closed'")]]
+
+.. req:: Three
+   :id: REQ_3
+   :status: open
+   :rel: [[links_from_filter("status == 'open'")]]
+   :mixed: REQ_1, REQ_2, [[links_from_filter("status == 'closed'")]]
+
+.. spec:: Open spec
+   :id: SPEC_1
+   :status: open
+   :rel: [[links_from_filter("status == 'open'")]]
+   :mixed: REQ_1, REQ_2, [[links_from_filter("status == 'closed'")]]
+
+.. spec:: Closed spec
+   :id: SPEC_2
+   :status: closed
+   :rel: [[links_from_filter("status == 'open'")]]
+   :mixed: REQ_1, REQ_2, [[links_from_filter("status == 'closed'")]]
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+rel = ["REQ_2", "REQ_3", "SPEC_1"]
+mixed = ["REQ_2", "REQ_3", "SPEC_2"]
+[case.expect.needs.SPEC_2]
+rel = ["REQ_1", "REQ_2", "REQ_3", "SPEC_1"]
+mixed = ["REQ_1", "REQ_2"]
+[[case.expect.findings]]
+code = "derive_dense"
+field = "rel"
+
+[[case]]
+name = "derive-dense-off"
+why = "derive_max_links_per_need = 0 never reports a link type, however many links its rule or its inline calls store"
+config = '''
+[needs]
+derive_max_links_per_need = 0
+
+# 16 links each, as in derive-dense-rule and derive-dense-inline: with 0, not reported
+[needs.links.open_all]
+derive = { kind = "links", where = "status == 'open'" }
+[needs.links.rel]
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+   :status: open
+   :rel: [[links_from_filter("status == 'open'")]]
+
+.. req:: Two
+   :id: REQ_2
+   :status: open
+   :rel: [[links_from_filter("status == 'open'")]]
+
+.. req:: Three
+   :id: REQ_3
+   :status: open
+   :rel: [[links_from_filter("status == 'open'")]]
+
+.. spec:: Open spec
+   :id: SPEC_1
+   :status: open
+   :rel: [[links_from_filter("status == 'open'")]]
+
+.. spec:: Closed spec
+   :id: SPEC_2
+   :status: closed
+   :rel: [[links_from_filter("status == 'open'")]]
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_2]
+open_all = ["REQ_1", "REQ_2", "REQ_3", "SPEC_1"]
+rel = ["REQ_1", "REQ_2", "REQ_3", "SPEC_1"]

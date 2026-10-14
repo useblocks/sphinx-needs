@@ -35,6 +35,18 @@ Improvements
   existing rule changed their words with it (``links`` "requires the role 'where' or 'join'", and
   ``copy``'s ``from`` / ``over`` / ``join`` and ``select`` texts).
 
+- 👌 A link type that computes more links than :ref:`needs_derive_max_links_per_need` (default ``100``)
+  per need of the project is reported once, as the warning ``needs.derive_dense`` (:issue:`2202`, :pr:`2258`)
+
+  The links a ``links`` or ``content_links`` rule computes are counted, or, on a link type without
+  one, those its ``links_from_filter``, ``links_from_content`` and ``links_from_match`` calls compute;
+  written links, those a needextend adds and back links are not, and the needs of the project are every
+  need but need parts. It counts rather than times, so every build of a project warns alike, and the
+  warning names the links, the needs computing them, the longest list, and what to do instead
+  (:ref:`needs_derive_cost`). It is on by default: a build with ``-W`` and such a rule fails until the
+  warning is silenced with ``suppress_warnings = ["needs.derive_dense"]``, or the threshold is raised
+  or set to ``0`` (or less), which never warns.
+
 Deprecations
 ............
 

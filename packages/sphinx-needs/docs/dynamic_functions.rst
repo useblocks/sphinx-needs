@@ -88,6 +88,9 @@ A ``where`` that cannot be evaluated on a candidate (one lacking a field it name
 without a warning, in every kind and in ``links_from_filter``;
 the ``filter`` of ``calc_sum``, ``check_linked_values`` and ``links_from_content`` keeps its own behaviour.
 
+Written in many needs, ``links_from_filter``, ``links_from_content`` and ``links_from_match`` store a list on each,
+counted as a rule's lists are: see :ref:`needs_derive_cost`.
+
 The ``join`` role (:ref:`needs_derive_join`) spells such a correlated lookup, as sphinx-test-reports' ``tr_link`` does,
 and :ref:`links_from_match` is its inline spelling.
 A ``copy("x", filter=…)`` whose filter compares a need with ``current_need`` (``name == current_need['ref']``)
