@@ -167,24 +167,21 @@ exclude_patterns = []
 # a list of builtin themes.
 #
 html_theme = "furo"
-html_favicon = "_static/sphinx-test-reports-logo.svg"
+html_favicon = "_static/favicon.svg"
 html_title = "Sphinx-Test-Reports"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further. The sidebar, the view/edit buttons, the repository they point into and the
 # shared stylesheet come from `ub_docs_theme` above; what is here is this site's own.
 html_theme_options = {
-    # the logo is an icon, not a wordmark like the other sites' logos, so the name stays
-    "sidebar_hide_name": False,
-    "light_logo": "sphinx-test-reports-logo.svg",
-    "dark_logo": "sphinx-test-reports-logo.svg",
+    "light_logo": "sphinx-test-reports-logo_light.svg",
+    "dark_logo": "sphinx-test-reports-logo_dark.svg",
     "source_directory": "packages/sphinx-test-reports/docs/",
 }
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
-html_css_files = ["test-reports.css"]
 
 # -- Options for HTMLHelp output ---------------------------------------------
 
