@@ -1,0 +1,817 @@
+# Conformance corpus for READING a needs.json (the needs exchange file): its envelope, the
+# selection of a version, and the records handed out, with the findings reported on the way.
+#
+# Repository of record: useblocks/sphinx-needs (public)
+# Canonical path:       packages/ub-needs-exchange/tests/fixtures/needs_json_reading_conformance.toml
+#
+# THIS copy is CANONICAL. ubCode is to vendor it byte-for-byte, with a provenance block
+# (this path, and the commit it was taken from) prepended and nothing else changed, and to
+# run it against its own readers. The corpus travels public -> private, so vendoring with a
+# recorded source commit is the sync mechanism: ubCode's CI cannot fetch from this
+# repository at test time, and a submodule of a public repository in a private one would
+# pin nothing either side can see.
+#
+# Do not reformat this file. `.gitattributes` pins its line endings, and the taplo and
+# yamlfmt hooks exclude it: every `json = '''...'''` body below is the INPUT of a case, so a
+# formatter touching one silently changes what the case tests. A change here is a change to
+# the contract, and owes ubCode a re-vendor.
+#
+# Two LAYERS, of which this corpus carries the first:
+#   document - what the shared reader owns, with no project: parse the text, check the
+#              envelope, select a version, and hand out each record of it with the
+#              version's schema defaults merged under it and the legacy keys mapped. Every
+#              case below is of this layer
+#   ingest   - what each tool's own readers decide (sphinx-needs' `needimport` and
+#              `needs_external_needs`, ubCode's import and external readers): which of a
+#              record's keys a project takes, coercion against the project's fields,
+#              `id_prefix`, `:ids:` and `:filter:`, duplicates. Defined here so the keys
+#              below have one meaning; no case of it exists yet, and the ingest slice
+#              defines the keys of its own (the reading project, the skip classes)
+#
+# Rules for every runner:
+#   - a case's `json` is the whole file, as UTF-8 text; a runner reads it from that text
+#     (and may also write it to a file of its own and read that -- the outcome is the same)
+#   - diagnostic codes are compared as the BARE code below. A reader that carries its
+#     findings under a prefix of its own strips it before comparing
+#   - a diagnostic `path` is the reader's dotted path of what was found: the keys from the
+#     top-level object down to it, each spelled as the file spells it, joined by `.`
+#     (`versions.1.0.needs.A.id` for the `id` of need `A` of version `1.0`). It is
+#     compared character for character
+#   - integers are within the signed 64-bit range; beyond it the behaviour is unspecified
+#   - a case carrying `divergent` is skipped by the runner it names, counted, with the
+#     register row as the reason (none does yet)
+#   - a runner that does not implement a case's `layer` SKIPS the case, counted, with the
+#     layer as the reason -- it never runs it as a case of another layer -- and the case
+#     count still counts it. A key the header does not define is still refused
+#
+# `packages/ub-needs-exchange/tests/test_conformance.py` runs every `[[case]]` against the
+# Python reader AND asserts the case COUNT, so a truncated copy is a red test rather than
+# reduced coverage. `design/exchange-contract.md` beside it is the prose half of the same
+# contract.
+#
+# Scope: what the shared reader owns (the `document` layer above). NOT what a reading
+# project does with a record (the `ingest` layer), NOT how a file is obtained (a path, a
+# URL, a cache: each tool's own), and NOT the writer.
+#
+# Each `[[case]]` has:
+#   name         - unique, kebab-case
+#   why          - one line saying what the case pins
+#   layer        - "document" or "ingest" (see above)
+#   reader       - `ingest` only: the readers the expectation holds for, a subset of
+#                  ["import", "external"]. Absent on a `document` case, which no reader's
+#                  policy can change
+#   json         - the file's text
+#   [case.options]
+#     version    - optional; the version asked for. Absent: none is asked for, and the
+#                  file's `current_version` is read. (An `ingest` case may also carry its
+#                  reader's own options: import `ids`, `filter`, `id_prefix`, `tags`;
+#                  external `id_prefix`, `base_url`, `target_url`)
+#   divergent    - optional; `{ ubcode = "design/divergence-register.md#..." }` when a
+#                  reader's outcome is a REGISTERED divergence of that tool
+#   [case.expect]
+#     error        - the code with which the reader must REFUSE the file: no record is read
+#                    from it. Every other expectation is then absent. A refusal's message
+#                    is not compared
+#     diagnostics  - the findings, as `code` + `path` pairs, compared as a multiset: those
+#                    about the version and those about each record together. Messages are
+#                    NOT compared: each reader words its own, and each consumer decides
+#                    what a finding is worth. Present (and possibly empty) whenever `error`
+#                    is absent
+#     records      - optional; the records read, by key, each with the fields it must
+#                    have and their values. Only the fields stated are compared; a record
+#                    may have others. Values compare as JSON values: a boolean is not a
+#                    number, an integer is not a float. `null` cannot be stated in TOML
+#                    (`test_reader.py` pins the `null` default)
+#     keys         - optional; the key of every record read, in the order read (the
+#                    file's order). When present, no other record is read
+#     absent       - optional; keys that must NOT be read as records: of the file's
+#                    `needs`, or a key it does not have (an `id` the reader must not use)
+#     unset        - optional; by record key, the fields that record must NOT have. The
+#                    record itself must be read
+#
+# Error codes (the file is refused), fixed by the contract:
+#   invalid_json               - the text is not JSON (or, read from bytes, not UTF-8)
+#   not_an_object              - the top level is not a JSON object
+#   format_version_invalid     - `format_version` is present and not an integer >= 1
+#   versions_missing           - `versions` is absent or not an object
+#   current_version_missing    - no version is asked for, and `current_version` is absent,
+#                                not a string, or empty while the file has no version of
+#                                the empty name
+#   version_not_found          - the version asked for (or the current one) is not a key
+#                                of `versions`
+#   needs_missing              - the selected version is not an object, or has no `needs`
+#                                object
+#
+# Diagnostic codes (the file is read, and this is reported), fixed by the contract:
+#   format_version_unsupported      - `format_version` is above 1; the file is read as
+#                                     format 1. `path` is `format_version`
+#   record_not_object               - a value of `needs` is not an object; it is not a
+#                                     record. `path` names it
+#   id_mismatch                     - a record's `id` differs from its key; the key is its
+#                                     id. `path` names the `id`
+#   defaults_removed_without_schema - `needs_defaults_removed` is true and the version has
+#                                     no `needs_schema` to restore the defaults from.
+#                                     `path` names `needs_defaults_removed`
+
+# --- the text -----------------------------------------------------------------------
+
+[[case]]
+name = "not-json"
+why = "text that is not JSON is refused as a whole"
+layer = "document"
+json = '''{ not json'''
+[case.expect]
+error = "invalid_json"
+
+[[case]]
+name = "top-level-array"
+why = "a top level that is an array is not an envelope"
+layer = "document"
+json = '''[1, 2]'''
+[case.expect]
+error = "not_an_object"
+
+[[case]]
+name = "top-level-string"
+why = "a top level that is a string is not an envelope"
+layer = "document"
+json = '''"text"'''
+[case.expect]
+error = "not_an_object"
+
+[[case]]
+name = "a-byte-order-mark-is-not-json"
+why = "the text starts with an (invisible) UTF-8 byte order mark, U+FEFF: not JSON, refused"
+layer = "document"
+json = '''﻿{"current_version": "1.0", "versions": {"1.0": {"needs": {}}}}'''
+[case.expect]
+error = "invalid_json"
+
+[[case]]
+name = "a-duplicated-key-keeps-its-last-value"
+why = "a key written twice in one object keeps its last value: here a record of needs"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"A": {"id": "A", "type": "req", "title": "first"}, "A": {"id": "A", "type": "req", "title": "second"}}}}}'''
+[case.expect]
+diagnostics = []
+keys = ["A"]
+records = { A = { title = "second" } }
+
+[[case]]
+name = "a-duplicated-envelope-key-keeps-its-last-value"
+why = "a key of the envelope written twice keeps its last value too: here current_version"
+layer = "document"
+json = '''{"current_version": "2.0", "versions": {"1.0": {"needs": {"V1": {"id": "V1", "type": "req", "title": "t"}}}, "2.0": {"needs": {"V2": {"id": "V2", "type": "req", "title": "t"}}}}, "current_version": "1.0"}'''
+[case.expect]
+diagnostics = []
+keys = ["V1"]
+absent = ["V2"]
+
+[[case]]
+name = "unicode-text-is-read"
+why = "the text is UTF-8: a title outside ASCII is read as written"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"A": {"id": "A", "type": "req", "title": "Grüße — 要件"}}}}}'''
+[case.expect]
+diagnostics = []
+records = { A = { title = "Grüße — 要件" } }
+
+# --- format_version -----------------------------------------------------------------
+
+[[case]]
+name = "format-version-1"
+why = "format_version 1, the format there is, is read with no finding"
+layer = "document"
+json = '''{"format_version": 1, "current_version": "1.0", "versions": {"1.0": {"needs": {"A": {"id": "A", "type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = []
+keys = ["A"]
+
+[[case]]
+name = "format-version-absent-is-1"
+why = "a file without format_version is format 1: read with no finding"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"A": {"id": "A", "type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = []
+keys = ["A"]
+
+[[case]]
+name = "format-version-above-1-is-read-as-1"
+why = "a later format_version is read as format 1, and reported"
+layer = "document"
+json = '''{"format_version": 2, "current_version": "1.0", "versions": {"1.0": {"needs": {"A": {"id": "A", "type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = [{ code = "format_version_unsupported", path = "format_version" }]
+keys = ["A"]
+
+[[case]]
+name = "format-version-a-string"
+why = "a format_version that is a string, even of a number, refuses the file"
+layer = "document"
+json = '''{"format_version": "1", "current_version": "1.0", "versions": {"1.0": {"needs": {}}}}'''
+[case.expect]
+error = "format_version_invalid"
+
+[[case]]
+name = "format-version-zero"
+why = "format_version 0 is not a format version"
+layer = "document"
+json = '''{"format_version": 0, "current_version": "1.0", "versions": {"1.0": {"needs": {}}}}'''
+[case.expect]
+error = "format_version_invalid"
+
+[[case]]
+name = "format-version-negative"
+why = "a negative format_version is not a format version"
+layer = "document"
+json = '''{"format_version": -1, "current_version": "1.0", "versions": {"1.0": {"needs": {}}}}'''
+[case.expect]
+error = "format_version_invalid"
+
+[[case]]
+name = "format-version-a-fraction"
+why = "a format_version written with a fraction (1.0) is not an integer"
+layer = "document"
+json = '''{"format_version": 1.0, "current_version": "1.0", "versions": {"1.0": {"needs": {}}}}'''
+[case.expect]
+error = "format_version_invalid"
+
+[[case]]
+name = "format-version-a-boolean"
+why = "true is not the format version 1"
+layer = "document"
+json = '''{"format_version": true, "current_version": "1.0", "versions": {"1.0": {"needs": {}}}}'''
+[case.expect]
+error = "format_version_invalid"
+
+[[case]]
+name = "format-version-null"
+why = "a format_version of null is present, and not a format version"
+layer = "document"
+json = '''{"format_version": null, "current_version": "1.0", "versions": {"1.0": {"needs": {}}}}'''
+[case.expect]
+error = "format_version_invalid"
+
+[[case]]
+name = "format-version-is-checked-first"
+why = "a format_version that is not a version refuses the file before anything else its envelope lacks"
+layer = "document"
+json = '''{"format_version": "2"}'''
+[case.expect]
+error = "format_version_invalid"
+
+# --- the envelope -------------------------------------------------------------------
+
+[[case]]
+name = "unknown-envelope-keys-are-ignored"
+why = "keys the envelope and the version do not define are ignored, with no finding"
+layer = "document"
+json = '''{"project": "p", "created": "2026-01-01T00:00:00", "creator": {"program": "x", "version": "1"}, "extra": [1], "current_version": "1.0", "versions": {"1.0": {"created": "2026-01-01T00:00:00", "creator": {"program": "x"}, "also": {}, "needs": {"A": {"id": "A", "type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = []
+keys = ["A"]
+
+[[case]]
+name = "needs-amount-is-not-checked"
+why = "needs_amount is informative: one that disagrees with the needs is not a finding"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs_amount": 5, "needs": {"A": {"id": "A", "type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = []
+keys = ["A"]
+
+[[case]]
+name = "versions-absent"
+why = "an envelope without versions is refused"
+layer = "document"
+json = '''{"current_version": "1.0"}'''
+[case.expect]
+error = "versions_missing"
+
+[[case]]
+name = "versions-are-checked-before-current-version"
+why = "an envelope with neither versions nor current_version is refused for its versions"
+layer = "document"
+json = '''{}'''
+[case.expect]
+error = "versions_missing"
+
+[[case]]
+name = "versions-not-an-object"
+why = "versions that is not an object is refused as absent"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": []}'''
+[case.expect]
+error = "versions_missing"
+
+# --- selecting a version ------------------------------------------------------------
+
+[[case]]
+name = "current-version-is-read"
+why = "with no version asked for, the file's current_version is read, and no other"
+layer = "document"
+json = '''{"current_version": "2.0", "versions": {"1.0": {"needs": {"V1": {"id": "V1", "type": "req", "title": "t"}}}, "2.0": {"needs": {"V2": {"id": "V2", "type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = []
+keys = ["V2"]
+absent = ["V1"]
+
+[[case]]
+name = "requested-version-is-read"
+why = "a version asked for is read instead of the current one"
+layer = "document"
+json = '''{"current_version": "2.0", "versions": {"1.0": {"needs": {"V1": {"id": "V1", "type": "req", "title": "t"}}}, "2.0": {"needs": {"V2": {"id": "V2", "type": "req", "title": "t"}}}}}'''
+[case.options]
+version = "1.0"
+[case.expect]
+diagnostics = []
+keys = ["V1"]
+absent = ["V2"]
+
+[[case]]
+name = "requested-version-needs-no-current-version"
+why = "a version asked for is read from a file that names no current_version"
+layer = "document"
+json = '''{"versions": {"1.0": {"needs": {"A": {"id": "A", "type": "req", "title": "t"}}}}}'''
+[case.options]
+version = "1.0"
+[case.expect]
+diagnostics = []
+keys = ["A"]
+
+[[case]]
+name = "empty-current-version-names-the-empty-version"
+why = "an empty current_version is the name of a version when the file has one by it (what sphinx-needs writes for a project with no version)"
+layer = "document"
+json = '''{"current_version": "", "versions": {"": {"needs": {"A": {"id": "A", "type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = []
+keys = ["A"]
+
+[[case]]
+name = "current-version-absent"
+why = "with no version asked for, a file without current_version is refused"
+layer = "document"
+json = '''{"versions": {"1.0": {"needs": {}}}}'''
+[case.expect]
+error = "current_version_missing"
+
+[[case]]
+name = "current-version-empty-and-no-empty-version"
+why = "an empty current_version names nothing when the file has no version of the empty name"
+layer = "document"
+json = '''{"current_version": "", "versions": {"1.0": {"needs": {}}}}'''
+[case.expect]
+error = "current_version_missing"
+
+[[case]]
+name = "current-version-a-number"
+why = "a current_version that is a number is not a version's name, even of an existing version"
+layer = "document"
+json = '''{"current_version": 1.0, "versions": {"1.0": {"needs": {}}}}'''
+[case.expect]
+error = "current_version_missing"
+
+[[case]]
+name = "current-version-not-in-the-file"
+why = "a current_version that names no version of the file is refused"
+layer = "document"
+json = '''{"current_version": "3.0", "versions": {"1.0": {"needs": {}}}}'''
+[case.expect]
+error = "version_not_found"
+
+[[case]]
+name = "requested-version-not-in-the-file"
+why = "a version asked for that the file does not have is refused, whatever current_version says"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {}}}}'''
+[case.options]
+version = "9.9"
+[case.expect]
+error = "version_not_found"
+
+[[case]]
+name = "versions-empty"
+why = "an empty versions object has no current version to read"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {}}'''
+[case.expect]
+error = "version_not_found"
+
+[[case]]
+name = "needs-absent"
+why = "a selected version without needs is refused"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs_amount": 0}}}'''
+[case.expect]
+error = "needs_missing"
+
+[[case]]
+name = "needs-not-an-object"
+why = "needs that is not an object is refused as absent"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": []}}}'''
+[case.expect]
+error = "needs_missing"
+
+[[case]]
+name = "version-not-an-object"
+why = "a selected version that is not an object has no needs"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": "x"}}'''
+[case.expect]
+error = "needs_missing"
+
+[[case]]
+name = "only-the-selected-version-is-checked"
+why = "another version's faults are not the selected one's: neither a refusal nor a finding"
+layer = "document"
+json = '''{"current_version": "2.0", "versions": {"1.0": "x", "0.9": {"needs": {"S": "x"}}, "2.0": {"needs": {"A": {"id": "A", "type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = []
+keys = ["A"]
+
+# --- records ------------------------------------------------------------------------
+
+[[case]]
+name = "records-keep-the-file-order"
+why = "records are handed out in the order the file writes them, not sorted"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"C": {"id": "C", "type": "req", "title": "t"}, "A": {"id": "A", "type": "req", "title": "t"}, "B": {"id": "B", "type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = []
+keys = ["C", "A", "B"]
+
+[[case]]
+name = "empty-needs-is-read"
+why = "a version with no needs is read, with no record and no finding"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {}}}}'''
+[case.expect]
+diagnostics = []
+keys = []
+
+[[case]]
+name = "record-not-an-object-is-skipped"
+why = "a value of needs that is not an object is not a record: skipped, reported, and the others are read"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"STR_001": "just a string", "A": {"id": "A", "type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = [{ code = "record_not_object", path = "versions.1.0.needs.STR_001" }]
+keys = ["A"]
+absent = ["STR_001"]
+
+[[case]]
+name = "record-values-of-every-other-type-are-skipped"
+why = "an array, a number, a boolean and null are not records either: each is reported"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"L": [], "N": 5, "T": true, "Z": null}}}}'''
+[case.expect]
+diagnostics = [
+  { code = "record_not_object", path = "versions.1.0.needs.L" },
+  { code = "record_not_object", path = "versions.1.0.needs.N" },
+  { code = "record_not_object", path = "versions.1.0.needs.T" },
+  { code = "record_not_object", path = "versions.1.0.needs.Z" },
+]
+keys = []
+
+[[case]]
+name = "record-keys-are-carried-verbatim"
+why = "the reader takes no side on a record's keys: every key the file writes is handed on, known or not"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"A": {"id": "A", "type": "req", "title": "t", "foo": 1, "links_back": ["B"], "type_name": "Requirement"}}}}}'''
+[case.expect]
+diagnostics = []
+records = { A = { foo = 1, links_back = ["B"], type_name = "Requirement" } }
+
+[[case]]
+name = "parts-are-carried-verbatim"
+why = "a record's parts are data to the reader, handed on as written"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"A": {"id": "A", "type": "req", "title": "t", "parts": {"p1": {"id": "p1", "content": "part one"}}}}}}}'''
+[case.expect]
+diagnostics = []
+records = { A = { parts = { p1 = { id = "p1", content = "part one" } } } }
+
+# --- the key is the id --------------------------------------------------------------
+
+[[case]]
+name = "id-equal-to-the-key"
+why = "an id that is the key is read with no finding"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"A": {"id": "A", "type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = []
+records = { A = { id = "A" } }
+
+[[case]]
+name = "id-absent-is-the-key"
+why = "a record without an id has the key as its id, with no finding"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"A": {"type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = []
+records = { A = { id = "A" } }
+
+[[case]]
+name = "id-other-than-the-key"
+why = "an id that differs from the key is reported and ignored: the key is the id"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"A": {"id": "OTHER", "type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = [{ code = "id_mismatch", path = "versions.1.0.needs.A.id" }]
+records = { A = { id = "A" } }
+absent = ["OTHER"]
+
+[[case]]
+name = "id-a-number"
+why = "an id that is a number is not the key either"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"A": {"id": 5, "type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = [{ code = "id_mismatch", path = "versions.1.0.needs.A.id" }]
+records = { A = { id = "A" } }
+
+[[case]]
+name = "id-null"
+why = "an id of null is present, and differs from the key"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"A": {"id": null, "type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = [{ code = "id_mismatch", path = "versions.1.0.needs.A.id" }]
+records = { A = { id = "A" } }
+
+[[case]]
+name = "id-mismatch-names-the-version-it-is-in"
+why = "a finding's path names the version read, here a requested one"
+layer = "document"
+json = '''{"current_version": "2.0", "versions": {"1.0": {"needs": {"A": {"id": "B", "type": "req", "title": "t"}}}, "2.0": {"needs": {}}}}'''
+[case.options]
+version = "1.0"
+[case.expect]
+diagnostics = [{ code = "id_mismatch", path = "versions.1.0.needs.A.id" }]
+keys = ["A"]
+
+# --- legacy keys --------------------------------------------------------------------
+
+[[case]]
+name = "description-is-the-content"
+why = "a legacy description is the content when the record has none, and is renamed rather than copied"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"A": {"id": "A", "type": "req", "title": "t", "description": "legacy"}}}}}'''
+[case.expect]
+diagnostics = []
+records = { A = { content = "legacy" } }
+unset = { A = ["description"] }
+
+[[case]]
+name = "description-fills-an-empty-content"
+why = "an empty content is no content: the description fills it"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"A": {"id": "A", "type": "req", "title": "t", "content": "", "description": "legacy"}}}}}'''
+[case.expect]
+diagnostics = []
+records = { A = { content = "legacy" } }
+unset = { A = ["description"] }
+
+[[case]]
+name = "description-fills-a-null-content"
+why = "a content of null is no content either"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"A": {"id": "A", "type": "req", "title": "t", "content": null, "description": "legacy"}}}}}'''
+[case.expect]
+diagnostics = []
+records = { A = { content = "legacy" } }
+unset = { A = ["description"] }
+
+[[case]]
+name = "description-fills-a-false-content"
+why = "a content of false is no content, as Python treats it as false: the description fills it"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"A": {"id": "A", "type": "req", "title": "t", "content": false, "description": "legacy"}}}}}'''
+[case.expect]
+diagnostics = []
+records = { A = { content = "legacy" } }
+unset = { A = ["description"] }
+
+[[case]]
+name = "description-fills-a-zero-content"
+why = "a content of 0 is no content, as Python treats it as false: the description fills it"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"A": {"id": "A", "type": "req", "title": "t", "content": 0, "description": "legacy"}}}}}'''
+[case.expect]
+diagnostics = []
+records = { A = { content = "legacy" } }
+unset = { A = ["description"] }
+
+[[case]]
+name = "description-fills-an-empty-array-content"
+why = "a content of [] (an empty array) is no content, as Python treats it as false: the description fills it"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"A": {"id": "A", "type": "req", "title": "t", "content": [], "description": "legacy"}}}}}'''
+[case.expect]
+diagnostics = []
+records = { A = { content = "legacy" } }
+unset = { A = ["description"] }
+
+[[case]]
+name = "description-fills-an-empty-object-content"
+why = "a content of {} (an empty object) is no content, as Python treats it as false: the description fills it"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"A": {"id": "A", "type": "req", "title": "t", "content": {}, "description": "legacy"}}}}}'''
+[case.expect]
+diagnostics = []
+records = { A = { content = "legacy" } }
+unset = { A = ["description"] }
+
+[[case]]
+name = "content-wins-over-description"
+why = "a record that has a content keeps it, and its description too"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"A": {"id": "A", "type": "req", "title": "t", "content": "kept", "description": "legacy"}}}}}'''
+[case.expect]
+diagnostics = []
+records = { A = { content = "kept", description = "legacy" } }
+
+[[case]]
+name = "a-content-default-does-not-hide-the-description"
+why = "the legacy key is mapped after the schema defaults are merged, so an empty default content leaves the description its place"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs_schema": {"properties": {"content": {"type": "string", "default": ""}}}, "needs": {"A": {"id": "A", "type": "req", "title": "t", "description": "legacy"}}}}}'''
+[case.expect]
+diagnostics = []
+records = { A = { content = "legacy" } }
+unset = { A = ["description"] }
+
+# --- schema defaults ----------------------------------------------------------------
+
+[[case]]
+name = "schema-defaults-are-merged-under-each-record"
+why = "each property's default fills a record that lacks the field; a stated value wins; a property without a default adds nothing"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs_schema": {"$schema": "http://json-schema.org/draft-07/schema#", "type": "object", "properties": {"priority": {"type": ["string", "null"], "default": "medium"}, "tags": {"type": "array", "default": []}, "no_default": {"type": "string"}}}, "needs_defaults_removed": true, "needs": {"A": {"id": "A", "type": "req", "title": "t"}, "B": {"id": "B", "type": "req", "title": "t", "priority": "high", "tags": ["x"]}}}}}'''
+[case.expect]
+diagnostics = []
+records = { A = { priority = "medium", tags = [] }, B = { priority = "high", tags = ["x"] } }
+unset = { A = ["no_default"], B = ["no_default"] }
+
+[[case]]
+name = "schema-defaults-are-merged-without-defaults-removed"
+why = "the defaults are merged whether or not the version says it was written without them"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs_schema": {"properties": {"priority": {"default": "medium"}}}, "needs": {"A": {"id": "A", "type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = []
+records = { A = { priority = "medium" } }
+
+[[case]]
+name = "a-default-of-any-json-type-is-merged"
+why = "a default is a value like any other: an object, a number and a boolean are merged as written"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs_schema": {"properties": {"meta": {"type": "object", "default": {"k": [1, 2]}}, "hours": {"type": "number", "default": 1.5}, "done": {"type": "boolean", "default": false}}}, "needs": {"A": {"id": "A", "type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = []
+records = { A = { meta = { k = [1, 2] }, hours = 1.5, done = false } }
+
+[[case]]
+name = "only-default-is-read-from-a-property"
+why = "of a schema property only its default is read: field_type and the rest of it decide nothing here"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs_schema": {"properties": {"x": {"field_type": "not-a-field-type", "type": "integer", "readOnly": true, "default": "a string"}}}, "needs": {"A": {"id": "A", "type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = []
+records = { A = { x = "a string" } }
+
+[[case]]
+name = "a-schema-default-does-not-replace-the-key"
+why = "a default for id does not change a record's id: the key is still the id"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs_schema": {"properties": {"id": {"type": "string", "default": "DEFAULT"}}}, "needs": {"A": {"type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = []
+records = { A = { id = "A" } }
+
+[[case]]
+name = "without-a-schema-nothing-is-merged"
+why = "a version without needs_schema is read as written, with no finding"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"A": {"id": "A", "type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = []
+records = { A = { id = "A", type = "req", title = "t" } }
+unset = { A = ["priority", "content"] }
+
+[[case]]
+name = "a-schema-that-is-not-an-object-merges-nothing"
+why = "a needs_schema that is not an object has no defaults, and is not a finding"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs_schema": [], "needs": {"A": {"id": "A", "type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = []
+keys = ["A"]
+
+[[case]]
+name = "schema-properties-not-an-object-merge-nothing"
+why = "properties that are not an object have no defaults, and are not a finding"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs_schema": {"properties": ["priority"]}, "needs": {"A": {"id": "A", "type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = []
+keys = ["A"]
+unset = { A = ["priority"] }
+
+[[case]]
+name = "a-property-that-is-not-an-object-is-ignored"
+why = "a property that is not an object has no default; the other properties' defaults are merged"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs_schema": {"properties": {"odd": "string", "priority": {"default": "medium"}}}, "needs": {"A": {"id": "A", "type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = []
+records = { A = { priority = "medium" } }
+unset = { A = ["odd"] }
+
+[[case]]
+name = "defaults-removed-without-a-schema"
+why = "a version written without its defaults and without a schema to restore them from is read, and reported"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs_defaults_removed": true, "needs": {"A": {"id": "A", "type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = [{ code = "defaults_removed_without_schema", path = "versions.1.0.needs_defaults_removed" }]
+keys = ["A"]
+
+[[case]]
+name = "defaults-removed-false-without-a-schema"
+why = "needs_defaults_removed false says nothing was removed: no finding"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs_defaults_removed": false, "needs": {"A": {"id": "A", "type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = []
+keys = ["A"]
+
+[[case]]
+name = "defaults-removed-not-a-boolean"
+why = "only a needs_defaults_removed of true says the defaults were removed"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs_defaults_removed": "true", "needs": {"A": {"id": "A", "type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = []
+keys = ["A"]
+
+[[case]]
+name = "defaults-removed-with-a-schema-that-is-not-an-object"
+why = "a needs_schema of any value counts as present for the finding, even one with no defaults to give"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs_defaults_removed": true, "needs_schema": null, "needs": {"A": {"id": "A", "type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = []
+keys = ["A"]
+
+# --- findings together --------------------------------------------------------------
+
+[[case]]
+name = "every-finding-of-a-file-is-reported"
+why = "the findings about the version and about each record are reported together, none hiding another"
+layer = "document"
+json = '''{"format_version": 3, "current_version": "1.0", "versions": {"1.0": {"needs_defaults_removed": true, "needs": {"S": "x", "A": {"id": "B", "type": "req", "title": "t"}, "C": {"id": "D", "type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = [
+  { code = "format_version_unsupported", path = "format_version" },
+  { code = "record_not_object", path = "versions.1.0.needs.S" },
+  { code = "defaults_removed_without_schema", path = "versions.1.0.needs_defaults_removed" },
+  { code = "id_mismatch", path = "versions.1.0.needs.A.id" },
+  { code = "id_mismatch", path = "versions.1.0.needs.C.id" },
+]
+keys = ["A", "C"]
+
+# --- what v1 must still read --------------------------------------------------------
+
+[[case]]
+name = "a-pre-3-0-file"
+why = "the shape sphinx-needs wrote before 3.0: created at both levels, no creator, no needs_schema, description for content"
+layer = "document"
+json = '''{"created": "2017-08-25T21:17:17.640061", "current_version": "0.1.33", "project": "Sphinx-Needs", "versions": {"0.1.33": {"created": "2017-08-25T21:17:17.640058", "needs": {"TEST_01": {"description": "TEST IMPORT DESCRIPTION", "id": "TEST_01", "links": [], "status": null, "tags": [], "title": "TEST IMPORT TITLE", "type": "impl", "type_name": "Implementation"}}, "needs_amount": 1}}}'''
+[case.expect]
+diagnostics = []
+records = { TEST_01 = { id = "TEST_01", title = "TEST IMPORT TITLE", content = "TEST IMPORT DESCRIPTION", links = [], tags = [], type = "impl" } }
+unset = { TEST_01 = ["description"] }
+
+[[case]]
+name = "a-3-x-file"
+why = "the shape of a 3.x writer: a needs_schema and its defaults removed, but no creator and no created, full_title on each record, and description for content (4.0.0 renamed it), its schema default merged under and then mapped"
+layer = "document"
+json = '''{"current_version": "0.1", "project": "large", "versions": {"0.1": {"needs_amount": 2, "needs_defaults_removed": true, "needs_schema": {"$schema": "http://json-schema.org/draft-07/schema#", "type": "object", "properties": {"id": {"type": "string", "field_type": "core", "description": "ID of the data."}, "description": {"type": "string", "field_type": "core", "default": ""}, "status": {"type": ["string", "null"], "field_type": "core", "default": "open"}, "tags": {"type": "array", "items": {"type": "string"}, "field_type": "core", "default": []}, "links": {"type": "array", "items": {"type": "string"}, "field_type": "links", "default": []}, "links_back": {"type": "array", "items": {"type": "string"}, "field_type": "backlinks", "default": []}, "asil": {"type": "string", "field_type": "extra", "default": ""}}}, "needs": {"REQ_1": {"id": "REQ_1", "type": "req", "title": "first", "full_title": "first", "description": "c", "links": ["REQ_2"]}, "REQ_2": {"id": "REQ_2", "type": "req", "title": "second", "full_title": "second", "status": "closed", "asil": "B", "links_back": ["REQ_1"]}}}}}'''
+[case.expect]
+diagnostics = []
+keys = ["REQ_1", "REQ_2"]
+records = { REQ_1 = { full_title = "first", content = "c", status = "open", tags = [], links = ["REQ_2"], links_back = [], asil = "" }, REQ_2 = { full_title = "second", content = "", status = "closed", asil = "B", links = [], links_back = ["REQ_1"] } }
+unset = { REQ_1 = ["description"], REQ_2 = ["description"] }
+
+[[case]]
+name = "a-4-x-file"
+why = "the shape sphinx-needs writes since 4.0: creator, created, needs_schema and needs_defaults_removed, read with no finding"
+layer = "document"
+json = '''{"created": "2026-01-01T00:00:00", "current_version": "1.0", "project": "demo", "versions": {"1.0": {"created": "2026-01-01T00:00:00", "creator": {"program": "sphinx_needs", "version": "9.0.0"}, "needs_amount": 1, "needs_defaults_removed": true, "needs_schema": {"$schema": "http://json-schema.org/draft-07/schema#", "type": "object", "properties": {"content": {"type": "string", "field_type": "core", "default": ""}, "status": {"type": ["string", "null"], "field_type": "core", "default": null}}}, "needs": {"REQ_1": {"id": "REQ_1", "type": "req", "title": "t", "content": "body"}}}}}'''
+[case.expect]
+diagnostics = []
+records = { REQ_1 = { id = "REQ_1", content = "body" } }
