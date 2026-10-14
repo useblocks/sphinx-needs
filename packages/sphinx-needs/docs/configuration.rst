@@ -518,7 +518,8 @@ The kinds
    * - ``copy``
      - a field
      - ``field``
-     - one of ``from`` and ``over``; ``select`` (only with ``over``)
+     - one of ``from``, ``over`` and ``join``; ``select`` (with ``over`` or ``join``);
+       ``include_self`` (with ``join``)
      - the type of the field read; with ``select = "list"``, an array of it
    * - ``sum``
      - a field
@@ -557,8 +558,8 @@ The kinds
      - a ``string``, computed after every other rule of the need
    * - ``links``
      - a link type
-     - ``where``
-     - ``include_self``, ``include_parts``
+     - ``where`` or ``join``
+     - the other of the two; ``include_self``; ``include_parts`` (not with ``join``)
      - a link list
    * - ``content_links``
      - a link type
@@ -600,6 +601,11 @@ The roles
    * - ``from``
      - a need id
      - The one need whose ``field`` (``copy``) or content (``content_links``) is read.
+   * - ``join``
+     - ``{ field = …, equals = … }``
+     - ``links``, ``copy``: the candidates are the needs whose ``field`` equals one of this need's ``equals`` values,
+       each once, in need-id order. Both are text fields, a string split on ``,`` or an array of strings,
+       compared value by value (see :ref:`needs_derive_join`).
    * - ``where``
      - a filter string
      - Narrows the candidates: each is kept when the :ref:`filter string <filter_string>` holds on it.
@@ -610,7 +616,7 @@ The roles
        Over no candidates, ``all`` is ``true`` and ``any`` is ``false``.
    * - ``select``
      - ``"first"`` (default), ``"unique"``, ``"list"``
-     - ``copy`` over several targets: the target with the lowest need id among those that set the field;
+     - ``copy`` over several targets (with ``over`` or ``join``): the target with the lowest need id among those that set the field;
        the same, reported when several set it; or every value, as a list (the field must be an array).
    * - ``transitive``
      - ``true`` / ``false`` (default)
@@ -619,9 +625,10 @@ The roles
      - ``true`` / ``false`` (default)
      - ``min`` / ``max`` with ``transitive = true``: count this need's own ``field`` too.
        ``links``: this need (and its parts) may be linked.
+       ``copy`` with ``join``: this need may be a candidate.
    * - ``include_parts``
      - ``true`` / ``false`` (default)
-     - ``links``: the parts of every need are candidates too, a passing part linked as ``<need>.<part>``.
+     - ``links`` without ``join``: the parts of every need are candidates too, a passing part linked as ``<need>.<part>``.
    * - ``after``
      - ``"derived"``
      - Compute the field after every other rule of the need.
@@ -630,10 +637,101 @@ A ``where`` or ``test`` reads the candidate only:
 a filter naming ``needs``, ``current_need`` or a ``c.`` check (such as ``c.this_doc()``) cannot be declared,
 so that a rule means the same in every tool that reads the configuration.
 
-The ``join`` role is reserved for a later release, and a rule naming it is reported.
+A ``join`` matches the needs whose field equals one of this need's values (:ref:`needs_derive_join`).
 ``types`` is not a role: a rule for some need types is declared under ``derive_by_type`` (:ref:`needs_derive_by_type`).
 A rule on a core field (``status``, ``tags``, ``title`` and the other core fields, and the ``parent_needs`` link type),
 or on a link type named after a core field (such as ``parts``), is not available in this release: it is reported, and ignored.
+
+.. _`needs_derive_join`:
+
+Matching a field: the join role
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 9.1.0
+
+``join = { field = "<field>", equals = "<own field>" }`` makes the candidates of a ``links`` or ``copy`` rule
+the needs whose ``field`` equals one of this need's ``equals`` values,
+such as the specifications a test names in its ``test_case`` field by their ``case_name``:
+
+.. code-block:: toml
+
+   [needs.fields.case_name]
+   schema = { type = "string" }
+
+   [needs.fields.test_case]
+   schema = { type = "string" }
+
+   [needs.fields.owner]
+   schema = { type = "string" }
+
+   [needs.links.covers]
+   derive = { kind = "links", join = { field = "case_name", equals = "test_case" } }
+
+   [needs.fields.owners]
+   schema = { type = "array", items = { type = "string" } }
+   derive = { kind = "copy", field = "owner", join = { field = "case_name", equals = "test_case" }, select = "list" }
+
+.. code-block:: rst
+
+   .. spec:: Login
+      :id: SPEC_LOGIN
+      :case_name: login
+      :owner: alice
+
+   .. spec:: Login, remembered
+      :id: SPEC_REMEMBER
+      :case_name: login, remember
+
+   .. spec:: Logout
+      :id: SPEC_LOGOUT
+      :case_name: logout
+      :owner: bob
+
+   .. test:: Session test
+      :id: TEST_SESSION
+      :test_case: login, logout
+
+``TEST_SESSION`` covers ``SPEC_LOGIN``, ``SPEC_LOGOUT`` and ``SPEC_REMEMBER`` (whose ``case_name`` holds ``login`` too),
+and its ``owners`` are ``["alice", "bob"]``; a spec, which has no ``test_case``, covers nothing.
+
+- **The match.** Both fields are read the same way:
+  a string is split on ``,`` and each value stripped of whitespace, an array of strings is taken item by item
+  (an item is not split again), and an empty value is dropped.
+  A need matches when its ``field`` and this need's ``equals`` share a value, compared exactly (case-sensitive).
+- **Candidates.** Each need that matches, once, however many values it shares,
+  in need-id order (the ids compared as strings, by code point: ``T_10``, ``T_2``, ``T_9``;
+  ``needs.json`` sorts a link list naturally instead).
+  This need is left out unless ``include_self = true``.
+  Needs only: a need part is never a candidate (a need with parts matches as itself),
+  and ``include_parts`` cannot be given beside ``join``.
+- **links and copy.** ``links`` links the candidates that pass its ``where``, if it has one:
+  it requires ``where`` or ``join``, and takes both.
+  ``copy`` reads the candidates as it reads the needs a link type names: ``select`` takes the lowest-id candidate
+  that sets the field (``"first"``, the default), the same and a ``needs.derive_unique`` warning when several set it
+  (``"unique"``), or every value (``"list"``); with no candidate it finds no value (``[]`` with ``"list"``).
+  ``copy`` takes one of ``from``, ``over`` and ``join``, and no ``where``.
+- **The fields.** ``field`` and ``equals`` each name a field holding a string (an ``enum`` included)
+  or an array of strings: one of :ref:`needs_fields`, or a core field such as ``id``, ``title``, ``type``,
+  ``status`` or ``tags``. A link type, a ``<link type>_back``, and a number or a boolean field
+  are reported as ``needs.derive_invalid``.
+- **The order.** A join reads ``equals`` on this need, and ``field`` (and ``copy``'s ``field``) on every need.
+  A ``copy`` with ``join`` is computed after every need computing those fields in its step;
+  a ``links`` with ``join`` is computed with the link fields, before any other field,
+  so one whose fields a rule, a ``[[…]]`` or a variant computes is not run (``needs.derive_scope``, see :ref:`needs_derive_scope`).
+  A ``copy`` whose ``equals`` is its own field, or reads it back through other rules, can be computed on no need,
+  and is reported when the configuration is read;
+  one whose ``field`` is its own field reads its own result on every need, a cycle (``needs.derive_cycle``).
+  The needs are indexed by ``field`` once per step, so a join costs one pass over the needs,
+  however many needs hold the rule.
+
+The inline spelling is :ref:`links_from_match`:
+``[[links_from_match("case_name", "test_case")]]`` in a link field of ``TEST_SESSION`` links the same needs.
+sphinx-test-reports' ``tr_link(test_option, target_option)`` is
+``join = { field = "<target_option>", equals = "<test_option>" }`` with ``include_self = true``,
+or inline ``[[links_from_match("<target_option>", "<test_option>", include_self=True)]]``:
+the arguments come in the swapped order, the field read on every need first.
+The two differ where ``tr_link`` links a need once per value that matches it, in the order the project holds the needs,
+compares each need's ``target_option`` whole, without splitting it, and fails on an array.
 
 .. _`needs_derive_by_type`:
 
@@ -755,6 +853,7 @@ a ``fingerprint`` whose ``exclude`` is not a list of names, names one twice,
 or names what a fingerprint does not include (nothing a need has, or a name it never includes, such as ``docname``),
 a ``where`` or ``test`` that does not parse or reads more than the candidate,
 an empty ``where`` on ``links`` (it would link every need),
+a ``join`` that is not a table of a ``field`` and an ``equals`` naming text fields, or is given beside ``include_parts``,
 and rules reading one another's own fields in a circle (``copy`` without ``over`` or ``from``, and ``hash``),
 which no need could compute.
 The field stays derived: it cannot be set, and it holds its empty value
@@ -804,7 +903,7 @@ A rule is computed with the ``[[…]]`` of its step (see :ref:`needs_processing_
   ``collect`` keeps each value once, in the order of the candidates, a list's items each.
   ``copy`` over several targets takes the one with the lowest need id among those that set the field
   (``select = "first"``), the same and a ``needs.derive_unique`` warning when several set it (``"unique"``),
-  or every value in the order written, a list's items each (``"list"``).
+  or every value in the order written (in need-id order over a ``join``), a list's items each (``"list"``).
 - **transitive.** ``min`` and ``max`` read every need reachable through ``over``, each once:
   a need on a cycle reaches itself, so every member of a cycle has the same value;
   ``include_self`` adds the need's own ``field``.
@@ -873,6 +972,7 @@ A rule is computed with the ``[[…]]`` of its step (see :ref:`needs_processing_
 - **links.** Every need, and with ``include_parts`` every need's parts (after it, in part-id order),
   in need-id order (the ids compared as strings, by code point: ``T_10``, ``T_2``, ``T_9``);
   this need and its parts are left out unless ``include_self``.
+  With ``join``, the needs that match (:ref:`needs_derive_join`), in the same order.
   ``needs.json`` writes the list sorted naturally, as every link list (``T_2``, ``T_9``, ``T_10``).
 - **content_links.** The ``:need:`` references of this need's content (or of the content of the need ``from`` names),
   in document order, each once: a reference to a part is a part link, a reference to this need is kept,

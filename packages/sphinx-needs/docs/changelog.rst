@@ -4,6 +4,36 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+Improvements
+............
+
+- ✨ The :ref:`join <needs_derive_join>` role of a derive rule, reserved in 9.0.0, and its inline
+  spelling, the dynamic function :ref:`links_from_match` (:issue:`2224`, :pr:`PR`)
+
+  ``join = { field = "case_name", equals = "test_case" }`` on a ``links`` or ``copy`` rule makes its
+  candidates the needs whose ``case_name`` equals one of the need's own ``test_case`` values: both are
+  text fields, a string split on ``,`` and stripped, or an array of strings, compared value by value. Each
+  need that matches is a candidate once, in need-id order; the need itself only with
+  ``include_self = true``; needs only, never their parts. ``links`` links them (``where`` narrows them,
+  and ``links`` requires ``where`` or ``join``), and ``copy`` reads them as over a link type, ``select``
+  included. The needs are indexed by the field once per step of the build, so a join costs one pass
+  over the needs. ``[[links_from_match("case_name", "test_case")]]`` links the same needs from one
+  need, and spells sphinx-test-reports' ``tr_link(test_option, target_option)`` as
+  ``links_from_match(target_option, test_option, include_self=True)``, the arguments swapped. A rule
+  that cannot be read is reported as ``needs.derive_invalid``, as every rule is; three refusals of an
+  existing rule changed their words with it (``links`` "requires the role 'where' or 'join'", and
+  ``copy``'s ``from`` / ``over`` / ``join`` and ``select`` texts).
+
+Internal changes
+................
+
+- 🔧 ``ENV_DATA_VERSION`` is 12: the first build after upgrading re-reads every document, so a
+  ``join`` rule that 9.0.0 refused, and a ``links_from_match`` it did not know, are computed on the
+  pages whose sources did not change too (:pr:`PR`)
+
 .. _`release:9.0.0`:
 
 9.0.0

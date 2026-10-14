@@ -139,8 +139,8 @@ _JOIN_KEYS: Final = ("field", "equals")
 class DeriveJoin:
     """The ``join`` role: the needs whose ``field`` equals one of this need's ``equals``.
 
-    Both are text fields: a string is split on ``,``, an array taken by item (see
-    :func:`~sphinx_needs.functions.common.join_values`).
+    Both are text fields: a string is split on ``,``, an array taken by item, each
+    value stripped, and a need matches when the two share a value.
 
     :ivar field: The field read on every need, the candidates.
     :ivar equals: The field read on the need holding the rule.
