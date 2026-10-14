@@ -9,7 +9,8 @@ Changed
 
 - 🏷️ ``sphinx_test_reports`` ships a ``py.typed`` marker (:pep:`561`) and the distribution
   the ``Typing :: Typed`` classifier, so a type checker reads its annotations instead of
-  treating it as untyped. The deprecated ``sphinxcontrib.test_reports`` aliases carry none.
+  treating it as untyped. The deprecated ``sphinxcontrib.test_reports`` aliases carry none
+  (`#2241 <https://github.com/useblocks/sphinx-needs/pull/2241>`__).
 - 📚 The documentation site moved from sphinx-immaterial to furo and the look the other
   useblocks sites in this repository share
   (`#1935 <https://github.com/useblocks/sphinx-needs/issues/1935>`__). It follows the
