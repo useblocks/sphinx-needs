@@ -52,9 +52,12 @@ def apply_defaults(app: Sphinx, config: Config) -> None:
     """Point a furo build at the shared files and fill in what the site left unset."""
     if config.html_theme != "furo":
         return
-    # appended, so the site's own directories are searched first: a template or a static
-    # file of the site's own with the same name wins over the shared one
-    config.html_static_path = [*config.html_static_path, str(HERE / "static")]
+    # A file of the site's own with the same name wins over the shared one, which takes
+    # the two lists in opposite orders. Sphinx copies the `html_static_path` entries in
+    # order, each over the last, so the shared directory goes FIRST and the site's copies
+    # land on top of it; it searches `templates_path` in order and takes the first match,
+    # so the shared directory goes LAST.
+    config.html_static_path = [str(HERE / "static"), *config.html_static_path]
     config.templates_path = [*config.templates_path, str(HERE / "templates")]
     if not config.html_sidebars:
         config.html_sidebars = {"**": list(SIDEBARS)}

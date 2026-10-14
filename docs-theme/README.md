@@ -30,8 +30,11 @@ Everything the extension sets is a default: a value the site's `conf.py` gives w
 (`html_sidebars`, `html_context["repository"]`, and each of `sidebar_hide_name`,
 `top_of_page_buttons`, `source_repository` and `source_branch` separately). `ub-furo.css`
 loads at priority 600, before the site's own `html_css_files` (800), so a rule only one site
-needs goes in that site's stylesheet and overrides the shared one. Templates and static
-files are searched in the site's own directories first.
+needs goes in that site's stylesheet and overrides the shared one. A template or a
+static file of the site's own with the same name wins over the shared one: the extension
+puts the shared `static/` FIRST in `html_static_path` (Sphinx copies the entries in order,
+each over the last) and the shared `templates/` LAST in `templates_path` (Sphinx takes the
+first match).
 
 ## Why it is a directory and not a package
 
