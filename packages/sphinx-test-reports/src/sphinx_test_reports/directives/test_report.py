@@ -1,6 +1,8 @@
 # fmt: off
 import pathlib
 import re
+from collections.abc import Iterable
+from typing import Any
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -19,7 +21,7 @@ class TestReport(nodes.General, nodes.Element):
 _CONTENT_INDENT = re.compile(r"^([ \t]*).*\{content\}", re.MULTILINE)
 
 
-def _indented_body(lines, template: str) -> str:
+def _indented_body(lines: Iterable[str], template: str) -> str:
     """The directive's body as the text for ``{content}``, at the template's indentation.
 
     The template places ``{content}`` inside the generated test-file directive, so its
@@ -52,10 +54,10 @@ class TestReportDirective(TestCommonDirective):
 
     final_argument_whitespace = True
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
-    def run(self):
+    def run(self) -> list[nodes.Node]:
         self.prepare_basic_options()
         # A refused option (no `:file:`, an invalid `:collapse:`) is reported here, not
         # handed on to a generated test-file that would carry it.

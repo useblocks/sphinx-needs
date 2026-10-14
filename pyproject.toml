@@ -330,7 +330,15 @@ extend-select = [
 # literal and its only fix is unsafe, so adopting it belongs with the wider ruleset review.
 # ANN401 (an explicit `Any`) is not the missing-annotation gate: an explicit `Any` is a
 # decision, and burning those down is a separate piece of work (#1835)
-extend-ignore = ["ANN401", "B904", "ISC001", "ISC004", "ICN001", "N818", "RUF012"]
+extend-ignore = [
+  "ANN401",
+  "B904",
+  "ISC001",
+  "ISC004",
+  "ICN001",
+  "N818",
+  "RUF012",
+]
 
 [tool.ruff.lint.flake8-annotations]
 # an `__init__` with at least one annotated parameter needs no `-> None`, as under mypy

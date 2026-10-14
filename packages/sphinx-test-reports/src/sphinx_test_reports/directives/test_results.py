@@ -1,4 +1,5 @@
 import os
+from typing import Any
 
 from docutils import nodes
 from docutils.parsers.rst import Directive
@@ -38,12 +39,12 @@ class TestResultsDirective(Directive):
 
     final_argument_whitespace = True
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.header = ("class", "name", "status", "reason")
         self.colwidths = (1, 1, 1, 2)
 
-    def run(self):
+    def run(self) -> list[nodes.Node]:
         env = self.state.document.settings.env
 
         xml_path = self.arguments[0]
@@ -80,7 +81,7 @@ class TestResultsDirective(Directive):
         warn(self, subtype, message)
         return [error_node(message)]
 
-    def _suite_section(self, testsuite) -> nodes.section:
+    def _suite_section(self, testsuite: dict[str, Any]) -> nodes.section:
         """A suite's section: its counters, its ``Time:``, the table of its DIRECT cases,
         then a section of the same shape inside it for each nested suite, at every depth.
         """
@@ -118,7 +119,7 @@ class TestResultsDirective(Directive):
 
         return section
 
-    def _create_testcase_row(self, testcase):
+    def _create_testcase_row(self, testcase: dict[str, Any]) -> nodes.row:
         row_cells = (
             testcase["classname"],
             testcase["name"],
@@ -140,7 +141,7 @@ class TestResultsDirective(Directive):
             entry += nodes.paragraph(text=cell, classes=["tr_" + testcase["result"]])
         return row
 
-    def _create_table_row(self, row_cells):
+    def _create_table_row(self, row_cells: tuple[str, ...]) -> nodes.row:
         row = nodes.row()
         for cell in row_cells:
             entry = nodes.entry()

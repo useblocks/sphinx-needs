@@ -52,7 +52,7 @@ class EnvReportDirective(Directive):
 
     final_argument_whitespace = True
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         #: The environments ``:env:`` names, or ``None``: every environment, in file order.
         #: A value naming none (``:env: ,``) shows none.
@@ -64,7 +64,7 @@ class EnvReportDirective(Directive):
         self.header = ("Variable", "Data")
         self.colwidths = (1, 1)
 
-    def run(self):
+    def run(self) -> list[nodes.Node]:
         env = self.state.document.settings.env
 
         json_path = self.arguments[0]
@@ -197,7 +197,7 @@ class EnvReportDirective(Directive):
 
         return section
 
-    def _create_rows(self, row_cells):
+    def _create_rows(self, row_cells: tuple[Any, ...]) -> nodes.row:
         row = nodes.row()
         for cell in row_cells:
             entry = nodes.entry()

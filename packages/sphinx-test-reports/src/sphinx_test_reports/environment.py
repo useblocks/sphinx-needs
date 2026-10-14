@@ -1,6 +1,7 @@
 import os
 
 from sphinx.application import Sphinx
+from sphinx.environment import BuildEnvironment
 from sphinx.util.console import brown
 from sphinx.util.display import status_iterator
 from sphinx.util.osutil import copyfile, ensuredir
@@ -8,7 +9,7 @@ from sphinx.util.osutil import copyfile, ensuredir
 STATICS_DIR_NAME = "_static"
 
 
-def safe_add_file(filename: str, app: Sphinx):
+def safe_add_file(filename: str, app: Sphinx) -> None:
     """
     Adds files to builder resources only, if the given filename was not already registered.
     Needed mainly for tests to avoid multiple registration of the same file and therefore also multiple execution
@@ -37,7 +38,7 @@ def safe_add_file(filename: str, app: Sphinx):
         )
 
 
-def safe_remove_file(filename: str, app: Sphinx):
+def safe_remove_file(filename: str, app: Sphinx) -> None:
     """
     Removes a given resource file from builder resources.
     Needed mostly during test, if multiple sphinx-build are started.
@@ -67,7 +68,7 @@ def safe_remove_file(filename: str, app: Sphinx):
 
 # Base implementation from sphinxcontrib-images
 # https://github.com/spinus/sphinxcontrib-images/blob/master/sphinxcontrib/images.py#L203
-def install_styles_static_files(app, env):
+def install_styles_static_files(app: Sphinx, env: BuildEnvironment) -> None:
     statics_dir_path = os.path.join(app.builder.outdir, STATICS_DIR_NAME)
     dest_path = os.path.join(statics_dir_path, "sphinx-test-results")
 

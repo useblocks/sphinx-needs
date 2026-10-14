@@ -43,7 +43,7 @@ class TestFileDirective(TestCommonDirective):
 
     final_argument_whitespace = True
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         #: Every id this expansion minted -- suites at every depth AND their cases -- with
         #: who minted it. Keyed on the full id, which for a suite carries the parent's: two
@@ -117,7 +117,7 @@ class TestFileDirective(TestCommonDirective):
             )
         return nodes_
 
-    def run(self):
+    def run(self) -> list[nodes.Node]:
         self.prepare_basic_options()
         if self.refusal is not None:
             return self.refuse(*self.refusal)

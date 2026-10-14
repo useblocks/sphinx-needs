@@ -3,6 +3,8 @@ JUnit XML parser
 """
 
 import os
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 from lxml import etree, objectify  # ty: ignore[unresolved-import]
 
@@ -55,6 +57,9 @@ TESTSUITE_KNOWN_ATTRIBUTES = frozenset(
 #: names, not ``result`` values -- ``<failure>`` is read as the result
 #: ``failed`` (see :mod:`ub_test_reports.results`).
 RESULT_PART_KINDS = ("skipped", "failure", "error")
+
+#: What ``_numeric`` converts an attribute to: ``int`` or ``float``.
+_Number = TypeVar("_Number", int, float)
 
 
 def _child_tag(child: objectify.ObjectifiedElement) -> str | None:
@@ -124,7 +129,12 @@ def _collect_captured_output(xml_object: objectify.ObjectifiedElement, tag: str)
     return "\n".join(block for block in blocks if block)
 
 
-def _numeric(path, element, name, convert):
+def _numeric(
+    path: str,
+    element: objectify.ObjectifiedElement,
+    name: str,
+    convert: Callable[[str | int], _Number],
+) -> _Number:
     """The ``name`` attribute of ``element`` as ``convert`` (``int`` or ``float``) reads it.
 
     An absent attribute is ``-1``, the reader's long-standing sentinel. A value the
@@ -144,7 +154,7 @@ def _numeric(path, element, name, convert):
 
 
 class JUnitParser:
-    def __init__(self, junit_xml, junit_xsd=None):
+    def __init__(self, junit_xml: str, junit_xsd: str | None = None) -> None:
         self.junit_xml_path = junit_xml
 
         if junit_xsd is None:
@@ -185,14 +195,14 @@ class JUnitParser:
         self.junit_xml_object = objectify.fromstring(self.junit_xml_string)
         self.junit_xml_string = str(self.junit_xml_string)
 
-    def validate(self):
+    def validate(self) -> bool:
         self.junit_schema_doc = etree.parse(self.junit_xsd_path)
         self.xmlschema = etree.XMLSchema(self.junit_schema_doc)
         self.valid_xml = self.xmlschema.validate(self.junit_xml_doc)
 
         return self.valid_xml
 
-    def parse(self):
+    def parse(self) -> list[dict[str, Any]]:
         """
         Creates a common python list of object, no matter what information are
         supported by the parsed xml file for test results junit().
@@ -202,7 +212,7 @@ class JUnitParser:
 
         path = self.junit_xml_path
 
-        def parse_testcase(xml_object):
+        def parse_testcase(xml_object: objectify.ObjectifiedElement) -> dict[str, Any]:
             testcase = xml_object
 
             tc_dict = {
@@ -267,7 +277,7 @@ class JUnitParser:
 
             return tc_dict
 
-        def parse_testsuite(xml_object):
+        def parse_testsuite(xml_object: objectify.ObjectifiedElement) -> dict[str, Any]:
             testsuite = xml_object
 
             tests = _numeric(path, testsuite, "tests", int)
@@ -339,7 +349,7 @@ class JUnitParser:
 
         return junit_dict
 
-    def docutils_table(self):
+    def docutils_table(self) -> None:
         pass
 
 
