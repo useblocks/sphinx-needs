@@ -15,7 +15,13 @@ from pathlib import Path
 import pytest
 
 from sphinx_needs.data import SphinxNeedsData
-from sphinx_needs.derive import DeriveInvalid, DeriveRule, parse_derive
+from sphinx_needs.derive import (
+    DeriveInvalid,
+    DeriveJoin,
+    DeriveRule,
+    check_derive_rules,
+    parse_derive,
+)
 from sphinx_needs.needs_schema import (
     FieldSchema,
     FieldsSchema,
@@ -73,7 +79,7 @@ EXPECTED_WARNINGS = [
     ),
     _invalid(
         "bad_copy_both",
-        "kind 'copy' takes one of the roles 'from' and 'over', not both",
+        "kind 'copy' takes one of the roles 'from', 'over' and 'join', not more",
     ),
     _invalid(
         "bad_copy_type",
@@ -183,7 +189,8 @@ EXPECTED_WARNINGS = [
         "string, which the field's schema (an array of number) cannot hold",
     ),
     _invalid(
-        "bad_select_no_over", "kind 'copy' takes the role 'select' only with 'over'"
+        "bad_select_no_over",
+        "kind 'copy' takes the role 'select' only with 'over' or 'join'",
     ),
     _invalid(
         "bad_sum_result",
@@ -218,7 +225,8 @@ EXPECTED_WARNINGS = [
     ),
     _invalid_link(
         "bad_link_join",
-        "kind 'links': the 'join' role is reserved and not available yet",
+        "kind 'links': the role 'join' has the key 'ignore_case'; it takes 'field' "
+        "and 'equals'",
     ),
     _invalid_link(
         "bad_link_value_kind",
@@ -717,7 +725,7 @@ def test_copy_on_a_derived_link_type(test_app):
     app = test_app
     app.build()
     assert build_warnings(app) == [
-        _invalid_link("broken", "kind 'links' requires the role 'where'"),
+        _invalid_link("broken", "kind 'links' requires the role 'where' or 'join'"),
         "WARNING: Invalid derive of link type 'mentions': kind 'content_links': "
         "'copy' is not available on a derived link type in this release, and is "
         "ignored; the rule applies [needs.derive_invalid]",
@@ -959,6 +967,56 @@ def test_a_placeholder_is_not_validated(test_app):
             DeriveRule(kind="content_links"),
             id="content-links",
         ),
+        pytest.param(
+            {"kind": "links", "join": {"field": "case_name", "equals": "test_case"}},
+            True,
+            DeriveRule(kind="links", join=DeriveJoin("case_name", "test_case")),
+            id="links-join",
+        ),
+        pytest.param(
+            {
+                "kind": "links",
+                "join": {"field": "name", "equals": "ref"},
+                "where": "status == 'open'",
+                "include_self": True,
+                "include_parts": False,
+            },
+            True,
+            DeriveRule(
+                kind="links",
+                join=DeriveJoin("name", "ref"),
+                where="status == 'open'",
+                include_self=True,
+            ),
+            id="links-join-where-self",
+        ),
+        pytest.param(
+            {
+                "kind": "copy",
+                "field": "owner",
+                "join": {"field": "key", "equals": "ref"},
+                "select": "list",
+                "include_self": True,
+                "after": "derived",
+            },
+            False,
+            DeriveRule(
+                kind="copy",
+                field="owner",
+                join=DeriveJoin("key", "ref"),
+                select="list",
+                include_self=True,
+                after_derived=True,
+            ),
+            id="copy-join",
+        ),
+        pytest.param(
+            # the default of the flag, beside a role it does not go with, says nothing
+            {"kind": "copy", "field": "owner", "over": "links", "include_self": False},
+            False,
+            DeriveRule(kind="copy", field="owner", over="links"),
+            id="copy-include-self-false",
+        ),
     ],
 )
 def test_parse_derive_reads_a_rule(raw, on_link, expected):
@@ -991,7 +1049,7 @@ def test_parse_derive_reads_a_rule(raw, on_link, expected):
             {"kind": "copy", "field": "x", "join": {}},
             False,
             "copy",
-            "kind 'copy': the 'join' role is reserved and not available yet",
+            "kind 'copy': the role 'join' has no 'field'",
             id="join-on-copy",
         ),
         pytest.param(
@@ -1127,3 +1185,406 @@ def test_replace_field_keeps_its_place():
         schema.replace_field(FieldSchema(name="z", schema={"type": "string"}))
     with pytest.raises(ValueError, match="does not exist"):
         schema.replace_field(dataclasses.replace(link, name="a"))
+
+
+# -- the join role -----------------------------------------------------------------------
+
+#: a ``links`` rule with a ``join``, to which each case adds or replaces roles
+_JOIN = {"kind": "links", "join": {"field": "name", "equals": "ref"}}
+
+
+@pytest.mark.parametrize(
+    "raw,on_link,kind,reason",
+    [
+        pytest.param(
+            {**_JOIN, "join": "name"},
+            True,
+            "links",
+            "kind 'links': the role 'join' must be a table with 'field' and 'equals'",
+            id="not-a-table",
+        ),
+        pytest.param(
+            {**_JOIN, "join": ["name", "ref"]},
+            True,
+            "links",
+            "kind 'links': the role 'join' must be a table with 'field' and 'equals'",
+            id="a-list",
+        ),
+        pytest.param(
+            {**_JOIN, "join": {"field": "name", "equals": "ref", "ignore_case": True}},
+            True,
+            "links",
+            "kind 'links': the role 'join' has the key 'ignore_case'; it takes 'field' "
+            "and 'equals'",
+            id="extra-key",
+        ),
+        pytest.param(
+            # an extra key is named before a missing one
+            {**_JOIN, "join": {"zz": 1, "aa": 2}},
+            True,
+            "links",
+            "kind 'links': the role 'join' has the key 'aa'; it takes 'field' and "
+            "'equals'",
+            id="extra-keys-by-name",
+        ),
+        pytest.param(
+            {**_JOIN, "join": {"equals": "ref"}},
+            True,
+            "links",
+            "kind 'links': the role 'join' has no 'field'",
+            id="no-field",
+        ),
+        pytest.param(
+            {**_JOIN, "join": {"field": "name"}},
+            True,
+            "links",
+            "kind 'links': the role 'join' has no 'equals'",
+            id="no-equals",
+        ),
+        pytest.param(
+            # a missing key is named before an empty one
+            {**_JOIN, "join": {"field": ""}},
+            True,
+            "links",
+            "kind 'links': the role 'join' has no 'equals'",
+            id="missing-before-empty",
+        ),
+        pytest.param(
+            {**_JOIN, "join": {"field": " ", "equals": "ref"}},
+            True,
+            "links",
+            "kind 'links': the role 'join' must name a field in 'field'",
+            id="blank-field",
+        ),
+        pytest.param(
+            {**_JOIN, "join": {"field": "name", "equals": 1}},
+            True,
+            "links",
+            "kind 'links': the role 'join' must name a field in 'equals'",
+            id="equals-not-string",
+        ),
+        pytest.param(
+            {"kind": "links", "include_self": True},
+            True,
+            "links",
+            "kind 'links' requires the role 'where' or 'join'",
+            id="links-neither-where-nor-join",
+        ),
+        pytest.param(
+            {**_JOIN, "include_parts": True},
+            True,
+            "links",
+            "kind 'links' takes the role 'include_parts' only without 'join'",
+            id="include-parts-beside-join",
+        ),
+        pytest.param(
+            {**_JOIN, "where": " "},
+            True,
+            "links",
+            "kind 'links' has an empty 'where', which would link every need",
+            id="empty-where-beside-join",
+        ),
+        pytest.param(
+            {"kind": "sum", "field": "hours", "over": "links", "join": _JOIN["join"]},
+            False,
+            "sum",
+            "kind 'sum' does not take the role 'join'",
+            id="sum-takes-no-join",
+        ),
+        pytest.param(
+            {"kind": "content_links", "join": _JOIN["join"]},
+            True,
+            "content_links",
+            "kind 'content_links' does not take the role 'join'",
+            id="content-links-takes-no-join",
+        ),
+        pytest.param(
+            {"kind": "copy", "field": "x", "over": "links", "join": _JOIN["join"]},
+            False,
+            "copy",
+            "kind 'copy' takes one of the roles 'from', 'over' and 'join', not more",
+            id="copy-over-and-join",
+        ),
+        pytest.param(
+            {"kind": "copy", "field": "x", "from": "REQ_1", "join": _JOIN["join"]},
+            False,
+            "copy",
+            "kind 'copy' takes one of the roles 'from', 'over' and 'join', not more",
+            id="copy-from-and-join",
+        ),
+        pytest.param(
+            {"kind": "copy", "field": "x", "from": "REQ_1", "over": "links"},
+            False,
+            "copy",
+            "kind 'copy' takes one of the roles 'from', 'over' and 'join', not more",
+            id="copy-from-and-over",
+        ),
+        pytest.param(
+            {"kind": "copy", "field": "x", "select": "list"},
+            False,
+            "copy",
+            "kind 'copy' takes the role 'select' only with 'over' or 'join'",
+            id="copy-select-alone",
+        ),
+        pytest.param(
+            {"kind": "copy", "field": "x", "over": "links", "include_self": True},
+            False,
+            "copy",
+            "kind 'copy' takes the role 'include_self' only with 'join'",
+            id="copy-include-self-without-join",
+        ),
+        pytest.param(
+            {"kind": "copy", "field": "x", "join": _JOIN["join"], "where": "a"},
+            False,
+            "copy",
+            "kind 'copy' does not take the role 'where'",
+            id="copy-join-takes-no-where",
+        ),
+        pytest.param(
+            # a role's value is checked before how the roles go together
+            {"kind": "copy", "field": "x", "over": "links", "join": "name"},
+            False,
+            "copy",
+            "kind 'copy': the role 'join' must be a table with 'field' and 'equals'",
+            id="value-before-combination",
+        ),
+    ],
+)
+def test_parse_derive_refuses_a_join(raw, on_link, kind, reason):
+    """A ``join`` is a table of exactly ``field`` and ``equals``, each naming a field;
+    ``links`` requires ``where`` or ``join`` and takes no ``include_parts`` beside a
+    ``join``; ``copy`` takes one of ``from``, ``over`` and ``join``, ``select`` with
+    ``over`` or ``join`` and ``include_self`` with ``join``; no other kind takes it.
+    One problem per rule, the first in the order the problems are looked for."""
+    assert parse_derive(raw, on_link=on_link) == DeriveInvalid(kind, reason)
+
+
+def test_parse_derive_reads_a_join_beside_include_parts_false():
+    """``include_parts = false`` is the default, so it says nothing beside a ``join``."""
+    assert parse_derive({**_JOIN, "include_parts": False}, on_link=True) == DeriveRule(
+        kind="links", join=DeriveJoin("name", "ref")
+    )
+
+
+def _join_schema(**rules: tuple[dict, bool]) -> FieldsSchema:
+    """A schema with text fields (``name``, ``ref``, an enum ``level``, an array
+    ``names``), non-text ones (``num``, ``score``, ``flag``), the link type ``links``,
+    and one field or link type per rule given (``name=(raw, on_link)``)."""
+    schema = FieldsSchema()
+    for name, type_schema in (
+        ("name", {"type": "string"}),
+        ("ref", {"type": "string"}),
+        ("level", {"type": "string", "enum": ["low", "high"]}),
+        ("names", {"type": "array", "items": {"type": "string"}}),
+        ("num", {"type": "integer"}),
+        ("score", {"type": "number"}),
+        ("flag", {"type": "boolean"}),
+        ("nums", {"type": "array", "items": {"type": "integer"}}),
+    ):
+        schema.add_extra_field(
+            FieldSchema(name=name, schema=type_schema, nullable=True)
+        )
+    schema.add_link_field(
+        LinkSchema(
+            name="links",
+            schema={"type": "array", "items": {"type": "string"}},
+            display=LinkDisplayConfig(incoming="links in", outgoing="links"),
+        )
+    )
+    for name, (raw, on_link) in rules.items():
+        rule = parse_derive(raw, on_link=on_link)
+        if on_link:
+            schema.add_link_field(
+                LinkSchema(
+                    name=name,
+                    schema={"type": "array", "items": {"type": "string"}},
+                    display=LinkDisplayConfig(incoming=f"{name} in", outgoing=name),
+                    derive=rule,
+                )
+            )
+        else:
+            schema.add_extra_field(
+                FieldSchema(
+                    name=name, schema={"type": "string"}, nullable=True, derive=rule
+                )
+            )
+    return schema
+
+
+@pytest.mark.parametrize(
+    "join,reason",
+    [
+        pytest.param(
+            {"field": "nosuch", "equals": "ref"},
+            "the role 'join' names 'nosuch' in 'field', which is not a field",
+            id="field-names-nothing",
+        ),
+        pytest.param(
+            {"field": "name", "equals": "nosuch"},
+            "the role 'join' names 'nosuch' in 'equals', which is not a field",
+            id="equals-names-nothing",
+        ),
+        pytest.param(
+            {"field": "links", "equals": "ref"},
+            "the role 'join' names 'links' in 'field', a link type; a join compares "
+            "text fields",
+            id="field-a-link-type",
+        ),
+        pytest.param(
+            {"field": "name", "equals": "links_back"},
+            "the role 'join' names 'links_back' in 'equals', a link type; a join "
+            "compares text fields",
+            id="equals-back-links",
+        ),
+        pytest.param(
+            {"field": "num", "equals": "ref"},
+            "the role 'join' names 'num' in 'field' (integer); a join compares a string "
+            "or an array of strings",
+            id="field-an-integer",
+        ),
+        pytest.param(
+            {"field": "name", "equals": "score"},
+            "the role 'join' names 'score' in 'equals' (number); a join compares a "
+            "string or an array of strings",
+            id="equals-a-number",
+        ),
+        pytest.param(
+            {"field": "flag", "equals": "ref"},
+            "the role 'join' names 'flag' in 'field' (boolean); a join compares a "
+            "string or an array of strings",
+            id="field-a-boolean",
+        ),
+        pytest.param(
+            {"field": "nums", "equals": "ref"},
+            "the role 'join' names 'nums' in 'field' (an array of integer); a join "
+            "compares a string or an array of strings",
+            id="field-an-array-of-integer",
+        ),
+        pytest.param(
+            {"field": "lineno", "equals": "ref"},
+            "the role 'join' names 'lineno' in 'field' (integer); a join compares a "
+            "string or an array of strings",
+            id="field-a-core-integer",
+        ),
+        pytest.param(
+            # 'field' is checked before 'equals'
+            {"field": "num", "equals": "nosuch"},
+            "the role 'join' names 'num' in 'field' (integer); a join compares a string "
+            "or an array of strings",
+            id="field-before-equals",
+        ),
+    ],
+)
+def test_a_join_compares_text_fields(join, reason):
+    """Both names of a ``join`` are value fields holding a string (an enum included)
+    or an array of strings: a name that is no field, a link type or its back links,
+    and a number or a boolean are each refused at load, on ``links`` and on ``copy``."""
+    schema = _join_schema(
+        j_links=({"kind": "links", "join": join}, True),
+        j_copy=({"kind": "copy", "field": "name", "join": join}, False),
+    )
+    assert [(p.name, p.reason) for p in check_derive_rules(schema)] == [
+        ("j_copy", f"kind 'copy': {reason}"),
+        ("j_links", f"kind 'links': {reason}"),
+    ]
+
+
+def test_a_join_problem_comes_before_the_where():
+    """The names of a ``join`` are checked before its ``where`` (A-6's order)."""
+    schema = _join_schema(
+        j=(
+            {
+                "kind": "links",
+                "join": {"field": "num", "equals": "ref"},
+                "where": "needs",
+            },
+            True,
+        )
+    )
+    assert [p.reason for p in check_derive_rules(schema)] == [
+        "kind 'links': the role 'join' names 'num' in 'field' (integer); a join "
+        "compares a string or an array of strings"
+    ]
+
+
+@pytest.mark.parametrize(
+    "field,equals",
+    [
+        ("name", "ref"),
+        ("level", "ref"),
+        ("names", "ref"),
+        ("name", "names"),
+        ("id", "ref"),
+        ("title", "ref"),
+        ("status", "ref"),
+        ("type", "ref"),
+        ("tags", "names"),
+    ],
+)
+def test_a_join_reads_a_string_or_an_array_of_strings(field, equals):
+    """A string field (an enum included), an array of strings, and the core text
+    fields (``id``, ``title``, ``status``, ``type``, ``tags``) may be joined."""
+    schema = _join_schema(
+        j_links=({"kind": "links", "join": {"field": field, "equals": equals}}, True),
+        j_copy=(
+            {
+                "kind": "copy",
+                "field": "name",
+                "join": {"field": field, "equals": equals},
+                "select": "first",
+            },
+            False,
+        ),
+    )
+    assert check_derive_rules(schema) == []
+
+
+def test_a_copy_join_reading_its_own_field_back_is_refused_at_load():
+    """``equals`` is read on the reader's own need: a ``copy`` with a ``join`` whose
+    ``equals`` is its own field, or a field whose rule reads it back, can be computed
+    on no need, and is refused at load. A ``join.field`` is read on every need, so a
+    join over its own result is not refused here (it is a cycle per need, at build)."""
+    schema = _join_schema(
+        self_cycle=(
+            {
+                "kind": "copy",
+                "field": "name",
+                "join": {"field": "ref", "equals": "self_cycle"},
+            },
+            False,
+        ),
+        ring_a=(
+            {
+                "kind": "copy",
+                "field": "name",
+                "join": {"field": "ref", "equals": "ring_b"},
+            },
+            False,
+        ),
+        ring_b=({"kind": "copy", "field": "ring_a"}, False),
+        over_own=(
+            {
+                "kind": "copy",
+                "field": "name",
+                "join": {"field": "over_own", "equals": "ref"},
+            },
+            False,
+        ),
+    )
+    assert [(p.name, p.reason) for p in check_derive_rules(schema)] == [
+        (
+            "ring_a",
+            "kind 'copy': the role 'join' reads 'ring_b', whose rule reads this field "
+            "back (ring_a -> ring_b -> ring_a), so no need can compute it",
+        ),
+        (
+            "ring_b",
+            "kind 'copy': the role 'field' reads 'ring_a', whose rule reads this field "
+            "back (ring_b -> ring_a -> ring_b), so no need can compute it",
+        ),
+        (
+            "self_cycle",
+            "kind 'copy': the role 'join' reads 'self_cycle', whose rule reads this "
+            "field back (self_cycle -> self_cycle), so no need can compute it",
+        ),
+    ]

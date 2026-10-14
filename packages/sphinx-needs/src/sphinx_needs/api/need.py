@@ -29,7 +29,6 @@ from sphinx_needs.data import (
 from sphinx_needs.derive import typed_empty
 from sphinx_needs.directives.needuml import Needuml, NeedumlException
 from sphinx_needs.exceptions import InvalidNeedException, NeedsInvalidFilter
-from sphinx_needs.exchange import map_legacy_keys
 from sphinx_needs.filter_common import (
     PredicateContextData,
     apply_default_predicate,
@@ -66,6 +65,7 @@ from sphinx_needs.utils import jinja_parse
 from sphinx_needs.variant_data import VariantDataParsed
 from sphinx_needs.variants import VariantFunctionParsed
 from sphinx_needs.views import NeedsView
+from ub_needs_exchange import map_legacy_keys
 
 logger = get_logger(__name__)
 

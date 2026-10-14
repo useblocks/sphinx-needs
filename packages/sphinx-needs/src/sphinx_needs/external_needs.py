@@ -7,7 +7,7 @@ from requests_file import FileAdapter
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
-from sphinx_needs import exchange
+import ub_needs_exchange as exchange
 from sphinx_needs._jinja import compile_template
 from sphinx_needs.api import InvalidNeedException, add_external_need, del_need
 from sphinx_needs.api.need import _record_params

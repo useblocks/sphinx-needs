@@ -1268,6 +1268,293 @@ def test_links_from_filter_system_requirements(test_app):
     assert needs["SA_UNLOCK"]["links"] == ["SR_LOCK", "SR_UNLOCK"]
 
 
+# -- links_from_match --------------------------------------------------------------------
+#
+# The per-need spelling of a derived link type of the kind ``links`` with a ``join``:
+# every need whose ``field`` shares a value with this need's ``equals`` (a string split
+# on ``,`` and stripped, an array by item), each once, in need-id order, the need itself
+# left out unless ``include_self``, then ``filter`` as ``links_from_filter`` reads it.
+
+LINKS_FROM_MATCH_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_fields = {
+    "name": {"nullable": True},
+    "names": {"nullable": True, "schema": {"type": "array", "items": {"type": "string"}}},
+    "ref": {"nullable": True},
+    "num": {"nullable": True, "schema": {"type": "integer"}},
+}
+"""
+
+LINKS_FROM_MATCH_INDEX = """\
+Links from a match
+==================
+
+.. req:: Zed, closed
+   :id: LFM_Z
+   :name: A
+   :status: closed
+
+.. req:: B
+   :id: LFM_B
+   :name: A
+
+.. req:: A and B
+   :id: LFM_AB
+   :name: A, B
+
+.. req:: A list
+   :id: LFM_LIST
+   :names: C, D
+
+.. spec:: Repeated values
+   :id: LFM_REPEAT
+   :ref: A, B ,A
+   :links: [[links_from_match("name", "ref")]]
+
+   As text: :ndf:`links_from_match("name", "ref")`
+
+.. spec:: Filtered, keyword arguments
+   :id: LFM_FILTER
+   :ref: A
+   :links: [[links_from_match(field="name", equals="ref", filter="status != 'closed'")]]
+
+.. spec:: Itself
+   :id: LFM_SELF
+   :name: S
+   :ref: S
+   :links: [[links_from_match("name", "ref", include_self=True, filter="type == 'spec'")]]
+
+.. spec:: Itself, left out
+   :id: LFM_SELF_EX
+   :name: S
+   :ref: S
+   :links: [[links_from_match("name", "ref", filter="type == 'spec'")]]
+
+.. spec:: An array on every need
+   :id: LFM_ARRAY
+   :ref: D
+   :links: [[links_from_match("names", "ref")]]
+
+.. spec:: The reader in the filter
+   :id: LFM_CURRENT
+   :ref: A
+   :status: closed
+   :links: [[links_from_match("name", "ref", filter="status == current_need['status']")]]
+
+.. spec:: The filter names every need
+   :id: LFM_NEEDS
+   :ref: B
+   :links: [[links_from_match("name", "ref", filter="len(needs) > 1")]]
+
+.. spec:: Nothing matches
+   :id: LFM_NONE
+   :ref: nothing
+   :links: [[links_from_match("name", "ref")]]
+
+.. spec:: The reader holds no value
+   :id: LFM_UNSET
+   :links: [[links_from_match("name", "ref")]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), LINKS_FROM_MATCH_CONF),
+                (Path("index.rst"), LINKS_FROM_MATCH_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_links_from_match(test_app):
+    """``links_from_match`` links to every need whose ``field`` shares a value with the
+    need's ``equals``, each once, in need-id order (written ``LFM_Z``, ``LFM_B``,
+    ``LFM_AB``); ``filter`` as ``links_from_filter`` reads it, ``current_need`` and
+    ``needs`` included. Nothing found is no link and no warning."""
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    needs = _built_needs(app)
+    assert needs["LFM_REPEAT"]["links"] == ["LFM_AB", "LFM_B", "LFM_Z"]
+    assert needs["LFM_FILTER"]["links"] == ["LFM_AB", "LFM_B"]
+    assert needs["LFM_SELF"]["links"] == ["LFM_SELF", "LFM_SELF_EX"]
+    assert needs["LFM_SELF_EX"]["links"] == ["LFM_SELF"]
+    assert needs["LFM_ARRAY"]["links"] == ["LFM_LIST"]
+    assert needs["LFM_CURRENT"]["links"] == ["LFM_Z"]
+    assert needs["LFM_NEEDS"]["links"] == ["LFM_AB"]
+    assert needs["LFM_NONE"]["links"] == needs["LFM_UNSET"]["links"] == []
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    # need-id order, each once, however many values match
+    assert "As text: LFM_AB, LFM_B, LFM_Z" in html
+
+
+@pytest.mark.parametrize(
+    "call,message",
+    [
+        pytest.param(
+            '[[links_from_match("", "ref")]]',
+            "links_from_match needs a non-empty 'field'",
+            id="empty-field",
+        ),
+        pytest.param(
+            '[[links_from_match("name", " ")]]',
+            "links_from_match needs a non-empty 'equals'",
+            id="blank-equals",
+        ),
+        pytest.param(
+            '[[links_from_match("name", "num")]]',
+            "links_from_match: the argument 'equals' names 'num' (integer); a join "
+            "compares a string or an array of strings",
+            id="non-text-reader",
+        ),
+        pytest.param(
+            '[[links_from_match("num", "ref")]]',
+            "links_from_match: the argument 'field' names 'num' (integer); a join "
+            "compares a string or an array of strings",
+            id="non-text-candidate",
+        ),
+        pytest.param(
+            '[[links_from_match("links", "ref")]]',
+            "links_from_match: the argument 'field' names 'links', a link type; a join "
+            "compares text fields",
+            id="link-type",
+        ),
+        pytest.param(
+            '[[links_from_match("nosuch", "ref")]]',
+            "links_from_match: the argument 'field' names 'nosuch', which is not a field",
+            id="no-such-field",
+        ),
+        pytest.param(
+            '[[links_from_match("name", "ref", filter="type ==")]]',
+            "invalid syntax",
+            id="filter-does-not-parse",
+        ),
+    ],
+)
+def test_links_from_match_fails(make_app, tmp_path, call, message):
+    """An empty name, a field that is not text (a number, a link type, nothing), and a
+    filter that does not parse fail the call: one ``needs.dynamic_function`` warning
+    naming why (the field and its type), and no links."""
+    (tmp_path / "conf.py").write_text(LINKS_FROM_MATCH_CONF)
+    (tmp_path / "index.rst").write_text(
+        "Fails\n=====\n\n"
+        ".. req:: Target\n   :id: LFM_T\n   :name: A\n\n"
+        f".. spec:: Reader\n   :id: LFM_R\n   :ref: A\n   :num: 7\n   :links: {call}\n"
+    )
+    app = make_app(srcdir=tmp_path, buildername="needs", freshenv=True)
+    app.build()
+    warnings = build_warnings(app)
+    assert len(warnings) == 1, warnings
+    assert message in warnings[0], warnings[0]
+    assert "links_from_match" in warnings[0]
+    assert warnings[0].endswith("[needs.dynamic_function]")
+    assert _built_needs(app)["LFM_R"]["links"] == []
+
+
+LINKS_FROM_MATCH_LATER_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_fields = {
+    "key": {"nullable": True},
+    "ref": {"nullable": True},
+    "key_d": {"derive": {"kind": "copy", "field": "key"}},
+    "ref_d": {"derive": {"kind": "copy", "field": "ref"}},
+}
+"""
+
+LINKS_FROM_MATCH_LATER_INDEX = """\
+Fields computed after the links
+===============================
+
+.. req:: Keyed
+   :id: REQ_1
+   :key: K
+
+.. test:: Plain
+   :id: TEST_PLAIN
+   :ref: K
+   :links: [[links_from_match("key_d", "ref")]]
+
+.. test:: Names every need
+   :id: TEST_NEEDS
+   :ref: K
+   :links: [[links_from_match("key_d", "ref", filter="len(needs) > 0")]]
+
+.. test:: Reads the reader by a computed key
+   :id: TEST_CURRENT
+   :ref: K
+   :links: [[links_from_match("key_d", "ref", filter="current_need['re' + 'f'] is not None")]]
+
+.. test:: Derived equals
+   :id: TEST_EQ
+   :ref: K
+   :links: [[links_from_match("key", "ref_d")]]
+
+.. test:: Derived equals, filter names every need
+   :id: TEST_EQ_NEEDS
+   :ref: K
+   :links: [[links_from_match("key", "ref_d", filter="len(needs) > 0")]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), LINKS_FROM_MATCH_LATER_CONF),
+                (Path("index.rst"), LINKS_FROM_MATCH_LATER_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_links_from_match_reads_its_fields_whatever_the_filter(test_app):
+    """A ``links_from_match`` in a link field reads its ``field`` on every need and its
+    ``equals`` on its own need, which a rule computes after the link fields here: the
+    call is not run (``needs.derive_scope``), with or without a filter, also one whose
+    reads cannot be told from its text (naming ``needs``, or ``current_need`` by a
+    computed key), which would otherwise run on values not computed yet."""
+    app = test_app
+    app.build()
+    later = "which {} final only after the link fields are computed: the call is not run and the field is left empty [needs.derive_scope]"
+    key_d = (
+        "WARNING: dynamic function 'links_from_match' for option 'links' reads 'key_d' "
+        "on 6 needs (REQ_1, TEST_CURRENT, TEST_EQ and 3 more), " + later.format("are")
+    )
+
+    def ref_d(need_id: str) -> str:
+        return (
+            "WARNING: dynamic function 'links_from_match' for option 'links' reads "
+            f"'ref_d' on need '{need_id}', " + later.format("is")
+        )
+
+    assert sorted(build_warnings(app)) == sorted(
+        [
+            f"<srcdir>/index.rst:8: {key_d}",
+            f"<srcdir>/index.rst:13: {key_d}",
+            f"<srcdir>/index.rst:18: {key_d}",
+            f"<srcdir>/index.rst:23: {ref_d('TEST_EQ')}",
+            f"<srcdir>/index.rst:28: {ref_d('TEST_EQ_NEEDS')}",
+        ]
+    )
+    needs = _built_needs(app)
+    for need_id in (
+        "TEST_PLAIN",
+        "TEST_NEEDS",
+        "TEST_CURRENT",
+        "TEST_EQ",
+        "TEST_EQ_NEEDS",
+    ):
+        assert needs[need_id]["links"] == [], need_id
+
+
 # -- three fixes from #1984 -------------------------------------------------------------
 
 PLAIN_CONF = """\

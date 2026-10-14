@@ -5,6 +5,7 @@ from sphinx_needs.functions.common import (
     echo,
     links_from_content,
     links_from_filter,
+    links_from_match,
     test,
 )
 from sphinx_needs.functions.functions import (  # noqa: F401
@@ -21,4 +22,5 @@ NEEDS_COMMON_FUNCTIONS: list[DynamicFunction] = [
     calc_sum,
     links_from_content,
     links_from_filter,
+    links_from_match,
 ]

@@ -178,13 +178,13 @@ _EXCLUDE_TYPE = "kind 'fingerprint': the role 'exclude' must be a list of field 
             id="on-a-link-type",
         ),
         # one problem per rule, the first in the order the problems are looked for:
-        # reserved role, unknown role, side, role not taken, role value, a name twice
+        # unknown role, side, role not taken, role value, a name twice
         pytest.param(
-            {"kind": "fingerprint", "join": {}, "nope": 1},
+            {"kind": "fingerprint", "join": {"field": "title", "equals": "title"}},
             False,
             "fingerprint",
-            "kind 'fingerprint': the 'join' role is reserved and not available yet",
-            id="first-reserved",
+            "kind 'fingerprint' does not take the role 'join'",
+            id="join-not-taken",
         ),
         pytest.param(
             {"kind": "fingerprint", "nope": 1, "fields": ["title"]},
