@@ -252,6 +252,88 @@ def test_every_call_of_a_list_is_counted(test_app):
     assert "stores 6 links" in _dense(app)[0]
 
 
+def _content_need(need_id: str, others: range) -> str:
+    refs = " ".join(f":need:`REQ_{j}`" for j in others if f"REQ_{j}" != need_id)
+    return (
+        f".. req:: {need_id}\n   :id: {need_id}\n   :c: [[links_from_content()]]\n\n"
+        f"   {refs}\n\n"
+    )
+
+
+@pytest.mark.parametrize(
+    ("test_app", "call"),
+    [
+        # every need matches the 3 others on grp: 3 x 4 = 12 > 1 x 4
+        (
+            _project(
+                _conf(1, {"m": {}}, 'needs_extra_options = ["grp"]\n'),
+                *(
+                    _need(
+                        "req",
+                        f"REQ_{i}",
+                        ":grp: g",
+                        ':m: [[links_from_match("grp", "grp")]]',
+                    )
+                    for i in range(1, 5)
+                ),
+            ),
+            "links_from_match",
+        ),
+        # every need's content references the 3 others: 3 x 4 = 12 > 1 x 4
+        (
+            _project(
+                _conf(1, {"c": {}}),
+                *(_content_need(f"REQ_{i}", range(1, 5)) for i in range(1, 5)),
+            ),
+            "links_from_content",
+        ),
+    ],
+    indirect=["test_app"],
+)
+def test_every_link_valued_call_is_counted(test_app, call):
+    """``links_from_match`` and ``links_from_content`` are counted as
+    ``links_from_filter`` is."""
+    app = test_app
+    app.build()
+    assert len(_dense(app)) == 1
+    assert (
+        f"stores 12 links computed by the dynamic function {call} on 4 needs"
+        in (_dense(app)[0])
+    )
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            _conf(1, {"rel": {}}),
+            # each call computes the 3 other needs before the next call fails: the
+            # field keeps its placeholder, so nothing is stored and nothing counted
+            # (3 + 3 = 6 would be more than 1 x 4)
+            *(
+                _need(
+                    "req",
+                    f"REQ_{i}",
+                    ':rel: [[links_from_filter("True")]], '
+                    '[[links_from_filter("this ( is bad")]]',
+                )
+                for i in (1, 2)
+            ),
+            _need("req", "REQ_3"),
+            _need("req", "REQ_4"),
+        )
+    ],
+    indirect=True,
+)
+def test_a_failed_field_adds_nothing(test_app):
+    """A field whose call fails holds its written items: the links its other calls
+    computed are never stored, so they are not counted."""
+    app = test_app
+    app.build()
+    assert _needs(app)["REQ_1"]["rel"] == []
+    assert _dense(app) == []
+
+
 BACK = {"rel": {"derive": {"kind": "links", "where": "type == 'spec'"}}}
 
 
@@ -299,7 +381,11 @@ def test_dead_links_a_rule_stores_are_counted(test_app):
     app.build()
     assert _needs(app)["REQ_1"]["mentions"] == ["NOPE_1", "NOPE_2", "NOPE_3"]
     assert _fields(app) == ["mentions"]
-    assert "stores 3 links" in _dense(app)[0]
+    # REQ_2's rule computed an empty list: it is one of the needs computing it
+    assert (
+        "stores 3 links computed by its derive rule (kind 'content_links') on 2 needs,"
+        in _dense(app)[0]
+    )
 
 
 PARTS = {
@@ -498,6 +584,31 @@ def test_one_warning_per_link_type(test_app):
     app = test_app
     app.build()
     assert _fields(app) == ["open_all", "rel"]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            # the inline link type declared before the derived one
+            _conf(2, {"rel": {}, **OPEN_ALL}),
+            *(
+                need.replace(
+                    "   :status:",
+                    "   :rel: [[links_from_filter(\"status == 'open'\")]]\n   :status:",
+                )
+                for need in FIVE
+            ),
+        )
+    ],
+    indirect=True,
+)
+def test_the_warnings_follow_the_declared_order(test_app):
+    """The warnings come in the order the link types are declared, whether a rule or
+    the calls compute them: here the inline ``rel`` first."""
+    app = test_app
+    app.build()
+    assert _fields(app) == ["rel", "open_all"]
 
 
 # --- every build ---------------------------------------------------------------------
