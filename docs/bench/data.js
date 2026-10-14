@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791989392963,
+  "lastUpdate": 1792000431361,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -24984,6 +24984,42 @@ window.BENCHMARK_DATA = {
             "value": 60.24198347999999,
             "unit": "s",
             "extra": "Commit: c3714f99153567aec8dbf73fd117d4ad3229695c\nBranch: master\nTime: 2026-10-14T16:48:19+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "75832ceb0ff27bff26920ae2bef4a8f5b236e503",
+          "message": "🐛 ty: possibly-unresolved-reference, disjoint-cast and missing-type-argument on, and the bug the first found (#2243)\n\n## What\n\nTurns on three ty rules that are off by default, and fixes the 15\nfindings they made, one of them a real crash. In\n`packages/sphinx-needs`, with small changes in\n`packages/sphinx-codelinks` and `packages/sphinx-test-reports`.\n\n| Rule | Findings | Resolution |\n|---|---|---|\n| `possibly-unresolved-reference` | 8 | 1 real bug (below); 7\nrestructured so the checker can follow them |\n| `disjoint-cast` | 3 | 2 replaced with real types; 1 deliberate duck\ntyping, suppressed with its reason |\n| `missing-type-argument` | 4 | type arguments supplied |\n\n**The bug.** `add_need(..., docname=None)` creates a need with no\ndocument. Drawing it in a `needflow` or `needuml` ended the build with\n`UnboundLocalError`, because `calculate_link` never bound `link` for it.\nGiving it an empty link was not enough: every caller wrapped it as\n`[[{link}]]`, and PlantUML rejects `[[]]` as a syntax error. The same\nempty `[[]]` already came out whenever the builder could make no URL\n(`NoUri`). So now:\n- needflow and needuml's `flow()` omit the `[[…]]` when there is no\nlink;\n- `ref()` returns its label as plain text, since `[[ label]]` would\nparse as a link to the label text.\n\n**The rest:**\n- **needflow:** `:debug:` keeps the diagram source in a variable instead\nof reading it back off a node built in another branch. This also removes\none `# ty: ignore[not-subscriptable]`.\n- **`need_count`:** the \"too many filters\" branch becomes the `else`.\n- **`layout.py`:** each name is now set and used in one block. The\nrendered HTML was checked identical for all 13 grids.\n- **`api/need.py`:** narrows the links with `isinstance` instead of\ncasting a list.\n- **`need_constraints.py`:** renders the constraint error message from\n`dict(need.items())`, a real dict, instead of casting a `NeedItem` to\none.\n- **Generics:** a recursive `_Trie` alias for the id trie, and\n`dict[str, Callable[[str], Any]]` for test-reports' option spec.\npygments' `HtmlFormatter[str]` is named only under `TYPE_CHECKING`,\nbecause sphinx-codelinks declares no pygments floor.\n- **sphinx-codelinks:** its libclang comment object deliberately stands\nin for a tree-sitter `Node`, so that cast keeps a `# ty:\nignore[disjoint-cast]`. Typing it properly would take an `isinstance`\nrefactor across five sites.\n\n## Why\n\nContinues #1835, after #2241 and #2242.\n\n## Tests\n\n- **`tests/test_need_no_docname.py`** builds a project with a need added\nwith `docname=None`, drawn by a needflow and a needuml (`flow()` and two\n`ref()` forms), with PlantUML actually rendering. It asserts no warning,\nboth diagrams drawn, no link whose target is a label, and that\n`ref(option=...)` shows the need's field. I reverted each part of the\nfix in turn and the test went red each time:\n\n  | Fix reverted | How the test fails |\n  |---|---|\n  | `link` left unbound | `UnboundLocalError` |\n| needflow's `[[]]` | PlantUML: \"Some diagram description contains\nerrors\" |\n  | needuml's `[[]]` | the same PlantUML error |\n  | `ref()`'s fallback | `href=\"labelled\"` assertion |\n  | `ref()` fallback returns `\"\"` | label assertion |\n  | `ref()` fallback ignores `option=` | field assertion |\n\n- **Adversarial review:** an independent reviewer checked every\nbehaviour-preservation claim, with probes and a before/after HTML\ncomparison across all 13 layout grids.\n  - Round 1 found the `[[]]` problem above.\n- The fix went back to the same reviewer, who verified that linked\nneeds' PlantUML lines are byte-identical before and after, re-ran the\nmutations, and returned **SHIP**.\n- Its one surviving mutation (`ref()` ignoring `option=`) is now caught\nby the field assertion.\n- **Gates:** lint, typecheck, `test-needs` (2877 passed),\n`test-codelinks` (1050), `test-reports` (462).\n\n**Follow-up, out of scope:** `:links:` *to* a need with no document\nstill ends the build, with `AssertionError: External URL must be set` in\n`roles/need_outgoing.py`. That predates this PR.\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue. *(Written by Claude Code at a\nmaintainer's request.)*\n- [x] I ran the package's tests (`uv run poe test-<package>`) and they\npass.\n- [x] Documentation is updated where behaviour or options change. *(No\noptions change.)*\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*. *(sphinx-needs: Bug fixes, Internal changes.)*\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-14T19:52:18+02:00",
+          "tree_id": "15632c8e2f1f9f25e4a3eb6553622d6c1ee60851",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/75832ceb0ff27bff26920ae2bef4a8f5b236e503"
+        },
+        "date": 1792000420297,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1166663519999247,
+            "unit": "s",
+            "extra": "Commit: 75832ceb0ff27bff26920ae2bef4a8f5b236e503\nBranch: master\nTime: 2026-10-14T19:52:18+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 57.49724256700006,
+            "unit": "s",
+            "extra": "Commit: 75832ceb0ff27bff26920ae2bef4a8f5b236e503\nBranch: master\nTime: 2026-10-14T19:52:18+02:00"
           }
         ]
       }
