@@ -72,7 +72,7 @@ def process_need_count(
                     )
                 )
                 amount = "inf" if amount_2 == 0 else f"{amount_1 / amount_2 * 100:2.1f}"
-            elif len(filters) > 2:
+            else:
                 raise NeedsInvalidFilter(
                     "Filter not valid. Got too many filter elements. Allowed are 1 or 2. "
                     'Use " ? " only once to separate filters.'

@@ -213,6 +213,10 @@ def calculate_link(
     :return:
     """
     builder = app.builder
+    # no link for a need with neither an external url nor a document, e.g. one added
+    # through the API without a docname, as when no URI can be built for it below; a
+    # caller then draws the need without a ``[[...]]``, which PlantUML refuses empty
+    link = ""
     try:
         if need_info["is_external"]:
             assert need_info["external_url"] is not None, (

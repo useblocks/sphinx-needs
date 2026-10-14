@@ -127,10 +127,11 @@ def get_need_node_rep_for_plantuml(
 
     # node representation for plantuml
     color_suffix = f" #{';'.join(node_colors)}" if node_colors else ""
-    need_node_code = '{style} "{node_text}" as {id} [[{link}]]{color_suffix}'.format(
+    # an empty `[[]]` is a PlantUML syntax error, so a need with no link has none
+    need_node_code = '{style} "{node_text}" as {id}{link}{color_suffix}'.format(
         id=get_entity_name(entity_names, need_info["id_complete"]),
         node_text=node_text,
-        link=node_link,
+        link=f" [[{node_link}]]" if node_link else "",
         color_suffix=color_suffix,
         style=presentation.type_style,
     )
@@ -267,6 +268,8 @@ def process_needflow_plantuml(
             variant_location=(current_needflow["docname"], current_needflow["lineno"]),
         )
         found_needs = graph.needs
+        # the diagram source, for `:debug:`; set only when a diagram is drawn
+        uml_source: str | None = None
 
         if found_needs:
             plantuml_block_text = ".. plantuml::\n\n   @startuml   @enduml"
@@ -322,6 +325,7 @@ def process_needflow_plantuml(
                 puml_node["uml"] += create_legend(needs_config.types)
 
             puml_node["uml"] += "\n@enduml"
+            uml_source = puml_node["uml"]
             set_plantuml_paths(puml_node, env, current_needflow["docname"])
 
             scale = int(current_needflow["scale"])
@@ -396,13 +400,8 @@ def process_needflow_plantuml(
 
         # We have to restrustructer the needflow
         # If this block should be organized differently
-        if current_needflow["debug"] and found_needs:
-            # We can only access puml_node if found_needs is set.
-            # Otherwise it was not been set, or we get outdated data
-            if isinstance(puml_node, nodes.figure):
-                data = puml_node.children[0]["uml"]  # ty: ignore[not-subscriptable]
-            else:
-                data = puml_node["uml"]
+        if current_needflow["debug"] and uml_source is not None:
+            data = uml_source
             # the same shape the graphviz engine uses, so that `:debug:` produces the
             # same kind of block whichever engine drew the diagram; Pygments has no
             # PlantUML lexer, so the source is shown unhighlighted rather than wrongly

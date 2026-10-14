@@ -51,8 +51,22 @@ Deprecations
   writes one yet -- and one above 1 is read as format 1 with a warning, while one that is
   not an integer of 1 or more refuses that source.
 
+Bug fixes
+.........
+
+- 🐛 A need with no document and no external url -- one added through the API with
+  ``docname=None`` -- no longer ends the build with an ``UnboundLocalError`` when a
+  :ref:`needflow` or :ref:`needuml` draws it; it is drawn without a link. A need the
+  builder can make no URL for is drawn without one too, where the PlantUML source used to
+  carry an empty ``[[]]`` that PlantUML refuses as a syntax error, and needuml's ``ref()``
+  then gives its label as plain text
+
 Internal changes
 ................
+
+- 🏷️ ty's ``possibly-unresolved-reference``, ``disjoint-cast`` and ``missing-type-argument``
+  rules are on: the bug above is what the first found, and the rest of its findings are
+  rewritten so the checker can follow them
 
 - 🏷️ Every function in the shipped code is annotated, and ruff's ``ANN`` rules keep it so
   across the workspace; ``sphinx_needs.setup`` now declares its types, and the internal

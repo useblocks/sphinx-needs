@@ -458,6 +458,13 @@ blanket-ignore-comment = "error"
 possibly-missing-attribute = "error"
 possibly-missing-import = "error"
 unsound-yield = "error"
+# a name bound on only some paths to its use: a latent `UnboundLocalError`, or (more often)
+# a flow ty cannot follow, which is clearer restructured anyway
+possibly-unresolved-reference = "error"
+# a `cast` between types that share no value is a claim the checker cannot test
+disjoint-cast = "error"
+# a bare generic (`dict`, `list`) is `dict[Unknown, Unknown]`: nothing in it is checked
+missing-type-argument = "error"
 
 [[tool.ty.overrides]]
 # the paths where `unsound-return-statement` and `unsound-assignment` already report

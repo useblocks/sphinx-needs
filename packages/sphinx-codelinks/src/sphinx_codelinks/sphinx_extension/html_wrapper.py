@@ -1,13 +1,21 @@
 from collections.abc import Generator
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pygments import highlight
 from pygments.formatters import HtmlFormatter
 from pygments.lexers import CLexer
 
+if TYPE_CHECKING:
+    # generic over its output type in the stubs; pygments accepts the subscript at run
+    # time only in recent releases (`Formatter.__class_getitem__`), and this package
+    # declares no pygments floor
+    _HtmlFormatter = HtmlFormatter[str]
+else:
+    _HtmlFormatter = HtmlFormatter
 
-class LineFormatter(HtmlFormatter):
+
+class LineFormatter(_HtmlFormatter):
     def __init__(self, lineno_href: dict[int, str], *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.lineno_href = lineno_href
