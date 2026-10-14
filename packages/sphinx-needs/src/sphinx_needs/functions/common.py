@@ -1083,12 +1083,15 @@ def join_matches(
         index = _join_index(needs, field, reads)
         if shared is not None:
             shared[key] = index
+    values = join_values(need.get(equals))
     if reads is not None:
         reads.note_read(need, equals)
-        for need_id in index.pending:
-            reads.note_read(needs[need_id], field)
+        # a need without values matches nothing, whatever the others hold
+        if values:
+            for need_id in index.pending:
+                reads.note_read(needs[need_id], field)
     found: set[str] = set()
-    for value in join_values(need.get(equals)):
+    for value in values:
         found.update(index.ids.get(value, ()))
     if not include_self:
         found.discard(need["id"])

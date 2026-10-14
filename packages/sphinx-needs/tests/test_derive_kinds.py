@@ -2223,7 +2223,7 @@ def test_a_join_without_values_reads_no_other_need(test_app):
     )
     assert build_warnings(app) == [
         f"<srcdir>/index.rst:14: {read}",
-        f"<srcdir>/index.rst:23: {read}",
+        f"<srcdir>/index.rst:25: {read}",
     ]
 
 
