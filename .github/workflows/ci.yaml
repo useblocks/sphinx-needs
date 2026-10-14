@@ -480,7 +480,7 @@ jobs:
           # no `python-version`, so this runs on the root `.python-version`
           cache-python: true
       - name: Install graphviz
-        # 13 `needflow` directives across three pages need `dot`; PlantUML needs a JDK,
+        # three `needflow` directives across two pages need `dot`; PlantUML needs a JDK,
         # which every Linux runner image already has
         run: sudo apt-get install graphviz
       - name: Point PLANTUML_JAR at the vendored jar

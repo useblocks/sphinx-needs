@@ -1,5 +1,3 @@
-:hide-navigation:
-
 .. _configuration:
 
 Configuration

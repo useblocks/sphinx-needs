@@ -3420,6 +3420,7 @@ dependencies = [
 
 [package.optional-dependencies]
 docs = [
+    { name = "furo" },
     { name = "packaging" },
     { name = "pillow" },
     { name = "sphinx", version = "7.4.7", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-22-sphinx-needs-workspace-sphinx-7' or extra == 'group-22-sphinx-needs-workspace-typing' or (extra == 'group-22-sphinx-needs-workspace-sphinx-8' and extra == 'group-22-sphinx-needs-workspace-sphinx-9')" },
@@ -3427,7 +3428,6 @@ docs = [
     { name = "sphinx", version = "9.1.0", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (python_full_version >= '3.12' and extra != 'group-22-sphinx-needs-workspace-sphinx-7' and extra != 'group-22-sphinx-needs-workspace-sphinx-8' and extra != 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-9' and extra == 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-sphinx-8') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-8' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (extra == 'group-22-sphinx-needs-workspace-sphinx-8' and extra == 'group-22-sphinx-needs-workspace-typing')" },
     { name = "sphinx-ai-index" },
     { name = "sphinx-design" },
-    { name = "sphinx-immaterial" },
     { name = "sphinx-needs" },
     { name = "sphinxcontrib-plantuml" },
 ]
@@ -3438,13 +3438,13 @@ pytest = [
 [package.metadata]
 requires-dist = [
     { name = "docutils", specifier = ">=0.21" },
+    { name = "furo", marker = "extra == 'docs'", specifier = ">=2025.12.19" },
     { name = "packaging", marker = "extra == 'docs'" },
     { name = "pillow", marker = "extra == 'docs'" },
     { name = "sphinx", specifier = ">=7.4" },
     { name = "sphinx", marker = "extra == 'docs'" },
     { name = "sphinx-ai-index", marker = "extra == 'docs'", editable = "packages/sphinx-ai-index" },
     { name = "sphinx-design", marker = "extra == 'docs'" },
-    { name = "sphinx-immaterial", marker = "extra == 'docs'" },
     { name = "sphinx-needs", editable = "packages/sphinx-needs" },
     { name = "sphinx-needs", marker = "extra == 'docs'", editable = "packages/sphinx-needs" },
     { name = "sphinxcontrib-plantuml", marker = "extra == 'docs'" },

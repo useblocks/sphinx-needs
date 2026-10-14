@@ -25,10 +25,6 @@ from packaging.version import Version
 
 import sphinx_needs
 
-sys.path.append(os.path.abspath("."))
-
-from ub_theme.conf import html_theme_options
-
 # -- Project information -----------------------------------------------------
 
 project = "sphinx-test-reports"
@@ -45,7 +41,6 @@ _release = Version(release)
 version = f"{_release.major}.{_release.minor}"
 
 needs_id_regex = ".*"
-needs_css = "dark.css"
 
 # -- General configuration ---------------------------------------------------
 
@@ -61,10 +56,17 @@ extensions = [
     "sphinx_test_reports",
     "sphinxcontrib.plantuml",
     "sphinx_design",
-    "sphinx_immaterial",
     # writes `ai_docs_index.json`, the page index ubCode reads (packages/sphinx-ai-index)
     "sphinx_ai_index",
 ]
+
+# The useblocks look for furo, shared with the repository's other docs sites
+# (docs-theme/README.md at the repository root). A copy of these docs outside the
+# repository has no such directory, so a build from one falls back to plain furo.
+_DOCS_THEME = Path(__file__).resolve().parents[3] / "docs-theme"
+if _DOCS_THEME.is_dir():
+    sys.path.insert(0, str(_DOCS_THEME))
+    extensions.append("ub_docs_theme")
 
 
 def _resolve_plantuml() -> str:
@@ -126,8 +128,6 @@ plantuml = _resolve_plantuml()
 plantuml_output_format = "png"
 
 
-# Add any paths that contain templates here, relative to this directory.
-templates_path = ["_templates", "ub_theme/templates"]
 if Version(sphinx_needs.__version__) >= Version("7.0.0"):
     needs_fields = {
         "more_info": {"nullable": True},
@@ -160,38 +160,31 @@ language = "en"
 # This pattern also affects html_static_path and html_extra_path .
 exclude_patterns = []
 
-# The name of the Pygments (syntax highlighting) style to use.
-pygments_style = "sphinx"
-
 
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "sphinx_immaterial"
-
-# Theme options are theme-specific and customize the look and feel of a theme
-# further.  For a list of options available for each theme, see the
-# documentation.
-#
-html_logo = "_static/sphinx-test-reports-logo.svg"
+html_theme = "furo"
 html_favicon = "_static/sphinx-test-reports-logo.svg"
 html_title = "Sphinx-Test-Reports"
 
-other_options = {
-    "repo_url": "https://github.com/useblocks/sphinx-needs",
-    "repo_name": "sphinx-needs",
-    "font": False,
+# Theme options are theme-specific and customize the look and feel of a theme
+# further. The sidebar, the view/edit buttons, the repository they point into and the
+# shared stylesheet come from `ub_docs_theme` above; what is here is this site's own.
+html_theme_options = {
+    # the logo is an icon, not a wordmark like the other sites' logos, so the name stays
+    "sidebar_hide_name": False,
+    "light_logo": "sphinx-test-reports-logo.svg",
+    "dark_logo": "sphinx-test-reports-logo.svg",
+    "source_directory": "packages/sphinx-test-reports/docs/",
 }
-html_theme_options.update(other_options)
-html_theme_options["features"].extend(["navigation.tabs", "navigation.tabs.sticky"])
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["_static", "ub_theme/css", "ub_theme/js"]
-html_css_files = ["ub-theme.css"]
-html_js_files = ["jquery.js"]
+html_static_path = ["_static"]
+html_css_files = ["test-reports.css"]
 
 # -- Options for HTMLHelp output ---------------------------------------------
 

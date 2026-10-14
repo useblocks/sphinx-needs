@@ -2,7 +2,7 @@
 
 The useblocks look for [furo](https://pradyunsg.me/furo/), in ONE place for every furo
 documentation site in this repository: sphinx-needs (when `DOCS_THEME=furo`, which is what
-Read the Docs builds), sphinx-codelinks and sphinx-mounts.
+Read the Docs builds), sphinx-codelinks, sphinx-mounts and sphinx-test-reports.
 
 | file | what it is |
 |---|---|
