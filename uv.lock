@@ -23,6 +23,7 @@ members = [
     "sphinx-needs-workspace",
     "sphinx-needs-workspace-tools",
     "sphinx-test-reports",
+    "ub-needs-exchange",
     "ub-project",
     "ub-test-reports",
 ]
@@ -3109,6 +3110,7 @@ dependencies = [
     { name = "sphinx-needs" },
     { name = "sphinx-needs-workspace-tools" },
     { name = "sphinx-test-reports" },
+    { name = "ub-needs-exchange" },
     { name = "ub-project" },
     { name = "ub-test-reports" },
 ]
@@ -3262,6 +3264,7 @@ requires-dist = [
     { name = "sphinx-needs-workspace-tools", virtual = "tools" },
     { name = "sphinx-test-reports", editable = "packages/sphinx-test-reports" },
     { name = "sphinx-test-reports", extras = ["docs"], marker = "extra == 'docs-reports'", editable = "packages/sphinx-test-reports" },
+    { name = "ub-needs-exchange", editable = "packages/ub-needs-exchange" },
     { name = "ub-project", editable = "packages/ub-project" },
     { name = "ub-test-reports", editable = "packages/ub-test-reports" },
 ]
@@ -3980,6 +3983,11 @@ sdist = { url = "https://files.pythonhosted.org/packages/a3/26/b09b8010994eccc3c
 wheels = [
     { url = "https://files.pythonhosted.org/packages/67/81/4add07e5172b7ac40d8ed5ff580409a7801a4fe26d529bdd915401dabfbe/typing_inspection-0.4.4-py3-none-any.whl", hash = "sha256:65b8397ba37ccbce054456aaccddfc91e6e3083c92824df348d96ca832f3f147", size = 14750, upload-time = "2026-08-12T12:37:24.648Z" },
 ]
+
+[[package]]
+name = "ub-needs-exchange"
+version = "1.0.0"
+source = { editable = "packages/ub-needs-exchange" }
 
 [[package]]
 name = "ub-project"
