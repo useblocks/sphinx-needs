@@ -37,3 +37,4 @@ def test_need_without_docname_in_diagrams(test_app):
     )
     assert "labelled" in svgs
     assert 'href="labelled"' not in svgs
+    assert "status_of_nodoc" in svgs  # the `option=` form reads the need's field

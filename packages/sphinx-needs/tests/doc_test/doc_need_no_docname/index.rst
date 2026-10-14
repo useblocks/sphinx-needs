@@ -12,4 +12,4 @@ Need without a document
 
    {{flow("R_NODOC")}}
    {{flow("R_DOC")}}
-   note "{{ref("R_NODOC", text="labelled")}} {{ref("R_NODOC", option="title")}}" as N
+   note "{{ref("R_NODOC", text="labelled")}} {{ref("R_NODOC", option="status")}}" as N

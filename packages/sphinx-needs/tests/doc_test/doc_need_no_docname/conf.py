@@ -22,6 +22,8 @@ class NoDocname(SphinxDirective):
             need_type="req",
             title="Need without a document",
             id="R_NODOC",
+            # rendered only by `ref(option="status")`: no diagram card shows a status
+            status="status_of_nodoc",
         )
 
 
