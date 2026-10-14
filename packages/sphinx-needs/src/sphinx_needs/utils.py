@@ -8,7 +8,7 @@ import re
 from collections.abc import Callable, Collection, Iterable
 from dataclasses import dataclass
 from functools import lru_cache, reduce, wraps
-from typing import TYPE_CHECKING, Any, Final, ParamSpec, Protocol, TypeVar
+from typing import TYPE_CHECKING, Any, Final, ParamSpec, Protocol, TypeAlias, TypeVar
 from urllib.parse import urlparse
 
 from docutils import nodes
@@ -329,17 +329,20 @@ def _whole_ids_pattern(ids: Iterable[str]) -> re.Pattern[str] | None:
         )
 
 
+_Trie: TypeAlias = "dict[str, _Trie]"
+
+
 def _trie_pattern(ids: list[str]) -> str:
     """The regular expression of a trie of ``ids``: at an id's end, the longer ids that
     continue it are tried first (a greedy optional group)."""
-    root: dict[str, dict] = {}
+    root: _Trie = {}
     for item in ids:
         node = root
         for char in item:
             node = node.setdefault(char, {})
         node[""] = {}
 
-    def emit(node: dict[str, dict]) -> str:
+    def emit(node: _Trie) -> str:
         branches = [
             re.escape(char) + emit(child) for char, child in node.items() if char
         ]

@@ -363,9 +363,14 @@ class SourceAnalyse:
             # ``c`` is a LibclangComment duck-typing the tree-sitter Node
             # interface SourceComment reads (``.text`` / ``.start_point.row``);
             # the Node-only path (find_associated_scope) is guarded by
-            # ``is_libclang`` so it never runs on these.
+            # ``is_libclang`` so it never runs on these. The cast is that duck typing,
+            # which is why ty, seeing two unrelated classes, has to be told.
             src_comments = [
-                SourceComment(cast("TreeSitterNode", c), c.column) for c in comments
+                SourceComment(
+                    cast("TreeSitterNode", c),  # ty: ignore[disjoint-cast]
+                    c.column,
+                )
+                for c in comments
             ]
             src_file = SourceFile(src_path.absolute())
             src_file.add_comments(src_comments)

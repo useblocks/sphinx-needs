@@ -1100,6 +1100,8 @@ class LayoutHandler:
         :return: need-table node
         """
         common_more_cols = 0
+        side_left_morerows = 0
+        side_right_morerows = 0
 
         if side_left:
             if side_left == "full":
@@ -1162,6 +1164,11 @@ class LayoutHandler:
         content_entry.insert(0, self.node.children)
         content_row += content_entry
 
+        # Construct table
+        self.node_tbody += head_row
+        self.node_tbody += meta_row
+        self.node_tbody += content_row
+
         # FOOTER row
         if footer:
             footer_row = nodes.row(classes=["need", "footer"])
@@ -1170,12 +1177,6 @@ class LayoutHandler:
             )
             footer_entry += self.get_section("footer")
             footer_row += footer_entry
-
-        # Construct table
-        self.node_tbody += head_row
-        self.node_tbody += meta_row
-        self.node_tbody += content_row
-        if footer:
             self.node_tbody += footer_row
         node_tgroup += self.node_tbody
 
@@ -1292,16 +1293,15 @@ class LayoutHandler:
             side_entry += self.get_section("side")
             content_row += side_entry
 
+        # Construct table
+        self.node_tbody += content_row
+
         # FOOTER row
         if footer:
             footer_row = nodes.row(classes=["footer"])
             footer_entry = nodes.entry(classes=["footer"])
             footer_entry += self.get_section("footer")
             footer_row += footer_entry
-
-        # Construct table
-        self.node_tbody += content_row
-        if footer:
             self.node_tbody += footer_row
         node_tgroup += self.node_tbody
 

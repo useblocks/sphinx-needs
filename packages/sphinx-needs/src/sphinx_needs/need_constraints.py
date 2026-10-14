@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any, cast
-
 from sphinx_needs._jinja import render_template_string
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsMutable
@@ -52,7 +50,7 @@ def process_constraints(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
                         msg = str(executable_constraints["error_message"])
                         error_msg = render_template_string(
                             msg,
-                            cast(dict[str, Any], need),
+                            dict(need.items()),
                             autoescape=False,
                         )
 

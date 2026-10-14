@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from copy import copy, deepcopy
 from dataclasses import replace
 from pathlib import Path
-from typing import Any, Literal, TypedDict, TypeVar, cast
+from typing import Any, Literal, TypedDict, TypeVar
 
 from docutils import nodes
 from docutils.parsers import Parser
@@ -1581,7 +1581,7 @@ def _copy_links(
                 tuple(links["links"].value) + tuple(copy_links)
             )
     else:
-        copy_links_literal = cast(list[NeedLink], copy_links)
+        copy_links_literal = [li for li in copy_links if isinstance(li, NeedLink)]
         if links["links"] is None:
             links["links"] = LinksLiteralValue(copy_links_literal)
         elif isinstance(links["links"], LinksLiteralValue):

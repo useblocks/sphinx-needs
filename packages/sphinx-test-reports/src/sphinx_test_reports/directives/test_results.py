@@ -1,4 +1,5 @@
 import os
+from collections.abc import Callable
 from typing import Any
 
 from docutils import nodes
@@ -12,7 +13,7 @@ class TestResults(nodes.General, nodes.Element):
     pass
 
 
-class _NoOptions(dict):
+class _NoOptions(dict[str, Callable[[str], Any]]):
     """An option spec that declares no option, and is still TRUE.
 
     docutils parses a directive's option block only ``if option_spec:``
