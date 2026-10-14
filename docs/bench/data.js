@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792008480377,
+  "lastUpdate": 1792021552529,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -25056,6 +25056,42 @@ window.BENCHMARK_DATA = {
             "value": 42.602050002,
             "unit": "s",
             "extra": "Commit: 3210ac5c3945e2987e340f6f74759120e82b33c7\nBranch: master\nTime: 2026-10-14T22:06:44+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "97ba171c360203b62956da131441c86440c5e2cc",
+          "message": "👌 sphinx-needs: warn once when a derived link type stores too many links (#2258)\n\nA derive rule that links every need to a large share of the project is\ncorrect — and costly: each need stores the\nwhole list, and each link a back link. Nothing named the rule before.\nNow a link type whose computed links number\nmore than `needs_derive_max_links_per_need` (default 100) per need of\nthe project is reported once, as the warning\n`needs.derive_dense`. It counts, never times, so every build of a\nproject warns alike.\n\n## What a user gets\n\n```toml\n[needs.links.rel]\nderive = { kind = \"links\", where = \"status == 'open'\" }\n```\n\nOn 500 needs, half of them open, the rule stores 124 750 links (249.5\nper need), and the build says:\n\n> WARNING: Link type 'rel' stores 124750 links computed by its derive\nrule (kind 'links') on 500 needs, more than 100\n> per need of the project (500 needs, at most 50000); the longest list,\n250 links, is REQ_000001's. Narrow the rule's\n> where, roll the set up on one need over the back links (a count or\ncollect over a '_back' field), or show it in a\n> view such as needtable; to keep it, raise\nneeds_derive_max_links_per_need (0 never warns) or add\n> 'needs.derive_dense' to suppress_warnings [needs.derive_dense]\n\nAt 2 000 needs the same rule stores about 2 000 000 links and grows\n`needs.json` from 2.5 MB to 58 MB; a rule that ten\nneeds pass (about ten links per need) is not reported at the default.\n\n## How it counts\n\n- **What:** for each link type, the links in the lists its `links` /\n`content_links` rule computed (`derive` or\n`derive_by_type`, every need holding it) — or, on a link type without a\nrule, the lists its `links_from_filter`,\n`links_from_content` and `links_from_match` calls computed. Written\nlinks, links a `needextend` adds and back links\nare never counted; dead links and part links a rule stores are; a link\ntwo calls of one need compute is stored, and\n  counted, once.\n- **Per what:** the needs of the project — every need, external and\nimported ones too, never a need part; a rule on one\n  need type is divided by all of them, not by its own needs.\n- **When:** strictly more than the threshold times the needs; `0` (or\nless) never warns. Once per link type, with no location\n  (a finding of the configuration, as `needs.derive_invalid` is).\n- **Where:** at the end of `resolve_functions`, from the final lists, on\nevery build — warm builds and builds that read\n  no document included.\n\n## Config and silence\n\n`needs_derive_max_links_per_need` (`int`, default `100`, `rebuild =\n\"html\"`), also read from `ubproject.toml`\n`[needs] derive_max_links_per_need`. Silence one project with\n`suppress_warnings = [\"needs.derive_dense\"]`, or raise\nthe threshold, or set it to `0` (or less). A threshold that is not an\ninteger (a string, a boolean) is reported by\nSphinx's type check and counts nothing. No per-rule option: the\nthreshold and the suppression cover \"I meant it\".\n\n## Docs\n\nA \"What a rule costs\" subsection of Derived fields (what a rule stores,\nkeeping `where` selective, a view instead of a\nstored set, a roll-up over back links, the inline calls), the confval\nbeside `needs_filter_max_time`, and a sentence in\nthe dynamic functions page.\n\n## Conformance corpus\n\nThree cases appended (63 → 66): `derive-dense-rule` (an over, an under,\na boundary at exactly the threshold — not\nreported — and a `derive_by_type` rule divided by the project's needs),\n`derive-dense-inline` (`links_from_filter` on\nevery need of a plain link type, reported at that link type; written\nlinks beside a call not counted) and\n`derive-dense-off` (`0` never reports). The runner shares the code\n`derive_dense`. ubCode follows in a twin PR\n(useblocks/ubcode#4032), re-vendoring the file.\n\n## Changelog, versioning\n\n`Unreleased` (9.1.0), Improvements: the confval and the warning, its\ndefault and its silence. The warning is on by\ndefault, so a build with `-W` and such a rule fails after the upgrade\nuntil the warning is suppressed or the threshold\nraised (or set to `0`) — said in the entry.\n\nNo `ENV_DATA_VERSION` bump: nothing stored in the environment changes —\nthe count reads the needs at `write-started`\nand the confval is `rebuild = \"html\"`. Measured: an environment built by\nmaster, then built by this branch without\n`-E`, re-reads no document (\"0 added, 0 changed, 0 removed\") and warns.\n\n`uv run poe lint`, `uv run poe typecheck`, `uv run poe check-workspace`,\nthe full sphinx-needs suite, the Sphinx 8 cell\nfor the new tests, the sphinx-test-reports suite and the docs build (no\nwarnings) are green. The count's cost is within\nthe run-to-run spread of master's builds on the dense shapes.\n\nCloses #2202",
+          "timestamp": "2026-10-15T01:44:30+02:00",
+          "tree_id": "1991aa5eb2a3f73b81048972da762ff0ed91937e",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/97ba171c360203b62956da131441c86440c5e2cc"
+        },
+        "date": 1792021543308,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1111698090000175,
+            "unit": "s",
+            "extra": "Commit: 97ba171c360203b62956da131441c86440c5e2cc\nBranch: master\nTime: 2026-10-15T01:44:30+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 50.857540296999986,
+            "unit": "s",
+            "extra": "Commit: 97ba171c360203b62956da131441c86440c5e2cc\nBranch: master\nTime: 2026-10-15T01:44:30+02:00"
           }
         ]
       }
