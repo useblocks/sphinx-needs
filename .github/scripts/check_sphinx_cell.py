@@ -21,7 +21,7 @@ from packaging.requirements import Requirement
 from packaging.version import Version
 
 
-def check(group):
+def check(group: str) -> int:
     config = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
     requirements = config["dependency-groups"].get(group)
     if requirements is None:

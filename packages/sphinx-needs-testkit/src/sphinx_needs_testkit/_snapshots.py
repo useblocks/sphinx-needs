@@ -7,8 +7,13 @@ only consumer is one suite is not shared code, it is that suite's code in a shar
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Any
+
 from docutils.nodes import document
 from syrupy.extensions.single_file import SingleFileSnapshotExtension, WriteMode
+
+if TYPE_CHECKING:
+    from syrupy.types import SerializableData, SerializedData
 
 
 class DoctreeSnapshotExtension(SingleFileSnapshotExtension):
@@ -22,7 +27,7 @@ class DoctreeSnapshotExtension(SingleFileSnapshotExtension):
     _write_mode = WriteMode.TEXT
     file_extension = "doctree.xml"
 
-    def serialize(self, data, **kwargs):
+    def serialize(self, data: SerializableData, **kwargs: Any) -> SerializedData:
         if not isinstance(data, document):
             raise TypeError(f"Expected document, got {type(data)}")
         doc = data.deepcopy()
