@@ -30,7 +30,7 @@ from packaging.requirements import Requirement
 from packaging.version import Version
 
 
-def series(text):
+def series(text: str) -> str:
     parsed = Version(text)
     return f"{parsed.major}.{parsed.minor}"
 
@@ -38,7 +38,7 @@ def series(text):
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def lower_bound(parsed):
+def lower_bound(parsed: Requirement) -> Version | None:
     """The floor one requirement declares, or None if it declares none."""
     lower = [
         Version(spec.version)
@@ -48,7 +48,7 @@ def lower_bound(parsed):
     return max(lower) if lower else None
 
 
-def docutils_floor_of_sphinx():
+def docutils_floor_of_sphinx() -> str | None:
     """The lowest docutils series the installed sphinx accepts, or None if not declared."""
     for requirement in requires("sphinx") or []:
         parsed = Requirement(requirement)
@@ -63,11 +63,11 @@ def docutils_floor_of_sphinx():
     return None
 
 
-def workspace_members():
+def workspace_members() -> list[str]:
     """Every member's distribution name, from the root manifest's workspace globs."""
     manifest = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     globs = manifest.get("tool", {}).get("uv", {}).get("workspace", {}).get("members")
-    names = []
+    names: list[str] = []
     for pattern in globs or []:
         for path in sorted(ROOT.glob(f"{pattern}/pyproject.toml")):
             project = tomllib.loads(path.read_text(encoding="utf-8")).get("project", {})
@@ -76,7 +76,7 @@ def workspace_members():
     return names
 
 
-def docutils_floors_of_members():
+def docutils_floors_of_members() -> list[tuple[str, str]]:
     """(declaration, series) for each docutils floor an installed member declares.
 
     Extras count: a floor a member declares in an extra is still a floor it promises its
@@ -108,7 +108,7 @@ def docutils_floors_of_members():
     return floors
 
 
-def check():
+def check() -> int:
     try:
         docutils_version = version("docutils")
         stubs_version = version("types-docutils")

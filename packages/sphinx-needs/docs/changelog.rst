@@ -54,6 +54,10 @@ Deprecations
 Internal changes
 ................
 
+- 🏷️ Every function in the shipped code is annotated, and ruff's ``ANN`` rules keep it so
+  across the workspace; ``sphinx_needs.setup`` now declares its types, and the internal
+  ``profile`` decorator preserves the signature of what it wraps
+
 - 🔧 ``ENV_DATA_VERSION`` is 12: the first build after upgrading re-reads every document, so a
   ``join`` rule that 9.0.0 refused, and a ``links_from_match`` it did not know, are shown on the
   pages whose sources did not change too (:pr:`2228`)

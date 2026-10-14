@@ -320,16 +320,38 @@ extend-select = [
   "SIM", # flake8-simplify
   "TID", # flake8-tidy-imports: no relative imports from a parent package
   "UP",  # pyupgrade
+  # flake8-annotations: every function in shipped code is annotated. ty has no equivalent of
+  # mypy's `disallow_untyped_defs` -- it reads an unannotated parameter as `Unknown` and
+  # checks nothing that flows through it -- so this is the gate `mypy --strict` used to be.
+  # It covers what ships and what CI runs; the suites, docs and benchmarks are exempted below
+  "ANN",
 ]
 # ISC004 is ignored for now: every occurrence here is a deliberately wrapped string
-# literal and its only fix is unsafe, so adopting it belongs with the wider ruleset review
-extend-ignore = ["B904", "ISC001", "ISC004", "ICN001", "N818", "RUF012"]
+# literal and its only fix is unsafe, so adopting it belongs with the wider ruleset review.
+# ANN401 (an explicit `Any`) is not the missing-annotation gate: an explicit `Any` is a
+# decision, and burning those down is a separate piece of work (#1835)
+extend-ignore = [
+  "ANN401",
+  "B904",
+  "ISC001",
+  "ISC004",
+  "ICN001",
+  "N818",
+  "RUF012",
+]
 
-# The one per-file table in this configuration, and it is SCOPED to the package that needs
-# it rather than written as `**/tests/*`: at the root that glob would silently loosen
-# sphinx-needs', sphinx-mounts' and `tools/`' suites too. It is the member's own entry,
-# re-rooted -- the root has no per-file-ignores of its own to extend.
+[tool.ruff.lint.flake8-annotations]
+# an `__init__` with at least one annotated parameter needs no `-> None`, as under mypy
+mypy-init-return = true
+
+# Every table here is SCOPED to what needs it. A test-wide glob loosens every suite at once,
+# so it is right only for a rule that is about shipped code, as `ANN` is; anything else
+# names its package -- the sphinx-codelinks entry is the member's own, re-rooted.
 [tool.ruff.lint.per-file-ignores]
+"packages/*/tests/**" = ["ANN"]
+"packages/*/docs/**" = ["ANN"]
+"packages/sphinx-needs/performance/**" = ["ANN"]
+"tools/tests/**" = ["ANN"]
 "packages/sphinx-codelinks/tests/*" = [
   "E402",   # the `pytest.importorskip("clang.cindex")` guard has to precede the imports
   "SIM300", # `loader.PARSE_OPTIONS` reads as a constant, so `assert PARSE_OPTIONS == x`

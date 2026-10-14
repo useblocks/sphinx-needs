@@ -9,6 +9,7 @@ API must be in sync with the JUnit parser in ``junitparser.py``.
 import json
 import operator
 import os
+from collections.abc import Iterable
 from functools import reduce
 from typing import Any
 
@@ -27,7 +28,7 @@ _JSON_KINDS = {
 }
 
 
-def dict_get(root, items, default=None):
+def dict_get(root: Any, items: Iterable[str | int], default: Any = None) -> Any:
     """
     Access a nested object in root by item sequence.
 
@@ -44,7 +45,7 @@ def dict_get(root, items, default=None):
 
 
 class JsonParser:
-    def __init__(self, json_path, *args, **kwargs):
+    def __init__(self, json_path: str, *args: Any, **kwargs: Any) -> None:
         self.json_path = json_path
 
         if not os.path.exists(self.json_path):
@@ -68,7 +69,7 @@ class JsonParser:
 
         self.json_mapping = kwargs.get("json_mapping", {})
 
-    def validate(self):
+    def validate(self) -> bool:
         # For JSON we validate nothing here.
         # But to be compatible with the API, we need to return True
         return True
@@ -81,7 +82,7 @@ class JsonParser:
         :return: list of test suites as dictionaries
         """
 
-        def parse_testcase(json_dict) -> dict[str, Any]:
+        def parse_testcase(json_dict: dict[str, Any]) -> dict[str, Any]:
             tc_mapping = self.json_mapping.get("testcase")
             tc_dict = {
                 k: dict_get(json_dict, v[0], v[1]) for k, v in tc_mapping.items()
@@ -96,7 +97,7 @@ class JsonParser:
                 tc_dict["result"] = normalize_result(result)
             return tc_dict
 
-        def parse_testsuite(json_dict) -> dict[str, Any]:
+        def parse_testsuite(json_dict: dict[str, Any]) -> dict[str, Any]:
             ts_mapping = self.json_mapping.get("testsuite")
             ts_dict = {
                 k: dict_get(json_dict, v[0], v[1])
@@ -140,7 +141,7 @@ class JsonParser:
 
         return result_data
 
-    def docutils_table(self):
+    def docutils_table(self) -> None:
         pass
 
 

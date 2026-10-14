@@ -154,7 +154,7 @@ _INERT_PLANTUML_COMMAND = (
 )
 
 
-def _skip_plantuml_node(self, node: nodes.Element) -> None:
+def _skip_plantuml_node(self: nodes.NodeVisitor, node: nodes.Element) -> None:
     """Visit a ``plantuml`` node by dropping it: no subprocess, no warning, no markup."""
     raise nodes.SkipNode
 

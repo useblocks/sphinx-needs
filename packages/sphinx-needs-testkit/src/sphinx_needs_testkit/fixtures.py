@@ -47,6 +47,7 @@ from pathlib import Path
 
 import pytest
 from sphinx.testing.util import SphinxTestApp
+from syrupy.assertion import SnapshotAssertion
 
 from ._plantuml import (
     make_plantuml_inert,
@@ -127,7 +128,7 @@ def plantuml_command() -> str:
 
 @pytest.fixture(scope="function")
 def test_app(
-    make_app,
+    make_app: Callable[..., SphinxTestApp],
     sphinx_test_tempdir: Path,
     tests_dir: Path,
     test_app_events: Sequence[tuple[str, Callable[..., object], int]],
@@ -248,7 +249,7 @@ def test_app(
 
 
 @pytest.fixture
-def snapshot_doctree(snapshot):
+def snapshot_doctree(snapshot: SnapshotAssertion) -> SnapshotAssertion:
     """Snapshot fixture for doctrees.
 
     Here we try to sanitize the doctree, to make the snapshots reproducible.

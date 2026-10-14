@@ -8,7 +8,7 @@ import re
 from collections.abc import Callable, Collection, Iterable
 from dataclasses import dataclass
 from functools import lru_cache, reduce, wraps
-from typing import TYPE_CHECKING, Any, Final, Protocol, TypeVar
+from typing import TYPE_CHECKING, Any, Final, ParamSpec, Protocol, TypeVar
 from urllib.parse import urlparse
 
 from docutils import nodes
@@ -368,19 +368,20 @@ def _prefix_link_string(value: str, prefixed: Callable[[str], str]) -> str:
     return "".join(parts)
 
 
-FuncT = TypeVar("FuncT")
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
 
 
-def profile(keyword: str) -> Callable[[FuncT], FuncT]:
+def profile(keyword: str) -> Callable[[Callable[_P, _R]], Callable[_P, _R]]:
     """
     Activate profiling for a specific function.
 
     Activation only happens, if given keyword is part of ``needs_profiling``.
     """
 
-    def inner(func):
+    def inner(func: Callable[_P, _R]) -> Callable[_P, _R]:
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _R:
             with cProfile.Profile() as pr:
                 result = func(*args, **kwargs)
 

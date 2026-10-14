@@ -41,10 +41,10 @@ class TestCaseDirective(TestCommonDirective):
 
     final_argument_whitespace = True
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
-    def run(self, suite: dict[str, Any] | None = None):
+    def run(self, suite: dict[str, Any] | None = None) -> list[nodes.Node]:
         """The case's need.
 
         ``suite`` is the parsed suite when a ``:auto_cases:`` expansion runs this directive

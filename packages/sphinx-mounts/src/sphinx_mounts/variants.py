@@ -33,6 +33,7 @@ here: it comes from sphinx-needs when that is installed, and otherwise from
 from __future__ import annotations
 
 import ast
+from collections.abc import Callable
 from typing import Any
 
 
@@ -620,7 +621,7 @@ class _PestRecogniser:
         self._ws_star()
         return True
 
-    def _choice(self, *alternatives) -> bool:
+    def _choice(self, *alternatives: Callable[[], bool]) -> bool:
         """PEG ordered choice: first alternative that matches wins."""
         for alternative in alternatives:
             save = self.pos
@@ -629,7 +630,7 @@ class _PestRecogniser:
             self.pos = save
         return False
 
-    def _seq(self, *parts) -> bool:
+    def _seq(self, *parts: str | Callable[[], bool]) -> bool:
         """PEG sequence: all or nothing, restoring the position on failure."""
         save = self.pos
         for part in parts:
@@ -827,7 +828,7 @@ class _PestRecogniser:
         `=` that follows.
         """
 
-        def cmp(operator: str, right) -> bool:
+        def cmp(operator: str, right: Callable[[], bool]) -> bool:
             return self._seq(
                 lambda: (self._ws_star(), True)[1],
                 operator,
@@ -923,7 +924,7 @@ class _PestRecogniser:
         operators take a `number_literal` only.
         """
 
-        def yoda(left, operator: str) -> bool:
+        def yoda(left: Callable[[], bool], operator: str) -> bool:
             return self._seq(
                 left,
                 lambda: (self._ws_star(), True)[1],

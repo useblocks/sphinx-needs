@@ -43,14 +43,14 @@ class TestSuiteDirective(TestCommonDirective):
 
     final_argument_whitespace = True
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
     def run(
         self,
         suite: dict[str, Any] | None = None,
         seen: dict[str, IdHolder] | None = None,
-    ):
+    ) -> list[nodes.Node]:
         """The suite's need and, from an ``:auto_cases:`` expansion, its direct cases'.
 
         ``suite`` is the parsed suite when ``test-file``'s ``:auto_suites:`` runs this

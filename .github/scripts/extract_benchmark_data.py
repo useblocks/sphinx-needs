@@ -2,7 +2,7 @@ import json
 import sys
 
 
-def extract(input_file, output_file):
+def extract(input_file: str, output_file: str) -> None:
     with open(input_file) as in_file:
         input_data = json.load(in_file)
 

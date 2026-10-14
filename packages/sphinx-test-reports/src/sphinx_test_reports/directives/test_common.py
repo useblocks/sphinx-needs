@@ -197,7 +197,7 @@ class TestCommonDirective(Directive):
     Common directive, which provides some shared functions to "real" directives.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.env = self.state.document.settings.env
         self.app = self.env.app
@@ -272,7 +272,7 @@ class TestCommonDirective(Directive):
             line_field: "" if source_line in (-1, None) else str(source_line),
         }
 
-    def deterministic_case_id_for(self, case):
+    def deterministic_case_id_for(self, case: dict[str, Any]) -> str | None:
         """Deterministic ID for ``case``, or ``None`` if the option is off."""
         if not getattr(self.app.config, "tr_deterministic_case_ids", False):
             return None
@@ -309,7 +309,7 @@ class TestCommonDirective(Directive):
             message = message.rstrip(".") + "; give the directive an :id: of its own"
         return self.refuse("need", message)
 
-    def collect_extra_options(self):
+    def collect_extra_options(self) -> None:
         """Collect any extra options and their values that were specified in the directive.
 
         docutils lowercases an option's name before it looks it up, so a configured name is
@@ -324,7 +324,7 @@ class TestCommonDirective(Directive):
                 if option_name.lower() in self.options:
                     self.extra_options[option_name] = self.options[option_name.lower()]
 
-    def load_test_file(self):
+    def load_test_file(self) -> list[dict[str, Any]] | None:
         """
         Loads the defined test_file under self.test_file.
 
@@ -368,7 +368,7 @@ class TestCommonDirective(Directive):
         self.results = self.app.testreport_data[self.test_file]
         return self.results
 
-    def prepare_basic_options(self):
+    def prepare_basic_options(self) -> None:
         """
         Reads and checks the needed basic data like name, id, links, status, ...
 
@@ -429,7 +429,7 @@ class TestCommonDirective(Directive):
         # Also collect any extra options while we're at it
         self.collect_extra_options()
 
-    def _apply_property_links(self, properties):
+    def _apply_property_links(self, properties: dict[str, str]) -> None:
         """Map JUnit <properties> values to sphinx-needs link fields via tr_property_link_types."""
         tr_property_link_types = getattr(self.app.config, "tr_property_link_types", {})
         for prop_name, link_field in tr_property_link_types.items():
