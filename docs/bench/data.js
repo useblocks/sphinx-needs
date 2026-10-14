@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792000431361,
+  "lastUpdate": 1792008480377,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -25020,6 +25020,42 @@ window.BENCHMARK_DATA = {
             "value": 57.49724256700006,
             "unit": "s",
             "extra": "Commit: 75832ceb0ff27bff26920ae2bef4a8f5b236e503\nBranch: master\nTime: 2026-10-14T19:52:18+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3210ac5c3945e2987e340f6f74759120e82b33c7",
+          "message": "🏷️ #1835 cheap fixes: a latent TypeError in FieldSchema, and three suppressions gone (#2248)\n\n## What\n\nThree of the \"cheap, worth doing first\" items from #1835, in\n`packages/sphinx-needs`. One is a latent bug; together they remove three\n`# ty: ignore` comments.\n\n- **`needs_schema.py`: a latent `TypeError` in `FieldSchema`.**\n- The `predicate_defaults` check read `isinstance(pair[1],\nFieldLiteralValue) | FieldFunctionArray`. That evaluates `bool | type`,\nwhich raises `TypeError` for every (filter, value) pair, so constructing\na `FieldSchema` with predicate defaults always failed.\n- No build reached it, because `_set_predicate_defaults` attaches\npredicates after construction with `object.__setattr__`.\n  - Now: `isinstance(pair[1], FieldLiteralValue | FieldFunctionArray)`.\n- **`filter_common.py`: `status` is converted in one expression.**\n- The old `try`/`except` around `str(status)` and `re.split` could not\nraise, because the option is `directives.unchanged_required`, a `str`.\n  - It was the only reason `status` was typed `str | list[str]`.\n- **`views.py`:** `filter_ids` builds its need-and-part list as a typed\nlocal, so `extend` accepts part ids.\n\n**Left out on purpose:** the fourth cheap item, annotating\n`debug.START_TIME` / `EXECUTE_TIME_MEASUREMENTS`.\n- ty infers `EXECUTE_TIME_MEASUREMENTS = False` as `Literal[False]`, so\nit treats the body of the `measure_time` wrapper as unreachable and\nnever checks it.\n- Once the flag is annotated, ty reports `func.__name__` on a `TypeVar`\nbound to `Callable`, in both sphinx-needs' and sphinx-codelinks' copies.\n- Fixing that needs a decision about callables without a `__name__`.\nWith measurement on, those already fail at run time. The details are\nrecorded in #1835.\n\n## Why\n\nContinues #1835.\n\n## Tests\n\n- **New tests in `tests/test_needs_schema.py`:** construction with a\n`FieldLiteralValue` predicate, construction with a `FieldFunctionArray`\npredicate, and a plain-`str` value being refused with `ValueError`. All\nthree fail with the `TypeError` against the old expression and pass with\nthe fix.\n- **Adversarial review:** an independent reviewer confirmed the parts\nthat carry the risk.\n- **Check (1A):** the now-working check rejects nothing real code\nproduces. Only two `FieldSchema(...)` constructions exist, neither\npasses predicates, and every `dataclasses.replace` site touches only\nfields whose `predicate_defaults` is `()`. Its probe build combined\npredicates, `derive`, derive cycles, `derive_by_type` and\n`needs_global_options`. That build produced identical warnings and\n`needs.json` on the parent commit and on this one.\n- **`status` rewrite:** equivalent for every directive that feeds it.\nAll eight `FilterBase` subclasses take `status` from `base_option_spec`.\n  - **`filter_ids`:** unchanged at runtime.\n  - **`debug.py` finding:** reproduced, cause included.\n- **Verdict:** SHIP-WITH-FIXES. The one fix was moving a changelog\nbullet, which is done.\n- **Gates:** lint, typecheck, `test-needs` (2880 passed).\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue. *(Written by Claude Code at a\nmaintainer's request.)*\n- [x] I ran the package's tests (`uv run poe test-<package>`) and they\npass.\n- [x] Documentation is updated where behaviour or options change. *(No\noptions change.)*\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*. *(Internal changes.)*\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-14T22:06:44+02:00",
+          "tree_id": "733f2e7c6e580febc6199d9748f184adeae6d3e5",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/3210ac5c3945e2987e340f6f74759120e82b33c7"
+        },
+        "date": 1792008471592,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07744125100000332,
+            "unit": "s",
+            "extra": "Commit: 3210ac5c3945e2987e340f6f74759120e82b33c7\nBranch: master\nTime: 2026-10-14T22:06:44+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 42.602050002,
+            "unit": "s",
+            "extra": "Commit: 3210ac5c3945e2987e340f6f74759120e82b33c7\nBranch: master\nTime: 2026-10-14T22:06:44+02:00"
           }
         ]
       }
