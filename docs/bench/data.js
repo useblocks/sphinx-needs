@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791976393158,
+  "lastUpdate": 1791976553936,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -24624,6 +24624,42 @@ window.BENCHMARK_DATA = {
             "value": 58.349163993000005,
             "unit": "s",
             "extra": "Commit: 881f666adcf2efc7d2f6b5ba9e40099d574c3d13\nBranch: master\nTime: 2026-10-14T13:11:45+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "871bd4722b2bf55cab32e4299eb2124af8c1ae1d",
+          "message": "📚 ub-needs-exchange: 1.0.0 was released on 14 October, the day its pull request merged (#2226)\n\nOne line: `packages/ub-needs-exchange/docs/changelog.rst` said\n`:Released: 2026-10-15`, the provisional date written before #2219's\nmerge; the merge happened on 2026-10-14, so the entry now says so. It\nmust land before the `ub-needs-exchange-v1.0.0` tag, whose GitHub\nRelease links this file and whose sdist carries it.\n\nNo code, no other file. ubCode: nothing.",
+          "timestamp": "2026-10-14T13:12:24+02:00",
+          "tree_id": "3c34b4a553a4144b0fa56b690ef9090a36882846",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/871bd4722b2bf55cab32e4299eb2124af8c1ae1d"
+        },
+        "date": 1791976545083,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.10978308899999689,
+            "unit": "s",
+            "extra": "Commit: 871bd4722b2bf55cab32e4299eb2124af8c1ae1d\nBranch: master\nTime: 2026-10-14T13:12:24+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 57.091379939999996,
+            "unit": "s",
+            "extra": "Commit: 871bd4722b2bf55cab32e4299eb2124af8c1ae1d\nBranch: master\nTime: 2026-10-14T13:12:24+02:00"
           }
         ]
       }
