@@ -259,7 +259,7 @@ derive = { kind = "count", over = "links", where = "type ==" }
 derive = { kind = "links", where = "  " }
 
 [needs.links.bad_link_join]
-derive = { kind = "links", where = "type == 'test'", join = { field = "owner", equals = "owner" } }
+derive = { kind = "links", where = "type == 'test'", join = { field = "owner", equals = "owner", ignore_case = true } }
 
 [needs.links.bad_link_value_kind]
 derive = { kind = "sum", field = "hours", over = "links" }
