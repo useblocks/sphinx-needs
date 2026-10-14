@@ -3,21 +3,6 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-.. image:: https://img.shields.io/pypi/l/sphinx-test-reports.svg
-    :target: https://pypi.python.org/pypi/sphinx-test-reports
-    :alt: License
-.. image:: https://img.shields.io/pypi/pyversions/sphinx-test-reports.svg
-    :target: https://pypi.python.org/pypi/sphinx-test-reports
-    :alt: Supported versions
-.. image:: https://readthedocs.org/projects/sphinx-test-reports/badge/?version=latest
-    :target: https://readthedocs.org/projects/sphinx-test-reports/
-.. image:: https://github.com/useblocks/sphinx-test-reports/actions/workflows/ci.yaml/badge.svg
-    :target: https://github.com/useblocks/sphinx-test-reports/actions/
-    :alt: CI Build Status
-.. image:: https://img.shields.io/pypi/v/sphinx-test-reports.svg
-    :target: https://pypi.python.org/pypi/sphinx-test-reports
-    :alt: PyPI Package latest release
-
 Sphinx-Test-Reports
 ===================
 
