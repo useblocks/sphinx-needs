@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791981576518,
+  "lastUpdate": 1791982066738,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -24840,6 +24840,42 @@ window.BENCHMARK_DATA = {
             "value": 59.213338214000004,
             "unit": "s",
             "extra": "Commit: e76f7d30198e96a908ae75dd157dc3e67ea87572\nBranch: master\nTime: 2026-10-14T14:38:01+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "770b951f095d807c43163bcb8b40bb5f211e7a56",
+          "message": "📚 sphinx-codelinks: the front-page hero spans the content width (#2239)\n\n## What\n\n`packages/sphinx-codelinks/docs/index.rst`: the hero's grid item goes\nfrom `:columns: 12 8 8 8` to `:columns: 12`. Package: `sphinx-codelinks`\n(docs only).\n\n## Why\n\nFrom the small breakpoint up the hero took 8 of 12 columns, the same as\nsphinx-needs' front page. On sphinx-needs the remaining third is filled\nby the grid container's `architecture-bg` background image. Codelinks\nhas no such image, so its title, intro and buttons sat in two thirds of\nthe column with the rest empty. This predates the shared theme: the file\nwas last changed in #2094.\n\n## Evidence\n\n- Measured in a browser at 1400 px wide, dark scheme: the hero item was\n**475 px** of a 736 px article before this change and is **712 px**\nafter.\n- `-nW --keep-going` docs build: the same 8 warnings as master, all\nintersphinx lookups this sandbox's proxy blocks\n(`sphinx-needs.readthedocs.io`, `www.sphinx-doc.org`).\n- `uv run poe lint`: 0.\n\nNo changelog entry: a front-page layout tweak, with nothing for users of\nthe extension.\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [ ] I ran the package's tests (`uv run poe test-<package>`) and they\npass. (Docs only: no package code changed.)\n- [x] Documentation is updated where behaviour or options change.\n- [ ] The package's `docs/changelog.rst` has an entry under\n*Unreleased*. (Layout only.)\n- [x] `uv run poe lint` and `uv run poe typecheck` pass. (lint run; no\nPython changed.)",
+          "timestamp": "2026-10-14T14:46:39+02:00",
+          "tree_id": "0dd3ad3b5e33b3ac80a876b0d30b2a23d65cc805",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/770b951f095d807c43163bcb8b40bb5f211e7a56"
+        },
+        "date": 1791982057602,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.0657510340000158,
+            "unit": "s",
+            "extra": "Commit: 770b951f095d807c43163bcb8b40bb5f211e7a56\nBranch: master\nTime: 2026-10-14T14:46:39+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 39.21146125900003,
+            "unit": "s",
+            "extra": "Commit: 770b951f095d807c43163bcb8b40bb5f211e7a56\nBranch: master\nTime: 2026-10-14T14:46:39+02:00"
           }
         ]
       }
