@@ -1777,3 +1777,420 @@ def test_add_field_declares_a_derived_field(test_app):
     app.build()
     assert build_warnings(app) == []
     assert _needs(app)["REQ_002"]["total"] == 3.0
+
+
+# -- the join role -----------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "reader,candidate,reader_values,candidate_values,match",
+    [
+        # the recon's match table, row by row (J2); a match is a shared value
+        pytest.param("A", "A", ["A"], ["A"], True, id="1-equal"),
+        pytest.param("A, B ,A", "A", ["A", "B", "A"], ["A"], True, id="2-repeated"),
+        pytest.param("A, B", "A, B", ["A", "B"], ["A", "B"], True, id="3-both-split"),
+        pytest.param("A", "A, B", ["A"], ["A", "B"], True, id="4-candidate-split"),
+        pytest.param("A", "a", ["A"], ["a"], False, id="5-case-sensitive"),
+        pytest.param("A", ["A", "C"], ["A"], ["A", "C"], True, id="6-list-candidate"),
+        pytest.param(["A", "C"], "A", ["A", "C"], ["A"], True, id="7-list-reader"),
+        pytest.param(" , ,B", "B", ["B"], ["B"], True, id="8-empty-items-dropped"),
+        pytest.param(None, "A", [], ["A"], False, id="9-reader-unset"),
+        pytest.param("", "A", [], ["A"], False, id="10-reader-empty"),
+        pytest.param("A", None, ["A"], [], False, id="11-candidate-unset"),
+        pytest.param("A", "", ["A"], [], False, id="11-candidate-empty"),
+        pytest.param("A", " A ", ["A"], ["A"], True, id="12-candidate-stripped"),
+        pytest.param("A", " ", ["A"], [], False, id="13-candidate-blank"),
+        # a number is no text (the declared role refuses such a field at load)
+        pytest.param("1", 1, ["1"], [], False, id="14-integer-candidate"),
+        pytest.param(1, 1, [], [], False, id="15-integer-both"),
+        # Python's whitespace: U+001F (a separator, which Unicode's White_Space lacks)
+        # and U+3000 (the ideographic space) are stripped too
+        pytest.param("\x1fA", "A　", ["A"], ["A"], True, id="strip-u001f-u3000"),
+        pytest.param("\x1c,　", "A", [], ["A"], False, id="strip-to-nothing"),
+        # an array's items are stripped, never split again; a non-string item is none
+        pytest.param(["A, B"], "A", ["A, B"], ["A"], False, id="list-item-not-split"),
+        pytest.param([" A ", "", 3, None], "A", ["A"], ["A"], True, id="list-items"),
+        pytest.param(("A",), "A", ["A"], ["A"], True, id="tuple"),
+        pytest.param(True, "True", [], ["True"], False, id="boolean"),
+    ],
+)
+def test_join_values(reader, candidate, reader_values, candidate_values, match):
+    """One normalisation on both sides of a join: a string is split on ``,`` and each
+    item stripped (Python's ``str.strip()`` whitespace), an array taken by its string
+    items, each stripped, empty items dropped; anything else gives no values. A
+    candidate matches when the two share a value, compared exactly.
+
+    The recon's rows 2, 3, 4, 6, 7, 12, 14 and 15 are where ``tr_link`` answers
+    otherwise (a repeated reader value linking twice, the candidate compared whole, a
+    list failing the call, a number compared to text): the join gives these answers.
+    Rows 16-18 (the reader itself, a part, an ``id`` join) are need-level:
+    ``test_the_join_candidates``.
+    """
+    assert common.join_values(reader) == reader_values
+    assert common.join_values(candidate) == candidate_values
+    assert bool(set(reader_values) & set(candidate_values)) is match
+
+
+JOIN_CANDIDATES_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_fields = {"key": {"nullable": True}, "ref": {"nullable": True}}
+needs_links = {
+    "by_key": {"derive": {"kind": "links", "join": {"field": "key", "equals": "ref"}}},
+    "by_key_self": {
+        "derive": {
+            "kind": "links",
+            "join": {"field": "key", "equals": "ref"},
+            "include_self": True,
+        }
+    },
+    "by_id": {"derive": {"kind": "links", "join": {"field": "id", "equals": "ref"}}},
+}
+"""
+
+JOIN_CANDIDATES_INDEX = """\
+Join candidates
+===============
+
+.. spec:: B
+   :id: SPEC_B
+   :key: K
+
+.. spec:: Z
+   :id: SPEC_Z
+   :key: K
+
+.. spec:: With parts
+   :id: SPEC_P
+   :key: K
+
+   :np:`(p1) one`
+
+.. test:: Self
+   :id: TEST_SELF
+   :key: K
+   :ref: K
+
+.. test:: By id
+   :id: TEST_ID
+   :ref: SPEC_Z, SPEC_B, p1, SPEC_P.p1
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), JOIN_CANDIDATES_CONF),
+                (Path("index.rst"), JOIN_CANDIDATES_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_the_join_candidates(test_app):
+    """The match table's need-level rows (J2 16-18): the reader is a candidate only
+    with ``include_self`` (``tr_link`` always includes it); the candidates are needs
+    only, so a need with parts matches once as itself and a part's id matches nothing;
+    an ``id`` join links the needs named, in need-id order whatever the order written.
+    """
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    needs = _needs(app)
+    assert needs["TEST_SELF"]["by_key"] == ["SPEC_B", "SPEC_P", "SPEC_Z"]
+    assert needs["TEST_SELF"]["by_key_self"] == [
+        "SPEC_B",
+        "SPEC_P",
+        "SPEC_Z",
+        "TEST_SELF",
+    ]
+    assert needs["TEST_ID"]["by_id"] == ["SPEC_B", "SPEC_Z"]
+
+
+JOIN_ONCE_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_fields = {
+    "name": {"nullable": True},
+    "ref": {"nullable": True},
+    "key": {"nullable": True},
+    "owner": {"nullable": True},
+    "owner_of": {
+        "derive": {
+            "kind": "copy",
+            "field": "owner",
+            "join": {"field": "key", "equals": "ref"},
+        }
+    },
+}
+needs_links = {
+    "tested": {"derive": {"kind": "links", "join": {"field": "name", "equals": "ref"}}},
+    "inline": {},
+}
+"""
+
+
+def _join_once_index(readers: int) -> str:
+    lines = ["Join once", "=========", ""]
+    for k in range(readers):
+        lines += [f".. spec:: S{k}", f"   :id: SPEC_{k:03d}", f"   :name: C{k}"]
+        lines += [f"   :key: C{k}", f"   :owner: o{k}", ""]
+        lines += [f".. test:: T{k}", f"   :id: TEST_{k:03d}", f"   :ref: C{k}"]
+        lines += ["   :inline: [[links_from_match('name', 'ref')]]", ""]
+    return "\n".join(lines)
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), JOIN_ONCE_CONF),
+                (Path("index.rst"), _join_once_index(6)),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_join_index_is_built_once_per_step(test_app, monkeypatch):
+    """A join reads its ``field`` on every need through one index from each value to
+    the needs holding it, built once per step of the build and shared by every need
+    holding the rule and by every ``links_from_match`` of the same field: 12 needs
+    hold ``tested`` (a link type, computed first) and 6 call ``links_from_match`` on
+    ``name``, one index; 12 hold ``owner_of`` (computed with the other fields), one
+    index of ``key``. Building it per need would make the join quadratic.
+    """
+    built: Counter[str] = Counter()
+    index = common._join_index
+
+    def counting(needs, field, reads):
+        built[field] += 1
+        return index(needs, field, reads)
+
+    monkeypatch.setattr(common, "_join_index", counting)
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    needs = _needs(app)
+    assert built == {"name": 1, "key": 1}
+    for k in range(6):
+        assert needs[f"TEST_{k:03d}"]["tested"] == [f"SPEC_{k:03d}"]
+        assert needs[f"TEST_{k:03d}"]["inline"] == [f"SPEC_{k:03d}"]
+        assert needs[f"TEST_{k:03d}"]["owner_of"] == f"o{k}"
+        assert needs[f"SPEC_{k:03d}"]["owner_of"] is None
+
+
+JOIN_STRATA_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+# Sphinx's own warning that a function in the configuration is not pickled
+suppress_warnings = ["config.cache"]
+needs_fields = {
+    "key": {"nullable": True},
+    "ref": {"nullable": True},
+    "owner": {"nullable": True},
+    "key_d": {"derive": {"kind": "copy", "field": "key"}},
+    "late_key": {"derive": {"kind": "copy", "field": "key", "after": "derived"}},
+    "o_derived": {
+        "derive": {
+            "kind": "copy",
+            "field": "owner",
+            "join": {"field": "key_d", "equals": "ref"},
+        }
+    },
+    "o_late": {
+        "derive": {
+            "kind": "copy",
+            "field": "owner",
+            "join": {"field": "late_key", "equals": "ref"},
+        }
+    },
+    "loop": {
+        "derive": {
+            "kind": "copy",
+            "field": "owner",
+            "join": {"field": "loop", "equals": "ref"},
+        }
+    },
+    "o_user": {
+        "derive_by_type": {
+            "test": {
+                "kind": "copy",
+                "field": "owner",
+                "join": {"field": "user_key", "equals": "ref"},
+                "select": "list",
+            }
+        }
+    },
+    "user_key": {"nullable": True},
+}
+needs_links = {
+    "by_key_d": {
+        "derive": {"kind": "links", "join": {"field": "key_d", "equals": "ref"}}
+    },
+}
+
+
+def later(app, need, needs):
+    return "K"
+
+
+needs_functions = [later]
+"""
+
+JOIN_STRATA_INDEX = """\
+Join strata
+===========
+
+.. req:: Owned
+   :id: REQ_1
+   :key: K
+   :owner: alice
+   :user_key: K
+
+.. req:: Owned by your function
+   :id: REQ_2
+   :owner: bob
+   :user_key: [[later()]]
+
+.. test:: Reader
+   :id: TEST_1
+   :ref: K
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), JOIN_STRATA_CONF),
+                (Path("index.rst"), JOIN_STRATA_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_join_reads_final_values(test_app):
+    """A join reads its ``field`` on every need, so it waits for every need computing
+    it in its own step: a ``copy`` join over a computed field computes after it
+    (``o_derived``, and ``o_late`` in the late step). A link type is computed first,
+    so a ``links`` join over a field computed after the link fields is not run, as a
+    ``where`` naming one is not (``needs.derive_scope``, naming the needs). A ``copy``
+    join over its own result reads itself on every need: a cycle of every need
+    holding it, through the join (``needs.derive_cycle``). Your own function computes
+    after every rule of its step, so a join reading what it computes says so, and
+    reads the placeholder.
+    """
+    app = test_app
+    app.build()
+    needs = _needs(app)
+    assert needs["TEST_1"]["o_derived"] == "alice"
+    assert needs["TEST_1"]["o_late"] == "alice"
+    assert needs["TEST_1"]["by_key_d"] == []
+    assert needs["TEST_1"]["loop"] is None
+    assert needs["TEST_1"]["o_user"] == ["alice"]
+    loop = (
+        "WARNING: derive rule 'copy' for option 'loop' is on a cycle: 'loop' on 3 "
+        "needs (REQ_1, REQ_2, TEST_1), through the join on 'loop'; the field is left "
+        "empty [needs.derive_cycle]"
+    )
+    scope = (
+        "WARNING: derive rule 'links' for option 'by_key_d' reads 'key_d' on 3 needs "
+        "(REQ_1, REQ_2, TEST_1), which are final only after the link fields are "
+        "computed: the rule is not run and the field is left empty [needs.derive_scope]"
+    )
+    assert build_warnings(app) == [
+        f"<srcdir>/index.rst:4: {scope}",
+        f"<srcdir>/index.rst:10: {scope}",
+        f"<srcdir>/index.rst:15: {scope}",
+        f"<srcdir>/index.rst:4: {loop}",
+        f"<srcdir>/index.rst:10: {loop}",
+        f"<srcdir>/index.rst:15: {loop}",
+        "<srcdir>/index.rst:15: WARNING: derive rule 'copy' for option 'o_user' read "
+        "'user_key' on need 'REQ_2' before it was computed: it is computed by your own "
+        "function 'later', which runs after the built-in functions "
+        "[needs.derive_scope]",
+    ]
+
+
+TR_LINK_DOCUMENTED_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_fields = {"classname": {"nullable": True}}
+needs_links = {
+    "tested": {
+        "derive": {
+            "kind": "links",
+            "join": {"field": "title", "equals": "classname"},
+            "include_self": True,
+        }
+    },
+    "inline": {},
+}
+"""
+
+#: sphinx-test-reports' documented ``tr_link`` usage
+#: (``packages/sphinx-test-reports/tests/doc_test/tr_link_documented``), its test-case
+#: and test-file as ``test`` needs; ``[[tr_link('classname', 'title')]]`` is the rule
+#: ``tested``, and both calls are rewritten as ``links_from_match``, its arguments
+#: swapped, with ``include_self=True``
+TR_LINK_DOCUMENTED_INDEX = """\
+tr_link, as documented
+======================
+
+.. spec:: sphinxcontrib.test_reports.test_reports
+   :id: TESTSPEC_001
+
+.. spec:: None
+   :id: TESTSPEC_NONE
+
+.. test:: A test file with the same role
+   :id: TESTFILE_1
+   :inline: [[links_from_match('title', 'classname', include_self=True)]]
+
+.. test:: Flake8 test case
+   :id: TESTLINK_1
+   :classname: sphinxcontrib.test_reports.test_reports
+   :inline: [[links_from_match('title', 'classname', include_self=True)]]
+
+.. spec:: sphinxcontrib.test_reports.test_reports
+   :id: TESTSPEC_002
+   :inline: [[links_from_match('classname', 'title', include_self=True)]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), TR_LINK_DOCUMENTED_CONF),
+                (Path("index.rst"), TR_LINK_DOCUMENTED_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_the_documented_tr_link_usage_as_a_join(test_app):
+    """``tr_link(test_option, target_option)`` is ``links`` with ``join = { field =
+    target_option, equals = test_option }`` and ``include_self = true``, inline
+    ``links_from_match(target_option, test_option, include_self=True)``: on the usage
+    sphinx-test-reports documents, the links ``tr_link`` gives there. The test-case links
+    both specs titled its classname, the test-file (no classname) nothing, not even the
+    spec titled ``None``; the other direction links the test-case back."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    needs = _needs(app)
+    assert needs["TESTLINK_1"]["tested"] == ["TESTSPEC_001", "TESTSPEC_002"]
+    assert needs["TESTLINK_1"]["inline"] == ["TESTSPEC_001", "TESTSPEC_002"]
+    assert needs["TESTFILE_1"]["tested"] == needs["TESTFILE_1"]["inline"] == []
+    assert needs["TESTSPEC_NONE"]["tested_back"] == []
+    assert needs["TESTSPEC_002"]["inline"] == ["TESTLINK_1"]
