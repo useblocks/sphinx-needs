@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791982066738,
+  "lastUpdate": 1791982769613,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -24876,6 +24876,42 @@ window.BENCHMARK_DATA = {
             "value": 39.21146125900003,
             "unit": "s",
             "extra": "Commit: 770b951f095d807c43163bcb8b40bb5f211e7a56\nBranch: master\nTime: 2026-10-14T14:46:39+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "23ac98950547636ac97a64fb963cc46831564961",
+          "message": "📚 sphinx-mounts, sphinx-test-reports: a front-page hero like sphinx-needs' and sphinx-codelinks' (#2240)\n\n## What\n\nsphinx-mounts' and sphinx-test-reports' front pages open with the same\nhero as the other two sites: a bold tagline, an italic pitch, and \"Get\nStarted\" (→ the installation page) / \"About useblocks\" pill buttons,\nfull width (12 columns, as on sphinx-codelinks since #2239). Packages:\n`sphinx-mounts`, `sphinx-test-reports` (docs only).\n\n- **sphinx-mounts**\n  - *Tagline:* \"Your sources, mounted into Sphinx.\"\n- *Pitch:* \"Mount external source trees into a Sphinx build without\ncopying or symlinking. The sources stay where they live, and Sphinx\nreads them in place under a docname prefix.\"\n- The old opening paragraph is now the pitch; its sentence about\nsupported formats stays below the hero.\n- **sphinx-test-reports**\n  - *Tagline:* \"Test results, inside your documentation.\"\n- *Pitch:* \"Turn JUnit XML and JSON test results into Sphinx-Needs items\nyou can link, filter and report on, right beside your requirements.\"\nThis names the two formats `parsers.rst` documents.\n- The one-line summary gives way to the pitch, and the feature list\nfollows.\n- **Shared by both**\n- As on sphinx-needs' front page, the real top-level title stays and is\nhidden with `:sd_hide_title:`, so the browser tab and the page index\nstill name the page.\n- The right-hand table of contents stays, because unlike sphinx-needs'\nfront page these have several sections.\n  - Every existing section stays below the hero.\n\n## Why\n\nThese were the two front pages without a hero, so they looked different\nfrom sphinx-needs and sphinx-codelinks.\n\n## Evidence\n\n- `-nW --keep-going` docs builds:\n  - sphinx-test-reports: exit 0, 0 warnings.\n- sphinx-mounts: the same 15 warnings as master, all intersphinx lookups\nthis sandbox's proxy blocks.\n- In a browser at 1400 px, light and dark, both pages:\n  - the hero is 712 px of a 736 px article;\n  - the `h1` is `display: none`;\n  - `<title>` is unchanged (\"sphinx-mounts\", \"Sphinx-Test-Reports\").\n- `uv run poe lint`: 0.\n\nNo changelog entries: front-page layout and copy only.\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [ ] I ran the package's tests (`uv run poe test-<package>`) and they\npass. (Docs only: no package code changed.)\n- [x] Documentation is updated where behaviour or options change.\n- [ ] The package's `docs/changelog.rst` has an entry under\n*Unreleased*. (Layout and copy only.)\n- [x] `uv run poe lint` and `uv run poe typecheck` pass. (lint run; no\nPython changed.)",
+          "timestamp": "2026-10-14T14:58:12+02:00",
+          "tree_id": "5f5053fbffbf7a2c232a936447b457c168dd7dfd",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/23ac98950547636ac97a64fb963cc46831564961"
+        },
+        "date": 1791982759708,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07649961500000302,
+            "unit": "s",
+            "extra": "Commit: 23ac98950547636ac97a64fb963cc46831564961\nBranch: master\nTime: 2026-10-14T14:58:12+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 43.27408814,
+            "unit": "s",
+            "extra": "Commit: 23ac98950547636ac97a64fb963cc46831564961\nBranch: master\nTime: 2026-10-14T14:58:12+02:00"
           }
         ]
       }
