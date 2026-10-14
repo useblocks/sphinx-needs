@@ -127,10 +127,11 @@ def get_need_node_rep_for_plantuml(
 
     # node representation for plantuml
     color_suffix = f" #{';'.join(node_colors)}" if node_colors else ""
-    need_node_code = '{style} "{node_text}" as {id} [[{link}]]{color_suffix}'.format(
+    # an empty `[[]]` is a PlantUML syntax error, so a need with no link has none
+    need_node_code = '{style} "{node_text}" as {id}{link}{color_suffix}'.format(
         id=get_entity_name(entity_names, need_info["id_complete"]),
         node_text=node_text,
-        link=node_link,
+        link=f" [[{node_link}]]" if node_link else "",
         color_suffix=color_suffix,
         style=presentation.type_style,
     )

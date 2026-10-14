@@ -56,7 +56,10 @@ Bug fixes
 
 - 🐛 A need with no document and no external url -- one added through the API with
   ``docname=None`` -- no longer ends the build with an ``UnboundLocalError`` when a
-  :ref:`needflow` or :ref:`needuml` draws it; it is drawn without a link
+  :ref:`needflow` or :ref:`needuml` draws it; it is drawn without a link. A need the
+  builder can make no URL for is drawn without one too, where the PlantUML source used to
+  carry an empty ``[[]]`` that PlantUML refuses as a syntax error, and needuml's ``ref()``
+  then gives its label as plain text
 
 Internal changes
 ................

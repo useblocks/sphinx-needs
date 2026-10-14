@@ -7,7 +7,9 @@ from pygments.formatters import HtmlFormatter
 from pygments.lexers import CLexer
 
 if TYPE_CHECKING:
-    # generic over its output type in the stubs only; at run time it takes no argument
+    # generic over its output type in the stubs; pygments accepts the subscript at run
+    # time only in recent releases (`Formatter.__class_getitem__`), and this package
+    # declares no pygments floor
     _HtmlFormatter = HtmlFormatter[str]
 else:
     _HtmlFormatter = HtmlFormatter

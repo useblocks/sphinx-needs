@@ -488,10 +488,11 @@ class JinjaFunctions:
             if need_info["type_color"]
             else ""
         )
-        need_uml = '{style} "{node_text}" as {id} [[{link}]]{color_suffix}'.format(
+        # an empty `[[]]` is a PlantUML syntax error, so a need with no link has none
+        need_uml = '{style} "{node_text}" as {id}{link}{color_suffix}'.format(
             id=make_entity_name(need_id),
             node_text=node_text,
-            link=link,
+            link=f" [[{link}]]" if link else "",
             color_suffix=color_suffix,
             style=need_info["type_style"],
         )
@@ -550,6 +551,9 @@ class JinjaFunctions:
             value_to_string(need_or_part.get(option, "")) if option else str(text or "")
         ).strip()
 
+        if not link:
+            # `[[ text]]` would link to the text itself, and `[[]]` does not parse
+            return link_text
         return f"[[{link}{' ' if link_text else ''}{link_text}]]"
 
     def filter(self, filter_string: str) -> list[NeedItem]:
