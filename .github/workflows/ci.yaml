@@ -420,6 +420,42 @@ jobs:
         run: uv run --no-sync sphinx-build -nW --keep-going -b html docs docs/_build/html -T
         working-directory: packages/sphinx-codelinks
 
+  docs-mounts:
+    name: Docs mounts
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    # sphinx-mounts' docs had no job of their own: a break in them broke only the
+    # sphinx-mounts site, and its Read the Docs pull-request build is neither required nor
+    # run when the package did not change. They now load the useblocks look for furo from
+    # `docs-theme/` at the repository root, shared with every other furo site here, and
+    # sphinx-needs' furo build -- which loads it too -- runs in CI nowhere; so this job and
+    # its docs siblings are what gate a change to that directory. A few seconds of build,
+    # no renderer.
+    #
+    # No `paths:` filter and no `if:`, like its two siblings: the shared directory sits
+    # outside the package, so a filter on the package would miss exactly the change this
+    # job is for.
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          enable-cache: true
+          cache-suffix: docs-mounts
+          # no `python-version`, so this runs on the root `.python-version`
+          cache-python: true
+      - name: Install the docs environment
+        # `docs.yaml`'s idiom -- sync ONE environment, then run the builder in it with
+        # `--no-sync` -- rather than `uv run --frozen poe docs-mounts`, which pays for two
+        # environments because poe itself lives in the `dev` group. Keep in step with the
+        # `docs-mounts` poe task.
+        run: uv sync --frozen --no-default-groups --extra docs-mounts
+      - name: Build the docs
+        # `-nW --keep-going`, from the poe task, so a nitpick warning is an error. No
+        # renderer: these docs draw no diagrams
+        run: uv run --no-sync sphinx-build -nW --keep-going -b html docs docs/_build/html -T
+        working-directory: packages/sphinx-mounts
+
   docs-reports:
     name: Docs reports
     runs-on: ubuntu-latest
@@ -428,10 +464,10 @@ jobs:
     # sphinx-test-reports' docs went from five warnings to zero in this pull request, and
     # without this job nothing holds that: the Read the Docs build is not a required check,
     # it is `-W` WITHOUT `-n`, and that project's settings do not point at this repository
-    # yet. `docs.yaml`'s linkcheck is scoped to sphinx-needs' own docs. sphinx-mounts has no
-    # docs job either, so this is a deliberate departure from that precedent rather than an
-    # oversight -- the difference is that these docs RENDER, which is a failure mode a build
-    # catches and a reviewer does not.
+    # yet. `docs.yaml`'s linkcheck is scoped to sphinx-needs' own docs. sphinx-mounts had no
+    # docs job either when this one was added, so this was a deliberate departure from that
+    # precedent rather than an oversight -- the difference is that these docs RENDER, which
+    # is a failure mode a build catches and a reviewer does not.
     #
     # No `paths:` filter and no `if:`: a change to `src/` with no change to `docs/` is
     # precisely the change that breaks a docs build.
@@ -784,6 +820,7 @@ jobs:
       - tests-no-mpl
       - tests-extensions
       - docs-codelinks
+      - docs-mounts
       - docs-reports
       - toolchain-free
       - plugin-floor
