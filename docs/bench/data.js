@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791982769613,
+  "lastUpdate": 1791987684518,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -24912,6 +24912,42 @@ window.BENCHMARK_DATA = {
             "value": 43.27408814,
             "unit": "s",
             "extra": "Commit: 23ac98950547636ac97a64fb963cc46831564961\nBranch: master\nTime: 2026-10-14T14:58:12+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a2e696c0e146331c4a29161cbd6447534529265a",
+          "message": "🏷️ Ship py.typed in the four Sphinx extensions, and switch on the type rules already clean (#2241)\n\n## What\n\nTwo typing changes that need no code fixes, as a first step before\nadding stricter rules.\n\n**`py.typed` in `packages/sphinx-needs`, `packages/sphinx-mounts`,\n`packages/sphinx-codelinks` and `packages/sphinx-test-reports`.** These\nfour packages shipped no PEP 561 marker, so mypy, pyright and ty in any\ndownstream project treated them as untyped. The ub-* libraries and\nsphinx-ai-index already ship one. Each package now ships `py.typed` and\nthe `Typing :: Typed` classifier; sphinx-codelinks had no classifiers at\nall, so it gets a list holding just that one. Each package's changelog\nhas an entry. The deprecated `sphinxcontrib.test_reports` aliases get no\nmarker.\n\n**Rules that report nothing today become fences** (root\n`pyproject.toml`):\n\n| Tool | Rule | Where |\n|---|---|---|\n| ty | `blanket-ignore-comment`, `possibly-missing-attribute`,\n`possibly-missing-import`, `unsound-yield` | everywhere |\n| ty | `unsound-return-statement` + `unsound-assignment` |\nub-needs-exchange, sphinx-ai-index, `.github/scripts`, `docs-theme` |\n| ty | `unsound-return-statement` | ub-project, which still has two\n`unsound-assignment`s in `project.py` |\n| ruff | `PGH`: no blanket `# type: ignore` / `# noqa` | everywhere |\n| ruff | `TID`: no relative imports from a parent package | everywhere |\n\nElsewhere the `unsound-*` pair still reports 91 + 71 diagnostics.\nBurning those down belongs to #1835; a path joins the override list when\nits own count reaches zero.\n\n## Why\n\nThis starts the typing work tracked in #1835. Stricter rules (ruff `ANN`\non shipped code, ty `possibly-unresolved-reference`, `disjoint-cast`,\n`missing-type-argument`) come in follow-up pull requests, because those\nneed code changes.\n\n## Tests\n\nThere are no new tests: nothing executable changed. Each new rule was\nchecked by putting a throwaway file under each covered path and\nconfirming that the rule fired there and not outside its scope:\n\n- `unsound-*` fires under the override paths and not in sphinx-needs.\n- `blanket-ignore-comment`, `PGH003`/`PGH004` and `TID252` fire.\n\n`uv build --package <p> --no-sources` for all four packages: `py.typed`\nis in both the sdist and the wheel, and the classifier is in `METADATA`.\nsphinx-test-reports' artefact fence in the `toolchain-free` job reads\n`git ls-files` under `src/`, so it now requires the marker in both\narchives too.\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue. *(Written by Claude Code at a\nmaintainer's request.)*\n- [ ] I ran the package's tests (`uv run poe test-<package>`) and they\npass. *(Not run: no code changed. `uv run poe smoke-needs` passes.)*\n- [x] Documentation is updated where behaviour or options change.\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-14T16:19:52+02:00",
+          "tree_id": "edea2f555be5f1d71c4178f7ce510d90c7835170",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/a2e696c0e146331c4a29161cbd6447534529265a"
+        },
+        "date": 1791987672682,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.11846846899999974,
+            "unit": "s",
+            "extra": "Commit: a2e696c0e146331c4a29161cbd6447534529265a\nBranch: master\nTime: 2026-10-14T16:19:52+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 55.126505866,
+            "unit": "s",
+            "extra": "Commit: a2e696c0e146331c4a29161cbd6447534529265a\nBranch: master\nTime: 2026-10-14T16:19:52+02:00"
           }
         ]
       }
