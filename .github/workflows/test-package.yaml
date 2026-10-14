@@ -78,8 +78,8 @@ on:
         type: boolean
         default: false
       needs-graphviz:
-        # a package that never calls `dot` sets this false rather than paying 5-23 s of
-        # `apt-get`/`choco` per cell for a renderer it does not use
+        # a package that never calls `dot` sets this false rather than paying for `apt-get`
+        # or the Windows download per cell for a renderer it does not use
         description: Install graphviz.
         type: boolean
         default: true
@@ -118,11 +118,29 @@ jobs:
       # runs exactly the same eight before its own pytest steps -- see the action's own
       # header for why it holds no `uses:` step, and why `setup-uv` therefore sits above
       # it rather than below
+      # The Windows graphviz zip, kept between runs: `prepare-cell` installs from it and
+      # downloads only when it is missing (see its "Install graphviz (windows)" step). The
+      # key is the pin file's hash, so a bump retires the old zip. Restore and save are two
+      # steps rather than one `actions/cache`, so the zip is kept even when the tests then
+      # fail
+      - name: Restore the pinned graphviz zip
+        if: runner.os == 'Windows' && inputs.needs-graphviz
+        id: graphviz-zip
+        uses: actions/cache/restore@v6
+        with:
+          path: ${{ runner.temp }}/graphviz-download
+          key: graphviz-windows-${{ hashFiles('.github/actions/prepare-cell/graphviz-windows.env') }}
       - uses: ./.github/actions/prepare-cell
         with:
           sphinx-group: ${{ inputs.sphinx-group }}
           needs-graphviz: ${{ inputs.needs-graphviz }}
           needs-plantuml: ${{ inputs.needs-plantuml }}
+      - name: Save the pinned graphviz zip
+        if: runner.os == 'Windows' && inputs.needs-graphviz && steps.graphviz-zip.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ${{ runner.temp }}/graphviz-download
+          key: graphviz-windows-${{ hashFiles('.github/actions/prepare-cell/graphviz-windows.env') }}
       - name: Run pytest
         # `--durations=25`: the slowest tests, printed at the end of every cell, so a slow
         # Windows run can be read rather than guessed at (there is no Windows machine to

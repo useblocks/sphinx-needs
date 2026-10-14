@@ -76,6 +76,18 @@ jobs:
           # no `python-version` above, so the cell runs on the root `.python-version`,
           # which is not on the runner image -- without this uv downloads it every run
           cache-python: true
+      # The Windows graphviz zip, kept between runs: `prepare-cell` installs from it and
+      # downloads only when it is missing (see its "Install graphviz (windows)" step). The
+      # key is the pin file's hash, so a bump retires the old zip. Restore and save are two
+      # steps rather than one `actions/cache`, so the zip is kept even when the tests then
+      # fail. This cell always asks for graphviz, so only the OS is tested
+      - name: Restore the pinned graphviz zip
+        if: runner.os == 'Windows'
+        id: graphviz-zip
+        uses: actions/cache/restore@v6
+        with:
+          path: ${{ runner.temp }}/graphviz-download
+          key: graphviz-windows-${{ hashFiles('.github/actions/prepare-cell/graphviz-windows.env') }}
       - uses: ./.github/actions/prepare-cell
         id: prepare
         with:
@@ -90,6 +102,12 @@ jobs:
           # sphinx-mounts' uml tests render for real, and the shared resolution RAISES
           # rather than skipping when it finds no renderer
           needs-plantuml: true
+      - name: Save the pinned graphviz zip
+        if: runner.os == 'Windows' && steps.graphviz-zip.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ${{ runner.temp }}/graphviz-download
+          key: graphviz-windows-${{ hashFiles('.github/actions/prepare-cell/graphviz-windows.env') }}
       - name: Check the libclang engine this cell asked for is really there
         # `extra-groups: codelinks-libclang` above is the ONLY executable place that wheel
         # is named in this repository, and losing it is SILENT: the four modules that need

@@ -18,9 +18,10 @@ description: The renderer installs, the cell sync and the fences that guard them
 #
 # One consequence, and it is the only behaviour difference from the steps as they were
 # written inline: `setup-uv` now runs BEFORE the renderer installs rather than after them,
-# because the composite is one step and the two `uses:` lines have to precede it. Nothing
-# reads across that boundary -- `apt-get`/`choco` and the uv cache restore are independent
-# -- so the cell is the same cell.
+# because the composite is one step and the two `uses:` lines have to precede it. The
+# Windows graphviz install now relies on that order: it unzips with `uv run --no-project
+# python`. The workflows also restore its zip from `actions/cache` before this action and
+# save it after, which is the other reason those `uses:` steps sit around it.
 #
 # Composite inputs are strings, so the two boolean-shaped ones are compared against
 # 'true'. A caller that forwards a `workflow_call` boolean gets exactly that, because
@@ -38,8 +39,8 @@ inputs:
     required: false
     default: ""
   needs-graphviz:
-    # a package that never calls `dot` passes 'false' rather than paying 5-23 s of
-    # `apt-get`/`choco` per cell for a renderer it does not use
+    # a package that never calls `dot` passes 'false' rather than paying for `apt-get` or
+    # the Windows download per cell for a renderer it does not use
     description: Install graphviz ('true' or 'false').
     required: false
     default: "true"
@@ -57,9 +58,46 @@ runs:
       shell: bash
       run: sudo apt-get install graphviz
     - name: Install graphviz (windows)
+      # Not Chocolatey. `choco install graphviz` asks the community feed, which answers
+      # HTTP 406 often enough to be a regular red (job 115845047323: "Failed to fetch
+      # results from V2 feed ... 406 (Not Acceptable)", "Chocolatey installed 0/0
+      # packages") -- and exits 0 when it does. This takes the Graphviz project's own
+      # portable zip at the version and sha256 `graphviz-windows.env` pins.
+      #
+      # The zip lives in `$RUNNER_TEMP/graphviz-download`, the directory the calling
+      # workflow restores from `actions/cache` before this action and saves after it (the
+      # `uses:` steps cannot live here; this file's header says why). On a hit there is
+      # no download at all. A restored zip is still hashed, and one that does not match is
+      # thrown away and fetched again rather than failing the cell.
+      #
+      # `dot -c` writes the plugin configuration an installer would; without it the
+      # portable build knows no output formats.
       if: inputs.needs-graphviz == 'true' && runner.os == 'Windows'
-      shell: pwsh
-      run: choco install -y --no-progress graphviz
+      shell: bash
+      run: |
+        source "$GITHUB_ACTION_PATH/graphviz-windows.env"
+        tmp="$(cygpath -u "$RUNNER_TEMP")"
+        zip="$tmp/graphviz-download/$GRAPHVIZ_ASSET"
+        fetch() {
+          mkdir -p "$(dirname "$zip")"
+          curl -fsSL --retry 5 --retry-all-errors --retry-delay 10 -o "$zip" "$GRAPHVIZ_URL"
+        }
+        if [ -f "$zip" ]; then
+          echo "graphviz $GRAPHVIZ_VERSION: zip restored from the actions cache"
+          if ! echo "$GRAPHVIZ_SHA256  $zip" | sha256sum -c --quiet -; then
+            echo "::warning::the cached graphviz zip does not match its pin; downloading it again"
+            rm -f "$zip"
+            fetch
+          fi
+        else
+          fetch
+        fi
+        echo "$GRAPHVIZ_SHA256  $zip" | sha256sum -c -
+        rm -rf "$tmp/graphviz"
+        uv run --no-project python -m zipfile -e "$(cygpath -w "$zip")" "$(cygpath -w "$tmp/graphviz")"
+        bin="$tmp/graphviz/Graphviz-$GRAPHVIZ_VERSION-win64/bin"
+        "$bin/dot.exe" -c
+        cygpath -w "$bin" >> "$GITHUB_PATH"
     - name: No graphviz install step for macOS
       # neither branch above fires on macOS, so a cell that asked for graphviz would run
       # without `dot` and fail somewhere far from the cause. Say so here instead
@@ -82,17 +120,17 @@ runs:
         jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py --verify | tr -d '\r')"
         echo "PLANTUML_JAR=$jar" >> "$GITHUB_ENV"
     - name: Check the renderers this cell asked for are really there
-      # `choco install graphviz` EXITS 0 WHEN THE FEED FAILS. Measured on run
-      # 34000562220, job 101398550280: "Failed to fetch results from V2 feed ... Unable
-      # to find package 'Graphviz' ... Chocolatey installed 0/0 packages", a green
-      # install step, and then two graphviz tests asserting 90 s later inside pytest. A
-      # renderer that did not arrive should be one red step that names it, not N
-      # assertions in the suite.
+      # Written when the Windows install was `choco install graphviz`, which EXITS 0 WHEN
+      # THE FEED FAILS. Measured on run 34000562220, job 101398550280: "Failed to fetch
+      # results from V2 feed ... Unable to find package 'Graphviz' ... Chocolatey installed
+      # 0/0 packages", a green install step, and then two graphviz tests asserting 90 s
+      # later inside pytest. The Windows install no longer uses Chocolatey, but the check
+      # stays for every installer: a renderer that did not arrive should be one red step
+      # that names it, not N assertions in the suite.
       #
       # For PlantUML this is also the mechanical check on the step above: if that step
       # ever stops writing a path that exists, THIS is the red, rather than every cell
-      # that wanted a jar. Deliberately no retry and no change of installer --
-      # `ts-graphviz/setup-graphviz` is a separate argument.
+      # that wanted a jar.
       if: inputs.needs-graphviz == 'true' || inputs.needs-plantuml == 'true'
       shell: bash
       run: |
