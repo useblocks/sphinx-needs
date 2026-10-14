@@ -1,5 +1,6 @@
 """Sphinx configuration for the sphinx-mounts docs."""
 
+import os
 import tomllib
 from datetime import datetime
 from pathlib import Path
@@ -56,6 +57,10 @@ html_sidebars = {
 }
 html_context = {"repository": "useblocks/sphinx-needs"}
 html_css_files = ["furo.css"]
+# Read the Docs passes every build the address it serves that version from, custom domain
+# included, and Sphinx writes a `<link rel="canonical">` into every page from it. Outside
+# Read the Docs the variable is unset, and an empty base URL writes no canonical link.
+html_baseurl = os.environ.get("READTHEDOCS_CANONICAL_URL", "")
 
 # Named hyperlink targets for sibling useblocks projects. Defined once
 # here (appended to every RST source via ``rst_epilog``) so the URLs are

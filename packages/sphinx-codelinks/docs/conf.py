@@ -6,6 +6,7 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
+import os
 import tomllib
 from datetime import datetime
 from pathlib import Path
@@ -84,6 +85,10 @@ html_sidebars = {
 }
 html_context = {"repository": "useblocks/sphinx-needs"}
 html_css_files = ["furo.css"]
+# Read the Docs passes every build the address it serves that version from, custom domain
+# included, and Sphinx writes a `<link rel="canonical">` into every page from it. Outside
+# Read the Docs the variable is unset, and an empty base URL writes no canonical link.
+html_baseurl = os.environ.get("READTHEDOCS_CANONICAL_URL", "")
 
 # Sphinx-Needs configuration
 needs_from_toml = "ubproject.toml"
