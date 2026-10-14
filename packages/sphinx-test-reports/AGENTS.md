@@ -84,8 +84,9 @@ to sit there, 8.6 MB, and was dead: the three `custom_tr_*` configs pointed at i
 `os.getcwd()`, which under pytest is the rootdir. It left with the import.)
 
 `uv run poe docs-reports` is the opposite case, and among the three EXTENSION packages it
-is the only docs build that renders: **13 `needflow` directives** across `filter.rst`, `functions.rst` and
-`examples/index.rst`. It needs `java` and `dot` on `PATH`, and it resolves the jar through
+is the only docs build that renders: **three `needflow` directives**, one in `functions.rst` and
+two in `examples/index.rst` (the others in the sources are examples inside literal blocks,
+and one commented out). It needs `java` and `dot` on `PATH`, and it resolves the jar through
 the workspace chain — `PLANTUML_JAR`, then the committed `vendor/plantuml/` jar, then a
 `plantuml` executable — written out in `docs/conf.py` rather than imported, because a docs
 build must not import a test-only member. `.readthedocs.yaml` therefore keeps

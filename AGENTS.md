@@ -187,7 +187,7 @@ and the testkit all are. The sdist is ≈7.4 MB rather than 28.
 
 **sphinx-test-reports is the two cases at once**: its SUITE needs neither renderer (no test
 document carries a rendering directive, and the dead 8.6 MB jar its tests used to carry left
-with the import; ub-test-reports' suite needs none either), while `docs-reports` DOES render — 13 `needflow` directives — so it needs
+with the import; ub-test-reports' suite needs none either), while `docs-reports` DOES render — three `needflow` directives — so it needs
 `java` and `dot`, and its `.readthedocs.yaml` keeps `apt_packages` where both SIBLING
 extensions' have none. (sphinx-needs' own docs render too, and more: 48 needflow
 directives.)

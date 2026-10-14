@@ -12,8 +12,8 @@ version: 2
 
 build:
   # These apt packages ARE needed, unlike both SIBLING extensions', whose configs
-  # deliberately install none: 13 `needflow` directives across `filter.rst`,
-  # `functions.rst` and `examples/index.rst` need graphviz's `dot`, and PlantUML needs a
+  # deliberately install none: three `needflow` directives, in `functions.rst` and
+  # `examples/index.rst`, need graphviz's `dot`, and PlantUML needs a
   # JDK. (sphinx-needs' own docs render too, and its config installs the same two.) The jar itself
   # comes from the checkout -- `vendor/plantuml/` is outside this package, so
   # `python.install` below does not carry it, but RTD checks out the whole repository, so

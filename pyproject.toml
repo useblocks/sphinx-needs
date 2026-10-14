@@ -51,7 +51,7 @@ docs-mounts = ["sphinx-mounts[docs]"]
 # and so does sphinx-codelinks
 docs-codelinks = ["sphinx-codelinks[docs]"]
 # and so does sphinx-test-reports. Of the three EXTENSION packages its docs build is the
-# only one that needs a renderer: 13 `needflow` directives across three pages. (sphinx-needs'
+# only one that needs a renderer: three `needflow` directives across two pages. (sphinx-needs'
 # own docs render too, and far more.)
 docs-reports = ["sphinx-test-reports[docs]"]
 # sphinx-codelinks' optional preprocessor-aware C/C++ engine. CI drives it from the
@@ -1007,7 +1007,7 @@ sequence = [
 
 [tool.poe.tasks.docs-reports]
 help = "Build the sphinx-test-reports HTML docs"
-# These docs RENDER: 13 `needflow` directives across `filter.rst`, `functions.rst` and
+# These docs RENDER: three `needflow` directives, in `functions.rst` and
 # `examples/index.rst`, so `java` and graphviz's `dot` both have to be on PATH and the jar
 # has to be there. That is unlike both SIBLING extensions, whose docs draw nothing -- but
 # not unlike sphinx-needs' own docs, which carry 48 needflow directives and declare this
