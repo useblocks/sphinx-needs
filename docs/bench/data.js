@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791980486357,
+  "lastUpdate": 1791981576518,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -24804,6 +24804,42 @@ window.BENCHMARK_DATA = {
             "value": 42.167398686,
             "unit": "s",
             "extra": "Commit: d5943748d45abe5cf7f9a54eed95bef91545c9d4\nBranch: master\nTime: 2026-10-14T14:20:15+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e76f7d30198e96a908ae75dd157dc3e67ea87572",
+          "message": "🔧 CI: Windows cells install a pinned graphviz zip, cached, instead of Chocolatey (#2238)\n\n## What\n\nThe Windows test cells stop installing graphviz with `choco install\ngraphviz`. Workspace CI only (`pkg: workspace`); no package changes.\n\n- `.github/actions/prepare-cell/graphviz-windows.env` (new): the pin.\nGraphviz **16.1.0** (the version Chocolatey was trying to install), the\nsha256 the release publishes beside the zip, and the asset URL on the\nGraphviz project's own GitLab release. A comment says how to bump it.\n- `.github/actions/prepare-cell/action.yml`, \"Install graphviz\n(windows)\" (now `bash`):\n1. Uses the zip if the cache restored it; otherwise downloads it with\n`curl --retry 5 --retry-all-errors`.\n2. Checks its sha256. A restored zip that doesn't match is thrown away\nand downloaded again rather than failing the cell.\n3. Unzips with `uv run --no-project python -m zipfile`, runs `dot -c` to\nregister the plugins an installer would, and puts `bin/` on\n`GITHUB_PATH`.\n  - The \"is `dot` really on PATH\" guard stays, with its comment updated.\n- `test-package.yaml` and `test-extensions.yaml`:\n`actions/cache/restore@v6` before `prepare-cell` and\n`actions/cache/save@v6` after it, Windows only, keyed on\n`hashFiles('.github/actions/prepare-cell/graphviz-windows.env')`.\n- They live in the workflows rather than the composite action because of\ndependabot, as the action's header already explains.\n- Restore and save are separate steps so the zip is saved even when the\ntests later fail.\n  - Editing the pin retires the old cache entry.\n\n## Why\n\nChocolatey's community feed answers HTTP 406 often enough to make the\nWindows cells a regular red, e.g. [job\n115845047323](https://github.com/useblocks/sphinx-needs/actions/runs/38560851585/job/115845047323)\non #2237 (attempt 3):\n\n```\nFailed to fetch results from V2 feed at 'https://community.chocolatey.org/api/v2/Packages(Id='Graphviz',Version='16.1.0')' … 406 (Not Acceptable)\nChocolatey installed 0/0 packages.\n```\n\n`choco` exits 0 when this happens, and the guard step then fails the\njob. With the cache, a normal Windows run makes no network request for\ngraphviz at all. Only a cache miss downloads, from the Graphviz\nproject's own release with retries, and that no longer depends on the\ncommunity feed.\n\n## Tests\n\n- Verified locally (Linux, with a stand-in `cygpath`), the step's three\npaths:\n- cold download: hash OK, `bin/dot.exe` extracted, `bin` written to\n`GITHUB_PATH`;\n  - cache hit: \"zip restored from the actions cache\", no download;\n- corrupted cached zip: the hash check fails, a warning is logged, and\nthe zip is downloaded again and verified.\n- The pinned zip is 9.8 MB. Its sha256 equals the release's published\n`.sha256`, and it contains `Graphviz-16.1.0-win64/bin/dot.exe`.\n- `uv run poe lint`: 0. `actionlint` on `ci.yaml`, `test-package.yaml`\nand `test-extensions.yaml`: 0.\n- **Not verifiable outside CI:** the Windows behaviour itself (Git-bash\n`cygpath`, and `dot -c` registering the plugins in the portable build).\nThis PR's Windows cells are the proof. The first run is a cache miss and\ndownloads; a re-run should then log \"restored from the actions cache\".\n\n## Downsides, for the record\n\n- A cache miss still downloads: the first run, after 7 days unused, and\nafter a bump.\n- A PR reads only its own branch's and master's caches.\n- Four Windows cells that miss at once all download, and three of their\nsaves log a harmless \"unable to reserve cache\" warning.\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [ ] I ran the package's tests (`uv run poe test-<package>`) and they\npass. (CI only: no package code changed.)\n- [x] Documentation is updated where behaviour or options change. (The\naction's and workflows' comments.)\n- [ ] The package's `docs/changelog.rst` has an entry under\n*Unreleased*. (No package changed.)\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-14T14:38:01+02:00",
+          "tree_id": "0d4327ecaa71be9633c2791c546105f2ee185f4b",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/e76f7d30198e96a908ae75dd157dc3e67ea87572"
+        },
+        "date": 1791981566034,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.10218006400000945,
+            "unit": "s",
+            "extra": "Commit: e76f7d30198e96a908ae75dd157dc3e67ea87572\nBranch: master\nTime: 2026-10-14T14:38:01+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 59.213338214000004,
+            "unit": "s",
+            "extra": "Commit: e76f7d30198e96a908ae75dd157dc3e67ea87572\nBranch: master\nTime: 2026-10-14T14:38:01+02:00"
           }
         ]
       }
