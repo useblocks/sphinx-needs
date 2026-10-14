@@ -464,8 +464,10 @@ EVERY_STATUS = 'status == "open"'
             "[[links_from_match('grp', 'which', filter='len(needs) > 1')]]",
             {"opaque": True},
         ),
-        # an empty name fails the call: it reads nothing
+        # an empty name, or a link type, fails the call: it reads nothing
         ("links", "[[links_from_match('', 'summary')]]", {}),
+        ("links", "[[links_from_match('links', 'which')]]", {}),
+        ("links", "[[links_from_match('grp', 'links_back')]]", {}),
         # calc_sum's filter may name ``needs``: what it reads cannot be told, so last
         (
             "out",

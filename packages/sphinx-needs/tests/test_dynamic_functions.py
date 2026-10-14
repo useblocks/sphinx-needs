@@ -1321,14 +1321,14 @@ Links from a match
 
 .. spec:: Itself
    :id: LFM_SELF
-   :name: A
-   :ref: A
+   :name: S
+   :ref: S
    :links: [[links_from_match("name", "ref", include_self=True, filter="type == 'spec'")]]
 
 .. spec:: Itself, left out
    :id: LFM_SELF_EX
-   :name: A
-   :ref: A
+   :name: S
+   :ref: S
    :links: [[links_from_match("name", "ref", filter="type == 'spec'")]]
 
 .. spec:: An array on every need
@@ -1382,8 +1382,8 @@ def test_links_from_match(test_app):
     needs = _built_needs(app)
     assert needs["LFM_REPEAT"]["links"] == ["LFM_AB", "LFM_B", "LFM_Z"]
     assert needs["LFM_FILTER"]["links"] == ["LFM_AB", "LFM_B"]
-    assert needs["LFM_SELF"]["links"] == ["LFM_SELF"]
-    assert needs["LFM_SELF_EX"]["links"] == []
+    assert needs["LFM_SELF"]["links"] == ["LFM_SELF", "LFM_SELF_EX"]
+    assert needs["LFM_SELF_EX"]["links"] == ["LFM_SELF"]
     assert needs["LFM_ARRAY"]["links"] == ["LFM_LIST"]
     assert needs["LFM_CURRENT"]["links"] == ["LFM_Z"]
     assert needs["LFM_NEEDS"]["links"] == ["LFM_AB"]

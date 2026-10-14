@@ -21,7 +21,12 @@ from sphinx.application import Sphinx
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsMutable, SphinxNeedsData
-from sphinx_needs.derive import NO_DEFAULT, DeriveRule, fingerprint_names
+from sphinx_needs.derive import (
+    NO_DEFAULT,
+    DeriveRule,
+    fingerprint_names,
+    join_name_problem,
+)
 from sphinx_needs.exceptions import NeedsInvalidFilter
 from sphinx_needs.filter_common import (
     filter_needs_and_parts,
@@ -711,6 +716,114 @@ def links_from_filter(
         if passes:
             found.append(candidate)
     return _links_to(found, need, include_self=include_self)
+
+
+@records_reads
+def links_from_match(
+    app: Sphinx,
+    need: NeedItem | NeedPartItem | None,
+    needs: NeedsMutable | NeedsView,
+    field: str,
+    equals: str,
+    include_self: bool = False,
+    filter: str | None = None,
+    *,
+    reads: UnresolvedReads | None = None,
+) -> list[NeedLink]:
+    """
+    Links to every need whose ``field`` equals one of this need's ``equals`` values.
+
+    .. versionadded:: 9.1.0
+
+    It is the per-need spelling of a :ref:`derived link type <needs_derive>` of the kind
+    ``links`` with the role :ref:`join <needs_derive_join>`, ``join = { field = …,
+    equals = … }``, and it links to the same needs.
+
+    Both fields hold text, a string or an array of strings, and both are read the same
+    way: a string is split on ``,``, an array taken item by item, each value stripped of
+    whitespace, empty values dropped. A need matches when its ``field`` and this need's
+    ``equals`` share a value, compared exactly (case-sensitive). Each need is linked
+    once, however many values it shares, in need-id order, comparing ids as strings
+    (so ``REQ_10`` comes before ``REQ_9``); the link list is sorted for the output
+    anyway. Only whole needs are candidates, never their parts. The need that contains
+    the call is not linked, even if it matches, unless ``include_self=True``.
+
+    ``filter`` keeps only the matches that pass it, and is read as
+    :func:`links_from_filter` reads its filter (``current_need`` is the need that
+    contains the call). No match gives no links. The call fails, and links nothing, if
+    ``field`` or ``equals`` is empty, or names a field that does not hold text (a number,
+    a boolean, a link type).
+
+    .. syntax-example::
+
+        .. spec:: login
+           :id: LFM_SPEC_1
+
+        .. spec:: logout
+           :id: LFM_SPEC_2
+
+        .. test:: Session tests
+           :id: LFM_TEST_1
+           :value: login, logout
+           :links: [[links_from_match("title", "value")]]
+
+           Links to the specs titled one of its values, ``LFM_SPEC_1`` and ``LFM_SPEC_2``.
+
+    sphinx-test-reports' ``tr_link(test_option, target_option)`` links the same needs as
+    ``links_from_match(target_option, test_option, include_self=True)`` -- note the
+    arguments' order, swapped -- with these differences: ``tr_link`` compares each
+    need's ``target_option`` whole, without splitting it, links a need once per value
+    that matches it, in the order the project holds the needs, and fails on an array.
+
+    :param field: The field read on every need.
+    :param equals: The field of this need whose values a need's ``field`` must share.
+    :param include_self: If True, the current need is linked too, if it matches.
+    :param filter: :ref:`filter_string`, which a matching need must pass too.
+    :return: The links to the needs that match.
+    """
+    for key, name in (("field", field), ("equals", equals)):
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError(f"links_from_match needs a non-empty {key!r}")
+    schema = SphinxNeedsData(app.env).get_schema()
+    link_fields = frozenset(schema.iter_link_field_names())
+    for key, name in (("field", field), ("equals", equals)):
+        if (problem := join_name_problem(name, schema, link_fields)) is not None:
+            raise ValueError(
+                f"links_from_match: the argument {key!r} names {name!r}{problem}"
+            )
+    # a filter that does not parse fails the call
+    compiled = None if not filter else compile(filter, "<links_from_match>", "eval")
+    if need is None:
+        return []
+    matched = join_matches(
+        need, needs, field, equals, include_self=include_self, reads=reads
+    )
+    if filter:
+        # imported here, as the order module imports this one
+        from sphinx_needs.functions.order import filter_names
+
+        config = NeedsSphinxConfig(app.config)
+        # every need, for a filter naming ``needs``; built only for one
+        every = list(needs.values()) if filter_names(filter).opaque else None
+        kept: list[NeedItem] = []
+        for candidate in matched:
+            try:
+                passes = filter_single_need(
+                    candidate,
+                    config,
+                    filter,
+                    every,
+                    need,
+                    filter_compiled=compiled,
+                    origin_docname=need["docname"],
+                )
+            except NeedsInvalidFilter:
+                # it cannot be evaluated on this candidate: the candidate does not pass
+                passes = False
+            if passes:
+                kept.append(candidate)
+        matched = kept
+    return [NeedLink(id=candidate["id"]) for candidate in matched]
 
 
 def _every_need_and_part(

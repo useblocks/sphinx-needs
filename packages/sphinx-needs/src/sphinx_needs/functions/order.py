@@ -45,6 +45,7 @@ from sphinx_needs.functions.common import (
     echo,
     links_from_content,
     links_from_filter,
+    links_from_match,
     over_candidates,
     test,
 )
@@ -104,6 +105,7 @@ BUILTINS: Final[Mapping[str, Callable[..., Any]]] = {
         calc_sum,
         links_from_content,
         links_from_filter,
+        links_from_match,
     )
 }
 
@@ -124,6 +126,7 @@ _SELECTORS: Final[Mapping[str, frozenset[str]]] = {
     "calc_sum": frozenset({"option", "filter", "links_only"}),
     "links_from_content": frozenset({"need_id", "filter"}),
     "links_from_filter": frozenset({"filter", "include_self", "include_parts"}),
+    "links_from_match": frozenset({"field", "equals", "filter", "include_self"}),
 }
 #: the selectors that hold a flag, not a name or a filter
 _FLAGS: Final = frozenset({"links_only", "include_self", "include_parts"})
@@ -818,6 +821,31 @@ class _CallReads:
             self._read(self.need.id, key)
         for read in sorted(names.names):
             self._column(read, None, filter_string)
+
+    def _links_from_match(self, args: dict[str, Any]) -> None:
+        # the need's own values, then the field on every need through its column
+        field, equals = args.get("field"), args.get("equals")
+        if not field or not equals:
+            return  # the call fails: an empty name
+        if any(
+            name in self.project.link_fields or self.project.at_barrier(name)
+            for name in (field, equals)
+        ):
+            return  # the call fails: a link list is not text
+        filter_string = args.get("filter")
+        names = None
+        if filter_string:
+            names = self._filter(filter_string)
+            if names is None:
+                return
+        self._read(self.need.id, equals)
+        self._column(field, None, JOIN_READ)
+        if names is not None:
+            # current_need is the need the call is in
+            for key in sorted(names.current):
+                self._read(self.need.id, key)
+            for read in sorted(names.names):
+                self._column(read, None, filter_string)
 
 
 class _RuleReads(_CallReads):
