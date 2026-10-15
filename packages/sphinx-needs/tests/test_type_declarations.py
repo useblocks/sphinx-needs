@@ -20,6 +20,7 @@ import pytest
 
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import WarningSubTypeDescription, WarningSubTypes
+from sphinx_needs.need_item import NeedItem
 from sphinx_needs.needs import _inherits_order
 from sphinx_needs.needs_schema import (
     FieldLiteralValue,
@@ -1233,8 +1234,10 @@ def test_a_deleted_field_the_schema_no_longer_has(
 ) -> None:
     """A needextend kept from an earlier build may delete a field the schema of this
     build no longer has (an extension's, no longer registered): the deletion is not
-    applied -- the need keeps the value it was written with, which a delete would have
-    emptied -- and the build goes on."""
+    applied -- nothing writes the field -- and the build goes on. Whether the kept
+    extend is applied again depends on the Sphinx version: 9.1 pickles the needs as
+    written and applies it again (the write spy below is what tells a skipped delete
+    from a write), 7.4 pickles them after the first build's deletion and does not."""
     srcdir = tmp_path / "src"
     srcdir.mkdir()
     (srcdir / "conf.py").write_text(GONE_CONF, encoding="utf-8")
@@ -1249,10 +1252,20 @@ def test_a_deleted_field_the_schema_no_longer_has(
     monkeypatch.delenv("PTYPE_WITH_GONE")
     # the same source and build directories: the extend comes from the environment
     app = make_app("needs", srcdir=srcdir)
+    written: list[str] = []
+    setitem = NeedItem.__setitem__
+
+    def _spy(need: NeedItem, key: str, value: Any) -> None:
+        if key == "gone":
+            written.append(need["id"])
+        setitem(need, key, value)
+
+    monkeypatch.setattr(NeedItem, "__setitem__", _spy)
     app.build()
     assert build_warnings(app) == []
-    # the need as written in the first build keeps its value: nothing deleted it
-    assert _needs(app)["R_001"]["gone"] == "kept"
+    # the deletion is skipped: nothing writes the field
+    assert written == []
+    assert "gone" in _needs(app)["R_001"]
 
 
 @pytest.mark.parametrize(
