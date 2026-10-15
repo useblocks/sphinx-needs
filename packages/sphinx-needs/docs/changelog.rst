@@ -69,11 +69,12 @@ Improvements
   instead of a traceback or silence: an entry that is not a dictionary, names no directive, or
   lacks a string ``title`` or ``prefix`` is ignored (a missing ``title`` used to end the build with
   a ``KeyError``); a ``color`` or ``style`` that is not a string, and an unknown key, are ignored
-  and the type kept; a value of neither shape stops the build with an error. A directive declared
-  twice in the list is now its last entry on every path -- a need of :ref:`list2need` took the
-  first entry's prefix -- and is listed once in the legends and in :ref:`needreport`; the
-  duplicate is reported, where Sphinx used to warn that the directive was already registered
-  (:issue:`2262`)
+  and the type kept -- the unknown key an old project most likely still carries is ``content``,
+  which sphinx-needs 1.0 read and :pr:`610` stopped reading; a value of neither shape stops the
+  build with an error. A directive declared twice in the list is now its last entry on every
+  path -- a need of :ref:`list2need` took the first entry's prefix -- and is listed once in the
+  legends and in :ref:`needreport`; the duplicate is reported, where Sphinx used to warn that
+  the directive was already registered (:issue:`2262`)
 
 Deprecations
 ............
