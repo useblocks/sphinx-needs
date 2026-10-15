@@ -375,6 +375,31 @@ class NeedType(TypedDict):
     If unset or empty, no color is applied and the diagram engine's default is used."""
     style: NotRequired[str]
     """The default node style to use in diagrams (default: "node")."""
+    inherits: NotRequired[str]
+    """The need type whose declarations of fields and link types this type starts from."""
+    fields: NotRequired[dict[str, NeedTypeFieldDeclaration]]
+    """The fields this type declares anew: field name to its declaration."""
+    links: NotRequired[dict[str, NeedTypeLinkDeclaration]]
+    """The link types this type declares anew: link type name to its declaration."""
+
+
+class NeedTypeFieldDeclaration(TypedDict, total=False):
+    """A need type's declaration of a field: a narrowing of the field's declaration."""
+
+    description: str
+    schema: dict[str, Any]
+    nullable: bool
+    default: Any
+    predicates: list[tuple[str, Any]]
+
+
+class NeedTypeLinkDeclaration(TypedDict, total=False):
+    """A need type's declaration of a link type: a narrowing of its declaration."""
+
+    description: str
+    schema: dict[str, Any]
+    default: Any
+    predicates: list[tuple[str, Any]]
 
 
 class NeedFields(TypedDict):

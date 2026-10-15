@@ -257,6 +257,7 @@ By default it is set to:
 * **prefix**: A prefix for generated IDs, to easily identify that an ID belongs to a specific type. Can also be ""
 * **color**: A color as hex value. Used in diagrams and some days maybe in other representations as well. Can also be ""
 * **style**: A plantuml node type, like node, artifact, frame, storage or database. See `plantuml documentation <http://plantuml.com/deployment-diagram>`__ for more.
+* **inherits**, **fields**, **links** (optional): the fields and link types the type declares anew for its needs, see :ref:`needs_types_fields`.
 
 .. versionchanged:: 9.1.0
 
@@ -304,7 +305,7 @@ is the same as
 
 The two shapes are equivalent, and the types keep the order they are given in both
 (the order of the legends, of :ref:`needreport`, and the default type of :ref:`needservice`);
-the table shape is the one a later release's per-type declarations extend.
+an entry of either shape may declare fields anew for its type (:ref:`needs_types_fields`).
 
 The value is validated when the configuration is read.
 A value that is neither a list nor a dictionary stops the build with an error.
@@ -314,8 +315,9 @@ Otherwise each problem is a ``needs.config`` warning, and the build goes on with
 * an entry that names no directive is ignored: in the list, a ``directive`` that is missing or not a non-empty string; in the dictionary, an empty key.
   A ``directive`` inside a dictionary entry that differs from its key is reported, and the key is used;
 * an entry whose ``title`` or ``prefix`` is missing or not a string is ignored: its type does not exist;
-* a ``color`` or ``style`` that is not a string is ignored, and the type kept;
-* a key other than ``directive``, ``title``, ``prefix``, ``color`` and ``style`` is ignored, and the type kept;
+* a ``color`` or ``style`` that is not a string, an ``inherits`` that is not a non-empty string,
+  and a ``fields`` or ``links`` that is not a dictionary, are ignored, and the type kept;
+* a key other than ``directive``, ``title``, ``prefix``, ``color``, ``style``, ``inherits``, ``fields`` and ``links`` is ignored, and the type kept;
 * a directive declared more than once in the list: the last entry is used, at its own position, and one warning names every entry that declares it.
 
 ``prefix`` and ``color`` may be ``""``.
@@ -335,6 +337,147 @@ Otherwise each problem is a ``needs.config`` warning, and the build goes on with
    **Not supporting** elements are for instance ``usecase``, ``actor``.
 
    Please take a look into the  `PlantUML Manual <https://plantuml.com/>`_ for more details.
+
+.. _`needs_types_fields`:
+
+Fields per need type
+++++++++++++++++++++
+
+.. versionadded:: 9.1.0
+
+A need type may declare fields and link types anew for its needs, in its entry:
+
+* ``fields``: a dictionary from the name of a field -- one of :ref:`needs_fields`, or a core field such as ``status`` -- to the type's declaration of it;
+* ``links``: a dictionary from the name of a link type -- one of :ref:`needs_links`, or ``links`` -- to the type's declaration of it;
+* ``inherits``: the directive name of one other need type, whose declarations this type starts from.
+
+A declaration in ``fields`` may carry these keys, each as :ref:`needs_fields` takes it:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 80
+
+   * - key
+     - the type's
+   * - ``description``
+     - description of the field
+   * - ``schema``
+     - schema of the field: only the keywords it changes, the others are kept
+   * - ``nullable``
+     - ``false`` where the field is nullable; never ``true`` where it is not
+   * - ``default``
+     - default value
+   * - ``predicates``
+     - ``(match expression, value)`` pairs, in place of the field's (an empty list: none)
+
+and a declaration in ``links`` these, as :ref:`needs_links` takes them:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 80
+
+   * - key
+     - the type's
+   * - ``description``
+     - description of the link type
+   * - ``schema``
+     - schema of the link list (``maxItems``, ``minItems``, ...): only the keywords it changes
+   * - ``default``
+     - default links
+   * - ``predicates``
+     - ``(match expression, links)`` pairs, in place of the link type's (an empty list: none)
+
+Anything else in a declaration -- a ``parse_variants``, a ``derive``, a link type's ``incoming`` or ``copy`` --
+is fixed for every need type: it is reported as a ``needs.config`` warning and ignored.
+
+.. code-block:: toml
+
+   [needs.fields.asil]
+   nullable = true
+   schema = { type = "string", enum = ["QM", "A", "B", "C", "D"] }
+
+   [needs.types.req]
+   title = "Requirement"
+   prefix = "R_"
+
+   [needs.types.req.fields.asil]
+   description = "The ASIL a requirement is developed to"
+   nullable = false
+   default = "QM"
+
+   [needs.types.safety_req]
+   title = "Safety requirement"
+   prefix = "SR_"
+   inherits = "req"
+
+   [needs.types.safety_req.fields.asil]
+   schema = { enum = ["A", "B", "C", "D"] }
+   default = "A"
+
+   [needs.types.safety_req.links.links]
+   schema = { maxItems = 3 }
+
+Here a ``req`` must have an ``asil`` (``QM`` unless it says), a ``safety_req`` one of ``A`` to ``D`` (``A`` unless it says),
+and a ``safety_req`` links to three needs at most; the needs of every other type read ``asil`` and ``links`` as declared for all.
+In :file:`conf.py`, the same entries are ``needs_types = {"safety_req": {"title": ..., "inherits": "req", "fields": {"asil": {...}}}, ...}``,
+and in the list shape ``dict(directive="safety_req", title=..., inherits="req", fields={"asil": {...}})``.
+In a TOML file of the list shape, a ``[needs.types.fields.asil]`` table after the ``[[needs.types]]`` tables belongs to the last of them.
+
+**Narrowing.**
+A type's declaration of a field starts from the field's own declaration, takes the declarations of its ancestors from the root down,
+then its own; a key it leaves out, and a schema keyword, is kept from the declaration before it.
+Each declaration must narrow the one before it, so that a need of the type is valid wherever a need of its parent, or of any type, is:
+a schema keyword only becomes stricter (an ``enum`` a subset, a ``minimum`` higher, a ``maxItems`` lower, ...), none is dropped,
+``nullable`` only changes from ``true`` to ``false``,
+and a default -- the type's own, or the one it keeps -- is valid against the narrowed schema
+(so an ``enum`` that leaves out the field's default needs a ``default`` inside it;
+and as the default of a link type, and of ``tags``, is an empty list, a ``minItems`` needs a ``default`` with as many items).
+A declaration that widens is ignored as a whole, and the type keeps the declaration before it;
+each reason is one ``needs.type_widening`` warning, such as::
+
+   needs_types['spec'].fields['x'] widens the field: Child 'enum' values ['A', 'B', 'C'] are not a subset of parent 'enum' values ['A', 'B'].
+
+naming the parent where the declaration before it is the parent's (``... widens the field as need type 'req' declares it: ...``).
+
+**inherits.**
+A type has one parent, given before or after it in ``needs_types``, or added by an extension or a service.
+A type with no declaration of its own of a field reads its parent's.
+An ``inherits`` naming no need type, or on a cycle, is ignored, and the type stays, without a parent;
+each is one ``needs.type_inherits`` warning, every type on a cycle reported::
+
+   Need type 'a' inherits 'b' on a cycle (a -> b -> a); its inherits is ignored.
+   Need type 'e' inherits 'nope', which is not a need type; its inherits is ignored.
+
+**What cannot be declared.**
+A declaration that cannot be applied is ignored as a whole, as one ``needs.type_conflict`` warning, such as::
+
+   needs_types['spec'].fields['x'] declares 'x', which is not a field; the entry is ignored
+
+when it names no field of its table (a link type under ``fields``, a field under ``links``, or a name declared nowhere),
+changes the field's type, which is the same on every need type
+(``... cannot be declared with type 'integer' (items None): its type is 'string' (items None) on every need type; the entry is ignored``),
+or carries a ``schema``, ``default`` or ``predicates`` that cannot be used (a value of another type, a default of ``title``, which takes none).
+A core field may be declared like any other: ``status`` takes a default and an ``enum``.
+A :ref:`derived <needs_derive>` field or link type (one with ``derive`` or ``derive_by_type``) takes only a ``description``,
+a narrower ``schema`` and (a field) ``nullable``: its rules give its value, so a ``default`` or ``predicates`` is refused,
+and so is a ``schema`` adding an ``enum`` to a field that has none, as its rules are checked against the field's own declaration.
+
+**The value of a need.**
+A field a need of the type does not set takes the first matching predicate of the type's declaration
+(the field's own, unless the type declares ``predicates``), else the type's default, else the field's default;
+a value set in the need wins over all of them.
+In :file:`conf.py`, ``"default": None`` gives a nullable field no default on the type (its needs leave it unset),
+and is refused (``needs.type_conflict``) on a field that is not nullable.
+A :ref:`needextend` deleting a field (``:-x:``) empties it as the need's type declares it:
+``None`` where the field is nullable on that type, else the empty value of the field's type.
+A default a type declares is not the one a :ref:`fingerprint <needs_derive>` compares against:
+a need's value equal to its type's default enters the fingerprint, unless it equals the field's own default too.
+
+The warnings of these declarations, given when the schema is built, name an entry by its directive in either shape
+(``needs_types['spec']``), while those given when the configuration is read name an entry of the list by its position
+(``needs_types entry 2 ('spec')``).
+An entry an extension adds to ``needs_types`` once the configuration is read has the shape of its ``inherits``,
+``fields`` and ``links`` checked when the schema is built, with the same ``needs.config`` warnings.
 
 .. _`needs_fields`:
 
@@ -380,6 +523,8 @@ For new fields the following can be defined:
     else ``None``, or the empty value of the field's type when it is not nullable.
     The field is derived on every need type, see :ref:`needs_derive_by_type`.
     *New in version 9.0.0.*
+
+A need type may declare a field anew for its needs, narrowing it: see :ref:`needs_types_fields`.
 
 For example:
 
@@ -833,6 +978,8 @@ Beside ``derive``, or instead of it, a ``derive_by_type`` table gives a rule per
 Its keys are need types, by their directive name (the value ``type`` holds, as a filter reads it: ``type == 'story'``),
 and each value is a rule, as ``derive`` takes one.
 A need uses the rule of its type, else ``derive``, else none.
+A need type's own declaration of a derived field (:ref:`needs_types_fields`) narrows its description, schema and ``nullable``,
+but gives it no default.
 
 Effort written on tasks and rolled up through stories and epics takes two fields:
 the one authors write, and a derived one, which copies it on a task and sums itself over the links of a story or an epic:
@@ -1153,6 +1300,8 @@ Each configured link can define:
   See :ref:`links_style`.
 - ``style_start`` (optional): See :ref:`needflow_style_start`.
 - ``style_end`` (optional): See :ref:`needflow_style_start`.
+
+A need type may declare a link type anew for its needs, narrowing it: see :ref:`needs_types_fields`.
 
 Configuration example:
 

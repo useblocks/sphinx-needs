@@ -77,6 +77,20 @@ Improvements
   without a type takes the type that now comes first; the duplicate is reported, where Sphinx
   used to warn that the directive was already registered (:issue:`2262`, :pr:`2276`)
 
+- ✨ A need type declares its fields: an entry of :ref:`needs_types` may carry ``fields`` and ``links``,
+  each a dictionary from a field or link type to the type's declaration of it (``description``,
+  ``schema``, ``nullable``, ``default``, ``predicates``; a link type is not nullable), and ``inherits``,
+  one parent whose declarations the type starts from (:ref:`needs_types_fields`). A declaration narrows
+  the one before it -- the field's own, then each ancestor's -- and what cannot be used is reported and
+  ignored as a whole, the build going on: ``needs.type_inherits`` for an ``inherits`` naming no need type
+  or on a cycle (every type on it), ``needs.type_conflict`` for a declaration naming no field of its
+  table or setting what the field does not take (a default of a derived field among them), and
+  ``needs.type_widening``, one warning per reason, for a declaration that widens. A :ref:`needextend`
+  deleting a field now empties it as the need's type declares it (``None`` where nullable on that type,
+  else the empty value of its type). The per-type declarations of :issue:`2269`, after the schema's
+  two tiers (:pr:`2275`) and the ``needs_types`` table (:pr:`2276`)
+  (`discussion #1646 <https://github.com/useblocks/sphinx-needs/discussions/1646>`__; :pr:`2278`)
+
 Deprecations
 ............
 

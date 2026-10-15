@@ -44,7 +44,7 @@ needs_build_json = True
 TOML_CONF = CONF + 'needs_from_toml = "ubproject.toml"\n'
 
 #: the known keys, as the unknown-key finding lists them
-KNOWN = "known keys are directive, title, prefix, color, style"
+KNOWN = "known keys are directive, title, prefix, color, style, inherits, fields, links"
 
 #: three types in an order that is not alphabetical, so that a sort would show
 ZETA = {"title": "Zeta", "prefix": "Z_", "color": "#000001", "style": "node"}
@@ -65,7 +65,7 @@ LIST_CONF = CONF + f"needs_types = {RESOLVED!r}\n"
 MAPPING_CONF = CONF + f"needs_types = {MAPPING!r}\n"
 
 #: the same three types as ``[needs.types.<name>]`` tables; a later sub-table of an
-#: earlier type does not move it (and ``fields`` is not a key of a type in this release)
+#: earlier type does not move it (and ``content`` is not a key of a type)
 TABLES_TOML = """\
 [needs]
 build_json = true
@@ -88,8 +88,8 @@ prefix = "M_"
 color = ""
 style = "frame"
 
-[needs.types.alpha.fields.x]
-nullable = true
+[needs.types.alpha.content]
+diagram = "plantuml"
 """
 
 #: one need of each type, each with a generated id
@@ -171,8 +171,8 @@ def test_toml_tables_resolve_to_the_list_shape(
     make_app: Callable[..., SphinxTestApp], tmp_path: Path
 ) -> None:
     """``[needs.types.<name>]`` tables are the same list, in the order the tables first
-    appear: a later sub-table of ``alpha`` does not move it. Its ``fields`` key is not a
-    key of a need type in this release, and is reported and ignored."""
+    appear: a later sub-table of ``alpha`` does not move it. Its ``content`` key is not
+    a key of a need type, and is reported and ignored."""
     reference = make_app(
         "needs", srcdir=_write(tmp_path / "list", LIST_CONF, TYPES_INDEX)
     )
@@ -191,7 +191,7 @@ def test_toml_tables_resolve_to_the_list_shape(
     assert _resolved(app) == RESOLVED
     app.build()
     assert build_warnings(app) == [
-        f"WARNING: needs_types['alpha'] has an unknown key 'fields'; {KNOWN}; the key "
+        f"WARNING: needs_types['alpha'] has an unknown key 'content'; {KNOWN}; the key "
         "is ignored [needs.config]"
     ]
     assert _needs(app) == expected
@@ -303,18 +303,18 @@ FINDINGS = [
         id="color-and-style-not-strings",
     ),
     _conf_case(
-        [{**REQ, "bogus": 1, "fields": {}}],
+        [{**REQ, "bogus": 1, "content": "plantuml"}],
         [
-            f"needs_types entry 1 ('req') has unknown keys 'bogus', 'fields'; {KNOWN}; "
+            f"needs_types entry 1 ('req') has unknown keys 'bogus', 'content'; {KNOWN}; "
             "the keys are ignored"
         ],
         [REQ],
         id="unknown-keys",
     ),
     _conf_case(
-        {"req": {**REQ_VALUE, "inherits": "spec"}},
+        {"req": {**REQ_VALUE, "content": "plantuml"}},
         [
-            f"needs_types['req'] has an unknown key 'inherits'; {KNOWN}; the key is "
+            f"needs_types['req'] has an unknown key 'content'; {KNOWN}; the key is "
             "ignored"
         ],
         [REQ],
@@ -362,6 +362,129 @@ FINDINGS = [
         ],
         [{**REQ, "title": "Two"}],
         id="adjacent-duplicate",
+    ),
+    # the declarations of a type: their shape here, what they declare in
+    # test_type_declarations.py
+    _conf_case(
+        {"req": {**REQ_VALUE, "inherits": "", "fields": [], "links": "links"}},
+        [
+            "needs_types['req'] has an 'inherits' that is not a non-empty string (got "
+            "'') and a 'fields' that is not a mapping (got list) and a 'links' that is "
+            "not a mapping (got str); the keys are ignored"
+        ],
+        [REQ],
+        id="declarations-not-of-their-shape",
+    ),
+    _conf_case(
+        [{**REQ, "inherits": 3}],
+        [
+            "needs_types entry 1 ('req') has an 'inherits' that is not a non-empty "
+            "string (got int); the key is ignored"
+        ],
+        [REQ],
+        id="inherits-not-a-name",
+    ),
+    _conf_case(
+        [{**REQ, "fields": {"status": "open"}, "links": {"links": None}}],
+        [
+            "needs_types entry 1 ('req').fields['status'] is not a mapping (got str); "
+            "the entry is ignored",
+            "needs_types entry 1 ('req').links['links'] is not a mapping (got "
+            "NoneType); the entry is ignored",
+        ],
+        [{**REQ, "fields": {}, "links": {}}],
+        id="declaration-not-a-mapping",
+    ),
+    _conf_case(
+        {
+            "req": {
+                **REQ_VALUE,
+                "fields": {
+                    "status": {
+                        "description": 1,
+                        "nullable": "no",
+                        "schema": [],
+                        "predicates": "x",
+                        "default": "open",
+                    }
+                },
+                "links": {"links": {"predicates": [["a", "b", "c"], [5, "x"]]}},
+            }
+        },
+        [
+            "needs_types['req'].fields['status'] has a 'description' that is not a "
+            "string (got int) and a 'schema' that is not a mapping (got list) and a "
+            "'nullable' that is not a boolean (got str) and a 'predicates' that is not "
+            "a list of (filter, value) pairs (got str); the keys are ignored",
+            "needs_types['req'].links['links'] has a 'predicates' that is not a list "
+            "of (filter, value) pairs (got a list with an item that is not a (filter, "
+            "value) pair); the key is ignored",
+        ],
+        [
+            {
+                **REQ,
+                "fields": {"status": {"default": "open"}},
+                "links": {"links": {}},
+            }
+        ],
+        id="declaration-keys-not-of-their-shape",
+    ),
+    _conf_case(
+        [
+            {
+                **REQ,
+                "fields": {"status": {"parse_variants": True, "derive": "x"}},
+                "links": {"links": {"nullable": False, "incoming": "in"}},
+            }
+        ],
+        [
+            "needs_types entry 1 ('req').fields['status'] has unknown keys "
+            "'parse_variants', 'derive'; known keys are description, schema, "
+            "nullable, default, predicates; the keys are ignored",
+            "needs_types entry 1 ('req').links['links'] has unknown keys 'nullable', "
+            "'incoming'; known keys are description, schema, default, predicates; the "
+            "keys are ignored",
+        ],
+        [{**REQ, "fields": {"status": {}}, "links": {"links": {}}}],
+        id="declaration-unknown-keys",
+    ),
+    _conf_case(
+        {
+            "req": {
+                **REQ_VALUE,
+                "inherits": "spec",
+                "fields": {
+                    "status": {
+                        "description": "d",
+                        "schema": {"enum": ["open"]},
+                        "nullable": True,
+                        "default": "open",
+                        "predicates": [("id == 'R_1'", "open")],
+                    }
+                },
+                "links": {"links": {"description": "d", "default": []}},
+            },
+            "spec": {"title": "Specification", "prefix": "S_"},
+        },
+        [],
+        [
+            {
+                **REQ,
+                "inherits": "spec",
+                "fields": {
+                    "status": {
+                        "description": "d",
+                        "schema": {"enum": ["open"]},
+                        "nullable": True,
+                        "default": "open",
+                        "predicates": [("id == 'R_1'", "open")],
+                    }
+                },
+                "links": {"links": {"description": "d", "default": []}},
+            },
+            SPEC,
+        ],
+        id="declarations-of-their-shape",
     ),
 ]
 
@@ -445,6 +568,76 @@ def test_the_resolution_is_pure_and_idempotent(value: object) -> None:
     assert value == before
     resolved, _ = normalise_need_types(value)
     assert normalise_need_types(resolved) == (resolved, [])
+
+
+def test_the_declarations_are_resolved_anew() -> None:
+    """A resolved entry shares no declaration with the configured value: changing one
+    changes nothing in the other."""
+    value = {
+        "req": {
+            **REQ_VALUE,
+            "inherits": "spec",
+            "fields": {
+                "x": {
+                    "schema": {"enum": ["A"]},
+                    "default": ["d"],
+                    "predicates": [["True", "p"]],
+                    "bogus": 1,
+                }
+            },
+            "links": {"blocks": {"default": ["R_1"]}},
+        }
+    }
+    before = copy.deepcopy(value)
+    resolved, findings = normalise_need_types(value)
+    assert len(findings) == 1
+    entry: dict[str, Any] = dict(resolved[0])
+    entry["fields"]["x"]["schema"]["enum"].append("B")
+    entry["fields"]["x"]["default"].append("e")
+    entry["fields"]["x"]["predicates"][0][1] = "q"
+    entry["links"]["blocks"]["default"].clear()
+    entry["fields"]["y"] = {}
+    assert value == before
+    assert normalise_need_types(normalise_need_types(value)[0]) == (
+        normalise_need_types(value)[0],
+        [],
+    )
+
+
+#: what the finding says a ``predicates`` value that is not of its shape is
+NOT_A_LIST = "(got str)"
+NOT_A_PAIR = "(got a list with an item that is not a (filter, value) pair)"
+
+
+@pytest.mark.parametrize(
+    ("predicates", "got"),
+    [
+        pytest.param([["id == 'R_1'", "open"]], None, id="a-list-of-lists"),
+        pytest.param([("id == 'R_1'", ["a", "b"])], None, id="a-tuple-any-value"),
+        pytest.param((), None, id="none"),
+        pytest.param("x", NOT_A_LIST, id="not-a-list"),
+        pytest.param(["id == 'R_1'"], NOT_A_PAIR, id="not-a-pair"),
+        pytest.param([["id == 'R_1'"]], NOT_A_PAIR, id="one-item"),
+        pytest.param([["id == 'R_1'", "a", "b"]], NOT_A_PAIR, id="three-items"),
+        pytest.param([[5, "open"]], NOT_A_PAIR, id="a-filter-not-a-string"),
+    ],
+)
+def test_predicates_are_filter_value_pairs(predicates: object, got: str | None) -> None:
+    """``predicates`` is a list of pairs, each a filter string and a value of any
+    type, as ``needs_fields`` takes them; the finding says which of the two it is
+    not."""
+    resolved, findings = normalise_need_types(
+        {"req": {**REQ_VALUE, "fields": {"status": {"predicates": predicates}}}}
+    )
+    assert ("predicates" in resolved[0]["fields"]["status"]) is (got is None)
+    assert findings == (
+        []
+        if got is None
+        else [
+            "needs_types['req'].fields['status'] has a 'predicates' that is not a "
+            f"list of (filter, value) pairs {got}; the key is ignored"
+        ]
+    )
 
 
 def test_the_mapping_shape_is_the_list_in_its_order() -> None:
