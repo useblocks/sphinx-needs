@@ -5,7 +5,7 @@ import re
 from collections.abc import Sequence
 from collections.abc import Set as AbstractSet
 from contextlib import suppress
-from typing import Any
+from typing import Any, TypedDict
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -23,6 +23,25 @@ from sphinx_needs.nodes import Need
 from sphinx_needs.utils import add_doc, coerce_to_boolean
 
 LOGGER = get_logger(__name__)
+
+
+class _ListNeed(TypedDict):
+    """One parsed list item, before it becomes a need."""
+
+    title: str
+    need_id: str
+    type: str
+    content: list[str]
+    """The item's content, line by line (the text after the title first)."""
+    content_lines: list[int]
+    """For each content line, its index within the directive's own content."""
+    level: int
+    """The item's indentation level, which decides its need type."""
+    line: int
+    """The index within the directive's own content of the item's first line."""
+    options: dict[str, str]
+    """Its inline options, with the list-level ``tags`` merged in and ``id`` taken out."""
+
 
 LINE_REGEX = re.compile(
     r"(?P<indent>[^\S\n]*)\*\s*(?P<text>.*)|[\S\*]*(?P<more_text>.*)"
@@ -102,7 +121,7 @@ class List2NeedDirective(SphinxDirective):
         if not types_raw:
             raise SphinxWarning("types must be set.")
         # Create a dict, which delivers the need-type for the later level
-        types = {}
+        types: dict[int, str] = {}
         types_raw_list = [x.strip() for x in types_raw.split(",")]
         conf_types = [x["directive"] for x in needs_config.types]
         for x in range(0, len(types_raw_list)):
@@ -117,7 +136,7 @@ class List2NeedDirective(SphinxDirective):
             down_links_raw = ""
 
         # Create a dict, which delivers the need-link for the later level
-        down_links_types = {}
+        down_links_types: dict[int, str] = {}
         if down_links_raw is None or down_links_raw == "":
             down_links_raw_list = []
         else:
@@ -145,7 +164,7 @@ class List2NeedDirective(SphinxDirective):
         # Retrieve tags defined at list level
         tags = self.options.get("tags", "")
 
-        list_needs = []
+        list_needs: list[_ListNeed] = []
         # Storing the data in a sorted list
         for line_index, content_line in enumerate(content_raw.split("\n")):
             # for groups in line.findall(content_raw):
@@ -200,7 +219,7 @@ class List2NeedDirective(SphinxDirective):
 
                     need_id = self.make_hashed_id(prefix, title, needs_id_length)
 
-                need = {
+                need: _ListNeed = {
                     "title": title,
                     "need_id": need_id,
                     "type": types[level],
@@ -221,13 +240,13 @@ class List2NeedDirective(SphinxDirective):
                     # ":" is likely to have needed: the options of a directive written
                     # in the content of an item, which are one field list line each
                     more_text = f"   {more_text}"
-                list_needs[-1]["content"].append(more_text)  # ty: ignore[invalid-argument-type, unresolved-attribute]
-                list_needs[-1]["content_lines"].append(line_index)  # ty: ignore[unresolved-attribute]
+                list_needs[-1]["content"].append(more_text)
+                list_needs[-1]["content_lines"].append(line_index)
 
         # Extract the inline options of every item
         for list_need in list_needs:
             # Search for meta data in the complete title/content
-            content_text = "\n".join(list_need["content"])  # ty: ignore[no-matching-overload]
+            content_text = "\n".join(list_need["content"])
             search_string = list_need["title"] + content_text
             result = OPTION_AREA_REGEX.search(search_string)
             if result is not None:  # An option was found
@@ -239,26 +258,24 @@ class List2NeedDirective(SphinxDirective):
                 # The option area cannot span a line break, so substituting on the
                 # joined content and splitting it up again preserves the line count,
                 # and with it every line's mapping back to its source position.
-                list_need["title"] = OPTION_AREA_REGEX.sub("", list_need["title"])  # ty: ignore[no-matching-overload]
+                list_need["title"] = OPTION_AREA_REGEX.sub("", list_need["title"])
                 list_need["content"] = OPTION_AREA_REGEX.sub("", content_text).split(
                     "\n"
                 )
 
             # Add tags defined at list level (if exists) to the ones potentially defined in the content
             if tags:
-                if "options" not in list_need:
-                    list_need["options"] = {}
-                current_tags = list_need["options"].get("tags", "")  # ty: ignore[unresolved-attribute]
+                current_tags = list_need["options"].get("tags", "")
                 if current_tags:
-                    list_need["options"]["tags"] = current_tags + "," + tags  # ty: ignore[invalid-assignment]
+                    list_need["options"]["tags"] = current_tags + "," + tags
                 else:
-                    list_need["options"]["tags"] = tags  # ty: ignore[invalid-assignment]
+                    list_need["options"]["tags"] = tags
 
             # an explicitly given id wins over the one derived from the title,
             # and has to be known before the links-down of any other item are built.
             # An empty one is handed on as it stands, so that it is refused with a
             # diagnostic instead of being silently replaced by the title hash.
-            if (given_id := list_need["options"].pop("id", None)) is not None:  # ty: ignore[invalid-argument-type, too-many-positional-arguments, unresolved-attribute]
+            if (given_id := list_need["options"].pop("id", None)) is not None:
                 list_need["need_id"] = given_id
 
         # Finally creating the needs
@@ -267,7 +284,7 @@ class List2NeedDirective(SphinxDirective):
         open_needs: list[tuple[int, Need]] = []
         created = False
         for index, list_need in enumerate(list_needs):
-            options = dict(list_need["options"])  # ty: ignore[no-matching-overload]
+            options = dict(list_need["options"])
 
             need_links_down = self.get_down_needs(list_needs, index)
             if (
@@ -275,17 +292,17 @@ class List2NeedDirective(SphinxDirective):
                 and list_need["level"] in down_links_types
                 and need_links_down
             ):
-                links_down_type = down_links_types[list_need["level"]]  # ty: ignore[invalid-argument-type]
+                links_down_type = down_links_types[list_need["level"]]
                 given = options.get(links_down_type)
                 joined = ", ".join(need_links_down)
                 options[links_down_type] = f"{given}, {joined}" if given else joined
 
-            type_options = known_options[list_need["type"]]  # ty: ignore[invalid-argument-type]
+            type_options = known_options[list_need["type"]]
             need_nodes = self._create_need(list_need, options, type_options)
             created = created or bool(need_nodes)
 
             if presentation == "nested":
-                while open_needs and open_needs[-1][0] >= list_need["level"]:  # ty: ignore[unsupported-operator]
+                while open_needs and open_needs[-1][0] >= list_need["level"]:
                     open_needs.pop()
                 if open_needs:
                     parent_node = open_needs[-1][1]
@@ -298,7 +315,7 @@ class List2NeedDirective(SphinxDirective):
                         # read, so a child placed inside one would be rendered nowhere
                         # and referenced by an anchor that never reaches the page
                         if not node.get("hidden"):
-                            open_needs.append((list_need["level"], node))  # ty: ignore[invalid-argument-type]
+                            open_needs.append((list_need["level"], node))
                         break
             else:
                 node_list += need_nodes
@@ -310,7 +327,7 @@ class List2NeedDirective(SphinxDirective):
 
     def _create_need(
         self,
-        list_need: dict[str, Any],
+        list_need: _ListNeed,
         options: dict[str, str],
         known_options: AbstractSet[str],
     ) -> list[nodes.Node]:
@@ -357,7 +374,7 @@ class List2NeedDirective(SphinxDirective):
         # own title is empty is one written without a directive argument
         title, full_title = _get_title(
             [list_need["title"]] if list_need["title"].strip() else [],
-            content,  # ty: ignore[invalid-argument-type]
+            content,
             title_optional=needs_config.title_optional,
             title_from_content=flags.get(
                 "title_from_content", needs_config.title_from_content
@@ -396,7 +413,7 @@ class List2NeedDirective(SphinxDirective):
             warn(f"Need could not be created: {err.message}", "create_need")
             return []
 
-    def _content(self, list_need: dict[str, Any]) -> tuple[StringList, int]:
+    def _content(self, list_need: _ListNeed) -> tuple[StringList, int]:
         """Build the source mapped content of one parsed list item.
 
         Blank lines are stripped from both ends, as the parser does for the content
@@ -473,7 +490,7 @@ class List2NeedDirective(SphinxDirective):
             .upper()[:id_length],
         )
 
-    def get_down_needs(self, list_needs: list[Any], index: int) -> list[str]:
+    def get_down_needs(self, list_needs: list[_ListNeed], index: int) -> list[str]:
         """
         Return all needs which are directly under the one given by the index
         """
