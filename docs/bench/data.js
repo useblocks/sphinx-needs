@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792050000468,
+  "lastUpdate": 1792069558001,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -25164,6 +25164,42 @@ window.BENCHMARK_DATA = {
             "value": 56.73399794600002,
             "unit": "s",
             "extra": "Commit: c80034a6b414ee940def3b79f9ff6334ae29a3c0\nBranch: master\nTime: 2026-10-15T09:38:35+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "07ae24f880d7f7bc44d9d425d80bd10af2f6df8d",
+          "message": "🐛 measure_time: a callable with no __name__ or no source is measured; ty checks the wrapper (#2268)\n\n## What\n\nThe last unchecked \"cheap\" item of #1835, which turned out to need a\nbehaviour decision first. The code is `measure_time` in\n`packages/sphinx-needs` (`debug.py`) and its copy in\n`packages/sphinx-codelinks` (`sphinx_extension/debug.py`).\n\n**The bug.** With time measurement on, `measure_time` read\n`func.__name__`, `inspect.getfile(func)` and\n`inspect.getsourcelines(func)` unguarded.\n\n| Measured callable | What happened |\n|---|---|\n| `functools.partial` named by `:filter-func:` | build ended with\n`AttributeError` |\n| `functools.partial` registered with `add_dynamic_function` | the call\nfailed with a warning, and the field lost its value |\n| function whose source file is gone | `OSError` (the failure\n`test_measure_time.py`'s fixture already describes) |\n\nEach callable is now measured.\n- **Names:** a partial is recorded as `partial(<name of what it wraps>)`\nand a callable instance by its type's name. A `repr` is never used,\nbecause it would put memory addresses and bound arguments into the\nreport.\n- **Location:** file and line are looked up separately, each `None`\nwhere inspect cannot give one. Every exception is caught there, since a\ndebugging aid must not end a build.\n- **Plain functions:** a callable with a name and readable source is\nrecorded exactly as before.\n\n**The typing.** ty inferred `EXECUTE_TIME_MEASUREMENTS = False` as\n`Literal[False]`. So it treated everything after `if not\nEXECUTE_TIME_MEASUREMENTS: return ...` in the wrapper as unreachable and\nnever checked it, and the assignments in `needs.py` /\n`source_tracing.py` needed `# ty: ignore[invalid-assignment]`. With the\nflags annotated `bool` / `float`, ty checks the wrapper and is clean,\nand those four suppressions go.\n\n**Noted, not changed.**\n- `functions.py` could pass the registered name to `measure_time_func`\n(`name=df.name`). The measurement key ignores `name=` anyway, which\npredates this PR.\n- Distinct partials of one function, or instances of one class, share a\nmeasurement entry, as two plain functions with the same `__name__`\nalways have: two dynamic functions `partial(base, suffix=\"_A\")` and\n`partial(base, suffix=\"_B\")` are measured as one. Passing the registered\nname would fix this too.\n\n## Why\n\nContinues #1835.\n\n## Tests\n\n- **`test_measure_time_func_names_and_places_a_callable`**, in both\n`packages/sphinx-needs/tests/test_measure_time.py` and\n`packages/sphinx-codelinks/tests/test_debug.py`. It pins the exact name,\nfile, line and count for five callables:\n\n  | Callable | Name | File | Line |\n  |---|---|---|---|\n  | plain function | its name | `__file__` | its first line |\n  | `partial(str.strip)` | `partial(strip)` | `None` | `None` |\n  | callable instance | its type's name | `None` | `None` |\n| partial of a callable instance | `partial(_CallableInstance)` | `None`\n| `None` |\n  | function with no source | `gone` | `<string>` (kept) | `None` |\n\n`test_measure_time_func_survives_any_inspect_error` patches inspect to\nraise `OSError` from `getfile` and `tokenize.TokenError` from\n`getsourcelines`, and asserts that field is `None`.\n\n- **Red first:** the tests failed before the fix with `AttributeError`\nand `OSError`.\n- **Mutations:** each of these, in both packages, fails them:\n  - each guard reverted;\n  - the file or line forced to `None`;\n- the name made a `repr`, for every callable, for a partial, or for an\ninstance;\n  - a partial named without recursing;\n  - either lookup's `except` narrowed.\n- **Adversarial review.** An independent reviewer confirmed:\n- plain functions, lambdas, bound methods and classes are recorded\nidentically before and after;\n- each of the four removed suppressions was needed before and is\nunneeded now, and the wrapper body really is checked now;\n- the real end-to-end paths: a partial through `:filter-func:` ended the\nbuild, and one through `add_dynamic_function` warned.\n\nIt found the `repr` addresses, the unpinned plain-function case and the\nchangelog example, all fixed. The fixes went back to the same reviewer,\nwho returned **SHIP**: no address in a real build's keys\n(`dyn_func_partial(base)`), and the edge cases checked (`partialmethod`,\nmocks, builtins, bound methods). Its two optional survivors are now\ncaught.\n- **Gates:** lint, typecheck, `test-needs` (2921 passed),\n`test-codelinks` (1062 passed), all at `49cacec`.\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue. *(Written by Claude Code at a\nmaintainer's request.)*\n- [x] I ran the package's tests (`uv run poe test-<package>`) and they\npass.\n- [x] Documentation is updated where behaviour or options change. *(No\noptions change.)*\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*. *(sphinx-needs: Bug fixes; sphinx-codelinks.)*\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-15T15:04:30+02:00",
+          "tree_id": "76a37d03f22425a5453de5771a2ebce50bc28b8e",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/07ae24f880d7f7bc44d9d425d80bd10af2f6df8d"
+        },
+        "date": 1792069548302,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.09540114200000005,
+            "unit": "s",
+            "extra": "Commit: 07ae24f880d7f7bc44d9d425d80bd10af2f6df8d\nBranch: master\nTime: 2026-10-15T15:04:30+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 52.33238085199999,
+            "unit": "s",
+            "extra": "Commit: 07ae24f880d7f7bc44d9d425d80bd10af2f6df8d\nBranch: master\nTime: 2026-10-15T15:04:30+02:00"
           }
         ]
       }
