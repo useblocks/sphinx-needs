@@ -68,7 +68,7 @@ def add_need_type(
     :param style: Plantuml-style for needflow representation. Default: 'node'
     :return: None
     """
-    import sphinx_needs.directives.need
+    from sphinx_needs.needs import _register_need_directive
 
     needs_types = NeedsSphinxConfig(app.config).types
     type_names = [x["directive"] for x in needs_types]
@@ -85,7 +85,7 @@ def add_need_type(
             "style": style,
         }
     )
-    app.add_directive(directive, sphinx_needs.directives.need.NeedDirective)
+    _register_need_directive(app, directive)
 
 
 def add_extra_option(

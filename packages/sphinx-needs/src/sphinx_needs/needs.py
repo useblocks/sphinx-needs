@@ -11,6 +11,7 @@ from timeit import default_timer as timer  # Used for timing measurements
 from typing import Any, Literal, TypedDict, TypeVar, cast
 
 from docutils import nodes
+from docutils.parsers.rst import directives as rst_directives
 from sphinx.application import Sphinx
 from sphinx.builders import Builder
 from sphinx.config import Config
@@ -735,6 +736,28 @@ def _load_variants_from_toml(
         )
 
 
+def _register_need_directive(app: Sphinx, name: str) -> None:
+    """Register the need directive under a need type's name, once.
+
+    Both ``load_config`` and ``add_need_type`` register the directive of a need type,
+    and either may run first: ``add_need_type`` is called from other extensions'
+    ``config-inited`` handlers, at the same priority as ``load_config`` or earlier. A
+    name that already holds :class:`NeedDirective` itself is left alone, so a type
+    registers its directive once whichever comes first (#2271). Any other directive
+    under the name is overridden as before, with Sphinx's ``already registered``
+    warning: only the need directive's own registration is skipped.
+
+    :param app: The Sphinx application.
+    :param name: The need type's directive name.
+    """
+    # the registry Sphinx's own ``is_directive_registered`` reads, which docutils'
+    # stubs do not declare
+    registry = rst_directives._directives  # ty: ignore[unresolved-attribute]
+    if registry.get(name) is NeedDirective:
+        return
+    app.add_directive(name, NeedDirective)
+
+
 def load_config(app: Sphinx, *_args: Any) -> None:
     """
     Register extra fields and directive based on config from conf.py
@@ -859,7 +882,7 @@ def load_config(app: Sphinx, *_args: Any) -> None:
 
     for t in needs_config.types:
         # Register requested types of needs
-        app.add_directive(t["directive"], NeedDirective)
+        _register_need_directive(app, t["directive"])
 
     for name, check in needs_config._warnings.items():
         if name not in _NEEDS_CONFIG.warnings:

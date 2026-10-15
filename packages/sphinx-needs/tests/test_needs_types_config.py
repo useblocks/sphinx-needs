@@ -497,9 +497,9 @@ def test_a_type_added_before_load_config_registers_its_directive_once(
     ``load_config`` registers the directive; ``load_config`` then finds it registered
     and does not register it again."""
     app = test_app
+    assert get_need_types(app)[-1] == "story"
     app.build()
     assert build_warnings(app) == []
-    assert get_need_types(app)[-1] == "story"
     assert list(_needs(app)) == ["ST_00001"]
 
 
