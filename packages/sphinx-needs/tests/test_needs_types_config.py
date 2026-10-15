@@ -603,6 +603,31 @@ def test_the_declarations_are_resolved_anew() -> None:
     )
 
 
+@pytest.mark.parametrize(
+    ("predicates", "of_their_shape"),
+    [
+        pytest.param([["id == 'R_1'", "open"]], True, id="a-list-of-lists"),
+        pytest.param([("id == 'R_1'", ["a", "b"])], True, id="a-tuple-any-value"),
+        pytest.param((), True, id="none"),
+        pytest.param("x", False, id="not-a-list"),
+        pytest.param(["id == 'R_1'"], False, id="not-a-pair"),
+        pytest.param([["id == 'R_1'"]], False, id="one-item"),
+        pytest.param([["id == 'R_1'", "a", "b"]], False, id="three-items"),
+        pytest.param([[5, "open"]], False, id="a-filter-not-a-string"),
+    ],
+)
+def test_predicates_are_filter_value_pairs(
+    predicates: object, of_their_shape: bool
+) -> None:
+    """``predicates`` is a list of pairs, each a filter string and a value of any
+    type, as ``needs_fields`` takes them."""
+    resolved, findings = normalise_need_types(
+        {"req": {**REQ_VALUE, "fields": {"status": {"predicates": predicates}}}}
+    )
+    assert ("predicates" in resolved[0]["fields"]["status"]) is of_their_shape
+    assert bool(findings) is not of_their_shape
+
+
 def test_the_mapping_shape_is_the_list_in_its_order() -> None:
     """Each key becomes the entry's ``directive``, first, in the mapping's order."""
     resolved, findings = normalise_need_types(MAPPING)

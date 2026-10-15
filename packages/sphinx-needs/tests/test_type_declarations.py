@@ -788,6 +788,10 @@ def test_a_child_narrows_what_its_parent_declares(test_app: Any) -> None:
                             }
                         },
                     },
+                    impl={
+                        "inherits": "spec",
+                        "fields": {"x": {"schema": {"enum": ["A", "B", "C"]}}},
+                    },
                 ),
                 {"x": X},
             )
@@ -797,16 +801,21 @@ def test_a_child_narrows_what_its_parent_declares(test_app: Any) -> None:
 )
 def test_a_child_widening_its_parent_is_refused(test_app: Any) -> None:
     """A child's entry is a narrowing of its parent's declaration, not only of the
-    field's: one that widens the parent's is refused, naming the parent, and the child
-    reads its parent's declaration."""
+    field's: one that widens the parent's is refused, naming the type whose entry made
+    the declaration (a grandparent, where the parent's own entry was refused), and the
+    child reads its parent's declaration."""
     app = test_app
     app.build()
     assert build_warnings(app) == [
         "WARNING: needs_types['spec'].fields['x'] widens the field as need type 'req' "
         "declares it: Child 'enum' values ['A', 'B', 'C'] are not a subset of parent "
-        "'enum' values ['A', 'B']. [needs.type_widening]"
+        "'enum' values ['A', 'B']. [needs.type_widening]",
+        "WARNING: needs_types['impl'].fields['x'] widens the field as need type 'req' "
+        "declares it: Child 'enum' values ['A', 'B', 'C'] are not a subset of parent "
+        "'enum' values ['A', 'B']. [needs.type_widening]",
     ]
     assert _field(app, "spec", "x") is _field(app, "req", "x")
+    assert _field(app, "impl", "x") is _field(app, "req", "x")
 
 
 # -- the value of a need ---------------------------------------------------------------------
@@ -824,6 +833,12 @@ PRECEDENCE_INDEX = """\
 .. spec:: D
    :id: S_003
    :x: authored
+
+.. impl:: P
+   :id: I_001
+
+.. impl:: Q
+   :id: I_002
 """
 
 
@@ -832,13 +847,20 @@ PRECEDENCE_INDEX = """\
     [
         _project(
             _conf(
-                _types(spec={"fields": {"x": {"default": "type"}}}),
+                _types(
+                    spec={"fields": {"x": {"default": "type"}, "n": {"default": "3"}}},
+                    impl={"fields": {"x": {"predicates": [["title == 'Q'", "impl"]]}}},
+                ),
                 {
                     "x": {
                         "nullable": True,
                         "default": "global",
-                        "predicates": [["id == 'S_002'", "predicate"]],
-                    }
+                        "predicates": [
+                            ["id == 'S_002'", "predicate"],
+                            ["title == 'P'", "predicate"],
+                        ],
+                    },
+                    "n": {"nullable": True, "schema": {"type": "integer"}},
                 },
             ),
             PRECEDENCE_INDEX,
@@ -851,7 +873,11 @@ build_json = true
 [needs.fields.x]
 nullable = true
 default = "global"
-predicates = [["id == 'S_002'", "predicate"]]
+predicates = [["id == 'S_002'", "predicate"], ["title == 'P'", "predicate"]]
+
+[needs.fields.n]
+nullable = true
+schema = { type = "integer" }
 
 [needs.types.req]
 title = "Requirement"
@@ -863,6 +889,16 @@ prefix = "S_"
 
 [needs.types.spec.fields.x]
 default = "type"
+
+[needs.types.spec.fields.n]
+default = "3"
+
+[needs.types.impl]
+title = "Implementation"
+prefix = "I_"
+
+[needs.types.impl.fields.x]
+predicates = [["title == 'Q'", "impl"]]
 """,
             PRECEDENCE_INDEX,
         ),
@@ -870,17 +906,20 @@ default = "type"
     indirect=True,
 )
 def test_what_a_need_of_the_type_holds(test_app: Any) -> None:
-    """A value given in the need wins; else the field's predicates, which the type
-    keeps; else the type's default; the needs of every other type take the field's
-    default."""
+    """A value given in the need wins; else the predicates of the type's declaration
+    -- the field's, unless the type declares its own, which replace them --; else the
+    type's default; the needs of every other type take the field's default. A value
+    in the configuration is converted to the field's type, as ``needs_fields`` does."""
     app = test_app
     app.build()
     assert build_warnings(app) == []
-    assert {k: v["x"] for k, v in _needs(app).items()} == {
-        "R_001": "global",
-        "S_001": "type",
-        "S_002": "predicate",
-        "S_003": "authored",
+    assert {k: (v["x"], v["n"]) for k, v in _needs(app).items()} == {
+        "R_001": ("global", None),
+        "S_001": ("type", 3),
+        "S_002": ("predicate", 3),
+        "S_003": ("authored", 3),
+        "I_001": ("global", None),
+        "I_002": ("impl", None),
     }
 
 
