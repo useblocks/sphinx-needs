@@ -341,7 +341,7 @@ Otherwise each problem is a ``needs.config`` warning, and the build goes on with
 .. _`needs_types_fields`:
 
 Fields per need type
-^^^^^^^^^^^^^^^^^^^^
+++++++++++++++++++++
 
 .. versionadded:: 9.1.0
 
