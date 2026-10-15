@@ -58,6 +58,7 @@ from sphinx_needs.needs_schema import (
     LinkSchema,
     LinksFunctionArray,
     LinksLiteralValue,
+    TypeFieldsSchema,
 )
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_part import find_parts, update_need_with_parts
@@ -280,7 +281,8 @@ def generate_need(
     # a need from outside keeps the values of its derived fields, as data; any other
     # need takes the rule's value, and what an author wrote in a derived field is
     # ignored. A field a closed need type does not declare is absent on its needs,
-    # from outside or not: a value given for it is ignored
+    # from outside or not: a value given for it is ignored, and reported unless it is
+    # what the need holds anyway (a needs.json carries every field, the empty ones too)
     extras_no_defaults: dict[str, FieldLiteralValue | FieldFunctionArray | None] = {}
     #: the fields an author cannot set: their value is final, no default applies
     closed: set[str] = set()
@@ -290,8 +292,11 @@ def generate_need(
             or not from_outside
             or kwargs.get(extra_field.name) is None
         ):
-            if not from_outside or not extra_field.derived:
-                _refuse_authored(extra_field, kwargs, location, need_type)
+            if not from_outside or (
+                not extra_field.derived
+                and kwargs.get(extra_field.name) != extra_field.off_type_value()
+            ):
+                _refuse_authored(extra_field, kwargs, location, need_type, need_id)
             extras_no_defaults[extra_field.name] = _closed_field_value(
                 extra_field, need_type
             )
@@ -320,8 +325,11 @@ def generate_need(
             or not from_outside
             or kwargs.get(link_field.name) is None
         ):
-            if not from_outside or not link_field.derived:
-                _refuse_authored(link_field, kwargs, location, need_type)
+            if not from_outside or (
+                not link_field.derived
+                and kwargs.get(link_field.name) != link_field.off_type_value()
+            ):
+                _refuse_authored(link_field, kwargs, location, need_type, need_id)
             links_no_defaults[link_field.name] = LinksLiteralValue(
                 link_field.off_type_value()
                 if link_field.derived and link_field.rule_for(need_type) is None
@@ -398,7 +406,7 @@ def generate_need(
         k: _get_links_default(schema.get_link_field(k), **context) if v is None else v
         for k, v in links_no_defaults.items()
     }
-    _copy_links(links, needs_schema)
+    _copy_links(links, schema)
 
     # Unwrap core fields: extract concrete values and dynamic functions
     dynamic_fields: dict[str, FieldFunctionArray | LinksFunctionArray] = {}
@@ -560,6 +568,7 @@ def _refuse_authored(
     kwargs: Mapping[str, Any],
     location: tuple[str | None, int | None] | None,
     need_type: str,
+    need_id: str,
 ) -> None:
     """Report a value given for a field an author cannot set: a derived one, or one
     the need's closed type does not declare.
@@ -576,8 +585,8 @@ def _refuse_authored(
         log_warning(
             logger,
             f"{what} {field_schema.name!r} is not declared on need type {need_type!r}, "
-            f"which is closed, and cannot be set in a need; the value {value!r} is "
-            "ignored",
+            f"which is closed, and cannot be set in need {need_id!r}; the value "
+            f"{value!r} is ignored",
             "undeclared_for_type",
             location,
         )
@@ -1571,15 +1580,19 @@ def _make_hashed_id(
 
 def _copy_links(
     links: dict[str, LinksLiteralValue | LinksFunctionArray | None],
-    schema: FieldsSchema,
+    schema: TypeFieldsSchema,
 ) -> None:
-    """Implement 'copy' logic for links.
+    """Implement 'copy' logic for links, on the schema of the need's type.
 
-    Nothing is copied into a derived ``links``: it holds what its rule computes.
+    Nothing is copied into a derived ``links``: it holds what its rule computes; nor
+    into ``links`` on a closed need type that does not declare it: it holds no links.
     """
     if "links" not in links:
         return  # should not happen, but be defensive
-    if (target := schema.get_link_field("links")) is not None and target.derived:
+    if (target := schema.get_link_field("links")) is not None and (
+        # derived, or absent on a closed type: an author cannot set it
+        target.derived or not target.directive_option
+    ):
         return
     copy_links: list[
         NeedLink | DynamicFunctionParsed | VariantFunctionParsed | VariantDataParsed
