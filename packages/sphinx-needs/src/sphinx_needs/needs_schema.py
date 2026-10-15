@@ -2198,9 +2198,9 @@ def _default_problems(
 ) -> list[str]:
     """Why a literal default, or a literal predicate default, of ``field`` is not
     valid against its schema: one reason per value, except a literal ``field`` takes
-    from ``base`` that is invalid against the schema of ``base`` already. A link
-    default is checked as a need's links are validated: each target once, as its
-    filter string."""
+    from ``base`` that is invalid against the schema of ``base`` already, or that is
+    the empty value of its type. A link default is checked as a need's links are
+    validated: each target once, as its filter string."""
     values: list[tuple[str | None, FieldLiteralValue | LinksLiteralValue]] = []
     if isinstance(field.default, FieldLiteralValue | LinksLiteralValue):
         values.append((None, field.default))
@@ -2214,6 +2214,7 @@ def _default_problems(
         (None, base.default),
         *base.predicate_defaults,
     ]
+    empty = typed_empty(field.type)
     problems: list[str] = []
     for filter_, literal in values:
         value = (
@@ -2221,6 +2222,12 @@ def _default_problems(
             if isinstance(literal, LinksLiteralValue)
             else literal.value
         )
+        if value == empty and any(
+            filter_ == of and literal is own for of, own in inherited
+        ):
+            # the empty value the field keeps (a link type's and tags' []) is no
+            # default, as None is not one for a nullable field: the need holds none
+            continue
         if (message := value_problem(field.name, field.schema, value)) is None:
             continue
         if (filter_, literal) in inherited and (
