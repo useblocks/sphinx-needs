@@ -979,6 +979,14 @@ DELETE_INDEX = """\
    :y: 2
    :w: b
 
+.. req:: C
+   :id: R_002
+   :x: [[copy("title")]]
+
+.. spec:: D
+   :id: S_002
+   :x: [[copy("title")]]
+
 .. needextend:: type in ["req", "spec"]
    :-x:
    :-y:
@@ -1016,13 +1024,16 @@ DELETE_INDEX = """\
 )
 def test_a_needextend_deletes_to_the_empty_value_of_the_type(test_app: Any) -> None:
     """``:-x:`` empties a field to what the need's type declares: ``None`` where the
-    field is nullable on it, else the empty value of the field's type."""
+    field is nullable on it, else the empty value of the field's type; a dynamic
+    function the need gave the field is deleted with it."""
     app = test_app
     app.build()
     assert build_warnings(app) == []
     assert {k: (v["x"], v["y"], v["w"]) for k, v in _needs(app).items()} == {
         "R_001": (None, None, None),
         "S_001": ("", 0, []),
+        "R_002": (None, None, None),
+        "S_002": ("", 0, []),
     }
 
 
