@@ -1,4 +1,6 @@
 import functools
+import inspect
+import tokenize
 from pathlib import Path
 
 import pytest
@@ -82,9 +84,22 @@ def _source_less_function():
         ),
         (functools.partial(str.strip), "partial(strip)", None, None),
         (_CallableInstance(), "_CallableInstance", None, None),
+        # named through what it wraps, which has no __name__ either
+        (
+            functools.partial(_CallableInstance()),
+            "partial(_CallableInstance)",
+            None,
+            None,
+        ),
         (_source_less_function(), "gone", "<string>", None),
     ],
-    ids=["function", "partial", "callable-instance", "function-without-source"],
+    ids=[
+        "function",
+        "partial",
+        "callable-instance",
+        "partial-of-instance",
+        "function-without-source",
+    ],
 )
 def test_measure_time_func_names_and_places_a_callable(func, name, file, line):
     """What a measurement records for a callable, whatever kind it is.
@@ -107,3 +122,30 @@ def test_measure_time_func_names_and_places_a_callable(func, name, file, line):
         line,
         1,
     )
+
+
+@pytest.mark.parametrize(
+    ("lookup", "error"),
+    [
+        ("getfile", OSError("source code not available")),  # a class in __main__
+        ("getsourcelines", tokenize.TokenError("EOF in multi-line statement")),
+    ],
+)
+def test_measure_time_func_survives_any_inspect_error(monkeypatch, lookup, error):
+    """Where a callable came from is a debugging aid: any error inspect raises while
+    looking it up leaves that field ``None`` rather than ending the build."""
+
+    original = getattr(inspect, lookup)
+
+    def raise_for_the_measured_function(obj, *args, **kwargs):
+        # only for it: pytest itself calls inspect to report a failure
+        if obj is _measured_function:
+            raise error
+        return original(obj, *args, **kwargs)
+
+    monkeypatch.setattr(inspect, lookup, raise_for_the_measured_function)
+    debug.EXECUTE_TIME_MEASUREMENTS = True
+    measured = debug.measure_time_func(_measured_function, category="test_inspect")
+    assert measured("1") == "1"
+    entry = debug.TIME_MEASUREMENTS["test_inspect__measured_function"]
+    assert entry["file" if lookup == "getfile" else "line"] is None
