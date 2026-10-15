@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792021552529,
+  "lastUpdate": 1792024184394,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -25092,6 +25092,42 @@ window.BENCHMARK_DATA = {
             "value": 50.857540296999986,
             "unit": "s",
             "extra": "Commit: 97ba171c360203b62956da131441c86440c5e2cc\nBranch: master\nTime: 2026-10-15T01:44:30+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "54439fac43579bc16399b001dda76deb83bc001e",
+          "message": "🐛 `:need:`, `:need_outgoing:`, `:need_incoming:` and needtable show a need with no document unlinked (#2244) (#2261)\n\n## What\n\nFixes #2244, in `packages/sphinx-needs`. `add_need(..., docname=None)`\ncreates a need that is in no document and is not external. Four\nrenderers ended the build on such a need; they now show its text without\na link.\n\n| Renderer | Before | Now |\n|---|---|---|\n| `:need:` (`roles/need_ref.py`) | `AssertionError: external_url must be\nset` | text, unlinked |\n| `:need_outgoing:` (also a need's *links* row in its layout) |\n`AssertionError: External URL must be set` | text, unlinked |\n| `:need_incoming:` (also the *backlinks* row) | `AssertionError:\nExternal URL must not be set` (sic) | text, unlinked |\n| `needtable` id and link columns (`utils.row_col_maker`) |\n`AssertionError: References must have \"refuri\" or \"refid\"` (HTML writer)\n| text, unlinked |\n\n**The roles.** Each branched `if not is_external and docname: <link to\nthe document> else: assert external_url; <external link>`. The `else`\nwas reached by an external need and also by an internal need with no\ndocument, but was written only for the first. The external branch is now\n`elif is_external`, and a new `else` shows the role's text. Linking to\nsuch a need was enough to crash, because a need's layout renders the\noutgoing and incoming roles.\n\n**needtable.** `row_col_maker` made a reference and set its `refuri`\nonly for an external need or one with a document. A reference with no\ntarget always ends the HTML build. A cell left without a target now\nholds the text alone.\n\nThis matches what needflow and needuml do since #2243. The rendered\noutput of every need that is external or in a document is unchanged.\n\n**Noted, not changed.** A hand-built `NeedItemSourceUnknown` with an\n`external_url` but `is_external=False`, and no document, used to get an\nexternal link from these roles. It now shows text. That is a mis-built\nneed: every built-in source keeps \"external_url set ⇔ is_external\", and\nevery other renderer (diagrams, needtable, needlist, graphviz) already\nbranches on `is_external` and ignores the URL otherwise.\n\n## Why\n\nCloses #2244, found by the review of #2243.\n\n## Tests\n\n- **`test_need_without_docname_in_roles`**\n(`tests/test_need_no_docname.py`, project\n`tests/doc_test/doc_need_no_docname_roles/`) builds the following:\n  - a need with no document;\n  - an external need, both linked to and from a need in the document;\n  - `needs_show_link_title` on;\n  - the three roles, each in a labelled paragraph;\n  - a needtable with `id;links;links_back`.\n\n  It asserts:\n  - no warning;\n- each role shows the need's title and id with no link, while still\nlinking the external need;\n- the needtable cells are text for the need without a document and links\nfor the rest.\n\n  It was red before the fix. Each of these mutations fails it:\n\n  | Mutation | Roles affected |\n  |---|---|\n  | the crash put back | each role in turn |\n  | an empty link instead of text | `need_outgoing` |\n| the id only instead of the link text | `need_outgoing`,\n`need_incoming` |\n  | the external branch made dead | `need_outgoing`, `need_incoming` |\n  | the needtable change reverted | — |\n\n- **Adversarial review.** An independent reviewer probed the html,\nlatex, text and needs builders, part references, every need source's\n`is_external` / `external_url` / `docname`, and the other renderers. It\nfound the needtable crash, which my issue text had wrongly said was\nunaffected, and three surviving mutations. Both were fixed and sent back\nto the same reviewer, who returned **SHIP**. It verified:\n- LaTeX and text output of such a table is byte-identical before and\nafter (the LaTeX and text writers already wrote a target-less reference\nas text);\n  - every surviving mutation now fails;\n- a probe with a part, `:show_parts:`, datatables, needlist, needextract\nand needflow builds cleanly under html, latex and singlehtml.\n\nTwo mutations still pass this test. `:need:`'s external branch turned to\ntext is caught by `test_role_need`. `need_ref` emitting its pending node\nwould only show in a non-HTML builder.\n- **Gates.** lint, typecheck, and `test-needs` (2914 passed).\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue. *(Written by Claude Code at a\nmaintainer's request.)*\n- [x] I ran the package's tests (`uv run poe test-<package>`) and they\npass.\n- [x] Documentation is updated where behaviour or options change. *(No\noptions change.)*\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*. *(Bug fixes.)*\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-15T02:28:26+02:00",
+          "tree_id": "4943eca587235cf4b200f4e80cfa7be3bfe6f510",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/54439fac43579bc16399b001dda76deb83bc001e"
+        },
+        "date": 1792024175721,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.12278881800000363,
+            "unit": "s",
+            "extra": "Commit: 54439fac43579bc16399b001dda76deb83bc001e\nBranch: master\nTime: 2026-10-15T02:28:26+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 47.639144275999996,
+            "unit": "s",
+            "extra": "Commit: 54439fac43579bc16399b001dda76deb83bc001e\nBranch: master\nTime: 2026-10-15T02:28:26+02:00"
           }
         ]
       }
