@@ -107,7 +107,8 @@ def test_the_three_codes_are_listed() -> None:
         get_args(WarningSubTypes)
     )
     assert WarningSubTypeDescription["type_inherits"] == (
-        "A need type inherits from no need type, or on a cycle; its inherits is ignored"
+        "A need type's inherits names no need type, or is on a cycle; it is ignored and "
+        "the type has no parent"
     )
     assert WarningSubTypeDescription["type_conflict"] == (
         "A need type's declaration of a field or link type cannot be applied to it; "
@@ -520,6 +521,26 @@ CONFLICTS = [
             }
         },
     ),
+    _declared(
+        "another-type",
+        {"fields": {"x": {"schema": {"type": "integer"}}}},
+        [
+            "type_conflict needs_types['spec'].fields['x'] cannot be declared with "
+            "type 'integer' (items None): its type is 'string' (items None) on every "
+            "need type; the entry is ignored"
+        ],
+        fields={"x": X},
+    ),
+    # A-6: None is no value of a field that is not nullable
+    _declared(
+        "a-default-none-not-nullable",
+        {"fields": {"n": {"default": None}}},
+        [
+            "type_conflict needs_types['spec'].fields['n'] sets a 'default' that "
+            "cannot be used: Invalid value for field 'n': None; the entry is ignored"
+        ],
+        fields={"n": {"nullable": False, "default": "n"}},
+    ),
 ]
 
 
@@ -586,6 +607,16 @@ def test_a_derived_field_takes_a_description_a_schema_and_nullable(
 
 WIDENINGS = [
     _declared(
+        "a-min-items-on-a-link-type-without-a-default",
+        {"links": {"blocks": {"schema": {"minItems": 1}}}},
+        [
+            "type_widening needs_types['spec'].links['blocks'] widens the field: "
+            "Default [] is not valid against the narrowed schema: [] has less than 1 "
+            "item."
+        ],
+        links={"blocks": BLOCKS},
+    ),
+    _declared(
         "an-enum-superset",
         {"fields": {"x": {"schema": {"enum": ["A", "B", "C", "D"]}}}},
         [
@@ -619,16 +650,6 @@ WIDENINGS = [
             "change 'nullable' from False to True in child."
         ],
         fields={"n": {"nullable": False, "default": "n"}},
-    ),
-    _declared(
-        "another-type",
-        {"fields": {"x": {"schema": {"type": "integer"}}}},
-        [
-            "type_widening needs_types['spec'].fields['x'] widens the field: it is "
-            "declared with type 'integer' (items None): its type is 'string' (items "
-            "None) on every need type."
-        ],
-        fields={"x": X},
     ),
     _declared(
         "an-enum-below-the-default",
@@ -694,6 +715,42 @@ def test_an_enum_below_the_default_with_a_default_inside(test_app: Any) -> None:
     app.build()
     assert build_warnings(app) == []
     assert {k: v["q"] for k, v in _needs(app).items()} == {"R_001": "QM", "S_001": "A"}
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            _conf(
+                _types(
+                    spec={
+                        "fields": {
+                            "q": {"schema": {"enum": ["A", "B"]}, "default": None}
+                        }
+                    }
+                ),
+                {
+                    "q": {
+                        "nullable": True,
+                        "schema": {"type": "string", "enum": ["A", "B", "QM"]},
+                        "default": "QM",
+                    }
+                },
+            ),
+            ".. req:: A\n   :id: R_001\n\n.. spec:: B\n   :id: S_001\n",
+        )
+    ],
+    indirect=True,
+)
+def test_a_default_of_none_on_a_nullable_field_is_no_default(test_app: Any) -> None:
+    """``default = None`` (in ``conf.py``) on a nullable field gives the type no
+    default: its needs leave the field unset, and an enum may then leave out the
+    field's default."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    assert _field(app, "spec", "q").default is None
+    assert {k: v["q"] for k, v in _needs(app).items()} == {"R_001": "QM", "S_001": None}
 
 
 # -- inherits: what a child declares -------------------------------------------------------
@@ -816,6 +873,47 @@ def test_a_child_widening_its_parent_is_refused(test_app: Any) -> None:
     ]
     assert _field(app, "spec", "x") is _field(app, "req", "x")
     assert _field(app, "impl", "x") is _field(app, "req", "x")
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            _conf(
+                _types(
+                    req={"fields": {"x": {"schema": {"enum": ["A", "B", "C"]}}}},
+                    spec={
+                        "inherits": "req",
+                        "fields": {"x": {"schema": {"enum": ["A", "B"]}}},
+                    },
+                    impl={
+                        "inherits": "spec",
+                        "fields": {"x": {"schema": {"enum": ["A", "B", "C"]}}},
+                    },
+                ),
+                {
+                    "x": {
+                        **X,
+                        "schema": {"type": "string", "enum": ["A", "B", "C", "D"]},
+                    }
+                },
+            )
+        )
+    ],
+    indirect=True,
+)
+def test_a_widening_names_the_nearest_declaring_type(test_app: Any) -> None:
+    """A widening names the nearest type whose entry made the declaration it widens:
+    the parent whose own entry narrowed it, not the root of the chain."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "WARNING: needs_types['impl'].fields['x'] widens the field as need type "
+        "'spec' declares it: Child 'enum' values ['A', 'B', 'C'] are not a subset of "
+        "parent 'enum' values ['A', 'B']. [needs.type_widening]",
+    ]
+    assert _field(app, "impl", "x") is _field(app, "spec", "x")
+    assert _field(app, "spec", "x").schema["enum"] == ["A", "B"]
 
 
 # -- the value of a need ---------------------------------------------------------------------
@@ -964,6 +1062,72 @@ def test_a_toml_sub_table_attaches_to_the_last_array_element(test_app: Any) -> N
     }
 
 
+#: a ``config-inited`` handler after the normaliser (priority 12) appending an entry
+#: to ``needs_types`` as it is, not through ``add_need_type``
+APPENDING_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_fields = {{"x": {{"nullable": True}}}}
+
+
+def _append(app, config):
+    config.needs_types.append({entry!r})
+
+
+def setup(app):
+    app.connect("config-inited", _append, priority=500)
+"""
+
+EXT = {"directive": "ext", "title": "Extension", "prefix": "E_"}
+
+
+@pytest.mark.parametrize(
+    ("test_app", "warning"),
+    [
+        pytest.param(
+            _project(APPENDING_CONF.format(entry={**EXT, "fields": ["x"]})),
+            "needs_types['ext'] has a 'fields' that is not a mapping (got list); the "
+            "key is ignored",
+            id="fields-a-list",
+        ),
+        pytest.param(
+            _project(APPENDING_CONF.format(entry={**EXT, "inherits": ["req"]})),
+            "needs_types['ext'] has an 'inherits' that is not a non-empty string (got "
+            "list); the key is ignored",
+            id="inherits-a-list",
+        ),
+        pytest.param(
+            _project(APPENDING_CONF.format(entry={**EXT, "fields": {"x": "abc"}})),
+            "needs_types['ext'].fields['x'] is not a mapping (got str); the entry is "
+            "ignored",
+            id="a-declaration-a-string",
+        ),
+        pytest.param(
+            _project(
+                APPENDING_CONF.format(
+                    entry={**EXT, "fields": {"x": {"schema": ["string"]}}}
+                )
+            ),
+            "needs_types['ext'].fields['x'] has a 'schema' that is not a mapping (got "
+            "list); the key is ignored",
+            id="a-schema-a-list",
+        ),
+    ],
+    indirect=["test_app"],
+)
+def test_an_entry_appended_after_the_configuration_is_resolved(
+    test_app: Any, warning: str
+) -> None:
+    """An entry an extension appends to ``needs_types`` once the configuration is
+    resolved has its ``inherits``, ``fields`` and ``links`` checked where they are
+    read: what is not of its shape is reported as the configuration's own finding and
+    ignored, and the build goes on."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [f"WARNING: {warning} [needs.config]"]
+    assert _field(app, "ext", "x") == _field(app, None, "x")
+
+
 # -- what reads the declarations -------------------------------------------------------------
 
 DELETE_INDEX = """\
@@ -1035,6 +1199,55 @@ def test_a_needextend_deletes_to_the_empty_value_of_the_type(test_app: Any) -> N
         "R_002": (None, None, None),
         "S_002": ("", 0, []),
     }
+
+
+GONE_CONF = """\
+import os
+
+extensions = ["sphinx_needs"]
+needs_build_json = True
+
+
+def setup(app):
+    if os.environ.get("PTYPE_WITH_GONE"):
+        from sphinx_needs.api import add_field
+
+        add_field("gone", "a field an extension registers", nullable=True)
+"""
+
+GONE_INDEX = """\
+Case
+====
+
+.. req:: A
+   :id: R_001
+
+.. needextend:: R_001
+   :-gone:
+"""
+
+
+def test_a_deleted_field_the_schema_no_longer_has(
+    make_app: Any, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A needextend kept from an earlier build may delete a field the schema of this
+    build no longer has (an extension's, no longer registered): the deletion is not
+    applied, and the build goes on."""
+    srcdir = tmp_path / "src"
+    srcdir.mkdir()
+    (srcdir / "conf.py").write_text(GONE_CONF, encoding="utf-8")
+    (srcdir / "index.rst").write_text(GONE_INDEX, encoding="utf-8")
+    monkeypatch.setenv("PTYPE_WITH_GONE", "1")
+    app = make_app("needs", srcdir=srcdir)
+    app.build()
+    assert build_warnings(app) == []
+    assert _needs(app)["R_001"]["gone"] is None
+    monkeypatch.delenv("PTYPE_WITH_GONE")
+    # the same source and build directories: the extend comes from the environment
+    app = make_app("needs", srcdir=srcdir)
+    app.build()
+    assert build_warnings(app) == []
+    assert "gone" not in _needs(app)["R_001"]
 
 
 @pytest.mark.parametrize(

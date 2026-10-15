@@ -417,7 +417,8 @@ FINDINGS = [
             "'nullable' that is not a boolean (got str) and a 'predicates' that is not "
             "a list of (filter, value) pairs (got str); the keys are ignored",
             "needs_types['req'].links['links'] has a 'predicates' that is not a list "
-            "of (filter, value) pairs (got list); the key is ignored",
+            "of (filter, value) pairs (got a list with an item that is not a (filter, "
+            "value) pair); the key is ignored",
         ],
         [
             {
@@ -603,29 +604,40 @@ def test_the_declarations_are_resolved_anew() -> None:
     )
 
 
+#: what the finding says a ``predicates`` value that is not of its shape is
+NOT_A_LIST = "(got str)"
+NOT_A_PAIR = "(got a list with an item that is not a (filter, value) pair)"
+
+
 @pytest.mark.parametrize(
-    ("predicates", "of_their_shape"),
+    ("predicates", "got"),
     [
-        pytest.param([["id == 'R_1'", "open"]], True, id="a-list-of-lists"),
-        pytest.param([("id == 'R_1'", ["a", "b"])], True, id="a-tuple-any-value"),
-        pytest.param((), True, id="none"),
-        pytest.param("x", False, id="not-a-list"),
-        pytest.param(["id == 'R_1'"], False, id="not-a-pair"),
-        pytest.param([["id == 'R_1'"]], False, id="one-item"),
-        pytest.param([["id == 'R_1'", "a", "b"]], False, id="three-items"),
-        pytest.param([[5, "open"]], False, id="a-filter-not-a-string"),
+        pytest.param([["id == 'R_1'", "open"]], None, id="a-list-of-lists"),
+        pytest.param([("id == 'R_1'", ["a", "b"])], None, id="a-tuple-any-value"),
+        pytest.param((), None, id="none"),
+        pytest.param("x", NOT_A_LIST, id="not-a-list"),
+        pytest.param(["id == 'R_1'"], NOT_A_PAIR, id="not-a-pair"),
+        pytest.param([["id == 'R_1'"]], NOT_A_PAIR, id="one-item"),
+        pytest.param([["id == 'R_1'", "a", "b"]], NOT_A_PAIR, id="three-items"),
+        pytest.param([[5, "open"]], NOT_A_PAIR, id="a-filter-not-a-string"),
     ],
 )
-def test_predicates_are_filter_value_pairs(
-    predicates: object, of_their_shape: bool
-) -> None:
+def test_predicates_are_filter_value_pairs(predicates: object, got: str | None) -> None:
     """``predicates`` is a list of pairs, each a filter string and a value of any
-    type, as ``needs_fields`` takes them."""
+    type, as ``needs_fields`` takes them; the finding says which of the two it is
+    not."""
     resolved, findings = normalise_need_types(
         {"req": {**REQ_VALUE, "fields": {"status": {"predicates": predicates}}}}
     )
-    assert ("predicates" in resolved[0]["fields"]["status"]) is of_their_shape
-    assert bool(findings) is not of_their_shape
+    assert ("predicates" in resolved[0]["fields"]["status"]) is (got is None)
+    assert findings == (
+        []
+        if got is None
+        else [
+            "needs_types['req'].fields['status'] has a 'predicates' that is not a "
+            f"list of (filter, value) pairs {got}; the key is ignored"
+        ]
+    )
 
 
 def test_the_mapping_shape_is_the_list_in_its_order() -> None:
