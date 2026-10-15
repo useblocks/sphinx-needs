@@ -57,7 +57,9 @@ Improvements
   declaration, the schema freezes once a need type reads it, and a per-type declaration is a
   narrowing (``needs_schema.narrowing_problems``); the second slice of per-type fields
   (`discussion #1646 <https://github.com/useblocks/sphinx-needs/discussions/1646>`__) -- nothing
-  changes for a project; the configuration surface follows
+  changes for a project; the configuration surface follows; an extension that changes the schema
+  after the first need is created now gets a ``TypeError``, and ``FieldsSchema``'s getters are
+  typed as shapes (read a full declaration through ``for_type``)
 
 Deprecations
 ............

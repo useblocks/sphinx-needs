@@ -231,19 +231,22 @@ its name, kind, type, item type and derivation, and a link type's display, copy 
 what is the same on every need type). `for_type(need["type"])` answers a need's fields in full
 (`TypeFieldsSchema`, the type's overlays in place); `for_type(None)` is the global view, which reads
 the global declarations explicitly where no need is in hand. Configuration code, which runs before
-any need, reads `declaration(name)`, `type_declarations(name)` and `declares_default(name)`. The type
-checker refuses a per-type attribute read (a default, `nullable`, `allow_extend`, `parse_*`, the
-`schema` constraints) on the union; an `isinstance` test against `FieldSchema` or `LinkSchema` on a
-union result re-opens it, so test `kind` instead. The first `for_type` freezes the schema: every
-later change raises `TypeError` (the configuration surface will freeze it at the end of
-`create_schema` instead). An overlay is a narrowing of the field: `narrowing_problems` is the one
+any need, reads `global_declaration(name)`, `type_declarations(name)` and `declares_default(name)`.
+The type checker refuses a per-type attribute read (a default, `nullable`, `allow_extend`, `parse_*`,
+the `schema` constraints) on the union, directly or through a helper typed with the full classes: a
+full declaration comes only through those named doors. It cannot see an `isinstance` test against
+`FieldSchema` or `LinkSchema` on a union result, which re-opens the full declaration -- so test `kind`
+instead. The first `for_type` freezes the schema (in a parallel build, a worker's freezes the main
+process's when its data are merged): every later change raises `TypeError`, so register fields and
+overlays while the schema is built, in `create_schema` (the configuration surface will freeze it at
+the end of `create_schema` instead). An overlay is a narrowing of the field: `narrowing_problems` is the one
 rule `add_type_overlay` and `replace_field` apply, the configuration resolver will apply, and whose
 schema half `inherit_schema` reads; and it names a configured need type (`set_need_types`). No
 configuration creates an overlay yet.
 
 The schema is built during `env-before-read-docs` via the `create_schema()` function in `src/sphinx_needs/needs.py`.
 It creates `FieldSchema` and `LinkSchema` from information obtained from the `NeedsCoreFields` and from user defined configuration.
-Type overlays are the last thing registered on it (today only tests do, from a later `env-before-read-docs` handler; the resolver of the per-type configuration will, as the final step of `create_schema`), and the first read for a need type freezes it.
+Type overlays are the last thing registered on it (today only tests do, from a later `env-before-read-docs` handler in projects without external needs -- a window the tests alone use; the resolver of the per-type configuration will, as the final step of `create_schema`), and the first `for_type` freezes it.
 It is accessible via `SphinxNeedsData(env).get_schema()`.
 
 ## Sphinx Extension Architecture
