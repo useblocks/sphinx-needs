@@ -1085,6 +1085,7 @@ class FieldsSchema:
     A field's declaration holds for every need type, unless the need type carries an
     overlay of it (:meth:`add_type_overlay`): :meth:`for_type` is the schema of the
     needs of one need type, its overlays in place of the declarations they replace.
+    Overlays are registered after every other change to the schema.
     """
 
     __slots__ = (
@@ -1137,10 +1138,13 @@ class FieldsSchema:
         a second overlay of the same field for the same need type replaces the first.
         A field name has one type on every need type: the overlay is of a field this
         schema has, of the same kind (a core or extra field, or a link type), with the
-        same ``type`` and ``item_type``.
+        same ``type`` and ``item_type``, and the same ``derive`` and ``derive_by_type``
+        (a field derived per need type says so in its ``derive_by_type``). Overlays are
+        registered after every other change to the schema: a field's in-place default
+        setters do not reach a resolved schema of one need type.
 
         :raises ValueError: if the schema has no field of that name, or the overlay is
-            of another kind, ``type`` or ``item_type``
+            of another kind, ``type``, ``item_type`` or derivation
         :raises TypeError: if this is the schema of one need type (:meth:`for_type`)
         """
         self._mutating()
@@ -1163,6 +1167,12 @@ class FieldsSchema:
                 f"Cannot declare field {field.name!r} for need type {need_type!r} "
                 f"with type {field.type!r} (items {field.item_type!r}): its type is "
                 f"{base.type!r} (items {base.item_type!r}) on every need type."
+            )
+        if field.derive != base.derive or field.derive_by_type != base.derive_by_type:
+            raise ValueError(
+                f"Cannot declare field {field.name!r} for need type {need_type!r} "
+                "with another derivation: a field is derived per need type by its "
+                "derive_by_type."
             )
         self._type_overlays.setdefault(need_type, {})[field.name] = field
 
@@ -1256,12 +1266,23 @@ class FieldsSchema:
     def replace_field(self, field: FieldSchema | LinkSchema) -> None:
         """Replace the extra field, or the link field, of the same name.
 
-        The field keeps its place in the iteration order.
+        The field keeps its place in the iteration order, and the type and item type
+        of the field a need type declares anew (:meth:`add_type_overlay`).
 
-        :raises ValueError: if no extra field or link field of that name exists
+        :raises ValueError: if no extra field or link field of that name exists, or a
+            need type declares it with another ``type`` or ``item_type``
         :raises TypeError: if this is the schema of one need type (:meth:`for_type`)
         """
         self._mutating()
+        for need_type, overlays in self._type_overlays.items():
+            if (overlay := overlays.get(field.name)) is not None and (
+                overlay.type != field.type or overlay.item_type != field.item_type
+            ):
+                raise ValueError(
+                    f"Cannot replace field {field.name!r} with type {field.type!r} "
+                    f"(items {field.item_type!r}): need type {need_type!r} declares it "
+                    f"with type {overlay.type!r} (items {overlay.item_type!r})."
+                )
         if isinstance(field, LinkSchema):
             if field.name not in self._link_fields:
                 raise ValueError(f"Link field '{field.name}' does not exist.")

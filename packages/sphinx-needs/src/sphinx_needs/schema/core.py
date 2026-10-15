@@ -145,11 +145,13 @@ def validate_field_link_schemas(
     for need in needs.values():
         if (validation := by_type.get(need["type"])) is None:
             type_schema = fields_schema.for_type(need["type"])
-            validation = by_type[need["type"]] = (
-                every_type
-                if type_schema is fields_schema
-                else _field_validation(type_schema) or every_type
-            )
+            if type_schema is fields_schema:
+                validation = every_type
+            else:
+                validation = _field_validation(type_schema)
+                # a need type's schema has the names of the schema it is resolved from
+                assert validation is not None
+            by_type[need["type"]] = validation
         validator = validation.validator
         schema_properties = validator.properties
         placeholders = validation.placeholders

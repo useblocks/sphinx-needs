@@ -902,7 +902,8 @@ def materialise_derive_rules(
     empty value until it is computed; a rule that cannot be read leaves it empty. The
     rule is the one of the need's type (``derive_by_type``), else ``derive``; a need of
     a type without one holds the field's default (else ``None``, or its empty value),
-    and has no computed item. A need created by ``needimport`` or loaded as an external
+    and has no computed item; the default, and whether the field is nullable, are
+    those of the need's type. A need created by ``needimport`` or loaded as an external
     need keeps the values it carries: no rule runs on it.
 
     :return: The rule of each ``(need id, field)`` computed by one.
@@ -921,7 +922,12 @@ def materialise_derive_rules(
     for need_id, need in needs.items():
         if need["is_import"] or need["is_external"]:
             continue
-        for field in derived:
+        # the fields as the need's type declares them: its nullable and default
+        type_schema = schema.for_type(need["type"])
+        for derived_field in derived:
+            field = type_schema.get_any_field(derived_field.name)
+            # an overlay keeps the field's derivation (add_type_overlay)
+            assert field is not None and field.derived
             rule = field.rule_for(need["type"])
             if rule is None:
                 need[field.name] = field.off_type_value()
