@@ -89,7 +89,7 @@ Improvements
   deleting a field now empties it as the need's type declares it (``None`` where nullable on that type,
   else the empty value of its type). The per-type declarations of :issue:`2269`, after the schema's
   two tiers (:pr:`2275`) and the ``needs_types`` table (:pr:`2276`)
-  (`discussion #1646 <https://github.com/useblocks/sphinx-needs/discussions/1646>`__)
+  (`discussion #1646 <https://github.com/useblocks/sphinx-needs/discussions/1646>`__; :pr:`2278`)
 
 Deprecations
 ............
