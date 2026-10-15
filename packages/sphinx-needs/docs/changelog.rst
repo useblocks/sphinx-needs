@@ -75,7 +75,7 @@ Improvements
   path -- a need of :ref:`list2need` took the first entry's prefix -- and is listed once in the
   legends and in :ref:`needreport`, and, when it was the first type, a :ref:`needservice` datum
   without a type takes the type that now comes first; the duplicate is reported, where Sphinx
-  used to warn that the directive was already registered (:issue:`2262`)
+  used to warn that the directive was already registered (:issue:`2262`, :pr:`2276`)
 
 Deprecations
 ............
@@ -123,7 +123,7 @@ Bug fixes
   the directives ``testfile``, ``testsuite`` and ``testcase`` are already registered: a need type
   registers its directive once, whether ``add_need_type`` or sphinx-needs' own configuration step
   comes first. A directive of another kind under a need type's name is handled as before, with
-  Sphinx's warning (:issue:`2271`)
+  Sphinx's warning (:issue:`2271`, :pr:`2276`)
 
 Internal changes
 ................
