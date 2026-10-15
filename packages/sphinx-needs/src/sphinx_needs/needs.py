@@ -2280,7 +2280,8 @@ def _resolve_type_declarations(
     entry of a field, itself or by an ancestor, reads the field's global declaration.
     A type is closed if its entry says so, else if its parent is
     (:meth:`FieldsSchema.close_type`): it declares the fields of its entries and its
-    ancestors', an empty entry included.
+    ancestors', an empty entry included, and an entry that cannot be used, if it names
+    a field of its table.
 
     What cannot be used is reported, one warning per reason, and ignored, and the
     build goes on: an ``inherits`` naming no need type or on a cycle
@@ -2325,8 +2326,12 @@ def _resolve_type_declarations(
     declared: dict[str, dict[str, tuple[FieldSchema | LinkSchema, str]]] = {}
     #: need type -> whether it is closed: its own ``closed``, else its parent's
     closed: dict[str, bool] = {}
+    #: need type -> the fields and link types it declares on a closed type: its
+    #: ancestors' and its own entries, used or not, each naming one of its table's kind
+    names: dict[str, set[str]] = {}
     for need_type in order:
         own = dict(declared[p]) if (p := parent.get(need_type)) else {}
+        names[need_type] = set(names[p]) if p else set()
         closed[need_type] = types[need_type].get("closed", closed[p] if p else False)
         for table, kind, what, other in (
             ("fields", "field", "a field", "a link type"),
@@ -2345,6 +2350,9 @@ def _resolve_type_declarations(
                         None,
                     )
                     continue
+                # declared on a closed type, also if the entry cannot be used: the
+                # type keeps the declaration before it
+                names[need_type].add(name)
                 previous, by = own.get(name, (glob, None))
                 if (
                     field := _declare_for_type(previous, glob, keys, where, by)
@@ -2354,7 +2362,7 @@ def _resolve_type_declarations(
         for field, _ in own.values():
             schema.add_type_overlay(need_type, field)
         if closed[need_type]:
-            schema.close_type(need_type, own.keys())
+            schema.close_type(need_type, names[need_type])
 
 
 def _declare_for_type(
@@ -2446,7 +2454,11 @@ def _declare_for_type(
                 None,
             )
             return None
-    if problems := narrowing_problems(previous, field):
+    if (problems := narrowing_problems(previous, field)) or (
+        # as the schema will check it: an ancestor's own literal is not the global
+        # declaration's, and the empty value rule 9 lets pass is the global one's
+        previous is not glob and (problems := narrowing_problems(glob, field))
+    ):
         as_declared = (
             "" if declared_by is None else f" as need type {declared_by!r} declares it"
         )
