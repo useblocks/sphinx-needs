@@ -51,7 +51,7 @@ Improvements
   fields (`discussion #1646 <https://github.com/useblocks/sphinx-needs/discussions/1646>`__): a need
   type may declare a field anew, and need creation, needextend's per-need ``allow_extend``, dynamic
   and derived values and the field validation read a need's fields as its type declares them;
-  nothing changes for a project -- the configuration surface follows
+  nothing changes for a project -- the configuration surface follows (:pr:`2266`)
 
 Deprecations
 ............
