@@ -84,7 +84,7 @@ def test_no_type_is_the_global_view() -> None:
     assert schema.for_type(None) is view
     for field in schema.iter_all_fields():
         assert view.get_any_field(field.name) is field
-        assert view.get_any_field(field.name) is schema.declaration(field.name)
+        assert view.get_any_field(field.name) is schema.global_declaration(field.name)
     assert view.get_extra_field("asil") is not overlays["asil"]
     assert list(view.iter_all_fields()) == list(schema.iter_all_fields())
 
@@ -296,8 +296,9 @@ def test_a_second_overlay_replaces_the_first() -> None:
 # -- the freeze ---------------------------------------------------------------------
 
 FREEZE = (
-    "The fields schema cannot be changed: it has been read for a need type. "
-    "Register fields and need type overlays before the first need is created"
+    "The fields schema cannot be changed: needs have been read from it (the first "
+    "for_type freezes it). Register fields and need type overlays while the schema "
+    "is built, in create_schema."
 )
 
 
@@ -358,7 +359,7 @@ def test_the_union_reads_do_not_freeze() -> None:
     list(schema.iter_all_fields())
     list(schema.iter_extra_field_names())
     schema.is_project_field("asil")
-    schema.declaration("asil")
+    schema.global_declaration("asil")
     schema.type_declarations("asil")
     schema.declares_default("asil")
     assert schema.need_types is None
@@ -387,6 +388,16 @@ def test_the_views_are_resolved_at_the_freeze() -> None:
     view = schema._type_views["spec"]
     assert schema.for_type("spec") is view
     assert schema.for_type(None) is schema._global_view
+
+
+def test_a_schema_of_one_need_type_is_frozen_from_the_start() -> None:
+    """A ``TypeFieldsSchema`` is resolved, never built up: one made directly is
+    frozen too."""
+    view = TypeFieldsSchema()
+    assert view.frozen
+    with pytest.raises(TypeError) as exc_info:
+        view.add_extra_field(FieldSchema(name="x", schema={"type": "string"}))
+    assert str(exc_info.value) == FREEZE
 
 
 def test_an_unknown_type_reads_as_the_global_view() -> None:
@@ -447,17 +458,17 @@ def test_the_need_types_name_every_declaring_type() -> None:
 # -- the declarations, for configuration code ---------------------------------------
 
 
-def test_the_declaration_is_the_global_one() -> None:
+def test_the_global_declaration() -> None:
     schema, overlays = _overlaid()
-    asil = schema.declaration("asil")
+    asil = schema.global_declaration("asil")
     assert isinstance(asil, FieldSchema)
     assert asil is schema.get_extra_field("asil")
     assert asil is not overlays["asil"]
-    assert schema.declaration("blocks") is schema.get_link_field("blocks")
-    assert schema.declaration("status") is schema.get_core_field("status")
-    assert schema.declaration("nope") is None
+    assert schema.global_declaration("blocks") is schema.get_link_field("blocks")
+    assert schema.global_declaration("status") is schema.get_core_field("status")
+    assert schema.global_declaration("nope") is None
     view = schema.for_type("spec")
-    assert view.declaration("asil") is asil
+    assert view.global_declaration("asil") is asil
 
 
 def test_the_declarations_of_each_type() -> None:
@@ -522,12 +533,12 @@ def test_a_legacy_default_replaces_the_field() -> None:
     """``needs_global_options`` gives a default to a copy of the field, which
     replaces it, in its place: a registered field is not changed in place."""
     schema = _with_default()
-    owner = schema.declaration("owner")
+    owner = schema.global_declaration("owner")
     assert owner is not None
     _set_global_default(
         schema, "needs_global_options", "owner", {"default": "me"}, allow_coercion=True
     )
-    replaced = schema.declaration("owner")
+    replaced = schema.global_declaration("owner")
     assert replaced is not owner
     assert owner.default is None
     assert isinstance(replaced, FieldSchema)
@@ -547,7 +558,7 @@ def test_a_legacy_default_after_the_freeze_is_refused() -> None:
             allow_coercion=True,
         )
     assert str(exc_info.value).startswith(FREEZE)
-    owner = schema.declaration("owner")
+    owner = schema.global_declaration("owner")
     assert owner is not None
     assert owner.default is None
 
@@ -571,7 +582,7 @@ def test_the_schema_is_built_before_it_is_read() -> None:
     schema is read for a need type only once it is built."""
     schema = _invalid_derive()
     _report_derive_problems(schema, [], {"req": "Requirement"})
-    score = schema.declaration("score")
+    score = schema.global_declaration("score")
     assert score is not None
     assert type(score.derive).__name__ == "DeriveInvalid"
 

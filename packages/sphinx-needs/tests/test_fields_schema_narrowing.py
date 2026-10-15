@@ -73,8 +73,6 @@ CLOSED = FieldSchema(name="asil", schema={"type": "string"})
                 directive_option=False,
                 allow_extend=False,
                 allow_defaults=True,
-                parse_variants=False,
-                parse_dynamic_functions=False,
             ),
             id="everything-closed",
         ),
@@ -241,18 +239,25 @@ def test_a_narrowing(
             ["Cannot change 'directive_option' from False to True in child."],
             id="7-directive-option",
         ),
-        # rule 8: what is parsed
+        # rule 8: what is parsed, the same on every need type (a needextend converts
+        # its value once, for the needs of every type)
         pytest.param(
             CLOSED,
             replace(CLOSED, parse_variants=True),
-            ["parse_variants is not allowed to be True for this field."],
+            ["Field 'asil' declares 'parse_variants' for every need type."],
             id="8-parse-variants",
         ),
         pytest.param(
             CLOSED,
             replace(CLOSED, parse_dynamic_functions=True),
-            ["parse_dynamic_functions is not allowed to be True for this field."],
+            ["Field 'asil' declares 'parse_dynamic_functions' for every need type."],
             id="8-parse-dynamic-functions",
+        ),
+        pytest.param(
+            OPEN,
+            replace(OPEN, parse_dynamic_functions=False),
+            ["Field 'asil' declares 'parse_dynamic_functions' for every need type."],
+            id="8-parse-dynamic-functions-closed",
         ),
         # rule 9: a literal default the narrowed schema admits
         pytest.param(
@@ -294,6 +299,22 @@ def test_a_narrowing(
                 '["A","B"] has more than 1 item.'
             ],
             id="9-a-link-default",
+        ),
+        pytest.param(
+            _link(allow_defaults=True),
+            _link(
+                allow_defaults=True,
+                schema={
+                    "type": "array",
+                    "items": {"type": "string", "pattern": "^[A-Z]+_[0-9]+$"},
+                },
+                default=LinksLiteralValue([NeedLink(id="REQ_1", part="p")]),
+            ),
+            [
+                "Default ['REQ_1.p'] is not valid against the narrowed schema: "
+                '"REQ_1.p" does not match "^[A-Z]+_[0-9]+$".'
+            ],
+            id="9-a-link-default-as-validated",
         ),
         # rule 10: a link type is drawn and resolved the same on every need type
         pytest.param(
@@ -528,7 +549,7 @@ def test_a_replacement_keeps_every_declaration_a_narrowing() -> None:
         OPEN, schema={"type": "string", "enum": ["A", "B", "QM", "X"], "minLength": 1}
     )
     schema.replace_field(wider)
-    assert schema.declaration("asil") is wider
+    assert schema.global_declaration("asil") is wider
     # the replacement leaves 'B' out, which spec's declaration admits
     narrower = replace(
         OPEN,
@@ -543,7 +564,7 @@ def test_a_replacement_keeps_every_declaration_a_narrowing() -> None:
         "['A', 'B', 'QM'] are not a subset of parent 'enum' values ['A', 'QM'].; "
         "Cannot change 'nullable' from False to True in child."
     )
-    assert schema.declaration("asil") is wider
+    assert schema.global_declaration("asil") is wider
 
 
 def test_a_replacement_checks_the_declarations_of_every_type() -> None:
@@ -558,3 +579,53 @@ def test_a_replacement_checks_the_declarations_of_every_type() -> None:
         "'spec' declares it, and not as a narrowing of it: Cannot change "
         "'allow_extend' from False to True in child."
     )
+
+
+# -- rule 9 reports what the narrowing makes invalid --------------------------------
+
+#: a field whose own default is outside its own enum: validation reports it per need
+INVALID_DEFAULT = FieldSchema(
+    name="asil",
+    schema={"type": "string", "enum": ["A", "B"]},
+    allow_defaults=True,
+    default=FieldLiteralValue("Z"),
+)
+
+
+def test_the_fields_own_invalid_default_is_not_a_narrowing_problem() -> None:
+    assert (
+        narrowing_problems(
+            INVALID_DEFAULT, replace(INVALID_DEFAULT, description="spec")
+        )
+        == []
+    )
+
+
+def test_a_new_default_inside_the_narrowed_enum() -> None:
+    overlay = replace(
+        INVALID_DEFAULT,
+        schema={"type": "string", "enum": ["A"]},
+        default=FieldLiteralValue("A"),
+    )
+    assert narrowing_problems(INVALID_DEFAULT, overlay) == []
+
+
+def test_a_repeated_link_default_is_one_link() -> None:
+    """A link default is validated as a need's links are: each target once."""
+    base = _link(allow_defaults=True)
+    narrowed = {"type": "array", "items": {"type": "string"}, "maxItems": 1}
+    twice = _link(
+        allow_defaults=True,
+        schema=narrowed,
+        default=LinksLiteralValue([NeedLink(id="A"), NeedLink(id="A")]),
+    )
+    assert narrowing_problems(base, twice) == []
+    two = _link(
+        allow_defaults=True,
+        schema=narrowed,
+        default=LinksLiteralValue([NeedLink(id="A"), NeedLink(id="B")]),
+    )
+    assert narrowing_problems(base, two) == [
+        "Default ['A', 'B'] is not valid against the narrowed schema: "
+        '["A","B"] has more than 1 item.'
+    ]
