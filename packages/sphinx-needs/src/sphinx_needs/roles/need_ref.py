@@ -280,7 +280,7 @@ def process_need_ref(
                         node_need_ref[0].deepcopy(),
                         node_need_ref["reftarget"],
                     )
-                else:
+                elif target_need["is_external"]:
                     assert target_need["external_url"] is not None, (
                         "external_url must be set for external needs"
                     )
@@ -289,5 +289,9 @@ def process_need_ref(
                         target_need["external_url"], fromdocname
                     )
                     new_node_ref["classes"].append(target_need["external_css"])
+                else:
+                    # in no document and not external (``add_need(docname=None)``):
+                    # nothing to link to, so the text alone (#2244)
+                    new_node_ref = node_need_ref[0].deepcopy()
 
         node_need_ref.replace_self(new_node_ref)
