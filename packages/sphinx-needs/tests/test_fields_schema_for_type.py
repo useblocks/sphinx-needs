@@ -296,9 +296,10 @@ def test_a_second_overlay_replaces_the_first() -> None:
 # -- the freeze ---------------------------------------------------------------------
 
 FREEZE = (
-    "The fields schema cannot be changed once it is read through for_type (the "
-    "first call freezes it). Register fields and need type overlays while the "
-    "schema is built, in create_schema."
+    "The fields schema cannot be changed once it is complete: create_schema freezes "
+    "the schema it builds, and the first read through for_type freezes one built by "
+    "hand. Declare fields, link types and need types in the configuration, before "
+    "the schema is built."
 )
 
 

@@ -2019,6 +2019,8 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
     # last: each type's declarations start from the fields as they stand now, their
     # derive problems and legacy defaults included
     _resolve_type_declarations(schema, needs_config.types)
+    # the schema is complete: nothing declares a field once it is built
+    schema.freeze()
 
     SphinxNeedsData(env)._set_schema(schema)
 

@@ -1174,7 +1174,8 @@ class FieldsSchema:
     type and derivation); a need's field is read through :meth:`for_type` of its type,
     and configuration code reads a field's declarations through :meth:`global_declaration`
     and :meth:`type_declarations`. Overlays are registered after every other change to
-    the schema, and the first read for a need type freezes it (:meth:`freeze`).
+    the schema, and once it is complete it is frozen (:meth:`freeze`): ``create_schema``
+    freezes the schema it builds, and the first :meth:`for_type` one built by hand.
     """
 
     __slots__ = (
@@ -1236,8 +1237,8 @@ class FieldsSchema:
         (:meth:`for_type` freezes it before it resolves one), so a change that is
         taken has none to forget.
 
-        :raises TypeError: if this is the schema of one need type, or the schema has
-            been read for a need type (:meth:`freeze`)
+        :raises TypeError: if this is the schema of one need type, or the schema is
+            frozen (:meth:`freeze`)
         """
         if self._view_of is not None:
             if self._view_of[1] is None:
@@ -1251,9 +1252,11 @@ class FieldsSchema:
             )
         if self._frozen:
             raise TypeError(
-                "The fields schema cannot be changed once it is read through "
-                "for_type (the first call freezes it). Register fields and need type "
-                "overlays while the schema is built, in create_schema."
+                "The fields schema cannot be changed once it is complete: "
+                "create_schema freezes the schema it builds, and the first read "
+                "through for_type freezes one built by hand. Declare fields, link "
+                "types and need types in the configuration, before the schema is "
+                "built."
             )
 
     @property
@@ -1265,11 +1268,10 @@ class FieldsSchema:
         """Stop the schema from changing: every later change raises ``TypeError``.
 
         The schema of each need type with overlays, of each closed need type, and the
-        global view, are resolved now; :meth:`for_type` then answers with one of them.
-        The first :meth:`for_type` freezes the schema: what a need was created with is
-        what every later read of its type answers. In a parallel build, a worker's
-        reads freeze the main process's schema when its data are merged. Freezing
-        again does nothing.
+        global view, are resolved now; :meth:`for_type` then answers with one of them,
+        so what a need was created with is what every later read of its type answers.
+        ``create_schema`` freezes the schema it builds, as its last step; the first
+        :meth:`for_type` freezes a schema built by hand. Freezing again does nothing.
         """
         if self._frozen:
             return
