@@ -55,39 +55,55 @@ def test_measure_time(test_app):
     assert outdir.joinpath("debug_filters.jsonl").exists()
 
 
+def _measured_function(x):
+    return x
+
+
+class _CallableInstance:
+    def __call__(self, x):
+        return x
+
+
 def _source_less_function():
     """A function whose source inspect cannot read, as one from a removed file."""
     namespace: dict = {}
-    exec("def gone(x):\n    return x * 2\n", namespace)
+    exec("def gone(x):\n    return x\n", namespace)
     return namespace["gone"]
 
 
 @pytest.mark.parametrize(
-    ("func", "name"),
+    ("func", "name", "file", "line"),
     [
-        (functools.partial(int, base=2), "functools.partial"),
-        (_source_less_function(), "gone"),
+        (
+            _measured_function,
+            "_measured_function",
+            __file__,
+            _measured_function.__code__.co_firstlineno,
+        ),
+        (functools.partial(str.strip), "partial(strip)", None, None),
+        (_CallableInstance(), "_CallableInstance", None, None),
+        (_source_less_function(), "gone", "<string>", None),
     ],
-    ids=["partial-without-__name__", "function-without-source"],
+    ids=["function", "partial", "callable-instance", "function-without-source"],
 )
-def test_measure_time_func_on_a_callable_inspect_cannot_place(func, name):
-    """A measured callable with no ``__name__``, or no readable source, is measured.
+def test_measure_time_func_names_and_places_a_callable(func, name, file, line):
+    """What a measurement records for a callable, whatever kind it is.
 
-    ``measure_time`` read ``func.__name__`` and ``inspect.getfile`` /
-    ``getsourcelines`` unguarded, so with measurement on a ``functools.partial`` raised
-    ``AttributeError`` and a function whose file is gone raised ``OSError``, ending the
-    build. Now the name falls back to the callable's repr and the location to ``None``.
+    ``measure_time`` read ``func.__name__``, ``inspect.getfile`` and
+    ``inspect.getsourcelines`` unguarded, so with measurement on a partial or a callable
+    instance raised ``AttributeError`` and a function whose source is gone raised
+    ``OSError``, ending the build. A plain function is recorded as before; the others
+    are named after what they wrap or their type -- never a ``repr`` with an address --
+    and their location is ``None`` where inspect cannot give it.
     """
     debug.EXECUTE_TIME_MEASUREMENTS = True
     measured = debug.measure_time_func(func, category="test_inspect")
-    assert measured("11") == func("11")
+    assert measured("1") == func("1")
 
-    (entry,) = [
-        value
-        for key, value in debug.TIME_MEASUREMENTS.items()
-        if key.startswith("test_inspect_")
-    ]
-    assert name in entry["name"]
-    assert entry["amount"] == 1
-    assert entry["file"] is None or name == "gone"
-    assert entry["line"] is None
+    entry = debug.TIME_MEASUREMENTS[f"test_inspect_{name}"]
+    assert (entry["name"], entry["file"], entry["line"], entry["amount"]) == (
+        name,
+        file,
+        line,
+        1,
+    )

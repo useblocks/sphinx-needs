@@ -10,7 +10,7 @@ import json
 import os.path
 from collections.abc import Callable
 from datetime import datetime
-from functools import wraps
+from functools import partial, wraps
 from pathlib import Path
 from timeit import default_timer as timer  # Used for timing measurements
 from typing import Any, TypeVar
@@ -29,11 +29,32 @@ START_TIME: float = 0.0
 T = TypeVar("T", bound=Callable[..., Any])
 
 
+def _callable_name(func: Callable[..., Any]) -> str:
+    """A name for a measured callable, which need not have a ``__name__``.
+
+    A ``functools.partial`` is named after what it wraps, a callable instance after its
+    type; never its ``repr``, which would put memory addresses and bound arguments into
+    the report.
+    """
+    name = getattr(func, "__name__", None)
+    if isinstance(name, str) and name:
+        return name
+    if isinstance(func, partial):
+        return f"partial({_callable_name(func.func)})"
+    return type(func).__name__
+
+
+# Where a measured callable came from is a debugging aid, so a callable inspect cannot
+# place -- a partial or an instance (TypeError), a file that is gone or a class in
+# ``__main__`` (OSError), a file rewritten since (tokenize.TokenError) -- is recorded
+# without it rather than ending the build.
+
+
 def _source_file(func: Callable[..., Any]) -> str | None:
     """The file ``func`` was defined in, or ``None`` if inspect cannot place it."""
     try:
         return inspect.getfile(func)
-    except TypeError:  # not a function, class or module: a partial, an instance
+    except Exception:
         return None
 
 
@@ -41,7 +62,7 @@ def _source_line(func: Callable[..., Any]) -> int | None:
     """The first line of ``func``'s source, or ``None`` if it cannot be read."""
     try:
         return inspect.getsourcelines(func)[1]
-    except (TypeError, OSError):  # no source: a partial, or its file is gone
+    except Exception:
         return None
 
 
@@ -94,8 +115,7 @@ def measure_time(
 
             runtime = end - start
 
-            # a callable need not have a __name__ (a functools.partial, an instance)
-            func_name = getattr(func, "__name__", None) or repr(func)
+            func_name = _callable_name(func)
             mt_name = func_name if name is None else name
 
             mt_id = f"{category}_{func_name}"

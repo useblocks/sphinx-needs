@@ -9,8 +9,9 @@ Unreleased
 New and Improved
 ................
 
-- 🐛 With time measurement on, a measured callable with no ``__name__`` or no readable
-  source no longer raises; the same fix as Sphinx-Needs' copy of ``measure_time``, and
+- 🏷️ With time measurement on, a measured callable with no ``__name__`` or no readable
+  source no longer raises; the same fix as Sphinx-Needs' copy of ``measure_time``.
+  Nothing in sphinx-codelinks measures such a callable today, so nothing changes in use;
   two ``# ty: ignore`` comments go
   (`#1835 <https://github.com/useblocks/sphinx-needs/issues/1835>`__)
 - 🏷️ A configuration's ``check_schema`` skips a field that has no schema, as
