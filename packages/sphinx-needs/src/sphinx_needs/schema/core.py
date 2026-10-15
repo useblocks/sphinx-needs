@@ -47,27 +47,21 @@ The implementation requires at least draft 2019-09 as unevaluatedProperties was 
 """
 
 
-def validate_field_link_schemas(
-    config: NeedsSphinxConfig,
-    fields_schema: FieldsSchema,
-    needs: NeedsView,
-) -> dict[str, list[OntologyWarning]]:
-    """Validate all needs against the combined field and link schema.
+@dataclass(frozen=True, slots=True)
+class _FieldValidation:
+    """The validator of the fields and link types of one fields schema."""
 
-    Builds a single JSON Schema validator from all field and link schemas
-    defined in ``fields_schema``, then validates each need against it.
-    For each need, only the properties present in the schema are included
-    (excluding ``None`` values, and the empty value a derived field holds until its
-    rule computes it), so the validator only sees relevant fields.
+    validator: SchemaValidator
+    link_names: frozenset[str]
+    #: the "no value" of a derived field that is not nullable
+    placeholders: dict[str, Any]
+    with_off_type_default: dict[str, FieldSchema]
 
-    Errors on link properties use :attr:`MessageRuleEnum.link_fail` and
-    the ``links > schema`` schema path prefix, while errors on other
-    properties use :attr:`MessageRuleEnum.field_fail` and ``fields > schema``.
 
-    :param config: The Sphinx-Needs configuration.
-    :param fields_schema: The fields schema containing core, extra, and link field definitions.
-    :param needs: The needs view to validate.
-    :return: Mapping of need ID to list of validation warnings.
+def _field_validation(fields_schema: FieldsSchema) -> _FieldValidation | None:
+    """Compile the validator of every field and link type of ``fields_schema``.
+
+    :return: ``None`` if the schema has no field.
     """
     # Build combined properties from all field and link schemas
     combined_properties: dict[str, Any] = {}
@@ -102,17 +96,68 @@ def validate_field_link_schemas(
         link_names.add(link.name)
 
     if not combined_properties:
-        return {}
+        return None
 
     schema: NeedFieldsSchemaType = {
         "type": "object",
         "properties": combined_properties,
     }
+    return _FieldValidation(
+        validator=compile_validator(schema),
+        link_names=frozenset(link_names),
+        placeholders=placeholders,
+        with_off_type_default=with_off_type_default,
+    )
+
+
+def validate_field_link_schemas(
+    config: NeedsSphinxConfig,
+    fields_schema: FieldsSchema,
+    needs: NeedsView,
+) -> dict[str, list[OntologyWarning]]:
+    """Validate all needs against the combined field and link schema.
+
+    Builds a single JSON Schema validator from all field and link schemas
+    defined in ``fields_schema``, then validates each need against it.
+    A need of a type that declares fields anew
+    (:meth:`~sphinx_needs.needs_schema.FieldsSchema.for_type`) is validated against
+    the fields of its type instead, one validator per such type.
+    For each need, only the properties present in the schema are included
+    (excluding ``None`` values, and the empty value a derived field holds until its
+    rule computes it), so the validator only sees relevant fields.
+
+    Errors on link properties use :attr:`MessageRuleEnum.link_fail` and
+    the ``links > schema`` schema path prefix, while errors on other
+    properties use :attr:`MessageRuleEnum.field_fail` and ``fields > schema``.
+
+    :param config: The Sphinx-Needs configuration.
+    :param fields_schema: The fields schema containing core, extra, and link field definitions.
+    :param needs: The needs view to validate.
+    :return: Mapping of need ID to list of validation warnings.
+    """
+    if (every_type := _field_validation(fields_schema)) is None:
+        return {}
+    #: need type -> the validation of its needs
+    by_type: dict[str, _FieldValidation] = {}
+
     need_2_warnings: dict[str, list[OntologyWarning]] = {}
-    validator = compile_validator(schema)
-    schema_properties = validator.properties
 
     for need in needs.values():
+        if (validation := by_type.get(need["type"])) is None:
+            type_schema = fields_schema.for_type(need["type"])
+            if type_schema is fields_schema:
+                validation = every_type
+            else:
+                validation = _field_validation(type_schema)
+                # a need type's schema has the names of the schema it is resolved from
+                assert validation is not None
+            by_type[need["type"]] = validation
+        validator = validation.validator
+        schema_properties = validator.properties
+        placeholders = validation.placeholders
+        with_off_type_default = validation.with_off_type_default
+        link_names = validation.link_names
+
         # Project the need to only the properties present in the schema,
         # excluding None values (we don't allow {"type": ["string", "null"]})
         # and a derived field's placeholder

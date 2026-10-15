@@ -84,7 +84,7 @@ class NeedserviceDirective(SphinxDirective):
 
         if "debug" not in self.options:
             service_data = service.request_from_directive(self)
-            defined_options = {
+            core_options = {
                 "debug",
                 "type",
                 "id",
@@ -100,9 +100,9 @@ class NeedserviceDirective(SphinxDirective):
                 "post_template",
                 "constraints",
                 "content",
-                *needs_schema.iter_extra_field_names(),
-                *needs_schema.iter_link_field_names(),
             }
+            #: need type -> the options of a datum of that type
+            defined_by_type: dict[str | None, set[str]] = {}
             for datum in service_data:
                 options = {}
 
@@ -127,7 +127,15 @@ class NeedserviceDirective(SphinxDirective):
                     del datum["title"]
 
                 # We need to check if all given options from services are really available as configured
-                # needs_fields or needs_links
+                # needs_fields or needs_links, for a need of the datum's type
+                type_key = need_type if isinstance(need_type, str) else None
+                if (defined_options := defined_by_type.get(type_key)) is None:
+                    type_schema = needs_schema.for_type(type_key)
+                    defined_options = defined_by_type[type_key] = {
+                        *core_options,
+                        *type_schema.iter_extra_field_names(),
+                        *type_schema.iter_link_field_names(),
+                    }
                 missing_options = {}
                 for element in datum:
                     if element not in defined_options:

@@ -47,6 +47,12 @@ Improvements
   warning is silenced with ``suppress_warnings = ["needs.derive_dense"]``, or the threshold is raised
   or set to ``0`` (or less), which never warns.
 
+- ♻️ ``FieldsSchema.for_type`` and ``FieldsSchema.add_type_overlay``, the first slice of per-type
+  fields (`discussion #1646 <https://github.com/useblocks/sphinx-needs/discussions/1646>`__): a need
+  type may declare a field anew, and need creation, needextend's per-need ``allow_extend``, dynamic
+  and derived values and the field validation read a need's fields as its type declares them;
+  nothing changes for a project -- the configuration surface follows (:pr:`2266`)
+
 Deprecations
 ............
 

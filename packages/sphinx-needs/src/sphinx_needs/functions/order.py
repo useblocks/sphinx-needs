@@ -208,9 +208,10 @@ def placeholder(need: NeedItem, field: str, schema: FieldsSchema) -> Any:
 
     :param need: The need.
     :param field: The field, which carries a ``[[…]]``, ``<<…>>`` or ``<{…}>``.
-    :param schema: The schema of the fields.
+    :param schema: The schema of the fields; the field is read as the need's type
+        declares it.
     """
-    if (field_schema := schema.get_any_field(field)) is None:
+    if (field_schema := schema.for_type(need["type"]).get_any_field(field)) is None:
         return need.get(field)
     if isinstance(field_schema, LinkSchema) or field_schema.type == "array":
         dynamic = need._dynamic_fields.get(field)

@@ -123,12 +123,16 @@ class List2NeedDirective(SphinxDirective):
         else:
             down_links_raw_list = [x.strip() for x in down_links_raw.split(",")]
         needs_schema = SphinxNeedsData(self.env).get_schema()
-        # the options an item may set inline, on top of the ones list2need computes
-        known_options = (
-            CORE_OPTIONS
-            | set(needs_schema.iter_extra_field_names())
-            | set(needs_schema.iter_link_field_names())
-        )
+        # the options an item may set inline, on top of the ones list2need computes,
+        # for the need type of each level
+        known_options: dict[str, frozenset[str]] = {}
+        for level_type in set(types.values()):
+            type_schema = needs_schema.for_type(level_type)
+            known_options[level_type] = (
+                CORE_OPTIONS
+                | set(type_schema.iter_extra_field_names())
+                | set(type_schema.iter_link_field_names())
+            )
         link_types = [link.name for link in needs_schema.iter_link_fields()]
         for i, down_link_raw in enumerate(down_links_raw_list):
             down_links_types[i] = down_link_raw
@@ -276,7 +280,8 @@ class List2NeedDirective(SphinxDirective):
                 joined = ", ".join(need_links_down)
                 options[links_down_type] = f"{given}, {joined}" if given else joined
 
-            need_nodes = self._create_need(list_need, options, known_options)
+            type_options = known_options[list_need["type"]]  # ty: ignore[invalid-argument-type]
+            need_nodes = self._create_need(list_need, options, type_options)
             created = created or bool(need_nodes)
 
             if presentation == "nested":

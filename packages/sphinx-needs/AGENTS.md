@@ -224,9 +224,20 @@ This module defines the schema data structures that serve as the single source o
   - `get_link_field(name: str) -> LinkSchema | None`
   - other iteration and access methods
 
+A need type may declare a field anew: `FieldsSchema.add_type_overlay(need_type, field)` stores the
+overlay beside the three dicts (never as an attribute of `FieldSchema` or `LinkSchema`), and
+`FieldsSchema.for_type(need_type)` is the schema of that type's needs -- the schema itself for no
+type or a type without overlays, else a schema resolved once with the overlays in place, which
+refuses changes. Read a field for a need through `for_type(need["type"])` wherever the attribute
+read may vary per type (admission, defaults, `nullable`, `allow_extend`, `parse_*`, the `schema`
+constraints); the field's type, its name and how it is rendered stay on the schema itself.
+`add_type_overlay` is the one-name-one-type fence: an overlay is of a field the schema has, of the
+same kind, `type` and `item_type`, or it raises `ValueError`. No configuration creates an overlay
+yet.
+
 The schema is built during `env-before-read-docs` via the `create_schema()` function in `src/sphinx_needs/needs.py`.
 It creates `FieldSchema` and `LinkSchema` from information obtained from the `NeedsCoreFields` and from user defined configuration.
-Once built, the schema is immutable for the rest of the build.
+Type overlays are the last thing registered on it (today only tests do, from a later `env-before-read-docs` handler; the resolver of the per-type configuration will, as the final step of `create_schema`), and once the documents are read nothing changes it.
 It is accessible via `SphinxNeedsData(env).get_schema()`.
 
 ## Sphinx Extension Architecture
