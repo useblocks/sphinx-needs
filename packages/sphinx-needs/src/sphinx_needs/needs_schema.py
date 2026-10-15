@@ -1164,7 +1164,7 @@ class FieldsSchema:
 
     The schema answers a field's shape, the same on every need type (its name, kind,
     type and derivation); a need's field is read through :meth:`for_type` of its type,
-    and configuration code reads a field's declarations through :meth:`declaration`
+    and configuration code reads a field's declarations through :meth:`global_declaration`
     and :meth:`type_declarations`. Overlays are registered after every other change to
     the schema, and the first read for a need type freezes it (:meth:`freeze`).
     """
@@ -1214,8 +1214,11 @@ class FieldsSchema:
         return self if self._view_of is None else self._view_of[0]
 
     def _mutating(self) -> None:
-        """Refuse to change a frozen schema, or the schema of one need type; forget
-        the resolved ones.
+        """Refuse to change a frozen schema, or the schema of one need type.
+
+        A schema of one need type exists only once the schema is frozen
+        (:meth:`for_type` freezes it before it resolves one), so a change that is
+        taken has none to forget.
 
         :raises TypeError: if this is the schema of one need type, or the schema has
             been read for a need type (:meth:`freeze`)
@@ -1232,13 +1235,10 @@ class FieldsSchema:
             )
         if self._frozen:
             raise TypeError(
-                "The fields schema cannot be changed: it has been read for a need "
-                "type. Register fields and need type overlays before the first need "
-                "is created: in create_schema, or in an env-before-read-docs handler "
-                "that runs before any need is created."
+                "The fields schema cannot be changed: needs have been read from it "
+                "(the first for_type freezes it). Register fields and need type "
+                "overlays while the schema is built, in create_schema."
             )
-        self._type_views.clear()
-        self._global_view = None
 
     @property
     def frozen(self) -> bool:
@@ -1251,7 +1251,9 @@ class FieldsSchema:
         The schema of each need type with overlays, and the global view, are resolved
         now; :meth:`for_type` then answers with one of them. The first
         :meth:`for_type` freezes the schema: what a need was created with is what
-        every later read of its type answers. Freezing again does nothing.
+        every later read of its type answers. In a parallel build, a worker's reads
+        freeze the main process's schema when its data are merged. Freezing again does
+        nothing.
         """
         if self._frozen:
             return
@@ -1344,7 +1346,8 @@ class FieldsSchema:
         return self._resolved(need_type)
 
     def _resolved(self, need_type: str | None) -> TypeFieldsSchema:
-        """The schema of the needs of ``need_type``, resolved once."""
+        """The schema of the needs of ``need_type``, resolved once (by :meth:`freeze`,
+        for every need type with overlays and the global view)."""
         if need_type is not None and need_type in self._type_overlays:
             if (view := self._type_views.get(need_type)) is None:
                 view = self._type_views[need_type] = self._resolve_type(need_type)
@@ -1369,7 +1372,6 @@ class FieldsSchema:
                 else:
                     view._extra_fields[name] = field
         view._view_of = (self, need_type)
-        view._frozen = True
         return view
 
     def add_core_field(self, field: FieldSchema) -> None:
@@ -1481,7 +1483,7 @@ class FieldsSchema:
                 raise ValueError(f"Extra field '{field.name}' does not exist.")
             self._extra_fields[field.name] = field
 
-    def declaration(self, name: str) -> FieldSchema | LinkSchema | None:
+    def global_declaration(self, name: str) -> FieldSchema | LinkSchema | None:
         """The global declaration of the field ``name``, in full, ``None`` if none.
 
         The declaration every need type shares unless it declares the field anew
@@ -1517,7 +1519,7 @@ class FieldsSchema:
         return any(
             field.default is not None or bool(field.predicate_defaults)
             for field in (
-                self.declaration(name),
+                self.global_declaration(name),
                 *self.type_declarations(name).values(),
             )
             if field is not None
@@ -1590,6 +1592,11 @@ class TypeFieldsSchema(FieldsSchema):
     """
 
     __slots__ = ()
+
+    def __init__(self) -> None:
+        super().__init__()
+        # resolved by FieldsSchema.for_type, never changed: also one made directly
+        self._frozen = True
 
     def get_any_field(self, name: str) -> FieldSchema | LinkSchema | None:
         """Get a field by name."""
@@ -2037,9 +2044,12 @@ def narrowing_problems(
     6. ``nullable`` only from true to false;
     7. ``allow_extend``, ``allow_defaults`` and ``directive_option`` only from true
        to false;
-    8. ``parse_variants`` and ``parse_dynamic_functions`` only from true to false;
+    8. the same ``parse_variants`` and ``parse_dynamic_functions``: a needextend
+       converts its value once, for the needs of every type;
     9. a literal ``default``, and each literal predicate default, valid against the
-       schema of ``overlay`` (a dynamic function or a variant is not checked);
+       schema of ``overlay``, unless it is not valid against the schema of ``base``
+       either (that is the field's own defect, which validation reports on each need,
+       not one the narrowing made); a dynamic function or a variant is not checked;
     10. for a link type, the same ``display``, ``copy``, ``allow_dead_links`` and
         ``parse_conditions``: a link type is drawn and resolved the same on every need
         type.
@@ -2089,10 +2099,12 @@ def narrowing_problems(
             overlay.parse_dynamic_functions,
         ),
     ):
-        if not base_flag and overlay_flag:
-            problems.append(f"{name} is not allowed to be True for this field.")
+        if base_flag != overlay_flag:
+            problems.append(
+                f"Field {base.name!r} declares {name!r} for every need type."
+            )
     if same_type:
-        problems.extend(_default_problems(overlay))
+        problems.extend(_default_problems(overlay, base))
     if isinstance(base, LinkSchema) and isinstance(overlay, LinkSchema):
         for name, same in (
             ("display", overlay.display == base.display),
@@ -2107,9 +2119,13 @@ def narrowing_problems(
     return problems
 
 
-def _default_problems(field: FieldSchema | LinkSchema) -> list[str]:
+def _default_problems(
+    field: FieldSchema | LinkSchema, base: FieldSchema | LinkSchema
+) -> list[str]:
     """Why a literal default, or a literal predicate default, of ``field`` is not
-    valid against its schema: one reason per value."""
+    valid against its schema while it is valid against the schema of ``base``: one
+    reason per value. A link default is checked as a need's links are validated:
+    each target once, as its filter string."""
     values: list[tuple[str | None, FieldLiteralValue | LinksLiteralValue]] = []
     if isinstance(field.default, FieldLiteralValue | LinksLiteralValue):
         values.append((None, field.default))
@@ -2121,11 +2137,14 @@ def _default_problems(field: FieldSchema | LinkSchema) -> list[str]:
     problems: list[str] = []
     for filter_, literal in values:
         value = (
-            [link.to_filter_string() for link in literal.value]
+            [link.to_filter_string() for link in dict.fromkeys(literal.value)]
             if isinstance(literal, LinksLiteralValue)
             else literal.value
         )
         if (message := value_problem(field.name, field.schema, value)) is None:
+            continue
+        if value_problem(base.name, base.schema, value) is not None:
+            # the field's own defect, not one the narrowing made
             continue
         of = "" if filter_ is None else f" of the predicate {filter_!r}"
         problems.append(

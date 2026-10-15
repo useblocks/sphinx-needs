@@ -1171,7 +1171,7 @@ def _order_of(schema: FieldsSchema, name: str) -> Callable[[Any], Any] | None:
     declaration. A need type that narrows the enum declares a subset of it, whose own
     order is not read.
     """
-    field = schema.declaration(name)
+    field = schema.global_declaration(name)
     if field is not None and field.type == "string":
         enum = list(field.schema.get("enum", ()))
         return lambda value: enum.index(value) if value in enum else None

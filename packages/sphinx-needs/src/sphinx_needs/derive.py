@@ -490,7 +490,7 @@ def fingerprint_names(schema: FieldsSchema) -> dict[str, Any]:
     type or ``tags`` without a literal default has ``[]``, its empty value.
 
     The default is the field's global declaration
-    (:meth:`~sphinx_needs.needs_schema.FieldsSchema.declaration`), the same for the
+    (:meth:`~sphinx_needs.needs_schema.FieldsSchema.global_declaration`), the same for the
     needs of every type: a value equal to a default a need type declares anew enters
     the fingerprint of its needs, unless it equals the global default too.
 
@@ -501,7 +501,7 @@ def fingerprint_names(schema: FieldsSchema) -> dict[str, Any]:
     from sphinx_needs.needs_schema import FieldLiteralValue, LinksLiteralValue
 
     def declared(name: str) -> FieldSchema | LinkSchema:
-        field = schema.declaration(name)
+        field = schema.global_declaration(name)
         assert field is not None, "a name of the schema"
         return field
 
@@ -782,7 +782,7 @@ def copy_problem(schema: FieldsSchema) -> DeriveProblem | None:
     copying = sorted(
         name
         for name in schema.iter_link_field_names()
-        if (link := schema.declaration(name)) is not None
+        if (link := schema.global_declaration(name)) is not None
         and isinstance(link, LinkSchema)
         and link.copy
         and name != "links"
@@ -825,7 +825,7 @@ def check_derive_rules(
     targets = [
         target
         for name in (*schema.iter_extra_field_names(), *schema.iter_link_field_names())
-        if (target := schema.declaration(name)) is not None
+        if (target := schema.global_declaration(name)) is not None
     ]
     #: the rules that can be read, by field and by entry ("" for ``derive``)
     valid: dict[tuple[str, str], tuple[DeriveRule, FieldSchema | LinkSchema]] = {}
@@ -1140,7 +1140,7 @@ def _value_type(name: str, schema: FieldsSchema, links: set[str]) -> _ValueType 
     if _is_link_name(name, links):
         return _LINK_LIST
     # the global declaration: a need type's enum is a subset of it
-    field = schema.declaration(name)
+    field = schema.global_declaration(name)
     if field is not None:
         return _ValueType(
             field.type,

@@ -1122,6 +1122,10 @@ def merge_data(
     """
     this_data = SphinxNeedsData(env)
     other_data = SphinxNeedsData(other)
+    # a worker that read needs froze its copy of the fields schema: so does this
+    # process, which may have read none itself
+    if other_data.get_schema().frozen:
+        this_data.get_schema().freeze()
 
     # Update needs
     needs = this_data._env_needs

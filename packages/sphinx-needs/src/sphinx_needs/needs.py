@@ -1824,7 +1824,7 @@ def _report_derive_problems(
     }
     for (on_link, name, part), problem in checked.items():
         # the global declaration: the schema is still built, no need reads it yet
-        target = schema.declaration(name)
+        target = schema.global_declaration(name)
         assert target is not None and (target.kind == "link") == on_link, (
             "a checked rule is on a field of the schema"
         )
@@ -1921,7 +1921,7 @@ def _set_global_default(
         return
 
     # the global declaration: the schema is still built, no need reads it yet
-    if (field_for_default := schema.declaration(name)) is None:
+    if (field_for_default := schema.global_declaration(name)) is None:
         log_warning(
             LOGGER,
             f"{config_name}[{name!r}] does not correspond to any defined field",
