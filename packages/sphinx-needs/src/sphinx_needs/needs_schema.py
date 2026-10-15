@@ -1438,7 +1438,13 @@ class FieldsSchema:
 
     def _absent_of(self, field: FieldSchema | LinkSchema) -> FieldSchema | LinkSchema:
         """The declaration of a field on a closed need type that does not declare it:
-        one for every such type. A derived field is closed on every type already."""
+        one for every such type. A derived field is closed on every type already.
+
+        It keeps the global ``default`` and ``predicate_defaults``, which no reader
+        applies: creation gives an absent field its empty value without defaults, the
+        validation's off-type default is a derived field's only, and the readers of a
+        default read the global view.
+        """
         if field.derived:
             return field
         if (absent := self._absent.get(field.name)) is None:

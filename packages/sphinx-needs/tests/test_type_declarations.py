@@ -1385,10 +1385,11 @@ def test_a_deleted_field_the_schema_no_longer_has(
 ) -> None:
     """A needextend kept from an earlier build may delete a field the schema of this
     build no longer has (an extension's, no longer registered): the deletion is not
-    applied -- nothing writes the field -- and the build goes on. Whether the kept
-    extend is applied again depends on the Sphinx version: 9.1 pickles the needs as
-    written and applies it again (the write spy below is what tells a skipped delete
-    from a write), 7.4 pickles them after the first build's deletion and does not."""
+    applied -- nothing writes the field -- and the build goes on. In this second build
+    no document changed, and whether the kept extend is applied again then depends on
+    the Sphinx version: 9.1 post-processes the needs again and applies it (the write
+    spy below is what tells a skipped delete from a write), 7.4 reads and processes
+    nothing; where a document changed, both apply it again."""
     srcdir = tmp_path / "src"
     srcdir.mkdir()
     (srcdir / "conf.py").write_text(GONE_CONF, encoding="utf-8")

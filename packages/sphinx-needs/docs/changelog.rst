@@ -96,13 +96,17 @@ Improvements
   entry included -- of those the project declares (:ref:`needs_types_fields`); ``closed`` is inherited,
   and a type may say otherwise. A field the type does not declare holds no value (``None`` where
   nullable, else the empty value of its type), a value set for it in a need is ignored as a
-  ``needs.undeclared_for_type`` warning, and a need imported or external drops it with the same
-  warning; the core fields, the fields an extension or a service registers, and ``parent_needs``
+  ``needs.undeclared_for_type`` warning naming the need, and a need imported or external drops it
+  with the same warning (silently when it holds that value anyway, as a needs.json writes empty
+  values); a ``copy`` link type copies into ``links`` only where the type declares ``links``; the
+  core fields, the fields an extension or a service registers, and ``parent_needs``
   stay as declared. A :ref:`needextend` refused on the needs of a type is one ``needs.needextend``
   warning for each need type, naming its needs, instead of one for each need. The fields schema is
   frozen once built, before any document is read: an extension that changes it from an
   ``env-before-read-docs`` handler now gets a ``TypeError``. A per-type ``minItems`` on a link type or
-  ``tags`` needs no ``default``: their empty list is no default (:issue:`2277`). The closed types of
+  ``tags`` needs no ``default``: the empty value of a field's type kept from its global declaration
+  (``[]``, ``""``, ``0``, ``0.0``, ``false``) is no default for a per-type narrowing (:issue:`2277`).
+  The closed types of
   :issue:`2269`
   (`discussion #1646 <https://github.com/useblocks/sphinx-needs/discussions/1646>`__)
 

@@ -423,8 +423,8 @@ is fixed for every need type: it is reported as a ``needs.config`` warning and i
 Here a ``req`` must have an ``asil`` (``QM`` unless it says), a ``safety_req`` one of ``A`` to ``D`` (``A`` unless it says),
 and a ``safety_req`` links to three needs at most; the needs of every other type read ``asil`` and ``links`` as declared for all.
 A ``safety_req`` is closed: of the project's fields and link types it holds only ``asil`` and ``links``, which it declares.
-In :file:`conf.py`, the same entries are ``needs_types = {"safety_req": {"title": ..., "inherits": "req", "fields": {"asil": {...}}}, ...}``,
-and in the list shape ``dict(directive="safety_req", title=..., inherits="req", fields={"asil": {...}})``.
+In :file:`conf.py`, the same entries are ``needs_types = {"safety_req": {"title": ..., "inherits": "req", "closed": True, "fields": {"asil": {...}}}, ...}``,
+and in the list shape ``dict(directive="safety_req", title=..., inherits="req", closed=True, fields={"asil": {...}})``.
 In a TOML file of the list shape, a ``[needs.types.fields.asil]`` table after the ``[[needs.types]]`` tables belongs to the last of them.
 
 **Narrowing.**
@@ -435,8 +435,9 @@ a schema keyword only becomes stricter (an ``enum`` a subset, a ``minimum`` high
 ``nullable`` only changes from ``true`` to ``false``,
 and a default -- the type's own, or the one it keeps -- is valid against the narrowed schema
 (so an ``enum`` that leaves out the field's default needs a ``default`` inside it).
-The empty value a field keeps from the declaration before it -- the empty list of a link type, and of ``tags`` -- is no default,
-as ``None`` is not one: a ``minItems`` needs no ``default``, and makes a need of the type without links, or without tags, fail validation.
+The empty value of its type (``[]``, ``""``, ``0``, ``0.0``, ``false``), kept from the field's global declaration -- the empty list of a link type and of ``tags`` among them -- is no default,
+as ``None`` is not one: a ``minItems`` (``minLength``, ``minimum``, ``const``) needs no ``default``, and makes a need of the type without a value fail validation.
+An ancestor that sets ``default = []`` itself sets a default, which a child's ``minItems`` must admit.
 A declaration that widens is ignored as a whole, and the type keeps the declaration before it;
 each reason is one ``needs.type_widening`` warning, such as::
 
@@ -455,25 +456,29 @@ each is one ``needs.type_inherits`` warning, every type on a cycle reported::
 
 **closed.**
 A type with ``closed = true`` declares only the fields and link types of its entries and its ancestors' entries;
-an entry that changes nothing (``[needs.types.spec.fields.x]`` with no key) declares the field as it is.
+an entry that changes nothing (``[needs.types.spec.fields.x]`` with no key) declares the field as it is,
+and an entry that cannot be used declares its field too, as it was (if it names a field of its table: a link type under ``fields`` declares nothing).
 ``closed`` closes what the project declares: its ``needs_fields``/``needs_extra_options`` fields and its link types but ``parent_needs``;
-the core fields, and the fields an extension or a service registers, stay as declared
+the core fields, and the fields an extension or a service registers (``add_field``, ``add_extra_option``, also from a project's own :file:`conf.py`), stay as declared
 (and a :ref:`derived <needs_derive>` field is closed on every type already).
 It is inherited: a child of a closed type is closed unless its entry says ``closed = false``,
 and a child of an open type is open unless it says ``closed = true``.
 On a need of a closed type, a field the type does not declare holds no value:
 ``None`` where the field is nullable, else the empty value of its type (``""``, ``false``, ``0``, ``[]``), never its default;
-a link type it does not declare holds no links. A value set for it in a need is ignored, as one ``needs.undeclared_for_type`` warning::
+a link type it does not declare holds no links, and a link type with ``copy`` copies into ``links`` only where the type declares ``links``.
+A value set for it in a need is ignored, as one ``needs.undeclared_for_type`` warning::
 
-   Field 'x' is not declared on need type 'spec', which is closed, and cannot be set in a need; the value 'two' is ignored
+   Field 'x' is not declared on need type 'spec', which is closed, and cannot be set in need 'S_001'; the value 'two' is ignored
 
-and a need imported by :ref:`needimport` or from :ref:`needs_external_needs` drops it with the same warning.
-A :ref:`needextend` setting or deleting it is refused on the needs of the type, one ``needs.needextend`` warning for each need type::
+and a need imported by :ref:`needimport` or from :ref:`needs_external_needs` drops it with the same warning;
+a value it holds anyway -- an empty value, which a needs.json carries for every field -- is dropped silently.
+A :ref:`needextend` setting, appending to or deleting it is refused on the needs of the type,
+one ``needs.needextend`` warning for each needextend, need type and option::
 
    Option 'x' does not support extend operations on need type 'spec'; it does not extend 3 needs (S_001, S_002, S_003).
 
-Such a field that is not nullable and has a default of its own enters the :ref:`fingerprint <needs_derive>` of every need of the type,
-as the empty value it holds is not that default; a nullable one holds ``None`` and stays out.
+Such a field with a default of its own enters the :ref:`fingerprint <needs_derive>` of every need of the type,
+as the value it holds is not that default; one without a default stays out (a nullable one holds ``None``, which is then its default).
 
 **What cannot be declared.**
 A declaration that cannot be applied is ignored as a whole, as one ``needs.type_conflict`` warning, such as::

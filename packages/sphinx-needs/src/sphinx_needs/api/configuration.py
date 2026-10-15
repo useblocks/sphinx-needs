@@ -108,7 +108,9 @@ def add_extra_option(
     """
     Adds an extra option to the configuration. This option can then later be used inside needs or ``add_need``.
 
-    Same impact as using :ref:`needs_extra_options` manually.
+    Same impact as using :ref:`needs_extra_options` manually, but that a closed need
+    type does not close the option (:ref:`needs_types_fields`): it is not the
+    project's, also when a project's own ``conf.py`` ``setup()`` registers it.
 
     .. deprecated::
         Use :func:`add_field` instead.
@@ -160,7 +162,9 @@ def add_field(
     """
     Adds an need field to the configured need schema.
 
-    Same impact as using :ref:`needs_fields` manually.
+    Same impact as using :ref:`needs_fields` manually, but that a closed need type
+    does not close the field (:ref:`needs_types_fields`): it is not the project's,
+    also when a project's own ``conf.py`` ``setup()`` registers it.
 
     **Usage**::
 
