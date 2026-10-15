@@ -471,14 +471,14 @@ A value set for it in a need is ignored, as one ``needs.undeclared_for_type`` wa
    Field 'x' is not declared on need type 'spec', which is closed, and cannot be set in need 'S_001'; the value 'two' is ignored
 
 and a need imported by :ref:`needimport` or from :ref:`needs_external_needs` drops it with the same warning;
-a value it holds anyway -- an empty value, which a needs.json carries for every field -- is dropped silently.
+a value equal to the one the need then holds -- the empty value of a field that is not nullable, which a needs.json carries for every field -- is dropped silently.
 A :ref:`needextend` setting, appending to or deleting it is refused on the needs of the type,
 one ``needs.needextend`` warning for each needextend, need type and option::
 
    Option 'x' does not support extend operations on need type 'spec'; it does not extend 3 needs (S_001, S_002, S_003).
 
 Such a field with a default of its own enters the :ref:`fingerprint <needs_derive>` of every need of the type,
-as the value it holds is not that default; one without a default stays out (a nullable one holds ``None``, which is then its default).
+as the value it holds is not that default; so does one that is not nullable and has no default, as every need's does; a nullable one without a default holds ``None``, which is then its default, and stays out.
 
 **What cannot be declared.**
 A declaration that cannot be applied is ignored as a whole, as one ``needs.type_conflict`` warning, such as::
