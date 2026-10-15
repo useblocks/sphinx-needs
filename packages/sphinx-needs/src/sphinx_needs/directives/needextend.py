@@ -26,6 +26,7 @@ from sphinx_needs.needs_schema import (
     LinkSchema,
     LinksFunctionArray,
     LinksLiteralValue,
+    TypeFieldsSchema,
 )
 from sphinx_needs.utils import DummyOptionSpec, add_doc, coerce_to_boolean, counted_ids
 
@@ -74,7 +75,11 @@ class NeedextendDirective(SphinxDirective):
         options: dict[str, str | None] = self.options
 
         needs_config = NeedsSphinxConfig(self.env.app.config)
-        needs_schema = SphinxNeedsData(self.env).get_schema()
+        # the global view: a needextend may match needs of every type, and none is in
+        # hand here, so its options are checked and converted against the declarations
+        # every need type shares; each matched need is checked against its own type
+        # where it is extended (_refused_on_type)
+        needs_schema = SphinxNeedsData(self.env).get_schema().for_type(None)
 
         try:
             # override global needextend_strict if user set it in the directive
@@ -450,7 +455,7 @@ def extend_needs_data(
 
 
 def _refused_on_type(
-    type_schema: FieldsSchema,
+    type_schema: TypeFieldsSchema,
     need: NeedItem,
     option_name: str,
     etype: ExtendType,

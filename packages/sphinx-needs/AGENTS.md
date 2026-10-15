@@ -225,19 +225,29 @@ This module defines the schema data structures that serve as the single source o
   - other iteration and access methods
 
 A need type may declare a field anew: `FieldsSchema.add_type_overlay(need_type, field)` stores the
-overlay beside the three dicts (never as an attribute of `FieldSchema` or `LinkSchema`), and
-`FieldsSchema.for_type(need_type)` is the schema of that type's needs -- the schema itself for no
-type or a type without overlays, else a schema resolved once with the overlays in place, which
-refuses changes. Read a field for a need through `for_type(need["type"])` wherever the attribute
-read may vary per type (admission, defaults, `nullable`, `allow_extend`, `parse_*`, the `schema`
-constraints); the field's type, its name and how it is rendered stay on the schema itself.
-`add_type_overlay` is the one-name-one-type fence: an overlay is of a field the schema has, of the
-same kind, `type` and `item_type`, or it raises `ValueError`. No configuration creates an overlay
-yet.
+overlay beside the three dicts (never as an attribute of `FieldSchema` or `LinkSchema`). The schema
+has two tiers. The union, `FieldsSchema` itself, answers a field's shape (`FieldShape`, `LinkShape`:
+its name, kind, type, item type and derivation, and a link type's display, copy and dead links --
+what is the same on every need type). `for_type(need["type"])` answers a need's fields in full
+(`TypeFieldsSchema`, the type's overlays in place); `for_type(None)` is the global view, which reads
+the global declarations explicitly where no need is in hand. Configuration code, which runs before
+any need, reads `global_declaration(name)`, `type_declarations(name)` and `declares_default(name)`.
+The type checker refuses a per-type attribute read (a default, `nullable`, `allow_extend`, `parse_*`,
+the `schema` constraints) on the union, directly or through a helper typed with the full classes: a
+full declaration comes only through those named doors. An `isinstance` test against `FieldSchema` or
+`LinkSchema`, or a `getattr`, on a union result re-opens the full declaration, and the checker cannot
+see that -- so test `kind` instead. The first `for_type` freezes the schema -- the first need, or the
+first validation (in a parallel build, a worker's freezes the main process's when its data are
+merged): every later change raises `TypeError`, so register fields and
+overlays while the schema is built, in `create_schema` (the configuration surface will freeze it at
+the end of `create_schema` instead). An overlay is a narrowing of the field: `narrowing_problems` is the one
+rule `add_type_overlay` and `replace_field` apply, the configuration resolver will apply, and whose
+schema half `inherit_schema` reads; and it names a configured need type (`set_need_types`). No
+configuration creates an overlay yet.
 
 The schema is built during `env-before-read-docs` via the `create_schema()` function in `src/sphinx_needs/needs.py`.
 It creates `FieldSchema` and `LinkSchema` from information obtained from the `NeedsCoreFields` and from user defined configuration.
-Type overlays are the last thing registered on it (today only tests do, from a later `env-before-read-docs` handler; the resolver of the per-type configuration will, as the final step of `create_schema`), and once the documents are read nothing changes it.
+Type overlays are the last thing registered on it (today only tests do, from a later `env-before-read-docs` handler in projects without external needs -- a window the tests alone use; the resolver of the per-type configuration will, as the final step of `create_schema`), and the first `for_type` freezes it.
 It is accessible via `SphinxNeedsData(env).get_schema()`.
 
 ## Sphinx Extension Architecture

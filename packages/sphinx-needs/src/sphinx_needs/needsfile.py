@@ -41,7 +41,13 @@ def generate_needs_schema(
     A derived field or link type (one with a ``derive`` or ``derive_by_type`` rule) is
     marked ``"readOnly": true``; its ``default`` is the value of a need type without a
     rule.
+
+    It is the schema of the fields every need type shares: the global view of the
+    schema (:meth:`~sphinx_needs.needs_schema.FieldsSchema.for_type` of no need type),
+    whatever a need type declares anew.
     """
+    # the union by design: one projection for the needs of every type
+    needs_schema = needs_schema.for_type(None)
     properties: dict[str, Any] = {}
 
     for field in needs_schema.iter_extra_fields():

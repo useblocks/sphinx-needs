@@ -30,7 +30,12 @@ from sphinx_needs.exceptions import FunctionParsingException
 from sphinx_needs.filter_common import filter_needs_and_parts, filter_single_need
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import NeedItem, NeedLink, NeedPartItem
-from sphinx_needs.needs_schema import FieldSchema, FieldsSchema, LinkSchema
+from sphinx_needs.needs_schema import (
+    FieldSchema,
+    FieldShape,
+    FieldsSchema,
+    LinkSchema,
+)
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_func import NeedFunc
 from sphinx_needs.utils import counted_ids
@@ -1219,7 +1224,7 @@ def _resolve_field(
         need[field] = placeholder(need, field, type_schema)
 
 
-def _in_field_type(value: Any, field_schema: FieldSchema | LinkSchema) -> Any:
+def _in_field_type(value: Any, field_schema: FieldShape) -> Any:
     """A computed value in the type of the field holding it.
 
     An integer in a ``number`` field (a rule's ``count``, a ``sum`` or ``copy`` of an

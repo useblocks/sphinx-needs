@@ -53,6 +53,15 @@ Improvements
   and derived values and the field validation read a need's fields as its type declares them;
   nothing changes for a project -- the configuration surface follows (:pr:`2266`)
 
+- ♻️ The fields schema has two tiers: the union answers a field's shape and ``for_type`` its full
+  declaration, the schema freezes once it is first read (the first need, or the first validation),
+  and a per-type declaration is a narrowing (``needs_schema.narrowing_problems``); the second slice
+  of per-type fields
+  (`discussion #1646 <https://github.com/useblocks/sphinx-needs/discussions/1646>`__) -- nothing
+  changes for a project; the configuration surface follows; an extension that changes the schema
+  after the schema is first read now gets a ``TypeError``, and ``FieldsSchema``'s getters are typed
+  as shapes (read a full declaration through ``for_type``) (:pr:`2275`)
+
 Deprecations
 ............
 

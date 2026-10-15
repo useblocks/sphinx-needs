@@ -44,7 +44,12 @@ from sphinx_needs.need_item import (
     NeedPartItem,
     _natural_sort_key_total,
 )
-from sphinx_needs.needs_schema import FieldSchema, FieldsSchema, LinkSchema
+from sphinx_needs.needs_schema import (
+    FieldSchema,
+    FieldShape,
+    FieldsSchema,
+    LinkSchema,
+)
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_ref import NeedRef
 from sphinx_needs.utils import logger
@@ -1160,8 +1165,13 @@ def _items(value: Any) -> list[Any]:
 
 def _order_of(schema: FieldsSchema, name: str) -> Callable[[Any], Any] | None:
     """How ``min`` / ``max`` order the values of a field: numbers by value, an enum by
-    its declared order; ``None`` for a value outside the order."""
-    field = schema.get_extra_field(name) or schema.get_core_field(name)
+    its declared order; ``None`` for a value outside the order.
+
+    One order per field, for the needs of every type: the enum of the field's global
+    declaration. A need type that narrows the enum declares a subset of it, whose own
+    order is not read.
+    """
+    field = schema.global_declaration(name)
     if field is not None and field.type == "string":
         enum = list(field.schema.get("enum", ()))
         return lambda value: enum.index(value) if value in enum else None
@@ -1288,7 +1298,7 @@ def _rule_fingerprint(
     out once per pass (``cache``).
     """
     key = ("fingerprint", rule.exclude)
-    names: list[tuple[str, FieldSchema | None, str | None]] | None = (
+    names: list[tuple[str, FieldShape | None, str | None]] | None = (
         None if cache is None else cache.get(key)
     )
     if names is None:

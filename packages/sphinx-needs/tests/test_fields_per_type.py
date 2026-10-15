@@ -14,6 +14,8 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from sphinx.errors import ExtensionError
+from sphinx.util.parallel import parallel_available
 
 from sphinx_needs.api.need import generate_need
 from sphinx_needs.config import NeedsSphinxConfig
@@ -123,7 +125,10 @@ def test_an_unknown_keyword_is_refused(test_app: Any) -> None:
 # -- the declarations of one need type -------------------------------------------------
 #
 # Nothing in the configuration declares a field for one need type yet: each project
-# below registers its overlays from ``conf.py``, after the fields schema is created.
+# below registers its overlays from ``conf.py``, after the fields schema is created and
+# before any need is read from it (an ``env-before-read-docs`` handler at priority 600;
+# these projects import no external needs, which would be read before it). That window
+# is the tests' only: the configuration of per-type fields replaces it.
 
 OVERLAY_CONF = """\
 from dataclasses import replace
@@ -466,13 +471,13 @@ DERIVED_INDEX = """\
     [
         _overlay_project(
             "{"
-            '"ox": {"nullable": False, "schema": {"type": "string", "minLength": 1},'
+            '"ox": {"nullable": True, "schema": {"type": "string", "minLength": 1},'
             ' "derive_by_type": {"req": {"kind": "copy", "field": "title"}}},'
             ' "oy": {"schema": {"type": "string"}, "default": "D",'
             ' "derive_by_type": {"req": {"kind": "copy", "field": "title"}}},'
             ' "c1": {"nullable": True}, "c2": {"nullable": True}'
             "}",
-            '[("spec", "ox", {"nullable": True}),'
+            '[("spec", "ox", {"nullable": False}),'
             ' ("spec", "oy", {"default": FieldLiteralValue("S")}),'
             ' ("spec", "c1", {"nullable": False, "default": FieldLiteralValue("cd")}),'
             ' ("spec", "c2", {"nullable": False, "default": FieldLiteralValue("cd")})]',
@@ -483,9 +488,9 @@ DERIVED_INDEX = """\
 )
 def test_derived_values_of_one_type(test_app: Any) -> None:
     """A field derived on another type holds, on the needs of a type, the value its
-    type declares: no value where the type makes it nullable (and so no schema
-    violation), the type's default; a call on a cycle leaves a field the type makes
-    not nullable empty, not unset."""
+    type declares: its empty value where the type makes it not nullable (and so no
+    schema violation: it holds no value yet), the type's default; a call on a cycle
+    leaves a field the type makes not nullable empty, not unset."""
     app = test_app
     app.build()
     assert build_warnings(app) == [
@@ -499,6 +504,115 @@ def test_derived_values_of_one_type(test_app: Any) -> None:
     needs = _needs(app)
     assert {k: (v["ox"], v["oy"], v["c1"], v["c2"]) for k, v in needs.items()} == {
         "REQ_1": ("A", "A", None, None),
-        "SPEC_1": (None, "S", "", ""),
-        "SPEC_2": (None, "S", "cd", "cd"),
+        "SPEC_1": ("", "S", "", ""),
+        "SPEC_2": ("", "S", "cd", "cd"),
     }
+
+
+LATE_CONF = """\
+from sphinx_needs.data import SphinxNeedsData
+
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_fields = {"x": {"nullable": True}}
+
+
+def _late(app, env, docnames):
+    schema = SphinxNeedsData(env).get_schema()
+    schema.for_type("req")
+    schema.add_type_overlay("spec", schema.global_declaration("x"))
+
+
+def setup(app):
+    app.connect("env-before-read-docs", _late, priority=600)
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app", [_project(LATE_CONF, ".. req:: A\n   :id: REQ_1\n")], indirect=True
+)
+def test_an_overlay_after_the_first_read_fails_the_build(test_app: Any) -> None:
+    """The schema freezes once it is read for a need type: an overlay registered
+    after that is refused, and the build stops, naming why."""
+    app = test_app
+    with pytest.raises(ExtensionError) as exc_info:
+        app.build()
+    cause = exc_info.value.orig_exc
+    assert isinstance(cause, TypeError)
+    assert str(cause) == FREEZE
+
+
+FREEZE = (
+    "The fields schema cannot be changed once it is read through for_type (the "
+    "first call freezes it). Register fields and need type overlays while the "
+    "schema is built, in create_schema."
+)
+
+PARALLEL_CONF = """\
+from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.needs_schema import FieldSchema
+
+extensions = ["sphinx_needs"]
+
+
+def _late(app, env):
+    SphinxNeedsData(env).get_schema().add_extra_field(
+        FieldSchema(name="late", schema={"type": "string"}, nullable=True)
+    )
+
+
+def setup(app):
+    app.connect("env-updated", _late)
+    return {"parallel_read_safe": True}
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "parallel": 4,
+            "files": [
+                (Path("conf.py"), PARALLEL_CONF),
+                (
+                    Path("index.rst"),
+                    "Index\n=====\n\n.. toctree::\n\n"
+                    + "".join(f"   d{i}\n" for i in range(1, 11)),
+                ),
+                *(
+                    (
+                        Path(f"d{i}.rst"),
+                        f"D{i}\n===\n\n.. req:: need {i}\n   :id: REQ_{i:03}\n",
+                    )
+                    for i in range(1, 11)
+                ),
+            ],
+        }
+    ],
+    indirect=True,
+)
+@pytest.mark.skipif(not parallel_available, reason="Parallel execution not supported")
+def test_a_parallel_read_freezes_the_schema(test_app: Any) -> None:
+    """The documents read in other processes freeze the schema of this one when
+    their data are merged: a change after the read stops the build, as it does
+    when the documents are read here."""
+    app = test_app
+    with pytest.raises(ExtensionError) as exc_info:
+        app.build()
+    cause = exc_info.value.orig_exc
+    assert isinstance(cause, TypeError)
+    assert str(cause) == FREEZE
+
+
+@pytest.mark.parametrize(
+    "test_app", [_project("extensions = ['sphinx_needs']\n", "")], indirect=True
+)
+def test_the_schema_knows_the_configured_need_types(test_app: Any) -> None:
+    """``create_schema`` tells the schema every configured need type, a service's
+    included, so an overlay names one of them."""
+    app = test_app
+    app.build()
+    assert SphinxNeedsData(app.env).get_schema().need_types == frozenset(
+        {"req", "spec", "impl", "test", "need", "issue", "pr", "commit"}
+    )

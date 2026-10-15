@@ -35,7 +35,11 @@ from sphinx_needs.views import NeedsView
 if TYPE_CHECKING:
     from typing import NotRequired
 
-    from sphinx_needs.needs_schema import FieldSchema, FieldsSchema
+    from sphinx_needs.needs_schema import (
+        FieldSchema,
+        FieldsSchema,
+        TypeFieldsSchema,
+    )
 
 # TODO(Marco): error for conflicting unevaluatedProperties
 
@@ -58,7 +62,7 @@ class _FieldValidation:
     with_off_type_default: dict[str, FieldSchema]
 
 
-def _field_validation(fields_schema: FieldsSchema) -> _FieldValidation | None:
+def _field_validation(fields_schema: TypeFieldsSchema) -> _FieldValidation | None:
     """Compile the validator of every field and link type of ``fields_schema``.
 
     :return: ``None`` if the schema has no field.
@@ -135,7 +139,9 @@ def validate_field_link_schemas(
     :param needs: The needs view to validate.
     :return: Mapping of need ID to list of validation warnings.
     """
-    if (every_type := _field_validation(fields_schema)) is None:
+    # the global view: the fields every need type without overlays reads
+    global_view = fields_schema.for_type(None)
+    if (every_type := _field_validation(global_view)) is None:
         return {}
     #: need type -> the validation of its needs
     by_type: dict[str, _FieldValidation] = {}
@@ -145,7 +151,7 @@ def validate_field_link_schemas(
     for need in needs.values():
         if (validation := by_type.get(need["type"])) is None:
             type_schema = fields_schema.for_type(need["type"])
-            if type_schema is fields_schema:
+            if type_schema is global_view:
                 validation = every_type
             else:
                 validation = _field_validation(type_schema)
@@ -715,6 +721,27 @@ class SchemaValidator:
     raw: NeedFieldsSchemaWithVersionType
     compiled: Validator
     properties: set[str]
+
+
+def value_problem(name: str, schema: Any, value: Any) -> str | None:
+    """Why ``value`` is not valid against ``schema``, the schema of the field ``name``:
+    the first message, ``None`` if it is valid.
+
+    One validator is compiled per call, as :func:`validate_object_schema_compiles`
+    compiles one.
+    """
+    validator = jsonschema_rs.validator_for(
+        {
+            "$schema": _SCHEMA_VERSION,
+            "type": "object",
+            "properties": {name: schema},
+        },
+        validate_formats=True,
+        pattern_options=jsonschema_rs.RegexOptions(),
+    )
+    for error in validator.iter_errors({name: value}):
+        return error.message
+    return None
 
 
 def compile_validator(schema: NeedFieldsSchemaType) -> SchemaValidator:

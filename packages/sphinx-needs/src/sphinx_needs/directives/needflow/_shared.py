@@ -19,7 +19,7 @@ from docutils import nodes
 
 from sphinx_needs.config import NeedType
 from sphinx_needs.data import NeedsFlowType
-from sphinx_needs.needs_schema import LinkSchema
+from sphinx_needs.needs_schema import LinkShape
 
 from ._options import LegendPart
 
@@ -117,7 +117,7 @@ def _color_swatch(color: str) -> nodes.Node:
 def create_legend_nodes(
     parts: Iterable[LegendPart],
     need_types: Sequence[NeedType],
-    link_types: Sequence[LinkSchema],
+    link_types: Sequence[LinkShape],
 ) -> list[nodes.Element]:
     """Describe what a diagram drew, as document tables beside it.
 

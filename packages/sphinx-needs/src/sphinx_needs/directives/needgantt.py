@@ -112,7 +112,7 @@ class NeedganttDirective(FilterBase, DiagramBase):
                     None,
                 )
                 return []
-            if option.schema.get("type") not in {"integer", "number"}:
+            if option.type not in {"integer", "number"}:
                 log_warning(
                     logger,
                     f"Schema for option '{option_name}' is not 'integer' or 'number' as required by needgantt.",

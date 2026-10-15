@@ -43,7 +43,7 @@ from sphinx_needs.filter_common import (
 )
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import NeedItem, NeedPartItem
-from sphinx_needs.needs_schema import FieldsSchema, LinkSchema
+from sphinx_needs.needs_schema import FieldsSchema, LinkShape
 from sphinx_needs.variants import match_variants
 from sphinx_needs.views import NeedsView
 
@@ -215,7 +215,7 @@ class GraphEdge:
     target_id: str
     """The complete id of the need the link points at."""
 
-    link_type: LinkSchema
+    link_type: LinkShape
     """The link field the link belongs to, carrying its display configuration."""
 
     is_part: bool
@@ -285,7 +285,7 @@ class NeedflowGraph:
     drawn_types: list[NeedType]
     """The configured need types the diagram actually drew, in configuration order."""
 
-    drawn_link_types: list[LinkSchema]
+    drawn_link_types: list[LinkShape]
     """The link fields the diagram actually drew edges for, in schema order."""
 
     direction: FlowDirection
@@ -307,7 +307,7 @@ def resolve_link_types(
     schema: FieldsSchema,
     config: NeedsSphinxConfig,
     location: nodes.Element,
-) -> list[LinkSchema]:
+) -> list[LinkShape]:
     """Resolve which link fields a needflow may draw.
 
     Unknown names given to the ``link_types`` option are warned about, but otherwise
@@ -343,7 +343,7 @@ def resolve_link_types(
     # always defaults the option to every link type; it is kept as is
     config_link_types = [link.upper() for link in config.flow_link_types]
 
-    allowed_link_types: list[LinkSchema] = []
+    allowed_link_types: list[LinkShape] = []
     for link_field in schema.iter_link_fields():
         # Skip link-type handling, if it is not part of a specified list of allowed link_types or
         # if not part of the overall configuration of needs_flow_link_types
@@ -365,7 +365,7 @@ def resolve_link_types(
 def build_graph(
     app: Sphinx,
     attributes: NeedsFlowType,
-    allowed_link_types: list[LinkSchema],
+    allowed_link_types: list[LinkShape],
     /,
     *,
     location: nodes.Element,
@@ -562,7 +562,7 @@ def build_node_tree(
 
 def collect_edges(
     found_needs: list[NeedItem | NeedPartItem],
-    allowed_link_types: list[LinkSchema],
+    allowed_link_types: list[LinkShape],
     drawn: Container[str],
     /,
 ) -> list[GraphEdge]:

@@ -24,7 +24,7 @@ from sphinx_needs.filter_common import FilterBase, apply_max_items, process_filt
 from sphinx_needs.functions.functions import check_and_get_content
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import NeedItem, NeedPartItem
-from sphinx_needs.needs_schema import FieldsSchema, LinkSchema
+from sphinx_needs.needs_schema import FieldsSchema, LinkSchema, LinkShape
 from sphinx_needs.utils import add_doc, profile, remove_node_from_tree, row_col_maker
 
 LOGGER = get_logger(__name__)
@@ -296,7 +296,7 @@ def _column_type(needs_schema: FieldsSchema, key: str) -> str | None:
     field = needs_schema.get_any_field(key)
     if field is None or isinstance(field, LinkSchema):
         return None
-    if field.schema.get("type") in ("integer", "number"):
+    if field.type in ("integer", "number"):
         return "number"
     return None
 
@@ -318,7 +318,7 @@ def process_needtables(
     needs_schema = needs_data.get_schema()
 
     # Create a link_type dictionary, which keys-list can be easily used to find columns
-    link_type_list: dict[str, LinkSchema] = {}
+    link_type_list: dict[str, LinkShape] = {}
     for link in needs_schema.iter_link_fields():
         link_type_list[link.name.upper()] = link
         link_type_list[link.name.upper() + "_BACK"] = link
