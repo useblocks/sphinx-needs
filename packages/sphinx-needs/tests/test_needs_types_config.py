@@ -413,8 +413,8 @@ FINDINGS = [
         },
         [
             "needs_types['req'].fields['status'] has a 'description' that is not a "
-            "string (got int) and a 'nullable' that is not a boolean (got str) and a "
-            "'schema' that is not a mapping (got list) and a 'predicates' that is not "
+            "string (got int) and a 'schema' that is not a mapping (got list) and a "
+            "'nullable' that is not a boolean (got str) and a 'predicates' that is not "
             "a list of (filter, value) pairs (got str); the keys are ignored",
             "needs_types['req'].links['links'] has a 'predicates' that is not a list "
             "of (filter, value) pairs (got list); the key is ignored",

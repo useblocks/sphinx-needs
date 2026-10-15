@@ -743,11 +743,117 @@ def _load_variants_from_toml(
 
 
 #: The keys a ``needs_types`` entry may carry; any other key is reported and ignored.
-NEED_TYPE_KEYS = ("directive", "title", "prefix", "color", "style")
+NEED_TYPE_KEYS = (
+    "directive",
+    "title",
+    "prefix",
+    "color",
+    "style",
+    "inherits",
+    "fields",
+    "links",
+)
+
+#: The keys of an entry of a need type's ``fields`` table.
+NEED_TYPE_FIELD_KEYS = ("description", "schema", "nullable", "default", "predicates")
+
+#: The keys of an entry of a need type's ``links`` table: a link type is not nullable.
+NEED_TYPE_LINK_KEYS = ("description", "schema", "default", "predicates")
 
 
 def _type_name(value: object) -> str:
     return type(value).__name__
+
+
+def _is_pairs(value: object) -> bool:
+    """Whether ``value`` is a list of (filter, value) pairs, each filter a string."""
+    return isinstance(value, list | tuple) and all(
+        isinstance(pair, list | tuple) and len(pair) == 2 and isinstance(pair[0], str)
+        for pair in value
+    )
+
+
+#: what the value of a key must be, and the test of it: the keys of a need type, then
+#: the keys of its declaration of a field or link type (``default`` is any value)
+_SHAPES: Mapping[str, tuple[str, Callable[[object], bool]]] = {
+    "color": ("a string", lambda v: isinstance(v, str)),
+    "style": ("a string", lambda v: isinstance(v, str)),
+    "inherits": ("a non-empty string", lambda v: isinstance(v, str) and bool(v)),
+    "fields": ("a mapping", lambda v: isinstance(v, Mapping)),
+    "links": ("a mapping", lambda v: isinstance(v, Mapping)),
+    "description": ("a string", lambda v: isinstance(v, str)),
+    "schema": ("a mapping", lambda v: isinstance(v, Mapping)),
+    "nullable": ("a boolean", lambda v: isinstance(v, bool)),
+    "predicates": ("a list of (filter, value) pairs", _is_pairs),
+}
+
+
+def _not_of_their_shape(
+    where: str, entry: Mapping[str, Any], keys: tuple[str, ...]
+) -> tuple[list[str], str]:
+    """The ``keys`` of ``entry`` whose value is not of its shape, and the finding."""
+    wrong = [
+        name
+        for name in keys
+        if name in _SHAPES and name in entry and not _SHAPES[name][1](entry[name])
+    ]
+    if not wrong:
+        return [], ""
+    return wrong, (
+        f"{where} has "
+        + " and ".join(
+            f"{'an' if name[0] in 'aeiou' else 'a'} {name!r} that is not "
+            f"{_SHAPES[name][0]} (got "
+            f"{repr(entry[name]) if entry[name] == '' else _type_name(entry[name])})"
+            for name in wrong
+        )
+        + f"; the {'key is' if len(wrong) == 1 else 'keys are'} ignored"
+    )
+
+
+def _unknown(
+    where: str, entry: Mapping[str, Any], known: tuple[str, ...]
+) -> tuple[list[str], str]:
+    """The keys of ``entry`` outside ``known``, and the finding."""
+    unknown = [k for k in entry if k not in known]
+    if not unknown:
+        return [], ""
+    return unknown, (
+        f"{where} has {'an unknown key' if len(unknown) == 1 else 'unknown keys'} "
+        f"{', '.join(repr(k) for k in unknown)}; known keys are {', '.join(known)}; the "
+        f"{'key is' if len(unknown) == 1 else 'keys are'} ignored"
+    )
+
+
+def _normalise_declarations(
+    named: str, table: str, value: Mapping[Any, Any], findings: list[str]
+) -> dict[Any, dict[str, Any]]:
+    """A need type's ``fields`` or ``links`` table, of its shape: each entry a mapping
+    of the keys of its table, each value of its shape. What is not is reported in
+    ``findings`` and left out: an entry that is not a mapping, a key that is not
+    known or not of its shape. Every entry is a new mapping, its values copies."""
+    known = NEED_TYPE_LINK_KEYS if table == "links" else NEED_TYPE_FIELD_KEYS
+    resolved: dict[Any, dict[str, Any]] = {}
+    for name, entry in value.items():
+        where = f"{named}.{table}[{name!r}]"
+        if not isinstance(entry, Mapping):
+            findings.append(
+                f"{where} is not a mapping (got {_type_name(entry)}); "
+                "the entry is ignored"
+            )
+            continue
+        wrong, text = _not_of_their_shape(where, entry, known)
+        if wrong:
+            findings.append(text)
+        unknown, text = _unknown(where, entry, known)
+        if unknown:
+            findings.append(text)
+        resolved[name] = {
+            key: deepcopy(item)
+            for key, item in entry.items()
+            if key not in wrong and key not in unknown
+        }
+    return resolved
 
 
 def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
@@ -768,10 +874,20 @@ def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
        used;
     4. an entry whose ``title`` or ``prefix`` is missing or not a string is dropped (an
        empty string is valid);
-    5. a ``color`` or ``style`` that is not a string is removed from the entry;
+    5. a ``color`` or ``style`` that is not a string, an ``inherits`` that is not a
+       non-empty string, and a ``fields`` or ``links`` that is not a mapping, are
+       removed from the entry;
     6. a key outside :data:`NEED_TYPE_KEYS` is removed from the entry;
     7. a directive declared by more than one entry (list shape only) resolves to the
        last of them, at its own position, the others removed.
+
+    In ``fields`` and ``links``, an entry that is not a mapping is removed, and so is
+    a key of an entry outside :data:`NEED_TYPE_FIELD_KEYS` (fields) or
+    :data:`NEED_TYPE_LINK_KEYS` (links), or not of its shape: a ``description`` that
+    is not a string, a ``schema`` that is not a mapping, a ``nullable`` that is not a
+    boolean, ``predicates`` that are not a list of (filter, value) pairs. Only the
+    shape is checked here: what a declaration names, and whether its values apply to
+    the field, is for :func:`create_schema`, which knows the fields and every need type.
 
     A directive name is otherwise not checked: which names docutils accepts is
     docutils' concern.
@@ -852,31 +968,20 @@ def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
             )
             continue
 
-        wrong = [
-            name
-            for name in ("color", "style")
-            if name in resolved and not isinstance(resolved[name], str)
-        ]
+        wrong, text = _not_of_their_shape(named, resolved, NEED_TYPE_KEYS)
         if wrong:
-            findings.append(
-                f"{named} has "
-                + " and ".join(
-                    f"a {name!r} that is not a string (got {_type_name(resolved[name])})"
-                    for name in wrong
-                )
-                + f"; the {'key is' if len(wrong) == 1 else 'keys are'} ignored"
-            )
-
-        unknown = [k for k in resolved if k not in NEED_TYPE_KEYS]
+            findings.append(text)
+        unknown, text = _unknown(named, resolved, NEED_TYPE_KEYS)
         if unknown:
-            findings.append(
-                f"{named} has {'an unknown key' if len(unknown) == 1 else 'unknown keys'} "
-                f"{', '.join(repr(k) for k in unknown)}; known keys are "
-                f"{', '.join(NEED_TYPE_KEYS)}; the "
-                f"{'key is' if len(unknown) == 1 else 'keys are'} ignored"
-            )
+            findings.append(text)
         for name in (*wrong, *unknown):
             del resolved[name]
+        for table in ("fields", "links"):
+            if table in resolved:
+                # a mapping: what is not was removed above
+                resolved[table] = _normalise_declarations(
+                    named, table, cast(Mapping[Any, Any], resolved[table]), findings
+                )
         kept.append((position, resolved))
 
     # a duplicate is possible in the list shape only (a mapping cannot hold a key
