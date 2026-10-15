@@ -1,3 +1,6 @@
+import functools
+import inspect
+import tokenize
 from pathlib import Path
 
 import pytest
@@ -52,3 +55,97 @@ def test_measure_time(test_app):
     outdir = Path(str(app.outdir))
     assert outdir.joinpath("debug_measurement.json").exists()
     assert outdir.joinpath("debug_filters.jsonl").exists()
+
+
+def _measured_function(x):
+    return x
+
+
+class _CallableInstance:
+    def __call__(self, x):
+        return x
+
+
+def _source_less_function():
+    """A function whose source inspect cannot read, as one from a removed file."""
+    namespace: dict = {}
+    exec("def gone(x):\n    return x\n", namespace)
+    return namespace["gone"]
+
+
+@pytest.mark.parametrize(
+    ("func", "name", "file", "line"),
+    [
+        (
+            _measured_function,
+            "_measured_function",
+            __file__,
+            _measured_function.__code__.co_firstlineno,
+        ),
+        (functools.partial(str.strip), "partial(strip)", None, None),
+        (_CallableInstance(), "_CallableInstance", None, None),
+        # named through what it wraps, which has no __name__ either
+        (
+            functools.partial(_CallableInstance()),
+            "partial(_CallableInstance)",
+            None,
+            None,
+        ),
+        (_source_less_function(), "gone", "<string>", None),
+    ],
+    ids=[
+        "function",
+        "partial",
+        "callable-instance",
+        "partial-of-instance",
+        "function-without-source",
+    ],
+)
+def test_measure_time_func_names_and_places_a_callable(func, name, file, line):
+    """What a measurement records for a callable, whatever kind it is.
+
+    ``measure_time`` read ``func.__name__``, ``inspect.getfile`` and
+    ``inspect.getsourcelines`` unguarded, so with measurement on a partial or a callable
+    instance raised ``AttributeError`` and a function whose source is gone raised
+    ``OSError``, ending the build. A plain function is recorded as before; the others
+    are named after what they wrap or their type -- never a ``repr`` with an address --
+    and their location is ``None`` where inspect cannot give it.
+    """
+    debug.EXECUTE_TIME_MEASUREMENTS = True
+    measured = debug.measure_time_func(func, category="test_inspect")
+    assert measured("1") == func("1")
+
+    entry = debug.TIME_MEASUREMENTS[f"test_inspect_{name}"]
+    assert (entry["name"], entry["file"], entry["line"], entry["amount"]) == (
+        name,
+        file,
+        line,
+        1,
+    )
+
+
+@pytest.mark.parametrize(
+    ("lookup", "error"),
+    [
+        ("getfile", OSError("source code not available")),  # a class in __main__
+        ("getsourcelines", tokenize.TokenError("EOF in multi-line statement")),
+    ],
+)
+def test_measure_time_func_survives_any_inspect_error(monkeypatch, lookup, error):
+    """Where a callable came from is a debugging aid: any error inspect raises while
+    looking it up leaves that field ``None`` rather than ending the build."""
+
+    original = getattr(inspect, lookup)
+
+    def raise_for_the_measured_function(obj, *args, **kwargs):
+        # only for it: pytest itself calls inspect to report a failure
+        if obj is _measured_function:
+            raise error
+        return original(obj, *args, **kwargs)
+
+    monkeypatch.setattr(inspect, lookup, raise_for_the_measured_function)
+    debug.EXECUTE_TIME_MEASUREMENTS = True
+    measured = debug.measure_time_func(_measured_function, category="test_inspect")
+    assert measured("1") == "1"
+    entry = debug.TIME_MEASUREMENTS["test_inspect__measured_function"]
+    assert entry["file" if lookup == "getfile" else "line"] is None

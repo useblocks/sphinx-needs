@@ -66,6 +66,16 @@ Deprecations
 Bug fixes
 .........
 
+- 🐛 With :ref:`needs_debug_measurement` on, a measured callable that has no ``__name__``
+  or whose source cannot be read is measured rather than failing. A ``functools.partial``
+  named by ``:filter-func:`` ended the build with ``AttributeError``, one registered with
+  ``add_dynamic_function`` failed its call with a warning and lost the field's value, and a
+  function whose file is gone raised ``OSError``. A partial is now recorded as
+  ``partial(<name>)``, a callable instance by its type's name, with no file or line where
+  inspect cannot give one.
+  ``debug.START_TIME`` and ``EXECUTE_TIME_MEASUREMENTS`` are annotated, so ty now checks
+  the measuring wrapper, and two ``# ty: ignore`` comments go (:issue:`1835`)
+
 - 🐛 :ref:`need <role_need>`, :ref:`need_outgoing <role_need_outgoing>` and
   :ref:`need_incoming <role_need_incoming>` -- and so a need's links and backlinks rows --
   and :ref:`needtable`'s id and link columns no longer end the build on a need that has no

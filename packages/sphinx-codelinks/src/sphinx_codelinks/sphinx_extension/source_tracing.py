@@ -447,8 +447,8 @@ def prepare_env(
 
     # Set time measurement flag
     if src_trace_sphinx_config.debug_measurement:
-        debug.START_TIME = timer()  # Store the rough start time of Sphinx build  # ty: ignore[invalid-assignment]
-        debug.EXECUTE_TIME_MEASUREMENTS = True  # ty: ignore[invalid-assignment]
+        debug.START_TIME = timer()  # Store the rough start time of Sphinx build
+        debug.EXECUTE_TIME_MEASUREMENTS = True
 
     if src_trace_sphinx_config.debug_filters:
         with contextlib.suppress(FileNotFoundError):
