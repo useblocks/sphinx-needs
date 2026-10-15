@@ -385,3 +385,53 @@ def test_an_equal_derivation_is_the_same_derivation() -> None:
     )
     schema.add_type_overlay("spec", overlay)
     assert schema.for_type("spec").get_extra_field("score") is overlay
+
+
+def test_a_replaced_field_keeps_the_type_of_the_first_need_type() -> None:
+    """The overlays of every need type are checked, not those of the last one."""
+    schema = _schema()
+    effort = schema.get_extra_field("effort")
+    asil = schema.get_extra_field("asil")
+    assert effort is not None and asil is not None
+    schema.add_type_overlay("spec", replace(asil, nullable=False))
+    schema.add_type_overlay("req", replace(effort, nullable=False))
+    with pytest.raises(ValueError) as exc_info:
+        schema.replace_field(FieldSchema(name="asil", schema={"type": "integer"}))
+    assert str(exc_info.value) == (
+        "Cannot replace field 'asil' with type 'integer' (items None): need type "
+        "'spec' declares it with another type or derivation."
+    )
+
+
+def test_a_replaced_field_keeps_the_derive_of_its_overlays() -> None:
+    schema = _schema()
+    effort = schema.get_extra_field("effort")
+    assert effort is not None
+    schema.add_type_overlay("spec", replace(effort, nullable=False))
+    with pytest.raises(ValueError) as exc_info:
+        schema.replace_field(
+            replace(effort, derive=DeriveRule(kind="copy", field="status"))
+        )
+    assert str(exc_info.value) == (
+        "Cannot replace field 'effort' with type 'integer' (items None): need type "
+        "'spec' declares it with another type or derivation."
+    )
+
+
+def test_an_equal_derive_is_the_same_derive() -> None:
+    """An overlay whose ``derive`` equals the field's, built anew, is taken."""
+    schema = _schema()
+    schema.add_extra_field(
+        FieldSchema(
+            name="score",
+            schema={"type": "number"},
+            derive=DeriveRule(kind="copy", field="effort"),
+        )
+    )
+    score = schema.get_extra_field("score")
+    assert score is not None
+    overlay = replace(
+        score, nullable=True, derive=DeriveRule(kind="copy", field="effort")
+    )
+    schema.add_type_overlay("spec", overlay)
+    assert schema.for_type("spec").get_extra_field("score") is overlay
