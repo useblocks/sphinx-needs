@@ -124,13 +124,10 @@ def test_an_unknown_keyword_is_refused(test_app: Any) -> None:
 
 # -- the declarations of one need type -------------------------------------------------
 #
-# A need type declares a field anew in its ``needs_types`` entry (``fields``), which
-# ``create_schema`` resolves. What the configuration does not declare per type yet --
-# a field closed, or not extended, on one type -- is registered from ``conf.py`` below,
-# after the fields schema is created and before any need is read from it (an
-# ``env-before-read-docs`` handler at priority 600; these projects import no external
-# needs, which would be read before it): the two tests using ``OVERLAY_CONF`` move onto
-# the configuration with the slice that closes need types.
+# A need type declares a field anew in its ``needs_types`` entry (``fields``), and
+# closes the fields it does not declare (``closed``), which ``create_schema`` resolves:
+# the configuration is the one place a field is declared for a type, and the schema is
+# complete, and frozen, once ``create_schema`` has built it.
 
 #: the default need types but ``need``, ``spec`` declaring its fields anew
 DECLARING_CONF = """\
@@ -150,38 +147,28 @@ def _declaring_project(fields: str, spec: str, index: str) -> dict[str, Any]:
     return _project(DECLARING_CONF.format(fields=fields, spec=spec), index)
 
 
-OVERLAY_CONF = """\
-from dataclasses import replace
-
-from sphinx_needs.data import SphinxNeedsData
-from sphinx_needs.needs_schema import FieldLiteralValue
-
+#: the default need types but ``need``, ``spec`` closed: it declares no field
+CLOSED_CONF = """\
 extensions = ["sphinx_needs"]
 needs_build_json = True
 needs_fields = {fields}
-
-#: (need type, field name, the changes to its declaration)
-OVERLAYS = {overlays}
+needs_links = {{"blocks": {{"incoming": "is blocked by", "outgoing": "blocks"}}}}
+needs_types = {{
+    "req": {{"title": "Requirement", "prefix": "R_"}},
+    "spec": {{"title": "Specification", "prefix": "S_", "closed": True}},
+    "impl": {{"title": "Implementation", "prefix": "I_"}},
+    "test": {{"title": "Test Case", "prefix": "T_"}},
+}}
 {extra}
-
-
-def _overlays(app, env, docnames):
-    schema = SphinxNeedsData(env).get_schema()
-    for need_type, name, changes in OVERLAYS:
-        schema.add_type_overlay(need_type, replace(schema.get_any_field(name), **changes))
-
-
-def setup(app):
-    app.connect("env-before-read-docs", _overlays, priority=600)
 """
 
 
-def _overlay_project(
-    fields: str, overlays: str, index: str, extra: str = ""
+def _closed_project(
+    fields: str, index: str, extra: str = "", **files: str
 ) -> dict[str, Any]:
-    return _project(
-        OVERLAY_CONF.format(fields=fields, overlays=overlays, extra=extra), index
-    )
+    project = _project(CLOSED_CONF.format(fields=fields, extra=extra), index)
+    project["files"].extend((Path(name), text) for name, text in files.items())
+    return project
 
 
 #: a service whose data are a need of each of two types, each setting ``x``
@@ -226,35 +213,32 @@ ADMISSION_INDEX = """\
 """
 
 
+def _undeclared(value: object, field: str = "x", what: str = "Field") -> str:
+    return (
+        f"{what} {field!r} is not declared on need type 'spec', which is closed, and "
+        f"cannot be set in a need; the value {value!r} is ignored "
+        "[needs.undeclared_for_type]"
+    )
+
+
 @pytest.mark.parametrize(
     "test_app",
-    [
-        _overlay_project(
-            '{"x": {"nullable": True}}',
-            '[("spec", "x", {"directive_option": False})]',
-            ADMISSION_INDEX,
-            SERVICE_CONF,
-        )
-    ],
+    [_closed_project('{"x": {"nullable": True}}', ADMISSION_INDEX, SERVICE_CONF)],
     indirect=True,
 )
 def test_a_field_closed_on_one_type(test_app: Any) -> None:
-    """A field a need type closes is refused on its needs, from a directive,
-    ``list2need`` and ``needservice``, and set on the needs of every other type."""
+    """A field a closed need type does not declare is refused on its needs, from a
+    directive, ``list2need`` and ``needservice``, and set on the needs of every other
+    type."""
     app = test_app
     app.build()
     # the service class in conf.py cannot be cached, which Sphinx reports in words
     # that differ between its versions
     warnings = [w for w in build_warnings(app) if "cannot cache unpick" not in w]
-    # the text and code are today's for a field closed by ``directive_option=False``;
-    # the slice that closes need types owns them
     assert warnings == [
-        "<srcdir>/index.rst:8: WARNING: Field 'x' is derived and cannot be set in a "
-        "need; the value 'two' is ignored [needs.derive_authored]",
-        "<srcdir>/index.rst:17: WARNING: Field 'x' is derived and cannot be set in a "
-        "need; the value 'four' is ignored [needs.derive_authored]",
-        "<srcdir>/index.rst:19: WARNING: Field 'x' is derived and cannot be set in a "
-        "need; the value 'six' is ignored [needs.derive_authored]",
+        f"<srcdir>/index.rst:8: WARNING: {_undeclared('two')}",
+        f"<srcdir>/index.rst:17: WARNING: {_undeclared('four')}",
+        f"<srcdir>/index.rst:19: WARNING: {_undeclared('six')}",
     ]
     needs = _needs(app)
     assert {k: v["x"] for k, v in needs.items()} == {
@@ -264,6 +248,86 @@ def test_a_field_closed_on_one_type(test_app: Any) -> None:
         "LIST_2": None,
         "SRV_1": "five",
         "SRV_2": None,
+    }
+
+
+IMPORTED = {
+    "current_version": "1.0",
+    "versions": {
+        "1.0": {
+            "needs": {
+                "IMP_1": {
+                    "id": "IMP_1",
+                    "type": "spec",
+                    "title": "Imported",
+                    "x": "imported",
+                    "blocks": ["REQ_1"],
+                },
+                "IMP_2": {"id": "IMP_2", "type": "req", "title": "Kept", "x": "kept"},
+            }
+        }
+    },
+}
+
+EXTERNAL = {
+    "current_version": "1.0",
+    "versions": {
+        "1.0": {
+            "needs": {
+                "E_1": {"id": "E_1", "type": "spec", "title": "External", "x": "ext"},
+                "E_2": {"id": "E_2", "type": "req", "title": "Kept", "x": "ext-kept"},
+            }
+        }
+    },
+}
+
+EXTERNAL_CONF = """
+import os
+
+needs_external_needs = [
+    {
+        "base_url": "http://example.org",
+        "json_path": os.path.join(os.path.dirname(__file__), "external.json"),
+        "id_prefix": "EXT_",
+    }
+]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _closed_project(
+            '{"x": {"nullable": True}}',
+            ".. req:: A\n   :id: REQ_1\n\n.. needimport:: imported.json\n",
+            EXTERNAL_CONF,
+            **{
+                "imported.json": json.dumps(IMPORTED),
+                "external.json": json.dumps(EXTERNAL),
+            },
+        )
+    ],
+    indirect=True,
+)
+def test_a_field_closed_on_one_type_from_outside(test_app: Any) -> None:
+    """A need from outside the project's sources -- imported, or external -- keeps
+    only the fields its type declares: a value of a field or link type a closed type
+    does not declare is dropped, one warning each."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        f"WARNING: {_undeclared('ext')}",
+        f"<srcdir>/index.rst:7: WARNING: {_undeclared('imported')}",
+        "<srcdir>/index.rst:7: WARNING: "
+        + _undeclared(["REQ_1"], "blocks", "Link type"),
+    ]
+    needs = _needs(app)
+    assert {k: (v["x"], v["blocks"]) for k, v in needs.items()} == {
+        "REQ_1": (None, []),
+        "IMP_1": (None, []),
+        "IMP_2": ("kept", []),
+        "EXT_E_1": (None, []),
+        "EXT_E_2": ("ext-kept", []),
     }
 
 
@@ -339,41 +403,50 @@ EXTEND_INDEX = """\
    :id: REQ_1
    :x: one
 
+.. spec:: D
+   :id: SPEC_3
+
 .. spec:: B
    :id: SPEC_1
-   :x: two
+
+.. spec:: C
+   :id: SPEC_2
 
 .. needextend:: type in ["req", "spec"]
    :x: extended
    :status: done
+
+.. needextend:: type == "spec"
+   :-x:
 """
 
 
 @pytest.mark.parametrize(
     "test_app",
-    [
-        _overlay_project(
-            '{"x": {"nullable": True}}',
-            '[("spec", "x", {"allow_extend": False})]',
-            EXTEND_INDEX,
-        )
-    ],
+    [_closed_project('{"x": {"nullable": True}}', EXTEND_INDEX)],
     indirect=True,
 )
 def test_a_field_one_type_does_not_extend(test_app: Any) -> None:
     """A needextend matching needs of two types sets a field on the needs of the
-    type that allows it to be extended; on the needs of a type that does not, it
-    warns once per need and leaves the field, and still applies its other options."""
+    type that declares it; on the needs of a closed type that does not, it warns once
+    for the type, naming its needs, and leaves the field, and still applies its other
+    options. Deleting the field is refused the same."""
     app = test_app
     app.build()
     assert build_warnings(app) == [
-        "<srcdir>/index.rst:12: WARNING: Option 'x' does not support extend operations "
-        "on need type 'spec'; need 'SPEC_1' is not extended by it. [needs.needextend]",
+        "<srcdir>/index.rst:17: WARNING: Option 'x' does not support extend operations "
+        "on need type 'spec'; it does not extend 3 needs (SPEC_1, SPEC_2, SPEC_3). "
+        "[needs.needextend]",
+        "<srcdir>/index.rst:21: WARNING: Option '-x' does not support extend "
+        "operations on need type 'spec'; it does not extend 3 needs (SPEC_1, SPEC_2, "
+        "SPEC_3). [needs.needextend]",
     ]
     needs = _needs(app)
     assert {k: (v["x"], v["status"]) for k, v in needs.items()} == {
         "REQ_1": ("extended", "done"),
-        "SPEC_1": ("two", "done"),
+        "SPEC_3": (None, "done"),
+        "SPEC_1": (None, "done"),
+        "SPEC_2": (None, "done"),
     }
 
 
@@ -541,7 +614,6 @@ needs_fields = {"x": {"nullable": True}}
 
 def _late(app, env, docnames):
     schema = SphinxNeedsData(env).get_schema()
-    schema.for_type("req")
     schema.add_type_overlay("spec", schema.global_declaration("x"))
 
 
@@ -553,9 +625,9 @@ def setup(app):
 @pytest.mark.parametrize(
     "test_app", [_project(LATE_CONF, ".. req:: A\n   :id: REQ_1\n")], indirect=True
 )
-def test_an_overlay_after_the_first_read_fails_the_build(test_app: Any) -> None:
-    """The schema freezes once it is read for a need type: an overlay registered
-    after that is refused, and the build stops, naming why."""
+def test_an_overlay_after_create_schema_fails_the_build(test_app: Any) -> None:
+    """The schema is frozen once ``create_schema`` has built it: an overlay registered
+    after that is refused and the build stops, naming why."""
     app = test_app
     with pytest.raises(ExtensionError) as exc_info:
         app.build()
@@ -565,9 +637,10 @@ def test_an_overlay_after_the_first_read_fails_the_build(test_app: Any) -> None:
 
 
 FREEZE = (
-    "The fields schema cannot be changed once it is read through for_type (the "
-    "first call freezes it). Register fields and need type overlays while the "
-    "schema is built, in create_schema."
+    "The fields schema cannot be changed once it is complete: create_schema freezes "
+    "the schema it builds, and the first read through for_type freezes one built by "
+    "hand. Declare fields, link types and need types in the configuration, before "
+    "the schema is built."
 )
 
 PARALLEL_CONF = """\
@@ -615,10 +688,9 @@ def setup(app):
     indirect=True,
 )
 @pytest.mark.skipif(not parallel_available, reason="Parallel execution not supported")
-def test_a_parallel_read_freezes_the_schema(test_app: Any) -> None:
-    """The documents read in other processes freeze the schema of this one when
-    their data are merged: a change after the read stops the build, as it does
-    when the documents are read here."""
+def test_a_parallel_build_has_the_schema_frozen(test_app: Any) -> None:
+    """The schema is frozen in every process once built: a change at
+    ``env-updated`` stops the build."""
     app = test_app
     with pytest.raises(ExtensionError) as exc_info:
         app.build()

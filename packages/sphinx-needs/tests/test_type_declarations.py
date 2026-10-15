@@ -608,8 +608,8 @@ def test_a_derived_field_takes_a_description_a_schema_and_nullable(
 
 WIDENINGS = [
     _declared(
-        "a-min-items-on-a-link-type-without-a-default",
-        {"links": {"blocks": {"schema": {"minItems": 1}}}},
+        "a-min-items-with-an-empty-default-of-its-own",
+        {"links": {"blocks": {"schema": {"minItems": 1}, "default": []}}},
         [
             "type_widening needs_types['spec'].links['blocks'] widens the field: "
             "Default [] is not valid against the narrowed schema: [] has less than 1 "
@@ -682,6 +682,98 @@ def test_an_entry_that_widens_the_field(test_app: Any, warnings: list[str]) -> N
         _schema(app).type_declarations(field.name)
         for field in _schema(app).iter_all_fields()
     )
+
+
+MIN_ITEMS_INDEX = """\
+.. req:: A
+   :id: R_001
+
+.. spec:: B
+   :id: S_001
+
+.. spec:: C
+   :id: S_002
+   :blocks: R_001
+   :tags: a
+"""
+
+
+@pytest.mark.parametrize(
+    ("test_app", "field", "rule"),
+    [
+        pytest.param(
+            _project(
+                _conf(
+                    _types(spec={"links": {"blocks": {"schema": {"minItems": 1}}}}),
+                    links={"blocks": BLOCKS},
+                ),
+                MIN_ITEMS_INDEX,
+            ),
+            "blocks",
+            "link_fail",
+            id="a-link-type",
+        ),
+        pytest.param(
+            _project(
+                _conf(
+                    _types(spec={"fields": {"tags": {"schema": {"minItems": 1}}}}),
+                    links={"blocks": BLOCKS},
+                ),
+                MIN_ITEMS_INDEX,
+            ),
+            "tags",
+            "field_fail",
+            id="tags",
+        ),
+    ],
+    indirect=["test_app"],
+)
+def test_a_min_items_of_one_type_needs_no_default(
+    test_app: Any, field: str, rule: str
+) -> None:
+    """The empty list a link type, and ``tags``, holds by default is no default: a
+    type's ``minItems`` is a narrowing, and a need of the type with no items fails
+    validation, where a need of another type does not."""
+    app = test_app
+    app.build()
+    table = "links" if rule == "link_fail" else "fields"
+    assert build_warnings(app) == [
+        "ERROR: Need 'S_001' has schema violations:\n"
+        "  Severity:       violation\n"
+        f"  Field:          {field}\n"
+        "  Need path:      S_001\n"
+        f"  Schema path:    {table} > schema > properties > {field} > minItems\n"
+        f"  Schema message: [] has less than 1 item [sn_schema_violation.{rule}]",
+    ]
+    assert _field(app, "spec", field).schema["minItems"] == 1
+    assert list(_schema(app).type_declarations(field)) == ["spec"]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            _conf(
+                _types(
+                    req={"links": {"blocks": {"schema": {"minItems": 1}}}},
+                    spec={
+                        "inherits": "req",
+                        "links": {"blocks": {"schema": {"maxItems": 3}}},
+                    },
+                ),
+                links={"blocks": BLOCKS},
+            )
+        )
+    ],
+    indirect=True,
+)
+def test_an_empty_default_is_no_default_down_a_chain(test_app: Any) -> None:
+    """The empty list a type keeps from its parent is no default either."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    blocks = _field(app, "spec", "blocks").schema
+    assert (blocks["minItems"], blocks["maxItems"]) == (1, 3)
 
 
 @pytest.mark.parametrize(

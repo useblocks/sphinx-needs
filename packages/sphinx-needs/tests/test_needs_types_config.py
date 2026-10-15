@@ -44,7 +44,10 @@ needs_build_json = True
 TOML_CONF = CONF + 'needs_from_toml = "ubproject.toml"\n'
 
 #: the known keys, as the unknown-key finding lists them
-KNOWN = "known keys are directive, title, prefix, color, style, inherits, fields, links"
+KNOWN = (
+    "known keys are directive, title, prefix, color, style, inherits, fields, links, "
+    "closed"
+)
 
 #: three types in an order that is not alphabetical, so that a sort would show
 ZETA = {"title": "Zeta", "prefix": "Z_", "color": "#000001", "style": "node"}

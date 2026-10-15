@@ -657,3 +657,50 @@ def test_a_new_default_is_valid_against_the_narrowed_schema() -> None:
         "Default 'C' of the predicate 'status == \"open\"' is not valid against the "
         'narrowed schema: "C" is not one of "A".'
     ]
+
+
+#: an empty value of each type, as a field takes it (a link type: no links)
+EMPTIES: list[tuple[str, Any, Any, dict[str, Any]]] = [
+    ("links", LinksLiteralValue, [], {"minItems": 1}),
+    ("an-array", FieldLiteralValue, [], {"minItems": 1}),
+    ("a-string", FieldLiteralValue, "", {"minLength": 1}),
+    ("a-boolean", FieldLiteralValue, False, {"const": True}),
+    ("an-integer", FieldLiteralValue, 0, {"minimum": 1}),
+    ("a-number", FieldLiteralValue, 0.0, {"minimum": 0.5}),
+]
+
+#: the field of each empty value: its type, and its items for an array
+_OF_EMPTY: dict[str, dict[str, Any]] = {
+    "an-array": {"type": "array", "items": {"type": "string"}},
+    "a-string": {"type": "string"},
+    "a-boolean": {"type": "boolean"},
+    "an-integer": {"type": "integer"},
+    "a-number": {"type": "number"},
+}
+
+
+@pytest.mark.parametrize(
+    ("kind", "literal", "empty", "keywords"),
+    EMPTIES,
+    ids=[case[0] for case in EMPTIES],
+)
+def test_an_inherited_empty_default_is_no_default(
+    kind: str, literal: Any, empty: Any, keywords: dict[str, Any]
+) -> None:
+    """The empty value of its type, kept from the field, is no default: as ``None``
+    is not one for a nullable field, a narrowed schema need not admit it. An empty
+    value the declaration sets itself is a default, and is checked."""
+    base: FieldSchema | LinkSchema = (
+        _link(allow_defaults=True, default=literal(deepcopy(empty)))
+        if kind == "links"
+        else FieldSchema(
+            name="f",
+            schema=deepcopy(_OF_EMPTY[kind]),
+            allow_defaults=True,
+            default=literal(deepcopy(empty)),
+        )
+    )
+    narrowed = {**base.schema, **keywords}
+    assert narrowing_problems(base, replace(base, schema=narrowed)) == []
+    own = replace(base, schema=narrowed, default=literal(deepcopy(empty)))
+    assert len(narrowing_problems(base, own)) == 1
