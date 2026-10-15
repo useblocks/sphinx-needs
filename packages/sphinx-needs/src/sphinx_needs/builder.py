@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from collections.abc import Iterable, Sequence
+from collections.abc import Set as AbstractSet
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -92,11 +93,11 @@ class NeedsBuilder(Builder):
         else:
             LOGGER.info("Needs successfully exported")
 
-    def get_target_uri(self, _docname: str, _typ: str | None = None) -> str:  # ty: ignore[invalid-method-override]
+    def get_target_uri(self, docname: str, typ: str | None = None) -> str:
         # only needed if the write phase is run
         return ""
 
-    def prepare_writing(self, _docnames: set[str]) -> None:  # ty: ignore[invalid-method-override]
+    def prepare_writing(self, docnames: AbstractSet[str]) -> None:
         # only needed if the write phase is run
         pass
 
@@ -104,7 +105,7 @@ class NeedsBuilder(Builder):
         # only needed if the write phase is run
         pass
 
-    def write_doc_serialized(self, _docname: str, _doctree: nodes.document) -> None:  # ty: ignore[invalid-method-override]
+    def write_doc_serialized(self, docname: str, doctree: nodes.document) -> None:
         # only needed if the write phase is run
         pass
 
@@ -247,16 +248,16 @@ class NeedumlsBuilder(Builder):
     def get_outdated_docs(self) -> Iterable[str]:
         return []
 
-    def prepare_writing(self, _docnames: set[str]) -> None:  # ty: ignore[invalid-method-override]
+    def prepare_writing(self, docnames: AbstractSet[str]) -> None:
         pass
 
-    def write_doc_serialized(self, _docname: str, _doctree: nodes.document) -> None:  # ty: ignore[invalid-method-override]
+    def write_doc_serialized(self, docname: str, doctree: nodes.document) -> None:
         pass
 
     def cleanup(self) -> None:
         pass
 
-    def get_target_uri(self, _docname: str, _typ: str | None = None) -> str:  # ty: ignore[invalid-method-override]
+    def get_target_uri(self, docname: str, typ: str | None = None) -> str:
         return ""
 
 
@@ -273,7 +274,7 @@ def build_needumls_pumls(app: Sphinx, _exception: Exception) -> None:
 
     # if other builder like html used together with config: needs_build_needumls
     needs_builder = NeedumlsBuilder(app, env)
-    needs_builder.outdir = os.path.join(needs_builder.outdir, config.build_needumls)  # ty: ignore[invalid-assignment]
+    needs_builder.outdir = needs_builder.outdir / config.build_needumls
 
     needs_builder.finish()
 
@@ -301,14 +302,14 @@ class SchemaBuilder(Builder):
     def get_outdated_docs(self) -> Iterable[str]:
         return []
 
-    def prepare_writing(self, _docnames: set[str]) -> None:  # ty: ignore[invalid-method-override]
+    def prepare_writing(self, docnames: AbstractSet[str]) -> None:
         pass
 
-    def write_doc_serialized(self, _docname: str, _doctree: nodes.document) -> None:  # ty: ignore[invalid-method-override]
+    def write_doc_serialized(self, docname: str, doctree: nodes.document) -> None:
         pass
 
     def cleanup(self) -> None:
         pass
 
-    def get_target_uri(self, _docname: str, _typ: str | None = None) -> str:  # ty: ignore[invalid-method-override]
+    def get_target_uri(self, docname: str, typ: str | None = None) -> str:
         return ""

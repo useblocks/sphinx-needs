@@ -191,6 +191,13 @@ Internal changes
   ``_get_title`` takes its content as lines (``Iterable[str]``), as both callers pass it;
   fifteen ``# ty: ignore`` comments go (:issue:`1835`)
 
+- 🏷️ The ``needs``, ``needumls`` and ``schema`` builders' do-nothing overrides of
+  ``get_target_uri``, ``prepare_writing`` and ``write_doc_serialized`` take Sphinx's own
+  parameter names (and ``prepare_writing`` an abstract ``Set``, as Sphinx 8 and 9 declare
+  it), and the needumls files written beside another builder's output join their
+  directory onto the builder's ``outdir`` as a path rather than a string; ten
+  ``# ty: ignore`` comments go (:issue:`1835`)
+
 - 🏷️ A ``FieldSchema`` constructed with predicate defaults no longer raises ``TypeError``:
   its value check read ``isinstance(v, A) | B``. No build reached it, as predicates are
   attached after construction. That fix, and two in ``filter_common.py`` and ``views.py``,
