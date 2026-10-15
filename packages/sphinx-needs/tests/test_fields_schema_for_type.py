@@ -307,8 +307,81 @@ def test_a_replaced_field_keeps_the_type_of_its_overlays() -> None:
         schema.replace_field(FieldSchema(name="asil", schema={"type": "integer"}))
     assert str(exc_info.value) == (
         "Cannot replace field 'asil' with type 'integer' (items None): need type "
-        "'spec' declares it with type 'string' (items None)."
+        "'spec' declares it with another type or derivation."
     )
     again = FieldSchema(name="asil", schema={"type": "string"}, description="again")
     schema.replace_field(again)
     assert schema.get_extra_field("asil") is again
+
+
+def test_a_replaced_field_keeps_the_item_type_of_its_overlays() -> None:
+    schema = _schema()
+    labels = FieldSchema(
+        name="labels", schema={"type": "array", "items": {"type": "string"}}
+    )
+    schema.add_extra_field(labels)
+    schema.add_type_overlay("spec", replace(labels, description="spec"))
+    with pytest.raises(ValueError) as exc_info:
+        schema.replace_field(
+            FieldSchema(
+                name="labels", schema={"type": "array", "items": {"type": "integer"}}
+            )
+        )
+    assert str(exc_info.value) == (
+        "Cannot replace field 'labels' with type 'array' (items 'integer'): need type "
+        "'spec' declares it with another type or derivation."
+    )
+
+
+def test_a_replaced_field_keeps_the_type_on_every_need_type() -> None:
+    """The overlays of every need type are checked, not those of the first one."""
+    schema = _schema()
+    effort = schema.get_extra_field("effort")
+    asil = schema.get_extra_field("asil")
+    assert effort is not None and asil is not None
+    schema.add_type_overlay("req", replace(effort, nullable=False))
+    schema.add_type_overlay("spec", replace(asil, nullable=False))
+    with pytest.raises(ValueError) as exc_info:
+        schema.replace_field(FieldSchema(name="asil", schema={"type": "integer"}))
+    assert str(exc_info.value) == (
+        "Cannot replace field 'asil' with type 'integer' (items None): need type "
+        "'spec' declares it with another type or derivation."
+    )
+
+
+def test_a_replaced_field_keeps_the_derivation_of_its_overlays() -> None:
+    schema = _schema()
+    effort = schema.get_extra_field("effort")
+    assert effort is not None
+    schema.add_type_overlay("spec", replace(effort, nullable=False))
+    with pytest.raises(ValueError) as exc_info:
+        schema.replace_field(
+            replace(
+                effort, derive_by_type={"req": DeriveRule(kind="copy", field="status")}
+            )
+        )
+    assert str(exc_info.value) == (
+        "Cannot replace field 'effort' with type 'integer' (items None): need type "
+        "'spec' declares it with another type or derivation."
+    )
+
+
+def test_an_equal_derivation_is_the_same_derivation() -> None:
+    """An overlay whose ``derive_by_type`` equals the field's, built anew, is taken."""
+    schema = _schema()
+    schema.add_extra_field(
+        FieldSchema(
+            name="score",
+            schema={"type": "number"},
+            derive_by_type={"req": DeriveRule(kind="copy", field="effort")},
+        )
+    )
+    score = schema.get_extra_field("score")
+    assert score is not None
+    overlay = replace(
+        score,
+        nullable=True,
+        derive_by_type={"req": DeriveRule(kind="copy", field="effort")},
+    )
+    schema.add_type_overlay("spec", overlay)
+    assert schema.for_type("spec").get_extra_field("score") is overlay
