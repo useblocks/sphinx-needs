@@ -44,7 +44,12 @@ from sphinx_needs.need_item import (
     NeedPartItem,
     _natural_sort_key_total,
 )
-from sphinx_needs.needs_schema import FieldSchema, FieldsSchema, LinkSchema
+from sphinx_needs.needs_schema import (
+    FieldSchema,
+    FieldShape,
+    FieldsSchema,
+    LinkSchema,
+)
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_ref import NeedRef
 from sphinx_needs.utils import logger
@@ -1293,7 +1298,7 @@ def _rule_fingerprint(
     out once per pass (``cache``).
     """
     key = ("fingerprint", rule.exclude)
-    names: list[tuple[str, FieldSchema | None, str | None]] | None = (
+    names: list[tuple[str, FieldShape | None, str | None]] | None = (
         None if cache is None else cache.get(key)
     )
     if names is None:

@@ -12,6 +12,7 @@ from typing import (
     Final,
     Generic,
     Literal,
+    Protocol,
     TypeAlias,
     TypeVar,
     cast,
@@ -1094,6 +1095,66 @@ class LinkSchema:
                 )
 
 
+class FieldShape(Protocol):
+    """The shape of a field: what is the same on every need type.
+
+    Its name, its kind, its ``type`` and ``item_type``, and its derivation (a field
+    derived per need type says so in its ``derive_by_type``). The fields schema answers
+    a field's shape (:meth:`FieldsSchema.get_any_field` and the other getters); a
+    field's declaration in full, which a need type may declare anew, is read through
+    :meth:`FieldsSchema.for_type` (:class:`FieldSchema`, :class:`LinkSchema`).
+    """
+
+    @property
+    def name(self) -> str: ...
+
+    @property
+    def kind(self) -> Literal["field", "link"]: ...
+
+    @property
+    def type(self) -> Literal["string", "boolean", "integer", "number", "array"]: ...
+
+    @property
+    def item_type(self) -> Literal["string", "boolean", "integer", "number"] | None: ...
+
+    @property
+    def derived(self) -> bool: ...
+
+    @property
+    def derive(self) -> Derive | None: ...
+
+    @property
+    def derive_by_type(self) -> Mapping[str, Derive] | None: ...
+
+    def rule_for(self, need_type: str) -> Derive | None: ...
+
+    def describe_derived(self) -> str: ...
+
+
+class LinkShape(FieldShape, Protocol):
+    """The shape of a link type: what is the same on every need type.
+
+    Besides a field's shape, how its links are drawn (``display``), whether they are
+    copied into ``links`` (``copy``) and whether a dead link is allowed
+    (``allow_dead_links``): every need type declares a link type with the same ones.
+    """
+
+    @property
+    def type(self) -> Literal["array"]: ...
+
+    @property
+    def item_type(self) -> Literal["string"]: ...
+
+    @property
+    def display(self) -> LinkDisplayConfig: ...
+
+    @property
+    def copy(self) -> bool: ...
+
+    @property
+    def allow_dead_links(self) -> bool: ...
+
+
 class FieldsSchema:
     """A schema for the fields of a single need.
 
@@ -1471,6 +1532,65 @@ class FieldsSchema:
             return self._link_fields[name]
         return None
 
+    def get_any_field(self, name: str) -> FieldShape | LinkShape | None:
+        """Get a field by name: its shape (:meth:`for_type` reads it in full)."""
+        return self._any_field(name)
+
+    def get_core_field(self, name: str) -> FieldShape | None:
+        """Get a core field by name: its shape (:meth:`for_type` reads it in full)."""
+        return self._core_fields.get(name)
+
+    def get_extra_field(self, name: str) -> FieldShape | None:
+        """Get an extra field by name: its shape (:meth:`for_type` reads it in full)."""
+        return self._extra_fields.get(name)
+
+    def get_link_field(self, name: str) -> LinkShape | None:
+        """Get a link field by name: its shape (:meth:`for_type` reads it in full)."""
+        return self._link_fields.get(name)
+
+    def iter_all_fields(self) -> Iterable[FieldShape | LinkShape]:
+        """Iterate over all fields in the schema."""
+        yield from self._core_fields.values()
+        yield from self._extra_fields.values()
+        yield from self._link_fields.values()
+
+    def iter_core_field_names(self) -> Iterable[str]:
+        """Iterate over all core field names in the schema."""
+        yield from self._core_fields.keys()
+
+    def iter_core_fields(self) -> Iterable[FieldShape]:
+        """Iterate over all core fields in the schema."""
+        yield from self._core_fields.values()
+
+    def iter_extra_field_names(self) -> Iterable[str]:
+        """Iterate over all extra field names in the schema."""
+        yield from self._extra_fields.keys()
+
+    def iter_extra_fields(self) -> Iterable[FieldShape]:
+        """Iterate over all extra fields in the schema."""
+        yield from self._extra_fields.values()
+
+    def iter_link_field_names(self) -> Iterable[str]:
+        """Iterate over all link field names in the schema."""
+        yield from self._link_fields.keys()
+
+    def iter_link_fields(self) -> Iterable[LinkShape]:
+        """Iterate over all link fields in the schema."""
+        yield from self._link_fields.values()
+
+
+class TypeFieldsSchema(FieldsSchema):
+    """The schema of the needs of one need type (:meth:`FieldsSchema.for_type`).
+
+    Its fields are the full declarations its needs read: the need type's overlays in
+    place of the fields they replace, or, for the global view, every field as every
+    need type shares it. Its getters answer them in full (:class:`FieldSchema`,
+    :class:`LinkSchema`), where the schema it is resolved from answers their shapes.
+    It cannot be changed.
+    """
+
+    __slots__ = ()
+
     def get_any_field(self, name: str) -> FieldSchema | LinkSchema | None:
         """Get a field by name."""
         return self._any_field(name)
@@ -1493,40 +1613,17 @@ class FieldsSchema:
         yield from self._extra_fields.values()
         yield from self._link_fields.values()
 
-    def iter_core_field_names(self) -> Iterable[str]:
-        """Iterate over all core field names in the schema."""
-        yield from self._core_fields.keys()
-
     def iter_core_fields(self) -> Iterable[FieldSchema]:
         """Iterate over all core fields in the schema."""
         yield from self._core_fields.values()
-
-    def iter_extra_field_names(self) -> Iterable[str]:
-        """Iterate over all extra field names in the schema."""
-        yield from self._extra_fields.keys()
 
     def iter_extra_fields(self) -> Iterable[FieldSchema]:
         """Iterate over all extra fields in the schema."""
         yield from self._extra_fields.values()
 
-    def iter_link_field_names(self) -> Iterable[str]:
-        """Iterate over all link field names in the schema."""
-        yield from self._link_fields.keys()
-
     def iter_link_fields(self) -> Iterable[LinkSchema]:
         """Iterate over all link fields in the schema."""
         yield from self._link_fields.values()
-
-
-class TypeFieldsSchema(FieldsSchema):
-    """The schema of the needs of one need type (:meth:`FieldsSchema.for_type`).
-
-    Its fields are the full declarations its needs read: the need type's overlays in
-    place of the fields they replace, or, for the global view, every field as every
-    need type shares it. It cannot be changed.
-    """
-
-    __slots__ = ()
 
 
 class ListItemType(enum.Enum):

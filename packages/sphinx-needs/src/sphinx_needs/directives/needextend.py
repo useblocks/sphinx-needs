@@ -26,6 +26,7 @@ from sphinx_needs.needs_schema import (
     LinkSchema,
     LinksFunctionArray,
     LinksLiteralValue,
+    TypeFieldsSchema,
 )
 from sphinx_needs.utils import DummyOptionSpec, add_doc, coerce_to_boolean, counted_ids
 
@@ -454,7 +455,7 @@ def extend_needs_data(
 
 
 def _refused_on_type(
-    type_schema: FieldsSchema,
+    type_schema: TypeFieldsSchema,
     need: NeedItem,
     option_name: str,
     etype: ExtendType,

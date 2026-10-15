@@ -35,7 +35,11 @@ from sphinx_needs.views import NeedsView
 if TYPE_CHECKING:
     from typing import NotRequired
 
-    from sphinx_needs.needs_schema import FieldSchema, FieldsSchema
+    from sphinx_needs.needs_schema import (
+        FieldSchema,
+        FieldsSchema,
+        TypeFieldsSchema,
+    )
 
 # TODO(Marco): error for conflicting unevaluatedProperties
 
@@ -58,7 +62,7 @@ class _FieldValidation:
     with_off_type_default: dict[str, FieldSchema]
 
 
-def _field_validation(fields_schema: FieldsSchema) -> _FieldValidation | None:
+def _field_validation(fields_schema: TypeFieldsSchema) -> _FieldValidation | None:
     """Compile the validator of every field and link type of ``fields_schema``.
 
     :return: ``None`` if the schema has no field.
