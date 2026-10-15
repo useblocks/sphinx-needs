@@ -14,6 +14,7 @@ is still overridden, with Sphinx's own warning.
 
 from __future__ import annotations
 
+import copy
 import json
 import pickle
 import re
@@ -32,6 +33,7 @@ from sphinx_needs.api.need import _get_need_type
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.directives.need import NeedDirective
 from sphinx_needs.exceptions import InvalidNeedException, NeedsConfigException
+from sphinx_needs.needs import normalise_need_types
 from sphinx_needs_testkit import build_warnings
 
 CONF = """\
@@ -401,6 +403,46 @@ def test_a_value_of_neither_shape_stops_the_build(
         "Config option 'needs_types' must be a list of need type mappings or a mapping "
         "from directive name to need type, got str."
     )
+
+
+# -- the resolution itself ------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        pytest.param(RESOLVED, id="list"),
+        pytest.param(MAPPING, id="mapping"),
+        pytest.param([REQ, "spec", {**SPEC, "color": 1, "bogus": 2}], id="findings"),
+        pytest.param({"req": {**REQ_VALUE, "directive": "spec"}}, id="key-wins"),
+        pytest.param([{**REQ, "title": "One"}, SPEC, REQ], id="duplicate"),
+        pytest.param([{"directive": "req"}, {}], id="nothing-left"),
+    ],
+)
+def test_the_resolution_is_pure_and_idempotent(value: object) -> None:
+    """Resolving leaves the configured value as it was, shares no entry with it, and a
+    resolved list resolves to itself without a finding."""
+    before = copy.deepcopy(value)
+    resolved, _ = normalise_need_types(value)
+    assert value == before
+    for entry in resolved:
+        entry["title"] = "changed"
+    assert value == before
+    resolved, _ = normalise_need_types(value)
+    assert normalise_need_types(resolved) == (resolved, [])
+
+
+def test_the_mapping_shape_is_the_list_in_its_order() -> None:
+    """Each key becomes the entry's ``directive``, first, in the mapping's order."""
+    resolved, findings = normalise_need_types(MAPPING)
+    assert (resolved, findings) == (RESOLVED, [])
+    assert [next(iter(entry)) for entry in resolved] == ["directive"] * 3
+
+
+@pytest.mark.parametrize("value", ["req", ("req",), None, 3])
+def test_a_value_of_neither_shape_is_refused(value: object) -> None:
+    with pytest.raises(NeedsConfigException, match="must be a list of need type"):
+        normalise_need_types(value)
 
 
 # -- the duplicate on every creation path ------------------------------------------------

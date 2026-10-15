@@ -26,6 +26,9 @@ def get_need_types(app: Sphinx) -> list[str]:
     """
     Returns a list of directive-names from all configured need_types.
 
+    Call it from a ``config-inited`` handler at a priority above 12, or later: before
+    that, a mapping-shaped ``needs_types`` is not yet resolved to its list.
+
     **Usage**::
 
         from sphinx_needs.api import get_need_types
@@ -53,6 +56,10 @@ def add_need_type(
     The given directive must no exist, otherwise NeedsApiConfigException gets raised.
 
     Same impact as using :ref:`needs_types` manually.
+
+    Call it from a ``config-inited`` handler at a priority above 12, or later: before
+    that, a mapping-shaped ``needs_types`` is not yet resolved to the list this appends
+    to. Unlike a configured entry, the type is not validated.
 
     **Usage**::
 

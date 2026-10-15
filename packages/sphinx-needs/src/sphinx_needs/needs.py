@@ -37,6 +37,7 @@ from sphinx_needs.config import (
     LinkOptionsType,
     NeedLinksConfig,
     NeedsSphinxConfig,
+    NeedType,
 )
 from sphinx_needs.data import (
     ENV_DATA_VERSION,
@@ -392,6 +393,11 @@ def setup(app: Sphinx) -> dict[str, Any]:
     # and before anything that may want to read the merged map,
     # up to and including configuration that decides which documents are read
     app.connect("config-inited", resolve_variant_data_config, priority=11)
+    # after the toml config is loaded, which can set the need types, and before every
+    # reader of them: load_config and the add_need_type calls of other extensions (500).
+    # sphinx-codelinks' register_string_links is at 12 too and reads no need types, so
+    # the order between the two does not matter
+    app.connect("config-inited", resolve_need_types, priority=12)
     app.connect("config-inited", load_config)
     app.connect("config-inited", merge_default_configs)
     # runs after the built-in layouts are merged in, and before the config is checked
@@ -734,6 +740,181 @@ def _load_variants_from_toml(
         config["needs_variant_data_file"] = NeedsSphinxConfig.convert_field_value(
             "variant_data_file", file_value, toml_file.parent
         )
+
+
+#: The keys a ``needs_types`` entry may carry; any other key is reported and ignored.
+NEED_TYPE_KEYS = ("directive", "title", "prefix", "color", "style")
+
+
+def _type_name(value: object) -> str:
+    return type(value).__name__
+
+
+def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
+    """Resolve a ``needs_types`` value to the list every reader of it expects.
+
+    Two shapes are accepted: a list of mappings, each naming its ``directive``, and a
+    mapping from directive name to a mapping of the other keys. Both resolve to the list
+    ``[{"directive": name, **keys}, ...]``, in the order the entries are given (a
+    mapping keeps its insertion order, and ``tomllib`` the order of first appearance).
+
+    A value of neither shape is refused (1). Otherwise each entry is checked in turn, and
+    every problem is a finding rather than an error:
+
+    2. an entry that is not a mapping is dropped;
+    3. an entry that names no directive is dropped (list shape: ``directive`` missing,
+       or not a non-empty string; mapping shape: an empty key); in the mapping shape a
+       ``directive`` inside the value that differs from the key is reported and the key
+       used;
+    4. an entry whose ``title`` or ``prefix`` is missing or not a string is dropped (an
+       empty string is valid);
+    5. a ``color`` or ``style`` that is not a string is removed from the entry;
+    6. a key outside :data:`NEED_TYPE_KEYS` is removed from the entry;
+    7. a directive declared by more than one entry (list shape only) resolves to the
+       last of them, at its own position, the others removed.
+
+    A directive name is otherwise not checked: which names docutils accepts is
+    docutils' concern.
+
+    The function is pure: the value is not modified, and nothing is logged. A resolved
+    list resolves to itself, with no findings.
+
+    :param value: The configured value.
+    :return: The resolved list, and the findings: in entry order, the duplicates last.
+    :raises NeedsConfigException: If the value is neither a list nor a mapping.
+    """
+    if isinstance(value, Mapping):
+        is_table = True
+        entries: list[tuple[str, object, object]] = [
+            (f"needs_types[{key!r}]", key, entry) for key, entry in value.items()
+        ]
+    elif isinstance(value, list):
+        is_table = False
+        entries = [
+            (f"needs_types entry {position}", None, entry)
+            for position, entry in enumerate(value, start=1)
+        ]
+    else:
+        raise NeedsConfigException(
+            "Config option 'needs_types' must be a list of need type mappings or a "
+            f"mapping from directive name to need type, got {_type_name(value)}."
+        )
+
+    findings: list[str] = []
+    #: the entries kept, each with its position (1-based)
+    kept: list[tuple[int, dict[str, Any]]] = []
+    for position, (where, key, entry) in enumerate(entries, start=1):
+        if not isinstance(entry, Mapping):
+            findings.append(
+                f"{where} is not a mapping (got {_type_name(entry)}); "
+                "the entry is ignored"
+            )
+            continue
+        if not is_table:
+            directive = entry.get("directive")
+            if "directive" not in entry:
+                findings.append(f"{where} has no 'directive'; the entry is ignored")
+                continue
+            if not isinstance(directive, str) or not directive:
+                findings.append(
+                    f"{where} has directive = {directive!r}, which is not a non-empty "
+                    "string; the entry is ignored"
+                )
+                continue
+            named = f"{where} ({directive!r})"
+            resolved: dict[str, Any] = dict(entry)
+        else:
+            if not isinstance(key, str) or not key:
+                findings.append(
+                    f"{where} does not name a directive: the key must be a non-empty "
+                    "string; the entry is ignored"
+                )
+                continue
+            named = where
+            if "directive" in entry and entry["directive"] != key:
+                findings.append(
+                    f"{where} sets directive = {entry['directive']!r}; the key names "
+                    "the directive and the value is ignored"
+                )
+            resolved = {"directive": key}
+            resolved.update((k, v) for k, v in entry.items() if k != "directive")
+
+        required = [
+            f"no {name!r}"
+            if name not in resolved
+            else f"a {name!r} that is not a string (got {_type_name(resolved[name])})"
+            for name in ("title", "prefix")
+            if not isinstance(resolved.get(name), str)
+        ]
+        if required:
+            findings.append(
+                f"{named} has {' and '.join(required)}; the entry is ignored"
+            )
+            continue
+
+        wrong = [
+            name
+            for name in ("color", "style")
+            if name in resolved and not isinstance(resolved[name], str)
+        ]
+        if wrong:
+            findings.append(
+                f"{named} has "
+                + " and ".join(
+                    f"a {name!r} that is not a string (got {_type_name(resolved[name])})"
+                    for name in wrong
+                )
+                + f"; the {'key is' if len(wrong) == 1 else 'keys are'} ignored"
+            )
+
+        unknown = [k for k in resolved if k not in NEED_TYPE_KEYS]
+        if unknown:
+            findings.append(
+                f"{named} has {'an unknown key' if len(unknown) == 1 else 'unknown keys'} "
+                f"{', '.join(repr(k) for k in unknown)}; known keys are "
+                f"{', '.join(NEED_TYPE_KEYS)}; the "
+                f"{'key is' if len(unknown) == 1 else 'keys are'} ignored"
+            )
+        for name in (*wrong, *unknown):
+            del resolved[name]
+        kept.append((position, resolved))
+
+    # a duplicate is possible in the list shape only (a mapping cannot hold a key
+    # twice): the last entry is used, at its own position, and the others are removed
+    positions: dict[str, list[int]] = {}
+    for position, resolved in kept:
+        positions.setdefault(resolved["directive"], []).append(position)
+    for directive, declared in positions.items():
+        if len(declared) > 1:
+            times = "twice" if len(declared) == 2 else f"{len(declared)} times"
+            at = ", ".join(map(str, declared[:-1])) + f" and {declared[-1]}"
+            findings.append(
+                f"needs_types declares the directive {directive!r} {times}, at entries "
+                f"{at}; the last entry is used"
+            )
+    return [
+        cast(NeedType, resolved)
+        for position, resolved in kept
+        if positions[resolved["directive"]][-1] == position
+    ], findings
+
+
+def resolve_need_types(_app: Sphinx, config: Config) -> None:
+    """Resolve ``needs_types`` to the list every reader of it expects, and report each
+    entry that cannot be used as a ``needs.config`` warning.
+
+    The list is written back to the option, so ``load_config``, ``add_need_type`` and
+    every later reader see a list whichever shape was configured, and Sphinx compares
+    the same list on both sides of an incremental build.
+
+    :param _app: The Sphinx application.
+    :param config: The Sphinx configuration.
+    :raises NeedsConfigException: If the value is neither a list nor a mapping.
+    """
+    need_types, findings = normalise_need_types(config.needs_types)
+    for text in findings:
+        log_warning(LOGGER, text, "config", None)
+    config["needs_types"] = need_types
 
 
 def _register_need_directive(app: Sphinx, name: str) -> None:
