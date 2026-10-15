@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from typing import Any, Final
 
 from docutils import nodes
@@ -96,7 +96,7 @@ class NeedDirective(SphinxDirective):
 
         title, full_title = _get_title(
             self.arguments,
-            self.content,  # ty: ignore[invalid-argument-type]
+            self.content,
             title_optional=needs_config.title_optional,
             title_from_content=title_from_content,
             max_title_length=needs_config.max_title_length,
@@ -217,7 +217,7 @@ class NeedDirective(SphinxDirective):
 
 def _get_title(
     args: list[str],
-    content: str,
+    content: Iterable[str],
     *,
     title_optional: bool,
     title_from_content: bool,
