@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from sphinx.errors import ExtensionError
 
 from sphinx_needs.api.need import generate_need
 from sphinx_needs.config import NeedsSphinxConfig
@@ -466,13 +467,13 @@ DERIVED_INDEX = """\
     [
         _overlay_project(
             "{"
-            '"ox": {"nullable": False, "schema": {"type": "string", "minLength": 1},'
+            '"ox": {"nullable": True, "schema": {"type": "string", "minLength": 1},'
             ' "derive_by_type": {"req": {"kind": "copy", "field": "title"}}},'
             ' "oy": {"schema": {"type": "string"}, "default": "D",'
             ' "derive_by_type": {"req": {"kind": "copy", "field": "title"}}},'
             ' "c1": {"nullable": True}, "c2": {"nullable": True}'
             "}",
-            '[("spec", "ox", {"nullable": True}),'
+            '[("spec", "ox", {"nullable": False}),'
             ' ("spec", "oy", {"default": FieldLiteralValue("S")}),'
             ' ("spec", "c1", {"nullable": False, "default": FieldLiteralValue("cd")}),'
             ' ("spec", "c2", {"nullable": False, "default": FieldLiteralValue("cd")})]',
@@ -483,9 +484,9 @@ DERIVED_INDEX = """\
 )
 def test_derived_values_of_one_type(test_app: Any) -> None:
     """A field derived on another type holds, on the needs of a type, the value its
-    type declares: no value where the type makes it nullable (and so no schema
-    violation), the type's default; a call on a cycle leaves a field the type makes
-    not nullable empty, not unset."""
+    type declares: its empty value where the type makes it not nullable (and so no
+    schema violation: it holds no value yet), the type's default; a call on a cycle
+    leaves a field the type makes not nullable empty, not unset."""
     app = test_app
     app.build()
     assert build_warnings(app) == [
@@ -499,6 +500,44 @@ def test_derived_values_of_one_type(test_app: Any) -> None:
     needs = _needs(app)
     assert {k: (v["ox"], v["oy"], v["c1"], v["c2"]) for k, v in needs.items()} == {
         "REQ_1": ("A", "A", None, None),
-        "SPEC_1": (None, "S", "", ""),
-        "SPEC_2": (None, "S", "cd", "cd"),
+        "SPEC_1": ("", "S", "", ""),
+        "SPEC_2": ("", "S", "cd", "cd"),
     }
+
+
+LATE_CONF = """\
+from sphinx_needs.data import SphinxNeedsData
+
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_fields = {"x": {"nullable": True}}
+
+
+def _late(app, env, docnames):
+    schema = SphinxNeedsData(env).get_schema()
+    schema.for_type("req")
+    schema.add_type_overlay("spec", schema.declaration("x"))
+
+
+def setup(app):
+    app.connect("env-before-read-docs", _late, priority=600)
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app", [_project(LATE_CONF, ".. req:: A\n   :id: REQ_1\n")], indirect=True
+)
+def test_an_overlay_after_the_first_read_fails_the_build(test_app: Any) -> None:
+    """The schema freezes once it is read for a need type: an overlay registered
+    after that is refused, and the build stops, naming why."""
+    app = test_app
+    with pytest.raises(ExtensionError) as exc_info:
+        app.build()
+    cause = exc_info.value.orig_exc
+    assert isinstance(cause, TypeError)
+    assert str(cause) == (
+        "The fields schema cannot be changed: it has been read for a need type. "
+        "Register fields and need type overlays before the first need is created: "
+        "in create_schema, or in an env-before-read-docs handler that runs before "
+        "any need is created."
+    )
