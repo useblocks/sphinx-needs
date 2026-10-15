@@ -62,6 +62,21 @@ Improvements
   after the schema is first read now gets a ``TypeError``, and ``FieldsSchema``'s getters are typed
   as shapes (read a full declaration through ``for_type``) (:pr:`2275`)
 
+- ✨ :ref:`needs_types` can be a dictionary from directive name to the other items of a type,
+  beside the list, in :file:`conf.py` and as ``[needs.types.<directive>]`` tables in a
+  :ref:`needs_from_toml` file; both shapes keep the order the types are given in. The value is
+  validated when the configuration is read, and what cannot be used is a ``needs.config`` warning
+  instead of a traceback or silence: an entry that is not a dictionary, names no directive, or
+  lacks a string ``title`` or ``prefix`` is ignored (a missing ``title`` used to end the build with
+  a ``KeyError``); a ``color`` or ``style`` that is not a string, and an unknown key, are ignored
+  and the type kept -- the unknown key an old project most likely still carries is ``content``,
+  which sphinx-needs 1.0 read and :pr:`610` stopped reading; a value of neither shape stops the
+  build with an error. A directive declared twice in the list is now its last entry on every
+  path -- a need of :ref:`list2need` took the first entry's prefix -- and is listed once in the
+  legends and in :ref:`needreport`, and, when it was the first type, a :ref:`needservice` datum
+  without a type takes the type that now comes first; the duplicate is reported, where Sphinx
+  used to warn that the directive was already registered (:issue:`2262`, :pr:`2276`)
+
 Deprecations
 ............
 
@@ -103,6 +118,12 @@ Bug fixes
   builder can make no URL for is drawn without one too, where the PlantUML source used to
   carry an empty ``[[]]`` that PlantUML refuses as a syntax error, and needuml's ``ref()``
   then gives its label as plain text
+
+- 🐛 Listing ``sphinx_test_reports`` before ``sphinx_needs`` in ``extensions`` no longer warns that
+  the directives ``testfile``, ``testsuite`` and ``testcase`` are already registered: a need type
+  registers its directive once, whether ``add_need_type`` or sphinx-needs' own configuration step
+  comes first. A directive of another kind under a need type's name is handled as before, with
+  Sphinx's warning (:issue:`2271`, :pr:`2276`)
 
 Internal changes
 ................

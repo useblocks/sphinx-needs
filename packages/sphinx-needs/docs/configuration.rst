@@ -250,13 +250,75 @@ By default it is set to:
                   dict(directive="need", title="Need", prefix="N_", color="#9856a5", style="node")
               ]
 
-``needs_types`` must be a list of dictionaries where each dictionary must contain the following items:
+``needs_types`` is a list of dictionaries where each dictionary must contain the following items:
 
 * **directive**: Name of the directive. For instance, you can use "req" via ``.. req::`` in documents
 * **title**: Title, used as human readable name in lists
 * **prefix**: A prefix for generated IDs, to easily identify that an ID belongs to a specific type. Can also be ""
 * **color**: A color as hex value. Used in diagrams and some days maybe in other representations as well. Can also be ""
 * **style**: A plantuml node type, like node, artifact, frame, storage or database. See `plantuml documentation <http://plantuml.com/deployment-diagram>`__ for more.
+
+.. versionchanged:: 9.1.0
+
+   ``needs_types`` can also be a dictionary keyed by directive name, and is validated when the configuration is read.
+
+Instead of a list, ``needs_types`` can be a dictionary from each directive name to the other items of its type:
+
+.. code-block:: python
+
+   needs_types = {
+       "req": {"title": "Requirement", "prefix": "R_", "color": "#BFD8D2", "style": "node"},
+       "spec": {"title": "Specification", "prefix": "S_", "color": "#FEDCD2", "style": "node"},
+   }
+
+In a :ref:`needs_from_toml` file, the list is an array of ``[[needs.types]]`` tables,
+and the dictionary one ``[needs.types.<directive>]`` table per type:
+
+.. code-block:: toml
+
+   [needs.types.req]
+   title = "Requirement"
+   prefix = "R_"
+   color = "#BFD8D2"
+
+   [needs.types.spec]
+   title = "Specification"
+   prefix = "S_"
+   color = "#FEDCD2"
+
+is the same as
+
+.. code-block:: toml
+
+   [[needs.types]]
+   directive = "req"
+   title = "Requirement"
+   prefix = "R_"
+   color = "#BFD8D2"
+
+   [[needs.types]]
+   directive = "spec"
+   title = "Specification"
+   prefix = "S_"
+   color = "#FEDCD2"
+
+The two shapes are equivalent, and the types keep the order they are given in both
+(the order of the legends, of :ref:`needreport`, and the default type of :ref:`needservice`);
+the table shape is the one a later release's per-type declarations extend.
+
+The value is validated when the configuration is read.
+A value that is neither a list nor a dictionary stops the build with an error.
+Otherwise each problem is a ``needs.config`` warning, and the build goes on without what cannot be used:
+
+* an entry that is not a dictionary is ignored;
+* an entry that names no directive is ignored: in the list, a ``directive`` that is missing or not a non-empty string; in the dictionary, an empty key.
+  A ``directive`` inside a dictionary entry that differs from its key is reported, and the key is used;
+* an entry whose ``title`` or ``prefix`` is missing or not a string is ignored: its type does not exist;
+* a ``color`` or ``style`` that is not a string is ignored, and the type kept;
+* a key other than ``directive``, ``title``, ``prefix``, ``color`` and ``style`` is ignored, and the type kept;
+* a directive declared more than once in the list: the last entry is used, at its own position, and one warning names every entry that declares it.
+
+``prefix`` and ``color`` may be ``""``.
 
 .. note::
 

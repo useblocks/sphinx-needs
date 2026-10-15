@@ -144,7 +144,6 @@ nullable = true
 [[needs.types]]
 directive = "int"
 title = "Interface"
-content = "plantuml"
 prefix = "I_"
 color = "#BFD8D2"
 style = "card"
@@ -152,7 +151,6 @@ style = "card"
 [[needs.types]]
 directive = "comp"
 title = "Component"
-content = "plantuml"
 prefix = "C_"
 color = "#BFD8D2"
 style = "card"
@@ -160,7 +158,6 @@ style = "card"
 [[needs.types]]
 directive = "sys"
 title = "System"
-content = "plantuml"
 prefix = "S_"
 color = "#BFD8D2"
 style = "card"

@@ -7,7 +7,6 @@ plantuml_output_format = "svg"
 needs_types = [
     {
         "directive": "int",
-        "content": "plantuml",
         "title": "Interface",
         "prefix": "I_",
         "color": "#BFD8D2",
@@ -15,7 +14,6 @@ needs_types = [
     },
     {
         "directive": "comp",
-        "content": "plantuml",
         "title": "Component",
         "prefix": "C_",
         "color": "#BFD8D2",
@@ -23,7 +21,6 @@ needs_types = [
     },
     {
         "directive": "sys",
-        "content": "plantuml",
         "title": "System",
         "prefix": "S_",
         "color": "#FF68D2",
@@ -31,7 +28,6 @@ needs_types = [
     },
     {
         "directive": "prod",
-        "content": "plantuml",
         "title": "Product",
         "prefix": "P_",
         "color": "#FF68D2",

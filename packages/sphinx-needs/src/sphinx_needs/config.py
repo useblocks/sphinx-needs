@@ -701,7 +701,13 @@ class NeedsSphinxConfig:
         ],
         metadata={"rebuild": "html", "types": ()},
     )
-    """Custom user need types"""
+    """Custom user need types.
+
+    A mapping from directive name to the other keys of a type is accepted too, and
+    resolved at ``config-inited`` (priority 12) to this list, in the mapping's order;
+    after that the value is always a list. Sphinx's own type check (at ``config-inited``
+    priority 800, inferred from the list default) sees the resolved list.
+    """
     include_needs: bool = field(
         default=True, metadata={"rebuild": "html", "types": (bool,)}
     )

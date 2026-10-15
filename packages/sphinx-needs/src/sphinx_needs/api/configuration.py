@@ -26,6 +26,9 @@ def get_need_types(app: Sphinx) -> list[str]:
     """
     Returns a list of directive-names from all configured need_types.
 
+    Call it from a ``config-inited`` handler at a priority above 12, or later: before
+    that, a mapping-shaped ``needs_types`` is not yet resolved to its list.
+
     **Usage**::
 
         from sphinx_needs.api import get_need_types
@@ -54,6 +57,10 @@ def add_need_type(
 
     Same impact as using :ref:`needs_types` manually.
 
+    Call it from a ``config-inited`` handler at a priority above 12, or later: before
+    that, a mapping-shaped ``needs_types`` is not yet resolved to the list this appends
+    to. Unlike a configured entry, the type is not validated.
+
     **Usage**::
 
         from sphinx_needs.api import add_need_type
@@ -68,7 +75,7 @@ def add_need_type(
     :param style: Plantuml-style for needflow representation. Default: 'node'
     :return: None
     """
-    import sphinx_needs.directives.need
+    from sphinx_needs.needs import _register_need_directive
 
     needs_types = NeedsSphinxConfig(app.config).types
     type_names = [x["directive"] for x in needs_types]
@@ -85,7 +92,7 @@ def add_need_type(
             "style": style,
         }
     )
-    app.add_directive(directive, sphinx_needs.directives.need.NeedDirective)
+    _register_need_directive(app, directive)
 
 
 def add_extra_option(

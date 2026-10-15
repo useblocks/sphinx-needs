@@ -345,10 +345,17 @@ flowchart TB
 
 ```python
 app.connect("config-inited", load_config_from_toml, priority=10)  # Load TOML config
+app.connect("config-inited", resolve_need_types, priority=12)     # needs_types: either shape -> the list
 app.connect("config-inited", load_config)                         # Register extra fields/directives
 app.connect("config-inited", merge_default_configs)               # Merge defaults
 app.connect("config-inited", check_configuration, priority=600)   # Validate config
 ```
+
+**`needs_types` is a list by the time anything reads it**: `resolve_need_types` turns either shape
+(the list, or a table keyed by directive) into the list, reports what it cannot use as `needs.config`
+findings through the pure `normalise_need_types`, and writes it back, so `load_config`,
+`add_need_type` and every later reader see one list, and `_register_need_directive` registers each
+type's directive once whichever of the two runs first.
 
 **Variant data in the TOML comes through `ub-project`** (`read_variants`, a runtime
 dependency): it decides which location is read — `[<prefix>.variants]`, or the legacy
