@@ -3,7 +3,7 @@ from __future__ import annotations
 import contextlib
 import dataclasses
 import json
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from copy import deepcopy
 from itertools import chain
 from pathlib import Path
@@ -161,7 +161,9 @@ from sphinx_needs.needs_schema import (
     LinkDisplayConfig,
     LinkSchema,
     LinksLiteralValue,
+    _inherit_keywords,
     create_inherited_field,
+    narrowing_problems,
 )
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles import NeedsXRefRole
@@ -2006,6 +2008,10 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
 
     _report_derive_problems(schema, derive_problems, need_types)
 
+    # last: each type's declarations start from the fields as they stand now, their
+    # derive problems and legacy defaults included
+    _resolve_type_declarations(schema, needs_config.types)
+
     SphinxNeedsData(env)._set_schema(schema)
 
 
@@ -2203,6 +2209,226 @@ def _with_table_text(schema: FieldsSchema, problem: DeriveProblem) -> DeriveProb
             uses_derive=uses_derive,
         ),
     )
+
+
+def _inherits_order(
+    types: Mapping[str, Mapping[str, Any]],
+) -> tuple[list[str], dict[str, str], list[str]]:
+    """The need types, each after its parent; the parent of each type; and why an
+    ``inherits`` is ignored.
+
+    A type has one parent at most, so the types are a forest once every ``inherits``
+    naming no need type, and every one on a cycle, is dropped: each is reported, every
+    member of every cycle, and its type stays, a root. The types keep the order they
+    are given in, but a parent comes before its children wherever it is given.
+
+    :param types: Each need type's directive name with its ``needs_types`` entry.
+    """
+    findings: list[str] = []
+    parent: dict[str, str] = {}
+    for name, entry in types.items():
+        if (inherits := entry.get("inherits")) is None:
+            continue
+        if inherits not in types:
+            findings.append(
+                f"Need type {name!r} inherits {inherits!r}, which is not a need type; "
+                "its inherits is ignored."
+            )
+        else:
+            parent[name] = inherits
+    order: list[str] = []
+    for start in types:
+        #: the types from ``start`` up to the first one placed, or back to itself
+        path: list[str] = []
+        node: str | None = start
+        while node is not None and node not in order and node not in path:
+            path.append(node)
+            node = parent.get(node)
+        if node is not None and node in path:
+            cycle = path[path.index(node) :]
+            ring = " -> ".join([*cycle, cycle[0]])
+            for member in cycle:
+                findings.append(
+                    f"Need type {member!r} inherits {parent.pop(member)!r} on a cycle "
+                    f"({ring}); its inherits is ignored."
+                )
+        order.extend(reversed(path))
+    return order, parent, findings
+
+
+def _resolve_type_declarations(
+    schema: FieldsSchema, need_types: Iterable[NeedType]
+) -> None:
+    """Declare the fields and link types of each need type anew, as its ``needs_types``
+    entry says: ``inherits``, ``fields`` and ``links``.
+
+    The last change to the schema while it is built. A type's declaration of a field
+    starts from the field's global declaration, takes the entries of its ancestors from
+    the root down, then its own; each entry is a narrowing of the declaration before
+    it (:func:`narrowing_problems`), and is registered for its type and every type
+    inheriting from it (:meth:`FieldsSchema.add_type_overlay`). A type without an
+    entry of a field, itself or by an ancestor, reads the field's global declaration.
+
+    What cannot be used is reported, one warning per reason, and ignored, and the
+    build goes on: an ``inherits`` naming no need type or on a cycle
+    (``needs.type_inherits``; the type stays, a root); an entry naming no field of its
+    table, or setting what the field does not take (``needs.type_conflict``); an entry
+    that widens the declaration before it (``needs.type_widening``). An entry is taken
+    whole or not at all: the type keeps the declaration before it.
+
+    :param schema: The schema, complete but for the declarations of need types.
+    :param need_types: The configured need types (the shape the configuration was
+        resolved to), those an extension or a service adds included.
+    """
+    types = {
+        need_type["directive"]: need_type
+        for need_type in need_types
+        if isinstance(need_type, dict) and isinstance(need_type.get("directive"), str)
+    }
+    order, parent, findings = _inherits_order(types)
+    for text in findings:
+        log_warning(LOGGER, text, "type_inherits", None)
+    #: need type -> field name -> its declaration for the type, and the type whose
+    #: entry made it
+    declared: dict[str, dict[str, tuple[FieldSchema | LinkSchema, str]]] = {}
+    for need_type in order:
+        own = dict(declared[p]) if (p := parent.get(need_type)) else {}
+        for table, kind, what, other in (
+            ("fields", "field", "a field", "a link type"),
+            ("links", "link", "a link type", "a field"),
+        ):
+            for name, keys in types[need_type].get(table, {}).items():
+                where = f"needs_types[{need_type!r}].{table}[{name!r}]"
+                glob = schema.global_declaration(name)
+                if glob is None or glob.kind != kind:
+                    is_ = f"not {what}" if glob is None else f"{other}, not {what}"
+                    log_warning(
+                        LOGGER,
+                        f"{where} declares {name!r}, which is {is_}; the entry is "
+                        "ignored",
+                        "type_conflict",
+                        None,
+                    )
+                    continue
+                previous, by = own.get(name, (glob, None))
+                if (
+                    field := _declare_for_type(previous, glob, keys, where, by)
+                ) is not None:
+                    own[name] = (field, need_type)
+        declared[need_type] = own
+        for field, _ in own.values():
+            schema.add_type_overlay(need_type, field)
+
+
+def _declare_for_type(
+    previous: FieldSchema | LinkSchema,
+    glob: FieldSchema | LinkSchema,
+    keys: Mapping[str, Any],
+    where: str,
+    declared_by: str | None,
+) -> FieldSchema | LinkSchema | None:
+    """The declaration a need type's entry makes of a field, from the one before it
+    (the global declaration, or an ancestor's); ``None``, reported, if the entry
+    cannot be used.
+
+    :param previous: The declaration before the entry.
+    :param glob: The field's global declaration.
+    :param keys: The entry.
+    :param where: The entry, as the configuration names it.
+    :param declared_by: The need type whose entry made ``previous``, if not global.
+    """
+    on_link = previous.kind == "link"
+    keys = {
+        key: value
+        for key, value in keys.items()
+        if key in (NEED_TYPE_LINK_KEYS if on_link else NEED_TYPE_FIELD_KEYS)
+    }
+    if previous.derived and (
+        refused := [k for k in ("default", "predicates") if k in keys]
+    ):
+        # a derived field takes no default: the rules give its value
+        log_warning(
+            LOGGER,
+            f"{where} sets {' and '.join(map(repr, refused))}, but {previous.name!r} is "
+            f"derived ({previous.describe_derived()}): a need type declares only its "
+            f"{'description and schema' if on_link else 'description, schema and nullable'}"
+            "; the entry is ignored",
+            "type_conflict",
+            None,
+        )
+        return None
+    changes: dict[str, Any] = {
+        key: keys[key] for key in ("description", "nullable") if key in keys
+    }
+    if "schema" in keys:
+        # a declaration names only what it changes: it takes the rest from before
+        child = deepcopy(dict(keys["schema"]))
+        _inherit_keywords(previous.schema, child)
+        if (
+            previous.derived
+            and previous.type != "array"
+            and child.get("enum")
+            and not glob.schema.get("enum")
+        ):
+            # the rules of a derived field are checked against its global declaration
+            log_warning(
+                LOGGER,
+                f"{where} adds an 'enum', but {previous.name!r} is derived "
+                f"({previous.describe_derived()}) and its rules are checked against "
+                "its declaration, which has none; the entry is ignored",
+                "type_conflict",
+                None,
+            )
+            return None
+        changes["schema"] = child
+    try:
+        field = dataclasses.replace(previous, **changes)
+    except ValueError as exc:
+        log_warning(
+            LOGGER,
+            f"{where} cannot be declared: {_reason(exc)}; the entry is ignored",
+            "type_conflict",
+            None,
+        )
+        return None
+    # set on the new declaration, not yet in the schema
+    for key, set_value, named in (
+        ("default", field._set_default, "a 'default'"),
+        ("predicates", field._set_predicate_defaults, "'predicates'"),
+    ):
+        if key not in keys:
+            continue
+        try:
+            set_value(keys[key], allow_coercion=True)
+        except ValueError as exc:
+            log_warning(
+                LOGGER,
+                f"{where} sets {named} that cannot be used: {_reason(exc)}; the entry "
+                "is ignored",
+                "type_conflict",
+                None,
+            )
+            return None
+    if problems := narrowing_problems(previous, field):
+        as_declared = (
+            "" if declared_by is None else f" as need type {declared_by!r} declares it"
+        )
+        for reason in problems:
+            # a reason of the type reads on from the field's name
+            is_declared = "it is declared " if reason.startswith("with ") else ""
+            log_warning(
+                LOGGER,
+                f"{where} widens the field{as_declared}: {is_declared}{reason}",
+                "type_widening",
+                None,
+            )
+        return None
+    return field
+
+
+def _reason(exc: Exception) -> str:
+    """The first line of an error's message, without its full stop."""
+    return str(exc).splitlines()[0].rstrip(".")
 
 
 class _DefaultsDictType(TypedDict, total=False):

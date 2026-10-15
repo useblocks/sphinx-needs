@@ -207,16 +207,16 @@ def test_the_inherits_order(
 
 INHERITS_INDEX = """\
 .. a:: A
-   :id: A_1
+   :id: A_001
 
 .. b:: B
-   :id: B_1
+   :id: B_001
 
 .. e:: E
-   :id: E_1
+   :id: E_001
 
 .. f:: F
-   :id: F_1
+   :id: F_001
 """
 
 
@@ -256,19 +256,20 @@ def test_an_inherits_that_cannot_be_used_is_reported(test_app: Any) -> None:
     schema knows, one a service adds included."""
     app = test_app
     app.build()
+    # the unknown parents first, then the cycles
     assert build_warnings(app) == [
+        "WARNING: Need type 'e' inherits 'nope', which is not a need type; its "
+        "inherits is ignored. [needs.type_inherits]",
         "WARNING: Need type 'a' inherits 'b' on a cycle (a -> b -> a); its inherits "
         "is ignored. [needs.type_inherits]",
         "WARNING: Need type 'b' inherits 'a' on a cycle (a -> b -> a); its inherits "
         "is ignored. [needs.type_inherits]",
-        "WARNING: Need type 'e' inherits 'nope', which is not a need type; its "
-        "inherits is ignored. [needs.type_inherits]",
     ]
     assert {k: v["x"] for k, v in _needs(app).items()} == {
-        "A_1": "a",
-        "B_1": None,
-        "E_1": None,
-        "F_1": "f",
+        "A_001": "a",
+        "B_001": None,
+        "E_001": None,
+        "F_001": "f",
     }
     assert _field(app, "a", "x").nullable is False
     assert _field(app, "b", "x") is _field(app, None, "x")
@@ -338,7 +339,7 @@ def test_a_project_without_declarations_registers_none(
                                 "schema": {"enum": ["A", "B"]},
                                 "nullable": False,
                                 "default": "A",
-                                "predicates": [["id == 'S_2'", "B"]],
+                                "predicates": [["id == 'S_002'", "B"]],
                             },
                             "status": {
                                 "schema": {"enum": ["open", "closed"]},
@@ -349,8 +350,8 @@ def test_a_project_without_declarations_registers_none(
                             "blocks": {
                                 "description": "What a spec blocks",
                                 "schema": {"maxItems": 1},
-                                "default": ["R_1"],
-                                "predicates": [["id == 'S_2'", ["R_2"]]],
+                                "default": ["R_001"],
+                                "predicates": [["id == 'S_002'", ["R_002"]]],
                             }
                         },
                     }
@@ -358,8 +359,8 @@ def test_a_project_without_declarations_registers_none(
                 {"x": X},
                 {"blocks": BLOCKS},
             ),
-            ".. req:: A\n   :id: R_1\n\n.. req:: B\n   :id: R_2\n\n"
-            ".. spec:: C\n   :id: S_1\n\n.. spec:: D\n   :id: S_2\n",
+            ".. req:: A\n   :id: R_001\n\n.. req:: B\n   :id: R_002\n\n"
+            ".. spec:: C\n   :id: S_001\n\n.. spec:: D\n   :id: S_002\n",
         )
     ],
     indirect=True,
@@ -377,7 +378,7 @@ def test_every_key_on_a_field_a_link_type_and_a_core_field(test_app: Any) -> Non
         {"type": "string", "enum": ["A", "B"]},
         False,
         FieldLiteralValue("A"),
-        (("id == 'S_2'", FieldLiteralValue("B")),),
+        (("id == 'S_002'", FieldLiteralValue("B")),),
     )
     status = _field(app, "spec", "status")
     assert (status.schema["enum"], status.default) == (
@@ -388,18 +389,18 @@ def test_every_key_on_a_field_a_link_type_and_a_core_field(test_app: Any) -> Non
     assert (blocks.description, blocks.schema, blocks.default) == (
         "What a spec blocks",
         {"type": "array", "items": {"type": "string"}, "maxItems": 1},
-        LinksLiteralValue([NeedLink(id="R_1")]),
+        LinksLiteralValue([NeedLink(id="R_001")]),
     )
     assert blocks.predicate_defaults == (
-        ("id == 'S_2'", LinksLiteralValue([NeedLink(id="R_2")])),
+        ("id == 'S_002'", LinksLiteralValue([NeedLink(id="R_002")])),
     )
     for name in ("x", "status", "blocks"):
         assert _field(app, "req", name) is _schema(app).global_declaration(name)
     assert {k: (v["x"], v["status"], v["blocks"]) for k, v in _needs(app).items()} == {
-        "R_1": (None, None, []),
-        "R_2": (None, None, []),
-        "S_1": ("A", "open", ["R_1"]),
-        "S_2": ("B", "open", ["R_2"]),
+        "R_001": (None, None, []),
+        "R_002": (None, None, []),
+        "S_001": ("A", "open", ["R_001"]),
+        "S_002": ("B", "open", ["R_002"]),
     }
 
 
@@ -458,7 +459,7 @@ CONFLICTS = [
     ),
     _declared(
         "predicates-that-do-not-convert",
-        {"fields": {"y": {"predicates": [["id == 'S_1'", 5]]}}},
+        {"fields": {"y": {"predicates": [["id == 'S_001'", 5]]}}},
         [
             "type_conflict needs_types['spec'].fields['y'] sets 'predicates' that "
             "cannot be used: Invalid value for field 'y': 5; the entry is ignored"
@@ -506,7 +507,7 @@ CONFLICTS = [
     ),
     _declared(
         "a-default-of-a-derived-link-type",
-        {"links": {"dl": {"default": ["R_1"]}}},
+        {"links": {"dl": {"default": ["R_001"]}}},
         [
             "type_conflict needs_types['spec'].links['dl'] sets 'default', but 'dl' "
             "is derived (by need type): a need type declares only its description "
@@ -515,7 +516,7 @@ CONFLICTS = [
         links={
             "dl": {
                 **BLOCKS,
-                "derive_by_type": {"req": {"kind": "links", "where": "id == 'R_1'"}},
+                "derive_by_type": {"req": {"kind": "links", "where": "id == 'R_001'"}},
             }
         },
     ),
@@ -561,7 +562,7 @@ def test_an_entry_that_cannot_be_applied(test_app: Any, warnings: list[str]) -> 
                     },
                 },
             ),
-            ".. req:: A\n   :id: R_1\n\n.. spec:: B\n   :id: S_1\n",
+            ".. req:: A\n   :id: R_001\n\n.. spec:: B\n   :id: S_001\n",
         )
     ],
     indirect=True,
@@ -681,7 +682,7 @@ def test_an_entry_that_widens_the_field(test_app: Any, warnings: list[str]) -> N
                     }
                 },
             ),
-            ".. req:: A\n   :id: R_1\n\n.. spec:: B\n   :id: S_1\n",
+            ".. req:: A\n   :id: R_001\n\n.. spec:: B\n   :id: S_001\n",
         )
     ],
     indirect=True,
@@ -692,23 +693,23 @@ def test_an_enum_below_the_default_with_a_default_inside(test_app: Any) -> None:
     app = test_app
     app.build()
     assert build_warnings(app) == []
-    assert {k: v["q"] for k, v in _needs(app).items()} == {"R_1": "QM", "S_1": "A"}
+    assert {k: v["q"] for k, v in _needs(app).items()} == {"R_001": "QM", "S_001": "A"}
 
 
 # -- inherits: what a child declares -------------------------------------------------------
 
 CHAIN_INDEX = """\
 .. req:: A
-   :id: R_1
+   :id: R_001
 
 .. spec:: B
-   :id: S_1
+   :id: S_001
 
 .. impl:: C
-   :id: I_1
+   :id: I_001
 
 .. test:: D
-   :id: T_1
+   :id: T_001
 """
 
 
@@ -764,10 +765,10 @@ def test_a_child_narrows_what_its_parent_declares(test_app: Any) -> None:
     assert test is req
     assert list(_schema(app).type_declarations("x")) == ["req", "spec", "impl", "test"]
     assert {k: v["x"] for k, v in _needs(app).items()} == {
-        "R_1": None,
-        "S_1": "B",
-        "I_1": "B",
-        "T_1": None,
+        "R_001": None,
+        "S_001": "B",
+        "I_001": "B",
+        "T_001": None,
     }
 
 
@@ -812,16 +813,16 @@ def test_a_child_widening_its_parent_is_refused(test_app: Any) -> None:
 
 PRECEDENCE_INDEX = """\
 .. req:: A
-   :id: R_1
+   :id: R_001
 
 .. spec:: B
-   :id: S_1
+   :id: S_001
 
 .. spec:: C
-   :id: S_2
+   :id: S_002
 
 .. spec:: D
-   :id: S_3
+   :id: S_003
    :x: authored
 """
 
@@ -836,7 +837,7 @@ PRECEDENCE_INDEX = """\
                     "x": {
                         "nullable": True,
                         "default": "global",
-                        "predicates": [["id == 'S_2'", "predicate"]],
+                        "predicates": [["id == 'S_002'", "predicate"]],
                     }
                 },
             ),
@@ -850,7 +851,7 @@ build_json = true
 [needs.fields.x]
 nullable = true
 default = "global"
-predicates = [["id == 'S_2'", "predicate"]]
+predicates = [["id == 'S_002'", "predicate"]]
 
 [needs.types.req]
 title = "Requirement"
@@ -876,10 +877,10 @@ def test_what_a_need_of_the_type_holds(test_app: Any) -> None:
     app.build()
     assert build_warnings(app) == []
     assert {k: v["x"] for k, v in _needs(app).items()} == {
-        "R_1": "global",
-        "S_1": "type",
-        "S_2": "predicate",
-        "S_3": "authored",
+        "R_001": "global",
+        "S_001": "type",
+        "S_002": "predicate",
+        "S_003": "authored",
     }
 
 
@@ -907,7 +908,7 @@ prefix = "S_"
 [needs.types.fields.x]
 default = "last"
 """,
-            ".. req:: A\n   :id: R_1\n\n.. spec:: B\n   :id: S_1\n",
+            ".. req:: A\n   :id: R_001\n\n.. spec:: B\n   :id: S_001\n",
         )
     ],
     indirect=True,
@@ -918,20 +919,23 @@ def test_a_toml_sub_table_attaches_to_the_last_array_element(test_app: Any) -> N
     app = test_app
     app.build()
     assert build_warnings(app) == []
-    assert {k: v["x"] for k, v in _needs(app).items()} == {"R_1": None, "S_1": "last"}
+    assert {k: v["x"] for k, v in _needs(app).items()} == {
+        "R_001": None,
+        "S_001": "last",
+    }
 
 
 # -- what reads the declarations -------------------------------------------------------------
 
 DELETE_INDEX = """\
 .. req:: A
-   :id: R_1
+   :id: R_001
    :x: a
    :y: 1
    :w: a
 
 .. spec:: B
-   :id: S_1
+   :id: S_001
    :x: b
    :y: 2
    :w: b
@@ -978,8 +982,8 @@ def test_a_needextend_deletes_to_the_empty_value_of_the_type(test_app: Any) -> N
     app.build()
     assert build_warnings(app) == []
     assert {k: (v["x"], v["y"], v["w"]) for k, v in _needs(app).items()} == {
-        "R_1": (None, None, None),
-        "S_1": ("", 0, []),
+        "R_001": (None, None, None),
+        "S_001": ("", 0, []),
     }
 
 
@@ -1016,7 +1020,7 @@ def test_a_template_default_of_one_type_is_a_declared_default(test_app: Any) -> 
                     }
                 },
             ),
-            ".. spec:: B\n   :id: S_1\n",
+            ".. spec:: B\n   :id: S_001\n",
         )
     ],
     indirect=True,
@@ -1030,4 +1034,4 @@ def test_a_declaration_of_a_field_whose_derive_cannot_be_read(test_app: Any) -> 
     assert len(warnings) == 1
     assert warnings[0].endswith("[needs.derive_invalid]")
     assert _field(app, "spec", "score").description == "A spec's score"
-    assert _needs(app)["S_1"]["score"] is None
+    assert _needs(app)["S_001"]["score"] is None
