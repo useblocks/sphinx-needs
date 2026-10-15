@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792024184394,
+  "lastUpdate": 1792050000468,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -25128,6 +25128,42 @@ window.BENCHMARK_DATA = {
             "value": 47.639144275999996,
             "unit": "s",
             "extra": "Commit: 54439fac43579bc16399b001dda76deb83bc001e\nBranch: master\nTime: 2026-10-15T02:28:26+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c80034a6b414ee940def3b79f9ff6334ae29a3c0",
+          "message": "🏷️ sphinx-codelinks: check_schema skips a field with no schema; five suppressions gone (#2267)\n\n## What\n\nIn `packages/sphinx-codelinks`, removes the five `# ty:\nignore[invalid-argument-type]` comments that #1835 lists for\nsphinx-codelinks' `jsonschema.validate(schema=...)` calls (16\nsuppressions → 11).\n\n**The problem.** Five `check_schema` methods passed `get_schema(...)`\nstraight to `jsonschema.validate(schema=...)`. `get_schema` is typed\n`dict | None`, and `validate(schema=None)` raises `TypeError`, which\n`check_schema` does not catch (it catches `ValidationError`). The five\nmethods are on these classes:\n- `NeedIdRefsConfig`, `MultilineNeedsConfig` and `OneLineCommentStyle`\nin `config.py`\n- `SourceDiscoverConfig` in `source_discover/config.py`\n- `MarkedContentSchema` in `needextend_write.py`\n\nEvery field of these five classes has a schema, measured, so no run\nreached the error.\n\n**The change.** Each `check_schema` now skips a field without a schema.\n`SourceAnalyseConfig.check_schema` already does this (`if not schema:\ncontinue`), because four of its fields have no schema. The suppressions\ngo, along with two stale comments about the stubs. Behaviour is\nunchanged for every existing field.\n\n## Why\n\nContinues #1835.\n\n## Tests\n\n- **`test_check_schema_skips_a_field_without_schema`**\n(`tests/test_analyse_config.py`) is parametrised over the five classes.\nIt makes `get_schema` return `None` and asserts `check_schema()` returns\n`[]`. Removing the guard from each file fails that file's cases:\n- the three `config.py` classes and `SourceDiscoverConfig` fail with\njsonschema's `TypeError`;\n- `MarkedContentSchema`, built bare because its fields have no defaults,\nfails with `AttributeError`.\n- **Review:** the diff is mechanical, and the guard cannot be reached by\ncurrent classes, so this got the orchestrator's own pass rather than a\nseparate reviewer.\n- **Gates:** lint, typecheck, `test-codelinks` (1055 passed).\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue. *(Written by Claude Code at a\nmaintainer's request.)*\n- [x] I ran the package's tests (`uv run poe test-<package>`) and they\npass.\n- [x] Documentation is updated where behaviour or options change. *(No\noptions change.)*\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*. *(sphinx-codelinks.)*\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-15T09:38:35+02:00",
+          "tree_id": "39914aaba796ac79170624d3c6ef69ee46f623fe",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/c80034a6b414ee940def3b79f9ff6334ae29a3c0"
+        },
+        "date": 1792049992596,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.11738414000001285,
+            "unit": "s",
+            "extra": "Commit: c80034a6b414ee940def3b79f9ff6334ae29a3c0\nBranch: master\nTime: 2026-10-15T09:38:35+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 56.73399794600002,
+            "unit": "s",
+            "extra": "Commit: c80034a6b414ee940def3b79f9ff6334ae29a3c0\nBranch: master\nTime: 2026-10-15T09:38:35+02:00"
           }
         ]
       }
