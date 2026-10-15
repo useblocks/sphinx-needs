@@ -11,6 +11,7 @@ from dataclasses import replace
 
 import pytest
 
+from sphinx_needs.derive import DeriveRule
 from sphinx_needs.needs_schema import (
     FieldSchema,
     FieldsSchema,
@@ -260,3 +261,54 @@ def test_an_overlay_does_not_change_the_repr() -> None:
     assert before.startswith("Schema(core=[FieldSchema(name='status'")
     schema, _ = _overlaid()
     assert repr(schema) == before
+
+
+def test_a_type_derives_a_field_by_derive_by_type() -> None:
+    """An overlay keeps the field's derivation: a field derived per need type says so
+    in its ``derive_by_type``."""
+    schema = _schema()
+    schema.add_extra_field(
+        FieldSchema(
+            name="score",
+            schema={"type": "number"},
+            derive_by_type={"req": DeriveRule(kind="copy", field="effort")},
+        )
+    )
+    effort = schema.get_extra_field("effort")
+    score = schema.get_extra_field("score")
+    assert effort is not None and score is not None
+    with pytest.raises(ValueError) as exc_info:
+        schema.add_type_overlay(
+            "spec", replace(effort, derive=DeriveRule(kind="copy", field="status"))
+        )
+    assert str(exc_info.value) == (
+        "Cannot declare field 'effort' for need type 'spec' with another derivation: "
+        "a field is derived per need type by its derive_by_type."
+    )
+    with pytest.raises(ValueError) as exc_info:
+        schema.add_type_overlay(
+            "spec",
+            replace(
+                score, derive_by_type={"spec": DeriveRule(kind="copy", field="effort")}
+            ),
+        )
+    assert str(exc_info.value) == (
+        "Cannot declare field 'score' for need type 'spec' with another derivation: "
+        "a field is derived per need type by its derive_by_type."
+    )
+    assert schema.for_type("spec") is schema
+
+
+def test_a_replaced_field_keeps_the_type_of_its_overlays() -> None:
+    """A field replaced while a need type declares it anew keeps its type and item
+    type; a replacement of the same type is taken."""
+    schema, _ = _overlaid()
+    with pytest.raises(ValueError) as exc_info:
+        schema.replace_field(FieldSchema(name="asil", schema={"type": "integer"}))
+    assert str(exc_info.value) == (
+        "Cannot replace field 'asil' with type 'integer' (items None): need type "
+        "'spec' declares it with type 'string' (items None)."
+    )
+    again = FieldSchema(name="asil", schema={"type": "string"}, description="again")
+    schema.replace_field(again)
+    assert schema.get_extra_field("asil") is again

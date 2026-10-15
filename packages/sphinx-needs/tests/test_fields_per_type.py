@@ -218,16 +218,18 @@ def test_a_field_closed_on_one_type(test_app: Any) -> None:
     ``list2need`` and ``needservice``, and set on the needs of every other type."""
     app = test_app
     app.build()
-    assert build_warnings(app) == [
+    # the service class in conf.py cannot be cached, which Sphinx reports in words
+    # that differ between its versions
+    warnings = [w for w in build_warnings(app) if "cannot cache unpick" not in w]
+    # the text and code are today's for a field closed by ``directive_option=False``;
+    # the slice that closes need types owns them
+    assert warnings == [
         "<srcdir>/index.rst:8: WARNING: Field 'x' is derived and cannot be set in a "
         "need; the value 'two' is ignored [needs.derive_authored]",
         "<srcdir>/index.rst:17: WARNING: Field 'x' is derived and cannot be set in a "
         "need; the value 'four' is ignored [needs.derive_authored]",
         "<srcdir>/index.rst:19: WARNING: Field 'x' is derived and cannot be set in a "
         "need; the value 'six' is ignored [needs.derive_authored]",
-        # the service class in conf.py
-        "WARNING: cannot cache unpickleable configuration value: 'needs_services' "
-        "(because it contains a function, class, or module object) [config.cache]",
     ]
     needs = _needs(app)
     assert {k: v["x"] for k, v in needs.items()} == {
@@ -400,6 +402,8 @@ def test_a_schema_one_type_narrows(
         '  Schema message: "QM" is not one of "A" or "B" '
         "[sn_schema_violation.field_fail]",
     ]
+    # the union validator is reused by identity for every type without overlays, so a
+    # cache keyed wrongly shows here, not in the plain project's count of one
     assert compiles == [2]
 
 
@@ -440,4 +444,61 @@ def test_a_computed_value_in_the_field_of_its_type(test_app: Any) -> None:
     assert {k: v["x"] for k, v in needs.items()} == {
         "REQ_1": None,
         "SPEC_1": "",
+    }
+
+
+DERIVED_INDEX = """\
+.. req:: A
+   :id: REQ_1
+
+.. spec:: B
+   :id: SPEC_1
+   :c1: [[copy("c2")]]
+   :c2: [[copy("c1")]]
+
+.. spec:: C
+   :id: SPEC_2
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _overlay_project(
+            "{"
+            '"ox": {"nullable": False, "schema": {"type": "string", "minLength": 1},'
+            ' "derive_by_type": {"req": {"kind": "copy", "field": "title"}}},'
+            ' "oy": {"schema": {"type": "string"}, "default": "D",'
+            ' "derive_by_type": {"req": {"kind": "copy", "field": "title"}}},'
+            ' "c1": {"nullable": True}, "c2": {"nullable": True}'
+            "}",
+            '[("spec", "ox", {"nullable": True}),'
+            ' ("spec", "oy", {"default": FieldLiteralValue("S")}),'
+            ' ("spec", "c1", {"nullable": False, "default": FieldLiteralValue("cd")}),'
+            ' ("spec", "c2", {"nullable": False, "default": FieldLiteralValue("cd")})]',
+            DERIVED_INDEX,
+        )
+    ],
+    indirect=True,
+)
+def test_derived_values_of_one_type(test_app: Any) -> None:
+    """A field derived on another type holds, on the needs of a type, the value its
+    type declares: no value where the type makes it nullable (and so no schema
+    violation), the type's default; a call on a cycle leaves a field the type makes
+    not nullable empty, not unset."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:7: WARNING: dynamic function 'copy' for option 'c1' is on "
+        "a cycle: 'c1' on need 'SPEC_1' and 'c2' on need 'SPEC_1'; the field is left "
+        "empty [needs.derive_cycle]",
+        "<srcdir>/index.rst:7: WARNING: dynamic function 'copy' for option 'c2' is on "
+        "a cycle: 'c1' on need 'SPEC_1' and 'c2' on need 'SPEC_1'; the field is left "
+        "empty [needs.derive_cycle]",
+    ]
+    needs = _needs(app)
+    assert {k: (v["ox"], v["oy"], v["c1"], v["c2"]) for k, v in needs.items()} == {
+        "REQ_1": ("A", "A", None, None),
+        "SPEC_1": (None, "S", "", ""),
+        "SPEC_2": (None, "S", "cd", "cd"),
     }
