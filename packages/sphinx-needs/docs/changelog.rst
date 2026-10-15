@@ -66,6 +66,13 @@ Deprecations
 Bug fixes
 .........
 
+- 🐛 With :ref:`needs_debug_measurement` on, a measured callable that has no ``__name__``
+  (a ``functools.partial`` registered as a dynamic function, say) or whose source cannot be
+  read (its file is gone) no longer ends the build with ``AttributeError`` / ``OSError``:
+  it is measured under its ``repr``, with no file or line where inspect cannot give one.
+  ``debug.START_TIME`` and ``EXECUTE_TIME_MEASUREMENTS`` are annotated, so ty now checks
+  the measuring wrapper, and two ``# ty: ignore`` comments go (:issue:`1835`)
+
 - 🐛 :ref:`need <role_need>`, :ref:`need_outgoing <role_need_outgoing>` and
   :ref:`need_incoming <role_need_incoming>` -- and so a need's links and backlinks rows --
   and :ref:`needtable`'s id and link columns no longer end the build on a need that has no

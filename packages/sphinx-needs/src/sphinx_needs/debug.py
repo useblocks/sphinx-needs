@@ -20,13 +20,29 @@ from sphinx.application import Sphinx
 from sphinx_needs._jinja import render_template_string
 
 TIME_MEASUREMENTS: dict[str, Any] = {}  # Stores the timing results
-EXECUTE_TIME_MEASUREMENTS = (
+EXECUTE_TIME_MEASUREMENTS: bool = (
     False  # Will be used to de/activate measurements. Set during a Sphinx Event
 )
 
-START_TIME = 0.0
+START_TIME: float = 0.0
 
 T = TypeVar("T", bound=Callable[..., Any])
+
+
+def _source_file(func: Callable[..., Any]) -> str | None:
+    """The file ``func`` was defined in, or ``None`` if inspect cannot place it."""
+    try:
+        return inspect.getfile(func)
+    except TypeError:  # not a function, class or module: a partial, an instance
+        return None
+
+
+def _source_line(func: Callable[..., Any]) -> int | None:
+    """The first line of ``func``'s source, or ``None`` if it cannot be read."""
+    try:
+        return inspect.getsourcelines(func)[1]
+    except (TypeError, OSError):  # no source: a partial, or its file is gone
+        return None
 
 
 def measure_time(
@@ -78,9 +94,11 @@ def measure_time(
 
             runtime = end - start
 
-            mt_name = func.__name__ if name is None else name
+            # a callable need not have a __name__ (a functools.partial, an instance)
+            func_name = getattr(func, "__name__", None) or repr(func)
+            mt_name = func_name if name is None else name
 
-            mt_id = f"{category}_{func.__name__}"
+            mt_id = f"{category}_{func_name}"
 
             if mt_id not in TIME_MEASUREMENTS:
                 TIME_MEASUREMENTS[mt_id] = {
@@ -88,8 +106,8 @@ def measure_time(
                     "category": category,
                     "source": source,
                     "doc": func.__doc__,
-                    "file": inspect.getfile(func),
-                    "line": inspect.getsourcelines(func)[1],
+                    "file": _source_file(func),
+                    "line": _source_line(func),
                     "amount": 0,
                     "overall": 0,
                     "avg": None,
