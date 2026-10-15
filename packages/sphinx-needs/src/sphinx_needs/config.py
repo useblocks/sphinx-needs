@@ -381,6 +381,10 @@ class NeedType(TypedDict):
     """The fields this type declares anew: field name to its declaration."""
     links: NotRequired[dict[str, NeedTypeLinkDeclaration]]
     """The link types this type declares anew: link type name to its declaration."""
+    closed: NotRequired[bool]
+    """Whether the needs of this type hold only the fields and link types it declares
+    (here, or by the type it inherits): the others the project declares are absent.
+    Inherited from the type it inherits, unless given (default: false)."""
 
 
 class NeedTypeFieldDeclaration(TypedDict, total=False):

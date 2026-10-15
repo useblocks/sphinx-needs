@@ -321,7 +321,8 @@ def test_a_field_closed_on_one_type_from_outside(test_app: Any) -> None:
         "<srcdir>/index.rst:7: WARNING: "
         + _undeclared(["REQ_1"], "blocks", "Link type"),
     ]
-    needs = _needs(app)
+    # an external need is not written to needs.json
+    needs = SphinxNeedsData(app.env).get_needs_view()
     assert {k: (v["x"], v["blocks"]) for k, v in needs.items()} == {
         "REQ_1": (None, []),
         "IMP_1": (None, []),

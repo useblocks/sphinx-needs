@@ -362,8 +362,8 @@ def test_what_closed_closes_and_what_it_leaves(test_app: Any) -> None:
     app.build()
     assert build_warnings(app) == [
         _undeclared(7, "spec", "refused"),
-        _undeclared(7, "spec", "R_001", "links", "Link type"),
         _undeclared(7, "spec", "R_001", "blocks", "Link type"),
+        _undeclared(7, "spec", "R_001", "links", "Link type"),
     ]
     needs = _needs(app)
     assert {
@@ -438,7 +438,7 @@ def test_a_closed_type_without_project_fields_holds_the_same(test_app: Any) -> N
         for key in needs["S_001"].keys() | needs["I_001"].keys()
         if needs["S_001"].get(key) != needs["I_001"].get(key)
     }
-    assert differ == {"id", "type", "type_name", "type_prefix", "lineno"}
+    assert differ == {"id", "type", "type_name", "lineno"}
 
 
 @pytest.mark.parametrize(
