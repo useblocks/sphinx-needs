@@ -103,6 +103,7 @@ def _field(app: Any, need_type: str | None, name: str) -> Any:
 
 def _undeclared(
     line: int | None,
+    need: str,
     need_type: str,
     value: object,
     name: str = "x",
@@ -111,8 +112,8 @@ def _undeclared(
     at = "" if line is None else f"<srcdir>/index.rst:{line}: "
     return (
         f"{at}WARNING: {what} {name!r} is not declared on need type {need_type!r}, "
-        f"which is closed, and cannot be set in a need; the value {value!r} is "
-        "ignored [needs.undeclared_for_type]"
+        f"which is closed, and cannot be set in need {need!r}; the value {value!r} "
+        "is ignored [needs.undeclared_for_type]"
     )
 
 
@@ -287,10 +288,10 @@ def test_closed_is_inherited_and_overridable(test_app: Any) -> None:
     app = test_app
     app.build()
     assert build_warnings(app) == [
-        _undeclared(9, "spec", "b", "y"),
-        _undeclared(14, "impl", "b", "y"),
-        _undeclared(24, "tcase", "a"),
-        _undeclared(24, "tcase", "b", "y"),
+        _undeclared(9, "S_001", "spec", "b", "y"),
+        _undeclared(14, "I_001", "impl", "b", "y"),
+        _undeclared(24, "C_001", "tcase", "a"),
+        _undeclared(24, "C_001", "tcase", "b", "y"),
     ]
     assert {k: (v["x"], v["y"]) for k, v in _needs(app).items()} == {
         "R_001": ("a", "b"),
@@ -361,9 +362,9 @@ def test_what_closed_closes_and_what_it_leaves(test_app: Any) -> None:
     app = test_app
     app.build()
     assert build_warnings(app) == [
-        _undeclared(7, "spec", "refused"),
-        _undeclared(7, "spec", "R_001", "blocks", "Link type"),
-        _undeclared(7, "spec", "R_001", "links", "Link type"),
+        _undeclared(7, "S_001", "spec", "refused"),
+        _undeclared(7, "S_001", "spec", "R_001", "blocks", "Link type"),
+        _undeclared(7, "S_001", "spec", "R_001", "links", "Link type"),
     ]
     needs = _needs(app)
     assert {
@@ -408,7 +409,7 @@ def test_an_empty_entry_declares(test_app: Any) -> None:
     app = test_app
     app.build()
     assert build_warnings(app) == [
-        _undeclared(7, "spec", "R_001", "blocks", "Link type")
+        _undeclared(7, "S_001", "spec", "R_001", "blocks", "Link type")
     ]
     assert {k: (v["x"], v["links"], v["blocks"]) for k, v in _needs(app).items()} == {
         "R_001": (None, [], []),
@@ -460,7 +461,7 @@ def test_add_need_takes_the_value_and_refuses_it(test_app: Any) -> None:
         x="given",
     )
     assert need["x"] is None
-    assert build_warnings(app) == [_undeclared(None, "spec", "given")]
+    assert build_warnings(app) == [_undeclared(None, "S_001", "spec", "given")]
 
 
 # -- validation -------------------------------------------------------------------------
@@ -567,7 +568,7 @@ EXT = {"directive": "ext", "title": "Extension", "prefix": "E_"}
                 ),
                 ".. ext:: A\n   :id: E_001\n   :x: kept\n",
             ),
-            [_undeclared(4, "ext", "kept")],
+            [_undeclared(4, "E_001", "ext", "kept")],
             True,
             id="appended-closed",
         ),
@@ -581,3 +582,344 @@ def test_closed_is_a_boolean(test_app: Any, warnings: list[str], closed: bool) -
     app.build()
     assert build_warnings(app) == warnings
     assert [need["x"] for need in _needs(app).values()] == [None if closed else "kept"]
+
+
+# -- a link type that copies, and a closed type's own export --------------------------
+
+#: ``spec`` declares ``blocks``, which copies into ``links``, but not ``links``;
+#: ``impl`` declares both
+COPY_TYPES = _types(
+    spec={"closed": True, "fields": {"x": {}}, "links": {"blocks": {}}},
+    impl={"closed": True, "links": {"blocks": {}, "links": {}}},
+)
+COPY_FIELDS = {
+    "x": X,
+    "s": {"nullable": False, "default": "D"},
+    "n": {"nullable": False, "schema": {"type": "integer"}, "default": 1},
+    "a": {
+        "nullable": False,
+        "schema": {"type": "array", "items": {"type": "string"}},
+        "default": ["d"],
+    },
+}
+COPY_LINKS = {"links": {"schema": {"maxItems": 1}}, "blocks": {**BLOCKS, "copy": True}}
+
+COPY_INDEX = """\
+.. req:: A
+   :id: R_001
+
+.. req:: B
+   :id: R_002
+
+.. spec:: C
+   :id: S_001
+
+.. spec:: D
+   :id: S_002
+   :x: kept
+   :blocks: R_001, R_002
+
+.. impl:: E
+   :id: I_001
+   :blocks: R_001
+"""
+
+#: what the needs of ``COPY_INDEX`` hold: x, s, n, a, blocks, links
+COPY_VALUES = {
+    "R_001": (None, "D", 1, ["d"], [], []),
+    "R_002": (None, "D", 1, ["d"], [], []),
+    "S_001": (None, "", 0, [], [], []),
+    "S_002": ("kept", "", 0, [], ["R_001", "R_002"], []),
+    "I_001": (None, "", 0, [], ["R_001"], ["R_001"]),
+}
+
+
+def _copy_values(needs: Any, prefix: str = "") -> dict[str, tuple[Any, ...]]:
+    return {
+        key.removeprefix(prefix): tuple(
+            [link.removeprefix(prefix) for link in value]
+            if isinstance(value, list) and name in ("blocks", "links")
+            else value
+            for name, value in (
+                (k, need[k]) for k in ("x", "s", "n", "a", "blocks", "links")
+            )
+        )
+        for key, need in needs.items()
+        if key.startswith(prefix)
+    }
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [_project(_conf(COPY_TYPES, COPY_FIELDS, COPY_LINKS), COPY_INDEX)],
+    indirect=True,
+)
+def test_a_link_type_copies_only_where_links_is_declared(test_app: Any) -> None:
+    """A link type with ``copy`` copies into ``links`` only on a type that declares
+    ``links``: on a closed type that does not, ``links`` holds no links, and its
+    schema is not checked against them."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    assert _copy_values(_needs(app)) == COPY_VALUES
+
+
+def test_a_closed_types_own_export_imports_silently(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """The needs.json a project with closed types writes holds every field of every
+    need, the empty values of the undeclared ones included: imported, and read as
+    external needs, by a project of the same configuration, it gives no warning, and
+    each need holds what it held."""
+    first = tmp_path / "first"
+    first.mkdir()
+    (first / "conf.py").write_text(
+        _conf(COPY_TYPES, COPY_FIELDS, COPY_LINKS), encoding="utf-8"
+    )
+    (first / "index.rst").write_text("Case\n====\n\n" + COPY_INDEX, encoding="utf-8")
+    app = make_app("needs", srcdir=first)
+    app.build()
+    assert build_warnings(app) == []
+    exported = Path(app.outdir, "needs.json")
+    app.cleanup()
+
+    second = tmp_path / "second"
+    second.mkdir()
+    (second / "exported.json").write_text(
+        exported.read_text(encoding="utf-8"), encoding="utf-8"
+    )
+    external = (
+        "needs_external_needs = [{'base_url': 'http://example.org', "
+        f"'json_path': {str(second / 'exported.json')!r}, 'id_prefix': 'E_'}}]\n"
+    )
+    (second / "conf.py").write_text(
+        _conf(COPY_TYPES, COPY_FIELDS, COPY_LINKS, external), encoding="utf-8"
+    )
+    (second / "index.rst").write_text(
+        "Case\n====\n\n.. needimport:: exported.json\n   :id_prefix: M_\n",
+        encoding="utf-8",
+    )
+    app = make_app("needs", srcdir=second)
+    app.build()
+    assert build_warnings(app) == []
+    needs = SphinxNeedsData(app.env).get_needs_view()
+    assert _copy_values(needs, "M_") == COPY_VALUES
+    assert sorted(k for k in needs if k.startswith("E_")) == [
+        f"E_{key}" for key in sorted(COPY_VALUES)
+    ]
+
+
+# -- the fingerprint ----------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            _conf(
+                _types(spec={"closed": True}),
+                {
+                    "s": {"nullable": False, "default": "A"},
+                    "d": {"nullable": True, "default": "dflt"},
+                    "n": {"nullable": True},
+                    **{
+                        f"fp{name}": {
+                            "schema": {"type": "string"},
+                            "derive": {
+                                "kind": "fingerprint",
+                                **({"exclude": [name]} if name else {}),
+                            },
+                        }
+                        for name in ("", "s", "d", "n")
+                    },
+                },
+            ),
+            ".. req:: A\n   :id: R_001\n\n.. spec:: B\n   :id: S_001\n",
+        )
+    ],
+    indirect=True,
+)
+def test_an_undeclared_field_with_a_default_enters_the_fingerprint(
+    test_app: Any,
+) -> None:
+    """A field a closed type does not declare, with a default of its own, enters the
+    fingerprint of the type's needs, as the value they hold is not that default,
+    nullable or not; one without a default stays out."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    needs = _needs(app)
+    entering = {
+        need_id: [name for name in "sdn" if need["fp"] != need[f"fp{name}"]]
+        for need_id, need in needs.items()
+    }
+    assert entering == {"R_001": [], "S_001": ["s", "d"]}
+
+
+# -- an entry the resolver refuses still declares --------------------------------------
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            _conf(
+                _types(
+                    spec={
+                        "closed": True,
+                        "fields": {
+                            "x": {"schema": {"maxLength": 99}},
+                            "y": {"schema": {"type": "integer"}},
+                            "blocks": {},
+                            "nosuch": {},
+                        },
+                    },
+                    impl={"inherits": "spec"},
+                ),
+                {
+                    "x": {
+                        "nullable": True,
+                        "schema": {"type": "string", "maxLength": 9},
+                    },
+                    "y": X,
+                },
+                {"blocks": BLOCKS},
+            ),
+            ".. req:: A\n   :id: R_001\n\n"
+            ".. spec:: B\n   :id: S_001\n   :x: v\n   :y: w\n   :blocks: R_001\n\n"
+            ".. impl:: C\n   :id: I_001\n   :x: v\n   :y: w\n",
+        )
+    ],
+    indirect=True,
+)
+def test_a_refused_entry_still_declares_on_a_closed_type(test_app: Any) -> None:
+    """An entry the resolver cannot use declares its field all the same on a closed
+    type, and its children: the type keeps the declaration before it. A name only
+    declares a field of its own table: a link type under ``fields`` stays absent."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "WARNING: needs_types['spec'].fields['x'] widens the field: Child 'maxLength' "
+        "99 is greater than parent 'maxLength' 9. [needs.type_widening]",
+        "WARNING: needs_types['spec'].fields['y'] cannot be declared with type "
+        "'integer' (items None): its type is 'string' (items None) on every need "
+        "type; the entry is ignored [needs.type_conflict]",
+        "WARNING: needs_types['spec'].fields['blocks'] declares 'blocks', which is a "
+        "link type, not a field; the entry is ignored [needs.type_conflict]",
+        "WARNING: needs_types['spec'].fields['nosuch'] declares 'nosuch', which is not "
+        "a field; the entry is ignored [needs.type_conflict]",
+        _undeclared(7, "S_001", "spec", "R_001", "blocks", "Link type"),
+    ]
+    assert {k: (v["x"], v["y"], v["blocks"]) for k, v in _needs(app).items()} == {
+        "R_001": (None, None, []),
+        "S_001": ("v", "w", []),
+        "I_001": ("v", "w", []),
+    }
+
+
+# -- closed on a type without a parent, a link type's schema, two closed types ----------
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            _conf(
+                _types(
+                    aa={"inherits": "bb"},
+                    bb={"inherits": "aa", "closed": True},
+                    cc={"inherits": "aa"},
+                    uu={"inherits": "nosuch", "closed": True},
+                ),
+                {"x": X},
+            ),
+            "".join(
+                f".. {t}:: {t}\n   :id: C_{t.upper()}1\n   :x: v\n\n"
+                for t in ("aa", "bb", "cc", "uu")
+            ),
+        )
+    ],
+    indirect=True,
+)
+def test_closed_on_a_type_without_a_parent_is_its_own(test_app: Any) -> None:
+    """A type whose ``inherits`` is ignored -- on a cycle, or naming no need type --
+    is closed by its own entry only, and a type inheriting from it by its."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "WARNING: Need type 'uu' inherits 'nosuch', which is not a need type; its "
+        "inherits is ignored. [needs.type_inherits]",
+        "WARNING: Need type 'aa' inherits 'bb' on a cycle (aa -> bb -> aa); its "
+        "inherits is ignored. [needs.type_inherits]",
+        "WARNING: Need type 'bb' inherits 'aa' on a cycle (aa -> bb -> aa); its "
+        "inherits is ignored. [needs.type_inherits]",
+        _undeclared(8, "C_BB1", "bb", "v"),
+        _undeclared(16, "C_UU1", "uu", "v"),
+    ]
+    assert {k: v["x"] for k, v in _needs(app).items()} == {
+        "C_AA1": "v",
+        "C_BB1": None,
+        "C_CC1": "v",
+        "C_UU1": None,
+    }
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            _conf(
+                _types(spec={"closed": True}),
+                None,
+                {"must": {**BLOCKS, "schema": {"minItems": 1}}},
+            ),
+            ".. req:: A\n   :id: R_001\n\n.. spec:: B\n   :id: S_001\n",
+        )
+    ],
+    indirect=True,
+)
+def test_an_undeclared_link_type_is_not_validated(test_app: Any) -> None:
+    """A link type a closed type does not declare holds no links, and its schema is
+    not checked against them; a need of an open type with none fails it."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "ERROR: Need 'R_001' has schema violations:\n"
+        "  Severity:       violation\n"
+        "  Field:          must\n"
+        "  Need path:      R_001\n"
+        "  Schema path:    links > schema > properties > must > minItems\n"
+        "  Schema message: [] has less than 1 item [sn_schema_violation.link_fail]",
+    ]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            _conf(_types(spec={"closed": True}, impl={"closed": True}), {"x": X}),
+            ".. req:: A\n   :id: R_001\n\n.. spec:: B\n   :id: S_001\n\n"
+            ".. spec:: C\n   :id: S_002\n\n.. impl:: D\n   :id: I_001\n\n"
+            '.. needextend:: type in ["req", "spec", "impl"]\n   :x: e\n',
+        )
+    ],
+    indirect=True,
+)
+def test_a_needextend_refused_on_two_closed_types(test_app: Any) -> None:
+    """A needextend refused on the needs of two types warns once for each type."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:16: WARNING: Option 'x' does not support extend "
+        "operations on need type 'impl'; it does not extend 1 need (I_001). "
+        "[needs.needextend]",
+        "<srcdir>/index.rst:16: WARNING: Option 'x' does not support extend "
+        "operations on need type 'spec'; it does not extend 2 needs (S_001, S_002). "
+        "[needs.needextend]",
+    ]
+    assert {k: v["x"] for k, v in _needs(app).items()} == {
+        "R_001": "e",
+        "S_001": None,
+        "S_002": None,
+        "I_001": None,
+    }

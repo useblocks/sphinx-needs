@@ -749,6 +749,65 @@ def test_a_min_items_of_one_type_needs_no_default(
     assert list(_schema(app).type_declarations(field)) == ["spec"]
 
 
+ARRAY = {"nullable": True, "schema": {"type": "array", "items": {"type": "string"}}}
+
+
+@pytest.mark.parametrize(
+    ("test_app", "warning"),
+    [
+        pytest.param(
+            _project(
+                _conf(
+                    _types(
+                        req={"links": {"blocks": {"default": []}}},
+                        spec={
+                            "inherits": "req",
+                            "links": {"blocks": {"schema": {"minItems": 1}}},
+                        },
+                    ),
+                    links={"blocks": BLOCKS},
+                )
+            ),
+            "needs_types['spec'].links['blocks'] widens the field as need type 'req' "
+            "declares it: Default [] is not valid against the narrowed schema: [] has "
+            "less than 1 item.",
+            id="a-link-type",
+        ),
+        pytest.param(
+            _project(
+                _conf(
+                    _types(
+                        req={"fields": {"arr": {"default": []}}},
+                        spec={
+                            "inherits": "req",
+                            "fields": {"arr": {"schema": {"minItems": 1}}},
+                        },
+                    ),
+                    {"arr": ARRAY},
+                )
+            ),
+            "needs_types['spec'].fields['arr'] widens the field as need type 'req' "
+            "declares it: Default [] is not valid against the narrowed schema: [] has "
+            "less than 1 item.",
+            id="an-array-field",
+        ),
+    ],
+    indirect=["test_app"],
+)
+def test_an_ancestors_own_empty_default_is_a_default(
+    test_app: Any, warning: str
+) -> None:
+    """The empty value that is no default is the one kept from the field's global
+    declaration: an ancestor that sets ``default = []`` itself sets a default, which
+    a child's ``minItems`` must admit. The child's entry is refused, and the build
+    goes on."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [f"WARNING: {warning} [needs.type_widening]"]
+    name = "blocks" if "links['blocks']" in warning else "arr"
+    assert "minItems" not in _field(app, "spec", name).schema
+
+
 @pytest.mark.parametrize(
     "test_app",
     [

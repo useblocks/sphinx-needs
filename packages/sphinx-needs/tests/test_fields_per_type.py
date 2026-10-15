@@ -213,10 +213,10 @@ ADMISSION_INDEX = """\
 """
 
 
-def _undeclared(value: object, field: str = "x", what: str = "Field") -> str:
+def _undeclared(need: str, value: object, field: str = "x", what: str = "Field") -> str:
     return (
         f"{what} {field!r} is not declared on need type 'spec', which is closed, and "
-        f"cannot be set in a need; the value {value!r} is ignored "
+        f"cannot be set in need {need!r}; the value {value!r} is ignored "
         "[needs.undeclared_for_type]"
     )
 
@@ -236,9 +236,9 @@ def test_a_field_closed_on_one_type(test_app: Any) -> None:
     # that differ between its versions
     warnings = [w for w in build_warnings(app) if "cannot cache unpick" not in w]
     assert warnings == [
-        f"<srcdir>/index.rst:8: WARNING: {_undeclared('two')}",
-        f"<srcdir>/index.rst:17: WARNING: {_undeclared('four')}",
-        f"<srcdir>/index.rst:19: WARNING: {_undeclared('six')}",
+        f"<srcdir>/index.rst:8: WARNING: {_undeclared('SPEC_1', 'two')}",
+        f"<srcdir>/index.rst:17: WARNING: {_undeclared('LIST_2', 'four')}",
+        f"<srcdir>/index.rst:19: WARNING: {_undeclared('SRV_2', 'six')}",
     ]
     needs = _needs(app)
     assert {k: v["x"] for k, v in needs.items()} == {
@@ -264,6 +264,14 @@ IMPORTED = {
                     "blocks": ["REQ_1"],
                 },
                 "IMP_2": {"id": "IMP_2", "type": "req", "title": "Kept", "x": "kept"},
+                # what the need holds anyway: no value to drop
+                "IMP_3": {
+                    "id": "IMP_3",
+                    "type": "spec",
+                    "title": "Empty",
+                    "x": None,
+                    "blocks": [],
+                },
             }
         }
     },
@@ -312,14 +320,15 @@ needs_external_needs = [
 def test_a_field_closed_on_one_type_from_outside(test_app: Any) -> None:
     """A need from outside the project's sources -- imported, or external -- keeps
     only the fields its type declares: a value of a field or link type a closed type
-    does not declare is dropped, one warning each."""
+    does not declare is dropped, one warning each; a value equal to what the need
+    holds anyway (``None``, no links) is dropped silently."""
     app = test_app
     app.build()
     assert build_warnings(app) == [
-        f"WARNING: {_undeclared('ext')}",
-        f"<srcdir>/index.rst:7: WARNING: {_undeclared('imported')}",
+        f"WARNING: {_undeclared('EXT_E_1', 'ext')}",
+        f"<srcdir>/index.rst:7: WARNING: {_undeclared('IMP_1', 'imported')}",
         "<srcdir>/index.rst:7: WARNING: "
-        + _undeclared(["REQ_1"], "blocks", "Link type"),
+        + _undeclared("IMP_1", ["REQ_1"], "blocks", "Link type"),
     ]
     # an external need is not written to needs.json
     needs = SphinxNeedsData(app.env).get_needs_view()
@@ -327,6 +336,7 @@ def test_a_field_closed_on_one_type_from_outside(test_app: Any) -> None:
         "REQ_1": (None, []),
         "IMP_1": (None, []),
         "IMP_2": ("kept", []),
+        "IMP_3": (None, []),
         "EXT_E_1": (None, []),
         "EXT_E_2": ("ext-kept", []),
     }
