@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792073616839,
+  "lastUpdate": 1792075037406,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -25272,6 +25272,42 @@ window.BENCHMARK_DATA = {
             "value": 59.346797095999996,
             "unit": "s",
             "extra": "Commit: 8011b09840f0393fa9ac354d4496135601fcfe79\nBranch: master\nTime: 2026-10-15T16:12:01+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ac4ab75ae53e7c68a783ebbf5865dde14d507ede",
+          "message": "🏷️ ty's unsound-* rules on ub-project and scripts/: the last three findings fixed (#2272)\n\n## What\n\nThis is the next step of the ratchet in #1835. `packages/ub-project` and\n`scripts/` join the per-path override in the root `pyproject.toml` that\nturns on ty's `unsound-assignment` and `unsound-return-statement`.\nub-project's return-only override goes.\n\nEach path had to fix its last findings first:\n\n| Site | Finding | Fix |\n|---|---|---|\n| `ub_project.project.load_toml` | `unsound-assignment`: tomllib is\ntyped `-> dict[str, Any]`, and it was assigned to `dict[str, object]` |\n`cast(\"dict[str, object]\", …)`, the type the annotation already stated |\n| `ub_project.project.select_table` | `unsound-assignment`: a value\nnarrowed by `isinstance(value, dict)` is `dict[Unknown, Unknown]` |\n`cast(\"Mapping[str, object]\", value)`, since a TOML table's keys are\nalways strings |\n| `scripts/smoke_needs.py` `run()` | `unsound-return-statement`:\nforwarding `**kwargs: Any` to `subprocess.run` made its result `Unknown`\n| the signature is `*, cwd: Path`, since all nine callers pass exactly\n`cwd=` |\n\nNothing changes at run time. `cast` returns its argument, and every call\nto `run()` is unchanged.\n\n`ub-project` stays standard-library only (`typing.cast`). Its changelog\ngets an *Unreleased* section with one entry. `scripts/` is repository\ntooling and has no changelog.\n\n## Why\n\nContinues #1835. With these two, six paths now hold both rules:\nub-needs-exchange, ub-project, sphinx-ai-index, `.github/scripts`,\n`scripts` and `docs-theme`.\n\n## Tests\n\n- **Mutations:** reverting each of the three fixes on its own makes `uv\nrun poe typecheck` fail (exit 1), so the override really covers those\npaths:\n  - `project.py:155`: `unsound-assignment`;\n  - `project.py:244`: `unsound-assignment`;\n  - `smoke_needs.py:123`: `unsound-return-statement`.\n- **Gates:** each exited 0 at `a0fb82e`:\n  - lint;\n  - typecheck;\n  - `test-ub-project` (222 passed, 1 skipped);\n  - `smoke-needs`, which runs the edited `run()` end to end.\n- **No reviewer:** this change has no behaviour change, so it got my own\npass only. It is two casts and one narrowed signature, and the mutations\nabove check each of them.\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue. *(Written by Claude Code at a\nmaintainer's request.)*\n- [x] I ran the package's tests (`uv run poe test-<package>`) and they\npass.\n- [x] Documentation is updated where behaviour or options change. *(No\nbehaviour changes.)*\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*. *(ub-project.)*\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-15T16:35:43+02:00",
+          "tree_id": "faba3d25cfc7fe79cf82fc8cd8aaefa461916c4e",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/ac4ab75ae53e7c68a783ebbf5865dde14d507ede"
+        },
+        "date": 1792075026894,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.11779620199999385,
+            "unit": "s",
+            "extra": "Commit: ac4ab75ae53e7c68a783ebbf5865dde14d507ede\nBranch: master\nTime: 2026-10-15T16:35:43+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 59.636457009000004,
+            "unit": "s",
+            "extra": "Commit: ac4ab75ae53e7c68a783ebbf5865dde14d507ede\nBranch: master\nTime: 2026-10-15T16:35:43+02:00"
           }
         ]
       }
