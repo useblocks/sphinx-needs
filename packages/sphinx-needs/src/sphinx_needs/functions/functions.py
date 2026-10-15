@@ -1011,8 +1011,10 @@ def _resolve_field(
     needs_schema = schema
     needs_config = config
     var_proxy = needs_config.variant_data_proxy
+    # the fields as the need's type declares them
+    type_schema = needs_schema.for_type(need["type"])
     try:
-        if (field_schema := needs_schema.get_any_field(field)) is None:
+        if (field_schema := type_schema.get_any_field(field)) is None:
             raise RuntimeError("does not exist in schema")
         resolved: list[Any] = []
         # the links the link-valued calls compute, and the calls (``needs.derive_dense``)
@@ -1208,7 +1210,7 @@ def _resolve_field(
         # it imports this module
         from sphinx_needs.functions.order import placeholder
 
-        need[field] = placeholder(need, field, needs_schema)
+        need[field] = placeholder(need, field, type_schema)
 
 
 def _in_field_type(value: Any, field_schema: FieldSchema | LinkSchema) -> Any:

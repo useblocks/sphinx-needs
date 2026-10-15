@@ -320,10 +320,15 @@ def extend_needs_data(
                 current_needextend["docname"],
                 current_needextend["lineno"],
             )
+            # the fields of the need's type: a field it does not allow to extend is
+            # not extended on its needs
+            type_schema = schema.for_type(need["type"])
 
             for option_name, etype, link_value in current_needextend[
                 "list_modifications"
             ]:
+                if _refused_on_type(type_schema, need, option_name, etype, location):
+                    continue
                 match (etype, link_value):
                     case (ExtendType.APPEND, LinksLiteralValue()):
                         if (df := need._dynamic_fields.get(option_name)) is not None:
@@ -371,6 +376,8 @@ def extend_needs_data(
                         )
 
             for option_name, etype, field_value in current_needextend["modifications"]:
+                if _refused_on_type(type_schema, need, option_name, etype, location):
+                    continue
                 match (etype, field_value):
                     case (ExtendType.APPEND, FieldLiteralValue()):
                         if (df := need._dynamic_fields.get(option_name)) is not None:
@@ -422,7 +429,7 @@ def extend_needs_data(
                                     f"Cannot append non-string/array value {field_value.value!r} to field '{option_name}'"
                                 )
                             # the value written is part of the call's value now
-                            _hold_placeholder(need, option_name, schema)
+                            _hold_placeholder(need, option_name, type_schema)
                     case (ExtendType.REPLACE | ExtendType.DELETE, None):
                         if (df := need._dynamic_fields.get(option_name)) is not None:
                             need._dynamic_fields.pop(option_name, None)
@@ -433,13 +440,38 @@ def extend_needs_data(
                         need[option_name] = field_value.value
                     case (ExtendType.REPLACE | ExtendType.DELETE, FieldFunctionArray()):
                         need._dynamic_fields[option_name] = field_value
-                        _hold_placeholder(need, option_name, schema)
+                        _hold_placeholder(need, option_name, type_schema)
                     case other_field:
                         raise RuntimeError(
                             f"Unhandled case {other_field} for {option_name!r}"
                         )
 
     _report_filters_on_computed_fields(all_needs, targets, needs_config, schema)
+
+
+def _refused_on_type(
+    type_schema: FieldsSchema,
+    need: NeedItem,
+    option_name: str,
+    etype: ExtendType,
+    location: tuple[str, int],
+) -> bool:
+    """Whether the need's type does not allow to extend the field, which is reported.
+
+    The directive refuses an option whose field does not allow it on any need type;
+    a need type may declare the field anew, so each need is checked against its type.
+    """
+    field_schema = type_schema.get_any_field(option_name)
+    if field_schema is None or field_schema.allow_extend:
+        return False
+    log_warning(
+        logger,
+        f"Option '{etype.value}{option_name}' does not support extend operations on "
+        f"need type {need['type']!r}; need {need.id!r} is not extended by it.",
+        "needextend",
+        location=location,
+    )
+    return True
 
 
 def _hold_placeholder(need: NeedItem, option_name: str, schema: FieldsSchema) -> None:

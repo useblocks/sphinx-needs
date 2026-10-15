@@ -306,3 +306,138 @@ def test_a_field_not_nullable_on_one_type(test_app: Any) -> None:
         "REQ_1": None,
         "SPEC_2": "given",
     }
+
+
+EXTEND_INDEX = """\
+.. req:: A
+   :id: REQ_1
+   :x: one
+
+.. spec:: B
+   :id: SPEC_1
+   :x: two
+
+.. needextend:: type in ["req", "spec"]
+   :x: extended
+   :status: done
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _overlay_project(
+            '{"x": {"nullable": True}}',
+            '[("spec", "x", {"allow_extend": False})]',
+            EXTEND_INDEX,
+        )
+    ],
+    indirect=True,
+)
+def test_a_field_one_type_does_not_extend(test_app: Any) -> None:
+    """A needextend matching needs of two types sets a field on the needs of the
+    type that allows it to be extended; on the needs of a type that does not, it
+    warns once per need and leaves the field, and still applies its other options."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:12: WARNING: Option 'x' does not support extend operations "
+        "on need type 'spec'; need 'SPEC_1' is not extended by it. [needs.needextend]",
+    ]
+    needs = _needs(app)
+    assert {k: (v["x"], v["status"]) for k, v in needs.items()} == {
+        "REQ_1": ("extended", "done"),
+        "SPEC_1": ("two", "done"),
+    }
+
+
+VALIDATION_INDEX = """\
+.. req:: A
+   :id: REQ_1
+   :x: QM
+
+.. spec:: B
+   :id: SPEC_1
+   :x: QM
+
+.. spec:: C
+   :id: SPEC_2
+   :x: A
+
+.. impl:: D
+   :id: IMPL_1
+   :x: QM
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _overlay_project(
+            '{"x": {"nullable": True,'
+            ' "schema": {"type": "string", "enum": ["A", "B", "QM"]}}}',
+            '[("spec", "x", {"schema": {"type": "string", "enum": ["A", "B"]}})]',
+            VALIDATION_INDEX,
+        )
+    ],
+    indirect=True,
+)
+def test_a_schema_one_type_narrows(
+    test_app: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A schema a need type narrows validates its needs; the needs of every other
+    type are validated against the field's schema. One validator is compiled for
+    every type, and one for each type that declares fields anew."""
+    compiles = _count_compiles(monkeypatch)
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "ERROR: Need 'SPEC_1' has schema violations:\n"
+        "  Severity:       violation\n"
+        "  Field:          x\n"
+        "  Need path:      SPEC_1\n"
+        "  Schema path:    fields > schema > properties > x > enum\n"
+        '  Schema message: "QM" is not one of "A" or "B" '
+        "[sn_schema_violation.field_fail]",
+    ]
+    assert compiles == [2]
+
+
+RESOLVE_INDEX = """\
+.. req:: A
+   :id: REQ_1
+   :x: [[copy("y")]]
+
+.. spec:: B
+   :id: SPEC_1
+   :x: [[copy("y")]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _overlay_project(
+            '{"x": {"nullable": True}, "y": {"nullable": True}}',
+            '[("spec", "x", {"nullable": False, "default": FieldLiteralValue("d")})]',
+            RESOLVE_INDEX,
+        )
+    ],
+    indirect=True,
+)
+def test_a_computed_value_in_the_field_of_its_type(test_app: Any) -> None:
+    """A dynamic function that computes nothing leaves a nullable field unset; in a
+    field the need's type makes not nullable it is refused, and the field holds its
+    empty value."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:8: WARNING: Error while resolving dynamic values for field "
+        "'x', of need 'SPEC_1': dynamic function value <class 'NoneType'> is not of "
+        "type 'string' [needs.dynamic_function]",
+    ]
+    needs = _needs(app)
+    assert {k: v["x"] for k, v in needs.items()} == {
+        "REQ_1": None,
+        "SPEC_1": "",
+    }
