@@ -498,12 +498,9 @@ def test_a_duplicate_directive_is_its_last_entry_on_every_path(test_app: Any) ->
     title and prefix, and the directive is registered once: the finding is the only
     warning."""
     app = test_app
-    assert _resolved(app) == [SPEC, LAST]
+    # read before the build, which adds the GitHub service's types
+    resolved = _resolved(app)
     app.build()
-    assert build_warnings(app) == [
-        "WARNING: needs_types declares the directive 'req' twice, at entries 1 and 3; "
-        "the last entry is used [needs.config]"
-    ]
     needs = _needs(app)
     assert sorted(
         (n["title"], n["type_name"], n["id"][:2]) for n in needs.values()
@@ -511,6 +508,11 @@ def test_a_duplicate_directive_is_its_last_entry_on_every_path(test_app: Any) ->
         ("A need of the directive", "Last", "L_"),
         ("A need of the list", "Last", "L_"),
     ]
+    assert build_warnings(app) == [
+        "WARNING: needs_types declares the directive 'req' twice, at entries 1 and 3; "
+        "the last entry is used [needs.config]"
+    ]
+    assert resolved == [SPEC, LAST]
 
 
 # -- one registration per directive (#2271) -----------------------------------------------
