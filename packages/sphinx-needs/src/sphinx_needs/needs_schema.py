@@ -1235,8 +1235,8 @@ class FieldsSchema:
             )
         if self._frozen:
             raise TypeError(
-                "The fields schema cannot be changed: needs have been read from it "
-                "(the first for_type freezes it). Register fields and need type "
+                "The fields schema cannot be changed once it is read through "
+                "for_type (the first call freezes it). Register fields and need type "
                 "overlays while the schema is built, in create_schema."
             )
 
@@ -2047,9 +2047,10 @@ def narrowing_problems(
     8. the same ``parse_variants`` and ``parse_dynamic_functions``: a needextend
        converts its value once, for the needs of every type;
     9. a literal ``default``, and each literal predicate default, valid against the
-       schema of ``overlay``, unless it is not valid against the schema of ``base``
-       either (that is the field's own defect, which validation reports on each need,
-       not one the narrowing made); a dynamic function or a variant is not checked;
+       schema of ``overlay``, unless it is the base's own literal, already invalid
+       against the schema of ``base`` (that defect is the field's, which validation
+       reports on each need); a literal the declaration introduces must be valid
+       against its schema; a dynamic function or a variant is not checked;
     10. for a link type, the same ``display``, ``copy``, ``allow_dead_links`` and
         ``parse_conditions``: a link type is drawn and resolved the same on every need
         type.
@@ -2123,9 +2124,10 @@ def _default_problems(
     field: FieldSchema | LinkSchema, base: FieldSchema | LinkSchema
 ) -> list[str]:
     """Why a literal default, or a literal predicate default, of ``field`` is not
-    valid against its schema while it is valid against the schema of ``base``: one
-    reason per value. A link default is checked as a need's links are validated:
-    each target once, as its filter string."""
+    valid against its schema: one reason per value, except a literal ``field`` takes
+    from ``base`` that is invalid against the schema of ``base`` already. A link
+    default is checked as a need's links are validated: each target once, as its
+    filter string."""
     values: list[tuple[str | None, FieldLiteralValue | LinksLiteralValue]] = []
     if isinstance(field.default, FieldLiteralValue | LinksLiteralValue):
         values.append((None, field.default))
@@ -2134,6 +2136,11 @@ def _default_problems(
         for filter_, value in field.predicate_defaults
         if isinstance(value, FieldLiteralValue | LinksLiteralValue)
     )
+    #: the base's own literals: an overlay that keeps one keeps the base's defect
+    inherited: list[tuple[str | None, object]] = [
+        (None, base.default),
+        *base.predicate_defaults,
+    ]
     problems: list[str] = []
     for filter_, literal in values:
         value = (
@@ -2143,8 +2150,10 @@ def _default_problems(
         )
         if (message := value_problem(field.name, field.schema, value)) is None:
             continue
-        if value_problem(base.name, base.schema, value) is not None:
-            # the field's own defect, not one the narrowing made
+        if (filter_, literal) in inherited and (
+            value_problem(base.name, base.schema, value) is not None
+        ):
+            # the field's own defect, inherited, not one the narrowing made
             continue
         of = "" if filter_ is None else f" of the predicate {filter_!r}"
         problems.append(
