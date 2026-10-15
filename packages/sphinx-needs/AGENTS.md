@@ -237,7 +237,7 @@ yet.
 
 The schema is built during `env-before-read-docs` via the `create_schema()` function in `src/sphinx_needs/needs.py`.
 It creates `FieldSchema` and `LinkSchema` from information obtained from the `NeedsCoreFields` and from user defined configuration.
-Once built, the schema is immutable for the rest of the build.
+Type overlays are the last thing registered on it (today only tests do; the resolver of the per-type configuration will, as the final step of `create_schema`), and from `_set_schema` on nothing changes it.
 It is accessible via `SphinxNeedsData(env).get_schema()`.
 
 ## Sphinx Extension Architecture
