@@ -2032,7 +2032,7 @@ def narrowing_problems(
     1. the same kind, a field or a link type (only this is reported when it differs);
     2. the same ``name``, ``type`` and ``item_type``;
     3. the same ``derive`` and ``derive_by_type``;
-    4. every schema keyword at least as strict (:func:`schema_narrowing_problems`);
+    4. every schema keyword at least as strict (``schema_narrowing_problems``);
     5. no schema keyword of ``base`` left out;
     6. ``nullable`` only from true to false;
     7. ``allow_extend``, ``allow_defaults`` and ``directive_option`` only from true
