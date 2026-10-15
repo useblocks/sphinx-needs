@@ -1266,22 +1266,25 @@ class FieldsSchema:
     def replace_field(self, field: FieldSchema | LinkSchema) -> None:
         """Replace the extra field, or the link field, of the same name.
 
-        The field keeps its place in the iteration order, and the type and item type
-        of the field a need type declares anew (:meth:`add_type_overlay`).
+        The field keeps its place in the iteration order, and the type, item type and
+        derivation of the field a need type declares anew (:meth:`add_type_overlay`).
 
         :raises ValueError: if no extra field or link field of that name exists, or a
-            need type declares it with another ``type`` or ``item_type``
+            need type declares it with another ``type``, ``item_type`` or derivation
         :raises TypeError: if this is the schema of one need type (:meth:`for_type`)
         """
         self._mutating()
         for need_type, overlays in self._type_overlays.items():
             if (overlay := overlays.get(field.name)) is not None and (
-                overlay.type != field.type or overlay.item_type != field.item_type
+                overlay.type != field.type
+                or overlay.item_type != field.item_type
+                or overlay.derive != field.derive
+                or overlay.derive_by_type != field.derive_by_type
             ):
                 raise ValueError(
                     f"Cannot replace field {field.name!r} with type {field.type!r} "
                     f"(items {field.item_type!r}): need type {need_type!r} declares it "
-                    f"with type {overlay.type!r} (items {overlay.item_type!r})."
+                    "with another type or derivation."
                 )
         if isinstance(field, LinkSchema):
             if field.name not in self._link_fields:
