@@ -193,8 +193,8 @@ Internal changes
 
 - 🏷️ The ``needs``, ``needumls`` and ``schema`` builders' do-nothing overrides of
   ``get_target_uri``, ``prepare_writing`` and ``write_doc_serialized`` take Sphinx's own
-  parameter names (and ``prepare_writing`` an abstract ``Set``, as Sphinx 8 and 9 declare
-  it), and the needumls files written beside another builder's output join their
+  parameter names (and ``prepare_writing`` an abstract ``Set``, as Sphinx 8.1 and later
+  declare it), and the needumls files written beside another builder's output join their
   directory onto the builder's ``outdir`` as a path rather than a string; ten
   ``# ty: ignore`` comments go (:issue:`1835`)
 
