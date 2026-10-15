@@ -1292,6 +1292,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         for need_type in needs_config.types
         if isinstance(need_type, dict) and isinstance(need_type.get("directive"), str)
     }
+    schema.set_need_types(need_types)
     link_types = _link_type_names(needs_config)
     for name, params in needs_config._fields.items():
         if not isinstance(params, dict) or (
@@ -1822,10 +1823,11 @@ def _report_derive_problems(
         for p in check_derive_rules(schema, need_types=need_types)
     }
     for (on_link, name, part), problem in checked.items():
-        target = (
-            schema.get_link_field(name) if on_link else schema.get_extra_field(name)
+        # the global declaration: the schema is still built, no need reads it yet
+        target = schema.declaration(name)
+        assert target is not None and (target.kind == "link") == on_link, (
+            "a checked rule is on a field of the schema"
         )
-        assert target is not None, "a checked rule is on a field of the schema"
         if part == "derive" and not problem.on_types:
             target = dataclasses.replace(
                 target,
@@ -1918,7 +1920,8 @@ def _set_global_default(
     if "default" not in values and "predicates" not in values:
         return
 
-    if (field_for_default := schema.get_any_field(name)) is None:
+    # the global declaration: the schema is still built, no need reads it yet
+    if (field_for_default := schema.declaration(name)) is None:
         log_warning(
             LOGGER,
             f"{config_name}[{name!r}] does not correspond to any defined field",
@@ -1934,14 +1937,16 @@ def _set_global_default(
             None,
         )
         return
+    # the defaults are set on a copy, not yet in the schema, which then replaces the
+    # field: a field in the schema is not changed in place (FieldsSchema.freeze)
+    field = dataclasses.replace(field_for_default)
     if "default" in values:
-        _set_default_on_field(
-            field_for_default, values["default"], config_name, allow_coercion
-        )
+        _set_default_on_field(field, values["default"], config_name, allow_coercion)
     if "predicates" in values:
         _set_predicates_on_field(
-            field_for_default, values["predicates"], config_name, allow_coercion
+            field, values["predicates"], config_name, allow_coercion
         )
+    schema.replace_field(field)
 
 
 def _set_default_on_field(

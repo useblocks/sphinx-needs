@@ -296,7 +296,7 @@ def _column_type(needs_schema: FieldsSchema, key: str) -> str | None:
     field = needs_schema.get_any_field(key)
     if field is None or isinstance(field, LinkSchema):
         return None
-    if field.schema.get("type") in ("integer", "number"):
+    if field.type in ("integer", "number"):
         return "number"
     return None
 

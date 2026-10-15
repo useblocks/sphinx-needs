@@ -1160,8 +1160,13 @@ def _items(value: Any) -> list[Any]:
 
 def _order_of(schema: FieldsSchema, name: str) -> Callable[[Any], Any] | None:
     """How ``min`` / ``max`` order the values of a field: numbers by value, an enum by
-    its declared order; ``None`` for a value outside the order."""
-    field = schema.get_extra_field(name) or schema.get_core_field(name)
+    its declared order; ``None`` for a value outside the order.
+
+    One order per field, for the needs of every type: the enum of the field's global
+    declaration. A need type that narrows the enum declares a subset of it, whose own
+    order is not read.
+    """
+    field = schema.declaration(name)
     if field is not None and field.type == "string":
         enum = list(field.schema.get("enum", ()))
         return lambda value: enum.index(value) if value in enum else None

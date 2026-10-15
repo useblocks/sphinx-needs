@@ -489,13 +489,24 @@ def fingerprint_names(schema: FieldsSchema) -> dict[str, Any]:
     ``content`` has ``""``; a link type's default is its list of links, and a link
     type or ``tags`` without a literal default has ``[]``, its empty value.
 
+    The default is the field's global declaration
+    (:meth:`~sphinx_needs.needs_schema.FieldsSchema.declaration`), the same for the
+    needs of every type: a value equal to a default a need type declares anew enters
+    the fingerprint of its needs, unless it equals the global default too.
+
     :param schema: The schema, every field and link type added.
     :return: Each name, in the order above, with its default.
     """
     # imported here, as the schema module imports this one
     from sphinx_needs.needs_schema import FieldLiteralValue, LinksLiteralValue
 
-    def default_of(field: FieldSchema) -> Any:
+    def declared(name: str) -> FieldSchema | LinkSchema:
+        field = schema.declaration(name)
+        assert field is not None, "a name of the schema"
+        return field
+
+    def default_of(name: str) -> Any:
+        field = declared(name)
         if isinstance(field.default, FieldLiteralValue):
             return field.default.value
         return None if field.nullable else NO_DEFAULT
@@ -504,15 +515,15 @@ def fingerprint_names(schema: FieldsSchema) -> dict[str, Any]:
     for name in FINGERPRINT_CORE:
         if name == "content":
             names[name] = ""
-        elif name in {"status", "tags"} and (core := schema.get_core_field(name)):
-            names[name] = default_of(core)
+        elif name in {"status", "tags"} and schema.get_core_field(name):
+            names[name] = default_of(name)
             if name == "tags" and names[name] is NO_DEFAULT:
                 names[name] = []
         else:
             names[name] = NO_DEFAULT
     for field in schema.iter_extra_fields():
         if not field.derived and schema.is_project_field(field.name):
-            names[field.name] = default_of(field)
+            names[field.name] = default_of(field.name)
     # Every link type is the project's today: only needs_links and needs_extra_links
     # declare one, and there is no API for an extension to add one. The set of names
     # is frozen to what the project declares, so when such an API lands, its link
@@ -520,10 +531,9 @@ def fingerprint_names(schema: FieldsSchema) -> dict[str, Any]:
     # marks a field) and left out here.
     for link in schema.iter_link_fields():
         if not link.derived and link.name not in CORE_LINK_TYPES:
+            default = declared(link.name).default
             names[link.name] = (
-                list(link.default.value)
-                if isinstance(link.default, LinksLiteralValue)
-                else []
+                list(default.value) if isinstance(default, LinksLiteralValue) else []
             )
     return names
 
@@ -761,14 +771,22 @@ def copy_problem(schema: FieldsSchema) -> DeriveProblem | None:
     holds what a rule computes, nothing is copied, and that is reported at the rule,
     naming every copying link type. The rule applies.
     """
+    # imported here, as the schema module imports this one
+    from sphinx_needs.needs_schema import LinkSchema
+
     links = schema.get_link_field("links")
     if links is None or not links.derived:
         return None
-    # a derived link type copies nothing, and is reported at its own rule
+    # a derived link type copies nothing, and is reported at its own rule; the
+    # schema is still built, so each link type is read in its global declaration
     copying = sorted(
-        link.name
-        for link in schema.iter_link_fields()
-        if link.copy and link.name != "links" and not link.derived
+        name
+        for name in schema.iter_link_field_names()
+        if (link := schema.declaration(name)) is not None
+        and isinstance(link, LinkSchema)
+        and link.copy
+        and name != "links"
+        and not link.derived
     )
     if not copying:
         return None
@@ -803,7 +821,12 @@ def check_derive_rules(
     :return: One problem per rule that cannot be read, in :attr:`DeriveProblem.order`.
     """
     problems: dict[tuple[bool, str, str], DeriveProblem] = {}
-    targets = [*schema.iter_extra_fields(), *schema.iter_link_fields()]
+    # the global declarations: the rules are checked before any need is created
+    targets = [
+        target
+        for name in (*schema.iter_extra_field_names(), *schema.iter_link_field_names())
+        if (target := schema.declaration(name)) is not None
+    ]
     #: the rules that can be read, by field and by entry ("" for ``derive``)
     valid: dict[tuple[str, str], tuple[DeriveRule, FieldSchema | LinkSchema]] = {}
     for target in targets:
@@ -1116,7 +1139,8 @@ def _value_type(name: str, schema: FieldsSchema, links: set[str]) -> _ValueType 
     """The type of the value ``name`` reads on a need, ``None`` if it names nothing."""
     if _is_link_name(name, links):
         return _LINK_LIST
-    field = schema.get_extra_field(name) or schema.get_core_field(name)
+    # the global declaration: a need type's enum is a subset of it
+    field = schema.declaration(name)
     if field is not None:
         return _ValueType(
             field.type,

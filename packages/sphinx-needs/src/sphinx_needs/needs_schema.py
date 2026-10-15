@@ -1,11 +1,21 @@
 from __future__ import annotations
 
 import enum
-from collections.abc import Iterable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from copy import deepcopy
 from dataclasses import dataclass, replace
 from functools import lru_cache, partial
-from typing import TYPE_CHECKING, Any, Generic, Literal, TypeAlias, TypeVar, cast
+from types import MappingProxyType
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Final,
+    Generic,
+    Literal,
+    TypeAlias,
+    TypeVar,
+    cast,
+)
 
 import jsonschema_rs
 
@@ -14,17 +24,12 @@ from sphinx_needs.derive import Derive, DeriveInvalid, DeriveRule, typed_empty
 from sphinx_needs.exceptions import VariantParsingException
 from sphinx_needs.need_item import NeedLink
 from sphinx_needs.schema.config import (
-    FieldBooleanSchemaType,
-    FieldIntegerSchemaType,
-    FieldMultiValueSchemaType,
-    FieldNumberSchemaType,
     FieldSchemaTypes,
-    FieldStringSchemaType,
     LinkSchemaType,
     validate_field_schema,
     validate_link_schema_type,
 )
-from sphinx_needs.schema.core import validate_object_schema_compiles
+from sphinx_needs.schema.core import validate_object_schema_compiles, value_problem
 from sphinx_needs.variant_data import VariantDataParsed
 from sphinx_needs.variants import VariantFunctionParsed
 
@@ -143,6 +148,11 @@ class FieldSchema:
             and self.derive_by_type is not None
             and isinstance(self.default, FieldLiteralValue)
         )
+
+    @property
+    def kind(self) -> Literal["field"]:
+        """What it declares: a field (a core field or an extra field)."""
+        return "field"
 
     @property
     def derived(self) -> bool:
@@ -815,6 +825,11 @@ class LinkSchema:
             )
 
     @property
+    def kind(self) -> Literal["link"]:
+        """What it declares: a link type."""
+        return "link"
+
+    @property
     def derived(self) -> bool:
         """Whether the link type is derived: it carries ``derive``, or ``derive_by_type``.
 
@@ -1085,13 +1100,21 @@ class FieldsSchema:
     A field's declaration holds for every need type, unless the need type carries an
     overlay of it (:meth:`add_type_overlay`): :meth:`for_type` is the schema of the
     needs of one need type, its overlays in place of the declarations they replace.
-    Overlays are registered after every other change to the schema.
+
+    The schema answers a field's shape, the same on every need type (its name, kind,
+    type and derivation); a need's field is read through :meth:`for_type` of its type,
+    and configuration code reads a field's declarations through :meth:`declaration`
+    and :meth:`type_declarations`. Overlays are registered after every other change to
+    the schema, and the first read for a need type freezes it (:meth:`freeze`).
     """
 
     __slots__ = (
         "_core_fields",
         "_extra_fields",
+        "_frozen",
+        "_global_view",
         "_link_fields",
+        "_need_types",
         "_project_fields",
         "_type_overlays",
         "_type_views",
@@ -1106,11 +1129,17 @@ class FieldsSchema:
         self._project_fields: set[str] = set()
         #: need type -> field name -> the field's declaration for that need type
         self._type_overlays: dict[str, dict[str, FieldSchema | LinkSchema]] = {}
-        #: need type -> the schema of its needs, resolved on first use
-        self._type_views: dict[str, FieldsSchema] = {}
-        #: the schema it is resolved from, and the need type, for the schema of one
-        #: need type (:meth:`for_type`)
-        self._view_of: tuple[FieldsSchema, str] | None = None
+        #: need type -> the schema of its needs (each need type with overlays)
+        self._type_views: dict[str, TypeFieldsSchema] = {}
+        #: the schema of the needs of every need type without overlays
+        self._global_view: TypeFieldsSchema | None = None
+        #: the schema it is resolved from, and the need type (``None`` for the global
+        #: view), for the schema of one need type (:meth:`for_type`)
+        self._view_of: tuple[FieldsSchema, str | None] | None = None
+        #: whether the schema has been read for a need type (:meth:`freeze`)
+        self._frozen = False
+        #: the configured need types, if the schema was told (:meth:`set_need_types`)
+        self._need_types: frozenset[str] | None = None
 
     def __repr__(self) -> str:
         return (
@@ -1119,102 +1148,174 @@ class FieldsSchema:
             f"link={list(self._link_fields.values())})"
         )
 
-    def _mutating(self) -> None:
-        """Refuse to change the schema of one need type; forget the resolved ones.
+    def _base(self) -> FieldsSchema:
+        """The schema itself, or the one a schema of one need type is resolved from."""
+        return self if self._view_of is None else self._view_of[0]
 
-        :raises TypeError: if this is the schema of one need type
+    def _mutating(self) -> None:
+        """Refuse to change a frozen schema, or the schema of one need type; forget
+        the resolved ones.
+
+        :raises TypeError: if this is the schema of one need type, or the schema has
+            been read for a need type (:meth:`freeze`)
         """
         if self._view_of is not None:
+            if self._view_of[1] is None:
+                raise TypeError(
+                    "The global view of the fields schema cannot be changed; change "
+                    "the schema it is resolved from."
+                )
             raise TypeError(
                 f"The fields schema of need type {self._view_of[1]!r} cannot be "
                 "changed; change the schema it is resolved from."
             )
+        if self._frozen:
+            raise TypeError(
+                "The fields schema cannot be changed: it has been read for a need "
+                "type. Register fields and need type overlays before the first need "
+                "is created: in create_schema, or in an env-before-read-docs handler "
+                "that runs before any need is created."
+            )
         self._type_views.clear()
+        self._global_view = None
+
+    @property
+    def frozen(self) -> bool:
+        """Whether the schema can no longer be changed (:meth:`freeze`)."""
+        return self._frozen
+
+    def freeze(self) -> None:
+        """Stop the schema from changing: every later change raises ``TypeError``.
+
+        The schema of each need type with overlays, and the global view, are resolved
+        now; :meth:`for_type` then answers with one of them. The first
+        :meth:`for_type` freezes the schema: what a need was created with is what
+        every later read of its type answers. Freezing again does nothing.
+        """
+        if self._frozen:
+            return
+        self._frozen = True
+        for need_type in self._type_overlays:
+            self._resolved(need_type)
+        self._resolved(None)
+
+    @property
+    def need_types(self) -> frozenset[str] | None:
+        """The configured need types (:meth:`set_need_types`), ``None`` if not told."""
+        return self._base()._need_types
+
+    def set_need_types(self, names: Iterable[str]) -> None:
+        """Tell the schema the configured need types (their directive names).
+
+        Once told, an overlay names one of them (:meth:`add_type_overlay`); a read
+        for any need type stays allowed (:meth:`for_type`). It is told once.
+
+        :raises ValueError: if it was told already, or a need type with overlays is
+            not among them
+        :raises TypeError: if the schema is frozen, or the schema of one need type
+        """
+        self._mutating()
+        if self._need_types is not None:
+            raise ValueError("The need types of the fields schema are already set.")
+        need_types = frozenset(names)
+        for need_type in self._type_overlays:
+            if need_type not in need_types:
+                raise ValueError(
+                    f"Need type {need_type!r} declares fields anew, but {need_type!r} "
+                    "is not a configured need type."
+                )
+        self._need_types = need_types
 
     def add_type_overlay(self, need_type: str, field: FieldSchema | LinkSchema) -> None:
         """Declare a field anew for the needs of one need type.
 
         The overlay is the field's declaration in :meth:`for_type` of that need type;
         a second overlay of the same field for the same need type replaces the first.
-        A field name has one type on every need type: the overlay is of a field this
-        schema has, of the same kind (a core or extra field, or a link type), with the
-        same ``type`` and ``item_type``, and the same ``derive`` and ``derive_by_type``
-        (a field derived per need type says so in its ``derive_by_type``). Overlays are
-        registered after every other change to the schema: a field's in-place default
-        setters do not reach a resolved schema of one need type.
+        The overlay is a narrowing of the field's declaration
+        (:func:`narrowing_problems`): of a field this schema has, of the same kind,
+        ``type``, ``item_type`` and derivation, admitting no value the field does not,
+        opening nothing the field closes. Once the schema knows the configured need
+        types (:meth:`set_need_types`), the need type is one of them. Overlays are
+        registered after every other change to the schema.
 
-        :raises ValueError: if the schema has no field of that name, or the overlay is
-            of another kind, ``type``, ``item_type`` or derivation
-        :raises TypeError: if this is the schema of one need type (:meth:`for_type`)
+        :raises ValueError: if the need type is not configured, the schema has no field
+            of that name, or the overlay is not a narrowing of it (every reason, joined
+            by ``"; "``)
+        :raises TypeError: if the schema is frozen, or the schema of one need type
         """
         self._mutating()
         if not isinstance(need_type, str) or not need_type:
             raise ValueError("need_type must be a non-empty string.")
-        base = self.get_any_field(field.name)
+        if self._need_types is not None and need_type not in self._need_types:
+            raise ValueError(
+                f"Cannot declare field {field.name!r} for need type {need_type!r}: "
+                f"{need_type!r} is not a configured need type."
+            )
+        base = self._any_field(field.name)
         if base is None:
             raise ValueError(
                 f"Cannot declare field {field.name!r} for need type {need_type!r}: "
                 "there is no field of that name."
             )
-        if isinstance(field, LinkSchema) != isinstance(base, LinkSchema):
-            kind = "a link type" if isinstance(base, LinkSchema) else "a field"
-            raise ValueError(
-                f"Cannot declare field {field.name!r} for need type {need_type!r}: "
-                f"it is {kind}."
-            )
-        if field.type != base.type or field.item_type != base.item_type:
-            raise ValueError(
-                f"Cannot declare field {field.name!r} for need type {need_type!r} "
-                f"with type {field.type!r} (items {field.item_type!r}): its type is "
-                f"{base.type!r} (items {base.item_type!r}) on every need type."
-            )
-        if field.derive != base.derive or field.derive_by_type != base.derive_by_type:
-            raise ValueError(
-                f"Cannot declare field {field.name!r} for need type {need_type!r} "
-                "with another derivation: a field is derived per need type by its "
-                "derive_by_type."
-            )
+        if problems := narrowing_problems(base, field):
+            head = f"Cannot declare field {field.name!r} for need type {need_type!r}"
+            # the type and derivation problems read on from the head ("... with type")
+            joint = " " if problems[0].startswith("with ") else ": "
+            raise ValueError(f"{head}{joint}{'; '.join(problems)}")
         self._type_overlays.setdefault(need_type, {})[field.name] = field
 
-    def for_type(self, need_type: str | None) -> FieldsSchema:
-        """The schema of the needs of ``need_type``.
+    def for_type(self, need_type: str | None) -> TypeFieldsSchema:
+        """The schema of the needs of ``need_type``, every field in full.
 
-        With no need type, or a need type without overlays, it is this schema. Else it
-        is a schema whose fields are this one's, in the same order, with the need
-        type's overlays (:meth:`add_type_overlay`) in place of the fields they replace;
-        it is resolved once, and cannot be changed. The schema of one need type answers
-        as the schema it is resolved from.
+        With no need type, or a need type without overlays, it is the global view:
+        the fields as every need type shares them, one instance. Else it is a schema
+        whose fields are this one's, in the same order, with the need type's overlays
+        (:meth:`add_type_overlay`) in place of the fields they replace. A need type the
+        schema does not know reads the global view: an unknown type is reported where
+        a need is created. Neither can be changed, and the first call freezes this
+        schema (:meth:`freeze`). The schema of one need type answers as the schema it
+        is resolved from.
         """
         if self._view_of is not None:
             return self._view_of[0].for_type(need_type)
-        if need_type is None or need_type not in self._type_overlays:
-            return self
-        if (view := self._type_views.get(need_type)) is None:
-            view = self._type_views[need_type] = self._resolve_type(need_type)
-        return view
+        if not self._frozen:
+            self.freeze()
+        return self._resolved(need_type)
 
-    def _resolve_type(self, need_type: str) -> FieldsSchema:
+    def _resolved(self, need_type: str | None) -> TypeFieldsSchema:
+        """The schema of the needs of ``need_type``, resolved once."""
+        if need_type is not None and need_type in self._type_overlays:
+            if (view := self._type_views.get(need_type)) is None:
+                view = self._type_views[need_type] = self._resolve_type(need_type)
+            return view
+        if self._global_view is None:
+            self._global_view = self._resolve_type(None)
+        return self._global_view
+
+    def _resolve_type(self, need_type: str | None) -> TypeFieldsSchema:
         """The schema of the needs of ``need_type``, its overlays in place."""
-        view = FieldsSchema()
+        view = TypeFieldsSchema()
         view._core_fields = dict(self._core_fields)
         view._extra_fields = dict(self._extra_fields)
         view._link_fields = dict(self._link_fields)
         view._project_fields = self._project_fields
-        for name, field in self._type_overlays[need_type].items():
-            if isinstance(field, LinkSchema):
-                view._link_fields[name] = field
-            elif name in view._core_fields:
-                view._core_fields[name] = field
-            else:
-                view._extra_fields[name] = field
+        if need_type is not None:
+            for name, field in self._type_overlays[need_type].items():
+                if isinstance(field, LinkSchema):
+                    view._link_fields[name] = field
+                elif name in view._core_fields:
+                    view._core_fields[name] = field
+                else:
+                    view._extra_fields[name] = field
         view._view_of = (self, need_type)
+        view._frozen = True
         return view
 
     def add_core_field(self, field: FieldSchema) -> None:
         """Add a core field to the schema.
 
         :raises ValueError: if a field with the same name already exists
-        :raises TypeError: if this is the schema of one need type (:meth:`for_type`)
+        :raises TypeError: if the schema is frozen, or the schema of one need type
         """
         self._mutating()
         if (
@@ -1231,7 +1332,7 @@ class FieldsSchema:
         :param project: Whether the project declares it (``needs_fields``,
             ``needs_extra_options``), rather than an extension or a service.
         :raises ValueError: if a field with the same name already exists
-        :raises TypeError: if this is the schema of one need type (:meth:`for_type`)
+        :raises TypeError: if the schema is frozen, or the schema of one need type
         """
         self._mutating()
         if (
@@ -1252,7 +1353,7 @@ class FieldsSchema:
         """Add a link field to the schema.
 
         :raises ValueError: if a field with the same name already exists
-        :raises TypeError: if this is the schema of one need type (:meth:`for_type`)
+        :raises TypeError: if the schema is frozen, or the schema of one need type
         """
         self._mutating()
         if (
@@ -1264,14 +1365,17 @@ class FieldsSchema:
         self._link_fields[field.name] = field
 
     def replace_field(self, field: FieldSchema | LinkSchema) -> None:
-        """Replace the extra field, or the link field, of the same name.
+        """Replace the core field, extra field or link field of the same name.
 
         The field keeps its place in the iteration order, and the type, item type and
-        derivation of the field a need type declares anew (:meth:`add_type_overlay`).
+        derivation of the field a need type declares anew (:meth:`add_type_overlay`);
+        each such declaration stays a narrowing of the replacement
+        (:func:`narrowing_problems`).
 
-        :raises ValueError: if no extra field or link field of that name exists, or a
-            need type declares it with another ``type``, ``item_type`` or derivation
-        :raises TypeError: if this is the schema of one need type (:meth:`for_type`)
+        :raises ValueError: if no field of that name and kind exists, or a need type
+            declares it with another ``type``, ``item_type`` or derivation, or not as
+            a narrowing of the replacement
+        :raises TypeError: if the schema is frozen, or the schema of one need type
         """
         self._mutating()
         for need_type, overlays in self._type_overlays.items():
@@ -1290,28 +1394,75 @@ class FieldsSchema:
                 )
                 if other
             ]
+            head = (
+                f"Cannot replace field {field.name!r} with type {field.type!r} "
+                f"(items {field.item_type!r}): need type {need_type!r} declares it"
+            )
             if differs:
                 kinds = (
                     differs[0]
                     if len(differs) == 1
                     else f"{', '.join(differs[:-1])} and {differs[-1]}"
                 )
+                raise ValueError(f"{head} with another {kinds}.")
+            if problems := narrowing_problems(field, overlay):
                 raise ValueError(
-                    f"Cannot replace field {field.name!r} with type {field.type!r} "
-                    f"(items {field.item_type!r}): need type {need_type!r} declares it "
-                    f"with another {kinds}."
+                    f"{head}, and not as a narrowing of it: {'; '.join(problems)}"
                 )
         if isinstance(field, LinkSchema):
             if field.name not in self._link_fields:
                 raise ValueError(f"Link field '{field.name}' does not exist.")
             self._link_fields[field.name] = field
+        elif field.name in self._core_fields:
+            self._core_fields[field.name] = field
         else:
             if field.name not in self._extra_fields:
                 raise ValueError(f"Extra field '{field.name}' does not exist.")
             self._extra_fields[field.name] = field
 
-    def get_any_field(self, name: str) -> FieldSchema | LinkSchema | None:
-        """Get a field by name."""
+    def declaration(self, name: str) -> FieldSchema | LinkSchema | None:
+        """The global declaration of the field ``name``, in full, ``None`` if none.
+
+        The declaration every need type shares unless it declares the field anew
+        (:meth:`type_declarations`): for configuration code and audits, which read a
+        field before any need, or across needs of every type. A need reads its field
+        through :meth:`for_type` of its type. Reading it does not freeze the schema.
+        """
+        return self._base()._any_field(name)
+
+    def type_declarations(self, name: str) -> Mapping[str, FieldSchema | LinkSchema]:
+        """The need types that declare the field ``name`` anew, each with its
+        declaration (:meth:`add_type_overlay`), read-only.
+
+        In the order the need types were first given an overlay; empty when no need
+        type declares the field anew. Reading it does not freeze the schema.
+        """
+        return MappingProxyType(
+            {
+                need_type: overlays[name]
+                for need_type, overlays in self._base()._type_overlays.items()
+                if name in overlays
+            }
+        )
+
+    def declares_default(self, name: str) -> bool:
+        """Whether a declaration of the field ``name`` carries a default or a
+        predicate default: its global declaration, or any need type's.
+
+        Before a need is created it is unknown which declaration, and which predicate,
+        will apply: this is the over-approximation for "the field may be given a
+        default". Reading it does not freeze the schema.
+        """
+        return any(
+            field.default is not None or bool(field.predicate_defaults)
+            for field in (
+                self.declaration(name),
+                *self.type_declarations(name).values(),
+            )
+            if field is not None
+        )
+
+    def _any_field(self, name: str) -> FieldSchema | LinkSchema | None:
         if name in self._core_fields:
             return self._core_fields[name]
         if name in self._extra_fields:
@@ -1319,6 +1470,10 @@ class FieldsSchema:
         if name in self._link_fields:
             return self._link_fields[name]
         return None
+
+    def get_any_field(self, name: str) -> FieldSchema | LinkSchema | None:
+        """Get a field by name."""
+        return self._any_field(name)
 
     def get_core_field(self, name: str) -> FieldSchema | None:
         """Get a core field by name."""
@@ -1361,6 +1516,17 @@ class FieldsSchema:
     def iter_link_fields(self) -> Iterable[LinkSchema]:
         """Iterate over all link fields in the schema."""
         yield from self._link_fields.values()
+
+
+class TypeFieldsSchema(FieldsSchema):
+    """The schema of the needs of one need type (:meth:`FieldsSchema.for_type`).
+
+    Its fields are the full declarations its needs read: the need type's overlays in
+    place of the fields they replace, or, for the global view, every field as every
+    need type shares it. It cannot be changed.
+    """
+
+    __slots__ = ()
 
 
 class ListItemType(enum.Enum):
@@ -1743,359 +1909,417 @@ def inherit_schema(
     - ``contains``: Child must match the parent's constraint (cannot be overridden).
     - ``items``: The above rules are applied also to the item schema.
 
+    A keyword the child leaves out is taken from the parent (the child dict is changed
+    in place); the rules are those of :func:`schema_narrowing_problems`.
+
+    :raises ValueError: with the first rule the child breaks
     """
     if not isinstance(child_schema, dict):
         raise ValueError("Child schema must be a dictionary.")
+    _inherit_keywords(parent_schema, child_schema)
+    if problems := schema_narrowing_problems(
+        parent_schema, child_schema, dropped_is_widening=False
+    ):
+        raise ValueError(problems[0])
 
-    if "type" not in child_schema:
-        child_schema["type"] = parent_schema["type"]
 
-    if parent_schema["type"] == "string" and child_schema["type"] == "string":
-        _validate_string_constraints(parent_schema, child_schema)
+def narrowing_problems(
+    base: FieldSchema | LinkSchema, overlay: FieldSchema | LinkSchema
+) -> list[str]:
+    """Why ``overlay`` is not a narrowing of ``base``: one reason per rule it breaks.
 
-    elif parent_schema["type"] == "integer" and child_schema["type"] == "integer":  # noqa: SIM114
-        _validate_number_or_integer_constraints(parent_schema, child_schema)
+    A need type's declaration of a field (an overlay) is a narrowing of the field's
+    declaration when a need of that type is usable wherever a need of any type is
+    (Liskov substitution). The rules, in this order:
 
-    elif parent_schema["type"] == "number" and child_schema["type"] == "number":
-        _validate_number_or_integer_constraints(parent_schema, child_schema)
+    1. the same kind, a field or a link type (only this is reported when it differs);
+    2. the same ``name``, ``type`` and ``item_type``;
+    3. the same ``derive`` and ``derive_by_type``;
+    4. every schema keyword at least as strict (:func:`schema_narrowing_problems`);
+    5. no schema keyword of ``base`` left out;
+    6. ``nullable`` only from true to false;
+    7. ``allow_extend``, ``allow_defaults`` and ``directive_option`` only from true
+       to false;
+    8. ``parse_variants`` and ``parse_dynamic_functions`` only from true to false;
+    9. a literal ``default``, and each literal predicate default, valid against the
+       schema of ``overlay`` (a dynamic function or a variant is not checked);
+    10. for a link type, the same ``display``, ``copy``, ``allow_dead_links`` and
+        ``parse_conditions``: a link type is drawn and resolved the same on every need
+        type.
 
-    elif parent_schema["type"] == "boolean" and child_schema["type"] == "boolean":
-        _validate_boolean_constraints(parent_schema, child_schema)
+    The ``description`` is free. A reason of the rules 1 to 3 reads on from the name
+    of the field ("Cannot declare field 'x' for need type 't' ..."), the others are
+    sentences. Pure: it changes neither field, and does not raise.
 
-    elif parent_schema["type"] == "array" and child_schema["type"] == "array":
-        _validate_array_constraints(parent_schema, child_schema)
+    :return: Every reason, in the order of the rules; empty for a narrowing.
+    """
+    if base.kind != overlay.kind:
+        return ["it is a link type." if base.kind == "link" else "it is a field."]
+    problems: list[str] = []
+    if overlay.name != base.name:
+        problems.append(f"with name {overlay.name!r}: it declares {base.name!r}.")
+    same_type = overlay.type == base.type and overlay.item_type == base.item_type
+    if not same_type:
+        problems.append(
+            f"with type {overlay.type!r} (items {overlay.item_type!r}): its type is "
+            f"{base.type!r} (items {base.item_type!r}) on every need type."
+        )
+    if overlay.derive != base.derive or overlay.derive_by_type != base.derive_by_type:
+        problems.append(
+            "with another derivation: a field is derived per need type by its "
+            "derive_by_type."
+        )
+    if same_type:
+        problems.extend(
+            schema_narrowing_problems(
+                base.schema, overlay.schema, dropped_is_widening=True
+            )
+        )
+    if not base.nullable and overlay.nullable:
+        problems.append("Cannot change 'nullable' from False to True in child.")
+    for name, base_flag, overlay_flag in (
+        ("allow_extend", base.allow_extend, overlay.allow_extend),
+        ("allow_defaults", base.allow_defaults, overlay.allow_defaults),
+        ("directive_option", base.directive_option, overlay.directive_option),
+    ):
+        if not base_flag and overlay_flag:
+            problems.append(f"Cannot change {name!r} from False to True in child.")
+    for name, base_flag, overlay_flag in (
+        ("parse_variants", base.parse_variants, overlay.parse_variants),
+        (
+            "parse_dynamic_functions",
+            base.parse_dynamic_functions,
+            overlay.parse_dynamic_functions,
+        ),
+    ):
+        if not base_flag and overlay_flag:
+            problems.append(f"{name} is not allowed to be True for this field.")
+    if same_type:
+        problems.extend(_default_problems(overlay))
+    if isinstance(base, LinkSchema) and isinstance(overlay, LinkSchema):
+        for name, same in (
+            ("display", overlay.display == base.display),
+            ("copy", overlay.copy == base.copy),
+            ("allow_dead_links", overlay.allow_dead_links == base.allow_dead_links),
+            ("parse_conditions", overlay.parse_conditions == base.parse_conditions),
+        ):
+            if not same:
+                problems.append(
+                    f"Link type {base.name!r} declares {name!r} for every need type."
+                )
+    return problems
 
+
+def _default_problems(field: FieldSchema | LinkSchema) -> list[str]:
+    """Why a literal default, or a literal predicate default, of ``field`` is not
+    valid against its schema: one reason per value."""
+    values: list[tuple[str | None, FieldLiteralValue | LinksLiteralValue]] = []
+    if isinstance(field.default, FieldLiteralValue | LinksLiteralValue):
+        values.append((None, field.default))
+    values.extend(
+        (filter_, value)
+        for filter_, value in field.predicate_defaults
+        if isinstance(value, FieldLiteralValue | LinksLiteralValue)
+    )
+    problems: list[str] = []
+    for filter_, literal in values:
+        value = (
+            [link.to_filter_string() for link in literal.value]
+            if isinstance(literal, LinksLiteralValue)
+            else literal.value
+        )
+        if (message := value_problem(field.name, field.schema, value)) is None:
+            continue
+        of = "" if filter_ is None else f" of the predicate {filter_!r}"
+        problems.append(
+            f"Default {value!r}{of} is not valid against the narrowed schema: "
+            f"{message}."
+        )
+    return problems
+
+
+#: the schema keywords a child schema takes from its parent when it leaves them out,
+#: in the order they are checked, by type
+_KEYWORDS: Final[Mapping[str, tuple[str, ...]]] = {
+    "string": ("const", "enum", "pattern", "format", "minLength", "maxLength"),
+    "integer": (
+        "const",
+        "enum",
+        "minimum",
+        "maximum",
+        "exclusiveMinimum",
+        "exclusiveMaximum",
+        "multipleOf",
+    ),
+    "number": (
+        "const",
+        "enum",
+        "minimum",
+        "maximum",
+        "exclusiveMinimum",
+        "exclusiveMaximum",
+        "multipleOf",
+    ),
+    "boolean": ("const",),
+    "array": (
+        "uniqueItems",
+        "minItems",
+        "maxItems",
+        "minContains",
+        "maxContains",
+        "contains",
+        "items",
+    ),
+}
+
+
+def schema_narrowing_problems(
+    base_schema: Mapping[str, Any],
+    overlay_schema: Mapping[str, Any],
+    *,
+    dropped_is_widening: bool,
+) -> list[str]:
+    """Why ``overlay_schema`` admits a value ``base_schema`` does not: one reason per
+    schema keyword (the rules of :func:`inherit_schema`).
+
+    :param dropped_is_widening: Whether a keyword of ``base_schema`` that
+        ``overlay_schema`` leaves out is a widening, reported after every other reason:
+        so for a full declaration, which states every keyword it keeps. A declaration
+        through a configuration dict names only what it changes, and takes the rest
+        from its parent (:func:`inherit_schema`).
+    :return: Every reason, in the order the keywords are checked; empty if none. Pure.
+    """
+    problems: list[str] = []
+    dropped: list[str] = []
+    _schema_problems(
+        base_schema,
+        overlay_schema,
+        problems,
+        dropped if dropped_is_widening else None,
+        allow_array=True,
+    )
+    return [*problems, *dropped]
+
+
+def _schema_problems(
+    parent: Mapping[str, Any],
+    child: Mapping[str, Any],
+    problems: list[str],
+    dropped: list[str] | None,
+    *,
+    allow_array: bool,
+) -> None:
+    """Add why ``child`` is not a narrowing of ``parent`` to ``problems``, and each
+    keyword ``child`` leaves out to ``dropped`` (if given)."""
+    parent_type = parent.get("type")
+    child_type = child.get("type", parent_type)
+    if (
+        child_type != parent_type
+        or parent_type not in _KEYWORDS
+        or (parent_type == "array" and not allow_array)
+    ):
+        problems.append(
+            f"Child 'type' {child_type!r} does not match parent 'type' {parent_type!r}."
+        )
+        return
+
+    def compare(keyword: str) -> bool:
+        """Whether both carry ``keyword``; a keyword the child leaves out is noted."""
+        if keyword not in parent:
+            return False
+        if keyword in child:
+            return True
+        if dropped is not None:
+            dropped.append(f"Child schema drops parent constraint {keyword!r}.")
+        return False
+
+    if parent_type == "array":
+        _array_problems(parent, child, problems, dropped, compare)
+        return
+    if compare("const") and child["const"] != parent["const"]:
+        problems.append(
+            f"Child 'const' value {child['const']!r} does not match parent 'const' "
+            f"value {parent['const']!r}."
+        )
+    if parent_type == "boolean":
+        return
+    if compare("enum") and not set(child["enum"]).issubset(set(parent["enum"])):
+        problems.append(
+            f"Child 'enum' values {child['enum']} are not a subset of parent 'enum' "
+            f"values {parent['enum']}."
+        )
+    if "const" in child and "enum" in parent and child["const"] not in parent["enum"]:
+        problems.append(
+            f"Child 'const' value {child['const']!r} is not in parent 'enum' values "
+            f"{parent['enum']}."
+        )
+    if parent_type == "string":
+        _string_problems(parent, child, problems, compare)
     else:
-        raise ValueError(
-            f"Child 'type' {child_schema.get('type')!r} does not match parent 'type' {parent_schema.get('type')!r}."
-        )
+        _number_problems(parent, child, problems, compare)
 
 
-def _validate_boolean_constraints(
-    parent_schema: FieldBooleanSchemaType, child_schema: dict[str, Any]
+def _string_problems(
+    parent: Mapping[str, Any],
+    child: Mapping[str, Any],
+    problems: list[str],
+    compare: Callable[[str], bool],
 ) -> None:
-    """Validate and merge boolean-specific constraints from parent to child schema.
-
-    :param parent_schema: The parent field's schema dictionary
-    :param child_schema: The child field's schema dictionary (will be modified in-place)
-    :raises ValueError: if child constraints are invalid relative to parent constraints
-    """
-    if "const" in parent_schema:
-        if "const" in child_schema:
-            if child_schema["const"] != parent_schema["const"]:
-                raise ValueError(
-                    f"Child 'const' value {child_schema['const']!r} does not match parent 'const' value {parent_schema['const']!r}."
-                )
-        else:
-            child_schema["const"] = parent_schema["const"]
-
-
-def _validate_string_constraints(
-    parent_schema: FieldStringSchemaType, child_schema: dict[str, Any]
-) -> None:
-    """Validate and merge string-specific constraints from parent to child schema.
-
-    :param parent_schema: The parent field's schema dictionary
-    :param child_schema: The child field's schema dictionary (will be modified in-place)
-    :raises ValueError: if child constraints are invalid relative to parent constraints
-    """
-    # Validate const constraint - must be identical
-    if "const" in parent_schema:
-        if "const" in child_schema:
-            if child_schema["const"] != parent_schema["const"]:
-                raise ValueError(
-                    f"Child 'const' value {child_schema['const']!r} does not match parent 'const' value {parent_schema['const']!r}."
-                )
-        else:
-            child_schema["const"] = parent_schema["const"]
-
-    # Validate enum constraints
-    if "enum" in parent_schema:
-        if "enum" in child_schema:
-            parent_str_enum_set = set(parent_schema["enum"])
-            child_str_enum_set = set(child_schema["enum"])
-            if not child_str_enum_set.issubset(parent_str_enum_set):
-                raise ValueError(
-                    f"Child 'enum' values {child_schema['enum']} are not a subset of parent 'enum' values {parent_schema['enum']}."
-                )
-        else:
-            child_schema["enum"] = parent_schema["enum"]
-
-    # Validate const is in parent's enum if both exist
-    if (
-        "const" in child_schema
-        and "enum" in parent_schema
-        and child_schema["const"] not in parent_schema["enum"]
+    """The string keywords after ``const`` and ``enum``."""
+    if compare("pattern"):
+        if child["pattern"] != parent["pattern"]:
+            problems.append(
+                f"Child 'pattern' {child['pattern']!r} does not match parent 'pattern' "
+                f"{parent['pattern']!r}. Pattern constraints cannot be overridden."
+            )
+    elif (
+        "pattern" not in parent
+        and "pattern" in child
+        and not isinstance(child["pattern"], str)
     ):
-        raise ValueError(
-            f"Child 'const' value {child_schema['const']!r} is not in parent 'enum' values {parent_schema['enum']}."
+        # leave compiling it to jsonschema
+        problems.append(f"Child 'pattern' {child['pattern']!r} is not a string.")
+    if compare("format") and child["format"] != parent["format"]:
+        problems.append(
+            f"Child 'format' {child['format']!r} does not match parent 'format' "
+            f"{parent['format']!r}. Format constraints cannot be overridden."
+        )
+    if compare("minLength") and child["minLength"] < parent["minLength"]:
+        problems.append(
+            f"Child 'minLength' {child['minLength']} is less than parent 'minLength' "
+            f"{parent['minLength']}."
+        )
+    if compare("maxLength") and child["maxLength"] > parent["maxLength"]:
+        problems.append(
+            f"Child 'maxLength' {child['maxLength']} is greater than parent "
+            f"'maxLength' {parent['maxLength']}."
         )
 
-    # Inherit pattern constraint - child cannot override
-    if "pattern" in parent_schema:
-        if (
-            "pattern" in child_schema
-            and child_schema["pattern"] != parent_schema["pattern"]
-        ):
-            raise ValueError(
-                f"Child 'pattern' {child_schema['pattern']!r} does not match parent 'pattern' {parent_schema['pattern']!r}. Pattern constraints cannot be overridden."
-            )
-        child_schema["pattern"] = parent_schema["pattern"]
-    elif "pattern" in child_schema:
-        # Validate that new pattern is a string (leave compilation to jsonschema)
-        if not isinstance(child_schema["pattern"], str):
-            raise ValueError(
-                f"Child 'pattern' {child_schema['pattern']!r} is not a string."
-            )
 
-    # Inherit format constraint - child cannot override
-    if "format" in parent_schema:
-        if (
-            "format" in child_schema
-            and child_schema["format"] != parent_schema["format"]
-        ):
-            raise ValueError(
-                f"Child 'format' {child_schema['format']!r} does not match parent 'format' {parent_schema['format']!r}. Format constraints cannot be overridden."
-            )
-        child_schema["format"] = parent_schema["format"]
-
-    # Validate minLength constraint
-    if "minLength" in parent_schema:
-        if "minLength" in child_schema:
-            if child_schema["minLength"] < parent_schema["minLength"]:
-                raise ValueError(
-                    f"Child 'minLength' {child_schema['minLength']} is less than parent 'minLength' {parent_schema['minLength']}."
-                )
-        else:
-            child_schema["minLength"] = parent_schema["minLength"]
-
-    # Validate maxLength constraint
-    if "maxLength" in parent_schema:
-        if "maxLength" in child_schema:
-            if child_schema["maxLength"] > parent_schema["maxLength"]:
-                raise ValueError(
-                    f"Child 'maxLength' {child_schema['maxLength']} is greater than parent 'maxLength' {parent_schema['maxLength']}."
-                )
-        else:
-            child_schema["maxLength"] = parent_schema["maxLength"]
-
-
-_T = TypeVar("_T", FieldNumberSchemaType, FieldIntegerSchemaType)
-
-
-def _validate_number_or_integer_constraints(
-    parent_schema: _T, child_schema: dict[str, Any]
+def _number_problems(
+    parent: Mapping[str, Any],
+    child: Mapping[str, Any],
+    problems: list[str],
+    compare: Callable[[str], bool],
 ) -> None:
-    """Validate and merge number/integer-specific constraints from parent to child schema.
-
-    :param parent_schema: The parent field's schema dictionary
-    :param child_schema: The child field's schema dictionary (will be modified in-place)
-    :raises ValueError: if child constraints are invalid relative to parent constraints
-    """
-    # Validate const constraint - must be identical
-    if "const" in parent_schema:
-        if "const" in child_schema:
-            if child_schema["const"] != parent_schema["const"]:
-                raise ValueError(
-                    f"Child 'const' value {child_schema['const']!r} does not match parent 'const' value {parent_schema['const']!r}."
-                )
-        else:
-            child_schema["const"] = parent_schema["const"]
-
-    # Validate enum constraints
-    if "enum" in parent_schema:
-        if "enum" in child_schema:
-            parent_enum_set = set(parent_schema["enum"])
-            child_enum_set = set(child_schema["enum"])
-            if not child_enum_set.issubset(parent_enum_set):
-                raise ValueError(
-                    f"Child 'enum' values {child_schema['enum']} are not a subset of parent 'enum' values {parent_schema['enum']}."
-                )
-        else:
-            child_schema["enum"] = parent_schema["enum"]
-
-    # Validate const is in parent's enum if both exist
-    if (
-        "const" in child_schema
-        and "enum" in parent_schema
-        and child_schema["const"] not in parent_schema["enum"]
+    """The number and integer keywords after ``const`` and ``enum``."""
+    if compare("minimum") and child["minimum"] < parent["minimum"]:
+        problems.append(
+            f"Child 'minimum' {child['minimum']} is less than parent 'minimum' "
+            f"{parent['minimum']}."
+        )
+    if compare("maximum") and child["maximum"] > parent["maximum"]:
+        problems.append(
+            f"Child 'maximum' {child['maximum']} is greater than parent 'maximum' "
+            f"{parent['maximum']}."
+        )
+    if compare("exclusiveMinimum") and (
+        child["exclusiveMinimum"] < parent["exclusiveMinimum"]
     ):
-        raise ValueError(
-            f"Child 'const' value {child_schema['const']!r} is not in parent 'enum' values {parent_schema['enum']}."
+        problems.append(
+            f"Child 'exclusiveMinimum' {child['exclusiveMinimum']} is less than "
+            f"parent 'exclusiveMinimum' {parent['exclusiveMinimum']}."
         )
-
-    # Validate minimum constraint
-    if "minimum" in parent_schema:
-        if "minimum" in child_schema:
-            if child_schema["minimum"] < parent_schema["minimum"]:
-                raise ValueError(
-                    f"Child 'minimum' {child_schema['minimum']} is less than parent 'minimum' {parent_schema['minimum']}."
-                )
-        else:
-            child_schema["minimum"] = parent_schema["minimum"]
-
-    # Validate maximum constraint
-    if "maximum" in parent_schema:
-        if "maximum" in child_schema:
-            if child_schema["maximum"] > parent_schema["maximum"]:
-                raise ValueError(
-                    f"Child 'maximum' {child_schema['maximum']} is greater than parent 'maximum' {parent_schema['maximum']}."
-                )
-        else:
-            child_schema["maximum"] = parent_schema["maximum"]
-
-    # Validate exclusiveMinimum constraint
-    if "exclusiveMinimum" in parent_schema:
-        if "exclusiveMinimum" in child_schema:
-            if child_schema["exclusiveMinimum"] < parent_schema["exclusiveMinimum"]:
-                raise ValueError(
-                    f"Child 'exclusiveMinimum' {child_schema['exclusiveMinimum']} is less than parent 'exclusiveMinimum' {parent_schema['exclusiveMinimum']}."
-                )
-        else:
-            child_schema["exclusiveMinimum"] = parent_schema["exclusiveMinimum"]
-
-    # Validate exclusiveMaximum constraint
-    if "exclusiveMaximum" in parent_schema:
-        if "exclusiveMaximum" in child_schema:
-            if child_schema["exclusiveMaximum"] > parent_schema["exclusiveMaximum"]:
-                raise ValueError(
-                    f"Child 'exclusiveMaximum' {child_schema['exclusiveMaximum']} is greater than parent 'exclusiveMaximum' {parent_schema['exclusiveMaximum']}."
-                )
-        else:
-            child_schema["exclusiveMaximum"] = parent_schema["exclusiveMaximum"]
-
-    # Validate multipleOf constraint
-    # The child value must be a multiple of the parent's multipleOf
-    if "multipleOf" in parent_schema:
-        if "multipleOf" in child_schema:
-            # Check if child's multipleOf is a multiple of parent's multipleOf
-            parent_multiple = parent_schema["multipleOf"]
-            child_multiple = child_schema["multipleOf"]
-            # For proper constraint narrowing, child should be a multiple of parent
-            # e.g., if parent requires multipleOf 2, child can require multipleOf 4, 6, 8, etc.
-            # Use modulo with tolerance for float precision issues
-            remainder = child_multiple % parent_multiple
-            # Check if remainder is effectively zero (accounting for float precision)
-            if not (abs(remainder) < 1e-9 or abs(remainder - parent_multiple) < 1e-9):
-                raise ValueError(
-                    f"Child 'multipleOf' {child_multiple} must be a multiple of parent 'multipleOf' {parent_multiple}."
-                )
-        else:
-            child_schema["multipleOf"] = parent_schema["multipleOf"]
-
-
-def _validate_array_constraints(
-    parent_schema: FieldMultiValueSchemaType, child_schema: dict[str, Any]
-) -> None:
-    """Validate and merge array-specific constraints from parent to child schema.
-
-    :param parent_schema: The parent field's schema dictionary
-    :param child_schema: The child field's schema dictionary (will be modified in-place)
-    :raises ValueError: if child constraints are invalid relative to parent constraints
-    """
-    # Validate uniqueItems constraint
-    if "uniqueItems" in parent_schema:
-        if "uniqueItems" in child_schema:
-            if (
-                parent_schema["uniqueItems"] is True
-                and child_schema["uniqueItems"] is False
-            ):
-                raise ValueError(
-                    "Child 'uniqueItems' constraint cannot be less restrictive than parent."
-                )
-        else:
-            child_schema["uniqueItems"] = parent_schema["uniqueItems"]
-
-    # Validate minItems constraint
-    if "minItems" in parent_schema:
-        if "minItems" in child_schema:
-            if child_schema["minItems"] < parent_schema["minItems"]:
-                raise ValueError(
-                    f"Child 'minItems' {child_schema['minItems']} is less than parent 'minItems' {parent_schema['minItems']}."
-                )
-        else:
-            child_schema["minItems"] = parent_schema["minItems"]
-
-    # Validate maxItems constraint
-    if "maxItems" in parent_schema:
-        if "maxItems" in child_schema:
-            if child_schema["maxItems"] > parent_schema["maxItems"]:
-                raise ValueError(
-                    f"Child 'maxItems' {child_schema['maxItems']} is greater than parent 'maxItems' {parent_schema['maxItems']}."
-                )
-        else:
-            child_schema["maxItems"] = parent_schema["maxItems"]
-
-    # Validate minContains constraint
-    if "minContains" in parent_schema:
-        if "minContains" in child_schema:
-            if child_schema["minContains"] < parent_schema["minContains"]:
-                raise ValueError(
-                    f"Child 'minContains' {child_schema['minContains']} is less than parent 'minContains' {parent_schema['minContains']}."
-                )
-        else:
-            child_schema["minContains"] = parent_schema["minContains"]
-
-    # Validate maxContains constraint
-    if "maxContains" in parent_schema:
-        if "maxContains" in child_schema:
-            if child_schema["maxContains"] > parent_schema["maxContains"]:
-                raise ValueError(
-                    f"Child 'maxContains' {child_schema['maxContains']} is greater than parent 'maxContains' {parent_schema['maxContains']}."
-                )
-        else:
-            child_schema["maxContains"] = parent_schema["maxContains"]
-
-    # Inherit contains constraint - child cannot override
-    if "contains" in parent_schema:
-        if (
-            "contains" in child_schema
-            and child_schema["contains"] != parent_schema["contains"]
-        ):
-            raise ValueError(
-                "Child 'contains' constraint does not match parent 'contains' constraint."
+    if compare("exclusiveMaximum") and (
+        child["exclusiveMaximum"] > parent["exclusiveMaximum"]
+    ):
+        problems.append(
+            f"Child 'exclusiveMaximum' {child['exclusiveMaximum']} is greater than "
+            f"parent 'exclusiveMaximum' {parent['exclusiveMaximum']}."
+        )
+    if compare("multipleOf"):
+        # the child's multipleOf is a multiple of the parent's (e.g. 4 of 2), with a
+        # tolerance for the precision of floats
+        parent_multiple = parent["multipleOf"]
+        child_multiple = child["multipleOf"]
+        remainder = child_multiple % parent_multiple
+        if not (abs(remainder) < 1e-9 or abs(remainder - parent_multiple) < 1e-9):
+            problems.append(
+                f"Child 'multipleOf' {child_multiple} must be a multiple of parent "
+                f"'multipleOf' {parent_multiple}."
             )
-        child_schema["contains"] = parent_schema["contains"]
 
-    if "items" in parent_schema:
-        if "items" not in child_schema:
-            child_schema["items"] = parent_schema["items"]
-        else:
-            parent_items = parent_schema["items"]
-            child_items = child_schema["items"]
 
-            if not isinstance(child_items, dict):
-                raise ValueError("Child 'items' must be a dictionary.")
+def _array_problems(
+    parent: Mapping[str, Any],
+    child: Mapping[str, Any],
+    problems: list[str],
+    dropped: list[str] | None,
+    compare: Callable[[str], bool],
+) -> None:
+    """The array keywords, and the keywords of its items."""
+    if (
+        compare("uniqueItems")
+        and parent["uniqueItems"] is True
+        and child["uniqueItems"] is False
+    ):
+        problems.append(
+            "Child 'uniqueItems' constraint cannot be less restrictive than parent."
+        )
+    if compare("minItems") and child["minItems"] < parent["minItems"]:
+        problems.append(
+            f"Child 'minItems' {child['minItems']} is less than parent 'minItems' "
+            f"{parent['minItems']}."
+        )
+    if compare("maxItems") and child["maxItems"] > parent["maxItems"]:
+        problems.append(
+            f"Child 'maxItems' {child['maxItems']} is greater than parent 'maxItems' "
+            f"{parent['maxItems']}."
+        )
+    if compare("minContains") and child["minContains"] < parent["minContains"]:
+        problems.append(
+            f"Child 'minContains' {child['minContains']} is less than parent "
+            f"'minContains' {parent['minContains']}."
+        )
+    if compare("maxContains") and child["maxContains"] > parent["maxContains"]:
+        problems.append(
+            f"Child 'maxContains' {child['maxContains']} is greater than parent "
+            f"'maxContains' {parent['maxContains']}."
+        )
+    if compare("contains") and child["contains"] != parent["contains"]:
+        problems.append(
+            "Child 'contains' constraint does not match parent 'contains' constraint."
+        )
+    if compare("items"):
+        if not isinstance(child["items"], dict):
+            problems.append("Child 'items' must be a dictionary.")
+            return
+        item_problems: list[str] = []
+        item_dropped: list[str] | None = None if dropped is None else []
+        _schema_problems(
+            parent["items"],
+            child["items"],
+            item_problems,
+            item_dropped,
+            allow_array=False,
+        )
+        problems.extend(f"'items' inheritance: {problem}" for problem in item_problems)
+        if dropped is not None and item_dropped:
+            dropped.extend(
+                f"'items' inheritance: {problem}" for problem in item_dropped
+            )
 
-            if "type" not in child_items:
-                child_items["type"] = parent_items["type"]
 
-            try:
-                if parent_items["type"] == "string" and child_items["type"] == "string":
-                    _validate_string_constraints(parent_items, child_items)
-
-                elif (
-                    parent_items["type"] == "integer"
-                    and child_items["type"] == "integer"
-                ):
-                    # type restricted to FieldIntegerSchemaType
-                    _validate_number_or_integer_constraints(parent_items, child_items)
-
-                elif (
-                    parent_items["type"] == "number" and child_items["type"] == "number"
-                ):
-                    # type restricted to FieldNumberSchemaType
-                    _validate_number_or_integer_constraints(parent_items, child_items)
-
-                elif (
-                    parent_items["type"] == "boolean"
-                    and child_items["type"] == "boolean"
-                ):
-                    _validate_boolean_constraints(parent_items, child_items)
-
-                else:
-                    raise ValueError(
-                        f"Child 'type' {child_items.get('type')!r} does not match parent 'type' {parent_items.get('type')!r}."
-                    )
-            except ValueError as e:
-                raise ValueError(f"'items' inheritance: {e}")
+def _inherit_keywords(
+    parent: Mapping[str, Any], child: dict[str, Any], *, allow_array: bool = True
+) -> None:
+    """Take every keyword ``child`` leaves out from ``parent``, in place: a declaration
+    through a configuration dict names only what it changes."""
+    if "type" not in child:
+        child["type"] = parent["type"]
+    parent_type = parent["type"]
+    if (
+        child["type"] != parent_type
+        or parent_type not in _KEYWORDS
+        or (parent_type == "array" and not allow_array)
+    ):
+        return
+    if (
+        parent_type == "array"
+        and "items" in parent
+        and isinstance(child.get("items"), dict)
+    ):
+        _inherit_keywords(parent["items"], child["items"], allow_array=False)
+    for keyword in _KEYWORDS[parent_type]:
+        if keyword in parent and keyword not in child:
+            child[keyword] = parent[keyword]

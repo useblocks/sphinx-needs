@@ -651,12 +651,10 @@ class SourceTracingDirective(SphinxDirective):
             fields = frozenset(
                 [*schema.iter_extra_field_names(), *schema.iter_link_field_names()]
             )
-            # a default or a predicate (which may not match the need: which one matches
-            # is only known when the need is created, after its markup is chosen)
-            template = schema.get_core_field("template")
-            project_template = template is not None and (
-                template.default is not None or bool(template.predicate_defaults)
-            )
+            # a default or a predicate of any declaration of the template, global or a
+            # need type's (which may not apply to the need: which one applies is only
+            # known when the need is created, after its markup is chosen)
+            project_template = schema.declares_default("template")
         for marker in markers:
             filepath = src_analyse.analyse_config.src_dir / marker.filepath
 
