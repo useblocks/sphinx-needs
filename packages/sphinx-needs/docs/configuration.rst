@@ -307,16 +307,16 @@ The two shapes are equivalent, and the types keep the order they are given in bo
 the table shape is the one a later release's per-type declarations extend.
 
 The value is validated when the configuration is read.
-Each problem is a ``needs.config`` warning, and the build goes on without what cannot be used:
+A value that is neither a list nor a dictionary stops the build with an error.
+Otherwise each problem is a ``needs.config`` warning, and the build goes on without what cannot be used:
 
-* a value that is neither a list nor a dictionary stops the build with an error;
 * an entry that is not a dictionary is ignored;
 * an entry that names no directive is ignored: in the list, a ``directive`` that is missing or not a non-empty string; in the dictionary, an empty key.
   A ``directive`` inside a dictionary entry that differs from its key is reported, and the key is used;
 * an entry whose ``title`` or ``prefix`` is missing or not a string is ignored: its type does not exist;
 * a ``color`` or ``style`` that is not a string is ignored, and the type kept;
 * a key other than ``directive``, ``title``, ``prefix``, ``color`` and ``style`` is ignored, and the type kept;
-* a directive declared more than once in the list: the last entry is used, at its own position, and both are reported.
+* a directive declared more than once in the list: the last entry is used, at its own position, and one warning names every entry that declares it.
 
 ``prefix`` and ``color`` may be ``""``.
 

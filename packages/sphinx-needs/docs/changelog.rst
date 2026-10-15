@@ -73,8 +73,9 @@ Improvements
   which sphinx-needs 1.0 read and :pr:`610` stopped reading; a value of neither shape stops the
   build with an error. A directive declared twice in the list is now its last entry on every
   path -- a need of :ref:`list2need` took the first entry's prefix -- and is listed once in the
-  legends and in :ref:`needreport`; the duplicate is reported, where Sphinx used to warn that
-  the directive was already registered (:issue:`2262`)
+  legends and in :ref:`needreport`, and, when it was the first type, a :ref:`needservice` datum
+  without a type takes the type that now comes first; the duplicate is reported, where Sphinx
+  used to warn that the directive was already registered (:issue:`2262`)
 
 Deprecations
 ............
@@ -121,7 +122,7 @@ Bug fixes
 - 🐛 Listing ``sphinx_test_reports`` before ``sphinx_needs`` in ``extensions`` no longer warns that
   the directives ``testfile``, ``testsuite`` and ``testcase`` are already registered: a need type
   registers its directive once, whether ``add_need_type`` or sphinx-needs' own configuration step
-  comes first. A directive of another kind under a need type's name is still replaced, with
+  comes first. A directive of another kind under a need type's name is handled as before, with
   Sphinx's warning (:issue:`2271`)
 
 Internal changes
