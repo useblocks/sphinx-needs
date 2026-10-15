@@ -3,6 +3,15 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+- ty's ``unsound-assignment`` rule now checks this package too, as ``unsound-return-statement``
+  already did. The two values it flagged in ``project.py`` -- the ``tomllib.load`` result and
+  a table narrowed by ``isinstance`` -- are cast to what they are, ``dict[str, object]`` and
+  ``Mapping[str, object]``; nothing changes at run time
+  (`#1835 <https://github.com/useblocks/sphinx-needs/issues/1835>`__).
+
 .. _`release:1.1.0`:
 
 1.1.0

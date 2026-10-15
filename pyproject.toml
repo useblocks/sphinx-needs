@@ -472,20 +472,15 @@ missing-type-argument = "error"
 # A path joins a list when its own count reaches zero, and does not leave it again
 include = [
   "packages/ub-needs-exchange/src",
+  "packages/ub-project/src",
   "packages/sphinx-ai-index/src",
   ".github/scripts",
+  "scripts",
   "docs-theme",
 ]
 [tool.ty.overrides.rules]
 unsound-return-statement = "error"
 unsound-assignment = "error"
-
-[[tool.ty.overrides]]
-# ub-project is clean of `unsound-return-statement` only: two `unsound-assignment`s remain
-# in `project.py`, a `tomllib.load` result and an `isinstance`-narrowed `dict`
-include = ["packages/ub-project/src"]
-[tool.ty.overrides.rules]
-unsound-return-statement = "error"
 
 [[tool.ty.overrides]]
 # SphinxNeedsData stores its state as dynamic attributes on BuildEnvironment (#1725, Tier 2)

@@ -19,6 +19,7 @@ import re
 import tomllib
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
+from typing import cast
 
 #: The file name every useblocks tool reads by default.
 DEFAULT_FILENAME = "ubproject.toml"
@@ -151,7 +152,7 @@ def load_toml(path: Path) -> dict[str, object]:
     try:
         with path.open("rb") as handle:
             # tomllib is typed ``-> dict[str, Any]``; everything downstream is ``object``
-            data: dict[str, object] = tomllib.load(handle)
+            data = cast("dict[str, object]", tomllib.load(handle))
     except _TOML_DECODE_ERROR as error:
         msg = f"{path}: invalid TOML: {error}"
         raise ProjectConfigError(msg) from error
@@ -239,7 +240,8 @@ def select_table(
             dotted = render_path(segments[: depth + 1])
             msg = f"{where}[{dotted}] must be a table, got {type(value).__name__}"
             raise ProjectConfigError(msg)
-        current = value
+        # a TOML table's keys are always strings
+        current = cast("Mapping[str, object]", value)
     return dict(current)
 
 
