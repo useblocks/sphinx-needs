@@ -16,7 +16,7 @@ from sphinx_needs.exceptions import (
     VariantParsingException,
 )
 from sphinx_needs.filter_common import filter_needs_mutable
-from sphinx_needs.functions.order import filter_names, placeholder
+from sphinx_needs.functions.order import filter_names, placeholder, typed_empty
 from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
 from sphinx_needs.need_item import NeedItem, NeedModification
 from sphinx_needs.needs_schema import (
@@ -165,24 +165,9 @@ class NeedextendDirective(SphinxDirective):
                 if isinstance(field_schema, LinkSchema):
                     list_modifications.append((key, etype, LinksLiteralValue([])))
                     continue
-                if field_schema.nullable:
-                    modifications.append((key, etype, None))
-                    continue
-                match field_schema.type:
-                    case "string":
-                        modifications.append((key, etype, FieldLiteralValue("")))
-                    case "boolean":
-                        modifications.append((key, etype, FieldLiteralValue(False)))
-                    case "number":
-                        modifications.append((key, etype, FieldLiteralValue(0.0)))
-                    case "integer":
-                        modifications.append((key, etype, FieldLiteralValue(0)))
-                    case "array":
-                        modifications.append((key, etype, FieldLiteralValue([])))
-                    case other:
-                        self._log_warning(
-                            f"Unknown field type '{other}' for option '{key}'"
-                        )
+                # the value is the need's type's: None where it declares the field
+                # nullable, else the empty value of its type (extend_needs_data)
+                modifications.append((key, etype, None))
             else:
                 if etype == ExtendType.APPEND and field_schema.type not in (
                     "string",
@@ -436,9 +421,11 @@ def extend_needs_data(
                             # the value written is part of the call's value now
                             _hold_placeholder(need, option_name, type_schema)
                     case (ExtendType.REPLACE | ExtendType.DELETE, None):
-                        if (df := need._dynamic_fields.get(option_name)) is not None:
-                            need._dynamic_fields.pop(option_name, None)
-                        need[option_name] = None
+                        # a deleted field: the empty value the need's type declares
+                        need._dynamic_fields.pop(option_name, None)
+                        field = type_schema.get_any_field(option_name)
+                        assert field is not None, "a field of the schema is extended"
+                        need[option_name] = typed_empty(field)
                     case (ExtendType.REPLACE | ExtendType.DELETE, FieldLiteralValue()):
                         if (df := need._dynamic_fields.get(option_name)) is not None:
                             need._dynamic_fields.pop(option_name, None)
