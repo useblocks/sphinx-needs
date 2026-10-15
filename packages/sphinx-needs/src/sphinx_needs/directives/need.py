@@ -118,8 +118,10 @@ class NeedDirective(SphinxDirective):
         extras: dict[str, str] = {}
         links: dict[str, str] = {}
 
-        link_keys = set(needs_schema.iter_link_field_names())
-        extra_keys = set(needs_schema.iter_extra_field_names())
+        # the options of a need of this type (the directive's name)
+        type_schema = needs_schema.for_type(self.name)
+        link_keys = set(type_schema.iter_link_field_names())
+        extra_keys = set(type_schema.iter_extra_field_names())
 
         while options:
             key, value = options.popitem()

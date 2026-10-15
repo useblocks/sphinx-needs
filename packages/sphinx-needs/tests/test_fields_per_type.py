@@ -118,3 +118,191 @@ def test_an_unknown_keyword_is_refused(test_app: Any) -> None:
     assert exc_info.value.message == (
         "{'bogus'} not in 'needs_fields' or 'needs_links'."
     )
+
+
+# -- the declarations of one need type -------------------------------------------------
+#
+# Nothing in the configuration declares a field for one need type yet: each project
+# below registers its overlays from ``conf.py``, after the fields schema is created.
+
+OVERLAY_CONF = """\
+from dataclasses import replace
+
+from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.needs_schema import FieldLiteralValue
+
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_fields = {fields}
+
+#: (need type, field name, the changes to its declaration)
+OVERLAYS = {overlays}
+{extra}
+
+
+def _overlays(app, env, docnames):
+    schema = SphinxNeedsData(env).get_schema()
+    for need_type, name, changes in OVERLAYS:
+        schema.add_type_overlay(need_type, replace(schema.get_any_field(name), **changes))
+
+
+def setup(app):
+    app.connect("env-before-read-docs", _overlays, priority=600)
+"""
+
+
+def _overlay_project(
+    fields: str, overlays: str, index: str, extra: str = ""
+) -> dict[str, Any]:
+    return _project(
+        OVERLAY_CONF.format(fields=fields, overlays=overlays, extra=extra), index
+    )
+
+
+#: a service whose data are a need of each of two types, each setting ``x``
+SERVICE_CONF = """
+from sphinx_needs.services.base import BaseService
+
+
+class TwoTypes(BaseService):
+    options = []
+
+    def __init__(self, app, name, config, **kwargs):
+        super().__init__()
+
+    def request(self, options):
+        return [
+            {"type": "req", "id": "SRV_1", "title": "E", "x": "five"},
+            {"type": "spec", "id": "SRV_2", "title": "F", "x": "six"},
+        ]
+
+
+needs_services = {"two": {"class": TwoTypes, "class_init": {}}}
+"""
+
+
+ADMISSION_INDEX = """\
+.. req:: A
+   :id: REQ_1
+   :x: one
+
+.. spec:: B
+   :id: SPEC_1
+   :x: two
+
+.. list2need::
+   :types: req, spec
+
+   * (LIST_1)C ((x="three"))
+
+     * (LIST_2)D ((x="four"))
+
+.. needservice:: two
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _overlay_project(
+            '{"x": {"nullable": True}}',
+            '[("spec", "x", {"directive_option": False})]',
+            ADMISSION_INDEX,
+            SERVICE_CONF,
+        )
+    ],
+    indirect=True,
+)
+def test_a_field_closed_on_one_type(test_app: Any) -> None:
+    """A field a need type closes is refused on its needs, from a directive,
+    ``list2need`` and ``needservice``, and set on the needs of every other type."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:8: WARNING: Field 'x' is derived and cannot be set in a "
+        "need; the value 'two' is ignored [needs.derive_authored]",
+        "<srcdir>/index.rst:17: WARNING: Field 'x' is derived and cannot be set in a "
+        "need; the value 'four' is ignored [needs.derive_authored]",
+        "<srcdir>/index.rst:19: WARNING: Field 'x' is derived and cannot be set in a "
+        "need; the value 'six' is ignored [needs.derive_authored]",
+        # the service class in conf.py
+        "WARNING: cannot cache unpickleable configuration value: 'needs_services' "
+        "(because it contains a function, class, or module object) [config.cache]",
+    ]
+    needs = _needs(app)
+    assert {k: v["x"] for k, v in needs.items()} == {
+        "REQ_1": "one",
+        "SPEC_1": None,
+        "LIST_1": "three",
+        "LIST_2": None,
+        "SRV_1": "five",
+        "SRV_2": None,
+    }
+
+
+DEFAULTS_INDEX = """\
+.. req:: A
+   :id: REQ_1
+
+.. spec:: B
+   :id: SPEC_1
+
+.. spec:: C
+   :id: SPEC_2
+   :x: given
+   :status: given
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _overlay_project(
+            '{"x": {"nullable": True, "default": "global"}}',
+            '[("spec", "x", {"default": FieldLiteralValue("spec")}),'
+            ' ("spec", "status", {"default": FieldLiteralValue("spec-open")})]',
+            DEFAULTS_INDEX,
+        )
+    ],
+    indirect=True,
+)
+def test_a_default_of_one_type(test_app: Any) -> None:
+    """A need type's default of a field, or of a core field, is the value of its
+    unset needs; the needs of every other type take the field's default."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    needs = _needs(app)
+    assert {k: (v["x"], v["status"]) for k, v in needs.items()} == {
+        "REQ_1": ("global", None),
+        "SPEC_1": ("spec", "spec-open"),
+        "SPEC_2": ("given", "given"),
+    }
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _overlay_project(
+            '{"x": {"nullable": True}}',
+            '[("spec", "x", {"nullable": False})]',
+            ".. req:: A\n   :id: REQ_1\n\n.. spec:: B\n   :id: SPEC_1\n\n"
+            ".. spec:: C\n   :id: SPEC_2\n   :x: given\n",
+        )
+    ],
+    indirect=True,
+)
+def test_a_field_not_nullable_on_one_type(test_app: Any) -> None:
+    """A field a need type makes not nullable, with no default, must be set on its
+    needs; on the needs of every other type it may be unset."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:7: WARNING: Need could not be created: Field 'x' is not "
+        "nullable, but no value or default was given. [needs.create_need]",
+    ]
+    needs = _needs(app)
+    assert {k: v["x"] for k, v in needs.items()} == {
+        "REQ_1": None,
+        "SPEC_2": "given",
+    }

@@ -188,10 +188,13 @@ def generate_need(
         else None
     )
 
+    # the fields of a need of this type, as the type declares them
+    schema = needs_schema.for_type(need_type)
+
     # validate kwargs
     allowed_kwargs = {
-        *needs_schema.iter_link_field_names(),
-        *needs_schema.iter_extra_field_names(),
+        *schema.iter_link_field_names(),
+        *schema.iter_extra_field_names(),
     }
     unknown_kwargs = set(kwargs) - allowed_kwargs
     if unknown_kwargs:
@@ -247,7 +250,7 @@ def generate_need(
     }
     core_converted: dict[str, FieldLiteralValue | FieldFunctionArray | None] = {}
     for _name, _raw in _raw_core.items():
-        _fs = needs_schema.get_core_field(_name)
+        _fs = schema.get_core_field(_name)
         assert _fs is not None, f"{_name} field schema does not exist"
         try:
             core_converted[_name] = (
@@ -280,7 +283,7 @@ def generate_need(
     extras_no_defaults: dict[str, FieldLiteralValue | FieldFunctionArray | None] = {}
     #: the fields an author cannot set: their value is final, no default applies
     closed: set[str] = set()
-    for extra_field in needs_schema.iter_extra_fields():
+    for extra_field in schema.iter_extra_fields():
         if not extra_field.directive_option and (
             not from_outside or kwargs.get(extra_field.name) is None
         ):
@@ -308,7 +311,7 @@ def generate_need(
                 ) from err
 
     links_no_defaults: dict[str, LinksLiteralValue | LinksFunctionArray | None] = {}
-    for link_field in needs_schema.iter_link_fields():
+    for link_field in schema.iter_link_fields():
         if not link_field.directive_option and (
             not from_outside or kwargs.get(link_field.name) is None
         ):
@@ -377,19 +380,17 @@ def generate_need(
             continue
         if core_converted[_name] is None:
             core_converted[_name] = _get_field_default(
-                needs_schema.get_core_field(_name), **context
+                schema.get_core_field(_name), **context
             )
 
     extras = {
-        k: _get_field_default(needs_schema.get_extra_field(k), **context)
+        k: _get_field_default(schema.get_extra_field(k), **context)
         if v is None and k not in closed
         else v
         for k, v in extras_no_defaults.items()
     }
     links = {
-        k: _get_links_default(needs_schema.get_link_field(k), **context)
-        if v is None
-        else v
+        k: _get_links_default(schema.get_link_field(k), **context) if v is None else v
         for k, v in links_no_defaults.items()
     }
     _copy_links(links, needs_schema)
@@ -398,7 +399,7 @@ def generate_need(
     dynamic_fields: dict[str, FieldFunctionArray | LinksFunctionArray] = {}
     core_values: dict[str, Any] = {}
     for _name in _raw_core:
-        _fs = needs_schema.get_core_field(_name)
+        _fs = schema.get_core_field(_name)
         assert _fs is not None
         core_values[_name], _func = _unwrap_field_value(_fs, core_converted[_name])
         if _func is not None:
@@ -456,7 +457,7 @@ def generate_need(
 
     extras_pre: dict[str, AllowedTypes | None] = {}
     for k, v in extras.items():
-        extra_schema = needs_schema.get_extra_field(k)
+        extra_schema = schema.get_extra_field(k)
         if extra_schema is None:
             raise InvalidNeedException(
                 "invalid_field_value",
@@ -917,8 +918,13 @@ def _need_record_params(
     params = dict(record)
     map_legacy_keys(params)
     # Remove unknown keys, as they may be defined in the source system, but not in this
-    # project, and the keys that are computed rather than read
-    known, omitted = _import_key_sets(needs_schema, reader=reader)
+    # project, and the keys that are computed rather than read; the keys of the
+    # record's need type (a type that is not a string is refused later)
+    need_type = params.get("type")
+    known, omitted = _import_key_sets(
+        needs_schema.for_type(need_type if isinstance(need_type, str) else None),
+        reader=reader,
+    )
     unknown: set[str] = set()
     for key in list(params):
         if key not in known:
