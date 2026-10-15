@@ -9,6 +9,10 @@ Unreleased
 New and Improved
 ................
 
+- 🏷️ A configuration's ``check_schema`` skips a field that has no schema, as
+  ``SourceAnalyseConfig``'s already did, where it would have ended in a ``TypeError`` from
+  ``jsonschema.validate``. Every field has a schema today, so nothing changes in use; five
+  ``# ty: ignore`` comments go (`#1835 <https://github.com/useblocks/sphinx-needs/issues/1835>`__)
 - 🏷️ sphinx-codelinks ships a ``py.typed`` marker (:pep:`561`) and the ``Typing :: Typed``
   classifier, so a type checker reads its annotations instead of treating the package as
   untyped (`#2241 <https://github.com/useblocks/sphinx-needs/pull/2241>`__).

@@ -118,13 +118,14 @@ class MarkedContentSchema:
         errors = []
         for _field_name in self.field_names():
             schema = self.get_schema(_field_name)
+            if schema is None:
+                # no schema to check against; `validate` would raise TypeError
+                continue
             value = getattr(self, _field_name)
             try:
-                # jsonschema's stubs type `schema` as `bool | Mapping`, but
-                # `get_schema` returns an optional dict
                 validate(
                     instance=value,
-                    schema=schema,  # ty: ignore[invalid-argument-type]
+                    schema=schema,
                 )
             except ValidationError as e:
                 errors.append(
