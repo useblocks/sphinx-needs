@@ -1080,9 +1080,22 @@ class LinkSchema:
 
 
 class FieldsSchema:
-    """A schema for the fields of a single need."""
+    """A schema for the fields of a single need.
 
-    __slots__ = ("_core_fields", "_extra_fields", "_link_fields", "_project_fields")
+    A field's declaration holds for every need type, unless the need type carries an
+    overlay of it (:meth:`add_type_overlay`): :meth:`for_type` is the schema of the
+    needs of one need type, its overlays in place of the declarations they replace.
+    """
+
+    __slots__ = (
+        "_core_fields",
+        "_extra_fields",
+        "_link_fields",
+        "_project_fields",
+        "_type_overlays",
+        "_type_views",
+        "_view_of",
+    )
 
     def __init__(self) -> None:
         self._core_fields: dict[str, FieldSchema] = {}
@@ -1090,6 +1103,13 @@ class FieldsSchema:
         self._link_fields: dict[str, LinkSchema] = {}
         #: the extra fields the project declares, not an extension or a service
         self._project_fields: set[str] = set()
+        #: need type -> field name -> the field's declaration for that need type
+        self._type_overlays: dict[str, dict[str, FieldSchema | LinkSchema]] = {}
+        #: need type -> the schema of its needs, resolved on first use
+        self._type_views: dict[str, FieldsSchema] = {}
+        #: the schema it is resolved from, and the need type, for the schema of one
+        #: need type (:meth:`for_type`)
+        self._view_of: tuple[FieldsSchema, str] | None = None
 
     def __repr__(self) -> str:
         return (
@@ -1098,11 +1118,95 @@ class FieldsSchema:
             f"link={list(self._link_fields.values())})"
         )
 
+    def _mutating(self) -> None:
+        """Refuse to change the schema of one need type; forget the resolved ones.
+
+        :raises TypeError: if this is the schema of one need type
+        """
+        if self._view_of is not None:
+            raise TypeError(
+                f"The fields schema of need type {self._view_of[1]!r} cannot be "
+                "changed; change the schema it is resolved from."
+            )
+        self._type_views.clear()
+
+    def add_type_overlay(self, need_type: str, field: FieldSchema | LinkSchema) -> None:
+        """Declare a field anew for the needs of one need type.
+
+        The overlay is the field's declaration in :meth:`for_type` of that need type;
+        a second overlay of the same field for the same need type replaces the first.
+        A field name has one type on every need type: the overlay is of a field this
+        schema has, of the same kind (a core or extra field, or a link type), with the
+        same ``type`` and ``item_type``.
+
+        :raises ValueError: if the schema has no field of that name, or the overlay is
+            of another kind, ``type`` or ``item_type``
+        :raises TypeError: if this is the schema of one need type (:meth:`for_type`)
+        """
+        self._mutating()
+        if not isinstance(need_type, str) or not need_type:
+            raise ValueError("need_type must be a non-empty string.")
+        base = self.get_any_field(field.name)
+        if base is None:
+            raise ValueError(
+                f"Cannot declare field {field.name!r} for need type {need_type!r}: "
+                "there is no field of that name."
+            )
+        if isinstance(field, LinkSchema) != isinstance(base, LinkSchema):
+            kind = "a link type" if isinstance(base, LinkSchema) else "a field"
+            raise ValueError(
+                f"Cannot declare field {field.name!r} for need type {need_type!r}: "
+                f"it is {kind}."
+            )
+        if field.type != base.type or field.item_type != base.item_type:
+            raise ValueError(
+                f"Cannot declare field {field.name!r} for need type {need_type!r} "
+                f"with type {field.type!r} (items {field.item_type!r}): its type is "
+                f"{base.type!r} (items {base.item_type!r}) on every need type."
+            )
+        self._type_overlays.setdefault(need_type, {})[field.name] = field
+
+    def for_type(self, need_type: str | None) -> FieldsSchema:
+        """The schema of the needs of ``need_type``.
+
+        With no need type, or a need type without overlays, it is this schema. Else it
+        is a schema whose fields are this one's, in the same order, with the need
+        type's overlays (:meth:`add_type_overlay`) in place of the fields they replace;
+        it is resolved once, and cannot be changed. The schema of one need type answers
+        as the schema it is resolved from.
+        """
+        if self._view_of is not None:
+            return self._view_of[0].for_type(need_type)
+        if need_type is None or need_type not in self._type_overlays:
+            return self
+        if (view := self._type_views.get(need_type)) is None:
+            view = self._type_views[need_type] = self._resolve_type(need_type)
+        return view
+
+    def _resolve_type(self, need_type: str) -> FieldsSchema:
+        """The schema of the needs of ``need_type``, its overlays in place."""
+        view = FieldsSchema()
+        view._core_fields = dict(self._core_fields)
+        view._extra_fields = dict(self._extra_fields)
+        view._link_fields = dict(self._link_fields)
+        view._project_fields = self._project_fields
+        for name, field in self._type_overlays[need_type].items():
+            if isinstance(field, LinkSchema):
+                view._link_fields[name] = field
+            elif name in view._core_fields:
+                view._core_fields[name] = field
+            else:
+                view._extra_fields[name] = field
+        view._view_of = (self, need_type)
+        return view
+
     def add_core_field(self, field: FieldSchema) -> None:
         """Add a core field to the schema.
 
         :raises ValueError: if a field with the same name already exists
+        :raises TypeError: if this is the schema of one need type (:meth:`for_type`)
         """
+        self._mutating()
         if (
             field.name in self._core_fields
             or field.name in self._extra_fields
@@ -1117,7 +1221,9 @@ class FieldsSchema:
         :param project: Whether the project declares it (``needs_fields``,
             ``needs_extra_options``), rather than an extension or a service.
         :raises ValueError: if a field with the same name already exists
+        :raises TypeError: if this is the schema of one need type (:meth:`for_type`)
         """
+        self._mutating()
         if (
             field.name in self._core_fields
             or field.name in self._extra_fields
@@ -1136,7 +1242,9 @@ class FieldsSchema:
         """Add a link field to the schema.
 
         :raises ValueError: if a field with the same name already exists
+        :raises TypeError: if this is the schema of one need type (:meth:`for_type`)
         """
+        self._mutating()
         if (
             field.name in self._core_fields
             or field.name in self._extra_fields
@@ -1151,7 +1259,9 @@ class FieldsSchema:
         The field keeps its place in the iteration order.
 
         :raises ValueError: if no extra field or link field of that name exists
+        :raises TypeError: if this is the schema of one need type (:meth:`for_type`)
         """
+        self._mutating()
         if isinstance(field, LinkSchema):
             if field.name not in self._link_fields:
                 raise ValueError(f"Link field '{field.name}' does not exist.")
