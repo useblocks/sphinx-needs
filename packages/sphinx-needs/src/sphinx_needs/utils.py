@@ -218,8 +218,14 @@ def row_col_maker(
                 except KeyError:
                     para_col += text_col
                 else:
-                    ref_col.append(text_col)
-                    para_col += ref_col
+                    if "refuri" in ref_col:
+                        ref_col.append(text_col)
+                        para_col += ref_col
+                    else:
+                        # a need in no document and not external (``add_need(docname=None)``)
+                        # has nothing to link to, and a reference with no target would
+                        # end the HTML build; the text alone (#2244)
+                        para_col += text_col
             elif matching_link_confs:
                 para_col += match_string_link(
                     datum_text,

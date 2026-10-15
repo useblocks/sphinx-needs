@@ -68,9 +68,9 @@ Bug fixes
 
 - 🐛 :ref:`need <role_need>`, :ref:`need_outgoing <role_need_outgoing>` and
   :ref:`need_incoming <role_need_incoming>` -- and so a need's links and backlinks rows --
-  no longer end the build with an ``AssertionError`` on a need that has no document and is
-  not external (one added through the API with ``docname=None``); they show its text
-  without a link (:issue:`2244`)
+  and :ref:`needtable`'s id and link columns no longer end the build on a need that has no
+  document and is not external (one added through the API with ``docname=None``); they
+  show its text without a link (:issue:`2244`)
 
 - 🐛 A need with no document and no external url -- one added through the API with
   ``docname=None`` -- no longer ends the build with an ``UnboundLocalError`` when a

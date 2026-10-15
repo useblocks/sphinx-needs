@@ -47,25 +47,39 @@ def test_need_without_docname_in_diagrams(test_app):
     indirect=True,
 )
 def test_need_without_docname_in_roles(test_app):
-    """``:need:``, ``:need_outgoing:`` and ``:need_incoming:`` show such a need unlinked.
+    """Roles and needtable show a need with no document unlinked, and still link others.
 
-    Each role took a need that is not external, or has no document, to be an external
-    one, and asserted its ``external_url`` -- ending the build (#2244). The need's
-    layout renders the same two link roles for its links and backlinks rows.
+    ``:need:``, ``:need_outgoing:`` and ``:need_incoming:`` took a need that is not
+    in a document to be external, and asserted its ``external_url``; needtable made a
+    reference with no target, which the HTML writer refuses. Either ended the build
+    (#2244). A need's layout renders the outgoing and incoming roles for its links and
+    backlinks rows, so linking to such a need was enough.
     """
     app = test_app
     app.build()
     assert_no_warnings(app)
 
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
-    for label, text in (
-        ("REF", "Need without a document (R_NODOC)"),
-        ("OUT", "R_NODOC"),
-        ("IN", "R_NODOC"),
-    ):
+    # needs_show_link_title is on, so each shows the title, not only the id
+    nodoc_text = "Need without a document (R_NODOC)"
+    external_link = 'href="https://example.com/R_EXT.html"'
+    for label, expect_external in (("REF", False), ("OUT", True), ("IN", True)):
         match = re.search(rf"<p>{label}: (.*?)</p>", html, re.DOTALL)
         assert match, f"no {label} paragraph"
         rendered = match.group(1)
-        assert text in rendered, (label, rendered)
-        # shown as text: no link to a document, and none to an empty url
-        assert "<a " not in rendered, (label, rendered)
+        assert nodoc_text in rendered, (label, rendered)
+        # shown as text: the only link is the external need's
+        assert rendered.count("<a ") == int(expect_external), (label, rendered)
+        assert (external_link in rendered) is expect_external, (label, rendered)
+
+    rows = {
+        m.group(1): m.group(0)
+        for m in re.finditer(
+            r'<tr class="need[^"]*" data-need-id="(\w+)">.*?</tr>', html, re.DOTALL
+        )
+    }
+    # its id cell, and its entry in another need's links columns, are text
+    assert '<td class="needs_id"><p>R_NODOC</p></td>' in rows["R_NODOC"]
+    assert ">R_NODOC</a>" not in rows["R_DOC"]
+    assert "R_NODOC</p>" in rows["R_DOC"]
+    assert external_link in rows["R_DOC"]
