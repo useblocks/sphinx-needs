@@ -1242,12 +1242,15 @@ def test_a_deleted_field_the_schema_no_longer_has(
     app.build()
     assert build_warnings(app) == []
     assert _needs(app)["R_001"]["gone"] is None
+    # the next application registers its own nodes and directives
+    app.cleanup()
     monkeypatch.delenv("PTYPE_WITH_GONE")
     # the same source and build directories: the extend comes from the environment
     app = make_app("needs", srcdir=srcdir)
     app.build()
     assert build_warnings(app) == []
-    assert "gone" not in _needs(app)["R_001"]
+    # the need read in the first build keeps the value it had
+    assert _needs(app)["R_001"]["gone"] is None
 
 
 @pytest.mark.parametrize(

@@ -805,12 +805,18 @@ def _not_of_their_shape(
         f"{where} has "
         + " and ".join(
             f"{'an' if name[0] in 'aeiou' else 'a'} {name!r} that is not "
-            f"{_SHAPES[name][0]} (got "
-            f"{repr(entry[name]) if entry[name] == '' else _type_name(entry[name])})"
+            f"{_SHAPES[name][0]} (got {_got(name, entry[name])})"
             for name in wrong
         )
         + f"; the {'key is' if len(wrong) == 1 else 'keys are'} ignored"
     )
+
+
+def _got(name: str, value: object) -> str:
+    """What a value that is not of its shape is, as a finding names it."""
+    if name == "predicates" and isinstance(value, list | tuple):
+        return "a list with an item that is not a (filter, value) pair"
+    return repr(value) if value == "" else _type_name(value)
 
 
 def _unknown(
@@ -2280,11 +2286,30 @@ def _resolve_type_declarations(
     :param need_types: The configured need types (the shape the configuration was
         resolved to), those an extension or a service adds included.
     """
-    types = {
-        need_type["directive"]: need_type
-        for need_type in need_types
-        if isinstance(need_type, dict) and isinstance(need_type.get("directive"), str)
-    }
+    types: dict[str, dict[str, Any]] = {}
+    for need_type in need_types:
+        if not isinstance(need_type, dict) or not isinstance(
+            name := need_type.get("directive"), str
+        ):
+            continue
+        # an entry an extension adds after the configuration is resolved has not been
+        # through the normaliser: its declarations are checked here, by its rules
+        named = f"needs_types[{name!r}]"
+        shape: list[str] = []
+        wrong, text = _not_of_their_shape(
+            named, need_type, ("inherits", "fields", "links")
+        )
+        if wrong:
+            shape.append(text)
+        entry = {key: value for key, value in need_type.items() if key not in wrong}
+        for table in ("fields", "links"):
+            if table in entry:
+                entry[table] = _normalise_declarations(
+                    named, table, cast(Mapping[Any, Any], entry[table]), shape
+                )
+        for text in shape:
+            log_warning(LOGGER, text, "config", None)
+        types[name] = entry
     order, parent, findings = _inherits_order(types)
     for text in findings:
         log_warning(LOGGER, text, "type_inherits", None)
@@ -2414,14 +2439,23 @@ def _declare_for_type(
             "" if declared_by is None else f" as need type {declared_by!r} declares it"
         )
         for reason in problems:
-            # a reason of the type reads on from the field's name
-            is_declared = "it is declared " if reason.startswith("with ") else ""
-            log_warning(
-                LOGGER,
-                f"{where} widens the field{as_declared}: {is_declared}{reason}",
-                "type_widening",
-                None,
-            )
+            if reason.startswith("with "):
+                # the field's type or derivation, the same on every need type: a
+                # reason of these reads on from the field's name
+                log_warning(
+                    LOGGER,
+                    f"{where} cannot be declared {reason.removesuffix('.')}; the entry "
+                    "is ignored",
+                    "type_conflict",
+                    None,
+                )
+            else:
+                log_warning(
+                    LOGGER,
+                    f"{where} widens the field{as_declared}: {reason}",
+                    "type_widening",
+                    None,
+                )
         return None
     return field
 

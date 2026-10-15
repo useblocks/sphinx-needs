@@ -422,9 +422,12 @@ def extend_needs_data(
                             _hold_placeholder(need, option_name, type_schema)
                     case (ExtendType.REPLACE | ExtendType.DELETE, None):
                         # a deleted field: the empty value the need's type declares
-                        need._dynamic_fields.pop(option_name, None)
                         field = type_schema.get_any_field(option_name)
-                        assert field is not None, "a field of the schema is extended"
+                        if field is None:
+                            # an extend kept from an earlier build, of a field this
+                            # build's schema does not have: nothing to delete
+                            continue
+                        need._dynamic_fields.pop(option_name, None)
                         need[option_name] = typed_empty(field)
                     case (ExtendType.REPLACE | ExtendType.DELETE, FieldLiteralValue()):
                         if (df := need._dynamic_fields.get(option_name)) is not None:

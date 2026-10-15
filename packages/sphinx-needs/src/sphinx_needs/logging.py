@@ -147,7 +147,7 @@ WarningSubTypeDescription: dict[WarningSubTypes, str] = {
     "string_link": "Invalid ``needs_string_links`` configuration",
     "title": "Error creating need title",
     "type_conflict": "A need type's declaration of a field or link type cannot be applied to it; the declaration is ignored",
-    "type_inherits": "A need type inherits from no need type, or on a cycle; its inherits is ignored",
+    "type_inherits": "A need type's inherits names no need type, or is on a cycle; it is ignored and the type has no parent",
     "type_widening": "A need type's declaration of a field or link type widens the declaration it inherits; the declaration is ignored",
     "uml": "Error in processing of UML diagram",
     "unknown_external_keys": "Unknown keys found in external need data",
