@@ -234,10 +234,11 @@ the global declarations explicitly where no need is in hand. Configuration code,
 any need, reads `global_declaration(name)`, `type_declarations(name)` and `declares_default(name)`.
 The type checker refuses a per-type attribute read (a default, `nullable`, `allow_extend`, `parse_*`,
 the `schema` constraints) on the union, directly or through a helper typed with the full classes: a
-full declaration comes only through those named doors. It cannot see an `isinstance` test against
-`FieldSchema` or `LinkSchema` on a union result, which re-opens the full declaration -- so test `kind`
-instead. The first `for_type` freezes the schema (in a parallel build, a worker's freezes the main
-process's when its data are merged): every later change raises `TypeError`, so register fields and
+full declaration comes only through those named doors. An `isinstance` test against `FieldSchema` or
+`LinkSchema`, or a `getattr`, on a union result re-opens the full declaration, and the checker cannot
+see that -- so test `kind` instead. The first `for_type` freezes the schema -- the first need, or the
+first validation (in a parallel build, a worker's freezes the main process's when its data are
+merged): every later change raises `TypeError`, so register fields and
 overlays while the schema is built, in `create_schema` (the configuration surface will freeze it at
 the end of `create_schema` instead). An overlay is a narrowing of the field: `narrowing_problems` is the one
 rule `add_type_overlay` and `replace_field` apply, the configuration resolver will apply, and whose
