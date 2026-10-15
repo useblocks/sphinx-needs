@@ -1275,16 +1275,31 @@ class FieldsSchema:
         """
         self._mutating()
         for need_type, overlays in self._type_overlays.items():
-            if (overlay := overlays.get(field.name)) is not None and (
-                overlay.type != field.type
-                or overlay.item_type != field.item_type
-                or overlay.derive != field.derive
-                or overlay.derive_by_type != field.derive_by_type
-            ):
+            if (overlay := overlays.get(field.name)) is None:
+                continue
+            differs = [
+                what
+                for what, other in (
+                    ("type", overlay.type != field.type),
+                    ("item type", overlay.item_type != field.item_type),
+                    (
+                        "derivation",
+                        overlay.derive != field.derive
+                        or overlay.derive_by_type != field.derive_by_type,
+                    ),
+                )
+                if other
+            ]
+            if differs:
+                kinds = (
+                    differs[0]
+                    if len(differs) == 1
+                    else f"{', '.join(differs[:-1])} and {differs[-1]}"
+                )
                 raise ValueError(
                     f"Cannot replace field {field.name!r} with type {field.type!r} "
                     f"(items {field.item_type!r}): need type {need_type!r} declares it "
-                    "with another type or derivation."
+                    f"with another {kinds}."
                 )
         if isinstance(field, LinkSchema):
             if field.name not in self._link_fields:
