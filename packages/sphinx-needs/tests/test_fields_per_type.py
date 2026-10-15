@@ -124,11 +124,31 @@ def test_an_unknown_keyword_is_refused(test_app: Any) -> None:
 
 # -- the declarations of one need type -------------------------------------------------
 #
-# Nothing in the configuration declares a field for one need type yet: each project
-# below registers its overlays from ``conf.py``, after the fields schema is created and
-# before any need is read from it (an ``env-before-read-docs`` handler at priority 600;
-# these projects import no external needs, which would be read before it). That window
-# is the tests' only: the configuration of per-type fields replaces it.
+# A need type declares a field anew in its ``needs_types`` entry (``fields``), which
+# ``create_schema`` resolves. What the configuration does not declare per type yet --
+# a field closed, or not extended, on one type -- is registered from ``conf.py`` below,
+# after the fields schema is created and before any need is read from it (an
+# ``env-before-read-docs`` handler at priority 600; these projects import no external
+# needs, which would be read before it): the two tests using ``OVERLAY_CONF`` move onto
+# the configuration with the slice that closes need types.
+
+#: the default need types but ``need``, ``spec`` declaring its fields anew
+DECLARING_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_fields = {fields}
+needs_types = {{
+    "req": {{"title": "Requirement", "prefix": "R_"}},
+    "spec": {{"title": "Specification", "prefix": "S_", "fields": {spec}}},
+    "impl": {{"title": "Implementation", "prefix": "I_"}},
+    "test": {{"title": "Test Case", "prefix": "T_"}},
+}}
+"""
+
+
+def _declaring_project(fields: str, spec: str, index: str) -> dict[str, Any]:
+    return _project(DECLARING_CONF.format(fields=fields, spec=spec), index)
+
 
 OVERLAY_CONF = """\
 from dataclasses import replace
@@ -264,10 +284,9 @@ DEFAULTS_INDEX = """\
 @pytest.mark.parametrize(
     "test_app",
     [
-        _overlay_project(
+        _declaring_project(
             '{"x": {"nullable": True, "default": "global"}}',
-            '[("spec", "x", {"default": FieldLiteralValue("spec")}),'
-            ' ("spec", "status", {"default": FieldLiteralValue("spec-open")})]',
+            '{"x": {"default": "spec"}, "status": {"default": "spec-open"}}',
             DEFAULTS_INDEX,
         )
     ],
@@ -290,9 +309,9 @@ def test_a_default_of_one_type(test_app: Any) -> None:
 @pytest.mark.parametrize(
     "test_app",
     [
-        _overlay_project(
+        _declaring_project(
             '{"x": {"nullable": True}}',
-            '[("spec", "x", {"nullable": False})]',
+            '{"x": {"nullable": False}}',
             ".. req:: A\n   :id: REQ_1\n\n.. spec:: B\n   :id: SPEC_1\n\n"
             ".. spec:: C\n   :id: SPEC_2\n   :x: given\n",
         )
@@ -380,10 +399,10 @@ VALIDATION_INDEX = """\
 @pytest.mark.parametrize(
     "test_app",
     [
-        _overlay_project(
+        _declaring_project(
             '{"x": {"nullable": True,'
             ' "schema": {"type": "string", "enum": ["A", "B", "QM"]}}}',
-            '[("spec", "x", {"schema": {"type": "string", "enum": ["A", "B"]}})]',
+            '{"x": {"schema": {"enum": ["A", "B"]}}}',
             VALIDATION_INDEX,
         )
     ],
@@ -426,9 +445,9 @@ RESOLVE_INDEX = """\
 @pytest.mark.parametrize(
     "test_app",
     [
-        _overlay_project(
+        _declaring_project(
             '{"x": {"nullable": True}, "y": {"nullable": True}}',
-            '[("spec", "x", {"nullable": False, "default": FieldLiteralValue("d")})]',
+            '{"x": {"nullable": False, "default": "d"}}',
             RESOLVE_INDEX,
         )
     ],
@@ -469,7 +488,7 @@ DERIVED_INDEX = """\
 @pytest.mark.parametrize(
     "test_app",
     [
-        _overlay_project(
+        _declaring_project(
             "{"
             '"ox": {"nullable": True, "schema": {"type": "string", "minLength": 1},'
             ' "derive_by_type": {"req": {"kind": "copy", "field": "title"}}},'
@@ -477,10 +496,9 @@ DERIVED_INDEX = """\
             ' "derive_by_type": {"req": {"kind": "copy", "field": "title"}}},'
             ' "c1": {"nullable": True}, "c2": {"nullable": True}'
             "}",
-            '[("spec", "ox", {"nullable": False}),'
-            ' ("spec", "oy", {"default": FieldLiteralValue("S")}),'
-            ' ("spec", "c1", {"nullable": False, "default": FieldLiteralValue("cd")}),'
-            ' ("spec", "c2", {"nullable": False, "default": FieldLiteralValue("cd")})]',
+            '{"ox": {"nullable": False}, "oy": {"default": "S"},'
+            ' "c1": {"nullable": False, "default": "cd"},'
+            ' "c2": {"nullable": False, "default": "cd"}}',
             DERIVED_INDEX,
         )
     ],
@@ -489,11 +507,15 @@ DERIVED_INDEX = """\
 def test_derived_values_of_one_type(test_app: Any) -> None:
     """A field derived on another type holds, on the needs of a type, the value its
     type declares: its empty value where the type makes it not nullable (and so no
-    schema violation: it holds no value yet), the type's default; a call on a cycle
-    leaves a field the type makes not nullable empty, not unset."""
+    schema violation: it holds no value yet); a type does not declare a default of a
+    derived field, so its needs hold the field's; a call on a cycle leaves a field the
+    type makes not nullable empty, not unset."""
     app = test_app
     app.build()
     assert build_warnings(app) == [
+        "WARNING: needs_types['spec'].fields['oy'] sets 'default', but 'oy' is derived "
+        "(by need type): a need type declares only its description, schema and "
+        "nullable; the entry is ignored [needs.type_conflict]",
         "<srcdir>/index.rst:7: WARNING: dynamic function 'copy' for option 'c1' is on "
         "a cycle: 'c1' on need 'SPEC_1' and 'c2' on need 'SPEC_1'; the field is left "
         "empty [needs.derive_cycle]",
@@ -504,8 +526,8 @@ def test_derived_values_of_one_type(test_app: Any) -> None:
     needs = _needs(app)
     assert {k: (v["ox"], v["oy"], v["c1"], v["c2"]) for k, v in needs.items()} == {
         "REQ_1": ("A", "A", None, None),
-        "SPEC_1": ("", "S", "", ""),
-        "SPEC_2": ("", "S", "cd", "cd"),
+        "SPEC_1": ("", "D", "", ""),
+        "SPEC_2": ("", "D", "cd", "cd"),
     }
 
 

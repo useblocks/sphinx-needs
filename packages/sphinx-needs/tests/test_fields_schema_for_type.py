@@ -657,6 +657,25 @@ def test_a_type_derives_a_field_by_derive_by_type() -> None:
     assert schema.type_declarations("score") == {}
 
 
+def test_a_type_without_a_rule_takes_its_own_value_of_a_derived_field() -> None:
+    """An overlay may give a field derived per need type its own literal default: the
+    value of that type's needs, which have no rule. The configuration refuses a default
+    of a derived field; the schema itself takes it."""
+    schema = _schema()
+    score = FieldSchema(
+        name="score",
+        schema={"type": "string"},
+        default=FieldLiteralValue("D"),
+        derive_by_type={"req": DeriveRule(kind="copy", field="asil")},
+    )
+    schema.add_extra_field(score)
+    schema.add_type_overlay("spec", replace(score, default=FieldLiteralValue("S")))
+    spec_score = schema.for_type("spec").get_extra_field("score")
+    impl_score = schema.for_type("impl").get_extra_field("score")
+    assert spec_score is not None and impl_score is not None
+    assert (spec_score.off_type_value(), impl_score.off_type_value()) == ("S", "D")
+
+
 def test_a_replaced_field_keeps_the_type_of_its_overlays() -> None:
     """A field replaced while a need type declares it anew keeps its type and item
     type; a replacement of the same type is taken."""
