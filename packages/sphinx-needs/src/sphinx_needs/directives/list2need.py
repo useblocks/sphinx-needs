@@ -40,7 +40,7 @@ class _ListNeed(TypedDict):
     line: int
     """The index within the directive's own content of the item's first line."""
     options: dict[str, str]
-    """Its inline options, as written."""
+    """Its inline options, with the list-level ``tags`` merged in and ``id`` taken out."""
 
 
 LINE_REGEX = re.compile(
@@ -121,7 +121,7 @@ class List2NeedDirective(SphinxDirective):
         if not types_raw:
             raise SphinxWarning("types must be set.")
         # Create a dict, which delivers the need-type for the later level
-        types = {}
+        types: dict[int, str] = {}
         types_raw_list = [x.strip() for x in types_raw.split(",")]
         conf_types = [x["directive"] for x in needs_config.types]
         for x in range(0, len(types_raw_list)):
@@ -136,7 +136,7 @@ class List2NeedDirective(SphinxDirective):
             down_links_raw = ""
 
         # Create a dict, which delivers the need-link for the later level
-        down_links_types = {}
+        down_links_types: dict[int, str] = {}
         if down_links_raw is None or down_links_raw == "":
             down_links_raw_list = []
         else:
@@ -265,8 +265,6 @@ class List2NeedDirective(SphinxDirective):
 
             # Add tags defined at list level (if exists) to the ones potentially defined in the content
             if tags:
-                if "options" not in list_need:
-                    list_need["options"] = {}
                 current_tags = list_need["options"].get("tags", "")
                 if current_tags:
                     list_need["options"]["tags"] = current_tags + "," + tags

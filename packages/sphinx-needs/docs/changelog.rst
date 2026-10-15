@@ -98,13 +98,13 @@ Bug fixes
 Internal changes
 ................
 
-- 🏷️ ``list2need`` parses each list item into a typed record (a ``TypedDict``), and
-  ``_get_title`` takes its content as lines (``Iterable[str]``), as both callers pass it;
-  fifteen ``# ty: ignore`` comments go (:issue:`1835`)
-
 - 🏷️ ty's ``possibly-unresolved-reference``, ``disjoint-cast`` and ``missing-type-argument``
   rules are on: the bug above is what the first found, and the rest of its findings are
   rewritten so the checker can follow them
+
+- 🏷️ ``list2need`` parses each list item into a typed record (a ``TypedDict``), and
+  ``_get_title`` takes its content as lines (``Iterable[str]``), as both callers pass it;
+  fifteen ``# ty: ignore`` comments go (:issue:`1835`)
 
 - 🏷️ A ``FieldSchema`` constructed with predicate defaults no longer raises ``TypeError``:
   its value check read ``isinstance(v, A) | B``. No build reached it, as predicates are
