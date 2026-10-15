@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792071089401,
+  "lastUpdate": 1792073616839,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -25236,6 +25236,42 @@ window.BENCHMARK_DATA = {
             "value": 39.681922753,
             "unit": "s",
             "extra": "Commit: 5a30f4cad54d9729474abf7c0a54bc8eeff0535a\nBranch: master\nTime: 2026-10-15T15:30:19+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8011b09840f0393fa9ac354d4496135601fcfe79",
+          "message": "🏷️ list2need: a TypedDict for the parsed item; `_get_title` takes lines; fifteen suppressions gone (#2270)\n\n## What\n\nTyping only, in `packages/sphinx-needs`: `directives/list2need.py` and\n`directives/need.py`. It removes fifteen `# ty: ignore` comments.\n\n**list2need.** Each parsed list item was a plain dict literal. ty\ninferred it as a dict whose every value is the union of all fields'\ntypes (`str | list[str] | list[int] | int | dict`), so every read needed\na suppression: thirteen in `run()`, one of them added by #2266\n(`known_options[list_need[\"type\"]]`).\n- A `_ListNeed` TypedDict now declares each key's own type.\n- `run()`, `_create_need`, `_content` and `get_down_needs` take it.\n- `types` and `down_links_types`, the per-level dicts that map an\nindentation level to a need type and a link type, are annotated\n`dict[int, str]`. Without that, ty saw their values as `Any` /\n`Unknown`, so the value stored under the `type` key went unchecked.\n- `if \"options\" not in list_need: list_need[\"options\"] = {}` goes. The\none dict literal that builds an item always sets `options`, and ty\nnarrows the branch to `Never`.\n\n**`_get_title`** declared `content: str` but joins it line by line\n(`\"\\n\".join(content)`). Its two callers pass a docutils `StringList`:\n- `NeedDirective` passes its own content;\n- list2need passes the `StringList` that `_content` builds for the item.\n\nA real `str` would be joined character by character: the title of\n`\"First.\"` would be `\"F\"`. The parameter is now `Iterable[str]`, and the\nsuppression at each call site goes. The body reads `content` once.\n\n**Left as is.** One suppression remains in `list2need.py`: `int(offset)`\nin `_source_info`. The docutils stubs allow a `None` offset there, which\nis a separate question.\n\n## Why\n\nContinues #1835: list2need was the largest single cluster of\nsuppressions in sphinx-needs.\n\n## Tests\n\nNo new test.\n- **Runtime unchanged:** a TypedDict is a plain dict at run time.\nStripped of annotations, the TypedDict and typing imports, the old and\nnew ASTs of both files are identical. The only exception is the removed\ndead branch.\n- **Type check now covers these lines:** each of these mutations makes\n`uv run poe typecheck` fail:\n- a wrong type on a key (`\"level\": \"x\"`, `\"type\": 1`, `type: int` on the\nTypedDict);\n  - appending an int to `content`;\n  - an int in `options[\"tags\"]`;\n  - storing the un-narrowed `pop(\"id\", None)` in `need_id`;\n  - a mistyped key;\n  - `known_options[level]`;\n  - int values in `types` or `down_links_types`;\n  - `_get_title(content: str)`, which fails at both call sites.\n- **Existing tests:** they already run `_get_title` through both callers\nwith a `StringList`.\n- **Adversarial review:** an independent reviewer checked every key's\ntype against every value stored under it:\n- an id written in the item's own options replaces the derived one only\nwhen the `pop` found one, so `need_id` is always a `str`;\n  - an empty `()` id group falls through to the hashed id;\n  - the options regex always yields string pairs.\n\nIt also confirmed the fifteen-suppression count: fifteen comment lines\ncarrying eighteen rule codes. Its verdict was **SHIP** with four\noptional nits, all taken: the `dict[int, str]` annotations, the dead\nbranch, a docstring and the changelog's order. The fixes went back to\nthe same reviewer, which returned **SHIP (no findings beyond a\ncommit-message nit, which this body corrects)**.\n- **Gates:** lint, typecheck and `test-needs` (2958 passed) at\n`74d4a98`.\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue. *(Written by Claude Code at a\nmaintainer's request.)*\n- [x] I ran the package's tests (`uv run poe test-<package>`) and they\npass.\n- [x] Documentation is updated where behaviour or options change. *(No\nbehaviour changes.)*\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*. *(sphinx-needs: Internal changes.)*\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-15T16:12:01+02:00",
+          "tree_id": "129d34511e628226670116049aab5adb77546079",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/8011b09840f0393fa9ac354d4496135601fcfe79"
+        },
+        "date": 1792073606420,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.10154268899999863,
+            "unit": "s",
+            "extra": "Commit: 8011b09840f0393fa9ac354d4496135601fcfe79\nBranch: master\nTime: 2026-10-15T16:12:01+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 59.346797095999996,
+            "unit": "s",
+            "extra": "Commit: 8011b09840f0393fa9ac354d4496135601fcfe79\nBranch: master\nTime: 2026-10-15T16:12:01+02:00"
           }
         ]
       }
