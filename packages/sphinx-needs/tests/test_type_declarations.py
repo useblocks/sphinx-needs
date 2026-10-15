@@ -1221,6 +1221,7 @@ Case
 
 .. req:: A
    :id: R_001
+   :gone: kept
 
 .. needextend:: R_001
    :-gone:
@@ -1232,7 +1233,8 @@ def test_a_deleted_field_the_schema_no_longer_has(
 ) -> None:
     """A needextend kept from an earlier build may delete a field the schema of this
     build no longer has (an extension's, no longer registered): the deletion is not
-    applied, and the build goes on."""
+    applied -- the need keeps the value it was written with, which a delete would have
+    emptied -- and the build goes on."""
     srcdir = tmp_path / "src"
     srcdir.mkdir()
     (srcdir / "conf.py").write_text(GONE_CONF, encoding="utf-8")
@@ -1249,8 +1251,8 @@ def test_a_deleted_field_the_schema_no_longer_has(
     app = make_app("needs", srcdir=srcdir)
     app.build()
     assert build_warnings(app) == []
-    # the need read in the first build keeps the value it had
-    assert _needs(app)["R_001"]["gone"] is None
+    # the need as written in the first build keeps its value: nothing deleted it
+    assert _needs(app)["R_001"]["gone"] == "kept"
 
 
 @pytest.mark.parametrize(
