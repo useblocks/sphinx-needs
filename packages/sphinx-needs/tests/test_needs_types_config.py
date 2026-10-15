@@ -348,6 +348,21 @@ FINDINGS = [
         [SPEC, {**REQ, "title": "Last"}],
         id="findings-in-entry-order",
     ),
+    _conf_case(
+        [{"directive": "req", "prefix": "R_", "bogus": 1}],
+        ["needs_types entry 1 ('req') has no 'title'; the entry is ignored"],
+        [],
+        id="dropped-entry-reports-only-why",
+    ),
+    _conf_case(
+        [REQ, {**REQ, "title": "Two"}],
+        [
+            "needs_types declares the directive 'req' twice, at entries 1 and 2; the "
+            "last entry is used"
+        ],
+        [{**REQ, "title": "Two"}],
+        id="adjacent-duplicate",
+    ),
 ]
 
 
@@ -547,6 +562,7 @@ def test_a_type_added_before_load_config_registers_its_directive_once(
     assert list(_needs(app)) == ["ST_00001"]
 
 
+#: a directive of another class under ``req``, registered before sphinx-needs' own
 FOREIGN_SETUP = """
 from docutils.parsers.rst import Directive
 
@@ -558,15 +574,48 @@ def setup(app):
     app.add_directive("req", Foreign)
 """
 
+#: a subclass of the need directive under ``req``
+SUBCLASS_SETUP = """
+from sphinx_needs.directives.need import NeedDirective
+
+class Derived(NeedDirective):
+    pass
+
+def setup(app):
+    app.add_directive("req", Derived)
+"""
+
+#: a directive of another class that only shares the need directive's name
+NAMESAKE_SETUP = """
+from docutils.parsers.rst import Directive
+
+class NeedDirective(Directive):
+    def run(self):
+        return []
+
+def setup(app):
+    app.add_directive("req", NeedDirective)
+"""
+
 
 @pytest.mark.parametrize(
     "test_app",
-    [_project(CONF + FOREIGN_SETUP, ".. req:: A need\n   :id: R_00001\n")],
+    [
+        pytest.param(
+            _project(CONF + setup, ".. req:: A need\n   :id: R_00001\n"), id=name
+        )
+        for name, setup in (
+            ("foreign", FOREIGN_SETUP),
+            ("subclass", SUBCLASS_SETUP),
+            ("namesake", NAMESAKE_SETUP),
+        )
+    ],
     indirect=True,
 )
 def test_a_foreign_directive_under_a_type_name_is_overridden(test_app: Any) -> None:
-    """A directive of another class under a need type's name is overridden by the
-    need directive, with Sphinx's own warning, as it always was."""
+    """A directive of another class under a need type's name -- a subclass of the
+    need directive, or a class that only shares its name, included -- is overridden by
+    the need directive itself, with Sphinx's own warning, as it always was."""
     app = test_app
     assert directives._directives.get("req") is NeedDirective
     app.build()
@@ -574,6 +623,33 @@ def test_a_foreign_directive_under_a_type_name_is_overridden(test_app: Any) -> N
     assert len(warnings) == 1
     assert "directive 'req' is already registered" in warnings[0]
     assert list(_needs(app)) == ["R_00001"]
+
+
+#: the need directive already under ``story`` when ``add_need_type`` adds the type
+STORY_REGISTERED_SETUP = """
+def _add_story(app, config):
+    from sphinx_needs.api import add_need_type
+    add_need_type(app, "story", "Story", "ST_")
+
+def setup(app):
+    from sphinx_needs.directives.need import NeedDirective
+    app.add_directive("story", NeedDirective)
+    app.connect("config-inited", _add_story, priority=600)
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [_project(CONF + STORY_REGISTERED_SETUP, STORY_INDEX)],
+    indirect=True,
+)
+def test_add_need_type_registers_its_directive_once(test_app: Any) -> None:
+    """``add_need_type`` goes through the same rule as ``load_config``: a name that
+    already holds the need directive is not registered again."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    assert list(_needs(app)) == ["ST_00001"]
 
 
 @pytest.mark.parametrize(
