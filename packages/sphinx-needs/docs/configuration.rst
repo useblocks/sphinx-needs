@@ -368,7 +368,7 @@ A declaration in ``fields`` may carry these keys, each as :ref:`needs_fields` ta
    * - ``default``
      - default value
    * - ``predicates``
-     - ``(match expression, value)`` pairs, in place of the field's
+     - ``(match expression, value)`` pairs, in place of the field's (an empty list: none)
 
 and a declaration in ``links`` these, as :ref:`needs_links` takes them:
 
@@ -385,7 +385,7 @@ and a declaration in ``links`` these, as :ref:`needs_links` takes them:
    * - ``default``
      - default links
    * - ``predicates``
-     - ``(match expression, links)`` pairs, in place of the link type's
+     - ``(match expression, links)`` pairs, in place of the link type's (an empty list: none)
 
 Anything else in a declaration -- a ``parse_variants``, a ``derive``, a link type's ``incoming`` or ``copy`` --
 is fixed for every need type: it is reported as a ``needs.config`` warning and ignored.
@@ -428,10 +428,10 @@ A type's declaration of a field starts from the field's own declaration, takes t
 then its own; a key it leaves out, and a schema keyword, is kept from the declaration before it.
 Each declaration must narrow the one before it, so that a need of the type is valid wherever a need of its parent, or of any type, is:
 a schema keyword only becomes stricter (an ``enum`` a subset, a ``minimum`` higher, a ``maxItems`` lower, ...), none is dropped,
-the field's type never changes, ``nullable`` only changes from ``true`` to ``false``,
+``nullable`` only changes from ``true`` to ``false``,
 and a default -- the type's own, or the one it keeps -- is valid against the narrowed schema
 (so an ``enum`` that leaves out the field's default needs a ``default`` inside it;
-and as a link type's default is no links, a ``minItems`` needs a ``default`` with as many).
+and as the default of a link type, and of ``tags``, is an empty list, a ``minItems`` needs a ``default`` with as many items).
 A declaration that widens is ignored as a whole, and the type keeps the declaration before it;
 each reason is one ``needs.type_widening`` warning, such as::
 
@@ -454,6 +454,8 @@ A declaration that cannot be applied is ignored as a whole, as one ``needs.type_
    needs_types['spec'].fields['x'] declares 'x', which is not a field; the entry is ignored
 
 when it names no field of its table (a link type under ``fields``, a field under ``links``, or a name declared nowhere),
+changes the field's type, which is the same on every need type
+(``... cannot be declared with type 'integer' (items None): its type is 'string' (items None) on every need type; the entry is ignored``),
 or carries a ``schema``, ``default`` or ``predicates`` that cannot be used (a value of another type, a default of ``title``, which takes none).
 A core field may be declared like any other: ``status`` takes a default and an ``enum``.
 A :ref:`derived <needs_derive>` field or link type (one with ``derive`` or ``derive_by_type``) takes only a ``description``,
@@ -464,10 +466,18 @@ and so is a ``schema`` adding an ``enum`` to a field that has none, as its rules
 A field a need of the type does not set takes the first matching predicate of the type's declaration
 (the field's own, unless the type declares ``predicates``), else the type's default, else the field's default;
 a value set in the need wins over all of them.
+In :file:`conf.py`, ``"default": None`` gives a nullable field no default on the type (its needs leave it unset),
+and is refused (``needs.type_conflict``) on a field that is not nullable.
 A :ref:`needextend` deleting a field (``:-x:``) empties it as the need's type declares it:
 ``None`` where the field is nullable on that type, else the empty value of the field's type.
 A default a type declares is not the one a :ref:`fingerprint <needs_derive>` compares against:
 a need's value equal to its type's default enters the fingerprint, unless it equals the field's own default too.
+
+The warnings of these declarations, given when the schema is built, name an entry by its directive in either shape
+(``needs_types['spec']``), while those given when the configuration is read name an entry of the list by its position
+(``needs_types entry 2 ('spec')``).
+An entry an extension adds to ``needs_types`` once the configuration is read has the shape of its ``inherits``,
+``fields`` and ``links`` checked when the schema is built, with the same ``needs.config`` warnings.
 
 .. _`needs_fields`:
 

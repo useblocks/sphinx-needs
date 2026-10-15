@@ -232,7 +232,8 @@ declaration of a field starts from the global declaration as it stands then (aft
 problems and the legacy defaults), takes its ancestors' entries from the root down and then its own,
 each checked with `narrowing_problems` against the one before, and registers the result for the type
 and every type inheriting from it; what cannot be used is a `needs.type_*` warning, never an error.
-The normaliser at `config-inited` checks only the shape of those keys. The schema has two tiers.
+The normaliser at `config-inited` checks only the shape of those keys, and the resolver checks it
+again, with the normaliser's helpers, for an entry added after it. The schema has two tiers.
 The union, `FieldsSchema` itself, answers a field's shape (`FieldShape`, `LinkShape`: its name,
 kind, type, item type and derivation, and a link type's display, copy and dead links -- what is the
 same on every need type). `for_type(need["type"])` answers a need's fields in full

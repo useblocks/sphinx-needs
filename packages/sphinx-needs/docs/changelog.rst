@@ -87,8 +87,9 @@ Improvements
   table or setting what the field does not take (a default of a derived field among them), and
   ``needs.type_widening``, one warning per reason, for a declaration that widens. A :ref:`needextend`
   deleting a field now empties it as the need's type declares it (``None`` where nullable on that type,
-  else the empty value of its type). The third slice of per-type fields
-  (`discussion #1646 <https://github.com/useblocks/sphinx-needs/discussions/1646>`__; :issue:`2269`)
+  else the empty value of its type). The per-type declarations of :issue:`2269`, after the schema's
+  two tiers (:pr:`2275`) and the ``needs_types`` table (:pr:`2276`)
+  (`discussion #1646 <https://github.com/useblocks/sphinx-needs/discussions/1646>`__)
 
 Deprecations
 ............
