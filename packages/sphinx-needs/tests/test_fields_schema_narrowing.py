@@ -629,3 +629,31 @@ def test_a_repeated_link_default_is_one_link() -> None:
         "Default ['A', 'B'] is not valid against the narrowed schema: "
         '["A","B"] has more than 1 item.'
     ]
+
+
+def test_a_new_default_is_valid_against_the_narrowed_schema() -> None:
+    """A default the declaration introduces is checked, also when the field's own
+    schema refuses it too: only a default it takes from the field is the field's."""
+    base = FieldSchema(
+        name="asil",
+        schema={"type": "string", "enum": ["A", "B"]},
+        allow_defaults=True,
+        default=FieldLiteralValue("A"),
+    )
+    narrowed = {"type": "string", "enum": ["A"]}
+    assert narrowing_problems(
+        base, replace(base, schema=narrowed, default=FieldLiteralValue("C"))
+    ) == [
+        'Default \'C\' is not valid against the narrowed schema: "C" is not one of "A".'
+    ]
+    assert narrowing_problems(
+        base,
+        replace(
+            base,
+            schema=narrowed,
+            predicate_defaults=(('status == "open"', FieldLiteralValue("C")),),
+        ),
+    ) == [
+        "Default 'C' of the predicate 'status == \"open\"' is not valid against the "
+        'narrowed schema: "C" is not one of "A".'
+    ]
