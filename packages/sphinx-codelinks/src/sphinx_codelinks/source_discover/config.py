@@ -186,13 +186,16 @@ class SourceDiscoverConfig:
         errors = []
         for _field_name in self.field_names():
             schema = self.get_schema(_field_name)
+            if schema is None:
+                # no schema to check against; `validate` would raise TypeError
+                continue
             value = getattr(self, _field_name)
             if isinstance(value, Path):  # adapt to json schema restriction
                 value = str(value)
             try:
                 validate(
                     instance=value,
-                    schema=schema,  # ty: ignore[invalid-argument-type]
+                    schema=schema,
                 )  # validate has no type specified
             except ValidationError as e:
                 errors.append(

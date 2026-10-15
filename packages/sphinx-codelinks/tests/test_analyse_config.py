@@ -11,6 +11,8 @@ from sphinx_codelinks.config import (
     convert_analyse_config,
     generate_project_configs,
 )
+from sphinx_codelinks.needextend_write import MarkedContentSchema
+from sphinx_codelinks.source_discover.config import SourceDiscoverConfig
 from sphinx_needs_testkit import build_warnings
 
 from .conftest import TEST_DIR
@@ -450,3 +452,33 @@ def test_an_unknown_analyse_key_still_fails_in_the_constructor() -> None:
     """The unknown-key policy for every other key is unchanged."""
     with pytest.raises(TypeError, match="unexpected keyword argument 'foo'"):
         convert_analyse_config({"foo": 1})
+
+
+@pytest.mark.parametrize(
+    "make",
+    [
+        NeedIdRefsConfig,
+        MultilineNeedsConfig,
+        OneLineCommentStyle,
+        SourceDiscoverConfig,
+        # its fields have no defaults; the guard runs before any field is read
+        lambda: object.__new__(MarkedContentSchema),
+    ],
+    ids=[
+        "NeedIdRefsConfig",
+        "MultilineNeedsConfig",
+        "OneLineCommentStyle",
+        "SourceDiscoverConfig",
+        "MarkedContentSchema",
+    ],
+)
+def test_check_schema_skips_a_field_without_schema(make, monkeypatch):
+    """A field whose ``get_schema`` is ``None`` is skipped, as SourceAnalyseConfig does.
+
+    ``jsonschema.validate(schema=None)`` raises ``TypeError``, which ``check_schema``
+    does not catch. Every field of these classes has a schema today, so this pins the
+    guard rather than a reachable path.
+    """
+    config = make()
+    monkeypatch.setattr(type(config), "get_schema", classmethod(lambda cls, name: None))
+    assert config.check_schema() == []
