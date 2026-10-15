@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792083591836,
+  "lastUpdate": 1792092197083,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -25344,6 +25344,42 @@ window.BENCHMARK_DATA = {
             "value": 40.269398142000014,
             "unit": "s",
             "extra": "Commit: 9d069137ca3da3d315ce7dde1fb4a073a3b811a4\nBranch: master\nTime: 2026-10-15T18:58:41+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "47ae2277027854fd5199ac63cef2055833ead86b",
+          "message": "✨ `needs_types` as a table keyed by directive, beside the list, validated at config-inited; one need type registers its directive once (#2276)\n\nThis is the second of four pull requests of the second slice of per-type\nfields (tracking issue #2269, discussion\n[#1646](https://github.com/useblocks/sphinx-needs/discussions/1646)):\nafter the schema API (#2275), it gives `needs_types` the table shape the\nper-type declarations of the next pull request (2c: `inherits`,\n`fields`, `links`, `closed`) extend, and the validation they need\nunderneath. It touches configuration handling only: `create_schema` and\n`needs_schema.py` are not edited.\n\nCloses #2262\nCloses #2271\nPart of #2269\n\n## The two shapes\n\n`needs_types` is a list of mappings, each naming its `directive`\n(today's shape), or a mapping from directive name to the other keys, in\n`conf.py` and in the `needs_from_toml` file alike:\n\n```python\nneeds_types = {\n    \"req\": {\"title\": \"Requirement\", \"prefix\": \"R_\", \"color\": \"#BFD8D2\"},\n    \"spec\": {\"title\": \"Specification\", \"prefix\": \"S_\"},\n}\n```\n\n```toml\n[needs.types.req]\ntitle = \"Requirement\"\nprefix = \"R_\"\ncolor = \"#BFD8D2\"\n\n[needs.types.spec]\ntitle = \"Specification\"\nprefix = \"S_\"\n```\n\nA `config-inited` handler at priority 12, `resolve_need_types` (after\n`load_config_from_toml` at 10 has copied the TOML value, before\n`load_config` and every extension's `add_need_type` at 500), resolves\neither shape to the list `[{\"directive\": key, **value}, ...]` in the\norder given and writes it back to the option, so every reader --\n`load_config`, `add_need_type`'s append, `get_need_types`, list2need,\nthe legends, needreport's template, needservice's default type,\nsphinx-codelinks -- keeps seeing a list, and Sphinx compares the same\nlist on both sides of an incremental build.\n\n## The findings\n\nThe resolution is one pure function, `normalise_need_types`, and each\nproblem is a `needs.config` warning rather than a traceback or silence:\nan entry that is not a mapping, that names no directive, or whose\n`title` or `prefix` is missing or not a string is dropped (a missing\n`title` used to end the build with a `KeyError`); a `color` or `style`\nthat is not a string, and a key other than `directive`, `title`,\n`prefix`, `color`, `style`, are removed from a kept entry; in the table\nshape a `directive` that differs from its key is reported and the key\nused. A value that is neither a list nor a mapping is a\n`NeedsConfigException`. A directive declared twice in the list resolves\nto its **last** entry, at its own position, with one finding naming both\npositions -- what need creation, `create_schema` and ubCode already did;\nlist2need's prefix (which took the first entry) and the doubled legend\nand needreport rows now agree, and Sphinx's `already registered` warning\nfor the duplicate is gone. When the duplicated directive was the first\ntype, a `needservice` datum without a `type` now takes the type that\ncomes first instead.\n\n## #2271\n\n`load_config` and `add_need_type` register a type's directive through\none helper, `_register_need_directive`, which leaves a name alone when\ndocutils' registry already maps it to `NeedDirective` itself and\notherwise calls `app.add_directive` as before. So `extensions =\n[\"sphinx_test_reports\", \"sphinx_needs\"]` builds without its three\n`already registered` warnings, with no priority change in either\nextension, while a directive of another class under a type's name is\nhandled as before, with Sphinx's warning.\n\n## What proves nothing else moved\n\nWith a valid list-shaped `needs_types` every output is what master\nbuilds: sphinx-needs' suite passes with only the new tests added (master\n3040 passed / 12 skipped; this branch 3082 passed / 12 skipped, by the\nsame names), sphinx-test-reports' 462 + 3 (the two order tests, and its\ncompile check over the new module), sphinx-codelinks' 1065 unchanged,\nthe docs build without a warning; no `.ambr`, needs.json or fixture file\nchanges, and the only TOML change is three dead `content` lines in the\ndocs' `ubproject.toml` (see below) (`git diff --stat origin/master... --\n'*.ambr' '*.json' '*.html' '*.txt'` is empty); the `needs_from_toml`\nsnapshot does not move; the lock does not move. Further pins -- the\nregistration rule overrides a subclass of the need directive and a\nforeign class that only shares its name like any other class, a dropped\nentry gets only the finding for why it was dropped, an adjacent\nduplicate is reported, and `add_need_type` follows the same rule as\n`load_config` -- each fail under the wrong version they guard against;\nand eight mutations of the new code (a mapping passed through, the first\nduplicate winning, the unknown-key finding removed, the registration\nhelper always registering or skipping any registered name, the list not\nwritten back, the handler at priority 600, a missing-`title` entry kept)\neach turn the tests that pin them red.\n\nThe `types` option keeps `rebuild = \"html\"`; #2262's \"consider env\" is\nunmeasured and separate from this pull request.\n\nFifteen test projects and the documentation's `ubproject.toml` declared\na type key `content`, which sphinx-needs 1.0 read and nothing has read\nsince #610; it is removed from them (63 lines, no assertion changes),\nand a project that still carries it now gets the unknown-key finding,\nwhich the changelog names.\n\n## ubCode\n\nToday ubCode accepts `[[needs.types]]` only -- a `[needs.types.<name>]`\ntable is a whole-configuration parse failure --, resolves a duplicate\ndirective silently to its last entry, and ignores unknown keys\n(useblocks/ubcode#4136, rows 3-4). After this pull request the two tools\ndiffer on the table shape, the duplicate finding, the unknown-key\nfinding, and a missing `title` (ubCode fails the whole configuration on\na missing required key; sphinx-needs drops the type with a finding). The\ngap is useblocks/ubcode#4149.\n\n## Follow-ups\n\n- 2c: the per-type declarations (`inherits`, `fields`, `links`,\n`closed`) as keys of the table, needextend's per-type DELETE value, the\ndocs.\n- 2d: the conformance corpus for field declarations, which ubCode\nvendors.",
+          "timestamp": "2026-10-15T21:22:11+02:00",
+          "tree_id": "bfd7fcdff28f4e74f4ce971e878a86d03379e8d9",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/47ae2277027854fd5199ac63cef2055833ead86b"
+        },
+        "date": 1792092189612,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.06554521500000021,
+            "unit": "s",
+            "extra": "Commit: 47ae2277027854fd5199ac63cef2055833ead86b\nBranch: master\nTime: 2026-10-15T21:22:11+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 37.128581522999994,
+            "unit": "s",
+            "extra": "Commit: 47ae2277027854fd5199ac63cef2055833ead86b\nBranch: master\nTime: 2026-10-15T21:22:11+02:00"
           }
         ]
       }
