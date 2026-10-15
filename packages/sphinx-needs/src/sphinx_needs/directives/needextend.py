@@ -295,6 +295,8 @@ def extend_needs_data(
         # a fixed order; each need is modified on its own, so nothing depends on it
         targets.append((needextend, sorted(matched)))
 
+    #: (location, need type, option) -> the ids of the needs not extended by it
+    refused: dict[tuple[tuple[str, int], str, str], list[str]] = {}
     current_needextend: NeedsExtendType
     for current_needextend, need_ids in targets:
         for need_id in need_ids:
@@ -317,7 +319,9 @@ def extend_needs_data(
             for option_name, etype, link_value in current_needextend[
                 "list_modifications"
             ]:
-                if _refused_on_type(type_schema, need, option_name, etype, location):
+                if _refused_on_type(
+                    type_schema, need, option_name, etype, location, refused
+                ):
                     continue
                 match (etype, link_value):
                     case (ExtendType.APPEND, LinksLiteralValue()):
@@ -366,7 +370,9 @@ def extend_needs_data(
                         )
 
             for option_name, etype, field_value in current_needextend["modifications"]:
-                if _refused_on_type(type_schema, need, option_name, etype, location):
+                if _refused_on_type(
+                    type_schema, need, option_name, etype, location, refused
+                ):
                     continue
                 match (etype, field_value):
                     case (ExtendType.APPEND, FieldLiteralValue()):
@@ -441,6 +447,15 @@ def extend_needs_data(
                             f"Unhandled case {other_field} for {option_name!r}"
                         )
 
+    for (location, need_type, option), ids in refused.items():
+        log_warning(
+            logger,
+            f"Option '{option}' does not support extend operations on need type "
+            f"{need_type!r}; it does not extend "
+            f"{counted_ids(ids, ' need' if len(ids) == 1 else ' needs')}.",
+            "needextend",
+            location=location,
+        )
     _report_filters_on_computed_fields(all_needs, targets, needs_config, schema)
 
 
@@ -450,22 +465,21 @@ def _refused_on_type(
     option_name: str,
     etype: ExtendType,
     location: tuple[str, int],
+    refused: dict[tuple[tuple[str, int], str, str], list[str]],
 ) -> bool:
-    """Whether the need's type does not allow to extend the field, which is reported.
+    """Whether the need's type does not allow to extend the field: then the need is
+    added to ``refused``, reported once for every needextend, need type and option.
 
     The directive refuses an option whose field does not allow it on any need type;
-    a need type may declare the field anew, so each need is checked against its type.
+    a need type may declare the field anew, or not declare it (a closed type), so each
+    need is checked against its type.
     """
     field_schema = type_schema.get_any_field(option_name)
     if field_schema is None or field_schema.allow_extend:
         return False
-    log_warning(
-        logger,
-        f"Option '{etype.value}{option_name}' does not support extend operations on "
-        f"need type {need['type']!r}; need {need.id!r} is not extended by it.",
-        "needextend",
-        location=location,
-    )
+    refused.setdefault(
+        (location, need["type"], f"{etype.value}{option_name}"), []
+    ).append(need.id)
     return True
 
 
