@@ -1067,14 +1067,15 @@ def test_a_name_under_links_and_untyped_fields_is_a_link_type(test_app: Any) -> 
 def test_the_back_links_of_a_link_type_are_no_link_type(test_app: Any) -> None:
     """A ``links`` entry named as the back links of a link type -- of ``links``, of
     ``parent_needs``, of a ``needs_links`` type, of a link type declared on need
-    types alone -- declares nothing: it is refused as no link type, and the back links
-    are computed on every need, as without it."""
+    types alone -- declares nothing: it is refused as a link type's back links (as a
+    ``fields`` entry of that name is), and the back links are computed on every need,
+    as without it."""
     app = test_app
     app.build()
     assert build_warnings(app) == [
         _conflict(
-            f"needs_types['spec'].links[{name!r}] declares {name!r}, which is not a "
-            "link type"
+            f"needs_types['spec'].links[{name!r}] declares {name!r}, which is a link "
+            "type's back links"
         )
         for name in ("links_back", "parent_needs_back", "blocks_back", "z_back")
     ]

@@ -1474,6 +1474,98 @@ def test_a_link_type_under_fields_is_no_field(test_app: Any) -> None:
     ) in build_warnings(app)
 
 
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            _conf(
+                _types(
+                    spec={
+                        "fields": {
+                            name: {"schema": {"type": "string"}}
+                            for name in (
+                                "links_back",
+                                "parent_needs_back",
+                                "blocks_back",
+                            )
+                        }
+                    }
+                ),
+                links={"blocks": BLOCKS},
+            ),
+            ".. req:: A\n   :id: R_001\n\n"
+            ".. req:: B\n   :id: R_002\n   :links: R_001\n   :blocks: R_001\n\n"
+            ".. spec:: C\n   :id: S_001\n   :links: R_001\n   :links_back: x\n\n"
+            "   .. req:: D\n      :id: R_003\n",
+        )
+    ],
+    indirect=True,
+)
+def test_a_field_named_as_back_links_is_refused(test_app: Any) -> None:
+    """#2301: a ``fields`` entry named as the back links of a link type -- of ``links``,
+    of ``parent_needs``, of a ``needs_links`` type -- declares no field: it is one
+    finding per entry, as a ``links`` entry of that name is, and the back links are
+    computed on every need as without it, never validated against the entry's schema;
+    the need directive has no option of the name (it used to take the value, and lose
+    it to the back links)."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        *(
+            _conflict(
+                f"needs_types['spec'].fields[{name!r}] declares {name!r}, which is a "
+                "link type's back links"
+            )
+            for name in ("links_back", "parent_needs_back", "blocks_back")
+        ),
+        "<srcdir>/index.rst:12: WARNING: Unknown option 'links_back' [needs.directive]",
+    ]
+    needs = _needs(app)
+    assert {
+        k: (v["links_back"], v["parent_needs_back"], v["blocks_back"])
+        for k, v in needs.items()
+    } == {
+        "R_001": (["R_002", "S_001"], [], ["R_002"]),
+        "R_002": ([], [], []),
+        "S_001": ([], ["R_003"], []),
+        "R_003": ([], [], []),
+    }
+    for name in ("links_back", "parent_needs_back", "blocks_back"):
+        assert _schema(app).get_extra_field(name) is None, name
+        assert _properties(app)[name]["field_type"] == "backlinks", name
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            CONF + "needs_extra_links = [{'option': 'blocks', 'incoming': 'in', "
+            "'outgoing': 'out'}]\n"
+            + "needs_types = "
+            + repr(_types(spec={"fields": {"blocks_back": {}}}))
+            + "\n",
+            ".. req:: A\n   :id: R_001\n\n.. spec:: B\n   :id: S_001\n   :blocks: R_001\n",
+        )
+    ],
+    indirect=True,
+)
+def test_a_field_named_as_extra_links_back_links_is_refused(test_app: Any) -> None:
+    """A ``fields`` entry named as the back links of a ``needs_extra_links`` type is
+    refused as the others are; the configuration check used to stop the build on it."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        'WARNING: Config option "needs_extra_links" is deprecated. Please use '
+        '"needs_links" instead. [needs.deprecated]',
+        _conflict(
+            "needs_types['spec'].fields['blocks_back'] declares 'blocks_back', which is "
+            "a link type's back links"
+        ),
+    ]
+    assert _needs(app)["R_001"]["blocks_back"] == ["S_001"]
+    assert _schema(app).get_extra_field("blocks_back") is None
+
+
 def test_a_schema_not_told_its_types_projects_absence() -> None:
     """A schema built by hand and never told its need types still makes a field
     declared on need types alone absent on every other type."""

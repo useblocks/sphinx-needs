@@ -151,6 +151,34 @@ Deprecations
 Bug fixes
 .........
 
+- 🐛 A ``fields`` entry of a need type named as a link type's back links (``links_back``,
+  ``parent_needs_back``, or ``rel_back`` beside a ``rel`` link type) is refused, one
+  ``needs.type_conflict`` warning, as a ``links`` entry of that name already was, and a
+  ``links`` entry of that name now says so too ("which is a link type's back links"). It
+  used to declare a field the computed back links replaced on every need, its authored
+  value lost and its schema checked against the back links of every need, those of the
+  types that do not declare it included; beside a :ref:`needs_extra_links` link type the
+  build stopped instead (:issue:`2301`, :pr:`2305`)
+
+- 🐛 One rule for a link type whose back links, ``<name>_back``, have the name of a field
+  or of another link type, applied when the schema is built (:issue:`2293`, :pr:`2305`)
+
+  Between global declarations, a name declared outright wins: the link type is refused,
+  one ``needs.config`` warning naming both and where the field comes from, and does not
+  exist (no directive option, no back links, no needs.json entry), while the field or link
+  type of that name keeps its values in needs.json, in filters and in the validation alike.
+  A link type that is itself refused claims no name: of the link types ``x``, ``x_back``
+  and ``x_back_back``, ``x_back`` is refused and ``x`` kept, its back links named
+  ``x_back``. A feature that names a refused link type (a :ref:`needgantt`'s
+  ``:starts_with_links:``, a network rule of the schema) stops the build, as it does for a
+  link type that was never declared.
+  Through :ref:`needs_links`, an extension's ``add_field``, a service's field, or a second
+  link type, the back links used to overwrite the field silently (or the link type
+  ``x_back`` hid the back links of ``x``); through :ref:`needs_extra_links`, the build
+  stopped with "Same name for automatically created link and field". ``links`` and
+  ``parent_needs``, which every project has, never yield: a field or link type named
+  ``links_back`` or ``parent_needs_back`` is ignored instead, one ``needs.config`` warning.
+
 - 🐛 The ``needs.config`` finding for a :ref:`needs_global_options` value with unknown
   keys lists them sorted, so its text is the same on every run. The keys came from a
   ``set``, whose order follows the hash seed, so the message changed from run to run and

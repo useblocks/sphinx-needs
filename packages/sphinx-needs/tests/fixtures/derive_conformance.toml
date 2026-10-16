@@ -3653,7 +3653,7 @@ config = '''
 schema = { type = "string" }
 [needs.links.tested]
 derive = { kind = "links", join = { field = "title", equals = "classname" }, include_self = true }
-[needs.links.tested_back]
+[needs.links.tested_by]
 derive = { kind = "links", join = { field = "classname", equals = "title" }, include_self = true }
 '''
 source = '''
@@ -3675,10 +3675,10 @@ findings = []
 [case.expect.needs.TESTLINK_1]
 tested = ["TESTSPEC_001", "TESTSPEC_002"]
 [case.expect.needs.TESTSPEC_002]
-tested_back = ["TESTLINK_1"]
+tested_by = ["TESTLINK_1"]
 [case.expect.needs.TESTSPEC_NONE]
 tested = []
-tested_back = []
+tested_by = []
 
 [[case]]
 name = "join-inline-equivalence"
