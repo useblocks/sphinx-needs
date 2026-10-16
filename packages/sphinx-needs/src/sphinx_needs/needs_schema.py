@@ -1390,8 +1390,8 @@ class FieldsSchema:
         type shares them, one instance. Else it is a schema whose fields are this
         one's, in the same order, with the need type's overlays
         (:meth:`add_type_overlay`) in place of the fields they replace, and each field
-        declared on need types alone that the type does not declare absent
-        (:meth:`_localise`). A need type the schema does not know reads the global
+        declared on need types alone (by their ``needs_types`` entries) that the type
+        does not declare absent. A need type the schema does not know reads the global
         view: an unknown type is reported where a need is created. Neither can be
         changed, and the first call freezes a schema not frozen yet (:meth:`freeze`).
         The schema of one need type answers as the schema it is resolved from.
