@@ -151,6 +151,29 @@ Deprecations
 Bug fixes
 .........
 
+- 🐛 An incremental build no longer reports
+  ``The configuration has changed (2 options: 'needs_layouts', 'needs_types')`` every time
+  (Sphinx 8 and later print the line; Sphinx 7 compared the same difference silently).
+  The GitHub services' need types (``issue``, ``pr``, ``commit``) and their ``github``
+  layout were appended to :ref:`needs_types` and :ref:`needs_layouts` when the services
+  were registered, after Sphinx had compared the configuration with the one pickled by the
+  previous build. They, and every need type added with
+  :func:`~sphinx_needs.api.configuration.add_need_type`, are now kept in sphinx-needs' own
+  registry, added at ``config-inited``, and follow the configured ones wherever types and
+  layouts are read; a configured type or layout of the same name still wins.
+  ``app.config.needs_types`` and ``app.config.needs_layouts`` therefore hold only what the
+  project configures: read every type with
+  :func:`~sphinx_needs.api.configuration.get_need_types`, or
+  ``NeedsSphinxConfig(app.config).types``. After upgrading, the line is still reported
+  until a build re-reads a document, as the environment Sphinx loads was pickled with the
+  old values and is pickled again only then (:issue:`2265`)
+
+- 🐛 Configuring your own ``issue`` or ``pr`` need type -- or adding one with
+  ``add_need_type`` from another extension -- no longer stops the GitHub services from
+  adding their other need types: a configured ``issue`` dropped ``pr`` and ``commit``, and
+  a configured ``pr`` dropped ``commit``. Each of the three is now added on its own, and
+  only where no type of its directive exists.
+
 - 🐛 A ``fields`` entry of a need type named as a link type's back links (``links_back``,
   ``parent_needs_back``, or ``rel_back`` beside a ``rel`` link type) is refused, one
   ``needs.type_conflict`` warning, as a ``links`` entry of that name already was, and a
