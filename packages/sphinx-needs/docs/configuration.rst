@@ -393,7 +393,7 @@ and a declaration in ``links`` these, as :ref:`needs_links` takes them:
    * - ``derive``
      - rule computing the links of the type's needs: its ``derive_by_type`` entry for the type (below)
    * - ``incoming``, ``outgoing``
-     - the labels of the links, on every need type: in a root declaration of a link type declared on need types alone only (below)
+     - the labels of the links, on every need type: set by the root declaration of a link type declared on need types alone (below)
    * - ``copy``
      - whether the links are copied into ``links``: likewise
    * - ``allow_dead_links``
@@ -541,9 +541,14 @@ A ``derive`` makes it derived on every type that declares it (a child inheriting
 
 **Link types declared on need types alone.**
 A ``links`` entry naming a link type that nothing else declares -- no :ref:`needs_links` or :ref:`needs_extra_links` entry,
-not ``links`` or ``parent_needs``, and no field, one declared on need types alone included --
+not ``links`` or ``parent_needs``, no field, one declared on need types alone included, nor a link type's back links, ``<l>_back`` --
 declares a link type of the types that declare it, as a ``fields`` entry declares a field:
 by their own entry or an ancestor's, an empty entry included.
+Its back links are named ``<name>_back`` on every need, so one whose back links would have the name of a field or a link type
+is refused on every entry, one ``needs.type_conflict`` warning each, and does not exist::
+
+   needs_types['spec'].links['x'] declares 'x', whose back links would be 'x_back', which is a field; the entry is ignored
+
 Every type that declares it agrees on its shape: whether it is derived, and the keys a :ref:`needs_links` entry gives a link type
 for every need type -- ``incoming``, ``outgoing``, ``copy``, ``allow_dead_links``, ``color``, ``style``, ``style_part``, ``style_start`` and ``style_end``.
 The first declaration of a type none of whose ancestors declares it, in the order the types are resolved (as for a field), sets them,
@@ -577,15 +582,16 @@ These link types come after the :ref:`needs_links` and :ref:`needs_extra_links` 
 in a need's links, a :ref:`needflow` legend, a :ref:`needreport`.
 The :ref:`needs.json <needs_builder_format>` declares each once, with the description ``Declared by need types 'req', 'test'``,
 naming the declarations without a declaring ancestor that are not refused.
-A name one type declares under ``fields`` and another under ``links``, neither declared otherwise, is a field:
-the ``links`` entry is refused, as below.
+A name one type declares under ``fields`` and another under ``links``, neither declared otherwise,
+is a field when a declaration of a type without a declaring ancestor gives it a ``schema`` ``type``, and the ``links`` entries are refused, as below;
+otherwise the ``fields`` entries are refused, and the ``links`` entries declare the link type.
 
 **What cannot be declared.**
 A declaration that cannot be applied is ignored as a whole, as one ``needs.type_conflict`` warning, such as::
 
    needs_types['spec'].links['x'] declares 'x', which is a field, not a link type; the entry is ignored
 
-when it names no field of its table (a link type under ``fields``, a field under ``links``,
+when it names no field of its table (a link type under ``fields``, a field or a link type's back links (``links_back``) under ``links``, an empty name,
 or under ``fields`` a name no need type gives a ``schema`` ``type``, above),
 changes the field's type, which is the same on every need type
 (``... cannot be declared with type 'integer' (items None): its type is 'string' (items None) on every need type; the entry is ignored``),
