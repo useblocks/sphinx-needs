@@ -486,7 +486,7 @@ A declaration of another type, or derived where the field is not (or the other w
    needs_types['spec'].fields['x'] cannot be declared with type 'string' (items None): its type is 'integer' (items None) on every need type, as need type 'req' declares it; the entry is ignored
 
 and the entry is ignored, and does not declare the field, so a child's entry under it is a declaration of its own
-(refused too if it gives the same other type; an empty one takes the agreed type);
+(refused too if its type or derivation is not the agreed one; an empty one takes the agreed type);
 an entry that cannot be used for another reason -- it widens, or its default cannot be used -- declares its field all the same, as it was.
 The field is declared once for all, nullable and without a default, which each declaring type narrows:
 one that declares it not nullable, with no default, requires it on its own needs alone.

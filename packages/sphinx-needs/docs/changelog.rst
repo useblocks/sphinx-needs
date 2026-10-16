@@ -102,7 +102,7 @@ Improvements
   in a need is ignored as a ``needs.undeclared_for_type`` warning naming the need, and a need imported
   or external drops it with the same warning (silently when it holds ``None`` anyway, as a needs.json
   writes it on every need); the needs.json describes it as ``Declared by need types ...``, naming the
-  declarations without a declaring ancestor. A ``derive`` in a need type's ``fields`` or ``links`` entry
+  declarations without a declaring ancestor that are not refused. A ``derive`` in a need type's ``fields`` or ``links`` entry
   is the field's (or link type's) ``derive_by_type`` entry for the type and the types inheriting from
   it, read and checked with the others (a rule that cannot be read is reported for each type that reads
   it); beside a ``derive_by_type`` entry for the same type it is a ``needs.config`` warning, and the

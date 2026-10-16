@@ -2609,7 +2609,8 @@ def _folded_rules(
     A ``derive_by_type`` entry for a type wins for that type: beside the type's own
     rule it is a ``needs.config`` finding, the type's rule ignored there (the types
     inheriting from it still read it, unless they have a rule of their own); an
-    inherited rule gives way to it silently. A ``derive_by_type`` that is not a table is read as it is.
+    inherited rule gives way to it silently. A ``derive_by_type`` that is not a
+    table is read as it is.
 
     :param declared: Where the field is declared, as a finding names it.
     :return: The ``derive_by_type`` to read, and the entry each folded rule came from,
