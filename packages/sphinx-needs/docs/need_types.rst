@@ -41,15 +41,15 @@ Give it a ``schema`` ``type``: without one, the entry is refused (see :ref:`need
 
 .. literalinclude:: ../tests/doc_test/doc_need_types/ubproject.toml
    :language: toml
-   :start-after: # [result]
-   :end-before: # [/result]
+   :start-after: # [verdict]
+   :end-before: # [/verdict]
 
-Only a ``test`` has a ``result``; on the needs of the other types it is ``None``.
-A ``result`` set on a ``req`` is ignored, and the need is kept without it:
+Only a ``test`` has a ``verdict``; on the needs of the other types it is ``None``.
+A ``verdict`` set on a ``req`` is ignored, and the need is kept without it:
 
 .. code-block:: text
 
-   index.rst:8: WARNING: Field 'result' is not declared on need type 'req' and cannot be set in need 'R_002'; the value 'passed' is ignored [needs.undeclared_for_type]
+   index.rst:8: WARNING: Field 'verdict' is not declared on need type 'req' and cannot be set in need 'R_002'; the value 'passed' is ignored [needs.undeclared_for_type]
 
 Status values per type
 ----------------------

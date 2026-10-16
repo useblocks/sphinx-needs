@@ -170,7 +170,7 @@ def test_schema_per_type_example(test_app: SphinxTestApp) -> None:
 
 
 NEED_TYPES_WARNINGS = [
-    "<srcdir>/index.rst:8: WARNING: Field 'result' is not declared on need type 'req' "
+    "<srcdir>/index.rst:8: WARNING: Field 'verdict' is not declared on need type 'req' "
     "and cannot be set in need 'R_002'; the value 'passed' is ignored "
     "[needs.undeclared_for_type]",
     "<srcdir>/index.rst:25: WARNING: Need could not be created: Field 'hazard' is not "
@@ -244,8 +244,8 @@ def test_need_types_example(test_app: SphinxTestApp) -> None:
     assert needs["SR_001"]["status"] == "draft"
     assert needs["T_001"]["status"] == "open"
     # A field of tests alone: set on a test, dropped from a req, None on the others.
-    assert needs["T_001"]["result"] == "passed"
-    assert needs["R_002"]["result"] is None
+    assert needs["T_001"]["verdict"] == "passed"
+    assert needs["R_002"]["verdict"] is None
     assert needs["SR_001"]["hazard"] == "loss of braking"
     assert needs["R_001"]["hazard"] is None
     # Per-type defaults of core fields; req's style default reaches its subtype.

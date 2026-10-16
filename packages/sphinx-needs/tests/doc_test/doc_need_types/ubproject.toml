@@ -18,11 +18,11 @@ title = "Test case"
 prefix = "T_"
 # [/types]
 
-# [result]
-[needs.types.test.fields.result]
+# [verdict]
+[needs.types.test.fields.verdict]
 description = "The outcome of the last test run"
 schema = { type = "string", enum = ["passed", "failed"] }
-# [/result]
+# [/verdict]
 
 # [status]
 [needs.types.req.fields.status]

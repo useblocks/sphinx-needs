@@ -7,7 +7,7 @@ Modeling need types example
 
 .. req:: A requirement that sets a field of tests
    :id: R_002
-   :result: passed
+   :verdict: passed
 
 .. req:: A status that requirements do not have
    :id: R_003
@@ -28,7 +28,7 @@ Modeling need types example
 .. test:: Brake timing test
    :id: T_001
    :verifies: R_001, SR_001
-   :result: passed
+   :verdict: passed
 
 .. test:: A test that verifies nothing
    :id: T_002
