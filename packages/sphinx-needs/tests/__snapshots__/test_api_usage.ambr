@@ -546,6 +546,27 @@
       'title': 'Test Case',
     }),
     dict({
+      'color': '#cccccc',
+      'directive': 'issue',
+      'prefix': 'IS_',
+      'style': 'card',
+      'title': 'Issue',
+    }),
+    dict({
+      'color': '#aaaaaa',
+      'directive': 'pr',
+      'prefix': 'PR_',
+      'style': 'card',
+      'title': 'PullRequest',
+    }),
+    dict({
+      'color': '#888888',
+      'directive': 'commit',
+      'prefix': 'C_',
+      'style': 'card',
+      'title': 'Commit',
+    }),
+    dict({
       'color': '#000000',
       'directive': 'awesome',
       'prefix': 'AW_',

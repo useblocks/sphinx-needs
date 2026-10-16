@@ -9,11 +9,12 @@ from urllib.parse import urlparse
 
 import requests
 from sphinx.application import Sphinx
+from sphinx.config import Config
 from sphinx.util.docutils import SphinxDirective
 from sphinx.util.logging import getLogger
 
 from sphinx_needs.api import add_need_type
-from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.exceptions import NeedsApiConfigException
 from sphinx_needs.logging import log_warning
 from sphinx_needs.services.base import BaseService
@@ -27,6 +28,30 @@ from sphinx_needs.services.config.github import (
 )
 
 LOGGER = getLogger(__name__)
+
+
+def add_github_need_types_and_layout(app: Sphinx, config: Config) -> None:
+    """Add the GitHub services' need types and ``github`` layout to sphinx-needs'
+    registry, never to the ``needs_types`` and ``needs_layouts`` values (#2265).
+
+    Connected to ``config-inited`` at priority 900: after every other extension's
+    handler at the default priority and after the configuration is checked (600), so
+    that a type or layout of the same name -- configured, or added by another
+    extension -- is there already, and wins.
+
+    :param app: The Sphinx application.
+    :param config: The Sphinx configuration.
+    """
+    with suppress(NeedsApiConfigException):
+        # Issue already exists, so we are fine
+        add_need_type(app, "issue", "Issue", "IS_", "#cccccc", "card")
+        # PR already exists, so we are fine
+        add_need_type(app, "pr", "PullRequest", "PR_", "#aaaaaa", "card")
+        # Commit already exists, so we are fine
+        add_need_type(app, "commit", "Commit", "C_", "#888888", "card")
+
+    if "github" not in NeedsSphinxConfig(config).layouts:
+        _NEEDS_CONFIG.add_layout("github", GITHUB_LAYOUT)
 
 
 class GithubService(BaseService):
@@ -55,10 +80,6 @@ class GithubService(BaseService):
         self.username = self.config.get("username")
         self.token = self.config.get("token")
 
-        layouts = NeedsSphinxConfig(self.app.config).layouts
-        if "github" not in layouts:
-            layouts["github"] = GITHUB_LAYOUT
-
         self.gh_type_config = {
             "issue": {
                 "url": "search/issues",
@@ -68,14 +89,6 @@ class GithubService(BaseService):
             "pr": {"url": "search/issues", "query": "is:pr", "need_type": "pr"},
             "commit": {"url": "search/commits", "query": "", "need_type": "commit"},
         }
-
-        with suppress(NeedsApiConfigException):
-            # Issue already exists, so we are fine
-            add_need_type(self.app, "issue", "Issue", "IS_", "#cccccc", "card")
-            # PR already exists, so we are fine
-            add_need_type(self.app, "pr", "PullRequest", "PR_", "#aaaaaa", "card")
-            # Commit already exists, so we are fine
-            add_need_type(self.app, "commit", "Commit", "C_", "#888888", "card")
 
         if "gh_type" in kwargs:
             self.gh_type = kwargs["gh_type"]

@@ -918,7 +918,7 @@ def compile_card_layouts(_app: Sphinx, config: Config) -> None:
         if name in LAYOUTS:
             warn("name collides with a built-in layout, skipping.")
             continue
-        if name in needs_config.layouts:
+        if name in needs_config._layouts:
             warn("name collides with an existing needs_layouts entry, skipping.")
             continue
         if (
@@ -930,4 +930,4 @@ def compile_card_layouts(_app: Sphinx, config: Config) -> None:
 
     if generated:
         # rebind, never mutate: the dict may still be the user's own conf.py object
-        needs_config.layouts = {**needs_config.layouts, **generated}
+        needs_config._layouts = {**needs_config._layouts, **generated}

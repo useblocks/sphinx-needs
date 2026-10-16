@@ -101,11 +101,15 @@ class _Config:
         self._warnings: dict[
             str, str | Callable[[NeedItem, SphinxLoggerAdapter], bool]
         ] = {}
+        self._types: dict[str, NeedType] = {}
+        self._layouts: dict[str, dict[str, Any]] = {}
 
     def clear(self) -> None:
         self._fields = {}
         self._functions = {}
         self._warnings = {}
+        self._types = {}
+        self._layouts = {}
 
     @property
     def fields(self) -> Mapping[str, NewFieldParams]:
@@ -228,6 +232,55 @@ class _Config:
     ) -> None:
         """Adds a warning handler to the configuration."""
         self._warnings[name] = filter
+
+    @property
+    def types(self) -> Mapping[str, NeedType]:
+        """Need types added from code, by directive name, in the order they were added.
+
+        These are added with the ``add_need_type`` API function (by other extensions,
+        and by sphinx-needs itself for its GitHub services), never written into the
+        ``needs_types`` configuration value: ``NeedsSphinxConfig.types`` reads the
+        configured types followed by these.
+        """
+        return self._types
+
+    def add_need_type(self, need_type: NeedType) -> None:
+        """Adds a need type to the registry.
+
+        :raises NeedsApiConfigException: If a need type of its directive is already
+            registered.
+        """
+        directive = need_type["directive"]
+        if directive in self._types:
+            from sphinx_needs.exceptions import (
+                NeedsApiConfigException,  # avoid circular import
+            )
+
+            raise NeedsApiConfigException(f"{directive} already exists as need type")
+        self._types[directive] = need_type
+
+    @property
+    def layouts(self) -> Mapping[str, dict[str, Any]]:
+        """Need layouts added from code, by name, in the order they were added.
+
+        sphinx-needs registers its GitHub services' ``github`` layout here, never in the
+        ``needs_layouts`` configuration value: ``NeedsSphinxConfig.layouts`` reads the
+        configured layouts followed by these.
+        """
+        return self._layouts
+
+    def add_layout(self, name: str, layout: dict[str, Any]) -> None:
+        """Adds a need layout to the registry.
+
+        :raises NeedsApiConfigException: If a layout of the name is already registered.
+        """
+        if name in self._layouts:
+            from sphinx_needs.exceptions import (
+                NeedsApiConfigException,  # avoid circular import
+            )
+
+            raise NeedsApiConfigException(f"{name} already exists as need layout")
+        self._layouts[name] = layout
 
 
 _NEEDS_CONFIG = _Config()
@@ -558,6 +611,11 @@ def _abs_path_external_sources(
     return new_sources
 
 
+#: The attributes :class:`NeedsSphinxConfig` answers itself, rather than from a
+#: ``needs_*`` configuration value of the same name.
+_OWN_ATTRIBUTES = ("_config", "functions", "warnings", "types", "layouts")
+
+
 @dataclass
 class NeedsSphinxConfig:
     """A wrapper around the Sphinx configuration,
@@ -569,21 +627,24 @@ class NeedsSphinxConfig:
     # such that we simply redirect all attribute access to the
     # Sphinx config object, but in a manner where type annotations will work
     # for static type analysis.
-    # Note also that we treat `functions` and `warnings` as special-cases,
-    # since these configurations can also be added to dynamically via the API
+    # Note also that we treat `functions`, `warnings`, `types` and `layouts` as
+    # special-cases, since these configurations can also be added to via the API:
+    # each is a property reading sphinx-needs' own registry (`_NEEDS_CONFIG`), and the
+    # configuration value itself is the dataclass field of the same name with a
+    # leading underscore (`_types` is `needs_types`).
 
     def __init__(self, config: _SphinxConfig) -> None:
         super().__setattr__("_config", config)
 
     def __getattribute__(self, name: str) -> Any:
-        if name.startswith("__") or name in ("_config", "functions", "warnings"):
+        if name.startswith("__") or name in _OWN_ATTRIBUTES:
             return super().__getattribute__(name)
         if name.startswith("_"):
             name = name[1:]
         return getattr(super().__getattribute__("_config"), f"needs_{name}")
 
     def __setattr__(self, name: str, value: Any) -> None:
-        if name.startswith("__") or name in ("_config", "functions", "warnings"):
+        if name.startswith("__") or name in _OWN_ATTRIBUTES:
             return super().__setattr__(name, value)
         if name.startswith("_"):
             name = name[1:]
@@ -727,7 +788,7 @@ class NeedsSphinxConfig:
     )
     """List of scenarios that are ignored for dumping debug information."""
 
-    types: list[NeedType] = field(
+    _types: list[NeedType] = field(
         default_factory=lambda: [
             {
                 "directive": "req",
@@ -775,6 +836,28 @@ class NeedsSphinxConfig:
     after that the value is always a list. Sphinx's own type check (at ``config-inited``
     priority 800, inferred from the list default) sees the resolved list.
     """
+
+    @property
+    def types(self) -> list[NeedType]:
+        """The need types: the configured ``needs_types``, then those added with the
+        ``add_need_type`` API function -- by other extensions, and by sphinx-needs for
+        its GitHub services -- that no configured type of the same directive replaces.
+
+        A new list on each read: a type is added with ``add_need_type``, or configured.
+        Read it from a ``config-inited`` handler at a priority above 12, or later:
+        before that, a mapping-shaped ``needs_types`` is not yet resolved to its list.
+        """
+        configured = self._types
+        taken = {need_type["directive"] for need_type in configured}
+        return [
+            *configured,
+            *(
+                need_type
+                for directive, need_type in _NEEDS_CONFIG.types.items()
+                if directive not in taken
+            ),
+        ]
+
     include_needs: bool = field(
         default=True, metadata={"rebuild": "html", "types": (bool,)}
     )
@@ -1055,10 +1138,30 @@ class NeedsSphinxConfig:
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
     """If True, log individual warnings per warning check failed."""
-    layouts: dict[str, dict[str, Any]] = field(
+    _layouts: dict[str, dict[str, Any]] = field(
         default_factory=dict, metadata={"rebuild": "html", "types": ()}
     )
     """Defines custom layouts for needs rendering."""
+
+    @property
+    def layouts(self) -> dict[str, dict[str, Any]]:
+        """The need layouts: the configured ``needs_layouts`` -- which holds the
+        built-in layouts and the compiled ``needs_card_layouts`` too, once
+        ``config-inited`` has run -- then those registered from code (the GitHub
+        services' ``github`` layout) that no configured layout of the same name replaces.
+
+        A new dict on each read: a layout is configured with ``needs_layouts``.
+        """
+        configured = self._layouts
+        return {
+            **configured,
+            **{
+                name: layout
+                for name, layout in _NEEDS_CONFIG.layouts.items()
+                if name not in configured
+            },
+        }
+
     card_layouts: dict[str, dict[str, Any]] = field(
         default_factory=dict, metadata={"rebuild": "html", "types": ()}
     )

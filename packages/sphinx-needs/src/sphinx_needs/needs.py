@@ -187,7 +187,10 @@ from sphinx_needs.schema.config_utils import (
     validate_schemas_config,
 )
 from sphinx_needs.schema.process import process_schemas
-from sphinx_needs.services.github import GithubService
+from sphinx_needs.services.github import (
+    GithubService,
+    add_github_need_types_and_layout,
+)
 from sphinx_needs.string_links import compile_string_links
 from sphinx_needs.utils import node_match
 from sphinx_needs.variant_data import VariantDataProxy
@@ -410,6 +413,9 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.connect("config-inited", compile_card_layouts, priority=550)
     app.connect("config-inited", compile_string_links, priority=551)
     app.connect("config-inited", check_configuration, priority=600)  # runs late
+    # after every other extension's handler at the default priority, so that a type or
+    # layout of the same name, added by one of them or configured, wins (#2265)
+    app.connect("config-inited", add_github_need_types_and_layout, priority=900)
 
     app.connect("env-before-read-docs", prepare_env)
     # note we have to place create_schema after prepare_env, as that can add extra fields,
@@ -1425,7 +1431,7 @@ def merge_default_configs(_app: Sphinx, config: Config) -> None:
     """Merge built-in defaults with user configuration."""
     needs_config = NeedsSphinxConfig(config)
 
-    needs_config.layouts = {**LAYOUTS, **needs_config.layouts}
+    needs_config._layouts = {**LAYOUTS, **needs_config._layouts}
 
     needs_config.flow_configs = {
         **NEEDFLOW_CONFIG_DEFAULTS,

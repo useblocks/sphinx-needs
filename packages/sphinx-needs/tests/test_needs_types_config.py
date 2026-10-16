@@ -58,6 +58,9 @@ RESOLVED = [
     {"directive": "mid", **MID},
 ]
 
+#: the GitHub services' need types, which sphinx-needs adds after every other type
+SERVICE_TYPES = ["issue", "pr", "commit"]
+
 #: the same three types, as a mapping from directive name to the other keys
 MAPPING = {"zeta": ZETA, "alpha": ALPHA, "mid": MID}
 
@@ -134,8 +137,13 @@ def _needs(app: Any) -> dict[str, dict[str, Any]]:
 
 
 def _resolved(app: Any) -> list[dict[str, Any]]:
-    """The list every reader of ``needs_types`` sees."""
-    return [dict(entry) for entry in NeedsSphinxConfig(app.config).types]
+    """The list every reader of ``needs_types`` sees, but the GitHub services' types,
+    which sphinx-needs adds after it (``tests/test_service_need_types.py``)."""
+    return [
+        dict(entry)
+        for entry in NeedsSphinxConfig(app.config).types
+        if entry["directive"] not in SERVICE_TYPES
+    ]
 
 
 # -- the two shapes ---------------------------------------------------------------------
@@ -150,7 +158,7 @@ def test_the_mapping_shape_resolves_to_the_list_shape(
     built = {}
     for name, conf in (("list", LIST_CONF), ("mapping", MAPPING_CONF)):
         app = make_app("needs", srcdir=_write(tmp_path / name, conf, TYPES_INDEX))
-        assert get_need_types(app) == ["zeta", "alpha", "mid"]
+        assert get_need_types(app) == ["zeta", "alpha", "mid", *SERVICE_TYPES]
         assert _resolved(app) == RESOLVED
         app.build()
         assert build_warnings(app) == []
@@ -187,7 +195,7 @@ def test_toml_tables_resolve_to_the_list_shape(
             tmp_path / "toml", TOML_CONF, TYPES_INDEX, **{"ubproject.toml": TABLES_TOML}
         ),
     )
-    assert get_need_types(app) == ["zeta", "alpha", "mid"]
+    assert get_need_types(app) == ["zeta", "alpha", "mid", *SERVICE_TYPES]
     assert _resolved(app) == RESOLVED
     app.build()
     assert build_warnings(app) == [
@@ -766,7 +774,7 @@ def test_a_type_added_before_load_config_registers_its_directive_once(
     ``load_config`` registers the directive; ``load_config`` then finds it registered
     and does not register it again."""
     app = test_app
-    assert get_need_types(app)[-1] == "story"
+    assert get_need_types(app)[-4:] == ["story", *SERVICE_TYPES]
     app.build()
     assert build_warnings(app) == []
     assert list(_needs(app)) == ["ST_00001"]
@@ -878,7 +886,7 @@ def test_add_need_type_after_the_mapping_shape(test_app: Any) -> None:
     """A type added from code after the mapping shape is resolved is appended to the
     list, and its directive works."""
     app = test_app
-    assert get_need_types(app) == ["zeta", "alpha", "story"]
+    assert get_need_types(app) == ["zeta", "alpha", "story", *SERVICE_TYPES]
     app.build()
     assert build_warnings(app) == []
     assert sorted(_needs(app)) == ["ST_00001", "Z_00001"]
