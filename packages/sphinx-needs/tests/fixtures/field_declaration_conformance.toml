@@ -757,7 +757,7 @@ prefix = "I_"
 
 [needs.types.impl.fields.asil]
 schema = { enum = ["A", "B"] }
-default = "C"
+default = "QM"
 '''
 source = '''
 .. spec:: Unset
