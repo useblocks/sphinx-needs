@@ -242,6 +242,11 @@ type the field is one absent declaration (`directive_option` and `allow_extend` 
 those types; `type_declarations` stays the declarations the configuration makes. A `derive` in an
 entry is folded into the field's `derive_by_type` where `create_schema` reads it, so the rule checks
 see it with the others; derivation is part of a field's shape when need types alone declare it.
+A `links` entry naming no link type and no field (fields are synthesised first) is the link half:
+`create_schema` appends its one global declaration to the link table, after the `needs_links` and
+`needs_extra_links` entries, so the loop that builds those builds it; its shape is its derivation
+and its display, `copy` and dead links, which the first root declaration sets and the others may
+only repeat, and its absence is the same projection, holding `[]`.
 The normaliser at `config-inited` checks only the shape of those keys, and the resolver checks it
 again, with the normaliser's helpers, for an entry added after it. The schema has two tiers.
 The union, `FieldsSchema` itself, answers a field's shape (`FieldShape`, `LinkShape`: its name,

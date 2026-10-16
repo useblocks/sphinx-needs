@@ -5,6 +5,7 @@ import dataclasses
 import json
 from collections.abc import Callable, Iterable, Mapping
 from copy import deepcopy
+from functools import partial
 from itertools import chain
 from pathlib import Path
 from timeit import default_timer as timer  # Used for timing measurements
@@ -773,6 +774,23 @@ NEED_TYPE_FIELD_KEYS = (
 #: The keys of an entry of a need type's ``links`` table: a link type is not nullable.
 NEED_TYPE_LINK_KEYS = ("description", "schema", "default", "predicates", "derive")
 
+#: The keys of a link type that are the same on every need type -- how its links are
+#: drawn, whether they are copied into ``links``, whether a dead link is allowed: an
+#: entry of a link type declared on need types alone may give them (its first root
+#: declaration sets them, the others may repeat them); on a link type declared
+#: otherwise they are refused.
+NEED_TYPE_LINK_SHAPE_KEYS = (
+    "incoming",
+    "outgoing",
+    "copy",
+    "allow_dead_links",
+    "color",
+    "style",
+    "style_part",
+    "style_start",
+    "style_end",
+)
+
 
 def _type_name(value: object) -> str:
     return type(value).__name__
@@ -799,6 +817,13 @@ _SHAPES: Mapping[str, tuple[str, Callable[[object], bool]]] = {
     "nullable": ("a boolean", lambda v: isinstance(v, bool)),
     "predicates": ("a list of (filter, value) pairs", _is_pairs),
     "derive": ("a mapping", lambda v: isinstance(v, Mapping)),
+    "incoming": ("a string", lambda v: isinstance(v, str)),
+    "outgoing": ("a string", lambda v: isinstance(v, str)),
+    "copy": ("a boolean", lambda v: isinstance(v, bool)),
+    "allow_dead_links": ("a boolean", lambda v: isinstance(v, bool)),
+    "style_part": ("a string", lambda v: isinstance(v, str)),
+    "style_start": ("a string", lambda v: isinstance(v, str)),
+    "style_end": ("a string", lambda v: isinstance(v, str)),
 }
 
 
@@ -852,7 +877,11 @@ def _normalise_declarations(
     of the keys of its table, each value of its shape. What is not is reported in
     ``findings`` and left out: an entry that is not a mapping, a key that is not
     known or not of its shape. Every entry is a new mapping, its values copies."""
-    known = NEED_TYPE_LINK_KEYS if table == "links" else NEED_TYPE_FIELD_KEYS
+    known = (
+        (*NEED_TYPE_LINK_KEYS, *NEED_TYPE_LINK_SHAPE_KEYS)
+        if table == "links"
+        else NEED_TYPE_FIELD_KEYS
+    )
     resolved: dict[Any, dict[str, Any]] = {}
     for name, entry in value.items():
         where = f"{named}.{table}[{name!r}]"
@@ -903,10 +932,11 @@ def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
 
     In ``fields`` and ``links``, an entry that is not a mapping is removed, and so is
     a key of an entry outside :data:`NEED_TYPE_FIELD_KEYS` (fields) or
-    :data:`NEED_TYPE_LINK_KEYS` (links), or not of its shape: a ``description`` that
-    is not a string, a ``schema`` or a ``derive`` that is not a mapping, a
-    ``nullable`` that is not a boolean, ``predicates`` that are not a list of
-    (filter, value) pairs. Only the
+    :data:`NEED_TYPE_LINK_KEYS` and :data:`NEED_TYPE_LINK_SHAPE_KEYS` (links), or not
+    of its shape: a ``description``, an ``incoming``, ``outgoing``, ``color`` or
+    ``style*`` that is not a string, a ``schema`` or a ``derive`` that is not a
+    mapping, a ``nullable``, ``copy`` or ``allow_dead_links`` that is not a boolean,
+    ``predicates`` that are not a list of (filter, value) pairs. Only the
     shape is checked here: what a declaration names, and whether its values apply to
     the field, is for :func:`create_schema`, which knows the fields and every need type.
 
@@ -1645,11 +1675,29 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         parent,
         {*NeedsCoreFields, *_NEEDS_CONFIG.fields, *link_types},
     )
+    #: the link types need types declare alone: declared below as a needs_links entry
+    #: is (after the needs_links and needs_extra_links entries), with the display,
+    #: copy and dead links their first root declaration gives; a name declared under
+    #: fields too is a field, and the back links of a link type are none
+    local_links, link_refused, link_findings = _type_local_links(
+        type_entries,
+        order,
+        parent,
+        {
+            **dict.fromkeys(
+                (*NeedsCoreFields, *_NEEDS_CONFIG.fields, *type_local), "a field"
+            ),
+            **dict.fromkeys(link_types, "a link type"),
+            **dict.fromkeys(
+                (f"{name}_back" for name in link_types), "a link type's back links"
+            ),
+        },
+    )
     #: each field's and link type's rules from the types' entries: folded below into
     #: its ``derive_by_type``, where it is read, so they are checked with the others
     field_rules, link_rules = (
-        _type_derive_rules(type_entries, order, parent, table, shape_refused)
-        for table in ("fields", "links")
+        _type_derive_rules(type_entries, order, parent, table, refused)
+        for table, refused in (("fields", shape_refused), ("links", link_refused))
     )
     #: (on a link type, name, need type) -> the entry a rule came from, as the
     #: findings of the rule name it
@@ -1912,12 +1960,14 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             raise NeedsConfigException(f"Invalid field {name!r}: {exc}") from exc
 
     # Get set of link names from needs_links (new config) vs needs_extra_links (deprecated)
-    links: dict[str, tuple[LinkOptionsType | NeedLinksConfig, str]] = {
-        k: (v, "needs_links") for k, v in needs_config._links.items()
-    } | {
-        link["option"]: (link, "needs_extra_links")
-        for link in needs_config._extra_links
-    }
+    links: dict[str, tuple[LinkOptionsType | NeedLinksConfig, str]] = (
+        {k: (v, "needs_links") for k, v in needs_config._links.items()}
+        | {
+            link["option"]: (link, "needs_extra_links")
+            for link in needs_config._extra_links
+        }
+        | {name: (params, "needs_types") for name, params in local_links.items()}
+    )
 
     for name, (link, config_source) in links.items():
         try:
@@ -2106,9 +2156,9 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         type_entries,
         order,
         parent,
-        (entry_findings, inherits_findings, shape_findings),
-        type_local,
-        shape_refused,
+        (entry_findings, inherits_findings, shape_findings + link_findings),
+        (*type_local, *local_links),
+        {"fields": shape_refused, "links": link_refused},
     )
     # the schema is complete: nothing declares a field once it is built
     schema.freeze()
@@ -2458,23 +2508,15 @@ def _type_local_fields(
         their field; and the findings, by field, in ``order``.
     """
 
-    def inherited(need_type: str, name: str) -> bool:
-        node = parent.get(need_type)
-        while node is not None:
-            # an entry its shape refuses does not declare the field
-            if name in types[node].get("fields", {}) and (node, name) not in refused:
-                return True
-            node = parent.get(node)
-        return False
-
     #: field -> its declarations, in order
     entries: dict[str, list[tuple[str, Mapping[str, Any]]]] = {}
     for need_type in order:
         for name, keys in types[need_type].get("fields", {}).items():
-            if isinstance(name, str) and name not in known:
+            if isinstance(name, str) and name and name not in known:
                 entries.setdefault(name, []).append((need_type, keys))
     local: dict[str, NewFieldParams] = {}
     refused: set[tuple[str, str]] = set()
+    inherited = partial(_declared_by_ancestor, types, parent, "fields", refused)
     findings: list[str] = []
     for name, declarations in entries.items():
         roots: list[str] = []
@@ -2556,6 +2598,138 @@ def _type_local_fields(
     return local, refused, findings
 
 
+def _declared_by_ancestor(
+    types: Mapping[str, Mapping[str, Any]],
+    parent: Mapping[str, str],
+    table: Literal["fields", "links"],
+    refused: set[tuple[str, str]],
+    need_type: str,
+    name: str,
+) -> bool:
+    """Whether an ancestor of ``need_type`` declares ``name`` in its ``table``; an
+    entry in ``refused``, refused for the shape of what it declares, declares
+    nothing."""
+    node = parent.get(need_type)
+    while node is not None:
+        if name in types[node].get(table, {}) and (node, name) not in refused:
+            return True
+        node = parent.get(node)
+    return False
+
+
+def _type_local_links(
+    types: Mapping[str, Mapping[str, Any]],
+    order: list[str],
+    parent: Mapping[str, str],
+    known: Mapping[str, str],
+) -> tuple[dict[str, NeedLinksConfig], set[tuple[str, str]], list[str]]:
+    """The link types need types declare that nothing else declares (no link type, no
+    field, no core field): each the link type of the types that declare it, of the one
+    shape they agree on -- whether it is derived, and its display, ``copy`` and
+    ``allow_dead_links`` (:data:`NEED_TYPE_LINK_SHAPE_KEYS`).
+
+    A root declaration is one of a type none of whose ancestors declares the link type:
+    an entry refused for the link type's shape declares nothing, so a child of a
+    refused entry is a declaration of its own (a root). The first root declaration in
+    ``order`` (a parent before its children), an empty one too, sets the shape: the
+    keys it gives, the defaults of a ``needs_links`` entry for the rest, and derived if
+    it gives a ``derive``. Every other declaration, a root or a child, may repeat a
+    key's value; one giving another value of a key, or derived where the link type is
+    not (or, a root, the other way round), is a ``needs.type_conflict`` finding, and
+    its entry is ignored: a root's then declares nothing, a child's still declares the
+    link type through its parent.
+
+    A name that is the back links of a link type (``links_back``, or ``z_back`` beside a
+    link type ``z`` need types declare alone) is none: the resolver refuses it. A link
+    type whose back links would have the name of a field or a link type is refused, a
+    ``needs.type_conflict`` finding on each of its entries.
+
+    Each link type is declared as a ``needs_links`` entry with the keys the first root
+    gives: each type that declares it narrows it.
+
+    :param types: Each need type's entry, of its shape.
+    :param order: The need types, each after its parent.
+    :param parent: The parent of each type that has one.
+    :param known: The names declared otherwise, each with what it is (``a field``, ``a
+        link type``, ``a link type's back links``); the fields declared on need types
+        alone are among them (a name one type declares under ``fields`` and another
+        under ``links`` is a field).
+    :return: The link types, by name, in the order of their first root declarations;
+        the (need type, link type) entries ignored; and the findings, by link type, in
+        ``order``.
+    """
+    #: link type -> its declarations, in order
+    entries: dict[str, list[tuple[str, Mapping[str, Any]]]] = {}
+    for need_type in order:
+        for name, keys in types[need_type].get("links", {}).items():
+            if isinstance(name, str) and name and name not in known:
+                entries.setdefault(name, []).append((need_type, keys))
+    # the back links of another: computed on every need, so no link type
+    for name in [n for n in entries if n.endswith("_back") and n[:-5] in entries]:
+        del entries[name]
+    local: dict[str, NeedLinksConfig] = {}
+    refused: set[tuple[str, str]] = set()
+    inherited = partial(_declared_by_ancestor, types, parent, "links", refused)
+    findings: list[str] = []
+    for name, declarations in entries.items():
+        if (taken := known.get(back := f"{name}_back")) is not None:
+            # every need would carry its back links under the other's name
+            for need_type, _ in declarations:
+                findings.append(
+                    f"needs_types[{need_type!r}].links[{name!r}] declares {name!r}, "
+                    f"whose back links would be {back!r}, which is {taken}; the entry "
+                    "is ignored"
+                )
+                refused.add((need_type, name))
+            continue
+        # the first declaration is a root: an ancestor's would come before it
+        by, first = declarations[0]
+        given = {k: first[k] for k in NEED_TYPE_LINK_SHAPE_KEYS if k in first}
+        shape = {**_link_shape_defaults(name), **given}
+        derived = first.get("derive") is not None
+        roots = [by]
+        for need_type, keys in declarations[1:]:
+            root = not inherited(need_type, name)
+            other = [
+                k
+                for k in NEED_TYPE_LINK_SHAPE_KEYS
+                if k in keys and keys[k] != shape[k]
+            ]
+            if other:
+                key = other[0]
+                text = (
+                    f"cannot be declared with {key} {keys[key]!r}: its {key} is "
+                    f"{shape[key]!r} on every need type, as need type {by!r} declares it"
+                )
+            elif (keys.get("derive") is not None) != derived and (root or not derived):
+                # a child of a derived link type inherits its parent's rule
+                text = _derivation_text(derived, by)
+            else:
+                if root:
+                    roots.append(need_type)
+                continue
+            findings.append(
+                f"needs_types[{need_type!r}].links[{name!r}] {text}; the entry is ignored"
+            )
+            refused.add((need_type, name))
+        declaring = ", ".join(repr(t) for t in roots)
+        local[name] = NeedLinksConfig(
+            description=f"Declared by need types {declaring}", **given
+        )
+    return local, refused, findings
+
+
+def _link_shape_defaults(name: str) -> dict[str, Any]:
+    """The display, ``copy`` and ``allow_dead_links`` of a ``needs_links`` entry that
+    gives none of them."""
+    display = LinkDisplayConfig(incoming=f"{name} incoming", outgoing=name)
+    return {
+        **{f.name: getattr(display, f.name) for f in dataclasses.fields(display)},
+        "copy": False,
+        "allow_dead_links": False,
+    }
+
+
 def _type_derive_rules(
     types: Mapping[str, Mapping[str, Any]],
     order: list[str],
@@ -2585,7 +2759,7 @@ def _type_derive_rules(
         }
         for name, keys in types[need_type].get(table, {}).items():
             if (rule := keys.get("derive")) is not None and (
-                table != "fields" or (need_type, name) not in refused
+                (need_type, name) not in refused
             ):
                 where = f"needs_types[{need_type!r}].{table}[{name!r}]"
                 rules[name] = (rule, f"{where}.derive", True)
@@ -2668,7 +2842,7 @@ def _resolve_type_declarations(
     parent: Mapping[str, str],
     findings: tuple[list[str], list[str], list[str]],
     local: Iterable[str],
-    refused: set[tuple[str, str]],
+    refused: Mapping[Literal["fields", "links"], set[tuple[str, str]]],
 ) -> None:
     """Declare the fields and link types of each need type anew, as its ``needs_types``
     entry says: ``inherits``, ``fields`` and ``links``.
@@ -2685,13 +2859,18 @@ def _resolve_type_declarations(
     (``needs.type_inherits``; the type stays, a root); an entry naming no field of its
     table, or setting what the field does not take (``needs.type_conflict``); an entry
     that widens the declaration before it (``needs.type_widening``). An entry is taken
-    whole or not at all: the type keeps the declaration before it.
+    whole or not at all: the type keeps the declaration before it. A ``links`` entry of
+    a link type declared otherwise that gives its display, ``copy`` or
+    ``allow_dead_links`` (:data:`NEED_TYPE_LINK_SHAPE_KEYS`) is a ``needs.config``
+    finding, those keys ignored and the rest of the entry used: the link type keeps its
+    own on every need type.
 
-    A field declared on need types alone (:func:`_type_local_fields`) is the field of
-    the types that declare it, absent on every other type
-    (:meth:`FieldsSchema._localise`): a type declares it by its entries and its
-    ancestors', an empty entry included, and an entry that cannot be used, if it names
-    a field of its table -- but an entry its shape refuses, which does not declare it.
+    A field or link type declared on need types alone (:func:`_type_local_fields`,
+    :func:`_type_local_links`) is the field of the types that declare it, absent on
+    every other type (:meth:`FieldsSchema._localise`): a type declares it by its entries
+    and its ancestors', an empty entry included, and an entry that cannot be used, if it
+    names a field of its table -- but an entry its shape refuses, which does not
+    declare it.
 
     :param schema: The schema, complete but for the declarations of need types.
     :param types: Each configured need type's entry (:func:`_checked_type_entries`),
@@ -2700,10 +2879,11 @@ def _resolve_type_declarations(
     :param parent: The parent of each type that has one.
     :param findings: What was found reading the entries, reported first: the shape of
         an entry an extension added (``needs.config``), the walk
-        (``needs.type_inherits``), and the shape of the fields declared on need types
-        alone (``needs.type_conflict``).
-    :param local: The fields declared on need types alone.
-    :param refused: The (need type, field) entries refused for their field's shape.
+        (``needs.type_inherits``), and the shape of the fields, then of the link types,
+        declared on need types alone (``needs.type_conflict``).
+    :param local: The fields and link types declared on need types alone.
+    :param refused: Per table, the (need type, name) entries refused for the shape of
+        the field or link type they declare.
     """
     entry_findings, inherits_findings, shape_findings = findings
     for text in entry_findings:
@@ -2726,8 +2906,8 @@ def _resolve_type_declarations(
             ("links", "link", "a link type", "a field"),
         ):
             for name, keys in types[need_type].get(table, {}).items():
-                if table == "fields" and (need_type, name) in refused:
-                    continue  # reported with the field's shape
+                if (need_type, name) in refused[table]:
+                    continue  # reported with the field's (or link type's) shape
                 where = f"needs_types[{need_type!r}].{table}[{name!r}]"
                 glob = schema.global_declaration(name)
                 if glob is None or glob.kind != kind:
@@ -2740,6 +2920,27 @@ def _resolve_type_declarations(
                         None,
                     )
                     continue
+                if (
+                    table == "links"
+                    and name not in local
+                    and (
+                        shape_keys := [
+                            k for k in NEED_TYPE_LINK_SHAPE_KEYS if k in keys
+                        ]
+                    )
+                ):
+                    # a link type declared otherwise is drawn, copied and checked the
+                    # same on every need type: as needs_links declares it
+                    named = [repr(k) for k in shape_keys]
+                    log_warning(
+                        LOGGER,
+                        f"{where} sets {_joined(named)}, which a "
+                        "need type gives only a link type declared on need types alone; "
+                        f"{name!r} keeps its own on every need type and the "
+                        f"{'key is' if len(shape_keys) == 1 else 'keys are'} ignored",
+                        "config",
+                        None,
+                    )
                 # declared, also if the entry cannot be used: the type keeps the
                 # declaration before it
                 names[need_type].add(name)
@@ -2884,6 +3085,11 @@ def _declare_for_type(
                 )
         return None
     return field
+
+
+def _joined(items: list[str]) -> str:
+    """``a``, ``a and b``, ``a, b and c``."""
+    return " and ".join(filter(None, (", ".join(items[:-1]), items[-1])))
 
 
 def _reason(exc: Exception) -> str:

@@ -328,14 +328,13 @@ def generate_need(
 
     links_no_defaults: dict[str, LinksLiteralValue | LinksFunctionArray | None] = {}
     for link_field in schema.iter_link_fields():
+        # a derived link type the type does not declare is absent: no data from outside
+        authored = not link_field.derived or not schema.declares(link_field.name)
         if not link_field.directive_option and (
-            not link_field.derived
-            or not from_outside
-            or kwargs.get(link_field.name) is None
+            authored or not from_outside or kwargs.get(link_field.name) is None
         ):
             if not from_outside or (
-                not link_field.derived
-                and kwargs.get(link_field.name) != link_field.off_type_value()
+                authored and kwargs.get(link_field.name) != link_field.off_type_value()
             ):
                 _refuse_authored(
                     link_field,

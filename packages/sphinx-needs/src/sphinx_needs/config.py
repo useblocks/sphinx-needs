@@ -405,7 +405,8 @@ class NeedType(TypedDict):
     """The fields this type declares anew: field name to its declaration. A name
     nothing else declares is a field of the types that declare it alone."""
     links: NotRequired[dict[str, NeedTypeLinkDeclaration]]
-    """The link types this type declares anew: link type name to its declaration."""
+    """The link types this type declares anew: link type name to its declaration. A
+    name nothing else declares is a link type of the types that declare it alone."""
 
 
 class NeedTypeFieldDeclaration(TypedDict, total=False):
@@ -416,15 +417,31 @@ class NeedTypeFieldDeclaration(TypedDict, total=False):
     nullable: bool
     default: Any
     predicates: list[tuple[str, Any]]
+    derive: dict[str, Any]
 
 
 class NeedTypeLinkDeclaration(TypedDict, total=False):
-    """A need type's declaration of a link type: a narrowing of its declaration."""
+    """A need type's declaration of a link type: a narrowing of its declaration.
+
+    The display, ``copy`` and ``allow_dead_links`` keys are a link type's on every need
+    type: a declaration gives them only of a link type declared on need types alone,
+    whose first root declaration sets them, as a ``needs_links`` entry would.
+    """
 
     description: str
     schema: dict[str, Any]
     default: Any
     predicates: list[tuple[str, Any]]
+    derive: dict[str, Any]
+    incoming: str
+    outgoing: str
+    copy: bool
+    allow_dead_links: bool
+    color: str
+    style: str
+    style_part: str
+    style_start: str
+    style_end: str
 
 
 class NeedFields(TypedDict):
