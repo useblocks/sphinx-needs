@@ -474,23 +474,28 @@ A ``fields`` entry naming a field that nothing else declares -- no :ref:`needs_f
 no field an extension or a service registers -- declares a field of the types that declare it:
 by their own entry or an ancestor's, and an entry that changes nothing (``[needs.types.spec.fields.x]`` with no key) declares the field as it is.
 Every type that declares it agrees on its type, its items' type, and whether it is derived; each is free in the rest.
-The first declaration of a type none of whose ancestors declares the field -- in the order the types are given,
-a parent before its children -- that gives a ``schema`` ``type`` sets them, so the order of ``needs_types`` decides which of two such declarations is refused;
-such a declaration that gives no type takes the agreed one, a child narrows its parent's as for any field,
-and a field no declaration gives a type is refused on every entry, and does not exist.
+The first declaration of a type none of whose ancestors declares the field -- in the order the types are resolved
+(a parent before its children; the members of a broken ``inherits`` cycle in the walk's order) --
+that gives a ``schema`` ``type`` sets them, so the order of ``needs_types`` decides which of two such declarations is refused;
+the first declaration of an array field gives its items' type too (``schema = { type = "array", items = { type = "string" } }``).
+Such a declaration that gives no type (or no items' type) takes the agreed one, a child narrows its parent's as for any field,
+and a field no such declaration gives a type is refused on every entry, and does not exist.
 A declaration of another type, or derived where the field is not (or the other way round), is one ``needs.type_conflict`` warning::
 
    needs_types['spec'].fields['x'] cannot be declared with type 'string' (items None): its type is 'integer' (items None) on every need type, as need type 'req' declares it; the entry is ignored
 
-and the entry is ignored, and does not declare the field; an entry that cannot be used for another reason -- it widens, or its default cannot be used -- declares its field all the same, as it was.
+and the entry is ignored, and does not declare the field, so a child's entry under it is a declaration of its own
+(refused too if it gives the same other type; an empty one takes the agreed type);
+an entry that cannot be used for another reason -- it widens, or its default cannot be used -- declares its field all the same, as it was.
 The field is declared once for all, nullable and without a default, which each declaring type narrows:
 one that declares it not nullable, with no default, requires it on its own needs alone.
-On a need of a type that does not declare it, the field holds ``None``.
+On a need of a type that does not declare it, the field holds ``None``, a derived one too.
 A value set for it in a need is ignored, as one ``needs.undeclared_for_type`` warning::
 
    Field 'x' is not declared on need type 'spec' and cannot be set in need 'S_001'; the value '4' is ignored
 
-and a need imported by :ref:`needimport` or from :ref:`needs_external_needs` drops it with the same warning;
+and a need imported by :ref:`needimport` or from :ref:`needs_external_needs` drops it with the same warning, a derived one too
+(on a type that declares a derived field, its value from outside is kept, as data);
 a value equal to the one the need then holds -- ``None``, which a needs.json carries for every field -- is dropped silently.
 A :ref:`needextend` setting, appending to or deleting it is refused on the needs of the type,
 one ``needs.needextend`` warning for each needextend, need type and option::
@@ -500,7 +505,8 @@ one ``needs.needextend`` warning for each needextend, need type and option::
 The field is a field of the project: its value enters the :ref:`fingerprint <needs_derive>` of a need where it is not ``None``,
 on a declaring need (its type's default too), never on a need of another type.
 The :ref:`needs.json <needs_builder_format>` carries it on every need, ``null`` on the needs of the other types,
-and its schema once, nullable, with no default, and the description ``Declared by need types 'req', 'spec'``.
+and its schema once, nullable, with no default, and the description ``Declared by need types 'req', 'spec'``,
+which names the declarations without a declaring ancestor that are not refused, not the types declaring it by inheritance.
 A ``derive`` makes it derived on every type that declares it (a child inheriting its parent's rule), and a derived one takes no ``enum``.
 
 **What cannot be declared.**
