@@ -1,0 +1,65 @@
+"$schema" = "https://ubcode.useblocks.com/ubproject.schema.json"
+
+[needs]
+build_json = true
+
+# [types]
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.safety_req]
+title = "Safety requirement"
+prefix = "SR_"
+inherits = "req"
+
+[needs.types.test]
+title = "Test case"
+prefix = "T_"
+# [/types]
+
+# [verdict]
+[needs.types.test.fields.verdict]
+description = "The outcome of the last test run"
+schema = { type = "string", enum = ["passed", "failed"] }
+# [/verdict]
+
+# [status]
+[needs.types.req.fields.status]
+schema = { enum = ["draft", "approved"] }
+default = "draft"
+
+[needs.types.test.fields.status]
+schema = { enum = ["open", "done"] }
+default = "open"
+# [/status]
+
+# [tags]
+[needs.types.req.fields.tags]
+schema = { items = { enum = ["functional", "performance", "safety"] } }
+# [/tags]
+
+# [hazard]
+[needs.types.safety_req.fields.hazard]
+description = "The hazard a safety requirement mitigates"
+schema = { type = "string" }
+nullable = false
+# [/hazard]
+
+# [verifies]
+[needs.types.test.links.verifies]
+incoming = "is verified by"
+outgoing = "verifies"
+schema = { minItems = 1 }
+# [/verifies]
+
+# [defaults]
+[needs.types.req.fields.style]
+default = "green_bar"
+
+[needs.types.test.fields.layout]
+default = "clean_l"
+
+[needs.types.test.fields.collapse]
+default = true
+# [/defaults]

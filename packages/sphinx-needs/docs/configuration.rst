@@ -347,8 +347,9 @@ Fields per need type
 
 A need type may declare fields and link types anew for its needs, in its entry:
 
-* ``fields``: a dictionary from the name of a field -- one of :ref:`needs_fields`, or a core field such as ``status``,
-  or a name no ``needs_fields`` entry declares, a field of this type's needs alone -- to the type's declaration of it;
+* ``fields``: a dictionary from the name of a field -- one of :ref:`needs_fields`, a field an extension or a service registers,
+  or a core field such as ``status``,
+  or a name nothing else declares, a field of this type's needs alone (below) -- to the type's declaration of it;
 * ``links``: a dictionary from the name of a link type -- one of :ref:`needs_links`, or ``links``,
   or a name nothing else declares, a link type of this type's needs alone -- to the type's declaration of it;
 * ``inherits``: the directive name of one other need type, whose declarations this type starts from.
@@ -645,7 +646,11 @@ For new fields the following can be defined:
     This will be output in the schema of the :ref:`needs.json <needs_builder_format>`, and can be used by other tools.
 - ``schema``: A schema definition for the field (optional).
     This uses the same format as :ref:`needs_schema_definitions` and :ref:`needs_schema_definitions_from_json`.
-    If specified, the field value will be validated against this schema when needs are parsed, see :ref:`schema_validation` for more details.
+    If specified, a value of another ``type`` is refused:
+    given in a need (its directive, a :ref:`needimport` or :ref:`needs_external_needs`), the need is not created;
+    from a :ref:`needextend` or a dynamic function, the value alone is refused, with a warning;
+    as a ``default`` or in ``predicates``, it is refused when the configuration is read.
+    The other constraints are checked by the schema validation, see :ref:`schema_validation` for more details.
     By default the field schema will be ``{"type": "string"}``.
 - ``nullable``: If set to ``True``, the field can be set to ``None`` (optional), e.g. if no value is specifically given and no default applies,
     If ``False``, the field must have a value (either explicitly set or via default/predicates), otherwise the need is invalid and will not be created.
@@ -1419,6 +1424,14 @@ Allows the definition of additional link types as a dictionary mapping link name
 Each configured link can define:
 
 - ``description`` (optional): A description of the link type.
+- ``schema`` (optional): A schema definition for the links.
+    This uses the same format as :ref:`needs_schema_definitions` and :ref:`needs_schema_definitions_from_json`,
+    for a list of need IDs, with keywords such as the number of links (``minItems``, ``maxItems``),
+    the IDs (``items``, with ``pattern``, ``minLength`` or ``maxLength``),
+    and ``contains`` with ``minContains`` or ``maxContains``
+    (``minContains`` is 1 unless given, so give ``minContains = 0`` beside a ``maxContains`` that allows no match).
+    The links are validated against it by the schema validation, see :ref:`schema_validation` for more details.
+    By default the link schema will be ``{"type": "array", "items": {"type": "string"}}``.
 - ``predicates`` (optional): A list of ``(match expression, value)`` tuples.
     If specified, these will be evaluated in order for any need that does not explicitly set the field, with the first match setting the field value.
 - ``default`` (optional): A default value for the field.

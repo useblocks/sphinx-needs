@@ -1,0 +1,49 @@
+"$schema" = "https://ubcode.useblocks.com/ubproject.schema.json"
+
+[needs]
+build_json = true
+schema_definitions_from_json = "schemas.json"
+
+[needs.fields.asil]
+description = "Automotive Safety Integrity Level"
+nullable = true
+schema = { type = "string", enum = ["QM", "A", "B", "C", "D"] }
+
+# [values]
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.fields.status]
+schema = { enum = ["draft", "approved"] }
+default = "draft"
+
+[needs.types.safety_req]
+title = "Safety requirement"
+prefix = "SR_"
+inherits = "req"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.links.links]
+schema = { minItems = 1, maxItems = 2 }
+# [/values]
+
+# [type-local]
+[needs.types.test]
+title = "Test case"
+prefix = "T_"
+
+[needs.types.test.links.verifies]
+incoming = "is verified by"
+outgoing = "verifies"
+schema = { minItems = 1 }
+# [/type-local]
+
+# [required]
+[needs.types.safety_req.fields.asil]
+nullable = false
+schema = { enum = ["A", "B", "C", "D"] }
+# [/required]

@@ -180,6 +180,25 @@ Bug fixes
   comes first. A directive of another kind under a need type's name is handled as before, with
   Sphinx's warning (:issue:`2271`, :pr:`2276`)
 
+Documentation
+.............
+
+- 📚 A need type's own entry is documented as the place for most rules about its needs,
+  beside schema rules for the rest (:pr:`2295`)
+
+  The schema validation page gains :ref:`schema_per_type_or_rules`: what a type's ``fields``,
+  ``links`` and ``inherits`` can declare, what still takes a schema rule, and how each is reported
+  -- a constraint keyword by the schema validation, the need kept; a field required on the type
+  when the need is created, the need not created. The new how-to :ref:`need_types_howto` walks
+  through fields, status values, tags, links and defaults per type, moving ``needs_global_options``
+  predicates into a type's entry, and filters over a field some types lack. Both examples are
+  projects in the test suite, which checks the warnings the pages quote.
+
+  :ref:`needs_links` lists its ``schema`` key, the :ref:`tutorial` points to ``needs_fields``
+  schemas instead of the deprecated ``needs_statuses`` and ``needs_tags``, and the schema page's
+  link counts are corrected: ``maxItems`` is a maximum, and a schema rule reports a need with no
+  links only through ``required``, as a local ``minItems`` alone does not
+
 Internal changes
 ................
 
