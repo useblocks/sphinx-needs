@@ -1419,6 +1419,12 @@ Allows the definition of additional link types as a dictionary mapping link name
 Each configured link can define:
 
 - ``description`` (optional): A description of the link type.
+- ``schema`` (optional): A schema definition for the links.
+    This uses the same format as :ref:`needs_schema_definitions` and :ref:`needs_schema_definitions_from_json`,
+    for a list of need IDs: the number of links (``minItems``, ``maxItems``),
+    and the IDs (``items``, with ``pattern``, ``minLength`` or ``maxLength``).
+    The links are validated against it by the schema validation, see :ref:`schema_validation` for more details.
+    By default the link schema will be ``{"type": "array", "items": {"type": "string"}}``.
 - ``predicates`` (optional): A list of ``(match expression, value)`` tuples.
     If specified, these will be evaluated in order for any need that does not explicitly set the field, with the first match setting the field value.
 - ``default`` (optional): A default value for the field.
