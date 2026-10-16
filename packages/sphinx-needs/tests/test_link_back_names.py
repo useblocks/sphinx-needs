@@ -501,6 +501,34 @@ def test_a_link_type_named_as_core_back_links_is_refused(test_app: Any) -> None:
     "test_app",
     [
         _project(
+            "needs_extra_options = ['links_back']\nneeds_links = {'links_back': {}}\n",
+            CORE_INDEX,
+        )
+    ],
+    indirect=True,
+)
+def test_a_field_and_a_link_type_named_as_core_back_links_are_both_reported(
+    test_app: Any,
+) -> None:
+    """A field and a link type both named ``links_back`` are both ignored, and each is
+    its own finding, the field's first: one finding per refused declaration, not per
+    name."""
+    app = test_app
+    app.build()
+    assert _warnings(app) == [
+        DEPRECATED_EXTRA_OPTIONS,
+        _core_field("links_back", "needs_extra_options"),
+        _core_link("needs_links entry 'links_back'", "links_back"),
+    ]
+    assert _schema(app).get_extra_field("links_back") is None
+    assert _schema(app).get_link_field("links_back") is None
+    assert _needs(app)["T_001"]["links_back"] == ["U_001"]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
             FIELD_X_BACK
             + LINKS_X
             + "needs_global_options = {'x_back': {'default': 'g'}}\n",
