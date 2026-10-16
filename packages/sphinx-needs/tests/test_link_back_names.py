@@ -383,6 +383,32 @@ def test_a_refused_link_type_claims_no_name(test_app: Any) -> None:
     assert _properties(app)["x_back"]["field_type"] == "backlinks"
 
 
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            "needs_links = {'aa': {}, 'parent_needs_back': {}}\n"
+            "needs_fields = {'aa_back': {'schema': {'type': 'string'}}, "
+            "'links_back': {'schema': {'type': 'string'}}}\n",
+            ".. t:: A\n   :id: T_001\n",
+        )
+    ],
+    indirect=True,
+)
+def test_the_findings_are_in_the_order_of_their_names(test_app: Any) -> None:
+    """The findings come in the order of the names refused, whatever the order of the
+    configuration (here the link types are given before the fields, and ``aa`` after
+    ``parent_needs_back`` would be the order of the checks): the text is the same on
+    every run and every machine."""
+    app = test_app
+    app.build()
+    assert _warnings(app) == [
+        _refused("needs_links entry 'aa'", "aa_back", "a field (from needs_fields)"),
+        _core_field("links_back", "needs_fields"),
+        _core_link("needs_links entry 'parent_needs_back'", "parent_needs_back"),
+    ]
+
+
 #: a nested need, so that both core link types have back links
 CORE_INDEX = (
     ".. t:: A\n   :id: T_001\n\n   .. u:: B\n      :id: U_001\n      :links: T_001\n"
