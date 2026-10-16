@@ -1495,7 +1495,7 @@ def test_a_link_type_under_fields_is_no_field(test_app: Any) -> None:
             ),
             ".. req:: A\n   :id: R_001\n\n"
             ".. req:: B\n   :id: R_002\n   :links: R_001\n   :blocks: R_001\n\n"
-            ".. spec:: C\n   :id: S_001\n   :links: R_001\n\n"
+            ".. spec:: C\n   :id: S_001\n   :links: R_001\n   :links_back: x\n\n"
             "   .. req:: D\n      :id: R_003\n",
         )
     ],
@@ -1505,15 +1505,20 @@ def test_a_field_named_as_back_links_is_refused(test_app: Any) -> None:
     """#2301: a ``fields`` entry named as the back links of a link type -- of ``links``,
     of ``parent_needs``, of a ``needs_links`` type -- declares no field: it is one
     finding per entry, as a ``links`` entry of that name is, and the back links are
-    computed on every need as without it, never validated against the entry's schema."""
+    computed on every need as without it, never validated against the entry's schema;
+    the need directive has no option of the name (it used to take the value, and lose
+    it to the back links)."""
     app = test_app
     app.build()
     assert build_warnings(app) == [
-        _conflict(
-            f"needs_types['spec'].fields[{name!r}] declares {name!r}, which is a link "
-            "type's back links"
-        )
-        for name in ("links_back", "parent_needs_back", "blocks_back")
+        *(
+            _conflict(
+                f"needs_types['spec'].fields[{name!r}] declares {name!r}, which is a "
+                "link type's back links"
+            )
+            for name in ("links_back", "parent_needs_back", "blocks_back")
+        ),
+        "<srcdir>/index.rst:12: WARNING: Unknown option 'links_back' [needs.directive]",
     ]
     needs = _needs(app)
     assert {
