@@ -935,11 +935,11 @@ def materialise_derive_rules(
             assert field is not None and field.derived
             rule = field.rule_for(need["type"])
             if rule is None:
-                need[field.name] = field.off_type_value()
+                need._set_resolved(field.name, field.off_type_value())
                 continue
             if isinstance(rule, DeriveRule):
                 rules[(need_id, field.name)] = DeriveCall(rule)
-            need[field.name] = typed_empty(field)
+            need._set_resolved(field.name, typed_empty(field))
     return rules
 
 
@@ -961,7 +961,9 @@ def _resolve_stratum(
     for step in stratum.steps:
         if step.cycle:
             for need_id, field in step.nodes:
-                needs[need_id][field] = placeholder(needs[need_id], field, schema)
+                needs[need_id]._set_resolved(
+                    field, placeholder(needs[need_id], field, schema)
+                )
                 pass_.finish((need_id, field))
             for (need_id, field), through in zip(step.nodes, step.through, strict=True):
                 node_reads = stratum.reads[(need_id, field)]
@@ -987,7 +989,8 @@ def _resolve_stratum(
         need = needs[need_id]
         node_reads = stratum.reads[(need_id, field)]
         if node_reads.sink:
-            need[field] = value = placeholder(need, field, schema)
+            value = placeholder(need, field, schema)
+            need._set_resolved(field, value)
             for out_of_scope in node_reads.scope:
                 log_warning(
                     logger,
@@ -1186,10 +1189,11 @@ def _resolve_field(
         # and a nullable field it leaves with nothing is unset
         values = [el for el in resolved if el is not None]
         if field_schema.type == "string":
-            need[field] = (
+            need._set_resolved(
+                field,
                 None
                 if not values and field_schema.nullable
-                else " ".join(str(el) for el in values)
+                else " ".join(str(el) for el in values),
             )
         elif field_schema.type in {"integer", "number", "boolean"}:
             # TODO(mh) unboxing the list for non-joinable types
@@ -1199,12 +1203,13 @@ def _resolve_field(
                 )
             # the type of the field, not of the result: an integer a call returns
             # is a float in a number field, as an authored value is
-            need[field] = _in_field_type(resolved[0], field_schema)
+            need._set_resolved(field, _in_field_type(resolved[0], field_schema))
         else:
-            need[field] = (
+            need._set_resolved(
+                field,
                 None
                 if resolved and not values and field_schema.nullable
-                else _in_field_type(values, field_schema)
+                else _in_field_type(values, field_schema),
             )
         if calls:
             reads_ctx.pass_.called_links[(need.id, field)] = (
@@ -1221,7 +1226,7 @@ def _resolve_field(
         # it imports this module
         from sphinx_needs.functions.order import placeholder
 
-        need[field] = placeholder(need, field, type_schema)
+        need._set_resolved(field, placeholder(need, field, type_schema))
 
 
 def _in_field_type(value: Any, field_schema: FieldShape) -> Any:

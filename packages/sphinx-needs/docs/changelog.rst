@@ -117,6 +117,19 @@ Improvements
   :issue:`2269`
   (`discussion #1646 <https://github.com/useblocks/sphinx-needs/discussions/1646>`__; :pr:`2281`, :pr:`2284`)
 
+- 👌 A derived field cannot be set on a need: ``need[name] = value`` for a field with a
+  :ref:`derive <needs_derive>` rule raises ``KeyError``, where it used to set a value the rule
+  then overwrote (``needs-before-post-processing``) or kept (``needs-before-sealing``, a
+  :ref:`filter function <filter_func>`, a :ref:`dynamic function <dynamic_functions>` writing
+  another need's field). An extension, a
+  filter function or a dynamic function writing a derived field now meets the refusal: from an
+  event or a filter function the build fails, with the field named (a filter function at
+  ``doctree-resolved``, whatever :ref:`needs_allow_unsafe_filters` says); from a dynamic
+  function the call is reported, for example ``Error while resolving dynamic values for field
+  'plain', of need 'R_001': Error while executing function 'meddle': "Cannot set derived field
+  'copied' in NeedItem: its value is computed by its derive rule." [needs.dynamic_function]``,
+  and the field the call was computing does not get its value (:pr:`2289`)
+
 Deprecations
 ............
 
@@ -185,9 +198,10 @@ Internal changes
   across the workspace; ``sphinx_needs.setup`` now declares its types, and the internal
   ``profile`` decorator preserves the signature of what it wraps
 
-- 🔧 ``ENV_DATA_VERSION`` is 12: the first build after upgrading re-reads every document, so a
+- 🔧 ``ENV_DATA_VERSION`` is 13: the first build after upgrading re-reads every document, so a
   ``join`` rule that 9.0.0 refused, and a ``links_from_match`` it did not know, are shown on the
-  pages whose sources did not change too (:pr:`2228`)
+  pages whose sources did not change too (:pr:`2228`), and every stored need carries the names of
+  its derived fields (:pr:`2289`)
 
 .. _`release:9.0.0`:
 

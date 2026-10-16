@@ -41,7 +41,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 12
+ENV_DATA_VERSION: Final = 13
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -82,6 +82,12 @@ which 9.0.0 refused as reserved and left empty, now computes, and ``links_from_m
 an unknown function in 9.0.0, now links; the configuration does not change, so without
 the bump an upgraded build would keep the empty values on the pages whose sources did
 not change.
+
+Version 13 adds the names of the derived fields to every stored need (a slot of
+:class:`~sphinx_needs.need_item.NeedItem`, which ``need[name] = value`` reads to refuse
+one). An unbumped rebuild over an existing ``_build`` unpickles needs without it, and
+the first write into one ends with an ``AttributeError`` rather than re-reading the
+documents.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """

@@ -454,6 +454,7 @@ The `ensure_post_process_needs_data` function calls `post_process_needs_data`, w
 4. `process_constraints` - Process constraints for each need
 
 After this, needs are "sealed" (made immutable) via the `needs-before-sealing` event.
+Once a need is created, a derived field is written by the resolver alone, through `NeedItem._set_resolved`: `need[name] = value` refuses every name of `FieldsSchema.derived_names`, which `generate_need` hands to each need.
 
 #### Finalization (`build-finished`)
 

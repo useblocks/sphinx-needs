@@ -22,6 +22,7 @@ import pytest
 from sphinx_needs.api.need import generate_need
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.derive import DeriveRule
 from sphinx_needs.exceptions import NeedsConfigException
 from sphinx_needs.logging import WarningSubTypeDescription, WarningSubTypes
 from sphinx_needs.needs_schema import (
@@ -1483,3 +1484,83 @@ def test_a_schema_not_told_its_types_projects_absence() -> None:
     assert absent is not None
     assert (absent.directive_option, absent.allow_extend) == (False, False)
     assert schema.for_type("req").get_any_field("x") is schema.global_declaration("x")
+
+
+DERIVED_NAMES_FIELDS = {
+    "effort": {"schema": {"type": "integer"}, "nullable": True},
+    "everywhere": {
+        "schema": {"type": "string"},
+        "derive": {"kind": "copy", "field": "title"},
+    },
+    "by_type": {
+        "schema": {"type": "string"},
+        "derive_by_type": {"spec": {"kind": "copy", "field": "title"}},
+    },
+}
+DERIVED_NAMES_TYPES = _types(
+    req={
+        "fields": {
+            "local_derived": {
+                "schema": {"type": "integer"},
+                "derive": {"kind": "copy", "field": "effort"},
+            }
+        }
+    }
+)
+DERIVED_NAMES_LINKS = {"mentions": {"derive": {"kind": "content_links"}}}
+DERIVED_NAMES_INDEX = (
+    ".. req:: A\n   :id: R_001\n   :effort: 3\n\n.. spec:: B\n   :id: S_001\n"
+)
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            _conf(DERIVED_NAMES_TYPES, DERIVED_NAMES_FIELDS, DERIVED_NAMES_LINKS),
+            DERIVED_NAMES_INDEX,
+        )
+    ],
+    indirect=True,
+)
+def test_the_derived_names_are_one_set_for_every_need_type(test_app: Any) -> None:
+    """``derived_names`` is every derived field and link type -- by ``derive``, by
+    ``derive_by_type`` (derived on a type with no rule too), and declared on need types
+    alone (derived on a type that does not declare it too) -- one set, the same object
+    for each need type and the global view; a need refuses each, on every type."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    data = SphinxNeedsData(app.env)
+    schema = data.get_schema()
+    names = schema.derived_names
+    assert names == {"everywhere", "by_type", "local_derived", "mentions"}
+    assert schema.for_type("req") is not schema.for_type("spec")
+    assert schema.for_type("req").derived_names is names
+    assert schema.for_type("spec").derived_names is names
+    assert schema.for_type(None).derived_names is names
+
+    needs = data.get_needs_view()
+    for need_id in ("R_001", "S_001"):
+        for name in sorted(names):
+            with pytest.raises(KeyError, match=r"Cannot set derived field"):
+                needs[need_id][name] = None
+
+
+def test_the_derived_names_of_a_schema_built_by_hand() -> None:
+    """An unfrozen schema answers its derived names at each read; freezing fixes them,
+    and a view of one need type made directly answers its own."""
+    schema = FieldsSchema()
+    schema.add_extra_field(_open_field("x"), project=True)
+    assert schema.derived_names == frozenset()
+    schema.add_extra_field(
+        FieldSchema(
+            name="d",
+            schema={"type": "string"},
+            derive=DeriveRule(kind="copy", field="title"),
+        )
+    )
+    assert schema.derived_names == {"d"}
+    schema.freeze()
+    assert schema.derived_names is schema.derived_names
+    assert schema.for_type("spec").derived_names is schema.derived_names

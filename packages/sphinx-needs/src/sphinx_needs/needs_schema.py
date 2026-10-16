@@ -1180,6 +1180,7 @@ class FieldsSchema:
     __slots__ = (
         "_absent",
         "_core_fields",
+        "_derived_names",
         "_extra_fields",
         "_frozen",
         "_global_view",
@@ -1216,6 +1217,9 @@ class FieldsSchema:
         self._view_of: tuple[FieldsSchema, str | None] | None = None
         #: whether the schema has been read for a need type (:meth:`freeze`)
         self._frozen = False
+        #: the names of the derived fields and link types, once the schema is frozen
+        #: (:attr:`derived_names`)
+        self._derived_names: frozenset[str] | None = None
         #: the configured need types, if the schema was told (:meth:`set_need_types`)
         self._need_types: frozenset[str] | None = None
 
@@ -1278,9 +1282,42 @@ class FieldsSchema:
         if self._frozen:
             return
         self._frozen = True
+        self._derived_names = self._collect_derived_names()
         for need_type in (*self._type_overlays, *self._lacking()):
             self._resolved(need_type)
         self._resolved(None)
+
+    @property
+    def derived_names(self) -> frozenset[str]:
+        """The names of the derived extra fields and link types: each one carrying
+        ``derive`` or ``derive_by_type``.
+
+        Derivation is a property of the field, the same on every need type (an overlay
+        keeps it, :meth:`add_type_overlay`, and a field declared on need types alone is
+        derived on the types that do not declare it too), so the set is one for the
+        schema: the schema of each need type (:meth:`for_type`) answers the schema's
+        own set, the same object. A need refuses a write to any of these names
+        (:class:`~sphinx_needs.need_item.NeedItem`). It is computed once the schema is
+        frozen (:meth:`freeze`), and at each read before.
+        """
+        if self._view_of is not None:
+            return self._view_of[0].derived_names
+        if self._derived_names is not None:
+            return self._derived_names
+        names = self._collect_derived_names()
+        if self._frozen:
+            # a schema of one need type made directly: frozen, never changed
+            self._derived_names = names
+        return names
+
+    def _collect_derived_names(self) -> frozenset[str]:
+        """The names of the derived extra fields and link types (:attr:`derived_names`)."""
+        # a core field is never derived: a derive on one is refused at load
+        return frozenset(
+            field.name
+            for field in (*self._extra_fields.values(), *self._link_fields.values())
+            if field.derived
+        )
 
     def _lacks_local(self, need_type: str) -> bool:
         """Whether a configured need type does not declare a field declared on need

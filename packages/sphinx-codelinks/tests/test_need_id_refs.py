@@ -634,6 +634,47 @@ def test_a_user_declaration_of_the_field_names_the_cure(
     ) in build_warnings(app)
 
 
+def test_a_user_derive_of_the_field_is_left_to_its_rule(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """A ``needs_fields`` entry for the references field with a ``derive`` rule makes it
+    a derived field, which a need refuses to have set: codelinks writes no reference into
+    it, each need keeps what its rule computes, and the build goes on with the warnings
+    the declaration gets anyway."""
+    declaration = (
+        'needs_fields = {"code_url": {"schema": {"type": "string"}, '
+        '"derive": {"kind": "copy", "field": "title"}}}\n'
+    )
+    _project(tmp_path, append={"docs/conf.py": declaration})
+    app = _build(tmp_path, make_app)
+
+    codelinks = " [codelinks.config]" if _SHOWS_WARNING_TYPES else ""
+    # sphinx-needs names the type itself below Sphinx 8
+    needs = " [needs.config]"
+    assert sorted(build_warnings(app)) == sorted(
+        [
+            "WARNING: codelinks registers 'code_url' for @need-ids references; remove "
+            f"the needs_fields declaration of it, or set ref_url_field{codelinks}",
+            "WARNING: Duplicate need field 'code_url', registered via "
+            "add_field('Code references (@need-ids markers)') and "
+            f"needs_fields('Added by needs_fields config').{needs}",
+            DANGLING,
+        ]
+    )
+    assert {
+        need_id: (need["title"], need["code_url"])
+        for need_id, need in _json(app)["needs"].items()
+    } == {
+        need_id: (title, title)
+        for need_id, title in {
+            "REQ_001": "Defined before the directive that references it",
+            "REQ_002": "Defined in a document read after the directive's",
+            "REQ_003": "Defined one directory down",
+            "SPEC_001": "Referenced by nothing",
+        }.items()
+    }
+
+
 def test_copies_and_pages_under_an_ascii_locale(tmp_path: Path) -> None:
     """The byte copy and the source page do not depend on the locale's codec.
 

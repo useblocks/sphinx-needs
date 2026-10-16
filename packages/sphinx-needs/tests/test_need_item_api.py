@@ -1,5 +1,7 @@
 """Test the need item API."""
 
+import pickle
+
 import pytest
 
 from sphinx_needs.data import NeedsInfoType
@@ -249,6 +251,92 @@ def test_need_item_set():
 
     item["link1_back"] = ["ref5"]
     assert item["link1_back"] == ["ref5"]
+
+
+#: the refusal of a write to a derived field (``need[key] = value``)
+DERIVED_REFUSAL = (
+    r"Cannot set derived field 'x' in NeedItem: its value is computed by its derive "
+    r"rule\."
+)
+
+
+def derived_item() -> NeedItem:
+    """A need with a derived extra ``x`` and a derived link type ``dl``."""
+    return NeedItem(
+        core=core(),
+        content=content(),
+        extras={"x": None, "y": None},
+        links={"dl": [], "plain": []},
+        source=None,
+        derived={"x", "dl"},
+    )
+
+
+def assert_refuses_derived(item: NeedItem) -> None:
+    """A derived key refuses ``need[key] = value``; a plain key and the resolver's
+    write (``_set_resolved``) are taken."""
+    with pytest.raises(KeyError, match=DERIVED_REFUSAL):
+        item["x"] = 1
+    with pytest.raises(KeyError, match=r"Cannot set derived field 'dl' in NeedItem"):
+        item["dl"] = ["ref1"]
+    assert item["x"] is None
+    assert item["dl"] == []
+    item["y"] = 1
+    assert item["y"] == 1
+    item["plain"] = ["ref2"]
+    assert item["plain"] == ["ref2"]
+
+
+def test_need_item_refuses_a_derived_field():
+    """``need[key] = value`` refuses a derived extra and a derived link type; the
+    resolver's own write sets them, a link's strings converted as for any link."""
+    item = derived_item()
+    assert_refuses_derived(item)
+
+    item._set_resolved("x", 1)
+    assert item["x"] == 1
+    item._set_resolved("dl", ["ref3", "ref4.part"])
+    assert item["dl"] == ["ref3", "ref4.part"]
+    assert item.get_links("dl", as_str=False) == [
+        NeedLink(id="ref3"),
+        NeedLink(id="ref4", part="part"),
+    ]
+    # every other refusal holds for the resolver's write
+    with pytest.raises(KeyError, match=r"Cannot modify immutable key 'id'"):
+        item._set_resolved("id", "other")
+    with pytest.raises(KeyError, match=r"Only existing keys can be set"):
+        item._set_resolved("unknown_key", 1)
+    with pytest.raises(TypeError, match=r"Value for link key 'dl' must be a list"):
+        item._set_resolved("dl", 1)
+
+
+def test_need_item_copy_refuses_a_derived_field():
+    """A copy refuses what the need refuses."""
+    copied = derived_item().copy()
+    assert_refuses_derived(copied)
+
+
+def test_need_item_pickled_refuses_a_derived_field():
+    """A need pickled and unpickled (the environment, a parallel build's worker)
+    refuses what the need refuses."""
+    unpickled = pickle.loads(pickle.dumps(derived_item()))
+    assert_refuses_derived(unpickled)
+
+
+def test_need_item_derived_keys_are_fields():
+    """A derived key is an extras or links key."""
+    with pytest.raises(
+        ValueError,
+        match=r"NeedItem derived keys must be extras or links keys, not: \['status', 'z'\]",
+    ):
+        NeedItem(
+            core=core(),
+            content=content(),
+            extras={"x": None},
+            links={},
+            source=None,
+            derived={"x", "z", "status"},
+        )
 
 
 def test_need_mutations():

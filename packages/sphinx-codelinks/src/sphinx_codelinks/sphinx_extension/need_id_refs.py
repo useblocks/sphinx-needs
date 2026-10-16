@@ -17,7 +17,7 @@ runs before ``needextend`` is applied, so a user's ``needextend`` of the field w
 from __future__ import annotations
 
 from collections import Counter
-from collections.abc import Iterable, Mapping, MutableMapping
+from collections.abc import Collection, Iterable, Mapping, MutableMapping
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 from typing import Any
@@ -35,6 +35,7 @@ from sphinx_codelinks.config import (
     need_id_refs_fields,
 )
 from sphinx_codelinks.sphinx_extension.project_analysis import configured_git_root
+from sphinx_needs.data import SphinxNeedsData
 
 logger = logging.getLogger(__name__)
 
@@ -133,6 +134,7 @@ def attach_need_id_refs(
     *,
     fields: Mapping[str, str],
     roots: Mapping[str, str] | None = None,
+    derived: Collection[str] = (),
 ) -> AttachResult:
     """Give each referenced need the URLs of its references.
 
@@ -150,7 +152,10 @@ def attach_need_id_refs(
     each kept. Records are ordered by ``(path, lineno, start_column)``. A
     need gets one entry per reference: its remote URL, else its local one; projects
     naming the same field share one list. The need is not marked as modified, and an
-    unreferenced need is left alone.
+    unreferenced need is left alone. Nothing is written into a field in ``derived``
+    (the fields the schema derives: a user's declaration of the field with a ``derive``
+    rule), which a need refuses to have set: the need keeps what its rule computes, and
+    a reference to an unknown id is still reported.
     """
     roots = roots or {}
     unique: dict[tuple[str, str, str, int, str], NeedIdRef] = {}
@@ -174,6 +179,8 @@ def attach_need_id_refs(
         if need is None:
             result.unknown.append(ref)
             continue
+        if fields[ref.project] in derived:
+            continue
         value = ref.remote_url or _local_value(ref.local_url, need.get("docname"))
         if value is None:
             continue
@@ -196,7 +203,10 @@ def attach_and_report(
     codelinks_config = CodeLinksConfig.from_sphinx(app.config)
     fields = need_id_refs_fields(codelinks_config)
     roots = project_roots(app.confdir, codelinks_config)
-    result = attach_need_id_refs(refs, needs, fields=fields, roots=roots)
+    derived = SphinxNeedsData(app.env).get_schema().derived_names
+    result = attach_need_id_refs(
+        refs, needs, fields=fields, roots=roots, derived=derived
+    )
 
     # one warning per located id, even when two fields cover one file
     warned: set[tuple[str, int, str]] = set()
