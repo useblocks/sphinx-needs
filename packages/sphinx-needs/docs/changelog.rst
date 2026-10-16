@@ -117,7 +117,7 @@ Improvements
   (``[]``, ``""``, ``0``, ``0.0``, ``false``) is no default for a per-type narrowing (:issue:`2277`).
   The per-type fields of
   :issue:`2269`
-  (`discussion #1646 <https://github.com/useblocks/sphinx-needs/discussions/1646>`__; :pr:`2281`, :pr:`2284`, :pr:`NNNN`)
+  (`discussion #1646 <https://github.com/useblocks/sphinx-needs/discussions/1646>`__; :pr:`2281`, :pr:`2284`, :pr:`2292`)
 
 - 👌 A derived field cannot be set on a need: ``need[name] = value`` for a field with a
   :ref:`derive <needs_derive>` rule raises ``KeyError``, where it used to set a value the rule
