@@ -29,6 +29,13 @@ from sphinx_needs.services.config.github import (
 
 LOGGER = getLogger(__name__)
 
+#: The GitHub services' need types: directive, title, prefix and color (style ``card``)
+GITHUB_NEED_TYPES = (
+    ("issue", "Issue", "IS_", "#cccccc"),
+    ("pr", "PullRequest", "PR_", "#aaaaaa"),
+    ("commit", "Commit", "C_", "#888888"),
+)
+
 
 def add_github_need_types_and_layout(app: Sphinx, config: Config) -> None:
     """Add the GitHub services' need types and ``github`` layout to sphinx-needs'
@@ -37,18 +44,16 @@ def add_github_need_types_and_layout(app: Sphinx, config: Config) -> None:
     Connected to ``config-inited`` at priority 900: after every other extension's
     handler at the default priority and after the configuration is checked (600), so
     that a type or layout of the same name -- configured, or added by another
-    extension -- is there already, and wins.
+    extension -- is there already, and wins. Each is added on its own: one that exists
+    does not stop the others.
 
     :param app: The Sphinx application.
     :param config: The Sphinx configuration.
     """
-    with suppress(NeedsApiConfigException):
-        # Issue already exists, so we are fine
-        add_need_type(app, "issue", "Issue", "IS_", "#cccccc", "card")
-        # PR already exists, so we are fine
-        add_need_type(app, "pr", "PullRequest", "PR_", "#aaaaaa", "card")
-        # Commit already exists, so we are fine
-        add_need_type(app, "commit", "Commit", "C_", "#888888", "card")
+    for directive, title, prefix, color in GITHUB_NEED_TYPES:
+        # a need type of the directive exists already, so we are fine
+        with suppress(NeedsApiConfigException):
+            add_need_type(app, directive, title, prefix, color, "card")
 
     if "github" not in NeedsSphinxConfig(config).layouts:
         _NEEDS_CONFIG.add_layout("github", GITHUB_LAYOUT)
