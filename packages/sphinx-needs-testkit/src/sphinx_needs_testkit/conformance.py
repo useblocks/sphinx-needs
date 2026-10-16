@@ -36,6 +36,7 @@ __all__ = [
     "case_files",
     "check_schema",
     "check_values",
+    "check_version_values",
     "inside",
     "match_findings",
     "name_field",
@@ -271,6 +272,30 @@ def check_values(
                     f"{need_id}.{name}: left out, and no default restores it"
                 )
     return problems
+
+
+def check_version_values(
+    version: Mapping[str, Any], expect: Mapping[str, Any]
+) -> list[str]:
+    """The problems with a case's pinned values in one *version* of ``needs.json``, read
+    the way the version says it was written.
+
+    A version whose ``needs_defaults_removed`` is ``true`` has its ``needs_schema``
+    defaults merged under each record (:func:`check_values` with *defaults*); any other
+    version is compared as written, so a writer that leaves a key out without saying so
+    fails every pin of that key. An ``omitted`` pin also needs the version to say it.
+    """
+    removed = version.get("needs_defaults_removed") is True
+    problems = []
+    if expect.get("omitted") and not removed:
+        problems.append(
+            f"needs_defaults_removed: {version.get('needs_defaults_removed')!r}, "
+            "expected true (the case pins fields left out)"
+        )
+    schema = version.get("needs_schema")
+    properties = schema.get("properties", {}) if isinstance(schema, Mapping) else {}
+    defaults = schema_defaults(properties) if removed else None
+    return problems + check_values(version["needs"], expect, defaults=defaults)
 
 
 def check_schema(

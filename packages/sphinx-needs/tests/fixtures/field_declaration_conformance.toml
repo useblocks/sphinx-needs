@@ -105,25 +105,28 @@
 #     `details.field`), not from the warning stream, so each is counted once
 #   - a runner that cannot read a record carrying one of these codes FAILS the case rather
 #     than skip the record
-#   - the `needs`, `nulls`, `absent` and `missing` pins are compared against each need's
-#     record with the version's `needs_schema` defaults merged under it, as a reader of
-#     `needs.json` merges them: a default fills a key the record lacks, a stated value
-#     wins. For a project that leaves no default out this changes nothing; a field that
-#     does not exist has no schema property, so it is still no key of the record
+#   - a version whose `needs_defaults_removed` is `true` is read with its `needs_schema`
+#     defaults merged under each need's record, as a reader of `needs.json` merges them: a
+#     default fills a key the record lacks, a stated value wins; the `needs`, `nulls`,
+#     `absent` and `missing` pins are compared against those records. Every other version
+#     is compared as written, so a writer that leaves a key out without saying so fails
+#     every case that pins it. A field that does not exist has no schema property, so it
+#     is still no key of the record
 #   - a `nulls` entry names a need of the case and a field that need carries: `needs.json`
-#     writes every declared field (and link type) on every need, null included (one it
-#     leaves out is restored by the merge above), so a runner asserts the need and the
-#     field are PRESENT, then that the value is null; a missing need or field fails the
-#     case
+#     writes every declared field (and link type) on every need, null included (one a
+#     version whose `needs_defaults_removed` is `true` leaves out is restored by the merge
+#     above), so a runner asserts the need and the field are PRESENT, then that the value
+#     is null; a missing need or field fails the case
 #   - an `absent` entry names a need of the case and a field that does NOT exist: the
 #     runner asserts the need is present and the field is no key of its record (not a
 #     null: a null is a field that exists and is unset)
 #   - a `missing` entry names a need the case's source gives that is NOT created: the
 #     runner asserts its id is no key of the needs `needs.json` writes
 #   - an `omitted` entry names a need of the case and a field its WRITTEN record leaves
-#     out, under `json_remove_defaults`: the runner asserts the need is present, the field
-#     is no key of the record as `needs.json` writes it, and is a key once the version's
-#     `needs_schema` defaults are merged under it
+#     out, under `json_remove_defaults`: the runner asserts the version's
+#     `needs_defaults_removed` is `true`, the need is present, the field is no key of the
+#     record as `needs.json` writes it, and is a key once the version's `needs_schema`
+#     defaults are merged under it
 #   - a `schema.<field>` table names keys of the field's entry in the `needs_schema`
 #     `properties` `needs.json` writes, each compared as a value is; a key it leaves out
 #     is not compared
@@ -3280,8 +3283,8 @@ prefix = "R_"
 source = '''
 .. spec:: Its type's default
    :id: SPEC_001
-   :weight: 1
-   :weights: 1
+   :weight: 1.0
+   :weights: 1.0
 
 .. spec:: The field's own default, authored
    :id: SPEC_002

@@ -6,7 +6,8 @@ ubCode vendors it, so every case is a statement both tools are held to. Each cas
 project, built with the ``needs`` builder, and three things are asserted:
 
 * every case's outcome -- the pinned values, as ``needs.json`` writes them (type
-  included) with its schema's defaults merged under each record, as a reader reads them,
+  included), with its schema's defaults merged under each record where the version says
+  it left them out (``needs_defaults_removed``), as a reader reads them,
   the fields pinned as unset, the fields pinned as absent, the needs pinned as not
   created, the fields a written record pinned as leaving out, the pinned keys of a
   field's schema, and the findings of the per-type declaration contract, as a multiset;
@@ -40,10 +41,10 @@ from sphinx_needs_testkit.conformance import (
     case_files,
     check_schema,
     check_values,
+    check_version_values,
     match_findings,
     params,
     read_findings,
-    schema_defaults,
 )
 
 CORPUS_PATH = Path(__file__).parent / "fixtures" / "field_declaration_conformance.toml"
@@ -217,6 +218,25 @@ def test_an_omitted_pin_reads_the_written_record() -> None:
     ]
 
 
+def test_an_omitted_pin_needs_a_version_that_says_it_left_defaults_out() -> None:
+    """Defaults are merged only under a version whose ``needs_defaults_removed`` is
+    true, and an ``omitted`` pin fails on any other version."""
+    schema = {"properties": {"asil": {"default": "QM"}}}
+    expect = {"omitted": {"REQ_001": ["asil"]}, "needs": {"REQ_001": {"asil": "QM"}}}
+    removed = {"needs_defaults_removed": True, "needs_schema": schema}
+    assert check_version_values({**removed, "needs": {"REQ_001": {}}}, expect) == []
+    silent = {"needs_schema": schema, "needs": {"REQ_001": {}}}
+    assert check_version_values(silent, expect) == [
+        "needs_defaults_removed: None, expected true (the case pins fields left out)",
+        "REQ_001.asil: None, expected 'QM'",
+        "REQ_001.asil: left out, and no default restores it",
+    ]
+    # without the flag a record leaving a pinned key out fails, as before any merge
+    assert check_version_values(silent, {"needs": {"REQ_001": {"asil": "QM"}}}) == [
+        "REQ_001.asil: None, expected 'QM'"
+    ]
+
+
 def _describe(code: str, message: str) -> tuple[str | None, str | None]:
     """The field and the need type a finding names.
 
@@ -264,10 +284,9 @@ def test_case(test_app: Any, case: dict[str, Any]) -> None:
     data = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf-8"))
     version = data["versions"][data["current_version"]]
     needs = version["needs"]
-    properties = version["needs_schema"]["properties"]
     expect = case["expect"]
-    problems = check_values(needs, expect, defaults=schema_defaults(properties))
-    problems += check_schema(properties, expect)
+    problems = check_version_values(version, expect)
+    problems += check_schema(version["needs_schema"]["properties"], expect)
     found, unread = read_findings(
         app,
         needs,
