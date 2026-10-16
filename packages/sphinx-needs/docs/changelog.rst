@@ -128,7 +128,7 @@ Improvements
   function the call is reported, for example ``Error while resolving dynamic values for field
   'plain', of need 'R_001': Error while executing function 'meddle': "Cannot set derived field
   'copied' in NeedItem: its value is computed by its derive rule." [needs.dynamic_function]``,
-  and the field the call was computing does not get its value (:pr:`NNNN`)
+  and the field the call was computing does not get its value (:pr:`2289`)
 
 Deprecations
 ............
@@ -201,7 +201,7 @@ Internal changes
 - 🔧 ``ENV_DATA_VERSION`` is 13: the first build after upgrading re-reads every document, so a
   ``join`` rule that 9.0.0 refused, and a ``links_from_match`` it did not know, are shown on the
   pages whose sources did not change too (:pr:`2228`), and every stored need carries the names of
-  its derived fields (:pr:`NNNN`)
+  its derived fields (:pr:`2289`)
 
 .. _`release:9.0.0`:
 
