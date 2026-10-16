@@ -401,7 +401,9 @@ def test_type_entry_on_a_registered_field(test_app: SphinxTestApp) -> None:
 
 DOCS = Path(__file__).parent.parent / "docs"
 
-_TEXT_BLOCK = re.compile(r"^( *)\.\. code-block:: text\n\n((?:\1   .*\n|\n)+)", re.MULTILINE)
+_TEXT_BLOCK = re.compile(
+    r"^( *)\.\. code-block:: text\n\n((?:\1   .*\n|\n)+)", re.MULTILINE
+)
 
 
 def _quoted_records(rst: str) -> list[str]:
