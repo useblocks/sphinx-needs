@@ -1,0 +1,2272 @@
+# Conformance corpus for FIELDS PER NEED TYPE: the `inherits`, `fields` and `links` of a
+# `[needs.types.<t>]` entry -- how a need type declares a field anew, what its needs then
+# hold, and what is reported.
+#
+# Repository of record: useblocks/sphinx-needs (public)
+# Canonical path:       packages/sphinx-needs/tests/fixtures/field_declaration_conformance.toml
+#
+# THIS copy is CANONICAL. ubCode is to vendor it byte-for-byte, with a provenance block
+# (this path, and the commit it was taken from) prepended and nothing else changed, and to
+# run it against its own engine. The corpus travels public -> private, so vendoring with a
+# recorded source commit is the sync mechanism.
+#
+# Do not reformat this file. `.gitattributes` pins its line endings, and the taplo hook
+# excludes it: every `config = '''...'''` and `source = '''...'''` body below is the INPUT
+# of a case, so a formatter touching one silently changes what the case tests. A change
+# here is a change to the contract, and owes ubCode a re-vendor.
+#
+# Rules for every runner:
+#   - a case is one project. `config` is its `ubproject.toml` (the `[needs]` configuration
+#     only); `source` is the body of its one reStructuredText document, `index.rst`, under
+#     a title the runner adds; `files` (optional) are other files of the project, relative
+#     to the case directory. A case writes only inside its own directory: a `files` key
+#     that would land outside it (`../x.json`) is a broken case, and the runner refuses it
+#   - a case declares ITS OWN need types, each with a `title` and a `prefix`: a
+#     `needs_types` that is given replaces the default list, so no case relies on `req` or
+#     `spec` existing unless it declares them. The cases use the mapping shape,
+#     `[needs.types.<t>]`, but one, which pins the list shape, `[[needs.types]]`
+#   - every need id satisfies the default id regex (`^[A-Z0-9_]{5,}`)
+#   - the agreement rule: a type's declaration of a field starts from the field's own
+#     declaration and takes its ancestors' from the root down, then its own; each must
+#     narrow the one before it. A field need types alone declare has ONE shape (its type,
+#     its items' type, whether it is derived) on every type declaring it, set by the
+#     first root declaration -- of a type none of whose ancestors declares it -- giving a
+#     `schema` `type`; a root of another shape is refused
+#   - the walk order decides which is first: the types in the order the `config` gives
+#     them, but each parent before its children wherever it is given, and the members of a
+#     broken `inherits` cycle in the order of the walk up from the first type given that is
+#     on the cycle or inherits into it -- the last reached first (`a` inheriting `b`
+#     inheriting `a`, `a` given first, resolves `b`, then `a`; with `c` inheriting `a`
+#     given before both, the walk starts at `c` and reaches `a`, then `b`, so it resolves
+#     `b`, then `a`, then `c`, whichever of `a` and `b` is given first)
+#   - absence is per field: a field that need types alone declare (no `[needs.fields.*]`
+#     entry, no core field, no link type) is carried by every need, `null` on the needs of
+#     a type that does not declare it; a field no declaration of which is usable does not
+#     exist, and is no key of any need
+#   - a `[needs.fields.<name>]` entry without `nullable` is nullable in both tools, so its
+#     unset value is null; a case writes `nullable = false` where it means the type's empty
+#     value instead
+#   - a case with `python_only = true` is one only sphinx-needs runs, and ubCode's runner
+#     skips it; `ubcode_only = true` is the converse
+#   - values are compared as `needs.json` writes them, TYPE INCLUDED: `7.0` is a float and
+#     `7` an integer, and the two differ; a link list is a list of id strings, as
+#     `needs.json` writes it
+#   - findings are compared as a MULTISET of `code`, and of `need`, `field` and `type`
+#     where the finding names them; a key a finding leaves out is not compared. `code` is
+#     the BARE subcode (`type_conflict`, not `needs.type_conflict`). Messages and
+#     severities are NOT compared. Only the codes of the per-type declaration contract are
+#     compared --
+#         type_inherits, type_conflict, type_widening, undeclared_for_type, needextend,
+#         derive_authored, derive_invalid, dynamic_function, create_need, field_fail,
+#         link_fail
+#     -- every other finding is each tool's own. `config` is not among them: it is every
+#     configuration finding, so a bare `config` would match any; a case that would pin a
+#     `needs.config` warning pins its consequence for a value instead, and says so
+#   - a finding's `need` is the need it is reported at (the need's directive, or for
+#     `field_fail` and `link_fail` the need validated); a finding of the configuration has
+#     none, and so has one at a `needextend`, and a `create_need` finding, whose need is
+#     not created, and one about a need from `needs_external_needs`, which has no
+#     directive. A finding about a need a `needimport` imports is reported at the
+#     `needimport`, so a case imports ONE need per `needimport`, and the finding's `need`
+#     is that need's own id. Its `field` is the field or link type it is about. Its
+#     `type` is the need type it is about. As sphinx-needs spells them (ubCode's runner
+#     reads its own diagnostics for the same facts): the entry a finding of the schema's
+#     build names (`needs_types['<t>']`, whose `.fields['<f>']` or `.links['<f>']` is its
+#     `field`), the type a `type_inherits` finding opens with (`Need type '<t>'`), the type
+#     an `undeclared_for_type` or a `needextend` finding names (`on need type '<t>'`); a
+#     finding of another code (`field_fail`, `derive_authored`) has none
+#   - `create_need` is the finding of a need that is not created: here, one without a value
+#     of a field its type makes not nullable, with no default (`Field '<f>'` is its field)
+#   - `field_fail` and `link_fail` are the schema validation's findings of a need whose
+#     value of a field (`field_fail`: an enum, a `minItems`) or whose links of a link type
+#     (`link_fail`: a `maxItems`) fail the schema as its need type declares it; a value
+#     failing two keywords is two findings, one per keyword, in both tools.
+#     sphinx-needs reports them as `[sn_schema_violation.field_fail]` and
+#     `[sn_schema_violation.link_fail]` with no source location, and its runner reads the
+#     need and the field or link type from the `schema_violations.json` the validation
+#     writes beside `needs.json` (`validation_warnings.<need id>[]`, `subtype` and
+#     `details.field`), not from the warning stream, so each is counted once
+#   - a runner that cannot read a record carrying one of these codes FAILS the case rather
+#     than skip the record
+#   - a `nulls` entry names a need of the case and a field that need carries: `needs.json`
+#     writes every declared field (and link type) on every need, null included, so a
+#     runner asserts the need and the field are PRESENT, then that the value is null; a
+#     missing need or field fails the case
+#   - an `absent` entry names a need of the case and a field that does NOT exist: the
+#     runner asserts the need is present and the field is no key of its record (not a
+#     null: a null is a field that exists and is unset)
+#   - a `missing` entry names a need the case's source gives that is NOT created: the
+#     runner asserts its id is no key of the needs `needs.json` writes
+#   - a `schema.<field>` table names keys of the field's entry in the `needs_schema`
+#     `properties` `needs.json` writes, each compared as a value is; a key it leaves out
+#     is not compared
+#
+# `packages/sphinx-needs/tests/test_field_declaration_conformance.py` runs every case with
+# the `needs` builder AND asserts the case COUNT, so a truncated copy is a red test rather
+# than reduced coverage. The prose half of the contract is the "Fields per need type"
+# section of the sphinx-needs documentation (`needs_types`).
+#
+# Each `[[case]]` has:
+#   name         - unique, kebab-case
+#   why          - one line saying what the case pins
+#   config       - the `ubproject.toml`, its need types included
+#   source       - the body of `index.rst`
+#   files        - optional; other files, relative to the case directory, and their text
+#   python_only  - optional; see the rules above
+#   ubcode_only  - optional; see the rules above
+#   [case.expect]
+#     findings         - the findings, `[]` for none; or one `[[case.expect.findings]]`
+#                        table per finding: `code`, and `need`, `field` and `type` where
+#                        named
+#     needs.<ID>       - one table per pinned need: field = value
+#     nulls            - <ID> = [the fields pinned as unset] (TOML has no null)
+#     absent           - <ID> = [the fields pinned as not existing]
+#     missing          - [the ids of needs pinned as not created]
+#     schema.<field>   - one table per pinned field schema: key = value
+
+# --- the field's own declaration, and the value of a need ---------------------------
+
+[[case]]
+name = "global-only"
+why = "with no declaration on a need type, a needs_fields default and enum reach every type: unset needs take the default, a value outside the enum fails on each type"
+config = '''
+[needs.fields.asil]
+schema = { type = "string", enum = ["QM", "A", "B"] }
+default = "QM"
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+'''
+source = '''
+.. req:: Unset
+   :id: REQ_1
+
+.. spec:: Unset
+   :id: SPEC_1
+
+.. req:: Outside the enum
+   :id: REQ_2
+   :asil: Z
+
+.. spec:: Outside the enum
+   :id: SPEC_2
+   :asil: Z
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+asil = "QM"
+[case.expect.needs.SPEC_1]
+asil = "QM"
+[case.expect.needs.REQ_2]
+asil = "Z"
+[case.expect.needs.SPEC_2]
+asil = "Z"
+[[case.expect.findings]]
+code = "field_fail"
+need = "REQ_2"
+field = "asil"
+[[case.expect.findings]]
+code = "field_fail"
+need = "SPEC_2"
+field = "asil"
+
+[[case]]
+name = "type-default-and-predicates"
+why = "a need's unset field takes the first matching predicate of its type (the field's, unless the type declares predicates), else the type's default, else the field's; its own value wins; predicates = [] leaves the type none"
+config = '''
+[needs.fields.asil]
+schema = { type = "string" }
+default = "QM"
+predicates = [["status == 'hot'", "B"]]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.fields.asil]
+default = "A"
+
+[needs.types.impl]
+title = "Implementation"
+prefix = "I_"
+
+[needs.types.impl.fields.asil]
+default = "A"
+predicates = [["status == 'cold'", "C"]]
+
+[needs.types.test]
+title = "Test case"
+prefix = "T_"
+
+[needs.types.test.fields.asil]
+predicates = []
+'''
+source = '''
+.. req:: The field's default
+   :id: REQ_1
+
+.. req:: The field's predicate
+   :id: REQ_2
+   :status: hot
+
+.. spec:: The type's default
+   :id: SPEC_1
+
+.. spec:: The field's predicate, before the type's default
+   :id: SPEC_2
+   :status: hot
+
+.. impl:: The type's predicate
+   :id: IMPL_1
+   :status: cold
+
+.. impl:: The type's predicates replace the field's
+   :id: IMPL_2
+   :status: hot
+
+.. impl:: Its own value
+   :id: IMPL_3
+   :status: cold
+   :asil: D
+
+.. test:: No predicate on the type
+   :id: TEST_1
+   :status: hot
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+asil = "QM"
+[case.expect.needs.REQ_2]
+asil = "B"
+[case.expect.needs.SPEC_1]
+asil = "A"
+[case.expect.needs.SPEC_2]
+asil = "B"
+[case.expect.needs.IMPL_1]
+asil = "C"
+[case.expect.needs.IMPL_2]
+asil = "A"
+[case.expect.needs.IMPL_3]
+asil = "D"
+[case.expect.needs.TEST_1]
+asil = "QM"
+
+[[case]]
+name = "core-field-per-type"
+why = "a core field is declared like any other: status with a default and an enum on req holds the default on req's unset needs and fails outside the enum there; spec is free"
+config = '''
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.fields.status]
+default = "open"
+schema = { enum = ["open", "closed"] }
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+'''
+source = '''
+.. req:: Unset
+   :id: REQ_1
+
+.. req:: Outside the enum
+   :id: REQ_2
+   :status: wip
+
+.. spec:: Unset
+   :id: SPEC_1
+
+.. spec:: Free
+   :id: SPEC_2
+   :status: wip
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+status = "open"
+[case.expect.needs.REQ_2]
+status = "wip"
+[case.expect.needs.SPEC_2]
+status = "wip"
+[case.expect.nulls]
+SPEC_1 = ["status"]
+[[case.expect.findings]]
+code = "field_fail"
+need = "REQ_2"
+field = "status"
+
+[[case]]
+name = "unsupported-key-ignored"
+why = "a key a type's declaration does not take (parse_variants) is ignored and the rest of the entry used: spec's default applies (the needs.config warning is not compared; this pins its consequence)"
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.fields.owner]
+parse_variants = true
+default = "bob"
+'''
+source = '''
+.. req:: Unset
+   :id: REQ_1
+
+.. spec:: Unset
+   :id: SPEC_1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+owner = "bob"
+[case.expect.nulls]
+REQ_1 = ["owner"]
+
+[[case]]
+name = "list-shape-sub-table"
+why = "in the [[needs.types]] list shape, a [needs.types.fields.asil] table after the last element belongs to that element: spec's needs read its default, req's the field's"
+config = '''
+[needs.fields.asil]
+schema = { type = "string" }
+default = "QM"
+
+[[needs.types]]
+directive = "req"
+title = "Requirement"
+prefix = "R_"
+
+[[needs.types]]
+directive = "spec"
+title = "Specification"
+prefix = "S_"
+
+[needs.types.fields.asil]
+default = "B"
+'''
+source = '''
+.. req:: Unset
+   :id: REQ_1
+
+.. spec:: Unset
+   :id: SPEC_1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+asil = "QM"
+[case.expect.needs.SPEC_1]
+asil = "B"
+
+[[case]]
+name = "link-type-per-type"
+why = "a type declares a link type's default and predicates for its needs as for a field: spec's unset links take its default, impl's its predicate, req's none; a type's predicates of a needs_links link type are in place of the link type's, and [] is none"
+config = '''
+[needs.links.covers]
+predicates = [["status == 'done'", ["REQ_1"]]]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.links.links]
+default = ["REQ_1"]
+
+[needs.types.spec.links.covers]
+predicates = [["status == 'done'", ["REQ_2"]]]
+
+[needs.types.impl]
+title = "Implementation"
+prefix = "I_"
+
+[needs.types.impl.links.links]
+predicates = [["status == 'done'", ["REQ_2"]]]
+
+[needs.types.impl.links.covers]
+predicates = []
+'''
+source = '''
+.. req:: Target
+   :id: REQ_1
+
+.. req:: Other target
+   :id: REQ_2
+
+.. req:: The link type's predicate
+   :id: REQ_3
+   :status: done
+
+.. spec:: The type's default
+   :id: SPEC_1
+
+.. spec:: Its own links
+   :id: SPEC_2
+   :links: REQ_2
+
+.. spec:: The type's predicate in place of the link type's
+   :id: SPEC_3
+   :status: done
+
+.. impl:: The type's predicate
+   :id: IMPL_1
+   :status: done
+
+.. impl:: No predicate matching
+   :id: IMPL_2
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+links = []
+[case.expect.needs.SPEC_1]
+links = ["REQ_1"]
+[case.expect.needs.SPEC_2]
+links = ["REQ_2"]
+[case.expect.needs.IMPL_1]
+links = ["REQ_2"]
+covers = []
+[case.expect.needs.REQ_3]
+covers = ["REQ_1"]
+[case.expect.needs.SPEC_3]
+covers = ["REQ_2"]
+[case.expect.needs.IMPL_2]
+links = []
+
+[[case]]
+name = "link-type-schema-per-type"
+why = "a type's schema of a link type narrows its needs' links alone, for links and for a needs_links link type: spec's maxItems fails spec's need with too many (link_fail each), impl's same links are clean"
+config = '''
+[needs.links.covers]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.links.links]
+schema = { maxItems = 3 }
+
+[needs.types.spec.links.covers]
+schema = { maxItems = 2 }
+
+[needs.types.impl]
+title = "Implementation"
+prefix = "I_"
+'''
+source = '''
+.. req:: First
+   :id: REQ_1
+
+.. req:: Second
+   :id: REQ_2
+
+.. req:: Third
+   :id: REQ_3
+
+.. req:: Fourth
+   :id: REQ_4
+
+.. spec:: Four links, three at most; three covers, two at most
+   :id: SPEC_1
+   :links: REQ_1, REQ_2, REQ_3, REQ_4
+   :covers: REQ_1, REQ_2, REQ_3
+
+.. impl:: The same, free
+   :id: IMPL_1
+   :links: REQ_1, REQ_2, REQ_3, REQ_4
+   :covers: REQ_1, REQ_2, REQ_3
+'''
+[case.expect]
+[case.expect.needs.SPEC_1]
+links = ["REQ_1", "REQ_2", "REQ_3", "REQ_4"]
+covers = ["REQ_1", "REQ_2", "REQ_3"]
+[case.expect.needs.IMPL_1]
+links = ["REQ_1", "REQ_2", "REQ_3", "REQ_4"]
+covers = ["REQ_1", "REQ_2", "REQ_3"]
+[[case.expect.findings]]
+code = "link_fail"
+need = "SPEC_1"
+field = "links"
+[[case.expect.findings]]
+code = "link_fail"
+need = "SPEC_1"
+field = "covers"
+
+[[case]]
+name = "link-derive-in-a-type-entry"
+why = "a derive in a type's entry of a needs_links link type is the link type's rule for the type and its children without one: spec and sspec compute their links; the link type is closed to authors on every type, so impl's written links are one derive_authored and ignored, and a type without a rule has none"
+config = '''
+[needs.links.covers]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.links.covers]
+derive = { kind = "links", where = "type == 'req'" }
+
+[needs.types.sspec]
+title = "Sub-specification"
+prefix = "SS_"
+inherits = "spec"
+
+[needs.types.impl]
+title = "Implementation"
+prefix = "I_"
+'''
+source = '''
+.. req:: Target
+   :id: REQ_1
+
+.. spec:: The type's rule
+   :id: SPEC_1
+
+.. sspec:: The parent's rule
+   :id: SSPEC_1
+
+.. impl:: No rule, authored
+   :id: IMPL_1
+   :covers: REQ_1
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+covers = []
+[case.expect.needs.SPEC_1]
+covers = ["REQ_1"]
+[case.expect.needs.SSPEC_1]
+covers = ["REQ_1"]
+[case.expect.needs.IMPL_1]
+covers = []
+[[case.expect.findings]]
+code = "derive_authored"
+need = "IMPL_1"
+field = "covers"
+
+# --- narrowing ------------------------------------------------------------------------
+
+[[case]]
+name = "type-narrows-enum"
+why = "a type's schema narrows the field's enum for its needs alone: QM fails on spec, the same value is clean on req"
+config = '''
+[needs.fields.asil]
+schema = { type = "string", enum = ["QM", "A", "B"] }
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.fields.asil]
+schema = { enum = ["A", "B"] }
+'''
+source = '''
+.. req:: QM on req
+   :id: REQ_1
+   :asil: QM
+
+.. spec:: QM on spec
+   :id: SPEC_1
+   :asil: QM
+
+.. spec:: A on spec
+   :id: SPEC_2
+   :asil: A
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+asil = "QM"
+[case.expect.needs.SPEC_1]
+asil = "QM"
+[case.expect.needs.SPEC_2]
+asil = "A"
+[[case.expect.findings]]
+code = "field_fail"
+need = "SPEC_1"
+field = "asil"
+
+[[case]]
+name = "two-level-inheritance"
+why = "a type without a declaration of its own reads its parent's, given before or after it: the grandchild takes the parent's narrowed enum and default, and its own value outside that enum fails; a child's entry giving only a schema keeps its parent's default"
+config = '''
+[needs.fields.asil]
+schema = { type = "string", enum = ["QM", "A", "B", "C"] }
+default = "QM"
+
+[needs.types.safety_spec]
+title = "Safety specification"
+prefix = "SS_"
+inherits = "safety_req"
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.fields.asil]
+schema = { enum = ["A", "B", "C"] }
+default = "A"
+
+[needs.types.safety_req]
+title = "Safety requirement"
+prefix = "SR_"
+inherits = "req"
+
+[needs.types.safety_req.fields.asil]
+schema = { enum = ["B", "C"] }
+default = "B"
+
+[needs.types.safety_test]
+title = "Safety test"
+prefix = "ST_"
+inherits = "req"
+
+[needs.types.safety_test.fields.asil]
+schema = { enum = ["A", "B"] }
+'''
+source = '''
+.. req:: Root
+   :id: REQ_1
+
+.. safety_req:: Child
+   :id: SREQ_1
+
+.. safety_spec:: Grandchild
+   :id: SSPEC_1
+
+.. safety_spec:: Grandchild, outside the inherited enum
+   :id: SSPEC_2
+   :asil: A
+
+.. safety_test:: The parent's default, under its own schema
+   :id: STEST_1
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+asil = "A"
+[case.expect.needs.SREQ_1]
+asil = "B"
+[case.expect.needs.SSPEC_1]
+asil = "B"
+[case.expect.needs.SSPEC_2]
+asil = "A"
+[case.expect.needs.STEST_1]
+asil = "A"
+[[case.expect.findings]]
+code = "field_fail"
+need = "SSPEC_2"
+field = "asil"
+
+[[case]]
+name = "widening-refused"
+why = "a declaration widening its parent's is one type_widening and ignored as a whole: the parent's narrowing stands, so a value inside the widened enum fails on the child, and the entry's default is dropped with it"
+config = '''
+[needs.fields.asil]
+schema = { type = "string", enum = ["QM", "A", "B", "C"] }
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.fields.asil]
+schema = { enum = ["A", "B"] }
+
+[needs.types.safety_req]
+title = "Safety requirement"
+prefix = "SR_"
+inherits = "req"
+
+[needs.types.safety_req.fields.asil]
+schema = { enum = ["A", "B", "C"] }
+default = "B"
+'''
+source = '''
+.. safety_req:: Inside the widened enum
+   :id: SREQ_1
+   :asil: C
+
+.. safety_req:: Inside the parent's
+   :id: SREQ_2
+   :asil: A
+
+.. safety_req:: Unset: the entry's default is not taken
+   :id: SREQ_3
+'''
+[case.expect]
+[case.expect.needs.SREQ_1]
+asil = "C"
+[case.expect.needs.SREQ_2]
+asil = "A"
+[case.expect.nulls]
+SREQ_3 = ["asil"]
+[[case.expect.findings]]
+code = "type_widening"
+type = "safety_req"
+field = "asil"
+[[case.expect.findings]]
+code = "field_fail"
+need = "SREQ_1"
+field = "asil"
+
+[[case]]
+name = "narrowed-enum-needs-a-default"
+why = "an enum leaving out the field's default without a default inside it cannot be used: the declaration is refused as a whole, so spec's unset need holds the field's default and nothing fails; so is a type's own default outside its own narrowed enum (impl)"
+config = '''
+[needs.fields.asil]
+schema = { type = "string", enum = ["QM", "A", "B"] }
+default = "QM"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.fields.asil]
+schema = { enum = ["A", "B"] }
+
+[needs.types.impl]
+title = "Implementation"
+prefix = "I_"
+
+[needs.types.impl.fields.asil]
+schema = { enum = ["A", "B"] }
+default = "QM"
+'''
+source = '''
+.. spec:: Unset
+   :id: SPEC_1
+
+.. spec:: QM
+   :id: SPEC_2
+   :asil: QM
+
+.. impl:: Unset
+   :id: IMPL_1
+'''
+[case.expect]
+[case.expect.needs.SPEC_1]
+asil = "QM"
+[case.expect.needs.SPEC_2]
+asil = "QM"
+[case.expect.needs.IMPL_1]
+asil = "QM"
+[[case.expect.findings]]
+code = "type_widening"
+type = "spec"
+field = "asil"
+[[case.expect.findings]]
+code = "type_widening"
+type = "impl"
+field = "asil"
+
+[[case]]
+name = "nullable-narrowing"
+why = "nullable = false on a type makes the field not nullable on its needs: a needextend deleting it gives the empty value there, None elsewhere; nullable = true where the field is not nullable widens it, one type_widening, and the field stays not nullable on that type"
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.fields.level]
+schema = { type = "string" }
+nullable = false
+default = "L"
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.fields.level]
+nullable = true
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.fields.owner]
+nullable = false
+'''
+source = '''
+.. req:: Deleted
+   :id: REQ_1
+   :owner: alice
+
+.. spec:: Deleted
+   :id: SPEC_1
+   :owner: alice
+
+.. needextend:: id in ['REQ_1', 'SPEC_1']
+   :-owner:
+   :-level:
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+level = ""
+[case.expect.needs.SPEC_1]
+owner = ""
+level = ""
+[case.expect.nulls]
+REQ_1 = ["owner"]
+[[case.expect.findings]]
+code = "type_widening"
+type = "req"
+field = "level"
+
+[[case]]
+name = "nullable-false-requires-a-value"
+why = "nullable = false on a type for a nullable field with no default requires a value on its needs: spec's unset need is not created (create_need), its set need is, and req's unset need holds null"
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.fields.owner]
+nullable = false
+'''
+source = '''
+.. req:: Unset
+   :id: REQ_1
+
+.. spec:: Unset
+   :id: SPEC_1
+
+.. spec:: Set
+   :id: SPEC_2
+   :owner: alice
+'''
+[case.expect]
+missing = ["SPEC_1"]
+[case.expect.needs.SPEC_2]
+owner = "alice"
+[case.expect.nulls]
+REQ_1 = ["owner"]
+[[case.expect.findings]]
+code = "create_need"
+field = "owner"
+
+[[case]]
+name = "min-items-needs-no-default"
+why = "the empty value of a type is no default: minItems on tags needs none and fails a need without tags; a parent's default = [] is a default, which a child's minItems must admit, so the child's declaration is refused"
+config = '''
+[needs.fields.labels]
+schema = { type = "array", items = { type = "string" } }
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.fields.tags]
+schema = { minItems = 1 }
+
+[needs.types.impl]
+title = "Implementation"
+prefix = "I_"
+
+[needs.types.impl.fields.labels]
+default = []
+
+[needs.types.impl2]
+title = "Sub-implementation"
+prefix = "I2_"
+inherits = "impl"
+
+[needs.types.impl2.fields.labels]
+schema = { minItems = 1 }
+'''
+source = '''
+.. req:: No tags
+   :id: REQ_1
+
+.. spec:: No tags
+   :id: SPEC_1
+
+.. spec:: Tagged
+   :id: SPEC_2
+   :tags: a
+
+.. impl2:: No labels
+   :id: IMPL2_1
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+tags = []
+[case.expect.needs.SPEC_1]
+tags = []
+[case.expect.needs.SPEC_2]
+tags = ["a"]
+[case.expect.needs.IMPL2_1]
+labels = []
+[[case.expect.findings]]
+code = "field_fail"
+need = "SPEC_1"
+field = "tags"
+[[case.expect.findings]]
+code = "type_widening"
+type = "impl2"
+field = "labels"
+
+# --- inherits -------------------------------------------------------------------------
+
+[[case]]
+name = "inherits-unknown-and-cycle"
+why = "an inherits naming no need type, or on a cycle, is one type_inherits per type and ignored: every type stays without a parent, so b does not read a's default; an inherits that is not a string, or a fields that is not a table, is ignored and the type kept (the needs.config warnings are not compared; this pins their consequence)"
+config = '''
+[needs.fields.asil]
+schema = { type = "string" }
+default = "QM"
+
+[needs.types.a]
+title = "A"
+prefix = "A_"
+inherits = "b"
+
+[needs.types.a.fields.asil]
+default = "A"
+
+[needs.types.b]
+title = "B"
+prefix = "B_"
+inherits = "a"
+
+[needs.types.c]
+title = "C"
+prefix = "C_"
+inherits = "nope"
+
+[needs.types.d]
+title = "D"
+prefix = "D_"
+inherits = 3
+
+[needs.types.e]
+title = "E"
+prefix = "E_"
+fields = "nope"
+'''
+source = '''
+.. a:: On the cycle, its own declaration
+   :id: A_001
+
+.. b:: On the cycle, no declaration
+   :id: B_001
+
+.. c:: Inheriting no need type
+   :id: C_001
+
+.. d:: An inherits that is not a string
+   :id: D_001
+
+.. e:: A fields that is not a table
+   :id: E_001
+'''
+[case.expect]
+[case.expect.needs.A_001]
+asil = "A"
+[case.expect.needs.B_001]
+asil = "QM"
+[case.expect.needs.C_001]
+asil = "QM"
+[case.expect.needs.D_001]
+asil = "QM"
+[case.expect.needs.E_001]
+asil = "QM"
+[[case.expect.findings]]
+code = "type_inherits"
+type = "a"
+[[case.expect.findings]]
+code = "type_inherits"
+type = "b"
+[[case.expect.findings]]
+code = "type_inherits"
+type = "c"
+
+# --- derived fields -------------------------------------------------------------------
+
+[[case]]
+name = "derived-field-on-a-type"
+why = "a derived field takes a type's description, narrower schema and nullable (lead, with no value to copy, is the empty value on req, null elsewhere); a default, predicates, or an enum where the field has none, is one type_conflict and the entry ignored; the derived value is unchanged on every type"
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.fields.lead]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner" }
+
+[needs.fields.title_copy]
+schema = { type = "string" }
+derive = { kind = "copy", field = "title" }
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.fields.title_copy]
+description = "The title, again"
+schema = { maxLength = 100 }
+nullable = false
+
+[needs.types.req.fields.lead]
+nullable = false
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.fields.title_copy]
+default = "x"
+
+[needs.types.impl]
+title = "Implementation"
+prefix = "I_"
+
+[needs.types.impl.fields.title_copy]
+schema = { enum = ["Impl"] }
+
+[needs.types.test]
+title = "Test case"
+prefix = "T_"
+
+[needs.types.test.fields.title_copy]
+predicates = [["status == 'open'", "p"]]
+'''
+source = '''
+.. req:: Req
+   :id: REQ_1
+
+.. spec:: Spec
+   :id: SPEC_1
+
+.. impl:: Impl
+   :id: IMPL_1
+
+.. test:: Test
+   :id: TEST_1
+   :status: open
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+title_copy = "Req"
+lead = ""
+[case.expect.needs.SPEC_1]
+title_copy = "Spec"
+[case.expect.needs.IMPL_1]
+title_copy = "Impl"
+[case.expect.needs.TEST_1]
+title_copy = "Test"
+[case.expect.nulls]
+SPEC_1 = ["lead"]
+IMPL_1 = ["lead"]
+[[case.expect.findings]]
+code = "type_conflict"
+type = "spec"
+field = "title_copy"
+[[case.expect.findings]]
+code = "type_conflict"
+type = "impl"
+field = "title_copy"
+[[case.expect.findings]]
+code = "type_conflict"
+type = "test"
+field = "title_copy"
+
+[[case]]
+name = "derived-field-narrower-schema"
+why = "a derived field's rules are checked against the field's own declaration, so its computed values are kept on every type; a type's narrower schema is validation's, a field_fail on that type's need alone, whichever type's need comes first"
+config = '''
+[needs.fields.title_copy]
+schema = { type = "string" }
+derive = { kind = "copy", field = "title" }
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.fields.title_copy]
+schema = { maxLength = 5 }
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+'''
+source = '''
+.. req:: Too long a title
+   :id: REQ_1
+
+.. spec:: Too long a title
+   :id: SPEC_1
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+title_copy = "Too long a title"
+[case.expect.needs.SPEC_1]
+title_copy = "Too long a title"
+[[case.expect.findings]]
+code = "field_fail"
+need = "REQ_1"
+field = "title_copy"
+
+[[case]]
+name = "derive-in-a-type-entry"
+why = "a derive in a type's entry is the field's rule for the type and for each child without its own: a child's rule overrides it; the field is closed to authors on every type, and a type without a rule holds null"
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.fields.lead]
+schema = { type = "string" }
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.fields.lead]
+derive = { kind = "copy", field = "owner" }
+
+[needs.types.sreq]
+title = "Safety requirement"
+prefix = "SR_"
+inherits = "req"
+
+[needs.types.treq]
+title = "Titled requirement"
+prefix = "TR_"
+inherits = "req"
+
+[needs.types.treq.fields.lead]
+derive = { kind = "copy", field = "title" }
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+'''
+source = '''
+.. req:: The type's rule
+   :id: REQ_1
+   :owner: alice
+
+.. req:: Authored
+   :id: REQ_2
+   :owner: bob
+   :lead: carol
+
+.. sreq:: The parent's rule
+   :id: SREQ_1
+   :owner: dave
+
+.. treq:: Its own rule
+   :id: TREQ_1
+   :owner: erin
+
+.. spec:: No rule, authored
+   :id: SPEC_1
+   :owner: frank
+   :lead: gina
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+lead = "alice"
+[case.expect.needs.REQ_2]
+lead = "bob"
+[case.expect.needs.SREQ_1]
+lead = "dave"
+[case.expect.needs.TREQ_1]
+lead = "Its own rule"
+[case.expect.nulls]
+SPEC_1 = ["lead"]
+[[case.expect.findings]]
+code = "derive_authored"
+need = "REQ_2"
+field = "lead"
+[[case.expect.findings]]
+code = "derive_authored"
+need = "SPEC_1"
+field = "lead"
+
+[[case]]
+name = "derive-invalid-in-a-type-entry"
+why = "a derive_invalid of a type's rule names the entry it came from: the type and the field"
+config = '''
+[needs.fields.lead]
+schema = { type = "string" }
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.fields.lead]
+derive = { kind = "copy" }
+'''
+source = '''
+.. req:: Broken rule
+   :id: REQ_1
+'''
+[case.expect]
+[case.expect.nulls]
+REQ_1 = ["lead"]
+[[case.expect.findings]]
+code = "derive_invalid"
+type = "req"
+field = "lead"
+
+[[case]]
+name = "derive-beside-derive-by-type"
+why = "a type's derive beside a derive_by_type entry for the same type: the derive_by_type rule is used for the type, its children without a rule read the entry's (the needs.config warning is not compared; this pins its consequence)"
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.fields.lead]
+schema = { type = "string" }
+derive_by_type.req = { kind = "copy", field = "title" }
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.fields.lead]
+derive = { kind = "copy", field = "owner" }
+
+[needs.types.sreq]
+title = "Safety requirement"
+prefix = "SR_"
+inherits = "req"
+'''
+source = '''
+.. req:: The derive_by_type rule
+   :id: REQ_1
+   :owner: alice
+
+.. sreq:: The entry's rule
+   :id: SREQ_1
+   :owner: bob
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+lead = "The derive_by_type rule"
+[case.expect.needs.SREQ_1]
+lead = "bob"
+
+# --- fields declared on need types alone ----------------------------------------------
+
+[[case]]
+name = "type-local-field"
+why = "a fields entry naming what nothing else declares is a field of the types declaring it, by their entry or a parent's: null on every other type's needs, and a value set there is one undeclared_for_type and ignored; needs.json declares it once, nullable, by the type without a declaring ancestor"
+config = '''
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.sreq]
+title = "Safety requirement"
+prefix = "SR_"
+
+[needs.types.sreq.fields.hazard]
+schema = { type = "string" }
+
+[needs.types.ssreq]
+title = "Safety sub-requirement"
+prefix = "SSR_"
+inherits = "sreq"
+'''
+source = '''
+.. sreq:: Declares it
+   :id: SREQ_1
+   :hazard: fire
+
+.. ssreq:: Declares it by its parent
+   :id: SSREQ_1
+   :hazard: flood
+
+.. req:: Does not declare it
+   :id: REQ_1
+
+.. req:: Sets it anyway
+   :id: REQ_2
+   :hazard: wind
+'''
+[case.expect]
+[case.expect.needs.SREQ_1]
+hazard = "fire"
+[case.expect.needs.SSREQ_1]
+hazard = "flood"
+[case.expect.nulls]
+REQ_1 = ["hazard"]
+REQ_2 = ["hazard"]
+[case.expect.schema.hazard]
+type = ["string", "null"]
+description = "Declared by need types 'sreq'"
+[[case.expect.findings]]
+code = "undeclared_for_type"
+need = "REQ_2"
+field = "hazard"
+type = "req"
+
+[[case]]
+name = "type-local-first-root-sets-the-shape"
+why = "the first root declaration in needs_types order giving a schema type sets the field's type: a later root of another type is one type_conflict and does not declare the field (its need holds null, a value there is undeclared_for_type); an untyped root takes the type; needs.json names the roots not refused"
+config = '''
+[needs.types.a]
+title = "A"
+prefix = "A_"
+
+[needs.types.a.fields.x]
+schema = { type = "integer" }
+
+[needs.types.b]
+title = "B"
+prefix = "B_"
+
+[needs.types.b.fields.x]
+schema = { type = "string" }
+
+[needs.types.c]
+title = "C"
+prefix = "C_"
+
+[needs.types.c.fields.x]
+'''
+source = '''
+.. a:: Sets the type
+   :id: A_001
+   :x: 4
+
+.. b:: Refused
+   :id: B_001
+   :x: four
+
+.. c:: Takes the type
+   :id: C_001
+   :x: 5
+'''
+[case.expect]
+[case.expect.needs.A_001]
+x = 4
+[case.expect.needs.C_001]
+x = 5
+[case.expect.nulls]
+B_001 = ["x"]
+[case.expect.schema.x]
+type = ["integer", "null"]
+description = "Declared by need types 'a', 'c'"
+[[case.expect.findings]]
+code = "type_conflict"
+type = "b"
+field = "x"
+[[case.expect.findings]]
+code = "undeclared_for_type"
+need = "B_001"
+field = "x"
+type = "b"
+
+[[case]]
+name = "type-local-cycle-walk-order"
+why = "the members of a broken inherits cycle are resolved in the walk's order: up from the first given (a), then placed parent-first, so b comes before a and b's type is the field's; a's other type is refused"
+config = '''
+[needs.types.a]
+title = "A"
+prefix = "A_"
+inherits = "b"
+
+[needs.types.a.fields.x]
+schema = { type = "integer" }
+
+[needs.types.b]
+title = "B"
+prefix = "B_"
+inherits = "a"
+
+[needs.types.b.fields.x]
+schema = { type = "string" }
+'''
+source = '''
+.. a:: Refused
+   :id: A_001
+
+.. b:: Sets the type
+   :id: B_001
+   :x: four
+'''
+[case.expect]
+[case.expect.needs.B_001]
+x = "four"
+[case.expect.nulls]
+A_001 = ["x"]
+[[case.expect.findings]]
+code = "type_inherits"
+type = "a"
+[[case.expect.findings]]
+code = "type_inherits"
+type = "b"
+[[case.expect.findings]]
+code = "type_conflict"
+type = "a"
+field = "x"
+
+[[case]]
+name = "type-local-chain-into-cycle-walk-order"
+why = "the walk that reaches a broken cycle starts at the first type given that is on it or inherits into it: c, given first, inherits a, so the walk is c, a, b and resolves b, then a, then c; b's type is the field's though a is given after it, and a's other type is refused, so c, inheriting a, declares nothing"
+config = '''
+[needs.types.c]
+title = "C"
+prefix = "C_"
+inherits = "a"
+
+[needs.types.b]
+title = "B"
+prefix = "B_"
+inherits = "a"
+
+[needs.types.b.fields.x]
+schema = { type = "string" }
+
+[needs.types.a]
+title = "A"
+prefix = "A_"
+inherits = "b"
+
+[needs.types.a.fields.x]
+schema = { type = "integer" }
+'''
+source = '''
+.. a:: Refused
+   :id: A_001
+   :x: 4
+
+.. b:: Sets the type
+   :id: B_001
+   :x: four
+
+.. c:: Inherits the refused entry
+   :id: C_001
+'''
+[case.expect]
+[case.expect.needs.B_001]
+x = "four"
+[case.expect.nulls]
+A_001 = ["x"]
+C_001 = ["x"]
+[[case.expect.findings]]
+code = "type_inherits"
+type = "a"
+[[case.expect.findings]]
+code = "type_inherits"
+type = "b"
+[[case.expect.findings]]
+code = "type_conflict"
+type = "a"
+field = "x"
+[[case.expect.findings]]
+code = "undeclared_for_type"
+need = "A_001"
+field = "x"
+type = "a"
+
+[[case]]
+name = "type-local-array-items"
+why = "the first root declaration of an array field gives its items' type: a later root with other items is refused, and a root giving no items takes them"
+config = '''
+[needs.types.a]
+title = "A"
+prefix = "A_"
+
+[needs.types.a.fields.x]
+schema = { type = "array", items = { type = "string" } }
+
+[needs.types.b]
+title = "B"
+prefix = "B_"
+
+[needs.types.b.fields.x]
+schema = { type = "array", items = { type = "integer" } }
+
+[needs.types.c]
+title = "C"
+prefix = "C_"
+
+[needs.types.c.fields.x]
+schema = { type = "array" }
+'''
+source = '''
+.. a:: Sets the items
+   :id: A_001
+   :x: p, q
+
+.. b:: Refused
+   :id: B_001
+
+.. c:: Takes the items
+   :id: C_001
+   :x: r
+'''
+[case.expect]
+[case.expect.needs.A_001]
+x = ["p", "q"]
+[case.expect.needs.C_001]
+x = ["r"]
+[case.expect.nulls]
+B_001 = ["x"]
+[[case.expect.findings]]
+code = "type_conflict"
+type = "b"
+field = "x"
+
+[[case]]
+name = "type-local-no-root-types-it"
+why = "a field declared on need types alone that no root declaration gives a schema type is refused on every entry and does not exist: no need carries the key"
+config = '''
+[needs.types.a]
+title = "A"
+prefix = "A_"
+
+[needs.types.a.fields.x]
+
+[needs.types.b]
+title = "B"
+prefix = "B_"
+
+[needs.types.b.fields.x]
+description = "Still no type"
+
+[needs.types.c]
+title = "C"
+prefix = "C_"
+'''
+source = '''
+.. a:: Declares it untyped
+   :id: A_001
+
+.. b:: Declares it untyped
+   :id: B_001
+
+.. c:: Does not declare it
+   :id: C_001
+'''
+[case.expect]
+[case.expect.absent]
+A_001 = ["x"]
+B_001 = ["x"]
+C_001 = ["x"]
+[[case.expect.findings]]
+code = "type_conflict"
+type = "a"
+field = "x"
+[[case.expect.findings]]
+code = "type_conflict"
+type = "b"
+field = "x"
+
+[[case]]
+name = "type-local-child-of-a-refused-root"
+why = "a refused entry does not declare the field, so a child's entry under it is a declaration of its own: an empty one takes the agreed type and declares, one of another type is refused too"
+config = '''
+[needs.types.a]
+title = "A"
+prefix = "A_"
+
+[needs.types.a.fields.x]
+schema = { type = "integer" }
+
+[needs.types.b]
+title = "B"
+prefix = "B_"
+
+[needs.types.b.fields.x]
+schema = { type = "string" }
+
+[needs.types.b1]
+title = "B1"
+prefix = "B1_"
+inherits = "b"
+
+[needs.types.b1.fields.x]
+
+[needs.types.b2]
+title = "B2"
+prefix = "B2_"
+inherits = "b"
+
+[needs.types.b2.fields.x]
+schema = { type = "string" }
+'''
+source = '''
+.. a:: Sets the type
+   :id: A_001
+   :x: 1
+
+.. b1:: Agrees, declares
+   :id: B1_001
+   :x: 3
+
+.. b2:: Disagrees, refused
+   :id: B2_001
+   :x: 4
+'''
+[case.expect]
+[case.expect.needs.A_001]
+x = 1
+[case.expect.needs.B1_001]
+x = 3
+[case.expect.nulls]
+B2_001 = ["x"]
+[[case.expect.findings]]
+code = "type_conflict"
+type = "b"
+field = "x"
+[[case.expect.findings]]
+code = "type_conflict"
+type = "b2"
+field = "x"
+[[case.expect.findings]]
+code = "undeclared_for_type"
+need = "B2_001"
+field = "x"
+type = "b2"
+
+[[case]]
+name = "type-local-widening-still-declares"
+why = "an entry that cannot be used for another reason than its shape (it widens) declares its field all the same, as it was: the child's needs carry the field, under the parent's minimum, and without the entry's default"
+config = '''
+[needs.types.a]
+title = "A"
+prefix = "A_"
+
+[needs.types.a.fields.x]
+schema = { type = "integer", minimum = 5 }
+
+[needs.types.a1]
+title = "A1"
+prefix = "A1_"
+inherits = "a"
+
+[needs.types.a1.fields.x]
+schema = { minimum = 1 }
+default = 7
+'''
+source = '''
+.. a1:: Inside the parent's minimum
+   :id: A1_001
+   :x: 6
+
+.. a1:: Inside the widened minimum only
+   :id: A1_002
+   :x: 3
+
+.. a1:: Unset: the entry's default is not taken
+   :id: A1_003
+'''
+[case.expect]
+[case.expect.needs.A1_001]
+x = 6
+[case.expect.needs.A1_002]
+x = 3
+[case.expect.nulls]
+A1_003 = ["x"]
+[[case.expect.findings]]
+code = "type_widening"
+type = "a1"
+field = "x"
+[[case.expect.findings]]
+code = "field_fail"
+need = "A1_002"
+field = "x"
+
+[[case]]
+name = "type-local-required-on-declaring-types"
+why = "the field is declared once, nullable and without a default, and a type declaring it not nullable requires it on its own needs alone: a's unset need is not created (create_need), b's holds null"
+config = '''
+[needs.types.a]
+title = "A"
+prefix = "A_"
+
+[needs.types.a.fields.x]
+schema = { type = "string" }
+nullable = false
+
+[needs.types.b]
+title = "B"
+prefix = "B_"
+
+[needs.types.b.fields.x]
+schema = { type = "string" }
+'''
+source = '''
+.. a:: Required, unset
+   :id: A_001
+
+.. a:: Required, set
+   :id: A_002
+   :x: v
+
+.. b:: Nullable, unset
+   :id: B_001
+'''
+[case.expect]
+missing = ["A_001"]
+[case.expect.needs.A_002]
+x = "v"
+[case.expect.nulls]
+B_001 = ["x"]
+[[case.expect.findings]]
+code = "create_need"
+field = "x"
+
+[[case]]
+name = "type-local-derived"
+why = "a derive in a root entry derives the field on every type declaring it (a child inheriting the rule), null on the others; a root declaring it not derived is one type_conflict; a derived root's enum is one type_conflict, and the entry declares its derived field all the same"
+config = '''
+[needs.types.a]
+title = "A"
+prefix = "A_"
+
+[needs.types.a.fields.x]
+schema = { type = "string" }
+derive = { kind = "copy", field = "title" }
+
+[needs.types.a1]
+title = "A1"
+prefix = "A1_"
+inherits = "a"
+
+[needs.types.b]
+title = "B"
+prefix = "B_"
+
+[needs.types.b.fields.x]
+schema = { type = "string" }
+
+[needs.types.c]
+title = "C"
+prefix = "C_"
+
+[needs.types.c.fields.y]
+schema = { type = "string", enum = ["p"] }
+derive = { kind = "copy", field = "title" }
+'''
+source = '''
+.. a:: Derived
+   :id: A_001
+
+.. a1:: Derived by the parent's rule
+   :id: A1_001
+
+.. b:: Refused
+   :id: B_001
+
+.. c:: Declaring y alone
+   :id: C_001
+'''
+[case.expect]
+[case.expect.needs.A_001]
+x = "Derived"
+[case.expect.needs.A1_001]
+x = "Derived by the parent's rule"
+[case.expect.needs.C_001]
+y = "Declaring y alone"
+[case.expect.nulls]
+A_001 = ["y"]
+B_001 = ["x"]
+C_001 = ["x"]
+[[case.expect.findings]]
+code = "type_conflict"
+type = "b"
+field = "x"
+[[case.expect.findings]]
+code = "type_conflict"
+type = "c"
+field = "y"
+
+[[case]]
+name = "type-local-derivation-agreed-both-ways"
+why = "derivation is agreed the other way round too: a plain root first, a later derived root is one type_conflict and does not declare (q's need null), and a child's derive of the plain field is refused while the child still declares it by its parent (p1's value kept)"
+config = '''
+[needs.types.p]
+title = "P"
+prefix = "P_"
+
+[needs.types.p.fields.z]
+schema = { type = "string" }
+
+[needs.types.p1]
+title = "P1"
+prefix = "P1_"
+inherits = "p"
+
+[needs.types.p1.fields.z]
+derive = { kind = "copy", field = "title" }
+
+[needs.types.q]
+title = "Q"
+prefix = "Q_"
+
+[needs.types.q.fields.z]
+schema = { type = "string" }
+derive = { kind = "copy", field = "title" }
+'''
+source = '''
+.. p:: Plain
+   :id: P_001
+   :z: v
+
+.. p1:: Its derive refused
+   :id: P1_001
+   :z: w
+
+.. q:: Refused
+   :id: Q_001
+'''
+[case.expect]
+[case.expect.needs.P_001]
+z = "v"
+[case.expect.needs.P1_001]
+z = "w"
+[case.expect.nulls]
+Q_001 = ["z"]
+[[case.expect.findings]]
+code = "type_conflict"
+type = "p1"
+field = "z"
+[[case.expect.findings]]
+code = "type_conflict"
+type = "q"
+field = "z"
+
+[[case]]
+name = "type-local-needextend"
+why = "a needextend deleting, setting or appending to the field on a non-declaring type is refused, its needs unchanged (the delete first, so a set that went through would show), one needextend finding per needextend, need type and option; on declaring types a delete empties it as the type declares it"
+config = '''
+[needs.types.a]
+title = "A"
+prefix = "A_"
+
+[needs.types.a.fields.x]
+schema = { type = "string" }
+
+[needs.types.a.fields.y]
+schema = { type = "string" }
+
+[needs.types.b]
+title = "B"
+prefix = "B_"
+
+[needs.types.b.fields.x]
+schema = { type = "string" }
+nullable = false
+default = "d"
+
+[needs.types.c]
+title = "C"
+prefix = "C_"
+
+[needs.types.d]
+title = "D"
+prefix = "D_"
+'''
+source = '''
+.. a:: Nullable here
+   :id: A_001
+   :x: v
+
+.. b:: Not nullable here
+   :id: B_001
+
+.. c:: Not declaring it
+   :id: C_001
+
+.. c:: Not declaring it
+   :id: C_002
+
+.. d:: Not declaring it
+   :id: D_001
+
+.. needextend:: type == 'c'
+   :-x:
+
+.. needextend:: type == 'c'
+   :x: set
+
+.. needextend:: type == 'c'
+   :+x: appended
+
+.. needextend:: type in ['c', 'd']
+   :x: two types
+
+.. needextend:: type == 'c'
+   :x: two
+   :y: options
+
+.. needextend:: type in ['a', 'b']
+   :-x:
+'''
+[case.expect]
+[case.expect.needs.B_001]
+x = ""
+[case.expect.nulls]
+A_001 = ["x", "y"]
+C_001 = ["x", "y"]
+C_002 = ["x", "y"]
+D_001 = ["x", "y"]
+[[case.expect.findings]]
+code = "needextend"
+type = "c"
+field = "x"
+[[case.expect.findings]]
+code = "needextend"
+type = "c"
+field = "x"
+[[case.expect.findings]]
+code = "needextend"
+type = "c"
+field = "x"
+[[case.expect.findings]]
+code = "needextend"
+type = "c"
+field = "x"
+[[case.expect.findings]]
+code = "needextend"
+type = "d"
+field = "x"
+[[case.expect.findings]]
+code = "needextend"
+type = "c"
+field = "x"
+[[case.expect.findings]]
+code = "needextend"
+type = "c"
+field = "y"
+
+[[case]]
+name = "type-local-from-outside"
+why = "a need from outside drops a value of the field where its type does not declare it, with undeclared_for_type: imported by needimport (at the needimport), and loaded from needs_external_needs (no location, so no need, and not in needs.json, so its values are not pinned); a null is dropped silently; a declaring type's need keeps its value"
+config = '''
+[needs]
+external_needs = [{ base_url = "http://example.org", json_path = "other.json", id_prefix = "E_" }]
+
+[needs.types.a]
+title = "A"
+prefix = "A_"
+
+[needs.types.a.fields.x]
+schema = { type = "string" }
+
+[needs.types.c]
+title = "C"
+prefix = "C_"
+'''
+source = '''
+.. needimport:: other.json
+   :filter: id == 'C_001'
+
+.. needimport:: other.json
+   :filter: id == 'C_002'
+
+.. needimport:: other.json
+   :filter: id == 'A_001'
+'''
+files = { "other.json" = '''
+{
+  "current_version": "1.0",
+  "versions": {
+    "1.0": {
+      "needs": {
+        "A_001": {"id": "A_001", "type": "a", "title": "Declaring", "x": "kept"},
+        "C_001": {"id": "C_001", "type": "c", "title": "A value", "x": "dropped"},
+        "C_002": {"id": "C_002", "type": "c", "title": "A null", "x": null}
+      }
+    }
+  }
+}
+''' }
+[case.expect]
+[case.expect.needs.A_001]
+x = "kept"
+[case.expect.nulls]
+C_001 = ["x"]
+C_002 = ["x"]
+[[case.expect.findings]]
+code = "undeclared_for_type"
+need = "C_001"
+field = "x"
+type = "c"
+[[case.expect.findings]]
+code = "undeclared_for_type"
+field = "x"
+type = "c"
+
+[[case]]
+name = "type-local-derived-from-outside"
+why = "a derived field declared on need types alone, from outside: on a declaring type the imported value is kept, as data; on a type that does not declare it, it is dropped with undeclared_for_type at the needimport"
+config = '''
+[needs.types.a]
+title = "A"
+prefix = "A_"
+
+[needs.types.a.fields.x]
+schema = { type = "string" }
+derive = { kind = "copy", field = "title" }
+
+[needs.types.c]
+title = "C"
+prefix = "C_"
+'''
+source = '''
+.. needimport:: other.json
+   :filter: id == 'A_001'
+
+.. needimport:: other.json
+   :filter: id == 'C_001'
+'''
+files = { "other.json" = '''
+{
+  "current_version": "1.0",
+  "versions": {
+    "1.0": {
+      "needs": {
+        "A_001": {"id": "A_001", "type": "a", "title": "Declaring", "x": "data"},
+        "C_001": {"id": "C_001", "type": "c", "title": "Not declaring", "x": "dropped"}
+      }
+    }
+  }
+}
+''' }
+[case.expect]
+[case.expect.needs.A_001]
+x = "data"
+[case.expect.nulls]
+C_001 = ["x"]
+[[case.expect.findings]]
+code = "undeclared_for_type"
+need = "C_001"
+field = "x"
+type = "c"
+
+# --- the fingerprint ------------------------------------------------------------------
+
+[[case]]
+name = "type-local-fingerprint"
+why = "a field declared on need types alone enters the fingerprint of a declaring need where it is not None, its type's default too, never on a need of another type"
+# the JSON texts hashed:
+#   A_001  {"id":"A_001","title":"Set","type":"a","x":"v"}
+#   A_002  {"id":"A_002","title":"Its type's default","type":"a","x":"d"}
+#   C_001  {"id":"C_001","title":"Not declaring it","type":"c"}
+config = '''
+[needs.fields.fp]
+schema = { type = "string" }
+derive = { kind = "fingerprint" }
+
+[needs.types.a]
+title = "A"
+prefix = "A_"
+
+[needs.types.a.fields.x]
+schema = { type = "string" }
+default = "d"
+
+[needs.types.c]
+title = "C"
+prefix = "C_"
+'''
+source = '''
+.. a:: Set
+   :id: A_001
+   :x: v
+
+.. a:: Its type's default
+   :id: A_002
+
+.. c:: Not declaring it
+   :id: C_001
+'''
+[case.expect]
+findings = []
+[case.expect.needs.A_001]
+x = "v"
+fp = "cfea47381d3fba92a7853b55c2995a5a53bd7982a76753a249a0520760213635"
+[case.expect.needs.A_002]
+x = "d"
+fp = "9f3497bdf566e68a6bec40e39659b7e0a26b97db79a919cec4e727d8a0dad29e"
+[case.expect.needs.C_001]
+fp = "062792c8e44175378b99b32363362991281305d936acc9d240c231922b2f3b54"
+[case.expect.nulls]
+C_001 = ["x"]
+
+[[case]]
+name = "fingerprint-and-type-default"
+why = "a need's value equal to its type's default enters the fingerprint, unless it equals the field's own default too"
+# the JSON texts hashed:
+#   REQ_1  {"id":"REQ_1","title":"Unset","type":"req"}
+#   SPEC_1 {"asil":"A","id":"SPEC_1","title":"Unset","type":"spec"}
+#   SPEC_2 {"id":"SPEC_2","title":"The field's default, written","type":"spec"}
+config = '''
+[needs.fields.asil]
+schema = { type = "string" }
+default = "QM"
+
+[needs.fields.fp]
+schema = { type = "string" }
+derive = { kind = "fingerprint" }
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.fields.asil]
+default = "A"
+'''
+source = '''
+.. req:: Unset
+   :id: REQ_1
+
+.. spec:: Unset
+   :id: SPEC_1
+
+.. spec:: The field's default, written
+   :id: SPEC_2
+   :asil: QM
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+asil = "QM"
+fp = "57501c8cc5c85edda788545556aa52e23bbc9e581adef74ff394d31bc1e665f2"
+[case.expect.needs.SPEC_1]
+asil = "A"
+fp = "1d8265e8b356f03ac07d6fef52c49e3d44575c9ef64c7c8a7b40007e170c78db"
+[case.expect.needs.SPEC_2]
+asil = "QM"
+fp = "474d91e1c8f4c48cff7420a4074fa18dc65cdde78303bcb667a3d1b8fba63051"
+
+# --- what cannot be declared ----------------------------------------------------------
+
+[[case]]
+name = "what-cannot-be-declared"
+why = "a declaration naming no field of its table (a link type under fields, a field or nothing under links), changing the field's type, giving a default of another type, or giving title a default is one type_conflict each and ignored; the needs hold what the field's own declaration gives"
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+default = "nobody"
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.fields.links]
+description = "A link type under fields"
+
+[needs.types.spec.links.owner]
+description = "A field under links"
+
+[needs.types.spec.links.nope]
+description = "Declared nowhere"
+
+[needs.types.spec.fields.title]
+default = "Untitled"
+
+[needs.types.impl]
+title = "Implementation"
+prefix = "I_"
+
+[needs.types.impl.fields.owner]
+schema = { type = "integer" }
+default = 3
+
+[needs.types.test]
+title = "Test case"
+prefix = "T_"
+
+[needs.types.test.fields.owner]
+default = 3
+'''
+source = '''
+.. req:: Target
+   :id: REQ_1
+
+.. spec:: Spec
+   :id: SPEC_1
+   :links: REQ_1
+
+.. impl:: Impl
+   :id: IMPL_1
+
+.. test:: Test
+   :id: TEST_1
+'''
+[case.expect]
+[case.expect.needs.SPEC_1]
+title = "Spec"
+owner = "nobody"
+links = ["REQ_1"]
+[case.expect.needs.IMPL_1]
+owner = "nobody"
+[case.expect.needs.TEST_1]
+owner = "nobody"
+[[case.expect.findings]]
+code = "type_conflict"
+type = "spec"
+field = "links"
+[[case.expect.findings]]
+code = "type_conflict"
+type = "spec"
+field = "owner"
+[[case.expect.findings]]
+code = "type_conflict"
+type = "spec"
+field = "nope"
+[[case.expect.findings]]
+code = "type_conflict"
+type = "spec"
+field = "title"
+[[case.expect.findings]]
+code = "type_conflict"
+type = "impl"
+field = "owner"
+[[case.expect.findings]]
+code = "type_conflict"
+type = "test"
+field = "owner"

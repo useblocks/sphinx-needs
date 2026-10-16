@@ -41,7 +41,7 @@
 #     Messages and severities are NOT compared. Only the codes of the derived-field
 #     contract are compared --
 #         derive_invalid, derive_authored, derive_unique, derive_cycle, derive_scope,
-#         dynamic_function, derive_sphinx_minimum
+#         derive_dense, dynamic_function, derive_sphinx_minimum
 #     -- every other finding (a dead link, a deprecated option) is each tool's own
 #   - `derive_sphinx_minimum` is ubCode's alone (its notice, once per project, that the
 #     project declares `derive`): it is compared ONLY in a `ubcode_only` case, and every
