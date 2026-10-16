@@ -409,6 +409,32 @@ def test_the_findings_are_in_the_order_of_their_names(test_app: Any) -> None:
     ]
 
 
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            FIELD_X_BACK + LINKS_X + EXTRA_LINKS_X,
+            ".. t:: A\n   :id: T_001\n   :x_back: authored\n",
+        )
+    ],
+    indirect=True,
+)
+def test_the_finding_names_the_entry_that_declares_the_link_type(
+    test_app: Any,
+) -> None:
+    """A link type in both ``needs_links`` and ``needs_extra_links`` is the
+    ``needs_extra_links`` entry, as where the schema is built: the finding names it."""
+    app = test_app
+    app.build()
+    assert _warnings(app) == [
+        DEPRECATED_EXTRA_LINKS,
+        _refused(
+            "needs_extra_links entry 'x'", "x_back", "a field (from needs_fields)"
+        ),
+    ]
+    assert _needs(app)["T_001"]["x_back"] == "authored"
+
+
 #: a nested need, so that both core link types have back links
 CORE_INDEX = (
     ".. t:: A\n   :id: T_001\n\n   .. u:: B\n      :id: U_001\n      :links: T_001\n"
