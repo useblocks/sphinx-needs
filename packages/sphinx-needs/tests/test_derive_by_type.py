@@ -1554,3 +1554,55 @@ def test_an_unreadable_table_says_what_the_needs_use(test_app: Any) -> None:
     needs = _needs(app)
     assert (needs["REQ_1"]["x"], needs["SPEC_1"]["x"]) == (None, "yd")
     assert (needs["REQ_1"]["e_plain"], needs["SPEC_1"]["e_plain"]) == ("A", "B")
+
+
+NARROWED_TOML = """\
+[needs.fields.title_copy]
+schema = { type = "string" }
+derive = { kind = "copy", field = "title" }
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.fields.title_copy]
+schema = { maxLength = 5 }
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            TOML_CONF,
+            ".. req:: Too long a title\n   :id: REQ_1\n\n"
+            ".. spec:: Too long a title\n   :id: SPEC_1\n",
+            **{"ubproject.toml": NARROWED_TOML},
+        )
+    ],
+    indirect=True,
+)
+def test_a_rule_result_is_checked_against_the_field_not_the_type(
+    test_app: Any,
+) -> None:
+    """A derived field's computed value is checked against the field's own declaration,
+    whichever need type's need is resolved first: a type's narrower ``schema`` is the
+    validation's to check, on that type's needs alone. ``req``'s need comes first, so a
+    check against the declaration of the first type resolved refuses ``spec``'s too."""
+    app = test_app
+    app.build()
+    needs = _needs(app)
+    assert needs["REQ_1"]["title_copy"] == "Too long a title"
+    assert needs["SPEC_1"]["title_copy"] == "Too long a title"
+    assert [w for w in _warnings(app) if "[needs.dynamic_function]" in w] == []
+    report = json.loads(
+        Path(app.outdir, "schema_violations.json").read_text(encoding="utf-8")
+    )
+    assert {
+        need_id: [(v["subtype"], v["details"]["field"]) for v in violations]
+        for need_id, violations in report["validation_warnings"].items()
+    } == {"REQ_1": [("field_fail", "title_copy")]}

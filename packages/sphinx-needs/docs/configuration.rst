@@ -347,9 +347,11 @@ Fields per need type
 
 A need type may declare fields and link types anew for its needs, in its entry:
 
-* ``fields``: a dictionary from the name of a field -- one of :ref:`needs_fields`, or a core field such as ``status``,
-  or a name no ``needs_fields`` entry declares, a field of this type's needs alone -- to the type's declaration of it;
-* ``links``: a dictionary from the name of a link type -- one of :ref:`needs_links`, or ``links`` -- to the type's declaration of it;
+* ``fields``: a dictionary from the name of a field -- one of :ref:`needs_fields`, a field an extension or a service registers,
+  or a core field such as ``status``,
+  or a name nothing else declares, a field of this type's needs alone (below) -- to the type's declaration of it;
+* ``links``: a dictionary from the name of a link type -- one of :ref:`needs_links`, or ``links``,
+  or a name nothing else declares, a link type of this type's needs alone -- to the type's declaration of it;
 * ``inherits``: the directive name of one other need type, whose declarations this type starts from.
 
 A declaration in ``fields`` may carry these keys, each as :ref:`needs_fields` takes it:
@@ -391,8 +393,23 @@ and a declaration in ``links`` these, as :ref:`needs_links` takes them:
      - ``(match expression, links)`` pairs, in place of the link type's (an empty list: none)
    * - ``derive``
      - rule computing the links of the type's needs: its ``derive_by_type`` entry for the type (below)
+   * - ``incoming``, ``outgoing``
+     - the labels of the links, on every need type: set by the root declaration of a link type declared on need types alone (below)
+   * - ``copy``
+     - whether the links are copied into ``links``: likewise
+   * - ``allow_dead_links``
+     - whether a link to no need is allowed: likewise
+   * - ``color``, ``style``, ``style_part``, ``style_start``, ``style_end``
+     - the links' color, and their line styles in a :ref:`needflow` (see :ref:`links_style`): likewise
 
-Anything else in a declaration -- a ``parse_variants``, a link type's ``incoming`` or ``copy`` --
+A link type's ``incoming``, ``outgoing``, ``copy``, ``allow_dead_links``, ``color`` and ``style*`` are the same on every need type:
+the first declaration of a link type declared on need types alone without a declaring ancestor sets them,
+and its other declarations may repeat them (below).
+On any other link type a declaration giving them is one ``needs.config`` warning, those keys ignored and the rest of the declaration used::
+
+   needs_types['spec'].links['blocks'] sets 'incoming' and 'copy', which a need type gives only a link type declared on need types alone; 'blocks' keeps its own on every need type and the keys are ignored
+
+Anything else in a declaration -- a ``parse_variants``, ``parse_dynamic_functions`` or ``parse_conditions``, a ``derive_by_type`` --
 is fixed for every need type: it is reported as a ``needs.config`` warning and ignored.
 A ``derive`` is the field's (or link type's) :ref:`derive_by_type <needs_derive_by_type>` entry for the type,
 and for each type inheriting from it that gives no ``derive`` of its own,
@@ -436,9 +453,19 @@ The ``needs.derive_invalid`` warnings of such a rule name the entry it came from
    description = "The hazard a safety requirement mitigates"
    schema = { type = "string" }
 
+   [needs.types.test]
+   title = "Test case"
+   prefix = "T_"
+
+   [needs.types.test.links.verifies]
+   incoming = "is verified by"
+   outgoing = "verifies"
+
 Here a ``req`` must have an ``asil`` (``QM`` unless it says), a ``safety_req`` one of ``A`` to ``D`` (``A`` unless it says),
 and a ``safety_req`` links to three needs at most; the needs of every other type read ``asil`` and ``links`` as declared for all.
 No ``needs_fields`` entry declares ``hazard``: it is a field of the ``safety_req`` needs alone (see below).
+No ``needs_links`` entry declares ``verifies``: it is a link type of the ``test`` needs alone,
+whose links read ``verifies:``, and ``is verified by:`` on the needs they link to (see below).
 In :file:`conf.py`, the same entries are ``needs_types = {"safety_req": {"title": ..., "inherits": "req", "fields": {"asil": {...}}}, ...}``,
 and in the list shape ``dict(directive="safety_req", title=..., inherits="req", fields={"asil": {...}})``.
 In a TOML file of the list shape, a ``[needs.types.fields.asil]`` table after the ``[[needs.types]]`` tables belongs to the last of them.
@@ -476,7 +503,10 @@ no field an extension or a service registers -- declares a field of the types th
 by their own entry or an ancestor's, and an entry that changes nothing (``[needs.types.spec.fields.x]`` with no key) declares the field as it is.
 Every type that declares it agrees on its type, its items' type, and whether it is derived; each is free in the rest.
 The first declaration of a type none of whose ancestors declares the field -- in the order the types are resolved
-(a parent before its children; the members of a broken ``inherits`` cycle in the walk's order) --
+(a parent before its children; the members of a broken ``inherits`` cycle in the walk's order,
+up from the first type given that is on the cycle or inherits into it, the last reached first:
+``a`` inheriting ``b`` inheriting ``a``, ``a`` given first, resolves ``b``, then ``a``;
+with ``c`` inheriting ``a`` given before both, the walk starts at ``c``, and resolves ``b``, then ``a``, then ``c``) --
 that gives a ``schema`` ``type`` sets them, so the order of ``needs_types`` decides which of two such declarations is refused;
 the first declaration of an array field gives its items' type too (``schema = { type = "array", items = { type = "string" } }``).
 Such a declaration that gives no type (or no items' type) takes the agreed one, a child narrows its parent's as for any field,
@@ -510,12 +540,59 @@ and its schema once, nullable, with no default, and the description ``Declared b
 which names the declarations without a declaring ancestor that are not refused, not the types declaring it by inheritance.
 A ``derive`` makes it derived on every type that declares it (a child inheriting its parent's rule), and a derived one takes no ``enum``.
 
+**Link types declared on need types alone.**
+A ``links`` entry naming a link type that nothing else declares -- no :ref:`needs_links` or :ref:`needs_extra_links` entry,
+not ``links`` or ``parent_needs``, no field, one declared on need types alone included, nor a link type's back links, ``<l>_back`` --
+declares a link type of the types that declare it, as a ``fields`` entry declares a field:
+by their own entry or an ancestor's, an empty entry included.
+Its back links are named ``<name>_back`` on every need, so one whose back links would have the name of a field or a link type
+is refused on every entry, one ``needs.type_conflict`` warning each, and does not exist::
+
+   needs_types['spec'].links['x'] declares 'x', whose back links would be 'x_back', which is a field; the entry is ignored
+
+Every type that declares it agrees on its shape: whether it is derived, and the keys a :ref:`needs_links` entry gives a link type
+for every need type -- ``incoming``, ``outgoing``, ``copy``, ``allow_dead_links``, ``color``, ``style``, ``style_part``, ``style_start`` and ``style_end``.
+The first declaration of a type none of whose ancestors declares it, in the order the types are resolved (as for a field), sets them,
+an empty one too: the keys it gives, the defaults of a ``needs_links`` entry for the others
+(``incoming`` is ``"<name> incoming"``, ``outgoing`` the name, ``copy`` and ``allow_dead_links`` are ``false``),
+and derived if it gives a ``derive``.
+Every other declaration may repeat a value, and no more: one that gives another value -- of a key the first declaration leaves out too --
+or is derived where the link type is not (or the other way round), is one ``needs.type_conflict`` warning::
+
+   needs_types['b'].links['rel'] cannot be declared with incoming 'related from': its incoming is 'rel incoming' on every need type, as need type 'a' declares it; the entry is ignored
+
+and the entry is ignored: one of a type without a declaring ancestor does not declare the link type
+(a child's entry under it is a declaration of its own), a child's still declares it, through its parent.
+On a need of a type that does not declare it, the link type holds ``[]``, no links -- where a field holds ``None``:
+a list of links is never ``None``, a needs.json carries every link type on every need, and an empty one is no links.
+A link set for it in a need is ignored, as one ``needs.undeclared_for_type`` warning::
+
+   Link type 'verifies' is not declared on need type 'spec' and cannot be set in need 'S_001'; the value 'R_001' is ignored
+
+a need imported by :ref:`needimport` or from :ref:`needs_external_needs` drops its links with the same warning, a derived link type's too
+(silently where they are ``[]``; on a declaring type a derived link type's are kept, as data),
+and a :ref:`needextend` is refused on the needs of the type, one ``needs.needextend`` warning for each needextend, need type and option::
+
+   Option 'verifies' does not support extend operations on need type 'spec'; it does not extend 1 need (S_001).
+
+Its back links, ``verifies_back``, are on every need, as for any link type.
+With ``copy`` the links of the declaring needs are copied into ``links``, and a need of another type copies none;
+``copy`` beside a ``derive`` is reported as on a ``needs_links`` entry (``needs.derive_invalid``), and nothing is copied.
+A derived one is derived on every type that declares it (a child inheriting its parent's rule), and holds ``[]`` on the others.
+These link types come after the :ref:`needs_links` and :ref:`needs_extra_links` ones, in the order their first declarations are resolved:
+in a need's links, a :ref:`needflow` legend, a :ref:`needreport`.
+The :ref:`needs.json <needs_builder_format>` declares each once, with the description ``Declared by need types 'req', 'test'``,
+naming the declarations without a declaring ancestor that are not refused.
+A name one type declares under ``fields`` and another under ``links``, neither declared otherwise,
+is a field when a declaration of a type without a declaring ancestor gives it a ``schema`` ``type``, and the ``links`` entries are refused, as below;
+otherwise the ``fields`` entries are refused, and the ``links`` entries declare the link type.
+
 **What cannot be declared.**
 A declaration that cannot be applied is ignored as a whole, as one ``needs.type_conflict`` warning, such as::
 
-   needs_types['spec'].links['x'] declares 'x', which is not a link type; the entry is ignored
+   needs_types['spec'].links['x'] declares 'x', which is a field, not a link type; the entry is ignored
 
-when it names no field of its table (a link type under ``fields``, a field under ``links``, a name under ``links`` declared nowhere,
+when it names no field of its table (a link type under ``fields``, a field or a link type's back links (``links_back``) under ``links``, an empty name,
 or under ``fields`` a name no need type gives a ``schema`` ``type``, above),
 changes the field's type, which is the same on every need type
 (``... cannot be declared with type 'integer' (items None): its type is 'string' (items None) on every need type; the entry is ignored``),
@@ -544,6 +621,11 @@ An entry an extension adds to ``needs_types`` once the configuration is read has
 ``fields`` and ``links`` checked when the schema is built, with the same ``needs.config`` warnings;
 once the schema is built it is complete, and nothing declares a field later.
 
+The executable half of this section is a conformance corpus,
+``packages/sphinx-needs/tests/fixtures/field_declaration_conformance.toml`` in the sphinx-needs repository:
+one project per rule, with the values its needs hold and the warnings it gives,
+which sphinx-needs' test suite runs and ubCode is to vendor, and to be held to.
+
 .. _`needs_fields`:
 
 needs_fields
@@ -564,7 +646,11 @@ For new fields the following can be defined:
     This will be output in the schema of the :ref:`needs.json <needs_builder_format>`, and can be used by other tools.
 - ``schema``: A schema definition for the field (optional).
     This uses the same format as :ref:`needs_schema_definitions` and :ref:`needs_schema_definitions_from_json`.
-    If specified, the field value will be validated against this schema when needs are parsed, see :ref:`schema_validation` for more details.
+    If specified, a value of another ``type`` is refused:
+    given in a need (its directive, a :ref:`needimport` or :ref:`needs_external_needs`), the need is not created;
+    from a :ref:`needextend` or a dynamic function, the value alone is refused, with a warning;
+    as a ``default`` or in ``predicates``, it is refused when the configuration is read.
+    The other constraints are checked by the schema validation, see :ref:`schema_validation` for more details.
     By default the field schema will be ``{"type": "string"}``.
 - ``nullable``: If set to ``True``, the field can be set to ``None`` (optional), e.g. if no value is specifically given and no default applies,
     If ``False``, the field must have a value (either explicitly set or via default/predicates), otherwise the need is invalid and will not be created.
@@ -1321,6 +1407,11 @@ writing the new fingerprint into the condition accepts the change.
 Writing only the start of the fingerprint is enough to tell a change apart:
 ``REQ_1[fp.startswith('3f9a1c2b7d4e')]``.
 
+The executable half of :ref:`needs_derive` is a conformance corpus,
+``packages/sphinx-needs/tests/fixtures/derive_conformance.toml`` in the sphinx-needs repository:
+one project per rule, with the values its needs hold and the warnings it gives,
+which sphinx-needs' test suite runs and ubCode vendors, and is held to.
+
 .. _`needs_links`:
 
 needs_links
@@ -1333,6 +1424,14 @@ Allows the definition of additional link types as a dictionary mapping link name
 Each configured link can define:
 
 - ``description`` (optional): A description of the link type.
+- ``schema`` (optional): A schema definition for the links.
+    This uses the same format as :ref:`needs_schema_definitions` and :ref:`needs_schema_definitions_from_json`,
+    for a list of need IDs, with keywords such as the number of links (``minItems``, ``maxItems``),
+    the IDs (``items``, with ``pattern``, ``minLength`` or ``maxLength``),
+    and ``contains`` with ``minContains`` or ``maxContains``
+    (``minContains`` is 1 unless given, so give ``minContains = 0`` beside a ``maxContains`` that allows no match).
+    The links are validated against it by the schema validation, see :ref:`schema_validation` for more details.
+    By default the link schema will be ``{"type": "array", "items": {"type": "string"}}``.
 - ``predicates`` (optional): A list of ``(match expression, value)`` tuples.
     If specified, these will be evaluated in order for any need that does not explicitly set the field, with the first match setting the field value.
 - ``default`` (optional): A default value for the field.
@@ -1368,6 +1467,7 @@ Each configured link can define:
 - ``style_end`` (optional): See :ref:`needflow_style_start`.
 
 A need type may declare a link type anew for its needs, narrowing it: see :ref:`needs_types_fields`.
+A link type the need types that have it declare alone, with its labels, ``copy`` and dead links, needs no entry here (:ref:`needs_types_fields`).
 
 Configuration example:
 

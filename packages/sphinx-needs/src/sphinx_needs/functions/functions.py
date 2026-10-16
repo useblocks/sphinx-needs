@@ -1073,9 +1073,13 @@ def _resolve_field(
                         f"{field_schema.type!r}"
                     )
                 value = _in_field_type(value, field_schema)
+                # checked against the field's own declaration, as its rules are: a
+                # type's narrower schema is the validation's to check, on its needs
+                if (own := needs_schema.global_declaration(field)) is None:
+                    raise RuntimeError("does not exist in schema")
                 if (
                     refused := _refused_by_schema(
-                        value, field_schema, reads_ctx.pass_.rule_cache
+                        value, own, reads_ctx.pass_.rule_cache
                     )
                 ) is not None:
                     raise ValueError(
@@ -1265,8 +1269,9 @@ def _refused_by_schema(
     """Why the field's own ``schema`` refuses a rule's result, if it does.
 
     The result is checked as schema validation checks the field's value (a link list
-    as its ids); ``None``, no value, is not checked. The field's validator is compiled
-    once per pass.
+    as its ids); ``None``, no value, is not checked. *field_schema* is the field's
+    global declaration, never a need type's (a type's narrower schema is the
+    validation's to check), so the field's validator is compiled once per pass.
     """
     if value is None:
         return None

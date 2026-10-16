@@ -1,0 +1,26 @@
+{
+  "schemas": [
+    {
+      "id": "req-has-asil",
+      "severity": "warning",
+      "message": "a requirement states its ASIL",
+      "select": { "properties": { "type": { "const": "req" } } },
+      "validate": { "local": { "required": ["asil"] } }
+    },
+    {
+      "id": "test-verifies-req",
+      "select": { "properties": { "type": { "const": "test" } } },
+      "validate": {
+        "network": {
+          "verifies": {
+            "items": {
+              "local": {
+                "properties": { "type": { "enum": ["req", "safety_req"] } }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -107,7 +107,9 @@ Improvements
   it, read and checked with the others (a rule that cannot be read is reported for each type that reads
   it); beside a ``derive_by_type`` entry for the same type it is a ``needs.config`` warning, and the
   ``derive_by_type`` entry used for that type (the types inheriting from it still read the entry's rule). A field declared on need types alone is derived on every type
-  that declares it, or on none. A :ref:`needextend` refused on the needs of a type is one
+  that declares it, or on none, and a ``links`` entry naming no link type declares a link type of the
+  types that declare it, its labels, styles, ``copy`` and dead links set by its first root (``[]`` on
+  the needs of every other type; :issue:`2285`). A :ref:`needextend` refused on the needs of a type is one
   ``needs.needextend`` warning for each need type, naming its needs, instead of one for each need. The fields schema is
   frozen once built, before any document is read: an extension that changes it from an
   ``env-before-read-docs`` handler now gets a ``TypeError``. A per-type ``minItems`` on a link type or
@@ -115,7 +117,7 @@ Improvements
   (``[]``, ``""``, ``0``, ``0.0``, ``false``) is no default for a per-type narrowing (:issue:`2277`).
   The per-type fields of
   :issue:`2269`
-  (`discussion #1646 <https://github.com/useblocks/sphinx-needs/discussions/1646>`__; :pr:`2281`, :pr:`2284`)
+  (`discussion #1646 <https://github.com/useblocks/sphinx-needs/discussions/1646>`__; :pr:`2281`, :pr:`2284`, :pr:`2292`)
 
 - 👌 A derived field cannot be set on a need: ``need[name] = value`` for a field with a
   :ref:`derive <needs_derive>` rule raises ``KeyError``, where it used to set a value the rule
@@ -184,6 +186,25 @@ Bug fixes
   comes first. A directive of another kind under a need type's name is handled as before, with
   Sphinx's warning (:issue:`2271`, :pr:`2276`)
 
+Documentation
+.............
+
+- 📚 A need type's own entry is documented as the place for most rules about its needs,
+  beside schema rules for the rest (:pr:`2295`)
+
+  The schema validation page gains :ref:`schema_per_type_or_rules`: what a type's ``fields``,
+  ``links`` and ``inherits`` can declare, what still takes a schema rule, and how each is reported
+  -- a constraint keyword by the schema validation, the need kept; a field required on the type
+  when the need is created, the need not created. The new how-to :ref:`need_types_howto` walks
+  through fields, status values, tags, links and defaults per type, moving ``needs_global_options``
+  predicates into a type's entry, and filters over a field some types lack. Both examples are
+  projects in the test suite, which checks the warnings the pages quote.
+
+  :ref:`needs_links` lists its ``schema`` key, the :ref:`tutorial` points to ``needs_fields``
+  schemas instead of the deprecated ``needs_statuses`` and ``needs_tags``, and the schema page's
+  link counts are corrected: ``maxItems`` is a maximum, and a schema rule reports a need with no
+  links only through ``required``, as a local ``minItems`` alone does not
+
 Internal changes
 ................
 
@@ -195,6 +216,13 @@ Internal changes
   ``_get_title`` takes its content as lines (``Iterable[str]``), as both callers pass it;
   fifteen ``# ty: ignore`` comments go (:issue:`1835`)
 
+- 🏷️ The ``needs``, ``needumls`` and ``schema`` builders' do-nothing overrides of
+  ``get_target_uri``, ``prepare_writing`` and ``write_doc_serialized`` take Sphinx's own
+  parameter names (and ``prepare_writing`` an abstract ``Set``, as Sphinx 8.1 and later
+  declare it), and the needumls files written beside another builder's output join their
+  directory onto the builder's ``outdir`` as a path rather than a string; ten
+  ``# ty: ignore`` comments go (:issue:`1835`)
+
 - 🏷️ A ``FieldSchema`` constructed with predicate defaults no longer raises ``TypeError``:
   its value check read ``isinstance(v, A) | B``. No build reached it, as predicates are
   attached after construction. That fix, and two in ``filter_common.py`` and ``views.py``,
@@ -203,6 +231,12 @@ Internal changes
 - 🏷️ Every function in the shipped code is annotated, and ruff's ``ANN`` rules keep it so
   across the workspace; ``sphinx_needs.setup`` now declares its types, and the internal
   ``profile`` decorator preserves the signature of what it wraps
+
+- 🧪 A conformance corpus for :ref:`fields per need type <needs_types_fields>`,
+  ``tests/fixtures/field_declaration_conformance.toml``: 38 cases, one project each, the rules of the
+  section as cases, with the values their needs hold and the findings they give; this repository is its
+  repository of record and ubCode is to vendor it. Its runner and the derived-field corpus's share their
+  corpus-independent half, ``sphinx_needs_testkit.conformance`` (:issue:`2269`, :pr:`2291`)
 
 - 🔧 ``ENV_DATA_VERSION`` is 13: the first build after upgrading re-reads every document, so a
   ``join`` rule that 9.0.0 refused, and a ``links_from_match`` it did not know, are shown on the
