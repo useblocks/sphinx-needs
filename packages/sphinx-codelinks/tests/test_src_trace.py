@@ -336,8 +336,9 @@ def test_an_incremental_build_changes_no_configuration_option(
         if old_values.get(name) != new_values.get(name)
     } == set()
     second.build()
-    # Sphinx 8 and later name the changed options in a status line (the html builder
-    # changes ``html_theme`` itself); Sphinx 7 does not
+    # Sphinx 8 and later name the changed options in a status line; Sphinx 7 does not.
+    # ``html_theme`` is among them: ``SphinxTestApp`` sets it to ``basic`` only after
+    # Sphinx has compared the configurations, and the first build pickled ``basic``
     reported = re.search(
         r"The configuration has changed \(\d+ options?: (.*)\)",
         strip_colors(second._status.getvalue()),

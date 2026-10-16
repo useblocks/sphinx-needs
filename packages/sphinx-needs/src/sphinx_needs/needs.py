@@ -468,6 +468,9 @@ def setup(app: Sphinx) -> dict[str, Any]:
 
     # Be sure Sphinx-Needs config gets erased before any events or external API calls get executed.
     # So never but this inside an event.
+    # The registry is one per process, not per application: applications set up in one
+    # process and built interleaved share it, and a later setup clears what an earlier
+    # application's extensions added -- fields, functions, need types and layouts alike.
     _NEEDS_CONFIG.clear()
     # the GitHub services' need types and layout, sphinx-needs' lowest tier: every type
     # or layout of their names, configured or added from code at any time, wins (#2265)
