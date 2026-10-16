@@ -132,6 +132,27 @@ Improvements
   'copied' in NeedItem: its value is computed by its derive rule." [needs.dynamic_function]``,
   and the field the call was computing does not get its value (:pr:`2289`)
 
+Breaking changes
+................
+
+- ‼️ ``app.config.needs_types`` and ``app.config.needs_layouts`` no longer hold the need
+  types and layouts added by extensions or by the GitHub services, and the types and
+  layouts sphinx-needs reads cannot be changed through ``NeedsSphinxConfig`` (:issue:`2265`)
+
+  The two values hold what the project configures -- ``needs_layouts`` also sphinx-needs'
+  own layouts and the compiled :ref:`needs_card_layouts`, as before -- so Sphinx compares
+  the same values on both sides of an incremental build. A type added with
+  :func:`~sphinx_needs.api.configuration.add_need_type`, the GitHub services' ``issue``,
+  ``pr`` and ``commit``, and their ``github`` layout are kept in sphinx-needs' own
+  registry instead. Read every type with
+  :func:`~sphinx_needs.api.configuration.get_need_types` or
+  ``NeedsSphinxConfig(app.config).types``, and every layout with
+  ``NeedsSphinxConfig(app.config).layouts``. Both reads are read-only: a change through
+  them, or assigning either attribute, raises ``NeedsApiConfigException``, where it used
+  to change the configuration value. Add a type with ``add_need_type``, and a layout with
+  the new :func:`~sphinx_needs.api.configuration.add_need_layout`, from an extension's
+  ``config-inited`` handler.
+
 Deprecations
 ............
 
@@ -152,27 +173,25 @@ Bug fixes
 .........
 
 - 🐛 An incremental build no longer reports
-  ``The configuration has changed (2 options: 'needs_layouts', 'needs_types')`` every time
-  (Sphinx 8 and later print the line; Sphinx 7 compared the same difference silently).
-  The GitHub services' need types (``issue``, ``pr``, ``commit``) and their ``github``
-  layout were appended to :ref:`needs_types` and :ref:`needs_layouts` when the services
-  were registered, after Sphinx had compared the configuration with the one pickled by the
-  previous build. They, and every need type added with
-  :func:`~sphinx_needs.api.configuration.add_need_type`, are now kept in sphinx-needs' own
-  registry, added at ``config-inited``, and follow the configured ones wherever types and
-  layouts are read; a configured type or layout of the same name still wins.
-  ``app.config.needs_types`` and ``app.config.needs_layouts`` therefore hold only what the
-  project configures: read every type with
-  :func:`~sphinx_needs.api.configuration.get_need_types`, or
-  ``NeedsSphinxConfig(app.config).types``. After upgrading, the line is still reported
-  until a build re-reads a document, as the environment Sphinx loads was pickled with the
-  old values and is pickled again only then (:issue:`2265`)
+  ``The configuration has changed (… options: 'needs_layouts', 'needs_types')`` -- one of
+  the two, or both -- on every build after the first (Sphinx 8 and later print the line;
+  Sphinx 7 compared the same difference silently). The GitHub services' need types
+  (``issue``, ``pr``, ``commit``) and their ``github`` layout were appended to
+  :ref:`needs_types` and :ref:`needs_layouts` when the services were registered, after
+  Sphinx had compared the configuration with the one pickled by the previous build. They,
+  and every need type added with :func:`~sphinx_needs.api.configuration.add_need_type`,
+  are now kept in sphinx-needs' own registry and read beside the configured ones, in the
+  same order as before: the configured types, then the added ones, then the GitHub
+  services' ones, which give way to a type or layout of their name, configured or added at
+  any time (see *Breaking changes* for what this changes for an extension). After
+  upgrading, the line is still reported until a build re-reads a document, as the
+  environment Sphinx loads was pickled with the old values: edit any page, or build once
+  with ``-E`` (:issue:`2265`)
 
 - 🐛 Configuring your own ``issue`` or ``pr`` need type -- or adding one with
   ``add_need_type`` from another extension -- no longer stops the GitHub services from
   adding their other need types: a configured ``issue`` dropped ``pr`` and ``commit``, and
-  a configured ``pr`` dropped ``commit``. Each of the three is now added on its own, and
-  only where no type of its directive exists.
+  a configured ``pr`` dropped ``commit``. Each of the three now gives way on its own.
 
 - 🐛 A ``fields`` entry of a need type named as a link type's back links (``links_back``,
   ``parent_needs_back``, or ``rel_back`` beside a ``rel`` link type) is refused, one

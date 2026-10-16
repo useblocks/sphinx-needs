@@ -311,6 +311,7 @@ The need types added by extensions (with :func:`~sphinx_needs.api.configuration.
 and by the :ref:`GitHub services <github_service>` are not part of the option's value:
 they follow the configured types wherever the types are read,
 and :func:`~sphinx_needs.api.configuration.get_need_types` lists them all.
+A configured type replaces one of its directive added by either.
 
 The value is validated when the configuration is read.
 A value that is neither a list nor a dictionary stops the build with an error.
@@ -3064,6 +3065,10 @@ needs_layouts
 You can use ``needs_layouts`` to define custom grid-based layouts with custom data.
 
 Please read :ref:`layouts_styles` for a lot more detailed information.
+
+The layouts added by extensions (with :func:`~sphinx_needs.api.configuration.add_need_layout`)
+and the :ref:`GitHub services' <github_service>` ``github`` layout are not part of the option's value,
+and a configured layout replaces one of its name added by either.
 
 ``needs_layouts`` must be a dictionary and each key represents a layout. A layout must define the used grid-system and
 a layout-structure.

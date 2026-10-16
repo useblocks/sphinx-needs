@@ -167,7 +167,8 @@ Layout
 The GitHub services are providing a new layout, called ``github``, which is used by default and is based on the
 standard ``complete`` layout.
 Sphinx-Needs registers it beside the configured layouts, not in the :ref:`needs_layouts` value:
-a ``github`` entry of your own in :ref:`needs_layouts` replaces it.
+a ``github`` entry of your own in :ref:`needs_layouts`,
+or one an extension adds with :func:`~sphinx_needs.api.configuration.add_need_layout`, replaces it.
 
 You can overwrite its usage by setting ``layout`` in the service configuration or by setting it directly in the
 directive :ref:`needservice`.
@@ -193,9 +194,11 @@ by setting ``need_type`` or in the directive directly by setting ``type``.
 
 The configuration (names, colors, diagram representation) can also be overwritten by configuring your own need
 type in the configuration. Simply use :ref:`needs_types` for this.
-A type of the same directive added by another extension with :func:`~sphinx_needs.api.configuration.add_need_type` wins too.
+A type of the same directive added by another extension with :func:`~sphinx_needs.api.configuration.add_need_type`,
+whenever it is added, replaces it too.
 Sphinx-Needs registers the three types beside the configured ones, not in the :ref:`needs_types` value,
-and each on its own: configuring your own ``issue`` leaves ``pr`` and ``commit`` as they are.
+after every configured or added type, and each gives way on its own:
+configuring your own ``issue`` leaves ``pr`` and ``commit`` as they are.
 
 .. _service_github_custom:
 
