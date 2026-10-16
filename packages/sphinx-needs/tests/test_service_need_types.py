@@ -23,7 +23,7 @@ import pytest
 import responses
 from sphinx.util.parallel import parallel_available
 
-from sphinx_needs.api import get_need_types
+from sphinx_needs.api import add_need_type, get_need_types
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.exceptions import NeedsApiConfigException
@@ -365,44 +365,104 @@ def plain_app(tmp_path: Path, make_app: Any) -> Any:
 ENTRY = {"directive": "x", "title": "X", "prefix": "X_"}
 
 
+#: each change the list of types refuses: the method, and the arguments to call it with
+TYPES_WRITES = {
+    "append": (ENTRY,),
+    "extend": ([ENTRY],),
+    "insert": (0, ENTRY),
+    "remove": (None,),
+    "pop": (),
+    "clear": (),
+    "sort": (),
+    "reverse": (),
+    "__setitem__": (0, ENTRY),
+    "__delitem__": (0,),
+    "__iadd__": ([ENTRY],),
+    "__imul__": (2,),
+}
+
+#: each change the dict of layouts refuses, as :data:`TYPES_WRITES`
+LAYOUTS_WRITES = {
+    "pop": ("clean",),
+    "popitem": (),
+    "clear": (),
+    "setdefault": ("x", {}),
+    "update": ({"x": {}},),
+    "__setitem__": ("x", {}),
+    "__delitem__": ("clean",),
+    "__ior__": ({"x": {}},),
+}
+
+
+def _del_type(config: NeedsSphinxConfig) -> None:
+    del config.types[0]
+
+
+def _del_layout(config: NeedsSphinxConfig) -> None:
+    del config.layouts["clean"]
+
+
+def _add_types(config: NeedsSphinxConfig) -> None:
+    types = config.types
+    types += [ENTRY]
+
+
+def _or_layouts(config: NeedsSphinxConfig) -> None:
+    layouts = config.layouts
+    layouts |= {"x": {}}
+
+
 @pytest.mark.parametrize(
-    ("write", "route"),
+    ("write", "routes"),
     [
-        pytest.param(lambda c: c.types.append(ENTRY), "add_need_type", id="append"),
-        pytest.param(lambda c: c.types.extend([ENTRY]), "add_need_type", id="extend"),
-        pytest.param(lambda c: c.types.insert(0, ENTRY), "add_need_type", id="insert"),
-        pytest.param(
-            lambda c: c.types.__setitem__(0, ENTRY), "add_need_type", id="types-item"
+        *(
+            pytest.param(
+                lambda c, n=name, a=args: getattr(c.types, n)(*a),
+                ("needs_types", "add_need_type"),
+                id=f"types.{name}",
+            )
+            for name, args in TYPES_WRITES.items()
         ),
-        pytest.param(lambda c: c.types.pop(), "needs_types", id="pop"),
+        *(
+            pytest.param(
+                lambda c, n=name, a=args: getattr(c.layouts, n)(*a),
+                ("needs_layouts", "add_need_layout"),
+                id=f"layouts.{name}",
+            )
+            for name, args in LAYOUTS_WRITES.items()
+        ),
+        pytest.param(_del_type, ("needs_types", "add_need_type"), id="del types[0]"),
+        pytest.param(_add_types, ("needs_types", "add_need_type"), id="types +="),
         pytest.param(
-            lambda c: c.layouts.__setitem__("x", {}),
-            "add_need_layout",
-            id="layouts-item",
+            _del_layout, ("needs_layouts", "add_need_layout"), id="del layouts[name]"
         ),
         pytest.param(
-            lambda c: c.layouts.update({"x": {}}), "add_need_layout", id="update"
-        ),
-        pytest.param(lambda c: c.layouts.pop("clean"), "needs_layouts", id="del"),
-        pytest.param(
-            lambda c: setattr(c, "types", [ENTRY]), "add_need_type", id="types="
+            _or_layouts, ("needs_layouts", "add_need_layout"), id="layouts |="
         ),
         pytest.param(
-            lambda c: setattr(c, "layouts", {}), "add_need_layout", id="layouts="
+            lambda c: setattr(c, "types", [ENTRY]),
+            ("needs_types", "add_need_type"),
+            id="types =",
+        ),
+        pytest.param(
+            lambda c: setattr(c, "layouts", {}),
+            ("needs_layouts", "add_need_layout"),
+            id="layouts =",
         ),
     ],
 )
 def test_the_views_cannot_be_written_through(
-    plain_app: Any, write: Any, route: str
+    plain_app: Any, write: Any, routes: tuple[str, str]
 ) -> None:
-    """The types and layouts every reader sees are read-only: a write through them, which
-    could never reach the configuration or the registry, raises, naming the routes."""
+    """The types and layouts every reader sees are read-only: each change through them,
+    which could never reach the configuration or the registry, raises, naming the two
+    routes, and changes nothing."""
     config = NeedsSphinxConfig(plain_app.config)
-    with pytest.raises(NeedsApiConfigException, match=route):
+    types, layouts = list(config.types), dict(config.layouts)
+    with pytest.raises(NeedsApiConfigException) as raised:
         write(config)
-    assert "x" not in get_need_types(plain_app)
-    assert "x" not in config.layouts
-    assert "clean" in config.layouts
+    assert all(route in str(raised.value) for route in routes)
+    assert (list(config.types), dict(config.layouts)) == (types, layouts)
 
 
 def test_a_copy_of_a_view_is_a_plain_value(plain_app: Any) -> None:
@@ -416,6 +476,25 @@ def test_a_copy_of_a_view_is_a_plain_value(plain_app: Any) -> None:
         ):
             assert type(duplicate) in (list, dict)
             assert duplicate == value
+
+
+# -- the duplicate checks ----------------------------------------------------------------
+
+
+def test_add_need_type_refuses_a_directive_already_taken(plain_app: Any) -> None:
+    """A directive that is a configured need type, or one added before, is refused; the
+    GitHub built-in ``issue`` is not taken: the added type replaces it."""
+    add_need_type(plain_app, "x", "X", "X_")
+    for directive in ("x", "req"):
+        with pytest.raises(
+            NeedsApiConfigException, match=f"{directive} already exists as need type"
+        ):
+            add_need_type(plain_app, directive, "Again", "AG_")
+    add_need_type(plain_app, "issue", "Mine", "MI_")
+    titles = {
+        t["directive"]: t["title"] for t in NeedsSphinxConfig(plain_app.config).types
+    }
+    assert (titles["x"], titles["req"], titles["issue"]) == ("X", "Requirement", "Mine")
 
 
 # -- add_need_layout ---------------------------------------------------------------------
@@ -458,6 +537,30 @@ def test_an_extension_layout_is_usable(test_app: Any) -> None:
 
 LAYOUT = {"grid": "simple", "layout": {"head": ["X"]}}
 
+#: an extension adds a layout named as one of sphinx-needs' own, before they are merged
+#: into ``needs_layouts`` (``config-inited``, priority 500)
+EARLY_CLEAN = """
+def _add_clean(app, config):
+    from sphinx_needs.api import add_need_layout
+    add_need_layout(app, "clean", {"grid": "simple", "layout": {}})
+
+def setup(app):
+    app.connect("config-inited", _add_clean, priority=499)
+"""
+
+
+def test_add_need_layout_refuses_a_builtin_name_before_it_is_configured(
+    tmp_path: Path, make_app: Any
+) -> None:
+    """sphinx-needs' own layouts are taken from the start: added before they are merged
+    into ``needs_layouts``, a layout of one's name would be shadowed by it silently."""
+    srcdir = tmp_path / "src"
+    srcdir.mkdir()
+    (srcdir / "conf.py").write_text(CONF + EARLY_CLEAN, encoding="utf-8")
+    (srcdir / "index.rst").write_text("Case\n====\n", encoding="utf-8")
+    with pytest.raises(NeedsApiConfigException, match="clean already exists"):
+        make_app("html", srcdir=srcdir)
+
 
 def test_add_need_layout_refuses_a_name_already_taken(plain_app: Any) -> None:
     """A name that is a configured layout (sphinx-needs' own included) or one added
@@ -483,12 +586,8 @@ COLLISIONS = """
 def _add(app, config):
     from sphinx_needs.api import add_need_type
     add_need_type(app, "story", "Their story", "TS_")
-    try:
-        from sphinx_needs.api import add_need_layout
-    except ImportError:  # the base, without it
-        config.needs_layouts["ext_card"] = {"grid": "simple", "layout": {}}
-    else:
-        add_need_layout(app, "ext_card", {"grid": "simple", "layout": {}})
+    from sphinx_needs.api import add_need_layout
+    add_need_layout(app, "ext_card", {"grid": "simple", "layout": {}})
 
 def _late(app):
     app.config.needs_types = [
