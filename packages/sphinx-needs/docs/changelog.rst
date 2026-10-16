@@ -207,7 +207,7 @@ Documentation
 
 - 📚 This documentation's own configuration declares its need types as ``[needs.types.<directive>]``
   tables, and its ``hours``, ``amount``, ``value`` and ``unit`` fields on the need types that use
-  them, a live example of :ref:`needs_types_fields` that its build checks
+  them, a live example of :ref:`needs_types_fields` that its build checks (:pr:`2302`)
 
 Internal changes
 ................
