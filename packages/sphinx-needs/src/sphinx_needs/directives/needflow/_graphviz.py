@@ -53,8 +53,8 @@ def process_needflow_graphviz(
     needs_config = NeedsSphinxConfig(app.config)
     needs_schema = SphinxNeedsData(app.env).get_schema()
 
-    node: NeedflowGraphiz
-    for node in found_nodes:  # ty: ignore[invalid-assignment]
+    for node in found_nodes:
+        assert isinstance(node, NeedflowGraphiz)
         attributes = node.attributes
 
         if not needs_config.include_needs:

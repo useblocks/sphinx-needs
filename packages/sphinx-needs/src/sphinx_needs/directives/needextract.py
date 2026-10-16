@@ -4,7 +4,7 @@ import re
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from copy import copy, deepcopy
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -33,11 +33,23 @@ from sphinx_needs.logging import log_warning
 from sphinx_needs.need_item import NeedItem, NeedPartItem
 from sphinx_needs.utils import add_doc, remove_node_from_tree
 
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
+
 LOGGER = getLogger(__name__)
 
 
 class Needextract(nodes.General, nodes.Element):
-    pass
+    if TYPE_CHECKING:
+
+        def __init__(
+            self,
+            rawsource: str,
+            /,
+            **kwargs: Unpack[NeedsExtractType],
+        ) -> None: ...
+
+        attributes: NeedsExtractType
 
 
 #: View directives that an extract cannot render, and so drops from its copy,
@@ -117,8 +129,8 @@ class NeedextractDirective(FilterBase):
             "docname": env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
-            "layout": self.options.get("layout"),  # ty: ignore[invalid-argument-type]
-            "style": self.options.get("style"),  # ty: ignore[invalid-argument-type]
+            "layout": self.options.get("layout"),
+            "style": self.options.get("style"),
             "show_filters": "show_filters" in self.options,
             "filter_arg": filter_arg,
             **self.collect_filter_attributes(),
@@ -147,13 +159,13 @@ def process_needextract(
     # before the filter is run, and the value is read once after the loop.
     found_needs: list[NeedItem | NeedPartItem] = []
 
-    node: Needextract
-    for node in found_nodes:  # ty: ignore[invalid-assignment]
+    for node in found_nodes:
+        assert isinstance(node, Needextract)
         if not needs_config.include_needs:
             remove_node_from_tree(node)
             continue
 
-        current_needextract: NeedsExtractType = node.attributes  # ty: ignore[invalid-assignment]
+        current_needextract: NeedsExtractType = node.attributes
         all_needs = SphinxNeedsData(env).get_needs_view()
         content = nodes.container()
         content.attributes["ids"] = [current_needextract["target_id"]]
@@ -270,7 +282,7 @@ def _build_needextract(
 
     dummy_need.attributes["ids"].append(need_data["id"])
     rendered_node = build_need_repr(
-        dummy_need,  # ty: ignore[invalid-argument-type]
+        dummy_need,
         need_data,
         app,
         layout=extract_data["layout"],
@@ -425,4 +437,5 @@ def _replace_pending_xref_refdoc(node: nodes.Element, new_refdoc: str) -> None:
         node.attributes["refdoc"] = new_refdoc
     else:
         for child in node.children:
-            _replace_pending_xref_refdoc(child, new_refdoc)  # ty: ignore[invalid-argument-type]
+            if isinstance(child, nodes.Element):
+                _replace_pending_xref_refdoc(child, new_refdoc)

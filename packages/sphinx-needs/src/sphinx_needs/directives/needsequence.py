@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -34,11 +34,23 @@ from sphinx_needs.need_item import NeedItem
 from sphinx_needs.utils import add_doc, remove_node_from_tree
 from sphinx_needs.views import NeedsView
 
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
+
 logger = get_logger(__name__)
 
 
 class Needsequence(nodes.General, nodes.Element):
-    pass
+    if TYPE_CHECKING:
+
+        def __init__(
+            self,
+            rawsource: str,
+            /,
+            **kwargs: Unpack[NeedsSequenceType],
+        ) -> None: ...
+
+        attributes: NeedsSequenceType
 
 
 class NeedsequenceDirective(FilterBase, DiagramBase, Exception):
@@ -110,11 +122,12 @@ def process_needsequence(
     # NEEDSEQUENCE
     # for node in doctree.findall(Needsequence):
     for node in found_nodes:
+        assert isinstance(node, Needsequence)
         if not include_needs:
             remove_node_from_tree(node)
             continue
 
-        current_needsequence: NeedsSequenceType = node.attributes  # ty: ignore[invalid-assignment]
+        current_needsequence: NeedsSequenceType = node.attributes
 
         option_link_types = [
             link.upper() for link in current_needsequence["link_types"]

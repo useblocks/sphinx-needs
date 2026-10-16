@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -27,11 +27,23 @@ from sphinx_needs.need_item import NeedItem, NeedPartItem
 from sphinx_needs.needs_schema import FieldsSchema, LinkSchema, LinkShape
 from sphinx_needs.utils import add_doc, profile, remove_node_from_tree, row_col_maker
 
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
+
 LOGGER = get_logger(__name__)
 
 
 class Needtable(nodes.General, nodes.Element):
-    pass
+    if TYPE_CHECKING:
+
+        def __init__(
+            self,
+            rawsource: str,
+            /,
+            **kwargs: Unpack[NeedsTableType],
+        ) -> None: ...
+
+        attributes: NeedsTableType
 
 
 #: Set on a resolved doctree that holds at least one INTERACTIVE needtable, so that
@@ -335,11 +347,12 @@ def process_needtables(
 
     # for node in doctree.findall(Needtable):
     for node in found_nodes:
+        assert isinstance(node, Needtable)
         if not needs_config.include_needs:
             remove_node_from_tree(node)
             continue
 
-        current_needtable: NeedsTableType = node.attributes  # ty: ignore[invalid-assignment]
+        current_needtable: NeedsTableType = node.attributes
 
         if current_needtable["style"] == "" or current_needtable[
             "style"
@@ -364,7 +377,7 @@ def process_needtables(
             classes.extend(needs_config.table_classes)
 
         table_node = NeedtableTable(
-            classes=classes, ids=[node.attributes["ids"][0] + "-table_node"]
+            classes=classes, ids=[node["ids"][0] + "-table_node"]
         )
         if style != "TABLE":
             # per-table options for the client-side enhancer; a `:style: table` table

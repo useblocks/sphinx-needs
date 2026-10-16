@@ -713,8 +713,8 @@ class NeedsFilteredDiagramBaseType(NeedsFilteredBaseType):
 class NeedsExtractType(NeedsFilteredBaseType):
     """Data to extract needs from a document."""
 
-    layout: str
-    style: str
+    layout: str | None
+    style: str | None
     show_filters: bool
     filter_arg: str | None
 

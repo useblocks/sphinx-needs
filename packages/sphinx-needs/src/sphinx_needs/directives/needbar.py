@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import math
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -23,11 +24,23 @@ from sphinx_needs.utils import (
     save_matplotlib_figure,
 )
 
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
+
 logger = get_logger(__name__)
 
 
 class Needbar(nodes.General, nodes.Element):
-    pass
+    if TYPE_CHECKING:
+
+        def __init__(
+            self,
+            rawsource: str,
+            /,
+            **kwargs: Unpack[NeedsBarType],
+        ) -> None: ...
+
+        attributes: NeedsBarType
 
 
 class NeedbarDirective(FilterBase):
@@ -217,11 +230,12 @@ def process_needbar(
     # NEEDFLOW
     # for node in doctree.findall(Needbar):
     for node in found_nodes:
+        assert isinstance(node, Needbar)
         if not needs_config.include_needs:
             remove_node_from_tree(node)
             continue
 
-        current_needbar: NeedsBarType = node.attributes  # ty: ignore[invalid-assignment]
+        current_needbar: NeedsBarType = node.attributes
 
         if matplotlib is None:
             message = "Matplotlib missing for needbar plot"
@@ -517,7 +531,7 @@ def process_needbar(
         # 9. final storage
 
         # We need to calculate an unique bar-image file name
-        hash_value = hashlib.sha256(node.attributes["ids"][0].encode()).hexdigest()[:5]
+        hash_value = hashlib.sha256(node["ids"][0].encode()).hexdigest()[:5]
         image_node = save_matplotlib_figure(
             app, figure, f"need_bar_{hash_value}", fromdocname
         )

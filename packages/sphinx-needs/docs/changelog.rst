@@ -227,6 +227,14 @@ Internal changes
   directory onto the builder's ``outdir`` as a path rather than a string; ten
   ``# ty: ignore`` comments go (:issue:`1835`)
 
+- 🏷️ The ``needextract``, ``needtable``, ``needbar``, ``needpie``, ``needlist``,
+  ``needsequence`` and ``needgantt`` nodes declare their attributes' ``TypedDict`` (as the
+  ``needflow`` nodes already did), and each node handler narrows the node it is handed, so
+  the checker follows a directive's options from the directive to its handler.
+  ``needextract``'s ``layout`` and ``style`` are ``str | None``, as an absent option leaves
+  them; ``build_need_repr`` takes any element. Fourteen ``# ty: ignore`` comments go
+  (:issue:`1835`)
+
 - 🏷️ A ``FieldSchema`` constructed with predicate defaults no longer raises ``TypeError``:
   its value check read ``isinstance(v, A) | B``. No build reached it, as predicates are
   attached after construction. That fix, and two in ``filter_common.py`` and ``views.py``,

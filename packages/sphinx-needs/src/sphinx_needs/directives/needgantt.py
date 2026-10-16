@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -27,11 +28,23 @@ from sphinx_needs.filter_common import FilterBase, filter_single_need, process_f
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import add_doc, remove_node_from_tree
 
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
+
 logger = get_logger(__name__)
 
 
 class Needgantt(nodes.General, nodes.Element):
-    pass
+    if TYPE_CHECKING:
+
+        def __init__(
+            self,
+            rawsource: str,
+            /,
+            **kwargs: Unpack[NeedsGanttType],
+        ) -> None: ...
+
+        attributes: NeedsGanttType
 
 
 class NeedganttDirective(FilterBase, DiagramBase):
@@ -178,11 +191,12 @@ def process_needgantt(
     # NEEDGANTT
     # for node in doctree.findall(Needgantt):
     for node in found_nodes:
+        assert isinstance(node, Needgantt)
         if not needs_config.include_needs:
             remove_node_from_tree(node)
             continue
 
-        current_needgantt: NeedsGanttType = node.attributes  # ty: ignore[invalid-assignment]
+        current_needgantt: NeedsGanttType = node.attributes
         all_needs_dict = SphinxNeedsData(env).get_needs_view()
 
         content = []
