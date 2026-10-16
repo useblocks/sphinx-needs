@@ -20,12 +20,18 @@ import json
 import re
 import tomllib
 from collections import Counter
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from typing import Any
 
 import pytest
 
-from sphinx_needs_testkit import build_warnings
+from sphinx_needs_testkit.conformance import (
+    case_files,
+    check_values,
+    match_findings,
+    params,
+    read_findings,
+)
 
 CORPUS_PATH = Path(__file__).parent / "fixtures" / "derive_conformance.toml"
 
@@ -65,17 +71,6 @@ needs_build_json = True
 
 #: The title the runner puts above every case's ``source``.
 TITLE = "Case\n====\n\n"
-
-_WARNING = re.compile(
-    r"^(?:<srcdir>/(?P<doc>[^:]+)\.rst:(?P<line>\d+): )?(?:WARNING|ERROR): "
-    r"(?P<message>.*) \[(?P<family>[a-z_]+)\.(?P<code>[a-z_]+)\]$",
-    re.DOTALL,
-)
-_FIELD = re.compile(r"(?:[Ff]ield|option|[Ll]ink type) '([^']+)'")
-#: a record naming a shared code anywhere, to catch one ``_WARNING`` cannot read
-_SHARED_MENTION = re.compile(
-    r"\[[a-z_]+\.(?:" + "|".join(sorted(SHARED_CODES)) + r")\]"
-)
 
 
 def _corpus() -> list[dict[str, Any]]:
@@ -137,27 +132,9 @@ def test_the_corpus_header_records_where_it_is_canonical() -> None:
     assert "THIS copy is CANONICAL" in header
 
 
-def _inside(relative: str) -> Path:
-    """The case-directory path for *relative*, refusing one that would land outside it.
-
-    The header's rule for every runner: a case writes only inside its own directory, so a
-    typo such as ``../x.json`` is a broken case, not a file written somewhere else.
-    """
-    posix = PurePosixPath(relative)
-    if posix.is_absolute() or ".." in posix.parts or ":" in relative:
-        msg = f"{relative!r} is outside the case directory"
-        raise AssertionError(msg)
-    return Path(*posix.parts)
-
-
 def _files(case: dict[str, Any]) -> list[tuple[Path, str]]:
     """The case's project: its configuration, its document, and its other files."""
-    return [
-        (Path("conf.py"), CONF_PY),
-        (Path("ubproject.toml"), case["config"]),
-        (Path("index.rst"), TITLE + case["source"]),
-        *((_inside(rel), text) for rel, text in case.get("files", {}).items()),
-    ]
+    return case_files(case, conf_py=CONF_PY, title=TITLE)
 
 
 @pytest.mark.parametrize(
@@ -168,126 +145,19 @@ def test_a_case_cannot_write_outside_its_directory(relative: str) -> None:
         _files({"config": "", "source": "", "files": {relative: "{}"}})
 
 
-def _findings(
-    app: Any, needs: dict[str, dict[str, Any]]
-) -> tuple[Counter[tuple], list[str]]:
-    """The build's findings of the shared codes, as ``(code, need, field)``, and the
-    records that name a shared code but cannot be read as one.
-
-    ``need`` is the need whose directive the finding is reported at (none for a finding
-    of the configuration, or one at a ``needextend``); ``field`` the first field, option
-    or link type the message names. A record this runner cannot read is not skipped: a
-    finding of the contract it fails to see would otherwise pass unnoticed.
-    """
-    at_line = {
-        (need["docname"], need["lineno"]): need_id
-        for need_id, need in needs.items()
-        if need.get("lineno") is not None
-    }
-    found: Counter[tuple] = Counter()
-    unread: list[str] = []
-    for warning in build_warnings(app):
-        match = _WARNING.match(warning)
-        if match is None and _SHARED_MENTION.search(warning):
-            unread.append(warning)
-            continue
-        if (
-            match is None
-            or match["code"] not in SHARED_CODES
-            # this runner skips every ubcode_only case, so it drops them everywhere
-            or match["code"] in UBCODE_ONLY_CODES
-        ):
-            continue
-        need = None
-        if match["line"] is not None:
-            need = at_line.get((match["doc"], int(match["line"])))
-        field = _FIELD.search(match["message"])
-        found[(match["code"], need, field[1] if field else None)] += 1
-    return found, unread
-
-
-def _match(found: Counter[tuple], expected: list[dict[str, str]]) -> list[str]:
-    """Match the expected findings against the found ones, a key left out matching any
-    value; return what is left over on either side."""
-    left = list(found.elements())
-    missing = []
-    # the most specific first, so a wildcard does not take a finding a full one needs
-    for finding in sorted(expected, key=lambda f: -len(f)):
-        for index, (code, need, field) in enumerate(left):
-            if (
-                code == finding["code"]
-                and finding.get("need", need) == need
-                and finding.get("field", field) == field
-            ):
-                del left[index]
-                break
-        else:
-            missing.append(f"missing {finding}")
-    return missing + [f"unexpected {item}" for item in left]
-
-
-def _same(actual: Any, expected: Any) -> bool:
-    """Equal, and of the same type for a number (``7.0`` is not ``7``)."""
-    if isinstance(expected, list):
-        return (
-            isinstance(actual, list)
-            and len(actual) == len(expected)
-            and all(_same(a, e) for a, e in zip(actual, expected, strict=True))
-        )
-    if isinstance(expected, bool) or isinstance(actual, bool):
-        return actual is expected
-    if isinstance(expected, int | float):
-        return type(actual) is type(expected) and actual == expected
-    return actual == expected
-
-
-def _params() -> list[Any]:
-    params = []
-    for case in CASES:
-        marks = (
-            [pytest.mark.skip(reason="ubcode_only: a case only ubCode runs")]
-            if case.get("ubcode_only")
-            else []
-        )
-        params.append(
-            pytest.param(
-                {"buildername": "needs", "files": _files(case)},
-                case,
-                id=case["name"],
-                marks=marks,
-            )
-        )
-    return params
-
-
-@pytest.mark.parametrize("test_app,case", _params(), indirect=["test_app"])
+@pytest.mark.parametrize(
+    "test_app,case", params(CASES, files=_files), indirect=["test_app"]
+)
 def test_case(test_app: Any, case: dict[str, Any]) -> None:
     app = test_app
     app.build()
     data = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf-8"))
     needs = data["versions"][data["current_version"]]["needs"]
     expect = case["expect"]
-    problems = []
-    for need_id, fields in expect.get("needs", {}).items():
-        if need_id not in needs:
-            problems.append(f"{need_id}: no such need")
-            continue
-        for name, value in fields.items():
-            actual = needs[need_id].get(name)
-            if not _same(actual, value):
-                problems.append(f"{need_id}.{name}: {actual!r}, expected {value!r}")
-    for need_id, names in expect.get("nulls", {}).items():
-        # needs.json writes every declared field on every need, null included, so a
-        # null pin names a need of the case and a field that need carries
-        if need_id not in needs:
-            problems.append(f"{need_id}: no such need")
-            continue
-        for name in names:
-            if name not in needs[need_id]:
-                problems.append(f"{need_id}.{name}: no such field")
-            elif (actual := needs[need_id][name]) is not None:
-                problems.append(f"{need_id}.{name}: {actual!r}, expected null")
-    found, unread = _findings(app, needs)
+    problems = check_values(needs, expect)
+    found, unread = read_findings(
+        app, needs, shared=SHARED_CODES, ubcode_only=UBCODE_ONLY_CODES
+    )
     problems += [f"a record naming a shared code is unreadable: {w!r}" for w in unread]
-    problems += _match(found, expect["findings"])
+    problems += match_findings(found, expect["findings"])
     assert problems == [], case["why"]

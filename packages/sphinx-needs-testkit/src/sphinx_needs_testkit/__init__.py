@@ -23,6 +23,10 @@ Two surfaces:
   pytest can only rewrite assertions in a plugin module it imports first -- importing it
   here would earn every session a ``PytestAssertRewriteWarning`` instead.
 
+One module is imported by path and deliberately not re-exported:
+``sphinx_needs_testkit.conformance``, the runner half the case-per-project conformance
+corpora share, which only their runners load.
+
 Nothing here imports a sibling: this must load for sphinx-mounts' and sphinx-codelinks'
 suites too, so anything that knows about needs stays in sphinx-needs' own conftest.
 """
