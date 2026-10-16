@@ -106,9 +106,6 @@ The schema is configured in multiple places:
    schemas.json file. If type information is provided in schemas.json, it must match the
    definition from ``needs_fields`` or core fields.
 
-The next sections guides through an example and how do use the type and schema system to enforce
-constraints on need items and links between them.
-
 .. _`schema_per_type_or_rules`:
 
 Per-type configuration or schema rules?
@@ -339,6 +336,9 @@ Here a ``test`` may only verify requirements:
    The rule above lists ``safety_req`` beside ``req``;
    with ``{ "const": "req" }`` instead, a test verifying a ``safety_req`` would be reported.
    List the subtypes in the rule yourself, and keep the list in step with :ref:`needs_types`.
+
+The next sections guide through an example and how to use the type and schema system to enforce
+constraints on need items and links between them.
 
 Modeling example
 ----------------
