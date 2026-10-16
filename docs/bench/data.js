@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792168082140,
+  "lastUpdate": 1792168627213,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -25704,6 +25704,42 @@ window.BENCHMARK_DATA = {
             "value": 58.006380369,
             "unit": "s",
             "extra": "Commit: 2cf5eb2e699a13a82baa64fa4a8a11e8d178138f\nBranch: master\nTime: 2026-10-16T18:26:35+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "94c3ac4088b7c27e48e9a506a6c3b5e5410a41b6",
+          "message": "📚 The documentation's own configuration uses per-type declarations (#2302)\n\n## What\n\nThis changes `packages/sphinx-needs/docs/` only. The documentation's own\n`ubproject.toml`, which `docs/conf.py` reads through `needs_from_toml`,\nnow uses the per-type declarations that #2295 documents:\n\n- **Table form.** Its 15 need types are `[needs.types.<directive>]`\ntables instead of `[[needs.types]]` entries, with the same types, keys\nand order.\n- **Fields on their types.** Four fields that only some types use are\ndeclared on those types instead of in `[needs.fields]`:\n  - `hours` on `spec` and `action`\n  - `amount` on `req` and `action`\n  - `value` on `req` and `test`\n  - `unit` on `req`\n\nOne declaration of each gives the `schema` `type`; the others are empty\nentries.\n- **How-to.** *Modeling need types* shows that block of the real\nconfiguration in a dropdown.\n- **Changelog.** One 📚 line under Unreleased → Documentation.\n\nNo change under `src/`.\n\n## Why\n\nThe docs explained per-type declarations but did not use them. With this\nchange, the published docs carry a live example, and CI's `-nW` docs\nbuild exercises the feature: a need of another type that sets one of\nthose fields fails the build with `needs.undeclared_for_type`.\n\n## Measured\n\nFresh `docs-needs` builds before and after:\n\n- **Warnings:** 0 in both builds.\n- **needs.json:** every one of the 225 needs is identical, in values and\nkey order. Only the four fields' schema descriptions change, to\n`Declared by need types ...`.\n- **Rendered HTML** (random container ids normalised):\n  - The table form alone changes nothing.\n- The field moves change the *order* of fields on three pages\n(needgantt, needreport, layout_styles), never a value. A field declared\non need types alone comes after every `needs_fields` entry.\n- **Gantt charts** (`:duration_option: hours`, `:completion_option:\namount`) render the same.\n\nFields left global, and why:\n\n| Field | Reason |\n|---|---|\n| `duration`, `completion` | needgantt registers them, so they cannot be\nfields of some types alone. |\n| `github`, `config` | The `needs_string_links` docs say such fields\nmust be `needs_fields` entries. That note now looks outdated, so it is a\npossible follow-up. |\n| `another_option` | A filter over every need reads it. |\n| `author`, `image`, `comment`, `my_extra_option` | Used on other types\ntoo. |\n\nMutation check: declaring `comment` (used on several types) on `req`\nalone makes `docs-needs` fail with `needs.undeclared_for_type`. The\nchange was reverted.\n\n## Tests\n\nThere are no test changes: the docs build is the check. Gates at the\ntip, after rebasing onto `master` with #2290:\n- `uv run poe lint`: 0\n- `uv run poe docs-needs`: 0, with 0 warnings\n- `uv run poe test-needs -n 4` (full, before the rebase): 3273 passed\n- `tests/test_need_types_docs.py` and `tests/test_field_defaults.py` at\nthe tip: 15 passed\n\n`test_need_types_docs.py` reads `need_types.rst`'s quoted warnings, and\nthis PR adds none.\n\n## ubCode\n\nNo change needed. ubCode's per-type support lands before the next\nrelease.\n\n## Checklist\n\n- [x] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-needs`) and they pass.\n- [x] Documentation is updated where behaviour or options change.\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` passes (`typecheck`: no Python changed).",
+          "timestamp": "2026-10-16T18:35:55+02:00",
+          "tree_id": "e40ed4d9a3eeb9ad26a9ade736141aabbb860893",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/94c3ac4088b7c27e48e9a506a6c3b5e5410a41b6"
+        },
+        "date": 1792168618689,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.0858015610000109,
+            "unit": "s",
+            "extra": "Commit: 94c3ac4088b7c27e48e9a506a6c3b5e5410a41b6\nBranch: master\nTime: 2026-10-16T18:35:55+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 40.424943965,
+            "unit": "s",
+            "extra": "Commit: 94c3ac4088b7c27e48e9a506a6c3b5e5410a41b6\nBranch: master\nTime: 2026-10-16T18:35:55+02:00"
           }
         ]
       }
