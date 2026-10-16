@@ -649,7 +649,8 @@ def test_a_user_derive_of_the_field_is_left_to_its_rule(
     app = _build(tmp_path, make_app)
 
     codelinks = " [codelinks.config]" if _SHOWS_WARNING_TYPES else ""
-    needs = " [needs.config]" if _SHOWS_WARNING_TYPES else ""
+    # sphinx-needs names the type itself below Sphinx 8
+    needs = " [needs.config]"
     assert sorted(build_warnings(app)) == sorted(
         [
             "WARNING: codelinks registers 'code_url' for @need-ids references; remove "
