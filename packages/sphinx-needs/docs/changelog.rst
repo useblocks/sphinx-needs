@@ -10,6 +10,9 @@ Unreleased
 Improvements
 ............
 
+- ✨ :func:`~sphinx_needs.api.configuration.add_need_layout` adds a need layout from an
+  extension, beside :ref:`needs_layouts`, as ``add_need_type`` adds a need type (:issue:`2265`)
+
 - 🏷️ sphinx-needs ships a ``py.typed`` marker (:pep:`561`) and the ``Typing :: Typed``
   classifier, so a type checker (mypy, pyright, ty) reads its annotations instead of
   treating the package as untyped. A project that type-checks code calling sphinx-needs'
@@ -152,6 +155,9 @@ Breaking changes
   to change the configuration value. Add a type with ``add_need_type``, and a layout with
   the new :func:`~sphinx_needs.api.configuration.add_need_layout`, from an extension's
   ``config-inited`` handler.
+  The GitHub services' types are read from the start of the build, so a
+  ``config-inited`` handler now sees ``issue``, ``pr`` and ``commit`` too, after the types
+  added by then; they used to appear only from ``env-before-read-docs``.
 
 Deprecations
 ............
