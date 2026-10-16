@@ -52,6 +52,16 @@ A ``verdict`` set on a ``req`` is ignored, and the need is kept without it:
 
    index.rst:8: WARNING: Field 'verdict' is not declared on need type 'req' and cannot be set in need 'R_002'; the value 'passed' is ignored [needs.undeclared_for_type]
 
+This documentation's own configuration declares four such fields, ``hours``, ``amount``, ``value`` and ``unit``,
+on the types whose needs use them:
+
+.. dropdown:: The need types of this documentation's ubproject.toml
+
+   .. literalinclude:: ubproject.toml
+      :language: toml
+      :start-at: # The need types
+      :end-before: [needs.links.blocks]
+
 Status values per type
 ----------------------
 
