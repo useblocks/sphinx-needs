@@ -269,7 +269,7 @@ When and how violations are reported
    * - reported as
      - ``sn_schema_violation.field_fail`` or ``sn_schema_violation.link_fail``,
        always of severity ``violation``, with no custom message and no source location
-     - a warning (``needs.create_need``, ``needs.undeclared_for_type``),
+     - a warning (``needs.create_need``, ``needs.import_need``, ``needs.undeclared_for_type``),
        with its place in the document for a need read from the documents
    * - the need
      - is kept, with its value, and listed in :ref:`schema_violation_json`
