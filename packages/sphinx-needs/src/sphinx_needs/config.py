@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import copy
 import re
 from collections.abc import Callable, Mapping
 from dataclasses import MISSING, Field, dataclass, field, fields
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, TypedDict, cast
+from typing import TYPE_CHECKING, Any, Literal, NoReturn, SupportsIndex, TypedDict, cast
 
 from sphinx.application import Sphinx
 from sphinx.config import Config as _SphinxConfig
@@ -650,6 +651,70 @@ def _abs_path_external_sources(
     return new_sources
 
 
+#: Why the need types every reader sees cannot be changed through the read
+TYPES_READ_ONLY = (
+    "NeedsSphinxConfig.types is read-only: configure need types with needs_types in "
+    "the project configuration, or add one from an extension with add_need_type"
+)
+
+#: Why the need layouts every reader sees cannot be changed through the read
+LAYOUTS_READ_ONLY = (
+    "NeedsSphinxConfig.layouts is read-only: configure need layouts with "
+    "needs_layouts in the project configuration, or add one from an extension with "
+    "add_need_layout"
+)
+
+
+def _read_only(message: str) -> NoReturn:
+    from sphinx_needs.exceptions import (
+        NeedsApiConfigException,  # avoid circular import
+    )
+
+    raise NeedsApiConfigException(message)
+
+
+class _ReadOnlyNeedTypes(list["NeedType"]):
+    """The need types as :attr:`NeedsSphinxConfig.types` reads them: a list every
+    change of which raises, as it would reach neither the configuration nor the
+    registry. A copy (``copy``, ``deepcopy``, ``pickle``, ``list(...)``) is a plain
+    list."""
+
+    def _refuse(self, *_args: object, **_kwargs: object) -> NoReturn:
+        _read_only(TYPES_READ_ONLY)
+
+    append = extend = insert = remove = pop = clear = sort = reverse = _refuse
+    __setitem__ = __delitem__ = __iadd__ = __imul__ = _refuse
+
+    def __copy__(self) -> list[NeedType]:
+        return list(self)
+
+    def __deepcopy__(self, memo: dict[int, Any]) -> list[NeedType]:
+        return copy.deepcopy(list(self), memo)
+
+    def __reduce_ex__(self, _protocol: SupportsIndex) -> tuple[Any, ...]:
+        return (list, (list(self),))
+
+
+class _ReadOnlyLayouts(dict[str, dict[str, Any]]):
+    """The need layouts as :attr:`NeedsSphinxConfig.layouts` reads them: a dict every
+    change of which raises, as :class:`_ReadOnlyNeedTypes`. A copy is a plain dict."""
+
+    def _refuse(self, *_args: object, **_kwargs: object) -> NoReturn:
+        _read_only(LAYOUTS_READ_ONLY)
+
+    pop = popitem = clear = setdefault = update = _refuse
+    __setitem__ = __delitem__ = __ior__ = _refuse
+
+    def __copy__(self) -> dict[str, dict[str, Any]]:
+        return dict(self)
+
+    def __deepcopy__(self, memo: dict[int, Any]) -> dict[str, dict[str, Any]]:
+        return copy.deepcopy(dict(self), memo)
+
+    def __reduce_ex__(self, _protocol: SupportsIndex) -> tuple[Any, ...]:
+        return (dict, (dict(self),))
+
+
 #: The attributes :class:`NeedsSphinxConfig` answers itself, rather than from a
 #: ``needs_*`` configuration value of the same name.
 _OWN_ATTRIBUTES = ("_config", "functions", "warnings", "types", "layouts")
@@ -883,11 +948,17 @@ class NeedsSphinxConfig:
         ``issue``, ``pr`` and ``commit``; a type is read only where no earlier one has
         its directive.
 
-        A new list on each read: a type is added with ``add_need_type``, or configured.
-        Read it from a ``config-inited`` handler at a priority above 12, or later:
-        before that, a mapping-shaped ``needs_types`` is not yet resolved to its list.
+        A read-only list, made anew on each read: a change through it raises
+        ``NeedsApiConfigException``, as does assigning the attribute. A type is
+        configured with ``needs_types``, or added with ``add_need_type``. Read it from
+        a ``config-inited`` handler at a priority above 12, or later: before that, a
+        mapping-shaped ``needs_types`` is not yet resolved to its list.
         """
-        return _NEEDS_CONFIG.merged_types(self._types)
+        return _ReadOnlyNeedTypes(_NEEDS_CONFIG.merged_types(self._types))
+
+    @types.setter
+    def types(self, _value: object) -> None:
+        _read_only(TYPES_READ_ONLY)
 
     include_needs: bool = field(
         default=True, metadata={"rebuild": "html", "types": (bool,)}
@@ -1182,9 +1253,15 @@ class NeedsSphinxConfig:
         services' ``github`` layout; a layout is read only where no earlier one has its
         name.
 
-        A new dict on each read: a layout is configured with ``needs_layouts``.
+        A read-only dict, made anew on each read: a change through it raises
+        ``NeedsApiConfigException``, as does assigning the attribute. A layout is
+        configured with ``needs_layouts``, or added with ``add_need_layout``.
         """
-        return _NEEDS_CONFIG.merged_layouts(self._layouts)
+        return _ReadOnlyLayouts(_NEEDS_CONFIG.merged_layouts(self._layouts))
+
+    @layouts.setter
+    def layouts(self, _value: object) -> None:
+        _read_only(LAYOUTS_READ_ONLY)
 
     card_layouts: dict[str, dict[str, Any]] = field(
         default_factory=dict, metadata={"rebuild": "html", "types": ()}

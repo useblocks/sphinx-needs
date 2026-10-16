@@ -107,7 +107,7 @@ def test_api_add_type(test_app: SphinxTestApp, snapshot):
     app = test_app
 
     add_need_type(app, "awesome", "Awesome", "AW_", "#000000", "cloud")
-    assert NeedsSphinxConfig(app.config).types == snapshot
+    assert list(NeedsSphinxConfig(app.config).types) == snapshot
     # the type is kept in sphinx-needs' registry, not in the configuration value
     assert "awesome" not in [t["directive"] for t in app.config.needs_types]
 
