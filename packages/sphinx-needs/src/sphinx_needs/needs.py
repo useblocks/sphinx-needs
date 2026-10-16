@@ -3016,6 +3016,9 @@ def _resolve_type_declarations(
                         if glob is None and name.endswith("_back")
                         else None
                     )
+                    # defensive: an entry named after a field's name and ``_back`` that
+                    # declares nothing is refused before it reaches here (no state is
+                    # known where ``owner`` is a field), so it would read "not ..."
                     if owner is not None and owner.kind == "link":
                         is_ = "a link type's back links"
                     elif glob is None:
