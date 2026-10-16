@@ -477,8 +477,9 @@ by their own entry or an ancestor's, and an entry that changes nothing (``[needs
 Every type that declares it agrees on its type, its items' type, and whether it is derived; each is free in the rest.
 The first declaration of a type none of whose ancestors declares the field -- in the order the types are resolved
 (a parent before its children; the members of a broken ``inherits`` cycle in the walk's order,
-up from the first of them given, the last reached first: ``a`` inheriting ``b`` inheriting ``a``, ``a`` given first,
-resolves ``b``, then ``a``) --
+up from the first type given that is on the cycle or inherits into it, the last reached first:
+``a`` inheriting ``b`` inheriting ``a``, ``a`` given first, resolves ``b``, then ``a``;
+with ``c`` inheriting ``a`` given before both, the walk starts at ``c``, and resolves ``b``, then ``a``, then ``c``) --
 that gives a ``schema`` ``type`` sets them, so the order of ``needs_types`` decides which of two such declarations is refused;
 the first declaration of an array field gives its items' type too (``schema = { type = "array", items = { type = "string" } }``).
 Such a declaration that gives no type (or no items' type) takes the agreed one, a child narrows its parent's as for any field,
@@ -1331,7 +1332,7 @@ Writing only the start of the fingerprint is enough to tell a change apart:
 The executable half of :ref:`needs_derive` is a conformance corpus,
 ``packages/sphinx-needs/tests/fixtures/derive_conformance.toml`` in the sphinx-needs repository:
 one project per rule, with the values its needs hold and the warnings it gives,
-which sphinx-needs' test suite runs and ubCode is to vendor, and to be held to.
+which sphinx-needs' test suite runs and ubCode vendors, and is held to.
 
 .. _`needs_links`:
 
