@@ -297,7 +297,14 @@ def generate_need(
                 not extra_field.derived
                 and kwargs.get(extra_field.name) != extra_field.off_type_value()
             ):
-                _refuse_authored(extra_field, kwargs, location, need_type, need_id)
+                _refuse_authored(
+                    extra_field,
+                    kwargs,
+                    location,
+                    need_type,
+                    need_id,
+                    declared=schema.declares(extra_field.name),
+                )
             extras_no_defaults[extra_field.name] = _unauthored_value(
                 extra_field, need_type
             )
@@ -330,7 +337,14 @@ def generate_need(
                 not link_field.derived
                 and kwargs.get(link_field.name) != link_field.off_type_value()
             ):
-                _refuse_authored(link_field, kwargs, location, need_type, need_id)
+                _refuse_authored(
+                    link_field,
+                    kwargs,
+                    location,
+                    need_type,
+                    need_id,
+                    declared=schema.declares(link_field.name),
+                )
             links_no_defaults[link_field.name] = LinksLiteralValue(
                 link_field.off_type_value()
                 if link_field.derived and link_field.rule_for(need_type) is None
@@ -570,9 +584,12 @@ def _refuse_authored(
     location: tuple[str | None, int | None] | None,
     need_type: str,
     need_id: str,
+    *,
+    declared: bool = True,
 ) -> None:
     """Report a value given for a field an author cannot set: a derived one, or one
-    declared on need types alone that the need's type does not declare.
+    declared on need types alone that the need's type does not declare (``declared``
+    false; derived or not, as it is absent on the type).
 
     The value, a literal or a ``[[…]]``, ``<<…>>`` or ``<{…}>``, is ignored; also on a
     need of a type a derived field has no rule for, which holds the field's default.
@@ -580,7 +597,7 @@ def _refuse_authored(
     if (value := kwargs.get(field_schema.name)) is None:
         return
     what = "Link type" if isinstance(field_schema, LinkSchema) else "Field"
-    if not field_schema.derived:
+    if not declared or not field_schema.derived:
         # every global declaration an author cannot set is derived: this is the
         # declaration of a need type that does not declare the field
         log_warning(

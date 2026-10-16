@@ -1433,9 +1433,12 @@ class FieldsSchema:
                 view._extra_fields[name] = field
         if need_type is not None:
             # a field declared on need types alone is absent on every other type
-            for name, declaring in self._local.items():
-                if need_type in declaring:
-                    continue
+            view._undeclared = frozenset(
+                name
+                for name, declaring in self._local.items()
+                if need_type not in declaring
+            )
+            for name in view._undeclared:
                 if (field := view._extra_fields.get(name)) is not None:
                     view._extra_fields[name] = self._absent_of(field)
                 elif (link := view._link_fields.get(name)) is not None:
@@ -1683,12 +1686,21 @@ class TypeFieldsSchema(FieldsSchema):
     It cannot be changed.
     """
 
-    __slots__ = ()
+    __slots__ = ("_undeclared",)
 
     def __init__(self) -> None:
         super().__init__()
         # resolved by FieldsSchema.for_type, never changed: also one made directly
         self._frozen = True
+        #: the fields declared on need types alone that this need type does not
+        #: declare (absent here, a derived one too)
+        self._undeclared: frozenset[str] = frozenset()
+
+    def declares(self, name: str) -> bool:
+        """Whether the need type declares the field or link type ``name``: every one
+        but a field declared on need types alone (in their ``needs_types`` entries)
+        that this type does not declare. The global view declares every one."""
+        return name not in self._undeclared
 
     def get_any_field(self, name: str) -> FieldSchema | LinkSchema | None:
         """Get a field by name."""

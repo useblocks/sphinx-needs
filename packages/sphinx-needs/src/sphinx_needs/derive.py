@@ -617,14 +617,24 @@ def invalid_message(name: str, *, on_link: bool, reason: str) -> str:
 
 
 def invalid_entry_message(
-    name: str, *, on_link: bool, need_type: str, reason: str
+    name: str,
+    *,
+    on_link: bool,
+    need_type: str,
+    reason: str,
+    spelling: str | None = None,
 ) -> str:
     """The ``needs.derive_invalid`` warning for a ``derive_by_type`` entry that cannot
-    be read."""
+    be read.
+
+    :param spelling: The configuration the rule came from, if not ``derive_by_type``:
+        a need type's entry (``needs_types['task'].fields['p'].derive``).
+    """
     what = _what(on_link)
     holds = "holds no links" if on_link else "holds its empty value"
+    entry = spelling or f"derive_by_type.{need_type}"
     return (
-        f"Invalid derive of {what} {name!r}: derive_by_type.{need_type}: {reason}; "
+        f"Invalid derive of {what} {name!r}: {entry}: {reason}; "
         f"the {what} cannot be set in a need or by a needextend, and on need type "
         f"{need_type!r} {holds}"
     )
@@ -713,12 +723,16 @@ def beside_by_type_message(name: str, *, on_link: bool, keys: list[str]) -> str:
     )
 
 
-def core_message(name: str, *, on_link: bool) -> str:
-    """The ``needs.derive_invalid`` warning for a rule on a core field or link type."""
+def core_message(name: str, *, on_link: bool, spelling: str | None = None) -> str:
+    """The ``needs.derive_invalid`` warning for a rule on a core field or link type.
+
+    :param spelling: The need type's entry the rule came from, if it did.
+    """
     what = _what(on_link)
+    entry = "" if spelling is None else f"{spelling}: "
     return (
-        f"Invalid derive of {what} {name!r}: a core {what} cannot carry a derive rule "
-        "in this release; the rule is ignored"
+        f"Invalid derive of {what} {name!r}: {entry}a core {what} cannot carry a "
+        "derive rule in this release; the rule is ignored"
     )
 
 
