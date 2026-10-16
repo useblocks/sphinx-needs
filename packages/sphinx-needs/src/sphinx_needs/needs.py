@@ -1683,23 +1683,25 @@ def _back_link_claims(
     :param links: The global link types, each with the configuration value that
         declares it (:func:`_global_link_entries`).
     :return: The link types refused, the fields refused, and one finding for each,
-        in the order of their names.
+        in the order of their names (a field before a link type of the same name).
     """
     core_back = {f"{name}_back": name for name in _CORE_LINK_NAMES}
-    findings: dict[str, str] = {}
+    #: (name, 0 for a field or 1 for a link type) -> the finding: a field and a link
+    #: type of one name are both refused, each its own finding
+    findings: dict[tuple[str, int], str] = {}
     refused_fields: set[str] = set()
     refused_links: set[str] = set()
     for name, params in fields.items():
         if (core := core_back.get(name)) is not None:
             refused_fields.add(name)
-            findings[name] = (
+            findings[name, 0] = (
                 f"Field {name!r} (from {params.source}) names the back links of the "
                 f"core link type {core!r}, which is not a field; the field is ignored"
             )
     for name, entry in links.items():
         if (core := core_back.get(name)) is not None:
             refused_links.add(name)
-            findings[name] = (
+            findings[name, 1] = (
                 f"{entry} entry {name!r} names the back links of the core link type "
                 f"{core!r}, which is not a link type; the link type is ignored"
             )
@@ -1716,14 +1718,14 @@ def _back_link_claims(
         else:
             continue
         refused_links.add(name)
-        findings[name] = (
+        findings[name, 1] = (
             f"{links[name]} entry {name!r} declares the link type {name!r}, whose back "
             f"links would be {back!r}, which is {what}; the link type is ignored"
         )
     return (
         frozenset(refused_links),
         frozenset(refused_fields),
-        [findings[name] for name in sorted(findings)],
+        [findings[key] for key in sorted(findings)],
     )
 
 
