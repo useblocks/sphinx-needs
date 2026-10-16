@@ -44,14 +44,21 @@
 #     given before both, the walk starts at `c` and reaches `a`, then `b`, so it resolves
 #     `b`, then `a`, then `c`, whichever of `a` and `b` is given first)
 #   - absence is per field: a field that need types alone declare (no `[needs.fields.*]`
-#     entry, no core field, no link type, nor a link type's back links) is carried by
-#     every need, `null` on the needs of
+#     entry, no core field, no link type,
+#     nor a link type's back links) is carried by every need, `null` on the needs of
 #     a type that does not declare it; a field no declaration of which is usable does not
 #     exist, and is no key of any need. A link type need types alone declare (no
 #     `[needs.links.*]` or `[[needs.extra_links]]` entry, no core link type, no field, nor
 #     a link type's back links, `<l>_back`) is carried by every need too, `[]` -- no links --
 #     on the needs of a type that does not declare it, never null: no link list is null, and
 #     an empty one is no links
+#   - the back links of a link type `l` claim the name `l_back`. Those of `links` and
+#     `parent_needs` never yield: a field or link type of their name does not exist.
+#     Between `[needs.fields.*]`, `[needs.links.*]` and `[[needs.extra_links]]` entries, a
+#     name declared outright wins over back links: the link type whose back links would
+#     take it does not exist, and a link type that does not exist claims no name (of the
+#     link types `x`, `x_back` and `x_back_back`, `x_back` does not exist and `x` does). A
+#     need type's declaration yields to all of these, as above
 #   - a `[needs.fields.<name>]` entry without `nullable` is nullable in both tools, so its
 #     unset value is null; a case writes `nullable = false` where it means the type's empty
 #     value instead
