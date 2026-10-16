@@ -181,7 +181,7 @@ The same ``status`` rule as a schema rule selects ``req`` and validates ``local`
 and is reported as ``local_fail`` with a schema path of ``<rule id>[<index>] > local > properties > status > enum``.
 It would not apply to a ``safety_req``, see :ref:`schema_per_type_still_rules`.
 ``S_001``, which has no links at all, is reported by the type's ``minItems``;
-a schema rule's local ``minItems`` reports it only when the rule also lists the link type in ``required``
+a schema rule reports it only through ``required``, and a local ``minItems`` alone does not
 (see :ref:`schema_link_count_constraints`).
 
 Fields and link types of some types only
@@ -716,9 +716,9 @@ Link count constraints
 need IDs (strings) on local level. That is enough to validate the number of links.
 
 A need with no links of the type is not reported by a local ``minItems`` alone:
-local validation sees only the fields that are not on their default value,
-and an empty link list is the default.
-List the link type in ``required`` too, to report such a need:
+local validation leaves out a link type with no links (as it leaves out a field with no value),
+so ``minItems`` has nothing to check.
+List the link type in ``required`` to report such a need; the finding is then ``required``'s:
 
 .. code-block:: json
 
@@ -731,7 +731,7 @@ List the link type in ``required`` too, to report such a need:
      }
    }
 
-A ``minItems`` in a need type's ``links`` entry reports a need with no links without it
+A ``minItems`` in a need type's ``links`` entry reports a need with no links by itself
 (see :ref:`schema_per_type_or_rules`).
 
 ``minContains`` and ``maxContains`` are located under network, as they validate the actual
