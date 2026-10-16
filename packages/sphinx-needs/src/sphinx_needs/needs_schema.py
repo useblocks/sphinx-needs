@@ -23,7 +23,6 @@ import jsonschema_rs
 
 from sphinx_needs.config import NeedFields
 from sphinx_needs.derive import (
-    CORE_LINK_TYPES,
     Derive,
     DeriveInvalid,
     DeriveRule,
@@ -1166,9 +1165,9 @@ class FieldsSchema:
     """A schema for the fields of a single need.
 
     A field's declaration holds for every need type, unless the need type carries an
-    overlay of it (:meth:`add_type_overlay`), or is closed and does not declare it
-    (:meth:`close_type`): :meth:`for_type` is the schema of the needs of one need type,
-    its overlays in place of the declarations they replace.
+    overlay of it (:meth:`add_type_overlay`), or the field is declared on need types
+    alone and the type does not declare it: :meth:`for_type` is the schema of the
+    needs of one need type, its overlays in place of the declarations they replace.
 
     The schema answers a field's shape, the same on every need type (its name, kind,
     type and derivation); a need's field is read through :meth:`for_type` of its type,
@@ -1180,12 +1179,12 @@ class FieldsSchema:
 
     __slots__ = (
         "_absent",
-        "_closed",
         "_core_fields",
         "_extra_fields",
         "_frozen",
         "_global_view",
         "_link_fields",
+        "_local",
         "_need_types",
         "_project_fields",
         "_type_overlays",
@@ -1201,13 +1200,14 @@ class FieldsSchema:
         self._project_fields: set[str] = set()
         #: need type -> field name -> the field's declaration for that need type
         self._type_overlays: dict[str, dict[str, FieldSchema | LinkSchema]] = {}
-        #: closed need type -> the names of the fields and link types it declares
-        self._closed: dict[str, frozenset[str]] = {}
-        #: field name -> its declaration on a closed need type that does not declare
-        #: it, one for every such type
+        #: field name -> its declaration on a need type that does not declare it, one
+        #: for every such type
         self._absent: dict[str, FieldSchema | LinkSchema] = {}
+        #: field declared on need types alone -> the need types that declare it: it is
+        #: absent on every other need type
+        self._local: dict[str, frozenset[str]] = {}
         #: need type -> the schema of its needs (each need type with overlays, and
-        #: each closed need type)
+        #: each that does not declare a field declared on need types alone)
         self._type_views: dict[str, TypeFieldsSchema] = {}
         #: the schema of the needs of every need type without overlays
         self._global_view: TypeFieldsSchema | None = None
@@ -1267,18 +1267,57 @@ class FieldsSchema:
     def freeze(self) -> None:
         """Stop the schema from changing: every later change raises ``TypeError``.
 
-        The schema of each need type with overlays, of each closed need type, and the
-        global view, are resolved now; :meth:`for_type` then answers with one of them,
-        so what a need was created with is what every later read of its type answers.
+        The schema of each need type with overlays, of each that does not declare a
+        field declared on need types alone, and the global view, are resolved now;
+        :meth:`for_type` then answers with one of them, so what a need was created with
+        is what every later read of its type answers (a schema never told its need
+        types resolves the view of a type lacking such a field at its first read).
         ``create_schema`` freezes the schema it builds, as its last step; the first
         :meth:`for_type` freezes a schema built by hand. Freezing again does nothing.
         """
         if self._frozen:
             return
         self._frozen = True
-        for need_type in (*self._type_overlays, *self._closed):
+        for need_type in (*self._type_overlays, *self._lacking()):
             self._resolved(need_type)
         self._resolved(None)
+
+    def _lacks_local(self, need_type: str) -> bool:
+        """Whether a configured need type does not declare a field declared on need
+        types alone (:meth:`_localise`)."""
+        return bool(self._local) and (
+            (self._need_types is None or need_type in self._need_types)
+            and any(need_type not in declaring for declaring in self._local.values())
+        )
+
+    def _lacking(self) -> list[str]:
+        """The configured need types that do not declare a field declared on need
+        types alone (:meth:`_localise`)."""
+        if not self._local or self._need_types is None:
+            return []
+        return sorted(t for t in self._need_types if self._lacks_local(t))
+
+    def _localise(self, name: str, declaring: Iterable[str]) -> None:
+        """Make ``name`` a field of the need types ``declaring`` alone: in
+        :meth:`for_type` of every other configured need type it is absent, its
+        declaration one an author (``directive_option``) or a ``needextend``
+        (``allow_extend``) cannot set, shared by every such type. A second call
+        replaces the first.
+
+        ``create_schema`` calls it for each field a need type's ``fields`` entry
+        declares that nothing else declares, once the types' declarations are
+        registered.
+
+        :raises ValueError: if the schema has no field of that name
+        :raises TypeError: if the schema is frozen, or the schema of one need type
+        """
+        self._mutating()
+        if self._any_field(name) is None:
+            raise ValueError(
+                f"Cannot declare field {name!r} on need types alone: there is no field "
+                "of that name."
+            )
+        self._local[name] = frozenset(declaring)
 
     @property
     def need_types(self) -> frozenset[str] | None:
@@ -1299,7 +1338,7 @@ class FieldsSchema:
         if self._need_types is not None:
             raise ValueError("The need types of the fields schema are already set.")
         need_types = frozenset(names)
-        for need_type in (*self._type_overlays, *self._closed):
+        for need_type in self._type_overlays:
             if need_type not in need_types:
                 raise ValueError(
                     f"Need type {need_type!r} declares fields anew, but {need_type!r} "
@@ -1345,39 +1384,16 @@ class FieldsSchema:
             raise ValueError(f"{head}{joint}{'; '.join(problems)}")
         self._type_overlays.setdefault(need_type, {})[field.name] = field
 
-    def close_type(self, need_type: str, declared: Iterable[str]) -> None:
-        """Close a need type: its needs hold only the fields it declares.
-
-        In :meth:`for_type` of the need type, each extra field the project declares
-        (:meth:`is_project_field`) and each link type but ``parent_needs``, neither
-        derived nor named in ``declared`` nor declared anew for the type
-        (:meth:`add_type_overlay`), is absent: its declaration cannot be set by an
-        author (``directive_option``) or a ``needextend`` (``allow_extend``). The core
-        fields, the fields an extension or a service registers, and the derived ones,
-        are the type's as they are every type's. A second call replaces the first.
-
-        :param declared: The names of the fields and link types the type declares.
-        :raises ValueError: if the schema knows the configured need types
-            (:meth:`set_need_types`) and the need type is not one of them
-        :raises TypeError: if the schema is frozen, or the schema of one need type
-        """
-        self._mutating()
-        if self._need_types is not None and need_type not in self._need_types:
-            raise ValueError(
-                f"Cannot close need type {need_type!r}: {need_type!r} is not a "
-                "configured need type."
-            )
-        self._closed[need_type] = frozenset(declared)
-
     def for_type(self, need_type: str | None) -> TypeFieldsSchema:
         """The schema of the needs of ``need_type``, every field in full.
 
-        With no need type, or a need type without overlays that is not closed, it is
-        the global view: the fields as every need type shares them, one instance. Else
-        it is a schema whose fields are this one's, in the same order, with the need
-        type's overlays (:meth:`add_type_overlay`) in place of the fields they replace,
-        and, for a closed need type, the fields it does not declare absent
-        (:meth:`close_type`). A need type the schema does not know reads the global
+        With no need type, or a need type without overlays that declares every field
+        declared on need types alone, it is the global view: the fields as every need
+        type shares them, one instance. Else it is a schema whose fields are this
+        one's, in the same order, with the need type's overlays
+        (:meth:`add_type_overlay`) in place of the fields they replace, and each field
+        declared on need types alone (by their ``needs_types`` entries) that the type
+        does not declare absent. A need type the schema does not know reads the global
         view: an unknown type is reported where a need is created. Neither can be
         changed, and the first call freezes a schema not frozen yet (:meth:`freeze`).
         The schema of one need type answers as the schema it is resolved from.
@@ -1390,10 +1406,10 @@ class FieldsSchema:
 
     def _resolved(self, need_type: str | None) -> TypeFieldsSchema:
         """The schema of the needs of ``need_type``, resolved once (by :meth:`freeze`,
-        for every need type with overlays, every closed need type and the global
-        view)."""
+        for every need type with overlays, every need type that does not declare a
+        field declared on need types alone, and the global view)."""
         if need_type is not None and (
-            need_type in self._type_overlays or need_type in self._closed
+            need_type in self._type_overlays or self._lacks_local(need_type)
         ):
             if (view := self._type_views.get(need_type)) is None:
                 view = self._type_views[need_type] = self._resolve_type(need_type)
@@ -1417,15 +1433,17 @@ class FieldsSchema:
                 view._core_fields[name] = field
             else:
                 view._extra_fields[name] = field
-        if need_type is not None and need_type in self._closed:
-            # what the type does not declare is absent: the project's extra fields and
-            # link types but parent_needs, which a need's place in the document sets
-            declared = self._closed[need_type] | overlays.keys()
-            for name, field in view._extra_fields.items():
-                if name not in declared and self.is_project_field(name):
+        if need_type is not None:
+            # a field declared on need types alone is absent on every other type
+            view._undeclared = frozenset(
+                name
+                for name, declaring in self._local.items()
+                if need_type not in declaring
+            )
+            for name in view._undeclared:
+                if (field := view._extra_fields.get(name)) is not None:
                     view._extra_fields[name] = self._absent_of(field)
-            for name, link in view._link_fields.items():
-                if name not in declared and name not in CORE_LINK_TYPES:
+                elif (link := view._link_fields.get(name)) is not None:
                     view._link_fields[name] = self._absent_of(link)
         view._view_of = (self, need_type)
         return view
@@ -1437,8 +1455,8 @@ class FieldsSchema:
     def _absent_of(self, field: LinkSchema) -> LinkSchema: ...
 
     def _absent_of(self, field: FieldSchema | LinkSchema) -> FieldSchema | LinkSchema:
-        """The declaration of a field on a closed need type that does not declare it:
-        one for every such type. A derived field is closed on every type already.
+        """The declaration of a field on a need type that does not declare it: one for
+        every such type. A derived field is closed on every type already.
 
         It keeps the global ``default`` and ``predicate_defaults``, which no reader
         applies: creation gives an absent field its empty value without defaults, the
@@ -1670,12 +1688,26 @@ class TypeFieldsSchema(FieldsSchema):
     It cannot be changed.
     """
 
-    __slots__ = ()
+    __slots__ = ("_undeclared",)
 
     def __init__(self) -> None:
         super().__init__()
         # resolved by FieldsSchema.for_type, never changed: also one made directly
         self._frozen = True
+        #: the fields declared on need types alone that this need type does not
+        #: declare (absent here, a derived one too)
+        self._undeclared: frozenset[str] = frozenset()
+
+    def declares(self, name: str) -> bool:
+        """Whether the need type declares the field or link type ``name``: every one
+        but a field declared on need types alone (in their ``needs_types`` entries)
+        that this type does not declare. The global view declares every one.
+
+        It answers ``True`` for any other name, a field or not, and a view made
+        directly (not by :meth:`FieldsSchema.for_type`) declares every name: ask it
+        about the fields of the view.
+        """
+        return name not in self._undeclared
 
     def get_any_field(self, name: str) -> FieldSchema | LinkSchema | None:
         """Get a field by name."""

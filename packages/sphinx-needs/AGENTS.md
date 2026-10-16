@@ -226,16 +226,22 @@ This module defines the schema data structures that serve as the single source o
 
 A need type may declare a field anew: `FieldsSchema.add_type_overlay(need_type, field)` stores the
 overlay beside the three dicts (never as an attribute of `FieldSchema` or `LinkSchema`). The user's
-door is the configuration -- the `inherits`, `fields`, `links` and `closed` of a `needs_types` entry --
+door is the configuration -- the `inherits`, `fields` and `links` of a `needs_types` entry --
 and the last step of `create_schema`, `_resolve_type_declarations`, turns it into overlays: each type's
 declaration of a field starts from the global declaration as it stands then (after the derive
 problems and the legacy defaults), takes its ancestors' entries from the root down and then its own,
 each checked with `narrowing_problems` against the one before, and registers the result for the type
 and every type inheriting from it; what cannot be used is a `needs.type_*` warning, never an error.
-A closed type (`close_type`, given the names it declares) is a projection in its view, not overlays:
-each project field and link type but `parent_needs` it does not declare is one absent declaration
-(`directive_option` and `allow_extend` false) shared by every closed type, and `type_declarations`
-stays the declarations the configuration makes.
+A `fields` entry naming nothing declared otherwise (no core field, no registered field, no link
+type) declares a field of the types that declare it alone: `create_schema` builds its one global
+declaration -- the type its first typed root declaration gives, nullable, no default -- through the
+loop that builds `needs_fields` entries, before the rules are checked, and the configuration
+readers that run before the schema exists see its name through `type_field_names`. Absence is per
+field, a projection in the views, not overlays: `_localise(name, declaring)`, and on every other
+type the field is one absent declaration (`directive_option` and `allow_extend` false) shared by
+those types; `type_declarations` stays the declarations the configuration makes. A `derive` in an
+entry is folded into the field's `derive_by_type` where `create_schema` reads it, so the rule checks
+see it with the others; derivation is part of a field's shape when need types alone declare it.
 The normaliser at `config-inited` checks only the shape of those keys, and the resolver checks it
 again, with the normaliser's helpers, for an entry added after it. The schema has two tiers.
 The union, `FieldsSchema` itself, answers a field's shape (`FieldShape`, `LinkShape`: its name,
@@ -249,15 +255,15 @@ the `schema` constraints) on the union, directly or through a helper typed with 
 full declaration comes only through those named doors. An `isinstance` test against `FieldSchema` or
 `LinkSchema`, or a `getattr`, on a union result re-opens the full declaration, and the checker cannot
 see that -- so test `kind` instead. `create_schema` freezes the schema as its last step, and the
-first `for_type` freezes one built by hand: every later change raises `TypeError`, so a field, an
-overlay or a closed type is declared in the configuration, which `create_schema` reads. An overlay
+first `for_type` freezes one built by hand: every later change raises `TypeError`, so a field or an
+overlay is declared in the configuration, which `create_schema` reads. An overlay
 is a narrowing of the field:
 `narrowing_problems` is the one rule `add_type_overlay`, `replace_field` and the resolver apply, and
 whose schema half `inherit_schema` reads; and it names a configured need type (`set_need_types`).
 
 The schema is built during `env-before-read-docs` via the `create_schema()` function in `src/sphinx_needs/needs.py`.
 It creates `FieldSchema` and `LinkSchema` from information obtained from the `NeedsCoreFields` and from user defined configuration.
-Type overlays and closed types are the last thing registered on it, by the resolver of the per-type configuration, and `create_schema` freezes it as its last step.
+Type overlays and the absence of the fields declared on need types alone are the last thing registered on it, by the resolver of the per-type configuration, and `create_schema` freezes it as its last step.
 It is accessible via `SphinxNeedsData(env).get_schema()`.
 
 ## Sphinx Extension Architecture

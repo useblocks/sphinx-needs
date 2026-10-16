@@ -412,7 +412,8 @@ CONFLICTS = [
         {"fields": {"nope": {"description": "d"}}},
         [
             "type_conflict needs_types['spec'].fields['nope'] declares 'nope', which "
-            "is not a field; the entry is ignored"
+            "no needs_fields entry declares, and no need type without an ancestor "
+            "declaring it gives it a 'schema' 'type'; the entry is ignored"
         ],
     ),
     _declared(

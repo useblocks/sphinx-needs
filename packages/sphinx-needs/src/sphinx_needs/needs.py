@@ -38,6 +38,8 @@ from sphinx_needs.config import (
     NeedLinksConfig,
     NeedsSphinxConfig,
     NeedType,
+    NewFieldParams,
+    type_field_names,
 )
 from sphinx_needs.data import (
     ENV_DATA_VERSION,
@@ -177,6 +179,7 @@ from sphinx_needs.roles.variant import VariantRole
 from sphinx_needs.schema.config import (
     FieldIntegerSchemaType,
     SchemasFileRootType,
+    validate_field_schema,
 )
 from sphinx_needs.schema.config_utils import (
     resolve_schemas_config,
@@ -754,14 +757,21 @@ NEED_TYPE_KEYS = (
     "inherits",
     "fields",
     "links",
-    "closed",
 )
 
-#: The keys of an entry of a need type's ``fields`` table.
-NEED_TYPE_FIELD_KEYS = ("description", "schema", "nullable", "default", "predicates")
+#: The keys of an entry of a need type's ``fields`` table (``derive``: the field's
+#: ``derive_by_type`` entry for the type, and the types inheriting from it).
+NEED_TYPE_FIELD_KEYS = (
+    "description",
+    "schema",
+    "nullable",
+    "default",
+    "predicates",
+    "derive",
+)
 
 #: The keys of an entry of a need type's ``links`` table: a link type is not nullable.
-NEED_TYPE_LINK_KEYS = ("description", "schema", "default", "predicates")
+NEED_TYPE_LINK_KEYS = ("description", "schema", "default", "predicates", "derive")
 
 
 def _type_name(value: object) -> str:
@@ -784,11 +794,11 @@ _SHAPES: Mapping[str, tuple[str, Callable[[object], bool]]] = {
     "inherits": ("a non-empty string", lambda v: isinstance(v, str) and bool(v)),
     "fields": ("a mapping", lambda v: isinstance(v, Mapping)),
     "links": ("a mapping", lambda v: isinstance(v, Mapping)),
-    "closed": ("a boolean", lambda v: isinstance(v, bool)),
     "description": ("a string", lambda v: isinstance(v, str)),
     "schema": ("a mapping", lambda v: isinstance(v, Mapping)),
     "nullable": ("a boolean", lambda v: isinstance(v, bool)),
     "predicates": ("a list of (filter, value) pairs", _is_pairs),
+    "derive": ("a mapping", lambda v: isinstance(v, Mapping)),
 }
 
 
@@ -885,8 +895,8 @@ def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
     4. an entry whose ``title`` or ``prefix`` is missing or not a string is dropped (an
        empty string is valid);
     5. a ``color`` or ``style`` that is not a string, an ``inherits`` that is not a
-       non-empty string, a ``fields`` or ``links`` that is not a mapping, and a
-       ``closed`` that is not a boolean, are removed from the entry;
+       non-empty string, and a ``fields`` or ``links`` that is not a mapping, are
+       removed from the entry;
     6. a key outside :data:`NEED_TYPE_KEYS` is removed from the entry;
     7. a directive declared by more than one entry (list shape only) resolves to the
        last of them, at its own position, the others removed.
@@ -894,8 +904,9 @@ def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
     In ``fields`` and ``links``, an entry that is not a mapping is removed, and so is
     a key of an entry outside :data:`NEED_TYPE_FIELD_KEYS` (fields) or
     :data:`NEED_TYPE_LINK_KEYS` (links), or not of its shape: a ``description`` that
-    is not a string, a ``schema`` that is not a mapping, a ``nullable`` that is not a
-    boolean, ``predicates`` that are not a list of (filter, value) pairs. Only the
+    is not a string, a ``schema`` or a ``derive`` that is not a mapping, a
+    ``nullable`` that is not a boolean, ``predicates`` that are not a list of
+    (filter, value) pairs. Only the
     shape is checked here: what a declaration names, and whether its values apply to
     the field, is for :func:`create_schema`, which knows the fields and every need type.
 
@@ -1468,7 +1479,16 @@ def check_configuration(app: Sphinx, config: Config) -> None:
     E.g. defined need-option, which is already defined internally
     """
     needs_config = NeedsSphinxConfig(config)
-    fields = _NEEDS_CONFIG.fields
+    # a field declared on need types alone is checked as a field (a core field or a
+    # link type a type's entry names is none: the entry narrows it, or is refused)
+    fields = {
+        *_NEEDS_CONFIG.fields,
+        *(
+            type_field_names(config)
+            - set(NeedsCoreFields)
+            - _link_type_names(needs_config)
+        ),
+    }
     link_types = [x["option"] for x in needs_config._extra_links]
 
     if validate_page_size(needs_config.table_page_size) is None:
@@ -1613,6 +1633,27 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
     }
     schema.set_need_types(need_types)
     link_types = _link_type_names(needs_config)
+    #: each need type's entry, its declarations of their shape, and the walk of their
+    #: inherits; their findings are reported with the types' declarations, last
+    type_entries, entry_findings = _checked_type_entries(needs_config.types)
+    order, parent, inherits_findings = _inherits_order(type_entries)
+    #: the fields need types declare alone: declared below as a needs_fields entry is
+    #: (before the rules are checked), each then declared by its need types
+    type_local, shape_refused, shape_findings = _type_local_fields(
+        type_entries,
+        order,
+        parent,
+        {*NeedsCoreFields, *_NEEDS_CONFIG.fields, *link_types},
+    )
+    #: each field's and link type's rules from the types' entries: folded below into
+    #: its ``derive_by_type``, where it is read, so they are checked with the others
+    field_rules, link_rules = (
+        _type_derive_rules(type_entries, order, parent, table, shape_refused)
+        for table in ("fields", "links")
+    )
+    #: (on a link type, name, need type) -> the entry a rule came from, as the
+    #: findings of the rule name it
+    spellings: dict[tuple[bool, str, str], str] = {}
     for name, params in needs_config._fields.items():
         if not isinstance(params, dict) or (
             name not in NeedsCoreFields and name not in link_types
@@ -1633,6 +1674,19 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 "which is not a field; the entry is ignored",
                 "config",
                 None,
+            )
+    for name, rules in field_rules.items():
+        # a core field is not derived: a type's rule is reported and ignored
+        if name in NeedsCoreFields:
+            derive_problems.extend(
+                DeriveProblem(
+                    name,
+                    False,
+                    core_message(name, on_link=False, spelling=entry),
+                    core=True,
+                )
+                for _, entry, own in rules.values()
+                if own
             )
     for name, data in NeedsCoreFields.items():
         if not data.get("add_to_field_schema", False):
@@ -1709,7 +1763,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         except Exception as exc:
             raise NeedsConfigException(f"Invalid core option {name!r}: {exc}") from exc
 
-    for name, field_data in _NEEDS_CONFIG.fields.items():
+    for name, field_data in (*_NEEDS_CONFIG.fields.items(), *type_local.items()):
         try:
             back_compatible = field_data.source in {
                 "needs_extra_options",
@@ -1763,8 +1817,16 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 if field_data.derive is None
                 else parse_derive(field_data.derive, on_link=False)
             )
+            raw_by_type = field_data.derive_by_type
+            if rules := field_rules.get(name):
+                raw_by_type, entries = _folded_rules(
+                    name, raw_by_type, rules, f"{field_data.source}[{name!r}]"
+                )
+                spellings.update(
+                    ((False, name, t), entry) for t, entry in entries.items()
+                )
             by_type, by_type_problems = _read_derive_by_type(
-                name, False, field_data.derive_by_type, need_types
+                name, False, raw_by_type, need_types
             )
             derive_problems.extend(by_type_problems)
             # a derived field is computed: an author cannot set it, nor a needextend,
@@ -1843,7 +1905,8 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                     )
             schema.add_extra_field(
                 field,
-                project=field_data.source in {"needs_fields", "needs_extra_options"},
+                project=field_data.source
+                in {"needs_fields", "needs_extra_options", "needs_types"},
             )
         except Exception as exc:
             raise NeedsConfigException(f"Invalid field {name!r}: {exc}") from exc
@@ -1886,21 +1949,41 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             display_config = LinkDisplayConfig(**display_kwargs)
             derive = None
             by_type = None
-            if _declares_derive(link):
+            raw_by_type = link.get("derive_by_type")
+            entries: dict[str, str] = {}
+            if type_rules := link_rules.get(name, {}):
+                raw_by_type, entries = _folded_rules(
+                    name, raw_by_type, type_rules, f"{config_source}[{name!r}]"
+                )
+            if link.get("derive") is not None or raw_by_type is not None:
                 if name in CORE_LINK_TYPES or name in NeedsCoreFields:
                     # a core link type is not derived, nor a link type named after a
                     # core field (a need computes ``parts``, ``id_parent`` and others
                     # itself): the rules are reported and ignored
-                    derive_problems.append(
-                        DeriveProblem(
-                            name, True, core_message(name, on_link=True), core=True
+                    if _declares_derive(link):
+                        derive_problems.append(
+                            DeriveProblem(
+                                name, True, core_message(name, on_link=True), core=True
+                            )
                         )
+                    derive_problems.extend(
+                        DeriveProblem(
+                            name,
+                            True,
+                            core_message(name, on_link=True, spelling=entry),
+                            core=True,
+                        )
+                        for _, entry, own in type_rules.values()
+                        if own
                     )
                 else:
                     if (raw_derive := link.get("derive")) is not None:
                         derive = parse_derive(raw_derive, on_link=True)
+                    spellings.update(
+                        ((True, name, t), entry) for t, entry in entries.items()
+                    )
                     by_type, by_type_problems = _read_derive_by_type(
-                        name, True, link.get("derive_by_type"), need_types
+                        name, True, raw_by_type, need_types
                     )
                     derive_problems.extend(by_type_problems)
             authored = derive is None and by_type is None
@@ -2014,11 +2097,19 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             schema, "needs_global_options", name, default_config, allow_coercion=True
         )
 
-    _report_derive_problems(schema, derive_problems, need_types)
+    _report_derive_problems(schema, derive_problems, need_types, spellings)
 
     # last: each type's declarations start from the fields as they stand now, their
     # derive problems and legacy defaults included
-    _resolve_type_declarations(schema, needs_config.types)
+    _resolve_type_declarations(
+        schema,
+        type_entries,
+        order,
+        parent,
+        (entry_findings, inherits_findings, shape_findings),
+        type_local,
+        shape_refused,
+    )
     # the schema is complete: nothing declares a field once it is built
     schema.freeze()
 
@@ -2130,6 +2221,7 @@ def _report_derive_problems(
     schema: FieldsSchema,
     read_problems: list[DeriveProblem],
     need_types: Mapping[str, str],
+    spellings: Mapping[tuple[bool, str, str], str] | None = None,
 ) -> None:
     """Check the rules against the complete schema, and report every finding.
 
@@ -2141,7 +2233,8 @@ def _report_derive_problems(
     reported for that alone, not for a default beside it, or a link type copying into
     a derived ``links``), in a fixed order: the core fields, then the fields, then the
     link types, each by name; within a name, ``derive``, the ``derive_by_type`` table,
-    its entries by need type, and a key beside ``derive_by_type``.
+    its entries by need type, and a key beside ``derive_by_type``. A finding of a rule
+    a need type's entry gives names that entry (``spellings``), where the rule is read.
     """
     checked = {
         (p.on_link, p.name, p.part): p
@@ -2191,7 +2284,28 @@ def _report_derive_problems(
         findings[(True, "links", copied.part)] = copied
     ordered = sorted(findings.values(), key=lambda problem: problem.order)
     for problem in [*core, *ordered]:
-        log_warning(LOGGER, problem.message, "derive_invalid", None)
+        message = problem.message
+        if (
+            spellings
+            and problem.part.startswith("derive_by_type.")
+            and (
+                entry := spellings.get(
+                    (
+                        problem.on_link,
+                        problem.name,
+                        need_type := problem.part.removeprefix("derive_by_type."),
+                    )
+                )
+            )
+        ):
+            message = invalid_entry_message(
+                problem.name,
+                on_link=problem.on_link,
+                need_type=need_type,
+                reason=problem.reason,
+                spelling=entry,
+            )
+        log_warning(LOGGER, message, "derive_invalid", None)
 
 
 def _with_table_text(schema: FieldsSchema, problem: DeriveProblem) -> DeriveProblem:
@@ -2266,11 +2380,298 @@ def _inherits_order(
     return order, parent, findings
 
 
+def _checked_type_entries(
+    need_types: Iterable[NeedType],
+) -> tuple[dict[str, dict[str, Any]], list[str]]:
+    """Each need type's entry by directive name, its declarations of their shape.
+
+    An entry an extension adds after the configuration is resolved has not been
+    through the normaliser: its declarations are checked here, by its rules.
+
+    :return: The entries, and the ``needs.config`` findings of their shape.
+    """
+    types: dict[str, dict[str, Any]] = {}
+    findings: list[str] = []
+    for need_type in need_types:
+        if not isinstance(need_type, dict) or not isinstance(
+            name := need_type.get("directive"), str
+        ):
+            continue
+        named = f"needs_types[{name!r}]"
+        wrong, text = _not_of_their_shape(
+            named, need_type, ("inherits", "fields", "links")
+        )
+        if wrong:
+            findings.append(text)
+        entry = {key: value for key, value in need_type.items() if key not in wrong}
+        for table in ("fields", "links"):
+            if table in entry:
+                entry[table] = _normalise_declarations(
+                    named, table, cast(Mapping[Any, Any], entry[table]), findings
+                )
+        types[name] = entry
+    return types, findings
+
+
+def _shape_of(keys: Mapping[str, Any]) -> tuple[Any, Any] | None:
+    """The type and items' type a declaration of a field gives, if it gives a type."""
+    schema = keys.get("schema", {})
+    if (type_ := schema.get("type")) is None:
+        return None
+    items = schema.get("items")
+    return type_, (
+        items.get("type") if type_ == "array" and isinstance(items, Mapping) else None
+    )
+
+
+def _type_local_fields(
+    types: Mapping[str, Mapping[str, Any]],
+    order: list[str],
+    parent: Mapping[str, str],
+    known: set[str],
+) -> tuple[dict[str, NewFieldParams], set[tuple[str, str]], list[str]]:
+    """The fields need types declare that nothing else declares (no core field, no
+    registered field, no link type): each the field of the types that declare it, of
+    the one shape they agree on.
+
+    A root declaration is one of a type none of whose ancestors declares the field:
+    an entry refused for the field's shape declares nothing, so a child of a refused
+    entry is a declaration of its own (a root), checked as any other.
+    The first root declaration in ``order`` (a parent before its children) that gives
+    a ``schema`` ``type`` sets the field's type and items' type, and whether it is
+    derived (it gives a ``derive``); a root declaration that gives no type takes the
+    type. A root declaration of another type, or derived where the field is not (or
+    the other way round), one whose type is no field's, and every declaration of a
+    field no root declaration gives a type, is a ``needs.type_conflict`` finding: its
+    entry is ignored, and does not declare the field. A child's declaration narrows
+    its parent's, as for any field, and inherits its rule; a child's ``derive`` of a
+    field that is not derived is refused the same.
+
+    Each field is declared as a ``needs_fields`` entry with the agreed ``schema``
+    alone, nullable and without a default: each type that declares it narrows it.
+
+    :param types: Each need type's entry, of its shape.
+    :param order: The need types, each after its parent.
+    :param parent: The parent of each type that has one.
+    :param known: The names declared otherwise.
+    :return: The fields, by name; the (need type, field) entries that do not declare
+        their field; and the findings, by field, in ``order``.
+    """
+
+    def inherited(need_type: str, name: str) -> bool:
+        node = parent.get(need_type)
+        while node is not None:
+            # an entry its shape refuses does not declare the field
+            if name in types[node].get("fields", {}) and (node, name) not in refused:
+                return True
+            node = parent.get(node)
+        return False
+
+    #: field -> its declarations, in order
+    entries: dict[str, list[tuple[str, Mapping[str, Any]]]] = {}
+    for need_type in order:
+        for name, keys in types[need_type].get("fields", {}).items():
+            if isinstance(name, str) and name not in known:
+                entries.setdefault(name, []).append((need_type, keys))
+    local: dict[str, NewFieldParams] = {}
+    refused: set[tuple[str, str]] = set()
+    findings: list[str] = []
+    for name, declarations in entries.items():
+        roots: list[str] = []
+        #: the agreed type and items' type, and the need type that set them
+        agreed: tuple[Any, Any, str] | None = None
+        derived = False
+        for need_type, keys in declarations:
+            if inherited(need_type, name) or (shape := _shape_of(keys)) is None:
+                continue
+            try:
+                validate_field_schema(_field_schema_of(*shape))
+            except TypeError as exc:
+                findings.append(
+                    f"needs_types[{need_type!r}].fields[{name!r}] cannot be declared: "
+                    f"Invalid schema: {_reason(exc)}; the entry is ignored"
+                )
+                refused.add((need_type, name))
+                continue
+            agreed = (*shape, need_type)
+            derived = keys.get("derive") is not None
+            break
+        for need_type, keys in declarations:
+            where = f"needs_types[{need_type!r}].fields[{name!r}]"
+            if (need_type, name) in refused or inherited(need_type, name):
+                continue
+            roots.append(need_type)
+            if agreed is not None and need_type == agreed[2]:
+                continue
+            if agreed is None:
+                text = (
+                    f"declares {name!r}, which no needs_fields entry declares, and no "
+                    "need type without an ancestor declaring it gives it a 'schema' "
+                    "'type'"
+                )
+            else:
+                type_, items, by = agreed
+                schema = keys.get("schema", {})
+                own = schema.get("type", type_)
+                own_items = None
+                if own == "array":
+                    own_items = items
+                    if isinstance(schema.get("items"), Mapping):
+                        own_items = schema["items"].get("type", items)
+                if (own, own_items) != (type_, items):
+                    text = (
+                        f"cannot be declared with type {own!r} (items {own_items!r}): "
+                        f"its type is {type_!r} (items {items!r}) on every need type, "
+                        f"as need type {by!r} declares it"
+                    )
+                elif (keys.get("derive") is not None) != derived:
+                    text = _derivation_text(derived, by)
+                else:
+                    continue
+            findings.append(f"{where} {text}; the entry is ignored")
+            refused.add((need_type, name))
+        if agreed is None:
+            continue
+        if not derived:
+            # a child's rule would derive the field on every type that declares it
+            for need_type in order:
+                keys = types[need_type].get("fields", {}).get(name)
+                if (
+                    keys is not None
+                    and keys.get("derive") is not None
+                    and inherited(need_type, name)
+                ):
+                    findings.append(
+                        f"needs_types[{need_type!r}].fields[{name!r}] "
+                        f"{_derivation_text(derived, agreed[2])}; the entry is ignored"
+                    )
+                    refused.add((need_type, name))
+        declaring = ", ".join(repr(t) for t in roots if (t, name) not in refused)
+        local[name] = NewFieldParams(
+            source="needs_types",
+            description=f"Declared by need types {declaring}",
+            schema=cast(Any, _field_schema_of(agreed[0], agreed[1])),
+            nullable=True,
+        )
+    return local, refused, findings
+
+
+def _type_derive_rules(
+    types: Mapping[str, Mapping[str, Any]],
+    order: list[str],
+    parent: Mapping[str, str],
+    table: Literal["fields", "links"],
+    refused: set[tuple[str, str]],
+) -> dict[str, dict[str, tuple[Any, str, bool]]]:
+    """The ``derive`` of each entry of the types' ``table``: name -> need type ->
+    (the rule, the entry that gives it, whether it is the type's own entry). A type's
+    rule reaches its children, each of which may give its own; an entry refused for
+    its field's shape gives none.
+    """
+    if not any(
+        "derive" in keys
+        for entry in types.values()
+        for keys in entry.get(table, {}).values()
+    ):
+        return {}  # no rule in any entry: nothing to walk
+    #: need type -> name -> its rule, its own or its nearest ancestor's
+    effective: dict[str, dict[str, tuple[Any, str, bool]]] = {}
+    for need_type in order:
+        rules = {
+            name: (rule, entry, False)
+            for name, (rule, entry, _) in effective.get(
+                parent.get(need_type, ""), {}
+            ).items()
+        }
+        for name, keys in types[need_type].get(table, {}).items():
+            if (rule := keys.get("derive")) is not None and (
+                table != "fields" or (need_type, name) not in refused
+            ):
+                where = f"needs_types[{need_type!r}].{table}[{name!r}]"
+                rules[name] = (rule, f"{where}.derive", True)
+        effective[need_type] = rules
+    by_name: dict[str, dict[str, tuple[Any, str, bool]]] = {}
+    for need_type, rules in effective.items():
+        for name, ruled in rules.items():
+            by_name.setdefault(name, {})[need_type] = ruled
+    return by_name
+
+
+def _folded_rules(
+    name: str,
+    raw: Any,
+    rules: Mapping[str, tuple[Any, str, bool]],
+    declared: str,
+) -> tuple[Any, dict[str, str]]:
+    """A field's (or link type's) ``derive_by_type`` with the rules of the need types'
+    entries folded in (:func:`_type_derive_rules`).
+
+    A ``derive_by_type`` entry for a type wins for that type: beside the type's own
+    rule it is a ``needs.config`` finding, the type's rule ignored there (the types
+    inheriting from it still read it, unless they have a rule of their own); an
+    inherited rule gives way to it silently. A ``derive_by_type`` that is not a
+    table is read as it is.
+
+    :param declared: Where the field is declared, as a finding names it.
+    :return: The ``derive_by_type`` to read, and the entry each folded rule came from,
+        by need type.
+    """
+    if not rules or (raw is not None and not isinstance(raw, Mapping)):
+        return raw, {}
+    folded = dict(raw or {})
+    entries: dict[str, str] = {}
+    for need_type, (rule, entry, own) in rules.items():
+        if need_type in folded:
+            if own:
+                log_warning(
+                    LOGGER,
+                    f"{entry.removesuffix('.derive')} sets 'derive', and "
+                    f"{declared}.derive_by_type[{need_type!r}] another rule for the "
+                    "same type; the need type's rule is ignored for it (the need "
+                    "types inheriting from it still read it)",
+                    "config",
+                    None,
+                )
+            continue
+        folded[need_type] = rule
+        entries[need_type] = entry
+    return folded, entries
+
+
+def _derivation_text(derived: bool, by: str) -> str:
+    """Why a declaration of a field declared on need types alone disagrees with its
+    derivation: derived on every type that declares it, or on none."""
+    if derived:
+        return (
+            "cannot be declared without a 'derive': it is derived on every need type "
+            f"that declares it, as need type {by!r} declares it"
+        )
+    return (
+        "cannot be declared with a 'derive': it is not derived on every need type "
+        f"that declares it, as need type {by!r} declares it"
+    )
+
+
+def _field_schema_of(type_: Any, items: Any) -> dict[str, Any]:
+    """The schema of a field of a type (and, for an array, of items of a type): an
+    array without an items' type is left without ``items``, so its finding is the one
+    a ``needs_fields`` entry gets."""
+    if type_ == "array" and items is not None:
+        return {"type": type_, "items": {"type": items}}
+    return {"type": type_}
+
+
 def _resolve_type_declarations(
-    schema: FieldsSchema, need_types: Iterable[NeedType]
+    schema: FieldsSchema,
+    types: Mapping[str, Mapping[str, Any]],
+    order: list[str],
+    parent: Mapping[str, str],
+    findings: tuple[list[str], list[str], list[str]],
+    local: Iterable[str],
+    refused: set[tuple[str, str]],
 ) -> None:
     """Declare the fields and link types of each need type anew, as its ``needs_types``
-    entry says: ``inherits``, ``fields``, ``links`` and ``closed``.
+    entry says: ``inherits``, ``fields`` and ``links``.
 
     The last change to the schema while it is built. A type's declaration of a field
     starts from the field's global declaration, takes the entries of its ancestors from
@@ -2278,10 +2679,6 @@ def _resolve_type_declarations(
     it (:func:`narrowing_problems`), and is registered for its type and every type
     inheriting from it (:meth:`FieldsSchema.add_type_overlay`). A type without an
     entry of a field, itself or by an ancestor, reads the field's global declaration.
-    A type is closed if its entry says so, else if its parent is
-    (:meth:`FieldsSchema.close_type`): it declares the fields of its entries and its
-    ancestors', an empty entry included, and an entry that cannot be used, if it names
-    a field of its table.
 
     What cannot be used is reported, one warning per reason, and ignored, and the
     build goes on: an ``inherits`` naming no need type or on a cycle
@@ -2290,54 +2687,47 @@ def _resolve_type_declarations(
     that widens the declaration before it (``needs.type_widening``). An entry is taken
     whole or not at all: the type keeps the declaration before it.
 
+    A field declared on need types alone (:func:`_type_local_fields`) is the field of
+    the types that declare it, absent on every other type
+    (:meth:`FieldsSchema._localise`): a type declares it by its entries and its
+    ancestors', an empty entry included, and an entry that cannot be used, if it names
+    a field of its table -- but an entry its shape refuses, which does not declare it.
+
     :param schema: The schema, complete but for the declarations of need types.
-    :param need_types: The configured need types (the shape the configuration was
-        resolved to), those an extension or a service adds included.
+    :param types: Each configured need type's entry (:func:`_checked_type_entries`),
+        those an extension or a service adds included.
+    :param order: The need types, each after its parent (:func:`_inherits_order`).
+    :param parent: The parent of each type that has one.
+    :param findings: What was found reading the entries, reported first: the shape of
+        an entry an extension added (``needs.config``), the walk
+        (``needs.type_inherits``), and the shape of the fields declared on need types
+        alone (``needs.type_conflict``).
+    :param local: The fields declared on need types alone.
+    :param refused: The (need type, field) entries refused for their field's shape.
     """
-    types: dict[str, dict[str, Any]] = {}
-    for need_type in need_types:
-        if not isinstance(need_type, dict) or not isinstance(
-            name := need_type.get("directive"), str
-        ):
-            continue
-        # an entry an extension adds after the configuration is resolved has not been
-        # through the normaliser: its declarations are checked here, by its rules
-        named = f"needs_types[{name!r}]"
-        shape: list[str] = []
-        wrong, text = _not_of_their_shape(
-            named, need_type, ("inherits", "fields", "links", "closed")
-        )
-        if wrong:
-            shape.append(text)
-        entry = {key: value for key, value in need_type.items() if key not in wrong}
-        for table in ("fields", "links"):
-            if table in entry:
-                entry[table] = _normalise_declarations(
-                    named, table, cast(Mapping[Any, Any], entry[table]), shape
-                )
-        for text in shape:
-            log_warning(LOGGER, text, "config", None)
-        types[name] = entry
-    order, parent, findings = _inherits_order(types)
-    for text in findings:
+    entry_findings, inherits_findings, shape_findings = findings
+    for text in entry_findings:
+        log_warning(LOGGER, text, "config", None)
+    for text in inherits_findings:
         log_warning(LOGGER, text, "type_inherits", None)
+    for text in shape_findings:
+        log_warning(LOGGER, text, "type_conflict", None)
     #: need type -> field name -> its declaration for the type, and the type whose
     #: entry made it
     declared: dict[str, dict[str, tuple[FieldSchema | LinkSchema, str]]] = {}
-    #: need type -> whether it is closed: its own ``closed``, else its parent's
-    closed: dict[str, bool] = {}
-    #: need type -> the fields and link types it declares on a closed type: its
-    #: ancestors' and its own entries, used or not, each naming one of its table's kind
+    #: need type -> the fields and link types it declares: its ancestors' and its own
+    #: entries, used or not, each naming one of its table's kind
     names: dict[str, set[str]] = {}
     for need_type in order:
         own = dict(declared[p]) if (p := parent.get(need_type)) else {}
         names[need_type] = set(names[p]) if p else set()
-        closed[need_type] = types[need_type].get("closed", closed[p] if p else False)
         for table, kind, what, other in (
             ("fields", "field", "a field", "a link type"),
             ("links", "link", "a link type", "a field"),
         ):
             for name, keys in types[need_type].get(table, {}).items():
+                if table == "fields" and (need_type, name) in refused:
+                    continue  # reported with the field's shape
                 where = f"needs_types[{need_type!r}].{table}[{name!r}]"
                 glob = schema.global_declaration(name)
                 if glob is None or glob.kind != kind:
@@ -2350,19 +2740,21 @@ def _resolve_type_declarations(
                         None,
                     )
                     continue
-                # declared on a closed type, also if the entry cannot be used: the
-                # type keeps the declaration before it
+                # declared, also if the entry cannot be used: the type keeps the
+                # declaration before it
                 names[need_type].add(name)
                 previous, by = own.get(name, (glob, None))
                 if (
-                    field := _declare_for_type(previous, glob, keys, where, by)
+                    field := _declare_for_type(
+                        previous, glob, keys, where, by, local=name in local
+                    )
                 ) is not None:
                     own[name] = (field, need_type)
         declared[need_type] = own
         for field, _ in own.values():
             schema.add_type_overlay(need_type, field)
-        if closed[need_type]:
-            schema.close_type(need_type, names[need_type])
+    for name in local:
+        schema._localise(name, [t for t in order if name in names[t]])
 
 
 def _declare_for_type(
@@ -2371,6 +2763,8 @@ def _declare_for_type(
     keys: Mapping[str, Any],
     where: str,
     declared_by: str | None,
+    *,
+    local: bool = False,
 ) -> FieldSchema | LinkSchema | None:
     """The declaration a need type's entry makes of a field, from the one before it
     (the global declaration, or an ancestor's); ``None``, reported, if the entry
@@ -2381,12 +2775,15 @@ def _declare_for_type(
     :param keys: The entry.
     :param where: The entry, as the configuration names it.
     :param declared_by: The need type whose entry made ``previous``, if not global.
+    :param local: Whether the field is declared on need types alone.
     """
     on_link = previous.kind == "link"
     keys = {
         key: value
         for key, value in keys.items()
+        # a ``derive`` is the field's rule for the type, folded where it is read
         if key in (NEED_TYPE_LINK_KEYS if on_link else NEED_TYPE_FIELD_KEYS)
+        and key != "derive"
     }
     if previous.derived and (
         refused := [k for k in ("default", "predicates") if k in keys]
@@ -2416,11 +2813,16 @@ def _declare_for_type(
             and not glob.schema.get("enum")
         ):
             # the rules of a derived field are checked against its global declaration
+            why = (
+                ", and a derived field declared on need types alone takes no 'enum'"
+                if local
+                else " and its rules are checked against its declaration, which has "
+                "none"
+            )
             log_warning(
                 LOGGER,
                 f"{where} adds an 'enum', but {previous.name!r} is derived "
-                f"({previous.describe_derived()}) and its rules are checked against "
-                "its declaration, which has none; the entry is ignored",
+                f"({previous.describe_derived()}){why}; the entry is ignored",
                 "type_conflict",
                 None,
             )

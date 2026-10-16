@@ -71,12 +71,12 @@ def _field_validation(fields_schema: TypeFieldsSchema) -> _FieldValidation | Non
     combined_properties: dict[str, Any] = {}
     link_names: set[str] = set()
     # the placeholder a field an author cannot set holds, if it is not nullable --
-    # a derived field until its rule computes it, a field a closed need type does not
-    # declare for good -- is its "no value" (its empty value), as None is for a
-    # nullable field: it is not validated. On a need of a type a derived field has no
-    # rule for, a field with a default holds that default, which is a value and is
-    # validated, also where it equals the empty value. A link type's ``default = []``
-    # is its "no links", exempt as no default is (the two cannot be told apart)
+    # a derived field until its rule computes it -- is its "no value" (its empty
+    # value), as None is for a nullable field: it is not validated. On a need of a
+    # type a derived field has no rule for, a field with a default holds that
+    # default, which is a value and is validated, also where it equals the empty
+    # value. A link type's ``default = []`` is its "no links", exempt as no default is
+    # (the two cannot be told apart)
     placeholders: dict[str, Any] = {
         field.name: typed_empty(field.type)
         for field in (

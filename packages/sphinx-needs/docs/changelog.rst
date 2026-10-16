@@ -91,24 +91,31 @@ Improvements
   two tiers (:pr:`2275`) and the ``needs_types`` table (:pr:`2276`)
   (`discussion #1646 <https://github.com/useblocks/sphinx-needs/discussions/1646>`__; :pr:`2278`)
 
-- ✨ A need type can be ``closed``: an entry of :ref:`needs_types` with ``closed = true`` holds, on its
-  needs, only the fields and link types it declares -- in its own entries or an ancestor's, an empty
-  entry included -- of those the project declares (:ref:`needs_types_fields`); ``closed`` is inherited,
-  and a type may say otherwise. A field the type does not declare holds no value (``None`` where
-  nullable, else the empty value of its type), a value set for it in a need is ignored as a
-  ``needs.undeclared_for_type`` warning naming the need, and a need imported or external drops it
-  with the same warning (silently when it holds that value anyway, as a needs.json writes empty
-  values); a ``copy`` link type copies into ``links`` only where the type declares ``links``; the
-  core fields, the fields an extension or a service registers, and ``parent_needs``
-  stay as declared. A :ref:`needextend` refused on the needs of a type is one ``needs.needextend``
-  warning for each need type, naming its needs, instead of one for each need. The fields schema is
+- ✨ A field may be declared on the need types that have it alone: a ``fields`` entry of
+  :ref:`needs_types` naming no field :ref:`needs_fields`, an extension or a service declares, and no
+  core field or link type, declares a field of the types that declare it -- in their own entries or an
+  ancestor's, an empty entry included -- absent on every other type (:ref:`needs_types_fields`). Every
+  type that declares it agrees on its type and items' type, which the first need type without an
+  ancestor declaring it that gives a ``schema`` ``type`` sets; such a declaration of another type is a
+  ``needs.type_conflict`` warning, and does not declare the field (a child of a declaring type still
+  declares it, through its parent). On a need of another type the field holds ``None``, a value set for it
+  in a need is ignored as a ``needs.undeclared_for_type`` warning naming the need, and a need imported
+  or external drops it with the same warning (silently when it holds ``None`` anyway, as a needs.json
+  writes it on every need); the needs.json describes it as ``Declared by need types ...``, naming the
+  declarations without a declaring ancestor that are not refused. A ``derive`` in a need type's ``fields`` or ``links`` entry
+  is the field's (or link type's) ``derive_by_type`` entry for the type and the types inheriting from
+  it, read and checked with the others (a rule that cannot be read is reported for each type that reads
+  it); beside a ``derive_by_type`` entry for the same type it is a ``needs.config`` warning, and the
+  ``derive_by_type`` entry used for that type (the types inheriting from it still read the entry's rule). A field declared on need types alone is derived on every type
+  that declares it, or on none. A :ref:`needextend` refused on the needs of a type is one
+  ``needs.needextend`` warning for each need type, naming its needs, instead of one for each need. The fields schema is
   frozen once built, before any document is read: an extension that changes it from an
   ``env-before-read-docs`` handler now gets a ``TypeError``. A per-type ``minItems`` on a link type or
   ``tags`` needs no ``default``: the empty value of a field's type kept from its global declaration
   (``[]``, ``""``, ``0``, ``0.0``, ``false``) is no default for a per-type narrowing (:issue:`2277`).
-  The closed types of
+  The per-type fields of
   :issue:`2269`
-  (`discussion #1646 <https://github.com/useblocks/sphinx-needs/discussions/1646>`__; :pr:`2281`)
+  (`discussion #1646 <https://github.com/useblocks/sphinx-needs/discussions/1646>`__; :pr:`2281`, :pr:`2284`)
 
 Deprecations
 ............

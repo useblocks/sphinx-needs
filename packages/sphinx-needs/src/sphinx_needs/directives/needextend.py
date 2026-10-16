@@ -471,8 +471,8 @@ def _refused_on_type(
     added to ``refused``, reported once for every needextend, need type and option.
 
     The directive refuses an option whose field does not allow it on any need type;
-    a need type may declare the field anew, or not declare it (a closed type), so each
-    need is checked against its type.
+    a need type may declare the field anew, or not declare a field declared on need
+    types alone, so each need is checked against its type.
     """
     field_schema = type_schema.get_any_field(option_name)
     if field_schema is None or field_schema.allow_extend:
