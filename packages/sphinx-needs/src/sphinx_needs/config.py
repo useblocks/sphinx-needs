@@ -952,9 +952,13 @@ class NeedsSphinxConfig:
         ``NeedsApiConfigException``, as does assigning the attribute. A type is
         configured with ``needs_types``, or added with ``add_need_type``. Read it from
         a ``config-inited`` handler at a priority above 12, or later: before that, a
-        mapping-shaped ``needs_types`` is not yet resolved to its list.
+        mapping-shaped ``needs_types`` is not yet resolved to its list, and is
+        returned as it is configured.
         """
-        return _ReadOnlyNeedTypes(_NEEDS_CONFIG.merged_types(self._types))
+        configured = self._types
+        if not isinstance(configured, list):
+            return configured
+        return _ReadOnlyNeedTypes(_NEEDS_CONFIG.merged_types(configured))
 
     @types.setter
     def types(self, _value: object) -> None:
