@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792153996715,
+  "lastUpdate": 1792158839345,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -25596,6 +25596,42 @@ window.BENCHMARK_DATA = {
             "value": 51.185315301,
             "unit": "s",
             "extra": "Commit: 36048b9a91a1a3417050c46cba6303926231ae9d\nBranch: master\nTime: 2026-10-16T14:31:49+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "96da5d275e41859de0c7c5d70bc45cc2e1d3cd2b",
+          "message": "🏷️ builder.py: the overrides take Sphinx's parameter names; ten suppressions gone (#2294)\n\n## What\n\nIn `packages/sphinx-needs/src/sphinx_needs/builder.py`, all ten `# ty:\nignore` comments go, leaving the file with none.\n\n**Nine `invalid-method-override`.** The `needs`, `needumls` and `schema`\nbuilders override `get_target_uri`, `prepare_writing` and\n`write_doc_serialized` with methods that do nothing. Their signatures\nmatched Sphinx's except for the parameter names: `_docname`, `_typ`,\n`_docnames` and `_doctree`. Every supported Sphinx, 7.4.0 through 9.1.0,\nsays `docname`, `typ`, `docnames` and `doctree`, and renaming a\nparameter breaks any caller that passes it by keyword. The overrides now\ntake Sphinx's names.\n\n`prepare_writing` also changes type: it now takes\n`collections.abc.Set[str]`.\n\n| Sphinx | Base parameter type | `set[str]` override |\n|---|---|---|\n| 7.4 and 8.0 | `set[str]` | valid |\n| 8.1 and later | abstract `Set[str]` | invalid |\n\nOnly the wider type is a valid override of every supported version. `uv\nrun poe typecheck` runs against the 7.4 floor, so it never showed this.\nThe commit message says \"8 and 9\" and \"red against Sphinx 9\"; 8.1 is\naccurate, and the changelog is corrected in a follow-up commit.\n\n**One `invalid-assignment`.** When `needs_build_needumls` is set and\nanother builder runs, `build_needumls_pumls` set the builder's `outdir`\nto `os.path.join(outdir, needs_build_needumls)`. That stored a `str`\nwhere Sphinx declares its `_StrPath`. It now joins with `/`, so `outdir`\nstays a `_StrPath`.\n- The saved file is the same on every supported Sphinx and Python,\nabsolute `needs_build_needumls` included.\n- The only reader, `NeedumlsBuilder.finish`, passes `outdir` to\n`os.path.join` either way.\n- Before Sphinx 8.2 the old code really did leave a plain `str` there;\nfrom 8.2 Sphinx converted it back.\n\n**Noted, not changed.** Against Sphinx 8.1 and later, ty also reports\nthat the three `write` overrides override a method marked `@final`.\nAgainst 8.2 and later it adds a `Sequence` vs `Iterable` parameter\nmismatch. Neither is new; the parent commit gives the same errors. The\nTODO in `NeedsBuilder.write` covers both until Sphinx 7 support is\ndropped.\n\n## Why\n\nContinues #1835: `builder.py` was one of its listed clusters, with ten\nsuppressions.\n\n## Tests\n\nNo new test. ty enforces the signatures, as these mutations show:\n- **ty, against Sphinx 7.4.7, 8.0.2, 8.1.3 and 9.1.0:**\n  - putting back any one underscore name fails on all four;\n  - `set[str]` passes on 7.4 and 8.0 and fails on 8.1 and 9.1;\n  - the `os.path.join` assignment fails on all four.\n- **The real gate:** `uv run poe typecheck` exits 1 for both a rename\nand the `os.path.join` assignment.\n- **Run time:** without the `outdir` assignment,\n`tests/test_needuml.py::test_needuml_save` fails with\n`FileNotFoundError`, so the existing suite runs that line.\n- **Adversarial review:** an independent reviewer ran all of the above,\n22 of 22 probes as predicted, and checked:\n- the parameter names and kinds against 11 Sphinx releases, 7.4.0 to\n9.1.0;\n- that nothing in the repository or in Sphinx calls these methods by\nkeyword;\n- the `outdir` result across Sphinx 7.4 to 9.1 and Python 3.11 to 3.14,\n135 of 135 cases identical.\n\nIt returned **SHIP-WITH-FIXES** with one SHOULD: the changelog said\n\"Sphinx 8 and 9\", where 8.0 still declares `set[str]`. Fixed in\n`159178c` (`118e6ad` before the rebase). That fix is docs-only, so it\nended the review loop without a second round. Its two NITs need no\nchange: the version in which each `write` diagnostic first appears,\nalready reflected above, and a log line's path separators on Windows.\n- **Gates**, after rebasing onto master `36048b9`:\n  - lint, typecheck and `test-needs` (3267 passed) at `159178c`;\n- before the rebase, the reviewer's `test_needuml.py` /\n`test_needs_builder.py` on Sphinx 7.4.7, 8.2.3 and 9.1.\n- ty against Sphinx 9.1 still shows only the known `write` diagnostics.\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue. *(Written by Claude Code at a\nmaintainer's request.)*\n- [x] I ran the package's tests (`uv run poe test-<package>`) and they\npass.\n- [x] Documentation is updated where behaviour or options change. *(No\nuser-facing behaviour changes.)*\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*. *(sphinx-needs: Internal changes.)*\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-16T15:52:25+02:00",
+          "tree_id": "bcf1e7d1ffb1454c7eb54faa955c4b6317ae00cb",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/96da5d275e41859de0c7c5d70bc45cc2e1d3cd2b"
+        },
+        "date": 1792158828947,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1055517069999965,
+            "unit": "s",
+            "extra": "Commit: 96da5d275e41859de0c7c5d70bc45cc2e1d3cd2b\nBranch: master\nTime: 2026-10-16T15:52:25+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 57.697904856,
+            "unit": "s",
+            "extra": "Commit: 96da5d275e41859de0c7c5d70bc45cc2e1d3cd2b\nBranch: master\nTime: 2026-10-16T15:52:25+02:00"
           }
         ]
       }
