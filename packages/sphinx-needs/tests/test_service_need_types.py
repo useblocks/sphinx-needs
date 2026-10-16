@@ -202,6 +202,42 @@ def test_a_parallel_build_keeps_the_service_types_and_layout(test_app: Any) -> N
 # -- what wins -----------------------------------------------------------------------------
 
 
+@pytest.mark.parametrize(
+    ("test_app", "mine"),
+    [
+        pytest.param(
+            _project(
+                CONF
+                + "needs_types = [\n"
+                + '    {"directive": "req", "title": "Requirement", "prefix": "R_"},\n'
+                + f'    {{"directive": "{name}", "title": "Mine", "prefix": "MI_"}},\n'
+                + "]\n",
+                f".. {name}:: Mine\n   :id: MI_00001\n",
+            ),
+            name,
+            id=name,
+        )
+        for name in GITHUB_TYPES
+    ],
+    indirect=["test_app"],
+)
+def test_a_configured_service_type_wins_and_the_others_are_added(
+    test_app: Any, mine: str
+) -> None:
+    """A configured type named as one of the service's keeps its own title and prefix,
+    and the service still adds its other two, each on its own. A configured ``issue``
+    used to stop the service adding ``pr`` and ``commit``, and a configured ``pr`` its
+    ``commit``."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    assert _types(app) == {
+        "req": ("Requirement", "R_"),
+        mine: ("Mine", "MI_"),
+        **{name: entry for name, entry in GITHUB_TYPES.items() if name != mine},
+    }
+
+
 #: another extension adds ``issue`` from a handler at the default priority
 THIRD_PARTY_ISSUE = """
 def _add_issue(app, config):
@@ -220,11 +256,21 @@ def setup(app):
 )
 def test_an_extension_type_named_as_a_service_type_wins(test_app: Any) -> None:
     """``add_need_type`` for ``issue`` from another extension's ``config-inited``
-    handler succeeds, and the service's ``issue`` is not added."""
+    handler succeeds, and the service's ``issue`` is not added; its ``pr`` and
+    ``commit`` are, after it."""
     app = test_app
     app.build()
     assert build_warnings(app) == []
-    assert get_need_types(app)[:6] == ["req", "spec", "impl", "test", "need", "issue"]
+    assert get_need_types(app) == [
+        "req",
+        "spec",
+        "impl",
+        "test",
+        "need",
+        "issue",
+        "pr",
+        "commit",
+    ]
     assert _types(app)["issue"] == ("Their issue", "TI_")
 
 
