@@ -306,7 +306,6 @@ Here a ``test`` may only verify requirements:
 
    {
      "id": "test-verifies-req",
-     "message": "a test verifies requirements only",
      "select": { "properties": { "type": { "const": "test" } } },
      "validate": {
        "network": {
@@ -329,6 +328,8 @@ Here a ``test`` may only verify requirements:
      Need path:      T_002 > verifies > S_002
      Schema path:    test-verifies-req[1] > validate > network > verifies > items > local > properties > type > enum
      Schema message: "spec" is not one of "req" or "safety_req" [sn_schema_violation.network_local_fail]
+
+The need path gives the chain: the ``verifies`` link of ``T_002`` to ``S_002``.
 
 .. important::
 

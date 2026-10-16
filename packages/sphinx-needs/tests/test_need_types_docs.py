@@ -123,7 +123,6 @@ SCHEMA_PER_TYPE_WARNINGS = [
         need_path="T_004 > verifies",
         rest=[
             "  Schema path:    test-verifies-req[1] > validate > network > verifies",
-            "  User message:   a test verifies requirements only",
             "  Schema message: Broken link of type 'verifies' to 'SR_002' "
             "[sn_schema_violation.network_missing_target]",
         ],
