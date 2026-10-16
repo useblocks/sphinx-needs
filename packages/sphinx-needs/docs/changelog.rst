@@ -117,6 +117,12 @@ Improvements
   :issue:`2269`
   (`discussion #1646 <https://github.com/useblocks/sphinx-needs/discussions/1646>`__; :pr:`2281`, :pr:`2284`)
 
+- 👌 A derived field cannot be set on a need: ``need[name] = value`` for a field with a
+  :ref:`derive <needs_derive>` rule raises ``KeyError``, where it used to set a value the rule
+  then overwrote (``needs-before-post-processing``) or kept (``needs-before-sealing``); an
+  extension writing a derived field from either event now fails the build there, with the field
+  named (:pr:`NNNN`)
+
 Deprecations
 ............
 
