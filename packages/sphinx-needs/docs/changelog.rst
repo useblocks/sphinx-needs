@@ -151,6 +151,12 @@ Deprecations
 Bug fixes
 .........
 
+- 🐛 The ``needs.config`` finding for a :ref:`needs_global_options` value with unknown
+  keys lists them sorted, so its text is the same on every run. The keys came from a
+  ``set``, whose order follows the hash seed, so the message changed from run to run and
+  could not be pinned by a test; it now reads as the import and external-need unknown-key
+  findings do (:issue:`2288`)
+
 - 🐛 With :ref:`needs_debug_measurement` on, a measured callable that has no ``__name__``
   or whose source cannot be read is measured rather than failing. A ``functools.partial``
   named by ``:filter-func:`` ended the build with ``AttributeError``, one registered with

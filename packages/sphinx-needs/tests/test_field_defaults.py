@@ -171,6 +171,59 @@ def test_invalid_predicate_default(test_app):
     assert need["blocks"] == ["SPEC_1"]
 
 
+CONF_UNKNOWN_GLOBAL_OPTION_KEYS = """\
+extensions = ["sphinx_needs"]
+
+needs_types = [
+    {"directive": "spec", "title": "Specification", "prefix": "SP_"}
+]
+
+needs_global_options = {
+    # the unknown keys are given in an order that is not alphabetical, so that a
+    # sort would show
+    "status": {"default": "open", "unexpected_z": 1, "unexpected_a": 2, "unexpected_m": 3},
+}
+"""
+
+INDEX_UNKNOWN_GLOBAL_OPTION_KEYS = """\
+Test
+====
+
+.. spec:: Specification 1
+    :id: SPEC_1
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_UNKNOWN_GLOBAL_OPTION_KEYS),
+                (Path("index.rst"), INDEX_UNKNOWN_GLOBAL_OPTION_KEYS),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_unknown_global_option_keys_are_sorted(test_app):
+    """The unknown-keys finding lists the keys sorted, so its text is stable.
+
+    The keys came from a ``set``, so the message differed from run to run and
+    could not be pinned (:issue:`2288`).
+    """
+    test_app.build()
+
+    warning_records = build_warnings(test_app)
+    assert warning_records == [
+        'WARNING: Config option "needs_global_options" is deprecated. Please use '
+        "needs_fields and needs_links instead. [needs.deprecated]",
+        "WARNING: needs_global_options 'status' value contains unknown keys: "
+        "['unexpected_a', 'unexpected_m', 'unexpected_z'] [needs.config]",
+    ]
+
+
 @pytest.mark.parametrize(
     "test_app",
     [

@@ -2139,7 +2139,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         if unknown := set(default_config).difference({"predicates", "default"}):
             log_warning(
                 LOGGER,
-                f"needs_global_options {name!r} value contains unknown keys: {unknown}",
+                f"needs_global_options {name!r} value contains unknown keys: {sorted(unknown)}",
                 "config",
                 None,
             )
