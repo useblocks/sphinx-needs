@@ -6,8 +6,9 @@ ubCode vendors it, so every case is a statement both tools are held to. Each cas
 project, built with the ``needs`` builder, and three things are asserted:
 
 * every case's outcome -- the pinned values, as ``needs.json`` writes them (type
-  included), the fields pinned as unset, the fields pinned as absent, and the findings of
-  the per-type declaration contract, as a multiset;
+  included), the fields pinned as unset, the fields pinned as absent, the needs pinned
+  as not created, the pinned keys of a field's schema, and the findings of the per-type
+  declaration contract, as a multiset;
 * the number of cases, so that a trimmed corpus is a red test rather than quietly reduced
   coverage;
 * the shape of every case, so that a case without a complete expectation cannot pass by
@@ -15,9 +16,9 @@ project, built with the ``needs`` builder, and three things are asserted:
 
 The runner half every such corpus shares is ``sphinx_needs_testkit.conformance``; what
 is this corpus's own is here: its codes, the need type a finding names, and the reader of
-``field_fail``, whose record names neither its need's location nor its field in a form
-the warning stream can be read for, and which is read from the ``schema_violations.json``
-the validation writes beside ``needs.json`` instead.
+``field_fail`` and ``link_fail``, whose records name neither their need's location nor
+their field in a form the warning stream can be read for, and which are read from the
+``schema_violations.json`` the validation writes beside ``needs.json`` instead.
 """
 
 from __future__ import annotations
@@ -34,7 +35,9 @@ import pytest
 
 from sphinx_needs_testkit.conformance import (
     Finding,
+    Reader,
     case_files,
+    check_schema,
     check_values,
     match_findings,
     params,
@@ -47,7 +50,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "field_declaration_conformanc
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 31
+EXPECTED_CASE_COUNT = 33
 
 #: The codes of the per-type declaration contract, compared as bare subcodes; every
 #: other finding (a ``needs.config`` warning, a dead link) is each tool's own.
@@ -61,7 +64,9 @@ SHARED_CODES = frozenset(
         "derive_authored",
         "derive_invalid",
         "dynamic_function",
+        "create_need",
         "field_fail",
+        "link_fail",
     }
 )
 
@@ -145,9 +150,18 @@ def test_every_case_has_a_complete_expectation() -> None:
             assert "title" in entry and "prefix" in entry, name
         expect = case["expect"]
         assert "findings" in expect, name
-        assert set(expect) <= {"needs", "nulls", "absent", "findings"}, name
-        assert expect.get("needs") or expect.get("nulls") or expect.get("absent"), name
-        for table in ("needs", "nulls", "absent"):
+        assert set(expect) <= {
+            "needs",
+            "nulls",
+            "absent",
+            "missing",
+            "schema",
+            "findings",
+        }, name
+        assert any(
+            expect.get(key) for key in ("needs", "nulls", "absent", "missing")
+        ), name
+        for table in ("needs", "nulls", "absent", "missing"):
             for need_id in expect.get(table, {}):
                 assert _NEED_ID.fullmatch(need_id), (name, need_id)
         for finding in expect["findings"]:
@@ -196,19 +210,24 @@ def _describe(code: str, message: str) -> tuple[str | None, str | None]:
     return field_name, need_type[1] if need_type else None
 
 
-def _field_fails(app: Any, needs: Mapping[str, Mapping[str, Any]]) -> Iterator[Finding]:
-    """The ``field_fail`` findings, from the ``schema_violations.json`` the validation
-    writes beside ``needs.json`` (``sphinx_needs.schema.process``): its
-    ``validation_warnings`` maps a need id to that need's violations, each with its
-    ``subtype`` and the ``field`` in its ``details``. The file is written on every build
-    that validates, so its absence fails the case."""
-    report = json.loads(
-        Path(app.outdir, "schema_violations.json").read_text(encoding="utf-8")
-    )
-    for need_id, violations in report["validation_warnings"].items():
-        for violation in violations:
-            if violation["subtype"] == "field_fail":
-                yield ("field_fail", need_id, violation["details"].get("field"), None)
+def _violations(subtype: str) -> Reader:
+    """The reader of the schema validation's findings of *subtype* (``field_fail``,
+    ``link_fail``), from the ``schema_violations.json`` the validation writes beside
+    ``needs.json`` (``sphinx_needs.schema.process``): its ``validation_warnings`` maps a
+    need id to that need's violations, each with its ``subtype`` and the field or link
+    type in its ``details``. The file is written on every build that validates, so its
+    absence fails the case."""
+
+    def read(app: Any, needs: Mapping[str, Mapping[str, Any]]) -> Iterator[Finding]:
+        report = json.loads(
+            Path(app.outdir, "schema_violations.json").read_text(encoding="utf-8")
+        )
+        for need_id, violations in report["validation_warnings"].items():
+            for violation in violations:
+                if violation["subtype"] == subtype:
+                    yield (subtype, need_id, violation["details"].get("field"), None)
+
+    return read
 
 
 @pytest.mark.parametrize(
@@ -221,13 +240,16 @@ def test_case(test_app: Any, case: dict[str, Any]) -> None:
     needs = data["versions"][data["current_version"]]["needs"]
     expect = case["expect"]
     problems = check_values(needs, expect)
+    problems += check_schema(
+        data["versions"][data["current_version"]]["needs_schema"]["properties"], expect
+    )
     found, unread = read_findings(
         app,
         needs,
         shared=SHARED_CODES,
         ubcode_only=UBCODE_ONLY_CODES,
         describe=_describe,
-        readers={"field_fail": _field_fails},
+        readers={code: _violations(code) for code in ("field_fail", "link_fail")},
     )
     problems += [f"a record naming a shared code is unreadable: {w!r}" for w in unread]
     problems += match_findings(found, expect["findings"], keys=KEYS)

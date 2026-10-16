@@ -55,25 +55,30 @@
 #     severities are NOT compared. Only the codes of the per-type declaration contract are
 #     compared --
 #         type_inherits, type_conflict, type_widening, undeclared_for_type, needextend,
-#         derive_authored, derive_invalid, dynamic_function, field_fail
+#         derive_authored, derive_invalid, dynamic_function, create_need, field_fail,
+#         link_fail
 #     -- every other finding is each tool's own. `config` is not among them: it is every
 #     configuration finding, so a bare `config` would match any; a case that would pin a
 #     `needs.config` warning pins its consequence for a value instead, and says so
 #   - a finding's `need` is the need it is reported at (the need's directive, or for
-#     `field_fail` the need validated); a finding of the configuration has none, and so
-#     has one at a `needextend`. Its `field` is the field or link type it is about. Its
+#     `field_fail` and `link_fail` the need validated); a finding of the configuration has
+#     none, and so has one at a `needextend`, and a `create_need` finding, whose need is
+#     not created. Its `field` is the field or link type it is about. Its
 #     `type` is the need type it is about: the entry a finding of the schema's build names
 #     (`needs_types['<t>']`, whose `.fields['<f>']` or `.links['<f>']` is its `field`),
 #     the type a `type_inherits` finding opens with (`Need type '<t>'`), the type an
 #     `undeclared_for_type` or a `needextend` finding names (`on need type '<t>'`); a
 #     finding of another code (`field_fail`, `derive_authored`) has none
-#   - `field_fail` is the schema validation's finding of a need whose value of a field
-#     fails the field's schema as its need type declares it (an enum, a `minItems`, a
-#     value required where the type makes the field not nullable). sphinx-needs reports it
-#     as `[sn_schema_violation.field_fail]` with no source location, and its runner reads
-#     the need and the field from the `schema_violations.json` the validation writes beside
-#     `needs.json` (`validation_warnings.<need id>[]`, `subtype` and `details.field`), not
-#     from the warning stream, so each is counted once
+#   - `create_need` is the finding of a need that is not created: here, one without a value
+#     of a field its type makes not nullable, with no default (`Field '<f>'` is its field)
+#   - `field_fail` and `link_fail` are the schema validation's findings of a need whose
+#     value of a field (`field_fail`: an enum, a `minItems`) or whose links of a link type
+#     (`link_fail`: a `maxItems`) fail the schema as its need type declares it.
+#     sphinx-needs reports them as `[sn_schema_violation.field_fail]` and
+#     `[sn_schema_violation.link_fail]` with no source location, and its runner reads the
+#     need and the field or link type from the `schema_violations.json` the validation
+#     writes beside `needs.json` (`validation_warnings.<need id>[]`, `subtype` and
+#     `details.field`), not from the warning stream, so each is counted once
 #   - a runner that cannot read a record carrying one of these codes FAILS the case rather
 #     than skip the record
 #   - a `nulls` entry names a need of the case and a field that need carries: `needs.json`
@@ -83,6 +88,11 @@
 #   - an `absent` entry names a need of the case and a field that does NOT exist: the
 #     runner asserts the need is present and the field is no key of its record (not a
 #     null: a null is a field that exists and is unset)
+#   - a `missing` entry names a need the case's source gives that is NOT created: the
+#     runner asserts its id is no key of the needs `needs.json` writes
+#   - a `schema.<field>` table names keys of the field's entry in the `needs_schema`
+#     `properties` `needs.json` writes, each compared as a value is; a key it leaves out
+#     is not compared
 #
 # `packages/sphinx-needs/tests/test_field_declaration_conformance.py` runs every case with
 # the `needs` builder AND asserts the case COUNT, so a truncated copy is a red test rather
@@ -104,6 +114,8 @@
 #     needs.<ID>       - one table per pinned need: field = value
 #     nulls            - <ID> = [the fields pinned as unset] (TOML has no null)
 #     absent           - <ID> = [the fields pinned as not existing]
+#     missing          - [the ids of needs pinned as not created]
+#     schema.<field>   - one table per pinned field schema: key = value
 
 # --- the field's own declaration, and the value of a need ---------------------------
 
@@ -411,6 +423,57 @@ links = ["REQ_2"]
 [case.expect.needs.IMPL_2]
 links = []
 
+
+[[case]]
+name = "link-type-schema-per-type"
+why = "a type's schema of a link type narrows its needs' links alone: maxItems = 3 on spec fails spec's need with four links (link_fail), impl's four links are clean"
+config = '''
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.links.links]
+schema = { maxItems = 3 }
+
+[needs.types.impl]
+title = "Implementation"
+prefix = "I_"
+'''
+source = '''
+.. req:: First
+   :id: REQ_1
+
+.. req:: Second
+   :id: REQ_2
+
+.. req:: Third
+   :id: REQ_3
+
+.. req:: Fourth
+   :id: REQ_4
+
+.. spec:: Four links, three at most
+   :id: SPEC_1
+   :links: REQ_1, REQ_2, REQ_3, REQ_4
+
+.. impl:: Four links, free
+   :id: IMPL_1
+   :links: REQ_1, REQ_2, REQ_3, REQ_4
+'''
+[case.expect]
+[case.expect.needs.SPEC_1]
+links = ["REQ_1", "REQ_2", "REQ_3", "REQ_4"]
+[case.expect.needs.IMPL_1]
+links = ["REQ_1", "REQ_2", "REQ_3", "REQ_4"]
+[[case.expect.findings]]
+code = "link_fail"
+need = "SPEC_1"
+field = "links"
+
 # --- narrowing ------------------------------------------------------------------------
 
 [[case]]
@@ -643,6 +706,45 @@ REQ_1 = ["owner"]
 code = "type_widening"
 type = "req"
 field = "level"
+
+[[case]]
+name = "nullable-false-requires-a-value"
+why = "nullable = false on a type for a nullable field with no default requires a value on its needs: spec's unset need is not created (create_need), its set need is, and req's unset need holds null"
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.fields.owner]
+nullable = false
+'''
+source = '''
+.. req:: Unset
+   :id: REQ_1
+
+.. spec:: Unset
+   :id: SPEC_1
+
+.. spec:: Set
+   :id: SPEC_2
+   :owner: alice
+'''
+[case.expect]
+missing = ["SPEC_1"]
+[case.expect.needs.SPEC_2]
+owner = "alice"
+[case.expect.nulls]
+REQ_1 = ["owner"]
+[[case.expect.findings]]
+code = "create_need"
+field = "owner"
 
 [[case]]
 name = "min-items-needs-no-default"
@@ -969,7 +1071,7 @@ lead = "bob"
 
 [[case]]
 name = "type-local-field"
-why = "a fields entry naming what nothing else declares is a field of the types declaring it, by their entry or a parent's: null on every other type's needs, and a value set there is one undeclared_for_type and ignored"
+why = "a fields entry naming what nothing else declares is a field of the types declaring it, by their entry or a parent's: null on every other type's needs, and a value set there is one undeclared_for_type and ignored; needs.json declares it once, nullable, by the type without a declaring ancestor"
 config = '''
 [needs.types.req]
 title = "Requirement"
@@ -1011,6 +1113,9 @@ hazard = "flood"
 [case.expect.nulls]
 REQ_1 = ["hazard"]
 REQ_2 = ["hazard"]
+[case.expect.schema.hazard]
+type = ["string", "null"]
+description = "Declared by need types 'sreq'"
 [[case.expect.findings]]
 code = "undeclared_for_type"
 need = "REQ_2"
@@ -1019,7 +1124,7 @@ type = "req"
 
 [[case]]
 name = "type-local-first-root-sets-the-shape"
-why = "the first root declaration in needs_types order giving a schema type sets the field's type: a later root of another type is one type_conflict and does not declare the field (its need holds null, a value there is undeclared_for_type); an untyped root takes the type"
+why = "the first root declaration in needs_types order giving a schema type sets the field's type: a later root of another type is one type_conflict and does not declare the field (its need holds null, a value there is undeclared_for_type); an untyped root takes the type; needs.json names the roots not refused"
 config = '''
 [needs.types.a]
 title = "A"
@@ -1061,6 +1166,9 @@ x = 4
 x = 5
 [case.expect.nulls]
 B_001 = ["x"]
+[case.expect.schema.x]
+type = ["integer", "null"]
+description = "Declared by need types 'a', 'c'"
 [[case.expect.findings]]
 code = "type_conflict"
 type = "b"
@@ -1320,7 +1428,7 @@ field = "x"
 
 [[case]]
 name = "type-local-required-on-declaring-types"
-why = "the field is declared once, nullable and without a default, and a type declaring it not nullable requires it on its own needs alone: b's unset need holds null (a's unset need is not created, a create_need finding this corpus does not compare, so A_001 is not pinned)"
+why = "the field is declared once, nullable and without a default, and a type declaring it not nullable requires it on its own needs alone: a's unset need is not created (create_need), b's holds null"
 config = '''
 [needs.types.a]
 title = "A"
@@ -1349,11 +1457,14 @@ source = '''
    :id: B_001
 '''
 [case.expect]
-findings = []
+missing = ["A_001"]
 [case.expect.needs.A_002]
 x = "v"
 [case.expect.nulls]
 B_001 = ["x"]
+[[case.expect.findings]]
+code = "create_need"
+field = "x"
 
 [[case]]
 name = "type-local-derived"

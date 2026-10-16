@@ -4,7 +4,8 @@ A corpus of this shape (sphinx-needs' ``derive_conformance.toml`` and
 ``field_declaration_conformance.toml``) is a TOML file of ``[[case]]`` rows, each one
 project: a ``config`` that is its ``ubproject.toml``, a ``source`` that is the body of its
 one document, optional ``files``, and an ``expect`` table of values (as ``needs.json``
-writes them), unset fields, absent fields, and findings. The rules every runner follows
+writes them), unset fields, absent fields, needs not created, field schemas, and
+findings. The rules every runner follows
 are in each corpus's header; this module is the part of sphinx-needs' runners that does
 not depend on which corpus it runs. Each runner keeps what does: its path, its case
 count, its codes, its ``conf.py``, its title, its shape test, and the readers a finding
@@ -33,6 +34,7 @@ __all__ = [
     "Finding",
     "Reader",
     "case_files",
+    "check_schema",
     "check_values",
     "inside",
     "match_findings",
@@ -192,8 +194,8 @@ def check_values(
     needs: Mapping[str, Mapping[str, Any]], expect: Mapping[str, Any]
 ) -> list[str]:
     """The problems with a case's pinned values: ``needs`` (values, type-strict),
-    ``nulls`` (present and null) and ``absent`` (the need present, the field not in its
-    record); an empty list when every pin holds."""
+    ``nulls`` (present and null), ``absent`` (the need present, the field not in its
+    record) and ``missing`` (the need not created); an empty list when every pin holds."""
     problems = []
     for need_id, fields in expect.get("needs", {}).items():
         if need_id not in needs:
@@ -224,6 +226,29 @@ def check_values(
                 problems.append(
                     f"{need_id}.{name}: {needs[need_id][name]!r}, expected no such field"
                 )
+    for need_id in expect.get("missing", []):
+        # a need the source gives that is not created is no key of the needs at all
+        if need_id in needs:
+            problems.append(f"{need_id}: created, expected no such need")
+    return problems
+
+
+def check_schema(
+    properties: Mapping[str, Mapping[str, Any]], expect: Mapping[str, Any]
+) -> list[str]:
+    """The problems with a case's pinned field schemas: each key a ``schema.<field>``
+    table gives, compared type-strict with the field's entry in the ``needs_schema``
+    *properties* of ``needs.json``; a key it leaves out is not compared."""
+    problems = []
+    for name, keys in expect.get("schema", {}).items():
+        if name not in properties:
+            problems.append(f"schema.{name}: no such field")
+            continue
+        for key, value in keys.items():
+            if key not in properties[name]:
+                problems.append(f"schema.{name}.{key}: no such key")
+            elif not same(actual := properties[name][key], value):
+                problems.append(f"schema.{name}.{key}: {actual!r}, expected {value!r}")
     return problems
 
 
