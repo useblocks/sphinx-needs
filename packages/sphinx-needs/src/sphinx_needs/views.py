@@ -236,7 +236,7 @@ class NeedsView(Mapping[str, "NeedItem"]):
             i for value in values for i in self._indexes.indexes.types.get(value, [])
         )
 
-    def filter_statuses(self, values: Iterable[str | None]) -> NeedsView:
+    def filter_statuses(self, values: list[str] | list[str | None]) -> NeedsView:
         """Create new view with only needs that have certain ``status`` field values.
 
         :param values: Statuses to filter by; ``None`` selects the needs without one.
@@ -406,7 +406,9 @@ class NeedsAndPartsListView:
             i for value in values for i in self._indexes.indexes.types.get(value, [])
         )
 
-    def filter_statuses(self, values: Iterable[str | None]) -> NeedsAndPartsListView:
+    def filter_statuses(
+        self, values: list[str] | list[str | None]
+    ) -> NeedsAndPartsListView:
         """Create new view with only needs/parts that have certain ``status`` field values.
 
         :param values: Statuses to filter by; ``None`` selects the needs/parts without one.

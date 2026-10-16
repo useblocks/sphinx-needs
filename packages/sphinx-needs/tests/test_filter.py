@@ -493,6 +493,23 @@ def test_filter_needs_parts(filter_string, expected_ids, strict_eval):
     assert {n["id"] for n in result} == set(expected_ids)
 
 
+def test_filter_needs_parts_id_none_on_narrowed_view():
+    """``id == None`` selects nothing on a view a directive option already narrowed.
+
+    A needtable or needlist with ``:status:`` narrows the view before its filter
+    runs; the fast path for ``id == <constant>`` used to keep every need of such a
+    view for ``None``, as every need's own entry has the part id ``None``.
+    """
+    narrowed = create_needs_view().to_list_with_parts().filter_statuses(["done"])
+    assert len(narrowed) > 0
+    mock_config = Mock()
+    mock_config.filter_data = {"xxx": True}
+    result = filter_needs_parts(
+        narrowed, mock_config, "id == None", str, strict_eval=True
+    )
+    assert list(result) == []
+
+
 def test_filter_needs_then_parts():
     npl = (
         create_needs_view()
