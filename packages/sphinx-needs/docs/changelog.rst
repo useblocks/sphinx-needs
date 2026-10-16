@@ -100,8 +100,12 @@ Improvements
   does not declare the field. On a need of another type the field holds ``None``, a value set for it
   in a need is ignored as a ``needs.undeclared_for_type`` warning naming the need, and a need imported
   or external drops it with the same warning (silently when it holds ``None`` anyway, as a needs.json
-  writes it on every need). A :ref:`needextend` refused on the needs of a type is one ``needs.needextend``
-  warning for each need type, naming its needs, instead of one for each need. The fields schema is
+  writes it on every need). A ``derive`` in a need type's ``fields`` or ``links`` entry is the field's (or
+  link type's) ``derive_by_type`` entry for the type and the types inheriting from it, read and checked
+  with the others; beside a ``derive_by_type`` entry for the same type it is a ``needs.config`` warning,
+  and the ``derive_by_type`` entry used. A field declared on need types alone is derived on every type
+  that declares it, or on none. A :ref:`needextend` refused on the needs of a type is one
+  ``needs.needextend`` warning for each need type, naming its needs, instead of one for each need. The fields schema is
   frozen once built, before any document is read: an extension that changes it from an
   ``env-before-read-docs`` handler now gets a ``TypeError``. A per-type ``minItems`` on a link type or
   ``tags`` needs no ``default``: the empty value of a field's type kept from its global declaration

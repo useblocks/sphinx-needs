@@ -347,7 +347,8 @@ Fields per need type
 
 A need type may declare fields and link types anew for its needs, in its entry:
 
-* ``fields``: a dictionary from the name of a field -- one of :ref:`needs_fields`, or a core field such as ``status`` -- to the type's declaration of it;
+* ``fields``: a dictionary from the name of a field -- one of :ref:`needs_fields`, or a core field such as ``status``,
+  or a name no ``needs_fields`` entry declares, a field of this type's needs alone -- to the type's declaration of it;
 * ``links``: a dictionary from the name of a link type -- one of :ref:`needs_links`, or ``links`` -- to the type's declaration of it;
 * ``inherits``: the directive name of one other need type, whose declarations this type starts from.
 
@@ -369,6 +370,8 @@ A declaration in ``fields`` may carry these keys, each as :ref:`needs_fields` ta
      - default value
    * - ``predicates``
      - ``(match expression, value)`` pairs, in place of the field's (an empty list: none)
+   * - ``derive``
+     - rule computing the field on the type's needs: its ``derive_by_type`` entry for the type (below)
 
 and a declaration in ``links`` these, as :ref:`needs_links` takes them:
 
@@ -386,9 +389,20 @@ and a declaration in ``links`` these, as :ref:`needs_links` takes them:
      - default links
    * - ``predicates``
      - ``(match expression, links)`` pairs, in place of the link type's (an empty list: none)
+   * - ``derive``
+     - rule computing the links of the type's needs: its ``derive_by_type`` entry for the type (below)
 
-Anything else in a declaration -- a ``parse_variants``, a ``derive``, a link type's ``incoming`` or ``copy`` --
+Anything else in a declaration -- a ``parse_variants``, a link type's ``incoming`` or ``copy`` --
 is fixed for every need type: it is reported as a ``needs.config`` warning and ignored.
+A ``derive`` is the field's (or link type's) :ref:`derive_by_type <needs_derive_by_type>` entry for the type,
+and for each type inheriting from it that gives no ``derive`` of its own,
+with what a ``derive_by_type`` entry brings: a field :ref:`needs_fields` declares is then derived on every need type,
+closed to authors there too, and a need of a type without a rule holds what :ref:`needs_derive_by_type` says.
+Beside a ``derive_by_type`` entry for the same type, it is one ``needs.config`` warning, and the ``derive_by_type`` entry is used::
+
+   needs_types['story'].fields['total'] sets 'derive', and needs_fields['total'].derive_by_type['story'] another rule for the same type; the need type's rule is ignored
+
+The ``needs.derive_invalid`` warnings of such a rule name the entry it came from (``needs_types['task'].fields['total'].derive: ...``).
 
 .. code-block:: toml
 
@@ -417,8 +431,13 @@ is fixed for every need type: it is reported as a ``needs.config`` warning and i
    [needs.types.safety_req.links.links]
    schema = { maxItems = 3 }
 
+   [needs.types.safety_req.fields.hazard]
+   description = "The hazard a safety requirement mitigates"
+   schema = { type = "string" }
+
 Here a ``req`` must have an ``asil`` (``QM`` unless it says), a ``safety_req`` one of ``A`` to ``D`` (``A`` unless it says),
 and a ``safety_req`` links to three needs at most; the needs of every other type read ``asil`` and ``links`` as declared for all.
+No ``needs_fields`` entry declares ``hazard``: it is a field of the ``safety_req`` needs alone (see below).
 In :file:`conf.py`, the same entries are ``needs_types = {"safety_req": {"title": ..., "inherits": "req", "fields": {"asil": {...}}}, ...}``,
 and in the list shape ``dict(directive="safety_req", title=..., inherits="req", fields={"asil": {...}})``.
 In a TOML file of the list shape, a ``[needs.types.fields.asil]`` table after the ``[[needs.types]]`` tables belongs to the last of them.
@@ -450,19 +469,55 @@ each is one ``needs.type_inherits`` warning, every type on a cycle reported::
    Need type 'a' inherits 'b' on a cycle (a -> b -> a); its inherits is ignored.
    Need type 'e' inherits 'nope', which is not a need type; its inherits is ignored.
 
+**Fields declared on need types alone.**
+A ``fields`` entry naming a field that nothing else declares -- no :ref:`needs_fields` entry, no core field, no link type,
+no field an extension or a service registers -- declares a field of the types that declare it:
+by their own entry or an ancestor's, and an entry that changes nothing (``[needs.types.spec.fields.x]`` with no key) declares the field as it is.
+Every type that declares it agrees on its type, its items' type, and whether it is derived; each is free in the rest.
+The first declaration of a type none of whose ancestors declares the field -- in the order the types are given,
+a parent before its children -- that gives a ``schema`` ``type`` sets them, so the order of ``needs_types`` decides which of two such declarations is refused;
+such a declaration that gives no type takes the agreed one, a child narrows its parent's as for any field,
+and a field no declaration gives a type is refused on every entry, and does not exist.
+A declaration of another type, or derived where the field is not (or the other way round), is one ``needs.type_conflict`` warning::
+
+   needs_types['spec'].fields['x'] cannot be declared with type 'string' (items None): its type is 'integer' (items None) on every need type, as need type 'req' declares it; the entry is ignored
+
+and the entry is ignored, and does not declare the field; an entry that cannot be used for another reason -- it widens, or its default cannot be used -- declares its field all the same, as it was.
+The field is declared once for all, nullable and without a default, which each declaring type narrows:
+one that declares it not nullable, with no default, requires it on its own needs alone.
+On a need of a type that does not declare it, the field holds ``None``.
+A value set for it in a need is ignored, as one ``needs.undeclared_for_type`` warning::
+
+   Field 'x' is not declared on need type 'spec' and cannot be set in need 'S_001'; the value '4' is ignored
+
+and a need imported by :ref:`needimport` or from :ref:`needs_external_needs` drops it with the same warning;
+a value equal to the one the need then holds -- ``None``, which a needs.json carries for every field -- is dropped silently.
+A :ref:`needextend` setting, appending to or deleting it is refused on the needs of the type,
+one ``needs.needextend`` warning for each needextend, need type and option::
+
+   Option 'x' does not support extend operations on need type 'spec'; it does not extend 3 needs (S_001, S_002, S_003).
+
+The field is a field of the project: its value enters the :ref:`fingerprint <needs_derive>` of a need where it is not ``None``,
+on a declaring need (its type's default too), never on a need of another type.
+The :ref:`needs.json <needs_builder_format>` carries it on every need, ``null`` on the needs of the other types,
+and its schema once, nullable, with no default, and the description ``Declared by need types 'req', 'spec'``.
+A ``derive`` makes it derived on every type that declares it (a child inheriting its parent's rule), and a derived one takes no ``enum``.
+
 **What cannot be declared.**
 A declaration that cannot be applied is ignored as a whole, as one ``needs.type_conflict`` warning, such as::
 
-   needs_types['spec'].fields['x'] declares 'x', which is not a field; the entry is ignored
+   needs_types['spec'].links['x'] declares 'x', which is not a link type; the entry is ignored
 
-when it names no field of its table (a link type under ``fields``, a field under ``links``, or a name declared nowhere),
+when it names no field of its table (a link type under ``fields``, a field under ``links``, a name under ``links`` declared nowhere,
+or under ``fields`` a name no need type gives a ``schema`` ``type``, above),
 changes the field's type, which is the same on every need type
 (``... cannot be declared with type 'integer' (items None): its type is 'string' (items None) on every need type; the entry is ignored``),
 or carries a ``schema``, ``default`` or ``predicates`` that cannot be used (a value of another type, a default of ``title``, which takes none).
 A core field may be declared like any other: ``status`` takes a default and an ``enum``.
 A :ref:`derived <needs_derive>` field or link type (one with ``derive`` or ``derive_by_type``) takes only a ``description``,
 a narrower ``schema`` and (a field) ``nullable``: its rules give its value, so a ``default`` or ``predicates`` is refused,
-and so is a ``schema`` adding an ``enum`` to a field that has none, as its rules are checked against the field's own declaration.
+and so is a ``schema`` adding an ``enum`` to a field that has none, as its rules are checked against the field's own declaration
+(a derived field declared on need types alone takes none).
 
 **The value of a need.**
 A field a need of the type does not set takes the first matching predicate of the type's declaration
@@ -527,7 +582,8 @@ For new fields the following can be defined:
     The field is derived on every need type, see :ref:`needs_derive_by_type`.
     *New in version 9.0.0.*
 
-A need type may declare a field anew for its needs, narrowing it: see :ref:`needs_types_fields`.
+A need type may declare a field anew for its needs, narrowing it, or declare one no ``needs_fields`` entry declares,
+for the needs of the types that declare it alone: see :ref:`needs_types_fields`.
 
 For example:
 
@@ -982,7 +1038,7 @@ Its keys are need types, by their directive name (the value ``type`` holds, as a
 and each value is a rule, as ``derive`` takes one.
 A need uses the rule of its type, else ``derive``, else none.
 A need type's own declaration of a derived field (:ref:`needs_types_fields`) narrows its description, schema and ``nullable``,
-but gives it no default.
+but gives it no default; a ``derive`` in it is the type's ``derive_by_type`` entry.
 
 Effort written on tasks and rolled up through stories and epics takes two fields:
 the one authors write, and a derived one, which copies it on a task and sums itself over the links of a story or an epic:

@@ -239,7 +239,9 @@ loop that builds `needs_fields` entries, before the rules are checked, and the c
 readers that run before the schema exists see its name through `type_field_names`. Absence is per
 field, a projection in the views, not overlays: `_localise(name, declaring)`, and on every other
 type the field is one absent declaration (`directive_option` and `allow_extend` false) shared by
-those types; `type_declarations` stays the declarations the configuration makes.
+those types; `type_declarations` stays the declarations the configuration makes. A `derive` in an
+entry is folded into the field's `derive_by_type` where `create_schema` reads it, so the rule checks
+see it with the others; derivation is part of a field's shape when need types alone declare it.
 The normaliser at `config-inited` checks only the shape of those keys, and the resolver checks it
 again, with the normaliser's helpers, for an entry added after it. The schema has two tiers.
 The union, `FieldsSchema` itself, answers a field's shape (`FieldShape`, `LinkShape`: its name,
