@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792168627213,
+  "lastUpdate": 1792173371467,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -25740,6 +25740,42 @@ window.BENCHMARK_DATA = {
             "value": 40.424943965,
             "unit": "s",
             "extra": "Commit: 94c3ac4088b7c27e48e9a506a6c3b5e5410a41b6\nBranch: master\nTime: 2026-10-16T18:35:55+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1b370c894cc2698cc0882d2988a1f1c3a3f10d7c",
+          "message": "🏷️ Directive nodes declare their attributes' TypedDict; needextract's own four; fourteen suppressions gone (#2304)\n\n## What\n\nTyping only, in `packages/sphinx-needs`, across 12 files. It removes\nfourteen `# ty: ignore` comments, taking the workspace from 134 to 120.\n\n**The node-handler pattern: 10 suppressions across 9 files.** Each node\nhandler (`process_needtables`, `process_needbar` and so on) receives\n`found_nodes: list[nodes.Element]`. Each one then did one of two things,\nand both needed a suppression:\n- it read `node.attributes`, a `dict[str, Any]`, into its directive's\nTypedDict;\n- or it annotated the loop variable with the node class.\n\nThe `needflow` nodes already showed the way: under `TYPE_CHECKING` they\ndeclare a constructor taking `**Unpack[NeedsFlowType]`, and `attributes:\nNeedsFlowType`. This PR gives the same declarations to the\n`needextract`, `needtable`, `needbar`, `needpie`, `needlist`,\n`needsequence` and `needgantt` nodes:\n- **The handlers:** each one narrows its node with `assert\nisinstance(node, <its class>)` and keeps the annotation `current_X:\nXType = node.attributes`, so the type checker now follows a directive's\noptions from the directive into its handler.\n- **The asserts can never fire:** `process_creator` sorts nodes into\nbuckets with the same `isinstance` check, keyed by exactly the class\neach assert names, and nothing else calls the handlers.\n- **`ids`:** the three reads of `node.attributes[\"ids\"]` (needbar,\nneedpie, needtable) become `node[\"ids\"]`, the same lookup. `ids` is\ndocutils' own key, not the directive's, so it isn't in the TypedDict.\n\n**needextract's own four:**\n- **`layout` and `style`:** `NeedsExtractType.layout` and `.style` are\n`str | None`. An absent option leaves them `None`, and their one reader,\n`build_need_repr`, already takes `str | None`.\n- **`build_need_repr` / `LayoutHandler`:** they take `nodes.Element`\ninstead of `Need`. They only read the node's `.children` and pass it as\na warning location, and needextract hands them a container.\n- **`_replace_pending_xref_refdoc`:** it recurses only into `Element`\nchildren. The only other docutils node is `Text`, whose `children` is\n`()`, so nothing changes.\n\n**Six stay in needextract, on purpose.**\n- Three hand a detached container to `ImageCollector.process_doc`,\n`DownloadFileCollector.process_doc` and `SphinxTransformer`, which are\ntyped for a whole document. That is the deliberate workaround its own\ncomment describes as hacky.\n- Three are the Sphinx ≥ 8.2 `env.current_document` branch. The type\ncheck runs against Sphinx 7.4, which doesn't have that attribute.\n\n**A limit of the checker.** ty 0.0.84 checks the typed constructors for\nmissing keys and wrong value types, but it does not reject an extra\nunknown keyword (`Needtable(\"\", bogus=1, **attributes)`). The existing\n`needflow` declarations have the same blind spot. Every construction\nsite builds its keyword arguments from a TypedDict literal, and ty does\nreject an unknown key there.\n\n## Why\n\nContinues #1835. `needextract.py` was its largest remaining cluster, and\nthe node-handler pattern accounted for ten more suppressions across the\ndirectives.\n\n## Tests\n\nNo new test: nothing changes at run time.\n- **Mutations:** each of these makes `uv run poe typecheck` fail:\n- removing any one of the nine asserts (seven handlers plus needflow's\ntwo);\n  - leaving out a required key where a node is constructed;\n  - passing the wrong TypedDict or a wrong value type;\n  - reading or writing a key the TypedDict doesn't declare;\n  - calling `.upper()` on needextract's `layout` or `style`;\n  - putting back `layout: str`;\n  - dropping the `Element` check in the refdoc walk.\n- **Adversarial review:** an independent reviewer returned\n**SHIP-WITH-FIXES**. It confirmed:\n- that the bucket key in the dispatcher matches every assert, and no\nother caller or subclass exists;\n  - `node[\"ids\"]` in docutils 0.21.2 and 0.22.4;\n  - `LayoutHandler`'s use of the node;\n- that none of the six remaining suppressions has a clean fix against\nthe 7.4 floor.\n\nIts one SHOULD: without the `current_X: XType` annotation, removing the\nassert left needbar, needpie and needsequence silently untyped. That is\nfixed in `5193dbe` (`a1d9b3a` before the rebase), and all nine asserts\nare now load-bearing. The fix went back to the same reviewer, which\nreturned **SHIP**: removing any of the nine asserts now fails the type\ncheck, and the fix is annotations only.\n- **Gates**, after rebasing onto master `94c3ac4`:\n  - lint, typecheck and `test-needs` (3274 passed) at `5193dbe`;\n- before the rebase, the reviewer's targeted runs over the twelve\naffected directive suites (314 tests).\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue. *(Written by Claude Code at a\nmaintainer's request.)*\n- [x] I ran the package's tests (`uv run poe test-<package>`) and they\npass.\n- [x] Documentation is updated where behaviour or options change. *(No\nbehaviour changes.)*\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*. *(sphinx-needs: Internal changes.)*\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-16T19:54:40+02:00",
+          "tree_id": "231c1625cf3ce921df72b2eb54124cbece334572",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/1b370c894cc2698cc0882d2988a1f1c3a3f10d7c"
+        },
+        "date": 1792173360646,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.11643340699999527,
+            "unit": "s",
+            "extra": "Commit: 1b370c894cc2698cc0882d2988a1f1c3a3f10d7c\nBranch: master\nTime: 2026-10-16T19:54:40+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 57.365767206,
+            "unit": "s",
+            "extra": "Commit: 1b370c894cc2698cc0882d2988a1f1c3a3f10d7c\nBranch: master\nTime: 2026-10-16T19:54:40+02:00"
           }
         ]
       }
