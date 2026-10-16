@@ -1817,13 +1817,14 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 if field_data.derive is None
                 else parse_derive(field_data.derive, on_link=False)
             )
-            raw_by_type, entries = _folded_rules(
-                name,
-                field_data.derive_by_type,
-                field_rules.get(name, {}),
-                f"{field_data.source}[{name!r}]",
-            )
-            spellings.update(((False, name, t), entry) for t, entry in entries.items())
+            raw_by_type = field_data.derive_by_type
+            if rules := field_rules.get(name):
+                raw_by_type, entries = _folded_rules(
+                    name, raw_by_type, rules, f"{field_data.source}[{name!r}]"
+                )
+                spellings.update(
+                    ((False, name, t), entry) for t, entry in entries.items()
+                )
             by_type, by_type_problems = _read_derive_by_type(
                 name, False, raw_by_type, need_types
             )
@@ -1948,13 +1949,12 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             display_config = LinkDisplayConfig(**display_kwargs)
             derive = None
             by_type = None
-            type_rules = link_rules.get(name, {})
-            raw_by_type, entries = _folded_rules(
-                name,
-                link.get("derive_by_type"),
-                type_rules,
-                f"{config_source}[{name!r}]",
-            )
+            raw_by_type = link.get("derive_by_type")
+            entries: dict[str, str] = {}
+            if type_rules := link_rules.get(name, {}):
+                raw_by_type, entries = _folded_rules(
+                    name, raw_by_type, type_rules, f"{config_source}[{name!r}]"
+                )
             if link.get("derive") is not None or raw_by_type is not None:
                 if name in CORE_LINK_TYPES or name in NeedsCoreFields:
                     # a core link type is not derived, nor a link type named after a
@@ -2568,6 +2568,12 @@ def _type_derive_rules(
     rule reaches its children, each of which may give its own; an entry refused for
     its field's shape gives none.
     """
+    if not any(
+        "derive" in keys
+        for entry in types.values()
+        for keys in entry.get(table, {}).values()
+    ):
+        return {}  # no rule in any entry: nothing to walk
     #: need type -> name -> its rule, its own or its nearest ancestor's
     effective: dict[str, dict[str, tuple[Any, str, bool]]] = {}
     for need_type in order:
