@@ -514,7 +514,8 @@ class NeedItem:
         )
         self._core = core.copy()
         self._extras = extras.copy()
-        # one set shared by the needs of a build: a frozenset is not copied
+        # one set shared by the needs of a build, per process (a parallel worker
+        # unpickles its own): a frozenset is not copied
         self._derived = frozenset(derived)
         self._links: dict[str, list[NeedLink]] = {
             key: [NeedLink.from_string(v) if isinstance(v, str) else v for v in value]
