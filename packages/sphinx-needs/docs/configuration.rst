@@ -499,7 +499,7 @@ each is one ``needs.type_inherits`` warning, every type on a cycle reported::
 
 **Fields declared on need types alone.**
 A ``fields`` entry naming a field that nothing else declares -- no :ref:`needs_fields` entry, no core field, no link type,
-no field an extension or a service registers -- declares a field of the types that declare it:
+no field an extension or a service registers, nor a link type's back links, ``<l>_back`` -- declares a field of the types that declare it:
 by their own entry or an ancestor's, and an entry that changes nothing (``[needs.types.spec.fields.x]`` with no key) declares the field as it is.
 Every type that declares it agrees on its type, its items' type, and whether it is derived; each is free in the rest.
 The first declaration of a type none of whose ancestors declares the field -- in the order the types are resolved
@@ -592,11 +592,22 @@ A declaration that cannot be applied is ignored as a whole, as one ``needs.type_
 
    needs_types['spec'].links['x'] declares 'x', which is a field, not a link type; the entry is ignored
 
-when it names no field of its table (a link type under ``fields``, a field or a link type's back links (``links_back``) under ``links``, an empty name,
+when it names no field of its table (a link type or a link type's back links (``links_back``) under ``fields``,
+a field or a link type's back links under ``links``, an empty name,
 or under ``fields`` a name no need type gives a ``schema`` ``type``, above),
 changes the field's type, which is the same on every need type
 (``... cannot be declared with type 'integer' (items None): its type is 'string' (items None) on every need type; the entry is ignored``),
 or carries a ``schema``, ``default`` or ``predicates`` that cannot be used (a value of another type, a default of ``title``, which takes none).
+A link type's back links are computed on every need, so an entry naming them, in either table, declares nothing,
+and the back links are computed and validated as without it::
+
+   needs_types['spec'].fields['links_back'] declares 'links_back', which is a link type's back links; the entry is ignored
+
+A name belongs to one declaration, and the back links of a link type ``l`` claim ``l_back``.
+Where two declarations claim one name, the back links of ``links`` and ``parent_needs`` win over any other declaration,
+a global one (:ref:`needs_fields`, :ref:`needs_links` and the others, an extension's or a service's) wins over a need type's,
+and between two global ones a name declared outright wins over back links, so the link type whose back links collide is refused (:ref:`needs_links`);
+between two link types need types declare alone, back links win: of ``x`` and ``x_back``, the entries of ``x_back`` are refused.
 A core field may be declared like any other: ``status`` takes a default and an ``enum``.
 A :ref:`derived <needs_derive>` field or link type (one with ``derive`` or ``derive_by_type``) takes only a ``description``,
 a narrower ``schema`` and (a field) ``nullable``: its rules give its value, so a ``default`` or ``predicates`` is refused,
@@ -677,6 +688,10 @@ For new fields the following can be defined:
 
 A need type may declare a field anew for its needs, narrowing it, or declare one no ``needs_fields`` entry declares,
 for the needs of the types that declare it alone: see :ref:`needs_types_fields`.
+
+A field named as a link type's back links, ``<name>_back``, is kept, and the link type is refused (:ref:`needs_links`);
+but a field named ``links_back`` or ``parent_needs_back``, the back links of the link types every project has,
+is ignored, one ``needs.config`` warning, as it is when an extension or a service registers it.
 
 For example:
 
@@ -1507,6 +1522,17 @@ The above example configuration allows the following usage:
 Link types with name **links** and **parent_needs** are added by default.
 You are free to overwrite the default config by defining your own type with name **links** or **parent_needs**.
 This type will be used as default configuration for all links.
+
+The back links of a link type are named ``<name>_back`` on every need.
+A link type whose back links would have the name of a field -- of :ref:`needs_fields` or :ref:`needs_extra_options`,
+or one an extension or a service registers -- or of another link type is refused, one ``needs.config`` warning naming both::
+
+   needs_links entry 'x' declares the link type 'x', whose back links would be 'x_back', which is a field (from needs_fields); the link type is ignored
+
+and does not exist: the need directive has no option of its name, its needs have no back links,
+and neither the needs.json, a :ref:`needflow` nor a :ref:`needtable` knows it; the field (or link type) ``x_back`` keeps its values.
+The back links of ``links`` and ``parent_needs`` yield to nothing: a link type, or a field, named ``links_back`` or ``parent_needs_back`` is ignored instead,
+one ``needs.config`` warning.
 
 Default values
 ++++++++++++++
@@ -4581,6 +4607,9 @@ Each configured link should define:
 - ``style`` (optional): A plantuml style description, e.g. "#FFCC00". Used for :ref:`needflow`. See :ref:`links_style`.
 - ``style_part`` (optional): Same as ``style``, but get used if link is connected to a :ref:`need_part`.
   See :ref:`links_style`.
+
+The back links of a link type are named ``<option>_back``, and one whose back links would have the name of a field
+or of another link type is refused, one ``needs.config`` warning, as for :ref:`needs_links`.
 
 Configuration example:
 
