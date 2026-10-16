@@ -202,7 +202,7 @@ Internal changes
   ``tests/fixtures/field_declaration_conformance.toml``: 38 cases, one project each, the rules of the
   section as cases, with the values their needs hold and the findings they give; this repository is its
   repository of record and ubCode is to vendor it. Its runner and the derived-field corpus's share their
-  corpus-independent half, ``sphinx_needs_testkit.conformance`` (:issue:`2269`, :pr:`2290`)
+  corpus-independent half, ``sphinx_needs_testkit.conformance`` (:issue:`2269`, :pr:`2291`)
 
 - 🔧 ``ENV_DATA_VERSION`` is 13: the first build after upgrading re-reads every document, so a
   ``join`` rule that 9.0.0 refused, and a ``links_from_match`` it did not know, are shown on the
