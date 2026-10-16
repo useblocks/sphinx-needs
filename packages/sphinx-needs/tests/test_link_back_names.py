@@ -435,6 +435,41 @@ def test_the_finding_names_the_entry_that_declares_the_link_type(
     assert _needs(app)["T_001"]["x_back"] == "authored"
 
 
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            FIELD_X_BACK + LINKS_X + "needs_types = [\n"
+            "    dict(directive='t', title='T', prefix='T_',\n"
+            "         fields={'x': {'schema': {'type': 'string'}}}),\n"
+            "    dict(directive='u', title='U', prefix='U_', links={'x': {}}),\n"
+            "]\n",
+            ".. t:: A\n   :id: T_001\n   :x: hello\n\n"
+            ".. u:: B\n   :id: U_001\n   :x: T_001\n",
+        )
+    ],
+    indirect=True,
+)
+def test_a_refused_link_type_leaves_its_name_free(test_app: Any) -> None:
+    """A refused link type does not exist, so its name is free: a need type may declare
+    a field of that name (its needs hold it), and another type's ``links`` entry of the
+    name names that field, not a link type."""
+    app = test_app
+    app.build()
+    assert _warnings(app) == [
+        _refused("needs_links entry 'x'", "x_back", "a field (from needs_fields)"),
+        "WARNING: needs_types['u'].links['x'] declares 'x', which is a field, not a "
+        "link type; the entry is ignored [needs.type_conflict]",
+        "<srcdir>/index.rst:8: WARNING: Field 'x' is not declared on need type 'u' "
+        "and cannot be set in need 'U_001'; the value 'T_001' is ignored "
+        "[needs.undeclared_for_type]",
+    ]
+    assert _schema(app).get_link_field("x") is None
+    needs = _needs(app)
+    assert (needs["T_001"]["x"], needs["U_001"]["x"]) == ("hello", None)
+    assert _properties(app)["x"]["field_type"] == "extra"
+
+
 #: a nested need, so that both core link types have back links
 CORE_INDEX = (
     ".. t:: A\n   :id: T_001\n\n   .. u:: B\n      :id: U_001\n      :links: T_001\n"
