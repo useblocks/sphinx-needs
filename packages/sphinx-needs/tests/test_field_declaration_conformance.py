@@ -50,7 +50,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "field_declaration_conformanc
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 33
+EXPECTED_CASE_COUNT = 37
 
 #: The codes of the per-type declaration contract, compared as bare subcodes; every
 #: other finding (a ``needs.config`` warning, a dead link) is each tool's own.
@@ -164,6 +164,9 @@ def test_every_case_has_a_complete_expectation() -> None:
         for table in ("needs", "nulls", "absent", "missing"):
             for need_id in expect.get(table, {}):
                 assert _NEED_ID.fullmatch(need_id), (name, need_id)
+        # a need pinned as not created is one the source gives, so a typo cannot pass
+        for need_id in expect.get("missing", []):
+            assert f":id: {need_id}\n" in case["source"], (name, need_id)
         for finding in expect["findings"]:
             assert set(finding) <= set(KEYS), name
             assert finding["code"] in SHARED_CODES, name
