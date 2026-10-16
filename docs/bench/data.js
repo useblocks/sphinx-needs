@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792164299980,
+  "lastUpdate": 1792168082140,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -25668,6 +25668,42 @@ window.BENCHMARK_DATA = {
             "value": 62.47569528299999,
             "unit": "s",
             "extra": "Commit: 26cc211bffb1ebe611c3550a2857f5cf8bbe4823\nBranch: master\nTime: 2026-10-16T17:23:23+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "156692956+shivampwm2020@users.noreply.github.com",
+            "name": "Shivam Maurya",
+            "username": "shivampwm2020"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2cf5eb2e699a13a82baa64fa4a8a11e8d178138f",
+          "message": "🐛 Sort the needs_global_options unknown-keys finding (#2290)\n\n## What\n\nIn `packages/sphinx-needs`, the `needs.config` warning that\n`create_schema` emits for a `needs_global_options` value with unknown\nkeys now lists those keys with `sorted(...)`, like the import and\nexternal-need \"Unknown keys\" findings already do. A test in\n`test_field_defaults.py` pins the sorted text, and `docs/changelog.rst`\nhas an entry under *Unreleased*.\n\n## Why\n\nThe keys came from a `set`, so the message followed the hash seed and\nchanged from run to run:\n\n```\nneeds_global_options 'x' value contains unknown keys: {'l', 'g', 'b', 'o'}\nneeds_global_options 'x' value contains unknown keys: {'o', 'b', 'l', 'g'}\n```\n\nA warning whose text is not stable cannot be pinned by a test or matched\nby a downstream filter. Printing `sorted(unknown)` matches\n`needimport.py`'s \"Unknown keys in import need source\" and\n`external_needs.py`'s \"Unknown keys in external need source\", which is\nwhat the issue asks for.\n\nCloses #2288.\n\n## Tests\n\n`test_field_defaults.py`: `test_unknown_global_option_keys_are_sorted`\nbuilds a one-page project whose `needs_global_options` entry carries\nthree unknown keys given in a non-alphabetical order (`unexpected_z`,\n`unexpected_a`, `unexpected_m`), and asserts the full warning list, the\nfinding naming them sorted. I confirmed it is red without the source\nchange on all 20 `PYTHONHASHSEED` values `1`-`20`.\n\nThe warning is the only place the text is asserted; `grep` for `contains\nunknown keys` across `packages/` finds no other project or snapshot that\ndepends on the old repr.\n\n## Checklist\n\n- [x] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-needs`) and they pass.\n- [x] Documentation is updated where behaviour or options change.\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.\n\nCo-authored-by: Shivam Maurya <shivam@programmingwithmaurya.com>\nCo-authored-by: Chris Sewell <chrisj_sewell@hotmail.com>",
+          "timestamp": "2026-10-16T18:26:35+02:00",
+          "tree_id": "b2173dc4e03f4493216c8d9a3e2ccc96b7fb8545",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/2cf5eb2e699a13a82baa64fa4a8a11e8d178138f"
+        },
+        "date": 1792168073596,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1098621500000121,
+            "unit": "s",
+            "extra": "Commit: 2cf5eb2e699a13a82baa64fa4a8a11e8d178138f\nBranch: master\nTime: 2026-10-16T18:26:35+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 58.006380369,
+            "unit": "s",
+            "extra": "Commit: 2cf5eb2e699a13a82baa64fa4a8a11e8d178138f\nBranch: master\nTime: 2026-10-16T18:26:35+02:00"
           }
         ]
       }
