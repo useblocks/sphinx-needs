@@ -1701,7 +1701,12 @@ class TypeFieldsSchema(FieldsSchema):
     def declares(self, name: str) -> bool:
         """Whether the need type declares the field or link type ``name``: every one
         but a field declared on need types alone (in their ``needs_types`` entries)
-        that this type does not declare. The global view declares every one."""
+        that this type does not declare. The global view declares every one.
+
+        It answers ``True`` for any other name, a field or not, and a view made
+        directly (not by :meth:`FieldsSchema.for_type`) declares every name: ask it
+        about the fields of the view.
+        """
         return name not in self._undeclared
 
     def get_any_field(self, name: str) -> FieldSchema | LinkSchema | None:

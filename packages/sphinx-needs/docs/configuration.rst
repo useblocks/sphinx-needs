@@ -398,9 +398,10 @@ A ``derive`` is the field's (or link type's) :ref:`derive_by_type <needs_derive_
 and for each type inheriting from it that gives no ``derive`` of its own,
 with what a ``derive_by_type`` entry brings: a field :ref:`needs_fields` declares is then derived on every need type,
 closed to authors there too, and a need of a type without a rule holds what :ref:`needs_derive_by_type` says.
-Beside a ``derive_by_type`` entry for the same type, it is one ``needs.config`` warning, and the ``derive_by_type`` entry is used::
+Beside a ``derive_by_type`` entry for the same type, it is one ``needs.config`` warning, and the ``derive_by_type`` entry is used for that type alone:
+the types inheriting from it, without a rule of their own, still read the entry's rule::
 
-   needs_types['story'].fields['total'] sets 'derive', and needs_fields['total'].derive_by_type['story'] another rule for the same type; the need type's rule is ignored
+   needs_types['story'].fields['total'] sets 'derive', and needs_fields['total'].derive_by_type['story'] another rule for the same type; the need type's rule is ignored for it (the need types inheriting from it still read it)
 
 The ``needs.derive_invalid`` warnings of such a rule name the entry it came from (``needs_types['task'].fields['total'].derive: ...``).
 

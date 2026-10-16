@@ -95,15 +95,18 @@ Improvements
   :ref:`needs_types` naming no field :ref:`needs_fields`, an extension or a service declares, and no
   core field or link type, declares a field of the types that declare it -- in their own entries or an
   ancestor's, an empty entry included -- absent on every other type (:ref:`needs_types_fields`). Every
-  type that declares it agrees on its type and items' type, which the first type to give a
-  ``schema`` ``type`` sets; a declaration of another type is a ``needs.type_conflict`` warning, and
-  does not declare the field. On a need of another type the field holds ``None``, a value set for it
+  type that declares it agrees on its type and items' type, which the first need type without an
+  ancestor declaring it that gives a ``schema`` ``type`` sets; such a declaration of another type is a
+  ``needs.type_conflict`` warning, and does not declare the field (a child of a declaring type still
+  declares it, through its parent). On a need of another type the field holds ``None``, a value set for it
   in a need is ignored as a ``needs.undeclared_for_type`` warning naming the need, and a need imported
   or external drops it with the same warning (silently when it holds ``None`` anyway, as a needs.json
-  writes it on every need). A ``derive`` in a need type's ``fields`` or ``links`` entry is the field's (or
-  link type's) ``derive_by_type`` entry for the type and the types inheriting from it, read and checked
-  with the others; beside a ``derive_by_type`` entry for the same type it is a ``needs.config`` warning,
-  and the ``derive_by_type`` entry used. A field declared on need types alone is derived on every type
+  writes it on every need); the needs.json describes it as ``Declared by need types ...``, naming the
+  declarations without a declaring ancestor. A ``derive`` in a need type's ``fields`` or ``links`` entry
+  is the field's (or link type's) ``derive_by_type`` entry for the type and the types inheriting from
+  it, read and checked with the others (a rule that cannot be read is reported for each type that reads
+  it); beside a ``derive_by_type`` entry for the same type it is a ``needs.config`` warning, and the
+  ``derive_by_type`` entry used for that type (the types inheriting from it still read the entry's rule). A field declared on need types alone is derived on every type
   that declares it, or on none. A :ref:`needextend` refused on the needs of a type is one
   ``needs.needextend`` warning for each need type, naming its needs, instead of one for each need. The fields schema is
   frozen once built, before any document is read: an extension that changes it from an

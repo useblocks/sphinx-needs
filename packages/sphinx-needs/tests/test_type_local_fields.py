@@ -1126,7 +1126,8 @@ def test_a_derive_in_a_need_types_entry(test_app: Any) -> None:
     assert build_warnings(app) == [
         "WARNING: needs_types['story'].fields['total'] sets 'derive', and "
         "needs_fields['total'].derive_by_type['story'] another rule for the same "
-        "type; the need type's rule is ignored [needs.config]",
+        "type; the need type's rule is ignored for it (the need types inheriting "
+        "from it still read it) [needs.config]",
         _conflict(
             "needs_types['bug'].fields['score'] cannot be declared without a "
             "'derive': it is derived on every need type that declares it, as need "
