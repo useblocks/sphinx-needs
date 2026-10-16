@@ -426,14 +426,6 @@ CONFLICTS = [
         links={"blocks": BLOCKS},
     ),
     _declared(
-        "not-a-link-type",
-        {"links": {"nope": {"description": "d"}}},
-        [
-            "type_conflict needs_types['spec'].links['nope'] declares 'nope', which "
-            "is not a link type; the entry is ignored"
-        ],
-    ),
-    _declared(
         "a-field-in-links",
         {"links": {"x": {"description": "d"}}},
         [

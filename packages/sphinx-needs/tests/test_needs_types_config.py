@@ -452,11 +452,17 @@ FINDINGS = [
             "needs_types entry 1 ('req').fields['status'] has an unknown key "
             "'parse_variants'; known keys are description, schema, nullable, "
             "default, predicates, derive; the key is ignored",
-            "needs_types entry 1 ('req').links['links'] has unknown keys 'nullable', "
-            "'incoming'; known keys are description, schema, default, predicates, "
-            "derive; the keys are ignored",
+            "needs_types entry 1 ('req').links['links'] has an unknown key "
+            "'nullable'; known keys are description, schema, default, predicates, "
+            "derive, incoming, outgoing, copy, allow_dead_links, color, style, "
+            "style_part, style_start, style_end; the key is ignored",
+            # a link type's display is a key of every links entry, and refused when
+            # the schema is built on a link type declared otherwise
+            "needs_types['req'].links['links'] sets 'incoming', which a need type "
+            "gives only a link type declared on need types alone; 'links' keeps its "
+            "own on every need type and the key is ignored",
         ],
-        [{**REQ, "fields": {"status": {}}, "links": {"links": {}}}],
+        [{**REQ, "fields": {"status": {}}, "links": {"links": {"incoming": "in"}}}],
         id="declaration-unknown-keys",
     ),
     _conf_case(
