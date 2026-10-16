@@ -199,7 +199,7 @@ Internal changes
   ``profile`` decorator preserves the signature of what it wraps
 
 - 🧪 A conformance corpus for :ref:`fields per need type <needs_types_fields>`,
-  ``tests/fixtures/field_declaration_conformance.toml``: 37 cases, one project each, the rules of the
+  ``tests/fixtures/field_declaration_conformance.toml``: 38 cases, one project each, the rules of the
   section as cases, with the values their needs hold and the findings they give; this repository is its
   repository of record and ubCode is to vendor it. Its runner and the derived-field corpus's share their
   corpus-independent half, ``sphinx_needs_testkit.conformance`` (:issue:`2269`, :pr:`2290`)

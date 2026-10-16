@@ -1108,6 +1108,42 @@ type = "test"
 field = "title_copy"
 
 [[case]]
+name = "derived-field-narrower-schema"
+why = "a derived field's rules are checked against the field's own declaration, so its computed values are kept on every type; a type's narrower schema is validation's, a field_fail on that type's need alone, whichever type's need comes first"
+config = '''
+[needs.fields.title_copy]
+schema = { type = "string" }
+derive = { kind = "copy", field = "title" }
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.fields.title_copy]
+schema = { maxLength = 5 }
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+'''
+source = '''
+.. req:: Too long a title
+   :id: REQ_1
+
+.. spec:: Too long a title
+   :id: SPEC_1
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+title_copy = "Too long a title"
+[case.expect.needs.SPEC_1]
+title_copy = "Too long a title"
+[[case.expect.findings]]
+code = "field_fail"
+need = "REQ_1"
+field = "title_copy"
+
+[[case]]
 name = "derive-in-a-type-entry"
 why = "a derive in a type's entry is the field's rule for the type and for each child without its own: a child's rule overrides it; the field is closed to authors on every type, and a type without a rule holds null"
 config = '''
