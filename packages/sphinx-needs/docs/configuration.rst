@@ -606,8 +606,10 @@ and the back links are computed and validated as without it::
 A name belongs to one declaration, and the back links of a link type ``l`` claim ``l_back``.
 Where two declarations claim one name, the back links of ``links`` and ``parent_needs`` win over any other declaration,
 a global one (:ref:`needs_fields`, :ref:`needs_links` and the others, an extension's or a service's) wins over a need type's,
-and between two global ones a name declared outright wins over back links, so the link type whose back links collide is refused (:ref:`needs_links`);
+and between two global ones a name declared outright wins over back links, so the link type whose back links collide is refused (:ref:`needs_links`),
+and a link type that is itself refused claims no name: of ``x``, ``x_back`` and ``x_back_back``, ``x_back`` is refused and ``x`` kept;
 between two link types need types declare alone, back links win: of ``x`` and ``x_back``, the entries of ``x_back`` are refused.
+A refused link type leaves its name free, so a need type may declare a field of that name.
 A core field may be declared like any other: ``status`` takes a default and an ``enum``.
 A :ref:`derived <needs_derive>` field or link type (one with ``derive`` or ``derive_by_type``) takes only a ``description``,
 a narrower ``schema`` and (a field) ``nullable``: its rules give its value, so a ``default`` or ``predicates`` is refused,
@@ -1525,12 +1527,14 @@ This type will be used as default configuration for all links.
 
 The back links of a link type are named ``<name>_back`` on every need.
 A link type whose back links would have the name of a field -- of :ref:`needs_fields` or :ref:`needs_extra_options`,
-or one an extension or a service registers -- or of another link type is refused, one ``needs.config`` warning naming both::
+or one an extension or a service registers -- or of another link type, one not refused itself, is refused, one ``needs.config`` warning naming both::
 
    needs_links entry 'x' declares the link type 'x', whose back links would be 'x_back', which is a field (from needs_fields); the link type is ignored
 
 and does not exist: the need directive has no option of its name, its needs have no back links,
 and neither the needs.json, a :ref:`needflow` nor a :ref:`needtable` knows it; the field (or link type) ``x_back`` keeps its values.
+A link type that is itself refused claims no name: of the link types ``x``, ``x_back`` and ``x_back_back``,
+``x_back`` is refused and ``x`` kept, its back links named ``x_back``.
 The back links of ``links`` and ``parent_needs`` yield to nothing: a link type, or a field, named ``links_back`` or ``parent_needs_back`` is ignored instead,
 one ``needs.config`` warning.
 
