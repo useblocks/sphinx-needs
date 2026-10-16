@@ -124,7 +124,7 @@ A type's entry constrains its needs in two ways, which are checked differently:
   ``pattern``, ``minItems``, ``maxItems``, ...) is checked by the schema validation, together with the schema rules,
   and a need that breaks it is reported and kept;
 - a **structural declaration** -- a field that is not nullable on the type, or a field or link type that only some types
-  declare -- is checked while the documents are read, and what does not fit it is dropped: the value, or the whole need.
+  declare -- is checked when the need is created, and what does not fit it is dropped: the value, or the whole need.
 
 The examples below come from one project in the test suite,
 `doc_schema_per_type <https://github.com/useblocks/sphinx-needs/tree/master/packages/sphinx-needs/tests/doc_test/doc_schema_per_type>`__,
@@ -198,8 +198,8 @@ Here only a ``test`` has ``verifies`` links, and a ``test`` must have at least o
    :start-after: # [type-local]
    :end-before: # [/type-local]
 
-A ``verifies`` set on a need of another type is dropped while the documents are read, with the source location,
-and the need is kept without it:
+A ``verifies`` set on a need of another type is dropped while the documents are read,
+with a warning giving its place in the document, and the need is kept without it:
 
 .. code-block:: text
 
@@ -265,11 +265,12 @@ When and how violations are reported
      - ``nullable = false``; a field or link type of some types only
    * - checked
      - by the schema validation, after the documents are read, together with the schema rules
-     - while the documents are read
+     - when the need is created: while the documents are read, or when external needs are loaded
    * - reported as
      - ``sn_schema_violation.field_fail`` or ``sn_schema_violation.link_fail``,
        always of severity ``violation``, with no custom message and no source location
-     - a warning with the source location (``needs.create_need``, ``needs.undeclared_for_type``)
+     - a warning (``needs.create_need``, ``needs.undeclared_for_type``),
+       with its place in the document for a need read from the documents
    * - the need
      - is kept, with its value, and listed in :ref:`schema_violation_json`
      - is kept without the value, or is not created
@@ -279,7 +280,8 @@ When and how violations are reported
    * - external needs
      - checked too: a need from :ref:`needs_external_needs` is validated as its type declares;
        a type's entry cannot leave such needs out
-     - see :ref:`needs_types_fields`
+     - applied too, with warnings that give no place in a document
+       (``needs.load_external_need`` for a need that is not created), see :ref:`needs_types_fields`
 
 The constraint keywords of a type's entry are suppressed with the same ``suppress_warnings`` entries as other schema findings
 (:ref:`suppress_validation_messages`): ``sn_schema_violation.field_fail`` hides every field's, of every type at once.
