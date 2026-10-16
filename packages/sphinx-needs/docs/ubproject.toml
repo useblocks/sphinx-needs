@@ -141,106 +141,91 @@ nullable = true
 description = "Unit specification"
 nullable = true
 
-[[needs.types]]
-directive = "int"
+[needs.types.int]
 title = "Interface"
 prefix = "I_"
 color = "#BFD8D2"
 style = "card"
 
-[[needs.types]]
-directive = "comp"
+[needs.types.comp]
 title = "Component"
 prefix = "C_"
 color = "#BFD8D2"
 style = "card"
 
-[[needs.types]]
-directive = "sys"
+[needs.types.sys]
 title = "System"
 prefix = "S_"
 color = "#BFD8D2"
 style = "card"
 
-[[needs.types]]
-directive = "req"
+[needs.types.req]
 title = "Requirement"
 prefix = "R_"
 color = "#BFD8D2"
 style = "node"
 
-[[needs.types]]
-directive = "spec"
+[needs.types.spec]
 title = "Specification"
 prefix = "S_"
 color = "#FEDCD2"
 style = "node"
 
-[[needs.types]]
-directive = "impl"
+[needs.types.impl]
 title = "Implementation"
 prefix = "I_"
 color = "#DF744A"
 style = "node"
 
-[[needs.types]]
-directive = "test"
+[needs.types.test]
 title = "Test Case"
 prefix = "T_"
 color = "#DCB239"
 style = "node"
 
-[[needs.types]]
-directive = "feature"
+[needs.types.feature]
 title = "Feature"
 prefix = "F_"
 color = "#FFCC00"
 style = "node"
 
-[[needs.types]]
-directive = "user"
+[needs.types.user]
 title = "User"
 prefix = "U_"
 color = "#777777"
 style = "node"
 
-[[needs.types]]
-directive = "action"
+[needs.types.action]
 title = "Action"
 prefix = "A_"
 color = "#FFCC00"
 style = "node"
 
-[[needs.types]]
-directive = "milestone"
+[needs.types.milestone]
 title = "Milestone"
 prefix = "M_"
 color = "#FF3333"
 style = "node"
 
-[[needs.types]]
-directive = "tutorial-project"
+[needs.types.tutorial-project]
 title = "Project"
 prefix = "P_"
 color = "#BFD8D2"
 style = "rectangle"
 
-[[needs.types]]
-directive = "tutorial-req"
+[needs.types.tutorial-req]
 title = "Requirement"
 prefix = "R_"
 color = "#BFD8D2"
 style = "rectangle"
 
-[[needs.types]]
-directive = "tutorial-spec"
+[needs.types.tutorial-spec]
 title = "Specification"
 prefix = "S_"
 color = "#FEDCD2"
 style = "rectangle"
 
-[[needs.types]]
-directive = "tutorial-test"
+[needs.types.tutorial-test]
 title = "Test Case"
 prefix = "T_"
 color = "#f9e79f"
