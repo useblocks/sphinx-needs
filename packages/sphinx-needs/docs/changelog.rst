@@ -107,7 +107,9 @@ Improvements
   it, read and checked with the others (a rule that cannot be read is reported for each type that reads
   it); beside a ``derive_by_type`` entry for the same type it is a ``needs.config`` warning, and the
   ``derive_by_type`` entry used for that type (the types inheriting from it still read the entry's rule). A field declared on need types alone is derived on every type
-  that declares it, or on none. A :ref:`needextend` refused on the needs of a type is one
+  that declares it, or on none, and a ``links`` entry naming no link type declares a link type of the
+  types that declare it, its labels, styles, ``copy`` and dead links set by its first root (``[]`` on
+  the needs of every other type; :issue:`2285`). A :ref:`needextend` refused on the needs of a type is one
   ``needs.needextend`` warning for each need type, naming its needs, instead of one for each need. The fields schema is
   frozen once built, before any document is read: an extension that changes it from an
   ``env-before-read-docs`` handler now gets a ``TypeError``. A per-type ``minItems`` on a link type or
@@ -115,7 +117,7 @@ Improvements
   (``[]``, ``""``, ``0``, ``0.0``, ``false``) is no default for a per-type narrowing (:issue:`2277`).
   The per-type fields of
   :issue:`2269`
-  (`discussion #1646 <https://github.com/useblocks/sphinx-needs/discussions/1646>`__; :pr:`2281`, :pr:`2284`)
+  (`discussion #1646 <https://github.com/useblocks/sphinx-needs/discussions/1646>`__; :pr:`2281`, :pr:`2284`, :pr:`NNNN`)
 
 - 👌 A derived field cannot be set on a need: ``need[name] = value`` for a field with a
   :ref:`derive <needs_derive>` rule raises ``KeyError``, where it used to set a value the rule
