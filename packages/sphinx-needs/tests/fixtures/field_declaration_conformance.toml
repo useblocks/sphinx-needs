@@ -47,8 +47,8 @@
 #     entry, no core field, no link type) is carried by every need, `null` on the needs of
 #     a type that does not declare it; a field no declaration of which is usable does not
 #     exist, and is no key of any need. A link type need types alone declare (no
-#     `[needs.links.*]` or `[[needs.extra_links]]` entry, no core link type, no field) is
-#     carried by every need too, `[]` -- no links -- on the needs of a type that does not
+#     `[needs.links.*]` or `[[needs.extra_links]]` entry, no core link type, no field, nor
+#     a link type's back links, `<l>_back`) is carried by every need too, `[]` -- no links -- on the needs of a type that does not
 #     declare it, never null: no link list is null, and an empty one is no links
 #   - a `[needs.fields.<name>]` entry without `nullable` is nullable in both tools, so its
 #     unset value is null; a case writes `nullable = false` where it means the type's empty
@@ -2190,7 +2190,7 @@ fp = "474d91e1c8f4c48cff7420a4074fa18dc65cdde78303bcb667a3d1b8fba63051"
 
 [[case]]
 name = "type-local-link-type"
-why = "a links entry naming what nothing else declares is a link type of the types declaring it, by their entry, an empty one, or a parent's: [] on every other type's needs, never null, and a link set there is one undeclared_for_type and ignored; its back links are on every need (a derived count over them); needs.json declares it once, by the types without a declaring ancestor"
+why = "a links entry naming what nothing else declares is a link type of the types declaring it, by their entry, an empty one, or a parent's (a child's own agreeing entry included): [] on every other type's needs, never null, and a link set there is one undeclared_for_type and ignored; its back links are on every need (a derived count over them); needs.json declares it once, by the types without a declaring ancestor"
 config = '''
 [needs.fields.n]
 schema = { type = "integer" }
@@ -2208,6 +2208,9 @@ incoming = "is verified by"
 title = "Safety requirement"
 prefix = "SR_"
 inherits = "req"
+
+[needs.types.sreq.links.verifies]
+incoming = "is verified by"
 
 [needs.types.test]
 title = "Test case"
@@ -2260,7 +2263,7 @@ type = "spec"
 
 [[case]]
 name = "type-local-link-first-root-sets-the-shape"
-why = "the first root declaration of a link type, an empty one too, sets its incoming, outgoing, copy, dead links and style (the needs_links defaults for what it leaves out); another declaration may repeat a value and no more: a later root giving another value, a key the first left out included, is one type_conflict and does not declare the link type (its need holds [], a link there is undeclared_for_type); a child giving another value is one type_conflict, its default ignored, and still declares it through its parent"
+why = "the first root declaration of a link type, an empty one too, sets its incoming, outgoing, copy, dead links and style (the needs_links defaults for what it leaves out); another declaration may repeat a value and no more: a later root giving another value, a key the first left out included, is one type_conflict and does not declare the link type (its need holds [], a link there is undeclared_for_type); a child giving another value is one type_conflict, its default ignored, and still declares it through its parent; a child of a refused root is a root of its own"
 config = '''
 [needs.types.a]
 title = "A"
@@ -2290,6 +2293,13 @@ inherits = "a"
 [needs.types.ca.links.rel]
 outgoing = "other"
 default = ["A_001"]
+
+[needs.types.bb]
+title = "BB"
+prefix = "BB_"
+inherits = "b"
+
+[needs.types.bb.links.rel]
 
 [needs.types.req]
 title = "Requirement"
@@ -2324,6 +2334,10 @@ source = '''
    :id: CA_002
    :rel: A_001
 
+.. bb:: A root of its own: its parent is refused
+   :id: BB_001
+   :rel: A_001
+
 .. req:: Sets the shape
    :id: REQ_1
    :verifies: A_001
@@ -2341,12 +2355,14 @@ rel = ["A_001"]
 rel = []
 [case.expect.needs.CA_002]
 rel = ["A_001"]
+[case.expect.needs.BB_001]
+rel = ["A_001"]
 [case.expect.needs.REQ_1]
 verifies = ["A_001"]
 [case.expect.needs.BAD_001]
 verifies = []
 [case.expect.schema.rel]
-description = "Declared by need types 'a', 'c'"
+description = "Declared by need types 'a', 'c', 'bb'"
 [[case.expect.findings]]
 code = "type_conflict"
 type = "b"
@@ -2372,7 +2388,7 @@ type = "bad"
 
 [[case]]
 name = "type-local-link-derived"
-why = "a derive in the first root declaration makes the link type derived on every type declaring it, a child inheriting the rule, and a root without one is one type_conflict; an author's links are derive_authored on a declaring type, undeclared_for_type on another, whose needs hold []"
+why = "a derive in the first root declaration makes the link type derived on every type declaring it, a child inheriting the rule, and a root without one is one type_conflict; an empty first root makes it not derived, and a later root with a derive is one type_conflict, its rule not applied; an author's links are derive_authored on a declaring type, undeclared_for_type on another, whose needs hold []"
 config = '''
 [needs.types.req]
 title = "Requirement"
@@ -2399,6 +2415,19 @@ prefix = "P_"
 [needs.types.spec]
 title = "Specification"
 prefix = "S_"
+
+[needs.types.early]
+title = "Early"
+prefix = "EA_"
+
+[needs.types.early.links.notes]
+
+[needs.types.late]
+title = "Late"
+prefix = "LA_"
+
+[needs.types.late.links.notes]
+derive = { kind = "links", where = "type == 'req'" }
 '''
 source = '''
 .. req:: Mentioned
@@ -2420,6 +2449,13 @@ source = '''
 .. spec:: Does not declare it
    :id: SPEC_1
    :mentions: REQ_1
+
+.. early:: Sets the shape, not derived
+   :id: EARLY_1
+   :notes: REQ_1
+
+.. late:: Refused: derived
+   :id: LATE_1
 '''
 [case.expect]
 [case.expect.needs.TASK_1]
@@ -2430,6 +2466,14 @@ mentions = ["REQ_1", "REQ_2"]
 mentions = []
 [case.expect.needs.SPEC_1]
 mentions = []
+[case.expect.needs.EARLY_1]
+notes = ["REQ_1"]
+[case.expect.needs.LATE_1]
+notes = []
+[[case.expect.findings]]
+code = "type_conflict"
+type = "late"
+field = "notes"
 [case.expect.schema.mentions]
 description = "Declared by need types 'task'"
 [[case.expect.findings]]
@@ -2709,7 +2753,7 @@ links = []
 
 [[case]]
 name = "link-and-field-of-one-name"
-why = "a name one type declares under fields and another under links, neither declared otherwise, is a field, whichever comes first: the links entry is one type_conflict, and on its type the field is null, a value there undeclared_for_type"
+why = "a name one type declares under fields and another under links, neither declared otherwise, is a field when a declaration of a type without a declaring ancestor gives it a schema type, whichever comes first: the links entry is one type_conflict, and on its type the field is null, a value there undeclared_for_type; otherwise the fields entries are refused (one type_conflict each), and the links entries declare the link type"
 config = '''
 [needs.types.e]
 title = "E"
@@ -2723,6 +2767,31 @@ prefix = "F_"
 
 [needs.types.f.fields.both]
 schema = { type = "string" }
+
+[needs.types.g]
+title = "G"
+prefix = "G_"
+
+[needs.types.g.fields.both2]
+schema = { type = "string" }
+
+[needs.types.h]
+title = "H"
+prefix = "H_"
+
+[needs.types.h.links.both2]
+
+[needs.types.i]
+title = "I"
+prefix = "I_"
+
+[needs.types.i.fields.rl2]
+
+[needs.types.j]
+title = "J"
+prefix = "J_"
+
+[needs.types.j.links.rl2]
 '''
 source = '''
 .. e:: Its links entry is refused
@@ -2732,12 +2801,35 @@ source = '''
 .. f:: Declares the field
    :id: F_001
    :both: x
+
+.. g:: Declares the field, given first
+   :id: G_001
+   :both2: y
+
+.. h:: Its links entry is refused
+   :id: H_001
+   :both2: G_001
+
+.. i:: Its untyped fields entry is refused
+   :id: I_001
+   :rl2: J_001
+
+.. j:: Declares the link type
+   :id: J_001
+   :rl2: I_001
 '''
 [case.expect]
 [case.expect.needs.F_001]
 both = "x"
+[case.expect.needs.G_001]
+both2 = "y"
+[case.expect.needs.I_001]
+rl2 = []
+[case.expect.needs.J_001]
+rl2 = ["I_001"]
 [case.expect.nulls]
 E_001 = ["both"]
+H_001 = ["both2"]
 [[case.expect.findings]]
 code = "type_conflict"
 type = "e"
@@ -2747,6 +2839,85 @@ code = "undeclared_for_type"
 need = "E_001"
 field = "both"
 type = "e"
+[[case.expect.findings]]
+code = "type_conflict"
+type = "h"
+field = "both2"
+[[case.expect.findings]]
+code = "undeclared_for_type"
+need = "H_001"
+field = "both2"
+type = "h"
+[[case.expect.findings]]
+code = "type_conflict"
+type = "i"
+field = "rl2"
+[[case.expect.findings]]
+code = "undeclared_for_type"
+need = "I_001"
+field = "rl2"
+type = "i"
+
+[[case]]
+name = "link-type-named-as-back-links"
+why = "a links entry named as a link type's back links (links_back) declares nothing: it is one type_conflict, and the back links are computed on every need as without it (a derived count over them); a link type whose back links would have the name of a field is one type_conflict on each entry, and does not exist"
+config = '''
+[needs.fields.n]
+schema = { type = "integer" }
+nullable = false
+derive = { kind = "count", over = "links_back" }
+
+[needs.fields.x_back]
+schema = { type = "string" }
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.links.x]
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.links.links_back]
+
+[needs.types.spec.links.x]
+'''
+source = '''
+.. spec:: Linked to
+   :id: SPEC_1
+
+.. req:: Links it
+   :id: REQ_1
+   :links: SPEC_1
+
+.. req:: Links it
+   :id: REQ_2
+   :links: SPEC_1, REQ_1
+'''
+[case.expect]
+[case.expect.needs.SPEC_1]
+n = 2
+[case.expect.needs.REQ_1]
+n = 1
+[case.expect.needs.REQ_2]
+n = 0
+[case.expect.absent]
+SPEC_1 = ["x"]
+REQ_1 = ["x"]
+[[case.expect.findings]]
+code = "type_conflict"
+type = "spec"
+field = "links_back"
+[[case.expect.findings]]
+code = "type_conflict"
+type = "req"
+field = "x"
+[[case.expect.findings]]
+code = "type_conflict"
+type = "spec"
+field = "x"
 
 # --- what cannot be declared ----------------------------------------------------------
 

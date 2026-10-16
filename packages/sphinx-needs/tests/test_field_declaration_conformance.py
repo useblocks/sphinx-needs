@@ -50,7 +50,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "field_declaration_conformanc
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 46
+EXPECTED_CASE_COUNT = 47
 
 #: The codes of the per-type declaration contract, compared as bare subcodes; every
 #: other finding (a ``needs.config`` warning, a dead link) is each tool's own.

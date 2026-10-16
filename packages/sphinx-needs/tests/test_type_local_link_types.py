@@ -859,7 +859,15 @@ def test_from_outside(make_app: Any, tmp_path: Path) -> None:
                         }
                     },
                     req={"links": {"links": {"incoming": "in"}}},
-                    impl={"links": {"parent_needs": {"style": "bold"}}},
+                    impl={
+                        "links": {
+                            "parent_needs": {
+                                "style": "bold",
+                                "color": "#ff0000",
+                                "copy": True,
+                            }
+                        }
+                    },
                 ),
                 f"needs_links = {{'blocks': {BLOCKS!r}}}\n",
             ),
@@ -868,7 +876,7 @@ def test_from_outside(make_app: Any, tmp_path: Path) -> None:
     ],
     indirect=True,
 )
-def test_the_display_of_a_link_type_declared_otherwise_is_not_a_types(
+def test_the_display_of_a_link_type_declared_otherwise_is_no_types_own(
     test_app: Any,
 ) -> None:
     """A link type ``needs_links`` declares, ``links`` and ``parent_needs`` are drawn,
@@ -886,10 +894,10 @@ def test_the_display_of_a_link_type_declared_otherwise_is_not_a_types(
         "which a need type gives only a link type declared on need types alone; "
         "'blocks' keeps its own on every need type and the keys are ignored "
         "[needs.config]",
-        "WARNING: needs_types['impl'].links['parent_needs'] sets 'style', which a "
-        "need type gives only a link type declared on need types alone; "
-        "'parent_needs' keeps its own on every need type and the key is ignored "
-        "[needs.config]",
+        "WARNING: needs_types['impl'].links['parent_needs'] sets 'copy', 'color' and "
+        "'style', which a need type gives only a link type declared on need types "
+        "alone; 'parent_needs' keeps its own on every need type and the keys are "
+        "ignored [needs.config]",
     ]
     assert _values(app, "blocks", "links") == {
         "R_001": ([], []),
@@ -993,6 +1001,207 @@ def test_a_name_under_fields_and_links_is_a_field(test_app: Any) -> None:
     ]
     assert _values(app, "both") == {"E_001": (None,), "F_001": ("x",)}
     assert _schema(app).get_link_field("both") is None
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            _conf(
+                {
+                    "e": {"title": "E", "prefix": "E_", "links": {"rl2": {}}},
+                    "f": {"title": "F", "prefix": "F_", "fields": {"rl2": {}}},
+                }
+            ),
+            ".. e:: A\n   :id: E_001\n   :rl2: F_001\n\n.. f:: B\n   :id: F_001\n",
+        )
+    ],
+    indirect=True,
+)
+def test_a_name_under_links_and_untyped_fields_is_a_link_type(test_app: Any) -> None:
+    """A name under ``fields`` and ``links``, neither declared otherwise, whose
+    ``fields`` declarations give it no ``schema`` ``type``, is no field: the ``fields``
+    entries are refused, and the ``links`` entries declare the link type."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        _conflict(
+            "needs_types['f'].fields['rl2'] declares 'rl2', which no needs_fields "
+            "entry declares, and no need type without an ancestor declaring it gives "
+            "it a 'schema' 'type'"
+        ),
+    ]
+    assert _values(app, "rl2", "rl2_back") == {
+        "E_001": (["F_001"], []),
+        "F_001": ([], ["E_001"]),
+    }
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            _conf(
+                _types(
+                    req={"links": {"z": {}}},
+                    spec={
+                        "links": {
+                            "links_back": {},
+                            "parent_needs_back": {},
+                            "blocks_back": {},
+                            "z_back": {},
+                        }
+                    },
+                ),
+                f"needs_links = {{'blocks': {BLOCKS!r}}}\n",
+            ),
+            ".. req:: A\n   :id: R_001\n\n"
+            ".. req:: B\n   :id: R_002\n   :links: R_001\n   :blocks: R_001\n"
+            "   :z: R_001\n\n"
+            ".. spec:: C\n   :id: S_001\n   :links: R_001\n\n"
+            "   .. req:: D\n      :id: R_003\n",
+        )
+    ],
+    indirect=True,
+)
+def test_the_back_links_of_a_link_type_are_no_link_type(test_app: Any) -> None:
+    """A ``links`` entry named as the back links of a link type -- of ``links``, of
+    ``parent_needs``, of a ``needs_links`` type, of a link type declared on need
+    types alone -- declares nothing: it is refused as no link type, and the back links
+    are computed on every need, as without it."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        _conflict(
+            f"needs_types['spec'].links[{name!r}] declares {name!r}, which is not a "
+            "link type"
+        )
+        for name in ("links_back", "parent_needs_back", "blocks_back", "z_back")
+    ]
+    assert _values(app, "links_back", "parent_needs_back", "blocks_back", "z_back") == {
+        "R_001": (["R_002", "S_001"], [], ["R_002"], ["R_002"]),
+        "R_002": ([], [], [], []),
+        "S_001": ([], ["R_003"], [], []),
+        "R_003": ([], [], [], []),
+    }
+    properties = _version(app)["needs_schema"]["properties"]
+    for name in ("links_back", "parent_needs_back", "blocks_back", "z_back"):
+        assert properties[name]["field_type"] == "backlinks", name
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            _conf(
+                _types(
+                    req={"fields": {"y_back": {"schema": {"type": "string"}}}},
+                    spec={"links": {"x": {}, "y": {}, "w": {}}},
+                    impl={"links": {"x": {"incoming": "x in"}}},
+                ),
+                "needs_fields = {'x_back': {'schema': {'type': 'string'}}}\n"
+                "needs_links = {'w_back': {}}\n",
+            ),
+            ".. req:: A\n   :id: R_001\n",
+        )
+    ],
+    indirect=True,
+)
+def test_a_link_type_whose_back_links_are_named_already_is_refused(
+    test_app: Any,
+) -> None:
+    """A link type declared on need types alone whose back links would have the name
+    of a field, or of a link type, is refused on every entry, and does not exist; the
+    build goes on."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        _conflict(
+            f"needs_types[{need_type!r}].links[{name!r}] declares {name!r}, whose back "
+            f"links would be '{name}_back', which is {what}"
+        )
+        for need_type, name, what in (
+            ("spec", "x", "a field"),
+            ("impl", "x", "a field"),
+            ("spec", "y", "a field"),
+            ("spec", "w", "a link type"),
+        )
+    ]
+    for name in ("x", "y", "w"):
+        assert _schema(app).get_link_field(name) is None, name
+    assert _needs(app)["R_001"]["x_back"] is None
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            _conf(
+                _types(
+                    req={
+                        "fields": {"": {"schema": {"type": "string"}}},
+                        "links": {"": {}},
+                    }
+                )
+            ),
+            ".. req:: A\n   :id: R_001\n",
+        )
+    ],
+    indirect=True,
+)
+def test_an_empty_name_is_no_field_and_no_link_type(test_app: Any) -> None:
+    """An entry of an empty name is refused as naming nothing, and the build goes on."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        _conflict("needs_types['req'].fields[''] declares '', which is not a field"),
+        _conflict("needs_types['req'].links[''] declares '', which is not a link type"),
+    ]
+    assert _needs(app)["R_001"]["id"] == "R_001"
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            _conf(
+                {
+                    "a": {
+                        "title": "A",
+                        "prefix": "A_",
+                        "fields": {"x": {"schema": {"type": "string"}}},
+                        "links": {"rel": {}},
+                    },
+                    "t": {
+                        "title": "T",
+                        "prefix": "T_",
+                        "fields": {"x": {"schema": {"type": "integer"}}},
+                        "links": {"x": {}, "rel": {"incoming": "other"}},
+                    },
+                }
+            ),
+            ".. a:: A\n   :id: A_001\n",
+        )
+    ],
+    indirect=True,
+)
+def test_the_entries_refused_for_their_shape_are_per_table(test_app: Any) -> None:
+    """An entry refused for the shape of the field it declares says nothing of a
+    ``links`` entry of the same name on the type, nor the other way round: that one
+    is reported for what it names."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        _conflict(
+            "needs_types['t'].fields['x'] cannot be declared with type 'integer' "
+            "(items None): its type is 'string' (items None) on every need type, as "
+            "need type 'a' declares it"
+        ),
+        _cannot("t", "rel", "incoming", "other", "rel incoming", "a"),
+        _conflict(
+            "needs_types['t'].links['x'] declares 'x', which is a field, not a link type"
+        ),
+    ]
 
 
 @pytest.mark.parametrize(
