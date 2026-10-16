@@ -105,15 +105,28 @@
 #     `details.field`), not from the warning stream, so each is counted once
 #   - a runner that cannot read a record carrying one of these codes FAILS the case rather
 #     than skip the record
+#   - a version whose `needs_defaults_removed` is `true` is read with its `needs_schema`
+#     defaults merged under each need's record, as a reader of `needs.json` merges them: a
+#     default fills a key the record lacks, a stated value wins; the `needs`, `nulls`,
+#     `absent` and `missing` pins are compared against those records. Every other version
+#     is compared as written, so a writer that leaves a key out without saying so fails
+#     every case that pins it. A field that does not exist has no schema property, so it
+#     is still no key of the record
 #   - a `nulls` entry names a need of the case and a field that need carries: `needs.json`
-#     writes every declared field (and link type) on every need, null included, so a
-#     runner asserts the need and the field are PRESENT, then that the value is null; a
-#     missing need or field fails the case
+#     writes every declared field (and link type) on every need, null included (one a
+#     version whose `needs_defaults_removed` is `true` leaves out is restored by the merge
+#     above), so a runner asserts the need and the field are PRESENT, then that the value
+#     is null; a missing need or field fails the case
 #   - an `absent` entry names a need of the case and a field that does NOT exist: the
 #     runner asserts the need is present and the field is no key of its record (not a
 #     null: a null is a field that exists and is unset)
 #   - a `missing` entry names a need the case's source gives that is NOT created: the
 #     runner asserts its id is no key of the needs `needs.json` writes
+#   - an `omitted` entry names a need of the case and a field its WRITTEN record leaves
+#     out, under `json_remove_defaults`: the runner asserts the version's
+#     `needs_defaults_removed` is `true`, the need is present, the field is no key of the
+#     record as `needs.json` writes it, and is a key once the version's `needs_schema`
+#     defaults are merged under it
 #   - a `schema.<field>` table names keys of the field's entry in the `needs_schema`
 #     `properties` `needs.json` writes, each compared as a value is; a key it leaves out
 #     is not compared
@@ -139,6 +152,7 @@
 #     nulls            - <ID> = [the fields pinned as unset] (TOML has no null)
 #     absent           - <ID> = [the fields pinned as not existing]
 #     missing          - [the ids of needs pinned as not created]
+#     omitted          - <ID> = [the fields the written record leaves out]
 #     schema.<field>   - one table per pinned field schema: key = value
 
 # --- the field's own declaration, and the value of a need ---------------------------
@@ -3224,3 +3238,147 @@ field = "owner"
 code = "type_conflict"
 type = "test"
 field = "owner"
+
+# --- needs.json without its defaults --------------------------------------------------
+
+[[case]]
+name = "defaults-left-out-equal-the-field-default"
+why = "under json_remove_defaults, needs.json leaves a value out where it equals the default its field's needs_schema entry carries, never a need type's: a need holding its type's default, its own type's or one inherited, writes it; a need holding the schema's default leaves it out, and the schema restores it; a value equal to the default but of another JSON type (1.0 against 1, [1.0] against [1]) is written"
+config = '''
+[needs]
+json_remove_defaults = true
+
+[needs.fields.asil]
+schema = { type = "string", enum = ["QM", "A", "B", "C", "D"] }
+default = "QM"
+
+[needs.fields.weight]
+schema = { type = "number" }
+default = 1
+
+[needs.fields.weights]
+schema = { type = "array", items = { type = "number" } }
+default = [1]
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.fields.asil]
+default = "A"
+
+[needs.types.spec.fields.lvl]
+schema = { type = "integer" }
+default = 1
+
+[needs.types.child]
+title = "Child"
+prefix = "C_"
+inherits = "spec"
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+'''
+source = '''
+.. spec:: Its type's default
+   :id: SPEC_001
+   :weight: 1.0
+   :weights: 1.0
+
+.. spec:: The field's own default, authored
+   :id: SPEC_002
+   :asil: QM
+
+.. child:: An inherited type default
+   :id: CHILD_001
+
+.. req:: The field's own default
+   :id: REQ_001
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_001]
+asil = "A"
+lvl = 1
+weight = 1.0
+weights = [1.0]
+[case.expect.needs.SPEC_002]
+asil = "QM"
+lvl = 1
+[case.expect.needs.CHILD_001]
+asil = "A"
+lvl = 1
+[case.expect.needs.REQ_001]
+asil = "QM"
+[case.expect.nulls]
+REQ_001 = ["lvl"]
+[case.expect.omitted]
+SPEC_002 = ["asil"]
+REQ_001 = ["asil", "lvl", "weight", "weights"]
+[case.expect.schema.asil]
+default = "QM"
+
+[[case]]
+name = "defaults-left-out-restored-from-the-file"
+why = "a value a needs.json leaves out is restored from the file's own needs_schema, the field's default in the project that wrote it, and not from the importing project's declarations, a need type's default or the field's; the importing project's defaults fill only a field the file's schema gives no default; a value the file states is kept"
+config = '''
+[needs.fields.asil]
+schema = { type = "string", enum = ["QM", "A", "B", "C", "D"] }
+default = "B"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.fields.asil]
+default = "A"
+
+[needs.types.spec.fields.lvl]
+schema = { type = "integer" }
+default = 1
+'''
+source = '''
+.. needimport:: other.json
+   :filter: id == 'SPEC_001'
+
+.. needimport:: other.json
+   :filter: id == 'SPEC_002'
+
+.. needimport:: other.json
+   :filter: id == 'SPEC_003'
+'''
+files = { "other.json" = '''
+{
+  "current_version": "1.0",
+  "versions": {
+    "1.0": {
+      "needs_amount": 3,
+      "needs_defaults_removed": true,
+      "needs_schema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "asil": {"type": ["string", "null"], "description": "", "field_type": "extra", "default": "QM"}
+        }
+      },
+      "needs": {
+        "SPEC_001": {"id": "SPEC_001", "type": "spec", "title": "Left out"},
+        "SPEC_002": {"id": "SPEC_002", "type": "spec", "title": "Written", "asil": "A"},
+        "SPEC_003": {"id": "SPEC_003", "type": "spec", "title": "Written in full", "asil": "QM"}
+      }
+    }
+  }
+}
+''' }
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_001]
+asil = "QM"
+lvl = 1
+[case.expect.needs.SPEC_002]
+asil = "A"
+lvl = 1
+[case.expect.needs.SPEC_003]
+asil = "QM"
+lvl = 1

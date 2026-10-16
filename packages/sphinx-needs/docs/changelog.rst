@@ -151,6 +151,13 @@ Deprecations
 Bug fixes
 .........
 
+- 🐛 Under :ref:`needs_json_remove_defaults`, a value equal to its field's default but of
+  another JSON type (``1.0`` against a default of ``1``, ``[1.0]`` against ``[1]``) is now
+  written, so a reader gets it back as written. The writer compared with Python's ``==``,
+  so a ``number`` field authored ``1`` (held as ``1.0``) with an integer default of ``1``
+  was left out and read back as ``1``. Nothing else is written that was left out before
+  (:pr:`2306`)
+
 - 🐛 A ``fields`` entry of a need type named as a link type's back links (``links_back``,
   ``parent_needs_back``, or ``rel_back`` beside a ``rel`` link type) is refused, one
   ``needs.type_conflict`` warning, as a ``links`` entry of that name already was, and a

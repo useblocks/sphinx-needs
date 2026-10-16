@@ -70,6 +70,11 @@ valid JSON, or without the version asked for -- is one ``needs.needimport`` warn
 directive, and the directive imports nothing; the build goes on. A local file that is
 missing is read on the next incremental build once it exists.
 
+A value the file leaves out (:ref:`needs_json_remove_defaults`) is restored from the
+file's own ``needs_schema``, the default of the field in the project that wrote it, not
+from this project's declarations: a need type's default here does not fill it. This
+project's defaults fill only a field to which the file's schema gives no default.
+
 .. note::
 
    If you are rebuilding documentation incrementally (for example, when using ``sphinx-autobuild``), Sphinx  automatically detects changes to the *local* JSON files. However, with remote URLs or a ``file://`` URL, you must run a Sphinx build with the ``-E`` flag to rebuild the environment from scratch when the remote file changes.
