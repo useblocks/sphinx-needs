@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 from collections.abc import Iterable, Sequence
+from typing import TYPE_CHECKING
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -26,11 +27,23 @@ from sphinx_needs.utils import (
     save_matplotlib_figure,
 )
 
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
+
 logger = get_logger(__name__)
 
 
 class Needpie(nodes.General, nodes.Element):
-    pass
+    if TYPE_CHECKING:
+
+        def __init__(
+            self,
+            rawsource: str,
+            /,
+            **kwargs: Unpack[NeedsPieType],
+        ) -> None: ...
+
+        attributes: NeedsPieType
 
 
 class NeedpieDirective(FilterBase):
@@ -152,11 +165,12 @@ def process_needpie(
     # NEEDFLOW
     # for node in doctree.findall(Needpie):
     for node in found_nodes:
+        assert isinstance(node, Needpie)
         if not needs_config.include_needs:
             remove_node_from_tree(node)
             continue
 
-        current_needpie: NeedsPieType = node.attributes  # ty: ignore[invalid-assignment]
+        current_needpie = node.attributes
 
         if matplotlib is None:
             message = "Matplotlib missing for needpie plot"
@@ -367,7 +381,7 @@ def process_needpie(
             )
         else:
             # We need to calculate an unique pie-image file name
-            target_id: str = node.attributes["ids"][0]
+            target_id: str = node["ids"][0]
             hash_value = hashlib.sha256(target_id.encode()).hexdigest()[:5]
             image_node = save_matplotlib_figure(
                 app, fig, f"need_pie_{hash_value}", fromdocname

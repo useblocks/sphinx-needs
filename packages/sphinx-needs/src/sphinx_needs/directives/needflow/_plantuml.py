@@ -230,8 +230,8 @@ def process_needflow_plantuml(
     env_data = SphinxNeedsData(env)
     needs_schema = env_data.get_schema()
 
-    node: NeedflowPlantuml
-    for node in found_nodes:  # ty: ignore[invalid-assignment]
+    for node in found_nodes:
+        assert isinstance(node, NeedflowPlantuml)
         if not needs_config.include_needs:
             remove_node_from_tree(node)
             continue

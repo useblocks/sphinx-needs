@@ -30,7 +30,6 @@ from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.logging import log_warning
 from sphinx_needs.need_item import NeedItem
-from sphinx_needs.nodes import Need
 from sphinx_needs.string_links import (
     compiled_string_links,
     split_string_link_value,
@@ -43,7 +42,7 @@ LOGGER = getLogger(__name__)
 
 @measure_time("build_need_repr")
 def build_need_repr(
-    node: Need,
+    node: nodes.Element,
     data: NeedItem,
     app: Sphinx,
     *,
@@ -100,7 +99,7 @@ class LayoutHandler:
         self,
         app: Sphinx,
         need: NeedItem,
-        node: Need,
+        node: nodes.Element,
         *,
         layout: str | None = None,
         style: str | None = None,

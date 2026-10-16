@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -20,9 +21,21 @@ from sphinx_needs.utils import (
     remove_node_from_tree,
 )
 
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
+
 
 class Needlist(nodes.General, nodes.Element):
-    pass
+    if TYPE_CHECKING:
+
+        def __init__(
+            self,
+            rawsource: str,
+            /,
+            **kwargs: Unpack[NeedsListType],
+        ) -> None: ...
+
+        attributes: NeedsListType
 
 
 class NeedlistDirective(FilterBase):
@@ -85,11 +98,12 @@ def process_needlist(
     include_needs = needs_config.include_needs
     # for node in doctree.findall(Needlist):
     for node in found_nodes:
+        assert isinstance(node, Needlist)
         if not include_needs:
             remove_node_from_tree(node)
             continue
 
-        current_needfilter: NeedsListType = node.attributes  # ty: ignore[invalid-assignment]
+        current_needfilter = node.attributes
         content: list[nodes.Node] = []
         found_needs = process_filters(
             app,
