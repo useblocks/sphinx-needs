@@ -14,6 +14,7 @@ from sphinx.application import Sphinx
 from sphinx.util.logging import SphinxLoggerAdapter
 
 from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
+from sphinx_needs.defaults import LAYOUTS
 from sphinx_needs.exceptions import NeedsApiConfigException
 from sphinx_needs.functions.functions import DynamicFunction
 from sphinx_needs.need_item import NeedItem
@@ -104,6 +105,40 @@ def add_need_type(
         }
     )
     _register_need_directive(app, directive)
+
+
+def add_need_layout(app: Sphinx, name: str, layout: dict[str, Any]) -> None:
+    """
+    Adds a new need layout, which a need then names with ``:layout:``.
+
+    The given name must not be a layout of :ref:`needs_layouts` -- sphinx-needs' own
+    layouts included -- or one added with this function already, otherwise
+    NeedsApiConfigException gets raised. The GitHub services' ``github`` layout does not
+    count: a layout added under that name replaces the service's.
+
+    The layout is added to sphinx-needs' own registry, not to the :ref:`needs_layouts`
+    configuration value, which holds only what the project configures (and
+    sphinx-needs' own layouts and the compiled :ref:`needs_card_layouts`). Every reader
+    sees it, through ``NeedsSphinxConfig(app.config).layouts``: the configured
+    layouts, then the added ones, then the GitHub services' one. The layout is used as
+    given, with the structure a :ref:`needs_layouts` entry has (see :ref:`layouts`).
+
+    **Usage**::
+
+        from sphinx_needs.api import add_need_layout
+
+        add_need_layout(
+            app, "my_card", {"grid": "simple", "layout": {"head": ["<<meta('title')>>"]}}
+        )
+
+    :param app: Sphinx application object
+    :param name: Name of the layout, e.g. 'my_card'
+    :param layout: The layout: its ``grid`` and ``layout`` (and optional ``style``)
+    :raises NeedsApiConfigException: If a layout of the name is configured or added.
+    """
+    if name in LAYOUTS or name in NeedsSphinxConfig(app.config)._layouts:
+        raise NeedsApiConfigException(f"{name} already exists as need layout")
+    _NEEDS_CONFIG.add_layout(name, layout)
 
 
 def add_extra_option(
