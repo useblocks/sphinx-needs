@@ -1268,8 +1268,10 @@ class FieldsSchema:
         """Stop the schema from changing: every later change raises ``TypeError``.
 
         The schema of each need type with overlays, of each that does not declare a
-        field declared on need types alone, and the global view, are resolved now; :meth:`for_type` then answers with one of them,
-        so what a need was created with is what every later read of its type answers.
+        field declared on need types alone, and the global view, are resolved now;
+        :meth:`for_type` then answers with one of them, so what a need was created with
+        is what every later read of its type answers (a schema never told its need
+        types resolves the view of a type lacking such a field at its first read).
         ``create_schema`` freezes the schema it builds, as its last step; the first
         :meth:`for_type` freezes a schema built by hand. Freezing again does nothing.
         """

@@ -2434,7 +2434,9 @@ def _type_local_fields(
     registered field, no link type): each the field of the types that declare it, of
     the one shape they agree on.
 
-    A root declaration is one of a type none of whose ancestors declares the field.
+    A root declaration is one of a type none of whose ancestors declares the field:
+    an entry refused for the field's shape declares nothing, so a child of a refused
+    entry is a declaration of its own (a root), checked as any other.
     The first root declaration in ``order`` (a parent before its children) that gives
     a ``schema`` ``type`` sets the field's type and items' type, and whether it is
     derived (it gives a ``derive``); a root declaration that gives no type takes the
@@ -2459,30 +2461,28 @@ def _type_local_fields(
     def inherited(need_type: str, name: str) -> bool:
         node = parent.get(need_type)
         while node is not None:
-            if name in types[node].get("fields", {}):
+            # an entry its shape refuses does not declare the field
+            if name in types[node].get("fields", {}) and (node, name) not in refused:
                 return True
             node = parent.get(node)
         return False
 
-    #: field -> its root declarations, in order
-    roots: dict[str, list[tuple[str, Mapping[str, Any]]]] = {}
+    #: field -> its declarations, in order
+    entries: dict[str, list[tuple[str, Mapping[str, Any]]]] = {}
     for need_type in order:
         for name, keys in types[need_type].get("fields", {}).items():
-            if (
-                isinstance(name, str)
-                and name not in known
-                and not inherited(need_type, name)
-            ):
-                roots.setdefault(name, []).append((need_type, keys))
+            if isinstance(name, str) and name not in known:
+                entries.setdefault(name, []).append((need_type, keys))
     local: dict[str, NewFieldParams] = {}
     refused: set[tuple[str, str]] = set()
     findings: list[str] = []
-    for name, declarations in roots.items():
+    for name, declarations in entries.items():
+        roots: list[str] = []
         #: the agreed type and items' type, and the need type that set them
         agreed: tuple[Any, Any, str] | None = None
         derived = False
         for need_type, keys in declarations:
-            if (shape := _shape_of(keys)) is None:
+            if inherited(need_type, name) or (shape := _shape_of(keys)) is None:
                 continue
             try:
                 validate_field_schema(_field_schema_of(*shape))
@@ -2498,14 +2498,16 @@ def _type_local_fields(
             break
         for need_type, keys in declarations:
             where = f"needs_types[{need_type!r}].fields[{name!r}]"
-            if (need_type, name) in refused or (
-                agreed is not None and need_type == agreed[2]
-            ):
+            if (need_type, name) in refused or inherited(need_type, name):
+                continue
+            roots.append(need_type)
+            if agreed is not None and need_type == agreed[2]:
                 continue
             if agreed is None:
                 text = (
                     f"declares {name!r}, which no needs_fields entry declares, and no "
-                    "need type gives it a 'schema' 'type'"
+                    "need type without an ancestor declaring it gives it a 'schema' "
+                    "'type'"
                 )
             else:
                 type_, items, by = agreed
@@ -2544,9 +2546,7 @@ def _type_local_fields(
                         f"{_derivation_text(derived, agreed[2])}; the entry is ignored"
                     )
                     refused.add((need_type, name))
-        declaring = ", ".join(
-            repr(t) for t, _ in declarations if (t, name) not in refused
-        )
+        declaring = ", ".join(repr(t) for t in roots if (t, name) not in refused)
         local[name] = NewFieldParams(
             source="needs_types",
             description=f"Declared by need types {declaring}",
@@ -2650,8 +2650,10 @@ def _derivation_text(derived: bool, by: str) -> str:
 
 
 def _field_schema_of(type_: Any, items: Any) -> dict[str, Any]:
-    """The schema of a field of a type (and, for an array, of items of a type)."""
-    if type_ == "array":
+    """The schema of a field of a type (and, for an array, of items of a type): an
+    array without an items' type is left without ``items``, so its finding is the one
+    a ``needs_fields`` entry gets."""
+    if type_ == "array" and items is not None:
         return {"type": type_, "items": {"type": items}}
     return {"type": type_}
 
