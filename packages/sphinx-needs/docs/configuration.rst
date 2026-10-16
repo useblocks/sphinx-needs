@@ -399,7 +399,7 @@ and a declaration in ``links`` these, as :ref:`needs_links` takes them:
    * - ``allow_dead_links``
      - whether a link to no need is allowed: likewise
    * - ``color``, ``style``, ``style_part``, ``style_start``, ``style_end``
-     - how :ref:`needflow` draws the links: likewise
+     - the links' color, and their line styles in a :ref:`needflow` (see :ref:`links_style`): likewise
 
 A link type's ``incoming``, ``outgoing``, ``copy``, ``allow_dead_links``, ``color`` and ``style*`` are the same on every need type:
 the first declaration of a link type declared on need types alone without a declaring ancestor sets them,
