@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792158839345,
+  "lastUpdate": 1792164299980,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -25632,6 +25632,42 @@ window.BENCHMARK_DATA = {
             "value": 57.697904856,
             "unit": "s",
             "extra": "Commit: 96da5d275e41859de0c7c5d70bc45cc2e1d3cd2b\nBranch: master\nTime: 2026-10-16T15:52:25+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "26cc211bffb1ebe611c3550a2857f5cf8bbe4823",
+          "message": "📚 Per-type configuration or schema rules: docs, how-to and tested examples (#2295)\n\n## What\n\nIn `packages/sphinx-needs`, the docs now present a need type's own entry\n(`needs_types` → `inherits` / `fields` / `links`) as the place for most\nrules about that type's needs, with schema rules\n(`needs_schema_definitions`, `schemas.json`) for the rest:\n\n- **Schema validation page**: a new section, *Per-type configuration or\nschema rules?* It covers:\n  - what a type's entry can declare;\n- fields and link types of some types only, including which names count\nas declared elsewhere (a service's or an extension's fields among them);\n  - required fields in two strengths;\n  - when and how each kind of violation is reported;\n- what still needs schema rules. A schema rule matches the literal type\nname, so it does not follow `inherits`.\n\nIt also fixes existing text: the link-count list (`maxItems` was\ndescribed as a minimum, and a local `minItems` alone does not report a\nneed with no links), the sources of `field_fail` / `link_fail`, and\nseverity, since a field's or a type's constraints are always\n`violation`.\n- **New how-to, *Modeling need types*** (in the How-tos toctree). It\ncovers:\n- a field only one type has, and status values and tags per type,\nreplacing the deprecated `needs_statuses` / `needs_tags`;\n  - a subtype with `inherits`, and a field required on one type;\n  - a link type only one type may use, and defaults per type;\n  - moving `needs_global_options` predicates into a type's entry;\n  - filters over a field some types lack;\n- two pitfalls: a misspelt field name declares a new field, and a name a\nservice or an extension registers is never a field of one type alone.\n- **`needs_fields` / `needs_links` reference**: which part of a field's\nor link type's `schema` is enforced where. `needs_links` now lists its\n`schema` key.\n- **Tutorial**: it no longer sends users to `needs_statuses` /\n`needs_tags`.\n- **Changelog**: one 📚 entry under a new *Unreleased → Documentation*\nsubsection.\n\nNo change under `src/`.\n\n## Why\n\nThe per-type declarations ship in 9.1.0, but the only place they were\ntaught was the reference section, which is dense rule text. Users need\nto know when a type's entry is enough, and that its two enforcement\nmodes differ:\n\n- **Constraint keyword** (`enum`, `maximum`, `minItems`, …): checked by\nthe schema validation together with the schema rules. The need is\nreported and kept.\n- **Structural declaration** (`nullable = false`, a field or link type\nof some types only): checked while the need is created. The value, or\nthe whole need, is dropped, and links to a dropped need become dead\nlinks.\n\n#1646's review drew the same boundary: config owns each type's own\nstructure and constraints, while schema rules keep cross-cutting,\nconditional and graph checks.\n\n## How\n\nThe main examples are two test projects,\n`tests/doc_test/doc_schema_per_type` and\n`tests/doc_test/doc_need_types`. The pages include them with\n`literalinclude` between marker comments, so the docs show what the\ntests build. A test also checks that every warning record the two pages\nquote is one the tests pin, so the quotes cannot drift from what the\ncode emits.\n\n## Measured\n\nEvery behavioural sentence was measured at the tip with a real build: 50\nclaims, 28 of them pinned by the tests and the rest by throwaway builds.\n\nTwo claims from the design notes were wrong when measured, and the docs\nsay what was measured instead:\n- A filter over a field some types lack warns once and still lists the\nneeds it matched.\n- A `field and field.startswith(...)` guard is itself refused, because\nit does not evaluate to a boolean. The docs use `type == ... and` or\n`field is not None and`.\n\nThe review measured three more points:\n- **A name a service or an extension registers** in a type's `fields`\nnarrows that global field rather than declaring a type-only one.\nExamples are the GitHub service's `url` and `user`, needgantt's\n`duration`, and sphinx-test-reports' `result` and `file`. Other types\nstill set it, with no warning.\n- **A value of another type** is handled differently by route:\n- from a directive, a `needimport` or an external need: the need is not\ncreated;\n- from a `needextend` or a dynamic function: only the value is refused;\n- as a `default` or in `predicates`: it is refused when the\nconfiguration is read.\n- **On a link schema, `maxContains` alone** still requires one match,\nbecause `minContains` defaults to 1.\n\n## Tests\n\n`tests/test_need_types_docs.py` pins:\n- the complete warning list of each example project;\n- the needs each build keeps (the need without its required field is\nabsent);\n- the per-type values, including inherited ones;\n- the three needtables of the filter section;\n- the misspelt-field pitfall;\n- a type entry on a service-registered field (`url`) being an overlay,\nnot type-only;\n- the check from the pages' quoted output to the pinned lists.\n\nGates:\n- `uv run poe lint`: 0\n- `uv run poe typecheck`: 0\n- `uv run poe test-needs -n 4`: 3273 passed, 14 skipped\n- Sphinx 7.4.7 floor cell, `UV_PYTHON=3.12 uv run --no-sync poe\ntest-needs-sphinx7 tests/test_need_types_docs.py`: 0\n- `uv run poe docs-needs`: 0, with 0 warnings\n\nMutations, each reverted:\n- Each of these turns a test red:\n  - removing `inherits`;\n  - giving the required field a default;\n- changing one quoted word in the test, or in either page (including a\nrecord inside a `warning` box);\n  - pointing the overlay test at a type-only name.\n- Breaking an include marker makes `docs-needs` warn.\n- A change outside the new section stays green, which proves the check\nis scoped to the new section.\n\n## Docs\n\n`docs/schema/index.rst`, `docs/need_types.rst` (new),\n`docs/configuration.rst`, `docs/tutorial.rst`, `docs/index.rst`,\n`docs/changelog.rst`.\n\nTwo links to the example projects (`tree/master/...`) 404 in\nDocs-Linkcheck until this merges, as the existing `doc_schema_example`\nlink did.\n\nFound while measuring, not changed here (docs-only PR):\n- **Wrong need named in the header:** for a network `items` failure, the\nconsole header names the target need while the need path names the\nsource. `schema_violations.json` files the finding under the source.\n- **Rule `message` missing:** that same failure does not carry the\nrule's `message`.\n- **#1462** asks for a template per type; a per-type `template` default,\nwhich the how-to shows, already does this, so it may be closable once\n9.1.0 is out.\n\n## ubCode\n\nNo matching change is needed in ubCode for these docs, and the\nconformance corpora are untouched. ubCode's own support for per-type\ndeclarations is being implemented separately. The docs here describe\nsphinx-needs' current behaviour, which is what that implementation is\nexpected to match.\n\n## Checklist\n\n- [x] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-needs`) and they pass.\n- [x] Documentation is updated where behaviour or options change.\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-16T17:23:23+02:00",
+          "tree_id": "4882d725775e20d8771d796700fca56d5cd055a8",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/26cc211bffb1ebe611c3550a2857f5cf8bbe4823"
+        },
+        "date": 1792164291331,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.14421354999998925,
+            "unit": "s",
+            "extra": "Commit: 26cc211bffb1ebe611c3550a2857f5cf8bbe4823\nBranch: master\nTime: 2026-10-16T17:23:23+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 62.47569528299999,
+            "unit": "s",
+            "extra": "Commit: 26cc211bffb1ebe611c3550a2857f5cf8bbe4823\nBranch: master\nTime: 2026-10-16T17:23:23+02:00"
           }
         ]
       }
