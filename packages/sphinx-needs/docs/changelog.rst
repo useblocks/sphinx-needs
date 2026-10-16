@@ -198,6 +198,12 @@ Internal changes
   across the workspace; ``sphinx_needs.setup`` now declares its types, and the internal
   ``profile`` decorator preserves the signature of what it wraps
 
+- 🧪 A conformance corpus for :ref:`fields per need type <needs_types_fields>`,
+  ``tests/fixtures/field_declaration_conformance.toml``: 31 cases, one project each, every rule of the
+  section a case, with the values its needs hold and the findings it gives; this repository is its
+  repository of record and ubCode is to vendor it. Its runner and the derived-field corpus's share their
+  corpus-independent half, ``sphinx_needs_testkit.conformance`` (:issue:`2269`, :pr:`2290`)
+
 - 🔧 ``ENV_DATA_VERSION`` is 13: the first build after upgrading re-reads every document, so a
   ``join`` rule that 9.0.0 refused, and a ``links_from_match`` it did not know, are shown on the
   pages whose sources did not change too (:pr:`2228`), and every stored need carries the names of

@@ -544,6 +544,11 @@ An entry an extension adds to ``needs_types`` once the configuration is read has
 ``fields`` and ``links`` checked when the schema is built, with the same ``needs.config`` warnings;
 once the schema is built it is complete, and nothing declares a field later.
 
+The executable half of this section is a conformance corpus,
+``packages/sphinx-needs/tests/fixtures/field_declaration_conformance.toml`` in the sphinx-needs repository:
+one project per rule, with the values its needs hold and the warnings it gives,
+which sphinx-needs' test suite runs and ubCode is to vendor, and to be held to.
+
 .. _`needs_fields`:
 
 needs_fields
