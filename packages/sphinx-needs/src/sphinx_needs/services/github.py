@@ -9,13 +9,10 @@ from urllib.parse import urlparse
 
 import requests
 from sphinx.application import Sphinx
-from sphinx.config import Config
 from sphinx.util.docutils import SphinxDirective
 from sphinx.util.logging import getLogger
 
-from sphinx_needs.api import add_need_type
-from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
-from sphinx_needs.exceptions import NeedsApiConfigException
+from sphinx_needs.config import _NEEDS_CONFIG, NeedType
 from sphinx_needs.logging import log_warning
 from sphinx_needs.services.base import BaseService
 from sphinx_needs.services.config.github import (
@@ -29,34 +26,48 @@ from sphinx_needs.services.config.github import (
 
 LOGGER = getLogger(__name__)
 
-#: The GitHub services' need types: directive, title, prefix and color (style ``card``)
-GITHUB_NEED_TYPES = (
-    ("issue", "Issue", "IS_", "#cccccc"),
-    ("pr", "PullRequest", "PR_", "#aaaaaa"),
-    ("commit", "Commit", "C_", "#888888"),
+#: The GitHub services' need types
+GITHUB_NEED_TYPES: tuple[NeedType, ...] = (
+    {
+        "directive": "issue",
+        "title": "Issue",
+        "prefix": "IS_",
+        "color": "#cccccc",
+        "style": "card",
+    },
+    {
+        "directive": "pr",
+        "title": "PullRequest",
+        "prefix": "PR_",
+        "color": "#aaaaaa",
+        "style": "card",
+    },
+    {
+        "directive": "commit",
+        "title": "Commit",
+        "prefix": "C_",
+        "color": "#888888",
+        "style": "card",
+    },
 )
 
 
-def add_github_need_types_and_layout(app: Sphinx, config: Config) -> None:
+def add_github_need_types_and_layout(app: Sphinx) -> None:
     """Add the GitHub services' need types and ``github`` layout to sphinx-needs'
-    registry, never to the ``needs_types`` and ``needs_layouts`` values (#2265).
+    registry, as its lowest tier, never to the ``needs_types`` and ``needs_layouts``
+    values (#2265).
 
-    Connected to ``config-inited`` at priority 900: after every other extension's
-    handler at the default priority and after the configuration is checked (600), so
-    that a type or layout of the same name -- configured, or added by another
-    extension -- is there already, and wins. Each is added on its own: one that exists
-    does not stop the others.
+    Each is read after every configured or added type or layout, and only where none of
+    its name is configured or added -- whenever that happens: each gives way on its own.
 
     :param app: The Sphinx application.
-    :param config: The Sphinx configuration.
     """
-    for directive, title, prefix, color in GITHUB_NEED_TYPES:
-        # a need type of the directive exists already, so we are fine
-        with suppress(NeedsApiConfigException):
-            add_need_type(app, directive, title, prefix, color, "card")
+    from sphinx_needs.needs import _register_need_directive  # avoid circular import
 
-    if "github" not in NeedsSphinxConfig(config).layouts:
-        _NEEDS_CONFIG.add_layout("github", GITHUB_LAYOUT)
+    for need_type in GITHUB_NEED_TYPES:
+        _NEEDS_CONFIG.add_builtin_need_type(need_type)
+        _register_need_directive(app, need_type["directive"])
+    _NEEDS_CONFIG.add_builtin_layout("github", GITHUB_LAYOUT)
 
 
 class GithubService(BaseService):

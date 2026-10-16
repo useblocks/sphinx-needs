@@ -103,6 +103,8 @@ class _Config:
         ] = {}
         self._types: dict[str, NeedType] = {}
         self._layouts: dict[str, dict[str, Any]] = {}
+        self._builtin_types: dict[str, NeedType] = {}
+        self._builtin_layouts: dict[str, dict[str, Any]] = {}
 
     def clear(self) -> None:
         self._fields = {}
@@ -110,6 +112,8 @@ class _Config:
         self._warnings = {}
         self._types = {}
         self._layouts = {}
+        self._builtin_types = {}
+        self._builtin_layouts = {}
 
     @property
     def fields(self) -> Mapping[str, NewFieldParams]:
@@ -237,10 +241,9 @@ class _Config:
     def types(self) -> Mapping[str, NeedType]:
         """Need types added from code, by directive name, in the order they were added.
 
-        These are added with the ``add_need_type`` API function (by other extensions,
-        and by sphinx-needs itself for its GitHub services), never written into the
-        ``needs_types`` configuration value: ``NeedsSphinxConfig.types`` reads the
-        configured types followed by these.
+        These are added with the ``add_need_type`` API function, by other extensions,
+        never written into the ``needs_types`` configuration value:
+        ``NeedsSphinxConfig.types`` reads them after the configured types.
         """
         return self._types
 
@@ -263,9 +266,8 @@ class _Config:
     def layouts(self) -> Mapping[str, dict[str, Any]]:
         """Need layouts added from code, by name, in the order they were added.
 
-        sphinx-needs registers its GitHub services' ``github`` layout here, never in the
-        ``needs_layouts`` configuration value: ``NeedsSphinxConfig.layouts`` reads the
-        configured layouts followed by these.
+        These are never written into the ``needs_layouts`` configuration value:
+        ``NeedsSphinxConfig.layouts`` reads them after the configured layouts.
         """
         return self._layouts
 
@@ -281,6 +283,43 @@ class _Config:
 
             raise NeedsApiConfigException(f"{name} already exists as need layout")
         self._layouts[name] = layout
+
+    def add_builtin_need_type(self, need_type: NeedType) -> None:
+        """Adds a need type sphinx-needs itself provides (the GitHub services' ones).
+
+        Built-in types are the lowest tier: read after the configured and the added
+        types, each only where no type of its directive is configured or added, and
+        never counted when ``add_need_type`` checks a directive is free.
+        """
+        self._builtin_types[need_type["directive"]] = need_type
+
+    def add_builtin_layout(self, name: str, layout: dict[str, Any]) -> None:
+        """Adds a need layout sphinx-needs itself provides (the GitHub services' one),
+        the lowest tier, as :meth:`add_builtin_need_type`."""
+        self._builtin_layouts[name] = layout
+
+    def merged_types(self, configured: list[NeedType]) -> list[NeedType]:
+        """The configured need types, then the added ones, then the built-in ones,
+        each tier without the directives an earlier one has."""
+        merged = list(configured)
+        seen = {need_type["directive"] for need_type in configured}
+        for tier in (self._types, self._builtin_types):
+            for directive, need_type in tier.items():
+                if directive not in seen:
+                    seen.add(directive)
+                    merged.append(need_type)
+        return merged
+
+    def merged_layouts(
+        self, configured: Mapping[str, dict[str, Any]]
+    ) -> dict[str, dict[str, Any]]:
+        """The configured need layouts, then the added ones, then the built-in ones,
+        each tier without the names an earlier one has."""
+        merged = dict(configured)
+        for tier in (self._layouts, self._builtin_layouts):
+            for name, layout in tier.items():
+                merged.setdefault(name, layout)
+        return merged
 
 
 _NEEDS_CONFIG = _Config()
@@ -840,23 +879,15 @@ class NeedsSphinxConfig:
     @property
     def types(self) -> list[NeedType]:
         """The need types: the configured ``needs_types``, then those added with the
-        ``add_need_type`` API function -- by other extensions, and by sphinx-needs for
-        its GitHub services -- that no configured type of the same directive replaces.
+        ``add_need_type`` API function by other extensions, then the GitHub services'
+        ``issue``, ``pr`` and ``commit``; a type is read only where no earlier one has
+        its directive.
 
         A new list on each read: a type is added with ``add_need_type``, or configured.
         Read it from a ``config-inited`` handler at a priority above 12, or later:
         before that, a mapping-shaped ``needs_types`` is not yet resolved to its list.
         """
-        configured = self._types
-        taken = {need_type["directive"] for need_type in configured}
-        return [
-            *configured,
-            *(
-                need_type
-                for directive, need_type in _NEEDS_CONFIG.types.items()
-                if directive not in taken
-            ),
-        ]
+        return _NEEDS_CONFIG.merged_types(self._types)
 
     include_needs: bool = field(
         default=True, metadata={"rebuild": "html", "types": (bool,)}
@@ -1145,22 +1176,15 @@ class NeedsSphinxConfig:
 
     @property
     def layouts(self) -> dict[str, dict[str, Any]]:
-        """The need layouts: the configured ``needs_layouts`` -- which holds the
-        built-in layouts and the compiled ``needs_card_layouts`` too, once
-        ``config-inited`` has run -- then those registered from code (the GitHub
-        services' ``github`` layout) that no configured layout of the same name replaces.
+        """The need layouts: the configured ``needs_layouts`` -- which holds
+        sphinx-needs' own layouts and the compiled ``needs_card_layouts`` too, once
+        ``config-inited`` has run -- then those added from code, then the GitHub
+        services' ``github`` layout; a layout is read only where no earlier one has its
+        name.
 
         A new dict on each read: a layout is configured with ``needs_layouts``.
         """
-        configured = self._layouts
-        return {
-            **configured,
-            **{
-                name: layout
-                for name, layout in _NEEDS_CONFIG.layouts.items()
-                if name not in configured
-            },
-        }
+        return _NEEDS_CONFIG.merged_layouts(self._layouts)
 
     card_layouts: dict[str, dict[str, Any]] = field(
         default_factory=dict, metadata={"rebuild": "html", "types": ()}

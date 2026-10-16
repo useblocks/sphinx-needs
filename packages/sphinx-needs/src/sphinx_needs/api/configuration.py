@@ -25,12 +25,12 @@ from sphinx_needs.schema.config import FieldSchemaTypes
 def get_need_types(app: Sphinx) -> list[str]:
     """
     Returns a list of directive-names from all need types: the configured
-    :ref:`needs_types`, then those added with :func:`add_need_type` (by extensions, and
-    by sphinx-needs for its GitHub services).
+    :ref:`needs_types`, then those added with :func:`add_need_type` by extensions, then
+    the GitHub services' ``issue``, ``pr`` and ``commit`` (each only where no earlier
+    type has its directive).
 
     Call it from a ``config-inited`` handler at a priority above 12, or later: before
-    that, a mapping-shaped ``needs_types`` is not yet resolved to its list. The GitHub
-    services' types are added from a ``config-inited`` handler at priority 900.
+    that, a mapping-shaped ``needs_types`` is not yet resolved to its list.
 
     **Usage**::
 
@@ -56,23 +56,21 @@ def add_need_type(
     """
     Adds a new need type, and registers its directive.
 
-    The given directive must not exist as a need type yet, otherwise
-    NeedsApiConfigException gets raised.
+    The given directive must not be configured in :ref:`needs_types` or added with
+    this function already, otherwise NeedsApiConfigException gets raised. The GitHub
+    services' ``issue``, ``pr`` and ``commit`` do not count: a type added under one of
+    those directives replaces the service's.
 
     The type is added to sphinx-needs' own registry, not to the :ref:`needs_types`
     configuration value, which holds only what the project configures (so Sphinx
     compares the same value on both sides of an incremental build). Read every type,
     the added ones included, with :func:`get_need_types`, or with
-    ``NeedsSphinxConfig(app.config).types`` for the whole entries; a configured type
-    of the same directive comes first and replaces it.
+    ``NeedsSphinxConfig(app.config).types`` for the whole entries: the configured
+    types, then the added ones, then the GitHub services' ones.
 
     Call it from a ``config-inited`` handler at a priority above 12, or later: before
     that, a mapping-shaped ``needs_types`` is not yet resolved to the list the
-    duplicate check reads. sphinx-needs adds the GitHub services' ``issue``, ``pr``
-    and ``commit`` types from a ``config-inited`` handler at priority 900, each only if
-    no type of its directive exists by then: a call before that may add a type of one
-    of those names, a later one raises. Unlike a configured entry, the type is not
-    validated.
+    duplicate check reads. Unlike a configured entry, the type is not validated.
 
     **Usage**::
 
@@ -90,7 +88,10 @@ def add_need_type(
     """
     from sphinx_needs.needs import _register_need_directive
 
-    if directive in get_need_types(app):
+    configured = NeedsSphinxConfig(app.config)._types
+    if directive in _NEEDS_CONFIG.types or any(
+        need_type["directive"] == directive for need_type in configured
+    ):
         raise NeedsApiConfigException(f"{directive} already exists as need type")
 
     _NEEDS_CONFIG.add_need_type(

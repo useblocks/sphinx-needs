@@ -546,6 +546,13 @@
       'title': 'Test Case',
     }),
     dict({
+      'color': '#000000',
+      'directive': 'awesome',
+      'prefix': 'AW_',
+      'style': 'cloud',
+      'title': 'Awesome',
+    }),
+    dict({
       'color': '#cccccc',
       'directive': 'issue',
       'prefix': 'IS_',
@@ -565,13 +572,6 @@
       'prefix': 'C_',
       'style': 'card',
       'title': 'Commit',
-    }),
-    dict({
-      'color': '#000000',
-      'directive': 'awesome',
-      'prefix': 'AW_',
-      'style': 'cloud',
-      'title': 'Awesome',
     }),
   ])
 # ---

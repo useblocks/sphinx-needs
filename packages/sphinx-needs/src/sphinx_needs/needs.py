@@ -413,9 +413,6 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.connect("config-inited", compile_card_layouts, priority=550)
     app.connect("config-inited", compile_string_links, priority=551)
     app.connect("config-inited", check_configuration, priority=600)  # runs late
-    # after every other extension's handler at the default priority, so that a type or
-    # layout of the same name, added by one of them or configured, wins (#2265)
-    app.connect("config-inited", add_github_need_types_and_layout, priority=900)
 
     app.connect("env-before-read-docs", prepare_env)
     # note we have to place create_schema after prepare_env, as that can add extra fields,
@@ -472,6 +469,9 @@ def setup(app: Sphinx) -> dict[str, Any]:
     # Be sure Sphinx-Needs config gets erased before any events or external API calls get executed.
     # So never but this inside an event.
     _NEEDS_CONFIG.clear()
+    # the GitHub services' need types and layout, sphinx-needs' lowest tier: every type
+    # or layout of their names, configured or added from code at any time, wins (#2265)
+    add_github_need_types_and_layout(app)
 
     return {
         "version": VERSION,
