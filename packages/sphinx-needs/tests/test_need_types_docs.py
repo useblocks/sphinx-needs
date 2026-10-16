@@ -319,3 +319,79 @@ def test_misspelt_field_of_a_type(test_app: SphinxTestApp) -> None:
     properties = _needs_json(test_app)["needs_schema"]["properties"]
     assert properties["hazrd"]["description"] == "Declared by need types 'safety_req'"
     assert "hazzard" not in properties
+
+
+REGISTERED_TOML = """\
+[needs]
+build_json = true
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.test]
+title = "Test case"
+prefix = "T_"
+
+[needs.types.test.fields.url]
+schema = { pattern = "^https://" }
+"""
+
+REGISTERED_INDEX = """\
+Case
+====
+
+.. req:: A requirement with a url
+   :id: R_001
+   :url: ftp://example.com/req
+
+.. test:: A test with a url
+   :id: T_001
+   :url: ftp://example.com/test
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (
+                    Path("conf.py"),
+                    'extensions = ["sphinx_needs"]\nneeds_from_toml = "ubproject.toml"\n',
+                ),
+                (Path("ubproject.toml"), REGISTERED_TOML),
+                (Path("index.rst"), REGISTERED_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_type_entry_on_a_registered_field(test_app: SphinxTestApp) -> None:
+    """The note of the how-to: a field a service registers is not a field of one type.
+
+    ``url`` is registered by the GitHub services, though no ``needs_fields`` entry names
+    it: a type's entry on it narrows the field on that type, and a need of another type
+    still sets it, without a warning.
+    """
+    test_app.build()
+    assert build_warnings(test_app) == [
+        _schema_record(
+            "ERROR: Need 'T_001' has schema violations:",
+            severity="violation",
+            field="url",
+            need_path="T_001",
+            rest=[
+                "  Schema path:    fields > schema > properties > url > pattern",
+                '  Schema message: "ftp://example.com/test" does not match "^https://" '
+                "[sn_schema_violation.field_fail]",
+            ],
+        ),
+    ]
+    data = _needs_json(test_app)
+    assert data["needs"]["R_001"]["url"] == "ftp://example.com/req"
+    assert (
+        data["needs_schema"]["properties"]["url"]["description"]
+        == "Added by service github-issues"
+    )

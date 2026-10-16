@@ -347,8 +347,9 @@ Fields per need type
 
 A need type may declare fields and link types anew for its needs, in its entry:
 
-* ``fields``: a dictionary from the name of a field -- one of :ref:`needs_fields`, or a core field such as ``status``,
-  or a name no ``needs_fields`` entry declares, a field of this type's needs alone -- to the type's declaration of it;
+* ``fields``: a dictionary from the name of a field -- one of :ref:`needs_fields`, a field an extension or a service registers,
+  or a core field such as ``status``,
+  or a name nothing else declares, a field of this type's needs alone (below) -- to the type's declaration of it;
 * ``links``: a dictionary from the name of a link type -- one of :ref:`needs_links`, or ``links``,
   or a name nothing else declares, a link type of this type's needs alone -- to the type's declaration of it;
 * ``inherits``: the directive name of one other need type, whose declarations this type starts from.

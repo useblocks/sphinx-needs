@@ -190,8 +190,10 @@ a schema rule's local ``minItems`` reports it only when the rule also lists the 
 Fields and link types of some types only
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A ``fields`` or ``links`` entry naming something nothing else declares declares a field or a link type
-of the types that declare it alone (see :ref:`needs_types_fields`).
+A ``fields`` or ``links`` entry can also name a field or a link type that nothing else declares
+(no :ref:`needs_fields` or :ref:`needs_links` entry, no core field, no field a service or an extension registers;
+see :ref:`needs_types_fields`).
+It then exists on the needs of the types that declare it, and only there.
 Here only a ``test`` has ``verifies`` links, and a ``test`` must have at least one:
 
 .. literalinclude:: ../../tests/doc_test/doc_schema_per_type/ubproject.toml
