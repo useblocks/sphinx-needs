@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 import os
 import sys
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from copy import deepcopy
 from datetime import datetime
 from functools import lru_cache
@@ -111,6 +111,21 @@ def generate_needs_schema(
     }
 
 
+def _is_json_default(value: Any, default: Any, /) -> bool:
+    """Whether *value* is *default* as a JSON value: equal, and of the same JSON type
+    (``bool`` is not ``int``, ``int`` is not ``float``: ``1.0`` is not ``1``), through
+    lists and objects."""
+    if value != default:
+        return False
+    if isinstance(value, bool | int | float):
+        return type(value) is type(default)
+    if isinstance(value, list | tuple):
+        return all(map(_is_json_default, value, default))
+    if isinstance(value, Mapping):
+        return all(_is_json_default(item, default[key]) for key, item in value.items())
+    return True
+
+
 class NeedsList:
     def __init__(
         self,
@@ -194,7 +209,8 @@ class NeedsList:
                 key: value
                 for key, value in writable_needs.items()
                 if not (
-                    key in self._need_defaults and value == self._need_defaults[key]
+                    key in self._need_defaults
+                    and _is_json_default(value, self._need_defaults[key])
                 )
             }
         self.needs_list["versions"][version]["needs"][need_info["id"]] = writable_needs  # ty: ignore[invalid-argument-type]
