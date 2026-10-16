@@ -355,29 +355,44 @@ def test_a_link_type_whose_back_links_are_a_link_type_is_refused(
     assert _properties(app)["x_back"]["field_type"] == "links"
 
 
+#: the index of the chains: a link of ``x``, whose back links are ``x_back``
+CHAIN_INDEX = ".. t:: A\n   :id: T_001\n\n.. u:: B\n   :id: U_001\n   :x: T_001\n"
+
+
 @pytest.mark.parametrize(
-    "test_app",
+    ("test_app", "what"),
     [
-        _project(
-            "needs_links = {'x': {}, 'x_back': {}}\n"
-            "needs_fields = {'x_back_back': {'schema': {'type': 'string'}}}\n",
-            ".. t:: A\n   :id: T_001\n\n.. u:: B\n   :id: U_001\n   :x: T_001\n",
-        )
+        pytest.param(
+            _project(
+                "needs_links = {'x': {}, 'x_back': {}}\n"
+                "needs_fields = {'x_back_back': {'schema': {'type': 'string'}}}\n",
+                CHAIN_INDEX,
+            ),
+            "a field (from needs_fields)",
+            id="field",
+        ),
+        pytest.param(
+            _project(
+                "needs_links = {'x_back_back': {}, 'x': {}, 'x_back': {}}\n",
+                CHAIN_INDEX,
+            ),
+            "a link type (from needs_links)",
+            id="link_type",
+        ),
     ],
-    indirect=True,
+    indirect=["test_app"],
 )
-def test_a_refused_link_type_claims_no_name(test_app: Any) -> None:
+def test_a_refused_link_type_claims_no_name(test_app: Any, what: str) -> None:
     """A link type refused for its own back links does not exist, so it takes no name
-    from another: ``x_back`` yields to the field ``x_back_back``, and ``x`` keeps its
-    back links, ``x_back``."""
+    from another: ``x_back`` yields to the field or link type ``x_back_back``, and ``x``
+    keeps its back links, ``x_back`` -- in whatever order the link types are given."""
     app = test_app
     app.build()
     assert _warnings(app) == [
-        _refused(
-            "needs_links entry 'x_back'", "x_back_back", "a field (from needs_fields)"
-        ),
+        _refused("needs_links entry 'x_back'", "x_back_back", what),
     ]
     assert _schema(app).get_link_field("x_back") is None
+    assert _schema(app).get_link_field("x") is not None
     needs = _needs(app)
     assert needs["T_001"]["x_back"] == ["U_001"]
     assert _properties(app)["x_back"]["field_type"] == "backlinks"
