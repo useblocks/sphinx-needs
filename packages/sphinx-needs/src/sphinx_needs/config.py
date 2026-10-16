@@ -417,6 +417,7 @@ class NeedTypeFieldDeclaration(TypedDict, total=False):
     nullable: bool
     default: Any
     predicates: list[tuple[str, Any]]
+    derive: dict[str, Any]
 
 
 class NeedTypeLinkDeclaration(TypedDict, total=False):
@@ -431,15 +432,16 @@ class NeedTypeLinkDeclaration(TypedDict, total=False):
     schema: dict[str, Any]
     default: Any
     predicates: list[tuple[str, Any]]
-    incoming: NotRequired[str]
-    outgoing: NotRequired[str]
-    copy: NotRequired[bool]
-    allow_dead_links: NotRequired[bool]
-    color: NotRequired[str]
-    style: NotRequired[str]
-    style_part: NotRequired[str]
-    style_start: NotRequired[str]
-    style_end: NotRequired[str]
+    derive: dict[str, Any]
+    incoming: str
+    outgoing: str
+    copy: bool
+    allow_dead_links: bool
+    color: str
+    style: str
+    style_part: str
+    style_start: str
+    style_end: str
 
 
 class NeedFields(TypedDict):
