@@ -496,17 +496,23 @@ def _analyze_and_apply_expr(
                     isinstance(elt, ast.Constant) for elt in expr.comparators[0].elts
                 )
             ):
-                values = [
+                constants = [
                     elt.value
                     for elt in expr.comparators[0].elts
-                    if isinstance(elt, ast.Constant) and isinstance(elt.value, str)
+                    if isinstance(elt, ast.Constant)
                 ]
+                values = [value for value in constants if isinstance(value, str)]
                 if expr.left.id == "id":
                     # id in ["a", "b", ...]
                     return needs.filter_ids(values), False
                 if expr.left.id == "status":
-                    # status in ["a", "b", ...]
-                    return needs.filter_statuses(values), False
+                    # status in ["a", "b", ...]; a status is a string or None
+                    statuses = [
+                        value
+                        for value in constants
+                        if value is None or isinstance(value, str)
+                    ]
+                    return needs.filter_statuses(statuses), False
                 elif expr.left.id == "type":
                     # type in ["a", "b", ...]
                     return needs.filter_types(values), False

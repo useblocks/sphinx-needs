@@ -228,6 +228,11 @@ Bug fixes
   any other type now matches no need and no part, as the same filter evaluated in Python does
   (:issue:`1835`)
 
+- 🐛 A filter ``status in [...]`` whose list holds ``None`` selects the needs without a status too,
+  as ``status == None`` already did and as the same filter evaluated in Python does: its fast path
+  kept only the strings of the list, so ``status in ["open", None]`` selected the open needs alone
+  and ``status in [None]`` none at all (:issue:`1835`)
+
 Documentation
 .............
 
