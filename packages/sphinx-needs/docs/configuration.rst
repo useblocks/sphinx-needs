@@ -627,6 +627,10 @@ A :ref:`needextend` deleting a field (``:-x:``) empties it as the need's type de
 ``None`` where the field is nullable on that type, else the empty value of the field's type.
 A default a type declares is not the one a :ref:`fingerprint <needs_derive>` compares against:
 a need's value equal to its type's default enters the fingerprint, unless it equals the field's own default too.
+Nor is it in the :ref:`needs.json <needs_builder_format>`, whose ``needs_schema`` is the schema every need type shares:
+no need type's narrowing is in it (its ``enum``, its default, a field it makes not nullable),
+the ``default`` it gives a field is the field's own, which :ref:`needs_json_remove_defaults` compares against,
+and a reader that has only the file checks less than the project that wrote it did.
 
 The warnings of these declarations, given when the schema is built, name an entry by its directive in either shape
 (``needs_types['spec']``), while those given when the configuration is read name an entry of the list by its position
@@ -3653,6 +3657,12 @@ needs_json_remove_defaults
 Setting ``needs_json_remove_defaults = True`` will remove all need fields with default from ``needs.json``, greatly reducing its size.
 
 The defaults can be retrieved from the ``needs_schema`` now also output in the JSON file (see :ref:`this section <needs_builder_format>` for the format).
+A value is left out where it equals the ``default`` its field's entry in that ``needs_schema`` carries:
+the field's own default (its :ref:`needs_fields` default, ``null`` for a field need types alone declare, ``[]`` for a link type),
+never a need type's (:ref:`needs_types_fields`).
+A need holding its type's default, its own type's or one it inherits, writes it wherever it differs from the field's own.
+So a reader that restores a left-out value from the file's ``needs_schema``, as :ref:`needimport` does,
+gets the same needs from the file as from the same file written in full.
 
 Default: :need_config_default:`json_remove_defaults`
 
