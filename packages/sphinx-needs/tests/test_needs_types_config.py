@@ -911,15 +911,19 @@ def test_resolving_the_types_changes_no_configuration_option(
 ) -> None:
     """The resolved list is the value Sphinx sees on both sides of an incremental build.
 
-    The options that differ are exactly the two the GitHub service changes after Sphinx
-    compares the configurations -- it adds its need types and its layout from
-    ``env-before-read-docs`` (#2265, pre-existing) -- for the list shape and the
-    mapping shape alike: resolving the types adds nothing to them.
+    No option differs, for the list shape and the mapping shape alike: resolving the
+    types adds nothing to them, and nothing writes ``needs_types`` or ``needs_layouts``
+    after ``config-inited`` -- the GitHub service's need types and layout, which it
+    used to add to the two values from ``env-before-read-docs``, after Sphinx compared
+    the configurations, are kept in sphinx-needs' own registry (#2265).
     """
     srcdir = _write(tmp_path / "src", conf, TYPES_INDEX)
     first = make_app("html", srcdir=srcdir, freshenv=True)
+    configured = copy.deepcopy((first.config.needs_types, first.config.needs_layouts))
     first.build()
     first.cleanup()
+    # nothing writes either value once the configuration is read
+    assert (first.config.needs_types, first.config.needs_layouts) == configured
     old_env = pickle.loads(Path(first.doctreedir, "environment.pickle").read_bytes())
 
     (srcdir / "index.rst").write_text(
@@ -927,21 +931,15 @@ def test_resolving_the_types_changes_no_configuration_option(
     )
     second = make_app("html", srcdir=srcdir)
     try:
-        assert _changed_options(old_env.config, second.config) == {
-            "needs_layouts",
-            "needs_types",
-        }
+        assert _changed_options(old_env.config, second.config) == set()
         second.build()
-        # Sphinx 8 and later name the options in a status line; Sphinx 7 does not
+        # Sphinx 8 and later name the changed options in a status line; Sphinx 7 does not
         reported = re.search(
             r"The configuration has changed \(\d+ options?: (.*)\)",
             strip_colors(second._status.getvalue()),
         )
         if reported is not None:
             names = set(re.findall(r"'([^']+)'", reported.group(1)))
-            assert {name for name in names if name.startswith("needs_")} == {
-                "needs_layouts",
-                "needs_types",
-            }
+            assert {name for name in names if name.startswith("needs_")} == set()
     finally:
         second.cleanup()

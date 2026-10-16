@@ -18,6 +18,7 @@ from typing import Any
 import pytest
 
 from sphinx_needs.card_layouts import BUILTIN_CARD_SPECS, compile_card_spec
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.defaults import LAYOUTS
 from sphinx_needs_testkit import assert_no_warnings, build_warnings
 
@@ -1867,6 +1868,9 @@ def test_no_card_layouts_leaves_the_registry_alone(test_app: Any) -> None:
     app = test_app
     app.build()
     assert_no_warnings(app)
-    # only the built-in layouts (plus the ones registered by services) are present
-    assert LAYOUTS.items() <= app.config.needs_layouts.items()
-    assert set(app.config.needs_layouts) - set(LAYOUTS) == {"github"}
+    # only the built-in layouts are configured
+    assert app.config.needs_layouts == LAYOUTS
+    # the ones registered by services are read beside them
+    layouts = NeedsSphinxConfig(app.config).layouts
+    assert LAYOUTS.items() <= layouts.items()
+    assert set(layouts) - set(LAYOUTS) == {"github"}
