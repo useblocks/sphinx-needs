@@ -629,7 +629,7 @@ A default a type declares is not the one a :ref:`fingerprint <needs_derive>` com
 a need's value equal to its type's default enters the fingerprint, unless it equals the field's own default too.
 Nor is it in the :ref:`needs.json <needs_builder_format>`, whose ``needs_schema`` is the schema every need type shares:
 no need type's narrowing is in it (its ``enum``, its default, a field it makes not nullable),
-the ``default`` it gives a field is the field's own, which :ref:`needs_json_remove_defaults` compares against,
+the ``default`` it gives a field, which :ref:`needs_json_remove_defaults` compares against, is never a need type's,
 and a reader that has only the file checks less than the project that wrote it did.
 
 The warnings of these declarations, given when the schema is built, name an entry by its directive in either shape
@@ -3657,14 +3657,10 @@ needs_json_remove_defaults
 Setting ``needs_json_remove_defaults = True`` will remove all need fields with default from ``needs.json``, greatly reducing its size.
 
 The defaults can be retrieved from the ``needs_schema`` now also output in the JSON file (see :ref:`this section <needs_builder_format>` for the format).
-A value is left out where it equals the ``default`` its field's entry in that ``needs_schema`` carries,
-as a JSON value of the same type (``1.0`` is not ``1``, ``[1.0]`` not ``[1]``).
-That default is the field's own, never a need type's (:ref:`needs_types_fields`):
-the literal default of the field's own declaration, else ``null`` where the field is nullable
-(a field need types alone declare, or one whose only default is a predicate or a dynamic function),
-and none where it is not, so its value is always written;
-for a link type ``[]``, or for one derived by type alone the links it holds on the other need types.
-A need holding its type's default, its own type's or one it inherits, writes it wherever it differs from the field's own.
+A value is left out exactly where it equals the ``default`` its field's entry in that ``needs_schema`` carries,
+as a JSON value of the same type (``1.0`` is not ``1``, ``[1.0]`` not ``[1]``):
+never a need type's default, which the ``needs_schema`` does not carry (:ref:`needs_types_fields`).
+A need holding its type's default, its own type's or one it inherits, writes it wherever it differs from that ``default``.
 So a reader that restores a left-out value from the file's ``needs_schema``, as :ref:`needimport` does,
 gets the same needs from the file as from the same file written in full.
 
