@@ -76,6 +76,13 @@ The schema is configured in multiple places:
   supports setting global schema constraints for that link option, that will be checked
   for each need type. E.g. minimum/maximum number of links or need id patterns. The schema
   defined here always runs on unresolved local needs, i.e. links are a list of IDs.
+- :ref:`needs_types` is the place to declare a field or link type anew for the needs of one type,
+  in the type's ``fields`` and ``links``, and to make a type start from another type's declarations,
+  with ``inherits`` (see :ref:`needs_types_fields`).
+  A type's ``schema`` only narrows the global one: the type of a field stays the same on every need type,
+  and the type's constraints are checked on its own needs, beside the global ones.
+  A field or link type can also be declared on some need types alone.
+  See :ref:`schema_per_type_or_rules` for what to declare there and what in schema rules.
 - :ref:`core fields <need>` such as ``type``, ``id``, ``title``, ``status`` or ``tags`` have
   pre-defined types that cannot be changed.
 - :ref:`needs_schema_definitions` and :ref:`needs_schema_definitions_from_json` are the places to
@@ -102,6 +109,235 @@ The schema is configured in multiple places:
 The next sections guides through an example and how do use the type and schema system to enforce
 constraints on need items and links between them.
 
+.. _`schema_per_type_or_rules`:
+
+Per-type configuration or schema rules?
+---------------------------------------
+
+Most constraints that concern the needs of one type can be written in the type's own entry in
+:ref:`needs_types`: its ``fields`` and ``links``, and ``inherits`` (see :ref:`needs_types_fields`).
+Such an entry sits next to the type it constrains, is easier to read than a schema rule that selects the type,
+and is inherited by the types that name it in ``inherits``.
+Schema rules (:ref:`needs_schema_definitions`, ``schemas.json``) are for what a type's entry cannot say,
+listed in :ref:`schema_per_type_still_rules`.
+
+A type's entry constrains its needs in two ways, which are checked differently:
+
+- a **constraint keyword** in a ``schema`` (``enum``, ``const``, ``minimum``, ``maximum``, ``minLength``, ``maxLength``,
+  ``pattern``, ``minItems``, ``maxItems``, ...) is checked by the schema validation, together with the schema rules,
+  and a need that breaks it is reported and kept;
+- a **structural declaration** -- a field that is not nullable on the type, or a field or link type that only some types
+  declare -- is checked while the documents are read, and what does not fit it is dropped: the value, or the whole need.
+
+The examples below come from one project in the test suite,
+`doc_schema_per_type <https://github.com/useblocks/sphinx-needs/tree/master/packages/sphinx-needs/tests/doc_test/doc_schema_per_type>`__,
+whose warnings the tests check:
+
+.. dropdown:: ubproject.toml
+
+   .. literalinclude:: ../../tests/doc_test/doc_schema_per_type/ubproject.toml
+      :language: toml
+
+.. dropdown:: index.rst
+
+   .. literalinclude:: ../../tests/doc_test/doc_schema_per_type/index.rst
+      :language: rst
+
+.. dropdown:: schemas.json
+
+   .. literalinclude:: ../../tests/doc_test/doc_schema_per_type/schemas.json
+      :language: json
+
+What a type's entry can declare
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A ``fields`` or ``links`` entry narrows a field or a link type for the needs of the type:
+the values allowed, a range, a length or a pattern, the number of links.
+``inherits`` makes a type start from the declarations of another type.
+
+.. literalinclude:: ../../tests/doc_test/doc_schema_per_type/ubproject.toml
+   :language: toml
+   :start-after: # [values]
+   :end-before: # [/values]
+
+A ``req`` takes only the status values ``draft`` and ``approved``, and ``draft`` when it sets none;
+so does a ``safety_req``, which inherits them;
+and a ``spec`` links to one or two needs.
+The schema validation reports a need that breaks one of these rules, and keeps it:
+
+.. code-block:: text
+
+   ERROR: Need 'SR_001' has schema violations:
+     Severity:       violation
+     Field:          status
+     Need path:      SR_001
+     Schema path:    fields > schema > properties > status > enum
+     Schema message: "done" is not one of "draft" or "approved" [sn_schema_violation.field_fail]
+   ERROR: Need 'S_001' has schema violations:
+     Severity:       violation
+     Field:          links
+     Need path:      S_001
+     Schema path:    links > schema > properties > links > minItems
+     Schema message: [] has less than 1 item [sn_schema_violation.link_fail]
+
+The same ``status`` rule as a schema rule selects ``req`` and validates ``local`` properties,
+and is reported as ``local_fail`` with a schema path of ``<rule id>[<index>] > local > properties > status > enum``.
+It would not apply to a ``safety_req``, see :ref:`schema_per_type_still_rules`.
+``S_001``, which has no links at all, is reported by the type's ``minItems``;
+a schema rule's local ``minItems`` reports it only when the rule also lists the link type in ``required``
+(see :ref:`schema_link_count_constraints`).
+
+Fields and link types of some types only
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A ``fields`` or ``links`` entry naming something nothing else declares declares a field or a link type
+of the types that declare it alone (see :ref:`needs_types_fields`).
+Here only a ``test`` has ``verifies`` links, and a ``test`` must have at least one:
+
+.. literalinclude:: ../../tests/doc_test/doc_schema_per_type/ubproject.toml
+   :language: toml
+   :start-after: # [type-local]
+   :end-before: # [/type-local]
+
+A ``verifies`` set on a need of another type is dropped while the documents are read, with the source location,
+and the need is kept without it:
+
+.. code-block:: text
+
+   index.rst:27: WARNING: Link type 'verifies' is not declared on need type 'spec' and cannot be set in need 'S_003'; the value 'R_001' is ignored [needs.undeclared_for_type]
+
+Required fields: two strengths
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``nullable = false`` in a type's entry requires the field on the needs of the type:
+
+.. literalinclude:: ../../tests/doc_test/doc_schema_per_type/ubproject.toml
+   :language: toml
+   :start-after: # [required]
+   :end-before: # [/required]
+
+A ``safety_req`` without an ``asil`` is **not created**:
+it is not rendered and not in the :ref:`needs.json <needs_builder>`,
+and every link to it becomes a dead link:
+
+.. code-block:: text
+
+   index.rst:17: WARNING: Need could not be created: Field 'asil' is not nullable, but no value or default was given. [needs.create_need]
+   index.rst:43: WARNING: Need 'T_004' has unknown outgoing link 'SR_002' in field 'verifies' [needs.link_outgoing]
+
+A schema rule's ``required`` is the weaker form: it reports the need and keeps it,
+with the severity and the message the rule gives:
+
+.. code-block:: json
+
+   {
+     "id": "req-has-asil",
+     "severity": "warning",
+     "message": "a requirement states its ASIL",
+     "select": { "properties": { "type": { "const": "req" } } },
+     "validate": { "local": { "required": ["asil"] } }
+   }
+
+.. code-block:: text
+
+   WARNING: Need 'R_002' has schema warnings:
+     Severity:       warning
+     Need path:      R_002
+     Schema path:    req-has-asil[0] > local > required
+     User message:   a requirement states its ASIL
+     Schema message: "asil" is a required property [sn_schema_warning.local_fail]
+
+A ``minLength`` in a type's entry does not require a nullable field:
+a need that leaves the field unset is not validated against it.
+Use ``nullable = false`` when a need without the value must not exist, and a schema rule's ``required`` when it should be reported.
+
+When and how violations are reported
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 40 40
+
+   * -
+     - constraint keyword in a type's ``schema``
+     - structural declaration
+   * - examples
+     - ``enum``, ``maximum``, ``maxLength``, ``minItems``, ...
+     - ``nullable = false``; a field or link type of some types only
+   * - checked
+     - by the schema validation, after the documents are read, together with the schema rules
+     - while the documents are read
+   * - reported as
+     - ``sn_schema_violation.field_fail`` or ``sn_schema_violation.link_fail``,
+       always of severity ``violation``, with no custom message and no source location
+     - a warning with the source location (``needs.create_need``, ``needs.undeclared_for_type``)
+   * - the need
+     - is kept, with its value, and listed in :ref:`schema_violation_json`
+     - is kept without the value, or is not created
+   * - switched off by
+     - :ref:`needs_schema_validation_enabled` ``= False``, which switches off the schema rules too
+     - not switched off by :ref:`needs_schema_validation_enabled`
+   * - external needs
+     - checked too: a need from :ref:`needs_external_needs` is validated as its type declares;
+       a type's entry cannot leave such needs out
+     - see :ref:`needs_types_fields`
+
+The constraint keywords of a type's entry are suppressed with the same ``suppress_warnings`` entries as other schema findings
+(:ref:`suppress_validation_messages`): ``sn_schema_violation.field_fail`` hides every field's, of every type at once.
+
+.. _`schema_per_type_still_rules`:
+
+What still needs schema rules
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A type's entry only says something about the needs of the type themselves.
+These need schema rules:
+
+- the **types of linked needs**, and anything else about the needs a link points to (:ref:`network_validation`);
+- **incoming links**, such as "every requirement is verified by a test" (:ref:`network_back_validation`);
+- **conditions between fields**, such as "``approval`` is required when ``efforts`` is greater than 15";
+- **multi-hop chains** (:ref:`nested network validation <network_validation>`);
+- a **pattern for the IDs** of one type (``id`` cannot be declared in a type's entry);
+- a **severity or message** per rule (:ref:`rule_severity`);
+- **leaving out external or imported needs**, with a ``select`` on ``is_external`` or ``is_import``.
+
+Here a ``test`` may only verify requirements:
+
+.. code-block:: json
+
+   {
+     "id": "test-verifies-req",
+     "message": "a test verifies requirements only",
+     "select": { "properties": { "type": { "const": "test" } } },
+     "validate": {
+       "network": {
+         "verifies": {
+           "items": {
+             "local": {
+               "properties": { "type": { "enum": ["req", "safety_req"] } }
+             }
+           }
+         }
+       }
+     }
+   }
+
+.. code-block:: text
+
+   ERROR: Need 'S_002' has schema violations:
+     Severity:       violation
+     Field:          type
+     Need path:      T_002 > verifies > S_002
+     Schema path:    test-verifies-req[1] > validate > network > verifies > items > local > properties > type > enum
+     Schema message: "spec" is not one of "req" or "safety_req" [sn_schema_violation.network_local_fail]
+
+.. important::
+
+   A schema rule matches the ``type`` it names literally: it does not follow ``inherits``.
+   The rule above lists ``safety_req`` beside ``req``;
+   with ``{ "const": "req" }`` instead, a test verifying a ``safety_req`` would be reported.
+   List the subtypes in the rule yourself, and keep the list in step with :ref:`needs_types`.
+
 Modeling example
 ----------------
 
@@ -115,6 +351,8 @@ There are a few things to note about this setup:
   ``asil`` (for **A**\ utomotive **S**\ ecurity **I**\ ntegrity **L**\ evel) are typed
 - the assigned fields differ between need types
 - the fields may be optional for a need type, required or even not allowed
+  (this example uses schema rules throughout;
+  much of it can also be declared in the need types' own entries, see :ref:`schema_per_type_or_rules`)
 - some validation rules are local to the need itself, while others
   require information from other needs (network validation)
 - the needs link to each other in a specific way, so a
@@ -461,16 +699,37 @@ Example:
 
 Network validation supports various constraints on linked needs:
 
+.. _`schema_link_count_constraints`:
+
 Link count constraints
 ^^^^^^^^^^^^^^^^^^^^^^
 
 - ``validate.local.properties.<link>.minItems``: Minimum number of links required
-- ``validate.local.properties.<link>.maxItems``: Minimum number of links required
+- ``validate.local.properties.<link>.maxItems``: Maximum number of links allowed
 - ``validate.network.<link>.minContains``: Minimum number of valid links required
 - ``validate.network.<link>.maxContains``: Maximum number of valid links allowed
 
 ``minItems`` and ``maxItems`` are located under local, as a link field is always a list of
 need IDs (strings) on local level. That is enough to validate the number of links.
+
+A need with no links of the type is not reported by a local ``minItems`` alone:
+local validation sees only the fields that are not on their default value,
+and an empty link list is the default.
+List the link type in ``required`` too, to report such a need:
+
+.. code-block:: json
+
+   {
+     "validate": {
+       "local": {
+         "properties": { "links": { "minItems": 1 } },
+         "required": ["links"]
+       }
+     }
+   }
+
+A ``minItems`` in a need type's ``links`` entry reports a need with no links without it
+(see :ref:`schema_per_type_or_rules`).
 
 ``minContains`` and ``maxContains`` are located under network, as they validate the actual
 need objects that are linked.
@@ -776,6 +1035,8 @@ Rule severity
 Each schema rule can specify one of the severity levels ``info``, ``warning``, or
 ``violation`` as described in :ref:`severity_levels`. If not given, ``violation`` is used as
 a default.
+The constraints of :ref:`needs_fields`, :ref:`needs_links` and a need type's ``fields`` and ``links``
+are not schema rules: they are always reported as ``violation``.
 
 The severity influences how validation failures are displayed in the console.
 
@@ -1202,9 +1463,11 @@ to indicate which validation failed.
 Local validation:
 
 - ``field_fail``: Field schema validation failed
-  (local validation, defined via ``schema`` key in :ref:`needs_fields`)
+  (local validation, defined via ``schema`` key in :ref:`needs_fields`,
+  or in a need type's ``fields`` entry, see :ref:`needs_types_fields`)
 - ``link_fail``: Extra link schema validation failed
-  (defined via ``schema`` key in :ref:`needs_links`)
+  (defined via ``schema`` key in :ref:`needs_links`,
+  or in a need type's ``links`` entry)
 - ``local_fail``: Need-local validation failed
   (defined via ``validate.local`` in schemas of :ref:`needs_schema_definitions`)
 
@@ -1217,6 +1480,8 @@ Network validation:
 
 If not overridden in the :ref:`schema rules <rule_severity>`, a default severity of ``violation``
 is used for all message types.
+``field_fail`` and ``link_fail`` are always of severity ``violation``:
+no schema rule sets their severity.
 
 .. _`suppress_validation_messages`:
 
@@ -1323,6 +1588,7 @@ Best practices
 1. **Use descriptive IDs**: Give your schemas meaningful IDs for easier debugging
 #. **Leverage $defs**: Define reusable schema components to avoid duplication
 #. **Start with warnings**: Use ``warning`` severity during development, then upgrade to ``violation``
+   (a schema rule's severity only: a field's or a need type's constraints are always ``violation``)
 #. **Provide clear messages**: Include helpful ``message`` fields to guide users
 #. **Test incrementally**: Add schemas gradually to avoid overwhelming validation errors
 #. **Use select wisely**: Only apply schemas to relevant need types using ``select``
