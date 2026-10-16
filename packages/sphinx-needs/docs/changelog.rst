@@ -158,10 +158,10 @@ Bug fixes
   used to declare a field the computed back links replaced on every need, its authored
   value lost and its schema checked against the back links of every need, those of the
   types that do not declare it included; beside a :ref:`needs_extra_links` link type the
-  build stopped instead (:issue:`2301`)
+  build stopped instead (:issue:`2301`, :pr:`2305`)
 
 - 🐛 One rule for a link type whose back links, ``<name>_back``, have the name of a field
-  or of another link type, applied when the schema is built (:issue:`2293`)
+  or of another link type, applied when the schema is built (:issue:`2293`, :pr:`2305`)
 
   Between global declarations, a name declared outright wins: the link type is refused,
   one ``needs.config`` warning naming both and where the field comes from, and does not
