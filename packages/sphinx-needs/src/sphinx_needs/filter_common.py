@@ -468,8 +468,9 @@ def _analyze_and_apply_expr(
                 return needs, True
 
             if field == "id":
-                # id == value
-                return needs.filter_ids([value]), False  # ty: ignore[invalid-argument-type]
+                # id == value; an id is a string, so no other constant matches
+                ids = [value] if isinstance(value, str) else []
+                return needs.filter_ids(ids), False
             elif field == "type":
                 # type == value; a type is a string, so no other constant matches
                 types = [value] if isinstance(value, str) else []

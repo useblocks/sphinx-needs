@@ -456,6 +456,10 @@ part_test_params = (
     ("id == 'part_a'", ["part_a"], True),
     ("id in ['part_a', 'req_a_1']", ["part_a", "req_a_1"], True),
     ("id in ['part_a', 'story_a_b_1']", ["story_a_b_1", "part_a"], True),
+    # an id is a string, so no other constant matches one, on a narrowed view too
+    ("id == None", [], True),
+    ("type == 'story' and id == None", [], True),
+    ("type == 'story' and id == 1", [], True),
 )
 
 
