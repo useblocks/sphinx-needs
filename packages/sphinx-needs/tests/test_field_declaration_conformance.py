@@ -1,0 +1,234 @@
+"""Fields per need type, held to the shared conformance corpus.
+
+``tests/fixtures/field_declaration_conformance.toml`` is the executable half of the
+"Fields per need type" documentation. This repository is its repository of record and
+ubCode vendors it, so every case is a statement both tools are held to. Each case is one
+project, built with the ``needs`` builder, and three things are asserted:
+
+* every case's outcome -- the pinned values, as ``needs.json`` writes them (type
+  included), the fields pinned as unset, the fields pinned as absent, and the findings of
+  the per-type declaration contract, as a multiset;
+* the number of cases, so that a trimmed corpus is a red test rather than quietly reduced
+  coverage;
+* the shape of every case, so that a case without a complete expectation cannot pass by
+  saying nothing.
+
+The runner half every such corpus shares is ``sphinx_needs_testkit.conformance``; what
+is this corpus's own is here: its codes, the need type a finding names, and the reader of
+``field_fail``, whose record names neither its need's location nor its field in a form
+the warning stream can be read for, and which is read from the ``schema_violations.json``
+the validation writes beside ``needs.json`` instead.
+"""
+
+from __future__ import annotations
+
+import json
+import re
+import tomllib
+from collections import Counter
+from collections.abc import Iterator, Mapping
+from pathlib import Path
+from typing import Any
+
+import pytest
+
+from sphinx_needs_testkit.conformance import (
+    Finding,
+    case_files,
+    check_values,
+    match_findings,
+    params,
+    read_findings,
+)
+
+CORPUS_PATH = Path(__file__).parent / "fixtures" / "field_declaration_conformance.toml"
+
+#: The number of ``[[case]]`` rows the corpus carries.
+#:
+#: Raising it is the normal consequence of adding a case; lowering it needs a reason in
+#: the commit message, and ubCode's vendored copy has to follow either way.
+EXPECTED_CASE_COUNT = 31
+
+#: The codes of the per-type declaration contract, compared as bare subcodes; every
+#: other finding (a ``needs.config`` warning, a dead link) is each tool's own.
+SHARED_CODES = frozenset(
+    {
+        "type_inherits",
+        "type_conflict",
+        "type_widening",
+        "undeclared_for_type",
+        "needextend",
+        "derive_authored",
+        "derive_invalid",
+        "dynamic_function",
+        "field_fail",
+    }
+)
+
+#: The codes only ubCode reports: none in this corpus.
+UBCODE_ONLY_CODES: frozenset[str] = frozenset()
+
+#: The configuration the runner gives every case besides its ``ubproject.toml``.
+CONF_PY = """\
+extensions = ["sphinx_needs"]
+needs_from_toml = "ubproject.toml"
+needs_build_json = True
+"""
+
+#: The title the runner puts above every case's ``source``.
+TITLE = "Case\n====\n\n"
+
+#: The positions of a found finding.
+KEYS = ("code", "need", "field", "type")
+
+#: the entry a finding of the schema's build names, and the field or link type in it
+_ENTRY = re.compile(r"needs_types\['([^']+)'\](?:\.(?:fields|links)\['([^']+)'\])?")
+#: the first field, option or link type a message names (a needextend's ``+``/``-``
+#: of an option stripped)
+_FIELD = re.compile(r"(?:[Ff]ield|[Oo]ption|[Ll]ink type) '[+-]?([^']+)'")
+#: the need type a finding names that names no entry, per code
+_TYPE = {
+    "type_inherits": re.compile(r"^Need type '([^']+)'"),
+    "undeclared_for_type": re.compile(r" on need type '([^']+)'"),
+    "needextend": re.compile(r" on need type '([^']+)'"),
+}
+
+#: the default id regex, which every need id of a case satisfies
+_NEED_ID = re.compile(r"[A-Z0-9_]{5,}")
+
+
+def _corpus() -> list[dict[str, Any]]:
+    with CORPUS_PATH.open("rb") as handle:
+        return tomllib.load(handle)["case"]
+
+
+CASES = _corpus()
+
+
+def test_the_corpus_still_has_every_case() -> None:
+    assert len(CASES) == EXPECTED_CASE_COUNT, (
+        f"{CORPUS_PATH.name} carries {len(CASES)} cases, expected "
+        f"{EXPECTED_CASE_COUNT}. Adding a case means raising EXPECTED_CASE_COUNT; "
+        "anything else means cases were lost."
+    )
+
+
+def test_every_case_name_is_unique() -> None:
+    names = Counter(case["name"] for case in CASES)
+    assert [name for name, count in names.items() if count > 1] == []
+
+
+def test_every_case_has_a_complete_expectation() -> None:
+    """Every case says why, what it builds, its own need types, the findings (``[]``
+    for none), and at least one pinned value; it runs in at least one tool."""
+    for case in CASES:
+        name = case["name"]
+        assert re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", name), name
+        assert set(case) <= {
+            "name",
+            "why",
+            "config",
+            "source",
+            "files",
+            "python_only",
+            "ubcode_only",
+            "expect",
+        }, name
+        assert case["why"] and case["config"] and case["source"], name
+        assert not (case.get("python_only") and case.get("ubcode_only")), name
+        # the default need types are replaced by any `needs_types`: a case declares
+        # every type it uses, each with a title and a prefix
+        types = tomllib.loads(case["config"])["needs"]["types"]
+        entries = types.values() if isinstance(types, dict) else types
+        assert entries, name
+        for entry in entries:
+            assert "title" in entry and "prefix" in entry, name
+        expect = case["expect"]
+        assert "findings" in expect, name
+        assert set(expect) <= {"needs", "nulls", "absent", "findings"}, name
+        assert expect.get("needs") or expect.get("nulls") or expect.get("absent"), name
+        for table in ("needs", "nulls", "absent"):
+            for need_id in expect.get(table, {}):
+                assert _NEED_ID.fullmatch(need_id), (name, need_id)
+        for finding in expect["findings"]:
+            assert set(finding) <= set(KEYS), name
+            assert finding["code"] in SHARED_CODES, name
+
+
+def test_the_corpus_header_records_where_it_is_canonical() -> None:
+    """ubCode's copy names this path; the header must keep saying this one is canonical."""
+    header = CORPUS_PATH.read_text(encoding="utf-8")
+    assert (
+        "packages/sphinx-needs/tests/fixtures/field_declaration_conformance.toml"
+        in header
+    )
+    assert "THIS copy is CANONICAL" in header
+
+
+def _files(case: Mapping[str, Any]) -> list[tuple[Path, str]]:
+    """The case's project: its configuration, its document, and its other files."""
+    return case_files(case, conf_py=CONF_PY, title=TITLE)
+
+
+@pytest.mark.parametrize(
+    "relative", ["../x.json", "/x.json", "a/../../x.json", "C:/x.json"]
+)
+def test_a_case_cannot_write_outside_its_directory(relative: str) -> None:
+    with pytest.raises(AssertionError, match="outside the case directory"):
+        _files({"config": "", "source": "", "files": {relative: "{}"}})
+
+
+def _describe(code: str, message: str) -> tuple[str | None, str | None]:
+    """The field and the need type a finding names.
+
+    A finding of the schema's build names its entry, ``needs_types['<t>']``, and the
+    field or link type in it, ``.fields['<f>']`` or ``.links['<f>']``; any other names
+    its field as ``Field``/``Option``/``Link type '<f>'``, and its type as its code says
+    (``Need type '<t>'`` for ``type_inherits``; ``on need type '<t>'`` for
+    ``undeclared_for_type`` and ``needextend``).
+    """
+    field = _FIELD.search(message)
+    field_name = field[1] if field else None
+    entry = _ENTRY.search(message)
+    if entry is not None:
+        return entry[2] or field_name, entry[1]
+    need_type = _TYPE[code].search(message) if code in _TYPE else None
+    return field_name, need_type[1] if need_type else None
+
+
+def _field_fails(app: Any, needs: Mapping[str, Mapping[str, Any]]) -> Iterator[Finding]:
+    """The ``field_fail`` findings, from the ``schema_violations.json`` the validation
+    writes beside ``needs.json`` (``sphinx_needs.schema.process``): its
+    ``validation_warnings`` maps a need id to that need's violations, each with its
+    ``subtype`` and the ``field`` in its ``details``. The file is written on every build
+    that validates, so its absence fails the case."""
+    report = json.loads(
+        Path(app.outdir, "schema_violations.json").read_text(encoding="utf-8")
+    )
+    for need_id, violations in report["validation_warnings"].items():
+        for violation in violations:
+            if violation["subtype"] == "field_fail":
+                yield ("field_fail", need_id, violation["details"].get("field"), None)
+
+
+@pytest.mark.parametrize(
+    "test_app,case", params(CASES, files=_files), indirect=["test_app"]
+)
+def test_case(test_app: Any, case: dict[str, Any]) -> None:
+    app = test_app
+    app.build()
+    data = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf-8"))
+    needs = data["versions"][data["current_version"]]["needs"]
+    expect = case["expect"]
+    problems = check_values(needs, expect)
+    found, unread = read_findings(
+        app,
+        needs,
+        shared=SHARED_CODES,
+        ubcode_only=UBCODE_ONLY_CODES,
+        describe=_describe,
+        readers={"field_fail": _field_fails},
+    )
+    problems += [f"a record naming a shared code is unreadable: {w!r}" for w in unread]
+    problems += match_findings(found, expect["findings"], keys=KEYS)
+    assert problems == [], case["why"]

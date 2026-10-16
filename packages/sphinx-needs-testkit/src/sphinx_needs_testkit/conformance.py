@@ -1,12 +1,14 @@
 """The runner half of the case-per-project conformance corpora.
 
-A corpus of this shape (sphinx-needs' ``derive_conformance.toml``) is a TOML file of ``[[case]]`` rows, each one project: a ``config`` that is its
-``ubproject.toml``, a ``source`` that is the body of its one document, optional ``files``,
-and an ``expect`` table of values (as ``needs.json`` writes them), unset fields, and
-findings. The rules every runner follows are in each corpus's header; this module is the
-part of sphinx-needs' runners that does not depend on which corpus it runs. Each runner
-keeps what does: its path, its case count, its codes, its ``conf.py``, its title, its
-shape test, and the readers a finding of its own contract needs.
+A corpus of this shape (sphinx-needs' ``derive_conformance.toml`` and
+``field_declaration_conformance.toml``) is a TOML file of ``[[case]]`` rows, each one
+project: a ``config`` that is its ``ubproject.toml``, a ``source`` that is the body of its
+one document, optional ``files``, and an ``expect`` table of values (as ``needs.json``
+writes them), unset fields, absent fields, and findings. The rules every runner follows
+are in each corpus's header; this module is the part of sphinx-needs' runners that does
+not depend on which corpus it runs. Each runner keeps what does: its path, its case
+count, its codes, its ``conf.py``, its title, its shape test, and the readers a finding
+of its own contract needs.
 
 Plain functions with explicit parameters, deliberately: no corpus's constants live here,
 so one runner changing its codes or its readers cannot change another's outcome.
