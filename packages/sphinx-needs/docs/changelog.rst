@@ -156,7 +156,7 @@ Bug fixes
   written, so a reader gets it back as written. The writer compared with Python's ``==``,
   so a ``number`` field authored ``1`` (held as ``1.0``) with an integer default of ``1``
   was left out and read back as ``1``. Nothing else is written that was left out before
-  (:pr:`0000`)
+  (:pr:`2306`)
 
 - 🐛 A ``fields`` entry of a need type named as a link type's back links (``links_back``,
   ``parent_needs_back``, or ``rel_back`` beside a ``rel`` link type) is refused, one
