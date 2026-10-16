@@ -11,7 +11,7 @@ Improvements
 ............
 
 - ✨ :func:`~sphinx_needs.api.configuration.add_need_layout` adds a need layout from an
-  extension, beside :ref:`needs_layouts`, as ``add_need_type`` adds a need type (:issue:`2265`)
+  extension, beside :ref:`needs_layouts`, as ``add_need_type`` adds a need type (:issue:`2265`, :pr:`2307`)
 
 - 🏷️ sphinx-needs ships a ``py.typed`` marker (:pep:`561`) and the ``Typing :: Typed``
   classifier, so a type checker (mypy, pyright, ty) reads its annotations instead of
@@ -140,7 +140,7 @@ Breaking changes
 
 - ‼️ ``app.config.needs_types`` and ``app.config.needs_layouts`` no longer hold the need
   types and layouts added by extensions or by the GitHub services, and the types and
-  layouts sphinx-needs reads cannot be changed through ``NeedsSphinxConfig`` (:issue:`2265`)
+  layouts sphinx-needs reads cannot be changed through ``NeedsSphinxConfig`` (:issue:`2265`, :pr:`2307`)
 
   The two values hold what the project configures -- ``needs_layouts`` also sphinx-needs'
   own layouts and the compiled :ref:`needs_card_layouts`, as before -- so Sphinx compares
@@ -192,12 +192,13 @@ Bug fixes
   any time (see *Breaking changes* for what this changes for an extension). After
   upgrading, the line is still reported until a build re-reads a document, as the
   environment Sphinx loads was pickled with the old values: edit any page, or build once
-  with ``-E`` (:issue:`2265`)
+  with ``-E`` (:issue:`2265`, :pr:`2307`)
 
 - 🐛 Configuring your own ``issue`` or ``pr`` need type -- or adding one with
   ``add_need_type`` from another extension -- no longer stops the GitHub services from
   adding their other need types: a configured ``issue`` dropped ``pr`` and ``commit``, and
-  a configured ``pr`` dropped ``commit``. Each of the three now gives way on its own.
+  a configured ``pr`` dropped ``commit``. Each of the three now gives way on its own
+  (:pr:`2307`)
 
 - 🐛 A ``fields`` entry of a need type named as a link type's back links (``links_back``,
   ``parent_needs_back``, or ``rel_back`` beside a ``rel`` link type) is refused, one
