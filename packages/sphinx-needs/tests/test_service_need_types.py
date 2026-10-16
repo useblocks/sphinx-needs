@@ -1,19 +1,21 @@
-"""The GitHub services' need types and layout, and the need types added from code (#2265).
+"""The GitHub services' need types and layout, and the types and layouts added from code
+(#2265).
 
-sphinx-needs keeps the need types added with ``add_need_type`` and the GitHub services'
-three need types (``issue``, ``pr``, ``commit``) and ``github`` layout in its own
-registry, never in the ``needs_types`` and ``needs_layouts`` values: those hold what the
-project configures, so Sphinx compares the same values on both sides of an incremental
-build. ``NeedsSphinxConfig(config).types`` and ``.layouts`` -- and so every reader --
-merge the two, a configured entry winning over a registered one of the same name.
-
-The GitHub built-ins are registered from a ``config-inited`` handler that runs after
-every extension's default-priority one, each only if nothing of its name exists by then,
-so a type or layout of the project's, or of another extension's, wins.
+sphinx-needs keeps the need types and layouts added with ``add_need_type`` and
+``add_need_layout``, and the GitHub services' three need types (``issue``, ``pr``,
+``commit``) and ``github`` layout, in its own registry, never in the ``needs_types`` and
+``needs_layouts`` values: those hold what the project configures, so Sphinx compares the
+same values on both sides of an incremental build. ``NeedsSphinxConfig(config).types``
+and ``.layouts`` -- and so every reader -- read three tiers, each entry shadowing those of
+its name below it: the configured entries, then the added ones, then the GitHub
+built-ins, which therefore come last and give way, one by one, to a type or layout of
+their name configured or added at any time. The two reads cannot be written through.
 """
 
 from __future__ import annotations
 
+import copy
+import pickle
 from pathlib import Path
 from typing import Any
 
@@ -24,6 +26,7 @@ from sphinx.util.parallel import parallel_available
 from sphinx_needs.api import get_need_types
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.exceptions import NeedsApiConfigException
 from sphinx_needs.services.config.github import GITHUB_LAYOUT
 from sphinx_needs_testkit import build_warnings
 
@@ -238,26 +241,39 @@ def test_a_configured_service_type_wins_and_the_others_are_added(
     }
 
 
-#: another extension adds ``issue`` from a handler at the default priority
+#: another extension adds ``issue``, from a handler of the event and priority given
 THIRD_PARTY_ISSUE = """
-def _add_issue(app, config):
+def _add_issue(app, *_args):
     from sphinx_needs.api import add_need_type
     add_need_type(app, "issue", "Their issue", "TI_")
 
 def setup(app):
-    app.connect("config-inited", _add_issue)
+    app.connect({event!r}, _add_issue, priority={priority})
 """
 
 
 @pytest.mark.parametrize(
     "test_app",
-    [_project(CONF + THIRD_PARTY_ISSUE, ".. issue:: Theirs\n   :id: TI_00001\n")],
+    [
+        pytest.param(
+            _project(
+                CONF + THIRD_PARTY_ISSUE.format(event=event, priority=priority),
+                ".. issue:: Theirs\n   :id: TI_00001\n",
+            ),
+            id=f"{event}-{priority}",
+        )
+        for event, priority in (
+            ("config-inited", 500),
+            ("config-inited", 950),
+            ("builder-inited", 500),
+        )
+    ],
     indirect=True,
 )
 def test_an_extension_type_named_as_a_service_type_wins(test_app: Any) -> None:
-    """``add_need_type`` for ``issue`` from another extension's ``config-inited``
-    handler succeeds, and the service's ``issue`` is not added; its ``pr`` and
-    ``commit`` are, after it."""
+    """``add_need_type`` for ``issue`` from another extension succeeds whenever it is
+    called, and the service's ``issue`` gives way to it; its ``pr`` and ``commit`` are
+    still there, last."""
     app = test_app
     app.build()
     assert build_warnings(app) == []
@@ -272,6 +288,40 @@ def test_an_extension_type_named_as_a_service_type_wins(test_app: Any) -> None:
         "commit",
     ]
     assert _types(app)["issue"] == ("Their issue", "TI_")
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    assert "TI_00001" in html
+
+
+#: another extension adds ``story`` after every ``config-inited`` handler of sphinx-needs
+LATE_STORY = """
+def _add_story(app, config):
+    from sphinx_needs.api import add_need_type
+    add_need_type(app, "story", "Story", "ST_")
+
+def setup(app):
+    app.connect("config-inited", _add_story, priority=950)
+"""
+
+
+@pytest.mark.parametrize("test_app", [_project(CONF + LATE_STORY, "")], indirect=True)
+def test_the_service_types_come_after_every_added_type(test_app: Any) -> None:
+    """The GitHub services' types follow the configured types and every type added
+    with ``add_need_type``, however late, as they always did: the order of legends,
+    of ``needreport`` and of ``list2need``'s types."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    assert get_need_types(app) == [
+        "req",
+        "spec",
+        "impl",
+        "test",
+        "need",
+        "story",
+        "issue",
+        "pr",
+        "commit",
+    ]
 
 
 #: a project layout named ``github``
@@ -300,19 +350,175 @@ def test_a_configured_github_layout_wins(test_app: Any) -> None:
     assert html.count("Mine: ") == 3
 
 
-def test_the_view_is_a_fresh_value_on_each_read(tmp_path: Path, make_app: Any) -> None:
-    """Changing the list or mapping a read returned changes nothing: types and layouts
-    are added with ``add_need_type`` and configured with the options."""
+@pytest.fixture
+def plain_app(tmp_path: Path, make_app: Any) -> Any:
+    """An application of a project that configures nothing but sphinx-needs."""
     srcdir = tmp_path / "src"
     srcdir.mkdir()
     (srcdir / "conf.py").write_text(CONF, encoding="utf-8")
     (srcdir / "index.rst").write_text("Case\n====\n", encoding="utf-8")
     app = make_app("html", srcdir=srcdir)
+    yield app
+    app.cleanup()
+
+
+ENTRY = {"directive": "x", "title": "X", "prefix": "X_"}
+
+
+@pytest.mark.parametrize(
+    ("write", "route"),
+    [
+        pytest.param(lambda c: c.types.append(ENTRY), "add_need_type", id="append"),
+        pytest.param(lambda c: c.types.extend([ENTRY]), "add_need_type", id="extend"),
+        pytest.param(lambda c: c.types.insert(0, ENTRY), "add_need_type", id="insert"),
+        pytest.param(
+            lambda c: c.types.__setitem__(0, ENTRY), "add_need_type", id="types-item"
+        ),
+        pytest.param(lambda c: c.types.pop(), "needs_types", id="pop"),
+        pytest.param(
+            lambda c: c.layouts.__setitem__("x", {}),
+            "add_need_layout",
+            id="layouts-item",
+        ),
+        pytest.param(
+            lambda c: c.layouts.update({"x": {}}), "add_need_layout", id="update"
+        ),
+        pytest.param(lambda c: c.layouts.pop("clean"), "needs_layouts", id="del"),
+        pytest.param(
+            lambda c: setattr(c, "types", [ENTRY]), "add_need_type", id="types="
+        ),
+        pytest.param(
+            lambda c: setattr(c, "layouts", {}), "add_need_layout", id="layouts="
+        ),
+    ],
+)
+def test_the_views_cannot_be_written_through(
+    plain_app: Any, write: Any, route: str
+) -> None:
+    """The types and layouts every reader sees are read-only: a write through them, which
+    could never reach the configuration or the registry, raises, naming the routes."""
+    config = NeedsSphinxConfig(plain_app.config)
+    with pytest.raises(NeedsApiConfigException, match=route):
+        write(config)
+    assert "x" not in get_need_types(plain_app)
+    assert "x" not in config.layouts
+    assert "clean" in config.layouts
+
+
+def test_a_copy_of_a_view_is_a_plain_value(plain_app: Any) -> None:
+    """A copy of a read is the caller's own: a plain list or dict."""
+    config = NeedsSphinxConfig(plain_app.config)
+    for value in (config.types, config.layouts):
+        for duplicate in (
+            copy.copy(value),
+            copy.deepcopy(value),
+            pickle.loads(pickle.dumps(value)),
+        ):
+            assert type(duplicate) in (list, dict)
+            assert duplicate == value
+
+
+# -- add_need_layout ---------------------------------------------------------------------
+
+#: an extension adds the layout ``ext_card`` from a ``config-inited`` handler
+EXT_LAYOUT = """
+def _add_layout(app, config):
+    from sphinx_needs.api import add_need_layout
+    add_need_layout(
+        app, "ext_card", {"grid": "simple", "layout": {"head": ["Ext: <<meta('title')>>"]}}
+    )
+
+def setup(app):
+    app.connect("config-inited", _add_layout)
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            CONF + EXT_LAYOUT,
+            ".. req:: A requirement\n   :id: R_00001\n   :layout: ext_card\n",
+        )
+    ],
+    indirect=True,
+)
+def test_an_extension_layout_is_usable(test_app: Any) -> None:
+    """A layout added with ``add_need_layout`` is read beside the configured ones, and a
+    need is rendered with it; it is not written into ``needs_layouts``."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    assert "ext_card" in NeedsSphinxConfig(app.config).layouts
+    assert "ext_card" not in app.config.needs_layouts
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    assert html.count("needs_layout_ext_card") == 1
+    assert html.count("Ext: ") == 1
+
+
+LAYOUT = {"grid": "simple", "layout": {"head": ["X"]}}
+
+
+def test_add_need_layout_refuses_a_name_already_taken(plain_app: Any) -> None:
+    """A name that is a configured layout (sphinx-needs' own included) or one added
+    before is refused; the GitHub built-in ``github`` is not taken: the added layout
+    replaces it."""
+    from sphinx_needs.api import add_need_layout
+
+    add_need_layout(plain_app, "x", LAYOUT)
+    for name in ("x", "clean"):
+        with pytest.raises(NeedsApiConfigException, match=f"{name} already exists"):
+            add_need_layout(plain_app, name, LAYOUT)
+    add_need_layout(plain_app, "github", LAYOUT)
+    layouts = NeedsSphinxConfig(plain_app.config).layouts
+    assert (layouts["x"], layouts["github"]) == (LAYOUT, LAYOUT)
+
+
+# -- a configured entry wins on a collision -----------------------------------------------
+
+#: an extension adds a type and a layout, and an old-style one writes the configuration
+#: values after it, and after every ``config-inited`` handler: an entry of each tier's
+#: name is configured late
+COLLISIONS = """
+def _add(app, config):
+    from sphinx_needs.api import add_need_type
+    add_need_type(app, "story", "Their story", "TS_")
     try:
-        config = NeedsSphinxConfig(app.config)
-        config.types.append({"directive": "x", "title": "X", "prefix": "X_"})
-        config.layouts["x"] = {}
-        assert "x" not in get_need_types(app)
-        assert "x" not in config.layouts
-    finally:
-        app.cleanup()
+        from sphinx_needs.api import add_need_layout
+    except ImportError:  # the base, without it
+        config.needs_layouts["ext_card"] = {"grid": "simple", "layout": {}}
+    else:
+        add_need_layout(app, "ext_card", {"grid": "simple", "layout": {}})
+
+def _late(app):
+    app.config.needs_types = [
+        *app.config.needs_types,
+        {"directive": "issue", "title": "Mine", "prefix": "MI_"},
+        {"directive": "story", "title": "My story", "prefix": "MS_"},
+    ]
+    app.config.needs_layouts = {
+        **app.config.needs_layouts,
+        "github": {"grid": "simple", "layout": {"head": ["MINE"]}},
+        "ext_card": {"grid": "simple", "layout": {"head": ["MY CARD"]}},
+    }
+
+def setup(app):
+    app.connect("config-inited", _add)
+    app.connect("builder-inited", _late)
+"""
+
+
+@pytest.mark.parametrize("test_app", [_project(CONF + COLLISIONS, "")], indirect=True)
+def test_a_configured_entry_wins_on_a_collision(test_app: Any) -> None:
+    """Where a configured entry and an added or built-in one share a name -- which only
+    a write into the configuration after they were added can make -- the configured
+    entry is the one every reader sees, once."""
+    app = test_app
+    config = NeedsSphinxConfig(app.config)
+    types = [t for t in config.types if t["directive"] in ("issue", "story")]
+    assert [(t["directive"], t["title"]) for t in types] == [
+        ("issue", "Mine"),
+        ("story", "My story"),
+    ]
+    assert config.layouts["github"]["layout"] == {"head": ["MINE"]}
+    assert config.layouts["ext_card"]["layout"] == {"head": ["MY CARD"]}

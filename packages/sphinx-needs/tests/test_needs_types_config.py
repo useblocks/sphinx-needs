@@ -20,6 +20,7 @@ import pickle
 import re
 from collections.abc import Callable
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -663,6 +664,14 @@ def test_predicates_are_filter_value_pairs(predicates: object, got: str | None) 
             f"list of (filter, value) pairs {got}; the key is ignored"
         ]
     )
+
+
+def test_the_types_read_before_resolution_are_the_value() -> None:
+    """Read before ``resolve_need_types`` (priority 12), a mapping-shaped value is
+    returned as it is configured: the added and built-in types are read beside the
+    resolved list only."""
+    config = NeedsSphinxConfig(SimpleNamespace(needs_types=MAPPING))  # ty: ignore[invalid-argument-type]
+    assert config.types == MAPPING
 
 
 def test_the_mapping_shape_is_the_list_in_its_order() -> None:
