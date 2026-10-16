@@ -609,7 +609,8 @@ a global one (:ref:`needs_fields`, :ref:`needs_links` and the others, an extensi
 and between two global ones a name declared outright wins over back links, so the link type whose back links collide is refused (:ref:`needs_links`),
 and a link type that is itself refused claims no name: of ``x``, ``x_back`` and ``x_back_back``, ``x_back`` is refused and ``x`` kept;
 between two link types need types declare alone, back links win: of ``x`` and ``x_back``, the entries of ``x_back`` are refused.
-A refused link type leaves its name free, so a need type may declare a field of that name.
+A link type refused for its back links leaves its own name to a need type's field,
+unless that name is the back links of a link type that remains (as ``x_back`` in the chain above, or ``links_back``).
 A core field may be declared like any other: ``status`` takes a default and an ``enum``.
 A :ref:`derived <needs_derive>` field or link type (one with ``derive`` or ``derive_by_type``) takes only a ``description``,
 a narrower ``schema`` and (a field) ``nullable``: its rules give its value, so a ``default`` or ``predicates`` is refused,
