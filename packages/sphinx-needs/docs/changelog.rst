@@ -270,6 +270,16 @@ Internal changes
   them; ``build_need_repr`` takes any element. Fourteen ``# ty: ignore`` comments go
   (:issue:`1835`)
 
+- 🏷️ The filter and ``needbar`` attributes declare what the directives store: an absent
+  option is ``None`` (``filter`` and ``sort_by`` of every filtering directive, needbar's axis
+  titles, label rotations, ``text_color``, and its ``xlabels``, ``ylabels`` and ``colors``,
+  split once into lists), and a directive's content is a ``StringList`` (``filter_code``,
+  needbar's ``content``). ``filter_needs_and_parts`` returns items of the kind it is given, a
+  filter code's namespace is typed as the user's, ``NeedsView.filter_statuses`` and its parts
+  twin take any iterable of statuses, ``None`` among them, and the ``type``, ``status`` and
+  ``is_external`` fast paths of a filter pass only a constant their index can hold, with the
+  same results. Eighteen ``# ty: ignore`` comments go (:issue:`1835`)
+
 - 🏷️ A ``FieldSchema`` constructed with predicate defaults no longer raises ``TypeError``:
   its value check read ``isinstance(v, A) | B``. No build reached it, as predicates are
   attached after construction. That fix, and two in ``filter_common.py`` and ``views.py``,
