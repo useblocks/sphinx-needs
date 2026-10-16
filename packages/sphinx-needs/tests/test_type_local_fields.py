@@ -145,7 +145,8 @@ def _untyped(need_type: str, name: str) -> str:
     """The finding of a declaration of a field no need type gives a type."""
     return _conflict(
         f"needs_types[{need_type!r}].fields[{name!r}] declares {name!r}, which no "
-        "needs_fields entry declares, and no need type gives it a 'schema' 'type'"
+        "needs_fields entry declares, and no need type without an ancestor declaring "
+        "it gives it a 'schema' 'type'"
     )
 
 
@@ -449,6 +450,81 @@ def test_its_own_export_imports_silently(make_app: Any, tmp_path: Path) -> None:
         } == held, prefix
 
 
+def test_a_derived_value_from_outside_is_dropped_where_undeclared(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """A derived field declared on need types alone is absent on every other type for
+    a need from outside too: a value a needs.json gives it there -- an edited file,
+    or another project's -- is dropped with the warning; on a type that declares it,
+    the value is kept, as data."""
+    types = _types(
+        req={
+            "fields": {
+                "dv": {
+                    "schema": {"type": "integer"},
+                    "derive": {"kind": "copy", "field": "effort"},
+                }
+            }
+        },
+        doc={},
+    )
+    fields = {"effort": {"schema": {"type": "integer"}, "nullable": True}}
+    index = (
+        ".. req:: A\n   :id: R_001\n   :effort: 3\n\n"
+        ".. spec:: B\n   :id: S_001\n\n"
+        ".. doc:: C\n   :id: D_001\n"
+    )
+    first = tmp_path / "first"
+    first.mkdir()
+    (first / "conf.py").write_text(_conf(types, fields), encoding="utf-8")
+    (first / "index.rst").write_text("Case\n====\n\n" + index, encoding="utf-8")
+    app = make_app("needs", srcdir=first)
+    app.build()
+    assert build_warnings(app) == []
+    data = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf-8"))
+    app.cleanup()
+    exported = data["versions"][data["current_version"]]["needs"]
+    assert {k: v["dv"] for k, v in exported.items()} == {
+        "R_001": 3,
+        "S_001": None,
+        "D_001": None,
+    }
+    # the file edited: a value on the types that do not declare the field
+    exported["R_001"]["dv"] = 99
+    exported["S_001"]["dv"] = 7
+    exported["D_001"]["dv"] = 9
+
+    second = tmp_path / "second"
+    second.mkdir()
+    (second / "edited.json").write_text(json.dumps(data), encoding="utf-8")
+    external = (
+        "needs_external_needs = [{'base_url': 'http://example.org', "
+        f"'json_path': {str(second / 'edited.json')!r}, 'id_prefix': 'E_'}}]\n"
+    )
+    (second / "conf.py").write_text(
+        _conf(types, fields, None, external), encoding="utf-8"
+    )
+    (second / "index.rst").write_text(
+        "Case\n====\n\n.. needimport:: edited.json\n   :id_prefix: M_\n",
+        encoding="utf-8",
+    )
+    app = make_app("needs", srcdir=second)
+    app.build()
+    assert build_warnings(app) == [
+        _undeclared(None, "E_D_001", "doc", 9, "dv"),
+        _undeclared(None, "E_S_001", "spec", 7, "dv"),
+        _undeclared(4, "M_D_001", "doc", 9, "dv"),
+        _undeclared(4, "M_S_001", "spec", 7, "dv"),
+    ]
+    needs = SphinxNeedsData(app.env).get_needs_view()
+    for prefix in ("M_", "E_"):
+        assert {
+            k.removeprefix(prefix): v["dv"]
+            for k, v in needs.items()
+            if k.startswith(prefix)
+        } == {"R_001": 99, "S_001": None, "D_001": None}, prefix
+
+
 # -- one name, one shape: who sets it, and what disagrees --------------------------
 
 SHAPE_TYPES = _types(
@@ -582,6 +658,68 @@ def test_the_first_declaration_sets_the_shape(test_app: Any) -> None:
     assert _schema(app).global_declaration("d3") is None
 
 
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            _conf(
+                _types(
+                    a={
+                        "fields": {
+                            "e1": {"schema": {"type": "array"}},
+                            "e2": {
+                                "schema": {"type": "array", "items": {"type": "string"}}
+                            },
+                            "m1": {},
+                        }
+                    },
+                    b={
+                        "fields": {
+                            "e1": {
+                                "schema": {"type": "array", "items": {"type": "string"}}
+                            },
+                            "e2": {"schema": {"type": "array"}},
+                        }
+                    },
+                    c={
+                        "inherits": "a",
+                        "fields": {"m1": {"schema": {"type": "integer"}}},
+                    },
+                )
+            ),
+            ".. a:: A\n   :id: A_001\n   :e1: p\n\n"
+            ".. b:: B\n   :id: B_001\n   :e1: q\n   :e2: r\n",
+        )
+    ],
+    indirect=True,
+)
+def test_the_first_declaration_of_an_array_gives_its_items(test_app: Any) -> None:
+    """The first declaration of a field that is an array gives its items' type: one
+    that gives none is refused with the text a ``needs_fields`` entry gets; a later
+    one that gives none takes the agreed items. A child never sets the shape: the
+    field of an untyped declaration whose child gives a type does not exist."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        _conflict(
+            "needs_types['a'].fields['e1'] cannot be declared: Invalid schema: "
+            '"items" is a required property'
+        ),
+        _untyped("a", "m1"),
+        _untyped("c", "m1"),
+        _undeclared(4, "A_001", "a", "p", "e1"),
+    ]
+    assert {k: (v["e1"], v["e2"]) for k, v in _needs(app).items()} == {
+        "A_001": (None, None),
+        "B_001": (["q"], ["r"]),
+    }
+    assert _field(app, "b", "e2").schema == {
+        "type": "array",
+        "items": {"type": "string"},
+    }
+    assert _schema(app).global_declaration("m1") is None
+
+
 INHERITED_TYPES = _types(
     req={"fields": {"x": {"schema": {"type": "integer", "minimum": 0}}}},
     sreq={
@@ -711,6 +849,58 @@ def test_a_refused_entry_still_declares(test_app: Any) -> None:
         "T_001": 6,
         "S_001": None,
     }
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            _conf(
+                _types(
+                    f1={"fields": {"k5": {"schema": {"type": "integer"}}}},
+                    f2={"fields": {"k5": {"schema": {"type": "string"}}}},
+                    f3={
+                        "inherits": "f2",
+                        "fields": {"k5": {"schema": {"type": "string"}}},
+                    },
+                    f4={"inherits": "f2", "fields": {"k5": {}}},
+                    f5={"inherits": "f2"},
+                )
+            ),
+            ".. f2:: A\n   :id: F2_001\n   :k5: s\n\n"
+            ".. f3:: B\n   :id: F3_001\n   :k5: hello\n\n"
+            ".. f3:: C\n   :id: F3_002\n   :k5: 12\n\n"
+            ".. f4:: D\n   :id: F4_001\n   :k5: 4\n\n"
+            ".. f5:: E\n   :id: F5_001\n   :k5: 12\n",
+        )
+    ],
+    indirect=True,
+)
+def test_a_child_of_a_refused_declaration_is_a_declaration_of_its_own(
+    test_app: Any,
+) -> None:
+    """An entry refused for the field's shape declares nothing, so a child's entry
+    under it is a declaration of its own: one of the refused type is refused too,
+    and does not declare the field -- its needs are kept, the value dropped; an
+    empty one takes the agreed type; a child without an entry does not declare it."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        _shape("f2", "k5", "string", "integer", "f1"),
+        _shape("f3", "k5", "string", "integer", "f1"),
+        _undeclared(4, "F2_001", "f2", "s", "k5"),
+        _undeclared(8, "F3_001", "f3", "hello", "k5"),
+        _undeclared(12, "F3_002", "f3", "12", "k5"),
+        _undeclared(20, "F5_001", "f5", "12", "k5"),
+    ]
+    assert {k: v["k5"] for k, v in _needs(app).items()} == {
+        "F2_001": None,
+        "F3_001": None,
+        "F3_002": None,
+        "F4_001": 4,
+        "F5_001": None,
+    }
+    assert _properties(app)["k5"]["description"] == "Declared by need types 'f1', 'f4'"
 
 
 REQUIRED_TYPES = _types(
@@ -1144,3 +1334,151 @@ def test_what_a_derive_in_an_entry_reaches(test_app: Any) -> None:
     blocks = _schema(app).global_declaration("blocks")
     assert blocks is not None
     assert sorted(blocks.derive_by_type or {}) == ["spec"]
+
+
+# -- the fold's precedence, the walk, a link type under fields, a schema by hand ------
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            _conf(
+                _types(
+                    task={
+                        "fields": {
+                            "total": {"derive": {"kind": "copy", "field": "effort"}},
+                            "ov": {
+                                "schema": {"type": "number"},
+                                "derive": {"kind": "copy", "field": "effort"},
+                            },
+                        }
+                    },
+                    subtask={
+                        "inherits": "task",
+                        "fields": {
+                            "ov": {"derive": {"kind": "copy", "field": "other"}}
+                        },
+                    },
+                ),
+                {
+                    "effort": {"schema": {"type": "number"}},
+                    "other": {"schema": {"type": "number"}},
+                    "total": {
+                        "schema": {"type": "number"},
+                        "nullable": True,
+                        "derive_by_type": {
+                            "subtask": {"kind": "copy", "field": "other"}
+                        },
+                    },
+                },
+            ),
+            ".. task:: a\n   :id: T_001\n   :effort: 3\n   :other: 5\n\n"
+            ".. subtask:: b\n   :id: ST_001\n   :effort: 2\n   :other: 9\n",
+        )
+    ],
+    indirect=True,
+)
+def test_an_inherited_rule_gives_way(test_app: Any) -> None:
+    """A rule a type inherits gives way, silently, to an explicit
+    ``derive_by_type`` entry for the child, and to the child's own ``derive``."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    assert {k: (v["total"], v["ov"]) for k, v in _needs(app).items()} == {
+        "T_001": (3.0, 3.0),
+        "ST_001": (9.0, 9.0),
+    }
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            _conf(
+                [
+                    {"directive": "k", "title": "K", "prefix": "K_", "inherits": "m"},
+                    {
+                        "directive": "r1",
+                        "title": "R",
+                        "prefix": "R_",
+                        "fields": {"x": {"schema": {"type": "string"}}},
+                    },
+                    {
+                        "directive": "m",
+                        "title": "M",
+                        "prefix": "M_",
+                        "fields": {"x": {"schema": {"type": "integer"}}},
+                    },
+                    {
+                        "directive": "p",
+                        "title": "P",
+                        "prefix": "P_",
+                        "inherits": "q",
+                        "fields": {"y": {"schema": {"type": "integer"}}},
+                    },
+                    {
+                        "directive": "q",
+                        "title": "Q",
+                        "prefix": "Q_",
+                        "inherits": "p",
+                        "fields": {"y": {}},
+                    },
+                ]
+            ),
+            ".. k:: a\n   :id: K_001\n   :x: 1\n\n.. m:: c\n   :id: M_001\n   :x: 2\n\n"
+            ".. p:: d\n   :id: P_001\n   :y: 3\n\n.. q:: e\n   :id: Q_001\n   :y: 4\n",
+        )
+    ],
+    indirect=True,
+)
+def test_the_walk_decides_the_roots(test_app: Any) -> None:
+    """The roots are read in the walk's order, not the configured one: a parent given
+    after its child sets the shape before a type given between them; the two members
+    of a broken ``inherits`` cycle are both roots, the untyped one taking the other's
+    type."""
+    app = test_app
+    app.build()
+    assert {k: (v["x"], v["y"]) for k, v in _needs(app).items()} == {
+        "K_001": (1, None),
+        "M_001": (2, None),
+        "P_001": (None, 3),
+        "Q_001": (None, 4),
+    }
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            CONF + "needs_extra_links = [{'option': 'blocks', 'incoming': 'in', "
+            "'outgoing': 'out'}]\n"
+            + "needs_types = "
+            + repr(_types(spec={"fields": {"blocks": {}}}))
+            + "\n"
+        )
+    ],
+    indirect=True,
+)
+def test_a_link_type_under_fields_is_no_field(test_app: Any) -> None:
+    """A ``needs_extra_links`` name under a type's ``fields`` is a mis-tabled link
+    type -- the configuration check does not take it for a field -- and the build goes
+    on with the warning."""
+    app = test_app
+    app.build()
+    assert _conflict(
+        "needs_types['spec'].fields['blocks'] declares 'blocks', which is a link type, "
+        "not a field"
+    ) in build_warnings(app)
+
+
+def test_a_schema_not_told_its_types_projects_absence() -> None:
+    """A schema built by hand and never told its need types still makes a field
+    declared on need types alone absent on every other type."""
+    schema = FieldsSchema()
+    schema.add_extra_field(_open_field("x"), project=True)
+    schema._localise("x", ["req"])
+    absent = schema.for_type("spec").get_any_field("x")
+    assert absent is not None
+    assert (absent.directive_option, absent.allow_extend) == (False, False)
+    assert schema.for_type("req").get_any_field("x") is schema.global_declaration("x")
