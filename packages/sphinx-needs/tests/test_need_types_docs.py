@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import re
+import textwrap
 from pathlib import Path
 from typing import Any
 
@@ -267,6 +268,12 @@ def test_need_types_example(test_app: SphinxTestApp) -> None:
     ]
 
 
+MISSPELT_WARNING = (
+    "WARNING: needs_types['safety_req'].fields['hazzard'] declares 'hazzard', which "
+    "no needs_fields entry declares, and no need type without an ancestor declaring "
+    "it gives it a 'schema' 'type'; the entry is ignored [needs.type_conflict]"
+)
+
 MISSPELT_TOML = """\
 [needs]
 build_json = true
@@ -310,11 +317,7 @@ def test_misspelt_field_of_a_type(test_app: SphinxTestApp) -> None:
     it is refused with a warning.
     """
     test_app.build()
-    assert build_warnings(test_app) == [
-        "WARNING: needs_types['safety_req'].fields['hazzard'] declares 'hazzard', which "
-        "no needs_fields entry declares, and no need type without an ancestor declaring "
-        "it gives it a 'schema' 'type'; the entry is ignored [needs.type_conflict]",
-    ]
+    assert build_warnings(test_app) == [MISSPELT_WARNING]
     properties = _needs_json(test_app)["needs_schema"]["properties"]
     assert properties["hazrd"]["description"] == "Declared by need types 'safety_req'"
     assert "hazzard" not in properties
@@ -394,3 +397,62 @@ def test_type_entry_on_a_registered_field(test_app: SphinxTestApp) -> None:
         data["needs_schema"]["properties"]["url"]["description"]
         == "Added by service github-issues"
     )
+
+
+DOCS = Path(__file__).parent.parent / "docs"
+
+_TEXT_BLOCK = re.compile(r"^( *)\.\. code-block:: text\n\n((?:\1   .*\n|\n)+)", re.MULTILINE)
+
+
+def _quoted_records(rst: str) -> list[str]:
+    """The records of every ``.. code-block:: text`` in ``rst``, as ``build_warnings`` gives them.
+
+    A record starts at a line in the block's first column, and takes the indented lines
+    after it; a location the page abbreviates to ``index.rst:`` is the ``<srcdir>/`` one.
+    """
+    records = []
+    for match in _TEXT_BLOCK.finditer(rst):
+        block = textwrap.dedent(match.group(2)).strip("\n")
+        block = block.replace("index.rst:", "<srcdir>/index.rst:")
+        records.extend(re.split(r"\n(?=\S)", block))
+    return records
+
+
+def _schema_page_section() -> str:
+    """The section "Per-type configuration or schema rules?" of the schema page, alone."""
+    rst = (DOCS / "schema" / "index.rst").read_text(encoding="utf-8")
+    start = rst.index(".. _`schema_per_type_or_rules`:")
+    lines = rst[start:].splitlines(keepends=True)
+    # The section's own title and underline come first; it ends before the next title.
+    underlines = [i for i, line in enumerate(lines) if re.fullmatch(r"-{4,}\n", line)]
+    return "".join(lines[: underlines[1] - 1])
+
+
+@pytest.mark.parametrize(
+    ("page", "pinned", "count"),
+    [
+        ("schema", SCHEMA_PER_TYPE_WARNINGS, 7),
+        ("need_types", NEED_TYPES_WARNINGS, 6),
+    ],
+)
+def test_docs_quote_the_pinned_warnings(
+    page: str, pinned: list[str], count: int
+) -> None:
+    """Every output the two pages quote is a record the tests above pin, word for word.
+
+    Without it a page could change a quoted warning and every test stay green. ``count``
+    is the number of records the page quotes, so a parse that finds none fails too.
+    """
+    if page == "schema":
+        rst = _schema_page_section()
+    else:
+        rst = (DOCS / "need_types.rst").read_text(encoding="utf-8")
+    records = _quoted_records(rst)
+    assert [record for record in records if record not in pinned] == []
+    assert len(records) == count
+    if page == "need_types":
+        # The misspelt-field warning is a ``::`` literal on the page, without its severity.
+        quoted = MISSPELT_WARNING.removeprefix("WARNING: ").removesuffix(
+            " [needs.type_conflict]"
+        )
+        assert quoted in rst
