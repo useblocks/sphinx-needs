@@ -1581,11 +1581,9 @@ def check_configuration(app: Sphinx, config: Config) -> None:
             raise NeedsConfigException(
                 f"Same name for link and field: {link}. This is not allowed."
             )
-        if link + "_back" in fields:
-            raise NeedsConfigException(
-                "Same name for automatically created link and field: {}."
-                " This is not allowed.".format(link + "_back")
-            )
+        # a link type whose back links are named as a field is refused where the
+        # schema is built (create_schema), which sees every field: a service's, and
+        # one an extension adds after this check, too
 
     external_variants = needs_config.variants
     for value in external_variants.values():
@@ -1650,6 +1648,85 @@ def _link_type_names(needs_config: NeedsSphinxConfig) -> frozenset[str]:
     )
 
 
+#: the link types every project has: their back links yield to no declaration
+_CORE_LINK_NAMES = frozenset({"links", *CORE_LINK_TYPES})
+
+
+def _global_link_entries(needs_config: NeedsSphinxConfig) -> dict[str, str]:
+    """Each global link type, with the configuration value that declares it: a
+    ``needs_extra_links`` entry wins over a ``needs_links`` one of the same name, as
+    where the schema is built."""
+    return dict.fromkeys(needs_config._links, "needs_links") | {
+        link["option"]: "needs_extra_links"
+        for link in needs_config._extra_links
+        if isinstance(link, dict) and isinstance(link.get("option"), str)
+    }
+
+
+def _back_link_claims(
+    fields: Mapping[str, NewFieldParams], links: Mapping[str, str]
+) -> tuple[frozenset[str], frozenset[str], list[str]]:
+    """The global declarations refused for the name of a link type's back links.
+
+    The back links of a link type ``l`` are computed on every need as ``l_back``. The
+    back links of ``links`` and ``parent_needs``, which every project has, yield to
+    nothing: a field or a link type named ``links_back`` or ``parent_needs_back`` is
+    refused. Between other global declarations, a name declared outright wins over
+    back links: a link type whose back links would have the name of a field, or of a
+    link type that is not refused itself, is refused (so of the link types ``x`` and
+    ``x_back`` and a field ``x_back_back``, ``x_back`` is refused and ``x`` kept). What
+    is refused does not exist. What need types declare is checked after this, against
+    the declarations that remain.
+
+    :param fields: The registered fields (from ``needs_fields``,
+        ``needs_extra_options``, ``add_field`` and the services), by name.
+    :param links: The global link types, each with the configuration value that
+        declares it (:func:`_global_link_entries`).
+    :return: The link types refused, the fields refused, and one finding for each,
+        in the order of their names.
+    """
+    core_back = {f"{name}_back": name for name in _CORE_LINK_NAMES}
+    findings: dict[str, str] = {}
+    refused_fields: set[str] = set()
+    refused_links: set[str] = set()
+    for name, params in fields.items():
+        if (core := core_back.get(name)) is not None:
+            refused_fields.add(name)
+            findings[name] = (
+                f"Field {name!r} (from {params.source}) names the back links of the "
+                f"core link type {core!r}, which is not a field; the field is ignored"
+            )
+    for name, entry in links.items():
+        if (core := core_back.get(name)) is not None:
+            refused_links.add(name)
+            findings[name] = (
+                f"{entry} entry {name!r} names the back links of the core link type "
+                f"{core!r}, which is not a link type; the link type is ignored"
+            )
+    # the longest name first: whether a link type is refused may depend on the link
+    # type named as its back links, which is longer
+    for name in sorted(
+        links.keys() - _CORE_LINK_NAMES - refused_links, key=lambda n: (-len(n), n)
+    ):
+        back = f"{name}_back"
+        if (params := fields.get(back)) is not None:
+            what = f"a field (from {params.source})"
+        elif back in links and back not in refused_links:
+            what = f"a link type (from {links[back]})"
+        else:
+            continue
+        refused_links.add(name)
+        findings[name] = (
+            f"{links[name]} entry {name!r} declares the link type {name!r}, whose back "
+            f"links would be {back!r}, which is {what}; the link type is ignored"
+        )
+    return (
+        frozenset(refused_links),
+        frozenset(refused_fields),
+        [findings[name] for name in sorted(findings)],
+    )
+
+
 def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> None:
     needs_config = NeedsSphinxConfig(app.config)
     schema = FieldsSchema()
@@ -1662,18 +1739,38 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         if isinstance(need_type, dict) and isinstance(need_type.get("directive"), str)
     }
     schema.set_need_types(need_types)
-    link_types = _link_type_names(needs_config)
+    #: the link types the configuration declares, those refused below included
+    declared_links = _link_type_names(needs_config)
     #: each need type's entry, its declarations of their shape, and the walk of their
     #: inherits; their findings are reported with the types' declarations, last
     type_entries, entry_findings = _checked_type_entries(needs_config.types)
     order, parent, inherits_findings = _inherits_order(type_entries)
+    #: one rule for the name of a link type's back links, wherever the field or link
+    #: type of that name comes from (every field is registered by now, a service's
+    #: too): what it refuses does not exist, and is not read from the configuration
+    #: again below (which is pickled with the environment, so it is not changed)
+    refused_links, refused_fields, claim_findings = _back_link_claims(
+        _NEEDS_CONFIG.fields, _global_link_entries(needs_config)
+    )
+    for text in claim_findings:
+        log_warning(LOGGER, text, "config", None)
+    link_types = declared_links - refused_links
+    #: the registered fields, but those named as a core link type's back links
+    registered = {
+        name: params
+        for name, params in _NEEDS_CONFIG.fields.items()
+        if name not in refused_fields
+    }
+    #: the back links of the global link types: no need type declares a field of
+    #: their name, nor a link type
+    back_links = {f"{name}_back" for name in link_types}
     #: the fields need types declare alone: declared below as a needs_fields entry is
     #: (before the rules are checked), each then declared by its need types
     type_local, shape_refused, shape_findings = _type_local_fields(
         type_entries,
         order,
         parent,
-        {*NeedsCoreFields, *_NEEDS_CONFIG.fields, *link_types},
+        {*NeedsCoreFields, *registered, *link_types, *back_links},
     )
     #: the link types need types declare alone: declared below as a needs_links entry
     #: is (after the needs_links and needs_extra_links entries), with the display,
@@ -1684,13 +1781,9 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         order,
         parent,
         {
-            **dict.fromkeys(
-                (*NeedsCoreFields, *_NEEDS_CONFIG.fields, *type_local), "a field"
-            ),
+            **dict.fromkeys((*NeedsCoreFields, *registered, *type_local), "a field"),
             **dict.fromkeys(link_types, "a link type"),
-            **dict.fromkeys(
-                (f"{name}_back" for name in link_types), "a link type's back links"
-            ),
+            **dict.fromkeys(back_links, "a link type's back links"),
         },
     )
     #: each field's and link type's rules from the types' entries: folded below into
@@ -1703,8 +1796,9 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
     #: findings of the rule name it
     spellings: dict[tuple[bool, str, str], str] = {}
     for name, params in needs_config._fields.items():
+        # as load_config skipped them: a link type refused above included
         if not isinstance(params, dict) or (
-            name not in NeedsCoreFields and name not in link_types
+            name not in NeedsCoreFields and name not in declared_links
         ):
             continue
         if _declares_derive(params) and (
@@ -1714,7 +1808,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             derive_problems.append(
                 DeriveProblem(name, False, core_message(name, on_link=False), core=True)
             )
-        elif name in link_types:
+        elif name in declared_links:
             what = "core link type" if name in CORE_LINK_TYPES else "link type"
             log_warning(
                 LOGGER,
@@ -1811,7 +1905,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         except Exception as exc:
             raise NeedsConfigException(f"Invalid core option {name!r}: {exc}") from exc
 
-    for name, field_data in (*_NEEDS_CONFIG.fields.items(), *type_local.items()):
+    for name, field_data in (*registered.items(), *type_local.items()):
         try:
             back_compatible = field_data.source in {
                 "needs_extra_options",
@@ -1960,14 +2054,17 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             raise NeedsConfigException(f"Invalid field {name!r}: {exc}") from exc
 
     # Get set of link names from needs_links (new config) vs needs_extra_links (deprecated)
-    links: dict[str, tuple[LinkOptionsType | NeedLinksConfig, str]] = (
-        {k: (v, "needs_links") for k, v in needs_config._links.items()}
-        | {
-            link["option"]: (link, "needs_extra_links")
-            for link in needs_config._extra_links
-        }
-        | {name: (params, "needs_types") for name, params in local_links.items()}
-    )
+    links: dict[str, tuple[LinkOptionsType | NeedLinksConfig, str]] = {
+        name: entry
+        for name, entry in (
+            {k: (v, "needs_links") for k, v in needs_config._links.items()}
+            | {
+                link["option"]: (link, "needs_extra_links")
+                for link in needs_config._extra_links
+            }
+        ).items()
+        if name not in refused_links
+    } | {name: (params, "needs_types") for name, params in local_links.items()}
 
     for name, (link, config_source) in links.items():
         try:
@@ -2481,7 +2578,8 @@ def _type_local_fields(
     known: set[str],
 ) -> tuple[dict[str, NewFieldParams], set[tuple[str, str]], list[str]]:
     """The fields need types declare that nothing else declares (no core field, no
-    registered field, no link type): each the field of the types that declare it, of
+    registered field, no link type, nor a link type's back links -- the resolver
+    refuses such an entry): each the field of the types that declare it, of
     the one shape they agree on.
 
     A root declaration is one of a type none of whose ancestors declares the field:
@@ -2911,7 +3009,17 @@ def _resolve_type_declarations(
                 where = f"needs_types[{need_type!r}].{table}[{name!r}]"
                 glob = schema.global_declaration(name)
                 if glob is None or glob.kind != kind:
-                    is_ = f"not {what}" if glob is None else f"{other}, not {what}"
+                    owner = (
+                        schema.global_declaration(name.removesuffix("_back"))
+                        if glob is None and name.endswith("_back")
+                        else None
+                    )
+                    if owner is not None and owner.kind == "link":
+                        is_ = "a link type's back links"
+                    elif glob is None:
+                        is_ = f"not {what}"
+                    else:
+                        is_ = f"{other}, not {what}"
                     log_warning(
                         LOGGER,
                         f"{where} declares {name!r}, which is {is_}; the entry is "
