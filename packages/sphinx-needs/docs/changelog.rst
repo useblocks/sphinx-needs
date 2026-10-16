@@ -115,7 +115,7 @@ Improvements
   (``[]``, ``""``, ``0``, ``0.0``, ``false``) is no default for a per-type narrowing (:issue:`2277`).
   The per-type fields of
   :issue:`2269`
-  (`discussion #1646 <https://github.com/useblocks/sphinx-needs/discussions/1646>`__; :pr:`2281`)
+  (`discussion #1646 <https://github.com/useblocks/sphinx-needs/discussions/1646>`__; :pr:`2281`, :pr:`2284`)
 
 Deprecations
 ............
