@@ -184,7 +184,8 @@ and the :ref:`constraint <needs_constraints>` ``test_passed``, which :ref:`needs
 From needs_global_options to a type's defaults
 ----------------------------------------------
 
-A :ref:`needs_global_options` predicate that tests the type,
+:ref:`needs_global_options` is deprecated (a build that sets it warns ``needs.deprecated``).
+A predicate of it that tests the type,
 
 .. code-block:: python
 
