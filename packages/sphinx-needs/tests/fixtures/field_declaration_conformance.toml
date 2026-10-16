@@ -44,7 +44,8 @@
 #     given before both, the walk starts at `c` and reaches `a`, then `b`, so it resolves
 #     `b`, then `a`, then `c`, whichever of `a` and `b` is given first)
 #   - absence is per field: a field that need types alone declare (no `[needs.fields.*]`
-#     entry, no core field, no link type) is carried by every need, `null` on the needs of
+#     entry, no core field, no link type, nor a link type's back links) is carried by
+#     every need, `null` on the needs of
 #     a type that does not declare it; a field no declaration of which is usable does not
 #     exist, and is no key of any need. A link type need types alone declare (no
 #     `[needs.links.*]` or `[[needs.extra_links]]` entry, no core link type, no field, nor
@@ -2930,6 +2931,206 @@ field = "x"
 code = "type_conflict"
 type = "spec"
 field = "x"
+
+[[case]]
+name = "field-named-as-back-links"
+why = "a fields entry named as a link type's back links (links_back, or rel_back beside a [needs.links.rel] entry) declares no field: it is one type_conflict, and the back links are computed on every need as without it, no need validated against the entry's schema"
+config = '''
+[needs.links.rel]
+
+[needs.types.t]
+title = "T"
+prefix = "T_"
+
+[needs.types.t.fields.links_back]
+schema = { type = "string" }
+
+[needs.types.t.fields.rel_back]
+schema = { type = "string" }
+
+[needs.types.u]
+title = "U"
+prefix = "U_"
+'''
+source = '''
+.. t:: Linked to
+   :id: T_001
+
+.. u:: Links it
+   :id: U_001
+   :links: T_001
+   :rel: T_001
+'''
+[case.expect]
+[case.expect.needs.T_001]
+links_back = ["U_001"]
+rel_back = ["U_001"]
+[case.expect.needs.U_001]
+links_back = []
+rel_back = []
+[case.expect.schema.links_back]
+field_type = "backlinks"
+[case.expect.schema.rel_back]
+field_type = "backlinks"
+[[case.expect.findings]]
+code = "type_conflict"
+type = "t"
+field = "links_back"
+[[case.expect.findings]]
+code = "type_conflict"
+type = "t"
+field = "rel_back"
+
+[[case]]
+name = "back-links-named-as-a-field"
+why = "a [needs.links.x] link type whose back links would have the name of a [needs.fields.x_back] field is refused and does not exist (its finding is needs.config, each tool's own, so the case pins its consequence): the field keeps the value its need gives it, null elsewhere"
+config = '''
+[needs.fields.x_back]
+schema = { type = "string" }
+
+[needs.links.x]
+
+[needs.types.t]
+title = "T"
+prefix = "T_"
+
+[needs.types.u]
+title = "U"
+prefix = "U_"
+'''
+source = '''
+.. t:: Gives the field a value
+   :id: T_001
+   :x_back: authored
+
+.. u:: Gives it none
+   :id: U_001
+'''
+[case.expect]
+findings = []
+[case.expect.needs.T_001]
+x_back = "authored"
+[case.expect.nulls]
+U_001 = ["x_back"]
+[case.expect.absent]
+T_001 = ["x"]
+U_001 = ["x"]
+[case.expect.schema.x_back]
+field_type = "extra"
+
+[[case]]
+name = "back-links-named-as-a-field-extra-links"
+why = "a [[needs.extra_links]] link type whose back links would have the name of a field is refused as a [needs.links.*] one is, and the build goes on (its finding is needs.config, each tool's own, as is the form's deprecation): the field keeps the value its need gives it"
+config = '''
+[needs.fields.x_back]
+schema = { type = "string" }
+
+[[needs.extra_links]]
+option = "x"
+
+[needs.types.t]
+title = "T"
+prefix = "T_"
+
+[needs.types.u]
+title = "U"
+prefix = "U_"
+'''
+source = '''
+.. t:: Gives the field a value
+   :id: T_001
+   :x_back: authored
+
+.. u:: Gives it none
+   :id: U_001
+'''
+[case.expect]
+findings = []
+[case.expect.needs.T_001]
+x_back = "authored"
+[case.expect.nulls]
+U_001 = ["x_back"]
+[case.expect.absent]
+T_001 = ["x"]
+U_001 = ["x"]
+[case.expect.schema.x_back]
+field_type = "extra"
+
+[[case]]
+name = "back-links-named-as-a-link-type"
+why = "of two link types x and x_back, x is refused and does not exist, its back links being named as the other (its finding is needs.config, each tool's own): x_back keeps the links its need gives it, and its own back links are computed"
+config = '''
+[needs.links.x]
+
+[needs.links.x_back]
+
+[needs.types.t]
+title = "T"
+prefix = "T_"
+
+[needs.types.u]
+title = "U"
+prefix = "U_"
+'''
+source = '''
+.. t:: Links through x_back
+   :id: T_001
+   :x_back: U_001
+
+.. u:: Linked to
+   :id: U_001
+'''
+[case.expect]
+findings = []
+[case.expect.needs.T_001]
+x_back = ["U_001"]
+x_back_back = []
+[case.expect.needs.U_001]
+x_back = []
+x_back_back = ["T_001"]
+[case.expect.absent]
+T_001 = ["x"]
+U_001 = ["x"]
+[case.expect.schema.x_back]
+field_type = "links"
+
+[[case]]
+name = "core-back-links-named-as-a-field-or-link-type"
+why = "links and parent_needs never yield: a [needs.fields.links_back] field and a [needs.links.parent_needs_back] link type are ignored (their findings are needs.config, each tool's own), and the back links of both are computed on every need as without them"
+config = '''
+[needs.fields.links_back]
+schema = { type = "string" }
+
+[needs.links.parent_needs_back]
+
+[needs.types.t]
+title = "T"
+prefix = "T_"
+
+[needs.types.u]
+title = "U"
+prefix = "U_"
+'''
+source = '''
+.. t:: A parent, linked to
+   :id: T_001
+
+   .. u:: Its child, linking to it
+      :id: U_001
+      :links: T_001
+'''
+[case.expect]
+findings = []
+[case.expect.needs.T_001]
+links_back = ["U_001"]
+parent_needs_back = ["U_001"]
+[case.expect.needs.U_001]
+links_back = []
+parent_needs_back = []
+[case.expect.schema.links_back]
+field_type = "backlinks"
+[case.expect.schema.parent_needs_back]
+field_type = "backlinks"
 
 # --- what cannot be declared ----------------------------------------------------------
 
