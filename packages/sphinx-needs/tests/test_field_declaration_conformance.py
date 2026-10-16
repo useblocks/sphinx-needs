@@ -231,6 +231,11 @@ def test_an_omitted_pin_needs_a_version_that_says_it_left_defaults_out() -> None
         "REQ_001.asil: None, expected 'QM'",
         "REQ_001.asil: left out, and no default restores it",
     ]
+    # only `true` says it: a truthy flag of another JSON type merges nothing
+    truthy = {**removed, "needs_defaults_removed": 1, "needs": {"REQ_001": {}}}
+    assert check_version_values(truthy, expect)[0] == (
+        "needs_defaults_removed: 1, expected true (the case pins fields left out)"
+    )
     # without the flag a record leaving a pinned key out fails, as before any merge
     assert check_version_values(silent, {"needs": {"REQ_001": {"asil": "QM"}}}) == [
         "REQ_001.asil: None, expected 'QM'"

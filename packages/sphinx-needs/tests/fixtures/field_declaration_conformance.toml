@@ -3243,7 +3243,7 @@ field = "owner"
 
 [[case]]
 name = "defaults-left-out-equal-the-field-default"
-why = "under json_remove_defaults, needs.json leaves a value out where it equals the default its field's needs_schema entry carries, the field's own and never a need type's: a need holding its type's default, its own type's or one inherited, writes it; a need holding the field's own default leaves it out, and the schema restores it; a value equal to the default but of another JSON type (1.0 against 1, [1.0] against [1]) is written"
+why = "under json_remove_defaults, needs.json leaves a value out where it equals the default its field's needs_schema entry carries, never a need type's: a need holding its type's default, its own type's or one inherited, writes it; a need holding the schema's default leaves it out, and the schema restores it; a value equal to the default but of another JSON type (1.0 against 1, [1.0] against [1]) is written"
 config = '''
 [needs]
 json_remove_defaults = true

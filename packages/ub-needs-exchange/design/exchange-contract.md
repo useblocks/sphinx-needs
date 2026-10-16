@@ -221,7 +221,8 @@ object identity). A rule marked **(not pinned)** has neither.
    (`needs_defaults_removed`) leaves out a value exactly where it equals the `default` its
    field's property carries in the version's own `needs_schema`, as a JSON value of the
    same type (`1.0` is not `1`, `[1.0]` not `[1]`): never a need type's default, which
-   `needs_schema` does not carry. A need holding its type's default, its own type's or one
+   `needs_schema` does not carry. A version whose `needs_defaults_removed` is not `true`
+   leaves nothing out. A need holding its type's default, its own type's or one
    it inherits, writes it wherever it differs from that `default`. A reader restores a
    left-out value from the version's own `needs_schema` (2.), not from the reading
    project's declarations, which fill only a field to which the schema gives no default.
