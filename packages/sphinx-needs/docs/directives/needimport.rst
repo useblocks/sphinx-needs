@@ -73,7 +73,7 @@ missing is read on the next incremental build once it exists.
 A value the file leaves out (:ref:`needs_json_remove_defaults`) is restored from the
 file's own ``needs_schema``, the default of the field in the project that wrote it, not
 from this project's declarations: a need type's default here does not fill it. This
-project's defaults fill only a field the file's schema gives no default.
+project's defaults fill only a field to which the file's schema gives no default.
 
 .. note::
 
