@@ -124,10 +124,11 @@ def test_an_unknown_keyword_is_refused(test_app: Any) -> None:
 
 # -- the declarations of one need type -------------------------------------------------
 #
-# A need type declares a field anew in its ``needs_types`` entry (``fields``), and
-# closes the fields it does not declare (``closed``), which ``create_schema`` resolves:
-# the configuration is the one place a field is declared for a type, and the schema is
-# complete, and frozen, once ``create_schema`` has built it.
+# A need type declares a field anew in its ``needs_types`` entry (``fields``), or
+# declares a field no ``needs_fields`` entry declares, which is then absent on every
+# other type; ``create_schema`` resolves both: the configuration is the one place a
+# field is declared for a type, and the schema is complete, and frozen, once
+# ``create_schema`` has built it.
 
 #: the default need types but ``need``, ``spec`` declaring its fields anew
 DECLARING_CONF = """\
@@ -147,26 +148,28 @@ def _declaring_project(fields: str, spec: str, index: str) -> dict[str, Any]:
     return _project(DECLARING_CONF.format(fields=fields, spec=spec), index)
 
 
-#: the default need types but ``need``, ``spec`` closed: it declares no field
-CLOSED_CONF = """\
+#: the default need types but ``need``, ``x`` declared on each but ``spec``, and in no
+#: ``needs_fields`` entry: ``req`` gives its type, which the others take
+TYPE_LOCAL_CONF = """\
 extensions = ["sphinx_needs"]
 needs_build_json = True
-needs_fields = {fields}
 needs_links = {{"blocks": {{"incoming": "is blocked by", "outgoing": "blocks"}}}}
 needs_types = {{
-    "req": {{"title": "Requirement", "prefix": "R_"}},
-    "spec": {{"title": "Specification", "prefix": "S_", "closed": True}},
-    "impl": {{"title": "Implementation", "prefix": "I_"}},
-    "test": {{"title": "Test Case", "prefix": "T_"}},
+    "req": {{
+        "title": "Requirement",
+        "prefix": "R_",
+        "fields": {{"x": {{"schema": {{"type": "string"}}}}}},
+    }},
+    "spec": {{"title": "Specification", "prefix": "S_"}},
+    "impl": {{"title": "Implementation", "prefix": "I_", "fields": {{"x": {{}}}}}},
+    "test": {{"title": "Test Case", "prefix": "T_", "fields": {{"x": {{}}}}}},
 }}
 {extra}
 """
 
 
-def _closed_project(
-    fields: str, index: str, extra: str = "", **files: str
-) -> dict[str, Any]:
-    project = _project(CLOSED_CONF.format(fields=fields, extra=extra), index)
+def _type_local_project(index: str, extra: str = "", **files: str) -> dict[str, Any]:
+    project = _project(TYPE_LOCAL_CONF.format(extra=extra), index)
     project["files"].extend((Path(name), text) for name, text in files.items())
     return project
 
@@ -215,21 +218,20 @@ ADMISSION_INDEX = """\
 
 def _undeclared(need: str, value: object, field: str = "x", what: str = "Field") -> str:
     return (
-        f"{what} {field!r} is not declared on need type 'spec', which is closed, and "
-        f"cannot be set in need {need!r}; the value {value!r} is ignored "
-        "[needs.undeclared_for_type]"
+        f"{what} {field!r} is not declared on need type 'spec' and cannot be set in "
+        f"need {need!r}; the value {value!r} is ignored [needs.undeclared_for_type]"
     )
 
 
 @pytest.mark.parametrize(
     "test_app",
-    [_closed_project('{"x": {"nullable": True}}', ADMISSION_INDEX, SERVICE_CONF)],
+    [_type_local_project(ADMISSION_INDEX, SERVICE_CONF)],
     indirect=True,
 )
-def test_a_field_closed_on_one_type(test_app: Any) -> None:
-    """A field a closed need type does not declare is refused on its needs, from a
-    directive, ``list2need`` and ``needservice``, and set on the needs of every other
-    type."""
+def test_a_field_one_type_does_not_declare(test_app: Any) -> None:
+    """A field declared on need types alone is refused on the needs of a type that
+    does not declare it, from a directive, ``list2need`` and ``needservice``, and set
+    on the needs of the types that do."""
     app = test_app
     app.build()
     # the service class in conf.py cannot be cached, which Sphinx reports in words
@@ -305,8 +307,7 @@ needs_external_needs = [
 @pytest.mark.parametrize(
     "test_app",
     [
-        _closed_project(
-            '{"x": {"nullable": True}}',
+        _type_local_project(
             ".. req:: A\n   :id: REQ_1\n\n.. needimport:: imported.json\n",
             EXTERNAL_CONF,
             **{
@@ -317,28 +318,26 @@ needs_external_needs = [
     ],
     indirect=True,
 )
-def test_a_field_closed_on_one_type_from_outside(test_app: Any) -> None:
+def test_a_field_one_type_does_not_declare_from_outside(test_app: Any) -> None:
     """A need from outside the project's sources -- imported, or external -- keeps
-    only the fields its type declares: a value of a field or link type a closed type
-    does not declare is dropped, one warning each; a value equal to what the need
-    holds anyway (``None``, no links) is dropped silently."""
+    only the fields its type declares: a value of a field its type does not declare
+    is dropped, one warning each; a value equal to what the need holds anyway
+    (``None``) is dropped silently."""
     app = test_app
     app.build()
     assert build_warnings(app) == [
         f"WARNING: {_undeclared('EXT_E_1', 'ext')}",
         f"<srcdir>/index.rst:7: WARNING: {_undeclared('IMP_1', 'imported')}",
-        "<srcdir>/index.rst:7: WARNING: "
-        + _undeclared("IMP_1", ["REQ_1"], "blocks", "Link type"),
     ]
     # an external need is not written to needs.json
     needs = SphinxNeedsData(app.env).get_needs_view()
-    assert {k: (v["x"], v["blocks"]) for k, v in needs.items()} == {
-        "REQ_1": (None, []),
-        "IMP_1": (None, []),
-        "IMP_2": ("kept", []),
-        "IMP_3": (None, []),
-        "EXT_E_1": (None, []),
-        "EXT_E_2": ("ext-kept", []),
+    assert {k: v["x"] for k, v in needs.items()} == {
+        "REQ_1": None,
+        "IMP_1": None,
+        "IMP_2": "kept",
+        "IMP_3": None,
+        "EXT_E_1": None,
+        "EXT_E_2": "ext-kept",
     }
 
 
@@ -434,13 +433,13 @@ EXTEND_INDEX = """\
 
 @pytest.mark.parametrize(
     "test_app",
-    [_closed_project('{"x": {"nullable": True}}', EXTEND_INDEX)],
+    [_type_local_project(EXTEND_INDEX)],
     indirect=True,
 )
 def test_a_field_one_type_does_not_extend(test_app: Any) -> None:
     """A needextend matching needs of two types sets a field on the needs of the
-    type that declares it; on the needs of a closed type that does not, it warns once
-    for the type, naming its needs, and leaves the field, and still applies its other
+    type that declares it; on the needs of a type that does not, it warns once for
+    the type, naming its needs, and leaves the field, and still applies its other
     options. Deleting the field is refused the same."""
     app = test_app
     app.build()

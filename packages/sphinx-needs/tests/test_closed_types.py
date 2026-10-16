@@ -111,9 +111,9 @@ def _undeclared(
 ) -> str:
     at = "" if line is None else f"<srcdir>/index.rst:{line}: "
     return (
-        f"{at}WARNING: {what} {name!r} is not declared on need type {need_type!r}, "
-        f"which is closed, and cannot be set in need {need!r}; the value {value!r} "
-        "is ignored [needs.undeclared_for_type]"
+        f"{at}WARNING: {what} {name!r} is not declared on need type {need_type!r} "
+        f"and cannot be set in need {need!r}; the value {value!r} is ignored "
+        "[needs.undeclared_for_type]"
     )
 
 
@@ -121,8 +121,8 @@ def test_the_code_is_listed() -> None:
     """The code is in the list the documentation renders for ``suppress_warnings``."""
     assert "undeclared_for_type" in get_args(WarningSubTypes)
     assert WarningSubTypeDescription["undeclared_for_type"] == (
-        "A field or link type is set on a need of a closed need type that does not "
-        "declare it; the value is ignored"
+        "A field or link type is set on a need of a need type that does not declare "
+        "it; the value is ignored"
     )
 
 
@@ -806,8 +806,9 @@ def test_a_refused_entry_still_declares_on_a_closed_type(test_app: Any) -> None:
         "type; the entry is ignored [needs.type_conflict]",
         "WARNING: needs_types['spec'].fields['blocks'] declares 'blocks', which is a "
         "link type, not a field; the entry is ignored [needs.type_conflict]",
-        "WARNING: needs_types['spec'].fields['nosuch'] declares 'nosuch', which is not "
-        "a field; the entry is ignored [needs.type_conflict]",
+        "WARNING: needs_types['spec'].fields['nosuch'] declares 'nosuch', which no "
+        "needs_fields entry declares, and no need type gives it a 'schema' 'type'; "
+        "the entry is ignored [needs.type_conflict]",
         _undeclared(7, "S_001", "spec", "R_001", "blocks", "Link type"),
     ]
     assert {k: (v["x"], v["y"], v["blocks"]) for k, v in _needs(app).items()} == {

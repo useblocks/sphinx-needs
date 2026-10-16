@@ -44,10 +44,7 @@ needs_build_json = True
 TOML_CONF = CONF + 'needs_from_toml = "ubproject.toml"\n'
 
 #: the known keys, as the unknown-key finding lists them
-KNOWN = (
-    "known keys are directive, title, prefix, color, style, inherits, fields, links, "
-    "closed"
-)
+KNOWN = "known keys are directive, title, prefix, color, style, inherits, fields, links"
 
 #: three types in an order that is not alphabetical, so that a sort would show
 ZETA = {"title": "Zeta", "prefix": "Z_", "color": "#000001", "style": "node"}
@@ -315,6 +312,15 @@ FINDINGS = [
         id="unknown-keys",
     ),
     _conf_case(
+        [{**REQ, "closed": True}],
+        [
+            f"needs_types entry 1 ('req') has an unknown key 'closed'; {KNOWN}; the key "
+            "is ignored"
+        ],
+        [REQ],
+        id="closed-is-unknown",
+    ),
+    _conf_case(
         {"req": {**REQ_VALUE, "content": "plantuml"}},
         [
             f"needs_types['req'] has an unknown key 'content'; {KNOWN}; the key is "
@@ -441,12 +447,14 @@ FINDINGS = [
             }
         ],
         [
-            "needs_types entry 1 ('req').fields['status'] has unknown keys "
-            "'parse_variants', 'derive'; known keys are description, schema, "
-            "nullable, default, predicates; the keys are ignored",
+            "needs_types entry 1 ('req').fields['status'] has a 'derive' that is not "
+            "a mapping (got str); the key is ignored",
+            "needs_types entry 1 ('req').fields['status'] has an unknown key "
+            "'parse_variants'; known keys are description, schema, nullable, "
+            "default, predicates, derive; the key is ignored",
             "needs_types entry 1 ('req').links['links'] has unknown keys 'nullable', "
-            "'incoming'; known keys are description, schema, default, predicates; the "
-            "keys are ignored",
+            "'incoming'; known keys are description, schema, default, predicates, "
+            "derive; the keys are ignored",
         ],
         [{**REQ, "fields": {"status": {}}, "links": {"links": {}}}],
         id="declaration-unknown-keys",
