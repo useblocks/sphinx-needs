@@ -955,6 +955,8 @@ class NeedsSphinxConfig:
         mapping-shaped ``needs_types`` is not yet resolved to its list, and is
         returned as it is configured.
         """
+        # the declared list type holds from config-inited priority 12, where
+        # resolve_need_types writes the list; before that, the value is as configured
         configured = self._types
         if not isinstance(configured, list):
             return configured

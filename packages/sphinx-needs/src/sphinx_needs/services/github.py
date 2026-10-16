@@ -66,6 +66,8 @@ def add_github_need_types_and_layout(app: Sphinx) -> None:
 
     for need_type in GITHUB_NEED_TYPES:
         _NEEDS_CONFIG.add_builtin_need_type(need_type)
+        # load_config registers it again through the view (once, as a need directive is
+        # left alone); registered here, the directive exists from setup, as its type does
         _register_need_directive(app, need_type["directive"])
     _NEEDS_CONFIG.add_builtin_layout("github", GITHUB_LAYOUT)
 
