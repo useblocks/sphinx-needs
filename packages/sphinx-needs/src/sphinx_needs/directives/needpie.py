@@ -170,7 +170,7 @@ def process_needpie(
             remove_node_from_tree(node)
             continue
 
-        current_needpie = node.attributes
+        current_needpie: NeedsPieType = node.attributes
 
         if matplotlib is None:
             message = "Matplotlib missing for needpie plot"

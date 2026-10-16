@@ -235,7 +235,7 @@ def process_needbar(
             remove_node_from_tree(node)
             continue
 
-        current_needbar = node.attributes
+        current_needbar: NeedsBarType = node.attributes
 
         if matplotlib is None:
             message = "Matplotlib missing for needbar plot"

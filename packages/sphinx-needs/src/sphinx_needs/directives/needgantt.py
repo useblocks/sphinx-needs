@@ -196,7 +196,7 @@ def process_needgantt(
             remove_node_from_tree(node)
             continue
 
-        current_needgantt = node.attributes
+        current_needgantt: NeedsGanttType = node.attributes
         all_needs_dict = SphinxNeedsData(env).get_needs_view()
 
         content = []

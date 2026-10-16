@@ -165,7 +165,7 @@ def process_needextract(
             remove_node_from_tree(node)
             continue
 
-        current_needextract = node.attributes
+        current_needextract: NeedsExtractType = node.attributes
         all_needs = SphinxNeedsData(env).get_needs_view()
         content = nodes.container()
         content.attributes["ids"] = [current_needextract["target_id"]]

@@ -352,7 +352,7 @@ def process_needtables(
             remove_node_from_tree(node)
             continue
 
-        current_needtable = node.attributes
+        current_needtable: NeedsTableType = node.attributes
 
         if current_needtable["style"] == "" or current_needtable[
             "style"

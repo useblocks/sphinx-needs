@@ -127,7 +127,7 @@ def process_needsequence(
             remove_node_from_tree(node)
             continue
 
-        current_needsequence = node.attributes
+        current_needsequence: NeedsSequenceType = node.attributes
 
         option_link_types = [
             link.upper() for link in current_needsequence["link_types"]

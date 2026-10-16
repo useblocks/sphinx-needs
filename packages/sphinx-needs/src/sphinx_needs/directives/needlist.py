@@ -103,7 +103,7 @@ def process_needlist(
             remove_node_from_tree(node)
             continue
 
-        current_needfilter = node.attributes
+        current_needfilter: NeedsListType = node.attributes
         content: list[nodes.Node] = []
         found_needs = process_filters(
             app,
