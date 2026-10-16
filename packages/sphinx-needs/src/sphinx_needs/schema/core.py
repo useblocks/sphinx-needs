@@ -57,7 +57,7 @@ class _FieldValidation:
 
     validator: SchemaValidator
     link_names: frozenset[str]
-    #: the "no value" of a derived field that is not nullable
+    #: the "no value" of a field an author cannot set, that is not nullable
     placeholders: dict[str, Any]
     with_off_type_default: dict[str, FieldSchema]
 
@@ -70,24 +70,26 @@ def _field_validation(fields_schema: TypeFieldsSchema) -> _FieldValidation | Non
     # Build combined properties from all field and link schemas
     combined_properties: dict[str, Any] = {}
     link_names: set[str] = set()
-    # the placeholder a derived field that is not nullable holds until its rule
-    # computes it (its empty value) is its "no value", as None is for a nullable
-    # field: it is not validated. On a need of a type the field has no rule for, a
-    # field with a default holds that default, which is a value and is validated, also
-    # where it equals the empty value. A link type's ``default = []`` is its "no
-    # links", exempt as no default is (the two cannot be told apart)
+    # the placeholder a field an author cannot set holds, if it is not nullable --
+    # a derived field until its rule computes it, a field a closed need type does not
+    # declare for good -- is its "no value" (its empty value), as None is for a
+    # nullable field: it is not validated. On a need of a type a derived field has no
+    # rule for, a field with a default holds that default, which is a value and is
+    # validated, also where it equals the empty value. A link type's ``default = []``
+    # is its "no links", exempt as no default is (the two cannot be told apart)
     placeholders: dict[str, Any] = {
         field.name: typed_empty(field.type)
         for field in (
             *fields_schema.iter_extra_fields(),
             *fields_schema.iter_link_fields(),
         )
-        if field.derived and not field.nullable
+        if not field.directive_option and not field.nullable
     }
     with_off_type_default: dict[str, FieldSchema] = {
         field.name: field
         for field in fields_schema.iter_extra_fields()
         if field.name in placeholders
+        and field.derived
         and field.derive is None
         and field.default is not None
     }
