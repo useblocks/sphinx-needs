@@ -103,10 +103,14 @@ Enforcing valid need items
 
 To enforce the usage of specifically defined need ID formats, you can configure :ref:`needs_id_required` and :ref:`needs_id_regex`.
 
-To enforce specific values for need item options,
-you can configure :ref:`needs_statuses`, :ref:`needs_tags` or :ref:`needs_warnings` to check for disallowed values.
+To enforce specific values for need item fields,
+give the field a ``schema`` in :ref:`needs_fields`, such as an ``enum`` of the values it allows,
+or declare it for one need type in that type's entry, see :ref:`need_types_howto`.
+The :ref:`schema validation <schema_validation>` checks the needs against them,
+and against schema rules about whole needs and the links between them;
+:ref:`needs_warnings` checks needs with filter strings.
 
-These will emit warnings when building the documentation if the values are not as expected.
+These are reported when building the documentation if the values are not as expected.
 
 
 Referring to a need item
