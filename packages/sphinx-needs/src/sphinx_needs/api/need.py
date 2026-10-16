@@ -523,6 +523,8 @@ def generate_need(
             content=content_info,
             parts=parts_objects,
             dynamic_fields=dynamic_fields,
+            # one set for every need type, the schema's own (derived_names)
+            derived=schema.derived_names,
             _validate=False,
         )
     except ValueError as err:

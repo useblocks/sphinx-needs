@@ -431,6 +431,7 @@ class NeedItem:
         "_constraint_results",
         "_content",
         "_core",
+        "_derived",
         "_dynamic_fields",
         "_extras",
         "_links",
@@ -455,6 +456,7 @@ class NeedItem:
         constraint_results: NeedConstraintResults | None = None,
         dynamic_fields: dict[str, FieldFunctionArray | LinksFunctionArray]
         | None = None,
+        derived: Iterable[str] = (),
         _validate: bool = True,
     ) -> None:
         """Initialize the NeedItem instance.
@@ -470,6 +472,9 @@ class NeedItem:
         :param backlinks: Backlinks associated with the need item.
            If set, this must contain all keys that are in links,
            and should not contain any keys that are in core or extras.
+        :param derived: The keys of the derived fields (extras or links keys), which
+            ``need[key] = value`` refuses: they hold what their rules compute
+            (:attr:`~sphinx_needs.needs_schema.FieldsSchema.derived_names`).
         :param _validate: Perform runtime type validation of initialisation inputs
         """
         if _validate:
@@ -509,6 +514,8 @@ class NeedItem:
         )
         self._core = core.copy()
         self._extras = extras.copy()
+        # one set shared by the needs of a build: a frozenset is not copied
+        self._derived = frozenset(derived)
         self._links: dict[str, list[NeedLink]] = {
             key: [NeedLink.from_string(v) if isinstance(v, str) else v for v in value]
             for key, value in links.items()
@@ -576,6 +583,10 @@ class NeedItem:
             ):
                 raise ValueError(
                     "constraint_results keys must match the constraints defined in the need."
+                )
+            if not_fields := self._derived.difference(self._extras, self._links):
+                raise ValueError(
+                    f"NeedItem derived keys must be extras or links keys, not: {sorted(not_fields)}"
                 )
 
     def _recompute(self) -> None:
@@ -676,6 +687,7 @@ class NeedItem:
             modifications=self._modifications,
             constraint_results=self._constraint_results,
             dynamic_fields=self._dynamic_fields,
+            derived=self._derived,
             _validate=False,
         )
 
@@ -683,6 +695,7 @@ class NeedItem:
         """Check if two NeedItems are equal."""
         if not isinstance(other, NeedItem):
             return False
+        # the derived keys are not compared: they are wiring from the schema, not data
         return (
             self._core == other._core
             and self._extras == other._extras
@@ -883,7 +896,25 @@ class NeedItem:
         )
 
     def __setitem__(self, key: str, value: Any) -> None:
-        """Set an item by key."""
+        """Set an item by key.
+
+        A derived field (``derived``) cannot be set: it holds what its rule computes.
+        """
+        if key in self._derived:
+            raise KeyError(
+                f"Cannot set derived field {key!r} in NeedItem: its value is computed by its derive rule."
+            )
+        self._set_resolved(key, value)
+
+    def _set_resolved(self, key: str, value: Any) -> None:
+        """Set a field as the resolver computes it, a derived field too.
+
+        The resolver's own write (:mod:`sphinx_needs.functions.functions`), for every
+        value it computes: a derived field's, and an authored ``[[…]]``, ``<<…>>`` or
+        ``<{…}>`` value's alike, so it is the resolver's write, not the derived write.
+        Every other writer sets through ``need[key] = value``, which refuses a derived
+        field; every other refusal of ``need[key] = value`` holds here.
+        """
         if key in self._immutable_core:
             raise KeyError(f"Cannot modify immutable key {key!r} in NeedItem.")
         elif key == "constraints":
