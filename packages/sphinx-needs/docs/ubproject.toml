@@ -105,14 +105,6 @@ nullable = true
 description = "Additional comments"
 nullable = true
 
-[needs.fields.amount]
-description = "Amount value"
-schema.type = "number"
-
-[needs.fields.hours]
-description = "Time in hours"
-schema.type = "integer"
-
 [needs.fields.duration]
 description = "Time in days"
 schema.type = "integer"
@@ -133,14 +125,12 @@ nullable = true
 description = "GitHub reference"
 nullable = true
 
-[needs.fields.value]
-description = "General value field"
-nullable = true
-
-[needs.fields.unit]
-description = "Unit specification"
-nullable = true
-
+# The need types, one `[needs.types.<directive>]` table each, in the order of the
+# legends and of `needreport`. A few of them declare fields of their own needs alone
+# (`hours`, `amount`, `value`, `unit`): no `[needs.fields]` entry declares those, so a
+# need of another type cannot set them. One declaration of each gives its `schema`
+# `type`; an empty entry, such as `[needs.types.action.fields.hours]`, declares the
+# field as it is on that type too. See "Fields per need type" in configuration.rst.
 [needs.types.int]
 title = "Interface"
 prefix = "I_"
@@ -165,11 +155,27 @@ prefix = "R_"
 color = "#BFD8D2"
 style = "node"
 
+[needs.types.req.fields.amount]
+description = "Amount value"
+schema.type = "number"
+
+[needs.types.req.fields.value]
+description = "General value field"
+schema.type = "string"
+
+[needs.types.req.fields.unit]
+description = "Unit specification"
+schema.type = "string"
+
 [needs.types.spec]
 title = "Specification"
 prefix = "S_"
 color = "#FEDCD2"
 style = "node"
+
+[needs.types.spec.fields.hours]
+description = "Time in hours"
+schema.type = "integer"
 
 [needs.types.impl]
 title = "Implementation"
@@ -182,6 +188,8 @@ title = "Test Case"
 prefix = "T_"
 color = "#DCB239"
 style = "node"
+
+[needs.types.test.fields.value]
 
 [needs.types.feature]
 title = "Feature"
@@ -200,6 +208,10 @@ title = "Action"
 prefix = "A_"
 color = "#FFCC00"
 style = "node"
+
+[needs.types.action.fields.hours]
+
+[needs.types.action.fields.amount]
 
 [needs.types.milestone]
 title = "Milestone"
