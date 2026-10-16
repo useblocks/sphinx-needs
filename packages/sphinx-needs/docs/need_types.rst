@@ -131,8 +131,9 @@ A field declared ``nullable = false`` with no default is required on the needs o
 A link type only one type may use
 ---------------------------------
 
-A ``links`` entry naming a link type that nothing else declares declares a link type of that type's needs alone,
-with its labels; a ``minItems`` or ``maxItems`` sets how many links a need of the type has:
+A ``links`` entry can name a link type that nothing else declares;
+it is then a link type of that type's needs alone, with its labels.
+A ``minItems`` or ``maxItems`` sets how many links a need of the type has:
 
 .. literalinclude:: ../tests/doc_test/doc_need_types/ubproject.toml
    :language: toml
