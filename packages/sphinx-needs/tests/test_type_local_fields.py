@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, get_args
 
 import pytest
 
@@ -23,6 +23,7 @@ from sphinx_needs.api.need import generate_need
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.exceptions import NeedsConfigException
+from sphinx_needs.logging import WarningSubTypeDescription, WarningSubTypes
 from sphinx_needs.needs_schema import (
     FieldSchema,
     FieldsSchema,
@@ -145,6 +146,15 @@ def _untyped(need_type: str, name: str) -> str:
     return _conflict(
         f"needs_types[{need_type!r}].fields[{name!r}] declares {name!r}, which no "
         "needs_fields entry declares, and no need type gives it a 'schema' 'type'"
+    )
+
+
+def test_the_code_is_listed() -> None:
+    """The code is in the list the documentation renders for ``suppress_warnings``."""
+    assert "undeclared_for_type" in get_args(WarningSubTypes)
+    assert WarningSubTypeDescription["undeclared_for_type"] == (
+        "A field or link type is set on a need of a need type that does not declare "
+        "it; the value is ignored"
     )
 
 
@@ -359,6 +369,9 @@ def test_a_field_declared_on_need_types_alone(test_app: Any) -> None:
     assert _field(app, None, "x") is glob
     assert _field(app, "impl", "x") is _field(app, "req", "x")
     assert schema.for_type("test") is not schema.for_type(None)
+    # every other field of a type that does not declare it is as declared for all
+    for name in ("shared", "fp", "status", "tags", "links", "parent_needs"):
+        assert _field(app, "test", name) is _field(app, None, name), name
 
 
 @pytest.mark.parametrize(
@@ -621,6 +634,83 @@ def test_a_child_narrows_and_a_sibling_agrees(test_app: Any) -> None:
         "wide",
     ]
     assert _field(app, "wide", "x").schema == {"type": "integer", "minimum": 0}
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            _conf(
+                _types(
+                    req={"fields": {"x": {"schema": {"type": "string"}}}},
+                    spec={"fields": {"x": {}}, "links": {"links": {}}},
+                )
+            ),
+            ".. req:: A\n   :id: R_001\n\n.. spec:: B\n   :id: S_001\n   :x: kept\n"
+            "   :links: R_001\n\n.. impl:: C\n   :id: I_001\n   :x: v\n",
+        )
+    ],
+    indirect=True,
+)
+def test_an_empty_entry_declares(test_app: Any) -> None:
+    """An entry that changes nothing declares the field for its type, of the agreed
+    type; a field every type has stays as declared."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [_undeclared(12, "I_001", "impl", "v")]
+    assert {k: (v["x"], v["links"]) for k, v in _needs(app).items()} == {
+        "R_001": (None, []),
+        "S_001": ("kept", ["R_001"]),
+        "I_001": (None, []),
+    }
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            _conf(
+                _types(
+                    req={
+                        "fields": {"n": {"schema": {"type": "integer", "maximum": 9}}}
+                    },
+                    impl={
+                        "inherits": "req",
+                        "fields": {"n": {"schema": {"maximum": 99}}},
+                    },
+                    test={"inherits": "req", "fields": {"n": {"default": "abc"}}},
+                    spec={"fields": {"n": {"schema": {"type": "string"}}}},
+                )
+            ),
+            ".. impl:: A\n   :id: I_001\n   :n: 5\n\n"
+            ".. test:: B\n   :id: T_001\n   :n: 6\n\n"
+            ".. spec:: C\n   :id: S_001\n   :n: 7\n",
+        )
+    ],
+    indirect=True,
+)
+def test_a_refused_entry_still_declares(test_app: Any) -> None:
+    """An entry the resolver cannot use -- it widens, or its default cannot be used --
+    declares its field all the same: the type keeps the declaration before it. An
+    entry refused for the field's shape does not."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        _shape("spec", "n", "string", "integer", "req"),
+        "WARNING: needs_types['impl'].fields['n'] widens the field as need type 'req' "
+        "declares it: Child 'maximum' 99 is greater than parent 'maximum' 9. "
+        "[needs.type_widening]",
+        _conflict(
+            "needs_types['test'].fields['n'] sets a 'default' that cannot be used: "
+            "Cannot convert 'abc' to integer"
+        ),
+        _undeclared(12, "S_001", "spec", "7", "n"),
+    ]
+    assert {k: v["n"] for k, v in _needs(app).items()} == {
+        "I_001": 5,
+        "T_001": 6,
+        "S_001": None,
+    }
 
 
 REQUIRED_TYPES = _types(

@@ -757,7 +757,6 @@ NEED_TYPE_KEYS = (
     "inherits",
     "fields",
     "links",
-    "closed",
 )
 
 #: The keys of an entry of a need type's ``fields`` table.
@@ -787,7 +786,6 @@ _SHAPES: Mapping[str, tuple[str, Callable[[object], bool]]] = {
     "inherits": ("a non-empty string", lambda v: isinstance(v, str) and bool(v)),
     "fields": ("a mapping", lambda v: isinstance(v, Mapping)),
     "links": ("a mapping", lambda v: isinstance(v, Mapping)),
-    "closed": ("a boolean", lambda v: isinstance(v, bool)),
     "description": ("a string", lambda v: isinstance(v, str)),
     "schema": ("a mapping", lambda v: isinstance(v, Mapping)),
     "nullable": ("a boolean", lambda v: isinstance(v, bool)),
@@ -888,8 +886,8 @@ def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
     4. an entry whose ``title`` or ``prefix`` is missing or not a string is dropped (an
        empty string is valid);
     5. a ``color`` or ``style`` that is not a string, an ``inherits`` that is not a
-       non-empty string, a ``fields`` or ``links`` that is not a mapping, and a
-       ``closed`` that is not a boolean, are removed from the entry;
+       non-empty string, and a ``fields`` or ``links`` that is not a mapping, are
+       removed from the entry;
     6. a key outside :data:`NEED_TYPE_KEYS` is removed from the entry;
     7. a directive declared by more than one entry (list shape only) resolves to the
        last of them, at its own position, the others removed.
@@ -2318,7 +2316,7 @@ def _checked_type_entries(
             continue
         named = f"needs_types[{name!r}]"
         wrong, text = _not_of_their_shape(
-            named, need_type, ("inherits", "fields", "links", "closed")
+            named, need_type, ("inherits", "fields", "links")
         )
         if wrong:
             findings.append(text)
@@ -2470,7 +2468,7 @@ def _resolve_type_declarations(
     refused: set[tuple[str, str]],
 ) -> None:
     """Declare the fields and link types of each need type anew, as its ``needs_types``
-    entry says: ``inherits``, ``fields``, ``links`` and ``closed``.
+    entry says: ``inherits``, ``fields`` and ``links``.
 
     The last change to the schema while it is built. A type's declaration of a field
     starts from the field's global declaration, takes the entries of its ancestors from
@@ -2478,10 +2476,6 @@ def _resolve_type_declarations(
     it (:func:`narrowing_problems`), and is registered for its type and every type
     inheriting from it (:meth:`FieldsSchema.add_type_overlay`). A type without an
     entry of a field, itself or by an ancestor, reads the field's global declaration.
-    A type is closed if its entry says so, else if its parent is
-    (:meth:`FieldsSchema.close_type`): it declares the fields of its entries and its
-    ancestors', an empty entry included, and an entry that cannot be used, if it names
-    a field of its table.
 
     What cannot be used is reported, one warning per reason, and ignored, and the
     build goes on: an ``inherits`` naming no need type or on a cycle
@@ -2492,7 +2486,9 @@ def _resolve_type_declarations(
 
     A field declared on need types alone (:func:`_type_local_fields`) is the field of
     the types that declare it, absent on every other type
-    (:meth:`FieldsSchema._localise`); an entry its shape refuses does not declare it.
+    (:meth:`FieldsSchema._localise`): a type declares it by its entries and its
+    ancestors', an empty entry included, and an entry that cannot be used, if it names
+    a field of its table -- but an entry its shape refuses, which does not declare it.
 
     :param schema: The schema, complete but for the declarations of need types.
     :param types: Each configured need type's entry (:func:`_checked_type_entries`),
@@ -2516,15 +2512,12 @@ def _resolve_type_declarations(
     #: need type -> field name -> its declaration for the type, and the type whose
     #: entry made it
     declared: dict[str, dict[str, tuple[FieldSchema | LinkSchema, str]]] = {}
-    #: need type -> whether it is closed: its own ``closed``, else its parent's
-    closed: dict[str, bool] = {}
-    #: need type -> the fields and link types it declares on a closed type: its
-    #: ancestors' and its own entries, used or not, each naming one of its table's kind
+    #: need type -> the fields and link types it declares: its ancestors' and its own
+    #: entries, used or not, each naming one of its table's kind
     names: dict[str, set[str]] = {}
     for need_type in order:
         own = dict(declared[p]) if (p := parent.get(need_type)) else {}
         names[need_type] = set(names[p]) if p else set()
-        closed[need_type] = types[need_type].get("closed", closed[p] if p else False)
         for table, kind, what, other in (
             ("fields", "field", "a field", "a link type"),
             ("links", "link", "a link type", "a field"),
@@ -2544,8 +2537,8 @@ def _resolve_type_declarations(
                         None,
                     )
                     continue
-                # declared on a closed type, also if the entry cannot be used: the
-                # type keeps the declaration before it
+                # declared, also if the entry cannot be used: the type keeps the
+                # declaration before it
                 names[need_type].add(name)
                 previous, by = own.get(name, (glob, None))
                 if (
@@ -2555,8 +2548,6 @@ def _resolve_type_declarations(
         declared[need_type] = own
         for field, _ in own.values():
             schema.add_type_overlay(need_type, field)
-        if closed[need_type]:
-            schema.close_type(need_type, names[need_type])
     for name in local:
         schema._localise(name, [t for t in order if name in names[t]])
 

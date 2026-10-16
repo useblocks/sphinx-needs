@@ -280,12 +280,13 @@ def generate_need(
 
     # a need from outside keeps the values of its derived fields, as data; any other
     # need takes the rule's value, and what an author wrote in a derived field is
-    # ignored. A field a closed need type does not declare is absent on its needs,
-    # from outside or not: a value given for it is ignored, and reported unless it is
-    # what the need holds anyway (a needs.json carries every field, the empty ones too)
+    # ignored. A field declared on need types alone is absent on the needs of every
+    # other type, from outside or not: a value given for it is ignored, and reported
+    # unless it is what the need holds anyway (a needs.json carries every field, the
+    # empty ones too)
     extras_no_defaults: dict[str, FieldLiteralValue | FieldFunctionArray | None] = {}
     #: the fields an author cannot set: their value is final, no default applies
-    closed: set[str] = set()
+    final: set[str] = set()
     for extra_field in schema.iter_extra_fields():
         if not extra_field.directive_option and (
             not extra_field.derived
@@ -297,10 +298,10 @@ def generate_need(
                 and kwargs.get(extra_field.name) != extra_field.off_type_value()
             ):
                 _refuse_authored(extra_field, kwargs, location, need_type, need_id)
-            extras_no_defaults[extra_field.name] = _closed_field_value(
+            extras_no_defaults[extra_field.name] = _unauthored_value(
                 extra_field, need_type
             )
-            closed.add(extra_field.name)
+            final.add(extra_field.name)
         elif extra_field.name not in kwargs:
             extras_no_defaults[extra_field.name] = None
         else:
@@ -398,7 +399,7 @@ def generate_need(
 
     extras = {
         k: _get_field_default(schema.get_extra_field(k), **context)
-        if v is None and k not in closed
+        if v is None and k not in final
         else v
         for k, v in extras_no_defaults.items()
     }
@@ -571,7 +572,7 @@ def _refuse_authored(
     need_id: str,
 ) -> None:
     """Report a value given for a field an author cannot set: a derived one, or one
-    the need's closed type does not declare.
+    declared on need types alone that the need's type does not declare.
 
     The value, a literal or a ``[[…]]``, ``<<…>>`` or ``<{…}>``, is ignored; also on a
     need of a type a derived field has no rule for, which holds the field's default.
@@ -581,7 +582,7 @@ def _refuse_authored(
     what = "Link type" if isinstance(field_schema, LinkSchema) else "Field"
     if not field_schema.derived:
         # every global declaration an author cannot set is derived: this is the
-        # declaration of a closed need type that does not declare the field
+        # declaration of a need type that does not declare the field
         log_warning(
             logger,
             f"{what} {field_schema.name!r} is not declared on need type {need_type!r} "
@@ -603,7 +604,7 @@ def _refuse_authored(
     )
 
 
-def _closed_field_value(
+def _unauthored_value(
     field_schema: FieldSchema, need_type: str
 ) -> FieldLiteralValue | None:
     """The value of a field an author cannot set, at the need's creation.
@@ -1583,15 +1584,11 @@ def _copy_links(
 ) -> None:
     """Implement 'copy' logic for links, on the schema of the need's type.
 
-    Nothing is copied into a derived ``links``: it holds what its rule computes; nor
-    into ``links`` on a closed need type that does not declare it: it holds no links.
+    Nothing is copied into a derived ``links``: it holds what its rule computes.
     """
     if "links" not in links:
         return  # should not happen, but be defensive
-    if (target := schema.get_link_field("links")) is not None and (
-        # derived, or absent on a closed type: an author cannot set it
-        target.derived or not target.directive_option
-    ):
+    if (target := schema.get_link_field("links")) is not None and target.derived:
         return
     copy_links: list[
         NeedLink | DynamicFunctionParsed | VariantFunctionParsed | VariantDataParsed

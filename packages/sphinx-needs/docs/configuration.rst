@@ -258,7 +258,6 @@ By default it is set to:
 * **color**: A color as hex value. Used in diagrams and some days maybe in other representations as well. Can also be ""
 * **style**: A plantuml node type, like node, artifact, frame, storage or database. See `plantuml documentation <http://plantuml.com/deployment-diagram>`__ for more.
 * **inherits**, **fields**, **links** (optional): the fields and link types the type declares anew for its needs, see :ref:`needs_types_fields`.
-* **closed** (optional): whether the needs of the type hold only the fields and link types it declares, see :ref:`needs_types_fields`.
 
 .. versionchanged:: 9.1.0
 
@@ -317,8 +316,8 @@ Otherwise each problem is a ``needs.config`` warning, and the build goes on with
   A ``directive`` inside a dictionary entry that differs from its key is reported, and the key is used;
 * an entry whose ``title`` or ``prefix`` is missing or not a string is ignored: its type does not exist;
 * a ``color`` or ``style`` that is not a string, an ``inherits`` that is not a non-empty string,
-  a ``fields`` or ``links`` that is not a dictionary, and a ``closed`` that is not a boolean, are ignored, and the type kept;
-* a key other than ``directive``, ``title``, ``prefix``, ``color``, ``style``, ``inherits``, ``fields``, ``links`` and ``closed`` is ignored, and the type kept;
+  and a ``fields`` or ``links`` that is not a dictionary, are ignored, and the type kept;
+* a key other than ``directive``, ``title``, ``prefix``, ``color``, ``style``, ``inherits``, ``fields`` and ``links`` is ignored, and the type kept;
 * a directive declared more than once in the list: the last entry is used, at its own position, and one warning names every entry that declares it.
 
 ``prefix`` and ``color`` may be ``""``.
@@ -350,8 +349,7 @@ A need type may declare fields and link types anew for its needs, in its entry:
 
 * ``fields``: a dictionary from the name of a field -- one of :ref:`needs_fields`, or a core field such as ``status`` -- to the type's declaration of it;
 * ``links``: a dictionary from the name of a link type -- one of :ref:`needs_links`, or ``links`` -- to the type's declaration of it;
-* ``inherits``: the directive name of one other need type, whose declarations this type starts from;
-* ``closed``: ``true`` for a type whose needs hold only the fields and link types it declares.
+* ``inherits``: the directive name of one other need type, whose declarations this type starts from.
 
 A declaration in ``fields`` may carry these keys, each as :ref:`needs_fields` takes it:
 
@@ -411,7 +409,6 @@ is fixed for every need type: it is reported as a ``needs.config`` warning and i
    title = "Safety requirement"
    prefix = "SR_"
    inherits = "req"
-   closed = true
 
    [needs.types.safety_req.fields.asil]
    schema = { enum = ["A", "B", "C", "D"] }
@@ -422,9 +419,8 @@ is fixed for every need type: it is reported as a ``needs.config`` warning and i
 
 Here a ``req`` must have an ``asil`` (``QM`` unless it says), a ``safety_req`` one of ``A`` to ``D`` (``A`` unless it says),
 and a ``safety_req`` links to three needs at most; the needs of every other type read ``asil`` and ``links`` as declared for all.
-A ``safety_req`` is closed: of the project's fields and link types it holds only ``asil`` and ``links``, which it declares.
-In :file:`conf.py`, the same entries are ``needs_types = {"safety_req": {"title": ..., "inherits": "req", "closed": True, "fields": {"asil": {...}}}, ...}``,
-and in the list shape ``dict(directive="safety_req", title=..., inherits="req", closed=True, fields={"asil": {...}})``.
+In :file:`conf.py`, the same entries are ``needs_types = {"safety_req": {"title": ..., "inherits": "req", "fields": {"asil": {...}}}, ...}``,
+and in the list shape ``dict(directive="safety_req", title=..., inherits="req", fields={"asil": {...}})``.
 In a TOML file of the list shape, a ``[needs.types.fields.asil]`` table after the ``[[needs.types]]`` tables belongs to the last of them.
 
 **Narrowing.**
@@ -453,32 +449,6 @@ each is one ``needs.type_inherits`` warning, every type on a cycle reported::
 
    Need type 'a' inherits 'b' on a cycle (a -> b -> a); its inherits is ignored.
    Need type 'e' inherits 'nope', which is not a need type; its inherits is ignored.
-
-**closed.**
-A type with ``closed = true`` declares only the fields and link types of its entries and its ancestors' entries;
-an entry that changes nothing (``[needs.types.spec.fields.x]`` with no key) declares the field as it is,
-and an entry that cannot be used declares its field too, as it was (if it names a field of its table: a link type under ``fields`` declares nothing).
-``closed`` closes what the project declares: its ``needs_fields``/``needs_extra_options`` fields and its link types but ``parent_needs``;
-the core fields, and the fields an extension or a service registers (``add_field``, ``add_extra_option``, also from a project's own :file:`conf.py`), stay as declared
-(and a :ref:`derived <needs_derive>` field is closed on every type already).
-It is inherited: a child of a closed type is closed unless its entry says ``closed = false``,
-and a child of an open type is open unless it says ``closed = true``.
-On a need of a closed type, a field the type does not declare holds no value:
-``None`` where the field is nullable, else the empty value of its type (``""``, ``false``, ``0``, ``[]``), never its default;
-a link type it does not declare holds no links, and a link type with ``copy`` copies into ``links`` only where the type declares ``links``.
-A value set for it in a need is ignored, as one ``needs.undeclared_for_type`` warning::
-
-   Field 'x' is not declared on need type 'spec', which is closed, and cannot be set in need 'S_001'; the value 'two' is ignored
-
-and a need imported by :ref:`needimport` or from :ref:`needs_external_needs` drops it with the same warning;
-a value equal to the one the need then holds -- the empty value of a field that is not nullable, which a needs.json carries for every field -- is dropped silently.
-A :ref:`needextend` setting, appending to or deleting it is refused on the needs of the type,
-one ``needs.needextend`` warning for each needextend, need type and option::
-
-   Option 'x' does not support extend operations on need type 'spec'; it does not extend 3 needs (S_001, S_002, S_003).
-
-Such a field with a default of its own enters the :ref:`fingerprint <needs_derive>` of every need of the type,
-as the value it holds is not that default; so does one that is not nullable and has no default, as every need's does; a nullable one without a default holds ``None``, which is then its default, and stays out.
 
 **What cannot be declared.**
 A declaration that cannot be applied is ignored as a whole, as one ``needs.type_conflict`` warning, such as::
@@ -509,7 +479,7 @@ The warnings of these declarations, given when the schema is built, name an entr
 (``needs_types['spec']``), while those given when the configuration is read name an entry of the list by its position
 (``needs_types entry 2 ('spec')``).
 An entry an extension adds to ``needs_types`` once the configuration is read has the shape of its ``inherits``,
-``fields``, ``links`` and ``closed`` checked when the schema is built, with the same ``needs.config`` warnings;
+``fields`` and ``links`` checked when the schema is built, with the same ``needs.config`` warnings;
 once the schema is built it is complete, and nothing declares a field later.
 
 .. _`needs_fields`:
