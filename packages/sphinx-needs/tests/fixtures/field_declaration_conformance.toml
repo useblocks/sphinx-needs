@@ -48,8 +48,9 @@
 #     a type that does not declare it; a field no declaration of which is usable does not
 #     exist, and is no key of any need. A link type need types alone declare (no
 #     `[needs.links.*]` or `[[needs.extra_links]]` entry, no core link type, no field, nor
-#     a link type's back links, `<l>_back`) is carried by every need too, `[]` -- no links -- on the needs of a type that does not
-#     declare it, never null: no link list is null, and an empty one is no links
+#     a link type's back links, `<l>_back`) is carried by every need too, `[]` -- no links --
+#     on the needs of a type that does not declare it, never null: no link list is null, and
+#     an empty one is no links
 #   - a `[needs.fields.<name>]` entry without `nullable` is nullable in both tools, so its
 #     unset value is null; a case writes `nullable = false` where it means the type's empty
 #     value instead
@@ -2221,6 +2222,11 @@ prefix = "T_"
 [needs.types.spec]
 title = "Specification"
 prefix = "S_"
+
+[needs.types.preq]
+title = "Plain child"
+prefix = "PR_"
+inherits = "req"
 '''
 source = '''
 .. req:: Declares it
@@ -2238,6 +2244,10 @@ source = '''
 .. spec:: Does not declare it
    :id: SPEC_1
    :verifies: REQ_1
+
+.. preq:: Declares it by its parent alone
+   :id: PREQ_1
+   :verifies: SPEC_1
 '''
 [case.expect]
 [case.expect.needs.REQ_1]
@@ -2251,7 +2261,9 @@ verifies = ["REQ_1"]
 n = 0
 [case.expect.needs.SPEC_1]
 verifies = []
-n = 2
+n = 3
+[case.expect.needs.PREQ_1]
+verifies = ["SPEC_1"]
 [case.expect.schema.verifies]
 type = "array"
 description = "Declared by need types 'req', 'test'"
