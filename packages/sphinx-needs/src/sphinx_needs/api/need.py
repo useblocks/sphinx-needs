@@ -288,13 +288,13 @@ def generate_need(
     #: the fields an author cannot set: their value is final, no default applies
     final: set[str] = set()
     for extra_field in schema.iter_extra_fields():
+        # a derived field the type does not declare is absent: no data from outside
+        authored = not extra_field.derived or not schema.declares(extra_field.name)
         if not extra_field.directive_option and (
-            not extra_field.derived
-            or not from_outside
-            or kwargs.get(extra_field.name) is None
+            authored or not from_outside or kwargs.get(extra_field.name) is None
         ):
             if not from_outside or (
-                not extra_field.derived
+                authored
                 and kwargs.get(extra_field.name) != extra_field.off_type_value()
             ):
                 _refuse_authored(
