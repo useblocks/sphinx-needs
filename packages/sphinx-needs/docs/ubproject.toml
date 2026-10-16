@@ -105,14 +105,6 @@ nullable = true
 description = "Additional comments"
 nullable = true
 
-[needs.fields.amount]
-description = "Amount value"
-schema.type = "number"
-
-[needs.fields.hours]
-description = "Time in hours"
-schema.type = "integer"
-
 [needs.fields.duration]
 description = "Time in days"
 schema.type = "integer"
@@ -133,114 +125,119 @@ nullable = true
 description = "GitHub reference"
 nullable = true
 
-[needs.fields.value]
-description = "General value field"
-nullable = true
-
-[needs.fields.unit]
-description = "Unit specification"
-nullable = true
-
-[[needs.types]]
-directive = "int"
+# The need types, one `[needs.types.<directive>]` table each, in the order of the
+# legends and of `needreport`. A few of them declare fields of their own needs alone
+# (`hours`, `amount`, `value`, `unit`): no `[needs.fields]` entry declares those, so a
+# need of another type cannot set them. One declaration of each gives its `schema`
+# `type`; an empty entry, such as `[needs.types.action.fields.hours]`, declares the
+# field as it is on that type too. See "Fields per need type" in configuration.rst.
+[needs.types.int]
 title = "Interface"
 prefix = "I_"
 color = "#BFD8D2"
 style = "card"
 
-[[needs.types]]
-directive = "comp"
+[needs.types.comp]
 title = "Component"
 prefix = "C_"
 color = "#BFD8D2"
 style = "card"
 
-[[needs.types]]
-directive = "sys"
+[needs.types.sys]
 title = "System"
 prefix = "S_"
 color = "#BFD8D2"
 style = "card"
 
-[[needs.types]]
-directive = "req"
+[needs.types.req]
 title = "Requirement"
 prefix = "R_"
 color = "#BFD8D2"
 style = "node"
 
-[[needs.types]]
-directive = "spec"
+[needs.types.req.fields.amount]
+description = "Amount value"
+schema.type = "number"
+
+[needs.types.req.fields.value]
+description = "General value field"
+schema.type = "string"
+
+[needs.types.req.fields.unit]
+description = "Unit specification"
+schema.type = "string"
+
+[needs.types.spec]
 title = "Specification"
 prefix = "S_"
 color = "#FEDCD2"
 style = "node"
 
-[[needs.types]]
-directive = "impl"
+[needs.types.spec.fields.hours]
+description = "Time in hours"
+schema.type = "integer"
+
+[needs.types.impl]
 title = "Implementation"
 prefix = "I_"
 color = "#DF744A"
 style = "node"
 
-[[needs.types]]
-directive = "test"
+[needs.types.test]
 title = "Test Case"
 prefix = "T_"
 color = "#DCB239"
 style = "node"
 
-[[needs.types]]
-directive = "feature"
+[needs.types.test.fields.value]
+
+[needs.types.feature]
 title = "Feature"
 prefix = "F_"
 color = "#FFCC00"
 style = "node"
 
-[[needs.types]]
-directive = "user"
+[needs.types.user]
 title = "User"
 prefix = "U_"
 color = "#777777"
 style = "node"
 
-[[needs.types]]
-directive = "action"
+[needs.types.action]
 title = "Action"
 prefix = "A_"
 color = "#FFCC00"
 style = "node"
 
-[[needs.types]]
-directive = "milestone"
+[needs.types.action.fields.hours]
+
+[needs.types.action.fields.amount]
+
+[needs.types.milestone]
 title = "Milestone"
 prefix = "M_"
 color = "#FF3333"
 style = "node"
 
-[[needs.types]]
-directive = "tutorial-project"
+[needs.types.tutorial-project]
 title = "Project"
 prefix = "P_"
 color = "#BFD8D2"
 style = "rectangle"
 
-[[needs.types]]
-directive = "tutorial-req"
+[needs.types.tutorial-req]
 title = "Requirement"
 prefix = "R_"
 color = "#BFD8D2"
 style = "rectangle"
 
-[[needs.types]]
-directive = "tutorial-spec"
+[needs.types.tutorial-spec]
 title = "Specification"
 prefix = "S_"
 color = "#FEDCD2"
 style = "rectangle"
 
-[[needs.types]]
-directive = "tutorial-test"
+[needs.types.tutorial-test]
 title = "Test Case"
 prefix = "T_"
 color = "#f9e79f"
