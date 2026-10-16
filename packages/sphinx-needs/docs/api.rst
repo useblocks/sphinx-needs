@@ -105,8 +105,9 @@ is the mutable mapping of need ids to needs, :py:obj:`~sphinx_needs.data.NeedsMu
    def setup(app):
        app.connect("needs-before-post-processing", default_status)
 
-A field with a :ref:`derive <needs_derive>` rule cannot be set from a callback: it holds what
-its rule computes, and ``need[name] = value`` raises ``KeyError``.
+A field with a :ref:`derive <needs_derive>` rule cannot be set from a callback, a
+:ref:`filter function <filter_func>` or a :ref:`dynamic function <dynamic_functions>`: it holds
+what its rule computes, and ``need[name] = value`` raises ``KeyError``.
 
 
 Exceptions

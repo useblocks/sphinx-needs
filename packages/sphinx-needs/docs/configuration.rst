@@ -1668,6 +1668,8 @@ Allow unsafe filter for :ref:`filter_func`. Default is ``False``.
 
 If set to True, the filtered results will keep all fields as they are returned by the dynamic functions.
 Fields can be added or existing fields can even be manipulated.
+A field with a :ref:`derive <needs_derive>` rule cannot be, whatever this option says:
+``need[name] = value`` on one raises ``KeyError``, and the build fails.
 
 .. note:: Keep in mind this only affects the filter results, original needs as displayed somewhere else are not modified.
 

@@ -119,9 +119,16 @@ Improvements
 
 - 👌 A derived field cannot be set on a need: ``need[name] = value`` for a field with a
   :ref:`derive <needs_derive>` rule raises ``KeyError``, where it used to set a value the rule
-  then overwrote (``needs-before-post-processing``) or kept (``needs-before-sealing``); an
-  extension writing a derived field from either event now fails the build there, with the field
-  named (:pr:`NNNN`)
+  then overwrote (``needs-before-post-processing``) or kept (``needs-before-sealing``, a
+  :ref:`filter function <filter_func>`, and in the case measured a
+  :ref:`dynamic function <dynamic_functions>` writing another need's field). An extension, a
+  filter function or a dynamic function writing a derived field now meets the refusal: from an
+  event or a filter function the build fails, with the field named (a filter function at
+  ``doctree-resolved``, whatever :ref:`needs_allow_unsafe_filters` says); from a dynamic
+  function the call is reported, for example ``Error while resolving dynamic values for field
+  'plain', of need 'R_001': Error while executing function 'meddle': "Cannot set derived field
+  'copied' in NeedItem: its value is computed by its derive rule." [needs.dynamic_function]``,
+  and the field it computes holds no value (:pr:`NNNN`)
 
 Deprecations
 ............
