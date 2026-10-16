@@ -3240,7 +3240,7 @@ field = "owner"
 
 [[case]]
 name = "defaults-left-out-equal-the-field-default"
-why = "under json_remove_defaults, needs.json leaves a value out where it equals the default its field's needs_schema entry carries, the field's own and never a need type's: a need holding its type's default, its own type's or one inherited, writes it; a need holding the field's own default leaves it out, and the schema restores it"
+why = "under json_remove_defaults, needs.json leaves a value out where it equals the default its field's needs_schema entry carries, the field's own and never a need type's: a need holding its type's default, its own type's or one inherited, writes it; a need holding the field's own default leaves it out, and the schema restores it; a value equal to the default but of another JSON type (1.0 against 1) is written"
 config = '''
 [needs]
 json_remove_defaults = true
@@ -3248,6 +3248,10 @@ json_remove_defaults = true
 [needs.fields.asil]
 schema = { type = "string", enum = ["QM", "A", "B", "C", "D"] }
 default = "QM"
+
+[needs.fields.weight]
+schema = { type = "number" }
+default = 1
 
 [needs.types.spec]
 title = "Specification"
@@ -3272,6 +3276,7 @@ prefix = "R_"
 source = '''
 .. spec:: Its type's default
    :id: SPEC_001
+   :weight: 1
 
 .. spec:: The field's own default, authored
    :id: SPEC_002
@@ -3288,6 +3293,7 @@ findings = []
 [case.expect.needs.SPEC_001]
 asil = "A"
 lvl = 1
+weight = 1.0
 [case.expect.needs.SPEC_002]
 asil = "QM"
 lvl = 1
@@ -3300,7 +3306,7 @@ asil = "QM"
 REQ_001 = ["lvl"]
 [case.expect.omitted]
 SPEC_002 = ["asil"]
-REQ_001 = ["asil", "lvl"]
+REQ_001 = ["asil", "lvl", "weight"]
 [case.expect.schema.asil]
 default = "QM"
 
