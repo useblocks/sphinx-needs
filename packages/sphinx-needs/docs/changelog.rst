@@ -184,7 +184,7 @@ Documentation
 .............
 
 - 📚 A need type's own entry is documented as the place for most rules about its needs,
-  beside schema rules for the rest
+  beside schema rules for the rest (:pr:`2295`)
 
   The schema validation page gains :ref:`schema_per_type_or_rules`: what a type's ``fields``,
   ``links`` and ``inherits`` can declare, what still takes a schema rule, and how each is reported
