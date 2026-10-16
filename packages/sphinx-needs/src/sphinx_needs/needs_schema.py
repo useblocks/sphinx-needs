@@ -1186,6 +1186,7 @@ class FieldsSchema:
         "_frozen",
         "_global_view",
         "_link_fields",
+        "_local",
         "_need_types",
         "_project_fields",
         "_type_overlays",
@@ -1203,9 +1204,12 @@ class FieldsSchema:
         self._type_overlays: dict[str, dict[str, FieldSchema | LinkSchema]] = {}
         #: closed need type -> the names of the fields and link types it declares
         self._closed: dict[str, frozenset[str]] = {}
-        #: field name -> its declaration on a closed need type that does not declare
-        #: it, one for every such type
+        #: field name -> its declaration on a need type that does not declare it, one
+        #: for every such type
         self._absent: dict[str, FieldSchema | LinkSchema] = {}
+        #: field declared on need types alone -> the need types that declare it: it is
+        #: absent on every other need type
+        self._local: dict[str, frozenset[str]] = {}
         #: need type -> the schema of its needs (each need type with overlays, and
         #: each closed need type)
         self._type_views: dict[str, TypeFieldsSchema] = {}
@@ -1276,9 +1280,46 @@ class FieldsSchema:
         if self._frozen:
             return
         self._frozen = True
-        for need_type in (*self._type_overlays, *self._closed):
+        for need_type in (*self._type_overlays, *self._closed, *self._lacking()):
             self._resolved(need_type)
         self._resolved(None)
+
+    def _lacks_local(self, need_type: str) -> bool:
+        """Whether a configured need type does not declare a field declared on need
+        types alone (:meth:`_localise`)."""
+        return bool(self._local) and (
+            (self._need_types is None or need_type in self._need_types)
+            and any(need_type not in declaring for declaring in self._local.values())
+        )
+
+    def _lacking(self) -> list[str]:
+        """The configured need types that do not declare a field declared on need
+        types alone (:meth:`_localise`)."""
+        if not self._local or self._need_types is None:
+            return []
+        return sorted(t for t in self._need_types if self._lacks_local(t))
+
+    def _localise(self, name: str, declaring: Iterable[str]) -> None:
+        """Make ``name`` a field of the need types ``declaring`` alone: in
+        :meth:`for_type` of every other configured need type it is absent, its
+        declaration one an author (``directive_option``) or a ``needextend``
+        (``allow_extend``) cannot set, shared by every such type. A second call
+        replaces the first.
+
+        ``create_schema`` calls it for each field a need type's ``fields`` entry
+        declares that nothing else declares, once the types' declarations are
+        registered.
+
+        :raises ValueError: if the schema has no field of that name
+        :raises TypeError: if the schema is frozen, or the schema of one need type
+        """
+        self._mutating()
+        if self._any_field(name) is None:
+            raise ValueError(
+                f"Cannot declare field {name!r} on need types alone: there is no field "
+                "of that name."
+            )
+        self._local[name] = frozenset(declaring)
 
     @property
     def need_types(self) -> frozenset[str] | None:
@@ -1393,7 +1434,9 @@ class FieldsSchema:
         for every need type with overlays, every closed need type and the global
         view)."""
         if need_type is not None and (
-            need_type in self._type_overlays or need_type in self._closed
+            need_type in self._type_overlays
+            or need_type in self._closed
+            or self._lacks_local(need_type)
         ):
             if (view := self._type_views.get(need_type)) is None:
                 view = self._type_views[need_type] = self._resolve_type(need_type)
@@ -1427,6 +1470,15 @@ class FieldsSchema:
             for name, link in view._link_fields.items():
                 if name not in declared and name not in CORE_LINK_TYPES:
                     view._link_fields[name] = self._absent_of(link)
+        if need_type is not None:
+            # a field declared on need types alone is absent on every other type
+            for name, declaring in self._local.items():
+                if need_type in declaring:
+                    continue
+                if (field := view._extra_fields.get(name)) is not None:
+                    view._extra_fields[name] = self._absent_of(field)
+                elif (link := view._link_fields.get(name)) is not None:
+                    view._link_fields[name] = self._absent_of(link)
         view._view_of = (self, need_type)
         return view
 
@@ -1437,8 +1489,8 @@ class FieldsSchema:
     def _absent_of(self, field: LinkSchema) -> LinkSchema: ...
 
     def _absent_of(self, field: FieldSchema | LinkSchema) -> FieldSchema | LinkSchema:
-        """The declaration of a field on a closed need type that does not declare it:
-        one for every such type. A derived field is closed on every type already.
+        """The declaration of a field on a need type that does not declare it: one for
+        every such type. A derived field is closed on every type already.
 
         It keeps the global ``default`` and ``predicate_defaults``, which no reader
         applies: creation gives an absent field its empty value without defaults, the

@@ -21,7 +21,7 @@ from copy import deepcopy
 from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, Any, Final, Literal
 
-from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
+from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig, type_field_names
 from sphinx_needs.data import NeedsCoreFields
 from sphinx_needs.defaults import LAYOUTS
 from sphinx_needs.logging import get_logger, log_warning
@@ -899,7 +899,8 @@ def compile_card_layouts(_app: Sphinx, config: Config) -> None:
         )
         return
 
-    known_fields = {*NeedsCoreFields, *_NEEDS_CONFIG.fields}
+    # a field declared on need types alone is a field once the schema is built
+    known_fields = {*NeedsCoreFields, *_NEEDS_CONFIG.fields, *type_field_names(config)}
     generated: dict[str, dict[str, Any]] = {}
     for name, spec in specs.items():
 

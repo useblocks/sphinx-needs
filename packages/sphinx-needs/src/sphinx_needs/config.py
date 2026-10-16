@@ -45,8 +45,10 @@ class NewFieldParams:
         "add_extra_option",
         "add_field",
         "service",
+        "needs_types",
     ]
-    """Where the field was added from."""
+    """Where the field was added from (``needs_types``: declared on need types alone,
+    by their entries' ``fields``)."""
     description: str
     """A description of the field."""
     nullable: bool | None = None
@@ -229,6 +231,28 @@ class _Config:
 
 
 _NEEDS_CONFIG = _Config()
+
+
+def type_field_names(config: _SphinxConfig) -> set[str]:
+    """The names the ``fields`` of the ``needs_types`` entries declare.
+
+    The configuration readers that run before the fields schema is built read them
+    beside the registered fields: a name only a need type declares is the name of a
+    field (declared on need types alone) once the schema is built. The value is read
+    as the configuration holds it, which is the list once ``config-inited`` has
+    resolved it; a configuration without ``needs_types`` declares none.
+    """
+    need_types = getattr(config, "needs_types", [])
+    if not isinstance(need_types, list):
+        return set()
+    return {
+        name
+        for entry in need_types
+        if isinstance(entry, Mapping)
+        and isinstance(table := entry.get("fields"), Mapping)
+        for name in table
+        if isinstance(name, str)
+    }
 
 
 class ConstraintFailedType(TypedDict):

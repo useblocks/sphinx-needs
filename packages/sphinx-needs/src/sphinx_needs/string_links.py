@@ -27,7 +27,12 @@ from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Final, cast
 
 from sphinx_needs._jinja import CompiledTemplate, compile_template
-from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig, StringLinkConf
+from sphinx_needs.config import (
+    _NEEDS_CONFIG,
+    NeedsSphinxConfig,
+    StringLinkConf,
+    type_field_names,
+)
 from sphinx_needs.data import NeedsCoreFields
 from sphinx_needs.logging import get_logger, log_warning
 
@@ -292,7 +297,8 @@ def compile_string_links(_app: Sphinx, config: Config) -> None:
     if not confs:
         return
 
-    known_fields = {*NeedsCoreFields, *_NEEDS_CONFIG.fields}
+    # a field declared on need types alone is a field once the schema is built
+    known_fields = {*NeedsCoreFields, *_NEEDS_CONFIG.fields, *type_field_names(config)}
     validated: dict[str, StringLinkConf] = {}
     for name, conf in confs.items():
 

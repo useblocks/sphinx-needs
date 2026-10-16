@@ -799,6 +799,9 @@ def test_a_refused_entry_still_declares_on_a_closed_type(test_app: Any) -> None:
     app = test_app
     app.build()
     assert build_warnings(app) == [
+        "WARNING: needs_types['spec'].fields['nosuch'] declares 'nosuch', which no "
+        "needs_fields entry declares, and no need type gives it a 'schema' 'type'; "
+        "the entry is ignored [needs.type_conflict]",
         "WARNING: needs_types['spec'].fields['x'] widens the field: Child 'maxLength' "
         "99 is greater than parent 'maxLength' 9. [needs.type_widening]",
         "WARNING: needs_types['spec'].fields['y'] cannot be declared with type "
@@ -806,9 +809,6 @@ def test_a_refused_entry_still_declares_on_a_closed_type(test_app: Any) -> None:
         "type; the entry is ignored [needs.type_conflict]",
         "WARNING: needs_types['spec'].fields['blocks'] declares 'blocks', which is a "
         "link type, not a field; the entry is ignored [needs.type_conflict]",
-        "WARNING: needs_types['spec'].fields['nosuch'] declares 'nosuch', which no "
-        "needs_fields entry declares, and no need type gives it a 'schema' 'type'; "
-        "the entry is ignored [needs.type_conflict]",
         _undeclared(7, "S_001", "spec", "R_001", "blocks", "Link type"),
     ]
     assert {k: (v["x"], v["y"], v["blocks"]) for k, v in _needs(app).items()} == {

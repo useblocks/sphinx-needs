@@ -38,6 +38,8 @@ from sphinx_needs.config import (
     NeedLinksConfig,
     NeedsSphinxConfig,
     NeedType,
+    NewFieldParams,
+    type_field_names,
 )
 from sphinx_needs.data import (
     ENV_DATA_VERSION,
@@ -177,6 +179,7 @@ from sphinx_needs.roles.variant import VariantRole
 from sphinx_needs.schema.config import (
     FieldIntegerSchemaType,
     SchemasFileRootType,
+    validate_field_schema,
 )
 from sphinx_needs.schema.config_utils import (
     resolve_schemas_config,
@@ -1468,7 +1471,16 @@ def check_configuration(app: Sphinx, config: Config) -> None:
     E.g. defined need-option, which is already defined internally
     """
     needs_config = NeedsSphinxConfig(config)
-    fields = _NEEDS_CONFIG.fields
+    # a field declared on need types alone is checked as a field (a core field or a
+    # link type a type's entry names is none: the entry narrows it, or is refused)
+    fields = {
+        *_NEEDS_CONFIG.fields,
+        *(
+            type_field_names(config)
+            - set(NeedsCoreFields)
+            - _link_type_names(needs_config)
+        ),
+    }
     link_types = [x["option"] for x in needs_config._extra_links]
 
     if validate_page_size(needs_config.table_page_size) is None:
@@ -1613,6 +1625,18 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
     }
     schema.set_need_types(need_types)
     link_types = _link_type_names(needs_config)
+    #: each need type's entry, its declarations of their shape, and the walk of their
+    #: inherits; their findings are reported with the types' declarations, last
+    type_entries, entry_findings = _checked_type_entries(needs_config.types)
+    order, parent, inherits_findings = _inherits_order(type_entries)
+    #: the fields need types declare alone: declared below as a needs_fields entry is
+    #: (before the rules are checked), each then declared by its need types
+    type_local, shape_refused, shape_findings = _type_local_fields(
+        type_entries,
+        order,
+        parent,
+        {*NeedsCoreFields, *_NEEDS_CONFIG.fields, *link_types},
+    )
     for name, params in needs_config._fields.items():
         if not isinstance(params, dict) or (
             name not in NeedsCoreFields and name not in link_types
@@ -1709,7 +1733,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         except Exception as exc:
             raise NeedsConfigException(f"Invalid core option {name!r}: {exc}") from exc
 
-    for name, field_data in _NEEDS_CONFIG.fields.items():
+    for name, field_data in (*_NEEDS_CONFIG.fields.items(), *type_local.items()):
         try:
             back_compatible = field_data.source in {
                 "needs_extra_options",
@@ -1843,7 +1867,8 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                     )
             schema.add_extra_field(
                 field,
-                project=field_data.source in {"needs_fields", "needs_extra_options"},
+                project=field_data.source
+                in {"needs_fields", "needs_extra_options", "needs_types"},
             )
         except Exception as exc:
             raise NeedsConfigException(f"Invalid field {name!r}: {exc}") from exc
@@ -2018,7 +2043,15 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
 
     # last: each type's declarations start from the fields as they stand now, their
     # derive problems and legacy defaults included
-    _resolve_type_declarations(schema, needs_config.types)
+    _resolve_type_declarations(
+        schema,
+        type_entries,
+        order,
+        parent,
+        (entry_findings, inherits_findings, shape_findings),
+        type_local,
+        shape_refused,
+    )
     # the schema is complete: nothing declares a field once it is built
     schema.freeze()
 
@@ -2266,8 +2299,175 @@ def _inherits_order(
     return order, parent, findings
 
 
+def _checked_type_entries(
+    need_types: Iterable[NeedType],
+) -> tuple[dict[str, dict[str, Any]], list[str]]:
+    """Each need type's entry by directive name, its declarations of their shape.
+
+    An entry an extension adds after the configuration is resolved has not been
+    through the normaliser: its declarations are checked here, by its rules.
+
+    :return: The entries, and the ``needs.config`` findings of their shape.
+    """
+    types: dict[str, dict[str, Any]] = {}
+    findings: list[str] = []
+    for need_type in need_types:
+        if not isinstance(need_type, dict) or not isinstance(
+            name := need_type.get("directive"), str
+        ):
+            continue
+        named = f"needs_types[{name!r}]"
+        wrong, text = _not_of_their_shape(
+            named, need_type, ("inherits", "fields", "links", "closed")
+        )
+        if wrong:
+            findings.append(text)
+        entry = {key: value for key, value in need_type.items() if key not in wrong}
+        for table in ("fields", "links"):
+            if table in entry:
+                entry[table] = _normalise_declarations(
+                    named, table, cast(Mapping[Any, Any], entry[table]), findings
+                )
+        types[name] = entry
+    return types, findings
+
+
+def _shape_of(keys: Mapping[str, Any]) -> tuple[Any, Any] | None:
+    """The type and items' type a declaration of a field gives, if it gives a type."""
+    schema = keys.get("schema", {})
+    if (type_ := schema.get("type")) is None:
+        return None
+    items = schema.get("items")
+    return type_, (
+        items.get("type") if type_ == "array" and isinstance(items, Mapping) else None
+    )
+
+
+def _type_local_fields(
+    types: Mapping[str, Mapping[str, Any]],
+    order: list[str],
+    parent: Mapping[str, str],
+    known: set[str],
+) -> tuple[dict[str, NewFieldParams], set[tuple[str, str]], list[str]]:
+    """The fields need types declare that nothing else declares (no core field, no
+    registered field, no link type): each the field of the types that declare it, of
+    the one shape they agree on.
+
+    A root declaration is one of a type none of whose ancestors declares the field.
+    The first root declaration in ``order`` (a parent before its children) that gives
+    a ``schema`` ``type`` sets the field's type and items' type; a root declaration
+    that gives none takes them. A root declaration of another type, one whose type
+    is no field's, and every declaration of a field no root declaration gives a type,
+    is a ``needs.type_conflict`` finding: its entry is ignored, and does not declare
+    the field. A child's declaration narrows its parent's, as for any field.
+
+    Each field is declared as a ``needs_fields`` entry with the agreed ``schema``
+    alone, nullable and without a default: each type that declares it narrows it.
+
+    :param types: Each need type's entry, of its shape.
+    :param order: The need types, each after its parent.
+    :param parent: The parent of each type that has one.
+    :param known: The names declared otherwise.
+    :return: The fields, by name; the (need type, field) entries that do not declare
+        their field; and the findings, by field, in ``order``.
+    """
+
+    def inherited(need_type: str, name: str) -> bool:
+        node = parent.get(need_type)
+        while node is not None:
+            if name in types[node].get("fields", {}):
+                return True
+            node = parent.get(node)
+        return False
+
+    #: field -> its root declarations, in order
+    roots: dict[str, list[tuple[str, Mapping[str, Any]]]] = {}
+    for need_type in order:
+        for name, keys in types[need_type].get("fields", {}).items():
+            if (
+                isinstance(name, str)
+                and name not in known
+                and not inherited(need_type, name)
+            ):
+                roots.setdefault(name, []).append((need_type, keys))
+    local: dict[str, NewFieldParams] = {}
+    refused: set[tuple[str, str]] = set()
+    findings: list[str] = []
+    for name, declarations in roots.items():
+        #: the agreed type and items' type, and the need type that set them
+        agreed: tuple[Any, Any, str] | None = None
+        for need_type, keys in declarations:
+            if (shape := _shape_of(keys)) is None:
+                continue
+            try:
+                validate_field_schema(_field_schema_of(*shape))
+            except TypeError as exc:
+                findings.append(
+                    f"needs_types[{need_type!r}].fields[{name!r}] cannot be declared: "
+                    f"Invalid schema: {_reason(exc)}; the entry is ignored"
+                )
+                refused.add((need_type, name))
+                continue
+            agreed = (*shape, need_type)
+            break
+        for need_type, keys in declarations:
+            where = f"needs_types[{need_type!r}].fields[{name!r}]"
+            if (need_type, name) in refused or (
+                agreed is not None and need_type == agreed[2]
+            ):
+                continue
+            if agreed is None:
+                text = (
+                    f"declares {name!r}, which no needs_fields entry declares, and no "
+                    "need type gives it a 'schema' 'type'"
+                )
+            else:
+                type_, items, by = agreed
+                schema = keys.get("schema", {})
+                own = schema.get("type", type_)
+                own_items = None
+                if own == "array":
+                    own_items = items
+                    if isinstance(schema.get("items"), Mapping):
+                        own_items = schema["items"].get("type", items)
+                if (own, own_items) == (type_, items):
+                    continue
+                text = (
+                    f"cannot be declared with type {own!r} (items {own_items!r}): its "
+                    f"type is {type_!r} (items {items!r}) on every need type, as need "
+                    f"type {by!r} declares it"
+                )
+            findings.append(f"{where} {text}; the entry is ignored")
+            refused.add((need_type, name))
+        if agreed is None:
+            continue
+        declaring = ", ".join(
+            repr(t) for t, _ in declarations if (t, name) not in refused
+        )
+        local[name] = NewFieldParams(
+            source="needs_types",
+            description=f"Declared by need types {declaring}",
+            schema=cast(Any, _field_schema_of(agreed[0], agreed[1])),
+            nullable=True,
+        )
+    return local, refused, findings
+
+
+def _field_schema_of(type_: Any, items: Any) -> dict[str, Any]:
+    """The schema of a field of a type (and, for an array, of items of a type)."""
+    if type_ == "array":
+        return {"type": type_, "items": {"type": items}}
+    return {"type": type_}
+
+
 def _resolve_type_declarations(
-    schema: FieldsSchema, need_types: Iterable[NeedType]
+    schema: FieldsSchema,
+    types: Mapping[str, Mapping[str, Any]],
+    order: list[str],
+    parent: Mapping[str, str],
+    findings: tuple[list[str], list[str], list[str]],
+    local: Iterable[str],
+    refused: set[tuple[str, str]],
 ) -> None:
     """Declare the fields and link types of each need type anew, as its ``needs_types``
     entry says: ``inherits``, ``fields``, ``links`` and ``closed``.
@@ -2290,37 +2490,29 @@ def _resolve_type_declarations(
     that widens the declaration before it (``needs.type_widening``). An entry is taken
     whole or not at all: the type keeps the declaration before it.
 
+    A field declared on need types alone (:func:`_type_local_fields`) is the field of
+    the types that declare it, absent on every other type
+    (:meth:`FieldsSchema._localise`); an entry its shape refuses does not declare it.
+
     :param schema: The schema, complete but for the declarations of need types.
-    :param need_types: The configured need types (the shape the configuration was
-        resolved to), those an extension or a service adds included.
+    :param types: Each configured need type's entry (:func:`_checked_type_entries`),
+        those an extension or a service adds included.
+    :param order: The need types, each after its parent (:func:`_inherits_order`).
+    :param parent: The parent of each type that has one.
+    :param findings: What was found reading the entries, reported first: the shape of
+        an entry an extension added (``needs.config``), the walk
+        (``needs.type_inherits``), and the shape of the fields declared on need types
+        alone (``needs.type_conflict``).
+    :param local: The fields declared on need types alone.
+    :param refused: The (need type, field) entries refused for their field's shape.
     """
-    types: dict[str, dict[str, Any]] = {}
-    for need_type in need_types:
-        if not isinstance(need_type, dict) or not isinstance(
-            name := need_type.get("directive"), str
-        ):
-            continue
-        # an entry an extension adds after the configuration is resolved has not been
-        # through the normaliser: its declarations are checked here, by its rules
-        named = f"needs_types[{name!r}]"
-        shape: list[str] = []
-        wrong, text = _not_of_their_shape(
-            named, need_type, ("inherits", "fields", "links", "closed")
-        )
-        if wrong:
-            shape.append(text)
-        entry = {key: value for key, value in need_type.items() if key not in wrong}
-        for table in ("fields", "links"):
-            if table in entry:
-                entry[table] = _normalise_declarations(
-                    named, table, cast(Mapping[Any, Any], entry[table]), shape
-                )
-        for text in shape:
-            log_warning(LOGGER, text, "config", None)
-        types[name] = entry
-    order, parent, findings = _inherits_order(types)
-    for text in findings:
+    entry_findings, inherits_findings, shape_findings = findings
+    for text in entry_findings:
+        log_warning(LOGGER, text, "config", None)
+    for text in inherits_findings:
         log_warning(LOGGER, text, "type_inherits", None)
+    for text in shape_findings:
+        log_warning(LOGGER, text, "type_conflict", None)
     #: need type -> field name -> its declaration for the type, and the type whose
     #: entry made it
     declared: dict[str, dict[str, tuple[FieldSchema | LinkSchema, str]]] = {}
@@ -2338,6 +2530,8 @@ def _resolve_type_declarations(
             ("links", "link", "a link type", "a field"),
         ):
             for name, keys in types[need_type].get(table, {}).items():
+                if table == "fields" and (need_type, name) in refused:
+                    continue  # reported with the field's shape
                 where = f"needs_types[{need_type!r}].{table}[{name!r}]"
                 glob = schema.global_declaration(name)
                 if glob is None or glob.kind != kind:
@@ -2363,6 +2557,8 @@ def _resolve_type_declarations(
             schema.add_type_overlay(need_type, field)
         if closed[need_type]:
             schema.close_type(need_type, names[need_type])
+    for name in local:
+        schema._localise(name, [t for t in order if name in names[t]])
 
 
 def _declare_for_type(

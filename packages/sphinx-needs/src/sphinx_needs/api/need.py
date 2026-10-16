@@ -584,9 +584,8 @@ def _refuse_authored(
         # declaration of a closed need type that does not declare the field
         log_warning(
             logger,
-            f"{what} {field_schema.name!r} is not declared on need type {need_type!r}, "
-            f"which is closed, and cannot be set in need {need_id!r}; the value "
-            f"{value!r} is ignored",
+            f"{what} {field_schema.name!r} is not declared on need type {need_type!r} "
+            f"and cannot be set in need {need_id!r}; the value {value!r} is ignored",
             "undeclared_for_type",
             location,
         )

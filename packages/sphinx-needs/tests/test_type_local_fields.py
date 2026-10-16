@@ -447,6 +447,7 @@ SHAPE_TYPES = _types(
             "d5": {"schema": {"type": "array", "items": {"type": "string"}}},
             "d7": {"schema": {"type": "integer"}, "nullable": False, "default": 0},
             "d10": {"schema": {"type": "integer"}},
+            "d8": {"schema": {"type": "str"}},
         },
         "links": {"d4": {}},
     },
@@ -458,6 +459,7 @@ SHAPE_TYPES = _types(
             "d4": {"schema": {"type": "string"}},
             "d5": {"schema": {"type": "array", "items": {"type": "integer"}}},
             "d7": {},
+            "d8": {"schema": {"type": "integer"}},
         }
     },
     c={"inherits": "a", "fields": {"d10": {"schema": {"type": "string"}}}},
@@ -509,7 +511,8 @@ def test_the_first_declaration_sets_the_shape(test_app: Any) -> None:
     field's type and items' type; one that gives none takes it; one of another type
     is reported, naming the type that set it, and does not declare the field, whose
     values on that type's needs are then refused; a field no such declaration gives a
-    type is refused on every entry, and does not exist. A child narrows its parent,
+    type is refused on every entry, and does not exist; a type that is no field's
+    sets nothing, and its entry does not declare the field. A child narrows its parent,
     and a type keeps its own ``nullable`` and ``default``. The walk's findings come
     first, then those of the shape, then those of each entry."""
     app = test_app
@@ -525,6 +528,11 @@ def test_the_first_declaration_sets_the_shape(test_app: Any) -> None:
             "needs_types['b'].fields['d5'] cannot be declared with type 'array' "
             "(items 'integer'): its type is 'array' (items 'string') on every need "
             "type, as need type 'a' declares it"
+        ),
+        _conflict(
+            "needs_types['a'].fields['d8'] cannot be declared: Invalid schema: Field "
+            "schema has invalid type 'str'. Must be one of ['array', 'boolean', "
+            "'integer', 'number', 'string']"
         ),
         _conflict(
             "needs_types['a'].links['d4'] declares 'd4', which is a field, not a link "
@@ -556,6 +564,8 @@ def test_the_first_declaration_sets_the_shape(test_app: Any) -> None:
     assert properties["d2"]["description"] == "Declared by need types 'a', 'b'"
     assert properties["d7"]["type"] == ["integer", "null"]
     assert _field(app, "b", "d2").type == "integer"
+    assert _field(app, "b", "d8").type == "integer"
+    assert _field(app, "a", "d8").directive_option is False
     assert _schema(app).global_declaration("d3") is None
 
 
@@ -595,7 +605,7 @@ def test_a_child_narrows_and_a_sibling_agrees(test_app: Any) -> None:
         "WARNING: needs_types['wide'].fields['x'] widens the field as need type 'req' "
         "declares it: Child 'minimum' -5 is less than parent 'minimum' 0. "
         "[needs.type_widening]",
-        _undeclared(17, "I_001", "impl", "1"),
+        _undeclared(18, "I_001", "impl", "1"),
     ]
     assert {k: v["x"] for k, v in _needs(app).items()} == {
         "R_001": 3,
@@ -707,7 +717,7 @@ needs_string_links = {
         "options": ["x"],
     }
 }
-needs_card_layouts = {"card": {"footer": ["x"]}}
+needs_card_layouts = {"card": {"footer": ["field:x"]}}
 needs_variant_options = ["x"]
 """
 
