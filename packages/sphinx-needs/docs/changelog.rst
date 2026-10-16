@@ -170,8 +170,9 @@ Bug fixes
   A link type that is itself refused claims no name: of the link types ``x``, ``x_back``
   and ``x_back_back``, ``x_back`` is refused and ``x`` kept, its back links named
   ``x_back``. A feature that names a refused link type (a :ref:`needgantt`'s
-  ``:starts_with_links:``, a network rule of the schema) fails as it does for a link type
-  that was never declared. Through :ref:`needs_links`, an extension's ``add_field``, a service's field, or a second
+  ``:starts_with_links:``, a network rule of the schema) stops the build, as it does for a
+  link type that was never declared.
+  Through :ref:`needs_links`, an extension's ``add_field``, a service's field, or a second
   link type, the back links used to overwrite the field silently (or the link type
   ``x_back`` hid the back links of ``x``); through :ref:`needs_extra_links`, the build
   stopped with "Same name for automatically created link and field". ``links`` and
