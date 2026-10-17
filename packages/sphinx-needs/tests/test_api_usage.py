@@ -11,6 +11,7 @@ from sphinx.testing.util import SphinxTestApp
 from syrupy.filters import props
 
 from sphinx_needs.api import add_need_type, get_need_types
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.exceptions import NeedsConfigException
 from sphinx_needs_testkit import assert_no_warnings, build_warnings
 
@@ -86,7 +87,8 @@ def test_api_get_types(test_app: SphinxTestApp):
     app = test_app
 
     need_types = get_need_types(app)
-    assert set(need_types) == {"story", "spec", "impl", "test"}
+    # the configured types, then the GitHub services' ones
+    assert need_types == ["story", "spec", "impl", "test", "issue", "pr", "commit"]
 
 
 @pytest.mark.usefixtures("add_extension2")
@@ -105,8 +107,9 @@ def test_api_add_type(test_app: SphinxTestApp, snapshot):
     app = test_app
 
     add_need_type(app, "awesome", "Awesome", "AW_", "#000000", "cloud")
-    need_types = app.config.needs_types
-    assert need_types == snapshot
+    assert list(NeedsSphinxConfig(app.config).types) == snapshot
+    # the type is kept in sphinx-needs' registry, not in the configuration value
+    assert "awesome" not in [t["directive"] for t in app.config.needs_types]
 
     Path(app.srcdir, "other_api.rst").write_text(
         """

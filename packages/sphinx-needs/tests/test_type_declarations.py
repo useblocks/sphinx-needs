@@ -1273,6 +1273,58 @@ def test_an_entry_appended_after_the_configuration_is_resolved(
     assert _field(app, "ext", "x") == _field(app, None, "x")
 
 
+#: an extension appends a type that declares ``inherits`` and ``fields`` -- which
+#: ``add_need_type`` cannot carry -- to ``needs_types`` from a ``config-inited`` handler,
+#: after the configured types are resolved to their list (priority 12) and before
+#: ``load_config`` registers their directives (500)
+APPENDING_DECLARED_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_fields = {{"x": {{"nullable": True}}, "y": {{"nullable": True}}}}
+needs_types = {{
+    "req": {{"title": "Requirement", "prefix": "R_", "fields": {{"y": {{"default": "r"}}}}}}
+}}
+
+
+def _append(app, config):
+    config.needs_types.append(
+        {{"directive": "ext", "title": "Extension", "prefix": "E_", "inherits": "req",
+          "fields": {{"x": {{"default": "e"}}}}}}
+    )
+
+
+def setup(app):
+    app.connect("config-inited", _append, priority={priority})
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        pytest.param(
+            _project(
+                APPENDING_DECLARED_CONF.format(priority=priority),
+                ".. ext:: An extension's need\n   :id: E_001\n",
+            ),
+            id=f"priority-{priority}",
+        )
+        for priority in (13, 499)
+    ],
+    indirect=True,
+)
+def test_an_extension_appends_a_type_with_declarations(test_app: Any) -> None:
+    """The route for an extension whose type declares ``inherits``, ``fields`` or
+    ``links``, which ``add_need_type`` cannot carry: appended to the resolved
+    ``needs_types`` before ``load_config``, the entry is part of the configuration, as a
+    project's own is -- its directive is registered, it inherits, and it declares."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    assert "ext" in [entry["directive"] for entry in app.config.needs_types]
+    need = _needs(app)["E_001"]
+    assert (need["x"], need["y"]) == ("e", "r")
+
+
 # -- what reads the declarations -------------------------------------------------------------
 
 DELETE_INDEX = """\

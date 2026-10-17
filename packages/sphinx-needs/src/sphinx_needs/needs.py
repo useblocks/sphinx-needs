@@ -187,7 +187,10 @@ from sphinx_needs.schema.config_utils import (
     validate_schemas_config,
 )
 from sphinx_needs.schema.process import process_schemas
-from sphinx_needs.services.github import GithubService
+from sphinx_needs.services.github import (
+    GithubService,
+    add_github_need_types_and_layout,
+)
 from sphinx_needs.string_links import compile_string_links
 from sphinx_needs.utils import node_match
 from sphinx_needs.variant_data import VariantDataProxy
@@ -465,7 +468,13 @@ def setup(app: Sphinx) -> dict[str, Any]:
 
     # Be sure Sphinx-Needs config gets erased before any events or external API calls get executed.
     # So never but this inside an event.
+    # The registry is one per process, not per application: applications set up in one
+    # process and built interleaved share it, and a later setup clears what an earlier
+    # application's extensions added -- fields, functions, need types and layouts alike.
     _NEEDS_CONFIG.clear()
+    # the GitHub services' need types and layout, sphinx-needs' lowest tier: every type
+    # or layout of their names, configured or added from code at any time, wins (#2265)
+    add_github_need_types_and_layout(app)
 
     return {
         "version": VERSION,
@@ -1425,7 +1434,7 @@ def merge_default_configs(_app: Sphinx, config: Config) -> None:
     """Merge built-in defaults with user configuration."""
     needs_config = NeedsSphinxConfig(config)
 
-    needs_config.layouts = {**LAYOUTS, **needs_config.layouts}
+    needs_config._layouts = {**LAYOUTS, **needs_config._layouts}
 
     needs_config.flow_configs = {
         **NEEDFLOW_CONFIG_DEFAULTS,
