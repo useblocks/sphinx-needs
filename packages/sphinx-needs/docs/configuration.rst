@@ -449,26 +449,13 @@ The ``needs.derive_invalid`` warnings of such a rule name the entry it came from
    [needs.types.safety_req.links.links]
    schema = { maxItems = 3 }
 
-   [needs.types.safety_req.fields.hazard]
-   description = "The hazard a safety requirement mitigates"
-   schema = { type = "string" }
-
-   [needs.types.test]
-   title = "Test case"
-   prefix = "T_"
-
-   [needs.types.test.links.verifies]
-   incoming = "is verified by"
-   outgoing = "verifies"
-
 Here a ``req`` must have an ``asil`` (``QM`` unless it says), a ``safety_req`` one of ``A`` to ``D`` (``A`` unless it says),
 and a ``safety_req`` links to three needs at most; the needs of every other type read ``asil`` and ``links`` as declared for all.
-No ``needs_fields`` entry declares ``hazard``: it is a field of the ``safety_req`` needs alone (see below).
-No ``needs_links`` entry declares ``verifies``: it is a link type of the ``test`` needs alone,
-whose links read ``verifies:``, and ``is verified by:`` on the needs they link to (see below).
 In :file:`conf.py`, the same entries are ``needs_types = {"safety_req": {"title": ..., "inherits": "req", "fields": {"asil": {...}}}, ...}``,
 and in the list shape ``dict(directive="safety_req", title=..., inherits="req", fields={"asil": {...}})``.
 In a TOML file of the list shape, a ``[needs.types.fields.asil]`` table after the ``[[needs.types]]`` tables belongs to the last of them.
+
+For a walkthrough with diagrams, see :ref:`need_types_howto`.
 
 **Narrowing.**
 A type's declaration of a field starts from the field's own declaration, takes the declarations of its ancestors from the root down,
@@ -575,7 +562,7 @@ and a :ref:`needextend` is refused on the needs of the type, one ``needs.needext
 
    Option 'verifies' does not support extend operations on need type 'spec'; it does not extend 1 need (S_001).
 
-Its back links, ``verifies_back``, are on every need, as for any link type.
+Its back links, ``<name>_back``, are on every need, as for any link type.
 With ``copy`` the links of the declaring needs are copied into ``links``, and a need of another type copies none;
 ``copy`` beside a ``derive`` is reported as on a ``needs_links`` entry (``needs.derive_invalid``), and nothing is copied.
 A derived one is derived on every type that declares it (a child inheriting its parent's rule), and holds ``[]`` on the others.
