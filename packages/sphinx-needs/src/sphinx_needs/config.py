@@ -335,6 +335,8 @@ def type_field_names(config: _SphinxConfig) -> set[str]:
     as the configuration holds it, which is the list once ``config-inited`` has
     resolved it; a configuration without ``needs_types`` declares none.
     """
+    # the configured types only, not NeedsSphinxConfig.types: a type added from code
+    # (add_need_type, the GitHub services) cannot declare fields, as it takes none
     need_types = getattr(config, "needs_types", [])
     if not isinstance(need_types, list):
         return set()
