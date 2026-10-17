@@ -20,6 +20,7 @@ import pickle
 import re
 from collections.abc import Callable
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -57,6 +58,9 @@ RESOLVED = [
     {"directive": "alpha", **ALPHA},
     {"directive": "mid", **MID},
 ]
+
+#: the GitHub services' need types, which sphinx-needs adds after every other type
+SERVICE_TYPES = ["issue", "pr", "commit"]
 
 #: the same three types, as a mapping from directive name to the other keys
 MAPPING = {"zeta": ZETA, "alpha": ALPHA, "mid": MID}
@@ -134,8 +138,13 @@ def _needs(app: Any) -> dict[str, dict[str, Any]]:
 
 
 def _resolved(app: Any) -> list[dict[str, Any]]:
-    """The list every reader of ``needs_types`` sees."""
-    return [dict(entry) for entry in NeedsSphinxConfig(app.config).types]
+    """The list every reader of ``needs_types`` sees, but the GitHub services' types,
+    which sphinx-needs adds after it (``tests/test_service_need_types.py``)."""
+    return [
+        dict(entry)
+        for entry in NeedsSphinxConfig(app.config).types
+        if entry["directive"] not in SERVICE_TYPES
+    ]
 
 
 # -- the two shapes ---------------------------------------------------------------------
@@ -150,7 +159,7 @@ def test_the_mapping_shape_resolves_to_the_list_shape(
     built = {}
     for name, conf in (("list", LIST_CONF), ("mapping", MAPPING_CONF)):
         app = make_app("needs", srcdir=_write(tmp_path / name, conf, TYPES_INDEX))
-        assert get_need_types(app) == ["zeta", "alpha", "mid"]
+        assert get_need_types(app) == ["zeta", "alpha", "mid", *SERVICE_TYPES]
         assert _resolved(app) == RESOLVED
         app.build()
         assert build_warnings(app) == []
@@ -187,7 +196,7 @@ def test_toml_tables_resolve_to_the_list_shape(
             tmp_path / "toml", TOML_CONF, TYPES_INDEX, **{"ubproject.toml": TABLES_TOML}
         ),
     )
-    assert get_need_types(app) == ["zeta", "alpha", "mid"]
+    assert get_need_types(app) == ["zeta", "alpha", "mid", *SERVICE_TYPES]
     assert _resolved(app) == RESOLVED
     app.build()
     assert build_warnings(app) == [
@@ -657,6 +666,14 @@ def test_predicates_are_filter_value_pairs(predicates: object, got: str | None) 
     )
 
 
+def test_the_types_read_before_resolution_are_the_value() -> None:
+    """Read before ``resolve_need_types`` (priority 12), a mapping-shaped value is
+    returned as it is configured: the added and built-in types are read beside the
+    resolved list only."""
+    config = NeedsSphinxConfig(SimpleNamespace(needs_types=MAPPING))  # ty: ignore[invalid-argument-type]
+    assert config.types == MAPPING
+
+
 def test_the_mapping_shape_is_the_list_in_its_order() -> None:
     """Each key becomes the entry's ``directive``, first, in the mapping's order."""
     resolved, findings = normalise_need_types(MAPPING)
@@ -766,7 +783,7 @@ def test_a_type_added_before_load_config_registers_its_directive_once(
     ``load_config`` registers the directive; ``load_config`` then finds it registered
     and does not register it again."""
     app = test_app
-    assert get_need_types(app)[-1] == "story"
+    assert get_need_types(app)[-4:] == ["story", *SERVICE_TYPES]
     app.build()
     assert build_warnings(app) == []
     assert list(_needs(app)) == ["ST_00001"]
@@ -878,7 +895,7 @@ def test_add_need_type_after_the_mapping_shape(test_app: Any) -> None:
     """A type added from code after the mapping shape is resolved is appended to the
     list, and its directive works."""
     app = test_app
-    assert get_need_types(app) == ["zeta", "alpha", "story"]
+    assert get_need_types(app) == ["zeta", "alpha", "story", *SERVICE_TYPES]
     app.build()
     assert build_warnings(app) == []
     assert sorted(_needs(app)) == ["ST_00001", "Z_00001"]
@@ -911,15 +928,19 @@ def test_resolving_the_types_changes_no_configuration_option(
 ) -> None:
     """The resolved list is the value Sphinx sees on both sides of an incremental build.
 
-    The options that differ are exactly the two the GitHub service changes after Sphinx
-    compares the configurations -- it adds its need types and its layout from
-    ``env-before-read-docs`` (#2265, pre-existing) -- for the list shape and the
-    mapping shape alike: resolving the types adds nothing to them.
+    No option differs, for the list shape and the mapping shape alike: resolving the
+    types adds nothing to them, and nothing writes ``needs_types`` or ``needs_layouts``
+    after ``config-inited`` -- the GitHub service's need types and layout, which it
+    used to add to the two values from ``env-before-read-docs``, after Sphinx compared
+    the configurations, are kept in sphinx-needs' own registry (#2265).
     """
     srcdir = _write(tmp_path / "src", conf, TYPES_INDEX)
     first = make_app("html", srcdir=srcdir, freshenv=True)
+    configured = copy.deepcopy((first.config.needs_types, first.config.needs_layouts))
     first.build()
     first.cleanup()
+    # nothing writes either value once the configuration is read
+    assert (first.config.needs_types, first.config.needs_layouts) == configured
     old_env = pickle.loads(Path(first.doctreedir, "environment.pickle").read_bytes())
 
     (srcdir / "index.rst").write_text(
@@ -927,21 +948,16 @@ def test_resolving_the_types_changes_no_configuration_option(
     )
     second = make_app("html", srcdir=srcdir)
     try:
-        assert _changed_options(old_env.config, second.config) == {
-            "needs_layouts",
-            "needs_types",
-        }
+        assert _changed_options(old_env.config, second.config) == set()
         second.build()
-        # Sphinx 8 and later name the options in a status line; Sphinx 7 does not
+        # Sphinx 8.1 and later name the changed options in a status line; 7.4 and 8.0
+        # compare only the options that rebuild the environment, and print no such line
         reported = re.search(
             r"The configuration has changed \(\d+ options?: (.*)\)",
             strip_colors(second._status.getvalue()),
         )
         if reported is not None:
             names = set(re.findall(r"'([^']+)'", reported.group(1)))
-            assert {name for name in names if name.startswith("needs_")} == {
-                "needs_layouts",
-                "needs_types",
-            }
+            assert {name for name in names if name.startswith("needs_")} == set()
     finally:
         second.cleanup()

@@ -10,6 +10,9 @@ Unreleased
 Improvements
 ............
 
+- ✨ :func:`~sphinx_needs.api.configuration.add_need_layout` adds a need layout from an
+  extension, beside :ref:`needs_layouts`, as ``add_need_type`` adds a need type (:issue:`2265`, :pr:`2307`)
+
 - 🏷️ sphinx-needs ships a ``py.typed`` marker (:pep:`561`) and the ``Typing :: Typed``
   classifier, so a type checker (mypy, pyright, ty) reads its annotations instead of
   treating the package as untyped. A project that type-checks code calling sphinx-needs'
@@ -132,6 +135,51 @@ Improvements
   'copied' in NeedItem: its value is computed by its derive rule." [needs.dynamic_function]``,
   and the field the call was computing does not get its value (:pr:`2289`)
 
+Breaking changes
+................
+
+- ‼️ ``app.config.needs_types`` and ``app.config.needs_layouts`` no longer hold the need
+  types and layouts added by extensions or by the GitHub services, and the types and
+  layouts sphinx-needs reads cannot be changed through ``NeedsSphinxConfig`` (:issue:`2265`, :pr:`2307`)
+
+  The two values hold what the project configures -- ``needs_layouts`` also sphinx-needs'
+  own layouts and the compiled :ref:`needs_card_layouts`, as before -- so Sphinx compares
+  the same values on both sides of an incremental build. A type added with
+  :func:`~sphinx_needs.api.configuration.add_need_type`, the GitHub services' ``issue``,
+  ``pr`` and ``commit``, and their ``github`` layout are kept in sphinx-needs' own
+  registry instead.
+
+  An extension that looks a need's type up in ``app.config.needs_types`` (or a layout
+  in ``app.config.needs_layouts``) no longer finds the added and the GitHub services'
+  ones there, and nothing warns about it. Read them through ``NeedsSphinxConfig``, which
+  returns every type and layout on this version and on every one from 2.0 (where the
+  GitHub services' types are in it once sphinx-needs' own ``env-before-read-docs``
+  handler has run):
+
+  .. code-block:: python
+
+     from sphinx_needs.config import NeedsSphinxConfig
+
+     need_types = {t["directive"]: t for t in NeedsSphinxConfig(app.config).types}
+     layouts = NeedsSphinxConfig(app.config).layouts
+
+  :func:`~sphinx_needs.api.configuration.get_need_types` gives the directive names
+  alone. The two ``NeedsSphinxConfig`` reads are read-only: a change through them, or
+  assigning either attribute, raises ``NeedsApiConfigException``, where it used to
+  change the configuration value. Add a type with ``add_need_type``, and a layout with
+  the new :func:`~sphinx_needs.api.configuration.add_need_layout`, from an extension's
+  ``config-inited`` handler.
+
+  ``add_need_type`` cannot carry an ``inherits``, ``fields`` or ``links``: an extension
+  whose type needs one appends the whole entry to ``app.config.needs_types`` from a
+  ``config-inited`` handler at a priority above 12 and below 500 -- after sphinx-needs
+  has resolved the configured types to their list, and before it registers their
+  directives. Such an entry is part of the configuration, as a project's own is.
+
+  The GitHub services' types are read from the start of the build, so a
+  ``config-inited`` handler now sees ``issue``, ``pr`` and ``commit`` too, after the
+  types added by then; they used to appear only from ``env-before-read-docs``.
+
 Deprecations
 ............
 
@@ -188,6 +236,32 @@ Bug fixes
   :ref:`needs_include_needs` set to ``False``: its node is now removed on those paths too.
   In a project with no needs it matches nothing and says so, as it does in one with needs
   (:issue:`2296`)
+
+- 🐛 An incremental build no longer reports
+  ``The configuration has changed (… options: 'needs_layouts', 'needs_types')`` -- one
+  of the two, or both -- on every build after the first (Sphinx 8.1 and later print the
+  line; Sphinx 7.4 and 8.0 compare only the options that rebuild the environment, so
+  they did not report it). The GitHub services' need types (``issue``, ``pr``,
+  ``commit``) and their ``github`` layout were appended to :ref:`needs_types` and
+  :ref:`needs_layouts` when the services were registered, after Sphinx had compared the
+  configuration with the one pickled by the previous build. They, and every need type
+  added with :func:`~sphinx_needs.api.configuration.add_need_type`, are now kept in
+  sphinx-needs' own registry and read beside the configured ones, in the same order as
+  before: the configured types, then the added ones, then the GitHub services' ones,
+  which give way to a type or layout of their name, configured or added at any time (see
+  *Breaking changes* for what this changes for an extension). A change to a type added
+  with ``add_need_type``, or to a layout added with ``add_need_layout``, is not a
+  configuration change: as for any change to an extension's code, build with ``-E`` to
+  see it. After upgrading, the line is
+  still reported until a build re-reads a document, as the environment Sphinx loads was
+  pickled with the old values: edit any page, or build once with ``-E`` (:issue:`2265`,
+  :pr:`2307`)
+
+- 🐛 Configuring your own ``issue`` or ``pr`` need type -- or adding one with
+  ``add_need_type`` from another extension -- no longer stops the GitHub services from
+  adding their other need types: a configured ``issue`` dropped ``pr`` and ``commit``, and
+  a configured ``pr`` dropped ``commit``. Each of the three now gives way on its own
+  (:pr:`2307`)
 
 - 🐛 Under :ref:`needs_json_remove_defaults`, a value equal to its field's default but of
   another JSON type (``1.0`` against a default of ``1``, ``[1.0]`` against ``[1]``) is now

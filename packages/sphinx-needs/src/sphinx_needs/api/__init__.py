@@ -5,6 +5,7 @@ from .configuration import (
     add_dynamic_function,
     add_extra_option,
     add_field,
+    add_need_layout,
     add_need_type,
     get_need_types,
 )
@@ -26,6 +27,7 @@ __all__ = (
     "add_extra_option",
     "add_field",
     "add_need",
+    "add_need_layout",
     "add_need_type",
     "del_need",
     "generate_need",

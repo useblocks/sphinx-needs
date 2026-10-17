@@ -1,5 +1,6 @@
 # @Test suite for Sphinx extension source tracing functionality, TEST_EXT_1, test, [IMPL_LNK_1, IMPL_ONE_1]
 import os
+import pickle
 import re
 import shutil
 from collections.abc import Callable
@@ -10,13 +11,16 @@ import pytest
 import sphinx
 from sphinx.environment import CONFIG_OK
 from sphinx.testing.util import SphinxTestApp
+from sphinx.util.console import strip_colors
 
+import sphinx_needs.api
 from sphinx_codelinks.analyse.oneline_parser import WarningSubTypeEnum
 from sphinx_codelinks.config import (
     CodeLinksConfig,
     check_configuration,
 )
 from sphinx_codelinks.sphinx_extension.source_tracing import set_config_to_sphinx
+from sphinx_needs.api import get_need_types
 from sphinx_needs_testkit import assert_no_warnings, build_warnings
 
 #: a one-line parser warning, by its kind: Sphinx 7 shows no ``[codelinks.oneline]``
@@ -304,6 +308,49 @@ def test_incremental_build_keeps_src_trace_projects_unchanged(
         f"incremental build wrongly invalidated the environment: "
         f"config changed{captured.get('extra')}"
     )
+
+
+@pytest.mark.skipif(
+    not hasattr(sphinx_needs.api, "add_need_layout"),
+    reason="the installed sphinx-needs predates its fix of #2265 (which added "
+    "add_need_layout); the fix ships in the next sphinx-needs release",
+)
+def test_an_incremental_build_changes_no_configuration_option(
+    minimal_sphinx_project: Path,
+    make_app: Callable[..., SphinxTestApp],
+) -> None:
+    """The need type this extension adds is not written into ``needs_types``.
+
+    ``add_need_type`` keeps ``srctrace`` in sphinx-needs' own registry, as it keeps the
+    GitHub services' need types and layout (sphinx-needs #2265), so the configuration
+    an incremental build compares with the pickled one is the same, and Sphinx names
+    no changed option. They used to be appended to ``needs_types`` and
+    ``needs_layouts``, after Sphinx had compared the configurations.
+    """
+    first = make_app(srcdir=minimal_sphinx_project, freshenv=True)
+    first.build()
+    old_env = pickle.loads(Path(first.doctreedir, "environment.pickle").read_bytes())
+    assert "srctrace" in get_need_types(first)
+    assert "srctrace" not in [t["directive"] for t in first.config.needs_types]
+
+    second = make_app(srcdir=minimal_sphinx_project)
+    old_values = {item.name: item.value for item in old_env.config}
+    new_values = {item.name: item.value for item in second.config}
+    assert {
+        name
+        for name in old_values.keys() | new_values.keys()
+        if old_values.get(name) != new_values.get(name)
+    } == set()
+    second.build()
+    # Sphinx 8.1 and later name the changed options in a status line; 7.4 and 8.0
+    # compare only the options that rebuild the environment, and print no such line.
+    # ``html_theme`` is among them: ``SphinxTestApp`` sets it to ``basic`` only after
+    # Sphinx has compared the configurations, and the first build pickled ``basic``
+    reported = re.search(
+        r"The configuration has changed \(\d+ options?: (.*)\)",
+        strip_colors(second._status.getvalue()),
+    )
+    assert reported is None or re.findall(r"'(needs_[^']+)'", reported.group(1)) == []
 
 
 @pytest.fixture
