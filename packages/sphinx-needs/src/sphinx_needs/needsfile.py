@@ -13,7 +13,7 @@ from collections.abc import Iterable, Mapping
 from copy import deepcopy
 from datetime import datetime
 from functools import lru_cache
-from typing import Any
+from typing import Any, NotRequired, TypedDict
 
 from jsonschema_rs import Draft7Validator, ValidationError
 from sphinx.environment import BuildEnvironment
@@ -25,6 +25,43 @@ from sphinx_needs.need_item import NeedItem, _link_natural_sort_key
 from sphinx_needs.needs_schema import FieldLiteralValue, FieldsSchema
 
 log = get_logger(__name__)
+
+
+class NeedsJsonCreatorType(TypedDict):
+    """The ``creator`` of a version in a ``needs.json``: the program that wrote it."""
+
+    program: str
+    version: str
+
+
+class NeedsJsonVersionType(TypedDict, total=False):
+    """One entry of ``versions`` in a ``needs.json``.
+
+    Every key is optional: :meth:`NeedsList.update_or_add_version` writes ``needs``,
+    ``needs_amount`` and ``creator`` for a version it creates, and the other three
+    by configuration, but a version kept from a file read by
+    :meth:`NeedsList.load_json` may be of an older shape that has any of them
+    missing (before 3.0 there was no ``creator`` or ``needs_schema``).
+    """
+
+    created: str
+    creator: NeedsJsonCreatorType
+    needs: dict[str, dict[str, Any]]
+    """The needs of the version by ID, each a JSON object of its fields."""
+    needs_amount: int
+    needs_defaults_removed: bool
+    needs_schema: dict[str, Any]
+    """The JSON schema of one need, from :func:`generate_needs_schema`."""
+
+
+class NeedsJsonType(TypedDict):
+    """The envelope of a ``needs.json``, as :class:`NeedsList` holds and writes it."""
+
+    project: str
+    current_version: str
+    versions: dict[str, NeedsJsonVersionType]
+    created: NotRequired[str]
+    """Left out under ``needs_reproducible_json``."""
 
 
 def generate_needs_schema(
@@ -140,7 +177,7 @@ class NeedsList:
         self.confdir = confdir
         self.current_version = self.config.version
         self.project = self.config.project
-        self.needs_list = {
+        self.needs_list: NeedsJsonType = {
             "project": self.project,
             "current_version": self.current_version,
             "versions": {},
@@ -171,7 +208,7 @@ class NeedsList:
         from sphinx_needs import __version__
 
         if version not in self.needs_list["versions"]:
-            self.needs_list["versions"][version] = {  # ty: ignore[invalid-assignment]
+            self.needs_list["versions"][version] = {
                 "needs_amount": 0,
                 "needs": {},
                 "creator": {
@@ -180,17 +217,17 @@ class NeedsList:
                 },
             }
             if self._schema:
-                self.needs_list["versions"][version]["needs_schema"] = self._schema  # ty: ignore[invalid-argument-type]
+                self.needs_list["versions"][version]["needs_schema"] = self._schema
             if self.needs_config.json_remove_defaults:
-                self.needs_list["versions"][version]["needs_defaults_removed"] = True  # ty: ignore[invalid-argument-type]
+                self.needs_list["versions"][version]["needs_defaults_removed"] = True
             if not self.needs_config.reproducible_json:
-                self.needs_list["versions"][version]["created"] = ""  # ty: ignore[invalid-argument-type]
+                self.needs_list["versions"][version]["created"] = ""
 
-        if "needs" not in self.needs_list["versions"][version]:  # ty: ignore[invalid-argument-type]
-            self.needs_list["versions"][version]["needs"] = {}  # ty: ignore[invalid-argument-type]
+        if "needs" not in self.needs_list["versions"][version]:
+            self.needs_list["versions"][version]["needs"] = {}
 
         if not self.needs_config.reproducible_json:
-            self.needs_list["versions"][version]["created"] = datetime.now().isoformat()  # ty: ignore[invalid-argument-type]
+            self.needs_list["versions"][version]["created"] = datetime.now().isoformat()
 
     def add_need(self, version: str, need_info: NeedItem) -> None:
         self.update_or_add_version(version)
@@ -213,14 +250,15 @@ class NeedsList:
                     and _is_json_default(value, self._need_defaults[key])
                 )
             }
-        self.needs_list["versions"][version]["needs"][need_info["id"]] = writable_needs  # ty: ignore[invalid-argument-type]
-        self.needs_list["versions"][version]["needs_amount"] = len(  # ty: ignore[invalid-argument-type]
-            self.needs_list["versions"][version]["needs"]  # ty: ignore[invalid-argument-type]
+        # `needs` is optional in a version, but `update_or_add_version` above has set it
+        self.needs_list["versions"][version]["needs"][need_info["id"]] = writable_needs
+        self.needs_list["versions"][version]["needs_amount"] = len(
+            self.needs_list["versions"][version]["needs"]
         )
 
     def wipe_version(self, version: str) -> None:
         if version in self.needs_list["versions"]:
-            del self.needs_list["versions"][version]  # ty: ignore[not-subscriptable]
+            del self.needs_list["versions"][version]
 
     def _finalise(self) -> None:
         self.update_or_add_version(self.current_version)
@@ -272,6 +310,8 @@ class NeedsList:
                         None,
                     )
                 else:
+                    # JSON from disk is `Any`: it is taken as a `NeedsJsonType` unchecked,
+                    # since the schema errors above are only logged
                     self.needs_list = needs_list
 
             self.log.debug(f"needs.json file loaded: {file}")

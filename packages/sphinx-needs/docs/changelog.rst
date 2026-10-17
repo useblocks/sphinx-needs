@@ -424,6 +424,11 @@ Internal changes
   attached after construction. That fix, and two in ``filter_common.py`` and ``views.py``,
   remove three ``# ty: ignore`` comments (:issue:`1835`)
 
+- 🏷️ ``NeedsList`` declares the ``needs.json`` it holds as a ``TypedDict``, the envelope and
+  each version (every key of a version optional, as a ``needs_file`` of an older shape can leave
+  any of them out), rather than letting the checker infer it from the first literal; the
+  written file is unchanged. Eleven ``# ty: ignore`` comments go (:issue:`1835`)
+
 - 🏷️ Every function in the shipped code is annotated, and ruff's ``ANN`` rules keep it so
   across the workspace; ``sphinx_needs.setup`` now declares its types, and the internal
   ``profile`` decorator preserves the signature of what it wraps
