@@ -325,6 +325,59 @@ def test_the_service_types_come_after_every_added_type(test_app: Any) -> None:
     ]
 
 
+#: the project's types inherit the added ``story`` and the GitHub services' ``issue``
+INHERITS_ADDED = (
+    CONF
+    + """
+needs_fields = {"x": {"nullable": True}}
+needs_types = [
+    {"directive": "mine", "title": "Mine", "prefix": "M_", "inherits": "story",
+     "fields": {"x": {"default": "m"}}},
+    {"directive": "sub", "title": "Sub", "prefix": "SU_", "inherits": "mine"},
+    {"directive": "bug", "title": "Bug", "prefix": "B_", "inherits": "issue",
+     "fields": {"x": {"default": "b"}}},
+]
+"""
+    + LATE_STORY
+)
+
+INHERITS_ADDED_INDEX = """\
+.. mine:: Mine
+   :id: M_001
+
+.. sub:: Sub
+   :id: SU_001
+
+.. bug:: Bug
+   :id: B_001
+
+.. story:: Story
+   :id: ST_001
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app", [_project(INHERITS_ADDED, INHERITS_ADDED_INDEX)], indirect=True
+)
+def test_a_configured_type_inherits_an_added_or_service_type(test_app: Any) -> None:
+    """A configured type may inherit a type added with ``add_need_type`` or a GitHub
+    service type: both are need types of the schema, so no ``needs.type_inherits``
+    warning is reported, and the declarations resolve down the chain as for configured
+    parents."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    schema = SphinxNeedsData(app.env).get_schema()
+    assert {"story", "issue"} <= schema.need_types
+    needs = SphinxNeedsData(app.env).get_needs_view()
+    assert {key: needs[key]["x"] for key in ("M_001", "SU_001", "B_001", "ST_001")} == {
+        "M_001": "m",
+        "SU_001": "m",
+        "B_001": "b",
+        "ST_001": None,
+    }
+
+
 #: a project layout named ``github``
 MY_GITHUB = {"grid": "simple", "layout": {"head": ["Mine: <<meta('title')>>"]}}
 
