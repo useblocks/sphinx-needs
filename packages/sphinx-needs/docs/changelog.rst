@@ -184,12 +184,18 @@ Breaking changes
     reads them with a default. A needs.json written by an earlier version still imports
     (:ref:`needimport`, :ref:`needs_external_needs`) without a warning for its empty
     service keys: a project with no service drops the twelve keys silently where they are
-    null or ``""``, and reports one holding a value as an unknown key, as before. Needs a
-    GitHub service made (of the ``issue``, ``pr`` or ``commit`` type, with the ``github``
-    layout) need that service configured, or the type and a ``github`` layout declared;
-    without it each is refused (``needs.import_need`` / ``needs.load_external_need``), and
-    a :ref:`needimport`'ed need of a declared type with the layout ``github`` stops the
-    build, as any unknown layout does.
+    null or ``""``, and reports one holding a value as an unknown key, as before. Needs that
+    a GitHub service made (of the ``issue``, ``pr`` or ``commit`` type, with the ``github``
+    layout) need that service configured, or their type declared (and, for
+    :ref:`needimport`, a ``github`` layout); without it each is refused
+    (``needs.import_need`` / ``needs.load_external_need``), and a :ref:`needimport`'ed need
+    of a declared type with the layout ``github`` stops the build, as any unknown layout
+    does (:ref:`needs_external_needs` drops the layout).
+  - A built-in named in :ref:`needs_services` only by an extension's ``config-inited``
+    handler above priority 12 (or at 12, connected after sphinx-needs) is no longer
+    registered: the built-in services are decided by sphinx-needs' own handler at priority
+    12. Name it in :file:`conf.py`, the :ref:`needs_from_toml` file, or a handler at
+    priority 11 or below; a :ref:`needservice` naming it says so.
   - An incremental build after a built-in service is configured or removed re-reads every
     document, as one after a change to :ref:`needs_types` does, also where the project
     declares the service's type itself; the first incremental build after upgrading
@@ -350,10 +356,6 @@ Bug fixes
   services from adding their other need types: a configured ``issue`` dropped ``pr`` and
   ``commit``, and a configured ``pr`` dropped ``commit``. Each of the three now gives way
   on its own (:pr:`2307`)
-
-- 🐛 A built-in GitHub service named in :ref:`needs_services` only by an extension's
-  ``config-inited`` handler after sphinx-needs' own at priority 12 is not registered, and a
-  :ref:`needservice` naming it says so, and where to name it instead
 
 - 🐛 A built-in GitHub service named in :ref:`needs_services` with a value that is not a
   mapping of options -- ``-D needs_services.github-issues=1`` sets the string ``'1'`` --
