@@ -298,7 +298,8 @@ def create_needs_view():
                 "type": "requirement",
                 "type_name": "Req",
                 "tags": ["c", "d"],
-                "status": "",
+                # no status, as a need written without the option has
+                "status": None,
             },
             None,
             (),
@@ -408,6 +409,9 @@ std_test_params = (
     ("status in ['ongoing', 'done']", ["story_b_1", "story_a_b_1"], True),
     ("status in ('ongoing', 'done')", ["story_b_1", "story_a_b_1"], True),
     ("status in {'ongoing', 'done'}", ["story_b_1", "story_a_b_1"], True),
+    ("status == None", ["req_c_1"], True),
+    ("status in [None]", ["req_c_1"], True),
+    ("status in ['done', None]", ["story_a_b_1", "req_c_1"], True),
     ("'d' in tags", ["req_c_1"], True),
     ("'a' in tags", ["story_a_1", "req_a_1", "story_a_b_1"], True),
 )
@@ -451,11 +455,18 @@ part_test_params = (
     ("status in ['ongoing', 'done']", ["story_b_1", "story_a_b_1", "part_a"], True),
     ("status in ('ongoing', 'done')", ["story_b_1", "story_a_b_1", "part_a"], True),
     ("status in {'ongoing', 'done'}", ["story_b_1", "story_a_b_1", "part_a"], True),
+    ("status == None", ["req_c_1"], True),
+    ("status in [None]", ["req_c_1"], True),
+    ("status in ['done', None]", ["story_a_b_1", "part_a", "req_c_1"], True),
     ("'d' in tags", ["req_c_1"], True),
     ("'a' in tags", ["story_a_1", "req_a_1", "story_a_b_1", "part_a"], True),
     ("id == 'part_a'", ["part_a"], True),
     ("id in ['part_a', 'req_a_1']", ["part_a", "req_a_1"], True),
     ("id in ['part_a', 'story_a_b_1']", ["story_a_b_1", "part_a"], True),
+    # an id is a string, so no other constant matches one, on a narrowed view too
+    ("id == None", [], True),
+    ("type == 'story' and id == None", [], True),
+    ("type == 'story' and id == 1", [], True),
 )
 
 
@@ -480,6 +491,23 @@ def test_filter_needs_parts(filter_string, expected_ids, strict_eval):
         strict_eval=strict_eval,
     )
     assert {n["id"] for n in result} == set(expected_ids)
+
+
+def test_filter_needs_parts_id_none_on_narrowed_view():
+    """``id == None`` selects nothing on a view a directive option already narrowed.
+
+    A needtable or needlist with ``:status:`` narrows the view before its filter
+    runs; the fast path for ``id == <constant>`` used to keep every need of such a
+    view for ``None``, as every need's own entry has the part id ``None``.
+    """
+    narrowed = create_needs_view().to_list_with_parts().filter_statuses(["done"])
+    assert len(narrowed) > 0
+    mock_config = Mock()
+    mock_config.filter_data = {"xxx": True}
+    result = filter_needs_parts(
+        narrowed, mock_config, "id == None", str, strict_eval=True
+    )
+    assert list(result) == []
 
 
 def test_filter_needs_then_parts():

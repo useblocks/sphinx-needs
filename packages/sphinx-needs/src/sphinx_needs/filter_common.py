@@ -12,10 +12,11 @@ from collections.abc import Callable, Iterable
 from pathlib import Path
 from timeit import default_timer as timer
 from types import CodeType
-from typing import Any, TypedDict, overload
+from typing import Any, TypedDict, TypeVar, overload
 
 from docutils import nodes
 from docutils.parsers.rst import directives
+from docutils.statemachine import StringList
 from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 
@@ -31,14 +32,20 @@ from sphinx_needs.utils import check_and_get_external_filter_func
 from sphinx_needs.utils import logger as log
 from sphinx_needs.views import NeedsAndPartsListView, NeedsView
 
+_NeedOrPartT = TypeVar("_NeedOrPartT", bound=NeedItem | NeedPartItem)
+"""A need or a need part: what a filter selects from, and so what it returns."""
+
 
 class FilterAttributesType(TypedDict):
     status: list[str]
     tags: list[str]
     types: list[str]
-    filter: str
-    sort_by: str
-    filter_code: list[str]
+    filter: str | None
+    """``:filter:`` option value, None if the option was not given."""
+    sort_by: str | None
+    """``:sort_by:`` option value, None if the option was not given."""
+    filter_code: StringList
+    """The directive's content: filter code, empty if it has none."""
     filter_func: str | None
     filter_warning: str | None
     """If set, the filter is exported with this ID in the needs.json file."""
@@ -90,9 +97,9 @@ class FilterBase(SphinxDirective):
             "status": status,
             "tags": tags,
             "types": types,
-            "filter": self.options.get("filter"),  # ty: ignore[invalid-argument-type]
-            "sort_by": self.options.get("sort_by"),  # ty: ignore[invalid-argument-type]
-            "filter_code": self.content,  # ty: ignore[invalid-argument-type]
+            "filter": self.options.get("filter"),
+            "sort_by": self.options.get("sort_by"),
+            "filter_code": self.content,
             "filter_func": self.options.get("filter-func"),
             "filter_warning": self.options.get("filter_warning"),
         }
@@ -183,13 +190,14 @@ def process_filters(
 
         if filter_code:  # code from content
             full_filter.append(filter_code)
-            # TODO better context type
-            context: dict[str, NeedsAndPartsListView] = {
+            # the namespace the filter code runs in: it is the user's code that
+            # leaves the matches under `results`, so its values are not ours to type
+            context: dict[str, Any] = {
                 "needs": needs_view.to_list_with_parts(),
                 "results": [],
-            }  # ty: ignore[invalid-assignment]
+            }
             exec(filter_code, context)
-            found_dirty_needs = context["results"]  # ty: ignore[invalid-assignment]
+            found_dirty_needs = context["results"]
         elif ff_result:  # code from external file
             full_filter.append(ff_result.sig)
             args = []
@@ -460,17 +468,23 @@ def _analyze_and_apply_expr(
                 return needs, True
 
             if field == "id":
-                # id == value
-                return needs.filter_ids([value]), False  # ty: ignore[invalid-argument-type]
+                # id == value; an id is a string, so no other constant matches
+                ids = [value] if isinstance(value, str) else []
+                return needs.filter_ids(ids), False
             elif field == "type":
-                # type == value
-                return needs.filter_types([value]), False  # ty: ignore[invalid-argument-type]
+                # type == value; a type is a string, so no other constant matches
+                types = [value] if isinstance(value, str) else []
+                return needs.filter_types(types), False
             elif field == "status":
-                # status == value
-                return needs.filter_statuses([value]), False  # ty: ignore[invalid-argument-type]
+                # status == value; a status is a string or None
+                statuses = [value] if value is None or isinstance(value, str) else []
+                return needs.filter_statuses(statuses), False
             elif field == "is_external":
-                # is_external == value
-                return needs.filter_is_external(value), False  # ty: ignore[invalid-argument-type]
+                # is_external == value; as in Python, a constant equal to a bool
+                # (True, 1, 0.0) selects as that bool, and any other matches nothing
+                if value in (True, False):
+                    return needs.filter_is_external(bool(value)), False
+                return needs.filter_ids([]), False
 
         elif len(expr.ops) == 1 and isinstance(expr.ops[0], ast.In):
             # <expr1> in <expr2>
@@ -482,17 +496,23 @@ def _analyze_and_apply_expr(
                     isinstance(elt, ast.Constant) for elt in expr.comparators[0].elts
                 )
             ):
-                values = [
+                constants = [
                     elt.value
                     for elt in expr.comparators[0].elts
-                    if isinstance(elt, ast.Constant) and isinstance(elt.value, str)
+                    if isinstance(elt, ast.Constant)
                 ]
+                values = [value for value in constants if isinstance(value, str)]
                 if expr.left.id == "id":
                     # id in ["a", "b", ...]
                     return needs.filter_ids(values), False
                 if expr.left.id == "status":
-                    # status in ["a", "b", ...]
-                    return needs.filter_statuses(values), False
+                    # status in ["a", "b", ...]; a status is a string or None
+                    statuses = [
+                        value
+                        for value in constants
+                        if value is None or isinstance(value, str)
+                    ]
+                    return needs.filter_statuses(statuses), False
                 elif expr.left.id == "type":
                     # type in ["a", "b", ...]
                     return needs.filter_types(values), False
@@ -618,12 +638,12 @@ def filter_needs(
         location=location,
         append_warning=append_warning,
         origin_docname=origin_docname,
-    )  # ty: ignore[invalid-return-type]
+    )
 
 
 @measure_time("filtering")
 def filter_needs_and_parts(
-    needs: Iterable[NeedItem | NeedPartItem],
+    needs: Iterable[_NeedOrPartT],
     config: NeedsSphinxConfig,
     filter_string: str | None = "",
     current_need: NeedItem | NeedPartItem | None = None,
@@ -631,12 +651,13 @@ def filter_needs_and_parts(
     location: tuple[str, int | None] | nodes.Node | None = None,
     append_warning: str = "",
     origin_docname: str | None = None,
-) -> list[NeedItem | NeedPartItem]:
+) -> list[_NeedOrPartT]:
     """
     Filters given needs based on a given filter string.
     Returns all needs, which pass the given filter.
 
-    :param needs: list of needs, which shall be filtered
+    :param needs: list of needs, which shall be filtered;
+        the result holds items of it, so needs alone give needs alone
     :param config: NeedsSphinxConfig object
     :param filter_string: strings, which gets evaluated against each need
     :param current_need: current need, which uses the filter.
@@ -658,7 +679,7 @@ def filter_needs_and_parts(
             fallback = dict(config.filter_data) if config.filter_data else {}
             if var_proxy is not None:
                 fallback["var"] = var_proxy
-        found_needs: list[NeedItem | NeedPartItem] = []
+        found_needs: list[_NeedOrPartT] = []
         error_reported = False
         for filter_need in needs:
             try:
@@ -685,7 +706,7 @@ def filter_needs_and_parts(
         return found_needs
 
     # === Slow path: fall back to eval() per item ===
-    found_needs_slow: list[NeedItem | NeedPartItem] = []
+    found_needs_slow: list[_NeedOrPartT] = []
 
     # https://docs.python.org/3/library/functions.html?highlight=compile#compile
     filter_compiled = compile(filter_string, "<string>", "eval")

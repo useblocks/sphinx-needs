@@ -236,8 +236,11 @@ class NeedsView(Mapping[str, "NeedItem"]):
             i for value in values for i in self._indexes.indexes.types.get(value, [])
         )
 
-    def filter_statuses(self, values: list[str]) -> NeedsView:
-        """Create new view with only needs that have certain ``status`` field values."""
+    def filter_statuses(self, values: list[str] | list[str | None]) -> NeedsView:
+        """Create new view with only needs that have certain ``status`` field values.
+
+        :param values: Statuses to filter by; ``None`` selects the needs without one.
+        """
         return self._copy_filtered(
             i for value in values for i in self._indexes.indexes.status.get(value, [])
         )
@@ -403,8 +406,13 @@ class NeedsAndPartsListView:
             i for value in values for i in self._indexes.indexes.types.get(value, [])
         )
 
-    def filter_statuses(self, values: list[str]) -> NeedsAndPartsListView:
-        """Create new view with only needs/parts that have certain ``status`` field values."""
+    def filter_statuses(
+        self, values: list[str] | list[str | None]
+    ) -> NeedsAndPartsListView:
+        """Create new view with only needs/parts that have certain ``status`` field values.
+
+        :param values: Statuses to filter by; ``None`` selects the needs/parts without one.
+        """
         return self._copy_filtered(
             i for value in values for i in self._indexes.indexes.status.get(value, [])
         )

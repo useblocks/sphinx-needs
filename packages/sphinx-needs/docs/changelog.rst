@@ -221,6 +221,18 @@ Bug fixes
   comes first. A directive of another kind under a need type's name is handled as before, with
   Sphinx's warning (:issue:`2271`, :pr:`2276`)
 
+- 🐛 A filter ``id == None`` selects nothing wherever it is used. On a view already narrowed --
+  a :ref:`needtable` or :ref:`needlist` with ``:status:``, ``:tags:`` or ``:types:``, or a filter
+  such as ``type == "spec" and id == None`` -- it selected every need of the view, as its fast path
+  matched ``None`` against the empty part id each need carries; an id is a string, so a constant of
+  any other type now matches no need and no part, as the same filter evaluated in Python does
+  (:issue:`1835`)
+
+- 🐛 A filter ``status in [...]`` whose list holds ``None`` selects the needs without a status too,
+  as ``status == None`` already did and as the same filter evaluated in Python does: its fast path
+  kept only the strings of the list, so ``status in ["open", None]`` selected the open needs alone
+  and ``status in [None]`` none at all (:issue:`1835`)
+
 Documentation
 .............
 
@@ -280,6 +292,17 @@ Internal changes
   the checker follows a directive's options from the directive to its handler.
   ``needextract``'s ``layout`` and ``style`` are ``str | None``, as an absent option leaves
   them; ``build_need_repr`` takes any element. Fourteen ``# ty: ignore`` comments go
+  (:issue:`1835`)
+
+- 🏷️ The filter and ``needbar`` attributes declare what the directives store: an absent
+  option is ``None`` (``filter`` and ``sort_by`` of every filtering directive, needbar's axis
+  titles, label rotations, ``text_color``, and its ``xlabels``, ``ylabels`` and ``colors``,
+  split once into lists), and a directive's content is a ``StringList`` (``filter_code``,
+  needbar's ``content``). ``filter_needs_and_parts`` returns items of the kind it is given, a
+  filter code's namespace is typed as the user's, ``NeedsView.filter_statuses`` and its parts
+  twin take any iterable of statuses, ``None`` among them, and the ``id``, ``type``, ``status``
+  and ``is_external`` fast paths of a filter pass only a constant their index can hold, with the
+  same results but the ``id == None`` fix above. Nineteen ``# ty: ignore`` comments go
   (:issue:`1835`)
 
 - 🏷️ A ``FieldSchema`` constructed with predicate defaults no longer raises ``TypeError``:
