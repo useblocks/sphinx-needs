@@ -258,7 +258,7 @@ A link from a ``test`` to a ``spec`` is reported at the need it is set in, and t
 
 ``target_types`` restricts the outgoing links alone, and only the type of the need they point to.
 It is checked once every link is final, whether or not the :ref:`schema validation <schema_validation>` runs,
-and a dead link is reported as a dead link instead.
+and a dead link is not checked: it is left to the dead-link warning, which ``allow_dead_links`` silences.
 
 ``target_types`` follows ``inherits``.
 A :ref:`filter <filter_string>` such as ``type == 'req'`` and a schema rule's ``const`` do not:
