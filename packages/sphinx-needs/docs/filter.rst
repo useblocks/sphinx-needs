@@ -89,6 +89,17 @@ sort_by
 ~~~~~~~
 Sorts the result list. Allowed values are ``status`` or any alphanumerical property.
 
+A need whose value is unset (``None``) comes first, whatever the field's type, as one with an empty string does.
+The other values are grouped, so that values of different types are never compared: booleans, then numbers, then text.
+Text is compared as it is (so ``"Z"`` comes before ``"a"``, unlike a :ref:`needtable`'s :ref:`sort <needtable_sort>`),
+a list as its values joined with ``", "``, and any other value as its text.
+Needs with equal values are ordered by id.
+
+.. versionchanged:: 9.1.0
+
+   An unset value used to be compared as an empty string, which stopped the build beside a number;
+   a list was compared item by item, and equal values kept the needs' own order.
+
 .. dropdown:: Show example
 
    .. syntax-example::

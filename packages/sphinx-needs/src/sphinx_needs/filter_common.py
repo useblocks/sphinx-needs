@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import ast
 import json
+import math
 import re
 from collections.abc import Callable, Iterable
 from pathlib import Path
@@ -104,6 +105,33 @@ class FilterBase(SphinxDirective):
             "filter_warning": self.options.get("filter_warning"),
         }
         return collected_filter_options
+
+
+def sort_key(value: object, /, *, ignore_case: bool) -> tuple[Any, ...]:
+    """The key a need is sorted by, from its value of the sort field.
+
+    An unset value (``None``) comes first, whatever the field's type, as an empty
+    string always has. The values are then grouped in bands, so that two values never
+    meet in a comparison Python refuses: booleans, then numbers, then text. A list is
+    compared as its items' text joined with ``", "``, and any other value as its text.
+    A NaN comes after the other numbers. Callers break ties by the need's id (#2253).
+
+    :param value: The need's value of the sort field.
+    :param ignore_case: Compare text lower-cased, so that ``"Z"`` does not come before
+        ``"a"`` (``needtable``'s ``:sort:``; ``:sort_by:`` compares it as it is).
+    :return: A key every other value's key compares with.
+    """
+    if value is None:
+        return (0,)
+    if isinstance(value, bool):
+        return (1, value)
+    if isinstance(value, int | float):
+        # a NaN compares neither below nor above anything, so it is placed on its own
+        return (2, 1, 0) if math.isnan(value) else (2, 0, value)
+    if isinstance(value, list | tuple):
+        value = ", ".join(str(item) for item in value)
+    text = str(value)
+    return (3, text.lower() if ignore_case else text)
 
 
 def process_filters(
@@ -230,16 +258,21 @@ def process_filters(
                 if need["id_complete"] in found_need_ids:
                     found_needs.append(need)
 
-    if sort_key := filter_data["sort_by"]:
+    if sort_by := filter_data["sort_by"]:
         try:
             found_needs = sorted(
                 found_needs,
-                key=lambda node: node[sort_key] or "",
+                # equal values are ordered by id: the needs' own order changes
+                # between a fresh and an incremental build
+                key=lambda node: (
+                    sort_key(node[sort_by], ignore_case=False),
+                    node["id_complete"],
+                ),
             )
         except KeyError as e:
             log_warning(
                 log,
-                f"Sorting parameter {sort_key} not valid: Error: {e}",
+                f"Sorting parameter {sort_by} not valid: Error: {e}",
                 "filter",
                 location=location,
             )

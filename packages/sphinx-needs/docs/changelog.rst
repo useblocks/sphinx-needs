@@ -151,6 +151,20 @@ Deprecations
 Bug fixes
 .........
 
+- 🐛 A :ref:`needtable`'s :ref:`sort <needtable_sort>` no longer stops the build when some needs
+  leave the field unset, as every need of a type that does not declare a field declared on need types
+  alone does: ``None`` beside a number or a string raised ``TypeError``. An unset value now comes
+  first, whatever the field's type, as an empty string already did; values of different types are
+  ordered booleans, numbers, then text, so they never meet in a comparison, and needs with equal
+  values are ordered by id (they kept the needs' own order, which could differ between a fresh and an
+  incremental build). A sort key that is not a field of the needs is a ``needs.filter`` warning, the
+  rows left in the filter's order, rather than a ``KeyError``. The :ref:`sort_by <option_sort_by>`
+  option of the filter directives crashed the same way beside a number (it compared an unset value,
+  and ``0``, as ``""``) and now orders by the same rule, comparing text as it is.
+  **A table sorted by a list field may change order**: a list is now compared as its values joined
+  with ``", "`` (by ``:sort:`` without regard to case), where it was compared value by value, with
+  regard to case (:issue:`2253`)
+
 - 🐛 A :ref:`needextend` no longer stops the HTML build with ``NotImplementedError: ...
   departing unknown node type: Needextend`` in a project with no needs, or with
   :ref:`needs_include_needs` set to ``False``: its node is now removed on those paths too.
