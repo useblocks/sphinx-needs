@@ -199,6 +199,15 @@ Deprecations
 Bug fixes
 .........
 
+- 🐛 The ``needs_schema`` of a :ref:`needs.json <needs_builder_format>` writes a core field as the
+  project declares it, as it writes an extra field: a :ref:`needs_fields` entry narrowing ``status``
+  to a non-nullable field with the default ``"open"`` is written ``"type": "string"``,
+  ``"default": "open"``, where it was written with the built-in ``["string", "null"]`` and ``null``,
+  and a default given to a core field in :ref:`needs_fields` or :ref:`needs_global_options` is
+  written as its ``default``. The file's content changes only for such projects, and its format does
+  not change. Under :ref:`needs_json_remove_defaults` a value equal to that default is now left out,
+  and a reader restores it from the file, as :ref:`needimport` does (:issue:`2263`)
+
 - 🐛 A field's ``default`` or ``predicates`` set both in its :ref:`needs_fields` entry and in the
   deprecated :ref:`needs_global_options` is taken from :ref:`needs_fields`, and the
   ``needs_global_options`` value is reported as ignored, in one ``needs.config`` warning per field

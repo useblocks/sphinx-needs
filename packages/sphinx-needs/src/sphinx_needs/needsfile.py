@@ -22,7 +22,7 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import NeedItem, _link_natural_sort_key
-from sphinx_needs.needs_schema import FieldLiteralValue, FieldsSchema
+from sphinx_needs.needs_schema import FieldLiteralValue, FieldSchema, FieldsSchema
 
 log = get_logger(__name__)
 
@@ -70,7 +70,8 @@ def generate_needs_schema(
     """Generate a JSON schema for all fields in each need item.
 
     It is based on:
-    * the core fields defined in NeedsCoreFields
+    * the core fields defined in NeedsCoreFields, those in the fields schema as the
+      project declares them (a ``needs_fields`` entry may narrow one)
     * the extra fields defined dynamically
     * the global options defined dynamically
     * the links defined dynamically
@@ -88,26 +89,17 @@ def generate_needs_schema(
     properties: dict[str, Any] = {}
 
     for field in needs_schema.iter_extra_fields():
-        properties[field.name] = {
-            "type": [field.type, "null"] if field.nullable else field.type,
-            "description": field.description,
-            "field_type": "extra",
-        }
-        if field.item_type is not None:
-            properties[field.name]["items"] = {"type": field.item_type}
-        if isinstance(field.default, FieldLiteralValue):
-            properties[field.name]["default"] = field.default.value
-        elif field.nullable:
-            properties[field.name]["default"] = None
-        if field.derived:
-            # derived: an importer takes the value as data, and does not compute it
-            properties[field.name]["readOnly"] = True
+        properties[field.name] = _field_property(field, "extra")
 
     # TODO currently extra fields can overlap with core fields,
     # in which case they are ignored,
     # (this is the case for `type` added by the github service)
     # hence this is why we add the core options after the extra fields
     for name, core_params in NeedsCoreFields.items():
+        if (field := needs_schema.get_core_field(name)) is not None:
+            # as the project declares it, a needs_fields entry narrowing it included
+            properties[name] = _field_property(field, "core")
+            continue
         properties[name] = deepcopy(core_params["schema"])
         properties[name]["description"] = f"{core_params['description']}"
         properties[name]["field_type"] = "core"
@@ -146,6 +138,27 @@ def generate_needs_schema(
         "type": "object",
         "properties": properties,
     }
+
+
+def _field_property(field: FieldSchema, field_type: str, /) -> dict[str, Any]:
+    """The ``needs_schema`` property of a field, from its global declaration: its type
+    (with ``null`` where it is nullable), item type and default; its other constraints
+    (an ``enum``, a ``pattern``) are not written."""
+    prop: dict[str, Any] = {
+        "type": [field.type, "null"] if field.nullable else field.type,
+        "description": field.description,
+        "field_type": field_type,
+    }
+    if field.item_type is not None:
+        prop["items"] = {"type": field.item_type}
+    if isinstance(field.default, FieldLiteralValue):
+        prop["default"] = field.default.value
+    elif field.nullable:
+        prop["default"] = None
+    if field.derived:
+        # derived: an importer takes the value as data, and does not compute it
+        prop["readOnly"] = True
+    return prop
 
 
 def _is_json_default(value: Any, default: Any, /) -> bool:
