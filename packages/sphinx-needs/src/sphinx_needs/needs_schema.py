@@ -738,6 +738,35 @@ class LinkDisplayConfig:
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
+class LinkTargetTypes:
+    """The need types the links of a link type may point to: its ``target_types``.
+
+    A link to a need of a listed type, or of a type inheriting from one, transitively,
+    is accepted; the check is made where the links are resolved, on the outgoing links
+    of the needs of the need type the declaration is for.
+    """
+
+    names: tuple[str, ...]
+    """The need types as declared, by directive name, each a need type of the project
+    (the names that are not are reported and left out where it is declared)."""
+    types: frozenset[str]
+    """The accepted need types: ``names`` and every type inheriting from one of them,
+    expanded once, through the parents ``inherits`` leaves after its checks."""
+    declared_by: str | None = None
+    """The need type whose ``needs_types`` entry declares them, or ``None`` for a
+    ``needs_links`` (or ``needs_extra_links``) entry; a type inheriting the declaration
+    keeps its ancestor's, so a message can name where the set comes from."""
+
+    def __post_init__(self) -> None:
+        if not self.names or not all(
+            isinstance(name, str) and name for name in self.names
+        ):
+            raise ValueError("names must be a non-empty tuple of need type names.")
+        if not set(self.names) <= self.types:
+            raise ValueError("types must include every one of names.")
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
 class LinkSchema:
     """Schema for a single link field."""
 
@@ -771,6 +800,14 @@ class LinkSchema:
     """If True, copy links to the common 'links' field."""
     allow_dead_links: bool = False
     """If True, add a 'forbidden' class to dead links instead of warning."""
+    target_types: LinkTargetTypes | None = None
+    """The need types the links may point to (``target_types``); ``None``: any.
+
+    Unlike ``display``, ``copy`` and ``allow_dead_links`` it is no part of the link
+    type's shape: a need type may narrow it (:func:`narrowing_problems`), so it is read
+    from the declaration for a need's type (:meth:`FieldsSchema.for_type`). A derived
+    link type takes none.
+    """
     derive: Derive | None = None
     """The ``derive`` rule computing this link type, if it is derived.
 
@@ -797,6 +834,11 @@ class LinkSchema:
         ):
             raise ValueError("derive must be a DeriveRule or a DeriveInvalid.")
         _check_derive_by_type(self.derive_by_type)
+        if self.target_types is not None:
+            if not isinstance(self.target_types, LinkTargetTypes):
+                raise ValueError("target_types must be a LinkTargetTypes.")
+            if self.derived:
+                raise ValueError("A derived link type takes no target_types.")
         try:
             validate_link_schema_type(self.schema)
         except TypeError as exc:
@@ -2201,7 +2243,11 @@ def narrowing_problems(
        against its schema; a dynamic function or a variant is not checked;
     10. for a link type, the same ``display``, ``copy``, ``allow_dead_links`` and
         ``parse_conditions``: a link type is drawn and resolved the same on every need
-        type.
+        type;
+    11. for a link type whose ``base`` has ``target_types``, ``target_types`` whose
+        accepted types (a listed type and the types inheriting from it) are among
+        those of ``base``: a link a need of the type may hold is one a need of any
+        type may.
 
     The ``description`` is free. A reason of the rules 1 to 3 reads on from the name
     of the field ("Cannot declare field 'x' for need type 't' ..."), the others are
@@ -2264,6 +2310,18 @@ def narrowing_problems(
             if not same:
                 problems.append(
                     f"Link type {base.name!r} declares {name!r} for every need type."
+                )
+        if (parent := base.target_types) is not None:
+            child = overlay.target_types
+            if child is None:
+                problems.append(
+                    f"Child drops parent 'target_types' {list(parent.names)}."
+                )
+            elif not child.types <= parent.types:
+                problems.append(
+                    f"Child 'target_types' {list(child.names)} are not a subset of "
+                    f"parent 'target_types' {list(parent.names)} and the types "
+                    "inheriting from them."
                 )
     return problems
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import contextlib
 import dataclasses
 import json
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from copy import deepcopy
 from functools import partial
 from itertools import chain
@@ -164,6 +164,7 @@ from sphinx_needs.needs_schema import (
     LinkDisplayConfig,
     LinkSchema,
     LinksLiteralValue,
+    LinkTargetTypes,
     _inherit_keywords,
     create_inherited_field,
     narrowing_problems,
@@ -784,7 +785,15 @@ NEED_TYPE_FIELD_KEYS = (
 )
 
 #: The keys of an entry of a need type's ``links`` table: a link type is not nullable.
-NEED_TYPE_LINK_KEYS = ("description", "schema", "default", "predicates", "derive")
+#: ``target_types`` narrows as ``schema`` does: it is no part of a link type's shape.
+NEED_TYPE_LINK_KEYS = (
+    "description",
+    "schema",
+    "default",
+    "predicates",
+    "derive",
+    "target_types",
+)
 
 #: The keys of a link type that are the same on every need type -- how its links are
 #: drawn, whether they are copied into ``links``, whether a dead link is allowed: an
@@ -808,6 +817,15 @@ def _type_name(value: object) -> str:
     return type(value).__name__
 
 
+def _is_names(value: object) -> bool:
+    """Whether ``value`` is a non-empty list of non-empty strings."""
+    return (
+        isinstance(value, list | tuple)
+        and bool(value)
+        and all(isinstance(item, str) and item for item in value)
+    )
+
+
 def _is_pairs(value: object) -> bool:
     """Whether ``value`` is a list of (filter, value) pairs, each filter a string."""
     return isinstance(value, list | tuple) and all(
@@ -829,6 +847,7 @@ _SHAPES: Mapping[str, tuple[str, Callable[[object], bool]]] = {
     "nullable": ("a boolean", lambda v: isinstance(v, bool)),
     "predicates": ("a list of (filter, value) pairs", _is_pairs),
     "derive": ("a mapping", lambda v: isinstance(v, Mapping)),
+    "target_types": ("a non-empty list of need type names", _is_names),
     "incoming": ("a string", lambda v: isinstance(v, str)),
     "outgoing": ("a string", lambda v: isinstance(v, str)),
     "copy": ("a boolean", lambda v: isinstance(v, bool)),
@@ -865,6 +884,12 @@ def _got(name: str, value: object) -> str:
     """What a value that is not of its shape is, as a finding names it."""
     if name == "predicates" and isinstance(value, list | tuple):
         return "a list with an item that is not a (filter, value) pair"
+    if name == "target_types" and isinstance(value, list | tuple):
+        return (
+            "an empty list"
+            if not value
+            else "a list with an item that is not a non-empty string"
+        )
     return repr(value) if value == "" else _type_name(value)
 
 
@@ -1795,6 +1820,8 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
     #: inherits; their findings are reported with the types' declarations, last
     type_entries, entry_findings = _checked_type_entries(needs_config.types)
     order, parent, inherits_findings = _inherits_order(type_entries)
+    #: each need type with the types inheriting from it, as ``target_types`` reads them
+    below = _type_descendants(order, parent)
     #: one rule for the name of a link type's back links, wherever the field or link
     #: type of that name comes from (every field is registered by now, a service's
     #: too): what it refuses does not exist, and is not read from the configuration
@@ -2184,6 +2211,22 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                     )
                     derive_problems.extend(by_type_problems)
             authored = derive is None and by_type is None
+            where = f"{config_source}[{name!r}]"
+            # a target_types not of its shape is ignored, as a need type's entry's is
+            given_targets = "target_types" in link
+            if given_targets:
+                wrong, text = _not_of_their_shape(where, link, ("target_types",))
+                if wrong:
+                    log_warning(LOGGER, text, "config", None)
+                    given_targets = False
+            # a derived link type takes none: reported beside its rule, below
+            target_types = (
+                _read_target_types(
+                    where, link["target_types"], below, need_types, declared_by=None
+                )
+                if given_targets and authored
+                else None
+            )
             link_field = LinkSchema(
                 name=name,
                 description=link.get("description", "Link field"),
@@ -2200,6 +2243,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 display=display_config,
                 copy=link.get("copy", False),
                 allow_dead_links=link.get("allow_dead_links", False),
+                target_types=target_types,
                 derive=derive,
                 derive_by_type=by_type,
             )
@@ -2210,7 +2254,13 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                         True,
                         derive,
                         beside=[
-                            key for key in ("default", "predicates") if key in link
+                            key
+                            for key, beside_key in (
+                                ("default", "default" in link),
+                                ("predicates", "predicates" in link),
+                                ("target_types", given_targets),
+                            )
+                            if beside_key
                         ],
                         copied=bool(link.get("copy", False)),
                     )
@@ -2224,6 +2274,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                     for key, refused_key in (
                         ("default", refused),
                         ("predicates", "predicates" in link),
+                        ("target_types", given_targets),
                     )
                     if refused_key
                 ]
@@ -2306,11 +2357,87 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         (entry_findings, inherits_findings, shape_findings + link_findings),
         (*type_local, *local_links),
         {"fields": shape_refused, "links": link_refused},
+        targets=(below, need_types),
     )
     # the schema is complete: nothing declares a field once it is built
     schema.freeze()
 
     SphinxNeedsData(env)._set_schema(schema)
+
+
+def _type_descendants(
+    types: Iterable[str], parent: Mapping[str, str]
+) -> dict[str, frozenset[str]]:
+    """Each need type with itself and every type inheriting from it, transitively.
+
+    :param types: The need types.
+    :param parent: The parent of each type that has one, once ``inherits`` is checked
+        (:func:`_inherits_order`): a forest, so every walk up ends.
+    """
+    below: dict[str, set[str]] = {name: {name} for name in types}
+    for name in below:
+        node = parent.get(name)
+        while node is not None:
+            below.setdefault(node, {node}).add(name)
+            node = parent.get(node)
+    return {name: frozenset(names) for name, names in below.items()}
+
+
+def _read_target_types(
+    where: str,
+    names: Sequence[str],
+    below: Mapping[str, frozenset[str]],
+    titles: Mapping[str, str],
+    *,
+    declared_by: str | None,
+) -> LinkTargetTypes | None:
+    """The target types a declaration gives, of their shape (:data:`_SHAPES`).
+
+    A name that is no need type is one ``needs.config`` finding with the others, and
+    ignored; a declaration none of whose names is a need type is ignored as a whole
+    (``None``: the links are unrestricted, or keep what they inherit), never an empty
+    set that no link could satisfy.
+
+    :param where: The declaration, as the configuration names it.
+    :param names: The names it gives.
+    :param below: Each need type with the types inheriting from it.
+    :param titles: Each need type's title, to point at a title given for a name.
+    :param declared_by: The need type whose entry it is, if any.
+    """
+    known = tuple(dict.fromkeys(name for name in names if name in below))
+    if unknown := list(dict.fromkeys(name for name in names if name not in below)):
+        hints = [
+            f"{name!r} (did you mean {directive!r}, whose title it is?)"
+            if (directive := _directive_titled(name, titles)) is not None
+            else repr(name)
+            for name in unknown
+        ]
+        many = len(unknown) > 1
+        consequence = (
+            "the key is ignored"
+            if not known
+            else f"the {'names are' if many else 'name is'} ignored"
+        )
+        log_warning(
+            LOGGER,
+            f"{where} has a 'target_types' naming {_joined(hints)}, which "
+            f"{'are not need types' if many else 'is not a need type'}; {consequence}",
+            "config",
+            None,
+        )
+    if not known:
+        return None
+    return LinkTargetTypes(
+        names=known,
+        types=frozenset().union(*(below[name] for name in known)),
+        declared_by=declared_by,
+    )
+
+
+def _directive_titled(title: str, titles: Mapping[str, str]) -> str | None:
+    """The need type whose title is ``title``, if exactly one has it."""
+    matches = [directive for directive, given in titles.items() if given == title]
+    return matches[0] if len(matches) == 1 else None
 
 
 def _declares_derive(params: Mapping[str, Any]) -> bool:
@@ -2991,6 +3118,8 @@ def _resolve_type_declarations(
     findings: tuple[list[str], list[str], list[str]],
     local: Iterable[str],
     refused: Mapping[Literal["fields", "links"], set[tuple[str, str]]],
+    *,
+    targets: tuple[Mapping[str, frozenset[str]], Mapping[str, str]] = ({}, {}),
 ) -> None:
     """Declare the fields and link types of each need type anew, as its ``needs_types``
     entry says: ``inherits``, ``fields`` and ``links``.
@@ -3032,6 +3161,8 @@ def _resolve_type_declarations(
     :param local: The fields and link types declared on need types alone.
     :param refused: Per table, the (need type, name) entries refused for the shape of
         the field or link type they declare.
+    :param targets: What a ``target_types`` is read against: each need type with the
+        types inheriting from it, and each need type's title.
     """
     entry_findings, inherits_findings, shape_findings = findings
     for text in entry_findings:
@@ -3108,7 +3239,14 @@ def _resolve_type_declarations(
                 previous, by = own.get(name, (glob, None))
                 if (
                     field := _declare_for_type(
-                        previous, glob, keys, where, by, local=name in local
+                        previous,
+                        glob,
+                        keys,
+                        where,
+                        by,
+                        local=name in local,
+                        need_type=need_type,
+                        targets=targets,
                     )
                 ) is not None:
                     own[name] = (field, need_type)
@@ -3127,6 +3265,8 @@ def _declare_for_type(
     declared_by: str | None,
     *,
     local: bool = False,
+    need_type: str = "",
+    targets: tuple[Mapping[str, frozenset[str]], Mapping[str, str]] = ({}, {}),
 ) -> FieldSchema | LinkSchema | None:
     """The declaration a need type's entry makes of a field, from the one before it
     (the global declaration, or an ancestor's); ``None``, reported, if the entry
@@ -3138,6 +3278,9 @@ def _declare_for_type(
     :param where: The entry, as the configuration names it.
     :param declared_by: The need type whose entry made ``previous``, if not global.
     :param local: Whether the field is declared on need types alone.
+    :param need_type: The need type whose entry it is.
+    :param targets: What a ``target_types`` is read against
+        (:func:`_resolve_type_declarations`).
     """
     on_link = previous.kind == "link"
     keys = {
@@ -3148,7 +3291,7 @@ def _declare_for_type(
         and key != "derive"
     }
     if previous.derived and (
-        refused := [k for k in ("default", "predicates") if k in keys]
+        refused := [k for k in ("default", "predicates", "target_types") if k in keys]
     ):
         # a derived field takes no default: the rules give its value
         log_warning(
@@ -3190,6 +3333,15 @@ def _declare_for_type(
             )
             return None
         changes["schema"] = child
+    if "target_types" in keys:
+        below, titles = targets
+        # names no need type are reported here; none left: as if not given
+        if (
+            target_types := _read_target_types(
+                where, keys["target_types"], below, titles, declared_by=need_type
+            )
+        ) is not None:
+            changes["target_types"] = target_types
     try:
         field = dataclasses.replace(previous, **changes)
     except ValueError as exc:
