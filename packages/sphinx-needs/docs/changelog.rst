@@ -147,14 +147,20 @@ Breaking changes
   the same values on both sides of an incremental build. A type added with
   :func:`~sphinx_needs.api.configuration.add_need_type`, the GitHub services' ``issue``,
   ``pr`` and ``commit``, and their ``github`` layout are kept in sphinx-needs' own
-  registry instead. Read every type with
-  :func:`~sphinx_needs.api.configuration.get_need_types` or
+  registry instead. Code that reads ``app.config.needs_types`` or
+  ``app.config.needs_layouts`` itself no longer sees them, and nothing warns it: read
+  every type with :func:`~sphinx_needs.api.configuration.get_need_types` or
   ``NeedsSphinxConfig(app.config).types``, and every layout with
-  ``NeedsSphinxConfig(app.config).layouts``. Both reads are read-only: a change through
-  them, or assigning either attribute, raises ``NeedsApiConfigException``, where it used
-  to change the configuration value. Add a type with ``add_need_type``, and a layout with
-  the new :func:`~sphinx_needs.api.configuration.add_need_layout`, from an extension's
-  ``config-inited`` handler.
+  ``NeedsSphinxConfig(app.config).layouts``, instead. Both reads are read-only: a change
+  through them, or assigning either attribute, raises ``NeedsApiConfigException``, where
+  it used to change the configuration value. Add a type with ``add_need_type``, and a
+  layout with the new :func:`~sphinx_needs.api.configuration.add_need_layout`, from an
+  extension's ``config-inited`` handler.
+  ``add_need_type`` cannot carry an ``inherits``, ``fields`` or ``links``: an extension
+  whose type needs one appends the whole entry to ``app.config.needs_types`` from a
+  ``config-inited`` handler at a priority above 12 and below 500 -- after sphinx-needs
+  has resolved the configured types to their list, and before it registers their
+  directives. Such an entry is part of the configuration, as a project's own is.
   The GitHub services' types are read from the start of the build, so a
   ``config-inited`` handler now sees ``issue``, ``pr`` and ``commit`` too, after the types
   added by then; they used to appear only from ``env-before-read-docs``.
