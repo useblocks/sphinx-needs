@@ -1,5 +1,5 @@
 {
-  "corpus_version": 2,
+  "corpus_version": 3,
   "readme": "98e1ebde016249b3dee7def42ff6de12912a530f77b5d65633a8490d2e0c5b5d",
   "cases": {
     "baseline-defaults.yaml": "4390170ffc2039bea4457893ad07af8d5e745fb9c1d11a6c15ffad2d6694d678",
@@ -11,7 +11,7 @@
     "edge-empty-label.yaml": "7700590a537cfd0eeaf5d09b8cfca2629189e08c51a4b0ffb2c5e70c74fdeac4",
     "legend-both.yaml": "997cd4d4e316b8e15a112098de842d768b526ba51534d9e28b5759f773fa4738",
     "legend-config-default.yaml": "a15858428a8f89a0e39b475b920d95c2a6fc676ea451e71e6da65f4fd3d8c8a3",
-    "legend-engine-default.yaml": "e9fd26952a1885c4cf29762370c517165649e5b0d708e0d53ed0f00c6a089c3a",
+    "legend-engine-default.yaml": "ca07d02f594758cd7f8c52c70caf963c543034944c24efefb58b90d5ee50f64b",
     "legend-links.yaml": "e05f9c663dd5342ed2e79ea4c1b90accab1642efd221d706f54aa7381e9fe3c2",
     "legend-option-beats-config.yaml": "399de65e68da88f484fb39443a6186a5151dc78a7a9b4ec16108ece98a3ddfc7",
     "legend-order.yaml": "e312ef05c9b8fa5504f1c93cde46509deb442b3ae3884243ac6d4a0ea1d86c4a",
