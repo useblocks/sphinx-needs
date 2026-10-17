@@ -349,6 +349,7 @@ def test_removing_a_built_in_service_rereads_every_document(
         "that is not configured, so it is not registered: name it in needs_services to "
         'use it, e.g. needs_services = {"github-issues": {}} in conf.py, or a '
         "[needs.services.github-issues] table in the needs_from_toml file "
+        "(below its needs_from_toml_table, if one is set) "
         "[needs.load_service_need]"
     ]
 

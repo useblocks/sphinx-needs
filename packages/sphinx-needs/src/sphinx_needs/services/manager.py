@@ -72,12 +72,19 @@ class ServiceManager:
         entry = configured.get(name) if isinstance(configured, Mapping) else None
         if isinstance(entry, Mapping):
             # named in the live value, but not when the services were decided
-            return (
+            message = (
                 f"Service {name!r} is named in needs_services, but only after the "
                 "built-in services were decided (config-inited priority 12), so it is "
                 "not registered: set it in conf.py, the needs_from_toml file, or a "
                 "config-inited handler at priority 11 or below"
             )
+            if "class" in entry:
+                # setting it earlier would register the built-in, not this class
+                message += (
+                    "; a service class of your own needs a name of its own, as a "
+                    "built-in name is always the built-in service"
+                )
+            return message
         if isinstance(configured, Mapping) and name in configured:
             # named with a value of another kind (reported as needs.config)
             return (
@@ -97,7 +104,8 @@ def builtin_service_fix(name: str) -> str:
     warning that gives it."""
     return (
         f'needs_services = {{"{name}": {{}}}} in conf.py, or a '
-        f"[needs.services.{name}] table in the needs_from_toml file"
+        f"[needs.services.{name}] table in the needs_from_toml file (below its "
+        "needs_from_toml_table, if one is set)"
     )
 
 

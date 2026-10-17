@@ -215,7 +215,7 @@ def not_configured(name: str, line: int = 6) -> str:
         f"<srcdir>/index.rst:{line}: WARNING: Service {name!r} is a built-in service "
         "that is not configured, so it is not registered: name it in needs_services "
         f'to use it, e.g. needs_services = {{"{name}": {{}}}} in conf.py, or a '
-        f"[needs.services.{name}] table in the needs_from_toml file "
+        f"[needs.services.{name}] table in the needs_from_toml file (below its needs_from_toml_table, if one is set) "
         "[needs.load_service_need]"
     )
 
@@ -271,19 +271,28 @@ def test_a_built_in_configured_with_a_non_mapping_is_not_registered(
         "whose needs_services entry is not a mapping of options, so it is not "
         'registered: configure it as a mapping, e.g. needs_services = {"github-issues": '
         "{}} in conf.py, or a [needs.services.github-issues] table in the "
-        "needs_from_toml file [needs.load_service_need]",
+        "needs_from_toml file (below its needs_from_toml_table, if one is set) [needs.load_service_need]",
     ]
     assert registered(app) == set()
     assert service_types(app) == set()
 
 
-def named_late(name: str = "github-issues", line: int = 6) -> str:
+def named_late(
+    name: str = "github-issues", line: int = 6, *, own_class: bool = False
+) -> str:
     return (
         f"<srcdir>/index.rst:{line}: WARNING: Service {name!r} is named in "
         "needs_services, but only after the built-in services were decided "
         "(config-inited priority 12), so it is not registered: set it in conf.py, the "
-        "needs_from_toml file, or a config-inited handler at priority 11 or below "
-        "[needs.load_service_need]"
+        "needs_from_toml file, or a config-inited handler at priority 11 or below"
+        + (
+            # an own class: setting it earlier would register the built-in instead
+            "; a service class of your own needs a name of its own, as a built-in "
+            "name is always the built-in service"
+            if own_class
+            else ""
+        )
+        + " [needs.load_service_need]"
     )
 
 
@@ -358,7 +367,7 @@ def test_a_class_given_late_under_a_built_in_name_is_not_registered(
             "index.rst": RST + "\n.. needservice:: github-issues\n",
         }
     )
-    assert build_warnings(app) == [named_late()]
+    assert build_warnings(app) == [named_late(own_class=True)]
     assert registered(app) == set()
 
 
@@ -580,7 +589,7 @@ def test_a_custom_github_service_alone_says_which_built_in_adds_its_type(
         "need type 'issue'. The 'issue' type is registered by the built-in "
         "'github-issues' service: configure it (needs_services = {\"github-issues\": "
         "{}} in conf.py, or a [needs.services.github-issues] table in the "
-        "needs_from_toml file), or declare the 'issue' need type. "
+        "needs_from_toml file (below its needs_from_toml_table, if one is set)), or declare the 'issue' need type. "
         "[needs.load_service_need]"
     ]
     assert len(SphinxNeedsData(app.env).get_needs_view()) == 0
