@@ -61,6 +61,7 @@ docs = [
   "sphinx-design~=0.6",
   "sphinx-ai-index>=1.0.0,<2",
   "sphinx-syntax-example~=0.2.0",      # the `syntax-example` directive
+  "sphinxcontrib-mermaid>=1.0.0,<3",   # the `mermaid` directive
 ]
 theme-im = ["sphinx-immaterial>=0.11.11,<0.14.0"]
 # furo before 2025.12.19 caps sphinx at <9.0, which the `sphinx-9` group cannot resolve.

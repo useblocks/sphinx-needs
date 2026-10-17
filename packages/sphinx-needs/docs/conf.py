@@ -41,6 +41,7 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx_ai_index",
     "sphinx_syntax_example",
+    "sphinxcontrib.mermaid",
 ]
 if DOCS_THEME == "sphinx_immaterial":
     extensions.append("sphinx_immaterial")

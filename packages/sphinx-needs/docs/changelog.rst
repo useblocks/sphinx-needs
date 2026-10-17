@@ -244,6 +244,13 @@ Documentation
   tables, and its ``hours``, ``amount``, ``value`` and ``unit`` fields on the need types that use
   them, a live example of :ref:`needs_types_fields` that its build checks (:pr:`2302`)
 
+- 📚 Three Mermaid diagrams: in :ref:`needs_types_fields`, where the fields of each type's needs come from
+  in its example (a field narrowed by a type and further by the type inheriting from it, and a field one type
+  declares alone), and how a field or link type declared on need types alone comes to be; in
+  :ref:`needs_processing_order`, the whole path of a need's values, from what it sets, its defaults and
+  copied links when it is created, through needextend, the link fields, the back links and every other field,
+  to the checks and the schema validation. The documentation's ``docs`` extra gains ``sphinxcontrib-mermaid``
+
 Internal changes
 ................
 
