@@ -23,6 +23,7 @@ from sphinx_needs.views import NeedsView
 if TYPE_CHECKING:
     from typing import NotRequired
 
+    from docutils.statemachine import StringList
     from sphinx.application import Sphinx
     from sphinx.environment import BuildEnvironment
 
@@ -619,14 +620,17 @@ class NeedsBarType(NeedsBaseDataType):
 
     error_id: str
     title: str | None
-    content: str
+    content: StringList
+    """The directive's content: one row of the chart per line."""
     legend: bool
-    x_axis_title: str
-    xlabels: list[str]
-    xlabels_rotation: str
-    y_axis_title: str
-    ylabels: list[str]
-    ylabels_rotation: str
+    x_axis_title: str | None
+    xlabels: list[str] | None
+    """``:xlabels:`` split on ``,``, None if the option was not given."""
+    xlabels_rotation: str | None
+    y_axis_title: str | None
+    ylabels: list[str] | None
+    """``:ylabels:`` split on ``,``, None if the option was not given."""
+    ylabels_rotation: str | None
     separator: str
     stacked: bool
     show_sum: bool | None
@@ -635,8 +639,9 @@ class NeedsBarType(NeedsBaseDataType):
     transpose: bool
     horizontal: bool
     style: str
-    colors: list[str]
-    text_color: str
+    colors: list[str] | None
+    """``:colors:`` split on ``,``, None if the option was not given."""
+    text_color: str | None
 
 
 class ExtendType(StrEnum):
@@ -681,7 +686,8 @@ class NeedsFilteredBaseType(NeedsBaseDataType):
     types: list[str]
     filter: str | None
     sort_by: str | None
-    filter_code: list[str]
+    filter_code: StringList
+    """The directive's content: filter code, empty if it has none."""
     filter_func: str | None
     filter_warning: str | None
     """If set, the filter is exported with this ID in the needs.json file."""

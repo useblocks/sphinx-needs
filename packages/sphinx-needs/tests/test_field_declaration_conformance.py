@@ -6,9 +6,11 @@ ubCode vendors it, so every case is a statement both tools are held to. Each cas
 project, built with the ``needs`` builder, and three things are asserted:
 
 * every case's outcome -- the pinned values, as ``needs.json`` writes them (type
-  included), the fields pinned as unset, the fields pinned as absent, the needs pinned
-  as not created, the pinned keys of a field's schema, and the findings of the per-type
-  declaration contract, as a multiset;
+  included), with its schema's defaults merged under each record where the version says
+  it left them out (``needs_defaults_removed``), as a reader reads them,
+  the fields pinned as unset, the fields pinned as absent, the needs pinned as not
+  created, the fields a written record pinned as leaving out, the pinned keys of a
+  field's schema, and the findings of the per-type declaration contract, as a multiset;
 * the number of cases, so that a trimmed corpus is a red test rather than quietly reduced
   coverage;
 * the shape of every case, so that a case without a complete expectation cannot pass by
@@ -39,6 +41,7 @@ from sphinx_needs_testkit.conformance import (
     case_files,
     check_schema,
     check_values,
+    check_version_values,
     match_findings,
     params,
     read_findings,
@@ -50,7 +53,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "field_declaration_conformanc
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 52
+EXPECTED_CASE_COUNT = 54
 
 #: The codes of the per-type declaration contract, compared as bare subcodes; every
 #: other finding (a ``needs.config`` warning, a dead link) is each tool's own.
@@ -155,13 +158,14 @@ def test_every_case_has_a_complete_expectation() -> None:
             "nulls",
             "absent",
             "missing",
+            "omitted",
             "schema",
             "findings",
         }, name
         assert any(
             expect.get(key) for key in ("needs", "nulls", "absent", "missing")
         ), name
-        for table in ("needs", "nulls", "absent", "missing"):
+        for table in ("needs", "nulls", "absent", "missing", "omitted"):
             for need_id in expect.get(table, {}):
                 assert _NEED_ID.fullmatch(need_id), (name, need_id)
         # a need pinned as not created is one the source gives, so a typo cannot pass
@@ -193,6 +197,49 @@ def _files(case: Mapping[str, Any]) -> list[tuple[Path, str]]:
 def test_a_case_cannot_write_outside_its_directory(relative: str) -> None:
     with pytest.raises(AssertionError, match="outside the case directory"):
         _files({"config": "", "source": "", "files": {relative: "{}"}})
+
+
+def test_an_omitted_pin_reads_the_written_record() -> None:
+    """An ``omitted`` pin holds only where the record as written lacks the field and a
+    schema default restores it; the other pins read the record with the defaults merged."""
+    expect = {"omitted": {"REQ_001": ["asil"]}, "needs": {"REQ_001": {"asil": "QM"}}}
+    defaults = {"asil": "QM"}
+    assert check_values({"REQ_001": {}}, expect, defaults=defaults) == []
+    assert check_values({"REQ_001": {"asil": "QM"}}, expect, defaults=defaults) == [
+        "REQ_001.asil: written as 'QM', expected left out"
+    ]
+    assert check_values({"REQ_001": {}}, expect) == [
+        "REQ_001.asil: None, expected 'QM'",
+        "REQ_001.asil: left out, and no default restores it",
+    ]
+    assert check_values({}, expect, defaults=defaults) == [
+        "REQ_001: no such need",
+        "REQ_001: no such need",
+    ]
+
+
+def test_an_omitted_pin_needs_a_version_that_says_it_left_defaults_out() -> None:
+    """Defaults are merged only under a version whose ``needs_defaults_removed`` is
+    true, and an ``omitted`` pin fails on any other version."""
+    schema = {"properties": {"asil": {"default": "QM"}}}
+    expect = {"omitted": {"REQ_001": ["asil"]}, "needs": {"REQ_001": {"asil": "QM"}}}
+    removed = {"needs_defaults_removed": True, "needs_schema": schema}
+    assert check_version_values({**removed, "needs": {"REQ_001": {}}}, expect) == []
+    silent = {"needs_schema": schema, "needs": {"REQ_001": {}}}
+    assert check_version_values(silent, expect) == [
+        "needs_defaults_removed: None, expected true (the case pins fields left out)",
+        "REQ_001.asil: None, expected 'QM'",
+        "REQ_001.asil: left out, and no default restores it",
+    ]
+    # only `true` says it: a truthy flag of another JSON type merges nothing
+    truthy = {**removed, "needs_defaults_removed": 1, "needs": {"REQ_001": {}}}
+    assert check_version_values(truthy, expect)[0] == (
+        "needs_defaults_removed: 1, expected true (the case pins fields left out)"
+    )
+    # without the flag a record leaving a pinned key out fails, as before any merge
+    assert check_version_values(silent, {"needs": {"REQ_001": {"asil": "QM"}}}) == [
+        "REQ_001.asil: None, expected 'QM'"
+    ]
 
 
 def _describe(code: str, message: str) -> tuple[str | None, str | None]:
@@ -240,12 +287,11 @@ def test_case(test_app: Any, case: dict[str, Any]) -> None:
     app = test_app
     app.build()
     data = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf-8"))
-    needs = data["versions"][data["current_version"]]["needs"]
+    version = data["versions"][data["current_version"]]
+    needs = version["needs"]
     expect = case["expect"]
-    problems = check_values(needs, expect)
-    problems += check_schema(
-        data["versions"][data["current_version"]]["needs_schema"]["properties"], expect
-    )
+    problems = check_version_values(version, expect)
+    problems += check_schema(version["needs_schema"]["properties"], expect)
     found, unread = read_findings(
         app,
         needs,

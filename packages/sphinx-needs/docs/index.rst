@@ -203,14 +203,14 @@ Contents
    :caption: How-tos
    :maxdepth: 1
 
-   filter
-   dynamic_functions
-   services/index
-   layout_styles
-   card_layouts
-   api
    need_types
    schema/index
+   filter
+   dynamic_functions
+   layout_styles
+   card_layouts
+   services/index
+   api
    utils
 
 .. toctree::

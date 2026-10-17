@@ -4,8 +4,8 @@ A corpus of this shape (sphinx-needs' ``derive_conformance.toml`` and
 ``field_declaration_conformance.toml``) is a TOML file of ``[[case]]`` rows, each one
 project: a ``config`` that is its ``ubproject.toml``, a ``source`` that is the body of its
 one document, optional ``files``, and an ``expect`` table of values (as ``needs.json``
-writes them), unset fields, absent fields, needs not created, field schemas, and
-findings. The rules every runner follows
+writes them), unset fields, absent fields, needs not created, fields a record leaves
+out, field schemas, and findings. The rules every runner follows
 are in each corpus's header; this module is the part of sphinx-needs' runners that does
 not depend on which corpus it runs. Each runner keeps what does: its path, its case
 count, its codes, its ``conf.py``, its title, its shape test, and the readers a finding
@@ -36,12 +36,14 @@ __all__ = [
     "case_files",
     "check_schema",
     "check_values",
+    "check_version_values",
     "inside",
     "match_findings",
     "name_field",
     "params",
     "read_findings",
     "same",
+    "schema_defaults",
 ]
 
 #: A found finding: its code, the need it is reported at, then what the runner's
@@ -190,12 +192,35 @@ def same(actual: Any, expected: Any) -> bool:
     return actual == expected
 
 
+def schema_defaults(properties: Mapping[str, Any]) -> dict[str, Any]:
+    """The ``default`` of each property of a version's ``needs_schema`` *properties*
+    that has one: what a reader of ``needs.json`` merges under each record."""
+    return {
+        name: spec["default"]
+        for name, spec in properties.items()
+        if isinstance(spec, Mapping) and "default" in spec
+    }
+
+
 def check_values(
-    needs: Mapping[str, Mapping[str, Any]], expect: Mapping[str, Any]
+    written: Mapping[str, Mapping[str, Any]],
+    expect: Mapping[str, Any],
+    *,
+    defaults: Mapping[str, Any] | None = None,
 ) -> list[str]:
     """The problems with a case's pinned values: ``needs`` (values, type-strict),
     ``nulls`` (present and null), ``absent`` (the need present, the field not in its
-    record) and ``missing`` (the need not created); an empty list when every pin holds."""
+    record), ``missing`` (the need not created) and ``omitted`` (the need present, the
+    field no key of its *written* record, and a key once *defaults* are merged under
+    it); an empty list when every pin holds.
+
+    Every pin but ``omitted`` is compared against each record with *defaults* (the
+    version's :func:`schema_defaults`) merged under it, as a reader merges them: a
+    default fills a key the record lacks, a stated value wins. Without *defaults*, or
+    for a record that leaves nothing out, the records are compared as written.
+    """
+    merge = dict(defaults or {})
+    needs = {need_id: {**merge, **record} for need_id, record in written.items()}
     problems = []
     for need_id, fields in expect.get("needs", {}).items():
         if need_id not in needs:
@@ -230,7 +255,47 @@ def check_values(
         # a need the source gives that is not created is no key of the needs at all
         if need_id in needs:
             problems.append(f"{need_id}: created, expected no such need")
+    for need_id, names in expect.get("omitted", {}).items():
+        # a value left out under json_remove_defaults: no key of the record as written,
+        # and restored by a schema default, so the merged record has it
+        if need_id not in written:
+            problems.append(f"{need_id}: no such need")
+            continue
+        for name in names:
+            if name in written[need_id]:
+                problems.append(
+                    f"{need_id}.{name}: written as {written[need_id][name]!r}, "
+                    "expected left out"
+                )
+            elif name not in needs[need_id]:
+                problems.append(
+                    f"{need_id}.{name}: left out, and no default restores it"
+                )
     return problems
+
+
+def check_version_values(
+    version: Mapping[str, Any], expect: Mapping[str, Any]
+) -> list[str]:
+    """The problems with a case's pinned values in one *version* of ``needs.json``, read
+    the way the version says it was written.
+
+    A version whose ``needs_defaults_removed`` is ``true`` has its ``needs_schema``
+    defaults merged under each record (:func:`check_values` with *defaults*); any other
+    version is compared as written, so a writer that leaves a key out without saying so
+    fails every pin of that key. An ``omitted`` pin also needs the version to say it.
+    """
+    removed = version.get("needs_defaults_removed") is True
+    problems = []
+    if expect.get("omitted") and not removed:
+        problems.append(
+            f"needs_defaults_removed: {version.get('needs_defaults_removed')!r}, "
+            "expected true (the case pins fields left out)"
+        )
+    schema = version.get("needs_schema")
+    properties = schema.get("properties", {}) if isinstance(schema, Mapping) else {}
+    defaults = schema_defaults(properties) if removed else None
+    return problems + check_values(version["needs"], expect, defaults=defaults)
 
 
 def check_schema(

@@ -200,6 +200,13 @@ Bug fixes
   a configured ``pr`` dropped ``commit``. Each of the three now gives way on its own
   (:pr:`2307`)
 
+- 🐛 Under :ref:`needs_json_remove_defaults`, a value equal to its field's default but of
+  another JSON type (``1.0`` against a default of ``1``, ``[1.0]`` against ``[1]``) is now
+  written, so a reader gets it back as written. The writer compared with Python's ``==``,
+  so a ``number`` field authored ``1`` (held as ``1.0``) with an integer default of ``1``
+  was left out and read back as ``1``. Nothing else is written that was left out before
+  (:pr:`2306`)
+
 - 🐛 A ``fields`` entry of a need type named as a link type's back links (``links_back``,
   ``parent_needs_back``, or ``rel_back`` beside a ``rel`` link type) is refused, one
   ``needs.type_conflict`` warning, as a ``links`` entry of that name already was, and a
@@ -263,6 +270,18 @@ Bug fixes
   comes first. A directive of another kind under a need type's name is handled as before, with
   Sphinx's warning (:issue:`2271`, :pr:`2276`)
 
+- 🐛 A filter ``id == None`` selects nothing wherever it is used. On a view already narrowed --
+  a :ref:`needtable` or :ref:`needlist` with ``:status:``, ``:tags:`` or ``:types:``, or a filter
+  such as ``type == "spec" and id == None`` -- it selected every need of the view, as its fast path
+  matched ``None`` against the empty part id each need carries; an id is a string, so a constant of
+  any other type now matches no need and no part, as the same filter evaluated in Python does
+  (:issue:`1835`)
+
+- 🐛 A filter ``status in [...]`` whose list holds ``None`` selects the needs without a status too,
+  as ``status == None`` already did and as the same filter evaluated in Python does: its fast path
+  kept only the strings of the list, so ``status in ["open", None]`` selected the open needs alone
+  and ``status in [None]`` none at all (:issue:`1835`)
+
 Documentation
 .............
 
@@ -285,6 +304,18 @@ Documentation
 - 📚 This documentation's own configuration declares its need types as ``[needs.types.<directive>]``
   tables, and its ``hours``, ``amount``, ``value`` and ``unit`` fields on the need types that use
   them, a live example of :ref:`needs_types_fields` that its build checks (:pr:`2302`)
+
+- 📚 The need-type pages are split into a walkthrough and a reference, with Mermaid diagrams (:pr:`2309`)
+
+  :ref:`need_types_howto` gains a "How it works" section before its recipes: the mental model, and two
+  diagrams on its example project -- where the fields of each type's needs come from (a field narrowed by a type and inherited by
+  the type inheriting from it, and fields one type declares alone), and how far a field or link type
+  declared on need types alone reaches: the type declaring it and the types inheriting from it. :ref:`needs_types_fields` stays the reference, every rule kept, and
+  points to the walkthrough instead of repeating its worked example. :ref:`needs_processing_order` gains
+  a diagram of the whole path of a need's values, from what it sets, its defaults and copied links when
+  it is created, through ``needextend``, the link fields, the back links and every other field, to the
+  checks and the schema validation. The :ref:`tutorial` gains a short step on a need type that
+  ``inherits`` another. The documentation's ``docs`` extra gains ``sphinxcontrib-mermaid``
 
 Internal changes
 ................
@@ -310,6 +341,17 @@ Internal changes
   the checker follows a directive's options from the directive to its handler.
   ``needextract``'s ``layout`` and ``style`` are ``str | None``, as an absent option leaves
   them; ``build_need_repr`` takes any element. Fourteen ``# ty: ignore`` comments go
+  (:issue:`1835`)
+
+- 🏷️ The filter and ``needbar`` attributes declare what the directives store: an absent
+  option is ``None`` (``filter`` and ``sort_by`` of every filtering directive, needbar's axis
+  titles, label rotations, ``text_color``, and its ``xlabels``, ``ylabels`` and ``colors``,
+  split once into lists), and a directive's content is a ``StringList`` (``filter_code``,
+  needbar's ``content``). ``filter_needs_and_parts`` returns items of the kind it is given, a
+  filter code's namespace is typed as the user's, ``NeedsView.filter_statuses`` and its parts
+  twin take any iterable of statuses, ``None`` among them, and the ``id``, ``type``, ``status``
+  and ``is_external`` fast paths of a filter pass only a constant their index can hold, with the
+  same results but the ``id == None`` fix above. Nineteen ``# ty: ignore`` comments go
   (:issue:`1835`)
 
 - 🏷️ A ``FieldSchema`` constructed with predicate defaults no longer raises ``TypeError``:

@@ -17,6 +17,7 @@ from pathlib import Path
 
 import pytest
 from docutils import nodes
+from docutils.statemachine import StringList
 from sphinx.testing.util import SphinxTestApp
 
 from sphinx_needs.config import NeedsSphinxConfig
@@ -237,7 +238,7 @@ def test_scope_membership_equals_the_filter_options_of_a_view_directive(
             "sort_by": None,
             # a chart's content is one filter per line, never filter code, so the
             # comparison is against the option-only branch of process_filters
-            "filter_code": [],
+            "filter_code": StringList(),
             "filter_func": None,
             "filter_warning": None,
         }

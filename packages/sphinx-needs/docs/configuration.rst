@@ -455,26 +455,13 @@ The ``needs.derive_invalid`` warnings of such a rule name the entry it came from
    [needs.types.safety_req.links.links]
    schema = { maxItems = 3 }
 
-   [needs.types.safety_req.fields.hazard]
-   description = "The hazard a safety requirement mitigates"
-   schema = { type = "string" }
-
-   [needs.types.test]
-   title = "Test case"
-   prefix = "T_"
-
-   [needs.types.test.links.verifies]
-   incoming = "is verified by"
-   outgoing = "verifies"
-
 Here a ``req`` must have an ``asil`` (``QM`` unless it says), a ``safety_req`` one of ``A`` to ``D`` (``A`` unless it says),
 and a ``safety_req`` links to three needs at most; the needs of every other type read ``asil`` and ``links`` as declared for all.
-No ``needs_fields`` entry declares ``hazard``: it is a field of the ``safety_req`` needs alone (see below).
-No ``needs_links`` entry declares ``verifies``: it is a link type of the ``test`` needs alone,
-whose links read ``verifies:``, and ``is verified by:`` on the needs they link to (see below).
 In :file:`conf.py`, the same entries are ``needs_types = {"safety_req": {"title": ..., "inherits": "req", "fields": {"asil": {...}}}, ...}``,
 and in the list shape ``dict(directive="safety_req", title=..., inherits="req", fields={"asil": {...}})``.
 In a TOML file of the list shape, a ``[needs.types.fields.asil]`` table after the ``[[needs.types]]`` tables belongs to the last of them.
+
+For a walkthrough with diagrams, see :ref:`need_types_howto`.
 
 **Narrowing.**
 A type's declaration of a field starts from the field's own declaration, takes the declarations of its ancestors from the root down,
@@ -581,7 +568,7 @@ and a :ref:`needextend` is refused on the needs of the type, one ``needs.needext
 
    Option 'verifies' does not support extend operations on need type 'spec'; it does not extend 1 need (S_001).
 
-Its back links, ``verifies_back``, are on every need, as for any link type.
+Its back links, ``<name>_back``, are on every need, as for any link type.
 With ``copy`` the links of the declaring needs are copied into ``links``, and a need of another type copies none;
 ``copy`` beside a ``derive`` is reported as on a ``needs_links`` entry (``needs.derive_invalid``), and nothing is copied.
 A derived one is derived on every type that declares it (a child inheriting its parent's rule), and holds ``[]`` on the others.
@@ -633,6 +620,10 @@ A :ref:`needextend` deleting a field (``:-x:``) empties it as the need's type de
 ``None`` where the field is nullable on that type, else the empty value of the field's type.
 A default a type declares is not the one a :ref:`fingerprint <needs_derive>` compares against:
 a need's value equal to its type's default enters the fingerprint, unless it equals the field's own default too.
+Nor is it in the :ref:`needs.json <needs_builder_format>`, whose ``needs_schema`` is the schema every need type shares:
+no need type's narrowing is in it (its ``enum``, its default, a field it makes not nullable),
+the ``default`` it gives a field, which :ref:`needs_json_remove_defaults` compares against, is never a need type's,
+and a reader that has only the file checks less than the project that wrote it did.
 
 The warnings of these declarations, given when the schema is built, name an entry by its directive in either shape
 (``needs_types['spec']``), while those given when the configuration is read name an entry of the list by its position
@@ -3663,6 +3654,12 @@ needs_json_remove_defaults
 Setting ``needs_json_remove_defaults = True`` will remove all need fields with default from ``needs.json``, greatly reducing its size.
 
 The defaults can be retrieved from the ``needs_schema`` now also output in the JSON file (see :ref:`this section <needs_builder_format>` for the format).
+A value is left out exactly where it equals the ``default`` its field's entry in that ``needs_schema`` carries,
+as a JSON value of the same type (``1.0`` is not ``1``, ``[1.0]`` not ``[1]``):
+never a need type's default, which the ``needs_schema`` does not carry (:ref:`needs_types_fields`).
+A need holding its type's default, its own type's or one it inherits, writes it wherever it differs from that ``default``.
+So a reader that restores a left-out value from the file's ``needs_schema``, as :ref:`needimport` does,
+gets the same needs from the file as from the same file written in full.
 
 Default: :need_config_default:`json_remove_defaults`
 

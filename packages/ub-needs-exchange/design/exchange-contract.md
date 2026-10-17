@@ -217,6 +217,21 @@ object identity). A rule marked **(not pinned)** has neither.
    `defaults-removed-false-without-a-schema`, `defaults-removed-not-a-boolean`,
    `defaults-removed-with-a-schema-that-is-not-an-object`;
    `test_reader.py::test_defaults_removed_without_a_schema` (the message).
+4. **The writer's half of the merge.** A writer that leaves defaults out
+   (`needs_defaults_removed`) leaves out a value exactly where it equals the `default` its
+   field's property carries in the version's own `needs_schema`, as a JSON value of the
+   same type (`1.0` is not `1`, `[1.0]` not `[1]`): never a need type's default, which
+   `needs_schema` does not carry. A version whose `needs_defaults_removed` is not `true`
+   leaves nothing out. A need holding its type's default, its own type's or one
+   it inherits, writes it wherever it differs from that `default`. A reader restores a
+   left-out value from the version's own `needs_schema` (2.), not from the reading
+   project's declarations, which fill only a field to which the schema gives no default.
+   So a version read with its defaults left out gives the same records as the same version
+   written in full.
+   Enforced by: sphinx-needs' field-declaration corpus,
+   `packages/sphinx-needs/tests/fixtures/field_declaration_conformance.toml`:
+   `defaults-left-out-equal-the-field-default` (the writer),
+   `defaults-left-out-restored-from-the-file` (the reader).
 
 ## 8. Refusals and findings
 

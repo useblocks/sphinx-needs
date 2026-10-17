@@ -3032,6 +3032,7 @@ docs = [
     { name = "sphinx-copybutton" },
     { name = "sphinx-design" },
     { name = "sphinx-syntax-example" },
+    { name = "sphinxcontrib-mermaid" },
     { name = "sphinxcontrib-plantuml" },
     { name = "sphinxcontrib-programoutput" },
 ]
@@ -3071,6 +3072,7 @@ requires-dist = [
     { name = "sphinx-rtd-theme", marker = "extra == 'theme-rtd'", specifier = ">=3.0.2,<4" },
     { name = "sphinx-syntax-example", marker = "extra == 'docs'", specifier = "~=0.2.0" },
     { name = "sphinxcontrib-jquery", specifier = "~=4.0" },
+    { name = "sphinxcontrib-mermaid", marker = "extra == 'docs'", specifier = ">=1.0.0,<3" },
     { name = "sphinxcontrib-plantuml", marker = "extra == 'docs'", specifier = "~=0.0" },
     { name = "sphinxcontrib-programoutput", marker = "extra == 'docs'", specifier = "~=0.17" },
     { name = "typing-extensions", specifier = ">=4.14.0" },
