@@ -47,7 +47,7 @@ As well as the ``needs`` data, each version in the **needs.json** file carries a
 This is a JSON schema for the data structure of a single need,
 and also includes a ``field_type`` for each field, to denote the source of the field,
 that can be one of: ``core``, ``links``, ``backlinks``, ``extra``.
-A field, core or extra, is written as the project declares it for every need type,
+A field, core or extra, is written as the project declares it for all need types together (a need type's own declaration is not written),
 a :ref:`needs_fields` entry narrowing a core field included:
 its type (with ``null`` where it is nullable), its item type and its default, but not its other constraints, such as an ``enum``.
 

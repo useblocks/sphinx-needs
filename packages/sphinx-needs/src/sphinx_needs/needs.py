@@ -3353,7 +3353,8 @@ def _set_global_default(
         )
         log_warning(
             LOGGER,
-            f"{ignored} {verb} ignored: {used} {verb} used instead",
+            f"{ignored} {verb} ignored: {used} "
+            + ("takes precedence" if len(both) == 1 else "take precedence"),
             "config",
             None,
         )

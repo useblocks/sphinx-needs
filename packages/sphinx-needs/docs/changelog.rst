@@ -206,7 +206,8 @@ Bug fixes
   and a default given to a core field in :ref:`needs_fields` or :ref:`needs_global_options` is
   written as its ``default``. The file's content changes only for such projects, and its format does
   not change. Under :ref:`needs_json_remove_defaults` a value equal to that default is now left out,
-  and a reader restores it from the file, as :ref:`needimport` does (:issue:`2263`)
+  and a reader restores it from the file, as :ref:`needimport` does. Its other constraints, such as
+  an ``enum``, are still not written, as for an extra field (:issue:`2263`)
 
 - 🐛 A field's ``default`` or ``predicates`` set both in its :ref:`needs_fields` entry and in the
   deprecated :ref:`needs_global_options` is taken from :ref:`needs_fields`, and the
