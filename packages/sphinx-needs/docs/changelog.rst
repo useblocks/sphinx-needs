@@ -188,7 +188,9 @@ Breaking changes
   - A service of your own built on ``GithubService``, such as the
     :ref:`GitHub Enterprise example <service_github_custom>`, gets no need type and no
     layout from its class: configure the built-in service it imitates too (as that example
-    does), or declare the type in :ref:`needs_types`.
+    does), or declare the type in :ref:`needs_types`. Its ``Service need could not be
+    created: Unknown need type 'issue'.`` warning now says so, naming the built-in to
+    configure.
 
   An extension reading :func:`~sphinx_needs.api.configuration.get_need_types` finds
   ``issue``, ``pr`` and ``commit`` only for the configured services, listed from

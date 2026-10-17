@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+import responses
 
 from sphinx_needs.api import get_need_types
 from sphinx_needs.config import NeedsSphinxConfig
@@ -368,3 +369,111 @@ def test_a_configured_service_imports_the_service_keys_as_fields(
     assert_no_warnings(app)
     need = SphinxNeedsData(app.env).get_needs_view()["OLD_1"]
     assert (need["url"], need["user"], need["avatar"]) == ("", "octo", None)
+
+
+# -- a custom GithubService entry, as in the GitHub Enterprise example ---------------------
+
+#: a ``needs_services`` entry of the class itself, as the documentation's GitHub
+#: Enterprise example configures it, without the built-in it imitates
+ENTERPRISE_CONF = (
+    CONF
+    + """
+from sphinx_needs.services.github import GithubService
+
+needs_services = {
+    "my-company-issues": {
+        "class": GithubService,
+        "class_init": {"gh_type": "issue"},
+        "url": "https://github.example/api/v3/",
+        "download_avatars": False,
+    },
+}
+# Sphinx's own warning that a class in the configuration is not pickled
+suppress_warnings = ["config.cache"]
+"""
+)
+
+ENTERPRISE_INDEX = (
+    RST
+    + "\n.. needservice:: my-company-issues\n   :query: repo:o/r\n   :max_amount: 1\n"
+)
+
+#: a GitHub issue as the search API returns it
+ISSUE = {
+    "number": 7,
+    "title": "An issue",
+    "body": "Its body",
+    "state": "open",
+    "labels": [],
+    "user": {"login": "octo", "avatar_url": "https://avatars.example/u/1"},
+    "html_url": "https://github.example/o/r/issues/7",
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-02T00:00:00Z",
+    "closed_at": None,
+}
+
+
+def fake_enterprise_search() -> None:
+    """The one request the project makes, answered without leaving the test."""
+    responses.get(
+        "https://github.example/api/v3/search/issues",
+        match=[
+            responses.matchers.query_param_matcher(
+                {"q": "repo:o/r is:issue", "per_page": "1"}
+            )
+        ],
+        json={"items": [ISSUE]},
+    )
+
+
+@responses.activate
+def test_a_custom_github_service_alone_says_which_built_in_adds_its_type(
+    build: Any,
+) -> None:
+    """The service runs, but its needs are of the ``issue`` type, which only the
+    configured ``github-issues`` adds: the refusal says so, and how to fix it."""
+    fake_enterprise_search()
+    app = build({"conf.py": ENTERPRISE_CONF, "index.rst": ENTERPRISE_INDEX})
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:6: WARNING: Service need could not be created: Unknown "
+        "need type 'issue'. The 'issue' type is registered by the built-in "
+        "'github-issues' service: configure needs_services['github-issues'] (an empty "
+        "entry is enough), or declare the 'issue' need type. [needs.load_service_need]"
+    ]
+    assert len(SphinxNeedsData(app.env).get_needs_view()) == 0
+
+
+@responses.activate
+def test_a_custom_github_service_with_its_built_in_configured_creates_its_needs(
+    build: Any,
+) -> None:
+    """Configuring the built-in it imitates adds the type and the layout."""
+    fake_enterprise_search()
+    app = build(
+        {
+            "conf.py": ENTERPRISE_CONF + 'needs_services["github-issues"] = {}\n',
+            "index.rst": ENTERPRISE_INDEX,
+        }
+    )
+    assert_no_warnings(app)
+    needs = SphinxNeedsData(app.env).get_needs_view()
+    assert [(need["type"], need["layout"]) for need in needs.values()] == [
+        ("issue", "github")
+    ]
+
+
+@responses.activate
+def test_an_unknown_type_of_another_cause_keeps_its_text(build: Any) -> None:
+    """The hint is for a GitHub service's own type alone: a ``:type:`` the project
+    does not declare is refused with today's text, built-in configured or not."""
+    fake_enterprise_search()
+    app = build(
+        {
+            "conf.py": ENTERPRISE_CONF,
+            "index.rst": ENTERPRISE_INDEX + "   :type: nope\n",
+        }
+    )
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:6: WARNING: Service need could not be created: Unknown "
+        "need type 'nope'. [needs.load_service_need]"
+    ]

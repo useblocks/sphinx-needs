@@ -277,7 +277,8 @@ instance.
 The need type and the ``github`` layout come with the built-in service, not with the class:
 the example configures ``github-issues`` too, which is what adds the ``issue`` type and the ``github`` layout
 that the needs of ``my-company-issues`` use.
-A custom service alone gets neither:
+A custom service alone gets neither, and its needs are refused with an ``Unknown need type 'issue'`` warning
+that names the built-in service to configure:
 configure the built-in service it imitates as well (``{}`` will do),
 or declare the type in :ref:`needs_types` (and a ``github`` entry in :ref:`needs_layouts`).
 
