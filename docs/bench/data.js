@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792236685711,
+  "lastUpdate": 1792237341700,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -25884,6 +25884,42 @@ window.BENCHMARK_DATA = {
             "value": 58.522058496999996,
             "unit": "s",
             "extra": "Commit: c46e310d78dd6d30fd885e200a428eef4d7127d7\nBranch: master\nTime: 2026-10-17T13:29:58+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7526d8d1fc8ac4780810c4f6b08a1f68403feaff",
+          "message": "🏷️ filter_common and needbar: nineteen suppressions gone, and two filter fast-path bugs fixed (#2308)\n\n## What\n\nThis PR is in `packages/sphinx-needs` and has four commits. It removes\nall nineteen `# ty: ignore` comments in `filter_common.py` (10) and\n`directives/needbar.py` (9), taking the workspace from 120 to 101.\nMaking two of the filter's fast paths type-check uncovered two bugs, and\neach is fixed in its own commit.\n\n### 1. The attributes declare what the directives store (18\nsuppressions; no behaviour change)\n\n**needbar (9).** Option values were stored in `NeedsBarType` keys\ndeclared `str` or `list[str]`, but an absent option is `None`.\n- **Text options:** `x_axis_title`, `y_axis_title`, `xlabels_rotation`,\n`ylabels_rotation` and `text_color` become `str | None`.\n- **List options:** `xlabels`, `ylabels` and `colors` become `list[str]\n| None`, split once by a small helper.\n- **`content`:** declared as the `StringList` it is.\n\nEvery reader already tests the value for truth first. The only value\nstored differently is `\"\"` where `None` was stored before, and neither\nreST nor MyST can produce `\"\"` for these options: both turn an empty\noption into `None`.\n\n**filter options (3).** `filter` and `sort_by` become `str | None`,\nwhich `NeedsFilteredBaseType` already said. `filter_code` is declared as\nthe `StringList` it is in both TypedDicts. It is not converted to a\nlist, because the doctree snapshots would change: a `StringList`\nserialises as `filter_code=\"[]\"` and a list as `filter_code=\"\"`.\n\n**The `filter_code` namespace (2).** The namespace is typed `dict[str,\nAny]`, with a comment explaining why: user filter code may rebind\n`results`, which is why it is read back from the namespace. This matches\nthe module's other evaluation namespaces. Narrowing with\n`isinstance(list)` would break filter code that rebinds `results` to a\ntuple or a generator.\n\n**`filter_needs_and_parts` (1).** It is now generic over need or part,\nreturning `list[_NeedOrPartT]` for an `Iterable[_NeedOrPartT]`.\n\n**The fast paths' constants (4 comments, 8 diagnostics).**\n`_analyze_and_apply_expr` passed any `ast.Constant` value straight to\nthe views' index lookups. Each value is now narrowed to what its index\nis keyed by:\n- `type == <constant>`: a `str` only;\n- `status == <constant>`: `str` or `None`, which `filter_statuses` now\ndeclares on both views;\n- `is_external == <constant>`: compared as `True`/`False`, reproducing\nthe dict lookup, so `1` and `1.0` still match `True`.\n\n### 2. Bug: `id == None` selected every need of a narrowed view (the\n19th suppression)\n\nOn a `NeedsAndPartsListView` that a `:status:`, `:tags:` or `:types:`\noption has already narrowed, `filter_ids` keeps an entry `(need_id,\npart_id)` when either half is among the values. Every need's own entry\nhas the part id `None`. So a needtable or needlist with such an option\nand `:filter: id == None` listed every need it had narrowed to, and so\ndid a filter such as `type == \"spec\" and id == None`. Evaluating the\nsame filter in Python selects none. The fast path now passes the\nconstant only when it is a `str`, as it already did for `type`.\n\n### 3. Bug: `status in [..., None]` dropped `None`\n\nThe `in` fast path kept only the list's string constants. So `status in\n[\"open\", None]` missed the needs without a status, and `status in\n[None]` selected nothing. `status == None` was already right. The\n`status` list now keeps `None`.\n\n### 4. Review follow-ups\n\n- `filter_statuses` takes `list[str] | list[str | None]`, so a bare\nstring is refused again; it would iterate the characters and select\nnothing.\n- A test runs `id == None` on a view a `:status:` option narrowed.\n- A test fixture uses the declared `StringList`.\n\n## Why\n\nContinues #1835: `filter_common.py` and `needbar.py` were two of its\nlargest remaining clusters.\n\n## Tests\n\n- **Bug tests, red first:** `tests/test_filter.py` gains cases for both\nbugs on the plain and parts views, plus a test on a view narrowed by\n`:status:`.\n- One need in the fixture now has no status, as a need written without\n`:status:` has. It is `None` where it was `\"\"`, and no existing case\nrelied on the `\"\"`.\n- Every new case fails without its fix. The narrowed-view test also\nfails on master's source.\n- **Differential probe:** the reviewer compared the fast path against\nPython evaluation of the same filter. That was 315 filters against 4\nviews, 1260 checks:\n- filters on `id`, `type`, `status` and `is_external`, against 15\nconstants;\n  - `==` both ways round, after an `and`, and three `in` forms;\n- a plain view, a parts view, and a parts view narrowed by status or by\ntype.\n\n  | commit | fast path ≠ evaluation |\n  |---|---|\n  | master | 19 (the two bugs) |\n  | after the typing commit | output byte-identical to master |\n  | after both bug fixes | 0 |\n\n- **Reproduced from a document:** a needlist on master versus this\nbranch shows both bugs, and both fixes.\n- **Mutations:**\n- 17 typing reverts, spread over `data.py`, `views.py`,\n`filter_common.py` and `needbar.py`, all make `uv run poe typecheck`\nfail.\n  - Reverting either bug fix makes its tests fail.\n  - `filter_statuses(\"open\")` fails the type check.\n- **Adversarial review:** an Opus builder wrote the change under binding\nrules: no behaviour change, no `cast`/`Any` to silence the checker, red\ntests for any bug. An independent reviewer then returned\n**SHIP-WITH-FIXES**: one SHOULD, the bare-string signature, plus two\ntest NITs, all taken in the last commit. The fixes went back to the same\nreviewer, which returned **SHIP**.\n- **Gates:** lint, typecheck and `test-needs` (3321 passed) at\n`aee7d69a`, after rebasing onto master `30910d8d`.\n\n**Noted, not changed (for #1835):**\n- `needpie.py` has the same `content`/`StringList` suppression, with the\nsame fix.\n- `NeedsBarType.style` is `None` at run time when no `:style:` is given.\nty does not see it, because matplotlib is untyped.\n- The `in` fast path returns needs in the order of the list's values,\nwhere evaluation gives need order. That predates this PR.\n- Against Sphinx 9.1, which has no docutils stubs and so is not the\ngate, ty diagnostics fall from 73 to 62. One new error is a `str.join`\non a `StringList`, the same kind as one already on master.\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue. *(Written by Claude Code at a\nmaintainer's request.)*\n- [x] I ran the package's tests (`uv run poe test-<package>`) and they\npass.\n- [x] Documentation is updated where behaviour or options change. *(The\ntwo fixes make the fast path agree with the documented filter semantics;\nno options change.)*\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*. *(sphinx-needs: two bug fixes and one internal change.)*\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-17T13:40:55+02:00",
+          "tree_id": "13ccf104a09304fd8cbe7e30f5a7dd440ce711a6",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/7526d8d1fc8ac4780810c4f6b08a1f68403feaff"
+        },
+        "date": 1792237333882,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.11368431199999662,
+            "unit": "s",
+            "extra": "Commit: 7526d8d1fc8ac4780810c4f6b08a1f68403feaff\nBranch: master\nTime: 2026-10-17T13:40:55+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 58.180940752000005,
+            "unit": "s",
+            "extra": "Commit: 7526d8d1fc8ac4780810c4f6b08a1f68403feaff\nBranch: master\nTime: 2026-10-17T13:40:55+02:00"
           }
         ]
       }
