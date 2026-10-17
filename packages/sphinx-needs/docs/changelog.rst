@@ -215,6 +215,24 @@ Deprecations
 Bug fixes
 .........
 
+- 🐛 The ``needs_schema`` of a :ref:`needs.json <needs_builder_format>` writes a core field as the
+  project declares it, as it writes an extra field: a :ref:`needs_fields` entry narrowing ``status``
+  to a non-nullable field with the default ``"open"`` is written ``"type": "string"``,
+  ``"default": "open"``, where it was written with the built-in ``["string", "null"]`` and ``null``,
+  and a default given to a core field in :ref:`needs_fields` or :ref:`needs_global_options` is
+  written as its ``default``. The file's content changes only for such projects, and its format does
+  not change. Under :ref:`needs_json_remove_defaults` a value equal to that default is now left out,
+  and a reader restores it from the file, as :ref:`needimport` does. Its other constraints, such as
+  an ``enum``, are still not written, as for an extra field, see :issue:`2316` (:issue:`2263`, :pr:`2318`)
+
+- 🐛 A field's ``default`` or ``predicates`` set both in its :ref:`needs_fields` entry and in the
+  deprecated :ref:`needs_global_options` is taken from :ref:`needs_fields`, and the
+  ``needs_global_options`` value is reported as ignored, in one ``needs.config`` warning per field
+  naming both values. The legacy value replaced the ``needs_fields`` one silently, so every need that
+  did not set the field held it. A field :ref:`needs_fields` declares without the key still takes the
+  ``needs_global_options`` value, a core field narrowed in :ref:`needs_fields` follows the same rule,
+  and a need type's own declaration still wins over both (:issue:`2264`, :pr:`2318`)
+
 - 🐛 An incremental build after a change to :ref:`needs_types` re-reads every document, as one
   after a change to :ref:`needs_fields` does. The option only rebuilt the HTML, so the needs of the
   documents that were not re-read kept what the previous entries gave them: a ``derive`` rule added
@@ -444,6 +462,13 @@ Internal changes
   each version (every key of a version optional, as a ``needs_file`` of an older shape can leave
   any of them out), rather than letting the checker infer it from the first literal; the
   written file is unchanged. Eleven ``# ty: ignore`` comments go (:issue:`1835`)
+
+- 🏷️ A ``needextend`` append that joins a computed value with another value of the same
+  field or link type reads the computed value as the ``FieldFunctionArray`` or
+  ``LinksFunctionArray`` it is, and ``FieldFunctionArray`` declares one tuple whose items
+  are computed parts, text or numbers, rather than one tuple per item type, which no join
+  could be proved to keep. The values a build gives are unchanged. Eight ``# ty: ignore``
+  comments go, seven in ``needextend.py`` and one in ``needs_schema.py`` (:issue:`1835`)
 
 - 🏷️ Every function in the shipped code is annotated, and ruff's ``ANN`` rules keep it so
   across the workspace; ``sphinx_needs.setup`` now declares its types, and the internal

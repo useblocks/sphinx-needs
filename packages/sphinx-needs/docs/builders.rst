@@ -47,6 +47,9 @@ As well as the ``needs`` data, each version in the **needs.json** file carries a
 This is a JSON schema for the data structure of a single need,
 and also includes a ``field_type`` for each field, to denote the source of the field,
 that can be one of: ``core``, ``links``, ``backlinks``, ``extra``.
+A field, core or extra, is written as the project declares it for all need types together (a need type's own declaration is not written),
+a :ref:`needs_fields` entry narrowing a core field included:
+its type (with ``null`` where it is nullable), its item type and its default, but not its other constraints, such as an ``enum``.
 
 How a needs.json is read is specified once, in the `needs.json exchange contract <https://github.com/useblocks/sphinx-needs/blob/master/packages/ub-needs-exchange/design/exchange-contract.md>`__ of the ``ub-needs-exchange`` library, through which :ref:`needimport` and :ref:`needs_external_needs` read it (ubCode is to vendor the contract's conformance corpus, and to be held to it); :ref:`needs_file` still reads the file with Python's ``json`` module, and moves to the library with the writer.
 

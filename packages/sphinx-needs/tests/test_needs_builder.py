@@ -5,7 +5,9 @@ from pathlib import Path
 import pytest
 from syrupy.filters import props
 
+from sphinx_needs.data import NeedsCoreFields
 from sphinx_needs_testkit import assert_no_warnings
+from ub_needs_exchange import parse
 
 
 @pytest.mark.parametrize(
@@ -132,3 +134,135 @@ def test_doc_needs_builder_empty(test_app):
     assert version in needs_list["versions"]
     assert needs_list["versions"][version]["needs_amount"] == 0
     assert needs_list["versions"][version]["needs"] == {}
+
+
+CONF_NARROWED_CORE_FIELD = """\
+extensions = ["sphinx_needs"]
+needs_reproducible_json = True
+needs_fields = {
+    "status": {
+        "schema": {"type": "string", "enum": ["open", "closed"]},
+        "nullable": False,
+        "default": "open",
+    },
+}
+"""
+
+INDEX_NARROWED_CORE_FIELD = """\
+Test
+====
+
+.. req:: Closed
+   :id: REQ_001
+   :status: closed
+
+.. req:: Unset
+   :id: REQ_002
+
+.. req:: Open
+   :id: REQ_003
+   :status: open
+"""
+
+
+def _current(needs_list: dict) -> dict:
+    return needs_list["versions"][needs_list["current_version"]]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), CONF_NARROWED_CORE_FIELD),
+                (Path("index.rst"), INDEX_NARROWED_CORE_FIELD),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_narrowed_core_field_in_needs_schema(test_app):
+    """A core field a ``needs_fields`` entry narrows is written into ``needs_schema``
+    as the project declares it, as an extra field is (:issue:`2263`).
+
+    The block was copied from the core field's built-in schema, so the file declared
+    ``status`` nullable with a ``null`` default while the project refused ``null``
+    and gave every unset need ``"open"``. The projection is the one extras are
+    written with: the type (with ``null`` where nullable), the item type, the
+    default; the ``enum`` is not written, for a core field as for an extra.
+    """
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+
+    version = _current(json.loads(Path(app.outdir, "needs.json").read_text()))
+    properties = version["needs_schema"]["properties"]
+    assert properties["status"] == {
+        "type": "string",
+        "default": "open",
+        "description": NeedsCoreFields["status"]["description"],
+        "field_type": "core",
+    }
+    # a core field the project does not narrow is written as before
+    assert properties["tags"] == {
+        "type": "array",
+        "items": {"type": "string"},
+        "default": [],
+        "description": NeedsCoreFields["tags"]["description"],
+        "field_type": "core",
+    }
+    # as is one that is not in the fields schema at all
+    assert properties["docname"] == {
+        **NeedsCoreFields["docname"]["schema"],
+        "description": NeedsCoreFields["docname"]["description"],
+        "field_type": "core",
+    }
+    assert {i: n["status"] for i, n in version["needs"].items()} == {
+        "REQ_001": "closed",
+        "REQ_002": "open",
+        "REQ_003": "open",
+    }
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), CONF_NARROWED_CORE_FIELD),
+                (Path("index.rst"), INDEX_NARROWED_CORE_FIELD),
+            ],
+            "confoverrides": {"needs_json_remove_defaults": True},
+        }
+    ],
+    indirect=True,
+)
+def test_narrowed_core_field_default_round_trips(test_app):
+    """Under ``needs_json_remove_defaults``, a value equal to a narrowed core field's
+    default is left out, and a reader restores it from the file's own ``needs_schema``
+    (:issue:`2263`).
+
+    Before, the file's default was the built-in ``null``, so ``"open"`` was always
+    written: nothing was lost, but nothing was left out either.
+    """
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+
+    text = Path(app.outdir, "needs.json").read_text()
+    written = _current(json.loads(text))["needs"]
+    assert {i: n.get("status", "<left out>") for i, n in written.items()} == {
+        "REQ_001": "closed",
+        "REQ_002": "<left out>",
+        "REQ_003": "<left out>",
+    }
+
+    # the one reader needimport and needs_external_needs read the file through
+    records = parse(text).select_version(None).records()
+    assert {r.key: r.fields["status"] for r in records} == {
+        "REQ_001": "closed",
+        "REQ_002": "open",
+        "REQ_003": "open",
+    }

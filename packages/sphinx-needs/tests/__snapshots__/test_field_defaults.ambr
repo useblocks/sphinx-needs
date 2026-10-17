@@ -6,11 +6,9 @@
       '': dict({
         'needs': dict({
           'SPEC_1': dict({
-            'collapse': True,
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'SPEC_1',
-            'layout': 'clean_l',
             'lineno': 4,
             'link1': list([
               'SPEC_1',
@@ -46,11 +44,9 @@
             'type_name': 'Specification',
           }),
           'SPEC_2': dict({
-            'collapse': True,
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'SPEC_2',
-            'layout': 'clean_l',
             'lineno': 9,
             'link1': list([
               'SPEC_1',
@@ -81,11 +77,11 @@
             'type_name': 'Specification',
           }),
           'SPEC_3': dict({
+            'collapse': False,
             'docname': 'index',
             'external_css': 'external_link',
             'hide': True,
             'id': 'SPEC_3',
-            'layout': 'clean_l',
             'lineno': 13,
             'link1': list([
               'SPEC_1',
@@ -106,9 +102,6 @@
               'GLOBAL OPTIONS',
             ]),
             'status': 'other',
-            'tags': list([
-              'd',
-            ]),
             'title': 'Specification 3',
             'type': 'spec',
             'type_name': 'Specification',
@@ -157,7 +150,7 @@
               ]),
             }),
             'collapse': dict({
-              'default': False,
+              'default': True,
               'description': 'Hide the meta-data information of the need.',
               'field_type': 'core',
               'type': 'boolean',
@@ -335,7 +328,7 @@
               'type': 'boolean',
             }),
             'layout': dict({
-              'default': None,
+              'default': 'clean_l',
               'description': 'Key of the layout, which is used to render the need.',
               'field_type': 'core',
               'type': list([
@@ -651,6 +644,7 @@
             }),
             'tags': dict({
               'default': list([
+                'd',
               ]),
               'description': 'List of tags.',
               'field_type': 'core',
