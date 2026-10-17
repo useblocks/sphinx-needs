@@ -116,12 +116,14 @@
 #     `[condition]` another), at the
 #     source need (`need`), its link type the `field`, and the TARGET's type the `type`.
 #     `external_link_target_type` is the same finding of a link of a need from
-#     `needs_external_needs`, which has no `need`. A dead link is no such finding (it is
-#     the dead-link finding, each tool's own), `allow_dead_links` or not, and a link to a
+#     `needs_external_needs`, which has no `need`. A dead link is no such finding,
+#     `allow_dead_links` or not: it is left to the dead-link finding (each tool's own,
+#     which `allow_dead_links` silences), and a link to a
 #     part its target lacks is a dead link; a link to a part
 #     is checked by the type of the need owning the part; a `[condition]` on the link
 #     changes nothing. A link of `links` that the same need also holds -- the same target,
-#     the same part -- in another link type with `copy = true` is not checked against the
+#     the same part -- in another link type with `copy = true`, one that is not derived
+#     (a derived link type copies nothing), is not checked against the
 #     `target_types` of `links` (it is checked as a link of that link type), whether it
 #     was copied or written by hand. A need type's `target_types` narrows by the EXPANDED
 #     sets (a listed type with the types inheriting from it, against the same of the
@@ -3857,7 +3859,7 @@ type = "spec"
 
 [[case]]
 name = "link-target-types-dead-link-skipped"
-why = "a dead link has no type to check: a link to no need, and to a missing part of a need of another type, is the dead-link finding (each tool's own, not compared) and no link_target_type, with allow_dead_links or without"
+why = "a dead link has no type to check: a link to no need, and to a missing part of a need of another type, is no link_target_type, with allow_dead_links or without; it is left to the dead-link finding (each tool's own, not compared), which allow_dead_links silences"
 config = '''
 [needs.links.verifies]
 target_types = ["req"]
@@ -4719,5 +4721,114 @@ links = ["REQ_1", "SPEC_1"]
 [[case.expect.findings]]
 code = "link_target_type"
 need = "TEST_1"
+field = "links"
+type = "req"
+
+[[case]]
+name = "link-target-types-copy-derived-exempts-nothing"
+why = "a derived link type copies nothing (its copy = true is one derive_invalid, and ignored), so it exempts nothing: a link of links to a target the derived link type holds is still checked against the target_types of links"
+config = '''
+[needs.links.links]
+target_types = ["req"]
+
+[needs.links.covers]
+derive = { kind = "links", where = "type == 'spec'" }
+copy = true
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+'''
+source = '''
+.. spec:: Specification
+   :id: SPEC_1
+
+.. test:: Covers the spec, and links it by hand
+   :id: TEST_1
+   :links: SPEC_1
+'''
+[case.expect]
+[case.expect.needs.TEST_1]
+covers = ["SPEC_1"]
+links = ["SPEC_1"]
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "covers"
+[[case.expect.findings]]
+code = "link_target_type"
+need = "TEST_1"
+field = "links"
+type = "spec"
+
+[[case]]
+name = "link-target-types-copy-by-target-and-part"
+why = "the copy exemption is by target AND part, whatever the condition: a copied part exempts that part in links but not the whole need, a copied whole need exempts the need but not a part of it, and a copied link with a [condition] exempts a link of links to the same target without one"
+config = '''
+[needs.links.links]
+target_types = ["spec"]
+
+[needs.links.verifies]
+copy = true
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+   A part: :np:`(p1) of it`.
+
+.. req:: Requirement
+   :id: REQ_2
+   :status: x
+
+.. test:: Verifies a part, links the part and the need
+   :id: TEST_1
+   :verifies: REQ_1.p1
+   :links: REQ_1.p1, REQ_1
+
+.. test:: Verifies the need, links the need and a part
+   :id: TEST_2
+   :verifies: REQ_1
+   :links: REQ_1, REQ_1.p1
+
+.. test:: Verifies with a condition, links without one
+   :id: TEST_3
+   :verifies: REQ_2[status == 'x']
+   :links: REQ_2
+'''
+[case.expect]
+[case.expect.needs.TEST_1]
+links = ["REQ_1", "REQ_1.p1"]
+[case.expect.needs.TEST_2]
+links = ["REQ_1", "REQ_1.p1"]
+[case.expect.needs.TEST_3]
+links = ["REQ_2", "REQ_2[status == 'x']"]
+[[case.expect.findings]]
+code = "link_target_type"
+need = "TEST_1"
+field = "links"
+type = "req"
+[[case.expect.findings]]
+code = "link_target_type"
+need = "TEST_2"
 field = "links"
 type = "req"
