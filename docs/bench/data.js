@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792241450491,
+  "lastUpdate": 1792243107494,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -25956,6 +25956,42 @@ window.BENCHMARK_DATA = {
             "value": 55.289878443,
             "unit": "s",
             "extra": "Commit: 6fc1ad6ff00785e90f55441a9b29442f7da3f984\nBranch: master\nTime: 2026-10-17T14:49:23+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "21b7afe6cbae77122c01d7b9847cd7de94edb67f",
+          "message": "🐛 Unset values in needtable sorts and layout placeholders, a changed needs_types on incremental builds, a needextend without needs (#2311)\n\n## What\n\nFour bug fixes in `packages/sphinx-needs`, each of which the per-type\nconfiguration (a field or link type declared on\nneed types alone, holding `None` / `[]` on every other type's needs)\nmakes easier to hit. One commit per issue, with\nmaster (#2307) merged in.\n\n- **`needtable :sort:` and `:sort_by:` on an unset value** (#2253). One\nsort key for both: an unset value (`None`) comes\nfirst, whatever the field's type, as an empty string already did; the\nother values are ordered in bands, booleans,\nnumbers (a NaN after the others), then text, so values of different\ntypes are never compared. `:sort:` compares text\nlower-cased, `:sort_by:` as it is. Equal values are ordered by id; they\nkept the needs' own order, which differs\nbetween a fresh and an incremental build. An unknown `:sort:` key is a\n`needs.filter` warning, the rows left in the\nfilter's order. Documented under `sort` (needtable) and `sort_by`\n(filter).\n**Behaviour change:** a list is now ordered as its values joined with\n`\", \"` (by `:sort:` without regard to case),\nwhere it was compared value by value, with regard to case, so a table\nsorted by a list field may reorder.\n- **A layout `{{field}}` placeholder on an unset or non-string value**\n(#2303). The value is written as its text, a list\njoined with `\", \"` (as `meta()` shows them); an unset or empty value\n(`None`, `\"\"`, `[]`) leaves out the layout\nfunction's element, as `image(\"field:...\")` leaves out its image, rather\nthan building `_images/.png`. Documented in\n  the layouts page.\n- **A changed `needs_types` on an incremental build** (#2287). A new\n`env-before-read-docs` handler,\n`reread_on_need_types_change`, compares the complete list of need types\nwith the one the documents were read with, and\nre-reads every document when it changed, as a `needs_fields` change\ndoes. The first incremental build after upgrading\nre-reads every document once, since the environment has no record yet.\n`needs_types` itself stays `rebuild=\"html\"`:\nsince #2307 the option holds the configured types only, and those added\nfrom code (`add_need_type`, the GitHub\nservices) live in sphinx-needs' registry, so `\"env\"` would see only the\nconfigured types. The handler compares the\ncomplete list, `NeedsSphinxConfig.types`, so a change to a type added\nwith `add_need_type` re-reads every document\ntoo. That narrows one sentence of #2307's changelog entry: it said such\na change needs `-E`, which now holds for\nlayouts only. Checked on master with #2307 merged in. Documented under\n`needs_types`.\n- **A `needextend` in a project with no needs, or with\n`needs_include_needs = False`** (#2296). `process_need_nodes`\nremoves the `Needextend` nodes before both of its early returns. No\nother node type was skipped by those returns: the\nother directive nodes are processed by `process_creator`, a separate\nhandler with no such return.\n\nubCode has none of the four (measured with its builds: unset values sort\nfirst there too, in the same bands, ties by id).\n\n## Why\n\nEach stopped the build or left stale data, and each is reached as soon\nas a need type declares a field or link type\nanother type does not:\n\n- `:sort: priority` with an integer `priority` declared on `req` alone:\n`TypeError: '<' not supported between instances\nof 'NoneType' and 'int'` (a string field: `... 'NoneType' and 'str'`);\n`:sort_by:` on it: `... 'str' and 'int'`.\n- The docs' own `example` layout (`image(\"_images/{{author}}.png\")`) on\na need of a type without `author`:\n`TypeError: replace() argument 2 must be str, not None`; an integer\nfield: `... not int`.\n- Removing a `derive` from a type entry: the field held `None` on the\nincremental build and its authored value on a fresh\none, without a warning; the same for a per-type default, `inherits`, a\nlink default, or the type's `title`/`prefix`.\n- `NotImplementedError: ... departing unknown node type: Needextend` on\nboth paths.\n\nCloses #2253\nCloses #2303\nCloses #2287\nCloses #2296\n\n## Tests\n\nEach new test is red on its base (`7526d8d1`; the `needs_types` ones\nalso on master `6fc1ad6f`, with #2307) and green on this branch.\n\n- `tests/test_needtable_sort_unset.py` (8): an integer field with an\nunset value; an integer and a string field declared\non one type; an unknown key warns; `:sort_by:` on a per-type integer\nfield (through a `needlist`); a table sorted by a\nlist field; equal values ordered by id on a fresh and an incremental\nbuild, for `:sort:` and `:sort_by:`; the key on\nmixed types, NaN, stability and case. On the base the build cases fail\nwith `TypeError` / `KeyError` / the old order.\n- `tests/test_layout_placeholder.py` (10): integer, number, boolean,\narray and string values written into a `link()`;\nunset string, unset integer, empty array and a non-nullable string's\n`\"\"` default leave the element out without a\nwarning; the docs' `example` layout on a need of a type that does not\ndeclare `author` builds no image. On the base: 9\n  failed (the string case is the control).\n- `tests/test_needs_types_incremental.py` (11): for six changes to a\ntype entry (derive removed, derive added, per-type\ndefault, `inherits`, per-type link default, `title`), an incremental\nbuild ends with the needs and the warnings of a fresh\nbuild; the issue's measurement; a prefix change with no document edited\nreaching a generated id; an environment pickled\nwithout the record re-reads once, then not again; a guard that an\nunchanged `needs_types` re-reads only the documents\nthat changed (the GitHub types do not trigger a re-read); and a change\nto a type added with `add_need_type` (no\nconfiguration value changes) is applied. On master `6fc1ad6f` without\nthe handler: 10 failed, the guard passes.\n- `tests/test_needextend_removed.py` (2): one per path of #2296. On the\nbase: both fail with `NotImplementedError`.\n\nGates on the branch (master `6fc1ad6f` merged in): `uv run poe\ntest-needs -n 4` 3407 passed, 14 skipped; `uv run poe lint` 0;\n`uv run poe typecheck` 0; the four new test files plus #2307's\n`test_service_need_types`, `test_needs_types_config`,\n`test_api_usage` and `test_card_layouts` 366 passed.\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-<package>`) and they\npass.\n- [x] Documentation is updated where behaviour or options change.\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-17T15:17:01+02:00",
+          "tree_id": "b7ce074cbab6a058105e38731ca5702d0308a993",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/21b7afe6cbae77122c01d7b9847cd7de94edb67f"
+        },
+        "date": 1792243099212,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.11037928199999669,
+            "unit": "s",
+            "extra": "Commit: 21b7afe6cbae77122c01d7b9847cd7de94edb67f\nBranch: master\nTime: 2026-10-17T15:17:01+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 58.44024199100001,
+            "unit": "s",
+            "extra": "Commit: 21b7afe6cbae77122c01d7b9847cd7de94edb67f\nBranch: master\nTime: 2026-10-17T15:17:01+02:00"
           }
         ]
       }
