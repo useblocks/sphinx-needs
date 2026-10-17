@@ -19,7 +19,7 @@ from sphinx_needs.needs_schema import FieldsSchema
 from sphinx_needs.services.base import BaseService
 from sphinx_needs.services.config.github import GITHUB_SERVICES
 from sphinx_needs.services.github import GithubService
-from sphinx_needs.services.manager import NeedsServiceException
+from sphinx_needs.services.manager import NeedsServiceException, builtin_service_fix
 from sphinx_needs.utils import DummyOptionSpec, add_doc, coerce_to_boolean
 
 
@@ -44,8 +44,8 @@ def _unconfigured_builtin_hint(service: BaseService, need_type: object) -> str:
         return ""
     return (
         f" The {need_type!r} type is registered by the built-in {builtin!r} service: "
-        f"configure needs_services[{builtin!r}] (an empty entry is enough), or "
-        f"declare the {need_type!r} need type."
+        f"configure it ({builtin_service_fix(builtin)}), or declare the {need_type!r} "
+        "need type."
     )
 
 

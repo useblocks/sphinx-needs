@@ -68,25 +68,37 @@ class ServiceManager:
 
     def _unregistered_builtin(self, name: str) -> str:
         """Why the built-in service of the name is not registered, and the fix."""
-        example = (
-            f'e.g. needs_services = {{"{name}": {{}}}} in conf.py, or a '
-            f"[needs.services.{name}] table in ubproject.toml"
-        )
         configured = NeedsSphinxConfig(self.app.config).services
-        if (
-            isinstance(configured, Mapping)
-            and name in configured
-            and not isinstance(configured[name], Mapping)
-        ):
+        entry = configured.get(name) if isinstance(configured, Mapping) else None
+        if isinstance(entry, Mapping):
+            # named in the live value, but not when the services were decided
+            return (
+                f"Service {name!r} is named in needs_services, but only after the "
+                "built-in services were decided (config-inited priority 12), so it is "
+                "not registered: set it in conf.py, the needs_from_toml file, or a "
+                "config-inited handler at priority 11 or below"
+            )
+        if isinstance(configured, Mapping) and name in configured:
+            # named with a value of another kind (reported as needs.config)
             return (
                 f"Service {name!r} is a built-in service whose needs_services entry is "
                 "not a mapping of options, so it is not registered: configure it as a "
-                f"mapping, {example}"
+                f"mapping, e.g. {builtin_service_fix(name)}"
             )
         return (
             f"Service {name!r} is a built-in service that is not configured, so it is "
-            f"not registered: name it in needs_services to use it, {example}"
+            f"not registered: name it in needs_services to use it, e.g. "
+            f"{builtin_service_fix(name)}"
         )
+
+
+def builtin_service_fix(name: str) -> str:
+    """How to configure the built-in service of the name, one spelling for every
+    warning that gives it."""
+    return (
+        f'needs_services = {{"{name}": {{}}}} in conf.py, or a '
+        f"[needs.services.{name}] table in the needs_from_toml file"
+    )
 
 
 class NeedsServiceException(Exception):
