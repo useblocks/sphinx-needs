@@ -449,47 +449,13 @@ The ``needs.derive_invalid`` warnings of such a rule name the entry it came from
    [needs.types.safety_req.links.links]
    schema = { maxItems = 3 }
 
-   [needs.types.safety_req.fields.hazard]
-   description = "The hazard a safety requirement mitigates"
-   schema = { type = "string" }
-
-   [needs.types.test]
-   title = "Test case"
-   prefix = "T_"
-
-   [needs.types.test.links.verifies]
-   incoming = "is verified by"
-   outgoing = "verifies"
-
 Here a ``req`` must have an ``asil`` (``QM`` unless it says), a ``safety_req`` one of ``A`` to ``D`` (``A`` unless it says),
 and a ``safety_req`` links to three needs at most; the needs of every other type read ``asil`` and ``links`` as declared for all.
-No ``needs_fields`` entry declares ``hazard``: it is a field of the ``safety_req`` needs alone (see below).
-No ``needs_links`` entry declares ``verifies``: it is a link type of the ``test`` needs alone,
-whose links read ``verifies:``, and ``is verified by:`` on the needs they link to (see below).
 In :file:`conf.py`, the same entries are ``needs_types = {"safety_req": {"title": ..., "inherits": "req", "fields": {"asil": {...}}}, ...}``,
 and in the list shape ``dict(directive="safety_req", title=..., inherits="req", fields={"asil": {...}})``.
 In a TOML file of the list shape, a ``[needs.types.fields.asil]`` table after the ``[[needs.types]]`` tables belongs to the last of them.
 
-Where the ``asil`` and ``hazard`` of each type's needs come from, in this example:
-
-.. mermaid::
-   :alt: The asil field narrowed by req, then further by safety_req, which inherits req; hazard declared by safety_req alone; what a need of each type holds
-
-   flowchart LR
-     field["needs_fields['asil']<br/>nullable, enum QM, A, B, C, D<br/>no default"]
-     req["req declares asil<br/>not nullable, default QM"]
-     safety["safety_req inherits req<br/>and declares asil:<br/>enum A, B, C, D, default A"]
-     hazard["safety_req declares hazard<br/>no needs_fields entry declares it"]
-     test_type["test declares no asil"]
-     req_need(["a req need<br/>asil: QM unless it says<br/>hazard: None, a value set is ignored"])
-     safety_need(["a safety_req need<br/>asil: A unless it says, one of A to D<br/>hazard: None unless it says"])
-     test_need(["a test need<br/>asil: None unless it says<br/>hazard: None, a value set is ignored"])
-     field -->|narrowed by| req -->|narrowed further by| safety
-     field -->|as declared for all| test_type
-     req --> req_need
-     safety --> safety_need
-     hazard --> safety_need
-     test_type --> test_need
+For a walkthrough with diagrams, see :ref:`need_types_howto`.
 
 **Narrowing.**
 A type's declaration of a field starts from the field's own declaration, takes the declarations of its ancestors from the root down,
@@ -517,39 +483,6 @@ each is one ``needs.type_inherits`` warning, every type on a cycle reported::
 
    Need type 'a' inherits 'b' on a cycle (a -> b -> a); its inherits is ignored.
    Need type 'e' inherits 'nope', which is not a need type; its inherits is ignored.
-
-How a field or a link type that need types declare alone comes to be,
-as the two paragraphs below say in full:
-
-.. mermaid::
-   :alt: The entries naming a field or link type nothing else declares, walked parent before child; the first root declaration sets the shape, other roots repeat it or are refused; the declaring types narrow the one global declaration, and the field is absent on every other type
-
-   flowchart TD
-     entry["A fields or links entry naming<br/>a field or link type nothing else declares"]
-     walk["Its entries, in the order the types are resolved:<br/>a parent before its children"]
-     ancestor{"Does an ancestor<br/>declare it?"}
-     root["A root declaration"]
-     first["The first root declaration sets the shape:<br/>whether it is derived, and<br/>a field: its type and items' type, from the first that gives a schema type<br/>a link type, an empty declaration too: incoming, outgoing, copy,<br/>allow_dead_links, color, style, style_part, style_start, style_end"]
-     same{"Does it agree<br/>with the shape?"}
-     conflict["needs.type_conflict:<br/>the entry is ignored,<br/>and does not declare it"]
-     child["A child's declaration narrows its parent's<br/>one that cannot be used still declares it, through the parent"]
-     once["Declared once for all<br/>a field: nullable, without a default<br/>a link type: of that shape"]
-     declaring["The declaring types:<br/>by their own entry or an ancestor's"]
-     on_declaring(["A need of a declaring type:<br/>the field as its type declares it"])
-     on_other(["A need of any other type:<br/>None, a link type [] (no links)<br/>a value set is ignored, needs.undeclared_for_type"])
-     entry --> walk --> ancestor
-     ancestor -->|no| root
-     ancestor -->|yes| child
-     root --> same
-     root -.->|the first| first
-     first -.->|sets| same
-     same -->|yes| declaring
-     same -->|no| conflict
-     child --> declaring
-     first --> once
-     once -->|narrowed by| declaring
-     declaring --> on_declaring
-     declaring -->|every other type| on_other
 
 **Fields declared on need types alone.**
 A ``fields`` entry naming a field that nothing else declares -- no :ref:`needs_fields` entry, no core field, no link type,

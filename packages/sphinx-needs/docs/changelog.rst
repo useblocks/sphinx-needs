@@ -244,12 +244,17 @@ Documentation
   tables, and its ``hours``, ``amount``, ``value`` and ``unit`` fields on the need types that use
   them, a live example of :ref:`needs_types_fields` that its build checks (:pr:`2302`)
 
-- 📚 Three Mermaid diagrams: in :ref:`needs_types_fields`, where the fields of each type's needs come from
-  in its example (a field narrowed by a type and further by the type inheriting from it, and a field one type
-  declares alone), and how a field or link type declared on need types alone comes to be; in
-  :ref:`needs_processing_order`, the whole path of a need's values, from what it sets, its defaults and
-  copied links when it is created, through ``needextend``, the link fields, the back links and every other field,
-  to the checks and the schema validation. The documentation's ``docs`` extra gains ``sphinxcontrib-mermaid`` (:pr:`2309`)
+- 📚 The need-type pages are split into a walkthrough and a reference, with Mermaid diagrams (:pr:`2309`)
+
+  :ref:`need_types_howto` gains a "How it works" section before its recipes: the mental model, and two
+  diagrams on its example project -- where the fields of each type's needs come from (a field narrowed by a type and inherited by
+  the type inheriting from it, and fields one type declares alone), and how a field or link type declared
+  on need types alone comes to be. :ref:`needs_types_fields` stays the reference, every rule kept, and
+  points to the walkthrough instead of repeating its worked example. :ref:`needs_processing_order` gains
+  a diagram of the whole path of a need's values, from what it sets, its defaults and copied links when
+  it is created, through ``needextend``, the link fields, the back links and every other field, to the
+  checks and the schema validation. The :ref:`tutorial` gains a short step on a need type that
+  ``inherits`` another. The documentation's ``docs`` extra gains ``sphinxcontrib-mermaid``
 
 Internal changes
 ................

@@ -112,6 +112,27 @@ and against schema rules about whole needs and the links between them;
 
 These are reported when building the documentation if the values are not as expected.
 
+A need type that builds on another
+..................................
+
+A need type can start from another one with ``inherits``, and declare fields of its own.
+Here ``needs_types`` is a dictionary keyed by directive, the other shape it takes:
+
+.. code-block:: python
+
+    needs_types = {
+        "req": {"title": "Requirement", "prefix": "R_"},
+        "safety_req": {
+            "title": "Safety requirement",
+            "prefix": "SR_",
+            "inherits": "req",
+            "fields": {"hazard": {"description": "The hazard it mitigates", "schema": {"type": "string"}}},
+        },
+    }
+
+A ``safety_req`` has everything a ``req`` declares, plus a ``hazard`` that only safety requirements have:
+on any other need it is ``None``, and a value set there is ignored with a warning.
+:ref:`need_types_howto` walks through what a type's entry can declare, with diagrams.
 
 Referring to a need item
 ------------------------

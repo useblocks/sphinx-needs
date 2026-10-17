@@ -32,6 +32,69 @@ It has three need types; a ``safety_req`` is a kind of ``req``:
    :start-after: # [types]
    :end-before: # [/types]
 
+How it works
+------------
+
+A need type reads every field and link type as the project declares it for all types
+(:ref:`needs_fields`, :ref:`needs_links`, and the core fields such as ``status``),
+unless its own entry, or the entry of a type it inherits from, declares it anew.
+Such a declaration narrows the field for the needs of that type and of every type that inherits from it:
+fewer allowed values, a value required, a default of its own -- never more than the field allows.
+A name that nothing else declares is a field, or a link type, of the types that declare it alone:
+on the needs of every other type it is ``None`` (a link type holds no links),
+and a value set there is ignored with a warning.
+
+In this project, where the ``status``, ``hazard`` and ``verdict`` of each type's needs come from:
+
+.. mermaid::
+   :alt: status narrowed by req and inherited by safety_req, narrowed differently by test; hazard declared by safety_req alone and verdict by test alone; what a need of each type holds
+
+   flowchart LR
+     status["status, a core field<br/>any string, or None<br/>no default"]
+     req["req declares status:<br/>enum draft, approved<br/>default draft"]
+     safety["safety_req inherits req:<br/>status as req declares it"]
+     hazard["safety_req declares hazard:<br/>a string, not nullable, no default<br/>no needs_fields entry declares it"]
+     test_type["test declares status:<br/>enum open, done<br/>default open"]
+     verdict["test declares verdict:<br/>enum passed, failed<br/>no needs_fields entry declares it"]
+     req_need(["a req need<br/>status: draft unless it says, draft or approved<br/>hazard, verdict: None, a value set is ignored"])
+     safety_need(["a safety_req need<br/>status: draft unless it says, draft or approved<br/>hazard: required, else the need is not created<br/>verdict: None, a value set is ignored"])
+     test_need(["a test need<br/>status: open unless it says, open or done<br/>verdict: None unless it says<br/>hazard: None, a value set is ignored"])
+     status -->|narrowed by| req -->|inherited by| safety
+     status -->|narrowed by| test_type
+     req --> req_need
+     safety --> safety_need
+     hazard --> safety_need
+     test_type --> test_need
+     verdict --> test_need
+
+A field or link type that need types declare alone, such as ``hazard`` and ``verifies`` here,
+reaches the type that declares it and the types inheriting from it, never the types above it or beside it:
+
+.. mermaid::
+   :alt: hazard declared by safety_req alone and verifies by test alone; safety_req inherits req; what a need of each type holds
+
+   flowchart LR
+     req["req"]
+     safety["safety_req<br/>inherits req"]
+     test_type["test"]
+     hazard["hazard<br/>declared by safety_req alone"]
+     verifies["verifies, a link type<br/>declared by test alone"]
+     req_need(["a req need<br/>hazard: None, verifies: []<br/>a value set is ignored, needs.undeclared_for_type"])
+     safety_need(["a safety_req need<br/>hazard: as safety_req declares it<br/>verifies: [], a value set is ignored"])
+     test_need(["a test need<br/>verifies: its links<br/>hazard: None, a value set is ignored"])
+     req -->|inherited by| safety
+     hazard --> safety
+     verifies --> test_type
+     req --> req_need
+     safety --> safety_need
+     test_type --> test_need
+
+Every type that declares such a name agrees on its shape:
+the first declaration of a type without a declaring ancestor, in the order the types are resolved (a parent before its children),
+sets its type -- and, for a link type, its labels, styles, ``copy`` and dead links --
+and another such declaration that gives a different one is ignored, as a ``needs.type_conflict`` warning.
+The rules in full are in :ref:`needs_types_fields`.
+
 A field only one type has
 -------------------------
 
