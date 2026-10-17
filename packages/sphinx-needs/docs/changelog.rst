@@ -199,6 +199,45 @@ Deprecations
 Bug fixes
 .........
 
+- 🐛 An incremental build after a change to :ref:`needs_types` re-reads every document, as one
+  after a change to :ref:`needs_fields` does. The option only rebuilt the HTML, so the needs of the
+  documents that were not re-read kept what the previous entries gave them: a ``derive`` rule added
+  to or removed from a type entry, a field or link type it declares, its default, an ``inherits``,
+  or the type's ``title`` and ``prefix``. A field whose rule was removed held ``None`` where a fresh
+  build held its authored value. The complete list of need types is compared with the one the
+  documents were read with, so a change to a type added with
+  :func:`~sphinx_needs.api.configuration.add_need_type`, which the option does not hold, re-reads
+  every document too. An unchanged list re-reads nothing more, and the first incremental build
+  after upgrading re-reads every document once (:issue:`2287`)
+
+- 🐛 A layout's ``{{field}}`` placeholder (:ref:`layouts`) no longer stops the build with
+  ``TypeError: replace() argument 2 must be str`` when the need's value is unset or not a string. A
+  value is written as its text, a list as its values joined with ``", "`` (as ``meta`` shows them),
+  and when the field is unset or empty -- as on every need of a type that does not declare a field
+  declared on need types alone -- the layout function's element is left out, as
+  ``image("field:...")`` leaves out its image, rather than built from an empty value
+  (``_images/.png``) (:issue:`2303`)
+
+- 🐛 A :ref:`needtable`'s :ref:`sort <needtable_sort>` no longer stops the build when some needs
+  leave the field unset, as every need of a type that does not declare a field declared on need types
+  alone does: ``None`` beside a number or a string raised ``TypeError``. An unset value now comes
+  first, whatever the field's type, as an empty string already did; values of different types are
+  ordered booleans, numbers, then text, so they never meet in a comparison, and needs with equal
+  values are ordered by id (they kept the needs' own order, which could differ between a fresh and an
+  incremental build). A sort key that is not a field of the needs is a ``needs.filter`` warning, the
+  rows left in the filter's order, rather than a ``KeyError``. The :ref:`sort_by <option_sort_by>`
+  option of the filter directives crashed the same way beside a number (it compared an unset value,
+  and ``0``, as ``""``) and now orders by the same rule, comparing text as it is.
+  **A table sorted by a list field may change order**: a list is now compared as its values joined
+  with ``", "`` (by ``:sort:`` without regard to case), where it was compared value by value, with
+  regard to case (:issue:`2253`)
+
+- 🐛 A :ref:`needextend` no longer stops the HTML build with ``NotImplementedError: ...
+  departing unknown node type: Needextend`` in a project with no needs, or with
+  :ref:`needs_include_needs` set to ``False``: its node is now removed on those paths too.
+  In a project with no needs it matches nothing and says so, as it does in one with needs
+  (:issue:`2296`)
+
 - 🐛 An incremental build no longer reports
   ``The configuration has changed (… options: 'needs_layouts', 'needs_types')`` -- one
   of the two, or both -- on every build after the first (Sphinx 8.1 and later print the
@@ -211,10 +250,11 @@ Bug fixes
   sphinx-needs' own registry and read beside the configured ones, in the same order as
   before: the configured types, then the added ones, then the GitHub services' ones,
   which give way to a type or layout of their name, configured or added at any time (see
-  *Breaking changes* for what this changes for an extension). A change to a type added
-  with ``add_need_type``, or to a layout added with ``add_need_layout``, is not a
-  configuration change: as for any change to an extension's code, build with ``-E`` to
-  see it. After upgrading, the line is
+  *Breaking changes* for what this changes for an extension). A change to a layout added
+  with ``add_need_layout`` is not a configuration change: as for any change to an
+  extension's code, build with ``-E`` to see it; a change to a type added with
+  ``add_need_type`` re-reads every document, as one to :ref:`needs_types` does. After
+  upgrading, the line is
   still reported until a build re-reads a document, as the environment Sphinx loads was
   pickled with the old values: edit any page, or build once with ``-E`` (:issue:`2265`,
   :pr:`2307`)

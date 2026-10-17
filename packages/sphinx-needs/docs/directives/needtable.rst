@@ -311,10 +311,29 @@ sort
 
 Option to sort the filtered-results based on a key.
 
-The sort-value must be compatible with the options supported by the :ref:`filter_string`, and the addressed need-value
-must have the type ``string``, ``float`` or ``int``.
+The sort-value must be compatible with the options supported by the :ref:`filter_string`.
+A key that is not a field of the needs is reported as a ``needs.filter`` warning,
+and the rows are left in the order the filter returned them.
 
 By default, we use ``id_complete`` if we don't set a sort option.
+
+A need whose value is unset (``None``) comes first, whatever the field's type,
+as one with an empty string does.
+This is the case for every need of a type that does not declare a field declared on need types alone
+(see :ref:`needs_types`).
+The other values are grouped, so that values of different types are never compared:
+booleans, then numbers, then text.
+Text is compared without regard to case; a list is compared as its values joined with ``", "``,
+and any other value as its text.
+Needs with equal values are ordered by id.
+
+.. versionchanged:: 9.1.0
+
+   An unset value comes first, and equal values are ordered by id.
+   Before, sorting by a field some needs leave unset stopped the build
+   (``'<' not supported between instances of 'NoneType' and 'int'``), as did an unknown key;
+   a list was compared item by item, with regard to case;
+   and equal values kept the needs' own order, which could differ between a fresh and an incremental build.
 
 .. syntax-example::
 

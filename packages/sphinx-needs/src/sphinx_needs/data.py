@@ -1061,6 +1061,19 @@ class SphinxNeedsData:
     def needs_is_post_processed(self, value: bool) -> None:
         self.env._needs_is_post_processed = value
 
+    @property
+    def need_types_read_with(self) -> list[dict[str, Any]] | None:
+        """The need types the documents of the environment were read with.
+
+        ``None`` for an environment that has not recorded them: a fresh one, or one
+        pickled before they were recorded.
+        """
+        return getattr(self.env, "_needs_types_read_with", None)
+
+    @need_types_read_with.setter
+    def need_types_read_with(self, value: list[dict[str, Any]]) -> None:
+        self.env._needs_types_read_with = value
+
     def get_or_create_services(self) -> ServiceManager:
         """Get information about services.
 

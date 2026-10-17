@@ -295,6 +295,18 @@ The line for the ``side`` area could look like::
 
    '<<image("_images/{{author}}.png", align="center")>>'
 
+The value is written as its text, and a list as its values joined with ``", "``, as ``meta`` shows them.
+If the need leaves the field unset or empty (``None``, ``""`` or ``[]``) -- as every need of a type
+that does not declare a field declared on need types alone does --
+the layout function is not called and its element is left out,
+as ``image("field:...")`` leaves out the image of a need whose field is unset:
+the line above shows no image for a need without an ``author``, rather than one at ``_images/.png``.
+
+.. versionchanged:: 9.1.0
+
+   An unset value, or a value that is not a string, used to stop the build
+   (``replace() argument 2 must be str``).
+
 .. spec:: My test spec
    :author: daniel
    :id: IMAGE_EXAMPLE

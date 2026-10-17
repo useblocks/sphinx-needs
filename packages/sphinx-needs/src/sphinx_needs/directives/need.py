@@ -407,6 +407,12 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     Event handler to add title meta data (status, tags, links, ...) information to the Need node. Also processes
     constraints.
     """
+    # first, before either early return: no writer has a visitor for a needextend's
+    # node, which has done its work by now (#2296). The other directive nodes are
+    # processed by ``process_creator``, which neither return skips.
+    for extend_node in list(doctree.findall(Needextend)):
+        remove_node_from_tree(extend_node)
+
     needs_config = NeedsSphinxConfig(app.config)
     if not needs_config.include_needs:
         for node in doctree.findall(Need):
@@ -419,9 +425,6 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     # If no needs were defined, we do not need to do anything
     if not needs_data.get_needs_view():
         return
-
-    for extend_node in list(doctree.findall(Needextend)):
-        remove_node_from_tree(extend_node)
 
     format_need_nodes(app, doctree, fromdocname, list(doctree.findall(Need)))
 
