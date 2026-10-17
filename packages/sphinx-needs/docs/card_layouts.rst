@@ -447,10 +447,9 @@ A header without a meta region leaves an empty band
    id in the normal reading direction.
 
 Layouts registered by services are not part of the collision set
-   Services register their layouts later in the build than card layouts are compiled, so a
-   card named after one of them — ``github``, for the :ref:`GitHub service <github_service>`
-   — takes precedence over it silently, exactly as a :ref:`needs_layouts` entry of that name
-   does today.
+   A layout a service registers is read after every configured layout, so a card named after
+   one of them — ``github``, for a configured :ref:`GitHub service <github_service>` — takes
+   precedence over it silently, exactly as a :ref:`needs_layouts` entry of that name does.
 
 Invalid specifications
 ----------------------

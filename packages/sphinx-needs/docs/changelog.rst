@@ -10,6 +10,12 @@ Unreleased
 Improvements
 ............
 
+- 👌 A :ref:`needservice` naming a service that is not registered is one
+  ``needs.load_service_need`` warning, checked before the directive's options: for a
+  built-in GitHub service that is not configured it says so and gives the configuration to
+  add (see *Breaking changes*), and with no service registered at all it says
+  ``could not be found: no service is registered`` where it listed none
+
 - ✨ :func:`~sphinx_needs.api.configuration.add_need_layout` adds a need layout from an
   extension, beside :ref:`needs_layouts`, as ``add_need_type`` adds a need type (:issue:`2265`, :pr:`2307`)
 
@@ -138,16 +144,66 @@ Improvements
 Breaking changes
 ................
 
+- ‼️ The built-in GitHub services ``github-issues``, ``github-prs`` and ``github-commits`` are
+  registered only when :ref:`needs_services` names them
+
+  They were registered in every build, so every project carried their twelve fields
+  (``url``, ``user``, ``avatar``, ``service``, ``created_at``, ``updated_at``, ``closed_at``,
+  ``query``, ``specific``, ``max_amount``, ``max_content_lines``, ``id_prefix``), null on
+  every need of its :ref:`needs.json <needs_builder_format>`, their three need types
+  ``issue``, ``pr`` and ``commit`` in every legend and :ref:`needreport`, and the ``github``
+  layout, whether or not it used GitHub. Now a built-in is registered only when
+  :ref:`needs_services` names it with a mapping of options -- ``{}`` will do -- in
+  :file:`conf.py` or as a ``[needs.services.<name>]`` table of the :ref:`needs_from_toml`
+  file. A configured service brings the twelve fields, the ``github`` layout and its own need
+  type alone (``github-issues`` brings ``issue``); a project that names none has none of
+  them. What to do:
+
+  - A :ref:`needservice` naming a built-in service now needs its entry; without it the
+    directive creates nothing and warns, for example ``Service 'github-issues' is a
+    built-in service that is not configured, so it is not registered: name it in
+    needs_services to use it, ... [needs.load_service_need]``:
+
+    .. code-block:: python
+
+       needs_services = {"github-issues": {}}
+
+    .. code-block:: toml
+
+       [needs.services.github-issues]
+
+  - A hand-written ``.. issue::``, ``.. pr::`` or ``.. commit::`` (or a type that
+    ``inherits`` one, or ``:layout: github``) needs the service configured, or the type
+    declared in :ref:`needs_types` (and a ``github`` entry in :ref:`needs_layouts`).
+  - ``:url:``, ``:user:`` and the other ten set on needs of your own types are now
+    ``Unknown option`` warnings and dropped, and a filter, :ref:`needs_warnings` check or
+    needtable ``:columns:`` naming one finds no such field: declare them in
+    :ref:`needs_fields` (or configure a service).
+  - The needs.json of a project that configures no service no longer carries the twelve
+    keys, nor their ``needs_schema`` entries, nor the three types; a consumer indexing them
+    reads them with a default. A needs.json written by an earlier version still imports
+    (:ref:`needimport`, :ref:`needs_external_needs`) without a warning: a project with no
+    service drops the twelve keys silently where they are null or ``""``, and reports one
+    holding a value as an unknown key, as before.
+  - A service of your own built on ``GithubService``, such as the
+    :ref:`GitHub Enterprise example <service_github_custom>`, gets no need type and no
+    layout from its class: configure the built-in service it imitates too (as that example
+    does), or declare the type in :ref:`needs_types`.
+
+  An extension reading :func:`~sphinx_needs.api.configuration.get_need_types` finds
+  ``issue``, ``pr`` and ``commit`` only for the configured services, listed from
+  ``config-inited`` priority 12 on.
+
 - ‼️ ``app.config.needs_types`` and ``app.config.needs_layouts`` no longer hold the need
-  types and layouts added by extensions or by the GitHub services, and the types and
+  types and layouts added by extensions or by the configured GitHub services, and the types and
   layouts sphinx-needs reads cannot be changed through ``NeedsSphinxConfig`` (:issue:`2265`, :pr:`2307`)
 
   The two values hold what the project configures -- ``needs_layouts`` also sphinx-needs'
   own layouts and the compiled :ref:`needs_card_layouts`, as before -- so Sphinx compares
   the same values on both sides of an incremental build. A type added with
-  :func:`~sphinx_needs.api.configuration.add_need_type`, the GitHub services' ``issue``,
-  ``pr`` and ``commit``, and their ``github`` layout are kept in sphinx-needs' own
-  registry instead.
+  :func:`~sphinx_needs.api.configuration.add_need_type`, the configured GitHub services'
+  ``issue``, ``pr`` and ``commit``, and their ``github`` layout are kept in sphinx-needs'
+  own registry instead.
 
   An extension that looks a need's type up in ``app.config.needs_types`` (or a layout
   in ``app.config.needs_layouts``) no longer finds the added and the GitHub services'
@@ -176,9 +232,10 @@ Breaking changes
   has resolved the configured types to their list, and before it registers their
   directives. Such an entry is part of the configuration, as a project's own is.
 
-  The GitHub services' types are read from the start of the build, so a
-  ``config-inited`` handler now sees ``issue``, ``pr`` and ``commit`` too, after the
-  types added by then; they used to appear only from ``env-before-read-docs``.
+  The configured GitHub services' types are read from ``config-inited`` priority 12 on,
+  so a ``config-inited`` handler at a priority above 12 now sees each configured one of
+  ``issue``, ``pr`` and ``commit`` too, after the types added by then; they used to appear
+  only from ``env-before-read-docs``.
 
 Deprecations
 ............
@@ -266,7 +323,7 @@ Bug fixes
   configuration with the one pickled by the previous build. They, and every need type
   added with :func:`~sphinx_needs.api.configuration.add_need_type`, are now kept in
   sphinx-needs' own registry and read beside the configured ones, in the same order as
-  before: the configured types, then the added ones, then the GitHub services' ones,
+  before: the configured types, then the added ones, then the configured GitHub services' ones,
   which give way to a type or layout of their name, configured or added at any time (see
   *Breaking changes* for what this changes for an extension). A change to a layout added
   with ``add_need_layout`` is not a configuration change: as for any change to an
@@ -278,10 +335,15 @@ Bug fixes
   :pr:`2307`)
 
 - 🐛 Configuring your own ``issue`` or ``pr`` need type -- or adding one with
-  ``add_need_type`` from another extension -- no longer stops the GitHub services from
-  adding their other need types: a configured ``issue`` dropped ``pr`` and ``commit``, and
-  a configured ``pr`` dropped ``commit``. Each of the three now gives way on its own
-  (:pr:`2307`)
+  ``add_need_type`` from another extension -- no longer stops the configured GitHub
+  services from adding their other need types: a configured ``issue`` dropped ``pr`` and
+  ``commit``, and a configured ``pr`` dropped ``commit``. Each of the three now gives way
+  on its own (:pr:`2307`)
+
+- 🐛 A built-in GitHub service named in :ref:`needs_services` with a value that is not a
+  mapping of options -- ``-D needs_services.github-issues=1`` sets the string ``'1'`` --
+  no longer ends the build with ``AttributeError: 'str' object has no attribute 'get'``:
+  it is a ``needs.config`` warning, and the service is not registered
 
 - 🐛 Under :ref:`needs_json_remove_defaults`, a value equal to its field's default but of
   another JSON type (``1.0`` against a default of ``1``, ``[1.0]`` against ``[1]``) is now
