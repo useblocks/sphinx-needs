@@ -142,7 +142,8 @@ Schema
 .. automodule:: sphinx_needs.needs_schema
    :members: FieldsSchema, TypeFieldsSchema, FieldShape, LinkShape, FieldSchema,
              FieldFunctionArray, LinksFunctionArray, FieldLiteralValue, LinkSchema,
-             LinkDisplayConfig, LinksLiteralValue, AllowedTypes, narrowing_problems
+             LinkDisplayConfig, LinkTargetTypes, LinksLiteralValue, AllowedTypes,
+             narrowing_problems
 
 .. automodule:: sphinx_needs.derive
    :members: DeriveRule, DeriveJoin, DeriveInvalid, DeriveCall

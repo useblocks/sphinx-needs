@@ -51,6 +51,7 @@ nullable = false
 incoming = "is verified by"
 outgoing = "verifies"
 schema = { minItems = 1 }
+target_types = ["req"]
 # [/verifies]
 
 # [defaults]

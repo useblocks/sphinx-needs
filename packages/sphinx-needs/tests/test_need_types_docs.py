@@ -46,6 +46,10 @@ SCHEMA_PER_TYPE_WARNINGS = [
     "<srcdir>/index.rst:27: WARNING: Link type 'verifies' is not declared on need type "
     "'spec' and cannot be set in need 'S_003'; the value 'R_001' is ignored "
     "[needs.undeclared_for_type]",
+    # The link check: a test's target types accept a req, or a type inheriting from it.
+    "<srcdir>/index.rst:36: WARNING: Need 'T_002' link 'S_002' in field 'verifies': "
+    "target need type 'spec' is not one of 'req' (or a type inheriting from it), as "
+    "need type 'test' declares it [needs.link_target_type]",
     # The need that was not created is a dead link target.
     "<srcdir>/index.rst:43: WARNING: Need 'T_004' has unknown outgoing link 'SR_002' "
     "in field 'verifies' [needs.link_outgoing]",
@@ -105,15 +109,16 @@ SCHEMA_PER_TYPE_WARNINGS = [
             "  Schema message: [] has less than 1 item [sn_schema_violation.link_fail]",
         ],
     ),
+    # The schema rule: what the target types cannot say, a linked need's fields.
     _schema_record(
         "ERROR: Need 'S_002' has schema violations:",
         severity="violation",
-        field="type",
+        field=None,
         need_path="T_002 > verifies > S_002",
         rest=[
-            "  Schema path:    test-verifies-req[1] > validate > network > verifies > "
-            "items > local > properties > type > enum",
-            '  Schema message: "spec" is not one of "req" or "safety_req" '
+            "  Schema path:    test-verifies-rated[1] > validate > network > verifies > "
+            "items > local > required",
+            '  Schema message: "asil" is a required property '
             "[sn_schema_violation.network_local_fail]",
         ],
     ),
@@ -123,9 +128,22 @@ SCHEMA_PER_TYPE_WARNINGS = [
         field=None,
         need_path="T_004 > verifies",
         rest=[
-            "  Schema path:    test-verifies-req[1] > validate > network > verifies",
+            "  Schema path:    test-verifies-rated[1] > validate > network > verifies",
             "  Schema message: Broken link of type 'verifies' to 'SR_002' "
             "[sn_schema_violation.network_missing_target]",
+        ],
+    ),
+    # A req the target types accept, which the rule reports for its missing ASIL.
+    _schema_record(
+        "ERROR: Need 'R_002' has schema violations:",
+        severity="violation",
+        field=None,
+        need_path="T_005 > verifies > R_002",
+        rest=[
+            "  Schema path:    test-verifies-rated[1] > validate > network > verifies > "
+            "items > local > required",
+            '  Schema message: "asil" is a required property '
+            "[sn_schema_violation.network_local_fail]",
         ],
     ),
 ]
@@ -139,10 +157,11 @@ SCHEMA_PER_TYPE_WARNINGS = [
 def test_schema_per_type_example(test_app: SphinxTestApp) -> None:
     """The example of "Per-type configuration or schema rules?" reports what the page quotes.
 
-    The two enforcement modes side by side: the structural declarations report while
+    The three enforcement modes side by side: the structural declarations report while
     reading, with a location, and drop a value or the whole need (``SR_002``); the
-    constraint keywords of a type entry report in the schema pass, beside the schema
-    rules, and keep the need.
+    target types report where the links are resolved, with the source need's location,
+    and keep the link; the constraint keywords of a type entry report in the schema
+    pass, beside the schema rules, and keep the need.
     """
     test_app.build()
     assert build_warnings(test_app) == SCHEMA_PER_TYPE_WARNINGS
@@ -160,6 +179,7 @@ def test_schema_per_type_example(test_app: SphinxTestApp) -> None:
         "T_002",
         "T_003",
         "T_004",
+        "T_005",
     ]
     # The value of a link type the need's type does not declare is dropped.
     assert needs["S_003"]["verifies"] == []
@@ -175,6 +195,10 @@ NEED_TYPES_WARNINGS = [
     "[needs.undeclared_for_type]",
     "<srcdir>/index.rst:25: WARNING: Need could not be created: Field 'hazard' is not "
     "nullable, but no value or default was given. [needs.create_need]",
+    # The link check: a test verifies a req, or a type inheriting from it; not a test.
+    "<srcdir>/index.rst:58: WARNING: Need 'T_003' link 'T_001' in field 'verifies': "
+    "target need type 'test' is not one of 'req' (or a type inheriting from it), as "
+    "need type 'test' declares it [needs.link_target_type]",
     _schema_record(
         "ERROR: Need 'R_003' has schema violations:",
         severity="violation",
@@ -222,8 +246,8 @@ def test_need_types_example(test_app: SphinxTestApp) -> None:
     """The example of the "Modeling need types" how-to does what the page says.
 
     Pins the warnings the page quotes, the need its required field drops, the values the
-    per-type defaults give (a subtype included), and what each of the three filters over
-    a field of one type lists.
+    per-type defaults give (a subtype included), the link its target types refuse (and
+    keep), and what each of the three filters over a field of one type lists.
     """
     test_app.build()
     assert build_warnings(test_app) == NEED_TYPES_WARNINGS
@@ -236,6 +260,7 @@ def test_need_types_example(test_app: SphinxTestApp) -> None:
         "SR_001",
         "T_001",
         "T_002",
+        "T_003",
     ]
 
     needs = SphinxNeedsData(test_app.env).get_needs_view()
@@ -243,6 +268,8 @@ def test_need_types_example(test_app: SphinxTestApp) -> None:
     assert needs["R_001"]["status"] == "draft"
     assert needs["SR_001"]["status"] == "draft"
     assert needs["T_001"]["status"] == "open"
+    # A link the target types refuse is reported, and kept.
+    assert needs["T_003"]["verifies"] == ["T_001"]
     # A field of tests alone: set on a test, dropped from a req, None on the others.
     assert needs["T_001"]["verdict"] == "passed"
     assert needs["R_002"]["verdict"] is None
@@ -433,8 +460,8 @@ def _schema_page_section() -> str:
 @pytest.mark.parametrize(
     ("page", "pinned", "count"),
     [
-        ("schema", SCHEMA_PER_TYPE_WARNINGS, 7),
-        ("need_types", NEED_TYPES_WARNINGS, 6),
+        ("schema", SCHEMA_PER_TYPE_WARNINGS, 8),
+        ("need_types", NEED_TYPES_WARNINGS, 7),
     ],
 )
 def test_docs_quote_the_pinned_warnings(

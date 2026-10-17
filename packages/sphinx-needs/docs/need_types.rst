@@ -209,7 +209,8 @@ A link type only one type may use
 
 A ``links`` entry can name a link type that nothing else declares;
 it is then a link type of that type's needs alone, with its labels.
-A ``minItems`` or ``maxItems`` sets how many links a need of the type has:
+A ``minItems`` or ``maxItems`` sets how many links a need of the type has,
+and ``target_types`` which need types they may point to:
 
 .. literalinclude:: ../tests/doc_test/doc_need_types/ubproject.toml
    :language: toml
@@ -228,8 +229,32 @@ A ``test`` without ``verifies`` links is reported:
      Schema message: [] has less than 1 item [sn_schema_violation.link_fail]
 
 ``verifies`` set on a need of another type is ignored with a ``needs.undeclared_for_type`` warning, as for a field.
-Which types a ``test`` may link to is a rule about the linked needs: that takes a schema rule,
-see :ref:`schema_per_type_still_rules`.
+
+A ``test`` verifies a ``req``, or a need of a type inheriting from ``req``, such as a ``safety_req``.
+A link to a need of another type is reported at the need it is set in, and kept:
+
+.. code-block:: text
+
+   index.rst:58: WARNING: Need 'T_003' link 'T_001' in field 'verifies': target need type 'test' is not one of 'req' (or a type inheriting from it), as need type 'test' declares it [needs.link_target_type]
+
+.. mermaid::
+   :alt: a test's verifies links may point to a req, or a safety_req, which inherits req; a link to another test is reported
+
+   flowchart LR
+     test_type["a test need<br/>verifies: target_types = [req]"]
+     req["a req need<br/>✓ accepted"]
+     safety["a safety_req need<br/>✓ accepted: inherits req"]
+     other["another test need<br/>✗ needs.link_target_type"]
+     test_type -->|verifies| req
+     test_type -->|verifies| safety
+     test_type -->|verifies| other
+
+``target_types`` restricts the outgoing links alone, and only the type of the need they point to.
+It is checked once every link is final, whether or not the :ref:`schema validation <schema_validation>` runs,
+and a dead link is reported as a dead link instead.
+A type inheriting from ``test`` may narrow the list, never add to it (see :ref:`needs_types_fields`).
+Since a subtype is accepted, "a ``req`` but not a ``safety_req``" takes a schema rule,
+as does anything else about the linked needs, such as their status: see :ref:`schema_per_type_still_rules`.
 
 Defaults per type
 -----------------
@@ -332,7 +357,7 @@ A misspelt field name
 When to use schema rules
 ------------------------
 
-A type's entry says what a need of the type may hold.
-Rules about the needs it links to, incoming links, conditions between fields
+A type's entry says what a need of the type may hold, and the types of the needs its links may point to.
+Rules about the needs it links to beyond their type, incoming links, conditions between fields
 and the other cases of :ref:`schema_per_type_still_rules` take :ref:`schema rules <schema_validation>`;
 :ref:`schema_per_type_or_rules` compares the two, and how each reports.

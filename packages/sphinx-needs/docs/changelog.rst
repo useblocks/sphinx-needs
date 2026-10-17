@@ -10,6 +10,22 @@ Unreleased
 Improvements
 ............
 
+- ✨ A link type's ``target_types`` lists the need types its links may point to (:issue:`2300`)
+
+  ``target_types = ["req"]`` on a :ref:`needs_links` entry (or a ``needs_extra_links`` one, or
+  ``[needs.links.<l>]``) accepts a link to a ``req``, or to a need of any type inheriting from ``req``,
+  and reports every other link, at the need it is set in, as ``needs.link_target_type``; the link is
+  kept. A need type's ``links`` entry may narrow it for its needs and the types inheriting from it
+  (a listed type's subtypes, or fewer types; anything else is a ``needs.type_widening``), and each need
+  type declaring a link type alone gives its own. It is checked once every link is final, whether or not
+  the schema validation runs, and unlike a schema rule's ``type`` it follows ``inherits``. Dead links are
+  left to the dead-link warning, a part link is checked by its need's type, the links of a need from
+  :ref:`needs_external_needs` are reported as ``needs.external_link_target_type``, and a link a ``copy``
+  link type copies into ``links`` is not checked against the ``target_types`` of ``links``. A derived link
+  type takes none in this release, and a name that is no need type is a ``needs.config`` warning, and
+  ignored. The field-declaration conformance corpus pins it (``link-target-types-*``), with two new shared
+  codes, ``link_target_type`` and ``external_link_target_type``.
+
 - ✨ :func:`~sphinx_needs.api.configuration.add_need_layout` adds a need layout from an
   extension, beside :ref:`needs_layouts`, as ``add_need_type`` adds a need type (:issue:`2265`, :pr:`2307`)
 
