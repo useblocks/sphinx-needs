@@ -2291,7 +2291,12 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 None,
             )
         _set_global_default(
-            schema, "needs_global_options", name, default_config, allow_coercion=True
+            schema,
+            "needs_global_options",
+            name,
+            default_config,
+            allow_coercion=True,
+            declared=_needs_fields_defaults(needs_config, registered, name),
         )
 
     _report_derive_problems(schema, derive_problems, need_types, spellings)
@@ -3263,6 +3268,31 @@ class _DefaultsDictType(TypedDict, total=False):
     default: Any
 
 
+def _needs_fields_defaults(
+    needs_config: NeedsSphinxConfig,
+    registered: Mapping[str, NewFieldParams],
+    name: str,
+) -> dict[str, Any]:
+    """The ``default`` and ``predicates`` the ``needs_fields`` entry of a field sets.
+
+    A key counts when the entry is the field's declaration (a core field's entry, or
+    the one the field is registered from) and the key is given, not ``None``: a field
+    declared there without it takes the ``needs_global_options`` value, as before.
+    """
+    entry = needs_config._fields.get(name)
+    if not isinstance(entry, dict):
+        return {}
+    if name not in NeedsCoreFields and (
+        (params := registered.get(name)) is None or params.source != "needs_fields"
+    ):
+        return {}
+    return {
+        key: entry[key]
+        for key in ("default", "predicates")
+        if entry.get(key) is not None
+    }
+
+
 def _set_global_default(
     schema: FieldsSchema,
     config_name: str,
@@ -3270,7 +3300,16 @@ def _set_global_default(
     values: _DefaultsDictType,
     *,
     allow_coercion: bool,
+    declared: Mapping[str, Any] | None = None,
 ) -> None:
+    """Set a field's ``needs_global_options`` default and predicates.
+
+    :param declared: The ``default`` and ``predicates`` the field's ``needs_fields``
+        entry sets: those win, and a key set in both is ignored here and reported,
+        in one warning for the field (:issue:`2264`). ``None`` is none.
+    """
+    if declared is None:
+        declared = {}
     if not isinstance(values, dict):
         log_warning(
             LOGGER,
@@ -3299,12 +3338,33 @@ def _set_global_default(
             None,
         )
         return
+    # a key needs_fields sets too is needs_fields': this one is ignored, and reported
+    set_default = "default" in values and "default" not in declared
+    set_predicates = "predicates" in values and "predicates" not in declared
+    if both := [
+        key for key in ("default", "predicates") if key in values and key in declared
+    ]:
+        verb = "is" if len(both) == 1 else "are"
+        ignored = " and ".join(
+            f"{config_name}[{name!r}][{key!r}] ({values.get(key)!r})" for key in both
+        )
+        used = " and ".join(
+            f"needs_fields[{name!r}][{key!r}] ({declared[key]!r})" for key in both
+        )
+        log_warning(
+            LOGGER,
+            f"{ignored} {verb} ignored: {used} {verb} used instead",
+            "config",
+            None,
+        )
+        if not (set_default or set_predicates):
+            return
     # the defaults are set on a copy, not yet in the schema, which then replaces the
     # field: a field in the schema is not changed in place (FieldsSchema.freeze)
     field = dataclasses.replace(field_for_default)
-    if "default" in values:
+    if set_default:
         _set_default_on_field(field, values["default"], config_name, allow_coercion)
-    if "predicates" in values:
+    if set_predicates:
         _set_predicates_on_field(
             field, values["predicates"], config_name, allow_coercion
         )

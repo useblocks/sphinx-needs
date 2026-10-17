@@ -199,6 +199,14 @@ Deprecations
 Bug fixes
 .........
 
+- 🐛 A field's ``default`` or ``predicates`` set both in its :ref:`needs_fields` entry and in the
+  deprecated :ref:`needs_global_options` is taken from :ref:`needs_fields`, and the
+  ``needs_global_options`` value is reported as ignored, in one ``needs.config`` warning per field
+  naming both values. The legacy value replaced the ``needs_fields`` one silently, so every need that
+  did not set the field held it. A field :ref:`needs_fields` declares without the key still takes the
+  ``needs_global_options`` value, a core field narrowed in :ref:`needs_fields` follows the same rule,
+  and a need type's own declaration still wins over both (:issue:`2264`)
+
 - 🐛 An incremental build after a change to :ref:`needs_types` re-reads every document, as one
   after a change to :ref:`needs_fields` does. The option only rebuilt the HTML, so the needs of the
   documents that were not re-read kept what the previous entries gave them: a ``derive`` rule added
