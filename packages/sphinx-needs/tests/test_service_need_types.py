@@ -532,6 +532,18 @@ def test_a_copy_of_a_view_is_a_plain_value(plain_app: Any) -> None:
             assert duplicate == value
 
 
+def test_add_need_layout_keeps_its_own_copy(plain_app: Any) -> None:
+    """The registry keeps a deep copy of an added layout: a later change to the
+    caller's value, a nested one too, does not reach what the views read."""
+    from sphinx_needs.api import add_need_layout
+
+    layout: dict[str, Any] = {"grid": "simple", "layout": {"head": ["Mine"]}}
+    add_need_layout(plain_app, "mine", layout)
+    layout["layout"]["head"].append("Changed")
+    layouts = NeedsSphinxConfig(plain_app.config).layouts
+    assert layouts["mine"]["layout"]["head"] == ["Mine"]
+
+
 def test_the_registry_keeps_its_own_copy_of_the_service_entries(
     plain_app: Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
