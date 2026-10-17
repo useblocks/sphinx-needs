@@ -1456,6 +1456,12 @@ def reread_on_need_types_change(
     configured types alone. The list is compared against the one recorded when the
     documents were read. Documents are added to ``docnames``, which this event allows.
 
+    The configured built-in GitHub services are compared too: each registers twelve
+    fields and the ``github`` layout, which the needs of every document are created
+    with, while its need type may be the project's own, leaving the list unchanged. An
+    environment that has not recorded them -- one pickled by a version that registered
+    them in every build -- is re-read once.
+
     :param app: The Sphinx application.
     :param env: The build environment.
     :param docnames: The documents Sphinx is about to read; extended in place.
@@ -1464,14 +1470,22 @@ def reread_on_need_types_change(
     need_types = deepcopy(
         [dict(entry) for entry in NeedsSphinxConfig(app.config).types]
     )
+    builtin_services = tuple(_NEEDS_CONFIG.builtin_services)
     if data.need_types_read_with != need_types:
+        changed = "needs_types"
+    elif data.builtin_services_read_with != builtin_services:
+        changed = "the configured built-in services"
+    else:
+        changed = None
+    if changed is not None:
         unread = sorted(env.found_docs.difference(docnames))
         if unread:
             LOGGER.info(
-                f"needs_types changed: re-reading {len(unread)} unchanged document(s)"
+                f"{changed} changed: re-reading {len(unread)} unchanged document(s)"
             )
             docnames.extend(unread)
     data.need_types_read_with = need_types
+    data.builtin_services_read_with = builtin_services
 
 
 def merge_default_configs(_app: Sphinx, config: Config) -> None:
