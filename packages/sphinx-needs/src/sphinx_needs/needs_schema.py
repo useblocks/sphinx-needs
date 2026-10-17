@@ -2320,6 +2320,8 @@ def narrowing_problems(
                 # the names whose types the parent does not accept: a listed type's
                 # subtypes are accepted with it, so a name the parent accepts adds none
                 added = [name for name in child.names if name not in parent.types]
+                # never empty: the parent's set holds every subtype of what it holds, so
+                # a type the child adds comes from a name outside it; a guard only
                 added = added or sorted(child.types - parent.types)
                 problems.append(
                     f"Child 'target_types' accept "

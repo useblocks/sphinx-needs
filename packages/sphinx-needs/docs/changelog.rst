@@ -19,7 +19,7 @@ Improvements
   and the types inheriting from it (within the types it inherits, the subtypes of a listed type included;
   anything else is a ``needs.type_widening``), and each root of a link type declared on need types alone
   gives its own. It is checked once every link is final, whether or not the schema validation runs, and
-  unlike a filter or a schema rule's ``type`` it follows ``inherits``. Dead links are left to the dead-link
+  unlike a filter or a schema rule's ``const`` it follows ``inherits``. Dead links are left to the dead-link
   warning, a part link is checked by its need's type, the links of a need from
   :ref:`needs_external_needs` are reported as ``needs.external_link_target_type``, and a link of ``links``
   that the need also holds in a ``copy`` link type is not checked against the ``target_types`` of

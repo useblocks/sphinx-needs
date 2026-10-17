@@ -1518,7 +1518,7 @@ Each configured link can define:
   and a link to a need from :ref:`needimport` or :ref:`needs_external_needs` by that need's type.
   The links of an imported need are reported at its ``needimport``,
   and those of a need from :ref:`needs_external_needs` as ``needs.external_link_target_type``, with its URL and no place in a document.
-  A link of ``links`` that the need also holds, the same target and part, in a ``copy`` link type
+  A link of ``links`` that the need also holds, the same target and part, whatever its condition, in a ``copy`` link type
   is not checked against the ``target_types`` of ``links``, whether it was copied or written by hand.
   A link written twice is one link, and reported once.
   A value that is not a non-empty list of names is one ``needs.config`` warning, and ignored.
