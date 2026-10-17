@@ -11,6 +11,14 @@ CONFIG_OPTIONS = [
     "max_content_lines",
     "id_prefix",
 ]
+#: the built-in GitHub services, by name, each with its GitHub type -- which is the
+#: directive of the need type it adds, too. Each is registered only when
+#: ``needs_services`` configures it
+GITHUB_SERVICES = {
+    "github-issues": "issue",
+    "github-prs": "pr",
+    "github-commits": "commit",
+}
 #: the fields a GitHub service registers: its options but ``type``, a core field
 GITHUB_FIELDS = tuple(
     option

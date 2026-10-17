@@ -4,12 +4,10 @@
     'NEED-002': dict({
       'arch': dict({
       }),
-      'avatar': None,
       'checks': list([
       ]),
       'checks_back': list([
       ]),
-      'closed_at': None,
       'collapse': False,
       'completion': None,
       'constraints': list([
@@ -19,7 +17,6 @@
       'constraints_results': dict({
       }),
       'content': '',
-      'created_at': None,
       'docname': 'index',
       'doctype': '.rst',
       'duration': None,
@@ -31,7 +28,6 @@
       'id': 'NEED-002',
       'id_complete': 'NEED-002',
       'id_parent': 'NEED-002',
-      'id_prefix': None,
       'is_external': False,
       'is_import': False,
       'is_modified': False,
@@ -45,8 +41,6 @@
       ]),
       'links_back': list([
       ]),
-      'max_amount': None,
-      'max_content_lines': None,
       'modifications': 0,
       'parent_need': None,
       'parent_needs': list([
@@ -61,14 +55,11 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'query': None,
       'section_name': 'TEST DOCUMENT LIST2NEED',
       'sections': tuple(
         'TEST DOCUMENT LIST2NEED',
       ),
-      'service': None,
       'signature': None,
-      'specific': None,
       'status': None,
       'style': None,
       'tags': list([
@@ -84,19 +75,14 @@
       'type_name': 'User Story',
       'type_prefix': 'US_',
       'type_style': 'node',
-      'updated_at': None,
-      'url': None,
-      'user': None,
     }),
     'NEED-003': dict({
       'arch': dict({
       }),
-      'avatar': None,
       'checks': list([
       ]),
       'checks_back': list([
       ]),
-      'closed_at': None,
       'collapse': False,
       'completion': None,
       'constraints': list([
@@ -106,7 +92,6 @@
       'constraints_results': dict({
       }),
       'content': '',
-      'created_at': None,
       'docname': 'index',
       'doctype': '.rst',
       'duration': None,
@@ -118,7 +103,6 @@
       'id': 'NEED-003',
       'id_complete': 'NEED-003',
       'id_parent': 'NEED-003',
-      'id_prefix': None,
       'is_external': False,
       'is_import': False,
       'is_modified': False,
@@ -132,8 +116,6 @@
       ]),
       'links_back': list([
       ]),
-      'max_amount': None,
-      'max_content_lines': None,
       'modifications': 0,
       'parent_need': 'NEED-002',
       'parent_needs': list([
@@ -147,14 +129,11 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'query': None,
       'section_name': 'TEST DOCUMENT LIST2NEED',
       'sections': tuple(
         'TEST DOCUMENT LIST2NEED',
       ),
-      'service': None,
       'signature': None,
-      'specific': None,
       'status': None,
       'style': None,
       'tags': list([
@@ -170,19 +149,14 @@
       'type_name': 'Specification',
       'type_prefix': 'SP_',
       'type_style': 'node',
-      'updated_at': None,
-      'url': None,
-      'user': None,
     }),
     'NEED-1': dict({
       'arch': dict({
       }),
-      'avatar': None,
       'checks': list([
       ]),
       'checks_back': list([
       ]),
-      'closed_at': None,
       'collapse': False,
       'completion': None,
       'constraints': list([
@@ -192,7 +166,6 @@
       'constraints_results': dict({
       }),
       'content': '',
-      'created_at': None,
       'docname': 'options',
       'doctype': '.rst',
       'duration': None,
@@ -204,7 +177,6 @@
       'id': 'NEED-1',
       'id_complete': 'NEED-1',
       'id_parent': 'NEED-1',
-      'id_prefix': None,
       'is_external': False,
       'is_import': False,
       'is_modified': False,
@@ -219,8 +191,6 @@
       'links_back': list([
         'NEED-3',
       ]),
-      'max_amount': None,
-      'max_content_lines': None,
       'modifications': 0,
       'parent_need': None,
       'parent_needs': list([
@@ -233,14 +203,11 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'query': None,
       'section_name': 'LIST2NEED OPTIONS',
       'sections': tuple(
         'LIST2NEED OPTIONS',
       ),
-      'service': None,
       'signature': None,
-      'specific': None,
       'status': 'open',
       'style': None,
       'tags': list([
@@ -256,19 +223,14 @@
       'type_name': 'User Story',
       'type_prefix': 'US_',
       'type_style': 'node',
-      'updated_at': None,
-      'url': None,
-      'user': None,
     }),
     'NEED-2': dict({
       'arch': dict({
       }),
-      'avatar': None,
       'checks': list([
       ]),
       'checks_back': list([
       ]),
-      'closed_at': None,
       'collapse': False,
       'completion': None,
       'constraints': list([
@@ -278,7 +240,6 @@
       'constraints_results': dict({
       }),
       'content': '',
-      'created_at': None,
       'docname': 'options',
       'doctype': '.rst',
       'duration': None,
@@ -290,7 +251,6 @@
       'id': 'NEED-2',
       'id_complete': 'NEED-2',
       'id_parent': 'NEED-2',
-      'id_prefix': None,
       'is_external': False,
       'is_import': False,
       'is_modified': False,
@@ -305,8 +265,6 @@
       'links_back': list([
         'NEED-3',
       ]),
-      'max_amount': None,
-      'max_content_lines': None,
       'modifications': 0,
       'parent_need': None,
       'parent_needs': list([
@@ -319,14 +277,11 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'query': None,
       'section_name': 'LIST2NEED OPTIONS',
       'sections': tuple(
         'LIST2NEED OPTIONS',
       ),
-      'service': None,
       'signature': None,
-      'specific': None,
       'status': 'done',
       'style': None,
       'tags': list([
@@ -345,19 +300,14 @@
       'type_name': 'User Story',
       'type_prefix': 'US_',
       'type_style': 'node',
-      'updated_at': None,
-      'url': None,
-      'user': None,
     }),
     'NEED-3': dict({
       'arch': dict({
       }),
-      'avatar': None,
       'checks': list([
       ]),
       'checks_back': list([
       ]),
-      'closed_at': None,
       'collapse': False,
       'completion': None,
       'constraints': list([
@@ -367,7 +317,6 @@
       'constraints_results': dict({
       }),
       'content': '',
-      'created_at': None,
       'docname': 'options',
       'doctype': '.rst',
       'duration': None,
@@ -379,7 +328,6 @@
       'id': 'NEED-3',
       'id_complete': 'NEED-3',
       'id_parent': 'NEED-3',
-      'id_prefix': None,
       'is_external': False,
       'is_import': False,
       'is_modified': False,
@@ -397,8 +345,6 @@
         'NEED-4',
         'NEED-Z',
       ]),
-      'max_amount': None,
-      'max_content_lines': None,
       'modifications': 0,
       'parent_need': None,
       'parent_needs': list([
@@ -411,14 +357,11 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'query': None,
       'section_name': 'LIST2NEED OPTIONS',
       'sections': tuple(
         'LIST2NEED OPTIONS',
       ),
-      'service': None,
       'signature': None,
-      'specific': None,
       'status': None,
       'style': None,
       'tags': list([
@@ -434,19 +377,14 @@
       'type_name': 'User Story',
       'type_prefix': 'US_',
       'type_style': 'node',
-      'updated_at': None,
-      'url': None,
-      'user': None,
     }),
     'NEED-4': dict({
       'arch': dict({
       }),
-      'avatar': None,
       'checks': list([
       ]),
       'checks_back': list([
       ]),
-      'closed_at': None,
       'collapse': False,
       'completion': None,
       'constraints': list([
@@ -456,7 +394,6 @@
       'constraints_results': dict({
       }),
       'content': 'With some content in the next line.',
-      'created_at': None,
       'docname': 'options',
       'doctype': '.rst',
       'duration': None,
@@ -468,7 +405,6 @@
       'id': 'NEED-4',
       'id_complete': 'NEED-4',
       'id_parent': 'NEED-4',
-      'id_prefix': None,
       'is_external': False,
       'is_import': False,
       'is_modified': False,
@@ -483,8 +419,6 @@
       ]),
       'links_back': list([
       ]),
-      'max_amount': None,
-      'max_content_lines': None,
       'modifications': 0,
       'parent_need': None,
       'parent_needs': list([
@@ -497,14 +431,11 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'query': None,
       'section_name': 'LIST2NEED OPTIONS',
       'sections': tuple(
         'LIST2NEED OPTIONS',
       ),
-      'service': None,
       'signature': None,
-      'specific': None,
       'status': 'in progress',
       'style': None,
       'tags': list([
@@ -520,20 +451,15 @@
       'type_name': 'User Story',
       'type_prefix': 'US_',
       'type_style': 'node',
-      'updated_at': None,
-      'url': None,
-      'user': None,
     }),
     'NEED-A': dict({
       'arch': dict({
       }),
-      'avatar': None,
       'checks': list([
         'NEED-B',
       ]),
       'checks_back': list([
       ]),
-      'closed_at': None,
       'collapse': False,
       'completion': None,
       'constraints': list([
@@ -543,7 +469,6 @@
       'constraints_results': dict({
       }),
       'content': '',
-      'created_at': None,
       'docname': 'links_down',
       'doctype': '.rst',
       'duration': None,
@@ -555,7 +480,6 @@
       'id': 'NEED-A',
       'id_complete': 'NEED-A',
       'id_parent': 'NEED-A',
-      'id_prefix': None,
       'is_external': False,
       'is_import': False,
       'is_modified': False,
@@ -569,8 +493,6 @@
       ]),
       'links_back': list([
       ]),
-      'max_amount': None,
-      'max_content_lines': None,
       'modifications': 0,
       'parent_need': None,
       'parent_needs': list([
@@ -583,14 +505,11 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'query': None,
       'section_name': 'LIST2NEED LINKS_DOWN',
       'sections': tuple(
         'LIST2NEED LINKS_DOWN',
       ),
-      'service': None,
       'signature': None,
-      'specific': None,
       'status': None,
       'style': None,
       'tags': list([
@@ -606,20 +525,15 @@
       'type_name': 'User Story',
       'type_prefix': 'US_',
       'type_style': 'node',
-      'updated_at': None,
-      'url': None,
-      'user': None,
     }),
     'NEED-B': dict({
       'arch': dict({
       }),
-      'avatar': None,
       'checks': list([
       ]),
       'checks_back': list([
         'NEED-A',
       ]),
-      'closed_at': None,
       'collapse': False,
       'completion': None,
       'constraints': list([
@@ -629,7 +543,6 @@
       'constraints_results': dict({
       }),
       'content': '',
-      'created_at': None,
       'docname': 'links_down',
       'doctype': '.rst',
       'duration': None,
@@ -641,7 +554,6 @@
       'id': 'NEED-B',
       'id_complete': 'NEED-B',
       'id_parent': 'NEED-B',
-      'id_prefix': None,
       'is_external': False,
       'is_import': False,
       'is_modified': False,
@@ -655,8 +567,6 @@
       ]),
       'links_back': list([
       ]),
-      'max_amount': None,
-      'max_content_lines': None,
       'modifications': 0,
       'parent_need': None,
       'parent_needs': list([
@@ -669,14 +579,11 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'query': None,
       'section_name': 'LIST2NEED LINKS_DOWN',
       'sections': tuple(
         'LIST2NEED LINKS_DOWN',
       ),
-      'service': None,
       'signature': None,
-      'specific': None,
       'status': None,
       'style': None,
       'tags': list([
@@ -693,19 +600,14 @@
       'type_name': 'Specification',
       'type_prefix': 'SP_',
       'type_style': 'node',
-      'updated_at': None,
-      'url': None,
-      'user': None,
     }),
     'NEED-C': dict({
       'arch': dict({
       }),
-      'avatar': None,
       'checks': list([
       ]),
       'checks_back': list([
       ]),
-      'closed_at': None,
       'collapse': False,
       'completion': None,
       'constraints': list([
@@ -715,7 +617,6 @@
       'constraints_results': dict({
       }),
       'content': '',
-      'created_at': None,
       'docname': 'links_down',
       'doctype': '.rst',
       'duration': None,
@@ -727,7 +628,6 @@
       'id': 'NEED-C',
       'id_complete': 'NEED-C',
       'id_parent': 'NEED-C',
-      'id_prefix': None,
       'is_external': False,
       'is_import': False,
       'is_modified': False,
@@ -741,8 +641,6 @@
       ]),
       'links_back': list([
       ]),
-      'max_amount': None,
-      'max_content_lines': None,
       'modifications': 0,
       'parent_need': None,
       'parent_needs': list([
@@ -755,14 +653,11 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'query': None,
       'section_name': 'LIST2NEED LINKS_DOWN',
       'sections': tuple(
         'LIST2NEED LINKS_DOWN',
       ),
-      'service': None,
       'signature': None,
-      'specific': None,
       'status': None,
       'style': None,
       'tags': list([
@@ -779,19 +674,14 @@
       'type_name': 'Test Case',
       'type_prefix': 'TC_',
       'type_style': 'node',
-      'updated_at': None,
-      'url': None,
-      'user': None,
     }),
     'NEED-W': dict({
       'arch': dict({
       }),
-      'avatar': None,
       'checks': list([
       ]),
       'checks_back': list([
       ]),
-      'closed_at': None,
       'collapse': False,
       'completion': None,
       'constraints': list([
@@ -801,7 +691,6 @@
       'constraints_results': dict({
       }),
       'content': '',
-      'created_at': None,
       'docname': 'global_tags',
       'doctype': '.rst',
       'duration': None,
@@ -813,7 +702,6 @@
       'id': 'NEED-W',
       'id_complete': 'NEED-W',
       'id_parent': 'NEED-W',
-      'id_prefix': None,
       'is_external': False,
       'is_import': False,
       'is_modified': False,
@@ -828,8 +716,6 @@
       'links_back': list([
         'NEED-Y',
       ]),
-      'max_amount': None,
-      'max_content_lines': None,
       'modifications': 0,
       'parent_need': None,
       'parent_needs': list([
@@ -842,14 +728,11 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'query': None,
       'section_name': 'LIST2NEED GLOBAL TAGS',
       'sections': tuple(
         'LIST2NEED GLOBAL TAGS',
       ),
-      'service': None,
       'signature': None,
-      'specific': None,
       'status': 'open',
       'style': None,
       'tags': list([
@@ -868,19 +751,14 @@
       'type_name': 'User Story',
       'type_prefix': 'US_',
       'type_style': 'node',
-      'updated_at': None,
-      'url': None,
-      'user': None,
     }),
     'NEED-X': dict({
       'arch': dict({
       }),
-      'avatar': None,
       'checks': list([
       ]),
       'checks_back': list([
       ]),
-      'closed_at': None,
       'collapse': False,
       'completion': None,
       'constraints': list([
@@ -890,7 +768,6 @@
       'constraints_results': dict({
       }),
       'content': '',
-      'created_at': None,
       'docname': 'global_tags',
       'doctype': '.rst',
       'duration': None,
@@ -902,7 +779,6 @@
       'id': 'NEED-X',
       'id_complete': 'NEED-X',
       'id_parent': 'NEED-X',
-      'id_prefix': None,
       'is_external': False,
       'is_import': False,
       'is_modified': False,
@@ -916,8 +792,6 @@
       ]),
       'links_back': list([
       ]),
-      'max_amount': None,
-      'max_content_lines': None,
       'modifications': 0,
       'parent_need': None,
       'parent_needs': list([
@@ -930,14 +804,11 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'query': None,
       'section_name': 'LIST2NEED GLOBAL TAGS',
       'sections': tuple(
         'LIST2NEED GLOBAL TAGS',
       ),
-      'service': None,
       'signature': None,
-      'specific': None,
       'status': 'done',
       'style': None,
       'tags': list([
@@ -959,19 +830,14 @@
       'type_name': 'User Story',
       'type_prefix': 'US_',
       'type_style': 'node',
-      'updated_at': None,
-      'url': None,
-      'user': None,
     }),
     'NEED-Y': dict({
       'arch': dict({
       }),
-      'avatar': None,
       'checks': list([
       ]),
       'checks_back': list([
       ]),
-      'closed_at': None,
       'collapse': False,
       'completion': None,
       'constraints': list([
@@ -981,7 +847,6 @@
       'constraints_results': dict({
       }),
       'content': '',
-      'created_at': None,
       'docname': 'global_tags',
       'doctype': '.rst',
       'duration': None,
@@ -993,7 +858,6 @@
       'id': 'NEED-Y',
       'id_complete': 'NEED-Y',
       'id_parent': 'NEED-Y',
-      'id_prefix': None,
       'is_external': False,
       'is_import': False,
       'is_modified': False,
@@ -1010,8 +874,6 @@
       'links_back': list([
         'NEED-Y',
       ]),
-      'max_amount': None,
-      'max_content_lines': None,
       'modifications': 0,
       'parent_need': None,
       'parent_needs': list([
@@ -1024,14 +886,11 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'query': None,
       'section_name': 'LIST2NEED GLOBAL TAGS',
       'sections': tuple(
         'LIST2NEED GLOBAL TAGS',
       ),
-      'service': None,
       'signature': None,
-      'specific': None,
       'status': None,
       'style': None,
       'tags': list([
@@ -1050,19 +909,14 @@
       'type_name': 'User Story',
       'type_prefix': 'US_',
       'type_style': 'node',
-      'updated_at': None,
-      'url': None,
-      'user': None,
     }),
     'NEED-Z': dict({
       'arch': dict({
       }),
-      'avatar': None,
       'checks': list([
       ]),
       'checks_back': list([
       ]),
-      'closed_at': None,
       'collapse': False,
       'completion': None,
       'constraints': list([
@@ -1072,7 +926,6 @@
       'constraints_results': dict({
       }),
       'content': 'With some content in the next line.',
-      'created_at': None,
       'docname': 'global_tags',
       'doctype': '.rst',
       'duration': None,
@@ -1084,7 +937,6 @@
       'id': 'NEED-Z',
       'id_complete': 'NEED-Z',
       'id_parent': 'NEED-Z',
-      'id_prefix': None,
       'is_external': False,
       'is_import': False,
       'is_modified': False,
@@ -1099,8 +951,6 @@
       ]),
       'links_back': list([
       ]),
-      'max_amount': None,
-      'max_content_lines': None,
       'modifications': 0,
       'parent_need': None,
       'parent_needs': list([
@@ -1113,14 +963,11 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'query': None,
       'section_name': 'LIST2NEED GLOBAL TAGS',
       'sections': tuple(
         'LIST2NEED GLOBAL TAGS',
       ),
-      'service': None,
       'signature': None,
-      'specific': None,
       'status': 'in progress',
       'style': None,
       'tags': list([
@@ -1139,19 +986,14 @@
       'type_name': 'User Story',
       'type_prefix': 'US_',
       'type_style': 'node',
-      'updated_at': None,
-      'url': None,
-      'user': None,
     }),
     'SP_69FFD': dict({
       'arch': dict({
       }),
-      'avatar': None,
       'checks': list([
       ]),
       'checks_back': list([
       ]),
-      'closed_at': None,
       'collapse': False,
       'completion': None,
       'constraints': list([
@@ -1164,7 +1006,6 @@
         Where this sentence will be used
         as content, the first one as title.
       ''',
-      'created_at': None,
       'docname': 'index',
       'doctype': '.rst',
       'duration': None,
@@ -1176,7 +1017,6 @@
       'id': 'SP_69FFD',
       'id_complete': 'SP_69FFD',
       'id_parent': 'SP_69FFD',
-      'id_prefix': None,
       'is_external': False,
       'is_import': False,
       'is_modified': False,
@@ -1190,8 +1030,6 @@
       ]),
       'links_back': list([
       ]),
-      'max_amount': None,
-      'max_content_lines': None,
       'modifications': 0,
       'parent_need': 'NEED-002',
       'parent_needs': list([
@@ -1206,14 +1044,11 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'query': None,
       'section_name': 'TEST DOCUMENT LIST2NEED',
       'sections': tuple(
         'TEST DOCUMENT LIST2NEED',
       ),
-      'service': None,
       'signature': None,
-      'specific': None,
       'status': None,
       'style': None,
       'tags': list([
@@ -1229,19 +1064,14 @@
       'type_name': 'Specification',
       'type_prefix': 'SP_',
       'type_style': 'node',
-      'updated_at': None,
-      'url': None,
-      'user': None,
     }),
     'TC_EA5AF': dict({
       'arch': dict({
       }),
-      'avatar': None,
       'checks': list([
       ]),
       'checks_back': list([
       ]),
-      'closed_at': None,
       'collapse': False,
       'completion': None,
       'constraints': list([
@@ -1254,7 +1084,6 @@
         With some rst-syntax supported for
         the **content** by :ref:`test`
       ''',
-      'created_at': None,
       'docname': 'index',
       'doctype': '.rst',
       'duration': None,
@@ -1266,7 +1095,6 @@
       'id': 'TC_EA5AF',
       'id_complete': 'TC_EA5AF',
       'id_parent': 'TC_EA5AF',
-      'id_prefix': None,
       'is_external': False,
       'is_import': False,
       'is_modified': False,
@@ -1280,8 +1108,6 @@
       ]),
       'links_back': list([
       ]),
-      'max_amount': None,
-      'max_content_lines': None,
       'modifications': 0,
       'parent_need': 'SP_69FFD',
       'parent_needs': list([
@@ -1295,14 +1121,11 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'query': None,
       'section_name': 'TEST DOCUMENT LIST2NEED',
       'sections': tuple(
         'TEST DOCUMENT LIST2NEED',
       ),
-      'service': None,
       'signature': None,
-      'specific': None,
       'status': None,
       'style': None,
       'tags': list([
@@ -1318,19 +1141,14 @@
       'type_name': 'Test Case',
       'type_prefix': 'TC_',
       'type_style': 'node',
-      'updated_at': None,
-      'url': None,
-      'user': None,
     }),
     'US_F1B63': dict({
       'arch': dict({
       }),
-      'avatar': None,
       'checks': list([
       ]),
       'checks_back': list([
       ]),
-      'closed_at': None,
       'collapse': False,
       'completion': None,
       'constraints': list([
@@ -1340,7 +1158,6 @@
       'constraints_results': dict({
       }),
       'content': '',
-      'created_at': None,
       'docname': 'index',
       'doctype': '.rst',
       'duration': None,
@@ -1352,7 +1169,6 @@
       'id': 'US_F1B63',
       'id_complete': 'US_F1B63',
       'id_parent': 'US_F1B63',
-      'id_prefix': None,
       'is_external': False,
       'is_import': False,
       'is_modified': False,
@@ -1366,8 +1182,6 @@
       ]),
       'links_back': list([
       ]),
-      'max_amount': None,
-      'max_content_lines': None,
       'modifications': 0,
       'parent_need': None,
       'parent_needs': list([
@@ -1380,14 +1194,11 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'query': None,
       'section_name': 'TEST DOCUMENT LIST2NEED',
       'sections': tuple(
         'TEST DOCUMENT LIST2NEED',
       ),
-      'service': None,
       'signature': None,
-      'specific': None,
       'status': None,
       'style': None,
       'tags': list([
@@ -1403,9 +1214,6 @@
       'type_name': 'User Story',
       'type_prefix': 'US_',
       'type_style': 'node',
-      'updated_at': None,
-      'url': None,
-      'user': None,
     }),
   })
 # ---

@@ -9,8 +9,6 @@
             'TC_001': dict({
               'arch': dict({
               }),
-              'avatar': None,
-              'closed_at': None,
               'completion': None,
               'constraints': list([
               ]),
@@ -19,7 +17,6 @@
               'constraints_results': dict({
               }),
               'content': '',
-              'created_at': None,
               'docname': 'index',
               'doctype': '.rst',
               'duration': None,
@@ -28,7 +25,6 @@
               'has_dead_links': False,
               'has_forbidden_dead_links': False,
               'id': 'TC_001',
-              'id_prefix': None,
               'is_external': False,
               'is_import': False,
               'is_modified': False,
@@ -39,8 +35,6 @@
               ]),
               'links_back': list([
               ]),
-              'max_amount': None,
-              'max_content_lines': None,
               'modifications': 0,
               'parent_need': None,
               'parent_needs': list([
@@ -53,14 +47,11 @@
               'post_template': None,
               'pre_content': None,
               'pre_template': None,
-              'query': None,
               'section_name': 'TEST DOCUMENT NEEDS Builder',
               'sections': list([
                 'TEST DOCUMENT NEEDS Builder',
               ]),
-              'service': None,
               'signature': None,
-              'specific': None,
               'status': 'open',
               'style': None,
               'tags': list([
@@ -69,9 +60,6 @@
               'title': 'Test example',
               'type': 'test',
               'type_name': 'Test Case',
-              'updated_at': None,
-              'url': None,
-              'user': None,
             }),
           }),
           'needs_amount': 1,
@@ -86,8 +74,6 @@
             'TC_NEG_001': dict({
               'arch': dict({
               }),
-              'avatar': None,
-              'closed_at': None,
               'completion': None,
               'constraints': list([
               ]),
@@ -96,7 +82,6 @@
               'constraints_results': dict({
               }),
               'content': '',
-              'created_at': None,
               'docname': 'index',
               'doctype': '.rst',
               'duration': None,
@@ -105,7 +90,6 @@
               'has_dead_links': False,
               'has_forbidden_dead_links': False,
               'id': 'TC_NEG_001',
-              'id_prefix': None,
               'is_external': False,
               'is_import': False,
               'is_modified': False,
@@ -116,8 +100,6 @@
               ]),
               'links_back': list([
               ]),
-              'max_amount': None,
-              'max_content_lines': None,
               'modifications': 0,
               'parent_need': None,
               'parent_needs': list([
@@ -130,14 +112,11 @@
               'post_template': None,
               'pre_content': None,
               'pre_template': None,
-              'query': None,
               'section_name': 'TEST DOCUMENT NEEDS Builder',
               'sections': list([
                 'TEST DOCUMENT NEEDS Builder',
               ]),
-              'service': None,
               'signature': None,
-              'specific': None,
               'status': 'closed',
               'style': None,
               'tags': list([
@@ -146,9 +125,6 @@
               'title': 'Negative test example',
               'type': 'test',
               'type_name': 'Test Case',
-              'updated_at': None,
-              'url': None,
-              'user': None,
             }),
           }),
           'needs_amount': 1,
@@ -163,8 +139,6 @@
             'US_63252': dict({
               'arch': dict({
               }),
-              'avatar': None,
-              'closed_at': None,
               'completion': None,
               'constraints': list([
               ]),
@@ -173,7 +147,6 @@
               'constraints_results': dict({
               }),
               'content': '',
-              'created_at': None,
               'docname': 'index',
               'doctype': '.rst',
               'duration': None,
@@ -182,7 +155,6 @@
               'has_dead_links': False,
               'has_forbidden_dead_links': False,
               'id': 'US_63252',
-              'id_prefix': None,
               'is_external': False,
               'is_import': False,
               'is_modified': False,
@@ -193,8 +165,6 @@
               ]),
               'links_back': list([
               ]),
-              'max_amount': None,
-              'max_content_lines': None,
               'modifications': 0,
               'parent_need': None,
               'parent_needs': list([
@@ -207,14 +177,11 @@
               'post_template': None,
               'pre_content': None,
               'pre_template': None,
-              'query': None,
               'section_name': 'TEST DOCUMENT NEEDS Builder',
               'sections': list([
                 'TEST DOCUMENT NEEDS Builder',
               ]),
-              'service': None,
               'signature': None,
-              'specific': None,
               'status': 'in progress',
               'style': None,
               'tags': list([
@@ -224,9 +191,6 @@
               'title': 'A story',
               'type': 'story',
               'type_name': 'User Story',
-              'updated_at': None,
-              'url': None,
-              'user': None,
             }),
           }),
           'needs_amount': 1,

@@ -205,24 +205,6 @@
               'field_type': 'core',
               'type': 'object',
             }),
-            'avatar': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'closed_at': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
             'completion': dict({
               'default': None,
               'description': 'Added for needgantt functionality',
@@ -279,15 +261,6 @@
               'field_type': 'core',
               'type': 'string',
             }),
-            'created_at': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
             'docname': dict({
               'default': None,
               'description': 'Name of the document where the need is defined (None if external).',
@@ -343,15 +316,6 @@
               'description': 'ID of the data.',
               'field_type': 'core',
               'type': 'string',
-            }),
-            'id_prefix': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
             }),
             'is_external': dict({
               'default': False,
@@ -414,24 +378,6 @@
                 'type': 'string',
               }),
               'type': 'array',
-            }),
-            'max_amount': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'max_content_lines': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
             }),
             'modifications': dict({
               'default': 0,
@@ -514,15 +460,6 @@
                 'null',
               ]),
             }),
-            'query': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
             'section_name': dict({
               'default': None,
               'description': 'Simply the first section.',
@@ -542,28 +479,10 @@
               }),
               'type': 'array',
             }),
-            'service': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
             'signature': dict({
               'default': None,
               'description': 'Derived from a docutils desc_name node.',
               'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'specific': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
               'type': list([
                 'string',
                 'null',
@@ -622,33 +541,6 @@
               'description': 'Name of the type.',
               'field_type': 'core',
               'type': 'string',
-            }),
-            'updated_at': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'url': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'user': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
             }),
           }),
           'type': 'object',
@@ -832,24 +724,6 @@
               'field_type': 'core',
               'type': 'object',
             }),
-            'avatar': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'closed_at': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
             'completion': dict({
               'default': None,
               'description': 'Added for needgantt functionality',
@@ -906,15 +780,6 @@
               'field_type': 'core',
               'type': 'string',
             }),
-            'created_at': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
             'docname': dict({
               'default': None,
               'description': 'Name of the document where the need is defined (None if external).',
@@ -970,15 +835,6 @@
               'description': 'ID of the data.',
               'field_type': 'core',
               'type': 'string',
-            }),
-            'id_prefix': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
             }),
             'is_external': dict({
               'default': False,
@@ -1041,24 +897,6 @@
                 'type': 'string',
               }),
               'type': 'array',
-            }),
-            'max_amount': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'max_content_lines': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
             }),
             'modifications': dict({
               'default': 0,
@@ -1150,15 +988,6 @@
                 'null',
               ]),
             }),
-            'query': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
             'section_name': dict({
               'default': None,
               'description': 'Simply the first section.',
@@ -1178,28 +1007,10 @@
               }),
               'type': 'array',
             }),
-            'service': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
             'signature': dict({
               'default': None,
               'description': 'Derived from a docutils desc_name node.',
               'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'specific': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
               'type': list([
                 'string',
                 'null',
@@ -1267,33 +1078,6 @@
               'description': 'Name of the type.',
               'field_type': 'core',
               'type': 'string',
-            }),
-            'updated_at': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'url': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'user': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
             }),
           }),
           'type': 'object',

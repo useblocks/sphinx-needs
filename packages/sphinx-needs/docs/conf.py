@@ -366,6 +366,12 @@ needs_from_toml = "ubproject.toml"
 needs_debug_measurement = "READTHEDOCS" in os.environ  # run on CI
 needs_debug_filters = True
 
+# the GitHub issues service, which the needservice example (directives/needservice.rst)
+# runs and whose fields the filter example (services/github.rst) names: a built-in
+# service is registered only when configured. Kept out of ubproject.toml, whose
+# services table would replace this whole value (and which ubCode reads too)
+needs_services = {"github-issues": {}}
+
 
 def custom_defined_func():
     return "List of contributors:"

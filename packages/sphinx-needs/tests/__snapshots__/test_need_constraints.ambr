@@ -8,8 +8,6 @@
           'SECURITY_REQ': dict({
             'arch': dict({
             }),
-            'avatar': None,
-            'closed_at': None,
             'completion': None,
             'constraints': list([
             ]),
@@ -18,7 +16,6 @@
             'constraints_results': dict({
             }),
             'content': 'This is a requirement describing OPSEC processes.',
-            'created_at': None,
             'docname': 'index',
             'doctype': '.rst',
             'duration': None,
@@ -27,7 +24,6 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'SECURITY_REQ',
-            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': False,
@@ -40,8 +36,6 @@
               'SP_3EBFA',
               'SP_109F4',
             ]),
-            'max_amount': None,
-            'max_content_lines': None,
             'modifications': 0,
             'parent_need': None,
             'parent_needs': list([
@@ -54,14 +48,11 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'query': None,
             'section_name': 'TEST DOCUMENT NEEDS CONSTRAINTS',
             'sections': list([
               'TEST DOCUMENT NEEDS CONSTRAINTS',
             ]),
-            'service': None,
             'signature': None,
-            'specific': None,
             'status': None,
             'style': None,
             'tags': list([
@@ -70,15 +61,10 @@
             'title': 'test1',
             'type': 'spec',
             'type_name': 'Specification',
-            'updated_at': None,
-            'url': None,
-            'user': None,
           }),
           'SP_109F4': dict({
             'arch': dict({
             }),
-            'avatar': None,
-            'closed_at': None,
             'completion': None,
             'constraints': list([
               'critical',
@@ -91,7 +77,6 @@
               }),
             }),
             'content': 'Example of a successful constraint.',
-            'created_at': None,
             'docname': 'index',
             'doctype': '.rst',
             'duration': None,
@@ -100,7 +85,6 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'SP_109F4',
-            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': False,
@@ -112,8 +96,6 @@
             ]),
             'links_back': list([
             ]),
-            'max_amount': None,
-            'max_content_lines': None,
             'modifications': 0,
             'parent_need': None,
             'parent_needs': list([
@@ -126,14 +108,11 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'query': None,
             'section_name': 'TEST DOCUMENT NEEDS CONSTRAINTS',
             'sections': list([
               'TEST DOCUMENT NEEDS CONSTRAINTS',
             ]),
-            'service': None,
             'signature': None,
-            'specific': None,
             'status': None,
             'style': None,
             'tags': list([
@@ -143,15 +122,10 @@
             'title': 'test2',
             'type': 'spec',
             'type_name': 'Specification',
-            'updated_at': None,
-            'url': None,
-            'user': None,
           }),
           'SP_3EBFA': dict({
             'arch': dict({
             }),
-            'avatar': None,
-            'closed_at': None,
             'completion': None,
             'constraints': list([
               'critical',
@@ -164,7 +138,6 @@
               }),
             }),
             'content': 'Example of a failed constraint.',
-            'created_at': None,
             'docname': 'index',
             'doctype': '.rst',
             'duration': None,
@@ -173,7 +146,6 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'SP_3EBFA',
-            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': False,
@@ -185,8 +157,6 @@
             ]),
             'links_back': list([
             ]),
-            'max_amount': None,
-            'max_content_lines': None,
             'modifications': 0,
             'parent_need': None,
             'parent_needs': list([
@@ -199,14 +169,11 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'query': None,
             'section_name': 'TEST DOCUMENT NEEDS CONSTRAINTS',
             'sections': list([
               'TEST DOCUMENT NEEDS CONSTRAINTS',
             ]),
-            'service': None,
             'signature': None,
-            'specific': None,
             'status': None,
             'style': 'red_bar',
             'tags': list([
@@ -215,15 +182,10 @@
             'title': 'test3',
             'type': 'spec',
             'type_name': 'Specification',
-            'updated_at': None,
-            'url': None,
-            'user': None,
           }),
           'SP_CA3FB': dict({
             'arch': dict({
             }),
-            'avatar': None,
-            'closed_at': None,
             'completion': None,
             'constraints': list([
               'team',
@@ -236,7 +198,6 @@
               }),
             }),
             'content': 'Example of a failed constraint with medium severity. Note the style from :ref:`needs_constraint_failed_options`',
-            'created_at': None,
             'docname': 'index',
             'doctype': '.rst',
             'duration': None,
@@ -245,7 +206,6 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'SP_CA3FB',
-            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': False,
@@ -256,8 +216,6 @@
             ]),
             'links_back': list([
             ]),
-            'max_amount': None,
-            'max_content_lines': None,
             'modifications': 0,
             'parent_need': None,
             'parent_needs': list([
@@ -270,14 +228,11 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'query': None,
             'section_name': 'TEST DOCUMENT NEEDS CONSTRAINTS',
             'sections': list([
               'TEST DOCUMENT NEEDS CONSTRAINTS',
             ]),
-            'service': None,
             'signature': None,
-            'specific': None,
             'status': None,
             'style': 'yellow_bar,',
             'tags': list([
@@ -286,15 +241,10 @@
             'title': 'FAIL_01',
             'type': 'spec',
             'type_name': 'Specification',
-            'updated_at': None,
-            'url': None,
-            'user': None,
           }),
           'SP_TOO_001': dict({
             'arch': dict({
             }),
-            'avatar': None,
-            'closed_at': None,
             'completion': None,
             'constraints': list([
             ]),
@@ -303,7 +253,6 @@
             'constraints_results': dict({
             }),
             'content': 'The Tool awesome shall have a command line interface.',
-            'created_at': None,
             'docname': 'index',
             'doctype': '.rst',
             'duration': None,
@@ -312,7 +261,6 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'SP_TOO_001',
-            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': False,
@@ -323,8 +271,6 @@
             ]),
             'links_back': list([
             ]),
-            'max_amount': None,
-            'max_content_lines': None,
             'modifications': 0,
             'parent_need': None,
             'parent_needs': list([
@@ -337,14 +283,11 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'query': None,
             'section_name': 'TEST DOCUMENT NEEDS CONSTRAINTS',
             'sections': list([
               'TEST DOCUMENT NEEDS CONSTRAINTS',
             ]),
-            'service': None,
             'signature': None,
-            'specific': None,
             'status': 'implemented',
             'style': None,
             'tags': list([
@@ -355,15 +298,10 @@
             'title': 'Command line interface',
             'type': 'spec',
             'type_name': 'Specification',
-            'updated_at': None,
-            'url': None,
-            'user': None,
           }),
           'SP_TOO_002': dict({
             'arch': dict({
             }),
-            'avatar': None,
-            'closed_at': None,
             'completion': None,
             'constraints': list([
               'critical',
@@ -376,7 +314,6 @@
               }),
             }),
             'content': 'asdf',
-            'created_at': None,
             'docname': 'index',
             'doctype': '.rst',
             'duration': None,
@@ -385,7 +322,6 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'SP_TOO_002',
-            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': False,
@@ -396,8 +332,6 @@
             ]),
             'links_back': list([
             ]),
-            'max_amount': None,
-            'max_content_lines': None,
             'modifications': 0,
             'parent_need': None,
             'parent_needs': list([
@@ -410,14 +344,11 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'query': None,
             'section_name': 'TEST DOCUMENT NEEDS CONSTRAINTS',
             'sections': list([
               'TEST DOCUMENT NEEDS CONSTRAINTS',
             ]),
-            'service': None,
             'signature': None,
-            'specific': None,
             'status': 'dev',
             'style': 'red_bar',
             'tags': list([
@@ -428,15 +359,10 @@
             'title': 'CLI',
             'type': 'spec',
             'type_name': 'Specification',
-            'updated_at': None,
-            'url': None,
-            'user': None,
           }),
           'TEST_STYLE': dict({
             'arch': dict({
             }),
-            'avatar': None,
-            'closed_at': None,
             'completion': None,
             'constraints': list([
               'critical',
@@ -449,7 +375,6 @@
               }),
             }),
             'content': '',
-            'created_at': None,
             'docname': 'style_test',
             'doctype': '.rst',
             'duration': None,
@@ -458,7 +383,6 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'TEST_STYLE',
-            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': False,
@@ -469,8 +393,6 @@
             ]),
             'links_back': list([
             ]),
-            'max_amount': None,
-            'max_content_lines': None,
             'modifications': 0,
             'parent_need': None,
             'parent_needs': list([
@@ -483,14 +405,11 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'query': None,
             'section_name': 'TEST DOCUMENT NEEDS CONSTRAINTS',
             'sections': list([
               'TEST DOCUMENT NEEDS CONSTRAINTS',
             ]),
-            'service': None,
             'signature': None,
-            'specific': None,
             'status': None,
             'style': 'red_bar',
             'tags': list([
@@ -499,15 +418,10 @@
             'title': 'CLI',
             'type': 'spec',
             'type_name': 'Specification',
-            'updated_at': None,
-            'url': None,
-            'user': None,
           }),
           'TEST_STYLE2': dict({
             'arch': dict({
             }),
-            'avatar': None,
-            'closed_at': None,
             'completion': None,
             'constraints': list([
               'team',
@@ -520,7 +434,6 @@
               }),
             }),
             'content': '',
-            'created_at': None,
             'docname': 'style_test',
             'doctype': '.rst',
             'duration': None,
@@ -529,7 +442,6 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'TEST_STYLE2',
-            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': False,
@@ -540,8 +452,6 @@
             ]),
             'links_back': list([
             ]),
-            'max_amount': None,
-            'max_content_lines': None,
             'modifications': 0,
             'parent_need': None,
             'parent_needs': list([
@@ -554,14 +464,11 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'query': None,
             'section_name': 'TEST DOCUMENT NEEDS CONSTRAINTS',
             'sections': list([
               'TEST DOCUMENT NEEDS CONSTRAINTS',
             ]),
-            'service': None,
             'signature': None,
-            'specific': None,
             'status': None,
             'style': 'blue_border, yellow_bar',
             'tags': list([
@@ -570,9 +477,6 @@
             'title': 'CLI2',
             'type': 'spec',
             'type_name': 'Specification',
-            'updated_at': None,
-            'url': None,
-            'user': None,
           }),
         }),
         'needs_amount': 8,
@@ -588,24 +492,6 @@
               'description': 'Mapping of uml key to uml content.',
               'field_type': 'core',
               'type': 'object',
-            }),
-            'avatar': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'closed_at': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
             }),
             'completion': dict({
               'default': None,
@@ -663,15 +549,6 @@
               'field_type': 'core',
               'type': 'string',
             }),
-            'created_at': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
             'docname': dict({
               'default': None,
               'description': 'Name of the document where the need is defined (None if external).',
@@ -727,15 +604,6 @@
               'description': 'ID of the data.',
               'field_type': 'core',
               'type': 'string',
-            }),
-            'id_prefix': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
             }),
             'is_external': dict({
               'default': False,
@@ -798,24 +666,6 @@
                 'type': 'string',
               }),
               'type': 'array',
-            }),
-            'max_amount': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'max_content_lines': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
             }),
             'modifications': dict({
               'default': 0,
@@ -898,15 +748,6 @@
                 'null',
               ]),
             }),
-            'query': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
             'section_name': dict({
               'default': None,
               'description': 'Simply the first section.',
@@ -926,28 +767,10 @@
               }),
               'type': 'array',
             }),
-            'service': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
             'signature': dict({
               'default': None,
               'description': 'Derived from a docutils desc_name node.',
               'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'specific': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
               'type': list([
                 'string',
                 'null',
@@ -1006,33 +829,6 @@
               'description': 'Name of the type.',
               'field_type': 'core',
               'type': 'string',
-            }),
-            'updated_at': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'url': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'user': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
             }),
           }),
           'type': 'object',

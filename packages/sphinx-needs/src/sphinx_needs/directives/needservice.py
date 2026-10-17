@@ -61,6 +61,23 @@ class NeedserviceDirective(SphinxDirective):
     def run(self) -> Sequence[nodes.Node]:
         needs_config = NeedsSphinxConfig(self.env.config)
         needs_schema = SphinxNeedsData(self.env).get_schema()
+        needs_services = SphinxNeedsData(self.env).get_or_create_services()
+
+        # the service first, before its options: a built-in service's control options
+        # are fields only once a service registered them, so an unconfigured built-in
+        # would otherwise be one "Unknown option" warning per option before the one
+        # warning that names the cause
+        service_name = self.arguments[0]
+        try:
+            service = needs_services.get(service_name)
+        except NeedsServiceException as err:
+            # not registered: an unknown name, an unconfigured built-in, or a service
+            # whose configuration was refused (and reported) when it was registered
+            log_warning(
+                self.log, str(err), "load_service_need", location=self.get_location()
+            )
+            return []
+
         try:
             self._process_options(needs_schema)
         except (AssertionError, ValueError):
@@ -68,18 +85,6 @@ class NeedserviceDirective(SphinxDirective):
 
         need_types = needs_config.types
         all_data = needs_config.service_all_data
-        needs_services = SphinxNeedsData(self.env).get_or_create_services()
-
-        service_name = self.arguments[0]
-        try:
-            service = needs_services.get(service_name)
-        except NeedsServiceException as err:
-            # not registered: an unknown name, or a service whose configuration was
-            # refused (and reported) when the services were registered
-            log_warning(
-                self.log, str(err), "load_service_need", location=self.get_location()
-            )
-            return []
         section = []
 
         if "debug" not in self.options:

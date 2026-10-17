@@ -8,8 +8,6 @@
           'REQ_1': dict({
             'arch': dict({
             }),
-            'avatar': None,
-            'closed_at': None,
             'completion': None,
             'constraints': list([
             ]),
@@ -18,7 +16,6 @@
             'constraints_results': dict({
             }),
             'content': '',
-            'created_at': None,
             'docname': 'index',
             'doctype': '.rst',
             'duration': None,
@@ -27,7 +24,6 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'REQ_1',
-            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': True,
@@ -41,8 +37,6 @@
             ]),
             'links_back': list([
             ]),
-            'max_amount': None,
-            'max_content_lines': None,
             'modifications': 2,
             'parent_need': None,
             'parent_needs': list([
@@ -55,14 +49,11 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'query': None,
             'section_name': 'needextend dynamic functions',
             'sections': list([
               'needextend dynamic functions',
             ]),
-            'service': None,
             'signature': None,
-            'specific': None,
             'status': None,
             'style': None,
             'tags': list([
@@ -71,15 +62,10 @@
             'title': 'Requirement 1',
             'type': 'req',
             'type_name': 'Requirement',
-            'updated_at': None,
-            'url': None,
-            'user': None,
           }),
           'REQ_A_1': dict({
             'arch': dict({
             }),
-            'avatar': None,
-            'closed_at': None,
             'completion': None,
             'constraints': list([
             ]),
@@ -88,7 +74,6 @@
             'constraints_results': dict({
             }),
             'content': '',
-            'created_at': None,
             'docname': 'index',
             'doctype': '.rst',
             'duration': None,
@@ -97,7 +82,6 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'REQ_A_1',
-            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': False,
@@ -109,8 +93,6 @@
             'links_back': list([
               'REQ_1',
             ]),
-            'max_amount': None,
-            'max_content_lines': None,
             'modifications': 0,
             'parent_need': None,
             'parent_needs': list([
@@ -123,14 +105,11 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'query': None,
             'section_name': 'needextend dynamic functions',
             'sections': list([
               'needextend dynamic functions',
             ]),
-            'service': None,
             'signature': None,
-            'specific': None,
             'status': None,
             'style': None,
             'tags': list([
@@ -139,15 +118,10 @@
             'title': 'Requirement A 1',
             'type': 'req',
             'type_name': 'Requirement',
-            'updated_at': None,
-            'url': None,
-            'user': None,
           }),
           'REQ_B_1': dict({
             'arch': dict({
             }),
-            'avatar': None,
-            'closed_at': None,
             'completion': None,
             'constraints': list([
             ]),
@@ -156,7 +130,6 @@
             'constraints_results': dict({
             }),
             'content': '',
-            'created_at': None,
             'docname': 'index',
             'doctype': '.rst',
             'duration': None,
@@ -165,7 +138,6 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'REQ_B_1',
-            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': False,
@@ -177,8 +149,6 @@
             'links_back': list([
               'REQ_1',
             ]),
-            'max_amount': None,
-            'max_content_lines': None,
             'modifications': 0,
             'parent_need': None,
             'parent_needs': list([
@@ -191,14 +161,11 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'query': None,
             'section_name': 'needextend dynamic functions',
             'sections': list([
               'needextend dynamic functions',
             ]),
-            'service': None,
             'signature': None,
-            'specific': None,
             'status': None,
             'style': None,
             'tags': list([
@@ -207,15 +174,10 @@
             'title': 'Requirement B 1',
             'type': 'req',
             'type_name': 'Requirement',
-            'updated_at': None,
-            'url': None,
-            'user': None,
           }),
           'REQ_C_1': dict({
             'arch': dict({
             }),
-            'avatar': None,
-            'closed_at': None,
             'completion': None,
             'constraints': list([
             ]),
@@ -224,7 +186,6 @@
             'constraints_results': dict({
             }),
             'content': '',
-            'created_at': None,
             'docname': 'index',
             'doctype': '.rst',
             'duration': None,
@@ -233,7 +194,6 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'REQ_C_1',
-            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': False,
@@ -244,8 +204,6 @@
             ]),
             'links_back': list([
             ]),
-            'max_amount': None,
-            'max_content_lines': None,
             'modifications': 0,
             'parent_need': None,
             'parent_needs': list([
@@ -258,14 +216,11 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'query': None,
             'section_name': 'needextend dynamic functions',
             'sections': list([
               'needextend dynamic functions',
             ]),
-            'service': None,
             'signature': None,
-            'specific': None,
             'status': None,
             'style': None,
             'tags': list([
@@ -274,15 +229,10 @@
             'title': 'Requirement C 1',
             'type': 'req',
             'type_name': 'Requirement',
-            'updated_at': None,
-            'url': None,
-            'user': None,
           }),
           'REQ_D_1': dict({
             'arch': dict({
             }),
-            'avatar': None,
-            'closed_at': None,
             'completion': None,
             'constraints': list([
             ]),
@@ -291,7 +241,6 @@
             'constraints_results': dict({
             }),
             'content': '',
-            'created_at': None,
             'docname': 'index',
             'doctype': '.rst',
             'duration': None,
@@ -300,7 +249,6 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'REQ_D_1',
-            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': False,
@@ -312,8 +260,6 @@
             'links_back': list([
               'REQ_1',
             ]),
-            'max_amount': None,
-            'max_content_lines': None,
             'modifications': 0,
             'parent_need': None,
             'parent_needs': list([
@@ -326,14 +272,11 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'query': None,
             'section_name': 'needextend dynamic functions',
             'sections': list([
               'needextend dynamic functions',
             ]),
-            'service': None,
             'signature': None,
-            'specific': None,
             'status': None,
             'style': None,
             'tags': list([
@@ -342,15 +285,10 @@
             'title': 'Requirement D 1',
             'type': 'req',
             'type_name': 'Requirement',
-            'updated_at': None,
-            'url': None,
-            'user': None,
           }),
           'REQ_E_1': dict({
             'arch': dict({
             }),
-            'avatar': None,
-            'closed_at': None,
             'completion': None,
             'constraints': list([
             ]),
@@ -359,7 +297,6 @@
             'constraints_results': dict({
             }),
             'content': '',
-            'created_at': None,
             'docname': 'index',
             'doctype': '.rst',
             'duration': None,
@@ -368,7 +305,6 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'REQ_E_1',
-            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': True,
@@ -379,8 +315,6 @@
             ]),
             'links_back': list([
             ]),
-            'max_amount': None,
-            'max_content_lines': None,
             'modifications': 2,
             'parent_need': None,
             'parent_needs': list([
@@ -393,14 +327,11 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'query': None,
             'section_name': 'needextend dynamic functions',
             'sections': list([
               'needextend dynamic functions',
             ]),
-            'service': None,
             'signature': None,
-            'specific': None,
             'status': 'other appended',
             'style': None,
             'tags': list([
@@ -411,15 +342,10 @@
             'title': 'Requirement E 1',
             'type': 'req',
             'type_name': 'Requirement',
-            'updated_at': None,
-            'url': None,
-            'user': None,
           }),
           'REQ_E_2': dict({
             'arch': dict({
             }),
-            'avatar': None,
-            'closed_at': None,
             'completion': None,
             'constraints': list([
             ]),
@@ -428,7 +354,6 @@
             'constraints_results': dict({
             }),
             'content': '',
-            'created_at': None,
             'docname': 'index',
             'doctype': '.rst',
             'duration': None,
@@ -437,7 +362,6 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'REQ_E_2',
-            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': True,
@@ -448,8 +372,6 @@
             ]),
             'links_back': list([
             ]),
-            'max_amount': None,
-            'max_content_lines': None,
             'modifications': 2,
             'parent_need': None,
             'parent_needs': list([
@@ -462,14 +384,11 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'query': None,
             'section_name': 'needextend dynamic functions',
             'sections': list([
               'needextend dynamic functions',
             ]),
-            'service': None,
             'signature': None,
-            'specific': None,
             'status': 'REQ_E_2 appended',
             'style': None,
             'tags': list([
@@ -480,15 +399,10 @@
             'title': 'Requirement E 2',
             'type': 'req',
             'type_name': 'Requirement',
-            'updated_at': None,
-            'url': None,
-            'user': None,
           }),
           'REQ_E_3': dict({
             'arch': dict({
             }),
-            'avatar': None,
-            'closed_at': None,
             'completion': None,
             'constraints': list([
             ]),
@@ -497,7 +411,6 @@
             'constraints_results': dict({
             }),
             'content': '',
-            'created_at': None,
             'docname': 'index',
             'doctype': '.rst',
             'duration': None,
@@ -506,7 +419,6 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'REQ_E_3',
-            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': True,
@@ -517,8 +429,6 @@
             ]),
             'links_back': list([
             ]),
-            'max_amount': None,
-            'max_content_lines': None,
             'modifications': 1,
             'parent_need': None,
             'parent_needs': list([
@@ -531,14 +441,11 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'query': None,
             'section_name': 'needextend dynamic functions',
             'sections': list([
               'needextend dynamic functions',
             ]),
-            'service': None,
             'signature': None,
-            'specific': None,
             'status': 'open REQ_E_3',
             'style': None,
             'tags': list([
@@ -549,9 +456,6 @@
             'title': 'Requirement E 3',
             'type': 'req',
             'type_name': 'Requirement',
-            'updated_at': None,
-            'url': None,
-            'user': None,
           }),
         }),
         'needs_amount': 8,
@@ -567,24 +471,6 @@
               'description': 'Mapping of uml key to uml content.',
               'field_type': 'core',
               'type': 'object',
-            }),
-            'avatar': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'closed_at': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
             }),
             'completion': dict({
               'default': None,
@@ -642,15 +528,6 @@
               'field_type': 'core',
               'type': 'string',
             }),
-            'created_at': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
             'docname': dict({
               'default': None,
               'description': 'Name of the document where the need is defined (None if external).',
@@ -706,15 +583,6 @@
               'description': 'ID of the data.',
               'field_type': 'core',
               'type': 'string',
-            }),
-            'id_prefix': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
             }),
             'is_external': dict({
               'default': False,
@@ -777,24 +645,6 @@
                 'type': 'string',
               }),
               'type': 'array',
-            }),
-            'max_amount': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'max_content_lines': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
             }),
             'modifications': dict({
               'default': 0,
@@ -877,15 +727,6 @@
                 'null',
               ]),
             }),
-            'query': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
             'section_name': dict({
               'default': None,
               'description': 'Simply the first section.',
@@ -905,28 +746,10 @@
               }),
               'type': 'array',
             }),
-            'service': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
             'signature': dict({
               'default': None,
               'description': 'Derived from a docutils desc_name node.',
               'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'specific': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
               'type': list([
                 'string',
                 'null',
@@ -985,33 +808,6 @@
               'description': 'Name of the type.',
               'field_type': 'core',
               'type': 'string',
-            }),
-            'updated_at': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'url': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'user': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
             }),
           }),
           'type': 'object',
@@ -1029,8 +825,6 @@
           'extend_test_003': dict({
             'arch': dict({
             }),
-            'avatar': None,
-            'closed_at': None,
             'completion': None,
             'constraints': list([
             ]),
@@ -1042,7 +836,6 @@
               Had no outgoing links.
               Got an outgoing link ``extend_test_004``.
             ''',
-            'created_at': None,
             'docname': 'index',
             'doctype': '.rst',
             'duration': None,
@@ -1051,7 +844,6 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'extend_test_003',
-            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': True,
@@ -1065,8 +857,6 @@
               'extend_test_006',
               'extend_test_007',
             ]),
-            'max_amount': None,
-            'max_content_lines': None,
             'modifications': 1,
             'parent_need': None,
             'parent_needs': list([
@@ -1079,14 +869,11 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'query': None,
             'section_name': 'Need extend',
             'sections': list([
               'Need extend',
             ]),
-            'service': None,
             'signature': None,
-            'specific': None,
             'status': None,
             'style': None,
             'tags': list([
@@ -1095,15 +882,10 @@
             'title': 'needextend Example 3',
             'type': 'story',
             'type_name': 'User Story',
-            'updated_at': None,
-            'url': None,
-            'user': None,
           }),
           'extend_test_004': dict({
             'arch': dict({
             }),
-            'avatar': None,
-            'closed_at': None,
             'completion': None,
             'constraints': list([
             ]),
@@ -1115,7 +897,6 @@
               Had no links.
               Got an incoming links ``extend_test_003`` and ``extend_test_006``.
             ''',
-            'created_at': None,
             'docname': 'index',
             'doctype': '.rst',
             'duration': None,
@@ -1124,7 +905,6 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'extend_test_004',
-            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': False,
@@ -1138,8 +918,6 @@
               'extend_test_006',
               'extend_test_007',
             ]),
-            'max_amount': None,
-            'max_content_lines': None,
             'modifications': 0,
             'parent_need': None,
             'parent_needs': list([
@@ -1152,14 +930,11 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'query': None,
             'section_name': 'Need extend',
             'sections': list([
               'Need extend',
             ]),
-            'service': None,
             'signature': None,
-            'specific': None,
             'status': None,
             'style': None,
             'tags': list([
@@ -1168,15 +943,10 @@
             'title': 'needextend Example 4',
             'type': 'story',
             'type_name': 'User Story',
-            'updated_at': None,
-            'url': None,
-            'user': None,
           }),
           'extend_test_005': dict({
             'arch': dict({
             }),
-            'avatar': None,
-            'closed_at': None,
             'completion': None,
             'constraints': list([
             ]),
@@ -1188,7 +958,6 @@
               Had the two links: ``extend_test_003`` and ``extend_test_004``.
               Both got deleted.
             ''',
-            'created_at': None,
             'docname': 'index',
             'doctype': '.rst',
             'duration': None,
@@ -1197,7 +966,6 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'extend_test_005',
-            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': True,
@@ -1209,8 +977,6 @@
             'links_back': list([
               'extend_test_007',
             ]),
-            'max_amount': None,
-            'max_content_lines': None,
             'modifications': 1,
             'parent_need': None,
             'parent_needs': list([
@@ -1223,14 +989,11 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'query': None,
             'section_name': 'Need extend',
             'sections': list([
               'Need extend',
             ]),
-            'service': None,
             'signature': None,
-            'specific': None,
             'status': None,
             'style': None,
             'tags': list([
@@ -1239,15 +1002,10 @@
             'title': 'needextend Example 5',
             'type': 'story',
             'type_name': 'User Story',
-            'updated_at': None,
-            'url': None,
-            'user': None,
           }),
           'extend_test_006': dict({
             'arch': dict({
             }),
-            'avatar': None,
-            'closed_at': None,
             'completion': None,
             'constraints': list([
             ]),
@@ -1256,7 +1014,6 @@
             'constraints_results': dict({
             }),
             'content': 'Had the link ``extend_test_003``, got another one ``extend_test_004``.',
-            'created_at': None,
             'docname': 'index',
             'doctype': '.rst',
             'duration': None,
@@ -1265,7 +1022,6 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'extend_test_006',
-            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': True,
@@ -1278,8 +1034,6 @@
             ]),
             'links_back': list([
             ]),
-            'max_amount': None,
-            'max_content_lines': None,
             'modifications': 2,
             'parent_need': None,
             'parent_needs': list([
@@ -1292,14 +1046,11 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'query': None,
             'section_name': 'Need extend',
             'sections': list([
               'Need extend',
             ]),
-            'service': None,
             'signature': None,
-            'specific': None,
             'status': None,
             'style': None,
             'tags': list([
@@ -1308,15 +1059,10 @@
             'title': 'needextend Example 6',
             'type': 'story',
             'type_name': 'User Story',
-            'updated_at': None,
-            'url': None,
-            'user': None,
           }),
           'extend_test_007': dict({
             'arch': dict({
             }),
-            'avatar': None,
-            'closed_at': None,
             'completion': None,
             'constraints': list([
             ]),
@@ -1325,7 +1071,6 @@
             'constraints_results': dict({
             }),
             'content': '',
-            'created_at': None,
             'docname': 'index',
             'doctype': '.rst',
             'duration': None,
@@ -1334,7 +1079,6 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'extend_test_007',
-            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': True,
@@ -1348,8 +1092,6 @@
             ]),
             'links_back': list([
             ]),
-            'max_amount': None,
-            'max_content_lines': None,
             'modifications': 1,
             'parent_need': None,
             'parent_needs': list([
@@ -1362,14 +1104,11 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'query': None,
             'section_name': 'Need extend',
             'sections': list([
               'Need extend',
             ]),
-            'service': None,
             'signature': None,
-            'specific': None,
             'status': None,
             'style': None,
             'tags': list([
@@ -1378,15 +1117,10 @@
             'title': 'needextend Example 7',
             'type': 'story',
             'type_name': 'User Story',
-            'updated_at': None,
-            'url': None,
-            'user': None,
           }),
           'extend_test_page': dict({
             'arch': dict({
             }),
-            'avatar': None,
-            'closed_at': None,
             'completion': None,
             'constraints': list([
             ]),
@@ -1395,7 +1129,6 @@
             'constraints_results': dict({
             }),
             'content': '',
-            'created_at': None,
             'docname': 'page_1',
             'doctype': '.rst',
             'duration': None,
@@ -1404,7 +1137,6 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'extend_test_page',
-            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': True,
@@ -1415,8 +1147,6 @@
             ]),
             'links_back': list([
             ]),
-            'max_amount': None,
-            'max_content_lines': None,
             'modifications': 2,
             'parent_need': None,
             'parent_needs': list([
@@ -1429,14 +1159,11 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'query': None,
             'section_name': 'need objects',
             'sections': list([
               'need objects',
             ]),
-            'service': None,
             'signature': None,
-            'specific': None,
             'status': 'closed',
             'style': None,
             'tags': list([
@@ -1448,9 +1175,6 @@
             'title': 'needextend different pages test',
             'type': 'story',
             'type_name': 'User Story',
-            'updated_at': None,
-            'url': None,
-            'user': None,
           }),
         }),
         'needs_amount': 6,
@@ -1466,24 +1190,6 @@
               'description': 'Mapping of uml key to uml content.',
               'field_type': 'core',
               'type': 'object',
-            }),
-            'avatar': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'closed_at': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
             }),
             'completion': dict({
               'default': None,
@@ -1541,15 +1247,6 @@
               'field_type': 'core',
               'type': 'string',
             }),
-            'created_at': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
             'docname': dict({
               'default': None,
               'description': 'Name of the document where the need is defined (None if external).',
@@ -1605,15 +1302,6 @@
               'description': 'ID of the data.',
               'field_type': 'core',
               'type': 'string',
-            }),
-            'id_prefix': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
             }),
             'is_external': dict({
               'default': False,
@@ -1676,24 +1364,6 @@
                 'type': 'string',
               }),
               'type': 'array',
-            }),
-            'max_amount': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'max_content_lines': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
             }),
             'modifications': dict({
               'default': 0,
@@ -1776,15 +1446,6 @@
                 'null',
               ]),
             }),
-            'query': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
             'section_name': dict({
               'default': None,
               'description': 'Simply the first section.',
@@ -1804,28 +1465,10 @@
               }),
               'type': 'array',
             }),
-            'service': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
             'signature': dict({
               'default': None,
               'description': 'Derived from a docutils desc_name node.',
               'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'specific': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
               'type': list([
                 'string',
                 'null',
@@ -1884,33 +1527,6 @@
               'description': 'Name of the type.',
               'field_type': 'core',
               'type': 'string',
-            }),
-            'updated_at': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'url': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'user': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
             }),
           }),
           'type': 'object',
