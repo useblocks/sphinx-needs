@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792248103406,
+  "lastUpdate": 1792249196437,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -26064,6 +26064,42 @@ window.BENCHMARK_DATA = {
             "value": 58.274699902,
             "unit": "s",
             "extra": "Commit: b01a98d82ad7e8dddbc2c4175da501a5c5ff3cc3\nBranch: master\nTime: 2026-10-17T16:40:17+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0bc5751ef8777abe4917bbaf36e687304deef28e",
+          "message": "🐛 needs_fields' default wins over needs_global_options', and needs.json writes a narrowed core field as declared (#2318)\n\n## What\n\nTwo fixes in `packages/sphinx-needs`, both about where a field's\ndeclaration comes from.\n\n- A field's `default` or `predicates` set both in its `needs_fields`\nentry and in the deprecated\n`needs_global_options` is now taken from `needs_fields`. The\n`needs_global_options` value is ignored and reported in\none `needs.config` warning per field, which names both locations and\nboth values.\n- The `needs_schema` block of `needs.json` now writes a core field the\nway the project declares it, through the same\nprojection extras already use (type, `null` where nullable, item type,\ndefault).\n\n## Why\n\n**#2264.** `_set_global_default` runs last in `create_schema`, so the\nlegacy value replaced the `needs_fields` one.\nMeasured on `9a860749` with `[needs.fields.asil] default = \"QM\"` and\n`needs_global_options = {\"asil\": {\"default\": \"A\"}}`:\na need without `asil` held `\"A\"`, and the only message was the generic\n`needs.deprecated` warning. The same happened to\n`predicates`, and to a core field (`status`) narrowed with a default in\n`needs_fields`.\n\n**#2263.** The core fields in the block were copied from their built-in\nschema, while extras and link types were\nwritten from the resolved schema. Measured on `9a860749` with\n`needs_fields = {\"status\": {\"schema\": {\"type\": \"string\",\n\"enum\": [\"open\", \"closed\"]}, \"nullable\": False, \"default\": \"open\"}}`:\nthe project gave every unset need `\"open\"` and\nrefused `null`, but the file declared `status` as `{\"type\": [\"string\",\n\"null\"], \"default\": null}`.\n\n**What this does not change.** The issue's own example narrows `status`\nwith an `enum` alone. That writes the same file before and after this\nchange, because `needs_schema` carries no field's constraints (`enum`,\n`pattern`, `minimum`, …), core or extra. This PR brings core fields to\nparity with extras, as the issue asks; the constraints are a separate\ngap, #2316. A `needs_links` default is still replaced silently by a\n`needs_global_options` one: #2317.\n\n## How\n\n- `create_schema` passes `_set_global_default` the keys the field's own\n`needs_fields` entry sets. A key counts when\nthat entry is the field's declaration (a core field's entry, or the\nentry the field is registered from) and its\nvalue is not `None`. A key set in both places is skipped and reported. A\nkey set in only one place applies as before.\nSo a field declared in `needs_fields` without a `default` still takes\nthe legacy default, and a `needs_fields`\ndefault still combines with legacy `predicates`. A need type's own\ndeclaration is resolved afterwards and still wins\n  over both.\n- `generate_needs_schema` writes every core field that is in the fields\nschema (`for_type(None).get_core_field`)\nthrough `_field_property`, the projection extras already used. The core\nfields outside the fields schema keep their\n  built-in block. As for extras, the `enum` is not written.\n\n## Measured\n\n- After the fix, the #2264 project holds `\"QM\"` and warns\n`needs_global_options['asil']['default'] ('A') is ignored:\nneeds_fields['asil']['default'] ('QM') takes precedence [needs.config]`.\n- After the fix, the #2263 project writes `status` as `{\"type\":\n\"string\", \"default\": \"open\", ...}`. Under\n`needs_json_remove_defaults`, a value equal to `\"open\"` is now left out\nof the file, and the `ub-needs-exchange`\nreader restores it from the file's own block. Before the fix nothing was\nlost: `\"open\"` was simply never left out.\n- Only one existing snapshot changed: `test_field_defaults.ambr`\n`field_defaults_needs`. Its two projects give\n`collapse`, `layout` and `tags` a default with\n`needs_json_remove_defaults = True`. The block now carries those\ndefaults, so values equal to them are left out, and one explicit\n`collapse: False` is now written.\n- The `needs.json` format does not change, and neither does\n`format_version`.\n\n## Tests\n\n- `test_needs_fields_default_wins_over_global_options` covers seven\nfields in one project:\n  - a default set in both places;\n- a field declared without a default (the legacy default still applies);\n  - predicates set in both places;\n  - a `needs_fields` default with legacy predicates (both apply);\n  - a type's own default winning on its type;\n  - a narrowed core `status`;\n- a `needs_fields` `default` of `None`, which is no default: the legacy\none applies, with no warning (added in review; a mutation treating\n`None` as set survived the suite before it).\n- `test_needs_fields_default_and_predicates_win_in_one_warning` checks\nthat both keys colliding give one warning.\n- `test_narrowed_core_field_in_needs_schema` checks the written `status`\nblock. It also checks that `tags` and\n  `docname` are unchanged.\n- `test_narrowed_core_field_default_round_trips` checks a narrowed\ndefault under `needs_json_remove_defaults`: the\n  value is left out and then restored through `ub_needs_exchange`.\n- Each pin is red at `9a860749` and green after its fix. A one-line\nmutation of each fix turns its pins red.\n\nGates at the tip (rebased on `b01a98d8`): `uv run poe lint` 0, `uv run\npoe typecheck` 0, `uv run poe test-needs -n 4` 3412 passed / 14 skipped,\nthe Sphinx 7.4.7 cell on the touched modules passes, `uv run poe\ndocs-needs` 0 warnings.\n\n## Docs\n\n- `configuration.rst`: one sentence in the `needs_global_options`\ndeprecation note gives the precedence: a type's own\ndeclaration first, then `needs_fields`, then `needs_global_options`. It\nalso mentions the warning.\n- `builders.rst`: one sentence in the needs.json Format section says a\nfield, core or extra, is written as declared,\n  without its other constraints.\n- `changelog.rst`: two 🐛 bullets under Unreleased.\n\n## ubCode\n\nubCode's writer already writes a specialized core field from its\nresolved declaration, in the same shape:\n`rust/ubc_config/src/needs/resolved.rs:2261` and\n`rust/ubc_needs/src/index_writers/json.rs:595-597, 685-781`.\nAfter this change the two writers agree for a narrowed core field.\nNeither writes the `enum`.\n\n## Review\n\nOne adversarial reviewer: SHIP-WITH-FIXES, 0 MUST. It re-ran every gate,\nchecked the other needs.json readers (ub-needs-exchange, needimport and\nexternal needs, `needs_file`, ub-test-reports' writer, the sibling\nsuites), and round-tripped a `needs_json_remove_defaults` file through\nthe branch's `needimport` and through sphinx-needs 9.0.0 and 8.5.0 from\nPyPI: all restore the left-out values. Its fixes are in: the\n`None`-default pin, \"takes precedence\" (an invalid `needs_fields`\ndefault left the field with none, so \"is used instead\" was false), the\n`builders.rst` and changelog caveats, and the two follow-up issues.\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-<package>`) and they\npass.\n- [x] Documentation is updated where behaviour or options change.\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.\n\nCloses #2264\nCloses #2263",
+          "timestamp": "2026-10-17T16:58:31+02:00",
+          "tree_id": "e0853b8b2f121162e6ef6ea5859b2f19b25f33f5",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/0bc5751ef8777abe4917bbaf36e687304deef28e"
+        },
+        "date": 1792249188182,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.16502474100000342,
+            "unit": "s",
+            "extra": "Commit: 0bc5751ef8777abe4917bbaf36e687304deef28e\nBranch: master\nTime: 2026-10-17T16:58:31+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 56.82591351600001,
+            "unit": "s",
+            "extra": "Commit: 0bc5751ef8777abe4917bbaf36e687304deef28e\nBranch: master\nTime: 2026-10-17T16:58:31+02:00"
           }
         ]
       }
