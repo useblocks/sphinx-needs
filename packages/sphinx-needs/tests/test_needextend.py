@@ -92,3 +92,16 @@ def test_doc_needextend_dynamic(test_app, snapshot):
 
     needs_data = json.loads(Path(app.outdir, "needs.json").read_text())
     assert needs_data == snapshot(exclude=props("created", "project", "creator"))
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needextend_no_needs"}],
+    indirect=True,
+)
+def test_doc_needextend_no_needs(test_app: Sphinx):
+    # Issue #2296: a needextend in a project with no needs left the Needextend
+    # node in the doctree, and the HTML builder raised NotImplementedError for
+    # the unknown node type. Building must now succeed.
+    app = test_app
+    app.build()

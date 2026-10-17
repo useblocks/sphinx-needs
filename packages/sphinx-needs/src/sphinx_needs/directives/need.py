@@ -416,12 +416,15 @@ def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
 
     needs_data = SphinxNeedsData(app.env)
 
-    # If no needs were defined, we do not need to do anything
-    if not needs_data.get_needs_view():
-        return
-
+    # Needextend nodes must be removed from the doctree even when no needs were
+    # defined; otherwise the HTML builder raises NotImplementedError for the
+    # unknown node type.
     for extend_node in list(doctree.findall(Needextend)):
         remove_node_from_tree(extend_node)
+
+    # If no needs were defined, we do not need to do anything else.
+    if not needs_data.get_needs_view():
+        return
 
     format_need_nodes(app, doctree, fromdocname, list(doctree.findall(Need)))
 
