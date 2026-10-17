@@ -150,12 +150,16 @@ def test_a_toml_table_configures_a_built_in(build: Any) -> None:
 
 
 #: records, from ``config-inited`` handlers at priorities 11 and 13, whether a reader
-#: of the need types sees ``issue``
+#: of the need types sees ``issue``, and whether its directive is registered
 PRIORITY_PROBE = """
 def _probe(priority):
     def handler(app, config):
+        from docutils.parsers.rst import directives
         from sphinx_needs.api import get_need_types
-        app.gate_probe[priority] = "issue" in get_need_types(app)
+        app.gate_probe[priority] = (
+            "issue" in get_need_types(app),
+            "issue" in directives._directives,
+        )
     return handler
 
 def setup(app):
@@ -168,18 +172,39 @@ def setup(app):
 @pytest.mark.parametrize(
     ("conf", "seen"),
     [
-        pytest.param(services_conf("github-issues"), {11: False, 13: True}, id="on"),
-        pytest.param(CONF, {11: False, 13: False}, id="off"),
+        pytest.param(
+            services_conf("github-issues"),
+            {11: (False, False), 13: (True, True)},
+            id="on",
+        ),
+        pytest.param(CONF, {11: (False, False), 13: (False, False)}, id="off"),
     ],
 )
 def test_the_service_type_is_listed_from_config_inited_priority_12(
-    build: Any, conf: str, seen: dict[int, bool]
+    build: Any, conf: str, seen: dict[int, tuple[bool, bool]]
 ) -> None:
-    """The type is added at ``config-inited`` priority 12, where the final
-    ``needs_services`` (``conf.py``, the TOML file, ``-D``) is known: a reader above 12
-    sees it when the service is configured, a reader below 12 never does."""
+    """The type is added, and its directive registered, by sphinx-needs' own handler at
+    ``config-inited`` priority 12, where the final ``needs_services`` (``conf.py``, the
+    TOML file, ``-D``) is known: a handler above 12 sees both when the service is
+    configured, a handler below 12 never does."""
     app = build({"conf.py": conf + PRIORITY_PROBE})
     assert app.gate_probe == seen
+
+
+def test_the_built_in_services_are_decided_at_config_inited_priority_12(
+    build: Any,
+) -> None:
+    """The priority itself: the probe above runs from ``conf.py``'s ``setup``, after
+    sphinx-needs' handlers are connected, so on its own it would not see the handler
+    moved to 13."""
+    from sphinx_needs.services.github import add_configured_github_services
+
+    app = build({"conf.py": CONF})
+    assert [
+        listener.priority
+        for listener in app.events.listeners["config-inited"]
+        if listener.handler is add_configured_github_services
+    ] == [12]
 
 
 # -- what an unconfigured built-in gives --------------------------------------------------
@@ -190,7 +215,8 @@ def not_configured(name: str, line: int = 6) -> str:
         f"<srcdir>/index.rst:{line}: WARNING: Service {name!r} is a built-in service "
         "that is not configured, so it is not registered: name it in needs_services "
         f'to use it, e.g. needs_services = {{"{name}": {{}}}} in conf.py, or a '
-        f"[needs.services.{name}] table in ubproject.toml [needs.load_service_need]"
+        f"[needs.services.{name}] table in the needs_from_toml file "
+        "[needs.load_service_need]"
     )
 
 
@@ -244,11 +270,116 @@ def test_a_built_in_configured_with_a_non_mapping_is_not_registered(
         "<srcdir>/index.rst:6: WARNING: Service 'github-issues' is a built-in service "
         "whose needs_services entry is not a mapping of options, so it is not "
         'registered: configure it as a mapping, e.g. needs_services = {"github-issues": '
-        "{}} in conf.py, or a [needs.services.github-issues] table in ubproject.toml "
-        "[needs.load_service_need]",
+        "{}} in conf.py, or a [needs.services.github-issues] table in the "
+        "needs_from_toml file [needs.load_service_need]",
     ]
     assert registered(app) == set()
     assert service_types(app) == set()
+
+
+def named_late(name: str = "github-issues", line: int = 6) -> str:
+    return (
+        f"<srcdir>/index.rst:{line}: WARNING: Service {name!r} is named in "
+        "needs_services, but only after the built-in services were decided "
+        "(config-inited priority 12), so it is not registered: set it in conf.py, the "
+        "needs_from_toml file, or a config-inited handler at priority 11 or below "
+        "[needs.load_service_need]"
+    )
+
+
+#: an extension names a built-in in ``needs_services`` from a ``config-inited`` handler
+#: at the priority given, with the value given
+LATE_WRITER = """
+def _late(app, config):
+    config.needs_services = {{**config.needs_services, "github-issues": {value}}}
+
+def setup(app):
+    app.connect("config-inited", _late, priority={priority})
+"""
+
+
+@pytest.mark.parametrize("priority", [13, 500])
+def test_a_built_in_named_after_priority_12_says_it_came_too_late(
+    build: Any, priority: int
+) -> None:
+    """The built-in services are decided once, at priority 12, so their types and the
+    services cannot disagree: one named later is not registered, and the warning says
+    where to name it instead of that it is not configured."""
+    app = build(
+        {
+            "conf.py": CONF + LATE_WRITER.format(value="{}", priority=priority),
+            "index.rst": RST + "\n.. needservice:: github-issues\n",
+        }
+    )
+    assert build_warnings(app) == [named_late()]
+    assert registered(app) == set()
+    assert service_types(app) == set()
+
+
+def test_a_built_in_named_at_priority_11_is_registered(build: Any) -> None:
+    app = build({"conf.py": CONF + LATE_WRITER.format(value="{}", priority=11)})
+    assert_no_warnings(app)
+    assert registered(app) == {"github-issues"}
+    assert service_types(app) == {"issue"}
+
+
+#: a service class of the extension's own, under a built-in's name
+LATE_CLASS = """
+from sphinx_needs.services.base import BaseService
+
+
+class Mine(BaseService):
+    options = []
+
+    def __init__(self, app, name, config, **kwargs):
+        super().__init__()
+
+    def request(self, options):
+        return []
+
+suppress_warnings = ["config.cache"]
+"""
+
+
+def test_a_class_given_late_under_a_built_in_name_is_not_registered(
+    build: Any,
+) -> None:
+    """A built-in's name is the built-in service's, decided at priority 12: an
+    extension's class set under it afterwards is not registered in its place (as a
+    class under that name in ``conf.py`` never was), and a ``needservice`` naming it
+    gets the too-late warning."""
+    app = build(
+        {
+            "conf.py": CONF
+            + LATE_CLASS
+            + LATE_WRITER.format(
+                value='{"class": Mine, "class_init": {}}', priority=500
+            ),
+            "index.rst": RST + "\n.. needservice:: github-issues\n",
+        }
+    )
+    assert build_warnings(app) == [named_late()]
+    assert registered(app) == set()
+
+
+def test_a_built_in_entry_of_another_kind_holding_class_is_one_warning(
+    build: Any,
+) -> None:
+    """A value that is not a mapping is refused once, at priority 12, even when it
+    holds the strings ``class`` and ``class_init``: it is not read again as a service
+    class to register."""
+    app = build(
+        {
+            "conf.py": CONF
+            + 'needs_services = {"github-issues": ["class", "class_init"]}\n'
+        }
+    )
+    assert build_warnings(app) == [
+        "WARNING: needs_services entry 'github-issues' is not registered: its "
+        "configuration must be a mapping of options (got a value of type 'list') "
+        "[needs.config]"
+    ]
+    assert registered(app) == set()
 
 
 def test_a_hand_written_service_type_needs_the_service(build: Any) -> None:
@@ -339,6 +470,16 @@ def test_an_old_needs_json_imports_its_empty_service_keys_silently(
     assert_no_warnings(app)
     need = SphinxNeedsData(app.env).get_needs_view()["OLD_1"]
     assert SERVICE_FIELDS.isdisjoint(need.keys())
+
+
+@pytest.mark.parametrize("reader", list(READERS))
+def test_an_unknown_key_beside_the_empty_service_keys_is_still_reported(
+    build: Any, reader: str
+) -> None:
+    """Only the twelve service names are dropped silently: any other key the project
+    does not know is reported, empty or not."""
+    app = build(import_project(reader, CONF, old_needs_json(foo=None)))
+    assert build_warnings(app) == [unknown_keys_warning(reader, ["foo"])]
 
 
 @pytest.mark.parametrize("reader", list(READERS))
@@ -437,8 +578,10 @@ def test_a_custom_github_service_alone_says_which_built_in_adds_its_type(
     assert build_warnings(app) == [
         "<srcdir>/index.rst:6: WARNING: Service need could not be created: Unknown "
         "need type 'issue'. The 'issue' type is registered by the built-in "
-        "'github-issues' service: configure needs_services['github-issues'] (an empty "
-        "entry is enough), or declare the 'issue' need type. [needs.load_service_need]"
+        "'github-issues' service: configure it (needs_services = {\"github-issues\": "
+        "{}} in conf.py, or a [needs.services.github-issues] table in the "
+        "needs_from_toml file), or declare the 'issue' need type. "
+        "[needs.load_service_need]"
     ]
     assert len(SphinxNeedsData(app.env).get_needs_view()) == 0
 
