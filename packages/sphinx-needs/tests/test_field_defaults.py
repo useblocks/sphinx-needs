@@ -224,6 +224,193 @@ def test_unknown_global_option_keys_are_sorted(test_app):
     ]
 
 
+CONF_DEFAULT_IN_BOTH = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+
+needs_types = [
+    {"directive": "spec", "title": "Specification", "prefix": "SP_"},
+    {
+        "directive": "impl",
+        "title": "Implementation",
+        "prefix": "IM_",
+        "fields": {"per_type": {"default": "from_type"}},
+    },
+]
+
+needs_fields = {
+    # a default in both: needs_fields' is used, needs_global_options' reported
+    "both": {"schema": {"type": "string"}, "default": "from_fields"},
+    # declared without a default: needs_global_options' default applies, as before
+    "declared_only": {"schema": {"type": "string"}},
+    # predicates in both: needs_fields' are used, needs_global_options' reported
+    "predicates": {
+        "schema": {"type": "string"},
+        "predicates": [("type == 'spec'", "from_fields")],
+    },
+    # a default in needs_fields, predicates in needs_global_options: nothing is set
+    # twice, so both apply
+    "mixed": {"schema": {"type": "string"}, "default": "from_fields"},
+    # a need type's own default wins over both, on that type
+    "per_type": {"schema": {"type": "string"}, "default": "from_fields"},
+    # a core field narrowed with a default: the same rule
+    "status": {"schema": {"type": "string"}, "default": "open"},
+    # a default of None is no default: needs_global_options' applies, unreported
+    "none_default": {"schema": {"type": "string"}, "default": None},
+}
+
+needs_global_options = {
+    "both": {"default": "from_global"},
+    "declared_only": {"default": "from_global"},
+    "predicates": {"predicates": [("type == 'spec'", "from_global")]},
+    "mixed": {"predicates": [("type == 'spec'", "from_global")]},
+    "per_type": {"default": "from_global"},
+    "status": {"default": "closed"},
+    "none_default": {"default": "from_global"},
+}
+"""
+
+INDEX_DEFAULT_IN_BOTH = """\
+Test
+====
+
+.. spec:: Specification
+    :id: SP_001
+
+.. impl:: Implementation
+    :id: IM_001
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), CONF_DEFAULT_IN_BOTH),
+                (Path("index.rst"), INDEX_DEFAULT_IN_BOTH),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_needs_fields_default_wins_over_global_options(test_app):
+    """A field's ``default`` (or ``predicates``) set in both ``needs_fields`` and
+    ``needs_global_options`` is ``needs_fields``', and the ignored value is reported,
+    once per field (:issue:`2264`).
+
+    The legacy value was applied last and replaced the ``needs_fields`` one silently:
+    every unset need held it, and the only message was the deprecation every use of
+    ``needs_global_options`` gives. A field ``needs_fields`` declares without the key
+    still takes the legacy value, and a need type's own default still wins over both.
+    """
+    test_app.build()
+
+    assert build_warnings(test_app) == [
+        'WARNING: Config option "needs_global_options" is deprecated. Please use '
+        "needs_fields and needs_links instead. [needs.deprecated]",
+        "WARNING: needs_global_options['both']['default'] ('from_global') is "
+        "ignored: needs_fields['both']['default'] ('from_fields') takes precedence "
+        "[needs.config]",
+        "WARNING: needs_global_options['predicates']['predicates'] "
+        "([(\"type == 'spec'\", 'from_global')]) is ignored: "
+        "needs_fields['predicates']['predicates'] "
+        "([(\"type == 'spec'\", 'from_fields')]) takes precedence [needs.config]",
+        "WARNING: needs_global_options['per_type']['default'] ('from_global') is "
+        "ignored: needs_fields['per_type']['default'] ('from_fields') takes precedence "
+        "[needs.config]",
+        "WARNING: needs_global_options['status']['default'] ('closed') is "
+        "ignored: needs_fields['status']['default'] ('open') takes precedence "
+        "[needs.config]",
+    ]
+
+    needs = _needs(test_app)
+    assert {
+        name: {i: n[name] for i, n in needs.items()}
+        for name in (
+            "both",
+            "declared_only",
+            "predicates",
+            "mixed",
+            "per_type",
+            "status",
+            "none_default",
+        )
+    } == {
+        "both": {"SP_001": "from_fields", "IM_001": "from_fields"},
+        "declared_only": {"SP_001": "from_global", "IM_001": "from_global"},
+        "predicates": {"SP_001": "from_fields", "IM_001": None},
+        "mixed": {"SP_001": "from_global", "IM_001": "from_fields"},
+        "per_type": {"SP_001": "from_fields", "IM_001": "from_type"},
+        "status": {"SP_001": "open", "IM_001": "open"},
+        "none_default": {"SP_001": "from_global", "IM_001": "from_global"},
+    }
+
+
+CONF_BOTH_KEYS_IN_BOTH = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+
+needs_fields = {
+    "asil": {
+        "schema": {"type": "string"},
+        "default": "QM",
+        "predicates": [("status == 'open'", "B")],
+    },
+}
+
+needs_global_options = {
+    "asil": {"default": "A", "predicates": [("status == 'open'", "C")]},
+}
+"""
+
+INDEX_BOTH_KEYS_IN_BOTH = """\
+Test
+====
+
+.. req:: Open
+    :id: REQ_001
+    :status: open
+
+.. req:: Unset
+    :id: REQ_002
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), CONF_BOTH_KEYS_IN_BOTH),
+                (Path("index.rst"), INDEX_BOTH_KEYS_IN_BOTH),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_needs_fields_default_and_predicates_win_in_one_warning(test_app):
+    """A field whose ``default`` and ``predicates`` are both set in both places is
+    reported once, naming both keys (:issue:`2264`)."""
+    test_app.build()
+
+    assert build_warnings(test_app) == [
+        'WARNING: Config option "needs_global_options" is deprecated. Please use '
+        "needs_fields and needs_links instead. [needs.deprecated]",
+        "WARNING: needs_global_options['asil']['default'] ('A') and "
+        "needs_global_options['asil']['predicates'] ([(\"status == 'open'\", 'C')]) "
+        "are ignored: needs_fields['asil']['default'] ('QM') and "
+        "needs_fields['asil']['predicates'] ([(\"status == 'open'\", 'B')]) "
+        "take precedence [needs.config]",
+    ]
+    assert {i: n["asil"] for i, n in _needs(test_app).items()} == {
+        "REQ_001": "B",
+        "REQ_002": "QM",
+    }
+
+
 @pytest.mark.parametrize(
     "test_app",
     [

@@ -4378,6 +4378,9 @@ needs_global_options
 .. deprecated:: 7.0.0
 
    Use :ref:`needs_fields` and :ref:`needs_links` instead.
+   A field's ``default`` or ``predicates`` set in more than one place is taken from a need type's own declaration
+   (:ref:`needs_types_fields`) first, then from the field's :ref:`needs_fields` entry, then from ``needs_global_options``,
+   whose value for a key the ``needs_fields`` entry sets too is ignored with a ``needs.config`` warning.
 
 .. versionchanged:: 5.1.0
 
