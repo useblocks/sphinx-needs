@@ -11,6 +11,14 @@ CONFIG_OPTIONS = [
     "max_content_lines",
     "id_prefix",
 ]
+#: the fields a GitHub service registers: its options but ``type``, a core field
+GITHUB_FIELDS = tuple(
+    option
+    for option in (
+        CONFIG_OPTIONS + EXTRA_DATA_OPTIONS + EXTRA_LINK_OPTIONS + EXTRA_IMAGE_OPTIONS
+    )
+    if option != "type"
+)
 GITHUB_DATA = [
     "status",
     "tags",
