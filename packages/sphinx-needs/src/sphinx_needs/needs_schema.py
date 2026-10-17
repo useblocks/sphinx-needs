@@ -479,7 +479,7 @@ class FieldSchema:
                             array.append(VariantDataParsed.from_string(item))
 
                 if has_df_or_vf:
-                    return FieldFunctionArray(tuple(array))  # ty: ignore[invalid-argument-type]
+                    return FieldFunctionArray(tuple(array))
                 else:
                     return FieldLiteralValue(array)  # ty: ignore[invalid-argument-type]
             case other:
@@ -620,22 +620,16 @@ class LinksLiteralValue:
 
 @dataclass(frozen=True, slots=True)
 class FieldFunctionArray:
-    value: (
-        tuple[
-            DynamicFunctionParsed | VariantFunctionParsed | VariantDataParsed | str, ...
-        ]
-        | tuple[
-            DynamicFunctionParsed | VariantFunctionParsed | VariantDataParsed | bool,
-            ...,
-        ]
-        | tuple[
-            DynamicFunctionParsed | VariantFunctionParsed | VariantDataParsed | int, ...
-        ]
-        | tuple[
-            DynamicFunctionParsed | VariantFunctionParsed | VariantDataParsed | float,
-            ...,
-        ]
-    )
+    value: tuple[
+        DynamicFunctionParsed
+        | VariantFunctionParsed
+        | VariantDataParsed
+        | str
+        | bool
+        | int
+        | float,
+        ...,
+    ]
 
     def __iter__(
         self,
