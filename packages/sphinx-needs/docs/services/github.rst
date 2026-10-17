@@ -219,6 +219,7 @@ A service that is not configured creates no type, so a project configuring ``git
 but no ``pr`` and no ``commit``.
 These types are used by default by the related service, but its usage can be overwritten in the service configuration
 by setting ``need_type`` or in the directive directly by setting ``type``.
+The service's type is added even when ``need_type`` sends its needs to another type.
 
 The configuration (names, colors, diagram representation) can also be overwritten by configuring your own need
 type in the configuration. Simply use :ref:`needs_types` for this.

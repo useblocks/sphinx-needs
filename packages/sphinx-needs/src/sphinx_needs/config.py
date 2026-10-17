@@ -980,8 +980,8 @@ class NeedsSphinxConfig:
         """The need types: the configured ``needs_types``, then those added with the
         ``add_need_type`` API function by other extensions, then the ``issue``, ``pr``
         and ``commit`` of the GitHub services ``needs_services`` configures (from
-        ``config-inited`` priority 12); a type is read only where no earlier one has its
-        directive.
+        sphinx-needs' own ``config-inited`` handler at priority 12 on, so from a handler
+        above 12); a type is read only where no earlier one has its directive.
 
         A read-only list, made anew on each read: a change through it raises
         ``NeedsApiConfigException``, as does assigning the attribute. A type is

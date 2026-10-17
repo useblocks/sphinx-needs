@@ -32,9 +32,9 @@ def get_need_types(app: Sphinx) -> list[str]:
 
     Call it from a ``config-inited`` handler at a priority above 12, or later: before
     that, a mapping-shaped ``needs_types`` is not yet resolved to its list, and the
-    configured GitHub services' types are not yet added. From priority 12 on they are
-    listed, after the types added by then (they used to be added only at
-    ``env-before-read-docs``).
+    configured GitHub services' types are not yet added. They are listed from
+    sphinx-needs' own priority-12 handler on, so from a handler above 12, after the
+    types added by then (they used to be added only at ``env-before-read-docs``).
 
     **Usage**::
 

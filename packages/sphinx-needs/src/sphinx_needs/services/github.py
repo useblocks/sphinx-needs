@@ -64,7 +64,8 @@ def add_configured_github_services(app: Sphinx, config: Config) -> None:
     (``{}`` will do), in ``conf.py`` or a ``[needs.services.<name>]`` table of the
     ``needs_from_toml`` file; any other value is a ``needs.config`` warning, and the
     service is not registered. Each configured service adds its own need type alone
-    (``github-issues`` adds ``issue``), and any of them adds the ``github`` layout; the
+    (``github-issues`` adds ``issue``) and registers its directive, so a handler above
+    12 finds both, and any of them adds the ``github`` layout; the
     services themselves, and their fields, are registered from the same record when
     the documents are about to be read.
 

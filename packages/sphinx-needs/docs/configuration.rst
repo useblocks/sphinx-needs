@@ -261,7 +261,8 @@ By default it is set to:
 
 Every one of these items is stored on, or decides, the needs of the type,
 so an incremental build after a change to ``needs_types`` re-reads every document, as one after a change to :ref:`needs_fields` does,
-and so does one after a change to a need type added by an extension (below).
+and so does one after a change to a need type added by an extension (below),
+or after a built-in :ref:`GitHub service <github_service>` is configured or removed in :ref:`needs_services`.
 
 .. versionchanged:: 9.1.0
 
@@ -3239,6 +3240,10 @@ each then adds its fields, its need type and the ``github`` layout,
 and a project that names none of them has none of these.
 A built-in named with a value that is not a mapping is reported as a ``needs.config`` warning,
 and that service is not registered.
+The built-in services are decided once, by sphinx-needs' own ``config-inited`` handler at priority 12:
+one named later, by an extension's handler above 12, is not registered,
+so name it in :file:`conf.py`, the :ref:`needs_from_toml` file, or a ``config-inited`` handler at priority 11 or below.
+An incremental build after a built-in service is configured or removed re-reads every document.
 
 .. code-block:: python
 

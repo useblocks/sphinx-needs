@@ -182,9 +182,18 @@ Breaking changes
   - The needs.json of a project that configures no service no longer carries the twelve
     keys, nor their ``needs_schema`` entries, nor the three types; a consumer indexing them
     reads them with a default. A needs.json written by an earlier version still imports
-    (:ref:`needimport`, :ref:`needs_external_needs`) without a warning: a project with no
-    service drops the twelve keys silently where they are null or ``""``, and reports one
-    holding a value as an unknown key, as before.
+    (:ref:`needimport`, :ref:`needs_external_needs`) without a warning for its empty
+    service keys: a project with no service drops the twelve keys silently where they are
+    null or ``""``, and reports one holding a value as an unknown key, as before. Needs a
+    GitHub service made (of the ``issue``, ``pr`` or ``commit`` type, with the ``github``
+    layout) need that service configured, or the type and a ``github`` layout declared;
+    without it each is refused (``needs.import_need`` / ``needs.load_external_need``), and
+    a :ref:`needimport`'ed need of a declared type with the layout ``github`` stops the
+    build, as any unknown layout does.
+  - An incremental build after a built-in service is configured or removed re-reads every
+    document, as one after a change to :ref:`needs_types` does, also where the project
+    declares the service's type itself; the first incremental build after upgrading
+    re-reads every document once.
   - A service of your own built on ``GithubService``, such as the
     :ref:`GitHub Enterprise example <service_github_custom>`, gets no need type and no
     layout from its class: configure the built-in service it imitates too (as that example
@@ -194,7 +203,7 @@ Breaking changes
 
   An extension reading :func:`~sphinx_needs.api.configuration.get_need_types` finds
   ``issue``, ``pr`` and ``commit`` only for the configured services, listed from
-  ``config-inited`` priority 12 on.
+  sphinx-needs' own ``config-inited`` handler at priority 12 on, so from a handler above 12.
 
 - ‼️ ``app.config.needs_types`` and ``app.config.needs_layouts`` no longer hold the need
   types and layouts added by extensions or by the configured GitHub services, and the types and
@@ -234,8 +243,8 @@ Breaking changes
   has resolved the configured types to their list, and before it registers their
   directives. Such an entry is part of the configuration, as a project's own is.
 
-  The configured GitHub services' types are read from ``config-inited`` priority 12 on,
-  so a ``config-inited`` handler at a priority above 12 now sees each configured one of
+  The configured GitHub services' types are read from sphinx-needs' own ``config-inited``
+  handler at priority 12 on, so a handler at a priority above 12 now sees each configured one of
   ``issue``, ``pr`` and ``commit`` too, after the types added by then; they used to appear
   only from ``env-before-read-docs``.
 
@@ -341,6 +350,10 @@ Bug fixes
   services from adding their other need types: a configured ``issue`` dropped ``pr`` and
   ``commit``, and a configured ``pr`` dropped ``commit``. Each of the three now gives way
   on its own (:pr:`2307`)
+
+- 🐛 A built-in GitHub service named in :ref:`needs_services` only by an extension's
+  ``config-inited`` handler after sphinx-needs' own at priority 12 is not registered, and a
+  :ref:`needservice` naming it says so, and where to name it instead
 
 - 🐛 A built-in GitHub service named in :ref:`needs_services` with a value that is not a
   mapping of options -- ``-D needs_services.github-issues=1`` sets the string ``'1'`` --
