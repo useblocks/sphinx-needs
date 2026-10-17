@@ -151,6 +151,12 @@ Deprecations
 Bug fixes
 .........
 
+- 🐛 A :ref:`needextend` no longer stops the HTML build with ``NotImplementedError: ...
+  departing unknown node type: Needextend`` in a project with no needs, or with
+  :ref:`needs_include_needs` set to ``False``: its node is now removed on those paths too.
+  In a project with no needs it matches nothing and says so, as it does in one with needs
+  (:issue:`2296`)
+
 - 🐛 Under :ref:`needs_json_remove_defaults`, a value equal to its field's default but of
   another JSON type (``1.0`` against a default of ``1``, ``[1.0]`` against ``[1]``) is now
   written, so a reader gets it back as written. The writer compared with Python's ``==``,
