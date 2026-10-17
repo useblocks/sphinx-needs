@@ -16,9 +16,15 @@ from pathlib import Path
 import pytest
 from sphinx.util.console import strip_colors
 
+import sphinx_needs.api
 from sphinx_needs.api import get_need_types
 
 
+@pytest.mark.skipif(
+    not hasattr(sphinx_needs.api, "add_need_layout"),
+    reason="the installed sphinx-needs predates its fix of #2265 (which added "
+    "add_need_layout); the fix ships in the next sphinx-needs release",
+)
 @pytest.mark.parametrize(
     "extensions",
     [

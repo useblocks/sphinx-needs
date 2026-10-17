@@ -13,6 +13,7 @@ from sphinx.environment import CONFIG_OK
 from sphinx.testing.util import SphinxTestApp
 from sphinx.util.console import strip_colors
 
+import sphinx_needs.api
 from sphinx_codelinks.analyse.oneline_parser import WarningSubTypeEnum
 from sphinx_codelinks.config import (
     CodeLinksConfig,
@@ -309,6 +310,11 @@ def test_incremental_build_keeps_src_trace_projects_unchanged(
     )
 
 
+@pytest.mark.skipif(
+    not hasattr(sphinx_needs.api, "add_need_layout"),
+    reason="the installed sphinx-needs predates its fix of #2265 (which added "
+    "add_need_layout); the fix ships in the next sphinx-needs release",
+)
 def test_an_incremental_build_changes_no_configuration_option(
     minimal_sphinx_project: Path,
     make_app: Callable[..., SphinxTestApp],
