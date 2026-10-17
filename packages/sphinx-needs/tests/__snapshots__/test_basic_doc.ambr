@@ -832,6 +832,7 @@
         }),
         'type': 'array',
       }),
+      target_types=None,
     ),
     'max_amount': FieldSchema(
       allow_defaults=True,
@@ -903,6 +904,7 @@
         }),
         'type': 'array',
       }),
+      target_types=None,
     ),
     'post_template': FieldSchema(
       allow_defaults=True,

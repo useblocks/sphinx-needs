@@ -463,8 +463,8 @@ FINDINGS = [
             "default, predicates, derive; the key is ignored",
             "needs_types entry 1 ('req').links['links'] has an unknown key "
             "'nullable'; known keys are description, schema, default, predicates, "
-            "derive, incoming, outgoing, copy, allow_dead_links, color, style, "
-            "style_part, style_start, style_end; the key is ignored",
+            "derive, target_types, incoming, outgoing, copy, allow_dead_links, color, "
+            "style, style_part, style_start, style_end; the key is ignored",
             # a link type's display is a key of every links entry, and refused when
             # the schema is built on a link type declared otherwise
             "needs_types['req'].links['links'] sets 'incoming', which a need type "

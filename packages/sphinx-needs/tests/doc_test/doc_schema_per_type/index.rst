@@ -43,3 +43,7 @@ Per-type configuration example
 .. test:: A test of the safety requirement that was not created
    :id: T_004
    :verifies: SR_002
+
+.. test:: A test of a requirement without an ASIL
+   :id: T_005
+   :verifies: R_002

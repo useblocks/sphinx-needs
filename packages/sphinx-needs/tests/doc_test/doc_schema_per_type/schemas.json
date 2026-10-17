@@ -8,14 +8,14 @@
       "validate": { "local": { "required": ["asil"] } }
     },
     {
-      "id": "test-verifies-req",
+      "id": "test-verifies-rated",
       "select": { "properties": { "type": { "const": "test" } } },
       "validate": {
         "network": {
           "verifies": {
             "items": {
               "local": {
-                "properties": { "type": { "enum": ["req", "safety_req"] } }
+                "required": ["asil"]
               }
             }
           }

@@ -25,7 +25,7 @@ from sphinx_needs.layout import build_need_repr
 from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
 from sphinx_needs.need_constraints import process_constraints
 from sphinx_needs.need_item import NeedItem, NeedItemSourceDirective, NeedLink
-from sphinx_needs.needs_schema import FieldsSchema
+from sphinx_needs.needs_schema import FieldsSchema, LinkTargetTypes
 from sphinx_needs.nodes import Need
 from sphinx_needs.utils import (
     DummyOptionSpec,
@@ -556,13 +556,36 @@ def build_backlinks(
 def check_links(
     needs: NeedsMutable, config: NeedsSphinxConfig, schema: FieldsSchema
 ) -> None:
-    """Assess the link conditions, and report the links to unknown needs.
+    """Assess the target types and the link conditions, and report the links to
+    unknown needs.
 
     Called once every value is computed, so a condition reads the target's computed
-    fields and its complete back links. The needs are checked in the order they were
-    read in, each need's conditions before its dead links.
+    fields and its complete back links, and every link checked is final. The needs are
+    checked in the order they were read in, each need's target types, then its
+    conditions, then its dead links. The target types are checked whether or not the
+    schema validation runs; a link failing both its target types and its condition is
+    reported for each.
     """
+    #: need type -> link type -> its target types, as the type declares them: read
+    #: once per need type, not per link
+    target_types: dict[str, dict[str, LinkTargetTypes]] = {}
+    #: the link types copied into ``links``, as ``_copy_links`` copies them: a copy is
+    #: not checked against ``links``; ``copy`` on ``links`` itself, and on a derived
+    #: link type (refused), copies nothing, so it exempts nothing
+    copied = tuple(
+        link.name
+        for link in schema.iter_link_fields()
+        if link.copy and link.name != "links" and not link.derived
+    )
     for need in needs.values():
+        if (declared := target_types.get(need_type := need["type"])) is None:
+            declared = target_types[need_type] = {
+                link.name: link.target_types
+                for link in schema.for_type(need_type).iter_link_fields()
+                if link.target_types is not None
+            }
+        if declared:
+            _check_target_types(need, needs, declared, copied)
         for link_type, references in need.iter_links_items(as_str=False):
             for need_link in references:
                 if need_link.condition is None:
@@ -598,13 +621,91 @@ def check_links(
                 _emit_link_warning(need, message, "link_outgoing")
 
 
+def _check_target_types(
+    need: NeedItem,
+    needs: NeedsMutable,
+    declared: dict[str, LinkTargetTypes],
+    copied: tuple[str, ...],
+) -> None:
+    """Report each resolved link of ``need`` to a need whose type its link type's
+    target types, as the need's type declares them, do not accept: one
+    ``needs.link_target_type`` warning per link.
+
+    A dead link is left to the dead-link check, whether or not dead links are allowed;
+    a link to a part is checked by the type of the need owning it. A link of ``links``
+    that the need also holds, the same target and part, in another link type copied
+    into ``links`` is not checked against the target types of ``links``: it is checked
+    as a link of the link type it is copied from (``copy`` on ``links`` itself, or on
+    a derived link type, copies nothing, so ``copied`` holds neither).
+
+    :param declared: Each link type with target types on the need's type.
+    :param copied: The link types with ``copy``.
+    """
+    #: the targets copied into ``links``, from the final values: computed once, if
+    #: ``links`` has target types and a link of it is refused
+    copies: set[tuple[str, str | None]] | None = None
+    for link_type, references in need.iter_links_items(as_str=False):
+        if (allowed := declared.get(link_type)) is None:
+            continue
+        # one finding per distinct link, as needs.json writes the links
+        for need_link in dict.fromkeys(references):
+            target = needs.get(need_link.id)
+            if target is None or (
+                need_link.part is not None and target.get_part(need_link.part) is None
+            ):
+                continue  # a dead link has no type: the dead-link check reports it
+            if target["type"] in allowed.types:
+                continue
+            if link_type == "links" and copied:
+                if copies is None:
+                    copies = {
+                        (link.id, link.part)
+                        for name, links in need.iter_links_items(as_str=False)
+                        if name in copied
+                        for link in links
+                    }
+                if (need_link.id, need_link.part) in copies:
+                    continue
+            _emit_link_warning(
+                need,
+                f"Need '{need.id}' link '{need_link.to_link_string()}' "
+                f"in field '{link_type}': target need type '{target['type']}' "
+                f"{_not_one_of(allowed)}",
+                "link_target_type",
+            )
+
+
+def _not_one_of(allowed: LinkTargetTypes) -> str:
+    """What a refused target's type is not, as a ``needs.link_target_type`` warning
+    says it: the declared names (not their expansion), and the need type declaring
+    them, where a need type does."""
+    names = [repr(name) for name in allowed.names]
+    listed = " or ".join(filter(None, (", ".join(names[:-1]), names[-1])))
+    declared_by = (
+        ""
+        if allowed.declared_by is None
+        else f", as need type {allowed.declared_by!r} declares it"
+    )
+    return (
+        f"is not one of {listed} (or a type inheriting from "
+        f"{'it' if len(names) == 1 else 'them'}){declared_by}"
+    )
+
+
+#: the subtype of a link warning about an external need, where it has its own
+_EXTERNAL_SUBTYPES: Final[dict[WarningSubTypes, WarningSubTypes]] = {
+    "link_outgoing": "external_link_outgoing",
+    "link_target_type": "external_link_target_type",
+}
+
+
 def _emit_link_warning(need: NeedItem, message: str, subtype: WarningSubTypes) -> None:
     """Emit a warning for a link issue, using the appropriate location."""
     if need["is_external"]:
         log_warning(
             LOGGER,
             f"{need['external_url']}: {message}",
-            "external_link_outgoing" if subtype == "link_outgoing" else subtype,
+            _EXTERNAL_SUBTYPES.get(subtype, subtype),
             None,
         )
     else:

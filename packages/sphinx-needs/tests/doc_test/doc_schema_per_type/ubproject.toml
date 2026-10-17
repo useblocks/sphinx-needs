@@ -40,6 +40,7 @@ prefix = "T_"
 incoming = "is verified by"
 outgoing = "verifies"
 schema = { minItems = 1 }
+target_types = ["req"]
 # [/type-local]
 
 # [required]
