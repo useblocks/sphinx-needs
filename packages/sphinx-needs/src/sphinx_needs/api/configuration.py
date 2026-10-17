@@ -117,9 +117,9 @@ def add_need_layout(app: Sphinx, name: str, layout: dict[str, Any]) -> None:
     The given name must not be a layout of :ref:`needs_layouts` (sphinx-needs' own
     layouts included), a name of :ref:`needs_card_layouts` (whether or not its card
     compiles), or one added with this function already, otherwise
-    NeedsApiConfigException gets raised: each is refused from the start of the build,
-    before the configured layouts are merged and the cards compiled. The GitHub services' ``github`` layout does not
-    count: a layout added under that name replaces the service's.
+    NeedsApiConfigException gets raised: each is refused before the configured layouts
+    are merged and the cards compiled, as after. The GitHub services' ``github``
+    layout does not count: a layout added under that name replaces the service's.
 
     The layout is added to sphinx-needs' own registry, not to the :ref:`needs_layouts`
     configuration value, which holds only what the project configures (and
@@ -127,6 +127,11 @@ def add_need_layout(app: Sphinx, name: str, layout: dict[str, Any]) -> None:
     sees it, through ``NeedsSphinxConfig(app.config).layouts``: the configured
     layouts, then the added ones, then the GitHub services' one. The layout is used as
     given, with the structure a :ref:`needs_layouts` entry has (see :ref:`layouts`).
+
+    Call it from a ``config-inited`` handler at a priority above 12, as
+    :func:`add_need_type`, or later: before priority 10, the layouts and card layouts
+    of a :ref:`needs_from_toml` file are not read yet, and one of their names would
+    replace the added layout without a warning.
 
     **Usage**::
 

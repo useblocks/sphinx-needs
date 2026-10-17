@@ -251,11 +251,12 @@ class _Config:
     def add_need_type(self, need_type: NeedType) -> None:
         """Adds a need type to the registry.
 
-        The registry keeps a deep copy, as every ``add_*`` method here does: the views
-        hand out the registry's own entries, so a change through one never reaches the
-        caller's value -- nor the GitHub services' module constants, which survive
-        :meth:`clear` -- and a later change to that value never reaches the registry.
-        A layout nests dicts and lists, which a shallow copy would leave shared.
+        The registry keeps a deep copy, as :meth:`add_layout` and the two
+        ``add_builtin_*`` methods do: the views hand out the registry's own entries, so
+        a change through one never reaches the caller's value -- nor the GitHub
+        services' module constants, which survive :meth:`clear` -- and a later change
+        to that value never reaches the registry. A layout nests dicts and lists, which
+        a shallow copy would leave shared.
 
         :raises NeedsApiConfigException: If a need type of its directive is already
             registered.
