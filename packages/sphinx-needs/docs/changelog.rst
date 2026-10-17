@@ -248,8 +248,8 @@ Documentation
 
   :ref:`need_types_howto` gains a "How it works" section before its recipes: the mental model, and two
   diagrams on its example project -- where the fields of each type's needs come from (a field narrowed by a type and inherited by
-  the type inheriting from it, and fields one type declares alone), and how a field or link type declared
-  on need types alone comes to be. :ref:`needs_types_fields` stays the reference, every rule kept, and
+  the type inheriting from it, and fields one type declares alone), and how far a field or link type
+  declared on need types alone reaches: the type declaring it and the types inheriting from it. :ref:`needs_types_fields` stays the reference, every rule kept, and
   points to the walkthrough instead of repeating its worked example. :ref:`needs_processing_order` gains
   a diagram of the whole path of a need's values, from what it sets, its defaults and copied links when
   it is created, through ``needextend``, the link fields, the back links and every other field, to the

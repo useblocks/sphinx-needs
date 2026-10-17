@@ -56,9 +56,9 @@ In this project, where the ``status``, ``hazard`` and ``verdict`` of each type's
      hazard["safety_req declares hazard:<br/>a string, not nullable, no default<br/>no needs_fields entry declares it"]
      test_type["test declares status:<br/>enum open, done<br/>default open"]
      verdict["test declares verdict:<br/>enum passed, failed<br/>no needs_fields entry declares it"]
-     req_need(["a req need<br/>status: draft unless it says, draft or approved<br/>hazard, verdict: None, a value set is ignored"])
-     safety_need(["a safety_req need<br/>status: draft unless it says, draft or approved<br/>hazard: required, else the need is not created<br/>verdict: None, a value set is ignored"])
-     test_need(["a test need<br/>status: open unless it says, open or done<br/>verdict: None unless it says<br/>hazard: None, a value set is ignored"])
+     req_need(["a req need<br/>status: draft unless it says<br/>another value is reported, the need kept<br/>hazard, verdict: None, a value set is ignored"])
+     safety_need(["a safety_req need<br/>status: draft unless it says<br/>another value is reported, the need kept<br/>hazard: required, else the need is not created<br/>verdict: None, a value set is ignored"])
+     test_need(["a test need<br/>status: open unless it says<br/>another value is reported, the need kept<br/>verdict: None unless it says<br/>hazard: None, a value set is ignored"])
      status -->|narrowed by| req -->|inherited by| safety
      status -->|narrowed by| test_type
      req --> req_need
@@ -89,10 +89,13 @@ reaches the type that declares it and the types inheriting from it, never the ty
      safety --> safety_need
      test_type --> test_need
 
-Every type that declares such a name agrees on its shape:
-the first declaration of a type without a declaring ancestor, in the order the types are resolved (a parent before its children),
-sets its type -- and, for a link type, its labels, styles, ``copy`` and dead links --
-and another such declaration that gives a different one is ignored, as a ``needs.type_conflict`` warning.
+Every type that declares such a name agrees on its shape,
+which the first declaration of a type without a declaring ancestor sets,
+in the order the types are resolved (a parent before its children):
+for a field, the first that gives a ``schema`` ``type`` sets that type and whether the field is derived;
+for a link type, the first, an empty one too, sets whether it is derived,
+its labels, its styles, ``copy`` and whether dead links are allowed.
+Another declaration that disagrees with the shape is ignored, as a ``needs.type_conflict`` warning.
 The rules in full are in :ref:`needs_types_fields`.
 
 A field only one type has

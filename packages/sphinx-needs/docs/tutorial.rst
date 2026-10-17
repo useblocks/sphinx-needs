@@ -115,24 +115,33 @@ These are reported when building the documentation if the values are not as expe
 A need type that builds on another
 ..................................
 
-A need type can start from another one with ``inherits``, and declare fields of its own.
-Here ``needs_types`` is a dictionary keyed by directive, the other shape it takes:
+For our car, a safety requirement is a requirement with one thing more to say: the hazard it mitigates.
+A need type can start from another one with ``inherits``, and declare fields of its own
+(here ``needs_types`` is a dictionary keyed by directive, the other shape it takes):
 
 .. code-block:: python
 
     needs_types = {
-        "req": {"title": "Requirement", "prefix": "R_"},
-        "safety_req": {
+        "tutorial-req": {"title": "Requirement", "prefix": "R_"},
+        "tutorial-safety-req": {
             "title": "Safety requirement",
             "prefix": "SR_",
-            "inherits": "req",
+            "inherits": "tutorial-req",
             "fields": {"hazard": {"description": "The hazard it mitigates", "schema": {"type": "string"}}},
         },
     }
 
-A ``safety_req`` has everything a ``req`` declares, plus a ``hazard`` that only safety requirements have:
+.. code-block:: rst
+
+    .. tutorial-safety-req:: Automatic emergency braking
+       :id: T_BRAKE
+       :hazard: collision with a pedestrian
+
+A ``tutorial-safety-req`` has everything a ``tutorial-req`` declares,
+plus a ``hazard`` that only safety requirements have:
 on any other need it is ``None``, and a value set there is ignored with a warning.
 :ref:`need_types_howto` walks through what a type's entry can declare, with diagrams.
+
 
 Referring to a need item
 ------------------------

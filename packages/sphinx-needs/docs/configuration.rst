@@ -562,7 +562,7 @@ and a :ref:`needextend` is refused on the needs of the type, one ``needs.needext
 
    Option 'verifies' does not support extend operations on need type 'spec'; it does not extend 1 need (S_001).
 
-Its back links, ``verifies_back``, are on every need, as for any link type.
+Its back links, ``<name>_back``, are on every need, as for any link type.
 With ``copy`` the links of the declaring needs are copied into ``links``, and a need of another type copies none;
 ``copy`` beside a ``derive`` is reported as on a ``needs_links`` entry (``needs.derive_invalid``), and nothing is copied.
 A derived one is derived on every type that declares it (a child inheriting its parent's rule), and holds ``[]`` on the others.
