@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792245027164,
+  "lastUpdate": 1792248103406,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -26028,6 +26028,42 @@ window.BENCHMARK_DATA = {
             "value": 43.359224209999994,
             "unit": "s",
             "extra": "Commit: 9a8607491d86f768f9305d7efaed0de0dd59c3a6\nBranch: master\nTime: 2026-10-17T15:49:13+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b01a98d82ad7e8dddbc2c4175da501a5c5ff3cc3",
+          "message": "🏷️ needextend: an append's computed value is read as what it is; eight suppressions gone (#2315)\n\n## What\n\nTyping only, in `packages/sphinx-needs`. It removes eight `# ty: ignore`\ncomments, seven in `directives/needextend.py` and one in\n`needs_schema.py`, taking the workspace from 90 to 82.\n\n**The seven in needextend.** A `needextend` append (`:+option:`) on a\nfield or link type whose value is computed (`[[…]]`, `<<…>>`, `<{…}>`)\njoins the computed value and the appended one into one function array.\nThe checker could not prove either join:\n- **Link types:** a need holds its computed values by name in one dict,\ntyped as the union of `LinksFunctionArray` and `FieldFunctionArray`. So\na link type's computed value read back from it could have been either.\n- **Fields:** `FieldFunctionArray.value` was declared as a union of four\nhomogeneous tuples, one each for `str`, `bool`, `int` and `float` items.\nNo concatenation of two such values could be proved to stay in one arm.\n\nAt run time both are always of one kind:\n- field names and link type names cannot overlap, because the schema\nrefuses a shared name;\n- an append is only accepted on string and array fields, and both sides\nare converted by the field's one declaration.\n\n**The fix.**\n- **Reading the computed value:** `_computed_links` and\n`_computed_field` read a need's computed value for a link type or a\nfield with an `isinstance` check. Each raises `RuntimeError` on the\nother kind, a state the schema makes impossible, in line with the three\ninvariant `RuntimeError`s the function already has.\n- **`FieldFunctionArray.value`:** it is declared as one tuple whose\nitems are computed parts, text or numbers, instead of one tuple per item\ntype. ty already merged the numeric arms, and no reader relied on the\nsplit; `__iter__` was already flat. The suppression this leaves unused\nin `FieldSchema.convert_directive_option` goes too.\n- **Docs:** `FieldFunctionArray` is autodoc'd in `docs/api.rst`, so its\nshown annotation becomes the wider one.\n\n**How it got here.** The first commit checked every joined item at run\ntime and raised on a mix of kinds. The review showed that this turned a\nthird-party misuse into a build abort, where master finishes the build\nand reports it as a located `sn_schema_violation.field_fail` error. The\nreview proposed the flat declaration instead. The second commit adopts\nit and removes the run-time checks, so behaviour stays exactly as on\nmaster. The PR squashes, so only the result lands.\n\n**Noted, not changed (for #1835).**\n- `FunctionArrayTyped` in `needs_schema.py` is never used.\n- Appending to a string field joins with one space when both sides are\nliteral, and can give two when one side is computed. Unchanged here.\n\n## Why\n\nContinues #1835: `needextend.py` was its largest remaining cluster.\n\n## Tests\n\n- **New characterisation test,\n`tests/test_needextend_append_computed.py`:** one build that drives all\nseven joins and pins the values each gives:\n  - a link type;\n  - a string field;\n  - string, integer, number and boolean arrays;\n  - computed values on either side.\n\nThe existing extend tests never reached two of the joins or any\nnumeric-array append. The test passes on master too, as nothing changes\nat run time.\n- **Neutrality:** the reviewer built two probe projects with master's\nand this branch's `needextend.py`. A line tracer confirmed all seven\njoins ran. One project covers link types, string fields, nullable and\ncomputed-default fields, arrays of each item type, `tags`, fields\ndeclared on one need type alone, and variants; the other uses\n`needimport`. needs.json and warnings are byte-identical. A third-party\nhandler writing a wrongly-kinded value gives master's located schema\nerror, byte for byte.\n- **Mutations:** each of these makes `uv run poe typecheck` fail:\n  - dropping `_computed_field` (3 errors);\n  - dropping `_computed_links` (2 errors);\n- putting the bare constructors back over the first commit's helpers (5\nerrors).\n- **Review:** an Opus builder wrote the first commit, and an independent\nreviewer returned **SHIP-WITH-FIXES**. Its main SHOULD was the build\nabort and the smaller design, which I adopted in the second commit. The\nsame reviewer then validated the result as **SHIP**:\n  - probes byte-identical;\n  - no dead code;\n  - imports in `needextend.py` identical to master's;\n- every `FieldFunctionArray` constructor and reader across the workspace\ntype-checks.\n- **Gates:** lint, typecheck and `test-needs` (3408 passed, 305\nsnapshots unchanged) at `567d8b01`, on master `9a860749`.\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue. *(Written by Claude Code at a\nmaintainer's request.)*\n- [x] I ran the package's tests (`uv run poe test-<package>`) and they\npass.\n- [x] Documentation is updated where behaviour or options change. *(No\nbehaviour changes; the autodoc'd annotation of `FieldFunctionArray`\nwidens.)*\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*. *(sphinx-needs: Internal changes.)*\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-17T16:40:17+02:00",
+          "tree_id": "f094ef4e446d8d577ba0c684670a1955d1e55c5d",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/b01a98d82ad7e8dddbc2c4175da501a5c5ff3cc3"
+        },
+        "date": 1792248095466,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1122811819999967,
+            "unit": "s",
+            "extra": "Commit: b01a98d82ad7e8dddbc2c4175da501a5c5ff3cc3\nBranch: master\nTime: 2026-10-17T16:40:17+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 58.274699902,
+            "unit": "s",
+            "extra": "Commit: b01a98d82ad7e8dddbc2c4175da501a5c5ff3cc3\nBranch: master\nTime: 2026-10-17T16:40:17+02:00"
           }
         ]
       }
