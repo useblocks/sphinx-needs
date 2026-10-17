@@ -2239,9 +2239,11 @@ def narrowing_problems(
         ``parse_conditions``: a link type is drawn and resolved the same on every need
         type;
     11. for a link type whose ``base`` has ``target_types``, ``target_types`` whose
-        accepted types (a listed type and the types inheriting from it) are among
-        those of ``base``: a link a need of the type may hold is one a need of any
-        type may.
+        accepted types (a listed type and the types inheriting from it, the EXPANDED
+        sets compared) are among those of ``base``: a link a need of the type may
+        hold is one a need of any type may. An overlay without ``target_types`` under
+        a base with them drops them: defensive, since a declaration from the
+        configuration that gives none (or names no need type) keeps the base's.
 
     The ``description`` is free. A reason of the rules 1 to 3 reads on from the name
     of the field ("Cannot declare field 'x' for need type 't' ..."), the others are
@@ -2308,16 +2310,30 @@ def narrowing_problems(
         if (parent := base.target_types) is not None:
             child = overlay.target_types
             if child is None:
+                # defensive: a declaration from the configuration keeps the target
+                # types before it when it gives none, so only an overlay built by
+                # hand (add_type_overlay, replace_field) can drop them
                 problems.append(
                     f"Child drops parent 'target_types' {list(parent.names)}."
                 )
             elif not child.types <= parent.types:
+                # the names whose types the parent does not accept: a listed type's
+                # subtypes are accepted with it, so a name the parent accepts adds none
+                added = [name for name in child.names if name not in parent.types]
+                added = added or sorted(child.types - parent.types)
                 problems.append(
-                    f"Child 'target_types' {list(child.names)} are not a subset of "
-                    f"parent 'target_types' {list(parent.names)} and the types "
-                    "inheriting from them."
+                    f"Child 'target_types' accept "
+                    f"{_or_joined([repr(name) for name in added], 'and')}, which "
+                    f"parent 'target_types' {list(parent.names)} (or a type "
+                    f"inheriting from {'it' if len(parent.names) == 1 else 'them'}) "
+                    "do not."
                 )
     return problems
+
+
+def _or_joined(items: list[str], word: str) -> str:
+    """``a``, ``a <word> b``, ``a, b <word> c``."""
+    return f" {word} ".join(filter(None, (", ".join(items[:-1]), items[-1])))
 
 
 def _default_problems(

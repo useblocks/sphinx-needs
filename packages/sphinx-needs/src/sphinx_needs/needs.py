@@ -2362,7 +2362,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         (entry_findings, inherits_findings, shape_findings + link_findings),
         (*type_local, *local_links),
         {"fields": shape_refused, "links": link_refused},
-        targets=(below, need_types),
+        type_tree=(below, need_types),
     )
     # the schema is complete: nothing declares a field once it is built
     schema.freeze()
@@ -3124,7 +3124,7 @@ def _resolve_type_declarations(
     local: Iterable[str],
     refused: Mapping[Literal["fields", "links"], set[tuple[str, str]]],
     *,
-    targets: tuple[Mapping[str, frozenset[str]], Mapping[str, str]] = ({}, {}),
+    type_tree: tuple[Mapping[str, frozenset[str]], Mapping[str, str]] = ({}, {}),
 ) -> None:
     """Declare the fields and link types of each need type anew, as its ``needs_types``
     entry says: ``inherits``, ``fields`` and ``links``.
@@ -3166,7 +3166,7 @@ def _resolve_type_declarations(
     :param local: The fields and link types declared on need types alone.
     :param refused: Per table, the (need type, name) entries refused for the shape of
         the field or link type they declare.
-    :param targets: What a ``target_types`` is read against: each need type with the
+    :param type_tree: What a ``target_types`` is read against: each need type with the
         types inheriting from it, and each need type's title.
     """
     entry_findings, inherits_findings, shape_findings = findings
@@ -3251,7 +3251,7 @@ def _resolve_type_declarations(
                         by,
                         local=name in local,
                         need_type=need_type,
-                        targets=targets,
+                        type_tree=type_tree,
                     )
                 ) is not None:
                     own[name] = (field, need_type)
@@ -3271,7 +3271,7 @@ def _declare_for_type(
     *,
     local: bool = False,
     need_type: str = "",
-    targets: tuple[Mapping[str, frozenset[str]], Mapping[str, str]] = ({}, {}),
+    type_tree: tuple[Mapping[str, frozenset[str]], Mapping[str, str]] = ({}, {}),
 ) -> FieldSchema | LinkSchema | None:
     """The declaration a need type's entry makes of a field, from the one before it
     (the global declaration, or an ancestor's); ``None``, reported, if the entry
@@ -3284,7 +3284,7 @@ def _declare_for_type(
     :param declared_by: The need type whose entry made ``previous``, if not global.
     :param local: Whether the field is declared on need types alone.
     :param need_type: The need type whose entry it is.
-    :param targets: What a ``target_types`` is read against
+    :param type_tree: What a ``target_types`` is read against
         (:func:`_resolve_type_declarations`).
     """
     on_link = previous.kind == "link"
@@ -3339,7 +3339,7 @@ def _declare_for_type(
             return None
         changes["schema"] = child
     if "target_types" in keys:
-        below, titles = targets
+        below, titles = type_tree
         # names no need type are reported here; none left: as if not given
         if (
             target_types := _read_target_types(

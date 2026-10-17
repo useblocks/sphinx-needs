@@ -78,6 +78,9 @@ target_types = []
 [needs.links.cites]
 target_types = ["req", 1]
 
+[needs.links.blanks]
+target_types = ["req", ""]
+
 [needs.links.covers]
 derive = { kind = "links", where = "type == 'spec'" }
 target_types = ["req"]
@@ -107,7 +110,8 @@ target_types = ["sepc", "tset"]
 def test_what_the_configuration_reports(test_app: SphinxTestApp) -> None:
     """Every configuration finding of a ``target_types``, word for word.
 
-    Not of its shape -- a bare string, an empty list, an item that is not a name -- is a
+    Not of its shape -- a bare string, an empty list, an item that is not a name (an
+    empty string among names included, so the whole key is ignored) -- is a
     ``needs.config`` finding (an entry's at ``config-inited``, a ``needs_links`` one's
     where the schema is built), the key ignored. A name that is no need type is one
     finding per declaration, a title pointed at its directive; when no name is left,
@@ -129,6 +133,9 @@ def test_what_the_configuration_reports(test_app: SphinxTestApp) -> None:
         "WARNING: needs_links['cites'] has a 'target_types' that is not a non-empty "
         "list of need type names (got a list with an item that is not a non-empty "
         "string); the key is ignored [needs.config]",
+        "WARNING: needs_links['blanks'] has a 'target_types' that is not a non-empty "
+        "list of need type names (got a list with an item that is not a non-empty "
+        "string); the key is ignored [needs.config]",
         "WARNING: needs_links['relates'] has a 'target_types' naming 'rq', which is "
         "not a need type; the key is ignored [needs.config]",
         "WARNING: Invalid derive of link type 'covers': kind 'links': 'target_types' "
@@ -144,9 +151,8 @@ def test_what_the_configuration_reports(test_app: SphinxTestApp) -> None:
         "'covers' is derived (kind 'links'): a need type declares only its "
         "description and schema; the entry is ignored [needs.type_conflict]",
         "WARNING: needs_types['test'].links['verifies'] widens the field: Child "
-        "'target_types' ['safety_req', 'spec'] are not a subset of parent "
-        "'target_types' ['req'] and the types inheriting from them. "
-        "[needs.type_widening]",
+        "'target_types' accept 'spec', which parent 'target_types' ['req'] (or a type "
+        "inheriting from it) do not. [needs.type_widening]",
     ]
 
 
@@ -163,6 +169,16 @@ target_types = ["req", "spec"]
 
 [needs.types.test.links.verifies]
 target_types = ["safety_req"]
+
+[needs.types.unit_test.links.verifies]
+description = "What a unit test verifies"
+
+[needs.types.impl]
+title = "Implementation"
+prefix = "I_"
+
+[needs.types.impl.links.verifies]
+description = "What an implementation verifies"
 """
 )
 
@@ -189,16 +205,22 @@ LINKS_INDEX = """\
 .. spec:: The global target types
    :id: SPEC_2
    :verifies: SPEC_1, TEST_1, REQ_404
+
+.. impl:: An entry that gives no target types
+   :id: IMPL_1
+   :verifies: TEST_1
 """
 
 
 @pytest.mark.parametrize("test_app", [_project(LINKS_TOML, LINKS_INDEX)], indirect=True)
 def test_what_the_link_check_reports(test_app: SphinxTestApp) -> None:
     """The ``needs.link_target_type`` warning, word for word: at the source need,
-    naming the link (a part by its own id, a condition left out), the field, the
-    target's type, and the declared names, never their expansion; plural for several;
-    and the need type that declares them, where one does -- an ancestor's for a type
-    inheriting the declaration. A link failing its condition too is reported for each;
+    naming the link as written (a part by its own id, its condition included), the
+    field, the target's type, and the declared names, never their expansion; plural for
+    several; and the need type that declares them, where one does -- an ancestor's for
+    a type inheriting the declaration, also through an entry of its own that gives
+    other keys but no target types (``unit_test``), and none for such an entry under
+    the global ones (``impl``). A link failing its condition too is reported for each;
     a dead link only as a dead link."""
     test_app.build()
     assert build_warnings(test_app) == [
@@ -206,7 +228,8 @@ def test_what_the_link_check_reports(test_app: SphinxTestApp) -> None:
         "'verifies': target need type 'req' is not one of 'safety_req' (or a type "
         "inheriting from it), as need type 'test' declares it "
         "[needs.link_target_type]",
-        "<srcdir>/index.rst:15: WARNING: Need 'TEST_1' link 'SPEC_1' in field "
+        "<srcdir>/index.rst:15: WARNING: Need 'TEST_1' link "
+        "'SPEC_1[status == 'open']' in field "
         "'verifies': target need type 'spec' is not one of 'safety_req' (or a type "
         "inheriting from it), as need type 'test' declares it "
         "[needs.link_target_type]",
@@ -222,6 +245,9 @@ def test_what_the_link_check_reports(test_app: SphinxTestApp) -> None:
         "inheriting from them) [needs.link_target_type]",
         "<srcdir>/index.rst:23: WARNING: Need 'SPEC_2' has unknown outgoing link "
         "'REQ_404' in field 'verifies' [needs.link_outgoing]",
+        "<srcdir>/index.rst:27: WARNING: Need 'IMPL_1' link 'TEST_1' in field "
+        "'verifies': target need type 'test' is not one of 'req' or 'spec' (or a type "
+        "inheriting from them) [needs.link_target_type]",
     ]
 
 
@@ -397,6 +423,8 @@ SAFETY = LinkTargetTypes(
     names=("safety_req",), types=frozenset({"safety_req"}), declared_by="test"
 )
 REQ_SPEC = LinkTargetTypes(names=("req", "spec"), types=frozenset({"req", "spec"}))
+SPEC_TEST = LinkTargetTypes(names=("spec", "test"), types=frozenset({"spec", "test"}))
+TEST = LinkTargetTypes(names=("test",), types=frozenset({"test"}))
 
 
 @pytest.mark.parametrize(
@@ -410,17 +438,35 @@ REQ_SPEC = LinkTargetTypes(names=("req", "spec"), types=frozenset({"req", "spec"
             REQ,
             REQ_SPEC,
             [
-                "Child 'target_types' ['req', 'spec'] are not a subset of parent "
-                "'target_types' ['req'] and the types inheriting from them."
+                "Child 'target_types' accept 'spec', which parent 'target_types' "
+                "['req'] (or a type inheriting from it) do not."
             ],
             id="another-type",
+        ),
+        pytest.param(
+            REQ,
+            SPEC_TEST,
+            [
+                "Child 'target_types' accept 'spec' and 'test', which parent "
+                "'target_types' ['req'] (or a type inheriting from it) do not."
+            ],
+            id="two-other-types",
+        ),
+        pytest.param(
+            REQ_SPEC,
+            TEST,
+            [
+                "Child 'target_types' accept 'test', which parent 'target_types' "
+                "['req', 'spec'] (or a type inheriting from them) do not."
+            ],
+            id="under-two-types",
         ),
         pytest.param(
             SAFETY,
             REQ,
             [
-                "Child 'target_types' ['req'] are not a subset of parent "
-                "'target_types' ['safety_req'] and the types inheriting from them."
+                "Child 'target_types' accept 'req', which parent 'target_types' "
+                "['safety_req'] (or a type inheriting from it) do not."
             ],
             id="a-supertype",
         ),

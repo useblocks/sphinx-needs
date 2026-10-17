@@ -640,7 +640,8 @@ def _check_target_types(
     for link_type, references in need.iter_links_items(as_str=False):
         if (allowed := declared.get(link_type)) is None:
             continue
-        for need_link in references:
+        # one finding per distinct link, as needs.json writes the links
+        for need_link in dict.fromkeys(references):
             target = needs.get(need_link.id)
             if target is None or (
                 need_link.part is not None and target.get_part(need_link.part) is None
@@ -660,7 +661,7 @@ def _check_target_types(
                     continue
             _emit_link_warning(
                 need,
-                f"Need '{need.id}' link '{need_link.to_filter_string()}' "
+                f"Need '{need.id}' link '{need_link.to_link_string()}' "
                 f"in field '{link_type}': target need type '{target['type']}' "
                 f"{_not_one_of(allowed)}",
                 "link_target_type",
