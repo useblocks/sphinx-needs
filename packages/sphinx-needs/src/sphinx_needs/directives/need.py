@@ -569,8 +569,13 @@ def check_links(
     #: need type -> link type -> its target types, as the type declares them: read
     #: once per need type, not per link
     target_types: dict[str, dict[str, LinkTargetTypes]] = {}
-    #: the link types copied into ``links``: a copy is not checked against ``links``
-    copied = tuple(link.name for link in schema.iter_link_fields() if link.copy)
+    #: the link types copied into ``links``: a copy is not checked against ``links``;
+    #: ``copy`` on ``links`` itself copies nothing, so it exempts nothing
+    copied = tuple(
+        link.name
+        for link in schema.iter_link_fields()
+        if link.copy and link.name != "links"
+    )
     for need in needs.values():
         if (declared := target_types.get(need_type := need["type"])) is None:
             declared = target_types[need_type] = {
@@ -627,9 +632,10 @@ def _check_target_types(
 
     A dead link is left to the dead-link check, whether or not dead links are allowed;
     a link to a part is checked by the type of the need owning it. A link of ``links``
-    that the need also holds, the same target and part, in a link type copied into
-    ``links`` is not checked against the target types of ``links``: it is checked as a
-    link of the link type it is copied from.
+    that the need also holds, the same target and part, in another link type copied
+    into ``links`` is not checked against the target types of ``links``: it is checked
+    as a link of the link type it is copied from (``copy`` on ``links`` itself copies
+    nothing, so ``copied`` never holds ``links``).
 
     :param declared: Each link type with target types on the need's type.
     :param copied: The link types with ``copy``.
