@@ -207,7 +207,7 @@ Bug fixes
   written as its ``default``. The file's content changes only for such projects, and its format does
   not change. Under :ref:`needs_json_remove_defaults` a value equal to that default is now left out,
   and a reader restores it from the file, as :ref:`needimport` does. Its other constraints, such as
-  an ``enum``, are still not written, as for an extra field, see :issue:`2316` (:issue:`2263`)
+  an ``enum``, are still not written, as for an extra field, see :issue:`2316` (:issue:`2263`, :pr:`2318`)
 
 - 🐛 A field's ``default`` or ``predicates`` set both in its :ref:`needs_fields` entry and in the
   deprecated :ref:`needs_global_options` is taken from :ref:`needs_fields`, and the
@@ -215,7 +215,7 @@ Bug fixes
   naming both values. The legacy value replaced the ``needs_fields`` one silently, so every need that
   did not set the field held it. A field :ref:`needs_fields` declares without the key still takes the
   ``needs_global_options`` value, a core field narrowed in :ref:`needs_fields` follows the same rule,
-  and a need type's own declaration still wins over both (:issue:`2264`)
+  and a need type's own declaration still wins over both (:issue:`2264`, :pr:`2318`)
 
 - 🐛 An incremental build after a change to :ref:`needs_types` re-reads every document, as one
   after a change to :ref:`needs_fields` does. The option only rebuilt the HTML, so the needs of the
