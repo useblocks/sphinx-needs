@@ -151,6 +151,14 @@ Deprecations
 Bug fixes
 .........
 
+- 🐛 A layout's ``{{field}}`` placeholder (:ref:`layouts`) no longer stops the build with
+  ``TypeError: replace() argument 2 must be str`` when the need's value is unset or not a string. A
+  value is written as its text, a list as its values joined with ``", "`` (as ``meta`` shows them),
+  and when the field is unset or empty -- as on every need of a type that does not declare a field
+  declared on need types alone -- the layout function's element is left out, as
+  ``image("field:...")`` leaves out its image, rather than built from an empty value
+  (``_images/.png``) (:issue:`2303`)
+
 - 🐛 A :ref:`needtable`'s :ref:`sort <needtable_sort>` no longer stops the build when some needs
   leave the field unset, as every need of a type that does not declare a field declared on need types
   alone does: ``None`` beside a number or a string raised ``TypeError``. An unset value now comes
