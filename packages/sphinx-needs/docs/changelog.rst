@@ -185,21 +185,23 @@ Bug fixes
 .........
 
 - 🐛 An incremental build no longer reports
-  ``The configuration has changed (… options: 'needs_layouts', 'needs_types')`` -- one of
-  the two, or both -- on every build after the first (Sphinx 8.1 and later print the line;
-  Sphinx 7.4 and 8.0 compare only the options that rebuild the environment, so they did
-  not report it). The GitHub services' need types
-  (``issue``, ``pr``, ``commit``) and their ``github`` layout were appended to
-  :ref:`needs_types` and :ref:`needs_layouts` when the services were registered, after
-  Sphinx had compared the configuration with the one pickled by the previous build. They,
-  and every need type added with :func:`~sphinx_needs.api.configuration.add_need_type`,
-  are now kept in sphinx-needs' own registry and read beside the configured ones, in the
-  same order as before: the configured types, then the added ones, then the GitHub
-  services' ones, which give way to a type or layout of their name, configured or added at
-  any time (see *Breaking changes* for what this changes for an extension). After
-  upgrading, the line is still reported until a build re-reads a document, as the
-  environment Sphinx loads was pickled with the old values: edit any page, or build once
-  with ``-E`` (:issue:`2265`, :pr:`2307`)
+  ``The configuration has changed (… options: 'needs_layouts', 'needs_types')`` -- one
+  of the two, or both -- on every build after the first (Sphinx 8.1 and later print the
+  line; Sphinx 7.4 and 8.0 compare only the options that rebuild the environment, so
+  they did not report it). The GitHub services' need types (``issue``, ``pr``,
+  ``commit``) and their ``github`` layout were appended to :ref:`needs_types` and
+  :ref:`needs_layouts` when the services were registered, after Sphinx had compared the
+  configuration with the one pickled by the previous build. They, and every need type
+  added with :func:`~sphinx_needs.api.configuration.add_need_type`, are now kept in
+  sphinx-needs' own registry and read beside the configured ones, in the same order as
+  before: the configured types, then the added ones, then the GitHub services' ones,
+  which give way to a type or layout of their name, configured or added at any time (see
+  *Breaking changes* for what this changes for an extension). A change to a type or
+  layout added from code is no longer a configuration change either: as for any change
+  to an extension's code, build with ``-E`` to see it. After upgrading, the line is
+  still reported until a build re-reads a document, as the environment Sphinx loads was
+  pickled with the old values: edit any page, or build once with ``-E`` (:issue:`2265`,
+  :pr:`2307`)
 
 - 🐛 Configuring your own ``issue`` or ``pr`` need type -- or adding one with
   ``add_need_type`` from another extension -- no longer stops the GitHub services from
