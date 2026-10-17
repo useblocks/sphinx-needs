@@ -309,7 +309,8 @@ The constraint keywords of a type's entry are suppressed with the same ``suppres
 What still needs schema rules
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A type's entry only says something about the needs of the type themselves.
+A type's entry only says something about the needs of the type themselves,
+and the types of the needs their links point to.
 These need schema rules:
 
 - **anything about linked needs beyond their type**: their status or other fields,

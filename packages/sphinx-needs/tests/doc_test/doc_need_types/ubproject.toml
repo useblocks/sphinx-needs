@@ -64,3 +64,9 @@ default = "clean_l"
 [needs.types.test.fields.collapse]
 default = true
 # [/defaults]
+
+# [spec]
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+# [/spec]

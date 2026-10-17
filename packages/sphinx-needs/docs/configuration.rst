@@ -410,7 +410,7 @@ and a declaration in ``links`` these, as :ref:`needs_links` takes them:
    * - ``derive``
      - rule computing the links of the type's needs: its ``derive_by_type`` entry for the type (below)
    * - ``target_types``
-     - need types the links of the type's needs may point to (a listed type or one inheriting from it): fewer than it inherits, never others (below)
+     - need types the links of the type's needs may point to (a listed type or one inheriting from it): within those it inherits (the subtypes of a listed type included), never others (below)
    * - ``incoming``, ``outgoing``
      - the labels of the links, on every need type: set by the root declaration of a link type declared on need types alone (below)
    * - ``copy``
@@ -486,10 +486,15 @@ and a default -- the type's own, or the one it keeps -- is valid against the nar
 The empty value of its type (``[]``, ``""``, ``0``, ``0.0``, ``false``), kept from the field's global declaration -- the empty list of a link type and of ``tags`` among them -- is no default,
 as ``None`` is not one: a ``minItems`` (``minLength``, ``minimum``, ``const``) needs no ``default``, and makes a need of the type without a value fail validation.
 An ancestor that sets ``default = []`` itself sets a default, which a child's ``minItems`` must admit.
-A link type's ``target_types`` narrows too: the types a declaration accepts -- each type it lists and the types inheriting from it --
-must be among those the declaration before it accepts, so ``["safety_req"]`` under ``["req"]`` narrows, and ``["req", "spec"]`` under ``["req"]`` widens;
-a declaration that gives none keeps the one before it, and where none before it gives any, the links may point to any type.
-A declaration that widens is ignored as a whole, and the type keeps the declaration before it;
+A link type's ``target_types`` narrows too.
+A declaration accepts each type it lists and every type inheriting from one of them,
+and it may accept only types that the declaration before it accepts.
+Say ``hw_test`` inherits ``test``, and ``test`` gives ``verifies`` the target types ``["req"]``.
+Then ``hw_test`` may give ``["safety_req"]``, because a ``safety_req`` inherits ``req`` and so is accepted already.
+It may not give ``["spec"]`` or ``["req", "spec"]``: a ``spec`` is not accepted for a ``test``, so that widens.
+A declaration that gives no ``target_types``, or names no need type in it, keeps the target types before it;
+where no declaration before it gives any, the links may point to any type.
+A declaration that widens is ignored as a whole, its other keys included, and the type keeps the declaration before it;
 each reason is one ``needs.type_widening`` warning, such as::
 
    needs_types['spec'].fields['x'] widens the field: Child 'enum' values ['A', 'B', 'C'] are not a subset of parent 'enum' values ['A', 'B'].
@@ -584,7 +589,7 @@ and a :ref:`needextend` is refused on the needs of the type, one ``needs.needext
    Option 'verifies' does not support extend operations on need type 'spec'; it does not extend 1 need (S_001).
 
 Its back links, ``<name>_back``, are on every need, as for any link type.
-``target_types`` is not part of its shape: each declaration of a type without a declaring ancestor gives its own
+``target_types`` is not part of its shape: each root declaration (one of a type without a declaring ancestor) gives its own
 (a ``test`` may verify a ``req`` while a ``review`` verifies a ``spec``), and the types inheriting from it narrow that one.
 With ``copy`` the links of the declaring needs are copied into ``links``, and a need of another type copies none;
 ``copy`` beside a ``derive`` is reported as on a ``needs_links`` entry (``needs.derive_invalid``), and nothing is copied.
@@ -1500,8 +1505,12 @@ Each configured link can define:
      index.rst:12: WARNING: Need 'T_002' link 'S_001' in field 'verifies': target need type 'spec' is not one of 'req' (or a type inheriting from it) [needs.link_target_type]
 
   naming the need type whose :ref:`needs_types` entry gives the target types, where one does (``..., as need type 'test' declares it``).
-  It restricts the outgoing links alone, and only their target's type: "a ``req``, but not a ``safety_req``",
-  or anything about the target's other fields, takes a :ref:`schema rule <network_validation>`.
+  It restricts the outgoing links alone, and only their target's type.
+  It follows ``inherits``, unlike a :ref:`filter <filter_string>` (``type == 'req'``) and a schema rule's ``const``,
+  which compare the type name literally.
+  Since a subtype is accepted, ``inherits`` reads as "is a":
+  a type that inherits another only to reuse its fields is accepted wherever its parent is.
+  "A ``req``, but not a ``safety_req``", or anything about the target's other fields, takes a :ref:`schema rule <network_validation>`.
   It is checked once every link is final (after the :ref:`needextend` directives, defaults, predicates and dynamic functions),
   whether or not the :ref:`schema validation <schema_validation>` runs.
   A dead link is not checked: it is reported as a dead link, ``allow_dead_links`` or not.
@@ -1509,10 +1518,13 @@ Each configured link can define:
   and a link to a need from :ref:`needimport` or :ref:`needs_external_needs` by that need's type.
   The links of an imported need are reported at its ``needimport``,
   and those of a need from :ref:`needs_external_needs` as ``needs.external_link_target_type``, with its URL and no place in a document.
-  A link a ``copy`` link type copies into ``links`` -- the same target and part in both -- is not checked against the ``target_types`` of ``links``.
-  A value that is not a non-empty list of names is one ``needs.config`` warning, and ignored;
-  a name that is no need type (a title, a typo) is one ``needs.config`` warning, and ignored,
-  and a ``target_types`` naming no need type at all is ignored: the links are unrestricted.
+  A link of ``links`` that the need also holds, the same target and part, in a ``copy`` link type
+  is not checked against the ``target_types`` of ``links``, whether it was copied or written by hand.
+  A link written twice is one link, and reported once.
+  A value that is not a non-empty list of names is one ``needs.config`` warning, and ignored.
+  The names that are no need type (a title, a typo) are one ``needs.config`` warning per declaration, naming them, and are ignored.
+  A ``target_types`` naming no need type at all is ignored:
+  the links keep the target types of the declaration before it, and are unrestricted where none gives any.
   A :ref:`derived <needs_derive>` link type takes none in this release: beside ``derive`` or ``derive_by_type`` it is reported (``needs.derive_invalid``) and ignored.
   A need type may narrow it for its needs, see :ref:`needs_types_fields`.
   *New in version 9.1.0.*

@@ -55,6 +55,9 @@ Safety requirements by hazard
 Tests of the wrong type
 -----------------------
 
-.. test:: A test that verifies a test
+.. spec:: A specification
+   :id: S_001
+
+.. test:: A test that verifies a specification
    :id: T_003
-   :verifies: T_001
+   :verifies: S_001

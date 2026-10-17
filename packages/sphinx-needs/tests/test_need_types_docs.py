@@ -195,9 +195,9 @@ NEED_TYPES_WARNINGS = [
     "[needs.undeclared_for_type]",
     "<srcdir>/index.rst:25: WARNING: Need could not be created: Field 'hazard' is not "
     "nullable, but no value or default was given. [needs.create_need]",
-    # The link check: a test verifies a req, or a type inheriting from it; not a test.
-    "<srcdir>/index.rst:58: WARNING: Need 'T_003' link 'T_001' in field 'verifies': "
-    "target need type 'test' is not one of 'req' (or a type inheriting from it), as "
+    # The link check: a test verifies a req, or a type inheriting from it; not a spec.
+    "<srcdir>/index.rst:61: WARNING: Need 'T_003' link 'S_001' in field 'verifies': "
+    "target need type 'spec' is not one of 'req' (or a type inheriting from it), as "
     "need type 'test' declares it [needs.link_target_type]",
     _schema_record(
         "ERROR: Need 'R_003' has schema violations:",
@@ -258,6 +258,7 @@ def test_need_types_example(test_app: SphinxTestApp) -> None:
         "R_003",
         "R_004",
         "SR_001",
+        "S_001",
         "T_001",
         "T_002",
         "T_003",
@@ -269,7 +270,7 @@ def test_need_types_example(test_app: SphinxTestApp) -> None:
     assert needs["SR_001"]["status"] == "draft"
     assert needs["T_001"]["status"] == "open"
     # A link the target types refuse is reported, and kept.
-    assert needs["T_003"]["verifies"] == ["T_001"]
+    assert needs["T_003"]["verifies"] == ["S_001"]
     # A field of tests alone: set on a test, dropped from a req, None on the others.
     assert needs["T_001"]["verdict"] == "passed"
     assert needs["R_002"]["verdict"] is None

@@ -231,30 +231,60 @@ A ``test`` without ``verifies`` links is reported:
 ``verifies`` set on a need of another type is ignored with a ``needs.undeclared_for_type`` warning, as for a field.
 
 A ``test`` verifies a ``req``, or a need of a type inheriting from ``req``, such as a ``safety_req``.
-A link to a need of another type is reported at the need it is set in, and kept:
+For the example the project has a fourth type, ``spec``:
+
+.. literalinclude:: ../tests/doc_test/doc_need_types/ubproject.toml
+   :language: toml
+   :start-after: # [spec]
+   :end-before: # [/spec]
+
+A link from a ``test`` to a ``spec`` is reported at the need it is set in, and the link is kept:
 
 .. code-block:: text
 
-   index.rst:58: WARNING: Need 'T_003' link 'T_001' in field 'verifies': target need type 'test' is not one of 'req' (or a type inheriting from it), as need type 'test' declares it [needs.link_target_type]
+   index.rst:61: WARNING: Need 'T_003' link 'S_001' in field 'verifies': target need type 'spec' is not one of 'req' (or a type inheriting from it), as need type 'test' declares it [needs.link_target_type]
 
 .. mermaid::
-   :alt: a test's verifies links may point to a req, or a safety_req, which inherits req; a link to another test is reported
+   :alt: a test's verifies links may point to a req, or a safety_req, which inherits req; a link to a spec is reported
 
    flowchart LR
      test_type["a test need<br/>verifies: target_types = [req]"]
      req["a req need<br/>✓ accepted"]
      safety["a safety_req need<br/>✓ accepted: inherits req"]
-     other["another test need<br/>✗ needs.link_target_type"]
+     spec["a spec need<br/>✗ needs.link_target_type"]
      test_type -->|verifies| req
      test_type -->|verifies| safety
-     test_type -->|verifies| other
+     test_type -->|verifies| spec
 
 ``target_types`` restricts the outgoing links alone, and only the type of the need they point to.
 It is checked once every link is final, whether or not the :ref:`schema validation <schema_validation>` runs,
 and a dead link is reported as a dead link instead.
-A type inheriting from ``test`` may narrow the list, never add to it (see :ref:`needs_types_fields`).
-Since a subtype is accepted, "a ``req`` but not a ``safety_req``" takes a schema rule,
+
+``target_types`` follows ``inherits``.
+A :ref:`filter <filter_string>` such as ``type == 'req'`` and a schema rule's ``const`` do not:
+they compare the type name literally.
+Since a subtype is accepted, ``inherits`` reads as "is a".
+A type that inherits another only to reuse its fields is accepted wherever its parent is.
+"A ``req`` but not a ``safety_req``" takes a schema rule,
 as does anything else about the linked needs, such as their status: see :ref:`schema_per_type_still_rules`.
+
+A type inheriting from ``test`` may narrow the target types, within those ``test`` accepts.
+Here ``hw_test`` inherits ``test``:
+
+.. code-block:: toml
+
+   [needs.types.hw_test]
+   title = "Hardware test"
+   prefix = "HT_"
+   inherits = "test"
+
+   [needs.types.hw_test.links.verifies]
+   target_types = ["safety_req"]
+
+``["safety_req"]`` narrows: a ``safety_req`` inherits ``req``, so a ``test`` accepts it already.
+``["spec"]`` would widen: a ``test`` does not accept a ``spec``.
+A declaration that widens is ignored as a whole, its other keys included,
+with a ``needs.type_widening`` warning (see :ref:`needs_types_fields`).
 
 Defaults per type
 -----------------
