@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792186598970,
+  "lastUpdate": 1792236685711,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -25848,6 +25848,42 @@ window.BENCHMARK_DATA = {
             "value": 42.04265320099999,
             "unit": "s",
             "extra": "Commit: 30910d8d0eaa446c09af610df93a1e50a9acc9c0\nBranch: master\nTime: 2026-10-16T23:35:27+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c46e310d78dd6d30fd885e200a428eef4d7127d7",
+          "message": "📚 Need types: a walkthrough with diagrams, a reference without repeats, and the path of a need's values (#2309)\n\n## What\n\n`packages/sphinx-needs`, docs only. This splits the need-type\ndocumentation into a walkthrough and a reference, adds Mermaid diagrams\nso the per-type field rules and the evaluation order can be taken in at\na glance, and puts the how-tos in the order a project needs them.\n\n- **Modeling need types** (`need_types.rst`, the how-to): a new **How it\nworks** section before the recipes. It gives the model in a few\nsentences, then two diagrams drawn on the page's own example project\n(`tests/doc_test/doc_need_types`):\n- where the `status`, `hazard` and `verdict` of each type's needs come\nfrom: the core `status` narrowed by `req` and inherited by `safety_req`,\nnarrowed differently by `test`; `hazard` declared by `safety_req` alone\nand `verdict` by `test` alone; and what a need of each type holds;\n- how far a field or link type declared on need types alone reaches\n(`hazard` on `safety_req`, `verifies` on `test`): the declaring type and\nthe types inheriting from it, and `None` / `[]` with\n`needs.undeclared_for_type` everywhere else. Two sentences under it give\nthe shape rule: for a field, the first root declaration that gives a\n`schema` `type` sets that type and whether the field is derived; for a\nlink type, the first root declaration sets whether it is derived, its\nlabels and styles, `copy`, and whether dead links are allowed; a\ndeclaration that disagrees is ignored with `needs.type_conflict`.\n- **Fields per need type** (`configuration.rst`) stays the reference:\nevery rule, key table and warning text is kept. The diagrams moved out,\nleaving one pointer line to the walkthrough. The parts of its worked\nexample that the walkthrough already shows (`hazard`, `test`,\n`verifies`) are gone; the `asil` / `links` narrowing example stays.\n- **Processing order** (`dynamic_functions.rst`, after the chain\nexample): the whole path of a need's values. It starts when the need is\ncreated: what it sets, the defaults of its fields and link types as its\ntype declares them, and the `copy` links. Then come post-processing\nsteps 1–5 as the list numbers them: step 3 builds the back links and\nsets the dead-link flags, step 5 reports links to unknown needs. It ends\nwith the frozen needs that schema validation, the pages and\n`needs_warnings` read. A short paragraph covers creation and notes that\nlinks a `needextend` adds to a `copy = true` link type are not copied\ninto `links` — current behaviour (`_copy_links` runs in `generate_need`)\nthat nothing documented before.\n- **Tutorial**: a short step in the car story, \"A need type that builds\non another\": a `tutorial-safety-req` that `inherits` `tutorial-req` and\nhas a `hazard` field of its own, in the dictionary shape of\n`needs_types`, with a link to the walkthrough.\n- **How-tos order** (`index.rst`): Modeling need types and Schema\nvalidation first, then Filtering needs, Delayed field evaluation,\nLayouts & Styles and Card layouts; Services, the Python API and Utils,\nthe more specialised ones, last.\n\nEvery node was checked against the code: the inheritance walk and the\nnarrowing in `needs.py` (`_inherits_order`, `_type_local_fields`,\n`_type_local_links`, `_resolve_type_declarations`, `_declare_for_type`),\nabsence in `needs_schema.py` (`_localise`, `_absent_of`), creation in\n`api/need.py` (`generate_need`), and post-processing in\n`directives/need.py` (`post_process_needs_data`) and\n`functions/functions.py` (`resolve_functions` and its three strata). The\nvalues the diagrams show were measured on the example project. Before\nthe reference was trimmed, every removed paragraph was mapped to where\nits content now lives; nothing normative was dropped.\n\nWiring: the `docs` extra gains `sphinxcontrib-mermaid>=1.0.0,<3` (the\nroot `test` group's floor; the lock already had 2.1.1 through that\ngroup), `docs/conf.py` loads `sphinxcontrib.mermaid`, and `uv.lock` is\nre-locked. Read the Docs needs no change: it installs the `docs` extra,\nand the browser fetches Mermaid from the CDN.\n\nThe same diagrams go into ubCode's documentation, useblocks/ubcode#4190;\nthe evaluation order is the same in both tools.\n\n## Why\n\nThe per-type declarations (`inherits`, fields and link types declared on\nneed types alone) and the order in which defaults, `copy`, `needextend`,\ndynamic functions, variants and derive rules apply were hard to follow\nfrom prose alone, and the explanation was split between the options\nreference and the how-to. The how-tos listed the specialised pages\n(services, the API) before the ones every project starts with.\n\n## Tests\n\nNone: docs only. The three diagrams were parsed and rendered with\nMermaid 11.12.1 (the version sphinxcontrib-mermaid loads) in Chromium, 3\nof 3; the tutorial's new `needs_types` entry was built in a test\nproject. `uv run poe docs-needs` gives exactly the same warnings as\n`master` without the change (in the sandbox: intersphinx hosts behind\nthe proxy, and a missing `dot`).\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [ ] I ran the package's tests (`uv run poe test-<package>`) and they\npass. — docs only; not run.\n- [x] Documentation is updated where behaviour or options change. — this\nis the change.\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass. — `poe lint`\n(ty included) and `poe check-workspace` pass.",
+          "timestamp": "2026-10-17T13:29:58+02:00",
+          "tree_id": "8325117760695ea9529b7da4a92fb31720a12f7a",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/c46e310d78dd6d30fd885e200a428eef4d7127d7"
+        },
+        "date": 1792236677604,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.12041928099999666,
+            "unit": "s",
+            "extra": "Commit: c46e310d78dd6d30fd885e200a428eef4d7127d7\nBranch: master\nTime: 2026-10-17T13:29:58+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 58.522058496999996,
+            "unit": "s",
+            "extra": "Commit: c46e310d78dd6d30fd885e200a428eef4d7127d7\nBranch: master\nTime: 2026-10-17T13:29:58+02:00"
           }
         ]
       }
