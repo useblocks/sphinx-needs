@@ -412,6 +412,9 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.connect("config-inited", check_configuration, priority=600)  # runs late
 
     app.connect("env-before-read-docs", prepare_env)
+    # after prepare_env, which registers the services, so that the list compared is the
+    # complete one, with the need types added from code, on every build
+    app.connect("env-before-read-docs", reread_on_need_types_change)
     # note we have to place create_schema after prepare_env, as that can add extra fields,
     # but before load_external_needs, where we start to add needs.
     app.connect("env-before-read-docs", create_schema)
@@ -1419,6 +1422,43 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> Non
     if needs_config.debug_filters:
         with contextlib.suppress(FileNotFoundError):
             Path(str(app.outdir), "debug_filters.jsonl").unlink()
+
+
+def reread_on_need_types_change(
+    app: Sphinx, env: BuildEnvironment, docnames: list[str]
+) -> None:
+    """Re-read every document if the need types changed since the documents were read.
+
+    A need type gives its needs their ``type_name`` and ``type_prefix`` (and the ids
+    generated from it), its diagram color and style, and, through ``inherits``,
+    ``fields`` and ``links``, the fields, link types, defaults and ``derive`` rules they
+    are created with. The needs of an unchanged document are kept from the pickled
+    environment, so they would keep what the previous entries gave them (#2287).
+
+    The list compared is the complete one, with the need types added from code (by
+    ``add_need_type`` or the GitHub service), which a ``rebuild = "env"`` on
+    ``needs_types`` -- as ``needs_fields`` has -- could not compare correctly: the types
+    added from code are either outside the configuration value or, where they are
+    appended to it after Sphinx compared the configurations, they make it differ on every
+    build (#2265). It is compared against the one recorded when the documents were read.
+    Documents are added to ``docnames``, which this event allows.
+
+    :param app: The Sphinx application.
+    :param env: The build environment.
+    :param docnames: The documents Sphinx is about to read; extended in place.
+    """
+    data = SphinxNeedsData(env)
+    need_types = deepcopy(
+        [dict(entry) for entry in NeedsSphinxConfig(app.config).types]
+    )
+    if data.need_types_read_with != need_types:
+        unread = sorted(env.found_docs.difference(docnames))
+        if unread:
+            LOGGER.info(
+                f"needs_types changed: re-reading {len(unread)} unchanged document(s)"
+            )
+            docnames.extend(unread)
+    data.need_types_read_with = need_types
 
 
 def merge_default_configs(_app: Sphinx, config: Config) -> None:

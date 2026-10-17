@@ -396,6 +396,7 @@ ub-project raises bare (an integer past Python's conversion limit), which reads 
 
 ```python
 app.connect("env-before-read-docs", prepare_env)           # Initialize data structures
+app.connect("env-before-read-docs", reread_on_need_types_change)  # needs_types changed: re-read every document
 app.connect("env-before-read-docs", create_schema)         # Create validation schema
 app.connect("env-before-read-docs", resolve_schemas_config). # Validates schema definitions and inject type information
 app.connect("env-before-read-docs", load_external_needs)   # Load external need files

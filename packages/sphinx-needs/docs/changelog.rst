@@ -151,6 +151,16 @@ Deprecations
 Bug fixes
 .........
 
+- 🐛 An incremental build after a change to :ref:`needs_types` re-reads every document, as one
+  after a change to :ref:`needs_fields` does. The option only rebuilt the HTML, so the needs of the
+  documents that were not re-read kept what the previous entries gave them: a ``derive`` rule added
+  to or removed from a type entry, a field or link type it declares, its default, an ``inherits``,
+  or the type's ``title`` and ``prefix``. A field whose rule was removed held ``None`` where a fresh
+  build held its authored value. The complete list of need types is compared with the one the
+  documents were read with: it includes the types added from code, such as the GitHub service's,
+  which a ``rebuild="env"`` on the option could not compare. An unchanged list re-reads nothing
+  more, and the first incremental build after upgrading re-reads every document once (:issue:`2287`)
+
 - 🐛 A layout's ``{{field}}`` placeholder (:ref:`layouts`) no longer stops the build with
   ``TypeError: replace() argument 2 must be str`` when the need's value is unset or not a string. A
   value is written as its text, a list as its values joined with ``", "`` (as ``meta`` shows them),

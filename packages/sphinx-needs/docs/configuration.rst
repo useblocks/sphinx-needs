@@ -259,9 +259,16 @@ By default it is set to:
 * **style**: A plantuml node type, like node, artifact, frame, storage or database. See `plantuml documentation <http://plantuml.com/deployment-diagram>`__ for more.
 * **inherits**, **fields**, **links** (optional): the fields and link types the type declares anew for its needs, see :ref:`needs_types_fields`.
 
+Every one of these items is stored on, or decides, the needs of the type,
+so an incremental build after a change to ``needs_types`` re-reads every document, as one after a change to :ref:`needs_fields` does.
+
 .. versionchanged:: 9.1.0
 
    ``needs_types`` can also be a dictionary keyed by directive name, and is validated when the configuration is read.
+
+   A change to ``needs_types`` re-reads every document.
+   Before, the needs of the documents an incremental build did not re-read kept what the previous need types gave them,
+   such as a ``derive`` rule that had been removed.
 
 Instead of a list, ``needs_types`` can be a dictionary from each directive name to the other items of its type:
 
