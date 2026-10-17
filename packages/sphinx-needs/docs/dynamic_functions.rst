@@ -307,36 +307,6 @@ Once every document has been read, and before any page is written, the needs are
    Then the needs are frozen, and :ref:`schema validation <schema_validation>`, every page,
    and the :ref:`needs_warnings` checks at the end of the build see their final values.
 
-Before these steps, each need is created as its document is read
-(a need from a needs.json, by :ref:`needimport` or :ref:`needs_external_needs`, as it is loaded):
-a field it does not set takes its default, as its need type declares it (:ref:`needs_types_fields`),
-and the links of a link type with ``copy`` are copied into ``links``,
-so the links a ``needextend`` adds to such a link type are not copied.
-The whole path of a need's values:
-
-.. mermaid::
-   :alt: A need's values, from what it sets, through its defaults and copied links when it is created, then needextend, the link fields, the back links, every other field, and the checks, to the frozen needs that schema validation sees
-
-   flowchart LR
-     subgraph created["When a need is created"]
-       direction TB
-       written["What the need sets:<br/>its directive's options, or its needs.json record"]
-       defaults["Each field it does not set takes its default:<br/>the first matching predicate, else the default,<br/>as its need type declares them"]
-       copied["copy: the links of a link type with copy = true<br/>are copied into links"]
-     end
-     subgraph post["Post-processing"]
-       direction TB
-       extend["needextend (step 1)"]
-       link_fields["The link fields (step 2):<br/>their [[…]], #lt;#lt;…#gt;#gt; and #lt;{…}#gt;,<br/>and the rules of derived link types"]
-       back["The back links are built (step 3)"]
-       other_fields["Every other field (step 4):<br/>its [[…]], #lt;#lt;…#gt;#gt; and #lt;{…}#gt;, and the rules of derived fields,<br/>then the hash, fingerprint and after = derived rules"]
-       checks["Link conditions, dead links,<br/>constraints (step 5)"]
-     end
-     frozen(["The needs are frozen:<br/>schema validation, every page, needs_warnings"])
-     written --> defaults --> copied
-     extend --> link_fields --> back --> other_fields --> checks
-     created --> post --> frozen
-
 So the value of a field does not depend on the order of the documents, on the documents an incremental build re-read,
 on ``-j``, on the order of the options in a directive, or on the order the fields are declared in.
 A chain gives the chained value:
@@ -356,6 +326,36 @@ A chain gives the chained value:
       :status: done
 
 ``REQ_A`` and ``REQ_B`` are ``done`` in every build.
+
+Before the five steps above, each need is created as its document is read
+(a need from a needs.json, by :ref:`needimport` or :ref:`needs_external_needs`, as it is loaded):
+a field or link type it does not set takes its default, as its need type declares it (:ref:`needs_types_fields`),
+and the links of a link type with ``copy`` are copied into ``links``,
+so the links a ``needextend`` adds to such a link type are not copied.
+The whole path of a need's values:
+
+.. mermaid::
+   :alt: A need's values, from what it sets, through its defaults and copied links when it is created, then needextend, the link fields, the back links, every other field, and the checks, to the frozen needs that schema validation sees
+
+   flowchart LR
+     subgraph created["When a need is created"]
+       direction TB
+       written["What the need sets:<br/>its directive's options, or its needs.json record"]
+       defaults["Each field and link type it does not set takes its default:<br/>the first matching predicate, else the default,<br/>as its need type declares them"]
+       copied["copy: the links of a link type with copy = true<br/>are copied into links"]
+     end
+     subgraph post["Post-processing"]
+       direction TB
+       extend["needextend (step 1)"]
+       link_fields["The link fields (step 2):<br/>their [[…]], #lt;#lt;…#gt;#gt; and #lt;{…}#gt;,<br/>and the rules of derived link types"]
+       back["The back links are built,<br/>and the dead-link flags set (step 3)"]
+       other_fields["Every other field (step 4):<br/>its [[…]], #lt;#lt;…#gt;#gt; and #lt;{…}#gt;, and the rules of derived fields,<br/>then the hash, fingerprint and after = derived rules"]
+       checks["Link conditions, links to unknown needs reported,<br/>constraints (step 5)"]
+     end
+     frozen(["The needs are frozen:<br/>schema validation, every page, needs_warnings"])
+     written --> defaults --> copied
+     extend --> link_fields --> back --> other_fields --> checks
+     created --> post --> frozen
 
 What each built-in function reads, and so is computed after:
 

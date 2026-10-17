@@ -476,7 +476,7 @@ Where the ``asil`` and ``hazard`` of each type's needs come from, in this exampl
    :alt: The asil field narrowed by req, then further by safety_req, which inherits req; hazard declared by safety_req alone; what a need of each type holds
 
    flowchart LR
-     field["needs.fields.asil<br/>nullable, enum QM, A, B, C, D<br/>no default"]
+     field["needs_fields['asil']<br/>nullable, enum QM, A, B, C, D<br/>no default"]
      req["req declares asil<br/>not nullable, default QM"]
      safety["safety_req inherits req<br/>and declares asil:<br/>enum A, B, C, D, default A"]
      hazard["safety_req declares hazard<br/>no needs_fields entry declares it"]
@@ -541,6 +541,7 @@ as the two paragraphs below say in full:
      ancestor -->|no| root
      ancestor -->|yes| child
      root --> same
+     root -.->|the first| first
      first -.->|sets| same
      same -->|yes| declaring
      same -->|no| conflict
