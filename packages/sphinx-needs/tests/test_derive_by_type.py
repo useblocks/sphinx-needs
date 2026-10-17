@@ -1354,8 +1354,7 @@ needs_fields = {
 def test_a_derive_cycling_on_some_types_names_each_path(test_app: Any) -> None:
     """``a``'s ``derive`` closes a cycle on ``impl`` (``a -> b -> a``) and another on
     ``req`` (``a -> b -> c -> a``): the finding gives each type its own path. ``x``,
-    declared with ``derive`` alone, cycles with ``y`` on every type but ``req`` (the github
-    service's types included); it is
+    declared with ``derive`` alone, cycles with ``y`` on every type but ``req``; it is
     still described by its own rule (``kind 'copy'``), never "by need type"."""
     app = test_app
     app.build()
@@ -1376,10 +1375,10 @@ def test_a_derive_cycling_on_some_types_names_each_path(test_app: Any) -> None:
         _invalid("b", cycle.format("a", "b -> a -> b"), entry="impl"),
         _invalid("b", cycle.format("c", "b -> c -> a -> b"), entry="req"),
         _invalid("c", cycle.format("a", "c -> a -> b -> c"), entry="req"),
-        "WARNING: Invalid derive of field 'x': on need types 'commit', 'impl', "
-        "'issue', 'pr', 'spec' and 'test': " + cycle.format("y", "x -> y -> x") + tail,
-        "WARNING: Invalid derive of field 'y': on need types 'commit', 'impl', "
-        "'issue', 'pr', 'spec' and 'test': " + cycle.format("x", "y -> x -> y") + tail,
+        "WARNING: Invalid derive of field 'x': on need types 'impl', 'spec' and "
+        "'test': " + cycle.format("y", "x -> y -> x") + tail,
+        "WARNING: Invalid derive of field 'y': on need types 'impl', 'spec' and "
+        "'test': " + cycle.format("x", "y -> x -> y") + tail,
         "<srcdir>/index.rst:10: WARNING: Field 'x' is derived (kind 'copy') and cannot "
         "be set by a needextend; the option 'x' is ignored [needs.derive_authored]",
     ]
@@ -1424,8 +1423,8 @@ def test_an_own_field_roll_up_with_include_self_reads_itself(test_app: Any) -> N
     assert (needs["REQ_3"]["lvl"], needs["SPEC_1"]["lvl"]) == (None, 4)
 
 
-#: every need type of a project declaring the four: its own, and the github service's
-ALL_TYPES = ("req", "spec", "impl", "test", "commit", "issue", "pr")
+#: every need type of a project declaring the four, and configuring no service
+ALL_TYPES = ("req", "spec", "impl", "test")
 
 EVERY_TYPE_CONF = f"""\
 extensions = ["sphinx_needs"]
@@ -1472,8 +1471,8 @@ def test_a_derive_cycling_on_every_type_along_two_paths(test_app: Any) -> None:
         "({}), so no need can compute it"
     )
     assert [w for w in _warnings(app) if "field 'a'" in w] == [
-        "WARNING: Invalid derive of field 'a': on need types 'commit', 'impl', "
-        "'issue', 'pr', 'req' and 'test': "
+        "WARNING: Invalid derive of field 'a': on need types 'impl', 'req' and "
+        "'test': "
         + cycle.format("a -> b -> a")
         + "; on need type 'spec': "
         + cycle.format("a -> b -> c -> a")

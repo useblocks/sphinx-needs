@@ -710,13 +710,20 @@ def test_a_parallel_build_has_the_schema_frozen(test_app: Any) -> None:
 
 
 @pytest.mark.parametrize(
-    "test_app", [_project("extensions = ['sphinx_needs']\n", "")], indirect=True
+    "test_app",
+    [
+        _project(
+            "extensions = ['sphinx_needs']\nneeds_services = {'github-issues': {}}\n",
+            "",
+        )
+    ],
+    indirect=True,
 )
 def test_the_schema_knows_the_configured_need_types(test_app: Any) -> None:
-    """``create_schema`` tells the schema every configured need type, a service's
-    included, so an overlay names one of them."""
+    """``create_schema`` tells the schema every configured need type, a configured
+    service's included (and only its own), so an overlay names one of them."""
     app = test_app
     app.build()
     assert SphinxNeedsData(app.env).get_schema().need_types == frozenset(
-        {"req", "spec", "impl", "test", "need", "issue", "pr", "commit"}
+        {"req", "spec", "impl", "test", "need", "issue"}
     )

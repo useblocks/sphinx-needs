@@ -2,7 +2,7 @@
 (#2265).
 
 sphinx-needs keeps the need types and layouts added with ``add_need_type`` and
-``add_need_layout``, and the GitHub services' three need types (``issue``, ``pr``,
+``add_need_layout``, and the configured GitHub services' need types (``issue``, ``pr``,
 ``commit``) and ``github`` layout, in its own registry, never in the ``needs_types`` and
 ``needs_layouts`` values: those hold what the project configures, so Sphinx compares the
 same values on both sides of an incremental build. ``NeedsSphinxConfig(config).types``
@@ -10,6 +10,10 @@ and ``.layouts`` -- and so every reader -- read three tiers, each entry shadowin
 its name below it: the configured entries, then the added ones, then the GitHub
 built-ins, which therefore come last and give way, one by one, to a type or layout of
 their name configured or added at any time. The two reads cannot be written through.
+
+A built-in service's type and the layout are registered only when ``needs_services``
+configures the service (``tests/test_services/test_builtin_service_gate.py``), so the
+projects here configure all three.
 """
 
 from __future__ import annotations
@@ -31,9 +35,11 @@ from sphinx_needs.services.config.github import GITHUB_LAYOUT
 from sphinx_needs.services.github import GITHUB_NEED_TYPES
 from sphinx_needs_testkit import build_warnings
 
+#: every built-in GitHub service configured, so their types and layout are registered
 CONF = """\
 extensions = ["sphinx_needs"]
 needs_build_json = True
+needs_services = {"github-issues": {}, "github-prs": {}, "github-commits": {}}
 """
 
 #: the three GitHub service types, as sphinx-needs registers them
@@ -134,7 +140,8 @@ ISSUE = {
     "closed_at": None,
 }
 
-#: no avatar download, so the one request is the search below
+#: ``github-issues`` alone, with no avatar download, so the one request is the search
+#: below
 SERVICE_CONF = (
     CONF + 'needs_services = {"github-issues": {"download_avatars": False}}\n'
 )
@@ -406,7 +413,8 @@ def test_a_configured_github_layout_wins(test_app: Any) -> None:
 
 @pytest.fixture
 def plain_app(tmp_path: Path, make_app: Any) -> Any:
-    """An application of a project that configures nothing but sphinx-needs."""
+    """An application of a project that configures nothing but sphinx-needs and the
+    built-in services."""
     srcdir = tmp_path / "src"
     srcdir.mkdir()
     (srcdir / "conf.py").write_text(CONF, encoding="utf-8")

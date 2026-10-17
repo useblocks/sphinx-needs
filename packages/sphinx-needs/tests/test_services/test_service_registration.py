@@ -26,8 +26,10 @@ RST = "Title\n=====\n\nText.\n"
 
 TOML_CONF = 'extensions = ["sphinx_needs"]\nneeds_from_toml = "ubproject.toml"\n'
 
-#: the services sphinx-needs registers itself, in every build
-BUILT_IN = {"github-commits", "github-issues", "github-prs"}
+#: the services registered in a build that configures no built-in service: none, since
+#: sphinx-needs registers its built-in GitHub services only when needs_services names
+#: them (tests/test_services/test_builtin_service_gate.py)
+NONE: set[str] = set()
 
 
 def class_warning(name: str, problem: str) -> str:
@@ -91,7 +93,7 @@ def test_a_string_class_in_the_toml_warns_and_the_service_is_skipped(build):
         }
     )
     assert build_warnings(app) == [class_warning("foo", not_callable("str"))]
-    assert registered(app) == BUILT_IN
+    assert registered(app) == NONE
 
 
 @pytest.mark.parametrize(
@@ -128,7 +130,7 @@ def test_a_class_in_conf_py_that_would_crash_the_registration_warns(
         }
     )
     assert build_warnings(app) == [class_warning("bad", problem)]
-    assert registered(app) == BUILT_IN
+    assert registered(app) == NONE
 
 
 def test_a_duck_typed_service_class_registers_as_before(build):
@@ -157,7 +159,7 @@ def test_a_duck_typed_service_class_registers_as_before(build):
         }
     )
     assert_no_warnings(app)
-    assert registered(app) == BUILT_IN | {"duck"}
+    assert registered(app) == {"duck"}
     assert type(app._needs_services.services["duck"]).__name__ == "Duck"
 
 
@@ -190,7 +192,7 @@ def test_a_callable_factory_with_options_registers_as_before(build):
         }
     )
     assert_no_warnings(app)
-    assert registered(app) == BUILT_IN | {"svc"}
+    assert registered(app) == {"svc"}
     assert type(app._needs_services.services["svc"]).__name__ == "Made"
 
 
@@ -233,7 +235,7 @@ def test_a_class_init_mapping_that_is_not_a_dict_registers_as_before(build, clas
         }
     )
     assert_no_warnings(app)
-    assert registered(app) == BUILT_IN | {"svc"}
+    assert registered(app) == {"svc"}
     assert type(app._needs_services.services["svc"]).kwargs == [{"custom_init": True}]
 
 
@@ -250,7 +252,7 @@ def test_a_class_and_a_class_init_both_wrong_give_one_warning(build):
         }
     )
     assert build_warnings(app) == [class_warning("foo", not_callable("str"))]
-    assert registered(app) == BUILT_IN
+    assert registered(app) == NONE
 
 
 def test_a_class_init_that_is_not_a_mapping_warns_and_the_service_is_skipped(build):
@@ -269,14 +271,14 @@ def test_a_class_init_that_is_not_a_mapping_warns_and_the_service_is_skipped(bui
         }
     )
     assert build_warnings(app) == [class_init_warning("bad", "a value of type 'str'")]
-    assert registered(app) == BUILT_IN
+    assert registered(app) == NONE
 
 
 #: the warning of a ``needservice`` naming a service that is not registered, at line 6
-#: of ``RST`` plus the directive (#2101)
+#: of ``RST`` plus the directive (#2101), when no service is registered at all
 NOT_FOUND_WARNING = (
-    "<srcdir>/index.rst:6: WARNING: Service foo could not be found. Available services "
-    "are github-issues, github-prs, github-commits [needs.load_service_need]"
+    "<srcdir>/index.rst:6: WARNING: Service foo could not be found: no service is "
+    "registered [needs.load_service_need]"
 )
 
 
@@ -324,6 +326,22 @@ def test_a_needservice_naming_an_unknown_service_warns_and_the_build_goes_on(bui
     assert_nothing_rendered(app)
 
 
+def test_a_needservice_naming_an_unknown_service_lists_the_registered_ones(build):
+    """With a service registered, the warning names the services there are."""
+    app = build(
+        {
+            "conf.py": 'extensions = ["sphinx_needs"]\n'
+            'needs_services = {"github-commits": {}, "github-prs": {}}\n',
+            "index.rst": RST + "\n.. needservice:: foo\n",
+        }
+    )
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:6: WARNING: Service foo could not be found. Available "
+        "services are github-prs, github-commits [needs.load_service_need]"
+    ]
+    assert_nothing_rendered(app)
+
+
 def test_needs_service_exception_is_an_exception():
     """Nothing needs it to bypass ``except Exception``, and as a ``BaseException`` it
     bypassed Sphinx's handler too (#2101)."""
@@ -331,32 +349,35 @@ def test_needs_service_exception_is_an_exception():
 
 
 @pytest.mark.parametrize(
-    "toml",
+    ("toml", "expected"),
     [
-        # the options of a built-in service
+        # the options of a built-in service, which configure it
         pytest.param(
             """\
             [needs.services.github-issues]
             url = "https://api.github.com/"
             max_content_lines = 20
             """,
+            {"github-issues"},
             id="built-in-options",
         ),
         # the options of a service an extension registers
-        pytest.param('[needs.services.foo]\nurl = "x"\n', id="options-only"),
+        pytest.param('[needs.services.foo]\nurl = "x"\n', NONE, id="options-only"),
         # no class: nothing to register from the configuration
         pytest.param(
             '[needs.services.foo]\nclass_init = {gh_type = "issue"}\n',
+            NONE,
             id="class-init-without-class",
         ),
     ],
 )
-def test_a_toml_service_table_without_a_class_is_not_a_mistake(build, toml):
-    """A table that holds options only configures a built-in service or one registered
-    by an extension: no warning, and nothing is registered from it."""
+def test_a_toml_service_table_without_a_class_is_not_a_mistake(build, toml, expected):
+    """A table that holds options only configures a built-in service -- which it
+    registers -- or one registered by an extension: no warning, and nothing else is
+    registered from it."""
     app = build({"conf.py": TOML_CONF, "ubproject.toml": toml})
     assert_no_warnings(app)
-    assert registered(app) == BUILT_IN
+    assert registered(app) == expected
 
 
 #: A service class an extension registers itself, here from ``conf.py``'s ``setup``;
@@ -400,7 +421,7 @@ def test_a_class_registered_by_an_extension_takes_its_options_from_the_toml(buil
         }
     )
     assert_no_warnings(app)
-    assert registered(app) == BUILT_IN | {"svc"}
+    assert registered(app) == {"svc"}
     service_class = type(app._needs_services.services["svc"])
     assert service_class.configs == [{"url": "https://example.org"}]
 
@@ -426,4 +447,4 @@ def test_a_toml_services_table_replaces_the_needs_services_of_conf_py(build):
     )
     assert_no_warnings(app)
     assert app.config.needs_services == {"svc": {"url": "https://example.org"}}
-    assert registered(app) == BUILT_IN
+    assert registered(app) == NONE

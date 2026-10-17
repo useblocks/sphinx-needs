@@ -242,10 +242,12 @@ INHERITS_INDEX = """\
                         "inherits": "e",
                         "fields": {"x": {"default": "f"}},
                     },
-                    # a type the GitHub service adds once the configuration is read
+                    # a type the configured GitHub service adds once the
+                    # configuration is read
                     "g": {"title": "G", "prefix": "G_", "inherits": "issue"},
                 },
                 {"x": {"nullable": True}},
+                extra='needs_services = {"github-issues": {}}\n',
             ),
             INHERITS_INDEX,
         )
