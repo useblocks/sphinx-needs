@@ -114,9 +114,11 @@ def add_need_layout(app: Sphinx, name: str, layout: dict[str, Any]) -> None:
     """
     Adds a new need layout, which a need then names with ``:layout:``.
 
-    The given name must not be a layout of :ref:`needs_layouts` -- sphinx-needs' own
-    layouts included -- or one added with this function already, otherwise
-    NeedsApiConfigException gets raised. The GitHub services' ``github`` layout does not
+    The given name must not be a layout of :ref:`needs_layouts` (sphinx-needs' own
+    layouts included), a name of :ref:`needs_card_layouts` (whether or not its card
+    compiles), or one added with this function already, otherwise
+    NeedsApiConfigException gets raised: each is refused from the start of the build,
+    before the configured layouts are merged and the cards compiled. The GitHub services' ``github`` layout does not
     count: a layout added under that name replaces the service's.
 
     The layout is added to sphinx-needs' own registry, not to the :ref:`needs_layouts`
@@ -139,7 +141,13 @@ def add_need_layout(app: Sphinx, name: str, layout: dict[str, Any]) -> None:
     :param layout: The layout: its ``grid`` and ``layout`` (and optional ``style``)
     :raises NeedsApiConfigException: If a layout of the name is configured or added.
     """
-    if name in LAYOUTS or name in NeedsSphinxConfig(app.config)._layouts:
+    needs_config = NeedsSphinxConfig(app.config)
+    card_layouts = needs_config.card_layouts
+    if (
+        name in LAYOUTS
+        or name in needs_config._layouts
+        or (isinstance(card_layouts, dict) and name in card_layouts)
+    ):
         raise NeedsApiConfigException(f"{name} already exists as need layout")
     _NEEDS_CONFIG.add_layout(name, layout)
 

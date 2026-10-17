@@ -630,6 +630,36 @@ def test_add_need_layout_refuses_a_builtin_name_before_it_is_configured(
         make_app("html", srcdir=srcdir)
 
 
+#: the project configures the card ``my_card``; an extension adds a layout of its name
+#: before the cards are compiled (``config-inited``, priority 550) or after
+CARD_NAMED = """
+needs_card_layouts = {{"my_card": {{"footer": ["id", "type"]}}}}
+
+def _add_card(app, config):
+    from sphinx_needs.api import add_need_layout
+    add_need_layout(app, "my_card", {{"grid": "simple", "layout": {{}}}})
+
+def setup(app):
+    app.connect("config-inited", _add_card, priority={priority})
+"""
+
+
+@pytest.mark.parametrize("priority", [500, 600])
+def test_add_need_layout_refuses_a_card_name_before_and_after_it_is_compiled(
+    tmp_path: Path, make_app: Any, priority: int
+) -> None:
+    """A name of ``needs_card_layouts`` is taken from the start, as sphinx-needs' own
+    layout names are: added before the card is compiled, a layout of its name would be
+    shadowed by the card silently; after, it is refused as a configured layout."""
+    srcdir = tmp_path / "src"
+    srcdir.mkdir()
+    conf = CONF + CARD_NAMED.format(priority=priority)
+    (srcdir / "conf.py").write_text(conf, encoding="utf-8")
+    (srcdir / "index.rst").write_text("Case\n====\n", encoding="utf-8")
+    with pytest.raises(NeedsApiConfigException, match="my_card already exists"):
+        make_app("html", srcdir=srcdir)
+
+
 def test_add_need_layout_refuses_a_name_already_taken(plain_app: Any) -> None:
     """A name that is a configured layout (sphinx-needs' own included) or one added
     before is refused; the GitHub built-in ``github`` is not taken: the added layout
