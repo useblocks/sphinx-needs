@@ -180,8 +180,9 @@ Bug fixes
 
 - 🐛 An incremental build no longer reports
   ``The configuration has changed (… options: 'needs_layouts', 'needs_types')`` -- one of
-  the two, or both -- on every build after the first (Sphinx 8 and later print the line;
-  Sphinx 7 compared the same difference silently). The GitHub services' need types
+  the two, or both -- on every build after the first (Sphinx 8.1 and later print the line;
+  Sphinx 7.4 and 8.0 compare only the options that rebuild the environment, so they did
+  not report it). The GitHub services' need types
   (``issue``, ``pr``, ``commit``) and their ``github`` layout were appended to
   :ref:`needs_types` and :ref:`needs_layouts` when the services were registered, after
   Sphinx had compared the configuration with the one pickled by the previous build. They,

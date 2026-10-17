@@ -950,7 +950,8 @@ def test_resolving_the_types_changes_no_configuration_option(
     try:
         assert _changed_options(old_env.config, second.config) == set()
         second.build()
-        # Sphinx 8 and later name the changed options in a status line; Sphinx 7 does not
+        # Sphinx 8.1 and later name the changed options in a status line; 7.4 and 8.0
+        # compare only the options that rebuild the environment, and print no such line
         reported = re.search(
             r"The configuration has changed \(\d+ options?: (.*)\)",
             strip_colors(second._status.getvalue()),
