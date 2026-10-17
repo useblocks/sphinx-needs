@@ -28,6 +28,7 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.exceptions import NeedsApiConfigException
 from sphinx_needs.services.config.github import GITHUB_LAYOUT
+from sphinx_needs.services.github import GITHUB_NEED_TYPES
 from sphinx_needs_testkit import build_warnings
 
 CONF = """\
@@ -476,6 +477,20 @@ def test_a_copy_of_a_view_is_a_plain_value(plain_app: Any) -> None:
         ):
             assert type(duplicate) in (list, dict)
             assert duplicate == value
+
+
+def test_the_registry_keeps_its_own_copy_of_the_service_entries(
+    plain_app: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The GitHub types and layout are registered as deep copies of the module's
+    constants: a change to a constant after registration -- here, a nested one of the
+    layout too -- does not reach what the views read, so neither does a change through
+    a view entry reach the constants, which outlive the application."""
+    monkeypatch.setitem(GITHUB_NEED_TYPES[0], "title", "Changed")
+    monkeypatch.setitem(GITHUB_LAYOUT["layout"], "head", ["Changed"])
+    assert _types(plain_app)["issue"] == ("Issue", "IS_")
+    github = NeedsSphinxConfig(plain_app.config).layouts["github"]
+    assert github["layout"]["head"] != ["Changed"]
 
 
 # -- the duplicate checks ----------------------------------------------------------------

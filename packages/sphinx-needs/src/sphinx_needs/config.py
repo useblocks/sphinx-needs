@@ -251,6 +251,12 @@ class _Config:
     def add_need_type(self, need_type: NeedType) -> None:
         """Adds a need type to the registry.
 
+        The registry keeps a deep copy, as every ``add_*`` method here does: the views
+        hand out the registry's own entries, so a change through one never reaches the
+        caller's value -- nor the GitHub services' module constants, which survive
+        :meth:`clear` -- and a later change to that value never reaches the registry.
+        A layout nests dicts and lists, which a shallow copy would leave shared.
+
         :raises NeedsApiConfigException: If a need type of its directive is already
             registered.
         """
@@ -261,7 +267,7 @@ class _Config:
             )
 
             raise NeedsApiConfigException(f"{directive} already exists as need type")
-        self._types[directive] = need_type
+        self._types[directive] = copy.deepcopy(need_type)
 
     @property
     def layouts(self) -> Mapping[str, dict[str, Any]]:
@@ -283,7 +289,7 @@ class _Config:
             )
 
             raise NeedsApiConfigException(f"{name} already exists as need layout")
-        self._layouts[name] = layout
+        self._layouts[name] = copy.deepcopy(layout)
 
     def add_builtin_need_type(self, need_type: NeedType) -> None:
         """Adds a need type sphinx-needs itself provides (the GitHub services' ones).
@@ -292,12 +298,12 @@ class _Config:
         types, each only where no type of its directive is configured or added, and
         never counted when ``add_need_type`` checks a directive is free.
         """
-        self._builtin_types[need_type["directive"]] = need_type
+        self._builtin_types[need_type["directive"]] = copy.deepcopy(need_type)
 
     def add_builtin_layout(self, name: str, layout: dict[str, Any]) -> None:
         """Adds a need layout sphinx-needs itself provides (the GitHub services' one),
         the lowest tier, as :meth:`add_builtin_need_type`."""
-        self._builtin_layouts[name] = layout
+        self._builtin_layouts[name] = copy.deepcopy(layout)
 
     def merged_types(self, configured: list[NeedType]) -> list[NeedType]:
         """The configured need types, then the added ones, then the built-in ones,
