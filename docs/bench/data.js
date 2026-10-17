@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792243107494,
+  "lastUpdate": 1792245027164,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -25992,6 +25992,42 @@ window.BENCHMARK_DATA = {
             "value": 58.44024199100001,
             "unit": "s",
             "extra": "Commit: 21b7afe6cbae77122c01d7b9847cd7de94edb67f\nBranch: master\nTime: 2026-10-17T15:17:01+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9a8607491d86f768f9305d7efaed0de0dd59c3a6",
+          "message": "🏷️ NeedsList declares the needs.json it holds; eleven suppressions gone (#2313)\n\n## What\n\nTyping only, in `packages/sphinx-needs/src/sphinx_needs/needsfile.py`.\nIt removes all eleven `# ty: ignore` comments there, taking the\nworkspace from 101 to 90.\n\n**The cause.** `NeedsList.needs_list` had no declared type, so ty\ninferred it from the dict literal in `__init__`. That gave a dict whose\nvalues were a union including `str` (`project`, `current_version`,\n`created`). Every `self.needs_list[\"versions\"][version][...]` was then a\nsubscript on a possible `str`, and each one needed a suppression.\n\n**The fix.** Three TypedDicts declare the file `NeedsList` holds and\nwrites:\n- **`NeedsJsonType`, the envelope:** `project`, `current_version`,\n`versions`, and `created`, which is `NotRequired` because it is left out\nunder `needs_reproducible_json`.\n- **`NeedsJsonVersionType`, one version (`total=False`):**\n`update_or_add_version` writes `needs`, `needs_amount` and `creator` for\na version it creates, and `created`, `needs_schema` and\n`needs_defaults_removed` depending on configuration. A version kept from\na `needs_file` may also be of an older shape: before 3.0 there was no\n`creator` or `needs_schema`. That is why the code already guards a\nmissing `needs`.\n- **`NeedsJsonCreatorType`:** `program` and `version`.\n\n`load_json` keeps taking the file's JSON unchecked, and a comment now\nsays so. No method body changes.\n\n**Noted, not changed.**\n- **A `needs_file` with no `versions` key crashes the `needs` builder**\nwith `KeyError: 'versions'`. Two things let it through:\n- the package's own `needsfile.json` schema requires only\n`current_version` and `project`;\n  - the schema's errors are only logged, never acted on.\n\nThis reproduces on master. Whether such a file should warn and start\nfresh or be refused is a separate decision, so this PR doesn't touch it.\n- **Optional keys aren't checked on read:** ty 0.0.84 does not flag\nreading a `total=False` key without a check. `add_need` reads `needs`\nstraight after `update_or_add_version` has set it, and a comment there\nsays so.\n\n## Why\n\nContinues #1835: `needsfile.py` was its largest remaining cluster.\n\n## Tests\n\nNo new test: nothing changes at run time.\n- **Byte identity:** 33 JSON files were built with the old and the new\nmodule, both `needs.json` and the per-ID output, across configurations.\n  - The 22 reproducible builds are byte-identical.\n- The other 11 are identical once their `created` timestamps are masked.\n  - All 305 snapshots pass with no update.\n- **Mutations:** 10 of 10 make `uv run poe typecheck` fail.\n- Removing the annotation brings back exactly the original eleven\nerrors.\n  - Each of the other nine gives a key the wrong type.\n- **Review:** an Opus builder wrote it under binding rules: no behaviour\nchange, the written JSON byte-identical, no `cast` or `Any` to silence\nthe checker. I reviewed the diff myself. It adds type declarations and\none annotation, and changes no method body, so it had no separate\nadversarial review.\n- **Gates:** lint, typecheck and `test-needs` (3407 passed, 305\nsnapshots unchanged) at `9d465155`, after rebasing onto master\n`21b7afe6`.\n\n## Checklist\n\n- [x] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue. *(Written by Claude Code at a\nmaintainer's request.)*\n- [x] I ran the package's tests (`uv run poe test-<package>`) and they\npass.\n- [x] Documentation is updated where behaviour or options change. *(No\nbehaviour changes.)*\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*. *(sphinx-needs: Internal changes.)*\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-17T15:49:13+02:00",
+          "tree_id": "29e098ff70904d657de1014b44069709a22caf08",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/9a8607491d86f768f9305d7efaed0de0dd59c3a6"
+        },
+        "date": 1792245018558,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1060172550000047,
+            "unit": "s",
+            "extra": "Commit: 9a8607491d86f768f9305d7efaed0de0dd59c3a6\nBranch: master\nTime: 2026-10-17T15:49:13+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 43.359224209999994,
+            "unit": "s",
+            "extra": "Commit: 9a8607491d86f768f9305d7efaed0de0dd59c3a6\nBranch: master\nTime: 2026-10-17T15:49:13+02:00"
           }
         ]
       }
