@@ -2,8 +2,7 @@
 
 A need's value that holds a ``[[…]]`` and an extend's value that holds one are joined
 into one computed value, item by item: on a link type, on a string field, and on an
-array field of each item type. The two values are of the field's one kind, which
-``_function_array`` checks, as the checker cannot see it (:issue:`1835`).
+array field of each item type. The values each join gives are pinned (:issue:`1835`).
 """
 
 from pathlib import Path
@@ -12,10 +11,6 @@ from typing import Any
 import pytest
 from sphinx.application import Sphinx
 
-from sphinx_needs.directives.needextend import _function_array
-from sphinx_needs.functions.functions import DynamicFunctionParsed
-from sphinx_needs.need_item import NeedLink
-from sphinx_needs.needs_schema import FieldFunctionArray
 from sphinx_needs_testkit import build_warnings
 from tests.util import needs_by_id
 
@@ -149,37 +144,3 @@ def test_append_joins_computed_values_of_each_kind(test_app: Sphinx):
     assert f3["counts"] == [1, 2, 7, 5]
     assert f3["weights"] == [0.25, 4.0, 2.5]
     assert f3["flags"] == [False, True, False]
-
-
-_COPY_ID = DynamicFunctionParsed.from_string('copy("id")', allow_need=True)
-
-
-@pytest.mark.parametrize(
-    "items",
-    [
-        ("a", _COPY_ID, "b"),
-        (1, _COPY_ID, 2),
-        (0.5, 1, _COPY_ID),
-        (True, _COPY_ID),
-        (_COPY_ID,),
-        (),
-    ],
-)
-def test_function_array_keeps_items_of_one_kind(items: tuple[Any, ...]):
-    """The items of one kind are the computed value as they are, in order."""
-    assert _function_array(items) == FieldFunctionArray(items)
-
-
-@pytest.mark.parametrize(
-    "items",
-    [
-        ("a", 1),
-        (_COPY_ID, True, "a"),
-        (NeedLink(id="T2"), _COPY_ID),
-        (None,),
-    ],
-)
-def test_function_array_refuses_items_of_two_kinds(items: tuple[Any, ...]):
-    """Items no field's values hold together are refused, rather than joined."""
-    with pytest.raises(RuntimeError, match="are not the values of one field"):
-        _function_array(items)

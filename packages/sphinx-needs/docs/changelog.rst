@@ -430,11 +430,11 @@ Internal changes
   written file is unchanged. Eleven ``# ty: ignore`` comments go (:issue:`1835`)
 
 - 🏷️ A ``needextend`` append that joins a computed value with another value of the same
-  field says so to the checker: a link type's computed value is read as the
-  ``LinksFunctionArray`` it is, and a field's joined items are checked to be of one kind,
-  text or numbers, before they become a ``FieldFunctionArray`` (both sides are values of the
-  one field, so they always are); the values a build gives are unchanged. Seven
-  ``# ty: ignore`` comments go (:issue:`1835`)
+  field or link type reads the computed value as the ``FieldFunctionArray`` or
+  ``LinksFunctionArray`` it is, and ``FieldFunctionArray`` declares one tuple whose items
+  are computed parts, text or numbers, rather than one tuple per item type, which no join
+  could be proved to keep. The values a build gives are unchanged. Eight ``# ty: ignore``
+  comments go, seven in ``needextend.py`` and one in ``needs_schema.py`` (:issue:`1835`)
 
 - 🏷️ Every function in the shipped code is annotated, and ruff's ``ANN`` rules keep it so
   across the workspace; ``sphinx_needs.setup`` now declares its types, and the internal

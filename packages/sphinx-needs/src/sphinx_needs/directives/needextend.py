@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
-from typing import Final, TypeAlias, TypeVar
+from collections.abc import Sequence
+from typing import Final
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -16,7 +16,6 @@ from sphinx_needs.exceptions import (
     VariantParsingException,
 )
 from sphinx_needs.filter_common import filter_needs_mutable
-from sphinx_needs.functions.functions import DynamicFunctionParsed
 from sphinx_needs.functions.order import filter_names, placeholder, typed_empty
 from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
 from sphinx_needs.need_item import NeedItem, NeedModification
@@ -30,8 +29,6 @@ from sphinx_needs.needs_schema import (
     TypeFieldsSchema,
 )
 from sphinx_needs.utils import DummyOptionSpec, add_doc, coerce_to_boolean, counted_ids
-from sphinx_needs.variant_data import VariantDataParsed
-from sphinx_needs.variants import VariantFunctionParsed
 
 logger = get_logger(__name__)
 
@@ -379,11 +376,11 @@ def extend_needs_data(
                     continue
                 match (etype, field_value):
                     case (ExtendType.APPEND, FieldLiteralValue()):
-                        if (df := need._dynamic_fields.get(option_name)) is not None:
+                        if (df := _computed_field(need, option_name)) is not None:
                             need._dynamic_fields[option_name] = (
-                                _function_array((*df.value, *field_value.value))
+                                FieldFunctionArray((*df.value, *field_value.value))
                                 if isinstance(field_value.value, list)
-                                else _function_array((*df.value, field_value.value))
+                                else FieldFunctionArray((*df.value, field_value.value))
                             )
                         else:
                             if isinstance(field_value.value, list):
@@ -404,17 +401,17 @@ def extend_needs_data(
                                     f"Cannot append non-string/array value {field_value.value!r} to field '{option_name}'"
                                 )
                     case (ExtendType.APPEND, FieldFunctionArray()):
-                        if (df := need._dynamic_fields.get(option_name)) is not None:
-                            need._dynamic_fields[option_name] = _function_array(
+                        if (df := _computed_field(need, option_name)) is not None:
+                            need._dynamic_fields[option_name] = FieldFunctionArray(
                                 (*df.value, *field_value.value)
                             )
                         else:
                             if isinstance(need[option_name], list):
-                                need._dynamic_fields[option_name] = _function_array(
+                                need._dynamic_fields[option_name] = FieldFunctionArray(
                                     (*need[option_name], *field_value.value)
                                 )
                             elif isinstance(need[option_name], str):
-                                need._dynamic_fields[option_name] = _function_array(
+                                need._dynamic_fields[option_name] = FieldFunctionArray(
                                     (
                                         need[option_name],
                                         *field_value.value,
@@ -477,41 +474,17 @@ def _computed_links(need: NeedItem, name: str) -> LinksFunctionArray | None:
     raise RuntimeError(f"Link type {name!r} holds a field's value {computed!r}")
 
 
-_Computed: TypeAlias = DynamicFunctionParsed | VariantFunctionParsed | VariantDataParsed
-"""An item a ``[[…]]``, ``<<…>>`` or ``<{…}>`` computes."""
+def _computed_field(need: NeedItem, name: str) -> FieldFunctionArray | None:
+    """The ``[[…]]``, ``<<…>>`` or ``<{…}>`` value a need holds for a field.
 
-_Kind = TypeVar("_Kind")
+    The counterpart of :func:`_computed_links`: no link type has a field's name.
 
-
-def _items_of_kind(
-    items: tuple[object, ...], kind: tuple[type[_Kind], ...]
-) -> tuple[_Computed | _Kind, ...] | None:
-    """The items, if each is computed or of ``kind``."""
-    checked: list[_Computed | _Kind] = []
-    for item in items:
-        if not isinstance(item, _Computed) and not isinstance(item, kind):
-            return None
-        checked.append(item)
-    return tuple(checked)
-
-
-def _function_array(items: Iterable[object]) -> FieldFunctionArray:
-    """The items, in order, as the computed value of a field.
-
-    An extend joins two values of one field: the one the need holds (its computed
-    value, or its value) and the one the extend sets, both converted by the field's
-    declaration, so their items are of the one kind that declaration gives. The
-    checker cannot see that, so it is checked here: text, or numbers (a boolean is an
-    integer, and an integer a number, to the checker as to ``isinstance``).
-
-    :raises RuntimeError: if the items mix text and numbers, or hold anything else.
+    :raises RuntimeError: if the need holds a link type's computed value under the name.
     """
-    values = tuple(items)
-    if (text := _items_of_kind(values, (str,))) is not None:
-        return FieldFunctionArray(text)
-    if (numbers := _items_of_kind(values, (bool, int, float))) is not None:
-        return FieldFunctionArray(numbers)
-    raise RuntimeError(f"The items {values!r} are not the values of one field")
+    computed = need._dynamic_fields.get(name)
+    if computed is None or isinstance(computed, FieldFunctionArray):
+        return computed
+    raise RuntimeError(f"Field {name!r} holds a link type's value {computed!r}")
 
 
 def _refused_on_type(
