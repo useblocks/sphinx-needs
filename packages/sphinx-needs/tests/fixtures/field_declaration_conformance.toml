@@ -121,7 +121,7 @@
 #     part its target lacks is a dead link; a link to a part
 #     is checked by the type of the need owning the part; a `[condition]` on the link
 #     changes nothing. A link of `links` that the same need also holds -- the same target,
-#     the same part -- in a link type with `copy = true` is not checked against the
+#     the same part -- in another link type with `copy = true` is not checked against the
 #     `target_types` of `links` (it is checked as a link of that link type), whether it
 #     was copied or written by hand. A need type's `target_types` narrows by the EXPANDED
 #     sets (a listed type with the types inheriting from it, against the same of the
@@ -4681,3 +4681,43 @@ code = "link_target_type"
 need = "SPEC_2"
 field = "parent_needs"
 type = "spec"
+
+[[case]]
+name = "link-target-types-copy-on-links"
+why = "copy = true on links itself copies nothing, so it exempts nothing: a link of links to a need of a type its target_types do not accept is a link_target_type (the exemption is for a link another link type with copy = true holds)"
+config = '''
+[needs.links.links]
+copy = true
+target_types = ["spec"]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+.. spec:: Specification
+   :id: SPEC_1
+
+.. test:: Links a req and a spec
+   :id: TEST_1
+   :links: REQ_1, SPEC_1
+'''
+[case.expect]
+[case.expect.needs.TEST_1]
+links = ["REQ_1", "SPEC_1"]
+[[case.expect.findings]]
+code = "link_target_type"
+need = "TEST_1"
+field = "links"
+type = "req"
