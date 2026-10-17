@@ -255,6 +255,8 @@ needs_fields = {
     "per_type": {"schema": {"type": "string"}, "default": "from_fields"},
     # a core field narrowed with a default: the same rule
     "status": {"schema": {"type": "string"}, "default": "open"},
+    # a default of None is no default: needs_global_options' applies, unreported
+    "none_default": {"schema": {"type": "string"}, "default": None},
 }
 
 needs_global_options = {
@@ -264,6 +266,7 @@ needs_global_options = {
     "mixed": {"predicates": [("type == 'spec'", "from_global")]},
     "per_type": {"default": "from_global"},
     "status": {"default": "closed"},
+    "none_default": {"default": "from_global"},
 }
 """
 
@@ -308,17 +311,17 @@ def test_needs_fields_default_wins_over_global_options(test_app):
         'WARNING: Config option "needs_global_options" is deprecated. Please use '
         "needs_fields and needs_links instead. [needs.deprecated]",
         "WARNING: needs_global_options['both']['default'] ('from_global') is "
-        "ignored: needs_fields['both']['default'] ('from_fields') is used instead "
+        "ignored: needs_fields['both']['default'] ('from_fields') takes precedence "
         "[needs.config]",
         "WARNING: needs_global_options['predicates']['predicates'] "
         "([(\"type == 'spec'\", 'from_global')]) is ignored: "
         "needs_fields['predicates']['predicates'] "
-        "([(\"type == 'spec'\", 'from_fields')]) is used instead [needs.config]",
+        "([(\"type == 'spec'\", 'from_fields')]) takes precedence [needs.config]",
         "WARNING: needs_global_options['per_type']['default'] ('from_global') is "
-        "ignored: needs_fields['per_type']['default'] ('from_fields') is used instead "
+        "ignored: needs_fields['per_type']['default'] ('from_fields') takes precedence "
         "[needs.config]",
         "WARNING: needs_global_options['status']['default'] ('closed') is "
-        "ignored: needs_fields['status']['default'] ('open') is used instead "
+        "ignored: needs_fields['status']['default'] ('open') takes precedence "
         "[needs.config]",
     ]
 
@@ -332,6 +335,7 @@ def test_needs_fields_default_wins_over_global_options(test_app):
             "mixed",
             "per_type",
             "status",
+            "none_default",
         )
     } == {
         "both": {"SP_001": "from_fields", "IM_001": "from_fields"},
@@ -340,6 +344,7 @@ def test_needs_fields_default_wins_over_global_options(test_app):
         "mixed": {"SP_001": "from_global", "IM_001": "from_fields"},
         "per_type": {"SP_001": "from_fields", "IM_001": "from_type"},
         "status": {"SP_001": "open", "IM_001": "open"},
+        "none_default": {"SP_001": "from_global", "IM_001": "from_global"},
     }
 
 
@@ -398,7 +403,7 @@ def test_needs_fields_default_and_predicates_win_in_one_warning(test_app):
         "needs_global_options['asil']['predicates'] ([(\"status == 'open'\", 'C')]) "
         "are ignored: needs_fields['asil']['default'] ('QM') and "
         "needs_fields['asil']['predicates'] ([(\"status == 'open'\", 'B')]) "
-        "are used instead [needs.config]",
+        "take precedence [needs.config]",
     ]
     assert {i: n["asil"] for i, n in _needs(test_app).items()} == {
         "REQ_001": "B",
