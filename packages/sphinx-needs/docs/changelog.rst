@@ -205,9 +205,10 @@ Bug fixes
   to or removed from a type entry, a field or link type it declares, its default, an ``inherits``,
   or the type's ``title`` and ``prefix``. A field whose rule was removed held ``None`` where a fresh
   build held its authored value. The complete list of need types is compared with the one the
-  documents were read with: it includes the types added from code, such as the GitHub service's,
-  which a ``rebuild="env"`` on the option could not compare. An unchanged list re-reads nothing
-  more, and the first incremental build after upgrading re-reads every document once (:issue:`2287`)
+  documents were read with, so a change to a type added with
+  :func:`~sphinx_needs.api.configuration.add_need_type`, which the option does not hold, re-reads
+  every document too. An unchanged list re-reads nothing more, and the first incremental build
+  after upgrading re-reads every document once (:issue:`2287`)
 
 - 🐛 A layout's ``{{field}}`` placeholder (:ref:`layouts`) no longer stops the build with
   ``TypeError: replace() argument 2 must be str`` when the need's value is unset or not a string. A
@@ -249,10 +250,11 @@ Bug fixes
   sphinx-needs' own registry and read beside the configured ones, in the same order as
   before: the configured types, then the added ones, then the GitHub services' ones,
   which give way to a type or layout of their name, configured or added at any time (see
-  *Breaking changes* for what this changes for an extension). A change to a type added
-  with ``add_need_type``, or to a layout added with ``add_need_layout``, is not a
-  configuration change: as for any change to an extension's code, build with ``-E`` to
-  see it. After upgrading, the line is
+  *Breaking changes* for what this changes for an extension). A change to a layout added
+  with ``add_need_layout`` is not a configuration change: as for any change to an
+  extension's code, build with ``-E`` to see it; a change to a type added with
+  ``add_need_type`` re-reads every document, as one to :ref:`needs_types` does. After
+  upgrading, the line is
   still reported until a build re-reads a document, as the environment Sphinx loads was
   pickled with the old values: edit any page, or build once with ``-E`` (:issue:`2265`,
   :pr:`2307`)

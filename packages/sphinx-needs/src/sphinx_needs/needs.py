@@ -416,7 +416,7 @@ def setup(app: Sphinx) -> dict[str, Any]:
 
     app.connect("env-before-read-docs", prepare_env)
     # after prepare_env, which registers the services, so that the list compared is the
-    # complete one, with the need types added from code, on every build
+    # complete one, the need types added from code included, on every build
     app.connect("env-before-read-docs", reread_on_need_types_change)
     # note we have to place create_schema after prepare_env, as that can add extra fields,
     # but before load_external_needs, where we start to add needs.
@@ -1444,13 +1444,12 @@ def reread_on_need_types_change(
     are created with. The needs of an unchanged document are kept from the pickled
     environment, so they would keep what the previous entries gave them (#2287).
 
-    The list compared is the complete one, with the need types added from code (by
-    ``add_need_type`` or the GitHub service), which a ``rebuild = "env"`` on
-    ``needs_types`` -- as ``needs_fields`` has -- could not compare correctly: the types
-    added from code are either outside the configuration value or, where they are
-    appended to it after Sphinx compared the configurations, they make it differ on every
-    build (#2265). It is compared against the one recorded when the documents were read.
-    Documents are added to ``docnames``, which this event allows.
+    The list compared is the complete one, ``NeedsSphinxConfig.types``: the configured
+    need types and those added from code (``add_need_type``, the GitHub services), which
+    sphinx-needs keeps in its own registry rather than in ``needs_types``. A
+    ``rebuild = "env"`` on ``needs_types`` -- as ``needs_fields`` has -- would compare the
+    configured types alone. The list is compared against the one recorded when the
+    documents were read. Documents are added to ``docnames``, which this event allows.
 
     :param app: The Sphinx application.
     :param env: The build environment.

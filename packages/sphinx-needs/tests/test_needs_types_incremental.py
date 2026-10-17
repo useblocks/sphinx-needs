@@ -6,10 +6,10 @@ them. Since a need type declares fields, link types, their defaults and ``derive
 and its ``title`` and ``prefix`` are stored on each need, a changed entry changes need
 data: the needs an incremental build ends with now equal those of a fresh build.
 
-The option itself stays ``"html"``: the GitHub service appends its need types to it in
-place after Sphinx compares the configurations (#2265), so ``"env"`` would re-read every
-document on every build. The entries are compared once the list is complete instead, and
-an unchanged list re-reads nothing more than the changed documents.
+The option itself stays ``"html"``: it holds the configured need types only, while those
+added from code (``add_need_type``, the GitHub services) are kept in sphinx-needs'
+registry, so ``"env"`` would not see a change to them. The complete list is compared
+instead, and an unchanged list re-reads nothing more than the changed documents.
 """
 
 from __future__ import annotations
@@ -161,8 +161,8 @@ def test_unchanged_types_reread_only_changed_documents(
 ) -> None:
     """An unchanged ``needs_types`` adds no document to an incremental build.
 
-    The GitHub service's need types are appended to the option on every build, so the
-    comparison must see them on both sides rather than re-read everything each time.
+    The GitHub services' need types are in the list compared on every build, so the
+    comparison sees them on both sides rather than re-reading everything each time.
     """
     srcdir = _write(tmp_path / "src", conf(req=LABEL_DERIVED))
     _build(make_app, srcdir, fresh=True)
@@ -216,3 +216,42 @@ def test_environment_without_the_record_rereads_once(
     assert warnings == []
     _, _, read = _build(make_app, srcdir, fresh=False)
     assert read == []
+
+
+#: an extension's need type, added from code: not part of the ``needs_types`` value
+ADDED_TYPE_CONF = """\
+from sphinx_needs.api import add_need_type
+
+extensions = ["sphinx_needs"]
+needs_build_json = True
+
+
+def setup(app):
+    app.connect(
+        "config-inited",
+        lambda app, config: add_need_type(app, "ext", "{title}", "E_"),
+        priority=500,
+    )
+"""
+
+
+def test_change_to_a_type_added_from_code_is_applied(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """A type added with ``add_need_type`` is not in the ``needs_types`` value, so no
+    configuration value changes with it; the complete list compared still does."""
+    srcdir = tmp_path / "src"
+    srcdir.mkdir()
+    (srcdir / "conf.py").write_text(ADDED_TYPE_CONF.format(title="Before"), "utf-8")
+    (srcdir / "index.rst").write_text(
+        "Index\n=====\n\n.. toctree::\n\n   other\n\n.. ext:: Added\n   :id: E_001\n",
+        "utf-8",
+    )
+    (srcdir / "other.rst").write_text(OTHER, "utf-8")
+    needs, _, _ = _build(make_app, srcdir, fresh=True)
+    assert needs["E_001"]["type_name"] == "Before"
+    (srcdir / "conf.py").write_text(ADDED_TYPE_CONF.format(title="After"), "utf-8")
+    needs, warnings, read = _build(make_app, srcdir, fresh=False)
+    assert sorted(read) == ["index", "other"]
+    assert needs["E_001"]["type_name"] == "After"
+    assert warnings == []

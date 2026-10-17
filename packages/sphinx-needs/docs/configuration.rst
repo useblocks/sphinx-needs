@@ -260,7 +260,8 @@ By default it is set to:
 * **inherits**, **fields**, **links** (optional): the fields and link types the type declares anew for its needs, see :ref:`needs_types_fields`.
 
 Every one of these items is stored on, or decides, the needs of the type,
-so an incremental build after a change to ``needs_types`` re-reads every document, as one after a change to :ref:`needs_fields` does.
+so an incremental build after a change to ``needs_types`` re-reads every document, as one after a change to :ref:`needs_fields` does,
+and so does one after a change to a need type added by an extension (below).
 
 .. versionchanged:: 9.1.0
 
@@ -319,6 +320,8 @@ and by the :ref:`GitHub services <github_service>` are not part of the option's 
 they follow the configured types wherever the types are read,
 and :func:`~sphinx_needs.api.configuration.get_need_types` lists them all.
 A configured type replaces one of its directive added by either.
+An incremental build after a change to a type added by an extension re-reads every document,
+as one after a change to ``needs_types`` does, although the option's value is unchanged.
 
 The value is validated when the configuration is read.
 A value that is neither a list nor a dictionary stops the build with an error.

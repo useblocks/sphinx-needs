@@ -940,11 +940,11 @@ class NeedsSphinxConfig:
                 "style": "node",
             },
         ],
-        # "html", not "env" as ``_fields`` is: "env" compares this value alone, and the
-        # need types added from code (``add_need_type``, the GitHub service) are not
-        # reliably in it when Sphinx compares (#2265). ``reread_on_need_types_change``
-        # compares the complete list instead, and re-reads every document when it
-        # changed (#2287)
+        # "html", not "env" as ``_fields`` is: "env" compares this value alone, which
+        # holds the configured need types only; those added from code (``add_need_type``,
+        # the GitHub services) are kept in sphinx-needs' registry. The complete list,
+        # ``NeedsSphinxConfig.types``, is compared by ``reread_on_need_types_change``,
+        # which re-reads every document when it changed (#2287)
         metadata={"rebuild": "html", "types": ()},
     )
     """Custom user need types.
