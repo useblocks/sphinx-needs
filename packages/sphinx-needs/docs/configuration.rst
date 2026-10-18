@@ -261,7 +261,8 @@ By default it is set to:
 
 Every one of these items is stored on, or decides, the needs of the type,
 so an incremental build after a change to ``needs_types`` re-reads every document, as one after a change to :ref:`needs_fields` does,
-and so does one after a change to a need type added by an extension (below).
+and so does one after a change to a need type added by an extension (below),
+or after a built-in :ref:`GitHub service <github_service>` is configured or removed in :ref:`needs_services`.
 
 .. versionchanged:: 9.1.0
 
@@ -316,7 +317,7 @@ The two shapes are equivalent, and the types keep the order they are given in bo
 an entry of either shape may declare fields anew for its type (:ref:`needs_types_fields`).
 
 The need types added by extensions (with :func:`~sphinx_needs.api.configuration.add_need_type`)
-and by the :ref:`GitHub services <github_service>` are not part of the option's value:
+and by the configured :ref:`GitHub services <github_service>` are not part of the option's value:
 they follow the configured types wherever the types are read,
 and :func:`~sphinx_needs.api.configuration.get_need_types` lists them all.
 A configured type replaces one of its directive added by either.
@@ -3068,7 +3069,7 @@ You can use ``needs_layouts`` to define custom grid-based layouts with custom da
 Please read :ref:`layouts_styles` for a lot more detailed information.
 
 The layouts added by extensions (with :func:`~sphinx_needs.api.configuration.add_need_layout`)
-and the :ref:`GitHub services' <github_service>` ``github`` layout are not part of the option's value,
+and the configured :ref:`GitHub services' <github_service>` ``github`` layout are not part of the option's value,
 and a configured layout replaces one of its name added by either.
 
 ``needs_layouts`` must be a dictionary and each key represents a layout. A layout must define the used grid-system and
@@ -3232,6 +3233,21 @@ Takes extra configuration options for :ref:`services`:
    }
 
 Each key-value-pair in ``needs_services`` describes a service specific configuration.
+
+The built-in :ref:`GitHub services <github_service>` (``github-issues``, ``github-prs`` and ``github-commits``)
+are registered only when this option names them, with a mapping of their options (``{}`` will do):
+each then adds its fields, its need type and the ``github`` layout,
+and a project that names none of them has none of these.
+A built-in named with a value that is not a mapping is reported as a ``needs.config`` warning,
+and that service is not registered.
+The built-in services are decided once, by sphinx-needs' own ``config-inited`` handler at priority 12:
+one named later, by an extension's handler above 12, is not registered,
+so name it in :file:`conf.py`, the :ref:`needs_from_toml` file, or a ``config-inited`` handler at priority 11 or below.
+An incremental build after a built-in service is configured or removed re-reads every document.
+
+.. code-block:: python
+
+   needs_services = {"github-issues": {}}
 
 Own services can be registered by setting ``class``, together with ``class_init``, as
 additional options.

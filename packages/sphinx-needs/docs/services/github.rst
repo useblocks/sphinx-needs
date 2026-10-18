@@ -10,6 +10,24 @@ for each information type:
 + ``github-prs``
 + ``github-commits``
 
+A service is available only when it is configured:
+name it in :ref:`needs_services`, in **conf.py** or as a ``[needs.services.<name>]`` table of the :ref:`needs_from_toml` file.
+An empty configuration will do:
+
+.. code-block:: python
+
+    needs_services = {"github-issues": {}}
+
+.. code-block:: toml
+
+    [needs.services.github-issues]
+
+A configured service brings the fields its needs carry (``url``, ``user``, ``avatar``, ``service``, ``created_at``,
+``updated_at``, ``closed_at``, and the options ``query``, ``specific``, ``max_amount``, ``max_content_lines`` and
+``id_prefix``), its :ref:`need type <service_github_need_type>` and the :ref:`github layout <service_github_layout>`.
+A project that configures none of the three has none of them.
+A :ref:`needservice` naming a service that is not configured creates nothing,
+and warns (``needs.load_service_need``) with the configuration to add.
 
 They all have common configuration options and are using the same way of querying their data.
 Therefore the below configuration is valid for all three services.
@@ -117,10 +135,12 @@ This query fetches a specific pull request with the id 161.
 
 Common Configuration
 --------------------
-All GitHub related services have a common set of configuration options
-and their configuration must be done in :ref:`needs_services` inside the project's **conf.py** file.
+All GitHub related services have a common set of configuration options,
+set in :ref:`needs_services`: in the project's **conf.py** file,
+or in a ``[needs.services.<name>]`` table of the :ref:`needs_from_toml` file.
 
-:ref:`needs_services` must contain a key with the service name, e.g. ``github-issues``
+:ref:`needs_services` must contain a key with the service name, e.g. ``github-issues``:
+that key is what makes the service available, with no options too (``{}``).
 
 The following key-value configuration parameters are known by all GitHub services:
 
@@ -161,11 +181,14 @@ All options can be overwritten by setting them directly in the need service dire
         }
     }
 
+.. _service_github_layout:
+
 Layout
 ++++++
 
 The GitHub services are providing a new layout, called ``github``, which is used by default and is based on the
 standard ``complete`` layout.
+It is available when at least one of the three services is configured.
 Sphinx-Needs registers it beside the configured layouts, not in the :ref:`needs_layouts` value:
 a ``github`` entry of your own in :ref:`needs_layouts`,
 or one an extension adds with :func:`~sphinx_needs.api.configuration.add_need_layout`, replaces it.
@@ -186,25 +209,32 @@ directive :ref:`needservice`.
 
    Example of a github Issue collected with Sphinx-Needs.
 
+.. _service_github_need_type:
+
 Need type
 +++++++++
-The GitHub services create 3 new need types: ``issue``, ``pr`` and ``commit``.
+Each GitHub service creates a need type of its own, when it is configured:
+``github-issues`` creates ``issue``, ``github-prs`` creates ``pr`` and ``github-commits`` creates ``commit``.
+A service that is not configured creates no type, so a project configuring ``github-issues`` alone has ``issue``,
+but no ``pr`` and no ``commit``.
 These types are used by default by the related service, but its usage can be overwritten in the service configuration
 by setting ``need_type`` or in the directive directly by setting ``type``.
+The service's type is added even when ``need_type`` sends its needs to another type.
 
 The configuration (names, colors, diagram representation) can also be overwritten by configuring your own need
 type in the configuration. Simply use :ref:`needs_types` for this.
 A type of the same directive added by another extension with :func:`~sphinx_needs.api.configuration.add_need_type`,
 whenever it is added, replaces it too.
-Sphinx-Needs registers the three types beside the configured ones, not in the :ref:`needs_types` value,
-after every configured or added type, and each gives way on its own:
+Sphinx-Needs registers the type of each configured service beside the configured ones, not in the
+:ref:`needs_types` value, after every configured or added type, and each gives way on its own:
 configuring your own ``issue`` leaves ``pr`` and ``commit`` as they are.
+An extension reading the need types sees them from a ``config-inited`` handler at a priority above 12.
 
 .. _service_github_custom:
 
 Custom service
 --------------
-The preconfigured services ``github_issues``, ``github_prs`` and ``github_commits`` support the cloud instance of
+The built-in services ``github-issues``, ``github-prs`` and ``github-commits`` support the cloud instance of
 GitHub by default.
 
 If a company internal ``GitHub Enterprise`` instance shall be addressed, you should configure an additional service to
@@ -244,6 +274,14 @@ it shall deal with. Allowed are ``issue``, ``pr`` and ``commit``.
 
 All other options are normal configuration options for the service, which are also available for the GitHub cloud
 instance.
+
+The need type and the ``github`` layout come with the built-in service, not with the class:
+the example configures ``github-issues`` too, which is what adds the ``issue`` type and the ``github`` layout
+that the needs of ``my-company-issues`` use.
+A custom service alone gets neither, and its needs are refused with an ``Unknown need type 'issue'`` warning
+that names the built-in service to configure:
+configure the built-in service it imitates as well (``{}`` will do),
+or declare the type in :ref:`needs_types` (and a ``github`` entry in :ref:`needs_layouts`).
 
 
 Examples

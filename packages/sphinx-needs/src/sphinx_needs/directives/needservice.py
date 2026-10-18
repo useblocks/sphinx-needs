@@ -11,13 +11,42 @@ from sphinx.util.docutils import SphinxDirective
 from sphinx_data_viewer.api import get_data_viewer_node
 
 from sphinx_needs.api import InvalidNeedException, add_need
-from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import NeedItemSourceService
 from sphinx_needs.needs_schema import FieldsSchema
-from sphinx_needs.services.manager import NeedsServiceException
+from sphinx_needs.services.base import BaseService
+from sphinx_needs.services.config.github import GITHUB_SERVICES
+from sphinx_needs.services.github import GithubService
+from sphinx_needs.services.manager import NeedsServiceException, builtin_service_fix
 from sphinx_needs.utils import DummyOptionSpec, add_doc, coerce_to_boolean
+
+
+def _unconfigured_builtin_hint(service: BaseService, need_type: object) -> str:
+    """The fix for a GitHub service need whose type is unknown because the built-in
+    service that adds the type is not configured, or ``""``.
+
+    A ``GithubService`` -- a custom entry built on the class, such as a GitHub
+    Enterprise one, included -- creates needs of its ``gh_type``'s type, which only the
+    built-in service of that type adds, when ``needs_services`` configures it.
+    """
+    if not isinstance(service, GithubService):
+        return ""
+    builtin = {gh_type: name for name, gh_type in GITHUB_SERVICES.items()}.get(
+        service.gh_type
+    )
+    if (
+        builtin is None
+        or need_type != service.gh_type
+        or builtin in _NEEDS_CONFIG.builtin_services
+    ):
+        return ""
+    return (
+        f" The {need_type!r} type is registered by the built-in {builtin!r} service: "
+        f"configure it ({builtin_service_fix(builtin)}), or declare the {need_type!r} "
+        "need type."
+    )
 
 
 class Needservice(nodes.General, nodes.Element):
@@ -61,6 +90,23 @@ class NeedserviceDirective(SphinxDirective):
     def run(self) -> Sequence[nodes.Node]:
         needs_config = NeedsSphinxConfig(self.env.config)
         needs_schema = SphinxNeedsData(self.env).get_schema()
+        needs_services = SphinxNeedsData(self.env).get_or_create_services()
+
+        # the service first, before its options: a built-in service's control options
+        # are fields only once a service registered them, so an unconfigured built-in
+        # would otherwise be one "Unknown option" warning per option before the one
+        # warning that names the cause
+        service_name = self.arguments[0]
+        try:
+            service = needs_services.get(service_name)
+        except NeedsServiceException as err:
+            # not registered: an unknown name, an unconfigured built-in, or a service
+            # whose configuration was refused (and reported) when it was registered
+            log_warning(
+                self.log, str(err), "load_service_need", location=self.get_location()
+            )
+            return []
+
         try:
             self._process_options(needs_schema)
         except (AssertionError, ValueError):
@@ -68,18 +114,6 @@ class NeedserviceDirective(SphinxDirective):
 
         need_types = needs_config.types
         all_data = needs_config.service_all_data
-        needs_services = SphinxNeedsData(self.env).get_or_create_services()
-
-        service_name = self.arguments[0]
-        try:
-            service = needs_services.get(service_name)
-        except NeedsServiceException as err:
-            # not registered: an unknown name, or a service whose configuration was
-            # refused (and reported) when the services were registered
-            log_warning(
-                self.log, str(err), "load_service_need", location=self.get_location()
-            )
-            return []
         section = []
 
         if "debug" not in self.options:
@@ -168,9 +202,14 @@ class NeedserviceDirective(SphinxDirective):
                         **datum,
                     )
                 except InvalidNeedException as err:
+                    hint = (
+                        _unconfigured_builtin_hint(service, need_type)
+                        if err.type == "invalid_type"
+                        else ""
+                    )
                     log_warning(
                         self.log,
-                        f"Service need could not be created: {err.message}",
+                        f"Service need could not be created: {err.message}{hint}",
                         "load_service_need",
                         location=self.get_location(),
                     )

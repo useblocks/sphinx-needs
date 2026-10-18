@@ -187,9 +187,10 @@ from sphinx_needs.schema.config_utils import (
     validate_schemas_config,
 )
 from sphinx_needs.schema.process import process_schemas
+from sphinx_needs.services.config.github import GITHUB_SERVICES
 from sphinx_needs.services.github import (
     GithubService,
-    add_github_need_types_and_layout,
+    add_configured_github_services,
 )
 from sphinx_needs.string_links import compile_string_links
 from sphinx_needs.utils import node_match
@@ -407,6 +408,10 @@ def setup(app: Sphinx) -> dict[str, Any]:
     # sphinx-codelinks' register_string_links is at 12 too and reads no need types, so
     # the order between the two does not matter
     app.connect("config-inited", resolve_need_types, priority=12)
+    # the configured built-in GitHub services, their need types and their layout:
+    # after the toml config, which can configure them, and at 12 rather than later, so
+    # every documented reader of the need types (above 12) sees them (#2265)
+    app.connect("config-inited", add_configured_github_services, priority=12)
     app.connect("config-inited", load_config)
     app.connect("config-inited", merge_default_configs)
     # runs after the built-in layouts are merged in, and before the config is checked
@@ -475,9 +480,6 @@ def setup(app: Sphinx) -> dict[str, Any]:
     # process and built interleaved share it, and a later setup clears what an earlier
     # application's extensions added -- fields, functions, need types and layouts alike.
     _NEEDS_CONFIG.clear()
-    # the GitHub services' need types and layout, sphinx-needs' lowest tier: every type
-    # or layout of their names, configured or added from code at any time, wins (#2265)
-    add_github_need_types_and_layout(app)
 
     return {
         "version": VERSION,
@@ -1397,16 +1399,18 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> Non
     # read paths from disagreeing within one build.
     _derive_variant_data_proxy(needs_config)
 
-    # Register embedded services
+    # Register the built-in services needs_services configures, as decided when their
+    # need types were added (config-inited, priority 12), so the two cannot disagree
     services = data.get_or_create_services()
-    services.register("github-issues", GithubService, gh_type="issue")
-    services.register("github-prs", GithubService, gh_type="pr")
-    services.register("github-commits", GithubService, gh_type="commit")
+    for name in _NEEDS_CONFIG.builtin_services:
+        services.register(name, GithubService, gh_type=GITHUB_SERVICES[name])
 
     # Register user defined services
     for name, service in needs_config.services.items():
         if (
-            name not in services.services
+            # a built-in name is the built-in service, registered above if configured
+            name not in GITHUB_SERVICES
+            and name not in services.services
             and "class" in service
             and "class_init" in service
         ):
@@ -1445,11 +1449,18 @@ def reread_on_need_types_change(
     environment, so they would keep what the previous entries gave them (#2287).
 
     The list compared is the complete one, ``NeedsSphinxConfig.types``: the configured
-    need types and those added from code (``add_need_type``, the GitHub services), which
+    need types and those added from code (``add_need_type``, the configured GitHub
+    services), which
     sphinx-needs keeps in its own registry rather than in ``needs_types``. A
     ``rebuild = "env"`` on ``needs_types`` -- as ``needs_fields`` has -- would compare the
     configured types alone. The list is compared against the one recorded when the
     documents were read. Documents are added to ``docnames``, which this event allows.
+
+    The configured built-in GitHub services are compared too: each registers twelve
+    fields and the ``github`` layout, which the needs of every document are created
+    with, while its need type may be the project's own, leaving the list unchanged. An
+    environment that has not recorded them -- one pickled by a version that registered
+    them in every build -- is re-read once.
 
     :param app: The Sphinx application.
     :param env: The build environment.
@@ -1459,14 +1470,22 @@ def reread_on_need_types_change(
     need_types = deepcopy(
         [dict(entry) for entry in NeedsSphinxConfig(app.config).types]
     )
+    builtin_services = tuple(_NEEDS_CONFIG.builtin_services)
     if data.need_types_read_with != need_types:
+        changed = "needs_types"
+    elif data.builtin_services_read_with != builtin_services:
+        changed = "the configured built-in services"
+    else:
+        changed = None
+    if changed is not None:
         unread = sorted(env.found_docs.difference(docnames))
         if unread:
             LOGGER.info(
-                f"needs_types changed: re-reading {len(unread)} unchanged document(s)"
+                f"{changed} changed: re-reading {len(unread)} unchanged document(s)"
             )
             docnames.extend(unread)
     data.need_types_read_with = need_types
+    data.builtin_services_read_with = builtin_services
 
 
 def merge_default_configs(_app: Sphinx, config: Config) -> None:
