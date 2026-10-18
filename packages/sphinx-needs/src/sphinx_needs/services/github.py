@@ -450,8 +450,10 @@ class GithubService(BaseService):
         # (or factory) it was registered with, which for one written for the old
         # meaning of ``options`` are none -- its options are need fields, and are
         # copied as they were
-        control = SphinxNeedsData(self.app.env).get_or_create_services().directive_options(
-            self.name
+        control = (
+            SphinxNeedsData(self.app.env)
+            .get_or_create_services()
+            .directive_options(self.name)
         )
         if control is None:  # not registered under its name
             control = service_options(type(self))
