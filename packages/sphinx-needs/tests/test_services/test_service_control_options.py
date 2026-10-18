@@ -664,8 +664,8 @@ def test_registering_a_class_whose_fields_are_a_string_through_the_api_raises(
     with pytest.raises(
         NeedsApiConfigException,
         match=(
-            "Service 'bad' cannot be registered: its class '.*Bad' declares 'fields' "
-            "as a value of type 'str', where a list of names is needed"
+            r"Service 'bad' cannot be registered: its class '.*Bad' declares 'fields' "
+            r"as a value of type 'str', where a list of names is needed"
         ),
     ):
         app._needs_services.register("bad", Bad)
