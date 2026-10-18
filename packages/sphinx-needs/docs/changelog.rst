@@ -292,6 +292,14 @@ Bug fixes
   ``needs_global_options`` value, a core field narrowed in :ref:`needs_fields` follows the same rule,
   and a need type's own declaration still wins over both (:issue:`2264`, :pr:`2318`)
 
+- 🐛 A link type's ``default`` or ``predicates`` set both in its :ref:`needs_links` (or deprecated
+  :ref:`needs_extra_links`) entry and in the deprecated :ref:`needs_global_options` is taken from that
+  entry, and the ``needs_global_options`` value is reported as ignored, in one ``needs.config``
+  warning per link type naming both values, as for a field. The legacy value replaced the entry's
+  silently, so every need that did not set the link type linked to the legacy targets. A link type
+  declared without the key still takes the ``needs_global_options`` value, and a need type's own
+  declaration still wins over both (:issue:`2317`, :pr:`2328`)
+
 - 🐛 An incremental build after a change to :ref:`needs_types` re-reads every document, as one
   after a change to :ref:`needs_fields` does. The option only rebuilt the HTML, so the needs of the
   documents that were not re-read kept what the previous entries gave them: a ``derive`` rule added
