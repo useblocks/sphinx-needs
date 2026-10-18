@@ -6,6 +6,18 @@ EXTRA_IMAGE_OPTIONS = ["avatar"]
 #: the options of the ``needservice`` directive a GitHub service reads: request
 #: parameters, not need fields
 GITHUB_OPTIONS = ("query", "specific", "max_amount", "max_content_lines", "id_prefix")
+
+
+def github_option_hint(name: str) -> str:
+    """Why one of :data:`GITHUB_OPTIONS`, set where only need fields are, is not one,
+    and the two ways out."""
+    return (
+        f"{name!r} is an option of the needservice directive, a request parameter of "
+        "the GitHub services, not a need field; set it on a needservice, or declare a "
+        f"field {name!r} in needs_fields"
+    )
+
+
 #: the GitHub services' directive options beside a need's own; ``type`` is a need's, a
 #: core field, which the ``github`` layout leaves out beside the five
 CONFIG_OPTIONS = ["type", *GITHUB_OPTIONS]

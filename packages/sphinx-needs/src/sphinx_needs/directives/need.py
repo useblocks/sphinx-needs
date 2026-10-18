@@ -27,6 +27,7 @@ from sphinx_needs.need_constraints import process_constraints
 from sphinx_needs.need_item import NeedItem, NeedItemSourceDirective, NeedLink
 from sphinx_needs.needs_schema import FieldsSchema
 from sphinx_needs.nodes import Need
+from sphinx_needs.services.config.github import GITHUB_OPTIONS, github_option_hint
 from sphinx_needs.utils import (
     DummyOptionSpec,
     add_doc,
@@ -157,7 +158,13 @@ class NeedDirective(SphinxDirective):
                     case key if key in link_keys:
                         links[key] = value or ""
                     case _:
-                        self._log_warning(f"Unknown option '{key}'")
+                        message = f"Unknown option '{key}'"
+                        if (
+                            key in GITHUB_OPTIONS
+                            and needs_schema.get_any_field(key) is None
+                        ):
+                            message += f": {github_option_hint(key)}"
+                        self._log_warning(message)
             except (AssertionError, ValueError) as err:
                 self._log_warning(f"Invalid value for '{key}' option: {err}")
                 return []

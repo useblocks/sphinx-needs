@@ -28,6 +28,7 @@ from sphinx_needs.needs_schema import (
     LinksLiteralValue,
     TypeFieldsSchema,
 )
+from sphinx_needs.services.config.github import GITHUB_OPTIONS, github_option_hint
 from sphinx_needs.utils import DummyOptionSpec, add_doc, coerce_to_boolean, counted_ids
 
 logger = get_logger(__name__)
@@ -139,7 +140,10 @@ class NeedextendDirective(SphinxDirective):
                 etype = ExtendType.REPLACE
 
             if (field_schema := needs_schema.get_any_field(key)) is None:
-                self._log_warning(f"Unknown option '{etype.value}{key}'")
+                message = f"Unknown option '{etype.value}{key}'"
+                if key in GITHUB_OPTIONS:
+                    message += f": {github_option_hint(key)}"
+                self._log_warning(message)
                 continue
             if field_schema.derived:
                 what = "Link type" if isinstance(field_schema, LinkSchema) else "Field"
