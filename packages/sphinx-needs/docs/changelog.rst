@@ -14,7 +14,7 @@ Improvements
   ``needs.load_service_need`` warning, checked before the directive's options: for a
   built-in GitHub service that is not configured it says so and gives the configuration to
   add (see *Breaking changes*), and with no service registered at all it says
-  ``could not be found: no service is registered`` where it listed none
+  ``could not be found: no service is registered`` where it listed none (:pr:`2321`)
 
 - ✨ :func:`~sphinx_needs.api.configuration.add_need_layout` adds a need layout from an
   extension, beside :ref:`needs_layouts`, as ``add_need_type`` adds a need type (:issue:`2265`, :pr:`2307`)
@@ -209,7 +209,8 @@ Breaking changes
 
   An extension reading :func:`~sphinx_needs.api.configuration.get_need_types` finds
   ``issue``, ``pr`` and ``commit`` only for the configured services, listed from
-  sphinx-needs' own ``config-inited`` handler at priority 12 on, so from a handler above 12.
+  sphinx-needs' own ``config-inited`` handler at priority 12 on, so from a handler above 12
+  (:pr:`2321`).
 
 - ‼️ ``app.config.needs_types`` and ``app.config.needs_layouts`` no longer hold the need
   types and layouts added by extensions or by the configured GitHub services, and the types and
@@ -360,7 +361,7 @@ Bug fixes
 - 🐛 A built-in GitHub service named in :ref:`needs_services` with a value that is not a
   mapping of options -- ``-D needs_services.github-issues=1`` sets the string ``'1'`` --
   no longer ends the build with ``AttributeError: 'str' object has no attribute 'get'``:
-  it is a ``needs.config`` warning, and the service is not registered
+  it is a ``needs.config`` warning, and the service is not registered (:pr:`2321`)
 
 - 🐛 Under :ref:`needs_json_remove_defaults`, a value equal to its field's default but of
   another JSON type (``1.0`` against a default of ``1``, ``[1.0]`` against ``[1]``) is now
