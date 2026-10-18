@@ -89,7 +89,8 @@ SERVICE_X_BACK = """\
 from sphinx_needs.services.base import BaseService
 
 class Svc(BaseService):
-    options = ["x_back"]
+    options = []
+    fields = ["x_back"]
 
     def __init__(self, app, name, config, **kwargs):
         super().__init__()

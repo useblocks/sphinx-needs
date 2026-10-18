@@ -30,7 +30,6 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'GITHUB_050bec',
-            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': False,
@@ -41,8 +40,6 @@
             ]),
             'links_back': list([
             ]),
-            'max_amount': None,
-            'max_content_lines': None,
             'modifications': 0,
             'parent_need': None,
             'parent_needs': list([
@@ -55,14 +52,12 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'query': None,
             'section_name': 'Title',
             'sections': list([
               'Title',
             ]),
             'service': 'github-commits',
             'signature': None,
-            'specific': 'useblocks/sphinx-needs/050bec750ff2c5acf881415fa2b5efb5fcce8414',
             'status': None,
             'style': None,
             'tags': list([
@@ -104,7 +99,6 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'GITHUB_1110',
-            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': False,
@@ -115,8 +109,6 @@
             ]),
             'links_back': list([
             ]),
-            'max_amount': '1',
-            'max_content_lines': '2',
             'modifications': 0,
             'parent_need': None,
             'parent_needs': list([
@@ -129,14 +121,12 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'query': 'repo:useblocks/sphinx-needs',
             'section_name': 'Title',
             'sections': list([
               'Title',
             ]),
             'service': 'github-issues',
             'signature': None,
-            'specific': None,
             'status': 'open',
             'style': None,
             'tags': list([
@@ -201,7 +191,6 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'GITHUB_1112',
-            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': False,
@@ -212,8 +201,6 @@
             ]),
             'links_back': list([
             ]),
-            'max_amount': '1',
-            'max_content_lines': None,
             'modifications': 0,
             'parent_need': None,
             'parent_needs': list([
@@ -226,14 +213,12 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'query': 'repo:useblocks/sphinx-needs',
             'section_name': 'Title',
             'sections': list([
               'Title',
             ]),
             'service': 'github-prs',
             'signature': None,
-            'specific': None,
             'status': 'open',
             'style': None,
             'tags': list([
@@ -282,7 +267,6 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'GITHUB_6abd38',
-            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': False,
@@ -293,8 +277,6 @@
             ]),
             'links_back': list([
             ]),
-            'max_amount': '1',
-            'max_content_lines': None,
             'modifications': 0,
             'parent_need': None,
             'parent_needs': list([
@@ -307,14 +289,12 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'query': 'repo:useblocks/sphinx-needs error',
             'section_name': 'Title',
             'sections': list([
               'Title',
             ]),
             'service': 'github-commits',
             'signature': None,
-            'specific': None,
             'status': None,
             'style': None,
             'tags': list([
@@ -472,15 +452,6 @@
               'field_type': 'core',
               'type': 'string',
             }),
-            'id_prefix': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
             'is_external': dict({
               'default': False,
               'description': 'If true, no node is created and need is referencing external url.',
@@ -542,24 +513,6 @@
                 'type': 'string',
               }),
               'type': 'array',
-            }),
-            'max_amount': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'max_content_lines': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
             }),
             'modifications': dict({
               'default': 0,
@@ -642,15 +595,6 @@
                 'null',
               ]),
             }),
-            'query': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
             'section_name': dict({
               'default': None,
               'description': 'Simply the first section.',
@@ -683,15 +627,6 @@
               'default': None,
               'description': 'Derived from a docutils desc_name node.',
               'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'specific': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
               'type': list([
                 'string',
                 'null',

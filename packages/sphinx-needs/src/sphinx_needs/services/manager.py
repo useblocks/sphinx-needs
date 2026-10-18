@@ -1,13 +1,18 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 from sphinx.application import Sphinx
 
 from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
-from sphinx_needs.logging import get_logger
-from sphinx_needs.services.base import BaseService
+from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.services.base import (
+    BaseService,
+    legacy_service_options,
+    service_fields,
+    service_options,
+)
 from sphinx_needs.services.config.github import GITHUB_SERVICES
 
 
@@ -17,6 +22,8 @@ class ServiceManager:
 
         self.log = get_logger(__name__)
         self.services: dict[str, BaseService] = {}
+        #: the needservice options of each registered service, by name
+        self._options: dict[str, tuple[str, ...]] = {}
 
     def register(self, name: str, klass: type[BaseService], **kwargs: Any) -> None:
         try:
@@ -27,24 +34,41 @@ class ServiceManager:
             )
             config = {}
 
-        # Register options from service class
-        for option in klass.options:
-            if option == "type":
-                # TODO this should probably be done a bit more systematically;
-                # the github service adds a "type" option, but this is related to the core need field NOT an extra field
-                pass
-            elif option not in _NEEDS_CONFIG.fields:
-                self.log.debug(f'Register option "{option}" for service "{name}"')
+        if legacy := legacy_service_options(klass):
+            qualname = getattr(klass, "__qualname__", type(klass).__name__)
+            listed = ", ".join(repr(option) for option in legacy)
+            log_warning(
+                self.log,
+                f"Service {name!r}: its class {qualname!r} declares 'options' but no "
+                f"'fields' of its own, so its options ({listed}) are registered as "
+                "need fields. This is deprecated: from sphinx-needs 10.0 a service's "
+                "'options' are only the needservice options it reads; list the fields "
+                "its needs carry in 'fields' (an empty list will do)",
+                "deprecated",
+                None,
+            )
+
+        # Register the need fields of the service class
+        for field_name in service_fields(klass):
+            if field_name not in _NEEDS_CONFIG.fields:
+                self.log.debug(f'Register field "{field_name}" for service "{name}"')
                 _NEEDS_CONFIG.add_field(
-                    option,
+                    field_name,
                     f"Added by service {name}",
                     "service",
                     nullable=True,
                     schema={"type": "string"},
                 )
+        self._options[name] = tuple(service_options(klass))
 
         # Init service with custom config
         self.services[name] = klass(self.app, name, config, **kwargs)
+
+    def directive_options(self, name: str) -> Sequence[str]:
+        """The options of the ``needservice`` directive the registered service of the
+        name reads, which are not need fields (none for a service class written for
+        the old meaning of ``options``, whose options are its fields)."""
+        return self._options.get(name, ())
 
     def get(self, name: str) -> BaseService:
         """The registered service of the name.

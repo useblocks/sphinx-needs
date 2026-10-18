@@ -62,7 +62,7 @@ from sphinx_needs.needs_schema import (
 )
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_part import find_parts, update_need_with_parts
-from sphinx_needs.services.config.github import GITHUB_FIELDS
+from sphinx_needs.services.config.github import GITHUB_FIELDS, GITHUB_OPTIONS
 from sphinx_needs.utils import jinja_parse
 from sphinx_needs.variant_data import VariantDataParsed
 from sphinx_needs.variants import VariantFunctionParsed
@@ -974,8 +974,14 @@ def _need_record_params(
         if key not in known:
             # every needs.json written before the GitHub services were registered only
             # when configured carries their fields on each need, null (or "" in older
-            # files) where no service made it: an empty one is no data to lose
-            if not (key in GITHUB_FIELDS and params[key] in (None, "")):
+            # files) where no service made it: an empty one is no data to lose. Their
+            # control options (``query``, ...) were written as fields too, with the
+            # values of the directive that made the need: request parameters of the
+            # build that wrote the file, not data, whatever their value
+            if not (
+                key in GITHUB_OPTIONS
+                or (key in GITHUB_FIELDS and params[key] in (None, ""))
+            ):
                 unknown.add(key)
             del params[key]
         elif key in omitted:

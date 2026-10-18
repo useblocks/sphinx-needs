@@ -3,14 +3,12 @@ from __future__ import annotations
 EXTRA_DATA_OPTIONS = ["user", "created_at", "updated_at", "closed_at", "service"]
 EXTRA_LINK_OPTIONS = ["url"]
 EXTRA_IMAGE_OPTIONS = ["avatar"]
-CONFIG_OPTIONS = [
-    "type",
-    "query",
-    "specific",
-    "max_amount",
-    "max_content_lines",
-    "id_prefix",
-]
+#: the options of the ``needservice`` directive a GitHub service reads: request
+#: parameters, not need fields
+GITHUB_OPTIONS = ("query", "specific", "max_amount", "max_content_lines", "id_prefix")
+#: the GitHub services' directive options beside a need's own; ``type`` is a need's, a
+#: core field, which the ``github`` layout leaves out beside the five
+CONFIG_OPTIONS = ["type", *GITHUB_OPTIONS]
 #: the built-in GitHub services, by name, each with its GitHub type -- which is the
 #: directive of the need type it adds, too. Each is registered only when
 #: ``needs_services`` configures it
@@ -19,14 +17,8 @@ GITHUB_SERVICES = {
     "github-prs": "pr",
     "github-commits": "commit",
 }
-#: the fields a GitHub service registers: its options but ``type``, a core field
-GITHUB_FIELDS = tuple(
-    option
-    for option in (
-        CONFIG_OPTIONS + EXTRA_DATA_OPTIONS + EXTRA_LINK_OPTIONS + EXTRA_IMAGE_OPTIONS
-    )
-    if option != "type"
-)
+#: the need fields a GitHub service registers, which its needs carry
+GITHUB_FIELDS = (*EXTRA_DATA_OPTIONS, *EXTRA_LINK_OPTIONS, *EXTRA_IMAGE_OPTIONS)
 GITHUB_DATA = [
     "status",
     "tags",
