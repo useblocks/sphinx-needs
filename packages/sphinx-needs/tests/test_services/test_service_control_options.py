@@ -72,25 +72,33 @@ def schema_fields(app: Any) -> set[str]:
     return set(SphinxNeedsData(app.env).get_schema().iter_extra_field_names())
 
 
-def deprecated(name: str, klass: str, options: list[str]) -> str:
-    """The warning of a service class written for the old meaning of ``options``."""
+def deprecated(
+    name: str, klass: str, options: list[str], inherited_from: str | None = None
+) -> str:
+    """The warning of a service class written for the old meaning of ``options``; its
+    advice keeps the fields the class inherits, from ``inherited_from``, if any."""
     listed = ", ".join(repr(option) for option in options)
+    remedy = (
+        "list the fields its needs carry in 'fields' (an empty list will do)"
+        if inherited_from is None
+        else "declare 'fields' in the class itself, keeping those it inherits "
+        f"(fields = [*{inherited_from}.fields])"
+    )
     return (
         f"WARNING: Service {name!r}: its class {klass!r} declares 'options' but no "
         f"'fields' of its own, so its options ({listed}) are registered as need "
         "fields. This is deprecated: from sphinx-needs 10.0 a service's 'options' are "
-        "only the needservice options it reads; list the fields its needs carry in "
-        "'fields' (an empty list will do) [needs.deprecated]"
+        f"only the needservice options it reads; {remedy} [needs.deprecated]"
     )
 
 
 def control_option_hint(shown: str, name: str) -> str:
-    """The text of the ``Unknown option`` warning for a GitHub control option set on a
-    need or a needextend."""
+    """The text of the ``Unknown option`` warning for a control option set on a need
+    or a needextend."""
     return (
         f"Unknown option '{shown}': {name!r} is an option of the needservice "
-        "directive, a request parameter of the GitHub services, not a need field; set "
-        f"it on a needservice, or declare a field {name!r} in needs_fields"
+        "directive (a request parameter of a service), not a need field; set it on a "
+        f"needservice, or declare a field {name!r} in needs_fields"
     )
 
 
@@ -467,25 +475,167 @@ class MyGithub(GithubService):
     options = [*GithubService.options, "label"]
 """
 
+#: ``mine``, a GitHub subclass's service, beside the built-in that adds its type
+SUBCLASS_ENTRY = (
+    '"github-issues": {}, '
+    '"mine": {"class": MyGithub, "class_init": {"gh_type": "issue"}, '
+    '"download_avatars": False}'
+)
 
+SUBCLASS_INDEX = (
+    RST
+    + "\n.. needservice:: mine\n   :query: repo:o/r\n   :max_amount: 1\n"
+    + "   :label: L\n"
+)
+
+
+def fake_subclass_search() -> None:
+    responses.get(
+        "https://api.github.com/search/issues",
+        match=[
+            responses.matchers.query_param_matcher(
+                {"q": "repo:o/r is:issue", "per_page": "1"}
+            )
+        ],
+        json={"items": [issue(7, BODY)]},
+    )
+
+
+@responses.activate
 def test_a_github_subclass_adding_options_without_fields_is_legacy(
     build: Any,
 ) -> None:
     """Its ``options`` are declared below the class declaring ``fields``, so they were
     written for the old meaning: they are registered as fields, beside the fields it
-    inherits, with the warning."""
+    inherits, and its needs carry them, as before. The warning's advice keeps the
+    inherited fields: ``fields = []`` would drop the seven."""
+    fake_subclass_search()
     app = build(
         {
-            "conf.py": service_conf(
-                GITHUB_SUBCLASS,
-                '"mine": {"class": MyGithub, "class_init": {"gh_type": "issue"}}',
-            )
+            "conf.py": service_conf(GITHUB_SUBCLASS, SUBCLASS_ENTRY),
+            "index.rst": SUBCLASS_INDEX,
         }
     )
     assert build_warnings(app) == [
-        deprecated("mine", "MyGithub", [*GITHUB_OPTIONS, "label"])
+        deprecated("mine", "MyGithub", [*GITHUB_OPTIONS, "label"], "GithubService")
     ]
     assert {"label", *GITHUB_OPTIONS, *GITHUB_FIELDS} <= schema_fields(app)
+    need = SphinxNeedsData(app.env).get_needs_view()["GITHUB_7"]
+    assert (need["query"], need["max_amount"], need["label"]) == ("repo:o/r", "1", "L")
+    assert need["user"] == "octo"
+
+
+@responses.activate
+def test_following_the_advice_keeps_the_inherited_fields(build: Any) -> None:
+    """The subclass declaring ``fields = [*GithubService.fields]``, as the warning
+    advises, is of the new kind: no warning, its needs keep the seven fields, and its
+    options (``label`` too) are its needservice's, not fields."""
+    fake_subclass_search()
+    app = build(
+        {
+            "conf.py": service_conf(
+                GITHUB_SUBCLASS + "    fields = [*GithubService.fields]\n",
+                SUBCLASS_ENTRY,
+            ),
+            "index.rst": SUBCLASS_INDEX,
+        }
+    )
+    assert_no_warnings(app)
+    fields = schema_fields(app)
+    assert set(GITHUB_FIELDS) <= fields
+    assert {"label", *GITHUB_OPTIONS}.isdisjoint(fields)
+    need = SphinxNeedsData(app.env).get_needs_view()["GITHUB_7"]
+    assert (need["user"], need["url"]) == ("octo", "https://github.com/o/r/issues/7")
+    assert {"label", *GITHUB_OPTIONS}.isdisjoint(need)
+
+
+def test_a_github_subclass_adding_fields_only_is_of_the_new_kind(build: Any) -> None:
+    """``fields`` declared below ``options``: the class adds a field and reads the
+    options it inherits, which stay its needservice's."""
+    app = build(
+        {
+            "conf.py": service_conf(
+                "from sphinx_needs.services.github import GithubService\n\n\n"
+                "class MoreFields(GithubService):\n"
+                '    fields = [*GithubService.fields, "extra_data"]\n',
+                '"more": {"class": MoreFields, "class_init": {"gh_type": "issue"}}',
+            )
+        }
+    )
+    assert_no_warnings(app)
+    fields = schema_fields(app)
+    assert {"extra_data", *GITHUB_FIELDS} <= fields
+    assert set(GITHUB_OPTIONS).isdisjoint(fields)
+
+
+GITHUB_FACTORY = """
+from sphinx_needs.services.github import GithubService
+
+
+def gh_factory(app, name, config, **kwargs):
+    return GithubService(app, name, config, **kwargs)
+
+
+gh_factory.options = ["type", "query", "specific", "max_amount", "max_content_lines",
+                      "id_prefix"]
+"""
+
+
+@responses.activate
+def test_a_legacy_factory_of_a_github_service_keeps_its_options_on_its_needs(
+    build: Any,
+) -> None:
+    """A factory carrying ``options`` but no ``fields`` is legacy, so its options are
+    fields; the GithubService it returns copies them onto its needs, as it did: the
+    service reads the record of the registration, not its own class."""
+    fake_subclass_search()
+    app = build(
+        {
+            "conf.py": service_conf(
+                GITHUB_FACTORY,
+                '"github-issues": {}, '
+                '"ghf": {"class": gh_factory, "class_init": {"gh_type": "issue"}, '
+                '"download_avatars": False}',
+            ),
+            "index.rst": RST
+            + "\n.. needservice:: ghf\n   :query: repo:o/r\n   :max_amount: 1\n",
+        }
+    )
+    assert build_warnings(app) == [
+        deprecated("ghf", "gh_factory", list(GITHUB_OPTIONS))
+    ]
+    need = SphinxNeedsData(app.env).get_needs_view()["GITHUB_7"]
+    assert (need["query"], need["max_amount"]) == ("repo:o/r", "1")
+
+
+FIELDS_ONLY = """
+from sphinx_needs.services.base import BaseService
+
+
+class FieldsOnly(BaseService):
+    fields = ["origin"]
+
+    def __init__(self, app, name, config, **kwargs):
+        super().__init__()
+
+    def request(self, options):
+        return [{"id": "FO_001", "title": "Fields only", "origin": "here"}]
+"""
+
+
+def test_a_class_with_fields_and_no_options_registers(build: Any) -> None:
+    """A service that reads no option of its own declares ``fields`` alone; from
+    ``needs_services`` it registers, and its needs carry its fields."""
+    app = build(
+        {
+            "conf.py": service_conf(
+                FIELDS_ONLY, '"fo": {"class": FieldsOnly, "class_init": {}}'
+            ),
+            "index.rst": RST + "\n.. needservice:: fo\n",
+        }
+    )
+    assert_no_warnings(app)
+    assert SphinxNeedsData(app.env).get_needs_view()["FO_001"]["origin"] == "here"
 
 
 FACTORY = """

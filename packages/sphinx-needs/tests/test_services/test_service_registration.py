@@ -46,7 +46,10 @@ def not_callable(type_name: str) -> str:
 
 
 def no_options(class_name: str) -> str:
-    return f"its 'class' {class_name!r} has no 'options', which a service class needs"
+    return (
+        f"its 'class' {class_name!r} has neither 'options' nor 'fields', which a "
+        "service class declares"
+    )
 
 
 def class_init_warning(name: str, got: str) -> str:
