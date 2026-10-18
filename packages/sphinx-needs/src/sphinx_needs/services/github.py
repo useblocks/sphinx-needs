@@ -15,6 +15,7 @@ from sphinx.util.docutils import SphinxDirective
 from sphinx.util.logging import getLogger
 
 from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig, NeedType
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import log_warning
 from sphinx_needs.services.base import BaseService, service_options
 from sphinx_needs.services.config.github import (
@@ -445,9 +446,15 @@ class GithubService(BaseService):
         :param options: The options of the ``needservice`` directive.
         :param element_data: The data of a need, updated in place.
         """
-        # a subclass written for the old meaning of ``options`` has none: its options
-        # are need fields, and are copied as they were
-        control = service_options(type(self))
+        # the options the needservice accepted as the service's: those of the class
+        # (or factory) it was registered with, which for one written for the old
+        # meaning of ``options`` are none -- its options are need fields, and are
+        # copied as they were
+        control = SphinxNeedsData(self.app.env).get_or_create_services().directive_options(
+            self.name
+        )
+        if control is None:  # not registered under its name
+            control = service_options(type(self))
         for key, value in options.items():
             if (
                 key not in element_data

@@ -37,13 +37,22 @@ class ServiceManager:
         if legacy := legacy_service_options(klass):
             qualname = getattr(klass, "__qualname__", type(klass).__name__)
             listed = ", ".join(repr(option) for option in legacy)
+            # an empty list would drop the fields the class inherits
+            owner = next(
+                (k for k in getattr(klass, "__mro__", ()) if "fields" in vars(k)), None
+            )
+            remedy = (
+                "list the fields its needs carry in 'fields' (an empty list will do)"
+                if owner is None
+                else "declare 'fields' in the class itself, keeping those it inherits "
+                f"(fields = [*{owner.__qualname__}.fields])"
+            )
             log_warning(
                 self.log,
                 f"Service {name!r}: its class {qualname!r} declares 'options' but no "
                 f"'fields' of its own, so its options ({listed}) are registered as "
                 "need fields. This is deprecated: from sphinx-needs 10.0 a service's "
-                "'options' are only the needservice options it reads; list the fields "
-                "its needs carry in 'fields' (an empty list will do)",
+                f"'options' are only the needservice options it reads; {remedy}",
                 "deprecated",
                 None,
             )
@@ -64,11 +73,12 @@ class ServiceManager:
         # Init service with custom config
         self.services[name] = klass(self.app, name, config, **kwargs)
 
-    def directive_options(self, name: str) -> Sequence[str]:
-        """The options of the ``needservice`` directive the registered service of the
-        name reads, which are not need fields (none for a service class written for
-        the old meaning of ``options``, whose options are its fields)."""
-        return self._options.get(name, ())
+    def directive_options(self, name: str) -> Sequence[str] | None:
+        """The options of the ``needservice`` directive the service registered under
+        the name reads, which are not need fields: empty for a service class written
+        for the old meaning of ``options``, whose options are its fields, and None for
+        a name no service was registered under."""
+        return self._options.get(name)
 
     def get(self, name: str) -> BaseService:
         """The registered service of the name.

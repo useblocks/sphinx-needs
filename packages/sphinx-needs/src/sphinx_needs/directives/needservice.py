@@ -109,7 +109,7 @@ class NeedserviceDirective(SphinxDirective):
 
         try:
             self._process_options(
-                needs_schema, needs_services.directive_options(service_name)
+                needs_schema, needs_services.directive_options(service_name) or ()
             )
         except (AssertionError, ValueError):
             return []
