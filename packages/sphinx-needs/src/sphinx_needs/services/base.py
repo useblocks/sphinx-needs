@@ -71,12 +71,10 @@ def service_fields(klass: object, /) -> list[str]:
 
     :param klass: The service class, as ``needs_services`` or the API gives it.
     """
-    fields = list(getattr(klass, "fields", None) or ())
+    fields: list[str] = list(getattr(klass, "fields", None) or ())
     if is_legacy_service(klass):
         fields.extend(
-            option
-            for option in legacy_service_options(klass)
-            if option not in fields
+            option for option in legacy_service_options(klass) if option not in fields
         )
     return fields
 

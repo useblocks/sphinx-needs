@@ -449,7 +449,11 @@ class GithubService(BaseService):
         # are need fields, and are copied as they were
         control = service_options(type(self))
         for key, value in options.items():
-            if key not in element_data and key not in GITHUB_DATA and key not in control:
+            if (
+                key not in element_data
+                and key not in GITHUB_DATA
+                and key not in control
+            ):
                 element_data[key] = value
 
 

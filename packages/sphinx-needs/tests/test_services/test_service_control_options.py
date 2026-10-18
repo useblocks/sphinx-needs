@@ -397,7 +397,7 @@ def test_a_field_of_a_control_option_name_is_imported(build: Any, reader: str) -
     assert_no_warnings(app)
     need = SphinxNeedsData(app.env).get_needs_view()["OLD_1"]
     assert need["query"] == "repo:o/r"
-    assert "max_amount" not in need.keys()
+    assert "max_amount" not in need
 
 
 # -- service classes: options and fields ----------------------------------------------------
@@ -524,7 +524,7 @@ def test_a_factory_with_fields_is_of_the_new_kind(build: Any) -> None:
     assert "made_option" not in fields
     need = SphinxNeedsData(app.env).get_needs_view()["MADE_1"]
     assert need["made_field"] == "given"
-    assert "made_option" not in need.keys()
+    assert "made_option" not in need
 
 
 # -- the documentation's own-service example (#2327) -----------------------------------------
