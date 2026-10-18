@@ -3306,6 +3306,8 @@ def _declared_defaults(
     """
     if (link := links.get(name)) is not None:
         entry, declared_in = link
+        # a fence: a link type need types alone declare carries no default or
+        # predicates today, and its own declarations win over both anyway
         if declared_in not in {"needs_links", "needs_extra_links"}:
             return declared_in, {}
     else:
@@ -3339,7 +3341,7 @@ def _set_global_default(
     :param declared: The configuration value declaring the field or link type, and
         the ``default`` and ``predicates`` its entry sets (:func:`_declared_defaults`):
         those win, and a key set in both is ignored here and reported, in one warning
-        for the field (:issue:`2264`, :issue:`2317`). ``None`` is none.
+        for the field or link type (:issue:`2264`, :issue:`2317`). ``None`` is none.
     """
     declared_in, keys = declared if declared is not None else ("", {})
     if not isinstance(values, dict):

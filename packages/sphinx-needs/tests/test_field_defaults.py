@@ -440,6 +440,9 @@ needs_links = {
     # a default of None is no default: needs_global_options' applies, and only the
     # value needs_links refuses is reported
     "none_default": {"default": None},
+    # declared in needs_extra_links too: that entry is the declaration, as in the
+    # schema, so its default is used and the warning names it
+    "extra": {"default": ["SP_001"]},
 }
 
 # the deprecated list-based declaration: the same rule, naming needs_extra_links
