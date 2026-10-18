@@ -298,7 +298,7 @@ Bug fixes
   warning per link type naming both values, as for a field. The legacy value replaced the entry's
   silently, so every need that did not set the link type linked to the legacy targets. A link type
   declared without the key still takes the ``needs_global_options`` value, and a need type's own
-  declaration still wins over both (:issue:`2317`)
+  declaration still wins over both (:issue:`2317`, :pr:`2328`)
 
 - 🐛 An incremental build after a change to :ref:`needs_types` re-reads every document, as one
   after a change to :ref:`needs_fields` does. The option only rebuilt the HTML, so the needs of the
