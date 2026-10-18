@@ -1347,12 +1347,13 @@ def _service_config_problem(service: dict[str, Any]) -> str | None:
     """Why a configured service cannot be registered from its ``class`` and
     ``class_init``, or ``None`` when it can.
 
-    Exactly what :meth:`.ServiceManager.register` cannot take is refused: it reads the
-    ``class``'s ``options`` and then calls it with ``class_init`` as keyword arguments,
-    so a ``class`` that is not callable -- a ``needs_from_toml`` file can give it nothing
-    but data, such as a string -- or has no ``options``, and a ``class_init`` that is not
-    a mapping. Anything else is registered, as it always was, whether or not it derives
-    from ``BaseService``.
+    :meth:`.ServiceManager.register` reads the ``class``'s ``options`` and ``fields``
+    (either may be missing) and then calls it with ``class_init`` as keyword arguments.
+    Refused are a ``class`` that is not callable -- a ``needs_from_toml`` file can give
+    it nothing but data, such as a string --, one that declares neither ``options`` nor
+    ``fields`` (so is no service class), and a ``class_init`` that is not a mapping.
+    Anything else is registered, as it always was, whether or not it derives from
+    ``BaseService``.
     """
     advice = (
         "A service class derives from BaseService and is set in conf.py's "
@@ -1365,7 +1366,7 @@ def _service_config_problem(service: dict[str, Any]) -> str | None:
             "its 'class' is not callable "
             f"(got a value of type {type(klass).__name__!r}). {advice}"
         )
-    if not hasattr(klass, "options"):
+    if not hasattr(klass, "options") and getattr(klass, "fields", None) is None:
         name = getattr(klass, "__qualname__", None)
         what = (
             repr(name)
@@ -1373,7 +1374,8 @@ def _service_config_problem(service: dict[str, Any]) -> str | None:
             else f"(a value of type {type(klass).__name__!r})"
         )
         return (
-            f"its 'class' {what} has no 'options', which a service class needs. "
+            f"its 'class' {what} has neither 'options' nor 'fields', which a service "
+            "class declares. "
             f"{advice}"
         )
     class_init = service["class_init"]
