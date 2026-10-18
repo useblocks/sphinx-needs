@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from typing import Any, ClassVar
 
 from sphinx.util.docutils import SphinxDirective
@@ -40,6 +40,27 @@ class BaseService:
 
     def debug(self, *args: Any, **kwargs: Any) -> Any:
         raise NotImplementedError("Must be implemented by the service!")
+
+
+def service_declaration_problem(klass: object, /) -> str | None:
+    """Why a service class's ``options`` or ``fields`` cannot be read as lists of
+    names, or None. Either may be missing, and ``fields`` may be None (no fields); a
+    string would be read as one name per letter.
+
+    :param klass: The service class, as ``needs_services`` or the API gives it.
+    """
+    for attribute in ("options", "fields"):
+        if not hasattr(klass, attribute):
+            continue
+        value = getattr(klass, attribute)
+        if attribute == "fields" and value is None:
+            continue
+        if isinstance(value, str) or not isinstance(value, Iterable):
+            return (
+                f"declares {attribute!r} as a value of type {type(value).__name__!r}, "
+                "where a list of names is needed"
+            )
+    return None
 
 
 def is_legacy_service(klass: object, /) -> bool:

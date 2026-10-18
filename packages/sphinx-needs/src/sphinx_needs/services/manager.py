@@ -6,10 +6,12 @@ from typing import Any
 from sphinx.application import Sphinx
 
 from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
+from sphinx_needs.exceptions import NeedsApiConfigException
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.services.base import (
     BaseService,
     legacy_service_options,
+    service_declaration_problem,
     service_fields,
     service_options,
 )
@@ -26,6 +28,18 @@ class ServiceManager:
         self._options: dict[str, tuple[str, ...]] = {}
 
     def register(self, name: str, klass: type[BaseService], **kwargs: Any) -> None:
+        """Register a service of the name, made by calling the class, and the need
+        fields it declares.
+
+        :raises NeedsApiConfigException: If the class's ``options`` or ``fields`` are
+            not lists of names.
+        """
+        if (problem := service_declaration_problem(klass)) is not None:
+            qualname = getattr(klass, "__qualname__", type(klass).__name__)
+            raise NeedsApiConfigException(
+                f"Service {name!r} cannot be registered: its class {qualname!r} "
+                f"{problem}"
+            )
         try:
             config = NeedsSphinxConfig(self.app.config).services[name]
         except KeyError:
@@ -39,7 +53,12 @@ class ServiceManager:
             listed = ", ".join(repr(option) for option in legacy)
             # an empty list would drop the fields the class inherits
             owner = next(
-                (k for k in getattr(klass, "__mro__", ()) if "fields" in vars(k)), None
+                (
+                    k
+                    for k in getattr(klass, "__mro__", ())
+                    if vars(k).get("fields") is not None
+                ),
+                None,
             )
             remedy = (
                 "list the fields its needs carry in 'fields' (an empty list will do)"
