@@ -2315,7 +2315,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             name,
             default_config,
             allow_coercion=True,
-            declared=_needs_fields_defaults(needs_config, registered, name),
+            declared=_declared_defaults(needs_config, registered, links, name),
         )
 
     _report_derive_problems(schema, derive_problems, need_types, spellings)
@@ -3287,25 +3287,38 @@ class _DefaultsDictType(TypedDict, total=False):
     default: Any
 
 
-def _needs_fields_defaults(
+def _declared_defaults(
     needs_config: NeedsSphinxConfig,
     registered: Mapping[str, NewFieldParams],
+    links: Mapping[str, tuple[Mapping[str, Any], str]],
     name: str,
-) -> dict[str, Any]:
-    """The ``default`` and ``predicates`` the ``needs_fields`` entry of a field sets.
+) -> tuple[str, dict[str, Any]]:
+    """The configuration value declaring a field or link type, and the ``default``
+    and ``predicates`` its entry sets.
 
-    A key counts when the entry is the field's declaration (a core field's entry, or
-    the one the field is registered from) and the key is given, not ``None``: a field
-    declared there without it takes the ``needs_global_options`` value, as before.
+    The entry is a link type's ``needs_links`` or ``needs_extra_links`` entry
+    (:issue:`2317`), or a field's ``needs_fields`` entry when that is the field's
+    declaration (a core field's entry, or the one the field is registered from)
+    (:issue:`2264`). A key counts when it is given, not ``None``: a field or link type
+    declared without it takes the ``needs_global_options`` value, as before. A link
+    type need types alone declare has no such entry: their own declarations are
+    resolved afterwards, and win over both.
     """
-    entry = needs_config._fields.get(name)
-    if not isinstance(entry, dict):
-        return {}
-    if name not in NeedsCoreFields and (
-        (params := registered.get(name)) is None or params.source != "needs_fields"
-    ):
-        return {}
-    return {
+    if (link := links.get(name)) is not None:
+        entry, declared_in = link
+        if declared_in not in {"needs_links", "needs_extra_links"}:
+            return declared_in, {}
+    else:
+        entry, declared_in = needs_config._fields.get(name), "needs_fields"
+        if not isinstance(entry, dict) or (
+            name not in NeedsCoreFields
+            and (
+                (params := registered.get(name)) is None
+                or params.source != "needs_fields"
+            )
+        ):
+            return declared_in, {}
+    return declared_in, {
         key: entry[key]
         for key in ("default", "predicates")
         if entry.get(key) is not None
@@ -3319,16 +3332,16 @@ def _set_global_default(
     values: _DefaultsDictType,
     *,
     allow_coercion: bool,
-    declared: Mapping[str, Any] | None = None,
+    declared: tuple[str, Mapping[str, Any]] | None = None,
 ) -> None:
-    """Set a field's ``needs_global_options`` default and predicates.
+    """Set a field's or link type's ``needs_global_options`` default and predicates.
 
-    :param declared: The ``default`` and ``predicates`` the field's ``needs_fields``
-        entry sets: those win, and a key set in both is ignored here and reported,
-        in one warning for the field (:issue:`2264`). ``None`` is none.
+    :param declared: The configuration value declaring the field or link type, and
+        the ``default`` and ``predicates`` its entry sets (:func:`_declared_defaults`):
+        those win, and a key set in both is ignored here and reported, in one warning
+        for the field (:issue:`2264`, :issue:`2317`). ``None`` is none.
     """
-    if declared is None:
-        declared = {}
+    declared_in, keys = declared if declared is not None else ("", {})
     if not isinstance(values, dict):
         log_warning(
             LOGGER,
@@ -3357,18 +3370,19 @@ def _set_global_default(
             None,
         )
         return
-    # a key needs_fields sets too is needs_fields': this one is ignored, and reported
-    set_default = "default" in values and "default" not in declared
-    set_predicates = "predicates" in values and "predicates" not in declared
+    # a key the declaring entry sets too is the entry's: this one is ignored, and
+    # reported
+    set_default = "default" in values and "default" not in keys
+    set_predicates = "predicates" in values and "predicates" not in keys
     if both := [
-        key for key in ("default", "predicates") if key in values and key in declared
+        key for key in ("default", "predicates") if key in values and key in keys
     ]:
         verb = "is" if len(both) == 1 else "are"
         ignored = " and ".join(
             f"{config_name}[{name!r}][{key!r}] ({values.get(key)!r})" for key in both
         )
         used = " and ".join(
-            f"needs_fields[{name!r}][{key!r}] ({declared[key]!r})" for key in both
+            f"{declared_in}[{name!r}][{key!r}] ({keys[key]!r})" for key in both
         )
         log_warning(
             LOGGER,
