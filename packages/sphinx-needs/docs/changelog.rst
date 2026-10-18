@@ -186,9 +186,9 @@ Breaking changes
     :ref:`needs_fields` (or configure a service).
   - ``:query:``, ``:max_amount:`` and the other control options set on a need or in a
     :ref:`needextend` are ``Unknown option`` warnings that say what they are, for example
-    ``Unknown option 'query': 'query' is an option of the needservice directive, a request
-    parameter of the GitHub services, not a need field; set it on a needservice, or
-    declare a field 'query' in needs_fields [needs.directive]``, and a filter, check or
+    ``Unknown option 'query': 'query' is an option of the needservice directive (a request
+    parameter of a service), not a need field; set it on a needservice, or declare a field
+    'query' in needs_fields [needs.directive]``, and a filter, check or
     column naming one finds no such field, service configured or not. A field of one of
     these names declared in :ref:`needs_fields` is a field like any other, but on a GitHub
     :ref:`needservice` the option is the service's, and the field is not set from it.
@@ -198,7 +198,8 @@ Breaking changes
     them reads them with a default. A needs.json written by an earlier version still
     imports (:ref:`needimport`, :ref:`needs_external_needs`) without a warning for its
     service keys: the five control options are dropped silently whatever their value
-    (they were the request parameters of the build that wrote the file), and a project
+    (request parameters of the build that wrote the file, or values a need was given
+    while they were fields), and a project
     with no service drops the seven data keys silently where they are null or ``""``, and
     reports one holding a value as an unknown key, as before; a field of one of the
     twelve names that the project declares is imported as any field is. Needs that
@@ -285,7 +286,11 @@ Deprecations
   'fields' of its own, so its options ('my_option') are registered as need fields. This
   is deprecated: from sphinx-needs 10.0 a service's 'options' are only the needservice
   options it reads; list the fields its needs carry in 'fields' (an empty list will do)
-  [needs.deprecated]``. A class whose ``options`` are empty does not warn.
+  [needs.deprecated]``. For a class that inherits ``fields``, such as a subclass of
+  ``GithubService``, the advice is to declare them in the class itself, keeping those it
+  inherits (``fields = [*GithubService.fields]``): an empty list would drop them. A
+  class whose ``options`` are empty, or only ``type``, does not warn. A service class
+  configured in :ref:`needs_services` may declare ``fields`` without ``options``.
 
 - ♻️ :ref:`needimport` and :ref:`needs_external_needs` read a needs.json through the new
   ``ub-needs-exchange`` library, a new dependency of sphinx-needs; nothing they read or

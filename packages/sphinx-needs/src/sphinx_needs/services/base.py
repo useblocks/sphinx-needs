@@ -17,8 +17,10 @@ class BaseService:
     fields: ClassVar[Sequence[str]]
     """The need fields the service's needs carry, registered when the service is.
 
-    A service class that declares ``options`` but no ``fields`` of its own is read the
-    way it was written: its options are its fields too (deprecated).
+    Declare it in the class that declares ``options`` (keeping any it inherits, such
+    as ``[*GithubService.fields, ...]``): a service class that declares ``options`` but
+    no ``fields`` of its own is read the way it was written, its options being its
+    fields too (deprecated).
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -44,9 +46,10 @@ def is_legacy_service(klass: object, /) -> bool:
     """Whether a service class is written for the old meaning of ``options``, where its
     options were its need fields too.
 
-    It is when it has no ``fields``, or when it declares ``options`` in a class more
-    derived than the one declaring ``fields`` -- such as a subclass of
-    ``GithubService`` adding to its options. The class may be any callable carrying the
+    It is when it has no ``fields``, or when the class declaring ``options`` comes
+    earlier in its MRO than the one declaring ``fields`` -- such as a subclass of
+    ``GithubService`` adding to its options, or a class taking ``fields`` from a
+    mixin. The class may be any callable carrying the
     attributes, such as a factory function, which is read by its attributes alone.
 
     :param klass: The service class, as ``needs_services`` or the API gives it.
@@ -81,7 +84,7 @@ def service_fields(klass: object, /) -> list[str]:
 
 def legacy_service_options(klass: object, /) -> list[str]:
     """The options of a service class written for the old meaning, which it registers
-    as need fields: its options but ``type``, a core field. None for another class.
+    as need fields: its options but ``type``, a core field. Empty for another class.
 
     :param klass: The service class, as ``needs_services`` or the API gives it.
     """
@@ -92,7 +95,7 @@ def legacy_service_options(klass: object, /) -> list[str]:
 
 def service_options(klass: object, /) -> list[str]:
     """The options of the ``needservice`` directive a service class reads, which are
-    not need fields. None for a class written for the old meaning, whose options are
+    not need fields. Empty for a class written for the old meaning, whose options are
     its fields.
 
     :param klass: The service class, as ``needs_services`` or the API gives it.

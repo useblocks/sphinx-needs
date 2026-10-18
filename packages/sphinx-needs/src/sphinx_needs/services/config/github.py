@@ -10,11 +10,12 @@ GITHUB_OPTIONS = ("query", "specific", "max_amount", "max_content_lines", "id_pr
 
 def github_option_hint(name: str) -> str:
     """Why one of :data:`GITHUB_OPTIONS`, set where only need fields are, is not one,
-    and the two ways out."""
+    and the two ways out. Generic, as a service of the project's own may read an
+    option of the name too."""
     return (
-        f"{name!r} is an option of the needservice directive, a request parameter of "
-        "the GitHub services, not a need field; set it on a needservice, or declare a "
-        f"field {name!r} in needs_fields"
+        f"{name!r} is an option of the needservice directive (a request parameter of "
+        "a service), not a need field; set it on a needservice, or declare a field "
+        f"{name!r} in needs_fields"
     )
 
 

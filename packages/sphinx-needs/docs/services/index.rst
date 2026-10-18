@@ -221,5 +221,6 @@ debug data in a nice and structured way.
    such as ``GithubService`` --
    is read as it was written: its options (but ``type``) are registered as need fields too,
    and its registration gives one ``needs.deprecated`` warning.
-   This is removed in sphinx-needs 10.0: declare ``fields`` (an empty list will do),
+   This is removed in sphinx-needs 10.0: declare ``fields`` in the class that declares ``options``
+   (an empty list will do, unless the class inherits fields: keep them, such as ``fields = [*GithubService.fields]``),
    and keep in ``options`` only what the service reads.
