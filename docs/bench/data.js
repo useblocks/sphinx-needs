@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792339949775,
+  "lastUpdate": 1792359939600,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -26136,6 +26136,42 @@ window.BENCHMARK_DATA = {
             "value": 42.06656272700002,
             "unit": "s",
             "extra": "Commit: 9feaba744ce09df5e4d0acae458aad0afe8bc0de\nBranch: master\nTime: 2026-10-18T18:11:19+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e4721e61d5a34a854f16a5e9b88d037161a26696",
+          "message": "🐛 A needs_links default wins over needs_global_options (#2328)\n\n## What\n\nIn `packages/sphinx-needs`: a link type's `default` or `predicates` set\nboth in its `needs_links` (or deprecated\n`needs_extra_links`) entry and in the deprecated `needs_global_options`\nis now taken from that entry. The\n`needs_global_options` value is ignored and reported in one\n`needs.config` warning per link type, naming both\nlocations and both values — the rule #2264 / #2318 gave fields, extended\nto link types.\n\n## Why\n\n`_set_global_default` runs last in `create_schema`, and #2318 only told\nit about `needs_fields` entries, so a link\ntype's own default was still replaced silently. Measured on `9feaba74`\nwith\n`needs_links = {\"rel\": {\"default\": [\"REQ_001\"]}}` and\n`needs_global_options = {\"rel\": {\"default\": [\"REQ_002\"]}}`:\nevery need that did not set `rel` linked to `REQ_002`, and the only\nmessage was the generic `needs.deprecated`\nwarning. The same held for `predicates`, and for a `needs_extra_links`\nentry.\n\n## How\n\n- `_needs_fields_defaults` becomes `_declared_defaults`, which returns\nthe configuration value declaring the field\nor link type with the keys its entry sets. For a link type it reads the\ntable `create_schema` already builds from\n`needs_links` and `needs_extra_links` (a `needs_extra_links` entry wins\nover a `needs_links` one of the same name,\nas in the schema). `_set_global_default` names that value in the\nwarning.\n- A key counts when it is given and not `None`, as for fields: a link\ntype declared without a default still takes\nthe legacy default. A link type need types alone declare has no such\nentry; a need type's own declaration is\n  resolved afterwards and still wins over both.\n\n## Measured\n\n- After the fix the project above holds `[\"REQ_001\"]` on every need and\nwarns\n`needs_global_options['rel']['default'] (['REQ_002']) is ignored:\nneeds_links['rel']['default'] (['REQ_001']) takes precedence\n[needs.config]`.\n- A `needs_extra_links` entry's warning names\n`needs_extra_links['rel']['default']`.\n- A link type declared without a default, or with `default: None`, still\ntakes the legacy value, with no\nprecedence warning. (A `needs_links` `default: None` is still reported\nas an incorrect value, as before: unlike\n`needs_fields`, `needs_links` does not read `None` as \"no default\".\nUnchanged here.)\n- The same holds for the core link types `links` and `parent_needs` when\na `needs_links` entry declares them with the key.\n- No existing test or snapshot changed.\n\n## Tests\n\n`test_needs_links_default_wins_over_global_options` in\n`tests/test_field_defaults.py`, beside the #2264 pins: one\nproject with seven link types — a default in both; a link type declared\nwithout a default; predicates in both; a\n`needs_links` default with legacy predicates (both apply); a need type's\nown `links` default winning on its type;\n`default: None`; a `needs_extra_links` entry; and a name declared in\nboth `needs_links` and `needs_extra_links` (the `needs_extra_links`\nentry is the declaration, as in the schema, and the warning names it).\nIt asserts the exact warnings and every need's value. Red at\n`9feaba74`, green after the fix; a one-line mutation of each part of the\nfix (drop the link branch, treat `None` as\nset, always name `needs_fields`, ignore `needs_extra_links`) turns it\nred.\n\nGates at the tip (`ed32b686`, on `9feaba74`): `uv run poe lint` 0, `uv\nrun poe typecheck` 0, `uv run poe test-needs -n 4` 3451 passed / 14\nskipped, the\nSphinx 7.4.7 cell on the touched modules passes, `uv run poe docs-needs`\n0 warnings.\n\n## Review\n\nOne adversarial reviewer: SHIP-WITH-FIXES, 0 MUST. It re-ran the gates\nand ten probe projects at both commits (`ubproject.toml` included). It\nfound one unpinned narration: a mutation preferring the `needs_links`\nentry over the `needs_extra_links` one survived, which would have given\na false warning. That case is now pinned and the mutation goes red. The\n`_set_global_default` docstring and the fence comment in\n`_declared_defaults` are fixed too. Known and unchanged, as for fields\nsince #2264: an invalid entry value still \"takes precedence\", so the\nlink holds `[]`.\n\n## Docs\n\n- `configuration.rst`: the precedence sentence in the\n`needs_global_options` deprecation note now covers link types\n  (`needs_links`, `needs_extra_links`).\n- `changelog.rst`: one 🐛 bullet under Unreleased.\n\n## ubCode\n\nubCode still applies a `[needs.global_options]` default on a link type\n(and on a field) by replacing the entry's own\n(`rust/ubc_config/src/needs/resolved.rs`, the `link_defaults` loop, and\nthe `input.rs` doc comments \"A `default` for\nthis link type under `[needs.global_options]` replaces it\"). After this\nchange and #2318 the two engines disagree\nfor a key set in both places; a matching ubCode change follows.\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-<package>`) and they\npass.\n- [x] Documentation is updated where behaviour or options change.\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.\n\nCloses #2317",
+          "timestamp": "2026-10-18T23:44:39+02:00",
+          "tree_id": "890298f785d87e46c9490777ffdbc256328d8c81",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/e4721e61d5a34a854f16a5e9b88d037161a26696"
+        },
+        "date": 1792359931924,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.06833890699999756,
+            "unit": "s",
+            "extra": "Commit: e4721e61d5a34a854f16a5e9b88d037161a26696\nBranch: master\nTime: 2026-10-18T23:44:39+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 35.19102395599998,
+            "unit": "s",
+            "extra": "Commit: e4721e61d5a34a854f16a5e9b88d037161a26696\nBranch: master\nTime: 2026-10-18T23:44:39+02:00"
           }
         ]
       }
