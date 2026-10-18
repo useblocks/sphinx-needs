@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 13
+ENV_DATA_VERSION: Final = 14
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -89,6 +89,13 @@ Version 13 adds the names of the derived fields to every stored need (a slot of
 one). An unbumped rebuild over an existing ``_build`` unpickles needs without it, and
 the first write into one ends with an ``AttributeError`` rather than re-reading the
 documents.
+
+Version 14 changes what the stored needs carry: a service's options (the GitHub
+services' ``query``, ``specific``, ``max_amount``, ``max_content_lines`` and
+``id_prefix``) are no longer need fields, so ``needs_schema`` has none of them. The
+configuration does not change, so an unbumped rebuild over an existing ``_build`` keeps
+the five on the needs of every document whose source did not change, beside a schema
+without them, and writes them to ``needs.json``.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """
