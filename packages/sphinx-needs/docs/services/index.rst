@@ -112,7 +112,7 @@ Own services
 A custom service can be created by providing your own service-class, which must inherit from the ``BaseService`` class
 and provide a function called ``request``.
 
-The class declares two lists:
+The class declares ``fields``, and ``options`` when it reads any, each a list of names:
 
 ``options``
    The options of the :ref:`needservice` directive the service reads, beside the options of a need,

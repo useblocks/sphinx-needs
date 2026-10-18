@@ -290,7 +290,10 @@ Deprecations
   ``GithubService``, the advice is to declare them in the class itself, keeping those it
   inherits (``fields = [*GithubService.fields]``): an empty list would drop them. A
   class whose ``options`` are empty, or only ``type``, does not warn. A service class
-  configured in :ref:`needs_services` may declare ``fields`` without ``options``.
+  configured in :ref:`needs_services` may declare ``fields`` without ``options``; one
+  whose ``options`` or ``fields`` is not a list of names (a string, read as one name per
+  letter, or a value that is not iterable, which ended the build) is reported as a
+  ``needs.config`` warning and not registered.
 
 - ♻️ :ref:`needimport` and :ref:`needs_external_needs` read a needs.json through the new
   ``ub-needs-exchange`` library, a new dependency of sphinx-needs; nothing they read or
