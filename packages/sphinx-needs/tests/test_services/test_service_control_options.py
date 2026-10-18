@@ -25,6 +25,7 @@ import pytest
 import responses
 
 from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.exceptions import NeedsApiConfigException
 from sphinx_needs_testkit import assert_no_warnings, build_warnings
 
 RST = "Title\n=====\n\nText.\n"
@@ -566,6 +567,109 @@ def test_a_github_subclass_adding_fields_only_is_of_the_new_kind(build: Any) -> 
     fields = schema_fields(app)
     assert {"extra_data", *GITHUB_FIELDS} <= fields
     assert set(GITHUB_OPTIONS).isdisjoint(fields)
+
+
+def test_a_legacy_subclass_two_levels_down_is_advised_its_nearest_fields(
+    build: Any,
+) -> None:
+    """The advice names the nearest class declaring ``fields``: ``A`` adds a field to
+    GithubService's, so ``B`` keeps ``A.fields``, not GithubService's."""
+    app = build(
+        {
+            "conf.py": service_conf(
+                "from sphinx_needs.services.github import GithubService\n\n\n"
+                "class A(GithubService):\n"
+                '    fields = [*GithubService.fields, "a"]\n\n\n'
+                "class B(A):\n"
+                '    options = [*A.options, "label"]\n',
+                '"b": {"class": B, "class_init": {"gh_type": "issue"}}',
+            )
+        }
+    )
+    assert build_warnings(app) == [
+        deprecated("b", "B", [*GITHUB_OPTIONS, "label"], "A")
+    ]
+
+
+def test_a_legacy_class_whose_fields_are_none_is_advised_a_list(build: Any) -> None:
+    """``fields = None`` is no fields: the class is legacy, and inherits none to keep,
+    so the advice is the plain one, not ``[*Legacy.fields]``."""
+    app = build(
+        {
+            "conf.py": service_conf(
+                LEGACY.replace(
+                    '    options = ["custom_option", "type", "exists"]\n',
+                    '    options = ["custom_option", "type", "exists"]\n'
+                    "    fields = None\n",
+                ),
+                '"legacy": {"class": Legacy, "class_init": {}}',
+            )
+        }
+    )
+    assert build_warnings(app) == [
+        deprecated("legacy", "Legacy", ["custom_option", "exists"])
+    ]
+
+
+def malformed(name: str, attribute: str, type_name: str) -> str:
+    return (
+        f"WARNING: needs_services entry {name!r} is not registered: its 'class' "
+        f"'Bad' declares {attribute!r} as a value of type {type_name!r}, where a list "
+        "of names is needed [needs.config]"
+    )
+
+
+@pytest.mark.parametrize(
+    ("declaration", "attribute", "type_name"),
+    [
+        pytest.param('fields = "origin"', "fields", "str", id="fields-str"),
+        pytest.param("fields = True", "fields", "bool", id="fields-not-iterable"),
+        pytest.param('options = "query"', "options", "str", id="options-str"),
+        pytest.param("options = None", "options", "NoneType", id="options-none"),
+    ],
+)
+def test_a_class_whose_fields_or_options_are_not_a_list_is_refused(
+    build: Any, declaration: str, attribute: str, type_name: str
+) -> None:
+    """A string would register one field per letter, and a value that is not
+    iterable ended the build: the entry is refused, and the build goes on."""
+    app = build(
+        {
+            "conf.py": service_conf(
+                "class Bad:\n"
+                f"    {declaration}\n\n"
+                "    def __init__(self, app, name, config, **kwargs):\n"
+                "        pass\n",
+                '"bad": {"class": Bad, "class_init": {}}',
+            )
+        }
+    )
+    assert build_warnings(app) == [malformed("bad", attribute, type_name)]
+    assert "bad" not in app._needs_services.services
+    assert {"o", "r", "i"}.isdisjoint(schema_fields(app))
+
+
+def test_registering_a_class_whose_fields_are_a_string_through_the_api_raises(
+    build: Any,
+) -> None:
+    """The API refuses what it cannot register, as its other functions do."""
+    app = build({"conf.py": CONF})
+
+    class Bad:
+        fields = "origin"
+
+        def __init__(self, app: Any, name: str, config: Any, **kwargs: Any) -> None:
+            pass
+
+    with pytest.raises(
+        NeedsApiConfigException,
+        match=(
+            "Service 'bad' cannot be registered: its class '.*Bad' declares 'fields' "
+            "as a value of type 'str', where a list of names is needed"
+        ),
+    ):
+        app._needs_services.register("bad", Bad)
+    assert "bad" not in app._needs_services.services
 
 
 GITHUB_FACTORY = """
