@@ -159,10 +159,9 @@ class NeedDirective(SphinxDirective):
                         links[key] = value or ""
                     case _:
                         message = f"Unknown option '{key}'"
-                        if (
-                            key in GITHUB_OPTIONS
-                            and needs_schema.get_any_field(key) is None
-                        ):
+                        # every field is a key of every type, declared or absent, so
+                        # an unknown option is one no field has
+                        if key in GITHUB_OPTIONS:
                             message += f": {github_option_hint(key)}"
                         self._log_warning(message)
             except (AssertionError, ValueError) as err:

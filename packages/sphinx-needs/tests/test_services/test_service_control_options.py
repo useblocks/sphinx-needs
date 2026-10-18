@@ -273,6 +273,30 @@ def test_a_field_of_a_control_option_name_is_a_field_on_a_need(build: Any) -> No
     assert SphinxNeedsData(app.env).get_needs_view()["R_001"]["query"] == "repo:o/r"
 
 
+def test_a_field_of_a_control_option_name_on_another_type_gives_no_hint(
+    build: Any,
+) -> None:
+    """A field ``query`` the ``spec`` type alone declares is a field of the project,
+    so on a ``req`` it is refused as any field absent from a type is, and the hint,
+    which would tell the project to declare it, is not given."""
+    app = build(
+        {
+            "conf.py": CONF
+            + "needs_types = [\n"
+            + "    {'directive': 'req', 'title': 'Req', 'prefix': 'R_'},\n"
+            + "    {'directive': 'spec', 'title': 'Spec', 'prefix': 'S_',\n"
+            + "     'fields': {'query': {'schema': {'type': 'string'}}}},\n"
+            + "]\n",
+            "index.rst": RST + "\n.. req:: R\n   :id: R_001\n   :query: repo:o/r\n",
+        }
+    )
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:6: WARNING: Field 'query' is not declared on need type "
+        "'req' and cannot be set in need 'R_001'; the value 'repo:o/r' is ignored "
+        "[needs.undeclared_for_type]"
+    ]
+
+
 #: a service of the new kind that reads no option, beside ``github-issues``
 PLAIN_SERVICE = """
 from sphinx_needs.services.base import BaseService
