@@ -29,8 +29,13 @@ These need objects can then be used and referenced as all other need objects, e.
 
 Options
 -------
-Each service can define custom options which may be needed for the service to work correctly.
+Each service can define custom options which may be needed for the service to work correctly,
+such as the ``query`` of the :ref:`GitHub services <github_service>`.
 Please take a look into the related service documentation to find out what is needed.
+They are options of the ``needservice`` naming that service only:
+they are given to the service, are not need fields, and are not set on the needs it creates;
+a ``needservice`` naming another service warns ``Unknown option`` for them, unless a field of the name is declared.
+An option of the service wins over a field of the same name.
 
 .. hint::
 

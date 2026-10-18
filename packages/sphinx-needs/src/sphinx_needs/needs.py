@@ -1456,7 +1456,7 @@ def reread_on_need_types_change(
     configured types alone. The list is compared against the one recorded when the
     documents were read. Documents are added to ``docnames``, which this event allows.
 
-    The configured built-in GitHub services are compared too: each registers twelve
+    The configured built-in GitHub services are compared too: each registers seven
     fields and the ``github`` layout, which the needs of every document are created
     with, while its need type may be the project's own, leaving the list unchanged. An
     environment that has not recorded them -- one pickled by a version that registered

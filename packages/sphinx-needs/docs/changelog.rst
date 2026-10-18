@@ -155,9 +155,14 @@ Breaking changes
   layout, whether or not it used GitHub. Now a built-in is registered only when
   :ref:`needs_services` names it with a mapping of options -- ``{}`` will do -- in
   :file:`conf.py` or as a ``[needs.services.<name>]`` table of the :ref:`needs_from_toml`
-  file. A configured service brings the twelve fields, the ``github`` layout and its own need
-  type alone (``github-issues`` brings ``issue``); a project that names none has none of
-  them. What to do:
+  file. A configured service brings the seven fields its needs carry (``url``, ``user``,
+  ``avatar``, ``service``, ``created_at``, ``updated_at``, ``closed_at``), the ``github``
+  layout and its own need type alone (``github-issues`` brings ``issue``); a project that
+  names none has none of them. The other five, ``query``, ``specific``, ``max_amount``,
+  ``max_content_lines`` and ``id_prefix``, are no longer need fields at all, service
+  configured or not: they are options of the :ref:`needservice` directive naming a GitHub
+  service, which tell it what to request, and are neither set on its needs nor written to
+  needs.json. What to do:
 
   - A :ref:`needservice` naming a built-in service now needs its entry; without it the
     directive creates nothing and warns, for example ``Service 'github-issues' is a
@@ -175,16 +180,28 @@ Breaking changes
   - A hand-written ``.. issue::``, ``.. pr::`` or ``.. commit::`` (or a type that
     ``inherits`` one, or ``:layout: github``) needs the service configured, or the type
     declared in :ref:`needs_types` (and a ``github`` entry in :ref:`needs_layouts`).
-  - ``:url:``, ``:user:`` and the other ten set on needs of your own types are now
-    ``Unknown option`` warnings and dropped, and a filter, :ref:`needs_warnings` check or
-    needtable ``:columns:`` naming one finds no such field: declare them in
+  - ``:url:``, ``:user:`` and the other five data fields set on needs of your own types
+    are now ``Unknown option`` warnings and dropped, and a filter, :ref:`needs_warnings`
+    check or needtable ``:columns:`` naming one finds no such field: declare them in
     :ref:`needs_fields` (or configure a service).
+  - ``:query:``, ``:max_amount:`` and the other control options set on a need or in a
+    :ref:`needextend` are ``Unknown option`` warnings that say what they are, for example
+    ``Unknown option 'query': 'query' is an option of the needservice directive, a request
+    parameter of the GitHub services, not a need field; set it on a needservice, or
+    declare a field 'query' in needs_fields [needs.directive]``, and a filter, check or
+    column naming one finds no such field, service configured or not. A field of one of
+    these names declared in :ref:`needs_fields` is a field like any other, but on a GitHub
+    :ref:`needservice` the option is the service's, and the field is not set from it.
   - The needs.json of a project that configures no service no longer carries the twelve
-    keys, nor their ``needs_schema`` entries, nor the three types; a consumer indexing them
-    reads them with a default. A needs.json written by an earlier version still imports
-    (:ref:`needimport`, :ref:`needs_external_needs`) without a warning for its empty
-    service keys: a project with no service drops the twelve keys silently where they are
-    null or ``""``, and reports one holding a value as an unknown key, as before. Needs that
+    keys, nor their ``needs_schema`` entries, nor the three types, and that of a project
+    that configures one no longer carries the five control options; a consumer indexing
+    them reads them with a default. A needs.json written by an earlier version still
+    imports (:ref:`needimport`, :ref:`needs_external_needs`) without a warning for its
+    service keys: the five control options are dropped silently whatever their value
+    (they were the request parameters of the build that wrote the file), and a project
+    with no service drops the seven data keys silently where they are null or ``""``, and
+    reports one holding a value as an unknown key, as before; a field of one of the
+    twelve names that the project declares is imported as any field is. Needs that
     a GitHub service made (of the ``issue``, ``pr`` or ``commit`` type, with the ``github``
     layout) need that service configured, or their type declared (and, for
     :ref:`needimport`, a ``github`` layout); without it each is refused
@@ -199,7 +216,7 @@ Breaking changes
   - An incremental build after a built-in service is configured or removed re-reads every
     document, as one after a change to :ref:`needs_types` does, also where the project
     declares the service's type itself; the first incremental build after upgrading
-    re-reads every document once.
+    re-reads every document once, so no need keeps the control options.
   - A service of your own built on ``GithubService``, such as the
     :ref:`GitHub Enterprise example <service_github_custom>`, gets no need type and no
     layout from its class: configure the built-in service it imitates too (as that example
@@ -257,6 +274,18 @@ Breaking changes
 
 Deprecations
 ............
+
+- 👌 A service class declares the need fields its needs carry as ``fields``, beside
+  ``options``, which are now the options of the :ref:`needservice` directive it reads and
+  never need fields (see :ref:`services`). A class that declares ``options`` but no
+  ``fields`` of its own -- every service class written so far, and a subclass of
+  ``GithubService`` adding to its options -- is read as it was written: its options (but
+  ``type``) are still registered as need fields, with one warning when it is registered,
+  for example ``Service 'my-service': its class 'MyService' declares 'options' but no
+  'fields' of its own, so its options ('my_option') are registered as need fields. This
+  is deprecated: from sphinx-needs 10.0 a service's 'options' are only the needservice
+  options it reads; list the fields its needs carry in 'fields' (an empty list will do)
+  [needs.deprecated]``. A class whose ``options`` are empty does not warn.
 
 - ♻️ :ref:`needimport` and :ref:`needs_external_needs` read a needs.json through the new
   ``ub-needs-exchange`` library, a new dependency of sphinx-needs; nothing they read or
