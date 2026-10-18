@@ -411,6 +411,158 @@ def test_needs_fields_default_and_predicates_win_in_one_warning(test_app):
     }
 
 
+CONF_LINK_DEFAULT_IN_BOTH = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+
+needs_types = [
+    {"directive": "req", "title": "Requirement", "prefix": "REQ_"},
+    {
+        "directive": "spec",
+        "title": "Specification",
+        "prefix": "SP_",
+        "links": {"per_type": {"default": ["SP_001"]}},
+    },
+]
+
+needs_links = {
+    # a default in both: needs_links' is used, needs_global_options' reported
+    "both": {"default": ["REQ_001"]},
+    # declared without a default: needs_global_options' default applies, as before
+    "declared_only": {},
+    # predicates in both: needs_links' are used, needs_global_options' reported
+    "predicates": {"predicates": [("type == 'spec'", ["REQ_001"])]},
+    # a default in needs_links, predicates in needs_global_options: nothing is set
+    # twice, so both apply
+    "mixed": {"default": ["REQ_001"]},
+    # a need type's own default wins over both, on that type
+    "per_type": {"default": ["REQ_001"]},
+    # a default of None is no default: needs_global_options' applies, and only the
+    # value needs_links refuses is reported
+    "none_default": {"default": None},
+}
+
+# the deprecated list-based declaration: the same rule, naming needs_extra_links
+needs_extra_links = [{"option": "extra", "default": ["REQ_001"]}]
+
+needs_global_options = {
+    "both": {"default": ["REQ_002"]},
+    "declared_only": {"default": ["REQ_002"]},
+    "predicates": {"predicates": [("type == 'spec'", ["REQ_002"])]},
+    "mixed": {"predicates": [("type == 'spec'", ["REQ_002"])]},
+    "per_type": {"default": ["REQ_002"]},
+    "none_default": {"default": ["REQ_002"]},
+    "extra": {"default": ["REQ_002"]},
+}
+"""
+
+INDEX_LINK_DEFAULT_IN_BOTH = """\
+Test
+====
+
+.. req:: First
+    :id: REQ_001
+
+.. req:: Second
+    :id: REQ_002
+
+.. spec:: Specification
+    :id: SP_001
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), CONF_LINK_DEFAULT_IN_BOTH),
+                (Path("index.rst"), INDEX_LINK_DEFAULT_IN_BOTH),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_needs_links_default_wins_over_global_options(test_app):
+    """A link type's ``default`` (or ``predicates``) set in both its ``needs_links``
+    (or ``needs_extra_links``) entry and ``needs_global_options`` is the entry's, and
+    the ignored value is reported, once per link type (:issue:`2317`).
+
+    The rule :issue:`2264` gave fields: the legacy value was applied last and
+    replaced the link type's own silently, so every need that did not set the link
+    type linked to it. A link type declared without the key still takes the legacy
+    value, and a need type's own default still wins over both, on that type.
+    """
+    test_app.build()
+
+    assert build_warnings(test_app) == [
+        'WARNING: Config option "needs_extra_links" is deprecated. Please use '
+        '"needs_links" instead. [needs.deprecated]',
+        # needs_links refuses None as a value (unlike needs_fields, which reads it
+        # as no default); that is all that is reported for it
+        "WARNING: needs_links['none_default']['default'] value is incorrect: "
+        "Invalid value for field 'none_default': None [needs.config]",
+        'WARNING: Config option "needs_global_options" is deprecated. Please use '
+        "needs_fields and needs_links instead. [needs.deprecated]",
+        "WARNING: needs_global_options['both']['default'] (['REQ_002']) is "
+        "ignored: needs_links['both']['default'] (['REQ_001']) takes precedence "
+        "[needs.config]",
+        "WARNING: needs_global_options['predicates']['predicates'] "
+        "([(\"type == 'spec'\", ['REQ_002'])]) is ignored: "
+        "needs_links['predicates']['predicates'] "
+        "([(\"type == 'spec'\", ['REQ_001'])]) takes precedence [needs.config]",
+        "WARNING: needs_global_options['per_type']['default'] (['REQ_002']) is "
+        "ignored: needs_links['per_type']['default'] (['REQ_001']) takes "
+        "precedence [needs.config]",
+        "WARNING: needs_global_options['extra']['default'] (['REQ_002']) is "
+        "ignored: needs_extra_links['extra']['default'] (['REQ_001']) takes "
+        "precedence [needs.config]",
+    ]
+
+    needs = _needs(test_app)
+    assert {
+        name: {i: n[name] for i, n in needs.items()}
+        for name in (
+            "both",
+            "declared_only",
+            "predicates",
+            "mixed",
+            "per_type",
+            "none_default",
+            "extra",
+        )
+    } == {
+        "both": {"REQ_001": ["REQ_001"], "REQ_002": ["REQ_001"], "SP_001": ["REQ_001"]},
+        "declared_only": {
+            "REQ_001": ["REQ_002"],
+            "REQ_002": ["REQ_002"],
+            "SP_001": ["REQ_002"],
+        },
+        "predicates": {"REQ_001": [], "REQ_002": [], "SP_001": ["REQ_001"]},
+        "mixed": {
+            "REQ_001": ["REQ_001"],
+            "REQ_002": ["REQ_001"],
+            "SP_001": ["REQ_002"],
+        },
+        "per_type": {
+            "REQ_001": ["REQ_001"],
+            "REQ_002": ["REQ_001"],
+            "SP_001": ["SP_001"],
+        },
+        "none_default": {
+            "REQ_001": ["REQ_002"],
+            "REQ_002": ["REQ_002"],
+            "SP_001": ["REQ_002"],
+        },
+        "extra": {
+            "REQ_001": ["REQ_001"],
+            "REQ_002": ["REQ_001"],
+            "SP_001": ["REQ_001"],
+        },
+    }
+
+
 @pytest.mark.parametrize(
     "test_app",
     [
