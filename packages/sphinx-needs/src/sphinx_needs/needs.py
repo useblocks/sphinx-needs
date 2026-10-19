@@ -1860,6 +1860,16 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
     for text in claim_findings:
         log_warning(LOGGER, text, "config", None)
     link_types = declared_links - refused_links
+    # a service's options and a field added after config-inited are registered by
+    # now: the reservation of check_configuration, over every registered field
+    if needs_config.namespaced_ids:
+        for reserved in NAMESPACE_NAMES:
+            if reserved in _NEEDS_CONFIG.fields:
+                raise NeedsConfigException(
+                    f"Field {reserved!r} is reserved while needs_namespaced_ids is on: "
+                    "it is the need's namespace or local id. Please use another name in "
+                    "your config."
+                )
     #: the registered fields, but those named as a core link type's back links
     registered = {
         name: params

@@ -221,6 +221,30 @@ def test_needextract_takes_a_namespaced_argument_as_an_id(
     assert html.count("Extracted") >= 2
 
 
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        project(
+            ".. req:: Kept title\n   :id: nc::REQ_001\n   :status: open\n\n"
+            ".. req:: Dropped title\n   :id: nc::REQ_002\n   :status: closed\n\n"
+            '.. needextract:: status == "open"\n',
+            confoverrides=on(needs_id_regex="^[A-Za-z0-9_]{5,}"),
+        )
+    ],
+    indirect=True,
+)
+def test_needextract_takes_an_argument_that_is_no_id_as_a_filter(
+    test_app: SphinxTestApp,
+) -> None:
+    """With the switch on, an argument that splits but whose local id does not
+    ``fullmatch`` the regex is a filter, as it is with the switch off."""
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
+    assert html.count("Kept title") > html.count("Dropped title")
+
+
 # --- reserved names -----------------------------------------------------------------
 
 ROUTES = {
@@ -272,6 +296,49 @@ def test_a_reserved_name_is_an_ordinary_name_with_the_switch_off(
     assert name in {*schema.iter_extra_field_names(), *schema.iter_link_field_names()}
 
 
+SERVICE = """\
+from sphinx_needs.services.base import BaseService
+
+class Svc(BaseService):
+    options = [NAME]
+
+    def __init__(self, app, name, config, **kwargs):
+        super().__init__()
+
+needs_services = {"svc": {"class": Svc, "class_init": {}}}
+"""
+"""A service's options are registered at ``env-before-read-docs``, after the
+configuration is checked."""
+
+
+@pytest.mark.parametrize("name", ["ns", "local_id"])
+def test_a_reserved_name_is_refused_as_a_services_option(
+    make_app: Any, tmp_path: Path, name: str
+) -> None:
+    srcdir = tmp_path / "src"
+    _write(
+        srcdir,
+        CONF + "needs_namespaced_ids = True\n" + SERVICE.replace("NAME", repr(name)),
+    )
+    with pytest.raises(NeedsConfigException) as exc_info:
+        make_app("needs", srcdir=srcdir).build()
+    assert str(exc_info.value) == (
+        f"Field {name!r} is reserved while needs_namespaced_ids is on: it is the "
+        "need's namespace or local id. Please use another name in your config."
+    )
+
+
+@pytest.mark.parametrize("name", ["ns", "local_id"])
+def test_a_services_option_may_be_a_reserved_name_with_the_switch_off(
+    make_app: Any, tmp_path: Path, name: str
+) -> None:
+    srcdir = tmp_path / "src"
+    _write(srcdir, CONF + SERVICE.replace("NAME", repr(name)))
+    app = make_app("needs", srcdir=srcdir)
+    app.build()
+    assert name in set(SphinxNeedsData(app.env).get_schema().iter_extra_field_names())
+
+
 # --- the marker ----------------------------------------------------------------------
 
 PREVIOUS = json.dumps(
@@ -318,21 +385,64 @@ def test_a_needs_file_history_keeps_its_earlier_versions_unmarked(
     assert data["versions"]["2.0"]["namespaced_ids"] is True
 
 
+MARKED_PREVIOUS = json.dumps(
+    {
+        "current_version": "1.0",
+        "project": "p",
+        "versions": {
+            "1.0": {
+                "namespaced_ids": True,
+                "needs": {"nc::OLD_001": {"id": "nc::OLD_001", "title": "old"}},
+            },
+        },
+    }
+)
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (
+                    Path("conf.py"),
+                    CONF + 'version = "2.0"\nneeds_file = "previous.json"\n',
+                ),
+                (Path("previous.json"), MARKED_PREVIOUS),
+                (Path("index.rst"), "Index\n=====\n\n.. req:: A\n   :id: REQ_001\n"),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_needs_file_history_keeps_an_earlier_marked_version_with_the_switch_off(
+    test_app: SphinxTestApp,
+) -> None:
+    app = test_app
+    app.build()
+    data = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf-8"))
+    assert data["versions"]["1.0"]["namespaced_ids"] is True
+    assert "namespaced_ids" not in data["versions"]["2.0"]
+
+
 @pytest.mark.parametrize(
     "test_app",
     [
         project(
-            ".. req:: A\n   :id: nc::REQ_001\n",
+            ".. req:: A\n   :id: REQ_001\n",
             confoverrides=on(needs_build_json_per_id=True),
         )
     ],
     indirect=True,
 )
 def test_the_per_id_files_are_marked(test_app: SphinxTestApp) -> None:
+    """The marker is the version's, so a plain id's file carries it too (a file named
+    for an id holding ``::`` cannot be written on Windows)."""
     app = test_app
     app.build()
     data = json.loads(
-        Path(app.outdir, "needs_id", "nc::REQ_001.json").read_text(encoding="utf-8")
+        Path(app.outdir, "needs_id", "REQ_001.json").read_text(encoding="utf-8")
     )
     assert data["versions"][data["current_version"]]["namespaced_ids"] is True
 
