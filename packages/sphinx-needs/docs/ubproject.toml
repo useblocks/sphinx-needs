@@ -246,7 +246,6 @@ style = "rectangle"
 [needs.links.blocks]
 incoming = "is blocked by"
 outgoing = "blocks"
-copy = true
 style = "#AA0000"
 style_part = "dotted,#AA0000"
 style_start = "-"
@@ -256,7 +255,6 @@ allow_dead_links = true
 [needs.links.tests]
 incoming = "is tested by"
 outgoing = "tests"
-copy = true
 style = "#00AA00"
 style_part = "dotted,#00AA00"
 

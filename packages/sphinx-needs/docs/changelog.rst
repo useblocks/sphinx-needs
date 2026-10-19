@@ -10,6 +10,24 @@ Unreleased
 Improvements
 ............
 
+- ✨ A derived union of link types: a link type deriving ``union`` holds the links of the link types it names
+  (:issue:`2279`)
+
+  ``derive = { kind = "union", fields = ["links", "blocks", "tests"] }`` on a :ref:`needs_links` entry (or
+  ``[needs.links.<l>]``, a need type's ``links`` entry, ``derive_by_type``) gives each need the links of
+  ``links``, ``blocks`` and ``tests``, in that order, each link once by its target, part and condition -- parts and
+  conditions carried as written -- with back links of its own (``<l>_back``). Its members are link types the need
+  has, derived ones and other unions included (computed first); a field, a ``<l>_back``, ``parent_needs``, a name
+  declared nowhere, no member, one named twice, and a union naming itself or two naming each other are each one
+  ``needs.derive_invalid``, the union holding no links. It is computed after every :ref:`needextend`, so a link a
+  needextend adds to a member is in it, closed to authors, left out of fingerprints and not computed on imported
+  or external needs, as every derived link type. Dead links and link conditions are its members': a union reports
+  neither, a dead link of a member that allows dead links makes no dead link forbidden, and an
+  ``allow_dead_links`` on the union itself is refused; ``needs.derive_dense`` does not count its list. It is what
+  ``copy = true`` gave, declared (see *Deprecations*); see :ref:`needs_derive_union` for how to read it in place of
+  ``links``. The derive conformance corpus pins it (``union-*``), as does the field-declaration corpus for a union
+  declared on need types.
+
 - ✨ A link type's ``target_types`` lists the need types its links may point to (:issue:`2300`, :pr:`2319`, :pr:`2342`)
 
   ``target_types = ["req"]`` on a :ref:`needs_links` entry (or a ``needs_extra_links`` one, or
@@ -280,6 +298,19 @@ Breaking changes
 
 Deprecations
 ............
+
+- ⚠️ ``copy = true`` on a link type is deprecated, and is removed in 10.0: a link type deriving the
+  :ref:`union <needs_derive_union>` of ``links`` and the copying link types replaces it (:issue:`2279`)
+
+  The links are still copied into ``links``. Each declaration writing ``copy = true`` -- a :ref:`needs_links` or
+  :ref:`needs_extra_links` entry, a ``[needs.links.<l>]`` table, a need type's entry of a link type need types alone
+  declare -- is one ``needs.deprecated`` warning naming it and the replacement; none for ``copy = false``, and none
+  where the key is already refused (beside a derive rule, in a need type's entry of a link type declared outright).
+  A union differs from the copies in three ways: a link a needextend adds to a member is in it, a need from
+  :ref:`needimport` or :ref:`needs_external_needs` keeps the union its needs.json carries rather than copying, and a
+  dead link is reported once, at the member. :ref:`check_linked_values <check_linked_values>`,
+  :ref:`calc_sum <calc_sum>` with ``links_only`` and the ``need_outgoing`` and ``need_incoming`` roles written in a
+  need read only ``links`` in this release. The documentation's own configuration no longer sets ``copy``.
 
 - ♻️ :ref:`needimport` and :ref:`needs_external_needs` read a needs.json through the new
   ``ub-needs-exchange`` library, a new dependency of sphinx-needs
