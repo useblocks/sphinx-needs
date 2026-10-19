@@ -22,6 +22,7 @@ from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.util.logging import suppress_logging
 
+from sphinx_needs._wording import joined
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsMutable, SphinxNeedsData
 from sphinx_needs.debug import measure_time_func
@@ -405,11 +406,6 @@ def records_reads(func: _DynamicFunctionT) -> _DynamicFunctionT:
     return func
 
 
-def _joined(parts: Sequence[str]) -> str:
-    """``a``, ``a and b``, ``a, b and c``."""
-    return parts[0] if len(parts) == 1 else f"{', '.join(parts[:-1])} and {parts[-1]}"
-
-
 def _reads_phrase(
     reads: Sequence[tuple[str, Sequence[str]]], linked: Sequence[str] = ()
 ) -> str:
@@ -418,7 +414,7 @@ def _reads_phrase(
     :param linked: Names read on every need the reader's own links name, which are not
         known yet.
     """
-    return _joined(
+    return joined(
         [
             f"'{name}' on need '{ids[0]}'"
             if len(ids) == 1
@@ -543,7 +539,7 @@ def _out_of_scope_message(
     if selectors := out_of_scope.selectors:
         return (
             f"{what} for option '{option}' names its target by "
-            f"{_joined([repr(s) for s in selectors])}, which "
+            f"{joined([repr(s) for s in selectors])}, which "
             f"{'is' if len(selectors) == 1 else 'are'} computed in the same step: "
             f"{not_run} and {_kept(value)}"
         )
@@ -634,7 +630,7 @@ class _Pass:
         for kind, group in groups.items():
             subject = "it is" if _one(group) else "they are"
             if kind == "user":
-                names = _joined([f"'{f}'" for f in functions])
+                names = joined([f"'{f}'" for f in functions])
                 plural = len(functions) > 1
                 cause = (
                     f"{subject} computed by your own function{'s' if plural else ''} "

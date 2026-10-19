@@ -21,6 +21,7 @@ from typing import (
 
 import jsonschema_rs
 
+from sphinx_needs._wording import joined
 from sphinx_needs.config import NeedFields
 from sphinx_needs.derive import (
     Derive,
@@ -2325,17 +2326,12 @@ def narrowing_problems(
                 added = added or sorted(child.types - parent.types)
                 problems.append(
                     f"Child 'target_types' accept "
-                    f"{_or_joined([repr(name) for name in added], 'and')}, which "
+                    f"{joined([repr(name) for name in added])}, which "
                     f"parent 'target_types' {list(parent.names)} (or a type "
                     f"inheriting from {'it' if len(parent.names) == 1 else 'them'}) "
                     "do not."
                 )
     return problems
-
-
-def _or_joined(items: list[str], word: str) -> str:
-    """``a``, ``a <word> b``, ``a, b <word> c``."""
-    return f" {word} ".join(filter(None, (", ".join(items[:-1]), items[-1])))
 
 
 def _default_problems(

@@ -455,8 +455,8 @@ app.connect("write-started", ensure_post_process_needs_data)  # Finalize needs d
 The `ensure_post_process_needs_data` function calls `post_process_needs_data`, which performs the key data processing operations in order:
 
 1. `extend_needs_data` - Apply all `needextend` modifications to need data
-2. `resolve_functions` - Resolve dynamic function values (calls functions set as field values)
-3. `resolve_links` - Generate back-links, check each link's target type against its link type's `target_types` (as the source need's type declares them), assess link conditions, and check for dead/broken links between needs
+2. `resolve_functions` - Resolve dynamic function values (calls functions set as field values), building the back-links between its strata (`build_backlinks`)
+3. `check_links` - Check each link's target type against its link type's `target_types` (as the source need's type declares them; a link of `links` that `copy` put there when the need was created, `NeedItem.copied_targets`, is exempt), assess link conditions, and report dead/broken links between needs. (`resolve_links` bundles back-links, `check_links` and sorting for callers outside the build; `post_process_needs_data` does not call it.)
 4. `process_constraints` - Process constraints for each need
 
 After this, needs are "sealed" (made immutable) via the `needs-before-sealing` event.

@@ -16,6 +16,7 @@ from typing import Any
 import pytest
 from sphinx.testing.util import SphinxTestApp
 
+from sphinx_needs._wording import joined, title_hint
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.derive import DeriveRule
 from sphinx_needs.needs import _type_descendants
@@ -124,8 +125,8 @@ def test_what_the_configuration_reports(test_app: SphinxTestApp) -> None:
     test_app.build()
     assert build_warnings(test_app) == [
         "WARNING: needs_links['verifies'] has a 'target_types' naming 'Specification' "
-        "(did you mean 'spec', whose title it is?) and 'nope', which are not need "
-        "types; the names are ignored [needs.config]",
+        "(did you mean 'spec'?) and 'nope', which are not need types; the names "
+        "are ignored [needs.config]",
         "WARNING: needs_links['checks'] has a 'target_types' that is not a non-empty "
         "list of need type names (got str); the key is ignored [needs.config]",
         "WARNING: needs_links['mentions'] has a 'target_types' that is not a "
@@ -580,3 +581,34 @@ def test_the_descendants_of_each_type() -> None:
         "asil_req": frozenset({"asil_req"}),
         "spec": frozenset({"spec"}),
     }
+
+
+@pytest.mark.parametrize(
+    ("items", "word", "expected"),
+    [
+        (["'a'"], "and", "'a'"),
+        (["'a'", "'b'"], "or", "'a' or 'b'"),
+        (["'a'", "'b'", "'c'"], "and", "'a', 'b' and 'c'"),
+    ],
+)
+def test_the_shared_join(items: list[str], word: str, expected: str) -> None:
+    """The one "a, b and c" join every message uses."""
+    assert joined(items, word) == expected
+
+
+@pytest.mark.parametrize(
+    ("name", "expected"),
+    [
+        pytest.param("Specification", " (did you mean 'spec'?)", id="a-title"),
+        pytest.param("spec", "", id="a-need-type"),
+        pytest.param("nope", "", id="neither"),
+        pytest.param(
+            "Requirement", " (did you mean 'safety_req'?)", id="a-shared-title"
+        ),
+    ],
+)
+def test_the_title_hint(name: str, expected: str) -> None:
+    """The hint ``target_types`` and ``derive_by_type`` give for a title given where a
+    directive name is meant; where two types share the title, the one given last."""
+    types = {"req": "Requirement", "safety_req": "Requirement", "spec": "Specification"}
+    assert title_hint(name, types) == expected

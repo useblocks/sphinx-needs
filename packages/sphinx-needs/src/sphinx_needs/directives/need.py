@@ -10,6 +10,7 @@ from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.util.docutils import SphinxDirective
 
+from sphinx_needs._wording import joined
 from sphinx_needs.api import InvalidNeedException, add_need
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsMutable, SphinxNeedsData
@@ -663,7 +664,7 @@ def _not_one_of(allowed: LinkTargetTypes) -> str:
     says it: the declared names (not their expansion), and the need type declaring
     them, where a need type does."""
     names = [repr(name) for name in allowed.names]
-    listed = " or ".join(filter(None, (", ".join(names[:-1]), names[-1])))
+    listed = joined(names, "or")
     declared_by = (
         ""
         if allowed.declared_by is None

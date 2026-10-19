@@ -22,6 +22,7 @@ from sphinx.environment import BuildEnvironment
 import sphinx_needs.debug as debug  # Need to set global var in it for timeing measurements
 import sphinx_needs.logging as needs_logging
 from sphinx_needs import __version__
+from sphinx_needs._wording import joined, title_hint
 from sphinx_needs.api import get_needs_view
 from sphinx_needs.builder import (
     NeedsBuilder,
@@ -2430,12 +2431,7 @@ def _read_target_types(
     """
     known = tuple(dict.fromkeys(name for name in names if name in below))
     if unknown := list(dict.fromkeys(name for name in names if name not in below)):
-        hints = [
-            f"{name!r} (did you mean {directive!r}, whose title it is?)"
-            if (directive := _directive_titled(name, titles)) is not None
-            else repr(name)
-            for name in unknown
-        ]
+        hints = [f"{name!r}{title_hint(name, titles)}" for name in unknown]
         many = len(unknown) > 1
         consequence = (
             "the key is ignored"
@@ -2444,7 +2440,7 @@ def _read_target_types(
         )
         log_warning(
             LOGGER,
-            f"{where} has a 'target_types' naming {_joined(hints)}, which "
+            f"{where} has a 'target_types' naming {joined(hints)}, which "
             f"{'are not need types' if many else 'is not a need type'}; {consequence}",
             "config",
             None,
@@ -2456,12 +2452,6 @@ def _read_target_types(
         types=frozenset().union(*(below[name] for name in known)),
         declared_by=declared_by,
     )
-
-
-def _directive_titled(title: str, titles: Mapping[str, str]) -> str | None:
-    """The need type whose title is ``title``, if exactly one has it."""
-    matches = [directive for directive, given in titles.items() if given == title]
-    return matches[0] if len(matches) == 1 else None
 
 
 def _declares_derive(params: Mapping[str, Any]) -> bool:
@@ -3250,7 +3240,7 @@ def _resolve_type_declarations(
                     named = [repr(k) for k in shape_keys]
                     log_warning(
                         LOGGER,
-                        f"{where} sets {_joined(named)}, which a "
+                        f"{where} sets {joined(named)}, which a "
                         "need type gives only a link type declared on need types alone; "
                         f"{name!r} keeps its own on every need type and the "
                         f"{'key is' if len(shape_keys) == 1 else 'keys are'} ignored",
@@ -3422,11 +3412,6 @@ def _declare_for_type(
                 )
         return None
     return field
-
-
-def _joined(items: list[str]) -> str:
-    """``a``, ``a and b``, ``a, b and c``."""
-    return " and ".join(filter(None, (", ".join(items[:-1]), items[-1])))
 
 
 def _reason(exc: Exception) -> str:
