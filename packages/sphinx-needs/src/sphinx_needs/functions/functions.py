@@ -786,7 +786,6 @@ def resolve_functions(
     # earlier build, and the barrier builds them into the empty lists
     for need in needs.values():
         need.reset_backlinks()
-        need._reset_copied()
     _resolve_stratum(app, needs, pass_, 1, needs_schema, needs_config)
     build_backlinks(needs, needs_schema, reset=False)
     _resolve_stratum(app, needs, pass_, 2, needs_schema, needs_config)
@@ -1031,10 +1030,7 @@ def _resolve_field(
         # the links the link-valued calls compute, and the calls (``needs.derive_dense``)
         called: set[Any] = set()
         calls: set[str] = set()
-        # the items a ``copy`` put into ``links``: the need records what they resolve to
-        copied = need.copied_computed() if field == "links" else ()
         for item in reads_ctx.pass_.project.items((need.id, field)):
-            start = len(resolved)
             if isinstance(item, DeriveCall):
                 with _reads_reported(item.describe(), field, need, reads_ctx) as reads:
                     # imported here, as the common module imports this one
@@ -1188,8 +1184,6 @@ def _resolve_field(
                     resolved.append(vd_return)
             else:
                 resolved.append(item)
-            if copied and any(item is copy for copy in copied):
-                need._record_copied(resolved[start:])
 
         # a ``None`` result (a ``copy`` of an unset field, a failed check) adds nothing,
         # and a nullable field it leaves with nothing is unset

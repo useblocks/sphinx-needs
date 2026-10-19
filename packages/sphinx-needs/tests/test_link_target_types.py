@@ -4,13 +4,12 @@ The shared behaviour is pinned by the ``link-target-types-*`` cases of the confo
 corpus (``tests/fixtures/field_declaration_conformance.toml``), which compare codes,
 needs, link types and types. These tests pin what the corpus does not: the words of
 every warning (the configuration's, and the link check's), the narrowing rule as a pure
-function, the external-need path and its own suppression, and the edges of the
-exemption a link copied into ``links`` has.
+function, the external-need path and its own suppression, and the refusal of
+``target_types`` on ``links`` while a link type copies into it.
 """
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 from typing import Any
 
@@ -18,9 +17,7 @@ import pytest
 from sphinx.testing.util import SphinxTestApp
 
 from sphinx_needs._wording import joined, title_hint
-from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.derive import DeriveRule
-from sphinx_needs.need_item import NeedItem, NeedLink, NeedsContent
 from sphinx_needs.needs import _type_descendants
 from sphinx_needs.needs_schema import (
     LinkDisplayConfig,
@@ -367,7 +364,7 @@ def test_an_imported_source_is_reported_at_the_needimport(
     ]
 
 
-COPY_TOML = (
+REFUSAL_TOML = (
     TYPES
     + """
 [needs.links.links]
@@ -375,204 +372,93 @@ target_types = ["spec"]
 
 [needs.links.verifies]
 copy = true
-target_types = ["req"]
+
+[needs.links.implements]
+copy = true
+
+[needs.types.test.links.links]
+target_types = ["spec"]
+schema = { maxItems = 1 }
 """
 )
 
-COPY_INDEX = """\
+REFUSAL_INDEX = """\
 .. req:: Requirement
    :id: REQ_1
 
-   A part: :np:`(p1) of it`.
-
-.. test:: A copied part, and the whole need written in links
+.. test:: Verifies a req, and links two
    :id: TEST_1
-   :verifies: REQ_1.p1
-   :links: REQ_1
-
-.. test:: A copied need, and a part of it written in links
-   :id: TEST_2
    :verifies: REQ_1
-   :links: REQ_1.p1
+   :links: REQ_1, SPEC_404
 """
 
 
-@pytest.mark.parametrize("test_app", [_project(COPY_TOML, COPY_INDEX)], indirect=True)
-def test_the_copy_exemption_is_by_target_and_part(test_app: SphinxTestApp) -> None:
-    """A link of ``links`` is exempt from its target types only where the need holds
-    the same target AND part in a ``copy`` link type: a whole need beside a copied
-    part, or a part beside a copied whole need, is checked against ``links``."""
+@pytest.mark.parametrize(
+    "test_app", [_project(REFUSAL_TOML, REFUSAL_INDEX)], indirect=True
+)
+def test_target_types_on_links_beside_a_copy_are_refused(
+    test_app: SphinxTestApp,
+) -> None:
+    """While a link type copies into ``links``, a ``target_types`` on ``links`` is one
+    ``needs.config`` warning per declaration, naming the copying link types, and is
+    ignored (the rest of a need type's entry applies: its ``maxItems`` reports the
+    two links, the copy and the written one being one); no link of ``links`` is
+    checked."""
     test_app.build()
-    assert build_warnings(test_app) == [
-        "<srcdir>/index.rst:9: WARNING: Need 'TEST_1' link 'REQ_1' in field 'links': "
-        "target need type 'req' is not one of 'spec' (or a type inheriting from it) "
-        "[needs.link_target_type]",
-        "<srcdir>/index.rst:14: WARNING: Need 'TEST_2' link 'REQ_1.p1' in field "
-        "'links': target need type 'req' is not one of 'spec' (or a type inheriting "
-        "from it) [needs.link_target_type]",
+    warnings = build_warnings(test_app)
+    assert warnings[:2] == [
+        "WARNING: needs_links['links'] has a 'target_types', but 'verifies' and "
+        "'implements' copy into links (copy = true); the key is ignored until copy is "
+        "replaced [needs.config]",
+        "WARNING: needs_types['test'].links['links'] has a 'target_types', but "
+        "'verifies' and 'implements' copy into links (copy = true); the key is ignored "
+        "until copy is replaced [needs.config]",
     ]
+    assert not any("needs.link_target_type" in warning for warning in warnings)
+    assert any("maxItems" in warning for warning in warnings)
 
 
-DYNAMIC_COPY_INDEX = """\
+NO_REFUSAL_TOML = (
+    TYPES
+    + """
+[needs.links.links]
+copy = true
+target_types = ["spec"]
+
+[needs.links.covers]
+derive = { kind = "links", where = "type == 'req'" }
+copy = true
+"""
+)
+
+
+NO_REFUSAL_INDEX = """\
 .. req:: Requirement
    :id: REQ_1
 
-.. req:: Requirement
-   :id: REQ_2
-
-.. spec:: Specification
-   :id: SPEC_1
-
-.. test:: A computed copy, its verifies then replaced
+.. test:: Links two
    :id: TEST_1
-   :verifies: [[links_from_filter("id == 'REQ_1'")]]
-
-.. test:: A computed copy, and the same need written in links
-   :id: TEST_2
-   :verifies: [[links_from_filter("id == 'REQ_1'")]]
-   :links: REQ_1
-
-.. test:: Links written by hand, matching what a needextend adds
-   :id: TEST_3
-   :links: REQ_2
-
-.. needextend:: TEST_1
-   :verifies: SPEC_1
-
-.. needextend:: TEST_3
-   :+verifies: REQ_2
+   :links: REQ_1, SPEC_404
 """
 
 
 @pytest.mark.parametrize(
-    "test_app", [_project(COPY_TOML, DYNAMIC_COPY_INDEX)], indirect=True
+    "test_app", [_project(NO_REFUSAL_TOML, NO_REFUSAL_INDEX)], indirect=True
 )
-def test_a_computed_copy_is_exempt_as_it_resolves(test_app: SphinxTestApp) -> None:
-    """A dynamic function a ``copy`` link type copies into ``links`` is recorded as it
-    resolves there, so its links are exempt, also after a needextend replaces the
-    copying link type (which is checked as the needextend leaves it); a link written
-    in ``links`` equal to a copy is the same link. A needextend copies nothing, so a
-    link of ``links`` matching only what a needextend adds is checked."""
+def test_a_copy_that_copies_nothing_refuses_nothing(test_app: SphinxTestApp) -> None:
+    """``copy`` on ``links`` itself, and on a derived link type (refused), copies
+    nothing into ``links``: the ``target_types`` of ``links`` holds."""
     test_app.build()
     assert build_warnings(test_app) == [
-        "<srcdir>/index.rst:13: WARNING: Need 'TEST_1' link 'SPEC_1' in field "
-        "'verifies': target need type 'spec' is not one of 'req' (or a type "
-        "inheriting from it) [needs.link_target_type]",
-        "<srcdir>/index.rst:22: WARNING: Need 'TEST_3' link 'REQ_2' in field 'links': "
+        "WARNING: Invalid derive of link type 'covers': kind 'links': 'copy' is not "
+        "available on a derived link type in this release, and is ignored; the rule "
+        "applies [needs.derive_invalid]",
+        "<srcdir>/index.rst:7: WARNING: Need 'TEST_1' link 'REQ_1' in field 'links': "
         "target need type 'req' is not one of 'spec' (or a type inheriting from it) "
         "[needs.link_target_type]",
+        "<srcdir>/index.rst:7: WARNING: Need 'TEST_1' has unknown outgoing link "
+        "'SPEC_404' in field 'links' [needs.link_outgoing]",
     ]
-    needs = SphinxNeedsData(test_app.env).get_needs_view()
-    assert needs["TEST_1"].copied_targets == {("REQ_1", None)}
-    assert needs["TEST_1"]["links"] == ["REQ_1"]
-    assert needs["TEST_3"].copied_targets == frozenset()
-
-
-REBUILD_INDEX = """\
-.. toctree::
-
-   d1
-   d2
-"""
-
-REBUILD_D1 = """\
-D1
-==
-
-.. test:: A computed copy, and a link written in links
-   :id: TEST_1
-   :verifies: [[links_from_filter("status == 'x'")]]
-   :links: REQ_A
-"""
-
-
-def _rebuild_d2(status_a: str, status_b: str) -> str:
-    return f"""\
-D2
-==
-
-.. req:: A
-   :id: REQ_A
-   :status: {status_a}
-
-.. req:: B
-   :id: REQ_B
-   :status: {status_b}
-"""
-
-
-@pytest.mark.parametrize(
-    "test_app",
-    [
-        _project(
-            COPY_TOML,
-            REBUILD_INDEX,
-            **{"d1.rst": REBUILD_D1, "d2.rst": _rebuild_d2("x", "y")},
-        )
-    ],
-    indirect=True,
-)
-def test_a_computed_copy_is_recorded_anew_on_a_rebuild(test_app: SphinxTestApp) -> None:
-    """The same application built again (as an editor's language server does) resolves
-    a computed copy again, and records only what it resolves to now: a link written in
-    ``links`` that the copy matched in the first build, and no longer does, is checked
-    in the second."""
-    test_app.build()
-    # (reading the needs here would mark them post-processed for the next build)
-    assert build_warnings(test_app) == []
-    first = len(test_app._warning.getvalue())
-
-    d2 = Path(test_app.srcdir, "d2.rst")
-    d2.write_text(_rebuild_d2("y", "x"), encoding="utf-8")
-    stat = d2.stat()
-    # later than the first build read it, without waiting for the clock
-    os.utime(d2, (stat.st_atime + 10, stat.st_mtime + 10))
-    test_app.build()
-
-    # the second build's warnings alone, read before the needs are: reading them
-    # after the build post-processes them again
-    second = test_app._warning.getvalue()[first:]
-    assert [
-        record.replace(f"{test_app.srcdir}/", "<srcdir>/")
-        for record in build_warnings(second)
-    ] == [
-        "<srcdir>/d1.rst:4: WARNING: Need 'TEST_1' link 'REQ_A' in field 'links': "
-        "target need type 'req' is not one of 'spec' (or a type inheriting from it) "
-        "[needs.link_target_type]",
-    ]
-    needs = SphinxNeedsData(test_app.env).get_needs_view()
-    assert needs["TEST_1"].copied_targets == {("REQ_B", None)}
-
-
-def test_a_copy_of_a_need_keeps_its_copies() -> None:
-    """``NeedItem.copy()`` keeps the record of what ``copy`` put into ``links``: the
-    copies as written, and those a computed copy resolved to."""
-    need = _copied_need()
-    need._record_copied(["REQ_2", "REQ_3.p1"])
-    assert (
-        need.copy().copied_targets
-        == need.copied_targets
-        == {
-            ("REQ_1", None),
-            ("REQ_2", None),
-            ("REQ_3", "p1"),
-        }
-    )
-
-
-def _copied_need() -> NeedItem:
-    """A need whose ``links`` holds the copy of ``REQ_1``."""
-    core: Any = dict.fromkeys(NeedsInfoType.__annotations__)
-    core.update(id="TEST_1", type="test", title="A test", tags=[], constraints=[])
-    return NeedItem(
-        core=core,
-        content=NeedsContent(content="", doctype=".rst"),
-        extras={},
-        links={"links": ["REQ_1"], "verifies": ["REQ_1"]},
-        source=None,
-        copied=[NeedLink(id="REQ_1")],
-        _validate=False,
-    )
 
 
 def _link(**kwargs: Any) -> LinkSchema:

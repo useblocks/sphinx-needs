@@ -25,20 +25,10 @@ from sphinx_needs.data import (
 )
 
 if TYPE_CHECKING:
-    from typing import TypeAlias
-
-    from sphinx_needs.functions.functions import DynamicFunctionParsed
     from sphinx_needs.needs_schema import (
         AllowedTypes,
         FieldFunctionArray,
         LinksFunctionArray,
-    )
-    from sphinx_needs.variant_data import VariantDataParsed
-    from sphinx_needs.variants import VariantFunctionParsed
-
-    #: an item a link type with ``copy`` copies into ``links``, as written
-    CopiedItem: TypeAlias = (
-        "NeedLink | DynamicFunctionParsed | VariantFunctionParsed | VariantDataParsed"
     )
 
 
@@ -440,8 +430,6 @@ class NeedItem:
         "_computed",
         "_constraint_results",
         "_content",
-        "_copied",
-        "_copied_resolved",
         "_core",
         "_derived",
         "_dynamic_fields",
@@ -469,7 +457,6 @@ class NeedItem:
         dynamic_fields: dict[str, FieldFunctionArray | LinksFunctionArray]
         | None = None,
         derived: Iterable[str] = (),
-        copied: Iterable[CopiedItem] = (),
         _validate: bool = True,
     ) -> None:
         """Initialize the NeedItem instance.
@@ -488,10 +475,6 @@ class NeedItem:
         :param derived: The keys of the derived fields (extras or links keys), which
             ``need[key] = value`` refuses: they hold what their rules compute
             (:attr:`~sphinx_needs.needs_schema.FieldsSchema.derived_names`).
-        :param copied: The items the link types with ``copy`` copied into ``links``
-            when the need was created, as written: each a link, or a dynamic function,
-            variant or variant data reference, which the resolver records as it
-            resolves it (:attr:`copied_targets`).
         :param _validate: Perform runtime type validation of initialisation inputs
         """
         if _validate:
@@ -534,9 +517,6 @@ class NeedItem:
         # one set shared by the needs of a build, per process (a parallel worker
         # unpickles its own): a frozenset is not copied
         self._derived = frozenset(derived)
-        # in memory, not in needs.json: what ``copy`` put into ``links`` at creation
-        self._copied = tuple(copied)
-        self._copied_resolved: set[tuple[str, str | None]] = set()
         self._links: dict[str, list[NeedLink]] = {
             key: [NeedLink.from_string(v) if isinstance(v, str) else v for v in value]
             for key, value in links.items()
@@ -697,7 +677,7 @@ class NeedItem:
 
     def copy(self) -> NeedItem:
         """Return a copy of the NeedItem."""
-        new = NeedItem(
+        return NeedItem(
             core=self._core,
             extras=self._extras,
             links=self._links,
@@ -709,12 +689,8 @@ class NeedItem:
             constraint_results=self._constraint_results,
             dynamic_fields=self._dynamic_fields,
             derived=self._derived,
-            copied=self._copied,
             _validate=False,
         )
-        # the computed copies as resolved, which the constructor does not take
-        new._copied_resolved = set(self._copied_resolved)
-        return new
 
     def __eq__(self, other: object) -> bool:
         """Check if two NeedItems are equal."""
@@ -980,39 +956,6 @@ class NeedItem:
         else:
             raise KeyError(f"Only existing keys can be set, not: {key!r}")
         self._recompute()
-
-    @property
-    def copied_targets(self) -> frozenset[tuple[str, str | None]]:
-        """The ``(id, part)`` of each link copied into ``links`` when the need was
-        created: by a link type with ``copy`` (not ``links`` itself, nor a derived
-        one), as written, a dynamic function's or a variant's links once the resolver
-        has resolved them. A needextend of the copying link type, after creation,
-        changes none of them, as it copies nothing.
-        """
-        return frozenset(
-            (item.id, item.part) for item in self._copied if isinstance(item, NeedLink)
-        ) | frozenset(self._copied_resolved)
-
-    def copied_computed(self) -> tuple[CopiedItem, ...]:
-        """The copied items that are not links: computed where ``links`` is resolved."""
-        return tuple(item for item in self._copied if not isinstance(item, NeedLink))
-
-    def _record_copied(self, values: Iterable[Any]) -> None:
-        """Record the links a copied computed item resolved to (the resolver's)."""
-        for value in values:
-            if isinstance(value, str):
-                value = NeedLink.from_string(value)
-            if isinstance(value, NeedLink):
-                self._copied_resolved.add((value.id, value.part))
-
-    def _reset_copied(self) -> None:
-        """Forget the resolved copies, as the resolver starts its pass.
-
-        Needed for a build of the same application again (as a language server
-        builds): its needs are post-processed again, and a computed copy that
-        resolves to another link now must not leave the old one recorded.
-        """
-        self._copied_resolved.clear()
 
     def reset_backlinks(self) -> None:
         """Reset all backlinks to empty lists (including parts)."""

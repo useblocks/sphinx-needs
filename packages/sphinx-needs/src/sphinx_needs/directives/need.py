@@ -624,12 +624,9 @@ def _check_target_types(
     ``needs.link_target_type`` warning per link.
 
     A dead link is left to the dead-link check, whether or not dead links are allowed;
-    a link to a part is checked by the type of the need owning it. A link of ``links``
-    with the target and part of a link another link type copied into ``links`` when
-    the need was created (:attr:`~sphinx_needs.need_item.NeedItem.copied_targets`) is
-    not checked against the target types of ``links``: it is checked as a link of the
-    link type it was copied from. A needextend of that link type copies nothing, so it
-    changes nothing here.
+    a link to a part is checked by the type of the need owning it. ``links`` takes no
+    target types beside a link type that copies into it (refused where the schema is
+    built), so a copy is never checked against them.
 
     :param declared: Each link type with target types on the need's type.
     """
@@ -644,11 +641,6 @@ def _check_target_types(
             ):
                 continue  # a dead link has no type: the dead-link check reports it
             if target["type"] in allowed.types:
-                continue
-            if (
-                link_type == "links"
-                and (need_link.id, need_link.part) in need.copied_targets
-            ):
                 continue
             _emit_link_warning(
                 need,

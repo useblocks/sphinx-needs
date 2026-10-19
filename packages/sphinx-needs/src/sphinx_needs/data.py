@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 14
+ENV_DATA_VERSION: Final = 13
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -89,12 +89,6 @@ Version 13 adds the names of the derived fields to every stored need (a slot of
 one). An unbumped rebuild over an existing ``_build`` unpickles needs without it, and
 the first write into one ends with an ``AttributeError`` rather than re-reading the
 documents.
-
-Version 14 adds what a ``copy`` link type copied into ``links`` when the need was created
-to every stored need (two slots of :class:`~sphinx_needs.need_item.NeedItem`, which the
-link check reads to exempt a copy from the ``target_types`` of ``links``). An unbumped
-rebuild over an existing ``_build`` unpickles needs without them, and the resolver's
-first pass ends with an ``AttributeError`` rather than re-reading the documents.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """

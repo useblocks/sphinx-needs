@@ -2372,6 +2372,17 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
 
     _report_derive_problems(schema, derive_problems, need_types, spellings)
 
+    # ``links`` takes no target types while a link type copies into it
+    if (
+        (copying := _copying_link_types(schema))
+        and (own := schema.global_declaration("links")) is not None
+        and isinstance(own, LinkSchema)
+        and own.target_types is not None
+    ):
+        where = f"{links['links'][1]}['links']" if "links" in links else "links"
+        log_warning(LOGGER, _copy_refusal(where, copying), "config", None)
+        schema.replace_field(dataclasses.replace(own, target_types=None))
+
     # last: each type's declarations start from the fields as they stand now, their
     # derive problems and legacy defaults included
     _resolve_type_declarations(
@@ -2388,6 +2399,36 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
     schema.freeze()
 
     SphinxNeedsData(env)._set_schema(schema)
+
+
+def _copying_link_types(schema: FieldsSchema) -> list[str]:
+    """The link types that copy into ``links``, as the copy step copies them: those
+    with ``copy``, but ``links`` itself and a derived one (whose ``copy`` is refused),
+    and none where ``links`` is derived (nothing is copied into it).
+
+    With one, ``links`` holds links written in it and links copied into it, so which
+    need types its links may point to is not one question: its ``target_types`` is
+    refused (:func:`_copy_refusal`) until ``copy`` is replaced.
+    """
+    own = schema.get_link_field("links")
+    if own is None or own.derived:
+        return []
+    return [
+        link.name
+        for link in schema.iter_link_fields()
+        if link.copy and link.name != "links" and not link.derived
+    ]
+
+
+def _copy_refusal(where: str, copying: Sequence[str]) -> str:
+    """The ``needs.config`` finding of a ``target_types`` on ``links`` beside the link
+    types ``copying`` into it."""
+    named = joined([repr(name) for name in copying])
+    verb = "copies" if len(copying) == 1 else "copy"
+    return (
+        f"{where} has a 'target_types', but {named} {verb} into links (copy = true); "
+        "the key is ignored until copy is replaced"
+    )
 
 
 def _type_descendants(
@@ -3179,6 +3220,8 @@ def _resolve_type_declarations(
         types inheriting from it, and each need type's title.
     """
     entry_findings, inherits_findings, shape_findings = findings
+    #: a need type's ``links`` takes no target types beside them either
+    copying = _copying_link_types(schema)
     for text in entry_findings:
         log_warning(LOGGER, text, "config", None)
     for text in inherits_findings:
@@ -3251,6 +3294,14 @@ def _resolve_type_declarations(
                 # declaration before it
                 names[need_type].add(name)
                 previous, by = own.get(name, (glob, None))
+                if (
+                    table == "links"
+                    and name == "links"
+                    and copying
+                    and "target_types" in keys
+                ):
+                    log_warning(LOGGER, _copy_refusal(where, copying), "config", None)
+                    keys = {k: v for k, v in keys.items() if k != "target_types"}
                 if (
                     field := _declare_for_type(
                         previous,
