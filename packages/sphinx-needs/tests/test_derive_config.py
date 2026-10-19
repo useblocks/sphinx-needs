@@ -779,10 +779,19 @@ def test_a_copy_into_derived_links_is_ignored(test_app):
     ``links`` holds what its rule computes, so the copy, a second writer, is not
     made, and it is one ``needs.derive_invalid`` at the ``links`` rule, naming every
     copying link type; the rule applies, and the copying link types keep their links.
+    Each ``copy = true`` is deprecated all the same.
     """
     app = test_app
     app.build()
     assert build_warnings(app) == [
+        *(
+            "WARNING: "
+            f"needs_links[{name!r}] sets 'copy = true', which is deprecated and will "
+            "be removed in sphinx-needs 10.0; declare a link type deriving the union "
+            f'instead, e.g. derive = {{kind = "union", fields = ["links", "{name}"]}}, '
+            "and read it where the copies in links were read [needs.deprecated]"
+            for name in ("tests", "satisfies")
+        ),
         "WARNING: Invalid derive of link type 'links': kind 'links': 'links' is "
         "derived; the copy of the link types 'satisfies' and 'tests' into it is "
         "ignored; the rule applies [needs.derive_invalid]",

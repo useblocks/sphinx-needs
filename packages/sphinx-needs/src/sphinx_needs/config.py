@@ -447,7 +447,11 @@ class NeedLinksConfig(TypedDict, total=False):
     outgoing: str
     """The outgoing link title. Default: '<name>'"""
     copy: bool
-    """Copy to common links data. Default: False"""
+    """Copy to common links data. Default: False
+
+    Deprecated, to be removed in 10.0: declare a link type deriving the ``union`` of
+    ``links`` and this link type instead, and read it where the copies were read.
+    """
     color: str
     """Used for needflow. Default: #000000"""
     style: str

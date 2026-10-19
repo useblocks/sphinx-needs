@@ -793,7 +793,8 @@ class LinkSchema:
     display: LinkDisplayConfig
     """Display/rendering configuration for this link type."""
     copy: bool = False
-    """If True, copy links to the common 'links' field."""
+    """If True, copy links to the common 'links' field (deprecated, removed in 10.0:
+    a ``union`` link type replaces it)."""
     allow_dead_links: bool = False
     """If True, add a 'forbidden' class to dead links instead of warning."""
     target_types: LinkTargetTypes | None = None
@@ -1762,6 +1763,25 @@ class FieldsSchema:
     def iter_link_fields(self) -> Iterable[LinkShape]:
         """Iterate over all link fields in the schema."""
         yield from self._link_fields.values()
+
+    def copying_link_types(self) -> list[str]:
+        """The link types that copy their links into ``links`` (``copy = true``,
+        deprecated), as a need's creation copies them: those with ``copy``, but
+        ``links`` itself and a derived one (whose ``copy`` is refused), and none where
+        ``links`` is derived (nothing is copied into it).
+
+        Read on :meth:`for_type`'s schema, they are those a need of that type copies;
+        on the global view, they are why ``links`` takes no ``target_types``: it holds
+        links written in it and links copied into it.
+        """
+        own = self.get_link_field("links")
+        if own is None or own.derived:
+            return []
+        return [
+            link.name
+            for link in self.iter_link_fields()
+            if link.copy and link.name != "links" and not link.derived
+        ]
 
 
 class TypeFieldsSchema(FieldsSchema):

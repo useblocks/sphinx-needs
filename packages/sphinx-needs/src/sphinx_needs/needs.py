@@ -2345,6 +2345,14 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             schema.add_link_field(link_field)
         except Exception as exc:
             raise NeedsConfigException(f"Invalid link {name!r}: {exc}") from exc
+        # a need type's entry is reported where the need types are read; on a derived
+        # link type, copy is refused (copy_on_derived_message) and so not deprecated
+        if (
+            config_source != "needs_types"
+            and link_field.copy
+            and not link_field.derived
+        ):
+            log_warning(LOGGER, _copy_deprecation(where, name), "deprecated", None)
 
     # validated where the configuration is read, so that a project which misconfigures
     # one of these and happens to have no needflow anywhere is still told, exactly once
@@ -2383,7 +2391,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
 
     # ``links`` takes no target types while a link type copies into it
     if (
-        (copying := _copying_link_types(schema))
+        (copying := schema.copying_link_types())
         and (own := schema.global_declaration("links")) is not None
         and isinstance(own, LinkSchema)
         and own.target_types is not None
@@ -2410,23 +2418,23 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
     SphinxNeedsData(env)._set_schema(schema)
 
 
-def _copying_link_types(schema: FieldsSchema) -> list[str]:
-    """The link types that copy into ``links``, as the copy step copies them: those
-    with ``copy``, but ``links`` itself and a derived one (whose ``copy`` is refused),
-    and none where ``links`` is derived (nothing is copied into it).
+def _copy_deprecation(where: str, name: str) -> str:
+    """The ``needs.deprecated`` finding of a declaration writing ``copy = true``.
 
-    With one, ``links`` holds links written in it and links copied into it, so which
-    need types its links may point to is not one question: its ``target_types`` is
-    refused (:func:`_copy_refusal`) until ``copy`` is replaced.
+    The links are still copied: the key goes in 10.0, and a link type deriving the
+    union of ``links`` and the copying link types replaces it.
     """
-    own = schema.get_link_field("links")
-    if own is None or own.derived:
-        return []
-    return [
-        link.name
-        for link in schema.iter_link_fields()
-        if link.copy and link.name != "links" and not link.derived
-    ]
+    deprecated = (
+        f"{where} sets 'copy = true', which is deprecated and will be removed in "
+        "sphinx-needs 10.0"
+    )
+    if name == "links":
+        return f"{deprecated}; on links it copies nothing, so remove it"
+    return (
+        f"{deprecated}; declare a link type deriving the union instead, e.g. "
+        f'derive = {{kind = "union", fields = ["links", "{name}"]}}, and read it '
+        "where the copies in links were read"
+    )
 
 
 def _copy_refusal(where: str, copying: Sequence[str]) -> str:
@@ -3230,7 +3238,7 @@ def _resolve_type_declarations(
     """
     entry_findings, inherits_findings, shape_findings = findings
     #: a need type's ``links`` takes no target types beside them either
-    copying = _copying_link_types(schema)
+    copying = schema.copying_link_types()
     for text in entry_findings:
         log_warning(LOGGER, text, "config", None)
     for text in inherits_findings:
@@ -3298,6 +3306,17 @@ def _resolve_type_declarations(
                         f"{'key is' if len(shape_keys) == 1 else 'keys are'} ignored",
                         "config",
                         None,
+                    )
+                if (
+                    table == "links"
+                    and name in local
+                    and keys.get("copy") is True
+                    and not glob.derived
+                ):
+                    # the shape a declaration of a link type need types alone give:
+                    # on a derived one, copy is refused at its rule
+                    log_warning(
+                        LOGGER, _copy_deprecation(where, name), "deprecated", None
                     )
                 # declared, also if the entry cannot be used: the type keeps the
                 # declaration before it

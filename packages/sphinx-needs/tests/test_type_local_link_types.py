@@ -450,6 +450,16 @@ def test_the_first_root_declaration_gives_the_display(test_app: Any) -> None:
     ]
 
 
+def _deprecated_copy(where: str, name: str) -> str:
+    """The ``needs.deprecated`` warning of a declaration writing ``copy = true``."""
+    return (
+        f"WARNING: {where} sets 'copy = true', which is deprecated and will be removed "
+        "in sphinx-needs 10.0; declare a link type deriving the union instead, e.g. "
+        f'derive = {{kind = "union", fields = ["links", "{name}"]}}, and read it where '
+        "the copies in links were read [needs.deprecated]"
+    )
+
+
 COPY_TYPES = _types(
     req={"links": {"verifies": {"copy": True}}},
     sreq={"inherits": "req"},
@@ -496,13 +506,16 @@ def test_copy_is_the_first_root_declarations(test_app: Any) -> None:
     """With ``copy`` in the first root declaration, the links of every declaring need
     are copied into ``links`` -- a later root's too, which takes the shape -- and a
     need of a type that does not declare the link type copies none; ``copy`` beside a
-    ``derive`` is refused as on a ``needs_links`` entry."""
+    ``derive`` is refused as on a ``needs_links`` entry. The declaration writing
+    ``copy = true`` is deprecated, as a ``needs_links`` entry is; the later root
+    writing none is not, nor is the refused one."""
     app = test_app
     app.build()
     assert build_warnings(app) == [
         "WARNING: Invalid derive of link type 'cites': by need type: 'copy' is not "
         "available on a derived link type in this release, and is ignored; the rule "
         "applies [needs.derive_invalid]",
+        _deprecated_copy("needs_types['req'].links['verifies']", "verifies"),
         _undeclared(16, "S_001", "spec", "R_001"),
     ]
     assert _values(app, "verifies", "links") == {
@@ -549,6 +562,8 @@ def test_dead_links_are_the_first_root_declarations(test_app: Any) -> None:
     # link types: that is what a needs_links entry of the same keys does (gchecks),
     # and not this declaration's to change
     assert build_warnings(app) == [
+        _deprecated_copy("needs_links['gchecks']", "gchecks"),
+        _deprecated_copy("needs_types['req'].links['checks']", "checks"),
         "<srcdir>/index.rst:8: WARNING: Need 'R_002' has unknown outgoing link "
         "'NOPE_2' in field 'links' [needs.link_outgoing]",
         "<srcdir>/index.rst:8: WARNING: Need 'R_002' has unknown outgoing link "
