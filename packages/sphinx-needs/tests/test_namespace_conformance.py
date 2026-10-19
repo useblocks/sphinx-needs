@@ -111,9 +111,12 @@ def test_every_case_has_a_complete_expectation() -> None:
             "files",
             "python_only",
             "ubcode_only",
+            "divergent",
             "expect",
         }, name
         assert case["why"] and case["config"] and case["source"], name
+        # a registered divergence names the tool's register row; this runner runs it
+        assert _divergent_problems(case) == [], name
         assert not (case.get("python_only") and case.get("ubcode_only")), name
         types = tomllib.loads(case["config"])["needs"]["types"]
         assert types, name
@@ -148,6 +151,32 @@ def test_every_case_has_a_complete_expectation() -> None:
             assert set(finding) <= set(KEYS), name
             assert finding["code"] in SHARED_CODES, name
         assert set(expect["notes"]) <= set(NOTES), name
+
+
+def _divergent_problems(case: Mapping[str, Any]) -> list[str]:
+    """What is wrong with a case's ``divergent`` key: it names ubCode alone, with the
+    row of its divergence register as a non-empty string."""
+    if "divergent" not in case:
+        return []
+    divergent = case["divergent"]
+    if not isinstance(divergent, dict):
+        return [f"divergent is {type(divergent).__name__}, not a table"]
+    problems = [
+        f"divergent names {tool!r}" for tool in sorted(set(divergent) - {"ubcode"})
+    ]
+    row = divergent.get("ubcode")
+    if not (isinstance(row, str) and row):
+        problems.append(f"divergent.ubcode is {row!r}, not a register row")
+    return problems
+
+
+@pytest.mark.parametrize(
+    "divergent",
+    ["design/x.md", {}, {"ubcode": 1}, {"ubcode": ""}, {"ubcode": "x", "python": "y"}],
+)
+def test_a_divergent_key_names_only_a_ubcode_register_row(divergent: Any) -> None:
+    assert _divergent_problems({"divergent": divergent}) != []
+    assert _divergent_problems({"divergent": {"ubcode": "design/x.md#row"}}) == []
 
 
 def test_the_corpus_header_records_where_it_is_canonical() -> None:

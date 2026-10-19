@@ -48,15 +48,20 @@
 #   - a `missing` entry names a need the case's source or files give that is NOT
 #     created: the runner asserts its id is no key of the needs needs.json writes
 #   - findings are compared as a MULTISET of `code`, and of `need` and `field` where the
-#     finding names them; a key a finding leaves out is not compared. `code` is the BARE
-#     subcode. Messages and severities are NOT compared. Only these codes are compared --
+#     finding names them; a key a finding leaves out is not compared. Messages and
+#     severities are NOT compared. Only these four codes are compared --
 #         create_need, import_need, load_external_need, link_outgoing
-#     -- every other finding is each tool's own. `create_need` is a need of the sources
-#     that is not created, `import_need` a record a `needimport` does not create (reported
-#     at the `needimport`, so a case pinning an `import_need` finding imports ONE record
-#     per `needimport`, and the finding has no need), `load_external_need` one an
-#     external source does not create (no location, so no need), and `link_outgoing` a
-#     link to a need that does not exist
+#     -- every other finding is each tool's own. They are this corpus's names for four
+#     FACTS, defined below, and a runner compares its own engine's finding for each:
+#     sphinx-needs' are these bare subcodes (`needs.create_need` and so on); ubCode's
+#     runner maps `create_need` to `needs.create_need`, `link_outgoing` to
+#     `needs.dead_link`, and `import_need` and `load_external_need` to its findings for an
+#     imported and an external record that is not created. `create_need` is a need of
+#     the sources that is not created, `import_need` a record a `needimport` does not
+#     create (reported at the `needimport`, so a case pinning an `import_need` finding
+#     imports ONE record per `needimport`, and the finding has no need),
+#     `load_external_need` one an external source does not create (no location, so no
+#     need), and `link_outgoing` a link to a need that does not exist
 #   - `notes` pins the INFORMATIONAL findings, one per source read, by bare code, as a
 #     multiset: `namespaced_ids_unmarked` (the switch is on, and a version read is not
 #     marked but holds an id with `::`: its ids are read as namespaced) and
@@ -64,12 +69,14 @@
 #     read as plain ids). sphinx-needs reports them on its status stream, not as warnings,
 #     and its runner reads them by their wording; ubCode's runner reads its own
 #     diagnostics for the same facts
-#   - `refused` names the reserved field name a case's configuration is refused for: the
-#     project is not built, and the case pins nothing else. sphinx-needs raises its
-#     configuration error, whose message names the field; ubCode reports a configuration
-#     error naming it
+#   - `refused` names the reserved field name a case's configuration is refused for, and
+#     the case pins nothing else: sphinx-needs raises its configuration error, whose
+#     message names the field, and builds nothing; ubCode reports a configuration finding
+#     naming the field and builds without that declaration
 #   - a case with `python_only = true` is one only sphinx-needs runs, and ubCode's runner
 #     skips it; `ubcode_only = true` is the converse
+#   - a case carrying `divergent` is skipped by the runner it names, counted, with the
+#     register row as the reason; every other runner runs it
 #
 # `packages/sphinx-needs/tests/test_namespace_conformance.py` runs every case with the
 # `needs` builder AND asserts the case COUNT, so a truncated copy is a red test rather
@@ -85,6 +92,8 @@
 #   files        - optional; other files, relative to the case directory, and their text
 #   python_only  - optional; see the rules above
 #   ubcode_only  - optional; see the rules above
+#   divergent    - optional; `{ ubcode = "design/divergence-register.md#..." }` when a
+#                  tool's outcome is a REGISTERED divergence of that tool
 #   [case.expect]
 #     refused      - the reserved name the configuration is refused for; alone
 #     findings     - the findings, `[]` for none; or one `[[case.expect.findings]]` table
@@ -164,6 +173,7 @@ local_id = "1a::REQ_001"
 [[case]]
 name = "off-the-id-regex-applies-to-the-whole-id"
 why = "with needs_namespaced_ids off, needs_id_regex validates the id whole: the default refuses nc::REQ_001"
+divergent = { ubcode = "design/divergence-register.md#2-index--diagnostics-surface" }
 config = '''
 [needs.types.req]
 title = "Requirement"
@@ -323,6 +333,7 @@ local_id = "REQ_001"
 [[case]]
 name = "on-a-local-id-that-fails-the-regex-is-refused"
 why = "needs_id_regex applies to the local id: NS::r_001 is refused by ^[A-Z], which the whole id would match, and NS::R_001 is not"
+divergent = { ubcode = "design/divergence-register.md#2-index--diagnostics-surface" }
 config = '''
 [needs]
 namespaced_ids = true
