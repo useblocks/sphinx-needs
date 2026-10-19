@@ -35,7 +35,7 @@ from ub_needs_exchange.reader import (
     parse,
 )
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 __all__ = [
     "CURRENT_VERSION_MISSING",

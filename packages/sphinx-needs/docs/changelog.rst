@@ -259,8 +259,9 @@ Deprecations
 ............
 
 - ♻️ :ref:`needimport` and :ref:`needs_external_needs` read a needs.json through the new
-  ``ub-needs-exchange`` library, a new dependency of sphinx-needs; nothing they read or
-  report changes, but for one addition: a top-level ``format_version`` is now read
+  ``ub-needs-exchange`` library, a new dependency of sphinx-needs
+  (``ub-needs-exchange>=1.1.0,<2``); nothing they read or report changes, but for one
+  addition: a top-level ``format_version`` is now read
 
   ``ub-needs-exchange`` is the record of the needs.json format: its reader, which 9.0.0
   shipped as ``sphinx_needs.exchange``, moved there with that one addition, beside a
