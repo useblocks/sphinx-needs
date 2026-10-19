@@ -16,7 +16,7 @@ which this repository holds canonically and ubCode is to vendor.
 
 Audience: implementers of a second reader, and anyone changing this package.
 
-Status: describes the implementation as it is (version 1.0.0). When behaviour changes, this
+Status: describes the implementation as it is (version 1.1.0). When behaviour changes, this
 document, the corpus and the tests change in the same commit. Every rule names what
 enforces it: "corpus: `name`" is the conformance case of that name, run by
 `tests/test_conformance.py::test_case` (and, from a file, `::test_case_read_from_a_file`);
@@ -88,19 +88,44 @@ object identity). A rule marked **(not pinned)** has neither.
 }
 ```
 
-1. **`format_version`**, an integer of 1 or more: the format the file is written in.
-   Absent, the file is format 1 — every file written before the key existed is. Format 1
-   is the only one there is. A value above 1 is read as format 1 and reported
-   (`format_version_unsupported`, path `format_version`): a later format is to stay
-   readable as this one, or it is not a later version of this format. Any other value — a
-   string, even `"1"`; `0` or a negative number; any number written with a fraction or an exponent, even `1.0` or `1e0`;
-   `true`; `null` — refuses the file (`format_version_invalid`). It is checked before
-   anything else in the envelope. No writer writes the key yet.
+1. **`format_version`**: the format the file is written in. Absent, the file is format 1 —
+   every file written before the key existed is — and so is a file that says `1`. Format 1
+   is the only format this reader reads. A file of any other format is **refused**, whatever
+   else its envelope holds (`format_version_unsupported`): an integer above 1, such as `2`,
+   or a pre-release of a format — a string of a format number of 1 or more, `a`, `b` or
+   `rc`, and a pre-release number of 1 or more, each written in the digits `0`–`9`
+   without leading zeros: `"2a1"`, `"2b1"`, `"2rc1"`.
+   A later format is not read as this one, even when its envelope could be: what its
+   records mean is not this contract's. Any other value is not a format version and refuses
+   the file too (`format_version_invalid`): any other string, even `"1"` or `"2.0"`; `0`
+   or a negative number; any number written with a fraction or an exponent, even `1.0` or
+   `1e0`; `true`; `null`. It is checked before anything else in the envelope, so a file of
+   a later format that has no `versions` is refused for its format, not for the envelope
+   it lacks. No writer writes the key yet.
    Enforced by: corpus: `format-version-1`, `format-version-absent-is-1`,
-   `format-version-above-1-is-read-as-1`, `format-version-a-string`,
-   `format-version-zero`, `format-version-negative`, `format-version-a-fraction`,
-   `format-version-a-boolean`, `format-version-null`, `format-version-is-checked-first`;
-   `test_reader.py::test_a_later_format_version_is_read_as_the_first` (the message).
+   `format-version-above-1-is-refused`, `format-version-a-pre-release-is-refused`,
+   `format-version-a-release-candidate-is-refused`,
+   `format-version-a-pre-release-of-1-is-refused`,
+   `format-version-a-pre-release-of-many-digits-is-refused`,
+   `format-version-of-many-digits-is-refused`,
+   `a-later-format-is-refused-before-its-shape-is-read`,
+   `a-later-integer-format-is-refused-before-its-shape-is-read`,
+   `format-version-is-checked-whatever-version-is-asked-for`, `format-version-a-string`,
+   `format-version-a-string-of-no-pre-release-form`,
+   `format-version-a-pre-release-with-a-leading-zero-is-invalid`,
+   `format-version-a-pre-release-numbered-0-is-invalid`,
+   `format-version-a-pre-release-without-a-number-is-invalid`,
+   `format-version-a-format-number-with-a-leading-zero-is-invalid`,
+   `format-version-a-pre-release-in-upper-case-is-invalid`,
+   `format-version-a-pre-release-of-another-segment-is-invalid`,
+   `format-version-a-pre-release-with-whitespace-is-invalid`,
+   `format-version-a-pre-release-in-other-digits-is-invalid`, `format-version-zero`,
+   `format-version-negative`, `format-version-a-fraction`,
+   `format-version-a-fraction-above-1-is-invalid`, `format-version-a-boolean`,
+   `format-version-null`, `format-version-is-checked-first`;
+   `test_reader.py::test_a_later_format_version_refuses_the_file`,
+   `…::test_a_format_version_that_is_not_a_positive_integer_refuses_the_file` (the
+   messages).
 2. **`versions`**, an object: each key a version's name, each value a version (§5).
    Absent or not an object, the file is refused (`versions_missing`).
    Enforced by: corpus: `versions-absent`, `versions-not-an-object`.
@@ -241,13 +266,15 @@ object identity). A rule marked **(not pinned)** has neither.
 |---|---|
 | `invalid_json` | the text is not JSON; bytes or a file that are not UTF-8; a file that cannot be read (§2) |
 | `not_an_object` | the top level is not a JSON object (§2) |
-| `format_version_invalid` | `format_version` is present and not an integer of 1 or more (§3.1) |
+| `format_version_invalid` | `format_version` is present, and is neither an integer of 1 or more nor a pre-release string (§3.1) |
+| `format_version_unsupported` | `format_version` names a format other than 1: an integer above 1, or a pre-release string such as `"2a1"` (§3.1) |
 | `versions_missing` | `versions` is absent or not an object (§3.2) |
 | `current_version_missing` | none asked for, and `current_version` is absent, not a string, or empty with no `""` version (§4.2) |
 | `version_not_found` | the version asked for, or the current one, is not a key of `versions` (§4) |
 | `needs_missing` | the selected version is not an object, or has no `needs` object (§4.3) |
 
-They are checked in that order, so a file is refused for the first rule it breaks.
+They are checked in that order, so a file is refused for the first rule it breaks; the
+two `format_version` codes are one check, and a value is one or the other.
 Enforced by: corpus: `format-version-is-checked-first`,
 `versions-are-checked-before-current-version`.
 
@@ -255,12 +282,11 @@ Enforced by: corpus: `format-version-is-checked-first`,
 
 | code | path | when |
 |---|---|---|
-| `format_version_unsupported` | `format_version` | `format_version` above 1 (§3.1) |
 | `record_not_object` | `versions.<version>.needs.<key>` | a value of `needs` is not an object (§6.1) |
 | `defaults_removed_without_schema` | `versions.<version>.needs_defaults_removed` | §7.3 |
 | `id_mismatch` | `versions.<version>.needs.<key>.id` | §6.2 |
 
-The first three are the version's (`Version.diagnostics`), the last each record's
+The first two are the version's (`Version.diagnostics`), the last each record's
 (`Record.diagnostics`); a reader reports both, and the corpus compares them together, as
 a multiset.
 Enforced by: corpus: `every-finding-of-a-file-is-reported`.
