@@ -24,7 +24,8 @@ Improvements
   :ref:`needs_external_needs` are reported as ``needs.external_link_target_type``, and a link of ``links``
   that another link type with ``copy`` copied there when the need was created is not checked against
   the ``target_types`` of ``links`` (a needextend of the copying link type copies nothing, so it changes
-  nothing; an imported or external need copies again from the values its needs.json holds). The link type's ``schema`` count (``minItems``, ``maxItems``) is checked apart, by the schema
+  nothing; an imported or external need copies again from the values its needs.json holds).
+  The link type's ``schema`` count (``minItems``, ``maxItems``) is checked apart, by the schema
   validation: it counts every link, a refused or dead one included. A derived link type takes none in
   this release. The names that are no need type are one ``needs.config`` warning per declaration, and
   ignored; a ``target_types`` naming none keeps the target types of the declaration before it. The
