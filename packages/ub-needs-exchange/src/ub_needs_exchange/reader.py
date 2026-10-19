@@ -264,8 +264,13 @@ def _check_format_version(stated: Any) -> None:
     if integer and stated == FORMAT_VERSION:
         return
     # the value as JSON spells it -- ``"2a1"``, ``2``, ``2.0``, ``true``, ``null`` -- and a
-    # character outside ASCII as itself, for the person who reads the message
-    shown = json.dumps(stated, ensure_ascii=False, default=repr)
+    # character outside ASCII as itself, for the person who reads the message; a lone
+    # surrogate, which no encoder can write, as its escape
+    shown = (
+        json.dumps(stated, ensure_ascii=False, default=repr)
+        .encode("utf-8", "backslashreplace")
+        .decode("utf-8")
+    )
     if (integer and stated > FORMAT_VERSION) or (
         isinstance(stated, str) and _PRE_RELEASE.fullmatch(stated) is not None
     ):

@@ -28,7 +28,8 @@ guess.
   ``format_version_unsupported`` among ``Version.diagnostics`` meets it as a refusal
   instead.
 - **Both messages spell the value as JSON writes it** -- ``"2a1"``, ``2``, ``2.0``,
-  ``true``, ``null`` -- where 1.0.0 used Python's spelling (``'1'``, ``True``, ``None``).
+  ``true``, ``null``, and a character outside ASCII as itself -- where 1.0.0 used Python's
+  spelling (``'1'``, ``True``, ``None``).
 - **The contract and the corpus.** ``design/exchange-contract.md`` §3.1 and §8 say so,
   withdrawing 1.0.0's "a later format is to stay readable as this one", and the corpus
   has 90 cases: ``format-version-above-1-is-read-as-1`` is now

@@ -202,6 +202,7 @@ def test_select_version_refuses(data, requested, code, message):
         pytest.param("\uff12a1", '"\uff12a1"', id="non-ascii-digit"),
         pytest.param("2a1\uff10", '"2a1\uff10"', id="non-ascii-pre-release-number"),
         pytest.param("\u00e9", '"\u00e9"', id="non-ascii-letter-as-written"),
+        pytest.param("2a1\ud800", '"2a1\\ud800"', id="lone-surrogate-escaped"),
         pytest.param(0, "0", id="zero"),
         pytest.param(-2, "-2", id="negative"),
         pytest.param(1.0, "1.0", id="float"),
