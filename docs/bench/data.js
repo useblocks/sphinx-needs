@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792442881556,
+  "lastUpdate": 1792448605427,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -26316,6 +26316,42 @@ window.BENCHMARK_DATA = {
             "value": 49.09801992300001,
             "unit": "s",
             "extra": "Commit: f8f4d36102179aa94296edae0d09705ba46491d0\nBranch: master\nTime: 2026-10-19T22:46:41+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0e9189243e5a3a0709a6ac5de14cf930876ff58a",
+          "message": "🐛 target_types: refused on links beside a copying link type; how it combines with minItems (#2342)\n\n<!-- Thank you. Please keep the sections; a maintainer reads them in\nthis order. -->\n\n## What\n\n`packages/sphinx-needs`: a follow-up to #2319, from the review in\n\nhttps://github.com/useblocks/sphinx-needs/pull/2319#issuecomment-6277047494.\n\n- **`target_types` on `links` is refused beside a copying link type**\n(finding 2). It replaces the copy exemption.\n- With `copy = true`, `links` holds links written in it and links copied\ninto it, so \"which need types may `links`\n    point to\" does not say one thing.\n- Any exemption of the copies needs per-need state for an edge case.\n#2319 had an exemption rebuilt from the final\nvalues, which went stale after a needextend; a record of what was copied\nat creation needed two `NeedItem` slots\n    and an environment version.\n- So, while a link type copies into `links`, a `target_types` on `links`\nis one `needs.config` warning per\ndeclaration, and the key is ignored until `copy` is replaced (#2279):\n\n    ```\nWARNING: needs_links['links'] has a 'target_types', but 'verifies'\ncopies into links (copy = true); the key is ignored until copy is\nreplaced [needs.config]\n    ```\n\n- \"Copies into `links`\" means `copy`, not on `links` itself, and not on\na derived link type: the copy step's own\n    predicate.\n- It applies to the `needs_links` entry and to a need type's entry\nalike.\n  - The copying link type's own `target_types` still holds.\n- `copy` on `links` itself, or on a derived link type, copies nothing\nand refuses nothing.\n- The exemption goes from `check_links`. Nothing per need is stored, and\n`ENV_DATA_VERSION` is unchanged.\n- **`target_types` beside `minItems` / `maxItems`** (finding 1, option\n(b)), in the docs:\n- The schema count is every link the need holds, a refused or dead link\nincluded.\n- It is checked by the schema validation, and stops when that is\nswitched off.\n- It is reported as `sn_schema_violation.link_fail` with no place in the\ndocument, so one refused link over a\n    `maxItems` is reported by both.\n- The `contains` / `minContains` pointer for \"at least one `req`\" among\nseveral target types is back on the\n    schema page.\n- **Cleanup** (finding 3):\n- One \"a, b and c\" join (`sphinx_needs._wording.joined`) for the four\nplaces that wrote it; every message's words\n    are unchanged.\n- The unknown-name warning of `target_types` reuses `derive_by_type`'s\ntitle hint, `(did you mean 'spec'?)`. That\nhint also names a type when two share the title (the one given last).\n- The package AGENTS.md credits the link checks to `check_links`, which\n`post_process_needs_data` calls, not to\n    `resolve_links`.\n- The unreleased changelog entry of `target_types` is amended in place.\n\n## Why\n\nThe two Medium findings of the post-merge review of #2319:\n\n- the copy exemption read the copying link type's final values, so a\nneedextend made a stale copy warn;\n- how the type check and the count combine was not written down, and the\n`contains` / `minContains` pointer had been\n  dropped.\n\nPlus the Low cleanup. Refusing `target_types` on `links` next to `copy`\nis the smaller, well-defined rule until #2279\nreplaces `copy`. Option (a), a count beside `target_types`, is left for\n#2341, to be decided together with #2323.\n\n## Tests\n\nFull suite: 3516 passed.\n\n- **Conformance corpus** (`field_declaration_conformance.toml`), 83\ncases; ubCode's vendored copy\n  (useblocks/ubcode#4197) has to follow:\n  - **New:** `link-target-types-on-links-beside-copy`:\n    - `links` and a test type's `links` entry give `target_types`;\n    - `verifies` copies;\n- expected: no `links` finding (the key is ignored) and `verifies`' own\ntarget_types still checked.\n\n    It is red against the exemption code.\n- **Removed:** the cases pinning the exemption: `copy-into-links`,\n`copy-by-target-and-part` and\n    `copy-then-needextend`.\n- **Kept:** `copy-on-links` (copy on `links` itself refuses nothing),\nand the derived copy, renamed\n    `derived-copy-refuses-nothing`, with their `why`s reworded.\n  - **New and kept:** `link-target-types-with-min-items`:\n    - a refused link alone satisfies `minItems`, and so does a dead one;\n    - a need without links fails it (`link_fail`);\n    - one refused link over `maxItems` is reported by both.\n- The header's exemption clause is replaced by the refusal rule. It also\nsays the schema count is independent and\n    counts every link, refused and dead included.\n- `tests/test_link_target_types.py`:\n- the refusal, word for word, for the global declaration and a type\nentry, with two copying link types; a type\n    entry's other keys still apply;\n  - `copy` on `links` and on a derived link type refusing nothing;\n  - the shared join, and the title hint.\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-<package>`) and they\npass.\n- [x] Documentation is updated where behaviour or options change.\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-20T00:22:22+02:00",
+          "tree_id": "19886e4024b642493032e92b539242b3b08921e7",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/0e9189243e5a3a0709a6ac5de14cf930876ff58a"
+        },
+        "date": 1792448597525,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.06415509400000019,
+            "unit": "s",
+            "extra": "Commit: 0e9189243e5a3a0709a6ac5de14cf930876ff58a\nBranch: master\nTime: 2026-10-20T00:22:22+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 34.44975162,
+            "unit": "s",
+            "extra": "Commit: 0e9189243e5a3a0709a6ac5de14cf930876ff58a\nBranch: master\nTime: 2026-10-20T00:22:22+02:00"
           }
         ]
       }
