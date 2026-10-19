@@ -34,6 +34,12 @@ packages/sphinx-needs/tests/fixtures/derive_conformance.toml text eol=lf
 # the cases test.
 packages/sphinx-needs/tests/fixtures/field_declaration_conformance.toml text eol=lf
 
+# The namespaced-ids conformance corpus is the fifth TOML corpus in this file, and this repository is
+# its repository of RECORD too: ubCode is to vendor it byte-for-byte. Its `config = '...'`,
+# `source = '...'` and `files` bodies are case inputs, so a CRLF checkout would change what the
+# cases test.
+packages/sphinx-needs/tests/fixtures/namespace_conformance.toml text eol=lf
+
 # sphinx-codelinks' extraction corpus is shared byte-for-byte with ubCode, which copies its
 # YAML cases and takes the snapshots as the expected output of its parity test, so their
 # bytes must be the same on every platform. The tests do not depend on it: YAML normalises
