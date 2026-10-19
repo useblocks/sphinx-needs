@@ -421,7 +421,7 @@ def generate_need(
         k: _get_links_default(schema.get_link_field(k), **context) if v is None else v
         for k, v in links_no_defaults.items()
     }
-    _copy_links(links, schema)
+    copied = _copy_links(links, schema)
 
     # Unwrap core fields: extract concrete values and dynamic functions
     dynamic_fields: dict[str, FieldFunctionArray | LinksFunctionArray] = {}
@@ -525,6 +525,7 @@ def generate_need(
             dynamic_fields=dynamic_fields,
             # one set for every need type, the schema's own (derived_names)
             derived=schema.derived_names,
+            copied=copied,
             _validate=False,
         )
     except ValueError as err:
@@ -1604,15 +1605,19 @@ def _make_hashed_id(
 def _copy_links(
     links: dict[str, LinksLiteralValue | LinksFunctionArray | None],
     schema: TypeFieldsSchema,
-) -> None:
+) -> list[NeedLink | DynamicFunctionParsed | VariantFunctionParsed | VariantDataParsed]:
     """Implement 'copy' logic for links, on the schema of the need's type.
 
     Nothing is copied into a derived ``links``: it holds what its rule computes.
+
+    :return: What was copied, as written: the need records it, and a link of
+        ``links`` that a copy put there is not checked against the ``target_types``
+        of ``links``.
     """
     if "links" not in links:
-        return  # should not happen, but be defensive
+        return []  # should not happen, but be defensive
     if (target := schema.get_link_field("links")) is not None and target.derived:
-        return
+        return []
     copy_links: list[
         NeedLink | DynamicFunctionParsed | VariantFunctionParsed | VariantDataParsed
     ] = []
@@ -1644,6 +1649,7 @@ def _copy_links(
             links["links"] = LinksFunctionArray(
                 tuple(links["links"].value) + tuple(copy_links_literal)
             )
+    return copy_links
 
 
 class DefaultContextData(TypedDict):

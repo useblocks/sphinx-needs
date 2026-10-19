@@ -16,6 +16,7 @@ from typing import Any
 import pytest
 from sphinx.testing.util import SphinxTestApp
 
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.derive import DeriveRule
 from sphinx_needs.needs import _type_descendants
 from sphinx_needs.needs_schema import (
@@ -407,6 +408,61 @@ def test_the_copy_exemption_is_by_target_and_part(test_app: SphinxTestApp) -> No
         "'links': target need type 'req' is not one of 'spec' (or a type inheriting "
         "from it) [needs.link_target_type]",
     ]
+
+
+DYNAMIC_COPY_INDEX = """\
+.. req:: Requirement
+   :id: REQ_1
+
+.. req:: Requirement
+   :id: REQ_2
+
+.. spec:: Specification
+   :id: SPEC_1
+
+.. test:: A computed copy, its verifies then replaced
+   :id: TEST_1
+   :verifies: [[links_from_filter("id == 'REQ_1'")]]
+
+.. test:: A computed copy, and the same need written in links
+   :id: TEST_2
+   :verifies: [[links_from_filter("id == 'REQ_1'")]]
+   :links: REQ_1
+
+.. test:: Links written by hand, matching what a needextend adds
+   :id: TEST_3
+   :links: REQ_2
+
+.. needextend:: TEST_1
+   :verifies: SPEC_1
+
+.. needextend:: TEST_3
+   :+verifies: REQ_2
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app", [_project(COPY_TOML, DYNAMIC_COPY_INDEX)], indirect=True
+)
+def test_a_computed_copy_is_exempt_as_it_resolves(test_app: SphinxTestApp) -> None:
+    """A dynamic function a ``copy`` link type copies into ``links`` is recorded as it
+    resolves there, so its links are exempt, also after a needextend replaces the
+    copying link type (which is checked as the needextend leaves it); a link written
+    in ``links`` equal to a copy is the same link. A needextend copies nothing, so a
+    link of ``links`` matching only what a needextend adds is checked."""
+    test_app.build()
+    assert build_warnings(test_app) == [
+        "<srcdir>/index.rst:13: WARNING: Need 'TEST_1' link 'SPEC_1' in field "
+        "'verifies': target need type 'spec' is not one of 'req' (or a type "
+        "inheriting from it) [needs.link_target_type]",
+        "<srcdir>/index.rst:22: WARNING: Need 'TEST_3' link 'REQ_2' in field 'links': "
+        "target need type 'req' is not one of 'spec' (or a type inheriting from it) "
+        "[needs.link_target_type]",
+    ]
+    needs = SphinxNeedsData(test_app.env).get_needs_view()
+    assert needs["TEST_1"].copied_targets == {("REQ_1", None)}
+    assert needs["TEST_1"]["links"] == ["REQ_1"]
+    assert needs["TEST_3"].copied_targets == frozenset()
 
 
 def _link(**kwargs: Any) -> LinkSchema:
