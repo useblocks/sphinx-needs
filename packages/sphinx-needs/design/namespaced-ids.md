@@ -141,8 +141,10 @@ long as it exists.
 
 Every deployed reader ignores the marker and reads the joined string as the id
 (`ub-needs-exchange` 1.0.0, sphinx-needs 9.0.0, ubCode; measured during the design, October
-2026), and with the switch off no needs.json or warning changes: measured on a namespaced
-probe project and on every needs.json the test suite writes.
+2026). With the switch off no needs.json changes, measured on a namespaced probe project and
+on every needs.json the test suite writes; nor does any warning, but needsequence's: its
+participants are named as needflow names its nodes, so an id holding `::` or `-` no longer
+breaks its PlantUML diagram, in every project.
 
 Per-id files (`needs_build_json_per_id`) cannot be written for an id holding `::` on
 Windows, where `:` is not a legal file-name character; a file naming for namespaced ids is

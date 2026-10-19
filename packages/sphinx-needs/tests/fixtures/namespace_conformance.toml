@@ -452,7 +452,7 @@ local_id = "REQ_001.x"
 
 [[case]]
 name = "on-a-dot-in-the-local-id-is-refused"
-why = "a local id holds no . (a . starts a need part): NS::REQ_001.x is not created"
+why = "the local id after a :: holds no . (a . starts a need part): NS::REQ_001.x is not created"
 config = '''
 [needs]
 namespaced_ids = true

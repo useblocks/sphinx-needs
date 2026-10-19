@@ -41,8 +41,8 @@ need by its whole id, as they always have.
 
 - A namespace segment is an ASCII letter followed by ASCII letters, digits, ``_`` or
   ``-``.
-- A local id is not empty, does not begin with ``:``, and holds neither ``::`` nor ``.``
-  (a ``.`` starts a :ref:`need part <need_part>`).
+- A local id after a ``::`` is not empty, does not begin with ``:``, and holds neither
+  ``::`` nor ``.`` (a ``.`` starts a :ref:`need part <need_part>`).
 
 A need written in the sources whose id breaks either rule is not created, and its warning
 names the rule it breaks, as for an id that does not match :ref:`needs_id_regex`.
