@@ -228,7 +228,7 @@ Breaking changes
   An extension reading :func:`~sphinx_needs.api.configuration.get_need_types` finds
   ``issue``, ``pr`` and ``commit`` only for the configured services, listed from
   sphinx-needs' own ``config-inited`` handler at priority 12 on, so from a handler above 12
-  (:pr:`2321`).
+  (:pr:`2321`, :pr:`2329`).
 
 - ‼️ ``app.config.needs_types`` and ``app.config.needs_layouts`` no longer hold the need
   types and layouts added by extensions or by the configured GitHub services, and the types and
@@ -293,7 +293,7 @@ Deprecations
   configured in :ref:`needs_services` may declare ``fields`` without ``options``; one
   whose ``options`` or ``fields`` is not a list of names (a string, read as one name per
   letter, or a value that is not iterable, which ended the build) is reported as a
-  ``needs.config`` warning and not registered.
+  ``needs.config`` warning and not registered (:issue:`2327`, :pr:`2329`)
 
 - ♻️ :ref:`needimport` and :ref:`needs_external_needs` read a needs.json through the new
   ``ub-needs-exchange`` library, a new dependency of sphinx-needs; nothing they read or
