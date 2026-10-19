@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792359939600,
+  "lastUpdate": 1792405432498,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -26172,6 +26172,42 @@ window.BENCHMARK_DATA = {
             "value": 35.19102395599998,
             "unit": "s",
             "extra": "Commit: e4721e61d5a34a854f16a5e9b88d037161a26696\nBranch: master\nTime: 2026-10-18T23:44:39+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fcdb3c2116ffb3a804478ccc1478e744113ac76b",
+          "message": "🧪 Pin `required` on `content` in the schema fixtures (#2330)\n\n## What\n\nTwo cases in `packages/sphinx-needs/tests/schema/fixtures/fields.yml`,\nplus their snapshots in `tests/schema/__snapshots__/test_schema.ambr`:\n\n- `required_content` — a need with a body, `required: [\"content\"]`,\nexpecting **no** finding.\n- `required_content_missing` — a need without a body, the same schema,\nexpecting the `required` finding.\n\n## Why\n\n`content` is a core field whose empty value equals its default (`\"\"`),\nso `required: [\"content\"]` is the rule that reports a need without a\nbody; `minLength` alone cannot, because reduction strips the\ndefault-valued field first. That is sphinx-needs' behaviour, but the\nschema fixture corpus never pinned it: no fixture named `content` at\nall, and the only core fields it ever put in `required` were `id` and\n`type`, both special-cased. A divergence in a consumer's own\n`reduce_need` therefore went unseen.\n\nRefs useblocks/ubcode#4213, where `ubc check` reports the violation on\nevery need — including ones with a full body — and `minLength` alone\nthen misses the empty one. With this pair in the shared corpus, a\nre-sync of the vendored fixtures catches that divergence.\n\n## Tests\n\n`uv run poe test-needs tests/schema/test_schema.py` → 143 passed (244\nsnapshots).\n\nThe two new cases pin both directions of the rule: a non-empty content\nis not reported, an empty one is.\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-needs\ntests/schema/test_schema.py`) and they pass.\n- [x] Documentation: no behaviour or option changes — test fixtures\nonly.\n- [x] `docs/changelog.rst`: no entry, matching other test-only changes.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.\n\n> The first box is deliberately left unchecked: this is an AI-assisted\ntest-fixture change prompted by useblocks/ubcode#4213, for review before\nmerging.",
+          "timestamp": "2026-10-19T12:22:27+02:00",
+          "tree_id": "8d9468c25c4b527571ef4ecfda079008627d0468",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/fcdb3c2116ffb3a804478ccc1478e744113ac76b"
+        },
+        "date": 1792405422359,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.10530478100000096,
+            "unit": "s",
+            "extra": "Commit: fcdb3c2116ffb3a804478ccc1478e744113ac76b\nBranch: master\nTime: 2026-10-19T12:22:27+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 54.40807672999999,
+            "unit": "s",
+            "extra": "Commit: fcdb3c2116ffb3a804478ccc1478e744113ac76b\nBranch: master\nTime: 2026-10-19T12:22:27+02:00"
           }
         ]
       }
