@@ -15,15 +15,14 @@ from sphinx.util.docutils import SphinxDirective
 from sphinx.util.logging import getLogger
 
 from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig, NeedType
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import log_warning
-from sphinx_needs.services.base import BaseService
+from sphinx_needs.services.base import BaseService, service_options
 from sphinx_needs.services.config.github import (
-    CONFIG_OPTIONS,
-    EXTRA_DATA_OPTIONS,
-    EXTRA_IMAGE_OPTIONS,
-    EXTRA_LINK_OPTIONS,
     GITHUB_DATA,
+    GITHUB_FIELDS,
     GITHUB_LAYOUT,
+    GITHUB_OPTIONS,
     GITHUB_SERVICES,
 )
 
@@ -108,9 +107,8 @@ def add_configured_github_services(app: Sphinx, config: Config) -> None:
 
 
 class GithubService(BaseService):
-    options = (
-        CONFIG_OPTIONS + EXTRA_DATA_OPTIONS + EXTRA_LINK_OPTIONS + EXTRA_IMAGE_OPTIONS
-    )
+    options = list(GITHUB_OPTIONS)
+    fields = list(GITHUB_FIELDS)
 
     def __init__(
         self, app: Sphinx, name: str, config: dict[str, Any], **kwargs: Any
@@ -441,16 +439,30 @@ class GithubService(BaseService):
     def _add_given_options(
         self, options: dict[str, Any], element_data: dict[str, Any]
     ) -> None:
-        """
-        Add data from options, which was defined by user but is not set by this service
+        """Add the directive's options the service did not set, such as a field of the
+        project's own, to the data of a need: not the service's own data, and not its
+        control options (``query``, ...), which are request parameters, not need fields.
 
-        :param options:
-        :param element_data:
-        :return:
+        :param options: The options of the ``needservice`` directive.
+        :param element_data: The data of a need, updated in place.
         """
+        # the options the needservice accepted as the service's: those of the class
+        # (or factory) it was registered with, which for one written for the old
+        # meaning of ``options`` are none -- its options are need fields, and are
+        # copied as they were
+        control = (
+            SphinxNeedsData(self.app.env)
+            .get_or_create_services()
+            .directive_options(self.name)
+        )
+        if control is None:  # not registered under its name
+            control = service_options(type(self))
         for key, value in options.items():
-            # Check if given option is not already handled and is not part of the service internal options
-            if key not in element_data and key not in GITHUB_DATA:
+            if (
+                key not in element_data
+                and key not in GITHUB_DATA
+                and key not in control
+            ):
                 element_data[key] = value
 
 

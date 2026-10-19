@@ -23,9 +23,15 @@ An empty configuration will do:
     [needs.services.github-issues]
 
 A configured service brings the fields its needs carry (``url``, ``user``, ``avatar``, ``service``, ``created_at``,
-``updated_at``, ``closed_at``, and the options ``query``, ``specific``, ``max_amount``, ``max_content_lines`` and
-``id_prefix``), its :ref:`need type <service_github_need_type>` and the :ref:`github layout <service_github_layout>`.
+``updated_at`` and ``closed_at``), its :ref:`need type <service_github_need_type>` and the
+:ref:`github layout <service_github_layout>`.
 A project that configures none of the three has none of them.
+``query``, ``specific``, ``max_amount``, ``max_content_lines`` and ``id_prefix`` are options of the
+:ref:`needservice` directive naming a GitHub service, which tell the service what to request: they are not need
+fields, so they are not set on its needs nor written to :ref:`needs.json <needs_builder_format>`, and a need or
+:ref:`needextend` setting one is an ``Unknown option`` warning that says so.
+A field of one of these names declared in :ref:`needs_fields` is a field like any other,
+but on a GitHub ``needservice`` the option is the service's, and the field is not set from it.
 A :ref:`needservice` naming a service that is not configured creates nothing,
 and warns (``needs.load_service_need``) with the configuration to add.
 

@@ -1,12 +1,12 @@
 """The built-in GitHub services are registered only when ``needs_services`` names them.
 
 ``github-issues``, ``github-prs`` and ``github-commits`` used to be registered in every
-build, so every project carried their twelve fields (``url``, ``user``, ``avatar``, ...),
+build, so every project carried their twelve keys (``url``, ``user``, ``avatar``, ...),
 their three need types (``issue``, ``pr``, ``commit``) and the ``github`` layout,
 whether or not it used GitHub. A built-in is now registered only when ``needs_services``
 names it with a mapping of options (``{}`` will do), from ``conf.py`` or a
 ``[needs.services.<name>]`` table of the ``needs_from_toml`` file: then the service, the
-twelve fields, the need type of that service alone, and the layout. A ``needservice``
+seven fields, the need type of that service alone, and the layout. A ``needservice``
 naming an unconfigured built-in is one warning that says how to configure it, and a
 needs.json written by an earlier version, which carries the twelve keys on every need,
 still imports without a warning for their empty values.
@@ -36,7 +36,7 @@ CONF = 'extensions = ["sphinx_needs"]\nneeds_build_json = True\n'
 #: each built-in service, and the need type it adds
 BUILT_IN = {"github-issues": "issue", "github-prs": "pr", "github-commits": "commit"}
 
-#: the fields every built-in service registers (its ``options`` but ``type``)
+#: the fields every built-in service registers (its ``fields``)
 SERVICE_FIELDS = {
     "user",
     "created_at",
@@ -45,12 +45,12 @@ SERVICE_FIELDS = {
     "service",
     "url",
     "avatar",
-    "query",
-    "specific",
-    "max_amount",
-    "max_content_lines",
-    "id_prefix",
 }
+#: the needservice options of every built-in service, which were fields too until
+#: tests/test_services/test_service_control_options.py
+SERVICE_OPTIONS = {"query", "specific", "max_amount", "max_content_lines", "id_prefix"}
+#: the twelve keys an earlier version wrote on every need
+SERVICE_KEYS = SERVICE_FIELDS | SERVICE_OPTIONS
 
 
 def services_conf(*names: str) -> str:
@@ -100,7 +100,7 @@ def has_github_layout(app: Any) -> bool:
 
 
 def test_a_project_naming_no_service_has_no_github_service(build: Any) -> None:
-    """No service, none of the twelve fields (in the schema or on a need of needs.json),
+    """No service, none of the twelve keys (in the schema or on a need of needs.json),
     no ``issue``/``pr``/``commit`` and no ``github`` layout."""
     app = build({"conf.py": CONF, "index.rst": RST + "\n.. req:: R\n   :id: R_001\n"})
     assert_no_warnings(app)
@@ -110,18 +110,20 @@ def test_a_project_naming_no_service_has_no_github_service(build: Any) -> None:
     assert not has_github_layout(app)
     needs_json = json.loads(Path(app.outdir, "needs.json").read_text("utf-8"))
     version = needs_json["versions"][needs_json["current_version"]]
-    assert SERVICE_FIELDS.isdisjoint(version["needs"]["R_001"])
-    assert SERVICE_FIELDS.isdisjoint(version["needs_schema"]["properties"])
+    assert SERVICE_KEYS.isdisjoint(version["needs"]["R_001"])
+    assert SERVICE_KEYS.isdisjoint(version["needs_schema"]["properties"])
 
 
 @pytest.mark.parametrize("name", list(BUILT_IN))
 def test_a_configured_built_in_adds_its_own_type_only(build: Any, name: str) -> None:
-    """Configuring one built-in registers that service, the twelve fields, the
+    """Configuring one built-in registers that service, the seven fields, the
     ``github`` layout and its own need type -- not the other two services' types."""
     app = build({"conf.py": services_conf(name)})
     assert_no_warnings(app)
     assert registered(app) == {name}
     assert service_fields(app) == SERVICE_FIELDS
+    schema = SphinxNeedsData(app.env).get_schema()
+    assert SERVICE_OPTIONS.isdisjoint(schema.iter_extra_field_names())
     assert service_types(app) == {BUILT_IN[name]}
     assert has_github_layout(app)
 
@@ -426,7 +428,7 @@ def old_needs_json(**values: Any) -> str:
         "id": "OLD_1",
         "title": "Old",
         "type": "req",
-        **dict.fromkeys(sorted(SERVICE_FIELDS)),
+        **dict.fromkeys(sorted(SERVICE_KEYS)),
         **values,
     }
     return json.dumps(
@@ -474,18 +476,18 @@ def test_an_old_needs_json_imports_its_empty_service_keys_silently(
     older files) where no service made the need. Into a project with no service they
     are dropped without the unknown-keys warning, which would fail a ``-W`` build of a
     project that never used GitHub."""
-    values = dict.fromkeys(SERVICE_FIELDS, empty)
+    values = dict.fromkeys(SERVICE_KEYS, empty)
     app = build(import_project(reader, CONF, old_needs_json(**values)))
     assert_no_warnings(app)
     need = SphinxNeedsData(app.env).get_needs_view()["OLD_1"]
-    assert SERVICE_FIELDS.isdisjoint(need.keys())
+    assert SERVICE_KEYS.isdisjoint(need.keys())
 
 
 @pytest.mark.parametrize("reader", list(READERS))
 def test_an_unknown_key_beside_the_empty_service_keys_is_still_reported(
     build: Any, reader: str
 ) -> None:
-    """Only the twelve service names are dropped silently: any other key the project
+    """Only the twelve service keys are dropped silently: any other key the project
     does not know is reported, empty or not."""
     app = build(import_project(reader, CONF, old_needs_json(foo=None)))
     assert build_warnings(app) == [unknown_keys_warning(reader, ["foo"])]
@@ -495,19 +497,20 @@ def test_an_unknown_key_beside_the_empty_service_keys_is_still_reported(
 def test_an_old_needs_json_reports_a_service_key_that_holds_a_value(
     build: Any, reader: str
 ) -> None:
-    """Only an empty value is dropped silently: a value is data the project cannot
-    keep, and is reported as an unknown key, as before."""
+    """Only an empty value of a data key is dropped silently: a value is data the
+    project cannot keep, and is reported as an unknown key, as before (a control key,
+    such as ``query``, is dropped whatever its value: test_service_control_options.py)."""
     app = build(import_project(reader, CONF, old_needs_json(url="https://x.org")))
     assert build_warnings(app) == [unknown_keys_warning(reader, ["url"])]
     need = SphinxNeedsData(app.env).get_needs_view()["OLD_1"]
-    assert SERVICE_FIELDS.isdisjoint(need.keys())
+    assert SERVICE_KEYS.isdisjoint(need.keys())
 
 
 @pytest.mark.parametrize("reader", list(READERS))
 def test_a_configured_service_imports_the_service_keys_as_fields(
     build: Any, reader: str
 ) -> None:
-    """With a built-in configured the twelve keys are fields, and are imported as
+    """With a built-in configured the seven data keys are fields, and are imported as
     they are: an empty string stays one."""
     app = build(
         import_project(

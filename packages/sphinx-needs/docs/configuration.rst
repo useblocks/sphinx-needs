@@ -3301,8 +3301,9 @@ The class is a Python type, so it can be set only here in :file:`conf.py`, or re
 an extension through the API: in a :ref:`needs_from_toml` file a service's table holds its
 options only. Note that the file's ``services`` table replaces the whole
 ``needs_services`` of :file:`conf.py`, as every key it sets does. A ``class`` that is not
-callable or has no ``options``, or a ``class_init`` that is not a mapping, is reported as
-a ``needs.config`` warning and that service is not registered.
+callable, declares neither ``options`` nor ``fields``, or declares one that is not a list of
+names (such as a string), or a ``class_init`` that is not a mapping, is reported as a
+``needs.config`` warning and that service is not registered.
 
 Config options are service specific and are described by :ref:`services`.
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Iterable, Sequence
 from typing import Any, ClassVar
 
 from sphinx.util.docutils import SphinxDirective
@@ -8,7 +9,19 @@ from sphinx_needs.logging import get_logger
 
 
 class BaseService:
-    options: ClassVar[list[str]]
+    options: ClassVar[Sequence[str]]
+    """The options of the ``needservice`` directive the service reads, beside those of
+    a need: request parameters, such as the GitHub services' ``query``. They are never
+    need fields, and are not copied onto the needs the service creates."""
+
+    fields: ClassVar[Sequence[str]]
+    """The need fields the service's needs carry, registered when the service is.
+
+    Declare it in the class that declares ``options`` (keeping any it inherits, such
+    as ``[*GithubService.fields, ...]``): a service class that declares ``options`` but
+    no ``fields`` of its own is read the way it was written, its options being its
+    fields too (deprecated).
+    """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.log = get_logger(__name__)
@@ -27,3 +40,87 @@ class BaseService:
 
     def debug(self, *args: Any, **kwargs: Any) -> Any:
         raise NotImplementedError("Must be implemented by the service!")
+
+
+def service_declaration_problem(klass: object, /) -> str | None:
+    """Why a service class's ``options`` or ``fields`` cannot be read as lists of
+    names, or None. Either may be missing, and ``fields`` may be None (no fields); a
+    string would be read as one name per letter.
+
+    :param klass: The service class, as ``needs_services`` or the API gives it.
+    """
+    for attribute in ("options", "fields"):
+        if not hasattr(klass, attribute):
+            continue
+        value = getattr(klass, attribute)
+        if attribute == "fields" and value is None:
+            continue
+        if isinstance(value, str) or not isinstance(value, Iterable):
+            return (
+                f"declares {attribute!r} as a value of type {type(value).__name__!r}, "
+                "where a list of names is needed"
+            )
+    return None
+
+
+def is_legacy_service(klass: object, /) -> bool:
+    """Whether a service class is written for the old meaning of ``options``, where its
+    options were its need fields too.
+
+    It is when it has no ``fields``, or when the class declaring ``options`` comes
+    earlier in its MRO than the one declaring ``fields`` -- such as a subclass of
+    ``GithubService`` adding to its options, or a class taking ``fields`` from a
+    mixin. The class may be any callable carrying the
+    attributes, such as a factory function, which is read by its attributes alone.
+
+    :param klass: The service class, as ``needs_services`` or the API gives it.
+    """
+    if getattr(klass, "fields", None) is None:
+        return True
+    mro = getattr(klass, "__mro__", None)
+    if not isinstance(mro, tuple):
+        return False
+    options_owner = next((i for i, k in enumerate(mro) if "options" in vars(k)), None)
+    fields_owner = next((i for i, k in enumerate(mro) if "fields" in vars(k)), None)
+    return (
+        options_owner is not None
+        and fields_owner is not None
+        and options_owner < fields_owner
+    )
+
+
+def service_fields(klass: object, /) -> list[str]:
+    """The need fields a service class registers: its ``fields``; for a class written
+    for the old meaning, its options but ``type`` (a core field) too.
+
+    :param klass: The service class, as ``needs_services`` or the API gives it.
+    """
+    fields: list[str] = list(getattr(klass, "fields", None) or ())
+    if is_legacy_service(klass):
+        fields.extend(
+            option for option in legacy_service_options(klass) if option not in fields
+        )
+    return fields
+
+
+def legacy_service_options(klass: object, /) -> list[str]:
+    """The options of a service class written for the old meaning, which it registers
+    as need fields: its options but ``type``, a core field. Empty for another class.
+
+    :param klass: The service class, as ``needs_services`` or the API gives it.
+    """
+    if not is_legacy_service(klass):
+        return []
+    return [option for option in getattr(klass, "options", ()) if option != "type"]
+
+
+def service_options(klass: object, /) -> list[str]:
+    """The options of the ``needservice`` directive a service class reads, which are
+    not need fields. Empty for a class written for the old meaning, whose options are
+    its fields.
+
+    :param klass: The service class, as ``needs_services`` or the API gives it.
+    """
+    if is_legacy_service(klass):
+        return []
+    return list(getattr(klass, "options", ()))

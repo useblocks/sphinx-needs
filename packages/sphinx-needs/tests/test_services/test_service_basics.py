@@ -5,9 +5,14 @@ from sphinx.application import Sphinx
 
 from sphinx_needs.services.base import BaseService
 from sphinx_needs.services.manager import ServiceManager
+from sphinx_needs_testkit import build_warnings
 
 
 class ServiceTest(BaseService):
+    """A service written for the old meaning of ``options``, kept as the pin of its
+    back-compatibility: no ``fields``, so its options are registered as need fields
+    (``exists`` reaches the need), with one ``needs.deprecated`` warning."""
+
     options = ["custom_option", "exists"]
 
     def __init__(self, _app: Sphinx, _name: str, config, **kwargs) -> None:
@@ -62,6 +67,14 @@ def test_service_creation(test_app):
     app = test_app
     app.build()
     assert isinstance(app._needs_services, ServiceManager)
+    # the legacy class warns once; NoDebugService, whose options are empty, does not
+    assert [w for w in build_warnings(app) if "[needs.deprecated]" in w] == [
+        "WARNING: Service 'testservice': its class 'ServiceTest' declares 'options' "
+        "but no 'fields' of its own, so its options ('custom_option', 'exists') are "
+        "registered as need fields. This is deprecated: from sphinx-needs 10.0 a "
+        "service's 'options' are only the needservice options it reads; list the "
+        "fields its needs carry in 'fields' (an empty list will do) [needs.deprecated]"
+    ]
 
     manager = app._needs_services
     service = manager.get("testservice")

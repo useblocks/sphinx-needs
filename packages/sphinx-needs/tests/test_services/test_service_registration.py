@@ -46,7 +46,10 @@ def not_callable(type_name: str) -> str:
 
 
 def no_options(class_name: str) -> str:
-    return f"its 'class' {class_name!r} has no 'options', which a service class needs"
+    return (
+        f"its 'class' {class_name!r} has neither 'options' nor 'fields', which a "
+        "service class declares"
+    )
 
 
 def class_init_warning(name: str, got: str) -> str:
@@ -101,9 +104,9 @@ def test_a_string_class_in_the_toml_warns_and_the_service_is_skipped(build):
     [
         pytest.param('"x"', not_callable("str"), id="string"),
         pytest.param("None", not_callable("NoneType"), id="none"),
-        # callable, but without the ``options`` the registration reads first
+        # callable, but with neither the ``options`` nor the ``fields`` of a service
         pytest.param("a_function", no_options("a_function"), id="function"),
-        # a type, but without the ``options`` the registration reads first
+        # a type, but with neither the ``options`` nor the ``fields`` of a service
         pytest.param("dict", no_options("dict"), id="class-without-options"),
     ],
 )
@@ -111,7 +114,8 @@ def test_a_class_in_conf_py_that_would_crash_the_registration_warns(
     build, value, problem
 ):
     """The same check covers a wrong value in ``conf.py``, with the same warning:
-    everything that is not callable, and a callable without ``options``."""
+    everything that is not callable, and a callable with neither ``options`` nor
+    ``fields``."""
     app = build(
         {
             "conf.py": f"""\

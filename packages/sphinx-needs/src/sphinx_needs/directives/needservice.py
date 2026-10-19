@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from typing import Any, Final
 
 from docutils import nodes
@@ -92,10 +92,10 @@ class NeedserviceDirective(SphinxDirective):
         needs_schema = SphinxNeedsData(self.env).get_schema()
         needs_services = SphinxNeedsData(self.env).get_or_create_services()
 
-        # the service first, before its options: a built-in service's control options
-        # are fields only once a service registered them, so an unconfigured built-in
-        # would otherwise be one "Unknown option" warning per option before the one
-        # warning that names the cause
+        # the service first, before its options: they are validated against the
+        # service's own (``query``, ...), so an unconfigured built-in would otherwise be
+        # one "Unknown option" warning per option before the one warning that names the
+        # cause
         service_name = self.arguments[0]
         try:
             service = needs_services.get(service_name)
@@ -108,7 +108,9 @@ class NeedserviceDirective(SphinxDirective):
             return []
 
         try:
-            self._process_options(needs_schema)
+            self._process_options(
+                needs_schema, needs_services.directive_options(service_name) or ()
+            )
         except (AssertionError, ValueError):
             return []
 
@@ -229,9 +231,15 @@ class NeedserviceDirective(SphinxDirective):
 
         return section
 
-    def _process_options(self, needs_schema: FieldsSchema) -> None:
+    def _process_options(
+        self, needs_schema: FieldsSchema, service_options: Collection[str]
+    ) -> None:
         """
         Process the options of the directive and coerce them to the correct value.
+
+        :param needs_schema: The fields schema, whose fields and links are options.
+        :param service_options: The options the named service reads, which are not
+            need fields; one of them wins over a field of its name.
         """
         link_keys = set(needs_schema.iter_link_field_names())
         extra_keys = set(needs_schema.iter_extra_field_names())
@@ -251,11 +259,13 @@ class NeedserviceDirective(SphinxDirective):
                         | "pre_template"
                         | "post_template"
                         | "constraints"
-                        | "type"  # TODO this is only used by the github service
+                        | "type"
                     ):
                         assert value, f"'{key}' must not be empty"
                     case "collapse" | "hide" | "jinja_content":
                         self.options[key] = coerce_to_boolean(value)
+                    case key if key in service_options:
+                        self.options[key] = value or ""
                     case key if key in extra_keys:
                         self.options[key] = value or ""
                     case key if key in link_keys:
