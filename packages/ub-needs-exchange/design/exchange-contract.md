@@ -92,9 +92,9 @@ object identity). A rule marked **(not pinned)** has neither.
    every file written before the key existed is — and so is a file that says `1`. Format 1
    is the only format this reader reads. A file of any other format is **refused**, whatever
    else its envelope holds (`format_version_unsupported`): an integer above 1, such as `2`,
-   or a pre-release of a format — a string of a format number, `a`, `b` or `rc`, and a
-   pre-release number, each number written in the digits `0`–`9` without leading zeros:
-   `"2a1"`, `"2b1"`, `"2rc1"`.
+   or a pre-release of a format — a string of a format number of 1 or more, `a`, `b` or
+   `rc`, and a pre-release number of 1 or more, each written in the digits `0`–`9`
+   without leading zeros: `"2a1"`, `"2b1"`, `"2rc1"`.
    A later format is not read as this one, even when its envelope could be: what its
    records mean is not this contract's. Any other value is not a format version and refuses
    the file too (`format_version_invalid`): any other string, even `"1"` or `"2.0"`; `0`

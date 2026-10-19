@@ -10,20 +10,23 @@ Changelog
 
 :Released: 2026-10-19
 
-A needs.json whose ``format_version`` names a later format is refused, where 1.0.0 read it
-as format 1 and reported it: the format a file states is what tells a later format of
+A needs.json whose ``format_version`` names a later format is refused with its own code,
+where 1.0.0 read an integer above 1 as format 1 and reported it, and refused a pre-release
+string as not a format version: the format a file states is what tells a later format of
 needs.json from this one, and what a later format's records mean is not this reader's to
 guess.
 
 - **A later ``format_version`` refuses the file.** An integer above 1, such as ``2``, or a
-  pre-release of a format -- a format number, ``a``, ``b`` or ``rc``, and a pre-release
-  number, as in ``"2a1"``, ``"2b1"`` or ``"2rc1"`` -- raises ``ExchangeError`` with the
-  code ``format_version_unsupported``, which 1.0.0 gave as a ``Diagnostic`` of a file it
-  read on. It is checked before anything else in the envelope, so a file of a later format
-  that has no ``versions`` is refused for its format, not as ``versions_missing``. Absent
-  or ``1``, the file is read as before, and any other value is still
-  ``format_version_invalid``. A consumer that looked for ``format_version_unsupported``
-  among ``Version.diagnostics`` meets it as a refusal instead.
+  pre-release of a format -- a format number of 1 or more, ``a``, ``b`` or ``rc``, and a
+  pre-release number of 1 or more, each written in the digits ``0``–``9`` without leading
+  zeros, as in ``"2a1"``, ``"2b1"`` or ``"2rc1"`` -- raises ``ExchangeError`` with the
+  code ``format_version_unsupported``, which 1.0.0 gave, for an integer, as a
+  ``Diagnostic`` of a file it read on. It is checked before anything else in the
+  envelope, so a file of a later format that has no ``versions`` is refused for its
+  format, not as ``versions_missing``. Absent or ``1``, the file is read as before, and
+  any other value is still ``format_version_invalid``. A consumer that looked for
+  ``format_version_unsupported`` among ``Version.diagnostics`` meets it as a refusal
+  instead.
 - **Both messages spell the value as JSON writes it** -- ``"2a1"``, ``2``, ``2.0``,
   ``true``, ``null`` -- where 1.0.0 used Python's spelling (``'1'``, ``True``, ``None``).
 - **The contract and the corpus.** ``design/exchange-contract.md`` §3.1 and §8 say so,
