@@ -188,11 +188,24 @@ def test_select_version_refuses(data, requested, code, message):
 @pytest.mark.parametrize(
     ("stated", "shown"),
     [
-        pytest.param("1", "'1'", id="string"),
+        pytest.param("1", '"1"', id="string"),
+        pytest.param("2.0", '"2.0"', id="dotted-string"),
+        pytest.param("2a", '"2a"', id="pre-release-without-number"),
+        pytest.param("2a0", '"2a0"', id="pre-release-zero"),
+        pytest.param("2a01", '"2a01"', id="pre-release-number-leading-zero"),
+        pytest.param("2b", '"2b"', id="beta-without-number"),
+        pytest.param("2c1", '"2c1"', id="unknown-pre-release-segment"),
+        pytest.param("2A1", '"2A1"', id="upper-case-segment"),
+        pytest.param("02a1", '"02a1"', id="pre-release-leading-zero"),
+        pytest.param("2a1 ", '"2a1 "', id="pre-release-trailing-space"),
+        pytest.param("v2", '"v2"', id="prefixed"),
+        pytest.param("\uff12a1", '"\\uff12a1"', id="non-ascii-digit"),
         pytest.param(0, "0", id="zero"),
+        pytest.param(-2, "-2", id="negative"),
         pytest.param(1.0, "1.0", id="float"),
-        pytest.param(True, "True", id="bool"),
-        pytest.param(None, "None", id="null"),
+        pytest.param(2.0, "2.0", id="float-above-1"),
+        pytest.param(True, "true", id="bool"),
+        pytest.param(None, "null", id="null"),
     ],
 )
 def test_a_format_version_that_is_not_a_positive_integer_refuses_the_file(
@@ -207,24 +220,30 @@ def test_a_format_version_that_is_not_a_positive_integer_refuses_the_file(
     )
 
 
+@pytest.mark.parametrize(
+    ("stated", "shown"),
+    [
+        pytest.param(2, "2", id="later"),
+        pytest.param("2a1", '"2a1"', id="alpha"),
+        pytest.param("2b1", '"2b1"', id="beta"),
+        pytest.param("10rc2", '"10rc2"', id="release-candidate"),
+        pytest.param("1a1", '"1a1"', id="pre-release-of-1"),
+        pytest.param(10, "10", id="two-digits"),
+    ],
+)
+def test_a_later_format_version_refuses_the_file(stated, shown):
+    data = {"format_version": stated, **envelope({"A": record("A")})}
+    with pytest.raises(nx.ExchangeError) as info:
+        nx.parse(json.dumps(data)).select_version(None)
+    assert (info.value.code, info.value.message) == (
+        "format_version_unsupported",
+        f"the file is of format version {shown}; this reader reads format version 1 "
+        "only",
+    )
+
+
 # ------------------------------------------------------------------------------------
 # the messages of a finding
-
-
-def test_a_later_format_version_is_read_as_the_first():
-    data = {"format_version": 2, **envelope({"A": record("A")})}
-    version = nx.parse(json.dumps(data)).select_version(None)
-    assert [r.key for r in version.records()] == ["A"]
-    assert version.diagnostics == (
-        nx.Diagnostic(
-            code="format_version_unsupported",
-            path="format_version",
-            message=(
-                "the file is of format version 2; this reader reads format version 1, "
-                "and reads the file as that"
-            ),
-        ),
-    )
 
 
 def test_a_record_that_is_not_an_object_is_skipped():

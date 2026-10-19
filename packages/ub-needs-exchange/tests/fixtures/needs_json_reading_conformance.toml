@@ -92,7 +92,10 @@
 # Error codes (the file is refused), fixed by the contract:
 #   invalid_json               - the text is not JSON (or, read from bytes, not UTF-8)
 #   not_an_object              - the top level is not a JSON object
-#   format_version_invalid     - `format_version` is present and not an integer >= 1
+#   format_version_invalid     - `format_version` is present, and neither an integer >= 1
+#                                nor a pre-release string (`"2a1"`, `"2b1"`, `"2rc1"`)
+#   format_version_unsupported - `format_version` names a format this reader does not
+#                                read: an integer above 1, or a pre-release string
 #   versions_missing           - `versions` is absent or not an object
 #   current_version_missing    - no version is asked for, and `current_version` is absent,
 #                                not a string, or empty while the file has no version of
@@ -103,8 +106,6 @@
 #                                object
 #
 # Diagnostic codes (the file is read, and this is reported), fixed by the contract:
-#   format_version_unsupported      - `format_version` is above 1; the file is read as
-#                                     format 1. `path` is `format_version`
 #   record_not_object               - a value of `needs` is not an object; it is not a
 #                                     record. `path` names it
 #   id_mismatch                     - a record's `id` differs from its key; the key is its
@@ -197,17 +198,40 @@ diagnostics = []
 keys = ["A"]
 
 [[case]]
-name = "format-version-above-1-is-read-as-1"
-why = "a later format_version is read as format 1, and reported"
+name = "format-version-above-1-is-refused"
+why = "a later format_version refuses the file, even one whose envelope this reader could read"
 layer = "document"
 json = '''{"format_version": 2, "current_version": "1.0", "versions": {"1.0": {"needs": {"A": {"id": "A", "type": "req", "title": "t"}}}}}'''
 [case.expect]
-diagnostics = [{ code = "format_version_unsupported", path = "format_version" }]
-keys = ["A"]
+error = "format_version_unsupported"
+
+[[case]]
+name = "format-version-a-pre-release-is-refused"
+why = "a pre-release of a later format, as its writer spells it, refuses the file as unsupported, not invalid"
+layer = "document"
+json = '''{"format_version": "2a1", "current_version": "1.0", "versions": {"1.0": {"needs": {"A": {"id": "A", "type": "req", "title": "t"}}}}}'''
+[case.expect]
+error = "format_version_unsupported"
+
+[[case]]
+name = "a-later-format-is-refused-before-its-shape-is-read"
+why = "a file of a later format, with no versions envelope, is refused for its format_version, not for the envelope it lacks"
+layer = "document"
+json = '''{"format_version": "2b1", "needs": {"A": {"id": "A", "type": "req", "title": "t"}}}'''
+[case.expect]
+error = "format_version_unsupported"
+
+[[case]]
+name = "format-version-a-string-of-no-pre-release-form"
+why = "a string that is not a pre-release (here a dotted number) is not a format version"
+layer = "document"
+json = '''{"format_version": "2.0", "current_version": "1.0", "versions": {"1.0": {"needs": {}}}}'''
+[case.expect]
+error = "format_version_invalid"
 
 [[case]]
 name = "format-version-a-string"
-why = "a format_version that is a string, even of a number, refuses the file"
+why = "a string that is not a pre-release, even of the number 1, is not a format version"
 layer = "document"
 json = '''{"format_version": "1", "current_version": "1.0", "versions": {"1.0": {"needs": {}}}}'''
 [case.expect]
@@ -773,10 +797,9 @@ keys = ["A"]
 name = "every-finding-of-a-file-is-reported"
 why = "the findings about the version and about each record are reported together, none hiding another"
 layer = "document"
-json = '''{"format_version": 3, "current_version": "1.0", "versions": {"1.0": {"needs_defaults_removed": true, "needs": {"S": "x", "A": {"id": "B", "type": "req", "title": "t"}, "C": {"id": "D", "type": "req", "title": "t"}}}}}'''
+json = '''{"format_version": 1, "current_version": "1.0", "versions": {"1.0": {"needs_defaults_removed": true, "needs": {"S": "x", "A": {"id": "B", "type": "req", "title": "t"}, "C": {"id": "D", "type": "req", "title": "t"}}}}}'''
 [case.expect]
 diagnostics = [
-  { code = "format_version_unsupported", path = "format_version" },
   { code = "record_not_object", path = "versions.1.0.needs.S" },
   { code = "defaults_removed_without_schema", path = "versions.1.0.needs_defaults_removed" },
   { code = "id_mismatch", path = "versions.1.0.needs.A.id" },

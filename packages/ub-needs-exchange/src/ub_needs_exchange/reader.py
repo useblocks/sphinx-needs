@@ -22,6 +22,7 @@ a reader that prefixes them follows (11). The corpus
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -53,13 +54,21 @@ __all__ = (
 FORMAT_VERSION = 1
 """The format version this reader reads; a file with no ``format_version`` is of it."""
 
+#: A pre-release of a format, as a later writer spells its ``format_version``:
+#: ``"2a1"``, ``"2b1"``, ``"2rc1"`` (PEP 440's normalised pre-release segments).
+_PRE_RELEASE = re.compile(r"[1-9][0-9]*(?:a|b|rc)[1-9][0-9]*")
+
 # the codes of an ExchangeError: no record can be read from the source
 INVALID_JSON = "invalid_json"
 """The file cannot be read, is not UTF-8, or is not valid JSON."""
 NOT_AN_OBJECT = "not_an_object"
 """The top level is not a JSON object."""
 FORMAT_VERSION_INVALID = "format_version_invalid"
-"""``format_version`` is present, and is not an integer of 1 or more."""
+"""``format_version`` is present, and is neither an integer of 1 or more nor a
+pre-release string such as ``"2a1"``."""
+FORMAT_VERSION_UNSUPPORTED = "format_version_unsupported"
+"""``format_version`` names a format this reader does not read: an integer above
+:data:`FORMAT_VERSION`, or a pre-release string such as ``"2a1"``."""
 VERSIONS_MISSING = "versions_missing"
 """``versions`` is absent or not an object."""
 CURRENT_VERSION_MISSING = "current_version_missing"
@@ -75,8 +84,6 @@ RECORD_NOT_OBJECT = "record_not_object"
 """A value of ``needs`` is not an object; that record is skipped."""
 ID_MISMATCH = "id_mismatch"
 """A record's ``id`` differs from its key; the key is its id."""
-FORMAT_VERSION_UNSUPPORTED = "format_version_unsupported"
-"""``format_version`` is above :data:`FORMAT_VERSION`; the file is read as that format."""
 DEFAULTS_REMOVED_WITHOUT_SCHEMA = "defaults_removed_without_schema"
 """The version was written without its default values, and carries no ``needs_schema``
 to restore them from."""
@@ -192,28 +199,14 @@ class Document:
         """The version ``requested``, or the file's ``current_version`` (contract
         sections 3 and 4).
 
-        :raises ExchangeError: If ``format_version`` is not an integer of 1 or more,
-            ``versions`` is missing, no version is requested and ``current_version``
-            names none, the version is not in the file, or it has no ``needs`` object.
+        :raises ExchangeError: If ``format_version`` is not a format version or names
+            one other than :data:`FORMAT_VERSION`, ``versions`` is missing, no version
+            is requested and ``current_version`` names none, the version is not in the
+            file, or it has no ``needs`` object.
         """
-        diagnostics: list[Diagnostic] = []
         if "format_version" in self.data:
-            stated = self.data["format_version"]
-            # a JSON ``true`` is a Python ``bool``, which is an ``int``: not a version
-            if isinstance(stated, bool) or not isinstance(stated, int) or stated < 1:
-                raise ExchangeError(
-                    FORMAT_VERSION_INVALID,
-                    f"'format_version' is {stated!r}, not an integer of 1 or more",
-                )
-            if stated > FORMAT_VERSION:
-                diagnostics.append(
-                    Diagnostic(
-                        FORMAT_VERSION_UNSUPPORTED,
-                        _path("format_version"),
-                        f"the file is of format version {stated}; this reader reads "
-                        f"format version {FORMAT_VERSION}, and reads the file as that",
-                    )
-                )
+            _check_format_version(self.data["format_version"])
+        diagnostics: list[Diagnostic] = []
         versions = self.data.get("versions")
         if not isinstance(versions, Mapping):
             raise ExchangeError(
@@ -261,6 +254,29 @@ class Document:
                 )
             )
         return Version(requested, data, tuple(diagnostics))
+
+
+def _check_format_version(stated: Any) -> None:
+    """Refuse a ``format_version`` that is not :data:`FORMAT_VERSION` (contract
+    section 3.1): one that names a later format, or one that is not a format version."""
+    # a JSON ``true`` is a Python ``bool``, which is an ``int``: not a version
+    integer = isinstance(stated, int) and not isinstance(stated, bool)
+    if integer and stated == FORMAT_VERSION:
+        return
+    # the value as JSON spells it: ``"2a1"``, ``2``, ``2.0``, ``true``, ``null``
+    shown = json.dumps(stated, default=repr)
+    if (integer and stated > FORMAT_VERSION) or (
+        isinstance(stated, str) and _PRE_RELEASE.fullmatch(stated) is not None
+    ):
+        raise ExchangeError(
+            FORMAT_VERSION_UNSUPPORTED,
+            f"the file is of format version {shown}; this reader reads format "
+            f"version {FORMAT_VERSION} only",
+        )
+    raise ExchangeError(
+        FORMAT_VERSION_INVALID,
+        f"'format_version' is {shown}, not an integer of 1 or more",
+    )
 
 
 def parse(text: str | bytes) -> Document:
