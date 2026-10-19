@@ -48,8 +48,11 @@ names the rule it breaks, as for an id that does not match :ref:`needs_id_regex`
 
 :ref:`needs_id_regex` applies to the **local** id, so a project's pattern keeps its meaning:
 with the default ``^[A-Z0-9_]{5,}``, ``nc::REQ_001`` is a valid id and ``NS::r1`` is not.
-Imported and external needs are exempt from it, as they are with the switch off. A
-generated id is split like any other; this release gives it no namespace of its own.
+Imported and external needs are exempt from it, as they are with the switch off.
+
+A generated id is split like any other, so a need type whose ``prefix`` holds ``::``
+(``prefix = "nc::testcase::T_"``) gives its generated ids that namespace; a generated id
+already changes when its need is re-typed, so this puts no identity at a new risk.
 
 Links name a namespaced need as they name any need, with parts and conditions:
 ``nc::testcase::T_001.p1``, ``NS::REQ_001[status=="open"]``.

@@ -450,6 +450,37 @@ code = "create_need"
 ns = ["NS"]
 local_id = "REQ_001"
 
+[[case]]
+name = "on-a-type-prefix-holding-a-namespace-namespaces-generated-ids"
+why = "a generated id is split like any other, so a need type whose prefix holds :: gives its generated ids that namespace"
+config = '''
+[needs]
+namespaced_ids = true
+
+[needs.types.test]
+title = "Test case"
+prefix = "nc::testcase::T_"
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+'''
+source = '''
+.. test:: A generated test case
+
+.. req:: A generated requirement
+'''
+[case.expect]
+findings = []
+notes = []
+marked = true
+[case.expect.split."nc::testcase::T_96BEA"]
+ns = ["nc", "testcase"]
+local_id = "T_96BEA"
+[case.expect.split.R_A83C7]
+ns = []
+local_id = "R_A83C7"
+
 # --- the switch on: one string a need and a namespace, and links ----------------------
 
 [[case]]

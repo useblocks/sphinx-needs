@@ -47,10 +47,10 @@ parts cost one slot read where splitting on read costs a parse per access.
 | a namespace declared by an import or external source, replacing `id_prefix` for it and rewriting links through the link object | planned |
 | schemas see `local_id`, so an id pattern written for the local id can move there | planned |
 
-A generated id gets no namespace of its own in this release; it is split as written, so a
-need type whose `prefix` holds `::` gives its generated ids that namespace, by the same rule
-as any other id. That is not a type's default namespace (section 6): it applies only to ids
-the author did not write, which already change with the title.
+A generated id is split like any other, so a need type whose `prefix` holds `::` gives its
+generated ids that namespace (this release, ruled 2026-10-19): a generated id already changes
+when its need is re-typed, so this adds none of the identity hazard that defers a type's
+default namespace (section 6), which would reach the ids authors write.
 
 Why the regex applies to the local id (recon Q1, Q6): a project's `needs_id_regex` and the id
 patterns in its schemas are written for the local id. Namespacing the 14 025-need benchmark

@@ -47,7 +47,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "namespace_conformance.toml"
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 24
+EXPECTED_CASE_COUNT = 25
 
 #: The codes compared, as bare subcodes; every other finding is each tool's own.
 SHARED_CODES = frozenset(
