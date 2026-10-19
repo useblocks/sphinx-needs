@@ -177,8 +177,9 @@ object identity). A rule marked **(not pinned)** has neither.
    `needs_defaults_removed`, a value other than `true` is no finding. The marker is the
    version's, not the file's: a `namespaced_ids` of the envelope is ignored as every other
    unknown envelope key is (§3.4), because a file accumulates versions built before and
-   after a project turns namespaces on, and only the versions marked are namespaced. No
-   writer writes the key yet.
+   after a project turns namespaces on, and only the versions marked are namespaced.
+   sphinx-needs writes the key from its next release, behind its experimental
+   `needs_namespaced_ids` switch.
 
    The separator is `::`, fixed here rather than written in the file, and the grammar is
    fixed with it:

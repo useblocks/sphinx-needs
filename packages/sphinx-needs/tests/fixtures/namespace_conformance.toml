@@ -54,8 +54,9 @@
 #     -- every other finding is each tool's own. `create_need` is a need of the sources
 #     that is not created, `import_need` a record a `needimport` does not create (reported
 #     at the `needimport`, so a case pinning an `import_need` finding imports ONE record
-#     per `needimport`, and the finding has no need), `load_external_need` one an external source does not create (no
-#     location, so no need), and `link_outgoing` a link to a need that does not exist
+#     per `needimport`, and the finding has no need), `load_external_need` one an
+#     external source does not create (no location, so no need), and `link_outgoing` a
+#     link to a need that does not exist
 #   - `notes` pins the INFORMATIONAL findings, one per source read, by bare code, as a
 #     multiset: `namespaced_ids_unmarked` (the switch is on, and a version read is not
 #     marked but holds an id with `::`: its ids are read as namespaced) and

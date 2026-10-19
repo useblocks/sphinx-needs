@@ -15,9 +15,10 @@ Improvements
 
   With it on, every need's id is read as a namespace and a local id, split at its last ``::``:
   ``nc::testcase::T_001`` is the local id ``T_001`` in the namespace ``nc::testcase``. An id that
-  does not split (``::X``, ``a::``, a ``.`` in the local id, a namespace segment that is not a
-  letter followed by letters, digits, ``_`` or ``-``) is refused as an id failing
-  :ref:`needs_id_regex` is, and :ref:`needs_id_regex` applies to the local id, as does
+  holds ``::`` but does not split (``::X``, ``a::``, a ``.`` in the local id, a namespace segment
+  that is not a letter followed by letters, digits, ``_`` or ``-``) is refused as an id failing
+  :ref:`needs_id_regex` is; an id without ``::`` keeps today's rules. :ref:`needs_id_regex`
+  applies to the local id, as does
   :ref:`needextract`'s id argument. ``ns`` and ``local_id`` are reserved field names while it is
   on. Each version of ``needs.json`` the project writes carries ``"namespaced_ids": true``;
   :ref:`needimport` and :ref:`needs_external_needs` split every id they read, and say so once per

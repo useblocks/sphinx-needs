@@ -26,7 +26,7 @@ Storage, **this release**: `NeedItem.ns` (a tuple of segments, `()` for none) an
 the key of every map and the value of `need["id"]`. With the switch off they are `()` and the
 id. They are not fields: no mapping key, no needs.json key, no schema property.
 
-Why the string stays the key (recon `fable/njns-recon.md` Q5, Q9(b)): `need["id"]` is a
+Why the string stays the key (measured during the design, October 2026): `need["id"]` is a
 string in sphinx-needs' public Python contract (every `needs[some_id]` in user code, Sphinx
 and HTML targets, `needs_string_links`), so the joined spelling has to exist anyway; a tuple
 key is also the slower lookup (1.6 to 2.9 times a string key, measured on 14 044 ids). Stored
@@ -38,7 +38,7 @@ parts cost one slot read where splitting on read costs a parse per access.
 |---|---|
 | the switch `needs_namespaced_ids` (`[needs] namespaced_ids`), off by default; off, nothing changes | this release |
 | every id split with `split_id` -- authored, generated, imported, external | this release |
-| an id that does not split is refused like an id failing `needs_id_regex`, its message naming the rule | this release |
+| an id that holds `::` and does not split is refused like an id failing `needs_id_regex`, its message naming the rule; an id without `::` keeps today's rules (`REQ_001.x` is created), since refusing it only with the switch on would be a new rule for ids that have no namespace | this release |
 | `needs_id_regex` applies to the local id (imported and external needs stay exempt); `needextract`'s id argument likewise | this release |
 | `ns` and `local_id` reserved as field and link type names while the switch is on | this release |
 | reserved unconditionally | planned, at the next major (refusing a name is a breaking change) |
@@ -52,7 +52,7 @@ generated ids that namespace (this release, ruled 2026-10-19): a generated id al
 when its need is re-typed, so this adds none of the identity hazard that defers a type's
 default namespace (section 6), which would reach the ids authors write.
 
-Why the regex applies to the local id (recon Q1, Q6): a project's `needs_id_regex` and the id
+Why the regex applies to the local id (measured during the design, October 2026): a project's `needs_id_regex` and the id
 patterns in its schemas are written for the local id. Namespacing the 14 025-need benchmark
 corpus per page made every one of its needs fail the corpus's own schemas (none in the plain
 build), because `^SW_REQ_` began to see `plat::m2::SW_REQ_13708`. Applying the regex to the
@@ -72,8 +72,7 @@ Three levels, each a different question:
 In a filter, `ns` is to be the namespace's joined spelling, which the next slice settles
 beside the tuple `NeedItem.ns`.
 
-The three levels are established ground (`fable/njns-prior-art.md`, each claim checked
-against its primary source):
+The three levels are established ground (each claim checked against its primary source):
 
 - **Bazel**, the closest analogue: a label names one target (`//foo:bar`), `//foo:all` every
   rule in package `foo` "but not its subpackages", and `//foo/...` every rule in `foo` and
@@ -110,7 +109,8 @@ similar but are not the model: its `singleLevel` is the immediate subordinates o
 the base excluded, whereas `ns ==` selects the needs of a namespace, which is not itself a
 need.
 
-Why built in rather than left to `eval` (recon Q2, 14 000 needs): selecting a namespace
+Why built in rather than left to `eval` (measured during the design, October 2026, on
+14 000 needs): selecting a namespace
 today means an `eval` filter at 100 to 130 ms; with `ns` on the index path it was 0.095 ms,
 `in_namespace()` 1.1 ms, a type within a namespace 0.35 ms, at no measurable cost to existing
 filters.
@@ -118,9 +118,14 @@ filters.
 ## 4. One string, a need and a namespace
 
 A need `nc::testcase` (local id `testcase` in `nc`) and needs in the namespace
-`nc::testcase` coexist; nothing refuses it (this release, ruled 2026-10-19). git and Java
-forbid a name being both an item and a container; MQTT and S3 allow it
-(`fable/njns-prior-art.md`). An id names one need, while `ns ==` and `in_namespace()` name
+`nc::testcase` coexist; nothing refuses it (this release, ruled 2026-10-19). Java forbids a
+package having a subpackage with the same simple name as a top level class or interface
+declared in it (JLS
+SE 21 §7.1, <https://docs.oracle.com/javase/specs/jls/se21/html/jls-7.html>), and git, as
+observed, refuses a branch `nc/a` beside an existing `nc` ("cannot lock ref"); MQTT lets a
+name be both a topic and a parent (`sport` and `sport/tennis`, §4.7.1,
+<https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html>), and so do S3's flat keys
+(<https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-prefixes.html>). An id names one need, while `ns ==` and `in_namespace()` name
 sets, so no query is ambiguous, and a namespace can have a "root" need, such as a component
 whose parts live in its namespace. Forbidding it would mean cross-checking every id against
 every namespace at load, with a refusal an author can fix only by renaming.
@@ -135,9 +140,13 @@ the one commitment the experimental label cannot cover: a file written with it i
 long as it exists.
 
 Every deployed reader ignores the marker and reads the joined string as the id
-(`ub-needs-exchange` 1.0.0, sphinx-needs 9.0.0, ubCode; recon Q7 addendum), and with the
-switch off the output is byte for byte what it was: measured on the recon's probe project and
-on every needs.json the test suite writes.
+(`ub-needs-exchange` 1.0.0, sphinx-needs 9.0.0, ubCode; measured during the design, October
+2026), and with the switch off no needs.json or warning changes: measured on a namespaced
+probe project and on every needs.json the test suite writes.
+
+Per-id files (`needs_build_json_per_id`) cannot be written for an id holding `::` on
+Windows, where `:` is not a legal file-name character; a file naming for namespaced ids is
+planned.
 
 Reading a needs.json (`needimport`, `needs_external_needs`):
 
@@ -156,13 +165,13 @@ Reading a needs.json (`needimport`, `needs_external_needs`):
 - **A need type's default namespace.** Both tools rebuild every need from its source on each
   build, so a namespace taken from the type would change a need's id whenever it is re-typed,
   breaking its inbound links; "stored at creation, never recomputed" cannot hold without
-  writing the namespace into the source (recon Q5). In this release a namespace comes only
+  writing the namespace into the source. In this release a namespace comes only
   from the id itself, so identity is a function of the text the author can see; a source's
   declared namespace is the planned second origin.
 - **Short-name resolution** -- a bare `T_001` in a link meaning the local need of the
   linking need's namespace. It makes a link's meaning depend on where it is written, which
   the joined spelling avoids; it needs its own design.
 - **The needs.json v2 identity shape.** Structured records cost nothing measurable (at most
-  1.3 % in size and 6 % in parse time; recon Q9(a)), so the shape is a semantic choice, made
+  1.3 % in size and 6 % in parse time, measured during the design, October 2026), so the shape is a semantic choice, made
   with the v2 format. The joined spelling plus the marker is what a v1 projection of it will
   write, so this slice commits nothing v2 would have to undo.
