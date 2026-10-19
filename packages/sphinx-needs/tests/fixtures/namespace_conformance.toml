@@ -17,8 +17,10 @@
 # The split itself is the needs.json exchange contract's (ub-needs-exchange,
 # `design/exchange-contract.md` section 5.4, `split_id`): at the LAST `::`; a segment is an
 # ASCII letter, then ASCII letters, digits, `_` or `-`; a local id is not empty, does not
-# begin with `:`, and holds neither `::` nor `.`; an id without `::` is its own local id.
-# This corpus pins what a PROJECT does with it.
+# begin with `:`, and holds neither `::` nor `.`. An id without `::` is its own local id,
+# returned whole: those rules apply only after a `::`, and a plain id's shape stays the
+# project's id pattern's, as with the switch off. This corpus pins what a PROJECT does
+# with it.
 #
 # Rules for every runner:
 #   - a case is one project. `config` is its `ubproject.toml` (the `[needs]` configuration
@@ -40,8 +42,9 @@
 #     the JSON `true`; `false` says the version has no `namespaced_ids` key at all
 #   - `needs.<ID>` pins values as needs.json writes them, TYPE INCLUDED; a link list is a
 #     list of id strings, as needs.json writes it
-#   - no case pins a need's written `links` list: ubCode's export collapses link conditions
-#     (its divergence register), so a link with a condition is pinned by its back link
+#   - no case pins a written `links` list holding a link condition: ubCode's export
+#     collapses link conditions (its divergence register), so such a link is pinned by its
+#     back link
 #   - a `missing` entry names a need the case's source or files give that is NOT
 #     created: the runner asserts its id is no key of the needs needs.json writes
 #   - findings are compared as a MULTISET of `code`, and of `need` and `field` where the
@@ -50,8 +53,8 @@
 #         create_need, import_need, load_external_need, link_outgoing
 #     -- every other finding is each tool's own. `create_need` is a need of the sources
 #     that is not created, `import_need` a record a `needimport` does not create (reported
-#     at the `needimport`, so a case imports ONE record per `needimport` and the finding
-#     has no need), `load_external_need` one an external source does not create (no
+#     at the `needimport`, so a case pinning an `import_need` finding imports ONE record
+#     per `needimport`, and the finding has no need), `load_external_need` one an external source does not create (no
 #     location, so no need), and `link_outgoing` a link to a need that does not exist
 #   - `notes` pins the INFORMATIONAL findings, one per source read, by bare code, as a
 #     multiset: `namespaced_ids_unmarked` (the switch is on, and a version read is not
@@ -422,6 +425,29 @@ code = "create_need"
 [case.expect.split.REQ_001]
 ns = []
 local_id = "REQ_001"
+
+[[case]]
+name = "on-a-plain-id-keeps-its-shape-rules"
+why = "an id without :: has no namespace and keeps today's rules: needs_id_regex alone decides its shape, so REQ_001.x is created with the switch on, as with it off"
+config = '''
+[needs]
+namespaced_ids = true
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+'''
+source = '''
+.. req:: A dot in a plain id
+   :id: REQ_001.x
+'''
+[case.expect]
+findings = []
+notes = []
+marked = true
+[case.expect.split."REQ_001.x"]
+ns = []
+local_id = "REQ_001.x"
 
 [[case]]
 name = "on-a-dot-in-the-local-id-is-refused"
