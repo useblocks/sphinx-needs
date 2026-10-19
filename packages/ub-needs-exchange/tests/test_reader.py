@@ -200,6 +200,7 @@ def test_select_version_refuses(data, requested, code, message):
         pytest.param("2a1 ", '"2a1 "', id="pre-release-trailing-space"),
         pytest.param("v2", '"v2"', id="prefixed"),
         pytest.param("\uff12a1", '"\\uff12a1"', id="non-ascii-digit"),
+        pytest.param("2a\uff11", '"2a\\uff11"', id="non-ascii-pre-release-number"),
         pytest.param(0, "0", id="zero"),
         pytest.param(-2, "-2", id="negative"),
         pytest.param(1.0, "1.0", id="float"),
