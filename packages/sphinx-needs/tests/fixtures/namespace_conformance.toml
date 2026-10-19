@@ -795,6 +795,41 @@ ns = []
 local_id = "REQ_001"
 
 [[case]]
+name = "on-an-imported-id-is-not-held-to-the-id-regex"
+why = "imported and external needs are exempt from needs_id_regex, as they are with the switch off: ext::imp_1 is read though the default refuses imp_1"
+config = '''
+[needs]
+namespaced_ids = true
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+'''
+source = '''
+.. needimport:: data.json
+'''
+files = { "data.json" = '''
+{
+  "current_version": "1.0",
+  "versions": {
+    "1.0": {
+      "namespaced_ids": true,
+      "needs": {
+        "ext::imp_1": {"type": "req", "title": "A lowercase local id"}
+      }
+    }
+  }
+}
+''' }
+[case.expect]
+findings = []
+notes = []
+marked = true
+[case.expect.split."ext::imp_1"]
+ns = ["ext"]
+local_id = "imp_1"
+
+[[case]]
 name = "off-a-marked-import-keeps-plain-ids-with-one-note"
 why = "into a project with the switch off, a marked version's ids are read as plain ids, :: included, with one note per source"
 config = '''
