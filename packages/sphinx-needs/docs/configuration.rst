@@ -1520,14 +1520,14 @@ Each configured link can define:
   and a link to a need from :ref:`needimport` or :ref:`needs_external_needs` by that need's type.
   The links of an imported need are reported at its ``needimport``,
   and those of a need from :ref:`needs_external_needs` as ``needs.external_link_target_type``, with its URL and no place in a document.
-  A link of ``links`` that another link type with ``copy`` copied into it when the need was created
-  (the same target and part, whatever its condition) is not checked against the ``target_types`` of ``links``,
-  whether it was copied or also written there by hand.
-  ``copy`` on ``links`` itself, or on a derived link type, copies nothing, and exempts nothing.
-  A :ref:`needextend` of the copying link type copies nothing and changes no exemption:
-  the copy made at creation stays in ``links``, and stays exempt.
-  A need from :ref:`needimport` or :ref:`needs_external_needs` is created, and copies, from the values its needs.json holds,
-  so a copy a needextend left in ``links`` in the exporting project is exempt here only if the copying link type still holds it.
+  While another link type copies into ``links`` (``copy``), ``links`` holds links written in it and links copied into it,
+  so its own ``target_types`` would not say one thing: for now ``target_types`` on ``links`` is refused beside such a link type,
+  one ``needs.config`` warning per declaration (the ``needs_links`` entry, a need type's entry), and ignored until ``copy`` is replaced::
+
+     needs_links['links'] has a 'target_types', but 'verifies' copies into links (copy = true); the key is ignored until copy is replaced
+
+  The copying link type's own ``target_types`` still holds.
+  ``copy`` on ``links`` itself, or on a derived link type, copies nothing, and refuses nothing.
   ``target_types`` and the link type's ``schema`` count (``minItems``, ``maxItems``) are checked apart.
   The count is every link the need holds, a link ``target_types`` refuses and a dead link included,
   so a ``test`` whose only link is a ``spec`` satisfies ``minItems = 1``.

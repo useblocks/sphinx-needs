@@ -21,10 +21,10 @@ Improvements
   gives its own. It is checked once every link is final, whether or not the schema validation runs, and
   unlike a filter or a schema rule's ``const`` it follows ``inherits``. Dead links are left to the dead-link
   warning, a part link is checked by its need's type, the links of a need from
-  :ref:`needs_external_needs` are reported as ``needs.external_link_target_type``, and a link of ``links``
-  that another link type with ``copy`` copied there when the need was created is not checked against
-  the ``target_types`` of ``links`` (a needextend of the copying link type copies nothing, so it changes
-  nothing; an imported or external need copies again from the values its needs.json holds).
+  :ref:`needs_external_needs` are reported as ``needs.external_link_target_type``. While a link type
+  copies into ``links`` (``copy``), ``links`` is part written, part copied, so a ``target_types`` on
+  ``links`` is refused, one ``needs.config`` warning per declaration, and ignored until ``copy`` is
+  replaced.
   The link type's ``schema`` count (``minItems``, ``maxItems``) is checked apart, by the schema
   validation: it counts every link, a refused or dead one included. A derived link type takes none in
   this release. The names that are no need type are one ``needs.config`` warning per declaration, and
