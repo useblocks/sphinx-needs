@@ -13,9 +13,10 @@ sees fit; a file no record can be read from raises :class:`ExchangeError`.
 
 The rules it reads by are written once, in the package's contract,
 ``design/exchange-contract.md``: the envelope and its ``format_version`` (section 3),
-selecting a version (4), a record -- the key is its id, the legacy ``description`` --
-(6), the schema defaults (7), every code (8), and the file's ids as its namespace, which
-a reader that prefixes them follows (11). The corpus
+selecting a version (4), a version's ``namespaced_ids`` marker and the rule
+:func:`split_id` splits an id by (5.4), a record -- the key is its id, the legacy
+``description`` -- (6), the schema defaults (7), every code (8), and the file's ids as
+its namespace, which a reader that prefixes them follows (11). The corpus
 ``tests/fixtures/needs_json_reading_conformance.toml`` pins them.
 """
 
@@ -49,6 +50,7 @@ __all__ = (
     "load",
     "map_legacy_keys",
     "parse",
+    "split_id",
 )
 
 FORMAT_VERSION = 1
@@ -57,6 +59,11 @@ FORMAT_VERSION = 1
 #: A pre-release of a format, as a later writer spells its ``format_version``:
 #: ``"2a1"``, ``"2b1"``, ``"2rc1"`` (PEP 440's normalised pre-release segments).
 _PRE_RELEASE = re.compile(r"[1-9][0-9]*(?:a|b|rc)[1-9][0-9]*")
+
+#: What joins a namespaced id's segments and its local id, fixed by the contract (5.4).
+_SEPARATOR = "::"
+#: One segment of a namespace: a letter, then letters, digits, ``_`` or ``-``.
+_SEGMENT = re.compile(r"[A-Za-z][A-Za-z0-9_-]*")
 
 # the codes of an ExchangeError: no record can be read from the source
 INVALID_JSON = "invalid_json"
@@ -137,6 +144,17 @@ class Version:
     diagnostics: tuple[Diagnostic, ...] = field(default=())
     """What was found in the version, beside its records: the records skipped, and
     stripped defaults with no schema to restore them."""
+
+    @property
+    def namespaced_ids(self) -> bool:
+        """Whether the version says its ids are namespaced: its ``namespaced_ids`` is
+        the JSON ``true`` (contract section 5.4). Any other value, or none, says nothing,
+        and a ``namespaced_ids`` of the envelope is not the version's.
+
+        The records are keyed by their ids as written either way: a reader that splits
+        them does so with :func:`split_id`.
+        """
+        return self.data.get("namespaced_ids") is True
 
     def schema_defaults(self) -> dict[str, Any]:
         """The ``default`` of each property of the version's ``needs_schema``."""
@@ -316,6 +334,44 @@ def load(path: str | Path) -> Document:
     except OSError as err:
         raise ExchangeError(INVALID_JSON, f"cannot be read: {err}") from err
     return parse(text)
+
+
+def split_id(id: str) -> tuple[tuple[str, ...], str]:
+    """Split a namespaced id into its namespace's segments and its local id (contract
+    section 5.4): at the LAST ``::``, so ``"a::b::X"`` is ``(("a", "b"), "X")``. An id
+    with no ``::`` has no namespace: ``"X"`` is ``((), "X")``.
+
+    It splits an id, not a link target: a consumer strips a target's ``.part`` (and its
+    conditions) first, as it does today. Whether a version's ids are to be split is
+    :attr:`Version.namespaced_ids`; the package never splits a record's key itself.
+
+    :raises ValueError: If ``id`` has a ``::`` and is not a namespaced id: every segment
+        a letter, then letters, digits, ``_`` or ``-``, and the local id not empty and
+        holding neither ``::`` nor ``.``. The message names the id and the rule.
+    """
+    namespace, separator, local = id.rpartition(_SEPARATOR)
+    if not separator:
+        return (), id
+    if not local:
+        raise ValueError(f"{id!r} is not a namespaced id: its local id is empty")
+    if "." in local:
+        raise ValueError(
+            f"{id!r} is not a namespaced id: its local id {local!r} contains '.'"
+        )
+    if not namespace:
+        raise ValueError(f"{id!r} is not a namespaced id: its namespace is empty")
+    segments = tuple(namespace.split(_SEPARATOR))
+    for segment in segments:
+        if not segment:
+            raise ValueError(
+                f"{id!r} is not a namespaced id: its namespace has an empty segment"
+            )
+        if _SEGMENT.fullmatch(segment) is None:
+            raise ValueError(
+                f"{id!r} is not a namespaced id: its namespace segment {segment!r} is "
+                "not a letter followed by letters, digits, '_' or '-'"
+            )
+    return segments, local
 
 
 def map_legacy_keys(fields: dict[str, Any]) -> None:
