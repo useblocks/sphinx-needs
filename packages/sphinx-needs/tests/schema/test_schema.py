@@ -177,3 +177,123 @@ def test_schema_benchmark(schema_benchmark_app, snapshot):
     assert schema_benchmark_app.statuscode == 0
     warnings_text = "\n".join(build_warnings(schema_benchmark_app))
     assert warnings_text == snapshot
+
+
+_HEADER_CONF = """
+extensions = ["sphinx_needs"]
+needs_links = {
+    "verifies": {"incoming": "is verified by", "outgoing": "verifies"},
+    "implements": {"incoming": "is implemented by", "outgoing": "implements"},
+}
+needs_types = [
+    {"directive": "req", "title": "Requirement", "prefix": "R_"},
+    {"directive": "spec", "title": "Specification", "prefix": "S_"},
+    {"directive": "test", "title": "Test", "prefix": "T_"},
+]
+needs_schema_definitions = {"schemas": [{
+    "id": "test-rule",
+    "select": {"properties": {"type": {"const": "test"}}},
+    "validate": {"network": {"verifies": {"items": %s}}},
+}]}
+"""
+_HEADER_RST = """
+Test
+====
+
+.. req:: A requirement
+   :id: R_001
+
+.. spec:: A spec
+   :id: S_001
+   :implements: %s
+
+.. spec:: Another spec
+   :id: S_002
+
+.. test:: A test
+   :id: T_001
+   :verifies: S_001
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app, need_paths",
+    [
+        pytest.param(
+            {
+                "buildername": "html",
+                "files": [
+                    (
+                        "conf.py",
+                        _HEADER_CONF
+                        % '{"local": {"properties": {"type": {"const": "req"}}}}',
+                    ),
+                    ("index.rst", _HEADER_RST % "R_001"),
+                ],
+            },
+            ["T_001 > verifies > S_001"],
+            id="level-1-network-local-fail",
+        ),
+        pytest.param(
+            {
+                "buildername": "html",
+                "files": [
+                    (
+                        "conf.py",
+                        _HEADER_CONF
+                        % (
+                            '{"network": {"implements": {"items": {"local":'
+                            ' {"properties": {"type": {"const": "req"}}}}}}}'
+                        ),
+                    ),
+                    ("index.rst", _HEADER_RST % "S_002"),
+                ],
+            },
+            ["T_001 > verifies > S_001 > implements > S_002"],
+            id="level-2-network-local-fail",
+        ),
+        pytest.param(
+            {
+                "buildername": "html",
+                "files": [
+                    (
+                        "conf.py",
+                        _HEADER_CONF
+                        % (
+                            '{"network": {"implements": {"contains": {"local":'
+                            ' {"properties": {"type": {"const": "req"}}}}}}}'
+                        ),
+                    ),
+                    ("index.rst", _HEADER_RST % "S_002"),
+                ],
+            },
+            ["T_001 > verifies > S_001 > implements"],
+            id="level-1-network-contains-too-few",
+        ),
+    ],
+    indirect=["test_app"],
+)
+def test_network_finding_header_names_selected_need(
+    test_app: SphinxTestApp, need_paths: list[str]
+) -> None:
+    """A network finding's console header names the need the rule SELECTED (#2297).
+
+    The rule selects ``T_001``; the failure is found on a need it links to,
+    one or two hops away.
+    The header used to name the need at the failing level (``S_001`` / ``S_002``),
+    which reads as if the linked need broke the rule,
+    while ``schema_violations.json`` files the finding under ``T_001``.
+    The ``Need path`` line keeps the whole chain.
+    """
+    test_app.build()
+    records = [r for r in build_warnings(test_app) if "Need path:" in r]
+    assert len(records) == len(need_paths), records
+    for record, need_path in zip(records, need_paths, strict=True):
+        first_line = record.splitlines()[0]
+        assert first_line == "ERROR: Need 'T_001' has schema violations:", record
+        assert f"  Need path:      {need_path}" in record.splitlines(), record
+
+    report = json.loads(
+        Path(test_app.outdir, "schema_violations.json").read_text("utf8")
+    )
+    assert list(report["validation_warnings"]) == ["T_001"]

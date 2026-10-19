@@ -39,7 +39,7 @@
     Need path:      SPEC_SAFE_P01
     Schema path:    spec[1] > local > properties > id > pattern
     Schema message: "SPEC_SAFE_P01" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
-  ERROR: Need 'FEAT_P01' has schema violations:
+  ERROR: Need 'IMPL_SAFE_P01' has schema violations:
     Severity:       violation
     Field:          asil
     Need path:      IMPL_SAFE_P01 > links > SPEC_SAFE_UNSAFE_FEAT_P01 > links > FEAT_P01
@@ -82,7 +82,7 @@
     Need path:      SPEC_SAFE_P02
     Schema path:    spec[1] > local > properties > id > pattern
     Schema message: "SPEC_SAFE_P02" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
-  ERROR: Need 'FEAT_P02' has schema violations:
+  ERROR: Need 'IMPL_SAFE_P02' has schema violations:
     Severity:       violation
     Field:          asil
     Need path:      IMPL_SAFE_P02 > links > SPEC_SAFE_UNSAFE_FEAT_P02 > links > FEAT_P02
@@ -125,7 +125,7 @@
     Need path:      SPEC_SAFE_P03
     Schema path:    spec[1] > local > properties > id > pattern
     Schema message: "SPEC_SAFE_P03" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
-  ERROR: Need 'FEAT_P03' has schema violations:
+  ERROR: Need 'IMPL_SAFE_P03' has schema violations:
     Severity:       violation
     Field:          asil
     Need path:      IMPL_SAFE_P03 > links > SPEC_SAFE_UNSAFE_FEAT_P03 > links > FEAT_P03
@@ -168,7 +168,7 @@
     Need path:      SPEC_SAFE_P04
     Schema path:    spec[1] > local > properties > id > pattern
     Schema message: "SPEC_SAFE_P04" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
-  ERROR: Need 'FEAT_P04' has schema violations:
+  ERROR: Need 'IMPL_SAFE_P04' has schema violations:
     Severity:       violation
     Field:          asil
     Need path:      IMPL_SAFE_P04 > links > SPEC_SAFE_UNSAFE_FEAT_P04 > links > FEAT_P04
@@ -211,7 +211,7 @@
     Need path:      SPEC_SAFE_P05
     Schema path:    spec[1] > local > properties > id > pattern
     Schema message: "SPEC_SAFE_P05" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
-  ERROR: Need 'FEAT_P05' has schema violations:
+  ERROR: Need 'IMPL_SAFE_P05' has schema violations:
     Severity:       violation
     Field:          asil
     Need path:      IMPL_SAFE_P05 > links > SPEC_SAFE_UNSAFE_FEAT_P05 > links > FEAT_P05
@@ -254,7 +254,7 @@
     Need path:      SPEC_SAFE_P06
     Schema path:    spec[1] > local > properties > id > pattern
     Schema message: "SPEC_SAFE_P06" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
-  ERROR: Need 'FEAT_P06' has schema violations:
+  ERROR: Need 'IMPL_SAFE_P06' has schema violations:
     Severity:       violation
     Field:          asil
     Need path:      IMPL_SAFE_P06 > links > SPEC_SAFE_UNSAFE_FEAT_P06 > links > FEAT_P06
@@ -297,7 +297,7 @@
     Need path:      SPEC_SAFE_P07
     Schema path:    spec[1] > local > properties > id > pattern
     Schema message: "SPEC_SAFE_P07" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
-  ERROR: Need 'FEAT_P07' has schema violations:
+  ERROR: Need 'IMPL_SAFE_P07' has schema violations:
     Severity:       violation
     Field:          asil
     Need path:      IMPL_SAFE_P07 > links > SPEC_SAFE_UNSAFE_FEAT_P07 > links > FEAT_P07
@@ -340,7 +340,7 @@
     Need path:      SPEC_SAFE_P08
     Schema path:    spec[1] > local > properties > id > pattern
     Schema message: "SPEC_SAFE_P08" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
-  ERROR: Need 'FEAT_P08' has schema violations:
+  ERROR: Need 'IMPL_SAFE_P08' has schema violations:
     Severity:       violation
     Field:          asil
     Need path:      IMPL_SAFE_P08 > links > SPEC_SAFE_UNSAFE_FEAT_P08 > links > FEAT_P08
@@ -383,7 +383,7 @@
     Need path:      SPEC_SAFE_P09
     Schema path:    spec[1] > local > properties > id > pattern
     Schema message: "SPEC_SAFE_P09" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
-  ERROR: Need 'FEAT_P09' has schema violations:
+  ERROR: Need 'IMPL_SAFE_P09' has schema violations:
     Severity:       violation
     Field:          asil
     Need path:      IMPL_SAFE_P09 > links > SPEC_SAFE_UNSAFE_FEAT_P09 > links > FEAT_P09
@@ -426,7 +426,7 @@
     Need path:      SPEC_SAFE_P10
     Schema path:    spec[1] > local > properties > id > pattern
     Schema message: "SPEC_SAFE_P10" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
-  ERROR: Need 'FEAT_P10' has schema violations:
+  ERROR: Need 'IMPL_SAFE_P10' has schema violations:
     Severity:       violation
     Field:          asil
     Need path:      IMPL_SAFE_P10 > links > SPEC_SAFE_UNSAFE_FEAT_P10 > links > FEAT_P10
@@ -474,7 +474,7 @@
     Need path:      SPEC_SAFE_P1
     Schema path:    spec[1] > local > properties > id > pattern
     Schema message: "SPEC_SAFE_P1" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
-  ERROR: Need 'FEAT_P1' has schema violations:
+  ERROR: Need 'IMPL_SAFE_P1' has schema violations:
     Severity:       violation
     Field:          asil
     Need path:      IMPL_SAFE_P1 > links > SPEC_SAFE_UNSAFE_FEAT_P1 > links > FEAT_P1
@@ -4437,7 +4437,7 @@
 # ---
 # name: test_schemas[schema/fixtures/network-max_network_levels]
   '''
-  ERROR: Need 'SPEC_1' has schema violations:
+  ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Need path:      IMPL_1 > links > SPEC_5 > links > SPEC_4 > links > SPEC_3 > links > SPEC_2 > links > SPEC_1
     Schema path:    [0] > validate > network > links > items > validate > network > links > items > validate > network > links > items > validate > network > links > items > validate > network > links > items
@@ -4509,7 +4509,7 @@
 # ---
 # name: test_schemas[schema/fixtures/network-network_back_items_error]
   '''
-  ERROR: Need 'IMPL_1' has schema violations:
+  ERROR: Need 'REQ_1' has schema violations:
     Severity:       violation
     Field:          type
     Need path:      REQ_1 > links (incoming) > IMPL_1
@@ -4705,13 +4705,13 @@
 # ---
 # name: test_schemas[schema/fixtures/network-network_local_multi_error]
   '''
-  ERROR: Need 'SPEC_1' has schema violations:
+  ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          asil
     Need path:      IMPL_1 > links > SPEC_1
     Schema path:    [0] > validate > network > links > items > local > properties > asil > const
     Schema message: "A" was expected [sn_schema_violation.network_local_fail]
-  ERROR: Need 'SPEC_1' has schema violations:
+  ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          comment
     Need path:      IMPL_1 > links > SPEC_1
@@ -4758,7 +4758,7 @@
 # ---
 # name: test_schemas[schema/fixtures/network-network_local_unevaluated_reduced_error]
   '''
-  ERROR: Need 'SPEC_1' has schema violations:
+  ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Need path:      IMPL_1 > links > SPEC_1
     Schema path:    [0] > validate > network > links > items > local > unevaluatedProperties

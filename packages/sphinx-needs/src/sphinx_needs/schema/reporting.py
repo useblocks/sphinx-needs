@@ -170,12 +170,16 @@ class OntologyReportJSON(TypedDict):
 
 
 def get_formatted_warnings_recurse(
-    warning: OntologyWarning, level: int
+    warning: OntologyWarning, level: int, need_id: str
 ) -> list[FormattedWarning]:
     """
     Recursively format a warning message with indentation.
 
     :param warning: The OntologyWarning to format.
+    :param level: The nesting level (0 for the root finding).
+    :param need_id: The ID of the need the rule selected, named in the header.
+        For a network finding that failed on a linked need, ``warning['need']``
+        is that linked need, not this one.
     :return: A list of FormattedWarning objects.
     """
     formatted_warnings: list[FormattedWarning] = []
@@ -185,29 +189,19 @@ def get_formatted_warnings_recurse(
 
     # Map severity to logger level and type
     if warning["severity"] == SeverityEnum.config_error:
-        title = (
-            f"Need '{warning['need']['id']}' has configuration errors:"
-            if has_title
-            else ""
-        )
+        title = f"Need '{need_id}' has configuration errors:" if has_title else ""
         log_lvl = "error"
         type_str = "sn_schema"
     elif warning["severity"] == SeverityEnum.violation:
-        title = (
-            f"Need '{warning['need']['id']}' has schema violations:"
-            if has_title
-            else ""
-        )
+        title = f"Need '{need_id}' has schema violations:" if has_title else ""
         log_lvl = "error"
         type_str = "sn_schema_violation"
     elif warning["severity"] == SeverityEnum.warning:
-        title = (
-            f"Need '{warning['need']['id']}' has schema warnings:" if has_title else ""
-        )
+        title = f"Need '{need_id}' has schema warnings:" if has_title else ""
         log_lvl = "warning"
         type_str = "sn_schema_warning"
     elif warning["severity"] == SeverityEnum.info:
-        title = f"Need '{warning['need']['id']}' has schema infos:" if has_title else ""
+        title = f"Need '{need_id}' has schema infos:" if has_title else ""
         log_lvl = "warning"
         type_str = "sn_schema_info"
     else:
@@ -226,7 +220,7 @@ def get_formatted_warnings_recurse(
             if child_warning["severity"] == SeverityEnum.none:
                 continue
             formatted_child_warnings = get_formatted_warnings_recurse(
-                warning=child_warning, level=level + 1
+                warning=child_warning, level=level + 1, need_id=need_id
             )
             indent = "  " * (1 + level + 1)
             for formatted_child_warning in formatted_child_warnings:
@@ -248,12 +242,17 @@ def get_formatted_warnings(
     :returns: tuple [log level, type, sub-type, message]
     """
     formatted_warnings: list[FormattedWarning] = []
-    for warnings in need_2_warnings.values():
+    for need_id, warnings in need_2_warnings.items():
         for warning in warnings:
             # Skip warnings with severity none (debug only)
             if warning["severity"] == SeverityEnum.none:
                 continue
-            new_warnings = get_formatted_warnings_recurse(warning=warning, level=0)
+            # The header names the need the rule selected (the key, as in
+            # schema_violations.json), not warning["need"]: for a network finding
+            # that failed on a linked need, that is the linked need.
+            new_warnings = get_formatted_warnings_recurse(
+                warning=warning, level=0, need_id=need_id
+            )
             formatted_warnings.extend(new_warnings)
     return formatted_warnings
 
