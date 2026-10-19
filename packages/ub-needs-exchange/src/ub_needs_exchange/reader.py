@@ -346,8 +346,9 @@ def split_id(id: str) -> tuple[tuple[str, ...], str]:
     :attr:`Version.namespaced_ids`; the package never splits a record's key itself.
 
     :raises ValueError: If ``id`` has a ``::`` and is not a namespaced id: every segment
-        a letter, then letters, digits, ``_`` or ``-``, and the local id not empty and
-        holding neither ``::`` nor ``.``. The message names the id and the rule.
+        a letter, then letters, digits, ``_`` or ``-``, and the local id not empty, not
+        beginning with ``:``, and holding neither ``::`` nor ``.``. The message names
+        the id and the rule.
     """
     namespace, separator, local = id.rpartition(_SEPARATOR)
     if not separator:

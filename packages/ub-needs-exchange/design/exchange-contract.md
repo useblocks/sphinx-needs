@@ -167,11 +167,11 @@ object identity). A rule marked **(not pinned)** has neither.
 3. **`needs_defaults_removed`**: `true` says the writer left out every value equal to its
    default, to be restored from `needs_schema` (§7.3). Any other value, or none, says
    nothing was left out.
-4. **`namespaced_ids`**: `true` says the version's ids are **namespaced**: each id, and
-   each link target written in the version, is a namespace of one or more segments and a
-   local id, joined by `::` and split at the **last** `::` — `nc::testcase::T_001` is the
-   namespace `nc::testcase`, of the segments `nc` and `testcase`, and the local id
-   `T_001`. Any other value — `false`, `"true"`, `1` — or none says nothing, and the ids
+4. **`namespaced_ids`**: `true` says the version's ids are **namespaced**: each id that
+   holds `::`, and each such link target written in the version, is a namespace of one or
+   more segments and a local id, joined by `::` and split at the **last** `::`; an id
+   without `::` has no namespace. `nc::testcase::T_001` is the namespace `nc::testcase`,
+   of the segments `nc` and `testcase`, and the local id `T_001`. Any other value — `false`, `"true"`, `1` — or none says nothing, and the ids
    are read as today, a `::` in one being characters of it; as for
    `needs_defaults_removed`, a value other than `true` is no finding. The marker is the
    version's, not the file's: a `namespaced_ids` of the envelope is ignored as every other
@@ -185,10 +185,10 @@ object identity). A rule marked **(not pinned)** has neither.
    - a **segment** is `[A-Za-z][A-Za-z0-9_-]*`: an ASCII letter, then ASCII letters,
      digits, `_` or `-`;
    - a **namespace** is one or more segments joined by `::`;
-   - a **namespaced id** is a namespace, `::`, and a **local id** that is not empty and
-     holds neither `::` nor `.`.
+   - a **namespaced id** is a namespace, `::`, and a **local id** that is not empty, does
+     not begin with `:`, and holds neither `::` nor `.`.
 
-   An id with no `::` has no namespace, and is its own local id. A link target's `.part`
+   An id with no `::` is its own local id. A link target's `.part`
    and its conditions are not part of the id: a reader strips them, as it does today, and
    splits what remains. `split_id` is the rule: `split_id("a::b::X")` is
    `(("a", "b"), "X")` and `split_id("X")` is `((), "X")`, an id with no `::` returned

@@ -96,8 +96,9 @@
 #                    record key, the `namespace` (its segments, in order; `[]` for a key
 #                    with no `::`) and the `local_id` the key splits into by the
 #                    contract's rule: at its LAST `::`, each segment a letter and then
-#                    letters, digits, `_` or `-`, the local id not empty and holding
-#                    neither `::` nor `.`. The runner splits the key read; the reader
+#                    letters, digits, `_` or `-`, the local id not empty, not beginning
+#                    with `:`, and holding neither `::` nor `.`. The runner splits the
+#                    key read; the reader
 #                    itself splits nothing, and every record keeps its key as written
 #     unsplittable - optional, under the same condition; record keys the rule refuses to
 #                    split. Each must still be read, keyed as written, and the case's
