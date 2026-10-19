@@ -934,11 +934,11 @@ keys = ["A"]
 name = "namespaced-ids-true-marks-the-version"
 why = "a version whose namespaced_ids is true says its ids are namespaced: each splits at its LAST ::, one with no :: has no namespace, and every record keeps its key as written"
 layer = "document"
-json = '''{"current_version": "1.0", "versions": {"1.0": {"namespaced_ids": true, "needs": {"nc::testcase::T_001": {"id": "nc::testcase::T_001", "type": "req", "title": "t"}, "nc::T_002": {"id": "nc::T_002", "type": "req", "title": "t"}, "Ab-c_9::d::X_1": {"id": "Ab-c_9::d::X_1", "type": "req", "title": "t"}, "PLAIN_1": {"id": "PLAIN_1", "type": "req", "title": "t"}, "nc::testcase::001": {"id": "nc::testcase::001", "type": "req", "title": "t"}, "a::X:Y": {"id": "a::X:Y", "type": "req", "title": "t"}, "a-::X": {"id": "a-::X", "type": "req", "title": "t"}, "a::é": {"id": "a::é", "type": "req", "title": "t"}, "a::X Y": {"id": "a::X Y", "type": "req", "title": "t"}}}}}'''
+json = '''{"current_version": "1.0", "versions": {"1.0": {"namespaced_ids": true, "needs": {"nc::testcase::T_001": {"id": "nc::testcase::T_001", "type": "req", "title": "t"}, "nc::T_002": {"id": "nc::T_002", "type": "req", "title": "t"}, "Ab-c_9::d::X_1": {"id": "Ab-c_9::d::X_1", "type": "req", "title": "t"}, "PLAIN_1": {"id": "PLAIN_1", "type": "req", "title": "t"}, "nc::testcase::001": {"id": "nc::testcase::001", "type": "req", "title": "t"}, "a::X:Y": {"id": "a::X:Y", "type": "req", "title": "t"}, "a-::X": {"id": "a-::X", "type": "req", "title": "t"}, "a::é": {"id": "a::é", "type": "req", "title": "t"}, "a::X Y": {"id": "a::X Y", "type": "req", "title": "t"}, "a::X-y_1": {"id": "a::X-y_1", "type": "req", "title": "t"}, "a::X:": {"id": "a::X:", "type": "req", "title": "t"}, "a::X ": {"id": "a::X ", "type": "req", "title": "t"}}}}}'''
 [case.expect]
 diagnostics = []
 namespaced_ids = true
-keys = ["nc::testcase::T_001", "nc::T_002", "Ab-c_9::d::X_1", "PLAIN_1", "nc::testcase::001", "a::X:Y", "a-::X", "a::é", "a::X Y"]
+keys = ["nc::testcase::T_001", "nc::T_002", "Ab-c_9::d::X_1", "PLAIN_1", "nc::testcase::001", "a::X:Y", "a-::X", "a::é", "a::X Y", "a::X-y_1", "a::X:", "a::X "]
 [case.expect.split]
 "nc::testcase::T_001" = { namespace = ["nc", "testcase"], local_id = "T_001" }
 "nc::T_002" = { namespace = ["nc"], local_id = "T_002" }
@@ -949,6 +949,9 @@ keys = ["nc::testcase::T_001", "nc::T_002", "Ab-c_9::d::X_1", "PLAIN_1", "nc::te
 "a-::X" = { namespace = ["a-"], local_id = "X" }
 "a::é" = { namespace = ["a"], local_id = "é" }
 "a::X Y" = { namespace = ["a"], local_id = "X Y" }
+"a::X-y_1" = { namespace = ["a"], local_id = "X-y_1" }
+"a::X:" = { namespace = ["a"], local_id = "X:" }
+"a::X " = { namespace = ["a"], local_id = "X " }
 
 [[case]]
 name = "namespaced-ids-false-says-nothing"

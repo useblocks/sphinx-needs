@@ -171,8 +171,9 @@ object identity). A rule marked **(not pinned)** has neither.
    holds `::`, and each such link target written in the version, is a namespace of one or
    more segments and a local id, joined by `::` and split at the **last** `::`; an id
    without `::` has no namespace. `nc::testcase::T_001` is the namespace `nc::testcase`,
-   of the segments `nc` and `testcase`, and the local id `T_001`. Any other value — `false`, `"true"`, `1` — or none says nothing, and the ids
-   are read as today, a `::` in one being characters of it; as for
+   of the segments `nc` and `testcase`, and the local id `T_001`. Any other value —
+   `false`, `"true"`, `1` — or none says nothing, and the ids are read as today, a `::` in
+   one being characters of it; as for
    `needs_defaults_removed`, a value other than `true` is no finding. The marker is the
    version's, not the file's: a `namespaced_ids` of the envelope is ignored as every other
    unknown envelope key is (§3.4), because a file accumulates versions built before and
