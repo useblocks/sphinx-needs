@@ -26,7 +26,7 @@ from sphinx_needs._wording import joined
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsMutable, SphinxNeedsData
 from sphinx_needs.debug import measure_time_func
-from sphinx_needs.derive import DeriveCall, DeriveRule, fingerprint_names
+from sphinx_needs.derive import DeriveCall, DeriveRule, fingerprint_names, is_union
 from sphinx_needs.exceptions import FunctionParsingException
 from sphinx_needs.filter_common import filter_needs_and_parts, filter_single_need
 from sphinx_needs.logging import get_logger, log_warning
@@ -833,7 +833,8 @@ def _warn_dense(
 
     The lists a ``links`` or ``content_links`` rule computed are counted, or, on a link
     type without a rule, the links :data:`LINK_CALLS` computed; never a written link,
-    one a ``needextend`` adds, or a back link. A link stored is counted, dead or to a
+    one a ``needextend`` adds, a back link, or a ``union``'s list, which holds the links
+    of its members. A link stored is counted, dead or to a
     part; a link two calls of one need computed is stored, and counted, once. The
     needs of the project are every need, external and imported ones too, never a part.
     It counts the lists as the pass left them, so every build warns alike; ``0`` (or
@@ -846,6 +847,9 @@ def _warn_dense(
     for (need_id, field), call in pass_.project.rules.items():
         if call.rule.link_valued:
             density = densities.setdefault(field, _Density(by_rule=True))
+            if is_union(call.rule):
+                # its links are its members' links, counted where they are computed
+                continue
             density.sources.add(call.rule.kind)
             density.add(need_id, len(set(needs[need_id][field])))
     for (need_id, field), (links, calls) in pass_.called_links.items():

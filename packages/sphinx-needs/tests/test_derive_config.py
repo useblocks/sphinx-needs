@@ -129,7 +129,7 @@ EXPECTED_WARNINGS = [
     _invalid(
         "bad_kind",
         "the kind 'expr' is unknown; the kinds are copy, sum, count, min, max, any, "
-        "all, collect, hash, fingerprint, links, content_links",
+        "all, collect, hash, fingerprint, links, content_links, union",
     ),
     _invalid(
         "bad_link_kind",
@@ -1034,7 +1034,7 @@ def test_parse_derive_reads_a_rule(raw, on_link, expected):
             False,
             None,
             "the kind 1 is unknown; the kinds are copy, sum, count, min, max, any, "
-            "all, collect, hash, fingerprint, links, content_links",
+            "all, collect, hash, fingerprint, links, content_links, union",
             id="kind-not-string",
         ),
         pytest.param(
@@ -1042,7 +1042,7 @@ def test_parse_derive_reads_a_rule(raw, on_link, expected):
             False,
             "expr",
             "the kind 'expr' is unknown; the kinds are copy, sum, count, min, max, "
-            "any, all, collect, hash, fingerprint, links, content_links",
+            "any, all, collect, hash, fingerprint, links, content_links, union",
             id="expr-not-yet",
         ),
         pytest.param(

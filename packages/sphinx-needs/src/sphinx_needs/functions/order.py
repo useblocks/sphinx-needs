@@ -853,12 +853,12 @@ class _RuleReads(_CallReads):
     A rule says what it reads in its roles: its own ``field`` or the field of the need
     ``from`` names (``copy``); on each need ``over`` names, the ``field`` and the names
     of ``where`` and ``test`` (the roll-ups, ``copy`` over a link type); every need
-    ``over`` reaches (``transitive``); the listed own ``fields`` (``hash``); every own
-    name a fingerprint includes and does not ``exclude`` (``fingerprint``); the names
-    of ``where`` on every need (``links``, through their columns) or on each need the
-    content references (``content_links``); for a ``join``, its ``equals`` on its own
-    need, and its ``field`` (with ``copy``'s ``field``, and ``where``'s names) on every
-    need, through their columns.
+    ``over`` reaches (``transitive``); the listed own ``fields`` (``hash``,
+    ``union``); every own name a fingerprint includes and does not ``exclude``
+    (``fingerprint``); the names of ``where`` on every need (``links``, through their
+    columns) or on each need the content references (``content_links``); for a
+    ``join``, its ``equals`` on its own need, and its ``field`` (with ``copy``'s
+    ``field``, and ``where``'s names) on every need, through their columns.
     """
 
     def read(self) -> None:
@@ -883,7 +883,8 @@ class _RuleReads(_CallReads):
             for target in self.project.content_refs(source):
                 for name in sorted(where):
                     self._read(target, name)
-        elif rule.kind == "hash":
+        elif rule.kind in {"hash", "union"}:
+            # a union's link types are of its own stratum: computed before it
             for name in rule.fields:
                 self._read(self.need.id, name)
         elif rule.kind == "fingerprint":

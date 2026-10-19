@@ -69,6 +69,7 @@ from sphinx_needs.derive import (
     core_message,
     invalid_entry_message,
     invalid_message,
+    is_union,
     parse_derive,
     parse_derive_by_type,
 )
@@ -2231,6 +2232,11 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                     )
                     derive_problems.extend(by_type_problems)
             authored = derive is None and by_type is None
+            # a union reports no dead link of its own, so its allow_dead_links would
+            # say nothing: reported beside its rule, below, and ignored
+            dead_beside = "allow_dead_links" in link and (
+                is_union(derive) or any(map(is_union, (by_type or {}).values()))
+            )
             where = f"{config_source}[{name!r}]"
             # a target_types not of its shape is ignored, as a need type's entry's is
             given_targets = "target_types" in link
@@ -2262,7 +2268,8 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 directive_option=authored,
                 display=display_config,
                 copy=link.get("copy", False),
-                allow_dead_links=link.get("allow_dead_links", False),
+                allow_dead_links=link.get("allow_dead_links", False)
+                and not dead_beside,
                 target_types=target_types,
                 derive=derive,
                 derive_by_type=by_type,
@@ -2279,6 +2286,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                                 ("default", "default" in link),
                                 ("predicates", "predicates" in link),
                                 ("target_types", given_targets),
+                                ("allow_dead_links", dead_beside),
                             )
                             if beside_key
                         ],
@@ -2295,6 +2303,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                         ("default", refused),
                         ("predicates", "predicates" in link),
                         ("target_types", given_targets),
+                        ("allow_dead_links", dead_beside),
                     )
                     if refused_key
                 ]

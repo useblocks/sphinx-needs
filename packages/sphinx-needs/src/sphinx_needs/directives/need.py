@@ -499,10 +499,28 @@ def resolve_links(
         need.sort_links()
 
 
-def _dead_links(need: NeedItem, needs: NeedsMutable) -> list[tuple[str, NeedLink]]:
-    """The links of ``need`` to an unknown need, or to an unknown part of a known one."""
+def _unions(
+    schema: FieldsSchema, need_type: str, cache: dict[str, frozenset[str]]
+) -> frozenset[str]:
+    """The link types that are a ``union`` on a need of ``need_type``
+    (:meth:`~sphinx_needs.needs_schema.LinkSchema.is_union`), read once per need type:
+    their links are their members', which alone report dead links and conditions."""
+    if (unions := cache.get(need_type)) is None:
+        unions = cache[need_type] = frozenset(
+            link.name for link in schema.iter_link_fields() if link.is_union(need_type)
+        )
+    return unions
+
+
+def _dead_links(
+    need: NeedItem, needs: NeedsMutable, unions: frozenset[str]
+) -> list[tuple[str, NeedLink]]:
+    """The links of ``need`` to an unknown need, or to an unknown part of a known one;
+    never those of a union (``unions``), which are its members'."""
     dead_links: list[tuple[str, NeedLink]] = []
     for link_type, references in need.iter_links_items(as_str=False):
+        if link_type in unions:
+            continue
         for need_link in references:
             linked_need = needs.get(need_link.id)
             if linked_need is None or (
@@ -545,9 +563,10 @@ def build_backlinks(
     allow_dead_links = {
         link.name: link.allow_dead_links for link in schema.iter_link_fields()
     }
+    unions: dict[str, frozenset[str]] = {}
     for need in needs.values():
         need.sort_backlinks()
-        dead_links = _dead_links(need, needs)
+        dead_links = _dead_links(need, needs, _unions(schema, need["type"], unions))
         need["has_dead_links"] = bool(dead_links)
         need["has_forbidden_dead_links"] = bool(
             any(not allow_dead_links.get(lt, False) for lt, _ in dead_links)
@@ -565,12 +584,15 @@ def check_links(
     checked in the order they were read in, each need's target types, then its
     conditions, then its dead links. The target types are checked whether or not the
     schema validation runs; a link failing both its target types and its condition is
-    reported for each.
+    reported for each. A union's links are its members': it reports neither a condition
+    nor a dead link of its own.
     """
     #: need type -> link type -> its target types, as the type declares them: read
     #: once per need type, not per link
     target_types: dict[str, dict[str, LinkTargetTypes]] = {}
+    unions_by_type: dict[str, frozenset[str]] = {}
     for need in needs.values():
+        unions = _unions(schema, need["type"], unions_by_type)
         if (declared := target_types.get(need_type := need["type"])) is None:
             declared = target_types[need_type] = {
                 link.name: link.target_types
@@ -580,6 +602,8 @@ def check_links(
         if declared:
             _check_target_types(need, needs, declared)
         for link_type, references in need.iter_links_items(as_str=False):
+            if link_type in unions:
+                continue
             for need_link in references:
                 if need_link.condition is None:
                     continue
@@ -609,7 +633,7 @@ def check_links(
                     )
 
         if need["has_forbidden_dead_links"] and config.report_dead_links:
-            for link_type, need_link in _dead_links(need, needs):
+            for link_type, need_link in _dead_links(need, needs, unions):
                 message = f"Need '{need.id}' has unknown outgoing link '{need_link.to_filter_string()}' in field '{link_type}'"
                 _emit_link_warning(need, message, "link_outgoing")
 

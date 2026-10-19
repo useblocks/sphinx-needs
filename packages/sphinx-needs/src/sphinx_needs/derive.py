@@ -55,6 +55,7 @@ DeriveKind: TypeAlias = Literal[
     "fingerprint",
     "links",
     "content_links",
+    "union",
 ]
 
 #: The kinds, in the order the documentation lists them.
@@ -71,11 +72,12 @@ KINDS: Final[tuple[DeriveKind, ...]] = (
     "fingerprint",
     "links",
     "content_links",
+    "union",
 )
 
 #: The kinds that compute a link list, declared on a link type; every other kind
 #: computes a value, declared on a field.
-LINK_KINDS: Final = frozenset({"links", "content_links"})
+LINK_KINDS: Final = frozenset({"links", "content_links", "union"})
 
 #: The roles, in the order a rule's problems are looked for.
 ROLES: Final = (
@@ -128,6 +130,7 @@ _ROLES_OF: Final[Mapping[str, tuple[frozenset[str], frozenset[str]]]] = {
         frozenset({"where", "join", "include_self", "include_parts"}),
     ),
     "content_links": (frozenset(), frozenset({"from", "where"})),
+    "union": (frozenset({"fields"}), frozenset()),
 }
 
 _STRING_ROLES: Final = frozenset({"field", "over", "from", "where", "test"})
@@ -158,7 +161,8 @@ class DeriveRule:
 
     :ivar kind: The kind.
     :ivar field: The ``field`` role: the field read on each candidate, or on this need.
-    :ivar fields: The ``fields`` role (``hash``): the own fields hashed, in order.
+    :ivar fields: The ``fields`` role: the own fields hashed, in order (``hash``), or
+        the link types whose links are united, in order (``union``).
     :ivar exclude: The ``exclude`` role (``fingerprint``): what it leaves out.
     :ivar over: The ``over`` role: a link type, or ``<link type>_back``.
     :ivar from_need: The ``from`` role: the id of the one need read.
@@ -312,6 +316,8 @@ def parse_derive(raw: Any, *, on_link: bool) -> Derive:
         return DeriveInvalid(
             kind, f"{prefix}: the role 'exclude' names {twice!r} twice"
         )
+    if kind == "union" and (twice := _named_twice(raw["fields"])) is not None:
+        return DeriveInvalid(kind, f"{prefix}: the role 'fields' names {twice!r} twice")
     if (problem := _combination_problem(kind, raw)) is not None:
         return DeriveInvalid(kind, f"{prefix} {problem}")
     return DeriveRule(
@@ -971,6 +977,8 @@ def _rule_problem(
                 f"{prefix}: the role 'field' names {rule.field!r}, "
                 "which is not a field, a link type or the back links of one"
             )
+    if rule.kind == "union":
+        return _union_problem(rule, links)
     for name in rule.fields:
         if name.endswith("_back") and name[:-5] in links:
             return (
@@ -1004,6 +1012,40 @@ def _rule_problem(
     if rule.link_valued:
         return None
     return _result_problem(rule, source, target)
+
+
+def _union_problem(rule: DeriveRule, links: set[str]) -> str | None:
+    """Why a ``union`` cannot be read against the configuration, if it cannot: each
+    member must be a link type, other than ``parent_needs``.
+
+    The union itself, or a union naming it back, is the cycle check's to refuse.
+    """
+    prefix = rule.describe()
+    for name in rule.fields:
+        if name in CORE_LINK_TYPES:
+            return (
+                f"{prefix}: the role 'fields' names {name!r}, which a union cannot "
+                "read in this release"
+            )
+        if _is_link_name(name, links) and name not in links:
+            return (
+                f"{prefix}: the role 'fields' names the back links {name!r}, which a "
+                "union cannot read: they are built after the link types"
+            )
+        if name not in links:
+            return (
+                f"{prefix}: the role 'fields' names {name!r}, which is not a link type"
+            )
+    return None
+
+
+def is_union(rule: Derive | None) -> bool:
+    """Whether a rule is a ``union``: its links are those of its members, which report
+    their own dead links and link conditions, so the union reports none of its own.
+
+    A ``union`` that cannot be read is no union: it holds no links.
+    """
+    return isinstance(rule, DeriveRule) and rule.kind == "union"
 
 
 def _result_problem(
@@ -1211,7 +1253,7 @@ def _own_reads(rule: DeriveRule) -> tuple[str, list[str]]:
         return "join", [rule.join.equals]
     if rule.kind == "copy" and rule.over is None and rule.from_need is None:
         return "field", [rule.field] if rule.field is not None else []
-    if rule.kind == "hash":
+    if rule.kind in {"hash", "union"}:
         return "fields", list(rule.fields)
     return "", []
 

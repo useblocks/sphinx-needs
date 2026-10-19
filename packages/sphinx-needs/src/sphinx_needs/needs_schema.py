@@ -27,6 +27,7 @@ from sphinx_needs.derive import (
     Derive,
     DeriveInvalid,
     DeriveRule,
+    is_union,
     typed_empty,
 )
 from sphinx_needs.exceptions import VariantParsingException
@@ -898,6 +899,15 @@ class LinkSchema:
         """The rules of a derived link type, as messages name them: ``kind 'links'``."""
         return _describe_derived(self.derive, self.derive_by_type)
 
+    def is_union(self, need_type: str) -> bool:
+        """Whether on a need of ``need_type`` the link type is a ``union`` of others.
+
+        Its links are its members' links, so it reports no dead link and no link
+        condition of its own, nor does a dead link of it make one forbidden: the
+        members do, as they allow dead links. Every check of a need's links asks this.
+        """
+        return is_union(self.rule_for(need_type))
+
     def off_type_value(self) -> list[NeedLink]:
         """The links a need holds when its type has no rule (see :meth:`rule_for`).
 
@@ -1196,6 +1206,8 @@ class LinkShape(FieldShape, Protocol):
 
     @property
     def allow_dead_links(self) -> bool: ...
+
+    def is_union(self, need_type: str) -> bool: ...
 
 
 class FieldsSchema:
