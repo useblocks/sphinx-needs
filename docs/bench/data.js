@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792441350460,
+  "lastUpdate": 1792442881556,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -26280,6 +26280,42 @@ window.BENCHMARK_DATA = {
             "value": 53.445926867,
             "unit": "s",
             "extra": "Commit: 554af4d4eaa00ef96035f38e07bdd201225215bf\nBranch: master\nTime: 2026-10-19T22:21:01+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f8f4d36102179aa94296edae0d09705ba46491d0",
+          "message": "🐛 A network schema finding's header names the need the rule selected (#2340)\n\n\n\n## What\n\n`packages/sphinx-needs`: the console header of a schema finding names\nthe need the rule selected,\nthe need `schema_violations.json` already files the finding under.\n`get_formatted_warnings` passes the key of `need_2_warnings` (the\nselected need) down to\n`get_formatted_warnings_recurse`, which builds all four headers\n(configuration errors, violations,\nwarnings, infos) from it instead of from `warning[\"need\"]`.\nThe `Need path` line still gives the chain (`T_001 > verifies > S_001`),\nand the finding's code,\nseverity, `Field`, `Schema path` and `schema_violations.json` do not\nchange.\n\n## Why\n\nFor a network finding that failed on a linked need, `warning[\"need\"]` is\nthat linked need,\nso a rule selecting `T_001` reported `Need 'S_001' has schema\nviolations` for the path\n`T_001 > verifies > S_001`, as if the spec broke the rule, while\n`schema_violations.json` filed it under `T_001`.\n\nCloses #2297\n\nNot changed here, for #1794 (the rules for when a rule's `message` and\n`severity` reach a finding): the rule's\n`message` is missing on `network_local_fail`, and\n`network_contains_too_few` adds it one hop down but not at the\nselected need itself (`schema/core.py`, the `recurse_level` guards).\n\n## Tests\n\n-\n`tests/schema/test_schema.py::test_network_finding_header_names_selected_need`\npins the header and the\n`Need path` line for a level-1 `network_local_fail`, a level-2 one\n(`T_001 > verifies > S_001 > implements > S_002`)\nand a `network_contains_too_few` found one hop away, plus\n`schema_violations.json` keyed by `T_001`.\nIt is committed first and fails on the parent commit for all three\ncases.\n- `tests/schema/__snapshots__/test_schema.ambr`: 16 header lines move,\nin 6 snapshots\n(`network-max_network_levels`,\n`network-network_local_unevaluated_reduced_error`,\n`network-network_local_multi_error`,\n`network-network_back_items_error`, `test_schema_benchmark[10]`,\n`test_schema_benchmark[100]`);\nevery header now equals the first need of its `Need path`. No JSON\nsnapshot moves.\n- `tests/test_need_types_docs.py`: the two network records of the\nper-type example\n(`T_002 > verifies > S_002`, `T_005 > verifies > R_002`) now head with\n`T_002` and `T_005`,\nand the quote on `docs/schema/index.rst` moves with them (with its\nsentence about the header).\n- Full suite: 3508 passed; `tests/schema` also on Python 3.12 / Sphinx\n9.\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-<package>`) and they\npass.\n- [x] Documentation is updated where behaviour or options change.\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-19T22:46:41+02:00",
+          "tree_id": "c3af047182aed4d986064b51415b36c16b96a9a5",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/f8f4d36102179aa94296edae0d09705ba46491d0"
+        },
+        "date": 1792442871627,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07934704500000578,
+            "unit": "s",
+            "extra": "Commit: f8f4d36102179aa94296edae0d09705ba46491d0\nBranch: master\nTime: 2026-10-19T22:46:41+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 49.09801992300001,
+            "unit": "s",
+            "extra": "Commit: f8f4d36102179aa94296edae0d09705ba46491d0\nBranch: master\nTime: 2026-10-19T22:46:41+02:00"
           }
         ]
       }
