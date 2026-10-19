@@ -268,8 +268,9 @@ Deprecations
   reads the file the same way. ``sphinx_needs.exchange`` is kept through 9.x as a deprecated alias of
   ``ub_needs_exchange``: importing it gives a ``DeprecationWarning``, and it is removed in
   10.0. The addition: a needs.json may carry a top-level ``format_version`` -- nothing
-  writes one yet -- and one above 1 is read as format 1 with a warning, while one that is
-  not an integer of 1 or more refuses that source.
+  writes one yet. Absent or ``1``, the file is read as before; one that names a later
+  format -- an integer above 1, or a pre-release such as ``"2a1"`` -- refuses that source,
+  in one warning saying which format the file is of, and so does any other value.
 
 Bug fixes
 .........
