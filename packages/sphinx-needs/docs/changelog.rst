@@ -10,7 +10,7 @@ Unreleased
 Improvements
 ............
 
-- ✨ A link type's ``target_types`` lists the need types its links may point to (:issue:`2300`, :pr:`2319`)
+- ✨ A link type's ``target_types`` lists the need types its links may point to (:issue:`2300`, :pr:`2319`, :pr:`2342`)
 
   ``target_types = ["req"]`` on a :ref:`needs_links` entry (or a ``needs_extra_links`` one, or
   ``[needs.links.<l>]``) accepts a link to a ``req``, or to a need of any type inheriting from ``req``,
