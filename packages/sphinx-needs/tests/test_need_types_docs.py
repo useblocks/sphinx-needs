@@ -355,6 +355,8 @@ REGISTERED_TOML = """\
 [needs]
 build_json = true
 
+[needs.services.github-issues]
+
 [needs.types.req]
 title = "Requirement"
 prefix = "R_"
@@ -401,8 +403,8 @@ Case
 def test_type_entry_on_a_registered_field(test_app: SphinxTestApp) -> None:
     """The note of the how-to: a field a service registers is not a field of one type.
 
-    ``url`` is registered by the GitHub services, though no ``needs_fields`` entry names
-    it: a type's entry on it narrows the field on that type, and a need of another type
+    ``url`` is registered by a configured GitHub service, though no ``needs_fields``
+    entry names it: a type's entry on it narrows the field on that type, and a need of another type
     still sets it, without a warning.
     """
     test_app.build()

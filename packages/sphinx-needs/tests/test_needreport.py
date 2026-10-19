@@ -539,7 +539,7 @@ def test_needs_report_template_renders(test_app):
     text = visible_text(Path(app.outdir, "index.html").read_text(encoding="utf8"))
     # the leading "/" of the configured path is stripped, not treated as the
     # file system root, so the template is found relative to the source directory
-    assert "The project defines 8 need types:" in text
+    assert "The project defines 5 need types:" in text
     assert "Requirement" in text
     assert "Specification" in text
 

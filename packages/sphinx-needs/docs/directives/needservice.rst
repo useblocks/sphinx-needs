@@ -66,6 +66,8 @@ GitHub Issues Example
 ---------------------
 This example is using the ``github-issues`` service.
 For details, please take a look into its specific documentation under :ref:`github_service`.
+A built-in service is available only when it is configured,
+so this documentation's **conf.py** names it: ``needs_services = {"github-issues": {}}``.
 
 The service queries ``GitHub`` for issues in the **Sphinx-Needs** repository that have *node* and *latexpdf* in
 their content.

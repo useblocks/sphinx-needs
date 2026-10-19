@@ -4,8 +4,6 @@
     'COMP_001': dict({
       'arch': dict({
       }),
-      'avatar': None,
-      'closed_at': None,
       'collapse': False,
       'completion': None,
       'constraints': list([
@@ -25,7 +23,6 @@
         
         comp --> int
       ''',
-      'created_at': None,
       'docname': 'index',
       'doctype': '.rst',
       'duration': None,
@@ -37,7 +34,6 @@
       'id': 'COMP_001',
       'id_complete': 'COMP_001',
       'id_parent': 'COMP_001',
-      'id_prefix': None,
       'is_external': False,
       'is_import': False,
       'is_modified': False,
@@ -51,8 +47,6 @@
       ]),
       'links_back': list([
       ]),
-      'max_amount': None,
-      'max_content_lines': None,
       'modifications': 0,
       'parent_need': None,
       'parent_needs': list([
@@ -65,14 +59,11 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'query': None,
       'section_name': 'TEST DOCUMENT NEEDUML',
       'sections': tuple(
         'TEST DOCUMENT NEEDUML',
       ),
-      'service': None,
       'signature': None,
-      'specific': None,
       'status': None,
       'style': None,
       'tags': list([
@@ -84,15 +75,10 @@
       'type_name': 'Component',
       'type_prefix': 'C_',
       'type_style': 'card',
-      'updated_at': None,
-      'url': None,
-      'user': None,
     }),
     'INT_001': dict({
       'arch': dict({
       }),
-      'avatar': None,
-      'closed_at': None,
       'collapse': False,
       'completion': None,
       'constraints': list([
@@ -102,7 +88,6 @@
       'constraints_results': dict({
       }),
       'content': 'circle "Int_X" as int',
-      'created_at': None,
       'docname': 'index',
       'doctype': '.rst',
       'duration': None,
@@ -114,7 +99,6 @@
       'id': 'INT_001',
       'id_complete': 'INT_001',
       'id_parent': 'INT_001',
-      'id_prefix': None,
       'is_external': False,
       'is_import': False,
       'is_modified': False,
@@ -128,8 +112,6 @@
       ]),
       'links_back': list([
       ]),
-      'max_amount': None,
-      'max_content_lines': None,
       'modifications': 0,
       'parent_need': None,
       'parent_needs': list([
@@ -142,14 +124,11 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'query': None,
       'section_name': 'TEST DOCUMENT NEEDUML',
       'sections': tuple(
         'TEST DOCUMENT NEEDUML',
       ),
-      'service': None,
       'signature': None,
-      'specific': None,
       'status': None,
       'style': None,
       'tags': list([
@@ -161,9 +140,6 @@
       'type_name': 'Interface',
       'type_prefix': 'I_',
       'type_style': 'card',
-      'updated_at': None,
-      'url': None,
-      'user': None,
     }),
     'INT_002': dict({
       'arch': dict({
@@ -180,8 +156,6 @@
           Bob --> Alice: Hi Alice
         ''',
       }),
-      'avatar': None,
-      'closed_at': None,
       'collapse': False,
       'completion': None,
       'constraints': list([
@@ -212,7 +186,6 @@
            Alice -> Bob: Hi Bob
            Bob --> Alice: Hi Alice
       ''',
-      'created_at': None,
       'docname': 'index',
       'doctype': '.rst',
       'duration': None,
@@ -224,7 +197,6 @@
       'id': 'INT_002',
       'id_complete': 'INT_002',
       'id_parent': 'INT_002',
-      'id_prefix': None,
       'is_external': False,
       'is_import': False,
       'is_modified': False,
@@ -238,8 +210,6 @@
       ]),
       'links_back': list([
       ]),
-      'max_amount': None,
-      'max_content_lines': None,
       'modifications': 0,
       'parent_need': None,
       'parent_needs': list([
@@ -252,14 +222,11 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'query': None,
       'section_name': 'TEST DOCUMENT NEEDUML',
       'sections': tuple(
         'TEST DOCUMENT NEEDUML',
       ),
-      'service': None,
       'signature': None,
-      'specific': None,
       'status': None,
       'style': None,
       'tags': list([
@@ -271,9 +238,6 @@
       'type_name': 'Interface',
       'type_prefix': 'I_',
       'type_style': 'card',
-      'updated_at': None,
-      'url': None,
-      'user': None,
     }),
     'INT_003': dict({
       'arch': dict({
@@ -292,8 +256,6 @@
           Bob --> Alice: Hi Alice
         ''',
       }),
-      'avatar': None,
-      'closed_at': None,
       'collapse': False,
       'completion': None,
       'constraints': list([
@@ -321,7 +283,6 @@
            Alice -> Bob: Hi Bob
            Bob --> Alice: Hi Alice
       ''',
-      'created_at': None,
       'docname': 'index',
       'doctype': '.rst',
       'duration': None,
@@ -333,7 +294,6 @@
       'id': 'INT_003',
       'id_complete': 'INT_003',
       'id_parent': 'INT_003',
-      'id_prefix': None,
       'is_external': False,
       'is_import': False,
       'is_modified': False,
@@ -347,8 +307,6 @@
       ]),
       'links_back': list([
       ]),
-      'max_amount': None,
-      'max_content_lines': None,
       'modifications': 0,
       'parent_need': None,
       'parent_needs': list([
@@ -361,14 +319,11 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'query': None,
       'section_name': 'TEST DOCUMENT NEEDUML',
       'sections': tuple(
         'TEST DOCUMENT NEEDUML',
       ),
-      'service': None,
       'signature': None,
-      'specific': None,
       'status': None,
       'style': None,
       'tags': list([
@@ -380,9 +335,6 @@
       'type_name': 'Interface',
       'type_prefix': 'I_',
       'type_style': 'card',
-      'updated_at': None,
-      'url': None,
-      'user': None,
     }),
     'INT_004': dict({
       'arch': dict({
@@ -405,8 +357,6 @@
           Marvel --> DC: Anyone there?
         ''',
       }),
-      'avatar': None,
-      'closed_at': None,
       'collapse': False,
       'completion': None,
       'constraints': list([
@@ -445,7 +395,6 @@
            Alice -> Bob: Hi Bob
            Bob --> Alice: Hi Alice
       ''',
-      'created_at': None,
       'docname': 'index',
       'doctype': '.rst',
       'duration': None,
@@ -457,7 +406,6 @@
       'id': 'INT_004',
       'id_complete': 'INT_004',
       'id_parent': 'INT_004',
-      'id_prefix': None,
       'is_external': False,
       'is_import': False,
       'is_modified': False,
@@ -471,8 +419,6 @@
       ]),
       'links_back': list([
       ]),
-      'max_amount': None,
-      'max_content_lines': None,
       'modifications': 0,
       'parent_need': None,
       'parent_needs': list([
@@ -485,14 +431,11 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'query': None,
       'section_name': 'TEST DOCUMENT NEEDUML',
       'sections': tuple(
         'TEST DOCUMENT NEEDUML',
       ),
-      'service': None,
       'signature': None,
-      'specific': None,
       'status': None,
       'style': None,
       'tags': list([
@@ -504,15 +447,10 @@
       'type_name': 'Interface',
       'type_prefix': 'I_',
       'type_style': 'card',
-      'updated_at': None,
-      'url': None,
-      'user': None,
     }),
     'PROD_001': dict({
       'arch': dict({
       }),
-      'avatar': None,
-      'closed_at': None,
       'collapse': False,
       'completion': None,
       'constraints': list([
@@ -528,7 +466,6 @@
         node "System A" as sys_2
         sys_2 --> int
       ''',
-      'created_at': None,
       'docname': 'index',
       'doctype': '.rst',
       'duration': None,
@@ -540,7 +477,6 @@
       'id': 'PROD_001',
       'id_complete': 'PROD_001',
       'id_parent': 'PROD_001',
-      'id_prefix': None,
       'is_external': False,
       'is_import': False,
       'is_modified': False,
@@ -554,8 +490,6 @@
       ]),
       'links_back': list([
       ]),
-      'max_amount': None,
-      'max_content_lines': None,
       'modifications': 0,
       'parent_need': None,
       'parent_needs': list([
@@ -568,14 +502,11 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'query': None,
       'section_name': 'TEST DOCUMENT NEEDUML',
       'sections': tuple(
         'TEST DOCUMENT NEEDUML',
       ),
-      'service': None,
       'signature': None,
-      'specific': None,
       'status': None,
       'style': None,
       'tags': list([
@@ -587,15 +518,10 @@
       'type_name': 'Product',
       'type_prefix': 'P_',
       'type_style': 'node',
-      'updated_at': None,
-      'url': None,
-      'user': None,
     }),
     'ST_001': dict({
       'arch': dict({
       }),
-      'avatar': None,
-      'closed_at': None,
       'collapse': False,
       'completion': None,
       'constraints': list([
@@ -605,7 +531,6 @@
       'constraints_results': dict({
       }),
       'content': 'Some content',
-      'created_at': None,
       'docname': 'index',
       'doctype': '.rst',
       'duration': None,
@@ -617,7 +542,6 @@
       'id': 'ST_001',
       'id_complete': 'ST_001',
       'id_parent': 'ST_001',
-      'id_prefix': None,
       'is_external': False,
       'is_import': False,
       'is_modified': False,
@@ -631,8 +555,6 @@
       ]),
       'links_back': list([
       ]),
-      'max_amount': None,
-      'max_content_lines': None,
       'modifications': 0,
       'parent_need': None,
       'parent_needs': list([
@@ -645,14 +567,11 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'query': None,
       'section_name': 'TEST DOCUMENT NEEDUML',
       'sections': tuple(
         'TEST DOCUMENT NEEDUML',
       ),
-      'service': None,
       'signature': None,
-      'specific': None,
       'status': None,
       'style': None,
       'tags': list([
@@ -664,15 +583,10 @@
       'type_name': 'User Story',
       'type_prefix': 'US_',
       'type_style': 'node',
-      'updated_at': None,
-      'url': None,
-      'user': None,
     }),
     'ST_002': dict({
       'arch': dict({
       }),
-      'avatar': None,
-      'closed_at': None,
       'collapse': False,
       'completion': None,
       'constraints': list([
@@ -682,7 +596,6 @@
       'constraints_results': dict({
       }),
       'content': 'Some content 2',
-      'created_at': None,
       'docname': 'index',
       'doctype': '.rst',
       'duration': None,
@@ -694,7 +607,6 @@
       'id': 'ST_002',
       'id_complete': 'ST_002',
       'id_parent': 'ST_002',
-      'id_prefix': None,
       'is_external': False,
       'is_import': False,
       'is_modified': False,
@@ -708,8 +620,6 @@
       ]),
       'links_back': list([
       ]),
-      'max_amount': None,
-      'max_content_lines': None,
       'modifications': 0,
       'parent_need': None,
       'parent_needs': list([
@@ -722,14 +632,11 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'query': None,
       'section_name': 'TEST DOCUMENT NEEDUML',
       'sections': tuple(
         'TEST DOCUMENT NEEDUML',
       ),
-      'service': None,
       'signature': None,
-      'specific': None,
       'status': None,
       'style': None,
       'tags': list([
@@ -741,15 +648,10 @@
       'type_name': 'User Story',
       'type_prefix': 'US_',
       'type_style': 'node',
-      'updated_at': None,
-      'url': None,
-      'user': None,
     }),
     'SYS_001': dict({
       'arch': dict({
       }),
-      'avatar': None,
-      'closed_at': None,
       'collapse': False,
       'completion': None,
       'constraints': list([
@@ -768,7 +670,6 @@
         
         comp_2 --> int
       ''',
-      'created_at': None,
       'docname': 'index',
       'doctype': '.rst',
       'duration': None,
@@ -780,7 +681,6 @@
       'id': 'SYS_001',
       'id_complete': 'SYS_001',
       'id_parent': 'SYS_001',
-      'id_prefix': None,
       'is_external': False,
       'is_import': False,
       'is_modified': False,
@@ -794,8 +694,6 @@
       ]),
       'links_back': list([
       ]),
-      'max_amount': None,
-      'max_content_lines': None,
       'modifications': 0,
       'parent_need': None,
       'parent_needs': list([
@@ -808,14 +706,11 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'query': None,
       'section_name': 'TEST DOCUMENT NEEDUML',
       'sections': tuple(
         'TEST DOCUMENT NEEDUML',
       ),
-      'service': None,
       'signature': None,
-      'specific': None,
       'status': None,
       'style': None,
       'tags': list([
@@ -827,9 +722,6 @@
       'type_name': 'System',
       'type_prefix': 'S_',
       'type_style': 'node',
-      'updated_at': None,
-      'url': None,
-      'user': None,
     }),
   })
 # ---

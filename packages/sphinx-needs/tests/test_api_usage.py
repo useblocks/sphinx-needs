@@ -87,8 +87,9 @@ def test_api_get_types(test_app: SphinxTestApp):
     app = test_app
 
     need_types = get_need_types(app)
-    # the configured types, then the GitHub services' ones
-    assert need_types == ["story", "spec", "impl", "test", "issue", "pr", "commit"]
+    # the configured types: the GitHub services' ones are added only when a service is
+    # configured, which this project does not
+    assert need_types == ["story", "spec", "impl", "test"]
 
 
 @pytest.mark.usefixtures("add_extension2")

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 import re
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import MISSING, Field, dataclass, field, fields
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, NoReturn, SupportsIndex, TypedDict, cast
@@ -106,6 +106,7 @@ class _Config:
         self._layouts: dict[str, dict[str, Any]] = {}
         self._builtin_types: dict[str, NeedType] = {}
         self._builtin_layouts: dict[str, dict[str, Any]] = {}
+        self._builtin_services: list[str] = []
 
     def clear(self) -> None:
         self._fields = {}
@@ -115,6 +116,7 @@ class _Config:
         self._layouts = {}
         self._builtin_types = {}
         self._builtin_layouts = {}
+        self._builtin_services = []
 
     @property
     def fields(self) -> Mapping[str, NewFieldParams]:
@@ -292,8 +294,26 @@ class _Config:
             raise NeedsApiConfigException(f"{name} already exists as need layout")
         self._layouts[name] = copy.deepcopy(layout)
 
+    @property
+    def builtin_services(self) -> Sequence[str]:
+        """The built-in GitHub services ``needs_services`` configures, by name, in the
+        order sphinx-needs registers them.
+
+        Decided once, at ``config-inited`` priority 12, together with their need types
+        and layout, and read when the services are registered, so the services and
+        their types cannot disagree.
+        """
+        return tuple(self._builtin_services)
+
+    def add_builtin_service(self, name: str) -> None:
+        """Records a built-in GitHub service as configured (see
+        :attr:`builtin_services`)."""
+        if name not in self._builtin_services:
+            self._builtin_services.append(name)
+
     def add_builtin_need_type(self, need_type: NeedType) -> None:
-        """Adds a need type sphinx-needs itself provides (the GitHub services' ones).
+        """Adds a need type sphinx-needs itself provides (the configured GitHub
+        services' ones).
 
         Built-in types are the lowest tier: read after the configured and the added
         types, each only where no type of its directive is configured or added, and
@@ -302,8 +322,8 @@ class _Config:
         self._builtin_types[need_type["directive"]] = copy.deepcopy(need_type)
 
     def add_builtin_layout(self, name: str, layout: dict[str, Any]) -> None:
-        """Adds a need layout sphinx-needs itself provides (the GitHub services' one),
-        the lowest tier, as :meth:`add_builtin_need_type`."""
+        """Adds a need layout sphinx-needs itself provides (the configured GitHub
+        services' one), the lowest tier, as :meth:`add_builtin_need_type`."""
         self._builtin_layouts[name] = copy.deepcopy(layout)
 
     def merged_types(self, configured: list[NeedType]) -> list[NeedType]:
@@ -965,9 +985,10 @@ class NeedsSphinxConfig:
     @property
     def types(self) -> list[NeedType]:
         """The need types: the configured ``needs_types``, then those added with the
-        ``add_need_type`` API function by other extensions, then the GitHub services'
-        ``issue``, ``pr`` and ``commit``; a type is read only where no earlier one has
-        its directive.
+        ``add_need_type`` API function by other extensions, then the ``issue``, ``pr``
+        and ``commit`` of the GitHub services ``needs_services`` configures (from
+        sphinx-needs' own ``config-inited`` handler at priority 12 on, so from a handler
+        above 12); a type is read only where no earlier one has its directive.
 
         A read-only list, made anew on each read: a change through it raises
         ``NeedsApiConfigException``, as does assigning the attribute. A type is
@@ -1276,9 +1297,9 @@ class NeedsSphinxConfig:
     def layouts(self) -> dict[str, dict[str, Any]]:
         """The need layouts: the configured ``needs_layouts`` -- which holds
         sphinx-needs' own layouts and the compiled ``needs_card_layouts`` too, once
-        ``config-inited`` has run -- then those added from code, then the GitHub
-        services' ``github`` layout; a layout is read only where no earlier one has its
-        name.
+        ``config-inited`` has run -- then those added from code, then the ``github``
+        layout of the configured GitHub services; a layout is read only where no earlier
+        one has its name.
 
         A read-only dict, made anew on each read: a change through it raises
         ``NeedsApiConfigException``, as does assigning the attribute. A layout is

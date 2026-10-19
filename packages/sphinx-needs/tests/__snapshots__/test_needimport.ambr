@@ -1634,24 +1634,6 @@
               'field_type': 'core',
               'type': 'object',
             }),
-            'avatar': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'closed_at': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
             'completion': dict({
               'default': None,
               'description': 'Added for needgantt functionality',
@@ -1708,15 +1690,6 @@
               'field_type': 'core',
               'type': 'string',
             }),
-            'created_at': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
             'docname': dict({
               'default': None,
               'description': 'Name of the document where the need is defined (None if external).',
@@ -1772,15 +1745,6 @@
               'description': 'ID of the data.',
               'field_type': 'core',
               'type': 'string',
-            }),
-            'id_prefix': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
             }),
             'is_external': dict({
               'default': False,
@@ -1843,24 +1807,6 @@
                 'type': 'string',
               }),
               'type': 'array',
-            }),
-            'max_amount': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'max_content_lines': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
             }),
             'modifications': dict({
               'default': 0,
@@ -1943,15 +1889,6 @@
                 'null',
               ]),
             }),
-            'query': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
             'section_name': dict({
               'default': None,
               'description': 'Simply the first section.',
@@ -1971,28 +1908,10 @@
               }),
               'type': 'array',
             }),
-            'service': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
             'signature': dict({
               'default': None,
               'description': 'Derived from a docutils desc_name node.',
               'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'specific': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
               'type': list([
                 'string',
                 'null',
@@ -2052,33 +1971,6 @@
               'field_type': 'core',
               'type': 'string',
             }),
-            'updated_at': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'url': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'user': dict({
-              'default': None,
-              'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
           }),
           'type': 'object',
         }),
@@ -2104,8 +1996,6 @@
     'IMP_TEST_101': dict({
       'arch': dict({
       }),
-      'avatar': None,
-      'closed_at': None,
       'collapse': False,
       'completion': None,
       'constraints': list([
@@ -2115,7 +2005,6 @@
       'constraints_results': dict({
       }),
       'content': 'IMP_TEST_101 DESCRIPTION',
-      'created_at': None,
       'docname': 'index',
       'doctype': '.rst',
       'duration': None,
@@ -2127,7 +2016,6 @@
       'id': 'IMP_TEST_101',
       'id_complete': 'IMP_TEST_101',
       'id_parent': 'IMP_TEST_101',
-      'id_prefix': None,
       'is_external': False,
       'is_import': True,
       'is_modified': False,
@@ -2141,8 +2029,6 @@
       ]),
       'links_back': list([
       ]),
-      'max_amount': None,
-      'max_content_lines': None,
       'modifications': 0,
       'parent_need': None,
       'parent_needs': list([
@@ -2155,14 +2041,11 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'query': None,
       'section_name': 'TEST DOCUMENT NEEDIMPORT DOWNLOAD NEEDS JSON',
       'sections': tuple(
         'TEST DOCUMENT NEEDIMPORT DOWNLOAD NEEDS JSON',
       ),
-      'service': None,
       'signature': None,
-      'specific': None,
       'status': None,
       'style': None,
       'tags': list([
@@ -2175,15 +2058,10 @@
       'type_name': 'Implementation',
       'type_prefix': 'IM_',
       'type_style': 'node',
-      'updated_at': None,
-      'url': None,
-      'user': None,
     }),
     'SPEC_1': dict({
       'arch': dict({
       }),
-      'avatar': None,
-      'closed_at': None,
       'collapse': False,
       'completion': None,
       'constraints': list([
@@ -2193,7 +2071,6 @@
       'constraints_results': dict({
       }),
       'content': 'other.',
-      'created_at': None,
       'docname': 'index',
       'doctype': '.rst',
       'duration': None,
@@ -2205,7 +2082,6 @@
       'id': 'SPEC_1',
       'id_complete': 'SPEC_1',
       'id_parent': 'SPEC_1',
-      'id_prefix': None,
       'is_external': False,
       'is_import': False,
       'is_modified': False,
@@ -2219,8 +2095,6 @@
       ]),
       'links_back': list([
       ]),
-      'max_amount': None,
-      'max_content_lines': None,
       'modifications': 0,
       'parent_need': None,
       'parent_needs': list([
@@ -2233,14 +2107,11 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'query': None,
       'section_name': 'TEST DOCUMENT NEEDIMPORT DOWNLOAD NEEDS JSON',
       'sections': tuple(
         'TEST DOCUMENT NEEDIMPORT DOWNLOAD NEEDS JSON',
       ),
-      'service': None,
       'signature': None,
-      'specific': None,
       'status': None,
       'style': None,
       'tags': list([
@@ -2252,15 +2123,10 @@
       'type_name': 'Specification',
       'type_prefix': 'SP_',
       'type_style': 'node',
-      'updated_at': None,
-      'url': None,
-      'user': None,
     }),
     'STORY_1': dict({
       'arch': dict({
       }),
-      'avatar': None,
-      'closed_at': None,
       'collapse': False,
       'completion': None,
       'constraints': list([
@@ -2270,7 +2136,6 @@
       'constraints_results': dict({
       }),
       'content': 'some.',
-      'created_at': None,
       'docname': 'index',
       'doctype': '.rst',
       'duration': None,
@@ -2282,7 +2147,6 @@
       'id': 'STORY_1',
       'id_complete': 'STORY_1',
       'id_parent': 'STORY_1',
-      'id_prefix': None,
       'is_external': False,
       'is_import': False,
       'is_modified': False,
@@ -2296,8 +2160,6 @@
       ]),
       'links_back': list([
       ]),
-      'max_amount': None,
-      'max_content_lines': None,
       'modifications': 0,
       'parent_need': None,
       'parent_needs': list([
@@ -2310,14 +2172,11 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'query': None,
       'section_name': 'TEST DOCUMENT NEEDIMPORT DOWNLOAD NEEDS JSON',
       'sections': tuple(
         'TEST DOCUMENT NEEDIMPORT DOWNLOAD NEEDS JSON',
       ),
-      'service': None,
       'signature': None,
-      'specific': None,
       'status': None,
       'style': None,
       'tags': list([
@@ -2329,9 +2188,6 @@
       'type_name': 'User Story',
       'type_prefix': 'US_',
       'type_style': 'node',
-      'updated_at': None,
-      'url': None,
-      'user': None,
     }),
   })
 # ---

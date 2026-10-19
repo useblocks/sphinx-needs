@@ -1074,6 +1074,20 @@ class SphinxNeedsData:
     def need_types_read_with(self, value: list[dict[str, Any]]) -> None:
         self.env._needs_types_read_with = value
 
+    @property
+    def builtin_services_read_with(self) -> tuple[str, ...] | None:
+        """The built-in GitHub services configured when the documents of the
+        environment were read.
+
+        ``None`` for an environment that has not recorded them: a fresh one, or one
+        pickled before they were recorded.
+        """
+        return getattr(self.env, "_needs_builtin_services_read_with", None)
+
+    @builtin_services_read_with.setter
+    def builtin_services_read_with(self, value: tuple[str, ...]) -> None:
+        self.env._needs_builtin_services_read_with = value
+
     def get_or_create_services(self) -> ServiceManager:
         """Get information about services.
 

@@ -360,7 +360,7 @@ Without it, the filter is reported once, and leaves out every need it raised on:
 
    A name that a :ref:`service <services>` or an extension registers is not a field of one type alone,
    even when no ``needs_fields`` entry names it:
-   the GitHub services' ``url`` and ``user``, :ref:`needgantt`'s ``duration``,
+   a configured GitHub service's ``url`` and ``user``, :ref:`needgantt`'s ``duration``,
    or the fields an extension such as sphinx-test-reports adds.
    A type's entry on such a name narrows that field on the type,
    and the needs of the other types still set it without a warning.

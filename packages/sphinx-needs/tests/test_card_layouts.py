@@ -1870,7 +1870,7 @@ def test_no_card_layouts_leaves_the_registry_alone(test_app: Any) -> None:
     assert_no_warnings(app)
     # only the built-in layouts are configured
     assert app.config.needs_layouts == LAYOUTS
-    # the ones registered by services are read beside them
+    # and they are all there is: the GitHub services' layout is read beside them only
+    # when a service is configured, which this project does not
     layouts = NeedsSphinxConfig(app.config).layouts
-    assert LAYOUTS.items() <= layouts.items()
-    assert set(layouts) - set(LAYOUTS) == {"github"}
+    assert layouts == LAYOUTS

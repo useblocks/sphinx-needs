@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+import responses
 from sphinx.testing.util import SphinxTestApp
 from sphinx.util.console import strip_colors
 
@@ -255,3 +256,147 @@ def test_change_to_a_type_added_from_code_is_applied(
     assert sorted(read) == ["index", "other"]
     assert needs["E_001"]["type_name"] == "After"
     assert warnings == []
+
+
+# -- the configured built-in GitHub services ------------------------------------------------
+
+#: the project declares its own ``issue`` type, so configuring or removing the
+#: ``github-issues`` service leaves the list of need types as it is
+OWN_ISSUE_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_types = [
+    {"directive": "req", "title": "Requirement", "prefix": "R_"},
+    {"directive": "issue", "title": "Issue", "prefix": "I_"},
+]
+"""
+
+#: ``github-issues`` configured, with no avatar download: one search request
+SERVICE = 'needs_services = {"github-issues": {"download_avatars": False}}\n'
+
+SERVICE_INDEX = """\
+Index
+=====
+
+.. toctree::
+
+   other
+
+.. req:: A title
+   :id: REQ_001
+
+.. needservice:: github-issues
+   :query: repo:o/r
+   :max_amount: 1
+"""
+
+#: a GitHub issue as the search API returns it
+ISSUE = {
+    "number": 7,
+    "title": "An issue",
+    "body": "Its body",
+    "state": "open",
+    "labels": [],
+    "user": {"login": "octo", "avatar_url": "https://avatars.example/u/1"},
+    "html_url": "https://github.com/o/r/issues/7",
+    "created_at": "2020-01-01T00:00:00Z",
+    "updated_at": "2020-01-02T00:00:00Z",
+    "closed_at": None,
+}
+
+
+def _service_project(srcdir: Path, conf_py: str, index: str) -> Path:
+    srcdir.mkdir(parents=True, exist_ok=True)
+    for name, text in {
+        "conf.py": conf_py,
+        "index.rst": index,
+        "other.rst": OTHER,
+    }.items():
+        (srcdir / name).write_text(text, encoding="utf-8")
+    return srcdir
+
+
+def _fake_search() -> None:
+    responses.get(
+        "https://api.github.com/search/issues",
+        match=[
+            responses.matchers.query_param_matcher(
+                {"q": "repo:o/r is:issue", "per_page": "1"}
+            )
+        ],
+        json={"items": [ISSUE]},
+    )
+
+
+@responses.activate
+def test_removing_a_built_in_service_rereads_every_document(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """The service's need, and every field it registered, go with the service: the
+    pickled need of the unchanged page is not rendered in a layout that is gone, which
+    ended the build with ``Given layout "github" is unknown``."""
+    _fake_search()
+    srcdir = _service_project(tmp_path / "src", OWN_ISSUE_CONF + SERVICE, SERVICE_INDEX)
+    needs, warnings, _ = _build(make_app, srcdir, fresh=True)
+    assert (sorted(needs), warnings) == (["GITHUB_7", "REQ_001"], [])
+    (srcdir / "conf.py").write_text(OWN_ISSUE_CONF, encoding="utf-8")
+    needs, warnings, read = _build(make_app, srcdir, fresh=False)
+    assert sorted(read) == ["index", "other"]
+    assert sorted(needs) == ["REQ_001"]
+    assert "url" not in needs["REQ_001"]
+    assert warnings == [
+        "<srcdir>/index.rst:11: WARNING: Service 'github-issues' is a built-in service "
+        "that is not configured, so it is not registered: name it in needs_services to "
+        'use it, e.g. needs_services = {"github-issues": {}} in conf.py, or a '
+        "[needs.services.github-issues] table in the needs_from_toml file "
+        "(below its needs_from_toml_table, if one is set) "
+        "[needs.load_service_need]"
+    ]
+
+
+#: an index with a need of the project's own type, and no service
+PLAIN_INDEX = (
+    "Index\n=====\n\n.. toctree::\n\n   other\n\n.. req:: A title\n   :id: REQ_001\n"
+)
+
+
+def test_adding_a_built_in_service_rereads_every_document(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """The needs of an unchanged page gain the service's fields, as in a fresh build."""
+    srcdir = _service_project(tmp_path / "src", OWN_ISSUE_CONF, PLAIN_INDEX)
+    needs, _, _ = _build(make_app, srcdir, fresh=True)
+    assert "url" not in needs["REQ_001"]
+    (srcdir / "conf.py").write_text(OWN_ISSUE_CONF + SERVICE, encoding="utf-8")
+    needs, warnings, read = _build(make_app, srcdir, fresh=False)
+    assert sorted(read) == ["index", "other"]
+    assert needs["REQ_001"]["url"] is None
+    assert warnings == []
+    _, _, read = _build(make_app, srcdir, fresh=False)
+    assert read == []
+
+
+def test_environment_without_the_services_record_rereads_once(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """An environment pickled before the configured built-in services were recorded --
+    by a version that registered them in every build, so its needs may carry their
+    fields -- re-reads every document on its first incremental build, and records
+    them, so the next reads none. The project's own ``issue`` keeps the type list as it
+    was, so the need types alone would not re-read it."""
+    srcdir = _service_project(tmp_path / "src", OWN_ISSUE_CONF, PLAIN_INDEX)
+    app = make_app("html", srcdir=srcdir, freshenv=True)
+    try:
+        app.build()
+        pickled = Path(app.doctreedir, "environment.pickle")
+    finally:
+        app.cleanup()
+    env = pickle.loads(pickled.read_bytes())
+    env.__dict__.pop("_needs_builtin_services_read_with", None)
+    pickled.write_bytes(pickle.dumps(env, pickle.HIGHEST_PROTOCOL))
+
+    _, warnings, read = _build(make_app, srcdir, fresh=False)
+    assert sorted(read) == ["index", "other"]
+    assert warnings == []
+    _, _, read = _build(make_app, srcdir, fresh=False)
+    assert read == []

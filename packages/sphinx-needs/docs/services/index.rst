@@ -59,8 +59,9 @@ Stores all service related configuration options in a dictionary.
         }
     }
 
-Normally all services have a working default configuration and no extra configuration is needed for basic
-tasks. However, if a service needs specific options or custom tasks are needed
+A service is available only once ``needs_services`` names it, the built-in GitHub services included
+(an empty entry, such as ``{"github-issues": {}}``, will do): their options have defaults that work for basic tasks.
+However, if a service needs specific options or custom tasks are needed
 (e.g. communicate with a specific company server), special configuration may be needed and the service may throw an
 error or warning, if something is missing.
 

@@ -27,14 +27,14 @@ def get_need_types(app: Sphinx) -> list[str]:
     """
     Returns a list of directive-names from all need types: the configured
     :ref:`needs_types`, then those added with :func:`add_need_type` by extensions, then
-    the GitHub services' ``issue``, ``pr`` and ``commit`` (each only where no earlier
-    type has its directive).
+    the ``issue``, ``pr`` and ``commit`` of the GitHub services :ref:`needs_services`
+    configures (each only where no earlier type has its directive).
 
     Call it from a ``config-inited`` handler at a priority above 12, or later: before
-    that, a mapping-shaped ``needs_types`` is not yet resolved to its list. The GitHub
-    services' types are listed from the start of the build, so a ``config-inited``
-    handler sees them too, after the types added by then (they used to be added only at
-    ``env-before-read-docs``).
+    that, a mapping-shaped ``needs_types`` is not yet resolved to its list, and the
+    configured GitHub services' types are not yet added. They are listed from
+    sphinx-needs' own priority-12 handler on, so from a handler above 12, after the
+    types added by then (they used to be added only at ``env-before-read-docs``).
 
     **Usage**::
 
@@ -61,16 +61,16 @@ def add_need_type(
     Adds a new need type, and registers its directive.
 
     The given directive must not be configured in :ref:`needs_types` or added with
-    this function already, otherwise NeedsApiConfigException gets raised. The GitHub
-    services' ``issue``, ``pr`` and ``commit`` do not count: a type added under one of
-    those directives replaces the service's.
+    this function already, otherwise NeedsApiConfigException gets raised. The
+    configured GitHub services' ``issue``, ``pr`` and ``commit`` do not count: a type
+    added under one of those directives replaces the service's.
 
     The type is added to sphinx-needs' own registry, not to the :ref:`needs_types`
     configuration value, which holds only what the project configures (so Sphinx
     compares the same value on both sides of an incremental build). Read every type,
     the added ones included, with :func:`get_need_types`, or with
     ``NeedsSphinxConfig(app.config).types`` for the whole entries: the configured
-    types, then the added ones, then the GitHub services' ones.
+    types, then the added ones, then the configured GitHub services' ones.
 
     Call it from a ``config-inited`` handler at a priority above 12, or later: before
     that, a mapping-shaped ``needs_types`` is not yet resolved to the list the
@@ -118,15 +118,17 @@ def add_need_layout(app: Sphinx, name: str, layout: dict[str, Any]) -> None:
     layouts included), a name of :ref:`needs_card_layouts` (whether or not its card
     compiles), or one added with this function already, otherwise
     NeedsApiConfigException gets raised: each is refused before the configured layouts
-    are merged and the cards compiled, as after. The GitHub services' ``github``
-    layout does not count: a layout added under that name replaces the service's.
+    are merged and the cards compiled, as after. The configured GitHub services'
+    ``github`` layout does not count: a layout added under that name replaces the
+    service's.
 
     The layout is added to sphinx-needs' own registry, not to the :ref:`needs_layouts`
     configuration value, which holds only what the project configures (and
     sphinx-needs' own layouts and the compiled :ref:`needs_card_layouts`). Every reader
     sees it, through ``NeedsSphinxConfig(app.config).layouts``: the configured
-    layouts, then the added ones, then the GitHub services' one. The layout is used as
-    given, with the structure a :ref:`needs_layouts` entry has (see :ref:`layouts`).
+    layouts, then the added ones, then the configured GitHub services' one. The layout
+    is used as given, with the structure a :ref:`needs_layouts` entry has (see
+    :ref:`layouts`).
 
     Call it from a ``config-inited`` handler at a priority above 12, as
     :func:`add_need_type`, or later: before priority 10, the layouts and card layouts

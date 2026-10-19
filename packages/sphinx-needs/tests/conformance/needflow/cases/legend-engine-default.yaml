@@ -49,9 +49,6 @@ expect:
       |= Color |= Type |
       |<back:#BFD8D2> #BFD8D2 </back>| Requirement |
       |<back:#CCCCCC> #CCCCCC </back>| Never Drawn |
-      |<back:#cccccc> #cccccc </back>| Issue |
-      |<back:#aaaaaa> #aaaaaa </back>| PullRequest |
-      |<back:#888888> #888888 </back>| Commit |
       endlegend
 
       @enduml

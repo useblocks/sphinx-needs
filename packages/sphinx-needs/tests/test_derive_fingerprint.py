@@ -632,6 +632,10 @@ needs_fields = {
 }
 
 
+# a configured service registers its fields, url among them
+needs_services = {"github-issues": {}}
+
+
 def setup(app):
     add_field("ext_result", "set by an extension", schema={"type": "string"})
     add_extra_option(app, "ext_legacy")
@@ -656,8 +660,8 @@ Extension
 )
 def test_registered_fields_never_enter(test_app):
     """A field an extension registers (``add_field``, ``add_extra_option``) and the
-    names sphinx-needs gives every need (``duration``, ``completion``, the services'
-    fields) never enter, set or not; ``exclude`` cannot name one."""
+    names sphinx-needs gives every need (``duration``, ``completion``, a configured
+    service's fields) never enter, set or not; ``exclude`` cannot name one."""
     app = test_app
     app.build()
     assert build_warnings(app) == [

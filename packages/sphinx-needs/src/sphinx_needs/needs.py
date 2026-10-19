@@ -188,9 +188,10 @@ from sphinx_needs.schema.config_utils import (
     validate_schemas_config,
 )
 from sphinx_needs.schema.process import process_schemas
+from sphinx_needs.services.config.github import GITHUB_SERVICES
 from sphinx_needs.services.github import (
     GithubService,
-    add_github_need_types_and_layout,
+    add_configured_github_services,
 )
 from sphinx_needs.string_links import compile_string_links
 from sphinx_needs.utils import node_match
@@ -408,6 +409,10 @@ def setup(app: Sphinx) -> dict[str, Any]:
     # sphinx-codelinks' register_string_links is at 12 too and reads no need types, so
     # the order between the two does not matter
     app.connect("config-inited", resolve_need_types, priority=12)
+    # the configured built-in GitHub services, their need types and their layout:
+    # after the toml config, which can configure them, and at 12 rather than later, so
+    # every documented reader of the need types (above 12) sees them (#2265)
+    app.connect("config-inited", add_configured_github_services, priority=12)
     app.connect("config-inited", load_config)
     app.connect("config-inited", merge_default_configs)
     # runs after the built-in layouts are merged in, and before the config is checked
@@ -476,9 +481,6 @@ def setup(app: Sphinx) -> dict[str, Any]:
     # process and built interleaved share it, and a later setup clears what an earlier
     # application's extensions added -- fields, functions, need types and layouts alike.
     _NEEDS_CONFIG.clear()
-    # the GitHub services' need types and layout, sphinx-needs' lowest tier: every type
-    # or layout of their names, configured or added from code at any time, wins (#2265)
-    add_github_need_types_and_layout(app)
 
     return {
         "version": VERSION,
@@ -1422,16 +1424,18 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> Non
     # read paths from disagreeing within one build.
     _derive_variant_data_proxy(needs_config)
 
-    # Register embedded services
+    # Register the built-in services needs_services configures, as decided when their
+    # need types were added (config-inited, priority 12), so the two cannot disagree
     services = data.get_or_create_services()
-    services.register("github-issues", GithubService, gh_type="issue")
-    services.register("github-prs", GithubService, gh_type="pr")
-    services.register("github-commits", GithubService, gh_type="commit")
+    for name in _NEEDS_CONFIG.builtin_services:
+        services.register(name, GithubService, gh_type=GITHUB_SERVICES[name])
 
     # Register user defined services
     for name, service in needs_config.services.items():
         if (
-            name not in services.services
+            # a built-in name is the built-in service, registered above if configured
+            name not in GITHUB_SERVICES
+            and name not in services.services
             and "class" in service
             and "class_init" in service
         ):
@@ -1470,11 +1474,18 @@ def reread_on_need_types_change(
     environment, so they would keep what the previous entries gave them (#2287).
 
     The list compared is the complete one, ``NeedsSphinxConfig.types``: the configured
-    need types and those added from code (``add_need_type``, the GitHub services), which
+    need types and those added from code (``add_need_type``, the configured GitHub
+    services), which
     sphinx-needs keeps in its own registry rather than in ``needs_types``. A
     ``rebuild = "env"`` on ``needs_types`` -- as ``needs_fields`` has -- would compare the
     configured types alone. The list is compared against the one recorded when the
     documents were read. Documents are added to ``docnames``, which this event allows.
+
+    The configured built-in GitHub services are compared too: each registers twelve
+    fields and the ``github`` layout, which the needs of every document are created
+    with, while its need type may be the project's own, leaving the list unchanged. An
+    environment that has not recorded them -- one pickled by a version that registered
+    them in every build -- is re-read once.
 
     :param app: The Sphinx application.
     :param env: The build environment.
@@ -1484,14 +1495,22 @@ def reread_on_need_types_change(
     need_types = deepcopy(
         [dict(entry) for entry in NeedsSphinxConfig(app.config).types]
     )
+    builtin_services = tuple(_NEEDS_CONFIG.builtin_services)
     if data.need_types_read_with != need_types:
+        changed = "needs_types"
+    elif data.builtin_services_read_with != builtin_services:
+        changed = "the configured built-in services"
+    else:
+        changed = None
+    if changed is not None:
         unread = sorted(env.found_docs.difference(docnames))
         if unread:
             LOGGER.info(
-                f"needs_types changed: re-reading {len(unread)} unchanged document(s)"
+                f"{changed} changed: re-reading {len(unread)} unchanged document(s)"
             )
             docnames.extend(unread)
     data.need_types_read_with = need_types
+    data.builtin_services_read_with = builtin_services
 
 
 def merge_default_configs(_app: Sphinx, config: Config) -> None:
@@ -2347,7 +2366,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             name,
             default_config,
             allow_coercion=True,
-            declared=_needs_fields_defaults(needs_config, registered, name),
+            declared=_declared_defaults(needs_config, registered, links, name),
         )
 
     _report_derive_problems(schema, derive_problems, need_types, spellings)
@@ -3420,25 +3439,40 @@ class _DefaultsDictType(TypedDict, total=False):
     default: Any
 
 
-def _needs_fields_defaults(
+def _declared_defaults(
     needs_config: NeedsSphinxConfig,
     registered: Mapping[str, NewFieldParams],
+    links: Mapping[str, tuple[Mapping[str, Any], str]],
     name: str,
-) -> dict[str, Any]:
-    """The ``default`` and ``predicates`` the ``needs_fields`` entry of a field sets.
+) -> tuple[str, dict[str, Any]]:
+    """The configuration value declaring a field or link type, and the ``default``
+    and ``predicates`` its entry sets.
 
-    A key counts when the entry is the field's declaration (a core field's entry, or
-    the one the field is registered from) and the key is given, not ``None``: a field
-    declared there without it takes the ``needs_global_options`` value, as before.
+    The entry is a link type's ``needs_links`` or ``needs_extra_links`` entry
+    (:issue:`2317`), or a field's ``needs_fields`` entry when that is the field's
+    declaration (a core field's entry, or the one the field is registered from)
+    (:issue:`2264`). A key counts when it is given, not ``None``: a field or link type
+    declared without it takes the ``needs_global_options`` value, as before. A link
+    type need types alone declare has no such entry: their own declarations are
+    resolved afterwards, and win over both.
     """
-    entry = needs_config._fields.get(name)
-    if not isinstance(entry, dict):
-        return {}
-    if name not in NeedsCoreFields and (
-        (params := registered.get(name)) is None or params.source != "needs_fields"
-    ):
-        return {}
-    return {
+    if (link := links.get(name)) is not None:
+        entry, declared_in = link
+        # a fence: a link type need types alone declare carries no default or
+        # predicates today, and its own declarations win over both anyway
+        if declared_in not in {"needs_links", "needs_extra_links"}:
+            return declared_in, {}
+    else:
+        entry, declared_in = needs_config._fields.get(name), "needs_fields"
+        if not isinstance(entry, dict) or (
+            name not in NeedsCoreFields
+            and (
+                (params := registered.get(name)) is None
+                or params.source != "needs_fields"
+            )
+        ):
+            return declared_in, {}
+    return declared_in, {
         key: entry[key]
         for key in ("default", "predicates")
         if entry.get(key) is not None
@@ -3452,16 +3486,16 @@ def _set_global_default(
     values: _DefaultsDictType,
     *,
     allow_coercion: bool,
-    declared: Mapping[str, Any] | None = None,
+    declared: tuple[str, Mapping[str, Any]] | None = None,
 ) -> None:
-    """Set a field's ``needs_global_options`` default and predicates.
+    """Set a field's or link type's ``needs_global_options`` default and predicates.
 
-    :param declared: The ``default`` and ``predicates`` the field's ``needs_fields``
-        entry sets: those win, and a key set in both is ignored here and reported,
-        in one warning for the field (:issue:`2264`). ``None`` is none.
+    :param declared: The configuration value declaring the field or link type, and
+        the ``default`` and ``predicates`` its entry sets (:func:`_declared_defaults`):
+        those win, and a key set in both is ignored here and reported, in one warning
+        for the field or link type (:issue:`2264`, :issue:`2317`). ``None`` is none.
     """
-    if declared is None:
-        declared = {}
+    declared_in, keys = declared if declared is not None else ("", {})
     if not isinstance(values, dict):
         log_warning(
             LOGGER,
@@ -3490,18 +3524,19 @@ def _set_global_default(
             None,
         )
         return
-    # a key needs_fields sets too is needs_fields': this one is ignored, and reported
-    set_default = "default" in values and "default" not in declared
-    set_predicates = "predicates" in values and "predicates" not in declared
+    # a key the declaring entry sets too is the entry's: this one is ignored, and
+    # reported
+    set_default = "default" in values and "default" not in keys
+    set_predicates = "predicates" in values and "predicates" not in keys
     if both := [
-        key for key in ("default", "predicates") if key in values and key in declared
+        key for key in ("default", "predicates") if key in values and key in keys
     ]:
         verb = "is" if len(both) == 1 else "are"
         ignored = " and ".join(
             f"{config_name}[{name!r}][{key!r}] ({values.get(key)!r})" for key in both
         )
         used = " and ".join(
-            f"needs_fields[{name!r}][{key!r}] ({declared[key]!r})" for key in both
+            f"{declared_in}[{name!r}][{key!r}] ({keys[key]!r})" for key in both
         )
         log_warning(
             LOGGER,
