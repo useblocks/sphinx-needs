@@ -697,7 +697,7 @@ class NeedItem:
 
     def copy(self) -> NeedItem:
         """Return a copy of the NeedItem."""
-        return NeedItem(
+        new = NeedItem(
             core=self._core,
             extras=self._extras,
             links=self._links,
@@ -712,6 +712,9 @@ class NeedItem:
             copied=self._copied,
             _validate=False,
         )
+        # the computed copies as resolved, which the constructor does not take
+        new._copied_resolved = set(self._copied_resolved)
+        return new
 
     def __eq__(self, other: object) -> bool:
         """Check if two NeedItems are equal."""
@@ -1003,7 +1006,12 @@ class NeedItem:
                 self._copied_resolved.add((value.id, value.part))
 
     def _reset_copied(self) -> None:
-        """Forget the resolved copies, as the resolver starts its pass."""
+        """Forget the resolved copies, as the resolver starts its pass.
+
+        Needed for a build of the same application again (as a language server
+        builds): its needs are post-processed again, and a computed copy that
+        resolves to another link now must not leave the old one recorded.
+        """
         self._copied_resolved.clear()
 
     def reset_backlinks(self) -> None:

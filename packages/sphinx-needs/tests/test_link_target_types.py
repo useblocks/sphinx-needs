@@ -10,6 +10,7 @@ exemption a link copied into ``links`` has.
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any
 
@@ -17,8 +18,9 @@ import pytest
 from sphinx.testing.util import SphinxTestApp
 
 from sphinx_needs._wording import joined, title_hint
-from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.derive import DeriveRule
+from sphinx_needs.need_item import NeedItem, NeedLink, NeedsContent
 from sphinx_needs.needs import _type_descendants
 from sphinx_needs.needs_schema import (
     LinkDisplayConfig,
@@ -464,6 +466,113 @@ def test_a_computed_copy_is_exempt_as_it_resolves(test_app: SphinxTestApp) -> No
     assert needs["TEST_1"].copied_targets == {("REQ_1", None)}
     assert needs["TEST_1"]["links"] == ["REQ_1"]
     assert needs["TEST_3"].copied_targets == frozenset()
+
+
+REBUILD_INDEX = """\
+.. toctree::
+
+   d1
+   d2
+"""
+
+REBUILD_D1 = """\
+D1
+==
+
+.. test:: A computed copy, and a link written in links
+   :id: TEST_1
+   :verifies: [[links_from_filter("status == 'x'")]]
+   :links: REQ_A
+"""
+
+
+def _rebuild_d2(status_a: str, status_b: str) -> str:
+    return f"""\
+D2
+==
+
+.. req:: A
+   :id: REQ_A
+   :status: {status_a}
+
+.. req:: B
+   :id: REQ_B
+   :status: {status_b}
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            COPY_TOML,
+            REBUILD_INDEX,
+            **{"d1.rst": REBUILD_D1, "d2.rst": _rebuild_d2("x", "y")},
+        )
+    ],
+    indirect=True,
+)
+def test_a_computed_copy_is_recorded_anew_on_a_rebuild(test_app: SphinxTestApp) -> None:
+    """The same application built again (as an editor's language server does) resolves
+    a computed copy again, and records only what it resolves to now: a link written in
+    ``links`` that the copy matched in the first build, and no longer does, is checked
+    in the second."""
+    test_app.build()
+    # (reading the needs here would mark them post-processed for the next build)
+    assert build_warnings(test_app) == []
+    first = len(test_app._warning.getvalue())
+
+    d2 = Path(test_app.srcdir, "d2.rst")
+    d2.write_text(_rebuild_d2("y", "x"), encoding="utf-8")
+    stat = d2.stat()
+    # later than the first build read it, without waiting for the clock
+    os.utime(d2, (stat.st_atime + 10, stat.st_mtime + 10))
+    test_app.build()
+
+    # the second build's warnings alone, read before the needs are: reading them
+    # after the build post-processes them again
+    second = test_app._warning.getvalue()[first:]
+    assert [
+        record.replace(f"{test_app.srcdir}/", "<srcdir>/")
+        for record in build_warnings(second)
+    ] == [
+        "<srcdir>/d1.rst:4: WARNING: Need 'TEST_1' link 'REQ_A' in field 'links': "
+        "target need type 'req' is not one of 'spec' (or a type inheriting from it) "
+        "[needs.link_target_type]",
+    ]
+    needs = SphinxNeedsData(test_app.env).get_needs_view()
+    assert needs["TEST_1"].copied_targets == {("REQ_B", None)}
+
+
+def test_a_copy_of_a_need_keeps_its_copies() -> None:
+    """``NeedItem.copy()`` keeps the record of what ``copy`` put into ``links``: the
+    copies as written, and those a computed copy resolved to."""
+    need = _copied_need()
+    need._record_copied(["REQ_2", "REQ_3.p1"])
+    assert (
+        need.copy().copied_targets
+        == need.copied_targets
+        == {
+            ("REQ_1", None),
+            ("REQ_2", None),
+            ("REQ_3", "p1"),
+        }
+    )
+
+
+def _copied_need() -> NeedItem:
+    """A need whose ``links`` holds the copy of ``REQ_1``."""
+    core: Any = dict.fromkeys(NeedsInfoType.__annotations__)
+    core.update(id="TEST_1", type="test", title="A test", tags=[], constraints=[])
+    return NeedItem(
+        core=core,
+        content=NeedsContent(content="", doctype=".rst"),
+        extras={},
+        links={"links": ["REQ_1"], "verifies": ["REQ_1"]},
+        source=None,
+        copied=[NeedLink(id="REQ_1")],
+        _validate=False,
+    )
 
 
 def _link(**kwargs: Any) -> LinkSchema:
