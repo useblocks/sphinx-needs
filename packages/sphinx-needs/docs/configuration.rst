@@ -1523,9 +1523,11 @@ Each configured link can define:
   A link of ``links`` that another link type with ``copy`` copied into it when the need was created
   (the same target and part, whatever its condition) is not checked against the ``target_types`` of ``links``,
   whether it was copied or also written there by hand.
-  ``copy`` on ``links`` itself, or on a derived link type, copies nothing, and exempts nothing;
-  nor does a :ref:`needextend` of the copying link type, which copies nothing either:
-  the copy stays in ``links``, and stays exempt.
+  ``copy`` on ``links`` itself, or on a derived link type, copies nothing, and exempts nothing.
+  A :ref:`needextend` of the copying link type copies nothing and changes no exemption:
+  the copy made at creation stays in ``links``, and stays exempt.
+  A need from :ref:`needimport` or :ref:`needs_external_needs` is created, and copies, from the values its needs.json holds,
+  so a copy a needextend left in ``links`` in the exporting project is exempt here only if the copying link type still holds it.
   ``target_types`` and the link type's ``schema`` count (``minItems``, ``maxItems``) are checked apart.
   The count is every link the need holds, a link ``target_types`` refuses and a dead link included,
   so a ``test`` whose only link is a ``spec`` satisfies ``minItems = 1``.
