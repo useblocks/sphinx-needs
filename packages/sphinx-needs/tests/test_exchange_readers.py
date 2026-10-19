@@ -307,6 +307,10 @@ REFUSED_SOURCES = {
     # case: (needs.json text, the reason both readers give)
     "invalid_json": ("{ not json", f"not valid JSON: {_json_error('{ not json')}"),
     "not_an_object": ("[1, 2]", "the top level is not a JSON object"),
+    "format_version_unsupported": (
+        json.dumps({"format_version": "2a1", "needs": {}}),
+        'the file is of format version "2a1"; this reader reads format version 1 only',
+    ),
     "versions_missing": (
         json.dumps({"current_version": "1.0"}),
         "'versions' is missing or not an object",

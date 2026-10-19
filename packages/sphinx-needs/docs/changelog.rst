@@ -259,8 +259,9 @@ Deprecations
 ............
 
 - ♻️ :ref:`needimport` and :ref:`needs_external_needs` read a needs.json through the new
-  ``ub-needs-exchange`` library, a new dependency of sphinx-needs; nothing they read or
-  report changes, but for one addition: a top-level ``format_version`` is now read
+  ``ub-needs-exchange`` library, a new dependency of sphinx-needs
+  (``ub-needs-exchange>=1.1.0,<2``); nothing they read or report changes, but for one
+  addition: a top-level ``format_version`` is now read
 
   ``ub-needs-exchange`` is the record of the needs.json format: its reader, which 9.0.0
   shipped as ``sphinx_needs.exchange``, moved there with that one addition, beside a
@@ -268,8 +269,9 @@ Deprecations
   reads the file the same way. ``sphinx_needs.exchange`` is kept through 9.x as a deprecated alias of
   ``ub_needs_exchange``: importing it gives a ``DeprecationWarning``, and it is removed in
   10.0. The addition: a needs.json may carry a top-level ``format_version`` -- nothing
-  writes one yet -- and one above 1 is read as format 1 with a warning, while one that is
-  not an integer of 1 or more refuses that source.
+  writes one yet. Absent or ``1``, the file is read as before; one that names a later
+  format -- an integer above 1, or a pre-release such as ``"2a1"`` -- refuses that source,
+  in one warning saying which format the file is of, and so does any other value.
 
 Bug fixes
 .........

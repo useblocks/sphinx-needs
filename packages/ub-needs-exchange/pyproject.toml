@@ -1,6 +1,6 @@
 [project]
 name = "ub-needs-exchange"
-version = "1.0.0"
+version = "1.1.0"
 description = "The record of the needs.json exchange format, and its reader, for the sphinx-needs family and ubCode"
 authors = [{ name = "team useblocks", email = "info@useblocks.com" }]
 license = { file = "LICENSE" }
