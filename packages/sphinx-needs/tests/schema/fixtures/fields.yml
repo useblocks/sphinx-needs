@@ -946,3 +946,49 @@ multiple_errors_per_need:
         :id: IMPL_1
         :priority: 8
         :severity: critical
+
+required_content:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+    nullable = true
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+
+        This need has content.
+  schemas:
+    $defs: []
+    schemas:
+      - validate:
+          local:
+            properties:
+              content:
+                type: string
+                minLength: 1
+            required: ["content"]
+
+required_content_missing:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+    nullable = true
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+  schemas:
+    $defs: []
+    schemas:
+      - validate:
+          local:
+            properties:
+              content:
+                type: string
+                minLength: 1
+            required: ["content"]
