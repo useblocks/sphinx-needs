@@ -263,8 +263,9 @@ def _check_format_version(stated: Any) -> None:
     integer = isinstance(stated, int) and not isinstance(stated, bool)
     if integer and stated == FORMAT_VERSION:
         return
-    # the value as JSON spells it: ``"2a1"``, ``2``, ``2.0``, ``true``, ``null``
-    shown = json.dumps(stated, default=repr)
+    # the value as JSON spells it -- ``"2a1"``, ``2``, ``2.0``, ``true``, ``null`` -- and a
+    # character outside ASCII as itself, for the person who reads the message
+    shown = json.dumps(stated, ensure_ascii=False, default=repr)
     if (integer and stated > FORMAT_VERSION) or (
         isinstance(stated, str) and _PRE_RELEASE.fullmatch(stated) is not None
     ):
