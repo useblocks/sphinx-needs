@@ -10,7 +10,7 @@ Unreleased
 Improvements
 ............
 
-- ✨ A link type's ``target_types`` lists the need types its links may point to (:issue:`2300`, :pr:`2319`)
+- ✨ A link type's ``target_types`` lists the need types its links may point to (:issue:`2300`, :pr:`2319`, :pr:`2342`)
 
   ``target_types = ["req"]`` on a :ref:`needs_links` entry (or a ``needs_extra_links`` one, or
   ``[needs.links.<l>]``) accepts a link to a ``req``, or to a need of any type inheriting from ``req``,
@@ -21,11 +21,15 @@ Improvements
   gives its own. It is checked once every link is final, whether or not the schema validation runs, and
   unlike a filter or a schema rule's ``const`` it follows ``inherits``. Dead links are left to the dead-link
   warning, a part link is checked by its need's type, the links of a need from
-  :ref:`needs_external_needs` are reported as ``needs.external_link_target_type``, and a link of ``links``
-  that the need also holds in another link type with ``copy`` is not checked against the
-  ``target_types`` of ``links``. A derived link type takes none in this release. The names that are no need type are one
-  ``needs.config`` warning per declaration, and ignored; a ``target_types`` naming none keeps the target
-  types of the declaration before it. The field-declaration conformance corpus pins it
+  :ref:`needs_external_needs` are reported as ``needs.external_link_target_type``. While a link type
+  copies into ``links`` (``copy``), ``links`` is part written, part copied, so a ``target_types`` on
+  ``links`` is refused, one ``needs.config`` warning per declaration, and ignored until ``copy`` is
+  replaced.
+  The link type's ``schema`` count (``minItems``, ``maxItems``) is checked apart, by the schema
+  validation: it counts every link, a refused or dead one included. A derived link type takes none in
+  this release. The names that are no need type are one ``needs.config`` warning per declaration, and
+  ignored; a ``target_types`` naming none keeps the target types of the declaration before it. The
+  field-declaration conformance corpus pins it
   (``link-target-types-*``), with two new shared codes, ``link_target_type`` and
   ``external_link_target_type``.
 

@@ -316,6 +316,9 @@ These need schema rules:
 - **anything about linked needs beyond their type**: their status or other fields,
   or "a ``req`` but not a ``safety_req``" (:ref:`network_validation`);
   which need types a link may point to is the link type's ``target_types`` (:ref:`needs_links`), which accepts subtypes;
+- **how many links point to a need of a given type**, such as "at least one ``req``" among links that may point to several types:
+  a network rule's ``contains`` with ``minContains`` (:ref:`schema_link_count_constraints`);
+  a link type's ``minItems`` and ``maxItems`` count every link, whatever its target's type, a dead link too;
 - **incoming links**, such as "every requirement is verified by a test" (:ref:`network_back_validation`);
 - **conditions between fields**, such as "``approval`` is required when ``efforts`` is greater than 15";
 - **multi-hop chains** (:ref:`nested network validation <network_validation>`);

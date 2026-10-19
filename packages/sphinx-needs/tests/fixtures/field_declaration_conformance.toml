@@ -121,12 +121,15 @@
 #     which `allow_dead_links` silences), and a link to a
 #     part its target lacks is a dead link; a link to a part
 #     is checked by the type of the need owning the part; a `[condition]` on the link
-#     changes nothing. A link of `links` that the same need also holds -- the same target,
-#     the same part -- in another link type with `copy = true`, one that is not derived
-#     (a derived link type copies nothing), is not checked against the
-#     `target_types` of `links` (it is checked as a link of that link type), whether it
-#     was copied or written by hand. A need type's `target_types` narrows by the EXPANDED
-#     sets (a listed type with the types inheriting from it, against the same of the
+#     changes nothing. While a link type copies into `links` -- `copy = true`, not `links`
+#     itself, not derived (a derived link type copies nothing) -- `links` holds links
+#     written in it and links copied into it, so a `target_types` on `links`, of
+#     `[needs.links.links]` or of a need type's entry, is refused (each tool's
+#     configuration finding, not compared) and ignored: no link of `links` is checked
+#     against it, and the copying link type's own `target_types` still holds; `copy =
+#     true` on `links` itself refuses nothing. The `schema` count is independent: it counts
+#     every link, refused and dead included. A need type's `target_types` narrows by the
+#     EXPANDED sets (a listed type with the types inheriting from it, against the same of the
 #     declaration before it); a name that is no need type is ignored, and a
 #     `target_types` naming none declares nothing: the links keep the target types of the
 #     declaration before it, and are unrestricted where none gives any
@@ -4280,17 +4283,15 @@ field = "verifies"
 type = "spec"
 
 [[case]]
-name = "link-target-types-copy-into-links"
-why = "a link a copy = true link type copies into links is not checked against the target_types of links (the same target and part in both); the original is checked as its own link type's, and a link written in links is checked against links, also where a link type without copy holds the same target"
+name = "link-target-types-on-links-beside-copy"
+why = "while a link type copies into links (copy = true), links holds links written in it and links copied into it, so its target_types is refused, on [needs.links.links] and on a need type's entry alike (each tool's configuration finding, not compared: the case pins its consequence), and no link of links is checked against it; the copying link type's own target_types still holds"
 config = '''
 [needs.links.links]
 target_types = ["spec"]
 
 [needs.links.verifies]
 copy = true
-target_types = ["req"]
-
-[needs.links.checks]
+target_types = ["spec"]
 
 [needs.types.req]
 title = "Requirement"
@@ -4303,6 +4304,9 @@ prefix = "S_"
 [needs.types.test]
 title = "Test"
 prefix = "T_"
+
+[needs.types.test.links.links]
+target_types = ["spec"]
 '''
 source = '''
 .. req:: Requirement
@@ -4311,29 +4315,19 @@ source = '''
 .. req:: Requirement
    :id: REQ_2
 
-.. spec:: Specification
-   :id: SPEC_1
-
-.. test:: Verifies, and links
+.. test:: Verifies a req, and links reqs
    :id: TEST_1
-   :verifies: REQ_1, SPEC_1
-   :links: REQ_2
-   :checks: REQ_2
+   :verifies: REQ_1
+   :links: REQ_1, REQ_2
 '''
 [case.expect]
 [case.expect.needs.TEST_1]
-verifies = ["REQ_1", "SPEC_1"]
-links = ["REQ_1", "REQ_2", "SPEC_1"]
-checks = ["REQ_2"]
+verifies = ["REQ_1"]
+links = ["REQ_1", "REQ_2"]
 [[case.expect.findings]]
 code = "link_target_type"
 need = "TEST_1"
 field = "verifies"
-type = "spec"
-[[case.expect.findings]]
-code = "link_target_type"
-need = "TEST_1"
-field = "links"
 type = "req"
 
 [[case]]
@@ -4686,7 +4680,7 @@ type = "spec"
 
 [[case]]
 name = "link-target-types-copy-on-links"
-why = "copy = true on links itself copies nothing, so it exempts nothing: a link of links to a need of a type its target_types do not accept is a link_target_type (the exemption is for a link another link type with copy = true holds)"
+why = "copy = true on links itself copies nothing, so it refuses nothing: the target_types of links holds, and a link of links to a need of a type they do not accept is a link_target_type"
 config = '''
 [needs.links.links]
 copy = true
@@ -4725,8 +4719,8 @@ field = "links"
 type = "req"
 
 [[case]]
-name = "link-target-types-copy-derived-exempts-nothing"
-why = "a derived link type copies nothing (its copy = true is one derive_invalid, and ignored), so it exempts nothing: a link of links to a target the derived link type holds is still checked against the target_types of links"
+name = "link-target-types-derived-copy-refuses-nothing"
+why = "a derived link type copies nothing (its copy = true is one derive_invalid, and ignored), so it does not refuse the target_types of links: a link of links to a target the derived link type holds is checked against them"
 config = '''
 [needs.links.links]
 target_types = ["req"]
@@ -4769,15 +4763,9 @@ field = "links"
 type = "spec"
 
 [[case]]
-name = "link-target-types-copy-by-target-and-part"
-why = "the copy exemption is by target AND part, whatever the condition: a copied part exempts that part in links but not the whole need, a copied whole need exempts the need but not a part of it, and a copied link with a [condition] exempts a link of links to the same target without one"
+name = "link-target-types-with-min-items"
+why = "target_types and the schema's minItems and maxItems are independent: the count is every link the need holds, a link target_types refuses and a dead link included, checked by the schema validation (link_fail); so a refused link alone satisfies minItems, a dead one too, a need without links fails it, and one refused link over maxItems is reported by both"
 config = '''
-[needs.links.links]
-target_types = ["spec"]
-
-[needs.links.verifies]
-copy = true
-
 [needs.types.req]
 title = "Requirement"
 prefix = "R_"
@@ -4789,46 +4777,57 @@ prefix = "S_"
 [needs.types.test]
 title = "Test"
 prefix = "T_"
+
+[needs.types.test.links.verifies]
+target_types = ["req"]
+schema = { minItems = 1, maxItems = 1 }
 '''
 source = '''
 .. req:: Requirement
    :id: REQ_1
 
-   A part: :np:`(p1) of it`.
+.. spec:: Specification
+   :id: SPEC_1
 
-.. req:: Requirement
-   :id: REQ_2
-   :status: x
-
-.. test:: Verifies a part, links the part and the need
+.. test:: Its only link refused
    :id: TEST_1
-   :verifies: REQ_1.p1
-   :links: REQ_1.p1, REQ_1
+   :verifies: SPEC_1
 
-.. test:: Verifies the need, links the need and a part
+.. test:: Its only link dead
    :id: TEST_2
-   :verifies: REQ_1
-   :links: REQ_1, REQ_1.p1
+   :verifies: REQ_404
 
-.. test:: Verifies with a condition, links without one
+.. test:: No link
    :id: TEST_3
-   :verifies: REQ_2[status == 'x']
-   :links: REQ_2
+
+.. test:: Two links, one refused
+   :id: TEST_4
+   :verifies: REQ_1, SPEC_1
 '''
 [case.expect]
 [case.expect.needs.TEST_1]
-links = ["REQ_1", "REQ_1.p1"]
+verifies = ["SPEC_1"]
 [case.expect.needs.TEST_2]
-links = ["REQ_1", "REQ_1.p1"]
+verifies = ["REQ_404"]
 [case.expect.needs.TEST_3]
-links = ["REQ_2", "REQ_2[status == 'x']"]
+verifies = []
+[case.expect.needs.TEST_4]
+verifies = ["REQ_1", "SPEC_1"]
 [[case.expect.findings]]
 code = "link_target_type"
 need = "TEST_1"
-field = "links"
-type = "req"
+field = "verifies"
+type = "spec"
+[[case.expect.findings]]
+code = "link_fail"
+need = "TEST_3"
+field = "verifies"
 [[case.expect.findings]]
 code = "link_target_type"
-need = "TEST_2"
-field = "links"
-type = "req"
+need = "TEST_4"
+field = "verifies"
+type = "spec"
+[[case.expect.findings]]
+code = "link_fail"
+need = "TEST_4"
+field = "verifies"

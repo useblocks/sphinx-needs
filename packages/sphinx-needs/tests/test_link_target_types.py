@@ -4,8 +4,8 @@ The shared behaviour is pinned by the ``link-target-types-*`` cases of the confo
 corpus (``tests/fixtures/field_declaration_conformance.toml``), which compare codes,
 needs, link types and types. These tests pin what the corpus does not: the words of
 every warning (the configuration's, and the link check's), the narrowing rule as a pure
-function, the external-need path and its own suppression, and the edges of the
-exemption a link copied into ``links`` has.
+function, the external-need path and its own suppression, and the refusal of
+``target_types`` on ``links`` while a link type copies into it.
 """
 
 from __future__ import annotations
@@ -16,6 +16,7 @@ from typing import Any
 import pytest
 from sphinx.testing.util import SphinxTestApp
 
+from sphinx_needs._wording import joined, title_hint
 from sphinx_needs.derive import DeriveRule
 from sphinx_needs.needs import _type_descendants
 from sphinx_needs.needs_schema import (
@@ -123,8 +124,8 @@ def test_what_the_configuration_reports(test_app: SphinxTestApp) -> None:
     test_app.build()
     assert build_warnings(test_app) == [
         "WARNING: needs_links['verifies'] has a 'target_types' naming 'Specification' "
-        "(did you mean 'spec', whose title it is?) and 'nope', which are not need "
-        "types; the names are ignored [needs.config]",
+        "(did you mean 'spec'?) and 'nope', which are not need types; the names "
+        "are ignored [needs.config]",
         "WARNING: needs_links['checks'] has a 'target_types' that is not a non-empty "
         "list of need type names (got str); the key is ignored [needs.config]",
         "WARNING: needs_links['mentions'] has a 'target_types' that is not a "
@@ -363,7 +364,7 @@ def test_an_imported_source_is_reported_at_the_needimport(
     ]
 
 
-COPY_TOML = (
+REFUSAL_TOML = (
     TYPES
     + """
 [needs.links.links]
@@ -371,41 +372,92 @@ target_types = ["spec"]
 
 [needs.links.verifies]
 copy = true
-target_types = ["req"]
+
+[needs.links.implements]
+copy = true
+
+[needs.types.test.links.links]
+target_types = ["spec"]
+schema = { maxItems = 1 }
 """
 )
 
-COPY_INDEX = """\
+REFUSAL_INDEX = """\
 .. req:: Requirement
    :id: REQ_1
 
-   A part: :np:`(p1) of it`.
-
-.. test:: A copied part, and the whole need written in links
+.. test:: Verifies a req, and links two
    :id: TEST_1
-   :verifies: REQ_1.p1
-   :links: REQ_1
-
-.. test:: A copied need, and a part of it written in links
-   :id: TEST_2
    :verifies: REQ_1
-   :links: REQ_1.p1
+   :links: REQ_1, SPEC_404
 """
 
 
-@pytest.mark.parametrize("test_app", [_project(COPY_TOML, COPY_INDEX)], indirect=True)
-def test_the_copy_exemption_is_by_target_and_part(test_app: SphinxTestApp) -> None:
-    """A link of ``links`` is exempt from its target types only where the need holds
-    the same target AND part in a ``copy`` link type: a whole need beside a copied
-    part, or a part beside a copied whole need, is checked against ``links``."""
+@pytest.mark.parametrize(
+    "test_app", [_project(REFUSAL_TOML, REFUSAL_INDEX)], indirect=True
+)
+def test_target_types_on_links_beside_a_copy_are_refused(
+    test_app: SphinxTestApp,
+) -> None:
+    """While a link type copies into ``links``, a ``target_types`` on ``links`` is one
+    ``needs.config`` warning per declaration, naming the copying link types, and is
+    ignored (the rest of a need type's entry applies: its ``maxItems`` reports the
+    two links, the copy and the written one being one); no link of ``links`` is
+    checked."""
+    test_app.build()
+    warnings = build_warnings(test_app)
+    assert warnings[:2] == [
+        "WARNING: needs_links['links'] has a 'target_types', but 'verifies' and "
+        "'implements' copy into links (copy = true); the key is ignored until copy is "
+        "replaced [needs.config]",
+        "WARNING: needs_types['test'].links['links'] has a 'target_types', but "
+        "'verifies' and 'implements' copy into links (copy = true); the key is ignored "
+        "until copy is replaced [needs.config]",
+    ]
+    assert not any("needs.link_target_type" in warning for warning in warnings)
+    assert any("maxItems" in warning for warning in warnings)
+
+
+NO_REFUSAL_TOML = (
+    TYPES
+    + """
+[needs.links.links]
+copy = true
+target_types = ["spec"]
+
+[needs.links.covers]
+derive = { kind = "links", where = "type == 'req'" }
+copy = true
+"""
+)
+
+
+NO_REFUSAL_INDEX = """\
+.. req:: Requirement
+   :id: REQ_1
+
+.. test:: Links two
+   :id: TEST_1
+   :links: REQ_1, SPEC_404
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app", [_project(NO_REFUSAL_TOML, NO_REFUSAL_INDEX)], indirect=True
+)
+def test_a_copy_that_copies_nothing_refuses_nothing(test_app: SphinxTestApp) -> None:
+    """``copy`` on ``links`` itself, and on a derived link type (refused), copies
+    nothing into ``links``: the ``target_types`` of ``links`` holds."""
     test_app.build()
     assert build_warnings(test_app) == [
-        "<srcdir>/index.rst:9: WARNING: Need 'TEST_1' link 'REQ_1' in field 'links': "
+        "WARNING: Invalid derive of link type 'covers': kind 'links': 'copy' is not "
+        "available on a derived link type in this release, and is ignored; the rule "
+        "applies [needs.derive_invalid]",
+        "<srcdir>/index.rst:7: WARNING: Need 'TEST_1' link 'REQ_1' in field 'links': "
         "target need type 'req' is not one of 'spec' (or a type inheriting from it) "
         "[needs.link_target_type]",
-        "<srcdir>/index.rst:14: WARNING: Need 'TEST_2' link 'REQ_1.p1' in field "
-        "'links': target need type 'req' is not one of 'spec' (or a type inheriting "
-        "from it) [needs.link_target_type]",
+        "<srcdir>/index.rst:7: WARNING: Need 'TEST_1' has unknown outgoing link "
+        "'SPEC_404' in field 'links' [needs.link_outgoing]",
     ]
 
 
@@ -524,3 +576,34 @@ def test_the_descendants_of_each_type() -> None:
         "asil_req": frozenset({"asil_req"}),
         "spec": frozenset({"spec"}),
     }
+
+
+@pytest.mark.parametrize(
+    ("items", "word", "expected"),
+    [
+        (["'a'"], "and", "'a'"),
+        (["'a'", "'b'"], "or", "'a' or 'b'"),
+        (["'a'", "'b'", "'c'"], "and", "'a', 'b' and 'c'"),
+    ],
+)
+def test_the_shared_join(items: list[str], word: str, expected: str) -> None:
+    """The one "a, b and c" join every message uses."""
+    assert joined(items, word) == expected
+
+
+@pytest.mark.parametrize(
+    ("name", "expected"),
+    [
+        pytest.param("Specification", " (did you mean 'spec'?)", id="a-title"),
+        pytest.param("spec", "", id="a-need-type"),
+        pytest.param("nope", "", id="neither"),
+        pytest.param(
+            "Requirement", " (did you mean 'safety_req'?)", id="a-shared-title"
+        ),
+    ],
+)
+def test_the_title_hint(name: str, expected: str) -> None:
+    """The hint ``target_types`` and ``derive_by_type`` give for a title given where a
+    directive name is meant; where two types share the title, the one given last."""
+    types = {"req": "Requirement", "safety_req": "Requirement", "spec": "Specification"}
+    assert title_hint(name, types) == expected

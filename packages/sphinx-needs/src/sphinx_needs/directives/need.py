@@ -10,6 +10,7 @@ from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.util.docutils import SphinxDirective
 
+from sphinx_needs._wording import joined
 from sphinx_needs.api import InvalidNeedException, add_need
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsMutable, SphinxNeedsData
@@ -569,14 +570,6 @@ def check_links(
     #: need type -> link type -> its target types, as the type declares them: read
     #: once per need type, not per link
     target_types: dict[str, dict[str, LinkTargetTypes]] = {}
-    #: the link types copied into ``links``, as ``_copy_links`` copies them: a copy is
-    #: not checked against ``links``; ``copy`` on ``links`` itself, and on a derived
-    #: link type (refused), copies nothing, so it exempts nothing
-    copied = tuple(
-        link.name
-        for link in schema.iter_link_fields()
-        if link.copy and link.name != "links" and not link.derived
-    )
     for need in needs.values():
         if (declared := target_types.get(need_type := need["type"])) is None:
             declared = target_types[need_type] = {
@@ -585,7 +578,7 @@ def check_links(
                 if link.target_types is not None
             }
         if declared:
-            _check_target_types(need, needs, declared, copied)
+            _check_target_types(need, needs, declared)
         for link_type, references in need.iter_links_items(as_str=False):
             for need_link in references:
                 if need_link.condition is None:
@@ -625,25 +618,18 @@ def _check_target_types(
     need: NeedItem,
     needs: NeedsMutable,
     declared: dict[str, LinkTargetTypes],
-    copied: tuple[str, ...],
 ) -> None:
     """Report each resolved link of ``need`` to a need whose type its link type's
     target types, as the need's type declares them, do not accept: one
     ``needs.link_target_type`` warning per link.
 
     A dead link is left to the dead-link check, whether or not dead links are allowed;
-    a link to a part is checked by the type of the need owning it. A link of ``links``
-    that the need also holds, the same target and part, in another link type copied
-    into ``links`` is not checked against the target types of ``links``: it is checked
-    as a link of the link type it is copied from (``copy`` on ``links`` itself, or on
-    a derived link type, copies nothing, so ``copied`` holds neither).
+    a link to a part is checked by the type of the need owning it. ``links`` takes no
+    target types beside a link type that copies into it (refused where the schema is
+    built), so a copy is never checked against them.
 
     :param declared: Each link type with target types on the need's type.
-    :param copied: The link types with ``copy``.
     """
-    #: the targets copied into ``links``, from the final values: computed once, if
-    #: ``links`` has target types and a link of it is refused
-    copies: set[tuple[str, str | None]] | None = None
     for link_type, references in need.iter_links_items(as_str=False):
         if (allowed := declared.get(link_type)) is None:
             continue
@@ -656,16 +642,6 @@ def _check_target_types(
                 continue  # a dead link has no type: the dead-link check reports it
             if target["type"] in allowed.types:
                 continue
-            if link_type == "links" and copied:
-                if copies is None:
-                    copies = {
-                        (link.id, link.part)
-                        for name, links in need.iter_links_items(as_str=False)
-                        if name in copied
-                        for link in links
-                    }
-                if (need_link.id, need_link.part) in copies:
-                    continue
             _emit_link_warning(
                 need,
                 f"Need '{need.id}' link '{need_link.to_link_string()}' "
@@ -680,7 +656,7 @@ def _not_one_of(allowed: LinkTargetTypes) -> str:
     says it: the declared names (not their expansion), and the need type declaring
     them, where a need type does."""
     names = [repr(name) for name in allowed.names]
-    listed = " or ".join(filter(None, (", ".join(names[:-1]), names[-1])))
+    listed = joined(names, "or")
     declared_by = (
         ""
         if allowed.declared_by is None

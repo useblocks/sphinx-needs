@@ -37,6 +37,8 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final, Literal, TypeAlias
 
+from sphinx_needs._wording import title_hint
+
 if TYPE_CHECKING:
     from sphinx_needs.needs_schema import FieldSchema, FieldsSchema, LinkSchema
 
@@ -352,17 +354,12 @@ def parse_derive_by_type(
         return {}, [("derive_by_type", "it is not a table of need types")]
     if not raw:
         return {}, [("derive_by_type", "it names no need type")]
-    titles = {title: directive for directive, title in need_types.items()}
     rules: dict[str, Derive] = {}
     problems: list[tuple[str, str]] = []
     for key in sorted(raw, key=str):
         name = str(key)
         if not isinstance(key, str) or key not in need_types:
-            hint = (
-                f" (did you mean {titles[name]!r}?)"
-                if name in titles and name not in need_types
-                else ""
-            )
+            hint = title_hint(name, need_types)
             problems.append(
                 (
                     f"derive_by_type.{name}",
