@@ -22,10 +22,13 @@ Improvements
   unlike a filter or a schema rule's ``const`` it follows ``inherits``. Dead links are left to the dead-link
   warning, a part link is checked by its need's type, the links of a need from
   :ref:`needs_external_needs` are reported as ``needs.external_link_target_type``, and a link of ``links``
-  that the need also holds in another link type with ``copy`` is not checked against the
-  ``target_types`` of ``links``. A derived link type takes none in this release. The names that are no need type are one
-  ``needs.config`` warning per declaration, and ignored; a ``target_types`` naming none keeps the target
-  types of the declaration before it. The field-declaration conformance corpus pins it
+  that another link type with ``copy`` copied there when the need was created is not checked against
+  the ``target_types`` of ``links`` (a needextend of the copying link type copies nothing, so it changes
+  nothing). The link type's ``schema`` count (``minItems``, ``maxItems``) is checked apart, by the schema
+  validation: it counts every link, a refused or dead one included. A derived link type takes none in
+  this release. The names that are no need type are one ``needs.config`` warning per declaration, and
+  ignored; a ``target_types`` naming none keeps the target types of the declaration before it. The
+  field-declaration conformance corpus pins it
   (``link-target-types-*``), with two new shared codes, ``link_target_type`` and
   ``external_link_target_type``.
 

@@ -1520,9 +1520,21 @@ Each configured link can define:
   and a link to a need from :ref:`needimport` or :ref:`needs_external_needs` by that need's type.
   The links of an imported need are reported at its ``needimport``,
   and those of a need from :ref:`needs_external_needs` as ``needs.external_link_target_type``, with its URL and no place in a document.
-  A link of ``links`` that the need also holds, the same target and part, whatever its condition, in another link type with ``copy``
-  is not checked against the ``target_types`` of ``links``, whether it was copied or written by hand
-  (``copy`` on ``links`` itself, or on a derived link type, copies nothing, and exempts nothing).
+  A link of ``links`` that another link type with ``copy`` copied into it when the need was created
+  (the same target and part, whatever its condition) is not checked against the ``target_types`` of ``links``,
+  whether it was copied or also written there by hand.
+  ``copy`` on ``links`` itself, or on a derived link type, copies nothing, and exempts nothing;
+  nor does a :ref:`needextend` of the copying link type, which copies nothing either:
+  the copy stays in ``links``, and stays exempt.
+  ``target_types`` and the link type's ``schema`` count (``minItems``, ``maxItems``) are checked apart.
+  The count is every link the need holds, a link ``target_types`` refuses and a dead link included,
+  so a ``test`` whose only link is a ``spec`` satisfies ``minItems = 1``.
+  It is checked by the :ref:`schema validation <schema_validation>`, and switched off with it
+  (:ref:`needs_schema_validation_enabled` ``= False``),
+  and reported as ``sn_schema_violation.link_fail``, with no place in a document;
+  so one refused link over a ``maxItems`` is reported twice, once by each.
+  "At least one ``req``" among links that may point to several types
+  takes a schema rule's ``contains`` with ``minContains`` (:ref:`schema_link_count_constraints`).
   A link written twice is one link, and reported once.
   A value that is not a non-empty list of names is one ``needs.config`` warning, and ignored.
   The names that are no need type (a title, a typo) are one ``needs.config`` warning per declaration, naming them, and are ignored.

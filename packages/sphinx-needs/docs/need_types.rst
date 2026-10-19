@@ -230,6 +230,13 @@ A ``test`` without ``verifies`` links is reported:
 
 ``verifies`` set on a need of another type is ignored with a ``needs.undeclared_for_type`` warning, as for a field.
 
+The ``minItems`` counts every link the need holds, whatever its target's type, a dead link too.
+It is checked by the schema validation, as above, and stops when the validation is switched off;
+``target_types`` is checked apart, and its warning gives the place in the document.
+So a ``test`` whose only link is a ``spec`` satisfies ``minItems = 1``, and is reported by ``target_types`` alone.
+"At least one ``req``", where the links may point to other types too,
+takes a schema rule's ``contains`` with ``minContains`` (:ref:`schema_link_count_constraints`).
+
 A ``test`` verifies a ``req``, or a need of a type inheriting from ``req``, such as a ``safety_req``.
 For the example the project has a fourth type, ``spec``:
 
