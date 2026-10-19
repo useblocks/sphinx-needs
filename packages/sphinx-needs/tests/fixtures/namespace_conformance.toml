@@ -40,6 +40,8 @@
 #     the JSON `true`; `false` says the version has no `namespaced_ids` key at all
 #   - `needs.<ID>` pins values as needs.json writes them, TYPE INCLUDED; a link list is a
 #     list of id strings, as needs.json writes it
+#   - no case pins a need's written `links` list: ubCode's export collapses link conditions
+#     (its divergence register), so a link with a condition is pinned by its back link
 #   - a `missing` entry names a need the case's source or files give that is NOT
 #     created: the runner asserts its id is no key of the needs needs.json writes
 #   - findings are compared as a MULTISET of `code`, and of `need` and `field` where the
